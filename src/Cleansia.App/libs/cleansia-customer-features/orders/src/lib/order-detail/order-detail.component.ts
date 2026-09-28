@@ -12,7 +12,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CleansiaButtonComponent, CleansiaTextareaComponent } from '@cleansia/components';
 import { OrderStatusLabelPipe } from '@cleansia/pipes';
-import { OrderStatus, PaymentStatus } from '@cleansia/customer-services';
+import { DisputeReason, OrderStatus, PaymentStatus } from '@cleansia/customer-services';
 import {
   RECURRING_PREFILL_STORAGE_KEY,
   RecurringPrefillParams,
@@ -107,6 +107,7 @@ export class OrderDetailComponent implements OnInit {
   readonly workContractAcceptances = this.facade.workContractAcceptances;
 
   readonly canCancel = this.facade.canCancel;
+  readonly canReportCleanerNoShow = this.facade.canReportCleanerNoShow;
   readonly tookNoCardPayment = this.facade.tookNoCardPayment;
   readonly cancellationOpen = this.facade.cancellationOpen;
   readonly previewLoading = this.facade.previewLoading;
@@ -465,6 +466,14 @@ export class OrderDetailComponent implements OnInit {
     if (!order?.id) return;
     this.router.navigate([CleansiaCustomerRoute.DISPUTES], {
       queryParams: { orderId: order.id },
+    });
+  }
+
+  reportCleanerNoShow(): void {
+    const order = this.order();
+    if (!order?.id) return;
+    this.router.navigate([CleansiaCustomerRoute.DISPUTES], {
+      queryParams: { orderId: order.id, reason: DisputeReason.ServiceNotProvided },
     });
   }
 

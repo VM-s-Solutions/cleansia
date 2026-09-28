@@ -1135,10 +1135,15 @@
           "3": "A partial cancellation fee applies.",
           "4": "A last-minute cancellation fee applies."
         },
-        "grace_note": "Cancelling within {{minutes}} minutes of booking is free, even after a cleaner has accepted."
+        "grace_note": "Cancelling within {{minutes}} minutes of booking is free, even after a cleaner has accepted.",
+        "refund_pending": "Your card refund has not gone through yet. We will keep trying automatically and let you know once it is sent."
       },
       "estimated_hours": "about {{hours}} h",
-      "label_market": "Market"
+      "label_market": "Market",
+      "cleaner_no_show": {
+        "action": "The cleaner did not arrive",
+        "note": "The booked start time has passed, so this booking can no longer be cancelled. If the cleaner did not arrive, let us know and our team will look into it."
+      }
     },
     "order_contract": {
       "eyebrow": "Your booking's contract",
@@ -1601,7 +1606,13 @@
       "need_link_title": "Open the link from your e-mail",
       "need_link_body": "The e-mail we sent when you booked has a button to this page. It carries a private key to that booking, which is why nothing else is asked for.",
       "link_expired": "This link no longer opens a booking. A link stops working 30 days after the clean, and straight away once the booking is cancelled.",
-      "loading": "Opening your booking…"
+      "loading": "Opening your booking…",
+      "cleaner_no_show": {
+        "action": "The cleaner did not arrive",
+        "note": "The booked start time has passed, so this booking can no longer be cancelled. If the cleaner did not arrive, let us know and our team will look into it.",
+        "reported": "Thank you. Our team has been told and will look into it.",
+        "error": "We could not send your report. Please try again."
+      }
     },
     "saved_addresses": {
       "title": "My addresses",

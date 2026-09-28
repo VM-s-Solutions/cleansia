@@ -17,7 +17,7 @@ import {
 } from '@cleansia/customer-services';
 import { ReviewLineScore } from './order-review-lines.models';
 import { buildWorkContractAcceptanceLines } from './order-work-contract.models';
-import { SnackbarService } from '@cleansia/services';
+import { extractApiErrorCode, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
 
@@ -32,6 +32,8 @@ const CANCELLABLE_ORDER_STATUSES: readonly OrderStatus[] = [
 ];
 
 const STANDARD_FREE_CANCELLATION_HOURS = 24;
+
+const START_PASSED_CANNOT_CANCEL = 'order.start_passed_cannot_cancel';
 
 @Injectable()
 export class OrderDetailFacade extends UnsubscribeControlDirective {
@@ -55,11 +57,27 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
   readonly cancellationPreviewFailed = signal(false);
   readonly cancelling = signal(false);
   readonly cancellationResult = signal<CancelOrderResponse | null>(null);
+  private readonly startPassedRefused = signal(false);
+
+  /**
+   * Past the booked start with a cleaner on the job who has not started, the server refuses a
+   * self-cancel and the customer reports that the cleaner did not arrive. The server's refusal also
+   * counts, so a client clock behind the server's cannot keep offering a cancel it will refuse.
+   * -> /product/business-rules#cancellation
+   */
+  readonly canReportCleanerNoShow = computed(() => {
+    const order = this.order();
+    const status = order?.orderStatus?.value;
+    if (!order || status === undefined || !CANCELLABLE_ORDER_STATUSES.includes(status)) return false;
+    if (this.startPassedRefused()) return true;
+    const startsAt = order.cleaningDateTime?.getTime();
+    return !!order.assignedEmployees?.length && startsAt !== undefined && startsAt <= Date.now();
+  });
 
   readonly canCancel = computed(() => {
     const status = this.order()?.orderStatus?.value;
     return !this.cancellationResult() && status !== undefined &&
-      CANCELLABLE_ORDER_STATUSES.includes(status);
+      CANCELLABLE_ORDER_STATUSES.includes(status) && !this.canReportCleanerNoShow();
   });
 
   /**
@@ -215,11 +233,15 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
       .cancellationPreview(orderId)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError(() => of(null)),
+        catchError((error: unknown) => {
+          this.noteStartPassed(error);
+          return of(null);
+        }),
         finalize(() => this.previewLoading.set(false)),
       )
       .subscribe((preview) => {
         if (preview && preview.orderId === orderId) this.cancellationPreview.set(preview);
+        else if (this.startPassedRefused()) this.cancellationOpen.set(false);
         else this.cancellationPreviewFailed.set(true);
       });
   }
@@ -246,7 +268,10 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
       .cancel(command)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError(() => of(null)),
+        catchError((error: unknown) => {
+          this.noteStartPassed(error);
+          return of(null);
+        }),
         finalize(() => this.cancelling.set(false)),
       )
       .subscribe((result) => {
@@ -262,5 +287,9 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
     this.snackbar.showError(
       this.translate.instant('recurring_booking.order_detail_make_recurring_plus_required'),
     );
+  }
+
+  private noteStartPassed(error: unknown): void {
+    if (extractApiErrorCode(error) === START_PASSED_CANNOT_CANCEL) this.startPassedRefused.set(true);
   }
 }

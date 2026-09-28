@@ -228,9 +228,13 @@ export class DisputesComponent implements OnInit {
     this.facade.loadOrdersForSelect();
     // Arriving from an order's "something was wrong": straight into the form,
     // with the order it is about already chosen.
-    const orderId = this.route.snapshot.queryParamMap.get('orderId');
+    const query = this.route.snapshot.queryParamMap;
+    const orderId = query.get('orderId');
     if (orderId) {
       this.createForm.patchValue({ orderId });
+      if (Number(query.get('reason')) === DisputeReason.ServiceNotProvided) {
+        this.pickReason(DisputeReason.ServiceNotProvided);
+      }
       this.mode.set('new');
     }
   }

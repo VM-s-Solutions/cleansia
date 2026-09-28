@@ -11,6 +11,7 @@ import {
   PaymentStatus,
   PaymentType,
 } from '@cleansia/customer-services';
+import { OrderStatus } from '@cleansia/models';
 import { GuestOrderService } from './guest-order.service';
 import { TrackOrderFacade } from './track-order.facade';
 
@@ -85,5 +86,23 @@ describe('TrackOrderFacade', () => {
     expect(JSON.parse(request.request.body)).toEqual({ accessTokens: [] });
 
     request.flush(new Blob([JSON.stringify({ orders: [] })]));
+  });
+
+  it('sends the no-show report with the access token in the body', () => {
+    facade.selectOrder(
+      LookupOrderResponse.fromJS({
+        id: 'ord-1',
+        orderStatus: { value: OrderStatus.Confirmed },
+        cleaningDateTime: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+      }),
+      'tok-123',
+    );
+
+    facade.reportCleanerNoShow();
+
+    const request = httpMock.expectOne(`${BASE_URL}/api/Order/ReportGuestNoShow`);
+    expect(request.request.method).toBe('POST');
+    expect(JSON.parse(request.request.body)).toEqual({ accessToken: 'tok-123' });
+    request.flush(new Blob([JSON.stringify({ orderId: 'ord-1' })]));
   });
 });

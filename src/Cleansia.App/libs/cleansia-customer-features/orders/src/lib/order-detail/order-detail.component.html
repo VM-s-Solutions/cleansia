@@ -545,7 +545,23 @@
             {{ 'pages.order_detail.cancellation.action' | translate }}
           </button>
           }
+          @if (canReportCleanerNoShow()) {
+          <cleansia-button
+            [block]="true"
+            severity="danger"
+            [outlined]="true"
+            [label]="'pages.order_detail.cleaner_no_show.action' | translate"
+            (onClick)="reportCleanerNoShow()"
+          />
+          }
         </div>
+
+        @if (canReportCleanerNoShow()) {
+        <p class="order-detail__policy">
+          <i class="pi pi-info-circle"></i>
+          {{ 'pages.order_detail.cleaner_no_show.note' | translate }}
+        </p>
+        }
 
         @if (cancellationResult()) {
         <div class="order-detail__cancellation-result" role="status">
@@ -554,6 +570,9 @@
           <p>
             {{ 'pages.order_detail.cancellation.refund_success' | translate: { amount: formatPrice(amount) } }}
           </p>
+          }
+          @if (cancellationResult()?.refundPending) {
+          <p>{{ 'pages.order_detail.cancellation.refund_pending' | translate }}</p>
           }
         </div>
         }

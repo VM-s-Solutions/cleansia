@@ -1135,10 +1135,15 @@
           "3": "Platí částečný storno poplatek.",
           "4": "Platí storno poplatek za zrušení na poslední chvíli."
         },
-        "grace_note": "Zrušení do {{minutes}} minut od objednání je zdarma, i když už objednávku přijal uklízeč."
+        "grace_note": "Zrušení do {{minutes}} minut od objednání je zdarma, i když už objednávku přijal uklízeč.",
+        "refund_pending": "Vrácení peněz na kartu zatím neproběhlo. Budeme to automaticky zkoušet znovu a dáme vám vědět, jakmile peníze odešleme."
       },
       "estimated_hours": "odhadem {{hours}} h",
-      "label_market": "Trh"
+      "label_market": "Trh",
+      "cleaner_no_show": {
+        "action": "Uklízeč nedorazil",
+        "note": "Objednaný čas začátku už uplynul, takže rezervaci už nelze zrušit. Pokud uklízeč nedorazil, dejte nám vědět a náš tým se na to podívá."
+      }
     },
     "order_contract": {
       "eyebrow": "Smlouva k vaší objednávce",
@@ -1601,7 +1606,13 @@
       "need_link_title": "Otevřete odkaz z e-mailu",
       "need_link_body": "V e-mailu, který jsme vám po objednání poslali, je tlačítko na tuto stránku. Nese soukromý klíč k té objednávce — proto se vás na nic dalšího neptáme.",
       "link_expired": "Tento odkaz už objednávku neotevře. Přestává platit 30 dní po úklidu a hned poté, co je objednávka zrušena.",
-      "loading": "Otevíráme vaši objednávku…"
+      "loading": "Otevíráme vaši objednávku…",
+      "cleaner_no_show": {
+        "action": "Uklízeč nedorazil",
+        "note": "Objednaný čas začátku už uplynul, takže rezervaci už nelze zrušit. Pokud uklízeč nedorazil, dejte nám vědět a náš tým se na to podívá.",
+        "reported": "Děkujeme. Náš tým o tom ví a bude se tím zabývat.",
+        "error": "Hlášení se nepodařilo odeslat. Zkuste to prosím znovu."
+      }
     },
     "saved_addresses": {
       "title": "Moje adresy",

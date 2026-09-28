@@ -146,6 +146,87 @@ describe('OrderDetailFacade', () => {
     });
   });
 
+  // Owner ruling 2026-09-28: past the booked start, with a cleaner on the job who has not started, the
+  // server refuses a self-cancel and the customer reports that the cleaner did not arrive instead.
+  describe('after the booked start', () => {
+    const HOUR_MS = 60 * 60 * 1000;
+    const startPassed = () => ({ errors: { OrderId: 'order.start_passed_cannot_cancel' } });
+    const booking = (status: OrderStatus, startsInMs: number, staffed: boolean) =>
+      OrderItem.fromJS({
+        id: ORDER_ID,
+        orderStatus: { value: status, name: OrderStatus[status] },
+        cleaningDateTime: new Date(Date.now() + startsInMs).toISOString(),
+        assignedEmployees: staffed ? [{ employeeId: 'emp-1', fullName: 'Petra S.' }] : [],
+      });
+
+    it.each([OrderStatus.Confirmed, OrderStatus.OnTheWay])(
+      'offers the no-show report in place of Cancel on a staffed order in status %s',
+      (status) => {
+        facade.order.set(booking(status, -HOUR_MS, true));
+        expect(facade.canCancel()).toBe(false);
+        expect(facade.canReportCleanerNoShow()).toBe(true);
+      },
+    );
+
+    it('keeps Cancel before the start, with the cleaner already on the way', () => {
+      facade.order.set(booking(OrderStatus.OnTheWay, HOUR_MS, true));
+      expect(facade.canCancel()).toBe(true);
+      expect(facade.canReportCleanerNoShow()).toBe(false);
+    });
+
+    it('keeps Cancel past the start while nobody is assigned', () => {
+      facade.order.set(booking(OrderStatus.New, -HOUR_MS, false));
+      expect(facade.canCancel()).toBe(true);
+      expect(facade.canReportCleanerNoShow()).toBe(false);
+    });
+
+    it.each([OrderStatus.InProgress, OrderStatus.Completed, OrderStatus.Cancelled])(
+      'offers neither once the order is in status %s',
+      (status) => {
+        facade.order.set(booking(status, -HOUR_MS, true));
+        expect(facade.canCancel()).toBe(false);
+        expect(facade.canReportCleanerNoShow()).toBe(false);
+      },
+    );
+
+    it('turns to the no-show report when the server refuses the preview because the start has passed', () => {
+      facade.order.set(orderIn(OrderStatus.Confirmed));
+      orderClient.cancellationPreview.mockReturnValue(throwError(startPassed));
+
+      facade.openCancellation();
+
+      expect(facade.cancellationOpen()).toBe(false);
+      expect(facade.cancellationPreviewFailed()).toBe(false);
+      expect(facade.canCancel()).toBe(false);
+      expect(facade.canReportCleanerNoShow()).toBe(true);
+    });
+
+    it('turns to the no-show report when the server refuses the cancel because the start has passed', () => {
+      facade.order.set(orderIn(OrderStatus.Confirmed));
+      facade.openCancellation();
+      orderClient.cancel.mockReturnValue(throwError(startPassed));
+      orderClient.getById.mockReturnValue(of(orderIn(OrderStatus.Confirmed)));
+
+      facade.cancelOrder('');
+
+      expect(facade.cancellationResult()).toBeNull();
+      expect(facade.canCancel()).toBe(false);
+      expect(facade.canReportCleanerNoShow()).toBe(true);
+    });
+
+    it('keeps the preview-failed state for any other refusal', () => {
+      facade.order.set(orderIn(OrderStatus.Confirmed));
+      orderClient.cancellationPreview.mockReturnValue(
+        throwError(() => ({ errors: { OrderId: 'order.in_progress_cannot_cancel' } })),
+      );
+
+      facade.openCancellation();
+
+      expect(facade.cancellationPreviewFailed()).toBe(true);
+      expect(facade.canReportCleanerNoShow()).toBe(false);
+    });
+  });
+
   // With no card charge behind the booking the cancel sheet has no card refund to estimate.
   describe('whether the booking took a card payment', () => {
     const booking = (type: PaymentType, status: PaymentStatus) =>

@@ -57,6 +57,8 @@ export {
   LookupOrderResponse,
   LookupOrderBatchQuery,
   LookupOrderBatchResponse,
+  ReportGuestCleanerNoShowCommand,
+  ReportGuestCleanerNoShowResponse,
 } from './lib/client/customer-client';
 export {
   SavedAddressClient,

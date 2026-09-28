@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Services;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
@@ -67,6 +68,7 @@ public class MembershipTrialMarkerWebhookTests
             _planRepository.Object,
             _currencyRepository.Object,
             _tenantProvider.Object,
+            Mock.Of<INotificationProducer>(),
             NullLogger<StripeSubscriptionWebhookHandler>.Instance);
 
     private UserMembership ExistingTrialingMembership(DateTime trialEndsAtUtc)
@@ -200,7 +202,7 @@ public class MembershipTrialMarkerWebhookTests
             .Setup(r => r.GetByStripeSubscriptionIdAsync(SubscriptionId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
         _membershipRepository
-            .Setup(r => r.GetActiveForUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetLifecycleForUserAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
 
         UserMembership? added = null;
@@ -223,7 +225,7 @@ public class MembershipTrialMarkerWebhookTests
             .Setup(r => r.GetByStripeSubscriptionIdAsync(SubscriptionId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
         _membershipRepository
-            .Setup(r => r.GetActiveForUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetLifecycleForUserAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
 
         UserMembership? added = null;

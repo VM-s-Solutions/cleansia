@@ -85,7 +85,7 @@ internal static class CreateOrderTestData
             Rooms: 2,
             Bathrooms: 1,
             Extras: new Dictionary<string, bool>(),
-            CleaningDate: cleaningDate ?? DateTime.UtcNow.AddDays(3),
+            CleaningDate: cleaningDate ?? DateTime.UtcNow.Date.AddDays(3).AddHours(9),
             PaymentType: paymentType,
             CurrencyId: CurrencyId,
             TotalPrice: totalPrice ?? MatchingTotalPrice,

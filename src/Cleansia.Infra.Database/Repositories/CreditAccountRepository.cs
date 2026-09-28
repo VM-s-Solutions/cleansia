@@ -197,6 +197,12 @@ public class CreditAccountRepository(CleansiaDbContext context)
         return rows.ToDictionary(r => r.OrderId, r => r.Total);
     }
 
+    public Task<decimal> GetDisputeSettledTotalForOrderAsync(string orderId, CancellationToken cancellationToken) =>
+        context.CreditTransactions
+            .AsNoTracking()
+            .Where(t => t.OrderId == orderId && t.Reason == CreditTransactionReason.DisputeSettlement)
+            .SumAsync(t => t.Amount, cancellationToken);
+
     public Task<CreditSpendable?> GetSpendableAsync(
         string userId, string currencyId, CancellationToken cancellationToken)
     {

@@ -17,4 +17,6 @@ public record OrderEmployeePayDto(
     string? PayBreakdown,
     bool IsApproved,
     DateTime CreatedOn,
-    string? CurrencyCode = null);
+    string? CurrencyCode = null,
+    /// <summary>Why the cleaner was charged when a dispute found them at fault; null otherwise.</summary>
+    string? DeductionReason = null);

@@ -41,6 +41,13 @@ public class Dispute : TenantAuditable
     [MaxLength(2000)]
     public string? ResolutionNotes { get; private set; }
 
+    /// <summary>
+    /// How the customer asked to be settled if the complaint is justified: a card refund unless they chose
+    /// credit. <c>ResolveDispute</c> settles by this and nothing else.
+    /// </summary>
+    [Required]
+    public DisputeSettlementPreference SettlementPreference { get; private set; } = DisputeSettlementPreference.CardRefund;
+
     public decimal? RefundAmount { get; private set; }
 
     /// <summary>
@@ -107,12 +114,14 @@ public class Dispute : TenantAuditable
         string? userId,
         DisputeReason reason,
         string description,
-        string createdBy)
+        string createdBy,
+        DisputeSettlementPreference settlementPreference = DisputeSettlementPreference.CardRefund)
     {
         OrderId = orderId;
         UserId = userId;
         Reason = reason;
         Description = description;
+        SettlementPreference = settlementPreference;
         Status = DisputeStatus.Pending;
         Created(createdBy, DateTimeOffset.UtcNow);
     }

@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Features.Currencies.DTOs;
 using Cleansia.Core.AppServices.Shared.DTOs.Enums;
+using Cleansia.Core.Domain.Enums;
 
 namespace Cleansia.Core.AppServices.Features.Disputes.DTOs;
 
@@ -52,5 +53,9 @@ public record DisputeDetails(
     /// The order items the customer said were not done properly. Empty is ordinary — a dispute about
     /// the whole job, or about a charge, names none.
     /// </summary>
-    IEnumerable<DisputeLineDto> Lines
+    IEnumerable<DisputeLineDto> Lines,
+    /// <summary>
+    /// The customer's choice on filing: a card refund, or credit. A justified complaint is settled by it.
+    /// </summary>
+    DisputeSettlementPreference SettlementPreference = DisputeSettlementPreference.CardRefund
 );

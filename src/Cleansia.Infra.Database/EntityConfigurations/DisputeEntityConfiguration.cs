@@ -31,6 +31,9 @@ public class DisputeEntityConfiguration : TenantAuditableEntityConfiguration<Dis
         builder.Property(d => d.Status)
             .IsRequired();
 
+        builder.Property(d => d.SettlementPreference)
+            .IsRequired();
+
         builder.Property(d => d.ResolutionNotes)
             .HasMaxLength(2000);
 

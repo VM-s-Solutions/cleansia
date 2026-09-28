@@ -1,17 +1,20 @@
 using System.Text.Json;
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.Domain.Loyalty;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.Core.AppServices.Features.Loyalty.Admin;
 
 /// <summary>
 /// Edit a single tier config. The Tier discriminator is immutable; admin
 /// updates the threshold / discount / perks for the row identified by
-/// <see cref="Command.TierConfigId"/>. Threshold edits retroactively
-/// reclassify users — the UI should call PreviewTierThresholdImpact first.
+/// <see cref="Command.TierConfigId"/>. A threshold edit re-tiers every account
+/// in the same save, so no customer keeps a tier or discount the new thresholds
+/// no longer give them — the UI should call PreviewTierThresholdImpact first.
 /// </summary>
 public class UpdateTierConfig
 {
@@ -78,6 +81,7 @@ public class UpdateTierConfig
 
     public class Handler(
         ILoyaltyTierConfigRepository tierConfigRepository,
+        ILoyaltyAccountRepository loyaltyAccountRepository,
         IUserSessionProvider userSessionProvider)
         : ICommandHandler<Command, Response>
     {
@@ -97,6 +101,14 @@ public class UpdateTierConfig
                 minimumOrderAmountForDiscount: command.MinimumOrderAmountForDiscount,
                 perksJson: command.PerksJson,
                 actorId: actorId);
+
+            var thresholds = LoyaltyTierThresholds.From(await tierConfigRepository.GetAllForTenantAsync(cancellationToken));
+            // The thresholds are one platform catalogue, so every company's accounts answer to them.
+            var accounts = await loyaltyAccountRepository.GetQueryableIgnoringTenant().ToListAsync(cancellationToken);
+            foreach (var account in accounts)
+            {
+                account.ApplyTierThresholds(thresholds, actorId);
+            }
 
             return BusinessResult.Success(new Response(entity.Id));
         }

@@ -63,6 +63,17 @@ public class OrderEmployeePay : TenantAuditable
     [MaxLength(2000)]
     public string? PayBreakdown { get; private set; }
 
+    /// <summary>
+    /// The dispute an administrator found this cleaner at fault on, and the finding they wrote for the
+    /// cleaner to read on this pay record. Null unless such a deduction was made — a refund never
+    /// deducts on its own (owner ruling 2026-09-28).
+    /// </summary>
+    [MaxLength(26)]
+    public string? DeductionDisputeId { get; private set; }
+
+    [MaxLength(500)]
+    public string? DeductionReason { get; private set; }
+
     public bool IsApproved { get; private set; } = false;
 
     public DateTime? ApprovedAt { get; private set; }
@@ -191,6 +202,22 @@ public class OrderEmployeePay : TenantAuditable
         return this;
     }
 
+    public bool CanTakeDisputeCharge(decimal amount) =>
+        EmployeeInvoiceId is null && DeductionDisputeId is null && amount <= TotalPay;
+
+    public OrderEmployeePay ChargeForDispute(string disputeId, decimal amount, string reason)
+    {
+        if (!CanTakeDisputeCharge(amount))
+        {
+            throw new InvalidOperationException(
+                $"Pay {Id} cannot take a dispute charge: already invoiced, already charged, or smaller than {amount}.");
+        }
+
+        DeductionDisputeId = disputeId;
+        DeductionReason = reason;
+        return AddDeduction(amount);
+    }
+
     /// <summary>
     /// The single source of truth for TotalPay once components change: clamp the core
     /// (base+extras+expenses) to the persisted [MinPay, MaxPay] bounds — the SAME clamp the calculator
@@ -228,6 +255,7 @@ public class OrderEmployeePay : TenantAuditable
     public OrderEmployeePay Anonymize()
     {
         Notes = Notes is null ? null : AnonymizationMarker.Value;
+        DeductionReason = DeductionReason is null ? null : AnonymizationMarker.Value;
         return this;
     }
 }

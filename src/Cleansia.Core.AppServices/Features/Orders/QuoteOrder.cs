@@ -136,6 +136,7 @@ public class QuoteOrder
         private readonly ICurrencyResolutionService _currencyResolutionService;
         private readonly IServicePriceRepository _servicePriceRepository;
         private readonly IPackagePriceRepository _packagePriceRepository;
+        private readonly ICountryConfigurationRepository _countryConfigurationRepository;
 
         public Validator(
             IServiceRepository serviceRepository,
@@ -144,8 +145,10 @@ public class QuoteOrder
             ICountryRepository countryRepository,
             ICurrencyResolutionService currencyResolutionService,
             IServicePriceRepository servicePriceRepository,
-            IPackagePriceRepository packagePriceRepository)
+            IPackagePriceRepository packagePriceRepository,
+            ICountryConfigurationRepository countryConfigurationRepository)
         {
+            _countryConfigurationRepository = countryConfigurationRepository;
             _serviceRepository = serviceRepository;
             _packageRepository = packageRepository;
             _currencyRepository = currencyRepository;
@@ -165,6 +168,13 @@ public class QuoteOrder
                 .WithMessage(BusinessErrorMessage.MustBePositive)
                 .LessThanOrEqualTo(BookingPolicy.MaxBathrooms)
                 .WithMessage(BusinessErrorMessage.OrderSizeExceedsMaximum);
+
+            // The window CreateOrder refuses, with its key: a slot the platform will not book must not
+            // first come back priced.
+            RuleFor(x => x.CleaningDate)
+                .MustAsync(IsBookableStartAsync)
+                .WithMessage(BusinessErrorMessage.CleaningDateOutsideBookingWindow)
+                .When(x => x.CleaningDate.HasValue);
 
             // Existence, then a price row in the currency being quoted in. The second term reuses the
             // selection code deliberately -- see CreateOrder.Validator: an entry with no row in this
@@ -202,6 +212,14 @@ public class QuoteOrder
                 .MustAsync(SpanWithinCapAsync)
                 .WithMessage(BusinessErrorMessage.OrderSpanExceedsMaximum);
         }
+
+        private async Task<bool> IsBookableStartAsync(
+            Command command, DateTime? cleaningDate, CancellationToken cancellationToken)
+            => BookingPolicy.IsBookableStart(
+                cleaningDate!.Value,
+                DateTime.UtcNow,
+                await TimeZoneResolution.ForMarketAsync(
+                    _countryConfigurationRepository, command.CountryId, cancellationToken));
 
         private const string CountryServicedKey = "quoteOrder.countryServiced";
 

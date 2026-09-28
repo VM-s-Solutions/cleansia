@@ -103,10 +103,13 @@ public class UpdateRecurringBooking
                 .WithMessage(BusinessErrorMessage.InvalidEnumValue);
 
             RuleFor(x => x.TimeOfDay)
+                .Cascade(CascadeMode.Stop)
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required)
                 .Must(t => TimeOnly.TryParse(t, out _))
-                .WithMessage(BusinessErrorMessage.InvalidEnumValue);
+                .WithMessage(BusinessErrorMessage.InvalidEnumValue)
+                .Must(t => BookingPolicy.IsBookableTimeOfDay(TimeOnly.Parse(t)))
+                .WithMessage(BusinessErrorMessage.CleaningDateOutsideBookingWindow);
 
             RuleFor(x => x.Rooms).GreaterThanOrEqualTo(0).WithMessage(BusinessErrorMessage.InvalidEnumValue)
                 .LessThanOrEqualTo(BookingPolicy.MaxRooms).WithMessage(BusinessErrorMessage.OrderSizeExceedsMaximum);
@@ -130,6 +133,10 @@ public class UpdateRecurringBooking
             RuleFor(x => x)
                 .Must(c => c.SelectedServiceIds.Count > 0 || c.SelectedPackageIds.Count > 0)
                 .WithMessage(BusinessErrorMessage.RecurringTemplateNoServicesOrPackages);
+
+            RuleFor(x => x.StartsOn)
+                .Must(d => !BookingPolicy.IsBeyondBookingHorizon(d, DateTime.UtcNow))
+                .WithMessage(BusinessErrorMessage.CleaningDateOutsideBookingWindow);
 
             When(x => x.EndsOn.HasValue, () =>
             {
@@ -220,6 +227,7 @@ public class UpdateRecurringBooking
         ISavedAddressRepository savedAddressRepository,
         IUserSessionProvider userSessionProvider,
         IOperatorTenantResolver operatorTenantResolver,
+        ICountryConfigurationRepository countryConfigurationRepository,
         IAuditContext auditContext) : ICommandHandler<Command, RecurringBookingTemplateDto>
     {
         public async Task<BusinessResult<RecurringBookingTemplateDto>> Handle(Command command, CancellationToken cancellationToken)
@@ -263,6 +271,8 @@ public class UpdateRecurringBooking
                 new RecurringTemplateEvidence(before, RecurringTemplateFacts.Of(existing)));
 
             var line = $"{address.Address.Street}, {address.Address.City} {address.Address.ZipCode}";
+            var marketZone = await TimeZoneResolution.ForMarketAsync(
+                countryConfigurationRepository, address.Address.CountryId, cancellationToken);
 
             return BusinessResult.Success(new RecurringBookingTemplateDto(
                 Id: existing.Id,
@@ -280,7 +290,8 @@ public class UpdateRecurringBooking
                 EndsOn: existing.EndsOn,
                 LastMaterializedFor: existing.LastMaterializedFor,
                 IsActive: existing.IsActive,
-                PreferredEmployeeId: existing.PreferredEmployeeId));
+                PreferredEmployeeId: existing.PreferredEmployeeId,
+                TimeZoneId: marketZone.Id));
         }
     }
 }

@@ -70,6 +70,12 @@ public class OrderEmployeePayEntityConfiguration : TenantAuditableEntityConfigur
         builder.Property(e => e.PayBreakdown)
             .HasMaxLength(2000);
 
+        builder.Property(e => e.DeductionDisputeId)
+            .HasMaxLength(26);
+
+        builder.Property(e => e.DeductionReason)
+            .HasMaxLength(500);
+
         builder.Property(e => e.IsApproved)
             .IsRequired()
             .HasDefaultValue(false);

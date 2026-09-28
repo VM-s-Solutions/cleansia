@@ -32,4 +32,9 @@ public record RecurringBookingTemplateDto(
     /// the customer switches it to card or to a one-cleaner selection; nothing switches it for them.
     /// Read from the live catalogue, so an edit to a service's duration can set or clear it.
     /// </summary>
-    bool RequiresPaymentMethodChange = false);
+    bool RequiresPaymentMethodChange = false,
+    /// <summary>
+    /// The zone <see cref="DayOfWeek"/> and <see cref="TimeOfDay"/> are read in — the saved address's
+    /// market, the clock the materializer walks. Null when the address can no longer be read.
+    /// </summary>
+    string? TimeZoneId = null);

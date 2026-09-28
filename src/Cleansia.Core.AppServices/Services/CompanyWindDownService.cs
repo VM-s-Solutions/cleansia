@@ -115,7 +115,7 @@ public sealed class CompanyWindDownService(
             "Company wind-down run for {TenantId} (from {WindDownFrom}, deactivated: {Deactivated}): "
                 + "{Notices} notices enqueued, {Cancelled} orders cancelled, {Refunded} refunded, "
                 + "{Redriven} refunds re-driven, {RefundFailures} refund failures, {Paused} templates paused, "
-                + "{Memberships} memberships cancelled at period end, {Discharged} credit accounts discharged, "
+                + "{Memberships} memberships cancelled, {Discharged} credit accounts discharged, "
                 + "{PeriodsClosed} pay periods closed{PeriodSkipped}",
             tenantId, tenant.WindDownFrom, tenant.IsDeactivated,
             notices, cancelledOrderIds.Count, refunded, redriven, summary.RefundFailures, paused, memberships, discharged,
@@ -409,31 +409,51 @@ public sealed class CompanyWindDownService(
 
     /// <summary>
     /// Every Plus the company's customers hold, in any currency: a benefit they pay for and can use
-    /// nowhere once the company closes. A Stripe refusal leaves the row selected for the next run.
+    /// nowhere once the company closes. A paid-up one ends with its period; a past-due or paused one ends
+    /// now, as the member's own cancel does, or Stripe goes on retrying the card. A Stripe refusal leaves
+    /// the row selected for the next run.
     /// </summary>
     private async Task<int> CancelMembershipsAsync(CancellationToken cancellationToken)
     {
-        var active = await userMembershipRepository.GetQueryable()
-            .Where(m => m.Status == MembershipStatus.Active && m.CancelledAt == null)
+        var live = await userMembershipRepository.GetQueryable()
+            .Where(m => (m.Status == MembershipStatus.Active && m.CancelledAt == null)
+                || m.Status == MembershipStatus.PastDue
+                || m.Status == MembershipStatus.Paused)
             .OrderBy(m => m.Id)
             .ToListAsync(cancellationToken);
 
         var cancelled = 0;
-        foreach (var membership in active)
+        foreach (var membership in live)
         {
+            var paidUp = membership.Status == MembershipStatus.Active;
             try
             {
-                await stripeClient.CancelSubscriptionAtPeriodEndAsync(membership.StripeSubscriptionId, cancellationToken);
+                if (paidUp)
+                {
+                    await stripeClient.CancelSubscriptionAtPeriodEndAsync(membership.StripeSubscriptionId, cancellationToken);
+                }
+                else
+                {
+                    await stripeClient.CancelSubscriptionNowAsync(membership.StripeSubscriptionId, cancellationToken);
+                }
             }
             catch (StripeException ex)
             {
                 logger.LogError(ex,
-                    "Company wind-down could not cancel membership {MembershipId} at period end; it stays selected for the next run",
+                    "Company wind-down could not cancel membership {MembershipId}; it stays selected for the next run",
                     membership.Id);
                 continue;
             }
 
-            membership.MarkCancellationRequested();
+            if (paidUp)
+            {
+                membership.MarkCancellationRequested();
+            }
+            else
+            {
+                membership.MarkCancelledNow(timeProvider.GetUtcNow().UtcDateTime);
+            }
+
             await unitOfWork.CommitAsync(cancellationToken);
             cancelled++;
         }

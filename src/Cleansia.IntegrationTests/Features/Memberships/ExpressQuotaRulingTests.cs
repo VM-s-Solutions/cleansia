@@ -294,7 +294,8 @@ public class ExpressQuotaRulingTests(PostgresContainerFixture fixture) : BaseInt
 
     /// <summary>
     /// Cancel-and-resubscribe. The two writes commit separately because the enrolment invariant is a
-    /// PostgreSQL unique INDEX on <c>(TenantId, UserId) WHERE Status = Active</c>, and an index — unlike
+    /// PostgreSQL unique INDEX on <c>(TenantId, UserId)</c> over the live statuses (Active, PastDue,
+    /// Paused), and an index — unlike
     /// a constraint — cannot be deferred to commit, so the replacement INSERT must not be batched ahead
     /// of the cancellation UPDATE.
     /// </summary>

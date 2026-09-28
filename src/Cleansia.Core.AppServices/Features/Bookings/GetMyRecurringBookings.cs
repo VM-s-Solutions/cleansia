@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Bookings.DTOs;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
@@ -15,7 +16,8 @@ public class GetMyRecurringBookings
         ISavedAddressRepository savedAddressRepository,
         IUserSessionProvider userSessionProvider,
         IServiceRepository serviceRepository,
-        IPackageRepository packageRepository) : IQueryHandler<Query, IReadOnlyList<RecurringBookingTemplateDto>>
+        IPackageRepository packageRepository,
+        ICountryConfigurationRepository countryConfigurationRepository) : IQueryHandler<Query, IReadOnlyList<RecurringBookingTemplateDto>>
     {
         public async Task<BusinessResult<IReadOnlyList<RecurringBookingTemplateDto>>> Handle(Query query, CancellationToken cancellationToken)
         {
@@ -40,6 +42,13 @@ public class GetMyRecurringBookings
                     cashTemplates.SelectMany(t => t.SelectedServiceIds),
                     cashTemplates.SelectMany(t => t.SelectedPackageIds),
                     cancellationToken);
+
+            var zoneByCountry = new Dictionary<string, string>(StringComparer.Ordinal);
+            foreach (var countryId in addressById.Values.Select(a => a.Address!.CountryId).Distinct())
+            {
+                zoneByCountry[countryId] = (await TimeZoneResolution.ForMarketAsync(
+                    countryConfigurationRepository, countryId, cancellationToken)).Id;
+            }
 
             var dtos = templates.Select(t =>
             {
@@ -66,7 +75,8 @@ public class GetMyRecurringBookings
                     IsActive: t.IsActive,
                     PreferredEmployeeId: t.PreferredEmployeeId,
                     RequiresPaymentMethodChange: t.PaymentType == PaymentType.Cash
-                        && !cashEligibility!.Allows(t.SelectedServiceIds, t.SelectedPackageIds));
+                        && !cashEligibility!.Allows(t.SelectedServiceIds, t.SelectedPackageIds),
+                    TimeZoneId: addr?.Address == null ? null : zoneByCountry[addr.Address.CountryId]);
             }).ToList();
 
             return BusinessResult.Success<IReadOnlyList<RecurringBookingTemplateDto>>(dtos);

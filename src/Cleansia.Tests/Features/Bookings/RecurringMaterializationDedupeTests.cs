@@ -186,6 +186,36 @@ public sealed class RecurringMaterializationDedupeTests : IDisposable
     }
 
     /// <summary>
+    /// A schedule stored before the server held times to the window — an iOS wheel could send 03:00 — is
+    /// preserved but spawns nothing until its owner moves it into the bookable day.
+    /// </summary>
+    [Fact]
+    public async Task A_Template_Timed_Outside_The_Bookable_Day_Creates_Nothing()
+    {
+        await SeedAsync(timeOfDay: new TimeOnly(3, 0));
+
+        var result = await RunAsync(Now, horizonDays: 14);
+
+        Assert.Equal(0, result.OrdersCreated);
+        Assert.Empty(await OccurrencesAsync());
+    }
+
+    /// <summary>
+    /// Today's 09:00 is an hour away at the 08:00 tick: under the two-hour floor a one-off booking is held
+    /// to, so it is skipped rather than created already late, and next week's is the first occurrence.
+    /// </summary>
+    [Fact]
+    public async Task An_Occurrence_Under_The_Minimum_Lead_Time_Is_Skipped()
+    {
+        await SeedAsync(day: Now.DayOfWeek, timeOfDay: new TimeOnly(9, 0));
+
+        var result = await RunAsync(Now, horizonDays: 8);
+
+        Assert.Equal(1, result.OrdersCreated);
+        Assert.Equal([Now.Date.AddDays(7).AddHours(9)], await OccurrencesAsync());
+    }
+
+    /// <summary>
     /// The dangerous edit is the ordinary one: a customer changing the room count leaves the schedule
     /// fields untouched, so every occurrence already inside the horizon is an occurrence of the new
     /// schedule too — and <see cref="RecurringBookingTemplate.UpdateSchedule"/> clears the watermark all
@@ -379,7 +409,8 @@ public sealed class RecurringMaterializationDedupeTests : IDisposable
         return calculator.Object;
     }
 
-    private async Task SeedAsync(string? marketZone = null, string? defaultMarketZone = null)
+    private async Task SeedAsync(
+        string? marketZone = null, string? defaultMarketZone = null, DayOfWeek? day = null, TimeOnly? timeOfDay = null)
     {
         _tenantProvider.SetTenantOverride(TestTenants.Default);
 
@@ -423,8 +454,8 @@ public sealed class RecurringMaterializationDedupeTests : IDisposable
         var template = RecurringBookingTemplate.Create(
             userId: UserId,
             frequency: RecurrenceFrequency.Weekly,
-            dayOfWeek: FirstOccurrence.DayOfWeek,
-            timeOfDay: new TimeOnly(10, 0),
+            dayOfWeek: day ?? FirstOccurrence.DayOfWeek,
+            timeOfDay: timeOfDay ?? new TimeOnly(10, 0),
             rooms: 2,
             bathrooms: 1,
             savedAddressId: SavedAddressId,

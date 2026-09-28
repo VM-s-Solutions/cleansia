@@ -113,7 +113,7 @@ public class CreateOrderPromoRedemptionPersistenceTests(PostgresContainerFixture
         Rooms: 2,
         Bathrooms: 1,
         Extras: new Dictionary<string, bool>(),
-        CleaningDate: DateTime.UtcNow.AddDays(3),
+        CleaningDate: DateTime.UtcNow.Date.AddDays(3).AddHours(9),
         PaymentType: PaymentType.Card,
         CurrencyId: CurrencyId,
         TotalPrice: QuotedTotal,

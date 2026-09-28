@@ -61,7 +61,8 @@ public static class DisputeMappers
                 ? null
                 : DisputeLimits.IsWithinFilingWindow(
                     dispute.Order.CompletedAt, dispute.Order.CleaningDateTime, dispute.CreatedOn),
-            Lines: dispute.Lines.Select(line => line.MapToDto(dispute.Order)).ToList()
+            Lines: dispute.Lines.Select(line => line.MapToDto(dispute.Order)).ToList(),
+            SettlementPreference: dispute.SettlementPreference
         );
     }
 

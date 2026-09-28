@@ -108,7 +108,8 @@ public class OrderCallerCurrencyTests
             _countries,
             _markets,
             CataloguePriceDoubles.Services(Czk, ("service-1", 500m, 100m), ("service-eur-priced", 20m, 4m)),
-            CataloguePriceDoubles.Packages(Czk, ("package-1", 1000m)));
+            CataloguePriceDoubles.Packages(Czk, ("package-1", 1000m)),
+            Mock.Of<ICountryConfigurationRepository>());
 
     private QuoteOrder.Handler QuoteHandler() =>
         new(

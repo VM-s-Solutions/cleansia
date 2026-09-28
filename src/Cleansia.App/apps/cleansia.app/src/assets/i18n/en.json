@@ -1447,11 +1447,20 @@
       "consent_updated": "Consent updated successfully",
       "consent_types": {
         "terms_of_service": "Terms of Service",
-        "privacy_policy": "Privacy Policy",
-        "marketing_emails": "Marketing Emails",
-        "data_processing": "Data Processing"
+        "privacy_policy": "Privacy Policy"
       },
-      "consents_description": "Manage what data processing you consent to.",
+      "consents_description": "The versions of the terms of service and the privacy policy you accepted, and your choice about marketing.",
+      "consents_load_error": "Your consents could not be loaded.",
+      "legal": {
+        "accepted_version": "Version {{version}}, accepted on {{date}}",
+        "accepted": "Accepted on {{date}}",
+        "not_accepted": "Not accepted yet",
+        "newer_version": "A newer version is now in force. You will be asked to accept it when you next book."
+      },
+      "marketing": {
+        "title": "Marketing: promotions and offers",
+        "description": "Promotions and offers sent as push notifications. This is the only marketing we send. It stays off unless you switch it on, and you can switch it off at any time."
+      },
       "export_description": "Download a copy of all your personal data we have on file.",
       "export_button": "Export Data",
       "delete_title": "Delete Account",

@@ -1447,11 +1447,20 @@
       "consent_updated": "Súhlas úspešne aktualizovaný",
       "consent_types": {
         "terms_of_service": "Obchodné podmienky",
-        "privacy_policy": "Zásady ochrany súkromia",
-        "marketing_emails": "Marketingové e-maily",
-        "data_processing": "Spracovanie údajov"
+        "privacy_policy": "Zásady ochrany súkromia"
       },
-      "consents_description": "Spravujte, s akým spracovaním údajov súhlasíte.",
+      "consents_description": "Verzie obchodných podmienok a zásad ochrany súkromia, ktoré ste prijali, a vaša voľba týkajúca sa marketingu.",
+      "consents_load_error": "Súhlasy sa nepodarilo načítať.",
+      "legal": {
+        "accepted_version": "Verzia {{version}}, prijaté {{date}}",
+        "accepted": "Prijaté {{date}}",
+        "not_accepted": "Zatiaľ neprijaté",
+        "newer_version": "Platí novšia verzia. Pri ďalšej objednávke vás požiadame o jej prijatie."
+      },
+      "marketing": {
+        "title": "Marketing: akcie a ponuky",
+        "description": "Akcie a ponuky zasielané ako push notifikácie. Iný marketing neposielame. Zostáva vypnutý, kým ho nezapnete, a kedykoľvek ho môžete vypnúť."
+      },
       "export_description": "Stiahnite si kópiu všetkých osobných údajov, ktoré o vás máme v evidencii.",
       "export_button": "Exportovať údaje",
       "delete_title": "Vymazať účet",

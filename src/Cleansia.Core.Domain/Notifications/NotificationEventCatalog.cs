@@ -15,6 +15,15 @@ public static class NotificationEventCatalog
     public const string OrderRefunded = "order.refunded";
     public const string MembershipExpiringSoon = "membership.expiring_soon";
     public const string MembershipCancellationEffective = "membership.cancellation_effective";
+
+    /// <summary>
+    /// Customer-targeted: a Plus renewal payment failed, so the benefits have stopped while Stripe retries
+    /// the card, and the customer may cancel at once (owner ruling 2026-09-28). One per failed attempt,
+    /// raised from the <c>invoice.payment_failed</c> webhook. Args: <c>membershipId</c> (deep link only).
+    /// Non-mutable (GetCategoryFor returns null): a charge that keeps being retried while nothing is
+    /// delivered for it is not a notice the customer may silence.
+    /// </summary>
+    public const string MembershipPaymentFailed = "membership.payment_failed";
     public const string LoyaltyTierUpgrade = "loyalty.tier_upgrade";
     public const string PromoNewSitewide = "promo.new_sitewide";
     public const string DisputeReply = "dispute.reply";
@@ -137,7 +146,8 @@ public static class NotificationEventCatalog
     /// <summary>
     /// Partner-targeted: an admin took this cleaner OFF a job they were assigned to
     /// (<c>AdminReassignOrder</c> with a replaced cleaner). Args: <c>orderNumber</c> (loc) +
-    /// <c>orderId</c> (deep link). Deliberately NOT <see cref="OrderAssignmentCancelled"/>, whose copy
+    /// <c>orderId</c> (deep link). The administrator's written reason is never an arg: the cleaner reads it
+    /// through <c>GetMyAssignmentRemoval</c>. Deliberately NOT <see cref="OrderAssignmentCancelled"/>, whose copy
     /// states the job was cancelled: here the job goes ahead with somebody else, and a cleaner
     /// repeating our wording to the customer would be telling them their booking was cancelled.
     /// Non-mutable for the same reason as its counterpart above — losing a booked day is not an
@@ -216,12 +226,26 @@ public static class NotificationEventCatalog
     /// push and the feed row's args alike. <c>check-booking-policy-parity.mjs</c> still pins that the
     /// copy carries a placeholder rather than a literal figure.</para>
     ///
-    /// <para>Sent only when the credit was actually issued. A guest has no account to hold it and an
-    /// order in a currency with no authored credit is refused the grant, and both of those get the
-    /// plain <see cref="OrderCancelled"/> instead — promising credit nobody received would be worse
-    /// than saying less.</para>
+    /// <para>Sent only when the credit was actually issued and the card refund went through. A guest
+    /// has no account to hold it and an order in a currency with no authored credit is refused the
+    /// grant, and both of those get the plain <see cref="OrderCancelled"/> instead — promising credit
+    /// nobody received would be worse than saying less.</para>
     /// </summary>
     public const string OrderNoCleanerRefunded = "order.no_cleaner_refunded";
+
+    /// <summary>
+    /// Customer-targeted: <see cref="OrderNoCleanerRefunded"/>'s cancellation and apology credit, when the
+    /// card refund did not go through. It stays queued for the hourly re-drive, so the copy says the money
+    /// is on its way, never that it arrived. Args as <see cref="OrderNoCleanerRefunded"/>.
+    /// </summary>
+    public const string OrderNoCleanerRefundPending = "order.no_cleaner_refund_pending";
+
+    /// <summary>
+    /// Customer-targeted: <see cref="OrderNoCleanerRefunded"/>'s cancellation and apology credit on an
+    /// order that took no payment — a cash booking — so there is nothing to refund and the copy says so.
+    /// Args as <see cref="OrderNoCleanerRefunded"/>.
+    /// </summary>
+    public const string OrderNoCleanerNothingCharged = "order.no_cleaner_nothing_charged";
 
     public static NotificationCategory? GetCategoryFor(string eventKey) => eventKey switch
     {
@@ -233,7 +257,8 @@ public static class NotificationEventCatalog
         // Same category as the plain cancellation it replaces: a customer who silenced cancellation
         // notices has already answered this question, and a second toggle for the same event in a
         // worse flavour would be a preference nobody asked for.
-        OrderNoCleanerRefunded => NotificationCategory.OrderCancelled,
+        OrderNoCleanerRefunded or OrderNoCleanerRefundPending or OrderNoCleanerNothingCharged
+            => NotificationCategory.OrderCancelled,
         OrderRefunded => NotificationCategory.RefundIssued,
         MembershipExpiringSoon => NotificationCategory.MembershipExpiring,
         MembershipCancellationEffective => NotificationCategory.MembershipCancelled,

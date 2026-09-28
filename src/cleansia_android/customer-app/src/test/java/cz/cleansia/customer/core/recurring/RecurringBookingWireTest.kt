@@ -348,7 +348,7 @@ class RecurringBookingWireTest {
             "lastMaterializedFor",
             "isActive",
             "preferredEmployeeId",
-            "requiresPaymentMethodChange",
+            "requiresPaymentMethodChange", "timeZoneId",
         )
 
         val TEMPLATE_REQUIRED_FIELDS =

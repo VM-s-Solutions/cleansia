@@ -43,6 +43,37 @@ public static class BookingPolicy
     public const int FirstWindowHour = 8;
     public const int LastWindowHour = 20;
 
+    /// <summary>Every start sits on this grid of the market's clock: 08:00, 08:15 … 19:45.</summary>
+    public const int SlotGridMinutes = 15;
+
+    /// <summary>The furthest ahead a booking, or a schedule's first date, may be.</summary>
+    public const int MaxBookingHorizonDays = 60;
+
+    /// <summary>
+    /// True if a wall-clock start in the market's zone is one the platform books: on the
+    /// <see cref="SlotGridMinutes"/> grid, from <see cref="FirstWindowHour"/> up to the last slot before
+    /// <see cref="LastWindowHour"/>. A recurring schedule's time already is that wall clock.
+    /// </summary>
+    public static bool IsBookableTimeOfDay(TimeOnly marketTime) =>
+        marketTime.Ticks % (TimeSpan.TicksPerMinute * SlotGridMinutes) == 0
+        && marketTime.Hour >= FirstWindowHour
+        && marketTime.Hour < LastWindowHour;
+
+    public static bool IsBeyondBookingHorizon(DateTime startUtc, DateTime nowUtc) =>
+        startUtc > nowUtc.AddDays(MaxBookingHorizonDays);
+
+    /// <summary>
+    /// The start-time rule every booking path answers to (owner ruling 2026-09-28): a bookable time of
+    /// day read in the service address's <paramref name="marketZone"/>, never the device's, and no further
+    /// ahead than <see cref="MaxBookingHorizonDays"/>. → /product/business-rules
+    /// </summary>
+    public static bool IsBookableStart(DateTime cleaningUtc, DateTime nowUtc, TimeZoneInfo marketZone)
+    {
+        var marketTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(cleaningUtc, DateTimeKind.Utc), marketZone);
+        return IsBookableTimeOfDay(TimeOnly.FromDateTime(marketTime))
+            && !IsBeyondBookingHorizon(cleaningUtc, nowUtc);
+    }
+
     /// <summary>
     /// How long before <c>CleaningDateTime</c> a cleaner may mark themselves on the way or start the
     /// job. Earlier than this and both transitions refuse.
@@ -75,10 +106,18 @@ public static class BookingPolicy
 
     /// <summary>
     /// "Oops window" — free cancellation within N minutes of booking, even with a cleaner already on the
-    /// job. Owner ruling 2026-09-24: this for every customer, guests and first-time customers included;
+    /// job. Owner ruling 2026-09-28: this for every returning customer, guests included;
+    /// <see cref="OopsWindowMinutesFirstBooking"/> on a customer's first booking and
     /// <see cref="OopsWindowMinutesPlus"/> for an entitled Plus member.
+    /// → /product/business-rules#oops-window
     /// </summary>
     public const int OopsWindowMinutesStandard = 15;
+
+    /// <summary>
+    /// The oops window of a customer's first booking ever, account or guest — once per e-mail, phone
+    /// and account (<c>IOrderRepository.IsFirstBookingAsync</c>). Owner ruling 2026-09-28.
+    /// </summary>
+    public const int OopsWindowMinutesFirstBooking = 60;
 
     /// <summary>
     /// The oops window of an entitled, paid Plus member. MINUTES after booking — a separate benefit from

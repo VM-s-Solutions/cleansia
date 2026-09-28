@@ -51,7 +51,6 @@ export class CleansiaTimeAnalyticsChartComponent {
   readonly averageHours = computed(() =>
     formatHours(this.data()?.averageMinutesPerOrder, this.lang())
   );
-  readonly efficiency = computed(() => `${Math.round(this.data()?.efficiencyRate ?? 0)}%`);
   readonly totalOrders = computed(() => String(this.data()?.totalOrders ?? 0));
 
   readonly serviceRows = computed((): ServiceTimeRow[] => {

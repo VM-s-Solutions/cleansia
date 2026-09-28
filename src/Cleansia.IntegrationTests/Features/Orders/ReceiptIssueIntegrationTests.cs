@@ -46,6 +46,7 @@ public partial class CreateOrderCallerCurrencyTests
     public async Task An_Express_Booking_With_A_Promo_And_An_Extra_Is_Issued_A_Receipt_Whose_Lines_Sum_To_Its_Total()
     {
         var rendered = new List<ReceiptPdfData>();
+        var slot = ExpressBookingSlot.Next();
         await TestMethod(
             setup: services => CaptureReceipts(services, rendered),
             arrange: async context =>
@@ -58,6 +59,7 @@ public partial class CreateOrderCallerCurrencyTests
                 context.PromoCodes.Add(PromoCode.CreatePercent(ReceiptPromoCode, 0.20m));
                 AddSlovakIssuer(context);
                 await context.CommitAsync(CancellationToken.None);
+                await ExpressBookingSlot.PutMarketInZoneAsync(context, Slovakia, slot.TimeZoneId);
             },
             act: async provider =>
             {
@@ -66,12 +68,13 @@ public partial class CreateOrderCallerCurrencyTests
                     {
                         SelectedPackageIds = [],
                         Extras = new Dictionary<string, bool> { [ReceiptExtraSlug] = true },
-                        CleaningDate = DateTime.UtcNow.AddHours(3),
+                        CleaningDate = slot.CleaningUtc,
                         PaymentType = PaymentType.Cash,
                         PromoCode = ReceiptPromoCode,
                     });
                 Assert.True(created.IsSuccess, created.Error?.Message);
 
+                await RecordTheCashAsTheCleanerWouldAsync(provider, created.Value.Id);
                 await IssueReceiptInAFreshScopeAsync(provider, created.Value.Id);
                 return created.Value.Id;
             },
@@ -116,7 +119,7 @@ public partial class CreateOrderCallerCurrencyTests
                 var starts = DateTime.UtcNow.AddDays(2).Date;
                 var template = await provider.GetRequiredService<IMediator>().Send(new CreateRecurringBooking.Command(
                     (int)RecurrenceFrequency.Weekly, (int)starts.DayOfWeek, "10:00", 2, 1, ReceiptSavedAddressId,
-                    [ServiceId], [], (int)PaymentType.Cash, starts));
+                    [ServiceId], [], (int)PaymentType.Cash, starts, TermsAccepted: true));
                 Assert.True(template.IsSuccess, template.Error?.Message);
 
                 var materialized = await ActivatorUtilities.CreateInstance<MaterializeRecurringBookingTemplate.Handler>(provider)
@@ -130,6 +133,7 @@ public partial class CreateOrderCallerCurrencyTests
                     .ToListAsync();
                 foreach (var orderId in orderIds)
                 {
+                    await RecordTheCashAsTheCleanerWouldAsync(provider, orderId);
                     await IssueReceiptInAFreshScopeAsync(provider, orderId);
                 }
 
@@ -180,6 +184,7 @@ public partial class CreateOrderCallerCurrencyTests
                     });
                 Assert.True(created.IsSuccess, created.Error?.Message);
 
+                await RecordTheCashAsTheCleanerWouldAsync(provider, created.Value.Id);
                 await IssueReceiptInAFreshScopeAsync(provider, created.Value.Id);
                 return created.Value.Id;
             },
@@ -261,6 +266,16 @@ public partial class CreateOrderCallerCurrencyTests
         var context = scope.ServiceProvider.GetRequiredService<CleansiaDbContext>();
         var order = await context.Orders.IgnoreQueryFilters().SingleAsync(o => o.Id == orderId);
         order.UpdatePaymentStatus(PaymentStatus.Paid);
+        await context.SaveChangesAsync();
+    }
+
+    /// <summary>A cash sale earns its receipt once the cleaner has recorded the cash (owner ruling 2026-09-28).</summary>
+    private static async Task RecordTheCashAsTheCleanerWouldAsync(IServiceProvider provider, string orderId)
+    {
+        using var scope = provider.GetRequiredService<IServiceScopeFactory>().CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<CleansiaDbContext>();
+        var order = await context.Orders.IgnoreQueryFilters().SingleAsync(o => o.Id == orderId);
+        order.MarkCashCollected("employee-receipt-cash");
         await context.SaveChangesAsync();
     }
 

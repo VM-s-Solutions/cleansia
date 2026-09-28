@@ -37,6 +37,19 @@ public class OrderController(IMediator mediator) : CustomerMobileApiController(m
         return HandleResult<GetCancellationFeePreview.Response>(await Mediator.Send(query, cancellationToken));
     }
 
+    // Offered once the start has passed and self-cancel is refused; it alerts the administrators and
+    // moves no money.
+    [AllowAnonymous]
+    [EnableRateLimiting("auth")]
+    [HttpPost("ReportGuestNoShow")]
+    [ProducesResponseType(typeof(ReportGuestCleanerNoShow.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ReportGuestNoShow(
+        [FromBody] ReportGuestCleanerNoShow.Command command, CancellationToken cancellationToken)
+    {
+        return HandleResult<ReportGuestCleanerNoShow.Response>(await Mediator.Send(command, cancellationToken));
+    }
+
     [AllowAnonymous]
     [EnableRateLimiting("auth")]
     [HttpPost("Lookup")]
@@ -95,10 +108,9 @@ public class OrderController(IMediator mediator) : CustomerMobileApiController(m
     }
 
     /// <summary>
-    /// Customer-driven confirmation of a Pending recurring-template Order.
-    /// Cash returns success immediately (order flips to Confirmed + Paid).
-    /// Card returns a Stripe PaymentIntent + ephemeral key so the mobile
-    /// PaymentSheet can collect payment.
+    /// Customer-driven confirmation of a recurring occurrence awaiting it. Cash returns success at once
+    /// and the occurrence stays unpaid until the cleaner records the cash. Card returns a Stripe
+    /// PaymentIntent + ephemeral key so the mobile PaymentSheet can collect payment.
     /// </summary>
     [Authorize]
     [EnableRateLimiting("auth")]

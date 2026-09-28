@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Features.Legal;
 using Cleansia.Core.AppServices.Common.Validators;
 using Cleansia.Core.AppServices.Features.Addresses.DTOs;
 using Cleansia.Core.AppServices.Features.Catalog;
@@ -45,6 +46,8 @@ public class CreateOrder
         private readonly IOperatorTenantResolver _operatorTenantResolver;
         private readonly ITenantProvider _tenantProvider;
         private readonly IUserConsentRepository _userConsentRepository;
+        private readonly ICountryConfigurationRepository _countryConfigurationRepository;
+        private readonly ILegalDocumentResolver _legalDocumentResolver;
 
         public Validator(
             IPackageRepository packageRepository,
@@ -63,8 +66,12 @@ public class CreateOrder
             IOperatorTenantResolver operatorTenantResolver,
             ITenantProvider tenantProvider,
             IUserConsentRepository userConsentRepository,
-            ILanguageRepository languageRepository)
+            ILanguageRepository languageRepository,
+            ICountryConfigurationRepository countryConfigurationRepository,
+            ILegalDocumentResolver legalDocumentResolver)
         {
+            _countryConfigurationRepository = countryConfigurationRepository;
+            _legalDocumentResolver = legalDocumentResolver;
             _operatorTenantResolver = operatorTenantResolver;
             _tenantProvider = tenantProvider;
             _userConsentRepository = userConsentRepository;
@@ -100,7 +107,8 @@ public class CreateOrder
             // Ahead of the price chain on purpose: the failure row records the FIRST refusal, and a
             // booking nobody consented to is refused on that ground before any figure is judged.
             RuleFor(x => x.TermsAccepted)
-                .MustAsync(AssertedOrAlreadyConsentedAsync)
+                .MustAsync((command, termsAccepted, context, cancellationToken) =>
+                    AssertedOrAlreadyConsentedAsync(command, termsAccepted, context, cancellationToken))
                 .WithMessage(BusinessErrorMessage.TermsNotAccepted)
                 .WithErrorCode(nameof(Command.TermsAccepted));
 
@@ -164,7 +172,9 @@ public class CreateOrder
                 .GreaterThan(DateTime.UtcNow)
                 .WithMessage(BusinessErrorMessage.CleaningDateInFuture)
                 .Must(cleaningDate => !BookingPolicy.IsBelowMinimumLeadTime(cleaningDate, DateTime.UtcNow))
-                .WithMessage(BusinessErrorMessage.CleaningDateBelowLeadTime);
+                .WithMessage(BusinessErrorMessage.CleaningDateBelowLeadTime)
+                .MustAsync(IsBookableStartAsync)
+                .WithMessage(BusinessErrorMessage.CleaningDateOutsideBookingWindow);
 
             RuleFor(x => x.TotalPrice)
                 .GreaterThan(0)
@@ -312,12 +322,14 @@ public class CreateOrder
         /// <summary>
         /// The tick is the answer when it is asserted — the consent read is skipped, so a customer
         /// re-consenting at checkout is never refused for a row the server has not written yet. Without
-        /// it, only a signed-in customer whose account already holds BOTH legal consents, granted and not
-        /// withdrawn, may book: that customer sees no box on any client and sends nothing. A guest has
-        /// no account to hold a consent on, so a guest always asserts it. A withdrawn consent is not a
-        /// consent, and asking again is the correct response to one.
+        /// it, only a signed-in customer whose account holds BOTH legal consents, granted, not withdrawn
+        /// and accepted under the version in force for the booking's market, may book: that customer sees
+        /// no box on any client and sends nothing. One who accepted an older version is asked again
+        /// (owner ruling 2026-09-28); their earlier bookings keep the version they were made under. A
+        /// guest has no account to hold a consent on, so a guest always asserts it.
         /// </summary>
-        private async Task<bool> AssertedOrAlreadyConsentedAsync(bool? termsAccepted, CancellationToken cancellationToken)
+        private async Task<bool> AssertedOrAlreadyConsentedAsync(
+            Command command, bool? termsAccepted, ValidationContext<Command> context, CancellationToken cancellationToken)
         {
             if (termsAccepted == true)
             {
@@ -330,11 +342,12 @@ public class CreateOrder
                 return false;
             }
 
-            var consents = await _userConsentRepository.GetByUserIdNoTrackingAsync(userId, cancellationToken);
-            return Holds(ConsentType.TermsOfService) && Holds(ConsentType.PrivacyPolicy);
-
-            bool Holds(ConsentType type) =>
-                consents.Any(c => c.ConsentType == type && c.IsGranted && c.WithdrawnAt is null);
+            return await CustomerLegalConsents.CoverTextsInForceAsync(
+                _userConsentRepository,
+                _legalDocumentResolver,
+                userId,
+                await ResolveOrderCountryIdAsync(command, context, cancellationToken),
+                cancellationToken);
         }
 
         /// <summary>
@@ -359,6 +372,19 @@ public class CreateOrder
                 && await _userMembershipRepository
                     .GetEntitledForUserNoTrackingAsync(userId, cancellationToken) is not null;
         }
+
+        private async Task<bool> IsBookableStartAsync(
+            Command command,
+            DateTime cleaningDate,
+            ValidationContext<Command> context,
+            CancellationToken cancellationToken)
+            => BookingPolicy.IsBookableStart(
+                cleaningDate,
+                DateTime.UtcNow,
+                await TimeZoneResolution.ForMarketAsync(
+                    _countryConfigurationRepository,
+                    await ResolveOrderCountryIdAsync(command, context, cancellationToken),
+                    cancellationToken));
 
         /// <summary>
         /// A completed order together, AND paid in the order's currency. A cleaner is paid in the
@@ -851,7 +877,8 @@ public class CreateOrder
         bool IsGuest,
         CancellationPolicyShown CancellationPolicyShown,
         bool? TermsAccepted,
-        string? TermsVersionAccepted) : ICustomerAuditPayload
+        string? TermsVersionAccepted,
+        string? PrivacyVersionAccepted) : ICustomerAuditPayload
     {
         public static OrderBookingEvidence From(
             Order order,
@@ -862,6 +889,7 @@ public class CreateOrder
             bool expressWaiverReserved,
             CancellationPolicy cancellationPolicy,
             string? termsVersion,
+            string? privacyVersion,
             DateTime nowUtc) => new(
             OrderId: order.Id,
             TotalPrice: order.TotalPrice,
@@ -894,14 +922,15 @@ public class CreateOrder
             IsGuest: string.IsNullOrEmpty(order.UserId),
             CancellationPolicyShown: CancellationPolicyShown.From(cancellationPolicy),
             TermsAccepted: command.TermsAccepted,
-            TermsVersionAccepted: termsVersion);
+            TermsVersionAccepted: termsVersion,
+            PrivacyVersionAccepted: privacyVersion);
     }
 
     /// <summary>
     /// The cancellation schedule the booking was made under: the platform figures, plus the free window
     /// and the oops window this customer had AT BOOKING (a Plus free window is narrower than the standard
-    /// 24 h, a Plus oops window longer than 15 minutes). The cancellation re-resolves both live, so its
-    /// own evidence row is what explains a given cancellation.
+    /// 24 h, a first booking's or a Plus oops window longer than 15 minutes) and which rule gave it. The
+    /// cancellation re-resolves both live, so its own evidence row is what explains a given cancellation.
     /// </summary>
     public record CancellationPolicyShown(
         int FreeHours,
@@ -909,7 +938,8 @@ public class CreateOrder
         decimal PartialRate,
         decimal LastMinuteRate,
         int FreeHoursForThisCustomer,
-        int OopsMinutesForThisCustomer)
+        int OopsMinutesForThisCustomer,
+        OopsWindowRule OopsRuleForThisCustomer)
     {
         public static CancellationPolicyShown From(CancellationPolicy policy) => new(
             FreeHours: BookingPolicy.FreeCancellationHours,
@@ -917,11 +947,14 @@ public class CreateOrder
             PartialRate: BookingPolicy.PartialCancellationFeeRate,
             LastMinuteRate: BookingPolicy.LastMinuteCancellationFeeRate,
             FreeHoursForThisCustomer: policy.FreeCancellationHours,
-            OopsMinutesForThisCustomer: policy.OopsWindowMinutes);
+            OopsMinutesForThisCustomer: policy.OopsWindowMinutes,
+            OopsRuleForThisCustomer: policy.OopsWindowRule);
     }
 
     public class Handler(
         ICurrencyResolutionService currencyResolutionService,
+        IConsentService consentService,
+        IUserConsentRepository userConsentRepository,
         IUserSessionProvider userSessionProvider,
         IOrderPricingCalculator pricingCalculator,
         IOrderFactory orderFactory,
@@ -1026,6 +1059,12 @@ public class CreateOrder
             var promo = await orderPromoApplier.PreviewAsync(
                 command, userId, rawSubtotal, currency.Id, cancellationToken);
 
+            // Under the account's own company, before the operator's: a consent row is the account's, and
+            // a new one takes the company ambient when it is written.
+            var (termsVersionAccepted, privacyVersionAccepted) = await CustomerLegalConsents.RecordAsync(
+                consentService, userConsentRepository, legalDocumentResolver,
+                userId, command.TermsAccepted, address.CountryId, cancellationToken);
+
             var accountTenantId = tenantProvider.GetCurrentTenantId();
             if (operatorTenantId is not null) tenantProvider.SetTenantOverride(operatorTenantId);
 
@@ -1108,12 +1147,11 @@ public class CreateOrder
                 command, userId, order, rawSubtotal, currency.Id, cancellationToken);
             if (operatorTenantId is not null) tenantProvider.SetTenantOverride(operatorTenantId);
 
-            var cancellationPolicy = await cancellationPolicyResolver.ResolveForUserAsync(
-                order.UserId, cancellationToken);
-            var terms = await legalDocumentResolver.ResolveInForceAsync(
-                LegalDocumentType.TermsOfService, address.CountryId, cancellationToken);
+            var cancellationPolicy = await cancellationPolicyResolver.ResolveForOrderAsync(
+                order, cancellationToken);
             auditContext.RecordEvidence("Order", order.Id, OrderBookingEvidence.From(
-                order, command, calc, currency, address, reservation != null, cancellationPolicy, terms?.Version, nowUtc));
+                order, command, calc, currency, address, reservation != null, cancellationPolicy,
+                termsVersionAccepted, privacyVersionAccepted, nowUtc));
 
             return BusinessResult.Success(new Response(
                 Id: order.Id,

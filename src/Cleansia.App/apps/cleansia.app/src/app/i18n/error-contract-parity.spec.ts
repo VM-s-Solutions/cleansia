@@ -487,9 +487,15 @@ const CUSTOMER_SURFACE_ERROR_KEYS: readonly string[] = [
   // Order — booking / cancel / review / lifecycle the customer can hit
   'order.cleaning_date.future',
   'order.cleaning_date.below_lead_time',
+  // CreateOrder and Create/UpdateRecurringBooking: a start off the quarter-hour, outside 08:00-19:45 in
+  // the market's clock, or more than 60 days ahead (owner ruling 2026-09-28).
+  'order.cleaning_date.outside_booking_window',
   'order.already_cancelled',
   'order.already_completed',
   'order.in_progress_cannot_cancel',
+  'order.start_passed_cannot_cancel',
+  'order.cleaner_already_started',
+  'order.start_time_not_reached',
   'order.invalid_status_transition',
   'order.address_exactly_one_required',
   'order.empty',
@@ -524,6 +530,9 @@ const CUSTOMER_SURFACE_ERROR_KEYS: readonly string[] = [
   // auth.invalid_apple_token does: on the money path, the string must never be
   // the thing that is missing when the button lands.
   'order.payment.already_paid',
+  // ConfirmRecurringOrder: a cash occurrence the customer already confirmed stays unpaid until the
+  // cleaner records the cash, so confirming it again is its own refusal (owner ruling 2026-09-28).
+  'order.recurring_already_confirmed',
   'order.not_completed',
   'order.review.duplicate_tag',
   'order.review.rating_invalid',
@@ -579,6 +588,8 @@ const CUSTOMER_SURFACE_ERROR_KEYS: readonly string[] = [
   'gdpr.deletion_blocked_by_invoice',
   'gdpr.consent_not_found',
   'gdpr.consent_already_granted',
+  // Only the terms and the privacy policy are accepted there, and no accepted document is withdrawn.
+  'gdpr.consent_not_editable',
   // Consent — the terms gate on Register and CreateOrder: a registration, or a booking by a guest or
   // by a customer whose account does not already hold both legal consents, that asserts no tick.
   'consent.terms_not_accepted',

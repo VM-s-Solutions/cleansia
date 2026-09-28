@@ -7,9 +7,11 @@ public record ReceiptPdfData
     public required string ReceiptNumber { get; init; }
     public required string OrderNumber { get; init; }
     public required string IssuedDate { get; init; }
+    /// <summary>
+    /// The buyer as a tax document names them: name and address, never an e-mail or a phone, which add
+    /// nothing to it and outlive the account (owner ruling 2026-09-28).
+    /// </summary>
     public required string CustomerName { get; init; }
-    public string? CustomerEmail { get; init; }
-    public string? CustomerPhone { get; init; }
     public string? CustomerAddress { get; init; }
     public required List<ReceiptLineItem> Services { get; init; }
     public required List<ReceiptLineItem> Packages { get; init; }
@@ -46,6 +48,10 @@ public record ReceiptPdfData
     public string LanguageCode { get; init; } = "en";
 
     public string? CleaningDate { get; init; }
+
+    /// <summary>When the clean was completed and when the cash was handed over, in market time; null when unknown.</summary>
+    public string? CompletedAt { get; init; }
+    public string? CashReceivedAt { get; init; }
     public int? Rooms { get; init; }
     public int? Bathrooms { get; init; }
     public int? EstimatedTime { get; init; }

@@ -459,7 +459,7 @@ class DisputeWireTest {
             "updatedOn",
             "currency",
             "filedWithinWindow",
-            "lines",
+            "lines", "settlementPreference",
         )
 
         val MESSAGE_SPEC_PROPERTIES = setOf(

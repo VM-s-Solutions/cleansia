@@ -251,7 +251,9 @@ public class CreateOrderPayCoverageValidatorTests
         Cleansia.Tests.Features.Orders.OrderMarketDoubles.OperatedBy("cleansia-cz"),
         Cleansia.Tests.Features.Orders.OrderMarketDoubles.TenantAt("cleansia-cz"),
         Mock.Of<IUserConsentRepository>(),
-        CreateOrderTestData.Speaking(Constants.Language.English));
+        CreateOrderTestData.Speaking(Constants.Language.English),
+        Mock.Of<ICountryConfigurationRepository>(),
+        Mock.Of<ILegalDocumentResolver>());
 
     [Fact]
     public async Task An_Unconfigured_Service_Fails_InvalidSelectedServices()

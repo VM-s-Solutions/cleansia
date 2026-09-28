@@ -93,6 +93,8 @@ public class CreateOrderExpressWaiverConsentTests
     private CreateOrder.Handler CreateHandler() =>
         new(
             OrderMarketDoubles.Trading(CreateOrderTestData.DefaultCurrency()),
+            Mock.Of<IConsentService>(),
+            Mock.Of<IUserConsentRepository>(),
             _session.Object,
             _pricingCalculator.Object,
             _orderFactory.Object,
@@ -121,7 +123,7 @@ public class CreateOrderExpressWaiverConsentTests
             // an unconfigured Mock returns null from GetSpendableAsync - which is exactly what a
             // customer who has never been credited looks like, and what every case here assumes.
             _creditAccountRepository.Object,
-            new CancellationPolicyResolver(new Mock<IUserMembershipRepository>().Object),
+            new CancellationPolicyResolver(new Mock<IUserMembershipRepository>().Object, Mock.Of<IOrderRepository>()),
             LegalDocumentFixtures.Resolver().Object,
             OrderMarketDoubles.OperatedBy("tenant-1"),
             Mock.Of<ITenantProvider>(),

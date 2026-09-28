@@ -339,7 +339,7 @@ public static class DomainSeed
         => Cleansia.Core.Domain.Memberships.MembershipPlanPrice.Create(planId, CurrencyId, price, $"price_hosttest_{code}");
 
     /// <summary>An ACTIVE <see cref="UserMembership"/> for <paramref name="ownerUserId"/> with a period
-    /// that ends in the future (so <c>IsActive</c> and <c>GetActiveForUserAsync</c> resolve it). The
+    /// that ends in the future (so <c>IsActive</c> and <c>GetLifecycleForUserAsync</c> resolve it). The
     /// resolve is tenant-filtered, so a foreign-tenant caller resolves null → MembershipNotFound.</summary>
     public static UserMembership ActiveMembership(string ownerUserId, string membershipPlanId, string? tenantId = null)
     {

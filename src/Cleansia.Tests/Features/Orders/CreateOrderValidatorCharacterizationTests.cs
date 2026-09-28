@@ -101,7 +101,9 @@ public class CreateOrderValidatorCharacterizationTests
             Cleansia.Tests.Features.Orders.OrderMarketDoubles.OperatedBy("cleansia-cz"),
             Cleansia.Tests.Features.Orders.OrderMarketDoubles.TenantAt("cleansia-cz"),
             Mock.Of<IUserConsentRepository>(),
-            CreateOrderTestData.Speaking(Constants.Language.English));
+            CreateOrderTestData.Speaking(Constants.Language.English),
+            Mock.Of<ICountryConfigurationRepository>(),
+            Mock.Of<ILegalDocumentResolver>());
 
     private static IServicePriceRepository PricedServices(params Currency[] currencies)
     {

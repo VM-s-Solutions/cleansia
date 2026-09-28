@@ -1877,7 +1877,8 @@
     "order": {
       "cleaning_date": {
         "future": "Dátum upratovania musí byť v budúcnosti.",
-        "below_lead_time": "Vyberte dátum s dostatočným predstihom na naplánovanie upratovania."
+        "below_lead_time": "Vyberte dátum s dostatočným predstihom na naplánovanie upratovania.",
+        "outside_booking_window": "Vyberte začiatok medzi 8:00 a 19:45 miestneho času, po štvrťhodinách, najviac 60 dní dopredu."
       },
       "already_cancelled": "Táto objednávka už bola zrušená.",
       "already_completed": "Táto objednávka už bola dokončená.",
@@ -1925,7 +1926,11 @@
         "membership_required": "Výber obľúbeného upratovača je výhoda Cleansia Plus.",
         "not_eligible": "Vybrať si môžete iba upratovača, ktorý u vás už dokončil upratovanie."
       },
-      "preferred_offer_closed": "Túto zákazku už nie je možné ponúknuť konkrétnemu upratovačovi."
+      "preferred_offer_closed": "Túto zákazku už nie je možné ponúknuť konkrétnemu upratovačovi.",
+      "start_passed_cannot_cancel": "Čas začiatku už uplynul a upratovač je pridelený, takže rezerváciu už nemožno zrušiť. Ak upratovač neprišiel, dajte nám vedieť.",
+      "cleaner_already_started": "Upratovač už s upratovaním začal.",
+      "start_time_not_reached": "Objednaný čas začiatku ešte nenastal.",
+      "recurring_already_confirmed": "Toto upratovanie už máte potvrdené. Upratovačovi zaplatíte v hotovosti v deň upratovania."
     },
     "address": {
       "already_exists": "Túto adresu už máte uloženú.",
@@ -1978,7 +1983,8 @@
       "consent_not_found": "Toto nastavenie súhlasu sme nenašli.",
       "consent_already_granted": "Tento súhlas ste už udelili.",
       "deletion_blocked_by_assigned_order": "Váš účet sa nedá zmazať, kým ste priradený k zakázke.",
-      "deletion_blocked_by_unsettled_pay": "Váš účet sa nedá zmazať, kým vám dlžíme odmenu. Najprv to vyriešte s kanceláriou."
+      "deletion_blocked_by_unsettled_pay": "Váš účet sa nedá zmazať, kým vám dlžíme odmenu. Najprv to vyriešte s kanceláriou.",
+      "consent_not_editable": "Tento súhlas tu nemožno zmeniť."
     },
     "promo": {
       "already_sent": "Na túto e-mailovú adresu už bol promo kód odoslaný. Skontrolujte doručenú poštu aj priečinok so spamom.",

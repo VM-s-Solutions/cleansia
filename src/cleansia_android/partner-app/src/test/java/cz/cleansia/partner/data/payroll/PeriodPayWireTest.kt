@@ -417,7 +417,7 @@ class PeriodPayWireTest {
             "payBreakdown",
             "isApproved",
             "createdOn",
-            "currencyCode",
+            "currencyCode", "deductionReason",
         )
 
         val SUMMARY_REQUIRED_NUMBERS = listOf(

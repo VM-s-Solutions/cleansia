@@ -143,6 +143,8 @@ public class CreateOrderHandlerCharacterizationTests
     private CreateOrder.Handler CreateHandler(OrderChannel channel = OrderChannel.Web) =>
         new(
             OrderMarketDoubles.Trading(Czk, ("cz", Czk), (Slovakia, Eur)),
+            Mock.Of<IConsentService>(),
+            Mock.Of<IUserConsentRepository>(),
             _session.Object,
             _pricingCalculator.Object,
             _orderFactory.Object,
@@ -171,7 +173,7 @@ public class CreateOrderHandlerCharacterizationTests
             // an unconfigured Mock returns null from GetSpendableAsync - which is exactly what a
             // customer who has never been credited looks like, and what every case here assumes.
             _creditAccountRepository.Object,
-            new CancellationPolicyResolver(new Mock<IUserMembershipRepository>().Object),
+            new CancellationPolicyResolver(new Mock<IUserMembershipRepository>().Object, Mock.Of<IOrderRepository>()),
             LegalDocumentFixtures.Resolver().Object,
             OrderMarketDoubles.OperatedBy("tenant-1"),
             _tenantProvider.Object,
@@ -254,8 +256,12 @@ public class CreateOrderHandlerCharacterizationTests
         Assert.Equal(BusinessErrorMessage.CountryNotServiced, result.Error!.Message);
     }
 
+    /// <summary>
+    /// Owner ruling 2026-09-28: a cash booking moves no money, so it gets the booking e-mail and no
+    /// receipt — that is issued at completion, after the cleaner records the cash.
+    /// </summary>
     [Fact]
-    public async Task AC9_CashPath_EnqueuesGenerateReceipt_AndStripeSessionIdIsNull()
+    public async Task AC9_CashPath_EnqueuesTheBookingEmail_NotAReceipt_AndStripeSessionIdIsNull()
     {
         var command = CreateOrderTestData.ValidCommand(paymentType: PaymentType.Cash);
 
@@ -264,12 +270,15 @@ public class CreateOrderHandlerCharacterizationTests
         Assert.True(result.IsSuccess);
         Assert.Null(result.Value!.StripeSessionId);
         _pending.Verify(p => p.Enqueue(
-            QueueNames.GenerateReceipt,
-            It.Is<QueueEnvelope<GenerateReceiptMessage>>(e =>
+            QueueNames.SendEmail,
+            It.Is<QueueEnvelope<SendOrderBookedEmailMessage>>(e =>
                 e.Payload.OrderId == CreatedOrderId
                 && e.Payload.LanguageCode == command.Language),
-            MessageKeys.Receipt(CreatedOrderId)),
+            MessageKeys.OrderBookedEmail(CreatedOrderId)),
             Times.Once);
+        _pending.Verify(p => p.Enqueue(
+            QueueNames.GenerateReceipt, It.IsAny<It.IsAnyType>(), It.IsAny<string>()),
+            Times.Never);
     }
 
     [Fact]

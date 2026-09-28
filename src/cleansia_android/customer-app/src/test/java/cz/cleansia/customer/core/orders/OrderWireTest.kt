@@ -669,7 +669,7 @@ class OrderWireTest {
         val CURRENCY_SPEC_PROPERTIES = setOf("id", "code", "symbol", "name", "isDefault")
 
         val CANCEL_SPEC_PROPERTIES =
-            setOf("orderId", "feeRate", "refundAmount", "totalPrice", "refundInitiated", "actualRefundAmount")
+            setOf("orderId", "feeRate", "refundAmount", "totalPrice", "refundInitiated", "actualRefundAmount", "refundPending")
 
         val PREVIEW_SPEC_PROPERTIES = setOf(
             "orderId",

@@ -32,6 +32,12 @@ export const CONSENT_TYPE_LABEL_KEYS: Readonly<Record<ConsentType, string>> = {
     'pages.data_protection.consent_types.marketing_emails',
   [ConsentType.DataProcessing]:
     'pages.data_protection.consent_types.data_processing',
+  [ConsentType.CleanerFrameworkContract]:
+    'pages.data_protection.consent_types.cleaner_framework_contract',
+  [ConsentType.SelfBillingAgreement]:
+    'pages.data_protection.consent_types.self_billing_agreement',
+  [ConsentType.CleanerDataProcessingAgreement]:
+    'pages.data_protection.consent_types.cleaner_data_processing_agreement',
 };
 
 const REQUEST_TYPE_LABEL_KEYS: Readonly<Record<string, string>> = {

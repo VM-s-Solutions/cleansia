@@ -60,6 +60,11 @@ public static class BusinessErrorMessage
     // Order
     public const string CleaningDateInFuture = "order.cleaning_date.future";
     public const string CleaningDateBelowLeadTime = "order.cleaning_date.below_lead_time";
+    /// <summary>
+    /// A start off the 15-minute grid, outside 08:00–19:45 in the market's clock, or more than 60 days
+    /// ahead — one booking or a recurring schedule's time and first date.
+    /// </summary>
+    public const string CleaningDateOutsideBookingWindow = "order.cleaning_date.outside_booking_window";
     // Customer + admin: CancelOrder, AdminCancelOrder, AdminOverrideOrderStatus. NOT the take gate —
     // see TakeOrderAlreadyCancelled below.
     public const string OrderAlreadyCancelled = "order.already_cancelled";
@@ -78,6 +83,13 @@ public static class BusinessErrorMessage
     public const string TakeOrderAlreadyCompleted = "order.take.already_completed";
 
     public const string OrderInProgressCannotCancel = "order.in_progress_cannot_cancel";
+    // The start time passed with a cleaner assigned and not started: the customer reports that the
+    // cleaner did not arrive instead of cancelling. → /product/business-rules#cancellation
+    public const string OrderStartPassedCannotCancel = "order.start_passed_cannot_cancel";
+    // A no-show report or an admin no-show cancellation on a job a cleaner has already started.
+    public const string OrderCleanerAlreadyStarted = "order.cleaner_already_started";
+    // A no-show report or an admin no-show cancellation before the booked start time.
+    public const string OrderStartTimeNotReached = "order.start_time_not_reached";
     public const string InvalidOrderStatusTransition = "order.invalid_status_transition";
     /// <summary>
     /// The admin override may not write Confirmed onto an order with nobody assigned: Confirmed means a
@@ -88,6 +100,10 @@ public static class BusinessErrorMessage
     public const string ReassignEmployeeNotApproved = "order.reassign.employee_not_approved";
     public const string ReassignEmployeeOtherMarket = "order.reassign.employee_other_market";
     public const string ReassignEmployeeBusy = "order.reassign.employee_busy";
+    /// <summary>An admin taking a cleaner off an order writes why; the cleaner is told it.</summary>
+    public const string OrderRemovalReasonRequired = "order.reassign.removal_reason_required";
+    /// <summary>The admin override completes an order with no after photo only with a written reason.</summary>
+    public const string OrderForceCompleteReasonRequired = "order.status.force_complete_reason_required";
     // Cash-collection gating (cleaner marks cash collected before an order can be completed).
     public const string OrderCashAlreadyCollected = "order.cash_already_collected";
     public const string OrderCashNotCollected = "order.cash_not_collected";
@@ -103,6 +119,13 @@ public static class BusinessErrorMessage
     public const string OrderCashNotAllowedOnCardOrder = "order.cash_not_allowed_on_card_order";
     /// <summary>MarkCashCollected on an order with nothing outstanding: settled, refunded or disputed.</summary>
     public const string OrderPaymentNotOutstanding = "order.payment_not_outstanding";
+    /// <summary>An administrator recording cash: an amount above zero, to the cent.</summary>
+    public const string OrderCashAmountInvalid = "order.cash_amount_invalid";
+    public const string OrderCashReceivedAtInFuture = "order.cash_received_at_in_future";
+    /// <summary>An administrator recording cash: no earlier than the cleaner may start the clean.</summary>
+    public const string OrderCashReceivedAtBeforeClean = "order.cash_received_at_before_clean";
+    /// <summary>The customer already confirmed this cash occurrence; it now waits for the cleaner.</summary>
+    public const string OrderRecurringAlreadyConfirmed = "order.recurring_already_confirmed";
     public const string AddressNotOwnedByUser = "address.not_owned_by_user";
     public const string AddressLabelRequired = "address.label_required";
     public const string SavedAddressAlreadyExists = "address.already_exists";
@@ -121,6 +144,8 @@ public static class BusinessErrorMessage
     public const string NoAvailableSpots = "order.no_available_spots";
     public const string WeeklyOrderLimitReached = "order.weekly_limit_reached";
     public const string WeeklyOrderLimitInvalid = "employee.weekly_limit_invalid";
+    /// <summary>A weekly cap is set with a reason the cleaner is shown.</summary>
+    public const string WeeklyOrderLimitReasonRequired = "employee.weekly_limit_reason_required";
     public const string TimeConflict = "order.time_conflict";
     public const string EmployeeAlreadyAssignedToOrder = "order.employee_already_assigned";
     public const string EmployeeNotAssignedToOrder = "order.employee_not_assigned";
@@ -212,6 +237,10 @@ public static class BusinessErrorMessage
     public const string EmployeeAlreadyHasOrderInProgress = "order.employee_already_has_order_in_progress";
     public const string CompletionNotesTooLong = "order.completion_notes.too_long";
     public const string AfterPhotosRequired = "order.after_photos.required";
+    /// <summary>A before photo from Confirmed through InProgress, an after photo during InProgress.</summary>
+    public const string OrderPhotoWindowClosed = "order.photo.window_closed";
+    /// <summary>A photo is deleted only before the order is completed or cancelled.</summary>
+    public const string OrderPhotoLocked = "order.photo.locked";
     public const string OrderNoteContentRequired = "order.note.content_required";
     public const string OrderIssueDescriptionRequired = "order.issue.description_required";
     public const string PaymentGatewayUnavailable = "order.payment_gateway_unavailable";
@@ -245,6 +274,11 @@ public static class BusinessErrorMessage
     public const string EmployeeDocumentsNotApproved = "employee.documents_not_approved";
     /// <summary>The work country is operated by another company than the approving admin's (ADR-0061 D6).</summary>
     public const string EmployeeWorkCountryOperatorMismatch = "employee.work_country_operator_mismatch";
+    /// <summary>
+    /// A cleaner document (framework contract, self-billing agreement, DPA) is in force for the market and
+    /// the cleaner has not accepted its current version: approval and the take refuse.
+    /// </summary>
+    public const string EmployeeLegalDocumentsNotAccepted = "employee.legal_documents_not_accepted";
     // The order-action approval gate: a cleaner who is not Approved (rejected, still pending, or
     // terminated) may not take/start/complete an order.
     public const string EmployeeNotApproved = "employee.not_approved";
@@ -406,6 +440,12 @@ public static class BusinessErrorMessage
     /// <summary>A spend-side reason was used to ISSUE credit.</summary>
     public const string CreditReasonNotIssuable = "credit.reason_not_issuable";
 
+    /// <summary>
+    /// A dispute settlement issued by hand. A complaint is settled by resolving its dispute, in credit
+    /// only when the customer chose credit.
+    /// </summary>
+    public const string CreditDisputeSettlementNotIssuable = "credit.dispute_settlement_not_issuable";
+
     /// <summary>Cash cannot settle an order part of which the customer already paid in credit.</summary>
     public const string CashNotCollectableOnCreditOrder = "credit.cash_not_collectable_on_credit_order";
 
@@ -414,6 +454,13 @@ public static class BusinessErrorMessage
     public const string DisputeNotOwnedByUser = "dispute.not_owned_by_user";
     public const string InvalidDisputeStatusTransition = "dispute.invalid_status_transition";
     public const string DisputeAlreadyResolved = "dispute.already_resolved";
+    /// <summary>
+    /// A charge to a cleaner found at fault that their pay on the order cannot take: none recorded,
+    /// already on an invoice, already charged for a dispute, or smaller than the charge.
+    /// </summary>
+    public const string DisputeCleanerChargeNotChargeable = "dispute.cleaner_charge_not_chargeable";
+    /// <summary>A charge to a cleaner carrying more precision than the currency has minor units.</summary>
+    public const string DisputeCleanerChargeNotWholeMinorUnits = "dispute.cleaner_charge_not_whole_minor_units";
     public const string UserNotFound = "user.not_found";
 
     // Admin User
@@ -580,6 +627,11 @@ public static class BusinessErrorMessage
     public const string GdprRequestNotRetryable = "gdpr.request_not_retryable";
     public const string ConsentNotFound = "gdpr.consent_not_found";
     public const string ConsentAlreadyGranted = "gdpr.consent_already_granted";
+    /// <summary>
+    /// Only the terms and the privacy policy are accepted through the consent endpoints, and no document
+    /// acceptance is withdrawn there; the promo push preference is the marketing consent.
+    /// </summary>
+    public const string ConsentNotEditable = "gdpr.consent_not_editable";
 
     // Consent
     /// <summary>
@@ -637,6 +689,8 @@ public static class BusinessErrorMessage
 
     // Legal documents
     public const string LegalDocumentNotFound = "legal.document_not_found";
+    /// <summary>A cleaner accepted a text that is not of the document in force for their market today.</summary>
+    public const string LegalDocumentNotInForce = "legal.document_not_in_force";
 
     // Admin action audit log
     public const string AuditNotFound = "audit.not_found";

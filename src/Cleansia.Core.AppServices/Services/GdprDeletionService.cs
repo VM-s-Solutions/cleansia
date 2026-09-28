@@ -7,6 +7,7 @@ using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Tenancy;
@@ -40,6 +41,7 @@ public class GdprDeletionService(
     IOutboxMessageRepository outboxMessageRepository,
     ICustomerActionAuditRepository customerActionAuditRepository,
     IWorkContractAcceptanceRepository workContractAcceptanceRepository,
+    ICleanerLegalDocumentAcceptanceRepository cleanerLegalDocumentAcceptanceRepository,
     IAddressRepository addressRepository,
     GuestOrderAccessTokenIssuer guestOrderAccessTokenIssuer,
     IRefreshTokenService refreshTokenService,
@@ -183,7 +185,7 @@ public class GdprDeletionService(
         // for the rest of the request scope rather than closed at the end of the walk.
         archiveWriteGate.OpenForLegalObligation("erasure");
 
-        await CancelActiveMembershipAsync(user.Id, cancellationToken);
+        await CancelLiveMembershipAsync(user.Id, cancellationToken);
         await AnonymizeUserDataAsync(user, deactivationReason, cancellationToken);
         await ForfeitCreditAsync(user.Id, deactivationReason, cancellationToken);
 
@@ -269,16 +271,26 @@ public class GdprDeletionService(
                 cancellationToken);
     }
 
-    private async Task CancelActiveMembershipAsync(string userId, CancellationToken cancellationToken)
+    private async Task CancelLiveMembershipAsync(string userId, CancellationToken cancellationToken)
     {
-        var membership = await userMembershipRepository.GetActiveForUserAsync(userId, cancellationToken);
+        var membership = await userMembershipRepository.GetLifecycleForUserAsync(userId, cancellationToken);
         if (membership is null) return;
 
         try
         {
-            await stripeClient.CancelSubscriptionAtPeriodEndAsync(
-                membership.StripeSubscriptionId, cancellationToken);
-            membership.MarkCancellationRequested();
+            // A past-due card would otherwise go on being retried for an erased customer.
+            if (membership.Status == MembershipStatus.Active)
+            {
+                await stripeClient.CancelSubscriptionAtPeriodEndAsync(
+                    membership.StripeSubscriptionId, cancellationToken);
+                membership.MarkCancellationRequested();
+            }
+            else
+            {
+                await stripeClient.CancelSubscriptionNowAsync(
+                    membership.StripeSubscriptionId, cancellationToken);
+                membership.MarkCancelledNow(DateTime.UtcNow);
+            }
         }
         catch (Exception ex)
         {
@@ -513,6 +525,7 @@ public class GdprDeletionService(
             // anonymised Employee row keeps); the IP, device label and device id on each are blanked
             // in this same commit, the way the customer's own audit rows are below.
             await workContractAcceptanceRepository.PseudonymiseForEmployeeAsync(user.Employee.Id, ct);
+            await cleanerLegalDocumentAcceptanceRepository.PseudonymiseForEmployeeAsync(user.Employee.Id, ct);
 
             user.Employee.Anonymize();
             if (user.Employee.Address is { } address)

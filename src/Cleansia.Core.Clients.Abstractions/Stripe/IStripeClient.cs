@@ -16,6 +16,17 @@ public interface IStripeClient
     Task<CheckoutSessionResult> CreateCheckoutSessionAsync(Order order, CancellationToken cancellationToken);
 
     /// <summary>
+    /// The same Checkout Session, closing at <paramref name="expiresAtUtc"/> instead of Stripe's default
+    /// 24 hours, for an order that must not stay payable past a moment of its own. The expiry is part of
+    /// the idempotency key: the same expiry replays the same session, and a later one opens the next.
+    /// Stripe refuses an expiry under 30 minutes or over 24 hours away. Backing out returns the customer to
+    /// the order's own page, not to the booking cancel page, whose resume asks without the expiry and so
+    /// would open a second session beside this one.
+    /// </summary>
+    Task<CheckoutSessionResult> CreateCheckoutSessionAsync(
+        Order order, DateTime expiresAtUtc, CancellationToken cancellationToken);
+
+    /// <summary>
     /// Refund a previously-paid checkout session. Amount is in the session's currency.
     /// <para>
     /// <paramref name="idempotencyKey"/> <b>MUST be the caller's deterministic refund key (ADR-0006 D3),
@@ -153,6 +164,15 @@ public interface IStripeClient
     /// IsActive until that webhook lands.
     /// </summary>
     Task CancelSubscriptionAtPeriodEndAsync(
+        string stripeSubscriptionId,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Cancel a subscription immediately and void its open invoice, so nothing more is charged. For an
+    /// enrolment with no paid period to run out — past due or paused — where cancelling at period end
+    /// would leave Stripe retrying the card until then.
+    /// </summary>
+    Task CancelSubscriptionNowAsync(
         string stripeSubscriptionId,
         CancellationToken cancellationToken);
 

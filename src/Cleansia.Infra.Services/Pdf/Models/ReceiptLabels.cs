@@ -39,8 +39,6 @@ public record ReceiptLabels
     public string CustomerInformation { get; init; } = "CUSTOMER INFORMATION";
     public string CompanyInformation { get; init; } = "COMPANY INFORMATION";
     public string Name { get; init; } = "Name";
-    public string Email { get; init; } = "E-mail";
-    public string Phone { get; init; } = "Telephone";
     public string Address { get; init; } = "Address";
     public string Company { get; init; } = "Company";
     public string RegistrationNumber { get; init; } = "Reg. No.";
@@ -50,6 +48,8 @@ public record ReceiptLabels
 
     public string OrderDetails { get; init; } = "Order details";
     public string CleaningDate { get; init; } = "Cleaning date";
+    public string CompletedAt { get; init; } = "Cleaning completed";
+    public string CashReceivedAt { get; init; } = "Cash received";
     public string Rooms { get; init; } = "Rooms";
     public string Bathrooms { get; init; } = "Bathrooms";
     public string EstimatedDuration { get; init; } = "Est. duration";
@@ -130,8 +130,6 @@ public record ReceiptLabels
         CustomerInformation = "ÚDAJE ZÁKAZNÍKA",
         CompanyInformation = "ÚDAJE DODAVATELE",
         Name = "Jméno",
-        Email = "E-mail",
-        Phone = "Telefon",
         Address = "Adresa",
         Company = "Název",
         RegistrationNumber = "IČO",
@@ -141,6 +139,8 @@ public record ReceiptLabels
 
         OrderDetails = "Detaily objednávky",
         CleaningDate = "Termín úklidu",
+        CompletedAt = "Úklid dokončen",
+        CashReceivedAt = "Hotovost přijata",
         Rooms = "Pokoje",
         Bathrooms = "Koupelny",
         EstimatedDuration = "Odhadovaná doba",
@@ -205,8 +205,6 @@ public record ReceiptLabels
         CustomerInformation = "ÚDAJE ZÁKAZNÍKA",
         CompanyInformation = "ÚDAJE DODÁVATEĽA",
         Name = "Meno",
-        Email = "E-mail",
-        Phone = "Telefón",
         Address = "Adresa",
         Company = "Názov",
         RegistrationNumber = "IČO",
@@ -216,6 +214,8 @@ public record ReceiptLabels
 
         OrderDetails = "Detaily objednávky",
         CleaningDate = "Termín upratovania",
+        CompletedAt = "Upratovanie dokončené",
+        CashReceivedAt = "Hotovosť prijatá",
         Rooms = "Izby",
         Bathrooms = "Kúpeľne",
         EstimatedDuration = "Odhadovaný čas",
@@ -280,8 +280,6 @@ public record ReceiptLabels
         CustomerInformation = "ДАНІ ЗАМОВНИКА",
         CompanyInformation = "ДАНІ ПОСТАЧАЛЬНИКА",
         Name = "Ім'я",
-        Email = "E-mail",
-        Phone = "Телефон",
         Address = "Адреса",
         Company = "Назва",
         RegistrationNumber = "Реєстраційний номер",
@@ -291,6 +289,8 @@ public record ReceiptLabels
 
         OrderDetails = "Деталі замовлення",
         CleaningDate = "Дата прибирання",
+        CompletedAt = "Прибирання завершено",
+        CashReceivedAt = "Готівку отримано",
         Rooms = "Кімнати",
         Bathrooms = "Ванні кімнати",
         EstimatedDuration = "Орієнтовна тривалість",
@@ -355,8 +355,6 @@ public record ReceiptLabels
         CustomerInformation = "ДАННЫЕ ЗАКАЗЧИКА",
         CompanyInformation = "ДАННЫЕ ПОСТАВЩИКА",
         Name = "Имя",
-        Email = "E-mail",
-        Phone = "Телефон",
         Address = "Адрес",
         Company = "Название",
         RegistrationNumber = "Регистрационный номер",
@@ -366,6 +364,8 @@ public record ReceiptLabels
 
         OrderDetails = "Детали заказа",
         CleaningDate = "Дата уборки",
+        CompletedAt = "Уборка завершена",
+        CashReceivedAt = "Наличные получены",
         Rooms = "Комнаты",
         Bathrooms = "Ванные комнаты",
         EstimatedDuration = "Примерная длительность",

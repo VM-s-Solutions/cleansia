@@ -36,12 +36,14 @@ public class BookingSizeBoundsTests
                     Mock.Of<IEmployeePayConfigRepository>(), Mock.Of<ICurrencyRepository>(), Mock.Of<IOrderAddressResolver>(),
                     Mock.Of<ICurrencyResolutionService>(), Mock.Of<IServicePriceRepository>(), Mock.Of<IPackagePriceRepository>(),
                     Mock.Of<IPromoCodeService>(), Mock.Of<IOperatorTenantResolver>(), Mock.Of<ITenantProvider>(),
-                    Mock.Of<IUserConsentRepository>(), Mock.Of<ILanguageRepository>()),
+                    Mock.Of<IUserConsentRepository>(), Mock.Of<ILanguageRepository>(),
+                    Mock.Of<ICountryConfigurationRepository>(), Mock.Of<ILegalDocumentResolver>()),
                 CreateOrderTestData.ValidCommand() with { Rooms = rooms, Bathrooms = bathrooms }),
             "quote" => await ValidateSize(new QuoteOrder.Validator(
                     Mock.Of<IServiceRepository>(), Mock.Of<IPackageRepository>(), Mock.Of<ICurrencyRepository>(),
                     Mock.Of<ICountryRepository>(), Mock.Of<ICurrencyResolutionService>(),
-                    Mock.Of<IServicePriceRepository>(), Mock.Of<IPackagePriceRepository>()),
+                    Mock.Of<IServicePriceRepository>(), Mock.Of<IPackagePriceRepository>(),
+                    Mock.Of<ICountryConfigurationRepository>()),
                 new QuoteOrder.Command([], [], rooms, bathrooms, null)),
             "plus" => await ValidateSize(new QuotePlusSavings.Validator(
                     Mock.Of<IServiceRepository>(), Mock.Of<IPackageRepository>(), Mock.Of<ICurrencyRepository>(),
@@ -51,7 +53,9 @@ public class BookingSizeBoundsTests
             "recurring-create" => await ValidateSize(new CreateRecurringBooking.Validator(
                     Mock.Of<IOrderRepository>(), Mock.Of<IUserSessionProvider>(), Mock.Of<ISavedAddressRepository>(),
                     Mock.Of<ICurrencyResolutionService>(), Mock.Of<ICountryRepository>(),
-                    Bookings.CatalogueDoubles.Services(), Bookings.CatalogueDoubles.Packages()),
+                    Bookings.CatalogueDoubles.Services(), Bookings.CatalogueDoubles.Packages(),
+                    Cleansia.Tests.Features.Legal.CustomerConsentDoubles.Consented(),
+                    Mock.Of<Cleansia.Core.AppServices.Services.Interfaces.ILegalDocumentResolver>()),
                 new CreateRecurringBooking.Command(1, 1, "10:00", rooms, bathrooms, "address", [], [], 1, DateTime.UtcNow)),
             "recurring-update" => await ValidateSize(new UpdateRecurringBooking.Validator(
                     Mock.Of<IRecurringBookingTemplateRepository>(), Mock.Of<IUserMembershipRepository>(),

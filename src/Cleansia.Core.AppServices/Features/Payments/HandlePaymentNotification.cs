@@ -125,6 +125,7 @@ public class HandlePaymentNotification
         IStripeSubscriptionWebhookHandler subscriptionWebhookHandler,
         ITenantProvider tenantProvider,
         IPendingDispatch pending,
+        GuestOrderAccessTokenIssuer guestAccessTokenIssuer,
         INotificationProducer notificationProducer,
         IPreferredCleanerHoldResolver preferredCleanerHoldResolver,
         IAdminNotifier adminNotifier,
@@ -235,6 +236,8 @@ public class HandlePaymentNotification
             // flow. Both end up driving the same Order state transitions.
             return stripeEvent.Type switch
             {
+                Constants.StripeEventType.ExpiredSession when order.RecurringTemplateId is not null
+                    => ReleaseRecurringCheckout(order, (stripeEvent.Data.Object as Session)?.Id),
                 Constants.StripeEventType.ExpiredSession
                     => await HandleExpiredSession(order, orderId, cancellationToken),
                 Constants.StripeEventType.CompletedSession
@@ -297,13 +300,28 @@ public class HandlePaymentNotification
             // the customer just paid a second time.
             if (order.SettledInCash)
             {
-                return await EscalateDoubleSettlement(order, orderId, cancellationToken);
+                logger.LogError(
+                    "Stripe settled order {OrderId} at {PaymentStatus} after employee {EmployeeId} collected it in cash on {CashCollectedAt}; escalating for manual reconciliation, no automatic refund",
+                    orderId, order.PaymentStatus, order.CollectedByEmployeeId, order.CashCollectedAt);
+                return await EscalateForReconciliation(order, orderId, DoubleSettlementDescription, cancellationToken);
             }
 
             if (order.PaymentStatus is PaymentStatus.Paid or PaymentStatus.Refunded)
             {
                 logger.LogInformation("Order {OrderId} already in terminal state {Status}, skipping webhook processing", orderId, order.PaymentStatus);
                 return BusinessResult.Success();
+            }
+
+            // A checkout still open when its order was cancelled — by the customer, the stale-order sweep
+            // or the recurring cutoff — can be paid afterwards. Recording Paid would issue a receipt and a
+            // "payment confirmed" push for a clean nobody will do, so the money is left where it is and an
+            // administrator refunds it.
+            if (order.CurrentStatus == OrderStatus.Cancelled && order.TookNoPayment)
+            {
+                logger.LogError(
+                    "Stripe settled order {OrderId} after it was cancelled ({CancellationReason}); escalating for a refund, the order is not marked paid",
+                    orderId, order.CancellationReason);
+                return await EscalateForReconciliation(order, orderId, PaidAfterCancellationDescription, cancellationToken);
             }
 
             // The MONEY axis only. This used to append OrderStatus.Confirmed too, which is what made
@@ -362,15 +380,24 @@ public class HandlePaymentNotification
 
         private async Task<BusinessResult> HandleExpiredSession(Order order, string orderId, CancellationToken cancellationToken)
         {
-            // Idempotency check - don't process if already cancelled or paid
-            if (order.PaymentStatus is PaymentStatus.Failed or PaymentStatus.Paid or PaymentStatus.Refunded)
+            // Idempotency check - don't process if already cancelled or paid. The stale-order sweep may
+            // have cancelled it first, and a second Cancelled track and notice would say it twice.
+            if (order.PaymentStatus is PaymentStatus.Failed or PaymentStatus.Paid or PaymentStatus.Refunded
+                || order.CurrentStatus == OrderStatus.Cancelled)
             {
                 logger.LogInformation("Order {OrderId} already has payment status {Status}, skipping expired session", orderId, order.PaymentStatus);
                 return BusinessResult.Success();
             }
 
+            // The same cancellation the stale-order sweep writes: who, when and why, fee- and refund-free.
             order.UpdatePaymentStatus(PaymentStatus.Failed);
             order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Cancelled, order));
+            order.Cancel(
+                DateTime.UtcNow,
+                CancelledBy.System,
+                feeRate: 0m,
+                refundAmount: 0m,
+                reason: OrderCancellationReasons.PaymentNotCompleted);
 
             // The session expired without a charge, but CreateOrder debits credit BEFORE the customer
             // ever reaches Stripe - so an abandoned checkout is the single most common way a customer
@@ -394,7 +421,30 @@ public class HandlePaymentNotification
                     cancellationToken);
             }
 
+            await GuestCancellationEmail.EnqueueAsync(order, languageCode: null,
+                successfulRefundAmount: null, guestAccessTokenIssuer, pending, cancellationToken);
+
             logger.LogInformation("Cancelled order {OrderId} due to expired Stripe checkout session", orderId);
+            return BusinessResult.Success();
+        }
+
+        /// <summary>
+        /// A recurring occurrence's web checkout closed unpaid. The checkout did not create the occurrence,
+        /// so it does not cancel it either: the occurrence stays for the customer to confirm again, on
+        /// either channel, until AutoCancelStaleRecurringOrders retracts it at its cutoff — as an abandoned
+        /// PaymentSheet leaves it. Only the session it records is forgotten; a session it no longer records
+        /// closing late changes nothing.
+        /// </summary>
+        private BusinessResult ReleaseRecurringCheckout(Order order, string? sessionId)
+        {
+            if (!string.IsNullOrEmpty(sessionId) && order.StripeSessionId == sessionId)
+            {
+                order.AssignStripeSessionId(string.Empty);
+            }
+
+            logger.LogInformation(
+                "Checkout session {SessionId} for recurring order {OrderId} expired; the occurrence stays confirmable",
+                sessionId, order.Id);
             return BusinessResult.Success();
         }
 
@@ -404,26 +454,26 @@ public class HandlePaymentNotification
             "The card payment settled at Stripe after the cleaner had already collected this order in cash. " +
             "The customer may have paid twice — reconcile the two settlements and decide the refund.";
 
-        /// <summary>
-        /// A card charge settled AFTER the assigned cleaner recorded a cash collection for the same
-        /// order. Deliberately does not refund: which settlement to reverse (and whether the cash ever
-        /// reached us) is a human call, so this raises an escalated dispute for an administrator and
-        /// leaves the money exactly where it is.
-        /// </summary>
-        private async Task<BusinessResult> EscalateDoubleSettlement(
-            Order order, string orderId, CancellationToken cancellationToken)
-        {
-            logger.LogError(
-                "Stripe settled order {OrderId} at {PaymentStatus} after employee {EmployeeId} collected it in cash on {CashCollectedAt}; escalating for manual reconciliation, no automatic refund",
-                orderId, order.PaymentStatus, order.CollectedByEmployeeId, order.CashCollectedAt);
+        private const string PaidAfterCancellationDescription =
+            "The card payment settled at Stripe after this order was cancelled, so the customer paid for a " +
+            "clean that will not take place. Refund the payment.";
 
+        /// <summary>
+        /// A card charge settled that the order should not have taken: after the assigned cleaner
+        /// recorded a cash collection, or after the order was cancelled. Deliberately does not refund:
+        /// which settlement to reverse, and whether a cancellation fee stands, is a human call, so this
+        /// raises an escalated dispute for an administrator and leaves the money exactly where it is.
+        /// </summary>
+        private async Task<BusinessResult> EscalateForReconciliation(
+            Order order, string orderId, string description, CancellationToken cancellationToken)
+        {
             var existing = await disputeRepository.GetOpenDisputeForOrderAsync(order.Id, cancellationToken);
             if (existing is not null)
             {
                 if (!existing.UpdateStatus(DisputeStatus.Escalated, WebhookActor))
                 {
                     logger.LogWarning(
-                        "Double settlement on order {OrderId} could not escalate the open dispute (illegal {CurrentStatus} → Escalated)",
+                        "Late settlement on order {OrderId} could not escalate the open dispute (illegal {CurrentStatus} → Escalated)",
                         orderId, existing.Status);
                 }
                 return BusinessResult.Success();
@@ -433,13 +483,13 @@ public class HandlePaymentNotification
                 orderId: order.Id,
                 userId: order.UserId,
                 reason: DisputeReason.IncorrectAmount,
-                description: DoubleSettlementDescription,
+                description: description,
                 createdBy: WebhookActor);
 
             if (!dispute.UpdateStatus(DisputeStatus.Escalated, WebhookActor))
             {
                 logger.LogWarning(
-                    "Double settlement on order {OrderId} could not escalate a new dispute (illegal {CurrentStatus} → Escalated); not persisting",
+                    "Late settlement on order {OrderId} could not escalate a new dispute (illegal {CurrentStatus} → Escalated); not persisting",
                     orderId, dispute.Status);
                 return BusinessResult.Success();
             }

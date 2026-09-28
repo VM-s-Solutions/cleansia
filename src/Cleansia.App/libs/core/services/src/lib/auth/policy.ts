@@ -310,7 +310,7 @@ export const POLICY_MAP: Record<PolicyName, PhysicalPolicy> = {
   CanManageRecurringBookings: PhysicalPolicy.CustomerOnly,
 
   // User
-  CanViewPagedUser: PhysicalPolicy.EmployeeOrAdmin,
+  CanViewPagedUser: PhysicalPolicy.SupportOrAbove,
   CanViewUserDetail: PhysicalPolicy.OwnerOrElevated,
   CanGetCurrentUser: PhysicalPolicy.Authenticated,
   CanChangeOwnPassword: PhysicalPolicy.Authenticated,

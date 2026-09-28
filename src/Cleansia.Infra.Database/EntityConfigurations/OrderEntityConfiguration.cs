@@ -24,7 +24,9 @@ public class OrderEntityConfiguration : TenantAuditableEntityConfiguration<Order
             .IsRequired()
             .HasMaxLength(100);
 
+        // citext, like Users.Email: the first-booking test matches an e-mail however it was typed.
         builder.Property(o => o.CustomerEmail)
+            .HasColumnType("citext")
             .IsRequired()
             .HasMaxLength(100);
 
@@ -101,6 +103,9 @@ public class OrderEntityConfiguration : TenantAuditableEntityConfiguration<Order
             .HasPrecision(5, 4);
 
         builder.Property(o => o.CancellationRefundAmount)
+            .HasPrecision(18, 2);
+
+        builder.Property(o => o.CashCollectedAmount)
             .HasPrecision(18, 2);
 
         // Kilometres, not money, and not a fraction -- so neither convention applies. (9,2) is ample
@@ -249,6 +254,9 @@ public class OrderEntityConfiguration : TenantAuditableEntityConfiguration<Order
         // UpdateCurrentUser back-fills a phone change onto the caller's own orders matched by
         // CustomerPhone.
         builder.HasIndex(o => o.CustomerPhone);
+
+        // The first-booking test (IsFirstBookingAsync) looks an earlier order up by e-mail.
+        builder.HasIndex(o => o.CustomerEmail);
 
         // Stamped by the 24h-ahead reminder sweep. Indexed alongside
         // RecurringTemplateId so the sweep's "find Pending recurring orders

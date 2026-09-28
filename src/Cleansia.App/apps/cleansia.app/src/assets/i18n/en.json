@@ -1877,7 +1877,8 @@
     "order": {
       "cleaning_date": {
         "future": "The cleaning date must be in the future.",
-        "below_lead_time": "Please pick a date that allows enough lead time to schedule a cleaner."
+        "below_lead_time": "Please pick a date that allows enough lead time to schedule a cleaner.",
+        "outside_booking_window": "Pick a start between 08:00 and 19:45 local time, on the quarter-hour, no more than 60 days ahead."
       },
       "already_cancelled": "This order has already been cancelled.",
       "already_completed": "This order has already been completed.",
@@ -1925,7 +1926,11 @@
         "membership_required": "Choosing your favourite cleaner is a Cleansia Plus benefit.",
         "not_eligible": "You can only choose a cleaner who has already completed a job for you."
       },
-      "preferred_offer_closed": "This job can no longer be offered to a specific cleaner."
+      "preferred_offer_closed": "This job can no longer be offered to a specific cleaner.",
+      "start_passed_cannot_cancel": "The start time has passed and a cleaner is booked, so this booking can no longer be cancelled. If the cleaner did not arrive, let us know.",
+      "cleaner_already_started": "The cleaner has already started this cleaning.",
+      "start_time_not_reached": "The booked start time has not come yet.",
+      "recurring_already_confirmed": "You've already confirmed this cleaning. Pay the cleaner in cash on the day."
     },
     "address": {
       "already_exists": "You already have this address saved.",
@@ -1978,7 +1983,8 @@
       "consent_not_found": "We couldn't find that consent setting.",
       "consent_already_granted": "You've already granted this consent.",
       "deletion_blocked_by_assigned_order": "Your account can't be deleted while you are still assigned to a job.",
-      "deletion_blocked_by_unsettled_pay": "Your account can't be deleted while pay is still owed to you. Contact the office to settle it first."
+      "deletion_blocked_by_unsettled_pay": "Your account can't be deleted while pay is still owed to you. Contact the office to settle it first.",
+      "consent_not_editable": "This consent can't be changed here."
     },
     "promo": {
       "already_sent": "A promo code has already been sent to this email address. Please check your inbox and spam folder.",

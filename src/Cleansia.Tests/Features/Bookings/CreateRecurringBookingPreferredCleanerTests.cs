@@ -100,7 +100,8 @@ public class CreateRecurringBookingPreferredCleanerTests
     {
         _session.Setup(s => s.GetUserId()).Returns((string?)null);
 
-        var result = await CreateValidator().ValidateAsync(CommandWith(ServedCleanerId));
+        // Ticked, so the terms rule — which refuses a session-less caller on its own ground — stays out of it.
+        var result = await CreateValidator().ValidateAsync(CommandWith(ServedCleanerId) with { TermsAccepted = true });
 
         Assert.False(result.IsValid);
         Assert.Equal(
@@ -186,7 +187,9 @@ public class CreateRecurringBookingPreferredCleanerTests
             OrderMarketDoubles.Trading(CreateOrderTestData.DefaultCurrency()),
             OrderMarketDoubles.Servicing("country-cz"),
             CatalogueDoubles.Services(),
-            CatalogueDoubles.Packages());
+            CatalogueDoubles.Packages(),
+            Cleansia.Tests.Features.Legal.CustomerConsentDoubles.Consented(),
+            Mock.Of<Cleansia.Core.AppServices.Services.Interfaces.ILegalDocumentResolver>());
 
     private CreateRecurringBooking.Handler CreateHandler() =>
         new(
@@ -195,6 +198,10 @@ public class CreateRecurringBookingPreferredCleanerTests
             _membershipRepository.Object,
             _session.Object,
             Cleansia.Tests.Features.Orders.OrderMarketDoubles.OperatedBy("cleansia-cz"),
+            Mock.Of<ICountryConfigurationRepository>(),
+            Mock.Of<Cleansia.Core.AppServices.Services.Interfaces.IConsentService>(),
+            Cleansia.Tests.Features.Legal.CustomerConsentDoubles.Consented(),
+            Mock.Of<Cleansia.Core.AppServices.Services.Interfaces.ILegalDocumentResolver>(),
             new AuditContext());
 
     private static CreateRecurringBooking.Command CommandWith(string? preferredEmployeeId) =>

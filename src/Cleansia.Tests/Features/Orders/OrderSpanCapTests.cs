@@ -305,7 +305,9 @@ public class OrderSpanCapTests
             Cleansia.Tests.Features.Orders.OrderMarketDoubles.OperatedBy("cleansia-cz"),
             Cleansia.Tests.Features.Orders.OrderMarketDoubles.TenantAt("cleansia-cz"),
             Mock.Of<IUserConsentRepository>(),
-            CreateOrderTestData.Speaking(Constants.Language.English));
+            CreateOrderTestData.Speaking(Constants.Language.English),
+            Mock.Of<ICountryConfigurationRepository>(),
+            Mock.Of<ILegalDocumentResolver>());
 
     /// <summary>Anonymous, so the factory stays off the loyalty/membership lookups.</summary>
     private static CreateOrderInput Input() =>

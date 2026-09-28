@@ -1419,7 +1419,11 @@
       "type": {
         "terms_of_service": "Obchodní podmínky",
         "privacy_policy": "Zásady ochrany osobních údajů",
-        "work_contract": "Smlouva o dílo"
+        "work_contract": "Smlouva o dílo",
+        "cleaner_framework_contract": "Rámcová smlouva o spolupráci (partneři)",
+        "self_billing_agreement": "Dohoda o samofakturaci",
+        "cleaner_data_processing_agreement": "Smlouva o zpracování osobních údajů (partneři)",
+        "complaints_procedure": "Reklamační řád"
       },
       "columns": {
         "audience": "Publikum",
@@ -1926,6 +1930,9 @@
           },
           "work_contract_metadata": {
             "years": "Počet let po přijetí smlouvy o dílo uklízečem/uklízečkou, po které se uchovává IP adresa a údaje o zařízení, než se vymažou; samotné přijetí zůstává u objednávky"
+          },
+          "receipts": {
+            "years": "Počet let od konce roku vystavení, po které se uchovává PDF účtenky, než se smaže, nejméně zákonných 10; záznam o účtence zůstává"
           }
         },
         "lifecycle": {
@@ -2629,7 +2636,10 @@
         "terms_of_service": "Obchodní podmínky",
         "privacy_policy": "Zásady ochrany osobních údajů",
         "marketing_emails": "Marketingové e-maily",
-        "data_processing": "Zpracování údajů"
+        "data_processing": "Zpracování údajů",
+        "cleaner_framework_contract": "Rámcová smlouva o spolupráci (partneři)",
+        "self_billing_agreement": "Dohoda o samofakturaci",
+        "cleaner_data_processing_agreement": "Smlouva o zpracování osobních údajů (partneři)"
       },
       "user_tools": {
         "title": "Nástroje pro uživatele",
@@ -2696,6 +2706,10 @@
                 "dropped": "pracovník ji vrátil",
                 "rejected": "účet pracovníka byl zamítnut"
               }
+            },
+            "cleaner_not_started": {
+              "title": "Uklízeč nezačal objednávku",
+              "body": "Objednávka {{orderNumber}} byla objednána na {{cleaningDateTime}} a nikdo ji nezačal. Pokud uklízeč nedorazil, zrušte ji jako nedostavení."
             }
           },
           "dispute": {
@@ -2716,6 +2730,14 @@
             "failed": {
               "title": "Platba kartou selhala",
               "body": "Platba kartou za objednávku {{orderNumber}} byla zamítnuta. Pokud zůstane nezaplacená, objednávka se automaticky zruší."
+            },
+            "refund_stuck": {
+              "title": "Vrácení peněz neprošlo",
+              "body": "Vrácení {{amount}} u objednávky {{orderNumber}} už den neprošlo. Zkouší se znovu každou hodinu; zkontrolujte ho ve Stripe."
+            },
+            "refund_needs_retry": {
+              "title": "Vrácení peněz je potřeba zopakovat",
+              "body": "Vrácení {{amount}} u objednávky {{orderNumber}} už den neprošlo a automaticky se neopakuje. Zkontrolujte ho ve Stripe a pak ho zopakujte z reklamace nebo z objednávky."
             }
           },
           "erasure": {
@@ -2983,7 +3005,8 @@
     "credit": {
       "amount_exceeds_sanity_cap": "Tato částka přesahuje limit pro jeden kredit. Pokud je správná, vystavte ji po menších částkách.",
       "amount_not_whole_minor_units": "Částka kreditu nemůže být menší než setina měnové jednotky.",
-      "reason_not_issuable": "Tento důvod popisuje čerpání kreditu, nikoli jeho přidělení. Zvolte vyřízení reklamace, nedostavení ýklidové pracovnice nebo vstřícný krok."
+      "reason_not_issuable": "Tento důvod popisuje čerpání kreditu, nikoli jeho přidělení. Zvolte vyřízení reklamace, nedostavení ýklidové pracovnice nebo vstřícný krok.",
+      "dispute_settlement_not_issuable": "Reklamace se vyřizuje vyřešením jejího sporu, a kreditem jen tehdy, když si zákazník kredit zvolil."
     },
     "currency": {
       "cannot_delete_default": "Výchozí měnu nelze smazat",
@@ -3009,7 +3032,9 @@
       "not_found": "Spor nenalezen",
       "not_owned_by_user": "Tento spor patří jinému uživateli.",
       "cleaning_not_started": "Tento úklid se ještě neuskutečnil, takže není co nahlásit.",
-      "line_not_on_order": "Tato položka na této objednávce není."
+      "line_not_on_order": "Tato položka na této objednávce není.",
+      "cleaner_charge_not_chargeable": "Z odměny tohoto uklízeče za objednávku nelze tuto částku strhnout: žádná není, už je vyfakturovaná nebo stržená za reklamaci, nebo je nižší než částka.",
+      "cleaner_charge_not_whole_minor_units": "Částka stržená uklízeči musí být v celých setinách měnové jednotky."
     },
     "email": {
       "invalid_email": "Neplatná e-mailová adresa",
@@ -3024,7 +3049,9 @@
       "pay_config_missing": "Tento uklízeč nemá nastavenou odměnu u jedné nebo více aktivních služeb či balíčků. Před schválením chybějící nastavení doplňte.",
       "profile_incomplete": "Profil zaměstnance je nekompletní",
       "weekly_limit_invalid": "Týdenní limit zakázek musí být alespoň 1, nebo prázdný pro neomezený počet",
-      "work_country_operator_mismatch": "Pracovní země patří jiné provozní společnosti."
+      "work_country_operator_mismatch": "Pracovní země patří jiné provozní společnosti.",
+      "weekly_limit_reason_required": "Napište, proč tohoto uklízeče omezujete. Důvod se mu zobrazí.",
+      "legal_documents_not_accepted": "Tento uklízeč zatím nepřijal aktuální verzi všech smluvních dokumentů platných pro zemi výkonu jeho práce."
     },
     "employee_document": {
       "deletion_already_resolved": "Tato žádost o smazání již byla vyřízena.",
@@ -3109,7 +3136,8 @@
         "invalid": "Vybrané služby jsou neplatné"
       },
       "status": {
-        "confirmed_needs_crew": "Potvrzeno znamená, že zakázku převzal uklízeč. Místo toho objednávce přiřaďte uklízeče."
+        "confirmed_needs_crew": "Potvrzeno znamená, že zakázku převzal uklízeč. Místo toho objednávce přiřaďte uklízeče.",
+        "force_complete_reason_required": "Tato objednávka nemá fotografii po úklidu. Napište, proč ji dokončujete bez ní; důvod se uloží do auditního záznamu."
       },
       "total_price": {
         "not_match": "Celková cena neodpovídá",
@@ -3118,8 +3146,17 @@
       "reassign": {
         "employee_not_approved": "Tento uklízeč zatím není schválen, proto ho nelze přiřadit k zakázce.",
         "employee_other_market": "Tento uklízeč nepracuje v zemi této objednávky.",
-        "employee_busy": "Tento uklízeč má v tuto dobu jinou zakázku."
-      }
+        "employee_busy": "Tento uklízeč má v tuto dobu jinou zakázku.",
+        "removal_reason_required": "Napište, proč uklízeče z objednávky odebíráte. Důvod se mu zobrazí."
+      },
+      "cleaner_already_started": "Uklízeč už zakázku zahájil, takže ji nelze zrušit jako nedostavení.",
+      "start_time_not_reached": "Objednaný čas začátku ještě nenastal, takže není co potvrdit jako nedostavení.",
+      "cash_already_collected": "Hotovost za tuto objednávku už byla zaznamenána",
+      "payment_not_outstanding": "U této objednávky nic nezbývá uhradit: je zaplacená, vrácená nebo reklamovaná",
+      "cash_not_allowed_on_card_order": "Tato objednávka byla objednána s platbou kartou, hotovost u ní zde zaznamenat nelze",
+      "cash_amount_invalid": "Zadejte částku větší než nula, nejvýše na haléře",
+      "cash_received_at_in_future": "Hotovost nemohla být přijata v budoucnosti",
+      "cash_received_at_before_clean": "Hotovost nemohla být přijata dříve, než mohl úklid začít"
     },
     "extra": {
       "in_use": "Doplněk nelze smazat, protože na něj odkazuje objednávka. Místo toho jej deaktivujte.",

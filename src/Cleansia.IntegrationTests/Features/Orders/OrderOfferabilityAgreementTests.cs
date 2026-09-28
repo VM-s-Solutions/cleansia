@@ -72,6 +72,10 @@ public class OrderOfferabilityAgreementTests(PostgresContainerFixture fixture) :
         // The money axis must not be swallowed by the widened status axis.
         new("order-otw-card-pend", OrderStatus.OnTheWay, PaymentType.Card, PaymentStatus.Pending, null, false),
         new("order-inprog-cash-recur", OrderStatus.InProgress, PaymentType.Cash, PaymentStatus.Pending, RecurringTemplateId, false),
+        // Owner ruling 2026-09-28: the customer's confirmation admits a recurring CASH occurrence while it
+        // is still unpaid, and only cash — a card occurrence is confirmed by its payment.
+        new("order-new-cash-recur-conf", OrderStatus.New, PaymentType.Cash, PaymentStatus.Pending, RecurringTemplateId, true, CustomerConfirmed: true),
+        new("order-new-card-recur-conf", OrderStatus.New, PaymentType.Card, PaymentStatus.Pending, RecurringTemplateId, false, CustomerConfirmed: true),
     ];
 
     [Fact]
@@ -99,7 +103,9 @@ public class OrderOfferabilityAgreementTests(PostgresContainerFixture fixture) :
                     provider.GetRequiredService<IEmployeeRepository>(),
                     provider.GetRequiredService<IOrderAccessService>(),
                     currencyResolution,
-                    provider.GetRequiredService<ILegalDocumentRepository>());
+                    provider.GetRequiredService<ILegalDocumentRepository>(),
+                    provider.GetRequiredService<ILegalDocumentResolver>(),
+                    provider.GetRequiredService<IUserConsentRepository>());
 
                 var takeVerdicts = new Dictionary<string, string?>();
                 foreach (var scenario in Cases)
@@ -194,12 +200,13 @@ public class OrderOfferabilityAgreementTests(PostgresContainerFixture fixture) :
                         o.PaymentType,
                         o.PaymentStatus,
                         o.RecurringTemplateId,
+                        o.CustomerConfirmedAt,
                     })
                     .ToListAsync();
 
                 var fromMemory = rows
                     .Where(o => OrderAvailability.IsOfferable(
-                        o.CurrentStatus, o.PaymentType, o.PaymentStatus, o.RecurringTemplateId))
+                        o.CurrentStatus, o.PaymentType, o.PaymentStatus, o.RecurringTemplateId, o.CustomerConfirmedAt))
                     .Select(o => o.Id)
                     .ToList();
 
@@ -321,6 +328,11 @@ public class OrderOfferabilityAgreementTests(PostgresContainerFixture fixture) :
         order.SetWorkContractDocument(WorkContractTestData.Document());
 
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));
+        if (scenario.CustomerConfirmed)
+        {
+            order.ConfirmByCustomer(DateTime.UtcNow);
+        }
+
         if (scenario.Status != OrderStatus.New)
         {
             order.AddOrderStatus(OrderStatusTrack.Create(scenario.Status, order));
@@ -335,7 +347,8 @@ public class OrderOfferabilityAgreementTests(PostgresContainerFixture fixture) :
         PaymentType PaymentType,
         PaymentStatus PaymentStatus,
         string? RecurringTemplateId,
-        bool Offerable);
+        bool Offerable,
+        bool CustomerConfirmed = false);
 
     public sealed record Verdicts(
         PagedData<OrderListItem> Board,

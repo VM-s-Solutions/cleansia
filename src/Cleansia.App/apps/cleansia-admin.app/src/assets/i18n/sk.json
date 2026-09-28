@@ -1316,7 +1316,11 @@
       "type": {
         "terms_of_service": "Obchodné podmienky",
         "privacy_policy": "Zásady ochrany osobných údajov",
-        "work_contract": "Zmluva o dielo"
+        "work_contract": "Zmluva o dielo",
+        "cleaner_framework_contract": "Rámcová zmluva o spolupráci (partneri)",
+        "self_billing_agreement": "Dohoda o samofakturácii",
+        "cleaner_data_processing_agreement": "Zmluva o spracúvaní osobných údajov (partneri)",
+        "complaints_procedure": "Reklamačný poriadok"
       },
       "columns": {
         "audience": "Publikum",
@@ -1823,6 +1827,9 @@
           },
           "work_contract_metadata": {
             "years": "Počet rokov po prijatí zmluvy o dielo upratovačom/upratovačkou, počas ktorých sa uchováva IP adresa a údaje o zariadení, kým sa vymažú; samotné prijatie zostáva pri objednávke"
+          },
+          "receipts": {
+            "years": "Počet rokov od konca roka vystavenia, počas ktorých sa uchováva PDF účtenky, kým sa vymaže, najmenej zákonných 10; záznam o účtenke zostáva"
           }
         },
         "lifecycle": {
@@ -2629,7 +2636,10 @@
         "terms_of_service": "Obchodné podmienky",
         "privacy_policy": "Zásady ochrany osobných údajov",
         "marketing_emails": "Marketingové e-maily",
-        "data_processing": "Spracovanie údajov"
+        "data_processing": "Spracovanie údajov",
+        "cleaner_framework_contract": "Rámcová zmluva o spolupráci (partneri)",
+        "self_billing_agreement": "Dohoda o samofakturácii",
+        "cleaner_data_processing_agreement": "Zmluva o spracúvaní osobných údajov (partneri)"
       },
       "user_tools": {
         "title": "Nástroje pre používateľa",
@@ -2696,6 +2706,10 @@
                 "dropped": "upratovač ju vrátil",
                 "rejected": "účet upratovača bol zamietnutý"
               }
+            },
+            "cleaner_not_started": {
+              "title": "Upratovač nezačal objednávku",
+              "body": "Objednávka {{orderNumber}} bola objednaná na {{cleaningDateTime}} a nikto ju nezačal. Ak upratovač neprišiel, zrušte ju ako nedostavenie sa."
             }
           },
           "dispute": {
@@ -2716,6 +2730,14 @@
             "failed": {
               "title": "Platba kartou zlyhala",
               "body": "Platba kartou za objednávku {{orderNumber}} bola zamietnutá. Ak zostane nezaplatená, objednávka sa automaticky zruší."
+            },
+            "refund_stuck": {
+              "title": "Vrátenie peňazí neprešlo",
+              "body": "Vrátenie {{amount}} pri objednávke {{orderNumber}} už deň neprešlo. Skúša sa znova každú hodinu; skontrolujte ho v Stripe."
+            },
+            "refund_needs_retry": {
+              "title": "Vrátenie peňazí treba zopakovať",
+              "body": "Vrátenie {{amount}} pri objednávke {{orderNumber}} už deň neprešlo a automaticky sa neopakuje. Skontrolujte ho v Stripe a potom ho zopakujte z reklamácie alebo z objednávky."
             }
           },
           "erasure": {
@@ -2983,7 +3005,8 @@
     "credit": {
       "amount_exceeds_sanity_cap": "Táto suma presahuje limit pre jeden kredit. Ak je správna, vystavte ju po menších sumách.",
       "amount_not_whole_minor_units": "Suma kreditu nemôže byť menšia než stotina menovej jednotky.",
-      "reason_not_issuable": "Tento dôvod popisuje čerpanie kreditu, nie jeho pridelenie. Zvoľte vybavenie reklamácie, nedostavenie sa upratovačky alebo ústretový krok."
+      "reason_not_issuable": "Tento dôvod popisuje čerpanie kreditu, nie jeho pridelenie. Zvoľte vybavenie reklamácie, nedostavenie sa upratovačky alebo ústretový krok.",
+      "dispute_settlement_not_issuable": "Reklamácia sa vybavuje jej vyriešením, a kreditom len vtedy, keď si zákazník kredit zvolil."
     },
     "currency": {
       "cannot_delete_default": "Nie je možné odstrániť predvolenú menu",
@@ -3009,7 +3032,9 @@
       "not_found": "Reklamácia nebola nájdená",
       "not_owned_by_user": "Táto reklamácia patrí inému používateľovi.",
       "cleaning_not_started": "Toto upratovanie sa ešte neuskutočnilo, takže nie je čo nahlásiť.",
-      "line_not_on_order": "Táto položka na tejto objednávke nie je."
+      "line_not_on_order": "Táto položka na tejto objednávke nie je.",
+      "cleaner_charge_not_chargeable": "Z odmeny tohto upratovača za objednávku nemožno túto sumu strhnúť: žiadna nie je, už je vyfakturovaná alebo stiahnutá za reklamáciu, alebo je nižšia ako suma.",
+      "cleaner_charge_not_whole_minor_units": "Suma strhnutá upratovačovi musí byť v celých stotinách menovej jednotky."
     },
     "email": {
       "invalid_email": "Neplatná e-mailová adresa",
@@ -3024,7 +3049,9 @@
       "pay_config_missing": "Tento upratovač nemá nastavenú odmenu pri jednej alebo viacerých aktívnych službách či balíkoch. Pred schválením chýbajúce nastavenie doplňte.",
       "profile_incomplete": "Profil zamestnanca nie je kompletný",
       "weekly_limit_invalid": "Týždenný limit zakázok musí byť aspoň 1, alebo prázdny pre neobmedzený počet",
-      "work_country_operator_mismatch": "Pracovná krajina patrí inej prevádzkovej spoločnosti."
+      "work_country_operator_mismatch": "Pracovná krajina patrí inej prevádzkovej spoločnosti.",
+      "weekly_limit_reason_required": "Napíšte, prečo tohto upratovača obmedzujete. Dôvod sa mu zobrazí.",
+      "legal_documents_not_accepted": "Tento upratovač zatiaľ neprijal aktuálnu verziu všetkých zmluvných dokumentov platných pre krajinu výkonu jeho práce."
     },
     "employee_document": {
       "deletion_already_resolved": "Táto žiadosť o vymazanie už bola vybavená.",
@@ -3109,7 +3136,8 @@
         "invalid": "Vybrané služby sú neplatné"
       },
       "status": {
-        "confirmed_needs_crew": "Potvrdené znamená, že zákazku prevzal upratovač. Namiesto toho objednávke priraďte upratovača."
+        "confirmed_needs_crew": "Potvrdené znamená, že zákazku prevzal upratovač. Namiesto toho objednávke priraďte upratovača.",
+        "force_complete_reason_required": "Táto objednávka nemá fotografiu po upratovaní. Napíšte, prečo ju dokončujete bez nej; dôvod sa uloží do auditného záznamu."
       },
       "total_price": {
         "not_match": "Celková cena sa nezhoduje",
@@ -3118,8 +3146,17 @@
       "reassign": {
         "employee_not_approved": "Tento upratovač zatiaľ nie je schválený, preto ho nemožno priradiť k zákazke.",
         "employee_other_market": "Tento upratovač nepracuje v krajine tejto objednávky.",
-        "employee_busy": "Tento upratovač má v tomto čase inú zákazku."
-      }
+        "employee_busy": "Tento upratovač má v tomto čase inú zákazku.",
+        "removal_reason_required": "Napíšte, prečo upratovača z objednávky odoberáte. Dôvod sa mu zobrazí."
+      },
+      "cleaner_already_started": "Upratovač už zákazku začal, takže ju nemožno zrušiť ako nedostavenie sa.",
+      "start_time_not_reached": "Objednaný čas začiatku ešte nenastal, takže nie je čo potvrdiť ako nedostavenie sa.",
+      "cash_already_collected": "Hotovosť za túto objednávku už bola zaznamenaná",
+      "payment_not_outstanding": "Pri tejto objednávke nič nezostáva uhradiť: je zaplatená, vrátená alebo reklamovaná",
+      "cash_not_allowed_on_card_order": "Táto objednávka bola objednaná s platbou kartou, hotovosť pri nej tu zaznamenať nemožno",
+      "cash_amount_invalid": "Zadajte sumu väčšiu ako nula, najviac na centy",
+      "cash_received_at_in_future": "Hotovosť nemohla byť prijatá v budúcnosti",
+      "cash_received_at_before_clean": "Hotovosť nemohla byť prijatá skôr, ako mohlo upratovanie začať"
     },
     "extra": {
       "in_use": "Doplnok nie je možné odstrániť, pretože naň odkazuje objednávka. Namiesto toho ho deaktivujte.",

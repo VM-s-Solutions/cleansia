@@ -93,6 +93,20 @@ public class AdminOrderController(IMediator mediator) : ApiController(mediator)
         return HandleResult<AdminCancelOrder.Response>(result);
     }
 
+    [HttpPost("cancel-no-show")]
+    [Permission(Policy.CanAdminCancelOrder)]
+    [EnableRateLimiting("auth")]
+    [ProducesResponseType(typeof(AdminCancelOrderAsNoShow.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> CancelOrderAsNoShow(
+        [FromBody] AdminCancelOrderAsNoShow.Command command, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<AdminCancelOrderAsNoShow.Response>(result);
+    }
+
     [HttpPost("override-status")]
     [Permission(Policy.CanOverrideOrderStatus)]
     [EnableRateLimiting("auth")]
@@ -104,6 +118,19 @@ public class AdminOrderController(IMediator mediator) : ApiController(mediator)
     {
         var result = await Mediator.Send(command, cancellationToken);
         return HandleResult<AdminOverrideOrderStatus.Response>(result);
+    }
+
+    [HttpPost("record-cash")]
+    [Permission(Policy.CanOverrideOrderStatus)]
+    [EnableRateLimiting("auth")]
+    [ProducesResponseType(typeof(AdminRecordCashReceived.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> RecordCashReceived([FromBody] AdminRecordCashReceived.Command command, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<AdminRecordCashReceived.Response>(result);
     }
 
     [HttpPost("reassign")]

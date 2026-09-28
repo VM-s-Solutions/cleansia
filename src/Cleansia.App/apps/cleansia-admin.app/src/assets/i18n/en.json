@@ -1316,7 +1316,11 @@
       "type": {
         "terms_of_service": "Terms of service",
         "privacy_policy": "Privacy policy",
-        "work_contract": "Contract for work"
+        "work_contract": "Contract for work",
+        "cleaner_framework_contract": "Framework cooperation agreement (partners)",
+        "self_billing_agreement": "Self-billing agreement",
+        "cleaner_data_processing_agreement": "Data processing agreement (partners)",
+        "complaints_procedure": "Complaints procedure"
       },
       "columns": {
         "audience": "Audience",
@@ -1823,6 +1827,9 @@
           },
           "work_contract_metadata": {
             "years": "Years after a cleaner's acceptance of a contract for work that its IP address and device details are kept before they are blanked; the acceptance itself is kept with the order"
+          },
+          "receipts": {
+            "years": "Years after the end of the year of issue that a receipt's PDF is kept before it is deleted, never fewer than the statutory 10; the receipt record itself is kept"
           }
         },
         "lifecycle": {
@@ -2629,7 +2636,10 @@
         "terms_of_service": "Terms of service",
         "privacy_policy": "Privacy policy",
         "marketing_emails": "Marketing emails",
-        "data_processing": "Data processing"
+        "data_processing": "Data processing",
+        "cleaner_framework_contract": "Framework cooperation agreement (partners)",
+        "self_billing_agreement": "Self-billing agreement",
+        "cleaner_data_processing_agreement": "Data processing agreement (partners)"
       },
       "user_tools": {
         "title": "User tools",
@@ -2696,6 +2706,10 @@
                 "dropped": "the cleaner dropped it",
                 "rejected": "the cleaner's account was rejected"
               }
+            },
+            "cleaner_not_started": {
+              "title": "The cleaner has not started an order",
+              "body": "Order {{orderNumber}} was booked for {{cleaningDateTime}} and nobody has started it. If the cleaner did not arrive, cancel it as a no-show."
             }
           },
           "dispute": {
@@ -2716,6 +2730,14 @@
             "failed": {
               "title": "A card payment failed",
               "body": "The card payment for order {{orderNumber}} was declined. The order is cancelled automatically if it stays unpaid."
+            },
+            "refund_stuck": {
+              "title": "A refund is not through",
+              "body": "The refund of {{amount}} on order {{orderNumber}} has not gone through for a day. It is retried every hour; check it in Stripe."
+            },
+            "refund_needs_retry": {
+              "title": "A refund needs a retry",
+              "body": "The refund of {{amount}} on order {{orderNumber}} has not gone through for a day, and it is not retried automatically. Check it in Stripe, then retry it from the dispute or the order."
             }
           },
           "erasure": {
@@ -2983,7 +3005,8 @@
     "credit": {
       "amount_exceeds_sanity_cap": "That amount is above the limit for a single credit. Issue it in smaller amounts if it is correct.",
       "amount_not_whole_minor_units": "A credit amount cannot be smaller than one hundredth of the currency unit.",
-      "reason_not_issuable": "That reason describes credit being spent, not issued. Choose a dispute settlement, cleaner no-show or goodwill."
+      "reason_not_issuable": "That reason describes credit being spent, not issued. Choose a dispute settlement, cleaner no-show or goodwill.",
+      "dispute_settlement_not_issuable": "A complaint is settled by resolving its dispute, and in credit only when the customer chose credit."
     },
     "currency": {
       "cannot_delete_default": "Cannot delete the default currency",
@@ -3009,7 +3032,9 @@
       "not_found": "Dispute not found",
       "not_owned_by_user": "This dispute belongs to a different user.",
       "cleaning_not_started": "This clean hasn't happened yet, so there is nothing to report on it.",
-      "line_not_on_order": "That item isn't on this order."
+      "line_not_on_order": "That item isn't on this order.",
+      "cleaner_charge_not_chargeable": "This cleaner's pay on the order cannot take this charge: there is none, it is already invoiced or charged for a dispute, or it is smaller than the charge.",
+      "cleaner_charge_not_whole_minor_units": "A charge to a cleaner must be in whole hundredths of the currency unit."
     },
     "email": {
       "invalid_email": "Invalid email address",
@@ -3024,7 +3049,9 @@
       "pay_config_missing": "This cleaner has no pay configured for one or more active services or packages. Add the missing pay configuration before approving them.",
       "profile_incomplete": "Employee profile is incomplete",
       "weekly_limit_invalid": "The weekly order limit must be at least 1, or empty for no limit",
-      "work_country_operator_mismatch": "The work country belongs to another operating company."
+      "work_country_operator_mismatch": "The work country belongs to another operating company.",
+      "weekly_limit_reason_required": "Write why this cleaner is limited. They are shown the reason.",
+      "legal_documents_not_accepted": "This cleaner has not yet accepted the current version of every contract document in force for their work country."
     },
     "employee_document": {
       "deletion_already_resolved": "This deletion request has already been answered.",
@@ -3109,7 +3136,8 @@
         "invalid": "Selected services are invalid"
       },
       "status": {
-        "confirmed_needs_crew": "Confirmed means a cleaner took the job. Assign a cleaner to the order instead."
+        "confirmed_needs_crew": "Confirmed means a cleaner took the job. Assign a cleaner to the order instead.",
+        "force_complete_reason_required": "This order has no after photo. Write why it is being completed without one; the reason is kept in the audit log."
       },
       "total_price": {
         "not_match": "Total price doesn't match",
@@ -3118,8 +3146,17 @@
       "reassign": {
         "employee_not_approved": "This cleaner is not approved yet, so they cannot be placed on a job.",
         "employee_other_market": "This cleaner does not work in this order's country.",
-        "employee_busy": "This cleaner already has another job at this time."
-      }
+        "employee_busy": "This cleaner already has another job at this time.",
+        "removal_reason_required": "Write why this cleaner is being taken off the order. They are shown the reason."
+      },
+      "cleaner_already_started": "The cleaner has already started this job, so it cannot be cancelled as a no-show.",
+      "start_time_not_reached": "The booked start time has not come yet, so there is no no-show to confirm.",
+      "cash_already_collected": "The cash for this order has already been recorded",
+      "payment_not_outstanding": "Nothing is outstanding on this order: it is paid, refunded or disputed",
+      "cash_not_allowed_on_card_order": "This order was booked for card payment, so cash cannot be recorded on it here",
+      "cash_amount_invalid": "Enter an amount above zero, to the cent",
+      "cash_received_at_in_future": "The cash cannot have been received in the future",
+      "cash_received_at_before_clean": "The cash cannot have been received before the clean could begin"
     },
     "extra": {
       "in_use": "Cannot delete extra because an order references it. Deactivate it instead.",

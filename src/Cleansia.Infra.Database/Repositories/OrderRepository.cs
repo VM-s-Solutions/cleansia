@@ -10,6 +10,26 @@ namespace Cleansia.Infra.Database.Repositories;
 
 public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(context), IOrderRepository
 {
+    public async Task<bool> IsFirstBookingAsync(Order order, CancellationToken cancellationToken)
+    {
+        var userId = order.UserId;
+        var email = order.CustomerEmail.Trim();
+        var phone = order.CustomerPhone.Trim();
+
+        // CustomerEmail is citext, so the e-mail term folds case in Postgres and seeks its index.
+        return !await GetQueryableIgnoringTenant()
+            .AnyAsync(o => o.Id != order.Id
+                && o.CreatedOn < order.CreatedOn
+                && o.CancellationReason != OrderCancellationReasons.PaymentNotCompleted
+                && !(o.PaymentType == PaymentType.Card
+                    && (o.PaymentStatus == PaymentStatus.Pending || o.PaymentStatus == PaymentStatus.Failed)
+                    && o.RecurringTemplateId == null)
+                && ((userId != null && o.UserId == userId)
+                    || o.CustomerEmail == email
+                    || (phone != "" && o.CustomerPhone == phone)),
+                cancellationToken);
+    }
+
     public async Task<IReadOnlyList<Order>> GetOwnOrdersByPhoneNumberAsync(string userId, string phoneNumber, CancellationToken cancellationToken)
     {
         return await GetDbSet()
@@ -346,6 +366,12 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
     public Task<bool> HasOverlappingOrderAsync(string employeeId, DateTime cleaningDateTime, int estimatedTimeMinutes, CancellationToken ct)
         => HasOverlappingOrderAsync(GetDbSet(), employeeId, cleaningDateTime, estimatedTimeMinutes, ct);
 
+    public Task<OrderStatus?> GetCurrentStatusAsync(string orderId, CancellationToken cancellationToken)
+        => GetDbSet()
+            .Where(o => o.Id == orderId)
+            .Select(o => (OrderStatus?)o.CurrentStatus)
+            .FirstOrDefaultAsync(cancellationToken);
+
     public Task<bool> HasOverlappingOrderIgnoringTenantAsync(string employeeId, DateTime cleaningDateTime, int estimatedTimeMinutes, CancellationToken ct)
         => HasOverlappingOrderAsync(GetQueryableIgnoringTenant(), employeeId, cleaningDateTime, estimatedTimeMinutes, ct);
 
@@ -506,39 +532,22 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
         // A cancelled order is out of the sweep: its money is settled by the refund path, and a receipt
         // for a fee it kept is the payment-time enqueue's job, not this backstop's.
         //
-        // The single-query `(Cash OR Paid)` shape forced a seq scan 288x/day — the OR defeats both
-        // (PaymentType|PaymentStatus, CreatedOn) composites. Split the eligibility into one
-        // index-served, CreatedOn-ordered, take-bounded arm per composite and UNION them: the global
-        // oldest `take` candidates are always contained in (cash top-take ∪ paid top-take), and the
-        // Union dedupes an order that is both Cash and Paid. Ids first, then one graph load — the
-        // Include of Receipt + Language + CustomerAddress stays because the per-item
-        // enforcement-mode resolution needs it (Language so the re-enqueue preserves the receipt's
-        // locale instead of defaulting to English).
-        var cashArm = GetDbSet()
-            .IgnoreQueryFilters()
-            .Where(o => o.PaymentType == PaymentType.Cash
-                && o.CurrentStatus != OrderStatus.Cancelled
-                && o.CreatedOn <= cutoff
-                && !registeredReceipts.Any(r => r.OrderId == o.Id && r.FiscalCode != null))
-            .OrderBy(o => o.CreatedOn)
-            .Take(take)
-            .Select(o => new { o.Id, o.CreatedOn });
-
-        var paidArm = GetDbSet()
+        // Only a PAID order has earned a receipt, whatever its tender (owner ruling 2026-09-28). A cash
+        // sale is Paid once the cleaner records the cash, but its receipt is issued at completion, so a
+        // collected order still in progress is not owed one yet. Ids first, then one graph load — the
+        // Include of Receipt + Language + CustomerAddress stays because the per-item enforcement-mode
+        // resolution needs it (Language so the re-enqueue preserves the receipt's locale instead of
+        // defaulting to English).
+        var candidateIds = await GetDbSet()
             .IgnoreQueryFilters()
             .Where(o => o.PaymentStatus == PaymentStatus.Paid
                 && o.CurrentStatus != OrderStatus.Cancelled
+                && (o.CashCollectedAt == null || o.CurrentStatus == OrderStatus.Completed)
                 && o.CreatedOn <= cutoff
                 && !registeredReceipts.Any(r => r.OrderId == o.Id && r.FiscalCode != null))
             .OrderBy(o => o.CreatedOn)
             .Take(take)
-            .Select(o => new { o.Id, o.CreatedOn });
-
-        var candidateIds = await cashArm
-            .Union(paidArm)
-            .OrderBy(x => x.CreatedOn)
-            .Take(take)
-            .Select(x => x.Id)
+            .Select(o => o.Id)
             .ToListAsync(cancellationToken);
 
         if (candidateIds.Count == 0)

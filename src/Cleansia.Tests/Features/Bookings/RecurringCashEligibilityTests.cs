@@ -109,7 +109,7 @@ public class RecurringCashEligibilityTests
             .ReturnsAsync([needsChange, packaged, eligible, card, paused]);
 
         var result = await new GetMyRecurringBookings.Handler(
-                _templateRepository.Object, _savedAddressRepository.Object, _session.Object, Services(), Packages())
+                _templateRepository.Object, _savedAddressRepository.Object, _session.Object, Services(), Packages(), Mock.Of<ICountryConfigurationRepository>())
             .Handle(new GetMyRecurringBookings.Query(), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
@@ -131,7 +131,7 @@ public class RecurringCashEligibilityTests
             .ReturnsAsync([Template(PaymentType.Card, [TwoHoursAndAMinute.Id], [])]);
 
         var result = await new GetMyRecurringBookings.Handler(
-                _templateRepository.Object, _savedAddressRepository.Object, _session.Object, services.Object, packages.Object)
+                _templateRepository.Object, _savedAddressRepository.Object, _session.Object, services.Object, packages.Object, Mock.Of<ICountryConfigurationRepository>())
             .Handle(new GetMyRecurringBookings.Query(), CancellationToken.None);
 
         Assert.False(Assert.Single(result.Value!).RequiresPaymentMethodChange);
@@ -163,7 +163,9 @@ public class RecurringCashEligibilityTests
             OrderMarketDoubles.Trading(CreateOrderTestData.DefaultCurrency()),
             OrderMarketDoubles.Servicing("country-cz"),
             Services(),
-            Packages());
+            Packages(),
+            Cleansia.Tests.Features.Legal.CustomerConsentDoubles.Consented(),
+            Mock.Of<Cleansia.Core.AppServices.Services.Interfaces.ILegalDocumentResolver>());
 
     private UpdateRecurringBooking.Validator UpdateValidator() =>
         new(

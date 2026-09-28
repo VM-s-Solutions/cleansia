@@ -214,7 +214,7 @@ class GdprConsentWireTest {
             "isGranted",
             "grantedAt",
             "withdrawnAt",
-            "createdOn",
+            "createdOn", "documentVersion", "coversCurrentVersion",
         )
     }
 }

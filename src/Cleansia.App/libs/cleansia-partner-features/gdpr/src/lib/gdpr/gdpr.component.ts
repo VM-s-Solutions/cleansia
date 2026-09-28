@@ -40,6 +40,10 @@ export class PartnerGdprComponent implements OnInit {
     [ConsentType.PrivacyPolicy]: 'pages.gdpr.consent_types.privacy_policy',
     [ConsentType.MarketingEmails]: 'pages.gdpr.consent_types.marketing_emails',
     [ConsentType.DataProcessing]: 'pages.gdpr.consent_types.data_processing',
+    [ConsentType.CleanerFrameworkContract]: 'pages.gdpr.consent_types.cleaner_framework_contract',
+    [ConsentType.SelfBillingAgreement]: 'pages.gdpr.consent_types.self_billing_agreement',
+    [ConsentType.CleanerDataProcessingAgreement]:
+      'pages.gdpr.consent_types.cleaner_data_processing_agreement',
   };
 
   readonly consentTypes: readonly ConsentType[] = [

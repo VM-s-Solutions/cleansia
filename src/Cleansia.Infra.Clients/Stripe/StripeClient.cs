@@ -41,7 +41,28 @@ public class StripeClient : IStripeClient
     public static long ToMinorUnits(decimal amount) =>
         (long)Math.Round(amount * 100m, MidpointRounding.AwayFromZero);
 
-    public async Task<CheckoutSessionResult> CreateCheckoutSessionAsync(Order order, CancellationToken cancellationToken)
+    public Task<CheckoutSessionResult> CreateCheckoutSessionAsync(Order order, CancellationToken cancellationToken) =>
+        CreateCheckoutSessionAsync(
+            order,
+            expiresAtUtc: null,
+            $"checkout-{order.Id}",
+            $"{config.CancelUrlBase}?orderId={order.Id}",
+            cancellationToken);
+
+    public Task<CheckoutSessionResult> CreateCheckoutSessionAsync(
+        Order order, DateTime expiresAtUtc, CancellationToken cancellationToken)
+    {
+        var expiresAt = DateTime.SpecifyKind(expiresAtUtc, DateTimeKind.Utc);
+        return CreateCheckoutSessionAsync(
+            order,
+            expiresAt,
+            $"checkout-{order.Id}-{new DateTimeOffset(expiresAt).ToUnixTimeSeconds()}",
+            new Uri(config.SuccessUrlBase).GetLeftPart(UriPartial.Authority) + $"{OrdersPagePath}/{order.Id}",
+            cancellationToken);
+    }
+
+    private async Task<CheckoutSessionResult> CreateCheckoutSessionAsync(
+        Order order, DateTime? expiresAtUtc, string idempotencyKey, string cancelUrl, CancellationToken cancellationToken)
     {
         // AmountDueOnCard, not TotalPrice: credit is a tender, so the sale keeps its size and only
         // the figure the card is asked for moves. Charging TotalPrice here would take the credit AND
@@ -86,11 +107,12 @@ public class StripeClient : IStripeClient
             // flipped back.
             AdaptivePricing = new SessionAdaptivePricingOptions { Enabled = false },
             SuccessUrl = $"{config.SuccessUrlBase}?session_id={{CHECKOUT_SESSION_ID}}&orderId={order.Id}",
-            CancelUrl = $"{config.CancelUrlBase}?orderId={order.Id}",
-            Metadata = new Dictionary<string, string> { { "OrderId", order.Id } }
+            CancelUrl = cancelUrl,
+            Metadata = new Dictionary<string, string> { { "OrderId", order.Id } },
+            ExpiresAt = expiresAtUtc,
         };
 
-        var requestOptions = new RequestOptions { IdempotencyKey = $"checkout-{order.Id}" };
+        var requestOptions = new RequestOptions { IdempotencyKey = idempotencyKey };
         var service = new SessionService(stripe);
         var session = await ClassifyAsync(
             nameof(CreateCheckoutSessionAsync),
@@ -420,6 +442,36 @@ public class StripeClient : IStripeClient
             () => service.UpdateAsync(stripeSubscriptionId, options, requestOptions, cancellationToken));
     }
 
+    public async Task CancelSubscriptionNowAsync(
+        string stripeSubscriptionId,
+        CancellationToken cancellationToken)
+    {
+        var service = new SubscriptionService(stripe);
+        var options = new SubscriptionCancelOptions
+        {
+            InvoiceNow = false,
+            Prorate = false,
+            Expand = ["latest_invoice"],
+        };
+        var requestOptions = new RequestOptions { IdempotencyKey = $"cancel-now-{stripeSubscriptionId}" };
+        var cancelled = await ClassifyAsync(
+            nameof(CancelSubscriptionNowAsync),
+            () => service.CancelAsync(stripeSubscriptionId, options, requestOptions, cancellationToken));
+
+        // Cancelling stops Stripe collecting the open invoice but leaves it open and owed; voiding it is
+        // what makes "nothing more is charged" true.
+        if (cancelled.LatestInvoice is { Status: "open" } invoice)
+        {
+            await ClassifyAsync(
+                nameof(CancelSubscriptionNowAsync),
+                () => new InvoiceService(stripe).VoidInvoiceAsync(
+                    invoice.Id,
+                    options: null,
+                    new RequestOptions { IdempotencyKey = $"void-{invoice.Id}" },
+                    cancellationToken));
+        }
+    }
+
     public async Task<string> CreateMembershipCheckoutSessionAsync(
         string stripeCustomerId,
         string stripePriceId,
@@ -475,13 +527,15 @@ public class StripeClient : IStripeClient
         return session.Url;
     }
 
-    // The two customer-app routes a membership checkout returns to. Pinned by
+    // The customer-app routes a checkout returns to: the two of a membership checkout, and the orders
+    // mount an expiring order checkout cancels back to. Pinned by
     // MembershipReturnPathTests, which reads them back out of the Angular route table — because a
     // frontend path living in a backend assembly is invisible to `nx affected`, to every Angular
     // test, and to the compiler, which is precisely how SuccessUrlBase came to point at the partner
     // app's port for as long as it did.
     private const string MembershipWelcomePath = "/membership/welcome";
     private const string PlusPagePath = "/plus";
+    private const string OrdersPagePath = "/orders";
 
     /// <summary>
     /// Where Stripe sends the browser back to after a membership checkout.

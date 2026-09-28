@@ -150,8 +150,11 @@ public sealed class CompanyArchiveBundleTests(PostgresContainerFixture fixture) 
                 Assert.Equal("Bratislava", receipted.GetProperty("city").GetString());
                 Assert.Equal("Completed", receipted.GetProperty("currentStatus").GetString());
                 Assert.Single(receipted.GetProperty("extras").EnumerateArray());
+                // The cash handed over sits beside the price: an administrator may record less than it.
+                Assert.Equal(100m, receipted.GetProperty("cashCollectedAmount").GetDecimal());
                 var anonymised = Assert.Single(orders, o => o.GetProperty("id").GetString() == seeded.AnonymisedOrderId);
-                Assert.Equal(JsonValueKind.Null, anonymised.GetProperty("receiptNumber").ValueKind);
+                Assert.Equal("RCP-2023-0001", anonymised.GetProperty("receiptNumber").GetString());
+                Assert.Equal(JsonValueKind.Null, anonymised.GetProperty("cashCollectedAmount").ValueKind);
                 foreach (var row in orders)
                 {
                     foreach (var forbidden in new[] { "customerName", "customerEmail", "customerPhone", "userId", "accessInstructions", "specialInstructions", "notes", "street", "customerAddressId" })
@@ -167,6 +170,9 @@ public sealed class CompanyArchiveBundleTests(PostgresContainerFixture fixture) 
                 var dispute = Assert.Single(Lines(Archived("books/disputes.jsonl")));
                 Assert.Equal(seeded.DisputeId, dispute.GetProperty("id").GetString());
                 Assert.Equal("Resolved", dispute.GetProperty("status").GetString());
+                // What the resolution moved sits beside what was asked for, so the books show the money.
+                Assert.Equal(20m, dispute.GetProperty("creditReturnedAmount").GetDecimal());
+                Assert.Equal(JsonValueKind.Null, dispute.GetProperty("cardRefundedAmount").ValueKind);
                 Assert.Single(dispute.GetProperty("lines").EnumerateArray());
                 foreach (var forbidden in new[] { "description", "resolutionNotes", "messages", "evidence", "userId" })
                 {
@@ -205,7 +211,9 @@ public sealed class CompanyArchiveBundleTests(PostgresContainerFixture fixture) 
 
                 Assert.Single(Lines(Archived("books/pay-periods.jsonl")));
                 Assert.Single(Lines(Archived("books/order-employee-pays.jsonl")));
-                Assert.Single(Lines(Archived("books/order-receipts.jsonl")));
+                // Both receipt rows are the books; only the one whose PDF still exists has a file in the
+                // layout below.
+                Assert.Equal(2, Lines(Archived("books/order-receipts.jsonl")).Count);
                 Assert.Single(Lines(Archived("books/company-info.jsonl")));
                 Assert.Single(Lines(Archived("books/tenant-configurations.jsonl")));
                 Assert.Empty(Lines(Archived("books/refunds.jsonl")));
@@ -487,6 +495,7 @@ public sealed class CompanyArchiveBundleTests(PostgresContainerFixture fixture) 
         receiptedOrder.SetWorkContractDocument(contractDocument);
         var seatB = OrderEmployee.Create(receiptedOrder, cleanerB);
         receiptedOrder.AddAssignedEmployee(seatB);
+        receiptedOrder.MarkCashCollected(cleanerB.Id, receiptedOrder.CleaningDateTime.AddMinutes(30));
         var anonymisedOrder = NewOrder("bundle-b-anonymised", SvkId, EurId, customerB.Id, DateTime.UtcNow.AddYears(-3), B);
         anonymisedOrder.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Completed, anonymisedOrder));
         anonymisedOrder.AnonymizeCustomerData();
@@ -505,12 +514,17 @@ public sealed class CompanyArchiveBundleTests(PostgresContainerFixture fixture) 
         ctx.OrderReceipts.Add(receipt);
         _blobs.Container(AppConstants.BlobContainers.GeneratedReceipts).Put("b/RCP-2026-0001.pdf", ReceiptPdf);
 
+        // Past its retention period: the PDF is gone, the row stays the record (owner ruling 2026-09-28).
+        var expiredReceipt = Stamped(OrderReceipt.Create(anonymisedOrder.Id, "RCP-2023-0001", "RCP-2023-0001.pdf", "b/RCP-2023-0001.pdf", english.Id), B);
+        expiredReceipt.MarkBlobDeleted(DateTime.UtcNow.AddDays(-1));
+        ctx.OrderReceipts.Add(expiredReceipt);
+
         var dispute = new Dispute(receiptedOrder.Id, customerB.Id, DisputeReason.QualityIssue, "the windows were streaky and the kitchen floor was skipped", customerB.Id);
         dispute.TenantId = B;
         dispute.AddLines([(service.Id, null)], customerB.Id);
         dispute.AddMessage("the windows were streaky", customerB.Id, isStaff: false);
         dispute.AddMessage("we are sorry, a credit is on its way", AdminBId, isStaff: true);
-        dispute.Resolve(AdminBId, refundAmount: null, "credit issued");
+        dispute.Resolve(AdminBId, refundAmount: null, "credit issued", cardRefundedAmount: null, creditReturnedAmount: 20m);
         ctx.Disputes.Add(dispute);
 
         var credit = Stamped(CreditAccount.Create(customerB.Id, EurId, "seed"), B);

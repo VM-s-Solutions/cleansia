@@ -86,7 +86,8 @@ public static class OrderMappers
             o.AssignedEmployees.Select(ae => new OrderListEmployeeRow(ae.Id, ae.EmployeeId)).ToList(),
             o.RequiredEmployees,
             o.MaxEmployees,
-            o.Reviews.Any()));
+            o.Reviews.Any(),
+            o.CompletedAt));
     }
 
     public static OrderListItem MapToDto(this OrderListRow row)
@@ -277,11 +278,14 @@ public static class OrderMappers
             HasAccessInstructions: !string.IsNullOrWhiteSpace(order.AccessInstructions),
             // System cancellations only. The same column holds an admin's free-text note when a human
             // cancels, and that is written by staff for staff — gating on CancelledBy is what keeps an
-            // internal note from reaching the customer through a field meant for a localisable key.
+            // internal note from reaching the customer through a field meant for a localisable key. An
+            // administrator's no-show confirmation writes the no-cleaner KEY, never a note.
             SystemCancellationReason: order.CancelledBy == CancelledBy.System
+                || order.CancellationReason == OrderCancellationReasons.NoCleanerAvailable
                 ? order.CancellationReason
                 : null,
             RecurringTemplateId: order.RecurringTemplateId,
+            NeedsConfirmation: order.AwaitsCustomerConfirmation,
             SelectedPackages: order.SelectedPackages.Select(op =>
                 op.Package.MapToDetails(order.Currency!.Code, op.LineTotal)),
             Currency: order.Currency!.MapToDetailDto(),

@@ -77,7 +77,9 @@ public sealed class CreateOrderOperatorAgreementTests
             _operators.Object,
             _tenant.Object,
             Mock.Of<IUserConsentRepository>(),
-            CreateOrderTestData.Speaking(Constants.Language.English));
+            CreateOrderTestData.Speaking(Constants.Language.English),
+            Mock.Of<ICountryConfigurationRepository>(),
+            Mock.Of<ILegalDocumentResolver>());
     }
 
     private static CreateOrder.Command AddressIn(string countryId) =>

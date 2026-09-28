@@ -2,31 +2,34 @@ using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Features.Bookings;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Credit;
 using Cleansia.Core.Domain.Enums;
-using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Queue.Abstractions;
-using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
 using BusinessResult = Cleansia.Infra.Common.Validations.BusinessResult;
+using StripeException = Stripe.StripeException;
 
 namespace Cleansia.Core.AppServices.Features.Orders;
 
 /// <summary>
-/// Customer confirmation of an occurrence the recurring materializer spawned. Card returns a Stripe
-/// PaymentIntent and the order confirms only on the webhook; cash flips to Confirmed and Paid
-/// immediately and queues the receipt.
+/// Customer confirmation of an occurrence the recurring materializer spawned. Both tenders stamp
+/// <see cref="Order.CustomerConfirmedAt"/>. Card then asks for the money — a PaymentIntent for the
+/// mobile PaymentSheet, a Checkout Session on the web — and the order is paid only on the webhook. Cash
+/// is confirmed by the stamp alone and stays <see cref="PaymentStatus.Pending"/> until the cleaner
+/// records the cash, so its receipt is issued at completion and the customer gets the booking e-mail.
 ///
-/// <para>Refuses orders that are not pending, not owned by the caller, or not linked to a template —
-/// those belong on the standard booking flow — and a cash occurrence whose job needs more than one
-/// cleaner. → /flows/booking-and-pricing#recurring-bookings</para>
+/// <para>Refuses orders that are not awaiting confirmation, not owned by the caller, or not linked to a
+/// template — those belong on the standard booking flow — a cash occurrence whose job needs more
+/// than one cleaner, and an occurrence closer than the minimum lead time a one-off booking gets.
+/// → /flows/booking-and-pricing#recurring-bookings</para>
 /// </summary>
 [AuditAction("customer.order.recurring.confirm", Audience = AuditAudience.Customer, ResourceType = "Order")]
 public class ConfirmRecurringOrder
@@ -47,16 +50,17 @@ public class ConfirmRecurringOrder
         decimal LeadTimeHours) : ICustomerAuditPayload;
 
     /// <summary>
-    /// Both flavors return the same shape; consumers branch on
-    /// <see cref="ClientSecret"/>: non-null = Card path, mobile opens
-    /// PaymentSheet; null = Cash path, mobile shows success snackbar.
+    /// Both flavors return the same shape. A mobile card confirm carries <see cref="ClientSecret"/> for
+    /// the PaymentSheet, a web card confirm carries <see cref="CheckoutUrl"/> to redirect to, and a cash
+    /// confirm carries neither.
     /// </summary>
     public record Response(
         string OrderId,
         string? ClientSecret,
         string? PaymentIntentId,
         string? StripeCustomerId,
-        string? EphemeralKey);
+        string? EphemeralKey,
+        string? CheckoutUrl = null);
 
     public class Validator : AbstractValidator<Command>
     {
@@ -76,6 +80,7 @@ public class ConfirmRecurringOrder
         ITenantProvider tenantProvider,
         IStripeClient stripeClient,
         IStripeConfig stripeConfig,
+        IOrderChannelProvider channelProvider,
         IPendingDispatch pending,
         INotificationProducer notificationProducer,
         IPreferredCleanerHoldResolver preferredCleanerHoldResolver,
@@ -83,6 +88,8 @@ public class ConfirmRecurringOrder
         IAuditContext auditContext,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
     {
+        private static readonly TimeSpan CheckoutStride = TimeSpan.FromHours(23);
+
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             var sessionUserId = userSessionProvider.GetUserId();
@@ -103,10 +110,28 @@ public class ConfirmRecurringOrder
                     nameof(command.OrderId), BusinessErrorMessage.OrderNotFound));
             }
 
+            if (order.CurrentStatus == OrderStatus.Cancelled)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.OrderId), BusinessErrorMessage.OrderAlreadyCancelled));
+            }
+
             if (order.PaymentStatus != PaymentStatus.Pending)
             {
                 return BusinessResult.Failure<Response>(new Error(
                     nameof(order.PaymentStatus), BusinessErrorMessage.OrderPaymentAlreadyPaid));
+            }
+
+            if (!order.AwaitsCustomerConfirmation)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.OrderId), BusinessErrorMessage.OrderRecurringAlreadyConfirmed));
+            }
+
+            if (BookingPolicy.IsBelowMinimumLeadTime(order.CleaningDateTime, DateTime.UtcNow))
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(order.CleaningDateTime), BusinessErrorMessage.CleaningDateBelowLeadTime));
             }
 
             // An occurrence materialized before the one-cleaner cash rule. It is neither confirmed as cash
@@ -154,48 +179,18 @@ public class ConfirmRecurringOrder
         {
             if (order.TenantId is not null) tenantProvider.SetTenantOverride(order.TenantId);
 
-            // Cash means the customer pays the cleaner on-site — no gateway step. The MONEY axis moves
-            // and the fulfilment axis does not: the customer confirming their own occurrence is not a
-            // cleaner taking it, and owner ruling 2026-09-08 (T-0691) is that Confirmed means only the
-            // latter. This used to append Confirmed here, which was the same overload as the Stripe
-            // webhook wearing different clothes — and leaving it would have meant the word still had
-            // two meanings after the split, buying nothing for the whole cost.
-            //
-            // The occurrence stays offerable: it rests at New + Paid, and OrderAvailability admits New
-            // with a satisfied money term. Before the ruling that was NOT true — a recurring cash
-            // occurrence at New is refused by the money term (Cash && RecurringTemplateId != null), so
-            // the Confirmed append was load-bearing for offerability. It is the PaymentStatus.Paid
-            // write below that carries it now.
-            order.UpdatePaymentStatus(PaymentStatus.Paid);
+            // Neither axis moves: no money has changed hands, and the customer confirming their own
+            // occurrence is not a cleaner taking it (owner ruling 2026-09-08). The stamp is what
+            // OrderAvailability admits a recurring cash occurrence on; the cleaner records the cash at
+            // the door and the receipt follows at completion (owner ruling 2026-09-28).
+            order.ConfirmByCustomer(DateTime.UtcNow);
 
-            pending.Enqueue(
-                QueueNames.GenerateReceipt,
-                new QueueEnvelope<GenerateReceiptMessage>(
-                    MessageKeys.Receipt(order.Id),
-                    order.TenantId,
-                    new GenerateReceiptMessage(order.Id, Constants.Language.English)),
-                MessageKeys.Receipt(order.Id));
+            OrderBookedEmail.Enqueue(order, Constants.Language.English, pending);
 
-            if (!string.IsNullOrEmpty(order.UserId))
-            {
-                await notificationProducer.NotifyAsync(
-                    order.UserId,
-                    NotificationEventCatalog.OrderPaymentConfirmed,
-                    new Dictionary<string, string>
-                    {
-                        ["orderId"] = order.Id,
-                        ["orderNumber"] = order.DisplayOrderNumber,
-                    },
-                    order.TenantId,
-                    order.Id,
-                    cancellationToken);
-            }
-
-            // Q-BROWSE-01 (b): a recurring occurrence is never offerable at creation — the money term
-            // demands Paid for anything carrying a RecurringTemplateId, because AutoCancelStaleRecurring
-            // Orders retracts those while they are Pending. The two writes above are that transition, so
-            // this is where its preferred cleaner is told. The card flavour is told by the Stripe
-            // webhook instead, and the PaymentStatus guard upstream keeps either to one announcement.
+            // Q-BROWSE-01 (b): an unconfirmed recurring cash occurrence is not offerable, because
+            // AutoCancelStaleRecurringOrders retracts it. The stamp above is that transition, so this is
+            // where its preferred cleaner is told. The card flavour is told by the Stripe webhook
+            // instead, and the confirmation guard upstream keeps either to one announcement.
             await PreferredOfferNotifier.NotifyBecameOfferableAsync(
                 order, preferredCleanerHoldResolver, notificationProducer, DateTime.UtcNow, cancellationToken);
             await NewOrderAdminNotifier.NotifyIfOfferableAsync(order, adminNotifier, logger, cancellationToken);
@@ -279,11 +274,23 @@ public class ConfirmRecurringOrder
                 return BusinessResult.Failure<Response>(new Error(
                     nameof(order.Id), BusinessErrorMessage.PaymentGatewayUnavailable));
             }
+
+            // One capturable surface per order: an occurrence the customer began paying on the other
+            // channel is finished there, as ResumeOrderCheckout refuses a session beside a PaymentIntent.
+            var otherChannelSurface = channelProvider.Channel == OrderChannel.Web
+                ? order.StripePaymentIntentId
+                : order.StripeSessionId;
+            if (!string.IsNullOrEmpty(otherChannelSurface))
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(order.Id), BusinessErrorMessage.InvalidOrderStatusTransition));
+            }
+
             // Card flow mirrors CreatePaymentIntent.Handler: ensure the user
             // has a Stripe Customer, create / reuse a PaymentIntent for the
-            // order, generate a fresh ephemeral key per request. Order status
-            // doesn't change here — the Stripe webhook is what flips it to
-            // Confirmed once payment succeeds.
+            // order, generate a fresh ephemeral key per request. The payment
+            // status doesn't change here — the Stripe webhook marks it Paid
+            // once payment succeeds.
             var user = await userRepository.GetByIdAsync(sessionUserId, cancellationToken);
             if (user == null)
             {
@@ -308,6 +315,13 @@ public class ConfirmRecurringOrder
                 {
                     order.ApplyCredit(credit, sessionUserId);
                 }
+            }
+
+            order.ConfirmByCustomer(DateTime.UtcNow);
+
+            if (channelProvider.Channel == OrderChannel.Web)
+            {
+                return await StartCheckoutAsync(order, cancellationToken);
             }
 
             var stripeCustomerId = user.StripeCustomerId;
@@ -353,6 +367,56 @@ public class ConfirmRecurringOrder
                 PaymentIntentId: intent.Id,
                 StripeCustomerId: stripeCustomerId,
                 EphemeralKey: ephemeralKey));
+        }
+
+        /// <summary>
+        /// The web has no PaymentSheet, so it pays through a Checkout Session, as a web booking does.
+        ///
+        /// <para>The session closes no later than the cutoff at which AutoCancelStaleRecurringOrders
+        /// retracts an unpaid occurrence, so nobody can pay for an occurrence that is gone. Stripe keeps a
+        /// session open for 30 minutes to 24 hours, so the expiry steps back from that cutoff in 23-hour
+        /// strides to the first one still ahead. Every confirm inside one stride names the same expiry, and
+        /// so the same idempotency key, and gets the same session back rather than a second surface; once
+        /// it has closed, the next stride opens the next. In a stride's last half hour Stripe will not open
+        /// a session that short, so the next stride is used — but a session already open for this stride is
+        /// replayed first, because a replay is not checked against the time left.</para>
+        /// </summary>
+        private async Task<BusinessResult<Response>> StartCheckoutAsync(Order order, CancellationToken cancellationToken)
+        {
+            var cutoff = DateTime.SpecifyKind(order.CleaningDateTime, DateTimeKind.Utc)
+                .AddHours(-AutoCancelStaleRecurringOrders.DefaultMissedConfirmGraceHours);
+            var strides = Math.Floor((cutoff - DateTime.UtcNow) / CheckoutStride);
+            var expiresAt = cutoff - strides * CheckoutStride;
+
+            try
+            {
+                CheckoutSessionResult session;
+                try
+                {
+                    session = await stripeClient.CreateCheckoutSessionAsync(order, expiresAt, cancellationToken);
+                }
+                catch (StripeException ex) when (ex.StripeError?.Param == "expires_at" && strides > 0)
+                {
+                    session = await stripeClient.CreateCheckoutSessionAsync(
+                        order, expiresAt + CheckoutStride, cancellationToken);
+                }
+
+                order.AssignStripeSessionId(session.Id);
+
+                return BusinessResult.Success(new Response(
+                    OrderId: order.Id,
+                    ClientSecret: null,
+                    PaymentIntentId: null,
+                    StripeCustomerId: null,
+                    EphemeralKey: null,
+                    CheckoutUrl: session.Url));
+            }
+            catch (StripeException ex)
+            {
+                logger.LogError(ex, "Checkout for recurring order {OrderId} could not be started", order.Id);
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(order.Id), BusinessErrorMessage.PaymentGatewayUnavailable));
+            }
         }
     }
 }

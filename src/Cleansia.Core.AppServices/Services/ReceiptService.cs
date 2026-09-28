@@ -136,51 +136,6 @@ public sealed class ReceiptService(
         await UploadAsync(receipt, pdfService.GenerateReceiptPdf(receiptData, countryCode), cancellationToken);
     }
 
-    /// <summary>
-    /// Re-renders an already-issued receipt from the order as it stands now, over the same number, the
-    /// same blob and the same language. The fiscal registration is deliberately not re-attempted: the
-    /// sale was registered (or is on the retry job's list) under this number already, and a second
-    /// register is what the claim-first ordering in ADR-0004 exists to prevent.
-    /// </summary>
-    public async Task RegenerateReceiptPdfAsync(Order order, OrderReceipt receipt, CancellationToken cancellationToken = default)
-    {
-        var countryId = order.CustomerAddress?.CountryId;
-        var companyInfo = countryId != null
-            ? await companyInfoRepository.GetActiveByCountryAsync(countryId, cancellationToken)
-            : null;
-
-        companyInfo ??= await companyInfoRepository.GetActiveCompanyInfoAsync(cancellationToken);
-
-        if (companyInfo == null)
-        {
-            throw new InvalidOperationException(BusinessErrorMessage.CompanyInfoNotFound);
-        }
-
-        var receiptData = CreateReceiptData(
-            order,
-            receipt,
-            companyInfo,
-            await ResolveDocumentLanguageAsync(receipt, cancellationToken),
-            await MarketZoneAsync(countryId, cancellationToken));
-
-        StampFiscalData(receiptData, receipt);
-
-        string? countryCode = null;
-        if (countryId != null)
-        {
-            countryCode = (await countryRepository.GetByIdAsync(countryId, cancellationToken))?.IsoCode;
-        }
-
-        // Rendered BEFORE the writer opens. Opening it re-creates the blob empty, so a render that threw
-        // after that point would leave the customer's only copy of the receipt at zero bytes.
-        var pdf = pdfService.GenerateReceiptPdf(receiptData, countryCode);
-
-        // The blob already exists: UploadAsync creates only, and would refuse this write on every attempt.
-        var blobClient = blobClientFactory.GetBlobContainerClient(Constants.BlobContainers.GeneratedReceipts);
-        await using var stored = await blobClient.CreateFileForWritingAsync(receipt.BlobName, cancellationToken);
-        await stored.WriteAsync(pdf, cancellationToken);
-    }
-
     private async Task UploadAsync(OrderReceipt receipt, byte[] pdfBytes, CancellationToken cancellationToken)
     {
         var blobClient = blobClientFactory.GetBlobContainerClient(Constants.BlobContainers.GeneratedReceipts);
@@ -517,6 +472,10 @@ public sealed class ReceiptService(
         return baseName;
     }
 
+    private static string MarketTime(DateTime utc, TimeZoneInfo marketZone) =>
+        TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utc, DateTimeKind.Utc), marketZone)
+            .ToString("dd.MM.yyyy HH:mm", CultureInfo.InvariantCulture);
+
     private static ReceiptPdfData CreateReceiptData(
         Order order, OrderReceipt receipt, CompanyInfo companyInfo, string languageCode, TimeZoneInfo marketZone)
     {
@@ -525,12 +484,10 @@ public sealed class ReceiptService(
             LanguageCode = languageCode,
             ReceiptNumber = receipt.ReceiptNumber,
             OrderNumber = order.DisplayOrderNumber,
-            // The row's date, not the render's: a restated receipt keeps the date it was issued on.
+            // The row's date, not the render's: a re-rendered receipt keeps the date it was issued on.
             IssuedDate = TimeZoneInfo.ConvertTimeFromUtc(receipt.IssuedAt, marketZone)
                 .ToString("dd.MM.yyyy", CultureInfo.InvariantCulture),
             CustomerName = order.CustomerName,
-            CustomerEmail = order.CustomerEmail,
-            CustomerPhone = order.CustomerPhone,
             CustomerAddress = $"{order.CustomerAddress?.Street}, {order.CustomerAddress?.City}, {order.CustomerAddress?.ZipCode}",
             // Snapshot prices, catalogue names — see BuildFiscalLineItems. An unloaded catalogue row is a
             // loader omission, printed as the line's own id rather than an English word.
@@ -564,8 +521,11 @@ public sealed class ReceiptService(
             // The VALUES, not their names: the layout picks the word in the document's language.
             PaymentStatus = order.PaymentStatus,
             PaymentType = order.ActualPaymentType,
-            CleaningDate = TimeZoneInfo.ConvertTimeFromUtc(order.CleaningDateTime, marketZone)
-                .ToString("dd.MM.yyyy HH:mm", CultureInfo.InvariantCulture),
+            CleaningDate = MarketTime(order.CleaningDateTime, marketZone),
+            // A cash receipt is issued at completion, after the cash was recorded, so it can state both
+            // (owner ruling 2026-09-28). A card receipt, issued when the payment settles, has neither.
+            CompletedAt = order.CompletedAt is { } completedAt ? MarketTime(completedAt, marketZone) : null,
+            CashReceivedAt = order.CashCollectedAt is { } collectedAt ? MarketTime(collectedAt, marketZone) : null,
             Rooms = order.Rooms,
             Bathrooms = order.Bathrooms,
             EstimatedTime = order.EstimatedTime,

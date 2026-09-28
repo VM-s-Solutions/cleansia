@@ -31,7 +31,7 @@ namespace Cleansia.IntegrationTests.Features.Orders;
 /// a signed-in customer whose booking needs one cleaner. The crew comes from the catalogue rows the
 /// server prices — 120 minutes is one cleaner, 60 + 61 is two — never from anything the client sends.
 /// A refusal writes nothing but its own failure audit row: no order, no status row, no guest token, no
-/// receipt message and no benefit reservation.
+/// booking e-mail and no benefit reservation.
 /// </summary>
 [Collection("PostgresCollection")]
 public class CreateOrderCashEligibilityTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
@@ -69,7 +69,11 @@ public class CreateOrderCashEligibilityTests(PostgresContainerFixture fixture) :
                 Assert.Equal(PaymentType.Cash, order.PaymentType);
                 Assert.Equal(120, order.EstimatedTime);
                 Assert.Equal(1, order.RequiredEmployees);
+                // Owner ruling 2026-09-28: the booking e-mail, and no receipt until the cash is recorded.
                 Assert.Single(await context.OutboxMessages.IgnoreQueryFilters()
+                    .Where(m => m.QueueName == QueueNames.SendEmail
+                        && m.MessageKey == MessageKeys.OrderBookedEmail(result.Value.Id)).ToListAsync());
+                Assert.Empty(await context.OutboxMessages.IgnoreQueryFilters()
                     .Where(m => m.QueueName == QueueNames.GenerateReceipt).ToListAsync());
             },
             transactional: false);
@@ -108,11 +112,16 @@ public class CreateOrderCashEligibilityTests(PostgresContainerFixture fixture) :
     [Fact]
     public async Task A_Plus_Member_Paying_Cash_For_An_Express_Job_Needing_Two_Cleaners_Keeps_The_Express_Slot()
     {
+        var slot = ExpressBookingSlot.Next();
         await TestMethod(
             setup: AccountSession,
-            arrange: SeedPlusMemberAsync,
+            arrange: async context =>
+            {
+                await SeedPlusMemberAsync(context);
+                await ExpressBookingSlot.PutMarketInZoneAsync(context, Czechia, slot.TimeZoneId);
+            },
             act: async provider => await provider.GetRequiredService<IMediator>()
-                .Send(Command(PaymentType.Cash, TwoCleaners, TwoCleanersPrice, DateTime.UtcNow.AddHours(3))),
+                .Send(Command(PaymentType.Cash, TwoCleaners, TwoCleanersPrice, slot.CleaningUtc)),
             assert: AssertRefusedAndNothingWritten,
             transactional: false);
     }
@@ -172,7 +181,7 @@ public class CreateOrderCashEligibilityTests(PostgresContainerFixture fixture) :
         Rooms: 2,
         Bathrooms: 1,
         Extras: new Dictionary<string, bool>(),
-        CleaningDate: cleaningDate ?? DateTime.UtcNow.AddDays(3),
+        CleaningDate: cleaningDate ?? DateTime.UtcNow.Date.AddDays(3).AddHours(9),
         PaymentType: paymentType,
         CurrencyId: null,
         TotalPrice: totalPrice,

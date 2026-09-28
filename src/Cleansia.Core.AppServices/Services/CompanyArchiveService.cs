@@ -272,6 +272,7 @@ public sealed class CompanyArchiveService(
         var receipts = blobClientFactory.GetBlobContainerClient(Constants.BlobContainers.GeneratedReceipts);
         var files = new List<CompanyArchiveRecords.ManifestFile>();
         var rows = await orderReceiptRepository.GetQueryable().AsNoTracking()
+            .Where(r => r.BlobDeletedAt == null)
             .OrderBy(r => r.Id)
             .Select(r => new { r.ReceiptNumber, r.BlobName })
             .ToListAsync(cancellationToken);
@@ -349,6 +350,7 @@ public sealed class CompanyArchiveService(
         o.PaymentStatus,
         o.CashCollectedAt,
         o.CollectedByEmployeeId,
+        o.CashCollectedAmount,
         o.TotalPrice,
         o.NetAmount,
         o.VatAmount,
@@ -395,7 +397,7 @@ public sealed class CompanyArchiveService(
         r.Source, r.Status, r.ConfirmedOn, r.CreatedOn);
 
     private static CompanyArchiveRecords.Dispute ToRow(Domain.Disputes.Dispute d) => new(
-        d.Id, d.OrderId, d.Reason, d.Status, d.RefundAmount, d.ResolvedBy, d.ResolvedOn, d.StripeDisputeId, d.TextRetainedUntil,
+        d.Id, d.OrderId, d.Reason, d.Status, d.RefundAmount, d.CardRefundedAmount, d.CreditReturnedAmount, d.ResolvedBy, d.ResolvedOn, d.StripeDisputeId, d.TextRetainedUntil,
         d.Lines.Select(l => new CompanyArchiveRecords.DisputeLine(l.Id, l.ServiceId, l.PackageId)).ToList(),
         d.CreatedOn);
 

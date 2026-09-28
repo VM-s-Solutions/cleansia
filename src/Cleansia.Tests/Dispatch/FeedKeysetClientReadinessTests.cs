@@ -57,6 +57,37 @@ public class FeedKeysetClientReadinessTests
     }
 
     /// <summary>
+    /// The two no-show outcomes the sweep and the administrator's confirmation announce (refund pending,
+    /// nothing charged) ship backend-first: until both iOS catalogs and the Android templates carry
+    /// <c>push.order.no_cleaner_refund_pending|nothing_charged.title|body</c>, they are data-only pushes
+    /// and no inbox row. The wave that ships the copy registers them in the display map with
+    /// <c>OrderNumberAndAmountArgs</c>, adds them to the customer keyset, and deletes this test.
+    /// </summary>
+    [Theory]
+    [InlineData(NotificationEventCatalog.OrderNoCleanerRefundPending)]
+    [InlineData(NotificationEventCatalog.OrderNoCleanerNothingCharged)]
+    public void The_No_Show_Outcome_Events_Wait_For_Their_Client_Copy(string eventKey)
+    {
+        Assert.DoesNotContain(eventKey, FcmMessageFactory.ApnsDisplayMap.Keys);
+        Assert.False(NotificationFeedEventKeys.IsFeedEvent(eventKey));
+        Assert.Equal(NotificationCategory.OrderCancelled, NotificationEventCatalog.GetCategoryFor(eventKey));
+    }
+
+    /// <summary>
+    /// The failed Plus renewal ships backend-first on the same terms: a data-only push and no inbox row
+    /// until both iOS catalogs and the Android templates carry <c>push.membership.payment_failed.title|body</c>.
+    /// The wave that ships the copy registers it in the display map with no args, adds it to the customer
+    /// keyset, and deletes this test. It stays non-mutable either way.
+    /// </summary>
+    [Fact]
+    public void The_Failed_Plus_Renewal_Waits_For_Its_Client_Copy()
+    {
+        Assert.DoesNotContain(NotificationEventCatalog.MembershipPaymentFailed, FcmMessageFactory.ApnsDisplayMap.Keys);
+        Assert.False(NotificationFeedEventKeys.IsFeedEvent(NotificationEventCatalog.MembershipPaymentFailed));
+        Assert.Null(NotificationEventCatalog.GetCategoryFor(NotificationEventCatalog.MembershipPaymentFailed));
+    }
+
+    /// <summary>
     /// The pre-cleaning reminder is held out of both lists for the same reason and on the same terms:
     /// the backend wave that makes the booking screen's "we'll remind you 1 hour before" true ships
     /// without client copy, so the push is data-only on iOS and the inbox stays empty rather than

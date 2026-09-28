@@ -183,7 +183,8 @@ public class QuoteOrderSpanCapTests
             OrderMarketDoubles.Servicing("cz"),
             OrderMarketDoubles.Trading(Czk),
             CataloguePriceDoubles.Services(Czk, (ServiceId, 500m, 100m)),
-            CataloguePriceDoubles.Packages(Czk, (PackageId, 1000m)));
+            CataloguePriceDoubles.Packages(Czk, (PackageId, 1000m)),
+            Mock.Of<ICountryConfigurationRepository>());
 
     private CreateOrder.Validator CreateValidator() =>
         new(
@@ -203,7 +204,9 @@ public class QuoteOrderSpanCapTests
             Cleansia.Tests.Features.Orders.OrderMarketDoubles.OperatedBy("cleansia-cz"),
             Cleansia.Tests.Features.Orders.OrderMarketDoubles.TenantAt("cleansia-cz"),
             Mock.Of<IUserConsentRepository>(),
-            CreateOrderTestData.Speaking(Constants.Language.English));
+            CreateOrderTestData.Speaking(Constants.Language.English),
+            Mock.Of<ICountryConfigurationRepository>(),
+            Mock.Of<ILegalDocumentResolver>());
 
     private static QuoteOrder.Command QuoteCommand() =>
         new([ServiceId], [PackageId], Rooms: 2, Bathrooms: 1, CurrencyId: CreateOrderTestData.CurrencyId);

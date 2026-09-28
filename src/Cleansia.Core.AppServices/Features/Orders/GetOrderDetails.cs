@@ -155,6 +155,12 @@ public class GetOrderDetails
                 return BusinessResult.Success(detail.RedactForBrowsingCleaner());
             }
 
+            if (isAssignedToCurrentUser
+                && !Order.CustomerDetailsOpenToCrew(order.CurrentStatus, order.CompletedAt, DateTime.UtcNow))
+            {
+                return BusinessResult.Success(detail.RedactForPastJob(callerEmployeeId!));
+            }
+
             // First read only: the partner app fetches this detail again on every resume and refresh.
             if (isAssignedToCurrentUser && !string.IsNullOrWhiteSpace(detail.AccessInstructions))
             {
@@ -171,9 +177,22 @@ public class GetOrderDetails
                 {
                     CancellationFeeRate = order.CancellationFeeRate,
                     CancellationFeeOwed = CancellationAssessor.FeeOwed(order),
+                    CashCollectedAt = order.CashCollectedAt,
+                    CashCollectedByName = await ResolveCashCollectorNameAsync(order, cancellationToken),
+                    CashCollectedAmount = order.CashCollectedAmount,
                 }).WithholdAccessInstructions()
                 : detail);
         }
+
+        private async Task<string?> ResolveCashCollectorNameAsync(Order order, CancellationToken cancellationToken) =>
+            string.IsNullOrEmpty(order.CollectedByEmployeeId)
+                ? null
+                : await employeeRepository.GetQueryableIgnoringTenant()
+                    .AsNoTracking()
+                    // The collector's id comes from the administrator's authorized order.
+                    .Where(e => e.Id == order.CollectedByEmployeeId && e.User != null)
+                    .Select(e => (e.User!.FirstName + " " + e.User.LastName).Trim())
+                    .FirstOrDefaultAsync(cancellationToken);
 
         // The authorized order pins this cross-company lookup; only the company name is returned.
         private async Task<string?> ResolveCustomerCompanyAsync(Order order, CancellationToken cancellationToken)

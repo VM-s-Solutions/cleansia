@@ -1877,7 +1877,8 @@
     "order": {
       "cleaning_date": {
         "future": "Datum úklidu musí být v budoucnosti.",
-        "below_lead_time": "Vyberte datum s dostatečným předstihem pro naplánování úklidu."
+        "below_lead_time": "Vyberte datum s dostatečným předstihem pro naplánování úklidu.",
+        "outside_booking_window": "Vyberte začátek mezi 8:00 a 19:45 místního času, po čtvrthodinách, nejvýše 60 dní dopředu."
       },
       "already_cancelled": "Tato objednávka už byla zrušena.",
       "already_completed": "Tato objednávka už byla dokončena.",
@@ -1925,7 +1926,11 @@
         "membership_required": "Výběr oblíbeného uklízeče je výhoda Cleansia Plus.",
         "not_eligible": "Vybrat můžete pouze uklízeče, který u vás už dokončil úklid."
       },
-      "preferred_offer_closed": "Tuto zakázku už nelze nabídnout konkrétnímu uklízeči."
+      "preferred_offer_closed": "Tuto zakázku už nelze nabídnout konkrétnímu uklízeči.",
+      "start_passed_cannot_cancel": "Čas začátku už uplynul a uklízeč je přidělen, takže rezervaci už nelze zrušit. Pokud uklízeč nedorazil, dejte nám vědět.",
+      "cleaner_already_started": "Uklízeč už s úklidem začal.",
+      "start_time_not_reached": "Objednaný čas začátku ještě nenastal.",
+      "recurring_already_confirmed": "Tento úklid už máte potvrzený. Uklízeči zaplatíte v hotovosti v den úklidu."
     },
     "address": {
       "already_exists": "Tuto adresu už máte uloženou.",
@@ -1978,7 +1983,8 @@
       "consent_not_found": "Toto nastavení souhlasu jsme nenašli.",
       "consent_already_granted": "Tento souhlas jste už udělili.",
       "deletion_blocked_by_assigned_order": "Váš účet nelze smazat, dokud jste přiřazeni k zakázce.",
-      "deletion_blocked_by_unsettled_pay": "Váš účet nelze smazat, dokud vám dlužíme odměnu. Nejprve to vyřešte s kanceláří."
+      "deletion_blocked_by_unsettled_pay": "Váš účet nelze smazat, dokud vám dlužíme odměnu. Nejprve to vyřešte s kanceláří.",
+      "consent_not_editable": "Tento souhlas zde nelze změnit."
     },
     "promo": {
       "already_sent": "Na tuto e-mailovou adresu už byl promo kód odeslán. Zkontrolujte doručenou poštu i složku se spamem.",

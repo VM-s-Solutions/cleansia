@@ -51,6 +51,9 @@ public class Order : TenantAuditable
 
     public string? CollectedByEmployeeId { get; private set; }
 
+    /// <summary>The cash handed over, in the order's currency. Null until the cash is recorded.</summary>
+    public decimal? CashCollectedAmount { get; private set; }
+
     [NotMapped]
     public bool SettledInCash => CashCollectedAt is not null;
 
@@ -99,6 +102,21 @@ public class Order : TenantAuditable
     /// `CancelledAt` pattern.
     /// </summary>
     public DateTime? CompletedAt { get; private set; }
+
+    /// <summary>
+    /// How long after completion the crew still reads the customer's name, phone, address and door
+    /// instructions — for the forgotten key or the call back (owner ruling 2026-09-28). A cancelled
+    /// order closes them at once.
+    /// </summary>
+    public static readonly TimeSpan CrewCustomerDetailsAfterCompletion = TimeSpan.FromHours(24);
+
+    /// <summary>Whether an assigned cleaner may still read the customer's details; a completion with no timestamp is closed.</summary>
+    public static bool CustomerDetailsOpenToCrew(OrderStatus status, DateTime? completedAt, DateTime nowUtc) => status switch
+    {
+        OrderStatus.Cancelled => false,
+        OrderStatus.Completed => completedAt is { } at && nowUtc < at + CrewCustomerDetailsAfterCompletion,
+        _ => true
+    };
 
     [MaxLength(1000)]
     public string? CompletionNotes { get; private set; }
@@ -429,6 +447,25 @@ public class Order : TenantAuditable
     public DateTime? RecurringReminderSentAt { get; private set; }
 
     /// <summary>
+    /// When the customer confirmed this recurring occurrence. It is the whole confirmation for a cash
+    /// occurrence, which stays <see cref="PaymentStatus.Pending"/> until the cleaner records the cash; a
+    /// card occurrence is confirmed only once its payment settles.
+    /// → /flows/booking-and-pricing#recurring-bookings
+    /// </summary>
+    public DateTime? CustomerConfirmedAt { get; private set; }
+
+    /// <summary>
+    /// A recurring occurrence the customer still has to confirm: open, unpaid, and — for cash, where no
+    /// payment follows the confirmation — not yet confirmed.
+    /// </summary>
+    [NotMapped]
+    public bool AwaitsCustomerConfirmation =>
+        RecurringTemplateId is not null
+        && CurrentStatus is not (OrderStatus.Cancelled or OrderStatus.Completed)
+        && PaymentStatus == PaymentStatus.Pending
+        && (PaymentType != PaymentType.Cash || CustomerConfirmedAt is null);
+
+    /// <summary>
     /// Timestamp when the "your cleaning starts in about an hour" push was dispatched for this one-off
     /// order. Null until the pre-cleaning sweep fires; never cleared. Disjoint from
     /// <see cref="RecurringReminderSentAt"/> in both population and meaning — that one is the 24h-ahead
@@ -577,6 +614,13 @@ public class Order : TenantAuditable
         return this;
     }
 
+    /// <summary>First stamp wins, so a card customer retrying a failed payment keeps the original confirmation.</summary>
+    public Order ConfirmByCustomer(DateTime confirmedAtUtc)
+    {
+        CustomerConfirmedAt ??= confirmedAtUtc;
+        return this;
+    }
+
     /// <summary>
     /// Stamp the instant the pre-cleaning reminder was dispatched. First stamp wins, so a re-entrant
     /// sweep cannot move it forward and re-open the order to a second reminder.
@@ -711,11 +755,15 @@ public class Order : TenantAuditable
     // Stripe-charged card order reaches) and stamps the audit trail. Idempotency and the InProgress gate
     // are enforced in MarkCashCollected.Validator, and the Stripe reconciliation that keeps a card order
     // from being charged twice is in its handler, so this stays a pure happy-path mutator.
-    public Order MarkCashCollected(string employeeId)
+    //
+    // Without an amount the cleaner confirmed the amount due, which the server stamps; an administrator
+    // recording the handover on the cleaner's behalf states both the amount and the moment.
+    public Order MarkCashCollected(string employeeId, DateTime? collectedAtUtc = null, decimal? amount = null)
     {
         PaymentStatus = PaymentStatus.Paid;
-        CashCollectedAt = DateTime.UtcNow;
+        CashCollectedAt = collectedAtUtc ?? DateTime.UtcNow;
         CollectedByEmployeeId = employeeId;
+        CashCollectedAmount = amount ?? TotalPrice - CreditAppliedAmount;
 
         return this;
     }

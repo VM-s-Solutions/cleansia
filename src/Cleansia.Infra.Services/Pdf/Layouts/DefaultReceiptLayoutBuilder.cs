@@ -187,8 +187,6 @@ public class DefaultReceiptLayoutBuilder : IReceiptLayoutBuilder
                         .FontColor(CleansiaPdfTheme.TextPrimary);
                     col.Item().PaddingTop(6);
                     col.Item().Element(c => c.LabeledField(labels.Name, data.CustomerName));
-                    col.Item().Element(c => c.LabeledField(labels.Email, data.CustomerEmail));
-                    col.Item().Element(c => c.LabeledField(labels.Phone, data.CustomerPhone));
                     col.Item().Element(c => c.LabeledField(labels.Address, data.CustomerAddress));
                 });
             },
@@ -208,66 +206,61 @@ public class DefaultReceiptLayoutBuilder : IReceiptLayoutBuilder
             });
     }
 
-    protected virtual void BuildOrderDetails(IContainer container, ReceiptPdfData data)
+    /// <summary>
+    /// The order-details strip as label/value pairs, so what it states can be asserted without rendering.
+    /// The completion time sits beside the booked slot on a receipt issued after the clean.
+    /// </summary>
+    protected virtual IReadOnlyList<(string Label, string Value)> OrderDetailLines(ReceiptPdfData data)
     {
         var labels = LabelsFor(data);
+        var lines = new List<(string Label, string Value)>();
+
+        if (data.CleaningDate != null)
+        {
+            lines.Add((labels.CleaningDate, data.CleaningDate));
+        }
+
+        if (data.CompletedAt != null)
+        {
+            lines.Add((labels.CompletedAt, data.CompletedAt));
+        }
+
+        if (data.Rooms.HasValue)
+        {
+            lines.Add((labels.Rooms, data.Rooms.Value.ToString()));
+        }
+
+        if (data.Bathrooms.HasValue)
+        {
+            lines.Add((labels.Bathrooms, data.Bathrooms.Value.ToString()));
+        }
+
+        if (data.EstimatedTime.HasValue)
+        {
+            lines.Add((labels.EstimatedDuration, Duration(data.EstimatedTime.Value, labels)));
+        }
+
+        return lines;
+    }
+
+    protected virtual void BuildOrderDetails(IContainer container, ReceiptPdfData data)
+    {
+        var lines = OrderDetailLines(data);
 
         container.PaddingTop(10)
             .Background(CleansiaPdfTheme.LightBlue)
             .Padding(14)
             .Row(row =>
             {
-                if (data.CleaningDate != null)
+                foreach (var (label, value) in lines)
                 {
                     row.RelativeItem().Column(col =>
                     {
-                        col.Item().Text(labels.CleaningDate)
+                        col.Item().Text(label)
                             .FontSize(CleansiaPdfTheme.FontSizeLabel)
                             .FontColor(CleansiaPdfTheme.TextSecondary)
                             .Bold();
-                        col.Item().Text(data.CleaningDate)
-                            .FontSize(CleansiaPdfTheme.FontSizeBody)
-                            .FontColor(CleansiaPdfTheme.TextPrimary);
-                    });
-                }
-
-                if (data.Rooms.HasValue)
-                {
-                    row.RelativeItem().Column(col =>
-                    {
-                        col.Item().Text(labels.Rooms)
-                            .FontSize(CleansiaPdfTheme.FontSizeLabel)
-                            .FontColor(CleansiaPdfTheme.TextSecondary)
-                            .Bold();
-                        col.Item().Text(data.Rooms.Value.ToString())
-                            .FontSize(CleansiaPdfTheme.FontSizeBody)
-                            .FontColor(CleansiaPdfTheme.TextPrimary);
-                    });
-                }
-
-                if (data.Bathrooms.HasValue)
-                {
-                    row.RelativeItem().Column(col =>
-                    {
-                        col.Item().Text(labels.Bathrooms)
-                            .FontSize(CleansiaPdfTheme.FontSizeLabel)
-                            .FontColor(CleansiaPdfTheme.TextSecondary)
-                            .Bold();
-                        col.Item().Text(data.Bathrooms.Value.ToString())
-                            .FontSize(CleansiaPdfTheme.FontSizeBody)
-                            .FontColor(CleansiaPdfTheme.TextPrimary);
-                    });
-                }
-
-                if (data.EstimatedTime.HasValue)
-                {
-                    row.RelativeItem().Column(col =>
-                    {
-                        col.Item().Text(labels.EstimatedDuration)
-                            .FontSize(CleansiaPdfTheme.FontSizeLabel)
-                            .FontColor(CleansiaPdfTheme.TextSecondary)
-                            .Bold();
-                        col.Item().Text(Duration(data.EstimatedTime.Value, labels))
+                        col.Item().Text(value)
                             .FontSize(CleansiaPdfTheme.FontSizeBody)
                             .FontColor(CleansiaPdfTheme.TextPrimary);
                     });
@@ -453,17 +446,24 @@ public class DefaultReceiptLayoutBuilder : IReceiptLayoutBuilder
 
     /// <summary>
     /// How the sale stands, as label/value pairs, each value the document language's word for the
-    /// payment status and the tender actually taken — never the enum's own name.
+    /// payment status and the tender actually taken — never the enum's own name — and, on a cash sale,
+    /// when the cash was handed over.
     /// </summary>
     protected virtual IReadOnlyList<(string Label, string Value)> PaymentLines(ReceiptPdfData data)
     {
         var labels = LabelsFor(data);
-
-        return
-        [
+        var lines = new List<(string Label, string Value)>
+        {
             (labels.PaymentStatus, labels.PaymentStatuses[data.PaymentStatus]),
             (labels.PaymentMethod, labels.PaymentTypes[data.PaymentType]),
-        ];
+        };
+
+        if (data.CashReceivedAt != null)
+        {
+            lines.Add((labels.CashReceivedAt, data.CashReceivedAt));
+        }
+
+        return lines;
     }
 
     protected virtual void BuildPaymentInfo(IContainer container, ReceiptPdfData data)

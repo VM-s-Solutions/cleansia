@@ -275,14 +275,18 @@ public class PreferredCleanerCurrencyGateTests
             Cleansia.Tests.Features.Orders.OrderMarketDoubles.OperatedBy("cleansia-cz"),
             Cleansia.Tests.Features.Orders.OrderMarketDoubles.TenantAt("cleansia-cz"),
             Mock.Of<IUserConsentRepository>(),
-            CreateOrderTestData.Speaking(Constants.Language.English));
+            CreateOrderTestData.Speaking(Constants.Language.English),
+            Mock.Of<ICountryConfigurationRepository>(),
+            Mock.Of<ILegalDocumentResolver>());
 
     private ChoosePreferredCleaner.Validator ChooseValidator() =>
         new(_session.Object, _membershipRepository.Object, _orderRepository.Object, _markets);
 
     private CreateRecurringBooking.Validator CreateRecurringValidator() =>
         new(_orderRepository.Object, _session.Object, _savedAddressRepository.Object, _markets, OrderMarketDoubles.Servicing(Czechia),
-            Bookings.CatalogueDoubles.Services(), Bookings.CatalogueDoubles.Packages());
+            Bookings.CatalogueDoubles.Services(), Bookings.CatalogueDoubles.Packages(),
+            Cleansia.Tests.Features.Legal.CustomerConsentDoubles.Consented(),
+            Mock.Of<Cleansia.Core.AppServices.Services.Interfaces.ILegalDocumentResolver>());
 
     private UpdateRecurringBooking.Validator UpdateRecurringValidator() =>
         new(

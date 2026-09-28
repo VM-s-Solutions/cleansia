@@ -1053,9 +1053,14 @@
     <string name="error_order_address_exactly_one_required">Vyberte prosím uloženú adresu alebo zadajte novú.</string>
     <string name="error_order_cleaning_date_future">Dátum musí byť v budúcnosti.</string>
     <string name="error_order_cleaning_date_below_lead_time">Tento čas je príliš blízko. Zvoľte neskorší termín.</string>
+    <string name="error_order_cleaning_date_outside_booking_window">Vyberte začiatok medzi 8:00 a 19:45 miestneho času, po štvrťhodinách, najviac 60 dní dopredu.</string>
     <string name="error_order_already_cancelled">Táto rezervácia je už zrušená.</string>
     <string name="error_order_already_completed">Táto rezervácia je už dokončená.</string>
     <string name="error_order_in_progress_cannot_cancel">Rezervácia prebieha a nie je možné ju zrušiť.</string>
+    <string name="error_order_start_passed_cannot_cancel">Čas začiatku už uplynul a upratovač je pridelený, takže rezerváciu už nemožno zrušiť. Ak upratovač neprišiel, dajte nám vedieť.</string>
+    <string name="error_order_cleaner_already_started">Upratovač už s upratovaním začal.</string>
+    <string name="error_order_start_time_not_reached">Objednaný čas začiatku ešte nenastal.</string>
+    <string name="error_order_invalid_status_transition">Táto akcia nie je pre aktuálny stav objednávky povolená.</string>
     <string name="error_order_cancellation_window_closed">Lehota na zrušenie už uplynula.</string>
     <string name="error_order_empty">Objednávka je prázdna. Pridajte prosím aspoň jednu službu.</string>
     <string name="error_order_size_exceeds_maximum">Jedna objednávka môže zahŕňať najviac 8 izieb a 4 kúpeľne.</string>
@@ -1069,6 +1074,7 @@
     <string name="error_order_total_price_not_match">Cena sa zmenila. Obnovte prosím a skúste znova.</string>
     <string name="error_order_payment_gateway_unavailable">Platobná služba je dočasne nedostupná.</string>
     <string name="error_order_payment_already_paid">Táto objednávka už bola zaplatená.</string>
+    <string name="error_order_recurring_already_confirmed">Toto upratovanie už máte potvrdené. Upratovačovi zaplatíte v hotovosti v deň upratovania.</string>
     <string name="error_order_creation_failed">Nie je možné vytvoriť rezerváciu. Skúste to znova.</string>
     <string name="error_order_cash_not_available">Platba v hotovosti je možná len po prihlásení a pri objednávke, ktorú zvládne jeden upratovač.</string>
     <string name="error_order_review_already_exists">Túto rezerváciu ste už hodnotili.</string>
@@ -1303,6 +1309,7 @@
     <string name="error_file_required">Súbor je povinný</string>
     <string name="error_gdpr_consent_already_granted">Tento súhlas už bol udelený.</string>
     <string name="error_gdpr_consent_not_found">Súhlas nebol nájdený.</string>
+    <string name="error_gdpr_consent_not_editable">Tento súhlas tu nemožno zmeniť.</string>
     <string name="error_gdpr_deletion_blocked_by_invoice">Účet zatiaľ nie je možné vymazať — existuje nevybavená faktúra.</string>
     <string name="error_gdpr_deletion_blocked_by_order">Účet zatiaľ nie je možné vymazať — existuje aktívna objednávka.</string>
     <string name="error_general_not_found">Zdroj nebol nájdený</string>

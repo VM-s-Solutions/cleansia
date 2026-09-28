@@ -1072,9 +1072,14 @@
     <string name="error_order_address_exactly_one_required">Please select a saved address or enter a new one.</string>
     <string name="error_order_cleaning_date_future">Date must be in the future.</string>
     <string name="error_order_cleaning_date_below_lead_time">This time is too close. Please choose a later slot.</string>
+    <string name="error_order_cleaning_date_outside_booking_window">Pick a start between 08:00 and 19:45 local time, on the quarter-hour, no more than 60 days ahead.</string>
     <string name="error_order_already_cancelled">This booking is already cancelled.</string>
     <string name="error_order_already_completed">This booking is already completed.</string>
     <string name="error_order_in_progress_cannot_cancel">This booking is in progress and can\'t be cancelled.</string>
+    <string name="error_order_start_passed_cannot_cancel">The start time has passed and a cleaner is booked, so this booking can no longer be cancelled. If the cleaner did not arrive, let us know.</string>
+    <string name="error_order_cleaner_already_started">The cleaner has already started this cleaning.</string>
+    <string name="error_order_start_time_not_reached">The booked start time has not come yet.</string>
+    <string name="error_order_invalid_status_transition">That action isn\'t allowed for the order\'s current status.</string>
     <string name="error_order_cancellation_window_closed">The cancellation window has closed.</string>
     <string name="error_order_empty">Your order is empty. Please add at least one service.</string>
     <string name="error_order_size_exceeds_maximum">A booking can include up to 8 rooms and 4 bathrooms.</string>
@@ -1088,6 +1093,7 @@
     <string name="error_order_total_price_not_match">Price changed. Please refresh and try again.</string>
     <string name="error_order_payment_gateway_unavailable">Payment service is temporarily unavailable.</string>
     <string name="error_order_payment_already_paid">This order has already been paid.</string>
+    <string name="error_order_recurring_already_confirmed">You\'ve already confirmed this cleaning. Pay the cleaner in cash on the day.</string>
     <string name="error_order_creation_failed">Couldn\'t create booking. Please try again.</string>
     <string name="error_order_cash_not_available">Cash is only available when you\'re signed in and the booking needs a single cleaner.</string>
     <string name="error_order_review_already_exists">You\'ve already reviewed this booking.</string>
@@ -1330,6 +1336,7 @@
     <string name="error_file_required">File is required</string>
     <string name="error_gdpr_consent_already_granted">This consent has already been granted.</string>
     <string name="error_gdpr_consent_not_found">Consent not found.</string>
+    <string name="error_gdpr_consent_not_editable">This consent can\'t be changed here.</string>
     <string name="error_gdpr_deletion_blocked_by_invoice">Your account can\'t be deleted yet — there is an open invoice.</string>
     <string name="error_gdpr_deletion_blocked_by_order">Your account can\'t be deleted yet — there is an active order.</string>
     <string name="error_general_not_found">Resource not found</string>

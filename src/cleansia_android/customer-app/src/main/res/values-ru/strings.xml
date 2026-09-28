@@ -1053,9 +1053,14 @@
     <string name="error_order_address_exactly_one_required">Пожалуйста, выберите сохранённый адрес или введите новый.</string>
     <string name="error_order_cleaning_date_future">Дата должна быть в будущем.</string>
     <string name="error_order_cleaning_date_below_lead_time">Это время слишком близко. Выберите более поздний слот.</string>
+    <string name="error_order_cleaning_date_outside_booking_window">Выберите начало между 08:00 и 19:45 по местному времени, кратно четверти часа, не более чем на 60 дней вперёд.</string>
     <string name="error_order_already_cancelled">Это бронирование уже отменено.</string>
     <string name="error_order_already_completed">Это бронирование уже завершено.</string>
     <string name="error_order_in_progress_cannot_cancel">Это бронирование выполняется и не может быть отменено.</string>
+    <string name="error_order_start_passed_cannot_cancel">Время начала уже прошло, и уборщик назначен, поэтому это бронирование больше нельзя отменить. Если уборщик не пришёл, сообщите нам.</string>
+    <string name="error_order_cleaner_already_started">Уборщик уже начал уборку.</string>
+    <string name="error_order_start_time_not_reached">Заказанное время начала ещё не наступило.</string>
+    <string name="error_order_invalid_status_transition">Это действие недоступно для текущего статуса заказа.</string>
     <string name="error_order_cancellation_window_closed">Период отмены уже закрыт.</string>
     <string name="error_order_empty">Ваш заказ пуст. Пожалуйста, добавьте хотя бы одну услугу.</string>
     <string name="error_order_size_exceeds_maximum">В одном заказе может быть не более 8 комнат и 4 ванных комнат.</string>
@@ -1069,6 +1074,7 @@
     <string name="error_order_total_price_not_match">Цена изменилась. Обновите и попробуйте снова.</string>
     <string name="error_order_payment_gateway_unavailable">Платёжный сервис временно недоступен.</string>
     <string name="error_order_payment_already_paid">Этот заказ уже оплачен.</string>
+    <string name="error_order_recurring_already_confirmed">Вы уже подтвердили эту уборку. Оплатите уборщику наличными в день уборки.</string>
     <string name="error_order_creation_failed">Не удалось создать бронирование. Попробуйте снова.</string>
     <string name="error_order_cash_not_available">Оплата наличными доступна только после входа в аккаунт и для заказа, с которым справится один уборщик.</string>
     <string name="error_order_review_already_exists">Вы уже оставили отзыв об этом бронировании.</string>
@@ -1303,6 +1309,7 @@
     <string name="error_file_required">Файл обязателен</string>
     <string name="error_gdpr_consent_already_granted">Это согласие уже предоставлено.</string>
     <string name="error_gdpr_consent_not_found">Согласие не найдено.</string>
+    <string name="error_gdpr_consent_not_editable">Это согласие здесь изменить нельзя.</string>
     <string name="error_gdpr_deletion_blocked_by_invoice">Аккаунт пока нельзя удалить — есть незакрытый счёт.</string>
     <string name="error_gdpr_deletion_blocked_by_order">Аккаунт пока нельзя удалить — есть активный заказ.</string>
     <string name="error_general_not_found">Ресурс не найден</string>

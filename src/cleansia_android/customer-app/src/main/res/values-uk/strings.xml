@@ -1053,9 +1053,14 @@
     <string name="error_order_address_exactly_one_required">Будь ласка, виберіть збережену адресу або введіть нову.</string>
     <string name="error_order_cleaning_date_future">Дата має бути в майбутньому.</string>
     <string name="error_order_cleaning_date_below_lead_time">Цей час занадто близький. Виберіть пізніший слот.</string>
+    <string name="error_order_cleaning_date_outside_booking_window">Оберіть початок між 08:00 і 19:45 за місцевим часом, кратно чверті години, не більше ніж на 60 днів наперед.</string>
     <string name="error_order_already_cancelled">Це бронювання вже скасоване.</string>
     <string name="error_order_already_completed">Це бронювання вже завершене.</string>
     <string name="error_order_in_progress_cannot_cancel">Це бронювання виконується і не може бути скасоване.</string>
+    <string name="error_order_start_passed_cannot_cancel">Час початку вже минув, і прибиральника призначено, тому це бронювання більше не можна скасувати. Якщо прибиральник не прийшов, повідомте нам.</string>
+    <string name="error_order_cleaner_already_started">Прибиральник уже розпочав прибирання.</string>
+    <string name="error_order_start_time_not_reached">Замовлений час початку ще не настав.</string>
+    <string name="error_order_invalid_status_transition">Ця дія недоступна для поточного статусу замовлення.</string>
     <string name="error_order_cancellation_window_closed">Період скасування вже закінчився.</string>
     <string name="error_order_empty">Ваше замовлення порожнє. Будь ласка, додайте принаймні одну послугу.</string>
     <string name="error_order_size_exceeds_maximum">В одному замовленні може бути не більше 8 кімнат і 4 ванних кімнат.</string>
@@ -1069,6 +1074,7 @@
     <string name="error_order_total_price_not_match">Ціна змінилася. Оновіть і спробуйте знову.</string>
     <string name="error_order_payment_gateway_unavailable">Платіжна служба тимчасово недоступна.</string>
     <string name="error_order_payment_already_paid">Це замовлення вже оплачено.</string>
+    <string name="error_order_recurring_already_confirmed">Ви вже підтвердили це прибирання. Сплатіть прибиральнику готівкою в день прибирання.</string>
     <string name="error_order_creation_failed">Не вдалося створити бронювання. Спробуйте знову.</string>
     <string name="error_order_cash_not_available">Оплата готівкою можлива лише після входу в акаунт і для замовлення, з яким впорається один прибиральник.</string>
     <string name="error_order_review_already_exists">Ви вже залишили відгук про це бронювання.</string>
@@ -1303,6 +1309,7 @@
     <string name="error_file_required">Файл є обов\'язковим</string>
     <string name="error_gdpr_consent_already_granted">Цю згоду вже надано.</string>
     <string name="error_gdpr_consent_not_found">Згоду не знайдено.</string>
+    <string name="error_gdpr_consent_not_editable">Цю згоду тут змінити не можна.</string>
     <string name="error_gdpr_deletion_blocked_by_invoice">Обліковий запис поки не можна видалити — є незакритий рахунок.</string>
     <string name="error_gdpr_deletion_blocked_by_order">Обліковий запис поки не можна видалити — є активне замовлення.</string>
     <string name="error_general_not_found">Ресурс не знайдено</string>

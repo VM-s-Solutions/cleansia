@@ -1056,9 +1056,14 @@
     <string name="error_order_address_exactly_one_required">Vyberte prosím uloženou adresu nebo zadejte novou.</string>
     <string name="error_order_cleaning_date_future">Datum musí být v budoucnosti.</string>
     <string name="error_order_cleaning_date_below_lead_time">Tento čas je příliš blízko. Zvolte pozdější termín.</string>
+    <string name="error_order_cleaning_date_outside_booking_window">Vyberte začátek mezi 8:00 a 19:45 místního času, po čtvrthodinách, nejvýše 60 dní dopředu.</string>
     <string name="error_order_already_cancelled">Tato rezervace je již zrušena.</string>
     <string name="error_order_already_completed">Tato rezervace je již dokončena.</string>
     <string name="error_order_in_progress_cannot_cancel">Rezervace probíhá a nelze ji zrušit.</string>
+    <string name="error_order_start_passed_cannot_cancel">Čas začátku už uplynul a uklízeč je přidělen, takže rezervaci už nelze zrušit. Pokud uklízeč nedorazil, dejte nám vědět.</string>
+    <string name="error_order_cleaner_already_started">Uklízeč už s úklidem začal.</string>
+    <string name="error_order_start_time_not_reached">Objednaný čas začátku ještě nenastal.</string>
+    <string name="error_order_invalid_status_transition">Tato akce není pro aktuální stav objednávky povolena.</string>
     <string name="error_order_cancellation_window_closed">Lhůta pro zrušení již uplynula.</string>
     <string name="error_order_empty">Objednávka je prázdná. Přidejte prosím alespoň jednu službu.</string>
     <string name="error_order_size_exceeds_maximum">Jedna objednávka může zahrnovat nejvýše 8 pokojů a 4 koupelny.</string>
@@ -1072,6 +1077,7 @@
     <string name="error_order_total_price_not_match">Cena se změnila. Obnovte prosím a zkuste znovu.</string>
     <string name="error_order_payment_gateway_unavailable">Platební služba je dočasně nedostupná.</string>
     <string name="error_order_payment_already_paid">Tato objednávka už byla zaplacena.</string>
+    <string name="error_order_recurring_already_confirmed">Tento úklid už máte potvrzený. Uklízeči zaplatíte v hotovosti v den úklidu.</string>
     <string name="error_order_creation_failed">Nelze vytvořit rezervaci. Zkuste to znovu.</string>
     <string name="error_order_cash_not_available">Platba hotově je možná jen po přihlášení a u objednávky, kterou zvládne jeden uklízeč.</string>
     <string name="error_order_review_already_exists">Tuto rezervaci jste již hodnotili.</string>
@@ -1306,6 +1312,7 @@
     <string name="error_file_required">Soubor je povinný</string>
     <string name="error_gdpr_consent_already_granted">Tento souhlas již byl udělen.</string>
     <string name="error_gdpr_consent_not_found">Souhlas nenalezen.</string>
+    <string name="error_gdpr_consent_not_editable">Tento souhlas zde nelze změnit.</string>
     <string name="error_gdpr_deletion_blocked_by_invoice">Účet zatím nelze smazat — existuje nevyřízená faktura.</string>
     <string name="error_gdpr_deletion_blocked_by_order">Účet zatím nelze smazat — existuje aktivní objednávka.</string>
     <string name="error_general_not_found">Zdroj nenalezen</string>

@@ -133,6 +133,48 @@ class BackendKeyStringsTest {
         "order.cash_not_available",
     )
 
+    /**
+     * A start off the quarter-hour, outside 08:00–19:45 in the market's clock, or more than 60 days
+     * ahead: refused by `QuoteOrder`, `CreateOrder`, `CreateRecurringBooking` and `UpdateRecurringBooking`.
+     */
+    private val bookingWindowKeys = listOf(
+        "order.cleaning_date.outside_booking_window",
+    )
+
+    /**
+     * Past the start with a cleaner assigned, the cancel and both previews refuse; the guest
+     * `ReportGuestNoShow` refuses before the start, once the job runs, and on a closed order.
+     */
+    private val cleanerNoShowKeys = listOf(
+        "order.start_passed_cannot_cancel",
+        "order.cleaner_already_started",
+        "order.start_time_not_reached",
+        "order.already_cancelled",
+        "order.already_completed",
+    )
+
+    /** Every refusal `ConfirmRecurringOrder` can answer. */
+    private val confirmRecurringKeys = listOf(
+        "common.required",
+        "common.invalid_enum_value",
+        "order.not_found",
+        "order.already_cancelled",
+        "order.payment_already_paid",
+        "order.recurring_already_confirmed",
+        "order.cleaning_date.below_lead_time",
+        "order.cash_not_available",
+        "order.payment_gateway_unavailable",
+        "order.invalid_status_transition",
+        "user.not_found",
+    )
+
+    /** Every refusal `GrantConsent` and `WithdrawConsent` can answer beyond the common validators. */
+    private val consentKeys = listOf(
+        "gdpr.consent_not_editable",
+        "gdpr.consent_already_granted",
+        "gdpr.consent_not_found",
+    )
+
     private val resDir: File = sequenceOf(
         File("src/main/res"),
         File("customer-app/src/main/res"),
@@ -200,6 +242,26 @@ class BackendKeyStringsTest {
     @Test
     fun `the cash refusal a booking or schedule can answer resolves to a sentence in all five locales`() {
         assertAllResolve(cashEligibilityKeys)
+    }
+
+    @Test
+    fun `the booking-window refusal a booking or schedule can answer resolves to a sentence in all five locales`() {
+        assertAllResolve(bookingWindowKeys)
+    }
+
+    @Test
+    fun `every post-start cancel and no-show refusal resolves to a sentence in all five locales`() {
+        assertAllResolve(cleanerNoShowKeys)
+    }
+
+    @Test
+    fun `every refusal ConfirmRecurringOrder can answer resolves to a sentence in all five locales`() {
+        assertAllResolve(confirmRecurringKeys)
+    }
+
+    @Test
+    fun `every consent refusal resolves to a sentence in all five locales`() {
+        assertAllResolve(consentKeys)
     }
 
     private fun assertAllResolve(keys: List<String>) {

@@ -44,6 +44,7 @@ import {
   DISPUTE_STATUS_LABEL_KEYS,
   getDisputeReasonLabelKey,
   getDisputeStatusSeverity,
+  initialDisputeReason,
   isDisputeOpen,
 } from './disputes.models';
 import {
@@ -232,9 +233,7 @@ export class DisputesComponent implements OnInit {
     const orderId = query.get('orderId');
     if (orderId) {
       this.createForm.patchValue({ orderId });
-      if (Number(query.get('reason')) === DisputeReason.ServiceNotProvided) {
-        this.pickReason(DisputeReason.ServiceNotProvided);
-      }
+      this.pickReason(initialDisputeReason(query.get('reason')));
       this.mode.set('new');
     }
   }

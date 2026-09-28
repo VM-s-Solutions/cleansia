@@ -111,9 +111,6 @@
     <string name="home_upsell_plus_top">Cleansia Plus</string>
     <string name="home_upsell_plus_title">Економте на кожному прибиранні.</string>
     <string name="home_upsell_plus_cta">Отримати Plus</string>
-    <string name="home_upsell_welcome_top">Вітальна пропозиція</string>
-    <string name="home_upsell_welcome_title">Знижка 15% на перше прибирання з кодом WELCOME15</string>
-    <string name="home_upsell_welcome_cta">Замовити перше прибирання</string>
     <string name="home_upsell_referral_top">Запросіть друга</string>
     <string name="home_upsell_referral_title">По 150 балів після першого завершеного прибирання друга</string>
     <string name="home_upsell_referral_cta">Поділитися кодом</string>
@@ -126,7 +123,6 @@
 
     <!-- Home — trust strip -->
     <string name="home_trust_insured">Застраховано</string>
-    <string name="home_trust_vetted">Перевірено</string>
     <string name="home_trust_same_day">Сьогодні</string>
 
     <!-- Home — popular packages -->
@@ -174,7 +170,6 @@
     <string name="home_promo_title">Для вас</string>
 
     <string name="home_hero_slide1_title">Бездоганно за кілька годин</string>
-    <string name="home_hero_slide1_subtitle">Замовте перевіреного клінера. Прозорі ціни, без дзвінків.</string>
     <string name="home_hero_book_now">Замовити</string>
 
     <string name="home_hero_slide2_title">Глибоке прибирання, легкий тиждень</string>
@@ -513,14 +508,14 @@
     <string name="help_email_desc">support@cleansia.cz</string>
     <string name="help_faq_title">Поширені запитання</string>
     <string name="help_faq_q1">Як скасувати бронювання?</string>
-    <string name="help_faq_a1">Відкрийте бронювання у вкладці Замовлення та натисніть \"Скасувати\". Безкоштовне скасування за 24 години до початку прибирання. Протягом 15 хвилин після замовлення ви не платите нічого — з Cleansia Plus протягом 60 хвилин.</string>
+    <string name="help_faq_a1">Відкрийте бронювання у вкладці Замовлення та натисніть \"Скасувати\". Безкоштовне скасування за 24 години до початку прибирання. Протягом 15 хвилин після замовлення ви не платите нічого — для першого замовлення або з Cleansia Plus протягом 60 хвилин.</string>
     <string name="help_faq_q2">Що робити, якщо мене не буде вдома, коли прийде клінер?</string>
     <string name="help_faq_a2">Додайте інструкції щодо доступу при бронюванні (напр. код від дверей, місце ключа). Клінери чекають до 15 хвилин; якщо ми не можемо зв’язатися з вами, бронювання може бути скасовано.</string>
-    <string name="help_faq_q3">Чи застраховані та перевірені клінери?</string>
-    <string name="help_faq_a3">Так. Усі клінери Cleansia пройшли перевірку та застраховані до %1$s на бронювання.</string>
-    <string name="help_faq_a3_no_figure">Так. Усі клінери Cleansia пройшли перевірку та застраховані.</string>
-    <string name="help_faq_q4">Як перенести час?</string>
-    <string name="help_faq_a4">У вкладці Замовлення відкрийте майбутнє бронювання та натисніть \"Перенести\". Безкоштовне перенесення за 12 годин до прибирання.</string>
+    <string name="help_faq_q3">Чи застраховані клінери?</string>
+    <string name="help_faq_a3">Так. Усі клінери Cleansia застраховані до %1$s на бронювання.</string>
+    <string name="help_faq_a3_no_figure">Так. Усі клінери Cleansia застраховані.</string>
+    <string name="help_faq_q4">Чи можна змінити час?</string>
+    <string name="help_faq_a4">Поки що ні — перенести бронювання не можна. Скасуйте його у вкладці Замовлення та забронюйте новий час; поки жоден клінер не взяв бронювання, скасування безкоштовне.</string>
     <string name="help_faq_q5">Що включено у стандартне прибирання?</string>
     <string name="help_faq_a5">Кухня (стільниці, мийка, зовнішня частина техніки), ванні (унітаз, душ, плитка), всі підлоги, витирання пилу, загальне прибирання. Додатки, як-от чищення духовки, доступні окремо.</string>
 
@@ -596,14 +591,13 @@
     <string name="booking_cancel_tier3_value">50% комісія</string>
     <string name="booking_cancel_plus_badge">ПЕРЕВАГА PLUS</string>
     <string name="booking_cancel_plus_subtitle">Як учасник Plus ви можете скасувати безкоштовно всього за %1$d години до початку.</string>
-    <string name="booking_cancel_grace_note">Протягом 15 хвилин після замовлення ви не платите нічого — з Cleansia Plus протягом 60 хвилин.</string>
+    <string name="booking_cancel_grace_note">Протягом 15 хвилин після замовлення ви не платите нічого — для першого замовлення або з Cleansia Plus протягом 60 хвилин.</string>
 
     <!-- Booking — save address -->
     <string name="booking_save_address">Зберегти цю адресу</string>
     <string name="booking_set_as_default">Встановити за замовчуванням</string>
     <string name="booking_trust_insured">Застраховано до %1$s</string>
     <string name="booking_trust_insured_no_figure">Застраховано</string>
-    <string name="booking_trust_vetted">Перевірені клінери</string>
 
     <string name="booking_pick_service">Виберіть послугу</string>
     <string name="booking_or_package">Або виберіть пакет</string>
@@ -729,18 +723,18 @@
     <string name="booking_referral_code_row_applied">%1$s застосовано</string>
     <string name="booking_referral_code_row_clear">Видалити</string>
     <string name="booking_referral_code_dialog_title">Введіть реферальний код</string>
-    <string name="booking_referral_code_dialog_helper">Маєте код від друга? Обидва отримаєте 150 бонусних балів після першого прибирання.</string>
+    <string name="booking_referral_code_dialog_helper">Маєте код від друга? Обидва отримаєте 150 бонусних балів після вашого першого завершеного прибирання.</string>
     <string name="booking_referral_code_dialog_apply">Застосувати</string>
     <string name="booking_referral_code_dialog_cancel">Скасувати</string>
     <string name="booking_referral_code_dialog_done">Готово</string>
-    <string name="booking_referral_code_dialog_success_named">Код від %1$s прийнято — обидва отримаєте 150 бонусних балів.</string>
+    <string name="booking_referral_code_dialog_success_named">Код від %1$s прийнято — обидва отримаєте 150 бонусних балів після вашого першого завершеного прибирання.</string>
 
     <!-- Plus: pre-request a favorite cleaner -->
     <string name="booking_preferred_cleaner_title">Запросити улюбленого клінера</string>
     <string name="booking_preferred_cleaner_subtitle">Перевага Plus · виберіть когось, хто вже у вас прибирав</string>
     <string name="booking_preferred_cleaner_dialog_title">Виберіть клінера</string>
     <string name="booking_preferred_cleaner_clear">Скасувати вибір клінера</string>
-    <string name="booking_referral_code_dialog_success">Код прийнято — обидва отримаєте 150 бонусних балів.</string>
+    <string name="booking_referral_code_dialog_success">Код прийнято — обидва отримаєте 150 бонусних балів після вашого першого завершеного прибирання.</string>
 
     <string name="booking_payment_method">Як хочете платити?</string>
     <string name="booking_pay_card">Карткою</string>
@@ -861,7 +855,7 @@
     <string name="membership_perk_cancellation_title">Безкоштовне скасування</string>
     <string name="membership_perk_cancellation_desc">Скасуйте за 4 години до прибирання без комісій.</string>
     <string name="membership_perk_grace_title">Безкоштовне скасування після замовлення</string>
-    <string name="membership_perk_grace_desc">60 хвилин після замовлення на безкоштовне скасування замість 15 хвилин</string>
+    <string name="membership_perk_grace_desc">60 хвилин після кожного замовлення на безкоштовне скасування замість 15 хвилин</string>
     <string name="membership_perk_discount_title" formatted="false">5% знижка для учасників</string>
     <string name="membership_perk_discount_desc" formatted="false">На кожне прибирання. У поєднанні з рівнем лояльності обмежена 12%.</string>
     <string name="membership_perk_express_title">Експрес-замовлення без доплати</string>
@@ -1190,13 +1184,13 @@
     <string name="loyalty_retry">Повторити</string>
 
     <!-- Loyalty Phase C — Referrals -->
-    <string name="loyalty_referral_section_title">Запросіть друзів — отримайте 150 балів за кожного</string>
-    <string name="loyalty_referral_subtitle">Поділіться своїм кодом. Вони отримають 150 бонусних балів на перше прибирання, ви теж.</string>
+    <string name="loyalty_referral_section_title">Запросіть друзів</string>
+    <string name="loyalty_referral_subtitle">Поділіться своїм кодом. Друг і ви отримаєте по 150 бонусних балів після його першого завершеного прибирання.</string>
     <string name="loyalty_referral_code_label">Ваш код</string>
     <string name="loyalty_referral_share_button">Поділитися</string>
     <string name="loyalty_referral_copy_button">Копіювати</string>
     <string name="loyalty_referral_copied_toast">Код скопійовано</string>
-    <string name="loyalty_referral_share_text">Отримайте 150 бонусних балів на перше прибирання Cleansia! Використайте мій код %1$s при реєстрації: %2$s</string>
+    <string name="loyalty_referral_share_text">Отримайте 150 бонусних балів після першого завершеного прибирання Cleansia! Використайте мій код %1$s при реєстрації: %2$s</string>
     <string name="loyalty_referral_stats_empty">Будьте першим — поділіться кодом</string>
     <string name="loyalty_referral_stats_qualified">%1$d друг приєднався · %2$d кваліфіковані</string>
     <string name="loyalty_referral_share_failed">Не вдалося поділитися. Код скопійовано в буфер.</string>
@@ -1370,10 +1364,10 @@
         <item quantity="other">%1$d прибирання завершено</item>
     </plurals>
     <plurals name="loyalty_referral_stats_waiting">
-        <item quantity="one">%1$d друг приєднався — чекаємо на перше бронювання</item>
-        <item quantity="few">%1$d друзі приєдналися — чекаємо на перше бронювання</item>
-        <item quantity="many">%1$d друзів приєдналися — чекаємо на перше бронювання</item>
-        <item quantity="other">%1$d друга приєдналося — чекаємо на перше бронювання</item>
+        <item quantity="one">%1$d друг приєднався — чекаємо на перше завершене прибирання</item>
+        <item quantity="few">%1$d друзі приєдналися — чекаємо на перше завершене прибирання</item>
+        <item quantity="many">%1$d друзів приєдналися — чекаємо на перше завершене прибирання</item>
+        <item quantity="other">%1$d друга приєдналося — чекаємо на перше завершене прибирання</item>
     </plurals>
     <plurals name="home_milestone_subtitle_v2">
         <item quantity="one">Ще %1$d бал до рівня %2$s</item>

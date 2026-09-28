@@ -111,9 +111,6 @@
     <string name="home_upsell_plus_top">Cleansia Plus</string>
     <string name="home_upsell_plus_title">Šetrite na každom upratovaní.</string>
     <string name="home_upsell_plus_cta">Získať Plus</string>
-    <string name="home_upsell_welcome_top">Uvítacia ponuka</string>
-    <string name="home_upsell_welcome_title">15 % zľava na prvé upratovanie s kódom WELCOME15</string>
-    <string name="home_upsell_welcome_cta">Objednať prvé upratovanie</string>
     <string name="home_upsell_referral_top">Pozvite kamaráta</string>
     <string name="home_upsell_referral_title">150 bodov pre oboch po dokončení jeho prvého upratovania</string>
     <string name="home_upsell_referral_cta">Zdieľať môj kód</string>
@@ -126,7 +123,6 @@
 
     <!-- Home — trust strip -->
     <string name="home_trust_insured">Poistené</string>
-    <string name="home_trust_vetted">Preverené</string>
     <string name="home_trust_same_day">Dnes</string>
 
     <!-- Home — popular packages -->
@@ -174,7 +170,6 @@
     <string name="home_promo_title">Pre vás</string>
 
     <string name="home_hero_slide1_title">Čisto za pár hodín</string>
-    <string name="home_hero_slide1_subtitle">Objednajte si preverenú upratovačku. Transparentné ceny, žiadne telefonáty.</string>
     <string name="home_hero_book_now">Rezervovať</string>
 
     <string name="home_hero_slide2_title">Hĺbkové upratovanie, pokojný týždeň</string>
@@ -513,14 +508,14 @@
     <string name="help_email_desc">support@cleansia.cz</string>
     <string name="help_faq_title">Často kladené otázky</string>
     <string name="help_faq_q1">Ako môžem zrušiť rezerváciu?</string>
-    <string name="help_faq_a1">Otvorte rezerváciu v záložke Objednávky a klepnite na \"Zrušiť\". Zrušenie zdarma až 24 hodín pred začiatkom upratovania. Do 15 minút od objednania neplatíte nič — s Cleansia Plus do 60 minút.</string>
+    <string name="help_faq_a1">Otvorte rezerváciu v záložke Objednávky a klepnite na \"Zrušiť\". Zrušenie zdarma až 24 hodín pred začiatkom upratovania. Do 15 minút od objednania neplatíte nič — pri prvej objednávke alebo s Cleansia Plus do 60 minút.</string>
     <string name="help_faq_q2">Čo ak nebudem doma, keď príde upratovačka?</string>
     <string name="help_faq_a2">Pri rezervácii pridajte pokyny ku vstupu (napr. kód pri dverách, miesto kľúča). Upratovačky čakajú až 15 minút; ak vás nemôžeme zastihnúť, rezervácia môže byť zrušená.</string>
-    <string name="help_faq_q3">Sú upratovačky poistené a preverené?</string>
-    <string name="help_faq_a3">Áno. Všetky upratovačky Cleansia sú preverené a poistené až do výšky %1$s na rezerváciu.</string>
-    <string name="help_faq_a3_no_figure">Áno. Všetky upratovačky Cleansia sú preverené a poistené.</string>
-    <string name="help_faq_q4">Ako zmením termín?</string>
-    <string name="help_faq_a4">V záložke Objednávky otvorte nadchádzajúcu rezerváciu a klepnite na \"Zmeniť termín\". Zmena zdarma až 12 hodín pred upratovaním.</string>
+    <string name="help_faq_q3">Sú upratovačky poistené?</string>
+    <string name="help_faq_a3">Áno. Všetky upratovačky Cleansia sú poistené až do výšky %1$s na rezerváciu.</string>
+    <string name="help_faq_a3_no_figure">Áno. Všetky upratovačky Cleansia sú poistené.</string>
+    <string name="help_faq_q4">Môžem zmeniť termín?</string>
+    <string name="help_faq_a4">Zatiaľ nie — termín rezervácie sa nedá zmeniť. Zrušte ju v záložke Objednávky a objednajte si nový termín; kým rezerváciu neprijme žiadna upratovačka, zrušenie je zadarmo.</string>
     <string name="help_faq_q5">Čo je zahrnuté v štandardnom upratovaní?</string>
     <string name="help_faq_a5">Kuchyňa (pracovné plochy, drez, exteriér spotrebičov), kúpeľne (toaleta, sprcha, dlažba), všetky podlahy, utieranie prachu, všeobecné upratovanie. Doplnky ako čistenie rúry sú k dispozícii ako príplatky.</string>
 
@@ -596,14 +591,13 @@
     <string name="booking_cancel_tier3_value">50% poplatok</string>
     <string name="booking_cancel_plus_badge">VÝHODA PLUS</string>
     <string name="booking_cancel_plus_subtitle">Ako člen Plus môžete zrušiť zadarmo až %1$d hodiny vopred.</string>
-    <string name="booking_cancel_grace_note">Do 15 minút od objednania neplatíte nič — s Cleansia Plus do 60 minút.</string>
+    <string name="booking_cancel_grace_note">Do 15 minút od objednania neplatíte nič — pri prvej objednávke alebo s Cleansia Plus do 60 minút.</string>
 
     <!-- Booking — save address -->
     <string name="booking_save_address">Uložiť túto adresu</string>
     <string name="booking_set_as_default">Nastaviť ako predvolenú</string>
     <string name="booking_trust_insured">Poistené až do %1$s</string>
     <string name="booking_trust_insured_no_figure">Poistené</string>
-    <string name="booking_trust_vetted">Preverené upratovačky</string>
 
     <string name="booking_pick_service">Vyberte službu</string>
     <string name="booking_or_package">Alebo zvoľte balíček</string>
@@ -729,18 +723,18 @@
     <string name="booking_referral_code_row_applied">%1$s uplatnené</string>
     <string name="booking_referral_code_row_clear">Odobrať</string>
     <string name="booking_referral_code_dialog_title">Zadajte kód odporúčania</string>
-    <string name="booking_referral_code_dialog_helper">Máte kód od kamaráta? Po prvom upratovaní obaja získate 150 bonusových bodov.</string>
+    <string name="booking_referral_code_dialog_helper">Máte kód od kamaráta? Po vašom prvom dokončenom upratovaní obaja získate 150 bonusových bodov.</string>
     <string name="booking_referral_code_dialog_apply">Použiť</string>
     <string name="booking_referral_code_dialog_cancel">Zrušiť</string>
     <string name="booking_referral_code_dialog_done">Hotovo</string>
-    <string name="booking_referral_code_dialog_success_named">Kód od %1$s prijatý — obaja získate 150 bonusových bodov.</string>
+    <string name="booking_referral_code_dialog_success_named">Kód od %1$s prijatý — po vašom prvom dokončenom upratovaní obaja získate 150 bonusových bodov.</string>
 
     <!-- Plus: pre-request a favorite cleaner -->
     <string name="booking_preferred_cleaner_title">Vyberte si obľúbenú upratovačku</string>
     <string name="booking_preferred_cleaner_subtitle">Výhoda Plus · vyberte niekoho, kto u vás už upratoval</string>
     <string name="booking_preferred_cleaner_dialog_title">Vyberte upratovačku</string>
     <string name="booking_preferred_cleaner_clear">Zrušiť výber upratovačky</string>
-    <string name="booking_referral_code_dialog_success">Kód prijatý — obaja získate 150 bonusových bodov.</string>
+    <string name="booking_referral_code_dialog_success">Kód prijatý — po vašom prvom dokončenom upratovaní obaja získate 150 bonusových bodov.</string>
 
     <string name="booking_payment_method">Ako chcete platiť?</string>
     <string name="booking_pay_card">Kartou</string>
@@ -861,7 +855,7 @@
     <string name="membership_perk_cancellation_title">Bezplatné zrušenie</string>
     <string name="membership_perk_cancellation_desc">Zrušte až 4 hodiny pred upratovaním bez poplatkov.</string>
     <string name="membership_perk_grace_title">Zrušenie zadarmo po objednaní</string>
-    <string name="membership_perk_grace_desc">60 minút po objednaní na bezplatné zrušenie namiesto 15 minút</string>
+    <string name="membership_perk_grace_desc">60 minút po každej objednávke na bezplatné zrušenie namiesto 15 minút</string>
     <string name="membership_perk_discount_title" formatted="false">5% členská zľava</string>
     <string name="membership_perk_discount_desc" formatted="false">Z každého upratovania. V kombinácii s vernostným programom je obmedzená na 12%.</string>
     <string name="membership_perk_express_title">Expresné termíny bez príplatku</string>
@@ -1190,13 +1184,13 @@
     <string name="loyalty_retry">Skúsiť znova</string>
 
     <!-- Loyalty Phase C — Referrals -->
-    <string name="loyalty_referral_section_title">Pozvite priateľov — získajte 150 bodov za každého</string>
-    <string name="loyalty_referral_subtitle">Zdieľajte svoj kód. Oni získajú 150 bonusových bodov na prvé upratovanie, vy tiež.</string>
+    <string name="loyalty_referral_section_title">Pozvite priateľov</string>
+    <string name="loyalty_referral_subtitle">Zdieľajte svoj kód. Kamarát aj vy získate každý 150 bonusových bodov po jeho prvom dokončenom upratovaní.</string>
     <string name="loyalty_referral_code_label">Váš kód</string>
     <string name="loyalty_referral_share_button">Zdieľať</string>
     <string name="loyalty_referral_copy_button">Kopírovať</string>
     <string name="loyalty_referral_copied_toast">Kód skopírovaný</string>
-    <string name="loyalty_referral_share_text">Získajte 150 bonusových bodov na prvé upratovanie Cleansia! Použite môj kód %1$s pri registrácii: %2$s</string>
+    <string name="loyalty_referral_share_text">Získajte 150 bonusových bodov po prvom dokončenom upratovaní Cleansia! Použite môj kód %1$s pri registrácii: %2$s</string>
     <string name="loyalty_referral_stats_empty">Buďte prvý — zdieľajte svoj kód</string>
     <string name="loyalty_referral_stats_qualified">%1$d priateľ sa pripojil · %2$d kvalifikovaných</string>
     <string name="loyalty_referral_share_failed">Zdieľanie sa nepodarilo otvoriť. Kód bol skopírovaný.</string>
@@ -1370,10 +1364,10 @@
         <item quantity="other">%1$d upratovaní dokončených</item>
     </plurals>
     <plurals name="loyalty_referral_stats_waiting">
-        <item quantity="one">%1$d priateľ sa pripojil — čaká na prvú rezerváciu</item>
-        <item quantity="few">%1$d priatelia sa pripojili — čakajú na prvú rezerváciu</item>
-        <item quantity="many">%1$d priateľa sa pripojilo — čaká na prvú rezerváciu</item>
-        <item quantity="other">%1$d priateľov sa pripojilo — čaká na prvú rezerváciu</item>
+        <item quantity="one">%1$d priateľ sa pripojil — čaká na prvé dokončené upratovanie</item>
+        <item quantity="few">%1$d priatelia sa pripojili — čakajú na prvé dokončené upratovanie</item>
+        <item quantity="many">%1$d priateľa sa pripojilo — čaká na prvé dokončené upratovanie</item>
+        <item quantity="other">%1$d priateľov sa pripojilo — čaká na prvé dokončené upratovanie</item>
     </plurals>
     <plurals name="home_milestone_subtitle_v2">
         <item quantity="one">Ešte %1$d bod do úrovne %2$s</item>

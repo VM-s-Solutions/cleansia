@@ -6,10 +6,9 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * Owner ruling 2026-09-24: after booking, cancelling is free for 15 minutes, and for 60 for an entitled
- * Plus member. Guests and first-time customers get the standard 15 — the first-time 60 the copy once
- * implied is gone from the server, so it must not come back in any locale. The figures are read from
- * `BookingPolicy` itself, the same way the web's claim spec reads them.
+ * Owner ruling 2026-09-28, reversing 2026-09-24: after booking, cancelling is free for 15 minutes, for 60
+ * on a customer's first booking (account, e-mail or phone alike) and for 60 for an entitled Plus member.
+ * The figures are read from `BookingPolicy` itself, the same way the web's claim spec reads them.
  */
 class CancellationGraceClaimTest {
 
@@ -27,7 +26,9 @@ class CancellationGraceClaimTest {
         ?: error("Cleansia.Api.sln not found above ${moduleDir.absolutePath}")
 
     private val standard = policyMinutes("OopsWindowMinutesStandard")
+    private val firstBooking = policyMinutes("OopsWindowMinutesFirstBooking")
     private val plus = policyMinutes("OopsWindowMinutesPlus")
+    private val graceFigures = setOf(standard, firstBooking, plus)
 
     private fun policyMinutes(name: String): Int {
         val source = File(solutionDir, "Cleansia.Core.AppServices/Features/Orders/BookingPolicy.cs").readText()
@@ -35,13 +36,14 @@ class CancellationGraceClaimTest {
             ?: error("BookingPolicy.$name not found — the parser needs updating")
     }
 
-    private data class Sides(val plus: String, val standard: String)
+    /** A grace sentence cut into the part that speaks for the longer grace and the part that speaks for everyone. */
+    private data class Sides(val longer: String, val standard: String)
 
-    /** "15 minutes … — 60 minutes with Cleansia Plus": the side that names Plus is the Plus figure's. */
+    /** "15 minutes … — 60 minutes on your first booking or with Cleansia Plus": the side naming Plus is the longer one's. */
     private fun aroundDash(value: String): Sides {
         val parts = value.split("—")
         return Sides(
-            plus = parts.filter { it.contains("Cleansia Plus") }.joinToString(" "),
+            longer = parts.filter { it.contains("Cleansia Plus") }.joinToString(" "),
             standard = parts.filterNot { it.contains("Cleansia Plus") }.joinToString(" "),
         )
     }
@@ -49,15 +51,21 @@ class CancellationGraceClaimTest {
     /** "60 minutes …, instead of 15 minutes": a Plus perk, so what it replaces is the standard figure. */
     private fun aroundInsteadOf(value: String): Sides {
         val match = Regex("instead of|namiesto|místo|замість|вместо", RegexOption.IGNORE_CASE).find(value)
-            ?: return Sides(plus = "", standard = value)
-        return Sides(plus = value.substring(0, match.range.first), standard = value.substring(match.range.first))
+            ?: return Sides(longer = "", standard = value)
+        return Sides(longer = value.substring(0, match.range.first), standard = value.substring(match.range.first))
     }
 
-    /** Every sentence that states the grace, and how to tell whose figure each side is. */
-    private val graceClaims: List<Pair<String, (String) -> Sides>> = listOf(
-        "booking_cancel_grace_note" to ::aroundDash,
-        "help_faq_a1" to ::aroundDash,
-        "membership_perk_grace_desc" to ::aroundInsteadOf,
+    private class GraceClaim(val key: String, val namesFirstBooking: Boolean, val sides: (String) -> Sides)
+
+    /**
+     * Every sentence that states the grace, whether it names the first booking, and how to tell whose
+     * figure each side is. A Plus perk speaks of EVERY booking and names no first booking: the member's
+     * 60 minutes are the benefit on the bookings after the first.
+     */
+    private val graceClaims = listOf(
+        GraceClaim("booking_cancel_grace_note", namesFirstBooking = true, sides = ::aroundDash),
+        GraceClaim("help_faq_a1", namesFirstBooking = true, sides = ::aroundDash),
+        GraceClaim("membership_perk_grace_desc", namesFirstBooking = false, sides = ::aroundInsteadOf),
     )
 
     private val minuteFigure = Regex("(\\d+)\\s*-?\\s*(?:minutes?|minut|minút|хвилин|минут)", RegexOption.IGNORE_CASE)
@@ -72,8 +80,9 @@ class CancellationGraceClaimTest {
     private fun minuteFigures(text: String): List<Int> = minuteFigure.findAll(text).map { it.groupValues[1].toInt() }.toList()
 
     @Test
-    fun `the two figures are read off the server and differ`() {
+    fun `a standard figure and two longer ones are read off the server`() {
         assertTrue(standard > 0)
+        assertTrue(firstBooking > standard)
         assertTrue(plus > standard)
     }
 
@@ -81,11 +90,23 @@ class CancellationGraceClaimTest {
     fun `every grace sentence states each figure on the side it belongs to, in every locale`() {
         locales.forEach { locale ->
             val strings = strings(locale)
-            graceClaims.forEach { (key, sidesOf) ->
-                val value = strings[key] ?: error("$locale/$key is missing")
-                val sides = sidesOf(value)
-                assertEquals("$locale/$key Plus side — $value", listOf(plus), minuteFigures(sides.plus))
-                assertEquals("$locale/$key standard side — $value", listOf(standard), minuteFigures(sides.standard))
+            graceClaims.forEach { claim ->
+                val value = strings[claim.key] ?: error("$locale/${claim.key} is missing")
+                val sides = claim.sides(value)
+                val longer = if (claim.namesFirstBooking) setOf(firstBooking, plus) else setOf(plus)
+                assertEquals("$locale/${claim.key} longer side — $value", longer, minuteFigures(sides.longer).toSet())
+                assertEquals("$locale/${claim.key} standard side — $value", listOf(standard), minuteFigures(sides.standard))
+            }
+        }
+    }
+
+    @Test
+    fun `the first booking is named wherever its grace is owed, and on no Plus perk, in every locale`() {
+        locales.forEach { locale ->
+            val strings = strings(locale)
+            graceClaims.forEach { claim ->
+                val value = strings[claim.key] ?: error("$locale/${claim.key} is missing")
+                assertEquals("$locale/${claim.key} — $value", claim.namesFirstBooking, firstTimeClaim.containsMatchIn(value))
             }
         }
     }
@@ -122,7 +143,7 @@ class CancellationGraceClaimTest {
     private val sweptGraceClaims = listOf("help_faq_a1", "membership_perk_grace_desc")
 
     @Test
-    fun `no string states a grace other than the two, or a first-time grace`() {
+    fun `no string states a grace but the policy figures, or a first booking without its own`() {
         locales.forEach { locale ->
             val graceSentences = strings(locale).filter { (key, value) ->
                 key !in notGraceMinutes &&
@@ -134,8 +155,11 @@ class CancellationGraceClaimTest {
                 graceSentences.keys.containsAll(sweptGraceClaims),
             )
             graceSentences.forEach { (key, value) ->
-                assertEquals("$locale/$key — $value", emptyList<Int>(), minuteFigures(value).filter { it != standard && it != plus })
-                assertTrue("$locale/$key claims a first-time grace — $value", !firstTimeClaim.containsMatchIn(value))
+                assertEquals("$locale/$key — $value", emptyList<Int>(), minuteFigures(value).filter { it !in graceFigures })
+                assertTrue(
+                    "$locale/$key names a first booking without its $firstBooking minutes — $value",
+                    !firstTimeClaim.containsMatchIn(value) || firstBooking in minuteFigures(value),
+                )
             }
         }
     }

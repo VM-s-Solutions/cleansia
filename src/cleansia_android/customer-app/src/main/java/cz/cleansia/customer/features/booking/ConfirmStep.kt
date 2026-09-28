@@ -31,7 +31,6 @@ import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Shield
-import androidx.compose.material.icons.outlined.VerifiedUser
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -447,12 +446,6 @@ fun ConfirmStep(
                 insuranceCoverage?.let { coverage ->
                     stringResource(R.string.booking_trust_insured, formatOrderPrice(coverage.amount, coverage.currencyCode))
                 } ?: stringResource(R.string.booking_trust_insured_no_figure),
-                Modifier.weight(1f).fillMaxHeight(),
-            )
-            Box(Modifier.width(1.dp).fillMaxHeight().background(MaterialTheme.colorScheme.outlineVariant))
-            TrustBadge(
-                Icons.Outlined.VerifiedUser,
-                stringResource(R.string.booking_trust_vetted),
                 Modifier.weight(1f).fillMaxHeight(),
             )
         }

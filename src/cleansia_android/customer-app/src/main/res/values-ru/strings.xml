@@ -111,9 +111,6 @@
     <string name="home_upsell_plus_top">Cleansia Plus</string>
     <string name="home_upsell_plus_title">Экономьте на каждой уборке.</string>
     <string name="home_upsell_plus_cta">Оформить Plus</string>
-    <string name="home_upsell_welcome_top">Приветственное предложение</string>
-    <string name="home_upsell_welcome_title">Скидка 15% на первую уборку с кодом WELCOME15</string>
-    <string name="home_upsell_welcome_cta">Заказать первую уборку</string>
     <string name="home_upsell_referral_top">Пригласите друга</string>
     <string name="home_upsell_referral_title">Обоим по 150 баллов после его первой завершённой уборки</string>
     <string name="home_upsell_referral_cta">Поделиться кодом</string>
@@ -126,7 +123,6 @@
 
     <!-- Home — trust strip -->
     <string name="home_trust_insured">Застраховано</string>
-    <string name="home_trust_vetted">Проверено</string>
     <string name="home_trust_same_day">Сегодня</string>
 
     <!-- Home — popular packages -->
@@ -174,7 +170,6 @@
     <string name="home_promo_title">Для вас</string>
 
     <string name="home_hero_slide1_title">Безупречно за пару часов</string>
-    <string name="home_hero_slide1_subtitle">Закажите проверенного клинера. Прозрачные цены, без звонков.</string>
     <string name="home_hero_book_now">Заказать</string>
 
     <string name="home_hero_slide2_title">Глубокая уборка, лёгкая неделя</string>
@@ -513,14 +508,14 @@
     <string name="help_email_desc">support@cleansia.cz</string>
     <string name="help_faq_title">Часто задаваемые вопросы</string>
     <string name="help_faq_q1">Как отменить бронирование?</string>
-    <string name="help_faq_a1">Откройте бронирование во вкладке Заказы и нажмите \"Отменить\". Бесплатная отмена за 24 часа до начала уборки. В течение 15 минут после заказа вы не платите ничего — с Cleansia Plus в течение 60 минут.</string>
+    <string name="help_faq_a1">Откройте бронирование во вкладке Заказы и нажмите \"Отменить\". Бесплатная отмена за 24 часа до начала уборки. В течение 15 минут после заказа вы не платите ничего — для первого заказа или с Cleansia Plus в течение 60 минут.</string>
     <string name="help_faq_q2">Что делать, если меня нет дома, когда придёт клинер?</string>
     <string name="help_faq_a2">Добавьте инструкции по доступу при бронировании (напр. код от двери, место ключа). Клинеры ждут до 15 минут; если мы не сможем связаться, бронирование может быть отменено.</string>
-    <string name="help_faq_q3">Застрахованы ли клинеры и проверены?</string>
-    <string name="help_faq_a3">Да. Все клинеры Cleansia проверены и застрахованы до %1$s на бронирование.</string>
-    <string name="help_faq_a3_no_figure">Да. Все клинеры Cleansia проверены и застрахованы.</string>
-    <string name="help_faq_q4">Как перенести время?</string>
-    <string name="help_faq_a4">Во вкладке Заказы откройте предстоящее бронирование и нажмите \"Перенести\". Бесплатный перенос за 12 часов до уборки.</string>
+    <string name="help_faq_q3">Застрахованы ли клинеры?</string>
+    <string name="help_faq_a3">Да. Все клинеры Cleansia застрахованы до %1$s на бронирование.</string>
+    <string name="help_faq_a3_no_figure">Да. Все клинеры Cleansia застрахованы.</string>
+    <string name="help_faq_q4">Можно ли изменить время?</string>
+    <string name="help_faq_a4">Пока нет — перенести бронирование нельзя. Отмените его во вкладке Заказы и забронируйте новое время; пока ни один клинер не взял бронирование, отмена бесплатна.</string>
     <string name="help_faq_q5">Что входит в стандартную уборку?</string>
     <string name="help_faq_a5">Кухня (столешницы, раковина, внешняя поверхность техники), ванные (унитаз, душ, плитка), все полы, вытирание пыли, общая уборка. Дополнения вроде чистки духовки доступны отдельно.</string>
 
@@ -596,14 +591,13 @@
     <string name="booking_cancel_tier3_value">50% сбор</string>
     <string name="booking_cancel_plus_badge">ПРЕИМУЩЕСТВО PLUS</string>
     <string name="booking_cancel_plus_subtitle">Как участник Plus вы можете отменить бесплатно всего за %1$d часа до начала.</string>
-    <string name="booking_cancel_grace_note">В течение 15 минут после заказа вы не платите ничего — с Cleansia Plus в течение 60 минут.</string>
+    <string name="booking_cancel_grace_note">В течение 15 минут после заказа вы не платите ничего — для первого заказа или с Cleansia Plus в течение 60 минут.</string>
 
     <!-- Booking — save address -->
     <string name="booking_save_address">Сохранить этот адрес</string>
     <string name="booking_set_as_default">Сделать основным</string>
     <string name="booking_trust_insured">Застраховано до %1$s</string>
     <string name="booking_trust_insured_no_figure">Застраховано</string>
-    <string name="booking_trust_vetted">Проверенные клинеры</string>
 
     <string name="booking_pick_service">Выберите услугу</string>
     <string name="booking_or_package">Или выберите пакет</string>
@@ -729,18 +723,18 @@
     <string name="booking_referral_code_row_applied">%1$s применён</string>
     <string name="booking_referral_code_row_clear">Удалить</string>
     <string name="booking_referral_code_dialog_title">Введите реферальный код</string>
-    <string name="booking_referral_code_dialog_helper">Есть код от друга? Оба получите 150 бонусных баллов после первой уборки.</string>
+    <string name="booking_referral_code_dialog_helper">Есть код от друга? Оба получите 150 бонусных баллов после вашей первой завершённой уборки.</string>
     <string name="booking_referral_code_dialog_apply">Применить</string>
     <string name="booking_referral_code_dialog_cancel">Отмена</string>
     <string name="booking_referral_code_dialog_done">Готово</string>
-    <string name="booking_referral_code_dialog_success_named">Код от %1$s принят — оба получите 150 бонусных баллов.</string>
+    <string name="booking_referral_code_dialog_success_named">Код от %1$s принят — оба получите 150 бонусных баллов после вашей первой завершённой уборки.</string>
 
     <!-- Plus: pre-request a favorite cleaner -->
     <string name="booking_preferred_cleaner_title">Запросить любимого клинера</string>
     <string name="booking_preferred_cleaner_subtitle">Преимущество Plus · выберите того, кто уже у вас убирал</string>
     <string name="booking_preferred_cleaner_dialog_title">Выберите клинера</string>
     <string name="booking_preferred_cleaner_clear">Сбросить выбор клинера</string>
-    <string name="booking_referral_code_dialog_success">Код принят — оба получите 150 бонусных баллов.</string>
+    <string name="booking_referral_code_dialog_success">Код принят — оба получите 150 бонусных баллов после вашей первой завершённой уборки.</string>
 
     <string name="booking_payment_method">Как хотите оплатить?</string>
     <string name="booking_pay_card">Картой</string>
@@ -861,7 +855,7 @@
     <string name="membership_perk_cancellation_title">Бесплатная отмена</string>
     <string name="membership_perk_cancellation_desc">Отмените за 4 часа до уборки без комиссий.</string>
     <string name="membership_perk_grace_title">Бесплатная отмена после заказа</string>
-    <string name="membership_perk_grace_desc">60 минут после заказа на бесплатную отмену вместо 15 минут</string>
+    <string name="membership_perk_grace_desc">60 минут после каждого заказа на бесплатную отмену вместо 15 минут</string>
     <string name="membership_perk_discount_title" formatted="false">5% скидка для участников</string>
     <string name="membership_perk_discount_desc" formatted="false">На каждую уборку. В сочетании с уровнем лояльности ограничена 12%.</string>
     <string name="membership_perk_express_title">Экспресс-заказы без доплаты</string>
@@ -1190,13 +1184,13 @@
     <string name="loyalty_retry">Повторить</string>
 
     <!-- Loyalty Phase C — Referrals -->
-    <string name="loyalty_referral_section_title">Пригласите друзей — получите 150 баллов за каждого</string>
-    <string name="loyalty_referral_subtitle">Поделитесь своим кодом. Они получат 150 бонусных баллов на первую уборку, вы тоже.</string>
+    <string name="loyalty_referral_section_title">Пригласите друзей</string>
+    <string name="loyalty_referral_subtitle">Поделитесь своим кодом. Друг и вы получите по 150 бонусных баллов после его первой завершённой уборки.</string>
     <string name="loyalty_referral_code_label">Ваш код</string>
     <string name="loyalty_referral_share_button">Поделиться</string>
     <string name="loyalty_referral_copy_button">Копировать</string>
     <string name="loyalty_referral_copied_toast">Код скопирован</string>
-    <string name="loyalty_referral_share_text">Получите 150 бонусных баллов на первую уборку Cleansia! Используйте мой код %1$s при регистрации: %2$s</string>
+    <string name="loyalty_referral_share_text">Получите 150 бонусных баллов после первой завершённой уборки Cleansia! Используйте мой код %1$s при регистрации: %2$s</string>
     <string name="loyalty_referral_stats_empty">Будьте первым — поделитесь кодом</string>
     <string name="loyalty_referral_stats_qualified">%1$d друг присоединился · %2$d квалифицированы</string>
     <string name="loyalty_referral_share_failed">Не удалось поделиться. Код скопирован в буфер.</string>
@@ -1370,10 +1364,10 @@
         <item quantity="other">%1$d уборки завершено</item>
     </plurals>
     <plurals name="loyalty_referral_stats_waiting">
-        <item quantity="one">%1$d друг присоединился — ждём первое бронирование</item>
-        <item quantity="few">%1$d друга присоединились — ждём первое бронирование</item>
-        <item quantity="many">%1$d друзей присоединились — ждём первое бронирование</item>
-        <item quantity="other">%1$d друга присоединились — ждём первое бронирование</item>
+        <item quantity="one">%1$d друг присоединился — ждём первую завершённую уборку</item>
+        <item quantity="few">%1$d друга присоединились — ждём первую завершённую уборку</item>
+        <item quantity="many">%1$d друзей присоединились — ждём первую завершённую уборку</item>
+        <item quantity="other">%1$d друга присоединились — ждём первую завершённую уборку</item>
     </plurals>
     <plurals name="home_milestone_subtitle_v2">
         <item quantity="one">Ещё %1$d балл до уровня %2$s</item>

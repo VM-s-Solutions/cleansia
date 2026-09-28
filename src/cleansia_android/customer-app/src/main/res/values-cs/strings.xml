@@ -111,9 +111,6 @@
     <string name="home_upsell_plus_top">Cleansia Plus</string>
     <string name="home_upsell_plus_title">Šetřete na každém úklidu.</string>
     <string name="home_upsell_plus_cta">Získat Plus</string>
-    <string name="home_upsell_welcome_top">Uvítací nabídka</string>
-    <string name="home_upsell_welcome_title">15 % sleva na první úklid s kódem WELCOME15</string>
-    <string name="home_upsell_welcome_cta">Objednat první úklid</string>
     <string name="home_upsell_referral_top">Pozvěte kamaráda</string>
     <string name="home_upsell_referral_title">Oba získáte 150 bodů po jeho prvním dokončeném úklidu</string>
     <string name="home_upsell_referral_cta">Sdílet můj kód</string>
@@ -126,7 +123,6 @@
 
     <!-- Home — trust strip -->
     <string name="home_trust_insured">Pojištěno</string>
-    <string name="home_trust_vetted">Prověřeno</string>
     <string name="home_trust_same_day">Dnes</string>
 
     <!-- Home — popular packages -->
@@ -174,7 +170,6 @@
     <string name="home_promo_title">Pro vás</string>
 
     <string name="home_hero_slide1_title">Čisto za pár hodin</string>
-    <string name="home_hero_slide1_subtitle">Objednejte si prověřeného uklízeče. Transparentní ceny, žádné telefonáty.</string>
     <string name="home_hero_book_now">Rezervovat</string>
 
     <string name="home_hero_slide2_title">Hloubkový úklid, klidný týden</string>
@@ -516,14 +511,14 @@
     <string name="help_email_desc">support@cleansia.cz</string>
     <string name="help_faq_title">Často kladené otázky</string>
     <string name="help_faq_q1">Jak mohu zrušit rezervaci?</string>
-    <string name="help_faq_a1">Otevřete rezervaci v záložce Objednávky a klepněte na \"Zrušit\". Zrušení zdarma až 24 hodin před začátkem úklidu. Do 15 minut od objednání neplatíte nic — s Cleansia Plus do 60 minut.</string>
+    <string name="help_faq_a1">Otevřete rezervaci v záložce Objednávky a klepněte na \"Zrušit\". Zrušení zdarma až 24 hodin před začátkem úklidu. Do 15 minut od objednání neplatíte nic — u první objednávky nebo s Cleansia Plus do 60 minut.</string>
     <string name="help_faq_q2">Co když nebudu doma, když uklízeč přijde?</string>
     <string name="help_faq_a2">Při rezervaci přidejte pokyny ke vstupu (např. kód u dveří, místo klíče). Uklízeči čekají až 15 minut; pokud vás nemůžeme zastihnout, rezervace může být zrušena.</string>
-    <string name="help_faq_q3">Jsou uklízeči pojištěni a prověřeni?</string>
-    <string name="help_faq_a3">Ano. Všichni uklízeči Cleansia jsou prověřeni a pojištěni do výše %1$s na rezervaci.</string>
-    <string name="help_faq_a3_no_figure">Ano. Všichni uklízeči Cleansia jsou prověřeni a pojištěni.</string>
-    <string name="help_faq_q4">Jak změním termín?</string>
-    <string name="help_faq_a4">V záložce Objednávky otevřete nadcházející rezervaci a klepněte na \"Změnit termín\". Změna zdarma až 12 hodin před úklidem.</string>
+    <string name="help_faq_q3">Jsou uklízeči pojištěni?</string>
+    <string name="help_faq_a3">Ano. Všichni uklízeči Cleansia jsou pojištěni do výše %1$s na rezervaci.</string>
+    <string name="help_faq_a3_no_figure">Ano. Všichni uklízeči Cleansia jsou pojištěni.</string>
+    <string name="help_faq_q4">Můžu změnit termín?</string>
+    <string name="help_faq_a4">Zatím ne — termín rezervace změnit nejde. Zrušte ji v záložce Objednávky a objednejte si nový termín; dokud rezervaci nepřijme žádný uklízeč, je zrušení zdarma.</string>
     <string name="help_faq_q5">Co je zahrnuto ve standardním úklidu?</string>
     <string name="help_faq_a5">Kuchyně (pracovní plochy, dřez, exteriér spotřebičů), koupelny (toaleta, sprcha, dlažba), všechny podlahy, utírání prachu, obecný úklid. Doplňky jako čištění trouby jsou k dispozici jako příplatky.</string>
 
@@ -599,14 +594,13 @@
     <string name="booking_cancel_tier3_value">50% poplatek</string>
     <string name="booking_cancel_plus_badge">VÝHODA PLUS</string>
     <string name="booking_cancel_plus_subtitle">Jako člen Plus můžete zrušit zdarma až %1$d hodiny předem.</string>
-    <string name="booking_cancel_grace_note">Do 15 minut od objednání neplatíte nic — s Cleansia Plus do 60 minut.</string>
+    <string name="booking_cancel_grace_note">Do 15 minut od objednání neplatíte nic — u první objednávky nebo s Cleansia Plus do 60 minut.</string>
 
     <!-- Booking — save address -->
     <string name="booking_save_address">Uložit tuto adresu</string>
     <string name="booking_set_as_default">Nastavit jako výchozí</string>
     <string name="booking_trust_insured">Pojištěno až do %1$s</string>
     <string name="booking_trust_insured_no_figure">Pojištěno</string>
-    <string name="booking_trust_vetted">Prověření uklízeči</string>
 
     <string name="booking_pick_service">Vyberte službu</string>
     <string name="booking_or_package">Nebo zvolte balíček</string>
@@ -732,18 +726,18 @@
     <string name="booking_referral_code_row_applied">%1$s uplatněno</string>
     <string name="booking_referral_code_row_clear">Odebrat</string>
     <string name="booking_referral_code_dialog_title">Zadejte kód doporučení</string>
-    <string name="booking_referral_code_dialog_helper">Máte kód od kamaráda? Po prvním úklidu oba získáte 150 bonusových bodů.</string>
+    <string name="booking_referral_code_dialog_helper">Máte kód od kamaráda? Po vašem prvním dokončeném úklidu oba získáte 150 bonusových bodů.</string>
     <string name="booking_referral_code_dialog_apply">Použít</string>
     <string name="booking_referral_code_dialog_cancel">Zrušit</string>
     <string name="booking_referral_code_dialog_done">Hotovo</string>
-    <string name="booking_referral_code_dialog_success_named">Kód od %1$s přijat — oba získáte 150 bonusových bodů.</string>
+    <string name="booking_referral_code_dialog_success_named">Kód od %1$s přijat — po vašem prvním dokončeném úklidu oba získáte 150 bonusových bodů.</string>
 
     <!-- Plus: pre-request a favorite cleaner -->
     <string name="booking_preferred_cleaner_title">Vyberte si oblíbeného uklízeče</string>
     <string name="booking_preferred_cleaner_subtitle">Výhoda Plus · vyberte někoho, kdo už u vás uklízel</string>
     <string name="booking_preferred_cleaner_dialog_title">Vyberte uklízeče</string>
     <string name="booking_preferred_cleaner_clear">Zrušit výběr uklízeče</string>
-    <string name="booking_referral_code_dialog_success">Kód přijat — oba získáte 150 bonusových bodů.</string>
+    <string name="booking_referral_code_dialog_success">Kód přijat — po vašem prvním dokončeném úklidu oba získáte 150 bonusových bodů.</string>
 
     <string name="booking_payment_method">Jak chcete platit?</string>
     <string name="booking_pay_card">Kartou</string>
@@ -864,7 +858,7 @@
     <string name="membership_perk_cancellation_title">Bezplatné zrušení</string>
     <string name="membership_perk_cancellation_desc">Zrušte až 4 hodiny před úklidem bez poplatků.</string>
     <string name="membership_perk_grace_title">Zrušení zdarma po objednání</string>
-    <string name="membership_perk_grace_desc">60 minut po objednání na bezplatné zrušení místo 15 minut</string>
+    <string name="membership_perk_grace_desc">60 minut po každé objednávce na bezplatné zrušení místo 15 minut</string>
     <string name="membership_perk_discount_title" formatted="false">5% členská sleva</string>
     <string name="membership_perk_discount_desc" formatted="false">Z každého úklidu. V kombinaci s věrnostním programem je omezena na 12%.</string>
     <string name="membership_perk_express_title">Expresní termíny bez příplatku</string>
@@ -1193,13 +1187,13 @@
     <string name="loyalty_retry">Zkusit znovu</string>
 
     <!-- Loyalty Phase C — Referrals -->
-    <string name="loyalty_referral_section_title">Pozvěte přátele — získejte 150 bodů za každého</string>
-    <string name="loyalty_referral_subtitle">Sdílejte svůj kód. Oni získají 150 bonusových bodů na první úklid, vy také.</string>
+    <string name="loyalty_referral_section_title">Pozvěte přátele</string>
+    <string name="loyalty_referral_subtitle">Sdílejte svůj kód. Kamarád i vy získáte každý 150 bonusových bodů po jeho prvním dokončeném úklidu.</string>
     <string name="loyalty_referral_code_label">Váš kód</string>
     <string name="loyalty_referral_share_button">Sdílet</string>
     <string name="loyalty_referral_copy_button">Kopírovat</string>
     <string name="loyalty_referral_copied_toast">Kód zkopírován</string>
-    <string name="loyalty_referral_share_text">Získejte 150 bonusových bodů na první úklid Cleansia! Použijte můj kód %1$s při registraci: %2$s</string>
+    <string name="loyalty_referral_share_text">Získejte 150 bonusových bodů po prvním dokončeném úklidu Cleansia! Použijte můj kód %1$s při registraci: %2$s</string>
     <string name="loyalty_referral_stats_empty">Buďte první — sdílejte svůj kód</string>
     <string name="loyalty_referral_stats_qualified">%1$d přítel se připojil · %2$d kvalifikováno</string>
     <string name="loyalty_referral_share_failed">Sdílení se nepodařilo otevřít. Kód byl zkopírován.</string>
@@ -1373,10 +1367,10 @@
         <item quantity="other">%1$d úklidů dokončeno</item>
     </plurals>
     <plurals name="loyalty_referral_stats_waiting">
-        <item quantity="one">%1$d přítel se připojil — čeká na první rezervaci</item>
-        <item quantity="few">%1$d přátelé se připojili — čekají na první rezervaci</item>
-        <item quantity="many">%1$d přítele se připojilo — čeká na první rezervaci</item>
-        <item quantity="other">%1$d přátel se připojilo — čeká na první rezervaci</item>
+        <item quantity="one">%1$d přítel se připojil — čeká na první dokončený úklid</item>
+        <item quantity="few">%1$d přátelé se připojili — čekají na první dokončený úklid</item>
+        <item quantity="many">%1$d přítele se připojilo — čeká na první dokončený úklid</item>
+        <item quantity="other">%1$d přátel se připojilo — čeká na první dokončený úklid</item>
     </plurals>
     <plurals name="home_milestone_subtitle_v2">
         <item quantity="one">Ještě %1$d bod k úrovni %2$s</item>

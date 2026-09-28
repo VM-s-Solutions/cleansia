@@ -112,9 +112,6 @@
     <string name="home_upsell_plus_top">Cleansia Plus</string>
     <string name="home_upsell_plus_title">Save on every cleaning.</string>
     <string name="home_upsell_plus_cta">Get Plus</string>
-    <string name="home_upsell_welcome_top">Welcome offer</string>
-    <string name="home_upsell_welcome_title">15% off your first cleaning with WELCOME15</string>
-    <string name="home_upsell_welcome_cta">Book your first one</string>
     <string name="home_upsell_referral_top">Refer a friend</string>
     <string name="home_upsell_referral_title">You both get 150 points after their first completed cleaning</string>
     <string name="home_upsell_referral_cta">Share my code</string>
@@ -127,7 +124,6 @@
 
     <!-- Home — trust strip -->
     <string name="home_trust_insured">Insured</string>
-    <string name="home_trust_vetted">Vetted</string>
     <string name="home_trust_same_day">Same-day</string>
 
     <!-- Home — popular packages (tap-to-book) -->
@@ -176,7 +172,6 @@
     <string name="home_promo_title">For you</string>
 
     <string name="home_hero_slide1_title">Spotless in hours</string>
-    <string name="home_hero_slide1_subtitle">Book a vetted cleaner. Transparent pricing, no phone calls.</string>
     <string name="home_hero_book_now">Book now</string>
 
     <string name="home_hero_slide2_title">Deep clean, easy week</string>
@@ -518,14 +513,14 @@
     <string name="help_email_desc">support@cleansia.cz</string>
     <string name="help_faq_title">Frequently asked questions</string>
     <string name="help_faq_q1">How do I cancel my booking?</string>
-    <string name="help_faq_a1">Open your booking from the Orders tab and tap \"Cancel\". Cancellations free of charge up to 24 hours before the cleaning start time. Within 15 minutes of booking you pay nothing — within 60 minutes with Cleansia Plus.</string>
+    <string name="help_faq_a1">Open your booking from the Orders tab and tap \"Cancel\". Cancellations free of charge up to 24 hours before the cleaning start time. Within 15 minutes of booking you pay nothing — within 60 minutes on your first booking or with Cleansia Plus.</string>
     <string name="help_faq_q2">What if I\'m not home when the cleaner arrives?</string>
     <string name="help_faq_a2">Add access instructions when booking (e.g., door code, key location). Cleaners wait up to 15 minutes; if we can\'t reach you, the booking may be cancelled.</string>
-    <string name="help_faq_q3">Are cleaners insured and vetted?</string>
-    <string name="help_faq_a3">Yes. All Cleansia cleaners are background-checked and covered by insurance up to %1$s per booking.</string>
-    <string name="help_faq_a3_no_figure">Yes. All Cleansia cleaners are background-checked and covered by insurance.</string>
-    <string name="help_faq_q4">How do I reschedule?</string>
-    <string name="help_faq_a4">From the Orders tab, open the upcoming booking and tap \"Reschedule\". Free rescheduling up to 12 hours before the cleaning.</string>
+    <string name="help_faq_q3">Are cleaners insured?</string>
+    <string name="help_faq_a3">Yes. All Cleansia cleaners are covered by insurance up to %1$s per booking.</string>
+    <string name="help_faq_a3_no_figure">Yes. All Cleansia cleaners are covered by insurance.</string>
+    <string name="help_faq_q4">Can I change the date or time?</string>
+    <string name="help_faq_a4">Not yet — a booking can\'t be moved. Cancel it from the Orders tab and book a new time; cancelling is free while no cleaner has taken the booking.</string>
     <string name="help_faq_q5">What\'s included in a standard cleaning?</string>
     <string name="help_faq_a5">Kitchen (countertops, sink, appliances exterior), bathrooms (toilet, shower, tiles), all floors, dusting, general tidying. Extras like oven cleaning are available as add-ons.</string>
 
@@ -605,14 +600,13 @@
     <string name="booking_cancel_plus_badge">PLUS PERK</string>
     <!-- %1$d = the user's extended free window in hours. -->
     <string name="booking_cancel_plus_subtitle">As a Plus member you can cancel free up to %1$d hours before.</string>
-    <string name="booking_cancel_grace_note">Within 15 minutes of booking you pay nothing — within 60 minutes with Cleansia Plus.</string>
+    <string name="booking_cancel_grace_note">Within 15 minutes of booking you pay nothing — within 60 minutes on your first booking or with Cleansia Plus.</string>
 
     <!-- Booking — save address -->
     <string name="booking_save_address">Save this address</string>
     <string name="booking_set_as_default">Set as default</string>
     <string name="booking_trust_insured">Insured up to %1$s</string>
     <string name="booking_trust_insured_no_figure">Insured</string>
-    <string name="booking_trust_vetted">Background-checked cleaners</string>
 
     <string name="booking_pick_service">Pick a service</string>
     <string name="booking_or_package">Or choose a package</string>
@@ -741,18 +735,18 @@
     <string name="booking_referral_code_row_applied">%1$s applied</string>
     <string name="booking_referral_code_row_clear">Remove</string>
     <string name="booking_referral_code_dialog_title">Enter referral code</string>
-    <string name="booking_referral_code_dialog_helper">Have a friend\'s code? Both of you earn 150 bonus tier-points after your first cleaning.</string>
+    <string name="booking_referral_code_dialog_helper">Have a friend\'s code? Both of you earn 150 bonus tier-points after your first completed cleaning.</string>
     <string name="booking_referral_code_dialog_apply">Apply</string>
     <string name="booking_referral_code_dialog_cancel">Cancel</string>
     <string name="booking_referral_code_dialog_done">Done</string>
-    <string name="booking_referral_code_dialog_success_named">Code from %1$s accepted — you\'ll both get 150 bonus points.</string>
+    <string name="booking_referral_code_dialog_success_named">Code from %1$s accepted — you\'ll both get 150 bonus points after your first completed cleaning.</string>
 
     <!-- Plus: pre-request a favorite cleaner -->
     <string name="booking_preferred_cleaner_title">Request your favorite cleaner</string>
     <string name="booking_preferred_cleaner_subtitle">Plus benefit · choose someone who\'s cleaned for you before</string>
     <string name="booking_preferred_cleaner_dialog_title">Pick a cleaner</string>
     <string name="booking_preferred_cleaner_clear">Clear preferred cleaner</string>
-    <string name="booking_referral_code_dialog_success">Code accepted — you\'ll both get 150 bonus points.</string>
+    <string name="booking_referral_code_dialog_success">Code accepted — you\'ll both get 150 bonus points after your first completed cleaning.</string>
 
     <string name="booking_payment_method">How do you want to pay?</string>
     <string name="booking_pay_card">Card</string>
@@ -875,7 +869,7 @@
     <string name="membership_perk_cancellation_title">Free cancellation</string>
     <string name="membership_perk_cancellation_desc">Cancel up to 4 hours before your cleaning, no fees.</string>
     <string name="membership_perk_grace_title">Free cancellation after booking</string>
-    <string name="membership_perk_grace_desc">60 minutes after booking to cancel free, instead of 15 minutes</string>
+    <string name="membership_perk_grace_desc">60 minutes after every booking to cancel free, instead of 15 minutes</string>
     <string name="membership_perk_discount_title" formatted="false">5% member discount</string>
     <string name="membership_perk_discount_desc" formatted="false">Off every cleaning. Combined with your loyalty tier it is capped at 12%.</string>
     <string name="membership_perk_express_title">Express bookings without the surcharge</string>
@@ -1214,13 +1208,13 @@
     <string name="loyalty_retry">Retry</string>
 
     <!-- Loyalty Phase C — Referrals -->
-    <string name="loyalty_referral_section_title">Invite friends — earn 150 points each</string>
-    <string name="loyalty_referral_subtitle">Share your code. They get 150 bonus points on their first cleaning, you get 150 too.</string>
+    <string name="loyalty_referral_section_title">Invite friends</string>
+    <string name="loyalty_referral_subtitle">Share your code. Your friend and you each get 150 bonus points after their first completed cleaning.</string>
     <string name="loyalty_referral_code_label">Your code</string>
     <string name="loyalty_referral_share_button">Share</string>
     <string name="loyalty_referral_copy_button">Copy</string>
     <string name="loyalty_referral_copied_toast">Code copied</string>
-    <string name="loyalty_referral_share_text">Get 150 bonus points on your first Cleansia cleaning! Use my code %1$s at signup: %2$s</string>
+    <string name="loyalty_referral_share_text">Get 150 bonus points after your first completed Cleansia cleaning! Use my code %1$s at signup: %2$s</string>
     <string name="loyalty_referral_stats_empty">Be the first — share your code</string>
     <string name="loyalty_referral_stats_qualified">%1$d friend joined · %2$d qualified</string>
     <string name="loyalty_referral_share_failed">Couldn\'t open share. Code copied to clipboard.</string>
@@ -1389,8 +1383,8 @@
         <item quantity="other">%1$d cleanings completed</item>
     </plurals>
     <plurals name="loyalty_referral_stats_waiting">
-        <item quantity="one">%1$d friend joined — waiting on first booking</item>
-        <item quantity="other">%1$d friends joined — waiting on first booking</item>
+        <item quantity="one">%1$d friend joined — waiting on their first completed cleaning</item>
+        <item quantity="other">%1$d friends joined — waiting on their first completed cleaning</item>
     </plurals>
     <plurals name="home_milestone_subtitle_v2">
         <item quantity="one">%1$d more point to %2$s</item>

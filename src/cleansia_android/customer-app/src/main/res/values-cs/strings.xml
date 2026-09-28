@@ -279,6 +279,7 @@
     <string name="order_cancel_fee_last_minute">Toto je zrušení na poslední chvíli, poplatek je proto vyšší.</string>
     <string name="order_cancel_fee_none">Žádný poplatek za zrušení.</string>
     <string name="order_cancel_fee_split">Poplatek za zrušení %1$s — vrátíme vám %2$s.</string>
+    <string name="order_cancel_fee_only">Poplatek za zrušení %1$s.</string>
     <string name="order_cancel_fee_checking">Zjišťujeme, kolik zrušení této rezervace stojí…</string>
     <string name="order_cancel_fee_unavailable">Poplatek za zrušení se teď nepodařilo zjistit. Zrušit můžete i tak — částku potvrdíme při zrušení.</string>
     <string name="order_cancel_fee_retry">Zkusit znovu</string>
@@ -1099,6 +1100,7 @@
     <string name="profile_row_disputes">Stížnosti</string>
 
     <string name="order_action_report_issue">Nahlásit problém</string>
+    <string name="order_action_cleaner_no_show">Uklízeč nedorazil</string>
     <string name="order_action_rebook">Objednat znovu</string>
     <string name="order_rebook_unavailable_items">Některé položky z vaší předchozí objednávky již nejsou dostupné.</string>
     <string name="booking_market_items_unavailable">Některé vybrané položky se na této adrese nenabízejí a byly odebrány.</string>

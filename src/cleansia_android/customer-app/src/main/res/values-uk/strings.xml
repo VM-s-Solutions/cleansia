@@ -278,6 +278,7 @@
     <string name="order_cancel_fee_last_minute">Це скасування в останню хвилину, тому комісія вища.</string>
     <string name="order_cancel_fee_none">Комісії за скасування немає.</string>
     <string name="order_cancel_fee_split">Комісія за скасування %1$s — вам повернемо %2$s.</string>
+    <string name="order_cancel_fee_only">Комісія за скасування %1$s.</string>
     <string name="order_cancel_fee_checking">Перевіряємо, скільки коштує скасування цього бронювання…</string>
     <string name="order_cancel_fee_unavailable">Зараз не вдалося перевірити комісію за скасування. Ви все одно можете скасувати — суму підтвердимо під час скасування.</string>
     <string name="order_cancel_fee_retry">Спробувати ще раз</string>
@@ -1096,6 +1097,7 @@
     <string name="profile_row_disputes">Спори</string>
 
     <string name="order_action_report_issue">Повідомити про проблему</string>
+    <string name="order_action_cleaner_no_show">Прибиральник не прийшов</string>
     <string name="order_action_rebook">Замовити знову</string>
     <string name="order_rebook_unavailable_items">Деякі позиції з вашого попереднього замовлення більше не доступні.</string>
     <string name="booking_market_items_unavailable">Деякі вибрані позиції за цією адресою не пропонуються, тому їх вилучено.</string>

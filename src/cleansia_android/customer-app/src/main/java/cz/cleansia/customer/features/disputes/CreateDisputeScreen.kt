@@ -90,7 +90,7 @@ fun CreateDisputeScreen(
     val submitting = submitState is ActionState.Submitting
     val error = (submitState as? ActionState.Error)?.message
 
-    var reasonValue by remember { mutableStateOf<Int?>(null) }
+    var reasonValue by remember { mutableStateOf(viewModel.presetReason) }
     var description by remember { mutableStateOf("") }
 
     // What was on the order, and which parts the customer has ticked. Both empty until the order

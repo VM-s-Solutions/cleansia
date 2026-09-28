@@ -55,14 +55,14 @@ class CreateDisputeViewModelTest {
         }
     }
 
-    private fun viewModel(orderId: String? = "order-1") =
+    private fun viewModel(orderId: String? = "order-1", reason: Int? = null) =
         CreateDisputeViewModel(
             disputeRepository = repository,
             // relaxed, so the order fetch answers a mock detail and the item list stays empty. These
             // cases are about the submit path; the item list has its own test.
             orderRepository = orderRepository,
             snackbar = snackbar,
-            savedStateHandle = SavedStateHandle(mapOf("orderId" to orderId)),
+            savedStateHandle = SavedStateHandle(mapOf("orderId" to orderId, "reason" to reason)),
             appContext = appContext,
         )
 
@@ -71,6 +71,18 @@ class CreateDisputeViewModelTest {
     @Test
     fun `starts Idle`() = runTest {
         assertEquals(ActionState.Idle, viewModel().submitState.value)
+    }
+
+    @Test
+    fun `the cleaner no-show route arrives with Service not provided picked`() = runTest {
+        assertEquals(2, viewModel(reason = DisputeFormConstants.REASON_SERVICE_NOT_PROVIDED).presetReason)
+    }
+
+    @Test
+    fun `no reason on the route, or one outside the enum, picks nothing`() = runTest {
+        assertEquals(null, viewModel().presetReason)
+        assertEquals(null, viewModel(reason = 8).presetReason)
+        assertEquals(null, viewModel(reason = 0).presetReason)
     }
 
     @Test

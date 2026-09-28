@@ -278,6 +278,7 @@
     <string name="order_cancel_fee_last_minute">Это отмена в последнюю минуту, поэтому комиссия выше.</string>
     <string name="order_cancel_fee_none">Комиссии за отмену нет.</string>
     <string name="order_cancel_fee_split">Комиссия за отмену %1$s — вам вернём %2$s.</string>
+    <string name="order_cancel_fee_only">Комиссия за отмену %1$s.</string>
     <string name="order_cancel_fee_checking">Проверяем, сколько стоит отмена этого бронирования…</string>
     <string name="order_cancel_fee_unavailable">Сейчас не удалось проверить комиссию за отмену. Отменить всё равно можно — сумму подтвердим при отмене.</string>
     <string name="order_cancel_fee_retry">Попробовать снова</string>
@@ -1096,6 +1097,7 @@
     <string name="profile_row_disputes">Споры</string>
 
     <string name="order_action_report_issue">Сообщить о проблеме</string>
+    <string name="order_action_cleaner_no_show">Уборщик не пришёл</string>
     <string name="order_action_rebook">Заказать снова</string>
     <string name="order_rebook_unavailable_items">Некоторые позиции из вашего предыдущего заказа больше не доступны.</string>
     <string name="booking_market_items_unavailable">Некоторые выбранные позиции по этому адресу не предлагаются, поэтому они удалены.</string>

@@ -278,6 +278,7 @@
     <string name="order_cancel_fee_last_minute">Toto je zrušenie na poslednú chvíľu, poplatok je preto vyšší.</string>
     <string name="order_cancel_fee_none">Žiadny poplatok za zrušenie.</string>
     <string name="order_cancel_fee_split">Poplatok za zrušenie %1$s — vrátime vám %2$s.</string>
+    <string name="order_cancel_fee_only">Poplatok za zrušenie %1$s.</string>
     <string name="order_cancel_fee_checking">Zisťujeme, koľko stojí zrušenie tejto rezervácie…</string>
     <string name="order_cancel_fee_unavailable">Poplatok za zrušenie sa teraz nepodarilo zistiť. Zrušiť môžete aj tak — sumu potvrdíme pri zrušení.</string>
     <string name="order_cancel_fee_retry">Skúsiť znova</string>
@@ -1096,6 +1097,7 @@
     <string name="profile_row_disputes">Sťažnosti</string>
 
     <string name="order_action_report_issue">Nahlásiť problém</string>
+    <string name="order_action_cleaner_no_show">Upratovač neprišiel</string>
     <string name="order_action_rebook">Objednať znova</string>
     <string name="order_rebook_unavailable_items">Niektoré položky z vašej predchádzajúcej objednávky už nie sú dostupné.</string>
     <string name="booking_market_items_unavailable">Niektoré vybrané položky sa na tejto adrese neponúkajú a boli odobraté.</string>

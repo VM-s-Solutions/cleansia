@@ -24,6 +24,7 @@ class CancelSheetStringsTest {
         "order_cancel_fee_last_minute",
         "order_cancel_fee_none",
         "order_cancel_fee_split",
+        "order_cancel_fee_only",
         "order_cancel_fee_checking",
         "order_cancel_fee_unavailable",
         "order_cancel_fee_retry",

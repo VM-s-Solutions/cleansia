@@ -30,6 +30,7 @@ import androidx.compose.material.icons.automirrored.outlined.ListAlt
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Cancel
 import androidx.compose.material.icons.outlined.Map
+import androidx.compose.material.icons.outlined.PersonOff
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.ReportProblem
 import androidx.compose.material3.Button
@@ -106,6 +107,8 @@ fun OrderDetailScreen(
     // Wave 2 Phase 6 — wired to the CreateDispute nav route. Caller passes
     // the order id as a query arg; the screen pre-fills the form.
     onReportIssue: () -> Unit = {},
+    /** Opens the dispute form on "Service not provided" for a cleaner who did not arrive. */
+    onReportCleanerNoShow: () -> Unit = {},
     /**
      * PA14 Path B — "Make this recurring". Routes to the create form with
      * the order id pre-filling services/packages/rooms/bathrooms/payment/
@@ -280,6 +283,8 @@ fun OrderDetailScreen(
     val loaded = state as? OrderDetailUiState.Loaded
     val status = loaded?.let { orderStatusFromValue(it.order.orderStatus?.value) }
     val isCancellable by viewModel.canCancel.collectAsStateWithLifecycle()
+    val canReportCleanerNoShow by viewModel.canReportCleanerNoShow.collectAsStateWithLifecycle()
+    val tookNoCardPayment by viewModel.tookNoCardPayment.collectAsStateWithLifecycle()
     // Wave 2 Phase 6 — Report Issue is only meaningful AFTER the cleaning has
     // been picked up by a cleaner (Confirmed) and through Completed. New /
     // Pending / Cancelled are hidden because there's nothing to dispute yet.
@@ -297,7 +302,7 @@ fun OrderDetailScreen(
 
     // Lift the snackbar above the sheet's sticky footer so a cancel error
     // isn't posted underneath the button that caused it.
-    if (isCancellable || canReportIssue || canRebook || canMakeRecurring) {
+    if (isCancellable || canReportCleanerNoShow || canReportIssue || canRebook || canMakeRecurring) {
         SnackbarInsetScope(140.dp)
     }
 
@@ -328,6 +333,7 @@ fun OrderDetailScreen(
                 photosState = photosState,
                 workContractAcceptances = workContractAcceptances,
                 showCancel = isCancellable,
+                showCleanerNoShow = canReportCleanerNoShow,
                 showReportIssue = canReportIssue,
                 showRebook = canRebook,
                 showMakeRecurring = canMakeRecurring,
@@ -336,6 +342,7 @@ fun OrderDetailScreen(
                 isDownloadingReceipt = downloadingReceipt,
                 onBack = onBack,
                 onCancel = { showCancelSheet = true },
+                onReportCleanerNoShow = onReportCleanerNoShow,
                 onReportIssue = onReportIssue,
                 onRebook = onRebook,
                 onMakeRecurring = { s.order.id?.let(onMakeRecurring) },
@@ -371,6 +378,7 @@ fun OrderDetailScreen(
             },
             onConfirm = { reason -> viewModel.cancel(reason) },
             onReasonChanged = viewModel::dismissCancelError,
+            tookNoCardPayment = tookNoCardPayment,
         )
     }
 
@@ -428,6 +436,7 @@ private fun OrderDetailMapLayout(
     photosState: PhotosUiState,
     workContractAcceptances: List<WorkContractAcceptanceLine>,
     showCancel: Boolean,
+    showCleanerNoShow: Boolean,
     showReportIssue: Boolean,
     showRebook: Boolean,
     showMakeRecurring: Boolean,
@@ -436,6 +445,7 @@ private fun OrderDetailMapLayout(
     isDownloadingReceipt: Boolean,
     onBack: () -> Unit,
     onCancel: () -> Unit,
+    onReportCleanerNoShow: () -> Unit,
     onReportIssue: () -> Unit,
     onRebook: () -> Unit,
     onMakeRecurring: () -> Unit,
@@ -512,6 +522,7 @@ private fun OrderDetailMapLayout(
             photosState = photosState,
             workContractAcceptances = workContractAcceptances,
             showCancel = showCancel,
+            showCleanerNoShow = showCleanerNoShow,
             showReportIssue = showReportIssue,
             showRebook = showRebook,
             showMakeRecurring = showMakeRecurring,
@@ -519,6 +530,7 @@ private fun OrderDetailMapLayout(
             confirmingRecurring = confirmingRecurring,
             isDownloadingReceipt = isDownloadingReceipt,
             onCancel = onCancel,
+            onReportCleanerNoShow = onReportCleanerNoShow,
             onReportIssue = onReportIssue,
             onRebook = onRebook,
             onMakeRecurring = onMakeRecurring,
@@ -558,6 +570,7 @@ private fun OrderDetailSheetContent(
     photosState: PhotosUiState,
     workContractAcceptances: List<WorkContractAcceptanceLine> = emptyList(),
     showCancel: Boolean,
+    showCleanerNoShow: Boolean,
     showReportIssue: Boolean,
     showRebook: Boolean,
     showMakeRecurring: Boolean,
@@ -565,6 +578,7 @@ private fun OrderDetailSheetContent(
     confirmingRecurring: Boolean,
     isDownloadingReceipt: Boolean,
     onCancel: () -> Unit,
+    onReportCleanerNoShow: () -> Unit,
     onReportIssue: () -> Unit,
     onRebook: () -> Unit,
     onMakeRecurring: () -> Unit,
@@ -580,7 +594,7 @@ private fun OrderDetailSheetContent(
     // life-cycle UI).
     val showConfirmRecurringCta = !order.recurringTemplateId.isNullOrBlank() &&
         order.paymentStatus?.value == 1
-    val hasFooter = showCancel || showReportIssue || showRebook || showMakeRecurring
+    val hasFooter = showCancel || showCleanerNoShow || showReportIssue || showRebook || showMakeRecurring
 
     // Gesture-priority guard, the same one the partner sheet carries: once the customer has scrolled
     // INTO the sheet content, a vertical drag must keep scrolling that content rather than collapsing
@@ -744,11 +758,13 @@ private fun OrderDetailSheetContent(
         if (hasFooter) {
             ActionsFooter(
                 showCancel = showCancel,
+                showCleanerNoShow = showCleanerNoShow,
                 showReportIssue = showReportIssue,
                 showRebook = showRebook,
                 showMakeRecurring = showMakeRecurring,
                 cancelEnabled = cancelEnabled,
                 onCancel = onCancel,
+                onReportCleanerNoShow = onReportCleanerNoShow,
                 onReportIssue = onReportIssue,
                 onRebook = onRebook,
                 onMakeRecurring = onMakeRecurring,
@@ -821,15 +837,18 @@ private fun ConfirmRecurringButton(
 @Composable
 private fun ActionsFooter(
     showCancel: Boolean,
+    showCleanerNoShow: Boolean,
     showReportIssue: Boolean,
     showRebook: Boolean,
     showMakeRecurring: Boolean,
     cancelEnabled: Boolean,
     onCancel: () -> Unit,
+    onReportCleanerNoShow: () -> Unit,
     onReportIssue: () -> Unit,
     onRebook: () -> Unit,
     onMakeRecurring: () -> Unit,
 ) {
+    val showCancelSlot = showCancel || showCleanerNoShow
     Surface(
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = 0.dp,
@@ -870,7 +889,7 @@ private fun ActionsFooter(
                 }
             }
 
-            if (showRebook && (showCancel || showReportIssue || showMakeRecurring)) {
+            if (showRebook && (showCancelSlot || showReportIssue || showMakeRecurring)) {
                 Spacer(Modifier.height(8.dp))
             }
 
@@ -900,7 +919,7 @@ private fun ActionsFooter(
                         style = MaterialTheme.typography.titleMedium,
                     )
                 }
-                if (showCancel || showReportIssue) {
+                if (showCancelSlot || showReportIssue) {
                     Spacer(Modifier.height(8.dp))
                 }
             }
@@ -932,9 +951,35 @@ private fun ActionsFooter(
                         style = MaterialTheme.typography.titleMedium,
                     )
                 }
+            } else if (showCleanerNoShow) {
+                OutlinedButton(
+                    onClick = onReportCleanerNoShow,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                    shape = CircleShape,
+                    border = BorderStroke(
+                        1.dp,
+                        MaterialTheme.colorScheme.error,
+                    ),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error,
+                    ),
+                ) {
+                    Icon(
+                        Icons.Outlined.PersonOff,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = stringResource(R.string.order_action_cleaner_no_show),
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                }
             }
 
-            if (showCancel && showReportIssue) {
+            if (showCancelSlot && showReportIssue) {
                 Spacer(Modifier.height(8.dp))
             }
 
@@ -1117,6 +1162,7 @@ private fun PreviewSheet() {
                 scrollState = rememberScrollState(),
                 photosState = PhotosUiState.Idle,
                 showCancel = false,
+                showCleanerNoShow = false,
                 showReportIssue = true,
                 showRebook = false,
                 showMakeRecurring = false,
@@ -1124,6 +1170,7 @@ private fun PreviewSheet() {
                 confirmingRecurring = false,
                 isDownloadingReceipt = false,
                 onCancel = {},
+                onReportCleanerNoShow = {},
                 onReportIssue = {},
                 onRebook = {},
                 onMakeRecurring = {},

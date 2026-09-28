@@ -30,6 +30,7 @@ import cz.cleansia.customer.features.auth.SignInScreen
 import cz.cleansia.customer.features.auth.SignUpScreen
 import cz.cleansia.customer.features.disputes.CreateDisputeScreen
 import cz.cleansia.customer.features.disputes.DisputeDetailScreen
+import cz.cleansia.customer.features.disputes.DisputeFormConstants
 import cz.cleansia.customer.features.disputes.DisputesListScreen
 import cz.cleansia.customer.features.main.MainShell
 import cz.cleansia.customer.features.orders.GuestOrderScreen
@@ -660,6 +661,11 @@ fun CleansiaNavHost(
                 // Wave 2 Phase 6 — opens CreateDispute pre-filled with this
                 // order's id. The screen + VM handle validation + submission.
                 onReportIssue = { navController.navigate(Routes.CreateDispute(args.orderId)) },
+                onReportCleanerNoShow = {
+                    navController.navigate(
+                        Routes.CreateDispute(args.orderId, DisputeFormConstants.REASON_SERVICE_NOT_PROVIDED),
+                    )
+                },
                 // PA14 Path B — opens the Create Recurring form pre-filled
                 // from this order. Plus + Completed gating handled inside
                 // the screen so non-eligible users never see the CTA.

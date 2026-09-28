@@ -52,6 +52,9 @@ class CreateDisputeViewModel @Inject constructor(
     /** Nullable — the FAB flow routes here without an orderId on purpose. */
     val orderId: String? = savedStateHandle.get<String>("orderId")?.takeIf { it.isNotBlank() }
 
+    /** The reason the route arrived with, picked in the form; null when none or not a customer reason. */
+    val presetReason: Int? = savedStateHandle.get<Int>("reason")?.takeIf { it in 1..7 }
+
     private val _submitState = MutableStateFlow<ActionState>(ActionState.Idle)
     val submitState: StateFlow<ActionState> = _submitState.asStateFlow()
 

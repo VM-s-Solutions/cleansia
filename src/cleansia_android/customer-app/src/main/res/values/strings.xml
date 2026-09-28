@@ -282,6 +282,7 @@
     <string name="order_cancel_fee_last_minute">This is a last-minute cancellation, so the fee is higher.</string>
     <string name="order_cancel_fee_none">No cancellation fee.</string>
     <string name="order_cancel_fee_split">Cancellation fee %1$s — you\'ll be refunded %2$s.</string>
+    <string name="order_cancel_fee_only">Cancellation fee %1$s.</string>
     <string name="order_cancel_fee_checking">Checking what cancelling this booking costs…</string>
     <string name="order_cancel_fee_unavailable">We couldn\'t check the cancellation fee just now. You can still cancel — the amount is confirmed when you do.</string>
     <string name="order_cancel_fee_retry">Try again</string>
@@ -1117,6 +1118,7 @@
 
     <!-- Order detail action -->
     <string name="order_action_report_issue">Report issue</string>
+    <string name="order_action_cleaner_no_show">The cleaner did not arrive</string>
     <string name="order_action_rebook">Book again</string>
     <string name="order_rebook_unavailable_items">Some items from your previous booking are no longer available.</string>
     <string name="booking_market_items_unavailable">Some of your picks aren\'t offered at this address and were removed.</string>

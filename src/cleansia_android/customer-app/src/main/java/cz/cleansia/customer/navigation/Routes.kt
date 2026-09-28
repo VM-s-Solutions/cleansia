@@ -139,8 +139,8 @@ object Routes {
     /**
      * "Report issue" form. [orderId] is null when entered from the FAB on the
      * disputes list (no order context); the screen renders a graceful error
-     * state and bounces the user back.
+     * state and bounces the user back. [reason] arrives picked in the form.
      */
     @Serializable
-    data class CreateDispute(val orderId: String? = null)
+    data class CreateDispute(val orderId: String? = null, val reason: Int? = null)
 }

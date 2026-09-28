@@ -116,6 +116,16 @@ final class CancellationPolicyTests: XCTestCase {
         XCTAssertFalse(policy.hasPlusPerk)
     }
 
+    /// A failed renewal stops every benefit at once, the window included.
+    func testAPastDueMemberIsQuotedTheStandardWindow() {
+        let policy = CancellationPolicyBuilder.make(
+            membership: MembershipSnapshot(hasMembership: true, freeCancellationWindowHours: 4, benefitsPaused: true)
+        )
+        XCTAssertEqual(policy.freeHours, 24)
+        XCTAssertNil(policy.plusFreeHours)
+        XCTAssertFalse(policy.hasPlusPerk)
+    }
+
     func testThePlusWindowStartsWithThePaidMonth() {
         let now = Date(timeIntervalSince1970: 1_780_000_000)
         let policy = CancellationPolicyBuilder.make(
@@ -190,6 +200,22 @@ final class PreferredCleanerViewModelTests: XCTestCase {
 
         XCTAssertEqual(vm.cancellationPolicy.freeHours, 24)
         XCTAssertFalse(vm.cancellationPolicy.hasPlusPerk)
+    }
+
+    func testHiddenForAPastDueMemberAndDoesNotFetchCleaners() async {
+        let cleaners = FakeServingCleanersClient(result: .success([ServingCleaner(id: "e-1", fullName: "Eva")]))
+        let vm = PreferredCleanerViewModel(cleanersClient: cleaners)
+
+        await vm.load(membership: MembershipSnapshot(
+            hasMembership: true,
+            freeCancellationWindowHours: 4,
+            benefitsPaused: true
+        ))
+
+        XCTAssertFalse(vm.isPlus)
+        XCTAssertFalse(vm.isVisible)
+        XCTAssertEqual(vm.cancellationPolicy.freeHours, 24)
+        XCTAssertEqual(cleaners.callCount, 0)
     }
 
     func testLoadIsIdempotent() async {

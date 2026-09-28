@@ -9,6 +9,7 @@ struct MembershipPlan: Equatable, Identifiable {
     let discountPercentage: Double
     let freeCancellationWindowHours: Int
     let allowsExpressUpgrade: Bool
+    let expressUpgradesPerMonth: Int
     let trialPeriodDays: Int
     let savingsPercentVsMonthly: Double
     /// The currency `price` is stated in — the market's, since a plan is priced per market.
@@ -20,6 +21,21 @@ struct MembershipPlan: Equatable, Identifiable {
 
     var isAnnual: Bool {
         billingInterval == 2
+    }
+
+    var discountPerkPercent: Int? {
+        let percent = Int(discountPercentage)
+        return percent > 0 ? percent : nil
+    }
+
+    /// Smaller than the standard window is the perk; see `CancellationPolicyBuilder`.
+    var cancellationPerkHours: Int? {
+        let hours = freeCancellationWindowHours
+        return hours > 0 && hours < CancellationPolicyBuilder.standardFreeHours ? hours : nil
+    }
+
+    var expressPerkPerMonth: Int? {
+        allowsExpressUpgrade && expressUpgradesPerMonth > 0 ? expressUpgradesPerMonth : nil
     }
 }
 
@@ -41,6 +57,9 @@ struct MyMembership: Equatable {
     let price: Double?
     let monthlyEquivalentPrice: Double?
     let currencyCode: String?
+    /// Past due or paused: the enrolment is live, so no second subscription, but no benefit runs and a
+    /// cancel ends it at once.
+    let benefitsPaused: Bool
 
     init(
         hasMembership: Bool,
@@ -57,7 +76,8 @@ struct MyMembership: Equatable {
         trialEndsAtUtc: Date? = nil,
         price: Double? = nil,
         monthlyEquivalentPrice: Double? = nil,
-        currencyCode: String? = nil
+        currencyCode: String? = nil,
+        benefitsPaused: Bool = false
     ) {
         self.hasMembership = hasMembership
         self.planCode = planCode
@@ -74,6 +94,7 @@ struct MyMembership: Equatable {
         self.price = price
         self.monthlyEquivalentPrice = monthlyEquivalentPrice
         self.currencyCode = currencyCode
+        self.benefitsPaused = benefitsPaused
     }
 }
 

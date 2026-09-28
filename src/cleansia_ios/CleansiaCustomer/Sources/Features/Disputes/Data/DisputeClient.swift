@@ -9,7 +9,8 @@ protocol DisputeClient: Sendable {
         orderId: String,
         reason: Int,
         description: String,
-        lines: [OrderItemLine]
+        lines: [OrderItemLine],
+        settlement: DisputeSettlement
     ) async -> ApiResult<String>
     func addMessage(disputeId: String, message: String) async -> ApiResult<Void>
     func uploadEvidence(disputeId: String, file: URL) async -> ApiResult<DisputeEvidence>
@@ -37,7 +38,8 @@ struct LiveDisputeClient: DisputeClient {
         orderId: String,
         reason: Int,
         description: String,
-        lines: [OrderItemLine]
+        lines: [OrderItemLine],
+        settlement: DisputeSettlement
     ) async -> ApiResult<String> {
         let command = CreateDisputeCommand(
             orderId: orderId,
@@ -47,7 +49,8 @@ struct LiveDisputeClient: DisputeClient {
             // every other client omits the field entirely and the wire shapes should not diverge.
             lines: lines.isEmpty ? nil : lines.map {
                 CreateDisputeDisputeLineSelection(serviceId: $0.serviceId, packageId: $0.packageId)
-            }
+            },
+            settlementPreference: DisputeSettlementPreference(rawValue: settlement.rawValue)
         )
         return await apiResult(mapError: ApiError.fromGenerated) {
             // The endpoint answers `{ "disputeId": "..." }`, never a bare string. The id is not

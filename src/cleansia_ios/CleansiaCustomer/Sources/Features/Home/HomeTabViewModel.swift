@@ -125,7 +125,7 @@ final class HomeTabViewModel: ViewModel {
 
     var showSetupRecurringSlide: Bool {
         Self.showSetupRecurringSlide(
-            isPlus: isPlus,
+            isPlus: isPlus && membership?.benefitsPaused != true,
             hasRecurringSource: true,
             templatesEmpty: recurringTemplates.isEmpty
         )

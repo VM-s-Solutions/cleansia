@@ -8827,6 +8827,76 @@
         }
       }
     },
+    "dispute_create_settlement_hint": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose how you want the money back. We refund to your card unless you choose credit."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vyberte, jak chcete peníze vrátit. Pokud nezvolíte kredit, vrátíme je na kartu."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vyberte, ako chcete peniaze vrátiť. Ak nezvolíte kredit, vrátime ich na kartu."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оберіть, як повернути гроші. Якщо ви не оберете кредит, ми повернемо їх на картку."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выберите, как вернуть деньги. Если вы не выберете кредит, мы вернём их на карту."
+          }
+        }
+      }
+    },
+    "dispute_create_settlement_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If your complaint is upheld"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pokud reklamaci uznáme"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ak reklamáciu uznáme"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Якщо скаргу буде визнано"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Если жалобу признают"
+          }
+        }
+      }
+    },
     "dispute_create_submit": {
       "extractionState": "stale",
       "localizations": {
@@ -10223,6 +10293,146 @@
           "stringUnit": {
             "state": "translated",
             "value": "Несанкціоноване списання"
+          }
+        }
+      }
+    },
+    "dispute_settlement_card_refund": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refund to my card"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vrátit na kartu"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vrátiť na kartu"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Повернути на картку"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вернуть на карту"
+          }
+        }
+      }
+    },
+    "dispute_settlement_card_refund_desc": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The money goes back to the card you paid with."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Peníze se vrátí na kartu, kterou jste platili."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Peniaze sa vrátia na kartu, ktorou ste platili."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Гроші повернуться на картку, якою ви платили."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Деньги вернутся на карту, которой вы платили."
+          }
+        }
+      }
+    },
+    "dispute_settlement_credit": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cleansia credit"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kredit Cleansia"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kredit Cleansia"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Кредит Cleansia"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Кредит Cleansia"
+          }
+        }
+      }
+    },
+    "dispute_settlement_credit_desc": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Added to your account for future bookings. Credit is never paid out and expires 12 months after your last credit activity."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Připíšeme ho na účet pro další objednávky. Kredit nelze vyplatit a propadá 12 měsíců po posledním pohybu kreditu."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pripíšeme ho na účet na ďalšie objednávky. Kredit nemožno vyplatiť a prepadá 12 mesiacov po poslednom pohybe kreditu."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Зарахуємо на ваш рахунок для наступних замовлень. Кредит не виплачується і згорає через 12 місяців після останнього руху кредиту."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Зачислим на ваш счёт для следующих заказов. Кредит не выплачивается и сгорает через 12 месяцев после последнего движения по кредиту."
           }
         }
       }
@@ -14894,31 +15104,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Obnovuje se automaticky — kdykoli můžete zrušit."
+            "value": "Obnovuje se automaticky. Pokud platba selže, výhody se pozastaví, dokud neprojde."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Auto-renews — cancel anytime."
+            "value": "Renews automatically. If the payment fails, your benefits pause until it goes through."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Продлевается автоматически — отмените в любое время."
+            "value": "Продлевается автоматически. Если платёж не пройдёт, преимущества приостановятся, пока он не пройдёт."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Obnovuje sa automaticky — kedykoľvek môžete zrušiť."
+            "value": "Obnovuje sa automaticky. Ak platba zlyhá, výhody sa pozastavia, kým neprejde."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Автоматично продовжується — скасуйте будь-коли."
+            "value": "Продовжується автоматично. Якщо платіж не пройде, переваги призупиняться, доки він не пройде."
           }
         }
       }
@@ -15028,6 +15238,41 @@
         }
       }
     },
+    "membership_cancel_dialog_message_past_due": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plus ends now. The unpaid payment is voided and you won't be charged again."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plus skončí hned. Nezaplacená platba se zruší a už vám nic nenaúčtujeme."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plus sa skončí hneď. Nezaplatená platba sa zruší a už vám nič nenaúčtujeme."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plus завершиться зараз. Неоплачений платіж буде анульовано, і з вас більше нічого не спишуть."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plus завершится сейчас. Неоплаченный платёж будет аннулирован, и с вас больше ничего не спишут."
+          }
+        }
+      }
+    },
     "membership_cancel_dialog_message_trial": {
       "extractionState": "manual",
       "localizations": {
@@ -15094,6 +15339,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "Скасувати Cleansia Plus?"
+          }
+        }
+      }
+    },
+    "membership_cancel_success_past_due": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Membership cancelled — nothing more will be charged."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Členství zrušeno — nic dalšího vám nenaúčtujeme."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Členstvo zrušené — nič ďalšie vám nenaúčtujeme."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Членство скасовано — більше нічого не спишуть."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Членство отменено — больше ничего не спишут."
           }
         }
       }
@@ -15314,31 +15594,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Můžete kdykoli zrušit. Předplatné se obnovuje automaticky, dokud ho nezrušíte."
+            "value": "Obnovuje se automaticky, dokud předplatné nezrušíte. Zrušit můžete kdykoli a výhody vám zůstanou do konce zaplaceného období. Pokud platba za obnovení selže, výhody se pozastaví, dokud neprojde."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cancel anytime. Your subscription renews automatically until you cancel."
+            "value": "Renews automatically until you cancel. Cancel any time and your benefits run to the end of the paid period. If a renewal payment fails, your benefits pause until it goes through."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Можно отменить в любое время. Подписка автоматически продлевается до отмены."
+            "value": "Продлевается автоматически, пока вы не отмените подписку. Отменить можно в любое время — преимущества сохранятся до конца оплаченного периода. Если платёж за продление не пройдёт, преимущества приостановятся, пока он не пройдёт."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Môžete kedykoľvek zrušiť. Predplatné sa obnovuje automaticky, kým ho nezrušíte."
+            "value": "Obnovuje sa automaticky, kým predplatné nezrušíte. Zrušiť môžete kedykoľvek a výhody vám zostanú do konca zaplateného obdobia. Ak platba za obnovenie zlyhá, výhody sa pozastavia, kým neprejde."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Можна скасувати будь-коли. Підписка автоматично продовжується до скасування."
+            "value": "Продовжується автоматично, доки ви не скасуєте підписку. Скасувати можна будь-коли — переваги діятимуть до кінця оплаченого періоду. Якщо платіж за продовження не пройде, переваги призупиняться, доки він не пройде."
           }
         }
       }
@@ -15623,37 +15903,107 @@
         }
       }
     },
+    "membership_past_due_body": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your last Plus payment didn't go through, so your Plus benefits are paused until it does."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poslední platba za Plus neprošla, takže jsou výhody Plus pozastavené, dokud neprojde."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Posledná platba za Plus neprešla, takže výhody Plus sú pozastavené, kým neprejde."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Останній платіж за Plus не пройшов, тому переваги Plus призупинено, доки він не пройде."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Последний платёж за Plus не прошёл, поэтому преимущества Plus приостановлены, пока он не пройдёт."
+          }
+        }
+      }
+    },
+    "membership_past_due_cancel_hint": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancelling ends Plus straight away: the unpaid payment is voided and nothing more is charged."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zrušením Plus okamžitě skončí: nezaplacená platba se zruší a nic dalšího vám nenaúčtujeme."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zrušením sa Plus okamžite skončí: nezaplatená platba sa zruší a nič ďalšie vám nenaúčtujeme."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Скасування одразу завершує Plus: неоплачений платіж анулюється, і більше нічого не списується."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Отмена сразу завершает Plus: неоплаченный платёж аннулируется, и больше ничего не списывается."
+          }
+        }
+      }
+    },
     "membership_perk_cancellation_desc": {
       "extractionState": "stale",
       "localizations": {
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zrušte až 4 hodiny před úklidem bez poplatků."
+            "value": "Zrušte bez poplatků až %1$d h před úklidem."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cancel up to 4 hours before your cleaning, no fees."
+            "value": "Cancel up to %1$d h before your cleaning, no fees."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Отмените за 4 часа до уборки без комиссий."
+            "value": "Отмените без комиссии не позднее чем за %1$d ч до уборки."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zrušte až 4 hodiny pred upratovaním bez poplatkov."
+            "value": "Zrušte bez poplatkov až %1$d h pred upratovaním."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Скасуйте за 4 години до прибирання без комісій."
+            "value": "Скасуйте без комісій не пізніше ніж за %1$d год до прибирання."
           }
         }
       }
@@ -15699,31 +16049,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Z každého úklidu. V kombinaci s věrnostním programem je omezena na 12%."
+            "value": "Sleva %1$d %% z každého úklidu. V kombinaci s věrnostním programem je omezena na 12 %%."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Off every cleaning. Combined with your loyalty tier it is capped at 12%."
+            "value": "%1$d%% off every cleaning. Combined with your loyalty tier it is capped at 12%%."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "На каждую уборку. В сочетании с уровнем лояльности ограничена 12%."
+            "value": "Скидка %1$d%% на каждую уборку. В сочетании с уровнем лояльности ограничена 12%%."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Z každého upratovania. V kombinácii s vernostným programom je obmedzená na 12%."
+            "value": "Zľava %1$d %% z každého upratovania. V kombinácii s vernostným programom je obmedzená na 12 %%."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "На кожне прибирання. У поєднанні з рівнем лояльності обмежена 12%."
+            "value": "Знижка %1$d%% на кожне прибирання. У поєднанні з рівнем лояльності обмежена 12%%."
           }
         }
       }
@@ -15734,31 +16084,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "5% členská sleva"
+            "value": "Členská sleva"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "5% member discount"
+            "value": "Member discount"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "5% скидка для участников"
+            "value": "Скидка для участников"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "5% členská zľava"
+            "value": "Členská zľava"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "5% знижка для учасників"
+            "value": "Знижка для учасників"
           }
         }
       }
@@ -15769,31 +16119,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Odpouštíme 20% příplatek za expresní objednávky — úklidy, které začínají 2 až 4 hodiny po objednání. Určitý počet každý kalendářní měsíc po dobu aktivního placeného členství; nevyužité se nepřevádějí."
+            "value": "Odpouštíme 20%% příplatek za expresní objednávky — úklidy, které začínají 2 až 4 hodiny po objednání. Až %1$d každý kalendářní měsíc po dobu aktivního placeného členství; nevyužité se nepřevádějí."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "We waive the 20% surcharge on express bookings — cleanings that start 2 to 4 hours after you book. A set number each calendar month while your paid membership is active; unused ones don't carry over."
+            "value": "We waive the 20%% surcharge on express bookings — cleanings that start 2 to 4 hours after you book. Up to %1$d each calendar month while your paid membership is active; unused ones don't carry over."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Мы не берём 20 % доплаты за экспресс-заказы — уборки, которые начинаются через 2–4 часа после оформления. Определённое количество на каждый календарный месяц, пока действует ваше оплаченное членство; неиспользованные не переносятся."
+            "value": "Мы не берём 20 %% доплаты за экспресс-заказы — уборки, которые начинаются через 2–4 часа после оформления. До %1$d в каждый календарный месяц, пока действует ваше оплаченное членство; неиспользованные не переносятся."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Odpúšťame 20% príplatok za expresné objednávky — upratovania, ktoré začínajú 2 až 4 hodiny po objednaní. Určitý počet každý kalendárny mesiac počas aktívneho plateného členstva; nevyužité sa neprenášajú."
+            "value": "Odpúšťame 20%% príplatok za expresné objednávky — upratovania, ktoré začínajú 2 až 4 hodiny po objednaní. Až %1$d každý kalendárny mesiac počas aktívneho plateného členstva; nevyužité sa neprenášajú."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ми не беремо 20 % доплати за експрес-замовлення — прибирання, що починаються через 2–4 години після оформлення. Певна кількість на кожен календарний місяць, поки діє ваше оплачене членство; невикористані не переносяться."
+            "value": "Ми не беремо 20 %% доплати за експрес-замовлення — прибирання, що починаються через 2–4 години після оформлення. До %1$d на кожен календарний місяць, поки діє ваше оплачене членство; невикористані не переносяться."
           }
         }
       }
@@ -16424,6 +16774,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "%1$@ / рік"
+          }
+        }
+      }
+    },
+    "membership_status_past_due_badge": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PAYMENT FAILED"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PLATBA SELHALA"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PLATBA ZLYHALA"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ОПЛАТА НЕ ПРОЙШЛА"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ОПЛАТА НЕ ПРОШЛА"
           }
         }
       }

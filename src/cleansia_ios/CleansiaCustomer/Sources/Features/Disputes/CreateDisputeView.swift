@@ -47,6 +47,7 @@ struct CreateDisputeView: View {
                     itemsField
                     descriptionField
                     evidenceField
+                    settlementField
                     if let error = vm.submitState.errorMessage {
                         Text(error)
                             .font(CleansiaTypography.bodyMedium)
@@ -231,6 +232,29 @@ struct CreateDisputeView: View {
         }
     }
 
+    @ViewBuilder
+    private var settlementField: some View {
+        if vm.hasOrderContext {
+            VStack(alignment: .leading, spacing: Spacing.xs) {
+                Text(L10n.Disputes.createSettlementTitle)
+                    .font(CleansiaTypography.labelLarge)
+                    .foregroundColor(CleansiaColors.onSurfaceVariant)
+                Text(L10n.Disputes.createSettlementHint)
+                    .font(CleansiaTypography.labelMedium)
+                    .foregroundColor(CleansiaColors.onSurfaceVariant)
+                ForEach(DisputeSettlement.allCases) { option in
+                    SettlementRow(
+                        settlement: option,
+                        selected: vm.settlement == option,
+                        enabled: !vm.submitState.isSubmitting
+                    ) {
+                        vm.settlement = option
+                    }
+                }
+            }
+        }
+    }
+
     private var submitFooter: some View {
         VStack {
             CleansiaPrimaryButton(
@@ -245,6 +269,43 @@ struct CreateDisputeView: View {
         .padding(.horizontal, Spacing.ml)
         .padding(.vertical, Spacing.s)
         .background(CleansiaColors.surface.ignoresSafeArea(edges: .bottom))
+    }
+}
+
+private struct SettlementRow: View {
+    let settlement: DisputeSettlement
+    let selected: Bool
+    let enabled: Bool
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            HStack(alignment: .top, spacing: Spacing.s) {
+                Image(systemName: selected ? "checkmark.circle.fill" : "circle")
+                    .foregroundColor(selected ? CleansiaColors.primary : CleansiaColors.onSurfaceVariant)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(L10n.Disputes.settlementTitle(settlement))
+                        .font(CleansiaTypography.bodyLarge)
+                        .foregroundColor(CleansiaColors.onSurface)
+                    Text(L10n.Disputes.settlementDescription(settlement))
+                        .font(CleansiaTypography.labelMedium)
+                        .foregroundColor(CleansiaColors.onSurfaceVariant)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(Spacing.m)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(CleansiaColors.surface, in: RoundedRectangle(cornerRadius: CornerRadius.small))
+            .overlay(
+                RoundedRectangle(cornerRadius: CornerRadius.small)
+                    .stroke(selected ? CleansiaColors.primary : CleansiaColors.outlineVariant, lineWidth: 1)
+            )
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(!enabled)
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }
 

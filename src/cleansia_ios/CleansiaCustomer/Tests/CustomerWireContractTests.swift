@@ -360,6 +360,7 @@ final class CustomerWireContractTests: XCTestCase {
         XCTAssertEqual(plan.price, 199)
         XCTAssertEqual(plan.currencyCode, "CZK")
         XCTAssertEqual(plan.billingInterval, 1)
+        XCTAssertEqual(plan.expressUpgradesPerMonth, 2)
     }
 
     /// A plan without its unit would be printed with a unit guessed for it, and one without its
@@ -369,6 +370,7 @@ final class CustomerWireContractTests: XCTestCase {
             ("price", { (dto: inout GetMembershipPlansResponse) in dto.price = nil }),
             ("monthlyEquivalentPrice", { dto in dto.monthlyEquivalentPrice = nil }),
             ("billingInterval", { dto in dto.billingInterval = nil }),
+            ("expressUpgradesPerMonth", { dto in dto.expressUpgradesPerMonth = nil }),
             ("currencyCode", { dto in dto.currencyCode = nil }),
             ("currencyCode", { dto in dto.currencyCode = "" })
         ] {
@@ -403,6 +405,29 @@ final class CustomerWireContractTests: XCTestCase {
         XCTAssertFalse(membership.hasMembership)
         XCTAssertNil(membership.price)
         XCTAssertNil(membership.currencyCode)
+    }
+
+    /// A failed renewal keeps the enrolment alive, so `hasMembership` stays true; only the status says that
+    /// no benefit runs.
+    func testAPastDueOrPausedMembershipIsLiveButItsBenefitsArePaused() throws {
+        for status in [MembershipStatus._2, ._4] {
+            let membership = try GetMyMembershipResponse(
+                hasMembership: true,
+                status: status,
+                cancelRequested: false
+            ).toDomain()
+            XCTAssertTrue(membership.hasMembership)
+            XCTAssertTrue(membership.benefitsPaused, "status \(status.rawValue)")
+        }
+    }
+
+    func testAnActiveMembershipRunsItsBenefits() throws {
+        let membership = try GetMyMembershipResponse(
+            hasMembership: true,
+            status: ._1,
+            cancelRequested: false
+        ).toDomain()
+        XCTAssertFalse(membership.benefitsPaused)
     }
 
     // MARK: the express-waiver quota — a claim, not a number

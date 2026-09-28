@@ -27,6 +27,8 @@ final class PushLocKeyCatalogTests: XCTestCase {
         "order.cancelled",
         "order.refunded",
         "order.no_cleaner_refunded",
+        "order.no_cleaner_refund_pending",
+        "order.no_cleaner_nothing_charged",
         "order.starting_soon",
         "dispute.reply",
         "recurring.scheduled",
@@ -34,6 +36,7 @@ final class PushLocKeyCatalogTests: XCTestCase {
         "loyalty.tier_upgrade",
         "membership.expiring_soon",
         "membership.cancellation_effective",
+        "membership.payment_failed",
         "order.new_available",
         "order.seat_open",
         "order.preferred_offer",
@@ -87,7 +90,9 @@ final class PushLocKeyCatalogTests: XCTestCase {
     /// The server formats the credit as "<number> <symbol>" and sends it after the order number,
     /// so the body takes two slots and states neither a figure nor a currency of its own.
     private let orderNumberAndAmountArgEvents: Set<String> = [
-        "order.no_cleaner_refunded"
+        "order.no_cleaner_refunded",
+        "order.no_cleaner_refund_pending",
+        "order.no_cleaner_nothing_charged"
     ]
 
     /// The word each locale uses for "cancelled" — i.e. the claim `order.assignment_revoked`

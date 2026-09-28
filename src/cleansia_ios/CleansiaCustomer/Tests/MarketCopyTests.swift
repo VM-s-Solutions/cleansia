@@ -53,19 +53,27 @@ final class MarketCopyTests: XCTestCase {
     /// arrives as the second loc-arg, formatted by the server in its own currency, so the copy takes
     /// it as a slot and states no figure and no currency of its own.
     func testTheNoCleanerPushTakesTheOrderNumberAndTheCreditAsSlotsInBothCatalogs() throws {
+        let bodies = [
+            "push.order.no_cleaner_refunded.body",
+            "push.order.no_cleaner_refund_pending.body",
+            "push.order.no_cleaner_nothing_charged.body"
+        ]
         for (app, strings) in try [("customer", customerStrings()), ("partner", partnerStrings())] {
-            for locale in Self.locales {
-                let value = try value(of: "push.order.no_cleaner_refunded.body", locale, in: strings)
-                let withoutSlots = value
-                    .replacingOccurrences(of: "%1$@", with: "")
-                    .replacingOccurrences(of: "%2$@", with: "")
-                XCTAssertTrue(value.contains("#%1$@"), "\(app)/\(locale) lost the order-number slot: \(value)")
-                XCTAssertTrue(value.contains("%2$@"), "\(app)/\(locale) lost the credit slot: \(value)")
-                XCTAssertNil(
-                    withoutSlots.rangeOfCharacter(from: .decimalDigits),
-                    "\(app)/\(locale) states a figure: \(value)"
-                )
-                XCTAssertFalse(matches(Self.currencyWord, value), "\(app)/\(locale) names a currency: \(value)")
+            for key in bodies {
+                for locale in Self.locales {
+                    let value = try value(of: key, locale, in: strings)
+                    let withoutSlots = value
+                        .replacingOccurrences(of: "%1$@", with: "")
+                        .replacingOccurrences(of: "%2$@", with: "")
+                    let site = "\(app)/\(locale)/\(key)"
+                    XCTAssertTrue(value.contains("#%1$@"), "\(site) lost the order-number slot: \(value)")
+                    XCTAssertTrue(value.contains("%2$@"), "\(site) lost the credit slot: \(value)")
+                    XCTAssertNil(
+                        withoutSlots.rangeOfCharacter(from: .decimalDigits),
+                        "\(site) states a figure: \(value)"
+                    )
+                    XCTAssertFalse(matches(Self.currencyWord, value), "\(site) names a currency: \(value)")
+                }
             }
         }
     }

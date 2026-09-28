@@ -16501,6 +16501,76 @@
         }
       }
     },
+    "push.membership.payment_failed.body": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poslední platba za Plus neprošla, takže jsou výhody Plus pozastavené, dokud neprojde. Plán spravujete v aplikaci."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your last Plus payment didn't go through, so your Plus benefits are paused until it does. Manage your plan in the app."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Последний платёж за Plus не прошёл, поэтому преимущества Plus приостановлены, пока он не пройдёт. Управляйте планом в приложении."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Posledná platba za Plus neprešla, takže výhody Plus sú pozastavené, kým neprejde. Plán spravujete v aplikácii."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Останній платіж за Plus не пройшов, тому переваги Plus призупинено, доки він не пройде. Керуйте планом у застосунку."
+          }
+        }
+      }
+    },
+    "push.membership.payment_failed.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Platba za Cleansia Plus neprošla"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cleansia Plus payment failed"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Платёж за Cleansia Plus не прошёл"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Platba za Cleansia Plus neprešla"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Платіж за Cleansia Plus не пройшов"
+          }
+        }
+      }
+    },
     "push.order.assigned.body": {
       "extractionState": "manual",
       "localizations": {
@@ -17127,6 +17197,146 @@
           "stringUnit": {
             "state": "translated",
             "value": "Нові доступні замовлення"
+          }
+        }
+      }
+    },
+    "push.order.no_cleaner_nothing_charged.body": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na objednávku #%1$@ nemohl dorazit žádný uklízeč, proto jsme ji zrušili. Nic jsme vám neúčtovali a přidali jsme vám kredit %2$@ na příští úklid. Omlouváme se."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No cleaner could make it to booking #%1$@, so we have cancelled it. You have not been charged, and we have added %2$@ credit towards your next clean. Sorry."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "На заказ #%1$@ не смог приехать ни один уборщик, поэтому мы его отменили. Мы ничего с вас не списали, а ещё добавили бонус %2$@ на следующую уборку. Простите."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na objednávku #%1$@ nemohol prísť žiadny upratovač, preto sme ju zrušili. Nič sme vám neúčtovali a pridali sme vám kredit %2$@ na ďalšie upratovanie. Ospravedlňujeme sa."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "На замовлення #%1$@ не зміг приїхати жоден прибиральник, тому ми його скасували. Ми нічого з вас не списали, а ще додали бонус %2$@ на наступне прибирання. Вибачте."
+          }
+        }
+      }
+    },
+    "push.order.no_cleaner_nothing_charged.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Žádný uklízeč nebyl k dispozici"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No cleaner was available"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Свободных уборщиков не нашлось"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Žiadny upratovač nebol k dispozícii"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вільних прибиральників не знайшлося"
+          }
+        }
+      }
+    },
+    "push.order.no_cleaner_refund_pending.body": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na objednávku #%1$@ nemohl dorazit žádný uklízeč, proto jsme ji zrušili. Vrácení peněz je na cestě a přidali jsme vám kredit %2$@ na příští úklid. Omlouváme se."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No cleaner could make it to booking #%1$@, so we have cancelled it. Your refund is on its way, and we have added %2$@ credit towards your next clean. Sorry."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "На заказ #%1$@ не смог приехать ни один уборщик, поэтому мы его отменили. Возврат средств обрабатывается, а ещё мы добавили бонус %2$@ на следующую уборку. Простите."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na objednávku #%1$@ nemohol prísť žiadny upratovač, preto sme ju zrušili. Vrátenie peňazí je na ceste a pridali sme vám kredit %2$@ na ďalšie upratovanie. Ospravedlňujeme sa."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "На замовлення #%1$@ не зміг приїхати жоден прибиральник, тому ми його скасували. Повернення коштів обробляється, а ще ми додали бонус %2$@ на наступне прибирання. Вибачте."
+          }
+        }
+      }
+    },
+    "push.order.no_cleaner_refund_pending.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Žádný uklízeč nebyl k dispozici"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No cleaner was available"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Свободных уборщиков не нашлось"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Žiadny upratovač nebol k dispozícii"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вільних прибиральників не знайшлося"
           }
         }
       }

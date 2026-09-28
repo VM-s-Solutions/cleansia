@@ -74,19 +74,23 @@ actually been pulled onto the job, read the assignment rows (`assignedEmployees`
 
 ### Offerability — which orders a cleaner may be offered and may take
 
-`OrderAvailability` is the single rule (ADR-0037). Every surface reads it; none re-derives it:
+`OrderAvailability` is the single rule (ADR-0037, status term as amended by ADR-0057). Every surface
+reads it; none re-derives it:
 
 ```csharp
-(CurrentStatus == Confirmed || (CurrentStatus == New && PaymentType == Cash))
-&& (PaymentStatus == Paid  || (PaymentType == Cash && RecurringTemplateId == null))
+(CurrentStatus == New || CurrentStatus == Confirmed
+    || CurrentStatus == OnTheWay || CurrentStatus == InProgress)
+&& (PaymentStatus == Paid || (PaymentType == Cash && RecurringTemplateId == null))
 ```
 
-A plain status list cannot express it. `New` is offerable **only for cash** — on a one-off cash order
-the take *is* the confirmation. `Confirmed` is offerable only once nothing scheduled can still retract
-the order: the two production retractors are `CleanupStalePendingOrders` (15-min timer; card +
-`PaymentStatus.Pending` + non-recurring) and `AutoCancelStaleRecurringOrders` (hourly; recurring +
-`PaymentStatus.Pending`), and the money term above is the union of the negations of their WHERE
-clauses.
+A plain status list cannot express it. The status term only says the work is not over; the money term
+decides. A one-off cash order is offerable from creation, a paid card order at `New`, and nothing is
+offerable while something scheduled can still retract it: the two production retractors are
+`CleanupStalePendingOrders` (15-min timer; card + `PaymentStatus.Pending` + non-recurring) and
+`AutoCancelStaleRecurringOrders` (hourly; recurring + `PaymentStatus.Pending`), and the money term
+above refuses everything either can still retract — an order is offerable only when neither WHERE
+clause matches it. The one `Pending` order it admits is a one-off cash order, which neither touches.
+→ [Offerability](/domain/offerability)
 
 The rule is enforced **at the take**, not only in the list — see [TakeOrder](#takeorder-validations).
 
@@ -102,7 +106,12 @@ create-order route; a cleaner takes existing orders, they do not book them.
 POST /api/Order/CreateOrder
 ```
 
-**Auth:** Anonymous (guest booking supported; an authenticated caller gets loyalty/membership pricing)
+**Auth:** depends on the host.
+
+| Host | Auth |
+|---|---|
+| Customer web (`Cleansia.Web.Customer`) | Anonymous — guest booking is supported; a signed-in caller gets loyalty and membership pricing. The same handler is also served as `POST /api/Payment/CreateOrder` on this host |
+| Customer mobile (`Cleansia.Web.Mobile.Customer`) | **Signed in** (`[Authorize]`) — guest booking is web-only, so an anonymous call is `401` and creates nothing, and the session user is the order's owner. This host has no `Payment/CreateOrder` route. `Quote` stays anonymous |
 
 **Request body:**
 
@@ -584,6 +593,13 @@ The admin host's unredacted detail is `GET /api/AdminOrder/details/{orderId}` un
 `CanViewOrderDetailAdmin` (Support or above — an Accountant is refused).
 
 **Response:** `OrderItem` object with full order details, address, services, packages, status history.
+
+Two members are **administrators' only** and `null` for every other caller and on an order that is
+not cancelled: `cancellationFeeRate` (the rate the cancellation applied) and `cancellationFeeOwed`
+(the whole fee on an order that took no payment — payment `Pending` or `Failed`, which nothing
+collects yet — and `0` on every other payment status: where a card charge covered it, and also on a
+confirmed recurring cash occurrence, which rests at `Paid` with nothing collected). The partner-facing
+redaction blanks both as well. → [Business rules — cancellation](/product/business-rules#cancellation)
 
 ---
 

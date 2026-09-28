@@ -50,8 +50,9 @@ sequenceDiagram
 | Order already `Paid` or `Refunded` | Short-circuit — but only *after* the cash check. |
 | Event for an order that no longer exists | Logged and ignored. |
 | Payment fails | Status is left alone so the client can retry. The company's administrators are told of the **first** decline on an order and not of every fumbled card entry: the site reads the feed before raising `admin.payment.failed`, and a decline that lands after the money did, or after the order was cancelled, is news about nothing. |
-| Chargeback | The order is found by its stored payment intent (a mobile or recurring-occurrence payment). The chargeback is reflected onto the linked dispute rather than the order's payment status, and the administrators are told (`admin.dispute.chargeback`, the reversed amount and the dispute it landed on). |
-| Chargeback on a web card booking, guest or account | The order is not found: a Checkout Session order stores no payment intent. The webhook logs it and acknowledges, so Stripe does not retry. Nothing is recorded and nobody is told. → [Cancellation, refund and dispute](/flows/cancellation-refund-dispute#dispute) |
+| Chargeback | The order is found by its stored payment intent — every card order stores one: a mobile or recurring-occurrence payment when the intent is created, a web Checkout Session on `checkout.session.completed`. The chargeback is reflected onto the linked dispute rather than the order's payment status, and the administrators are told (`admin.dispute.chargeback`, the reversed amount and the dispute it landed on). |
+| Chargeback on a web order paid before its intent was recorded | No order carries the intent, so the webhook asks Stripe for the Checkout Session behind it and reads the order id from the session's metadata. The order gets the intent then, and the dispute is written as above. |
+| Chargeback that matches no order | Nothing is recorded, and the webhook acknowledges so Stripe does not retry. The administrators of **every** company are told (`admin.dispute.chargeback_unmatched`, the amount and the Stripe dispute id), because the Stripe account is shared. Only `charge.dispute.created` alerts; an update or close for an unknown dispute is logged and ignored. → [Cancellation, refund and dispute](/flows/cancellation-refund-dispute#dispute) |
 | Card order paid | `admin.order.new` to the company's administrators — the order became offerable on this write, never at creation; a redelivery never reaches the site. |
 
 ## Amounts are never reconciled, and do not need to be
@@ -111,6 +112,13 @@ when none applied) rather than derived from a gap, and every discount is stored 
 rounding residue on the largest source, so there is no gap to hide. How the figures are computed →
 [Business rules — the express-surcharge correction](/product/business-rules#discount-express-correction).
 
+**The fiscal registration declares the same lines.** `ReceiptService.BuildFiscalLineItems` builds what
+is sent to the fiscal authority from the same stored order fields the PDF prints: the service and
+package lines, one line per extra at its snapshot unit price (named by its catalogue name, else its
+slug), an *Express surcharge* line, and negative *Loyalty discount*, *Cleansia Plus discount* and
+*Promo code discount* lines. A line worth zero is left out. The declared lines sum to
+`Order.TotalPrice`.
+
 **Its VAT posture is the sale's.** The order froze it at creation (`AppliedVatRate`, null when no VAT
 applied), and the receipt reads the order, never the live company row. A sale that charged VAT prints
 the subtotal without VAT, the VAT at its rate and the total, and the issuer block carries the company's
@@ -124,6 +132,13 @@ the validation does not repair stored company identities.
 receipt's resolved market zone before formatting, including daylight-saving offsets and date rollover.
 Initial issuance and later renders use the same conversion: a Prague summer booking at 08:00 UTC
 prints 10:00, and 22:30 UTC prints 00:30 on the next day.
+
+**So are the e-mails** (since 2026-09-28; they used to print UTC, one or two hours early, in the
+server's culture). The order status e-mails convert `CleaningDateTime` to the same market zone — the
+address country's `TimeZoneId`, else UTC — and format it with the short date-and-time pattern of the
+e-mail's language. The receipt e-mail's order date is the booking's creation instant in the market
+zone, in that language's short date pattern, so a booking made at 23:30 UTC on 31 March reads 1 April
+in Prague. Neither reads the server's culture.
 
 **It is in the customer's language.** Every label comes from the document's language: headings, line
 captions, the payment status and the payment method. Status and method print as words, never as enum

@@ -46,9 +46,9 @@ a lattice, Administrator ⊇ Manager ⊇ (Support ∪ Accountant), so four sets 
 
 | Area | Administrator | Manager | Support | Accountant |
 |---|---|---|---|---|
-| Company lifecycle, company settings (view too), legal documents, administrator accounts and **role assignment** | ✓ | — | — | — |
+| Company lifecycle, company settings (view too), legal documents, administrator accounts and **role assignment**, company-info writes (create, update, delete — since 2026-09-28) | ✓ | — | — | — |
 | Administrators list (`CanViewAdminUsers`) | ✓ | ✓ | — | — |
-| Catalogue and market-configuration **writes** (services, packages, extras, languages, countries, currencies, service cities, plans, tiers, promo codes, templates, sitewide push, country configuration), pay-rate writes, company-info writes, credit write-off, erasure and its retry, unmasked payout reveal | ✓ | ✓ | — | — |
+| Catalogue and market-configuration **writes** (services, packages, extras, languages, countries, currencies, service cities, plans, tiers, promo codes, templates, sitewide push, country configuration), pay-rate writes, credit write-off, erasure and its retry, unmasked payout reveal | ✓ | ✓ | — | — |
 | Orders (list, unredacted detail, photos, customer identity, door codes, cancel, override, reassign, refunds), disputes, credit issue, loyalty grants, referral intervention, cleaner approval / rejection / edit, identity documents, exports and the incident file, consents, GDPR requests, the audit log | ✓ | ✓ | ✓ | — |
 | Payout invoices, pay periods and every act on them, pay-rate **reads**, revenue and payroll reports, fiscal failures, masked payout details | ✓ | ✓ | — | ✓ |
 | Catalogue **reads**, the cleaner list, company info, credit balance, referrals, promo codes, notifications feed | ✓ | ✓ | ✓ | ✓ |

@@ -183,6 +183,23 @@ The server accepts at most **eight rooms and four bathrooms**. The same upper bo
 booking, quote, Plus-savings quote and recurring-template creation or update, with
 `order.size_exceeds_maximum` when either is exceeded. Existing lower-bound rules are unchanged.
 
+**No client offers a size the server refuses.** Every picker stops at 8 rooms and 4 bathrooms, and on
+Android and iOS the plus button is disabled at the cap:
+
+| Picker | Rooms | Bathrooms |
+|---|---|---|
+| One-off booking — web, Android, iOS | 1 – 8 | 1 – 4 |
+| Recurring schedule — web | 1 – 8 | 1 – 4 |
+| Recurring schedule — Android, iOS | 0 – 8 | 0 – 4 |
+
+On Android and iOS, a rebooking, or a schedule started from a past order, that was larger starts at the
+cap. The web's two prefills (`prefillFromRebook`, `prefillFromOrder`) pass the stored size through
+unclamped: a larger past order leaves no size chip selected, and submitting it is refused with
+`order.size_exceeds_maximum`. Editing an existing schedule does not clamp what it stored; the server
+already refuses anything larger. Android
+(`PropertySize.kt`) and iOS (`PropertySize.swift`) each hold the two caps once, and a test on each
+reads them against `BookingPolicy.MaxRooms` and `MaxBathrooms` in `BookingPolicy.cs`.
+
 Web, Android, and iOS offer starts every 15 minutes from 08:00 through 19:45. The two-hour minimum
 lead time and the express window still apply to the exact selected instant, including its minutes.
 The picker range and grid are not additional API restrictions today; enforcing them on API callers
@@ -198,7 +215,7 @@ awaits an owner decision.
 | 2–4 h lead time | Accepted with a **+20 %** express surcharge, unless a Plus waiver applies. |
 | Booked span over 24 h | Refused. See [why that bound exists](/product/business-rules#maximum-booked-duration-24-h-and-it-is-not-about-calendars). |
 | A package **and** a service the package includes | Charged twice, performed twice, takes twice as long. Owner ruling — not a bug, and not to be de-duplicated. |
-| Guest, no account | Allowed, by card. The order is keyed on the email address, and the customer later finds it via order lookup. The audit row has no user; an admin reaches it from the order's history. |
+| Guest, no account | Allowed **on the web**, by card. The order is keyed on the email address, and the customer later finds it via order lookup. The audit row has no user; an admin reaches it from the order's history. The customer mobile host's create route requires a session, so an anonymous call there is `401` and creates nothing → [CreateOrder](/api/orders#createorder). |
 | Cash from a guest, or on a booking that needs two cleaners or more | Refused, `order.cash_not_available`, before anything is reserved, debited or dispatched. 120 booked minutes is one cleaner; 121 is two. |
 | An unknown language code on the booking | Refused (`CreateOrder.Validator` carries the `LanguageValidator`, the `Register` idiom) — the audit row records `language`, and an unrecognised code is not evidence of anything. No shipped client sends one outside the five seeded codes. |
 | A recurring occurrence confirmed | One `customer.order.recurring.confirm` row: the order, the template, the price and currency, the payment type, the cleaning time and lead time. A schedule created, edited, paused/resumed or deleted writes a `customer.recurring.*` row with the schedule facts before and after. |
@@ -209,6 +226,29 @@ A template materialises occurrences up to 7 days ahead. A materialised occurrenc
 until the customer confirms it, so *"pending for over an hour"* is its **normal** state, not an
 abandoned checkout — which is why the stale-checkout sweep explicitly excludes rows with a
 `RecurringTemplateId`. A separate sweep retracts unconfirmed occurrences an hour before the slot.
+
+**A schedule's weekday and time are the market's wall-clock time** (since 2026-09-28; they used to be
+read as UTC, so a Prague 10:00 schedule ran at 11:00 in winter and 12:00 in summer). The materialiser
+loads the saved address first and takes its zone from the address country's
+`CountryConfiguration.TimeZoneId`, else the default market's, else UTC. It walks the calendar in that
+zone — the weekday, the step and the resume marker are all local dates — and converts each local date
+plus `TimeOfDay` to UTC on its own, so 10:00 stays 10:00 across the clock change:
+
+| Case | What the occurrence gets |
+|---|---|
+| A time the spring change skips (02:30 on that Sunday in Prague) | moved forward by the gap — 03:30 |
+| A time the autumn change repeats | the later, standard-time instant |
+
+The duplicate guard is unchanged and still compares exact UTC instants. A template whose saved address
+is missing now stops before it can move its resume marker.
+The web schedule list's *next visit* walks the same rule in the **browser's** time zone, because the
+template's DTO carries no zone; for a customer in the market's own zone the two agree.
+
+**An edit cannot move the start past the end.** The server refuses a start on or after the stored end
+date (`recurring_booking.ends_on_before_start`), and no edit form has an end-date editor, so on the
+web, Android and iOS the start-date picker of an edited schedule stops at the day before its end date.
+A schedule with no end date, and every new one, is open after today. On iOS the range collapses to
+its first day rather than crossing when the end date is less than a day after the earliest start.
 
 **A schedule is priced and operated in the market of its saved address.** Creation and update stamp
 the template with that address’s active operator. The template carries no currency; every occurrence
@@ -328,9 +368,15 @@ senders rather than testing each handler behaviourally.
 
 A token dies **30 days after the cleaning** — long enough to cover the refund window and a question
 about the receipt afterwards, short enough that a mailbox read years later is not a live key to
-somebody's home. **`CancelGuestOrder` revokes every existing live token on the booking at once**, because there is
-nothing left to do with them — with one deliberate exception, the cancellation e-mail itself
-([below](#guest-cancellation)). An account booking mints none at all: its owner signs in instead.
+somebody's home. **Every cancellation the guest or the platform makes revokes every existing live
+token on the booking at once** — the guest's own, an administrator's, the company wind-down, the
+unfilled-slot sweep and the stale-checkout sweep — because there is nothing left to do with them, with
+one deliberate exception: the cancellation e-mail itself ([below](#guest-cancellation)). One
+cancellation does neither: when Stripe reports the checkout expired or the payment cancelled
+(`checkout.session.expired`, `payment_intent.canceled`), the webhook cancels the booking but revokes no
+token and sends no e-mail. It is rare — no expiry is set on the Checkout Session, so Stripe's own comes
+long after the stale-checkout sweep's hour. An account booking mints none at all: its owner signs in
+instead.
 Erasing an ended guest booking also revokes its live tokens in the same database commit as its
 personal data is anonymised. Live guest bookings excluded from erasure keep their tokens. The weekly
 retention sweep deletes expired or revoked token rows; it does not extend their lifetime.
@@ -366,12 +412,25 @@ nothing. The guest gets no account, feed or push; assigned cleaners still receiv
 act is recorded as `customer.order.cancel` with no customer user id, even when a session accompanies
 the guest's token. → [The customer trail](/flows/gdpr-and-audit#customer-trail)
 
-**`CancelGuestOrder` revokes every existing live key, and the cancellation e-mail then carries a new one.** Those are
+**The cancel revokes every existing live key, and the cancellation e-mail then carries a new one.** Those are
 the same decision rather than opposite ones: every token the guest already held is retired at the
 cancel, and the last message the booking will ever send carries the only one that still opens it, so
 the customer can read what they were refunded. It is minted and committed *before* the send, so a
 crash after it cannot leave an e-mailed token with no row behind it, and it expires on the same
 schedule as any other — 30 days past the cleaning.
+
+**A guest is told when the platform cancels, too.** An administrator's cancel, the company wind-down,
+the unfilled-slot sweep (`CancelUnfilledOrders`) and the stale-checkout sweep
+(`CleanupStalePendingOrders`) stage the same e-mail as the guest's own cancel, through one helper
+(`GuestCancellationEmail`), in the booking's language, with the same revoke-then-mint rule. It adds
+two lines the guest's own cancel does not need:
+
+| Line | What it says |
+|---|---|
+| Why | Keyed on the reason **code**, never on an administrator's free text: *no cleaner was available* (`order.cancelled.no_cleaner_available`), *the payment wasn't completed* (`order.cancelled.payment_not_completed`), otherwise *we had to cancel this booking* |
+| Money | *Refund issued: {amount}* only with the amount a refund actually returned; *Nothing was charged* when the card was never charged (payment `Pending` or `Failed`); *Your refund is being processed* when the booking is still paid, so its refund was attempted and did not come back; otherwise nothing — a requested figure is never printed |
+
+The texts are in the e-mail's own defaults, in all five languages.
 
 **Shipped on every client.** The web track page, the Android customer app and the iOS customer app
 all draw the preview (tier, fee, refund estimate) before asking for confirmation, and all three key

@@ -25,17 +25,21 @@ the money axis, in **two evaluation forms that a test proves equal**.
 > the money **progress**, not only the money **model**.
 
 ```
-Offerable(o) ⟺ ( o.CurrentStatus == Confirmed
-               ∨ (o.CurrentStatus == New ∧ o.PaymentType == Cash) )
+Offerable(o) ⟺ o.CurrentStatus ∈ { New, Confirmed, OnTheWay, InProgress }
              ∧ NotRetractable(o)
 
 NotRetractable(o) ⟺ o.PaymentStatus == Paid
                   ∨ (o.PaymentType == Cash ∧ o.RecurringTemplateId == null)
 ```
 
+> **Status term amended twice since the panel.** The owner ruling of 2026-09-06 admitted `OnTheWay`
+> and `InProgress` (the work is not *over*, not "has not started"), and
+> [ADR-0057](/decisions/adr-0057) (2026-09-08) dropped the `New ∧ Cash` qualifier — a paid card
+> order now rests at `New`, and the money term already carried the payment qualification.
+
 | Member | Job |
 |---|---|
-| `OfferableStatuses` = `[New, Confirmed]` | the **coarse** fulfilment floor — the index-served prefilter on `Orders.CurrentStatus`, and the thing the clients mirror. **Not the rule** — `New` is conditional. |
+| `OfferableStatuses` = `[New, Confirmed, OnTheWay, InProgress]` | the **coarse** fulfilment floor — exactly the status term, the index-served prefilter on `Orders.CurrentStatus`, and the thing the clients mirror. **Not the rule** — it has no money term. |
 | `IsOfferableSql` : `Expression<Func<Order,bool>>` | queryable form, composed into `OrderSpecification` |
 | `IsOfferable(OrderStatus?, PaymentType, PaymentStatus, string? recurringTemplateId)` | in-memory form, for the `TakeOrder` write gate. **Four scalars, all columns on `Order`** — no navigation properties, no I/O, no collaborator. |
 
@@ -76,8 +80,9 @@ an exhaustiveness test over `Enum.GetValues<PaymentType>()` goes red until it is
   about *liveness*, not capacity; they are separate conjuncts and the take gate evaluates availability
   **first** so a cancelled order with a free seat reports the honest reason.
 - **Whether an order occupies a cleaner's calendar.** That is `SlotBlockingStatuses`
-  (`OrderRepository.cs:263-270`) and it is a **different set for a different question** — it correctly
-  includes `OnTheWay`/`InProgress`, which are never offerable. Do not unify them.
+  (`OrderRepository.cs`) and it is a **different set for a different question** — it has no money term
+  and still tolerates legacy `Pending` rows. That it now shares `OnTheWay`/`InProgress` with the floor
+  is a consequence of the 2026-09-06 ruling, not a shared definition. Do not unify them.
 - **Which statuses a cleaner's *own* list shows.** My-Active and My-Completed are the my-orders
   question. A cleaner must always see their own terminal orders; availability must never floor them.
 - **How to write a status.** It reads `CurrentStatus`; it never appends a track. `TakeOrder.cs:192-194`

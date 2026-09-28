@@ -254,10 +254,13 @@ The in-app feed has **three** audiences, and the host controller sets which one 
 count or mark-read a row of their partner-app feed. The customer and partner keysets are lists that
 trail their clients' templates (a key belongs in a keyset only once the audience's clients render it,
 or the badge counts a row the app drops unrendered). **The admin keyset is the catalogue by
-construction** — `NotificationFeedEventKeys.Admin = AdminNotificationEventCatalog.All`, the nine
+construction** — `NotificationFeedEventKeys.Admin = AdminNotificationEventCatalog.All`, the ten
 `admin.*` keys ([ADR-0065](/decisions/adr-0065)) — because the console is built to render every key of
 its catalogue, and a spec walks the C# file so a key added on the server fails the admin build without
-its five-locale sentence.
+its five-locale sentence. The tenth, `admin.dispute.chargeback_unmatched`, is that case today: the five
+admin locales carry its copy, but the console's mirror (`ADMIN_NOTIFICATION_EVENT_KEYS`) does not list
+it yet, so the page renders its row as an unknown event and `admin-notification-copy.spec.ts` fails
+until the key is added.
 
 Three things separate this audience from the other two:
 

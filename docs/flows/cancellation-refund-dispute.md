@@ -42,6 +42,24 @@ Android and iOS bodies as their second slot (owner ruling 2026-09-13; the credit
 credit's own, which the device cannot derive from the order).
 → [Money constants](/product/business-rules#money-constants)
 
+**Money never taken is never refunded.** `Order.Cancel` records the fee rate on every cancellation,
+but on an order that took no payment (`Order.TookNoPayment`: payment `Pending` or `Failed` — a cash
+booking not yet collected, a card never charged) it records a refund of **0**, for every writer: the
+customer, an administrator or the company wind-down, and the unfilled sweep. The fee on such an order is
+owed and nothing collects it yet; the admin order detail shows the rate and *Fee still owed*
+(`CancellationAssessor.FeeOwed` — all of the fee on an unpaid order, zero where a card charge covered
+it), two figures only an administrator receives. The customer web's order detail, on a cash booking,
+shows the fee and no card-refund estimate (`tookNoCardPayment`: the payment type is `Cash`, or the
+payment is `Pending` or `Failed`); the Android and iOS cancel sheets still print the policy refund
+beside the fee on every signed-in booking, cash included.
+
+One cash booking falls outside `TookNoPayment`: a **confirmed recurring cash occurrence** rests at
+`Paid` with no money taken (`ConfirmRecurringOrder` writes `Paid` and moves only the payment axis).
+Cancelling it records a refund all the same — the policy refund on the customer's cancel, the full
+price on a platform one — though none is issued, because only a card order is refunded; and `FeeOwed`
+returns 0 for it.
+→ [Business rules — cancellation](/product/business-rules#cancellation)
+
 **The cancel is written down as the server priced it.** `CancelOrder` is marked
 `customer.order.cancel` ([ADR-0062](/decisions/adr-0062)): the row that rides its commit carries the
 tier, the fee rate and amount, the refund amount, the notice given in hours, the minutes since booking,
@@ -87,11 +105,19 @@ cannot explain.
 
 Chargebacks arrive as Stripe events and are **reflected onto the linked dispute**, not onto the
 order's payment status. The webhook finds the disputed order **by its stored payment intent**, links
-the order's open dispute or writes an escalated `Chargeback` one, and acknowledges. Only an order paid
-through a PaymentIntent stores one: a mobile PaymentSheet payment or a confirmed recurring occurrence,
-both account orders. **A web card booking stores only its Checkout Session, and every guest card
-booking is one**, so its chargeback resolves to no order. The webhook logs it and answers `200`. No
-dispute is written and no administrator is told.
+the order's open dispute or writes an escalated `Chargeback` one, and acknowledges. Every card order
+stores its intent: a mobile PaymentSheet payment and a confirmed recurring occurrence when the intent
+is created, and a web Checkout Session — every guest card booking is one — when
+`checkout.session.completed` lands. A web order paid before that was recorded is found **through its
+Checkout Session**: the webhook asks Stripe for the session behind the intent, reads the order id from
+its metadata, stores the intent on the order, and writes the dispute as above.
+
+**A chargeback that matches no order is still heard.** No dispute can be written, so the webhook logs
+it, answers `200`, and tells the administrators of **every** operating company
+(`admin.dispute.chargeback_unmatched`, with the amount and the Stripe dispute id to answer it by in the
+Stripe dashboard): the Stripe account is shared, so the money could be any company's. Only the
+`created` event alerts; an update or close for a dispute the platform never recorded is logged and
+ignored.
 
 `Dispute.UserId` is nullable: a dispute hangs off the order, an order may have no account, and the
 webhook's writers copy the order's `UserId`. Every ownership read compares that column against the
@@ -111,15 +137,27 @@ sends that refund through the one refund seam (reason `DisputeResolution`, the d
 `Refund` row) **before** it writes anything on the dispute. The seam splits the amount across the
 tenders the order was settled with: the card share goes back through Stripe, clamped to what the card
 can still return, and any credit share goes back to the customer's balance in the same commit. Only
-when the refund succeeds is the dispute written `Resolved` with its `RefundAmount`, and a customer with
-an account told (`order.refunded`, keyed on the refund). The `RefundAmount` recorded is the amount the
-administrator asked for, not the figure the seam moved. When the seam refuses — `refund.failed` from
+when the refund succeeds is the dispute written `Resolved`, and a customer with an account told
+(`order.refunded`, keyed on the refund). **The dispute records what was asked and what moved:**
+
+| Field | What it holds |
+|---|---|
+| `RefundAmount` | the amount the administrator asked for |
+| `CardRefundedAmount` | what went back to the card — the seam's clamped amount |
+| `CreditReturnedAmount` | what the same refund put back on the customer's credit balance, read from the ledger row written under the refund's key |
+
+The admin dispute detail shows them as *Refund requested*, *Refunded to card* and *Returned as credit*.
+A leg that moved nothing shows zero; a dispute resolved without a refund, or before the two legs were
+recorded, shows neither. The audit row's before and after carry all three. `DisputeDetails` carries
+the two new figures on every host that serves it — admin, customer web and customer mobile — and only
+the admin console shows them. When the seam refuses — `refund.failed` from
 Stripe, `refund.order_not_refundable` on an order with no card charge, `refund.nothing_refundable` once
 the ceiling is spent — the resolver gets that error and the dispute stays open. The refund key carries
 the dispute's id and no amount, so a retry re-drives the **first attempt's** refund row, clamped to
-what remains, whatever amount the retry names. The money moves once, and the dispute records the
-retry's amount. A resolution with no amount, or zero, moves nothing and simply resolves. A terminal
-dispute is never resolved twice (`dispute.already_resolved`).
+what remains, whatever amount the retry names. The money moves once: the dispute records the retry's
+amount as requested, and that one refund's card and credit legs as what moved. A resolution with no
+amount, or zero, moves nothing and simply resolves. A terminal dispute is never resolved twice
+(`dispute.already_resolved`).
 
 **Filing one is recorded against the order, then the dispute.** `CreateDispute` is marked
 `customer.dispute.create` with `Order` as its resource, so a filing that is refused — against a clean
@@ -148,7 +186,8 @@ dispute or the order shows the three interleaved, newest first.
 | Cancel after the cleaner is on the way | Allowed; the fee ladder decides the cost. |
 | Cancel by someone who does not own the order | Refused — the handler checks `order.UserId`. The probe is recorded: a failure row on the caller with `order.not_found` and the probed order as its resource. |
 | Dispute resolved outside the guard | Cannot happen from application code; the checker fails the build. |
-| Dispute resolved with a refund Stripe refuses | The resolver gets `refund.failed`; the dispute stays open with no `RefundAmount`, and the customer is not told of a refund. Resolving again re-drives the same refund row at the first attempt's amount, even when the retry names another; the dispute then records the retry's amount. |
+| Dispute resolved with a refund Stripe refuses | The resolver gets `refund.failed`; the dispute stays open with no `RefundAmount`, and the customer is not told of a refund. Resolving again re-drives the same refund row at the first attempt's amount, even when the retry names another; the dispute then records the retry's amount as requested and that refund's legs as what moved. |
 | Dispute resolved with a refund on a cash booking | `refund.order_not_refundable` — there is no card charge to refund, and the dispute stays open. |
-| Chargeback on a web card booking, guest or account | The order is not found, because a Checkout Session order stores no payment intent. The webhook logs it and answers `200`. No dispute is written and the administrators are not told. |
+| Chargeback on a web card booking, guest or account | Found by the intent `checkout.session.completed` stored, or through its Checkout Session when the order predates that; the dispute is written and the administrators are told. |
+| Chargeback that matches no order | No dispute is written; the webhook answers `200` and the administrators of every company are told (`admin.dispute.chargeback_unmatched`). |
 | Express waiver used, then the order cancelled | The consumed benefit slot is forfeited or released by rule, not silently kept. |

@@ -9,24 +9,48 @@ It is a property of the **order alone** — four columns in, a bool out — and 
 [order lifecycle](/domain/order-lifecycle):
 
 ```csharp
-(CurrentStatus == Confirmed || (CurrentStatus == New && PaymentType == Cash))
-&& (PaymentStatus == Paid  || (PaymentType == Cash && RecurringTemplateId == null))
+(CurrentStatus == New || CurrentStatus == Confirmed
+    || CurrentStatus == OnTheWay || CurrentStatus == InProgress)                 // the work is not over
+&& (PaymentStatus == Paid || (PaymentType == Cash && RecurringTemplateId == null)) // nothing can retract it
 ```
+
+The status term asks one thing — is the work over? — and qualifies nothing about money. The money term
+carries the whole payment qualification. That split is [ADR-0057](/decisions/adr-0057) (owner ruling
+2026-09-08): until then the status term read `Confirmed || (New && Cash)`, because the Stripe webhook
+wrote `Confirmed` when a card payment settled. `Confirmed` now means only that a cleaner took the job,
+so a paid card order rests at `New`, and the cash qualifier would have taken every card job off every
+board.
 
 ## Why a status list cannot express it
 
-Two conditionals make the fulfilment axis insufficient on its own:
+Every status the rule admits is also a status it refuses, depending on the money. What the money term
+decides:
 
-- **`New` is offerable only for cash.** On a one-off cash order the take *is* the confirmation, so
-  there is nothing to wait for. On a card order, `New` means the webhook has not landed.
-- **`Confirmed` is offerable only once nothing scheduled can still retract it.** A recurring occurrence
-  the customer has not confirmed can still be withdrawn, and a cleaner should not be standing in a
-  doorway when that happens.
+| Order | Offerable | Why |
+|---|---|---|
+| One-off, cash | **yes, from creation** | Nothing scheduled can retract it. The take *is* the confirmation, and the money changes hands at the door |
+| One-off, card, `Paid` | **yes** | The webhook's `Paid` write puts it on the board; the status stays `New` until a cleaner takes it |
+| One-off, card, `Pending` or `Failed` | no | The money has not landed. A `Pending` checkout is cancelled by `CleanupStalePendingOrders` once it is more than an hour old (the sweep runs every 15 minutes). `Failed` is only ever written together with a cancellation — by that sweep, or by the webhook when Stripe expires or cancels the payment |
+| Recurring occurrence, `Pending` (cash or card) | no | The customer has not confirmed it, and `AutoCancelStaleRecurringOrders` withdraws it an hour before the slot. A cleaner should not be standing in a doorway when that happens |
+| Recurring occurrence, `Paid` | **yes** | A cash occurrence gets its `Paid` from the customer's confirm (`ConfirmRecurringOrder`); a card one from the webhook |
 
-`OfferableStatuses = { New, Confirmed }` exists, but it is **the coarse floor, not the rule** — the
-statuses the rule can ever admit. It is there because the clients cannot evaluate the money term (they
+The money term **refuses everything either retracting sweep can still reach** —
+`CleanupStalePendingOrders` (card, `Pending`, not recurring) and `AutoCancelStaleRecurringOrders`
+(recurring, `Pending`): an order is offerable only when neither sweep's filter would match it. The one
+`Pending` order it admits is a one-off cash order, which neither sweep touches. A third scheduled
+retractor must be refused there too, or the board offers orders that are about to disappear.
+
+The status term says the work is **not over**, not that it has **not started** (owner ruling
+2026-09-06). A job longer than two hours has several seats, and the first cleaner to tap *on my way*
+writes an order-level `OnTheWay` while another seat is still empty. Only `Completed`, `Cancelled` and
+the dead `Pending` are out.
+
+`OfferableStatuses = { New, Confirmed, OnTheWay, InProgress }` is the status term on its own — **the
+coarse floor, not the rule**. It is there because the clients cannot evaluate the money term (they
 filter on none of the three money columns) and because it is the index-served prefilter on
-`Orders.CurrentStatus`.
+`Orders.CurrentStatus`. A read that asks *"may a cleaner be offered this?"* and uses it without the
+money term offers orders the rule refuses; the reads that use it on purpose ask a different question —
+whether the work is still owed.
 
 ## Two evaluation forms, on purpose
 
@@ -105,9 +129,11 @@ read; the pending-offer list conjoins `PayableTo` alone. A null resolved currenc
 empty board, never every board. The resolver itself never hands the predicate a guess: a work country
 with no configured currency throws before the board is read (owner ruling 2026-09-12), so a cleaner is
 never shown the platform default's orders because their country's row is missing. The take answers
-`order.not_found`, exactly as for a held order, for the same reason. `AdminReassignOrder` is
-deliberately not gated — it is the override — and an assignment made over the rule stays visible to
-the cleaner it was made for.
+`order.not_found`, exactly as for a held order, for the same reason. `AdminReassignOrder` does not
+read `PayableTo` — it is the override — but it does refuse a cleaner who is not approved, does not
+work in the order's market, or is busy at the time
+([reassignment](/admin-app/order-management#order-reassignment)). An assignment made over the
+currency rule stays visible to the cleaner it was made for.
 → [Business rules](/product/business-rules#cleaner-currency)
 
 ## Seat allocation

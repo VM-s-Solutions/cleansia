@@ -36,9 +36,10 @@ earned it.
 of the country they work in (owner ruling 2026-09-12), and `OrderVisibility.PayableTo` keeps every
 order in another currency off their board, out of their counts, out of their browse and out of their
 take — it answers `order.not_found`, like a held order. So under normal operation a cleaner's pay rows
-are all in one currency and a period closes into one invoice. The one path across the line is an admin
-reassigning a cleaner onto an order (`AdminReassignOrder` is deliberately not gated), which is why the
-per-currency invoicing below still exists. → [Business rules](/product/business-rules#cleaner-currency)
+are all in one currency and a period closes into one invoice. The one path the board does not decide
+is an admin reassigning a cleaner onto an order: `AdminReassignOrder` does not read the currency — it
+checks that the cleaner works in the order's market (`order.reassign.employee_other_market`) — which
+is why the per-currency invoicing below still exists. → [Business rules](/product/business-rules#cleaner-currency)
 
 ## One invoice per employee, per period, per currency {#one-invoice-per-currency}
 

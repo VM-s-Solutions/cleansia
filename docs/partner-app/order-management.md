@@ -88,7 +88,7 @@ The order detail page (`/orders/:id`) shows comprehensive order information thro
 The partner order flow mirrors the Android and iOS apps:
 
 ```
-Offerable (New+Cash, or Confirmed+settled)
+Offerable (the work is not over, and it is Paid — or a one-off cash order; see /domain/offerability)
   → Take Order
     → assignment row added; New becomes Confirmed
       → Notify On The Way
@@ -210,6 +210,13 @@ if (inProgressEntry) {
   actualMinutes = Math.max(1, Math.floor((Date.now() - start.getTime()) / 60000));
 }
 ```
+
+**From the orders list, completion opens a dialog** (`CompleteOrderDialogComponent`, via
+`OrdersFacade.openCompleteOrderDialog`). It shows the estimated and actual minutes side by side, takes
+the actual minutes (prefilled with the estimate) and **optional** notes — the form requires none,
+like the server and the detail page, which sends an empty string. It passes no verdict: the *Delay* /
+*On time* row is gone (2026-09-28), and the hint under the notes says only that they help improve the
+estimates. Nothing in pay reads the minutes; the dashboard's time and productivity analytics do.
 
 ### Elapsed Timer
 

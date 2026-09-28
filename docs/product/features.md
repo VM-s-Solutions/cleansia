@@ -36,7 +36,9 @@ not a tick). Once a cleaner has accepted it for the job, the order detail on web
 states *Contract for work accepted by {given name} on {date}, version {version}* per crew member, and
 **Read the contract** opens the accepted text with the job facts frozen at acceptance — order number,
 window, price, coarse location, scope — in the customer's language. Before any acceptance it says
-nothing. → [Business rules — the contract for work](/product/business-rules#work-contract),
+nothing. This is the shipped customer ↔ cleaner contract; under the owner's 2026-09-27 own-name-sale
+ruling its parties become the operating company and the cleaner once the lawyer confirms, and the
+customer will no longer see it. → [Business rules — the contract for work](/product/business-rules#work-contract),
 [ADR-0068](/decisions/adr-0068)
 
 **Tracking** — see the order move through on-the-way, in progress and completed, with push
@@ -75,15 +77,21 @@ confirms. See [Business rules](/product/business-rules#cancellation).
 15, and a monthly quota of express-surcharge waivers. Priced per market: the Plus page, the wizard's Plus step and the mobile
 Subscribe screens show the plans priced in the chosen market's currency, a market with no priced plan
 says so instead of showing a price, and a subscription keeps the currency it was started in for life.
-No plan has a free trial, and the web's Plus page, home band and recurring-bookings gate offer none.
-The Android and iOS customer apps still show trial copy that no plan honours, on two surfaces each:
-the home Plus card (*Save on every cleaning. 14 days free.* / *Try Plus free*) and the membership
-card a non-member sees (*Try free for 14 days*).
+No plan has a free trial, and no client offers one: the Android and iOS home Plus card reads *Save on
+every cleaning.* / *Get Plus*, and the membership card a non-member sees offers *Get Cleansia Plus*,
+with no trial and no *cancel anytime* (since 2026-09-28).
 → [Business rules — Cleansia Plus](/product/business-rules#cleansia-plus)
 
 **Honest copy** — the money figures in the customer copy (the apology credit when a cleaner never
 comes, the insurance ceiling on the mobile trust badge and FAQ, the currency named in the terms) come
-from the market, not from the translation; a market with no figure gets the sentence without one.
+from the market, not from the translation; a market with no figure gets the sentence without one. The
+copy promises only what the platform does (since 2026-09-28): the web catalogue's trust chip says
+*24 h to report a problem* — the dispute window — instead of *100 % Satisfaction*; the web order
+detail has no *Track live* button, which only went back; the mobile referral slide says both sides
+earn their points after the friend's **first completed cleaning**; and strings that promised a free
+add-on, tier perks or a satisfaction guarantee the platform does not give are deleted. Each retired
+claim is pinned absent by a test in every locale.
+→ [Business rules — disputes](/product/business-rules#disputes)
 
 **Loyalty and referrals** — earn points, move through tiers, share a referral code, redeem promo codes.
 The tier follows the current points total both ways: points taken back — a refund's clawback, an
@@ -104,7 +112,12 @@ with its effective date, a sign-up or a booking without the terms tick is **refu
 consent written at sign-up points at exactly the text that was shown. An erasure request that could
 not complete is kept on record and finished by the platform without a second request. A completed
 deletion forfeits any unused credit — never paid out, never restored — and the deletion confirmation
-on the web and in both mobile apps says so before the customer confirms.
+on the web and in both mobile apps says so before the customer confirms. None of them says *all* the
+customer's data is deleted: each lists what goes (the profile, saved addresses, sign-in details, and
+the name, contact details, address and photos on the bookings) and **what is kept** — the bookings as
+the contract record without personal details, receipts for as long as accounting law requires,
+consent records and the action log (without IP or device) for three years, dispute text for three
+years.
 → [What is recorded about a customer](/product/business-rules#customer-record),
 [Credit on a deleted account](/product/business-rules#credit-on-account-deletion),
 [ADR-0063](/decisions/adr-0063)
@@ -165,7 +178,8 @@ an open period offers it before any invoice exists, and a cancelled invoice's cu
 **Four roles, one console.** Every administrator account carries a role — **Administrator**, **Manager**,
 **Support** or **Accountant** — and the console shows each role only what it may do; the server refuses the
 rest whether or not a button was visible. An Administrator has everything. A Manager has everything but
-the company's own affairs: the lifecycle, the company settings, the legal documents, and the administrator
+the company's own affairs: the lifecycle, the company settings, the legal documents, the company's legal
+identity (its name, registration number and bank details in *Company Info*), and the administrator
 accounts and their roles. Support runs the day: orders (the unredacted detail, door codes, reassign,
 override, cancel, refunds), disputes, customers (credit, loyalty, referrals, exports and the incident
 file, consents, GDPR requests), cleaners (approve, reject, identity documents) and the audit log — but not
@@ -253,7 +267,8 @@ with a hash on the last page; every build of either is itself recorded. The orde
 
 **Legal documents** — a read-only page under the configuration area listing every version of the
 terms, the privacy policy and the contract for work the platform has shown, per audience, type and
-market, with its effective date, whether it is in force and the languages it carries, and a preview
+market, with its effective date, whether it is in force (only the newest version already in effect
+in its audience, type and market is; a superseded or future-dated one is not) and the languages it carries, and a preview
 of one language with its content hash. There is no authoring: a new version is a seed file plus a
 deploy. → [ADR-0063](/decisions/adr-0063), [ADR-0068](/decisions/adr-0068)
 

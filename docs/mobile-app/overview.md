@@ -164,15 +164,25 @@ Play Data safety declaration is filled in from.
 <uses-permission android:name="android.permission.INTERNET" />
 <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 <uses-permission android:name="android.permission.CAMERA" />
 
 <uses-feature android:name="android.hardware.camera" android:required="false" />
 ```
 
+**The partner app asks for approximate location only** (since 2026-09-28). Its two uses are both
+satisfied by a coarse fix: the job list's distance is worked out on the device, to the cleaner's own
+jobs, shown in kilometres and never uploaded; the address picker only centres the map on it, and the
+cleaner moves the pin. Every permission request asks for `ACCESS_COARSE_LOCATION` — Android refuses a
+request for a permission the manifest does not declare, so a leftover request for precise location
+would read as a denial on every device — and the merged manifest declares nothing finer.
+`LocationPermissionTest` pins both. The iOS partner app's location purpose string names the same two
+uses, and says the distance is calculated only on the device, in all five `InfoPlist.strings` and in
+`project.yml` (`LocationPurposeCopyTests`).
+
 **`:customer-app`** — `INTERNET`, `POST_NOTIFICATIONS`, `ACCESS_FINE_LOCATION`,
-`ACCESS_COARSE_LOCATION`. It does not declare `ACCESS_NETWORK_STATE`; that is the only difference.
+`ACCESS_COARSE_LOCATION`. It does not declare `ACCESS_NETWORK_STATE` or `CAMERA`, and it still
+declares precise location.
 
 **Neither app declares a storage permission, and neither needs one.** Every gallery picker in
 both apps goes through the system picker — `PickVisualMedia()` on partner (job photos, avatar),

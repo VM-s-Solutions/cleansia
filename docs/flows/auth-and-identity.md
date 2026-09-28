@@ -10,11 +10,14 @@ use**. Only a hash of it is stored.
 | Host | Access token |
 |---|---|
 | Admin web | 15 min |
-| Partner web, Customer web | 24 h |
+| Partner web, Customer web | 30 min |
 | Both mobile hosts | 30 min |
 
-The admin figure is deliberate: on web there is no device id, so the TTL *is* the revocation window.
-Partner and customer web stay at 24 h by a separate, recorded decision.
+The web figures are deliberate: on web there is no device id, so the TTL *is* the revocation window.
+Partner and customer web moved from 24 h to 30 min on 2026-09-28; both web clients refresh silently on
+a `401` and replay the request, so a signed-in session outlives its access token. The customer site's
+server render is always anonymous and never sees the token.
+→ [ADR-0030](/decisions/adr-0030)
 
 ## Rotation detects theft
 

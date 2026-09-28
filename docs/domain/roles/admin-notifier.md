@@ -3,8 +3,9 @@
 > Introduced by **ADR-0065** (`docs/decisions/adr-0065.md`, **`accepted`** 2026-09-19; owner ruling on
 > D5, 2026-09-19: *"both in-app and email"*). Shipped as T-0768 (the notifier's feed half, the admin feed
 > routes, the first event), T-0774 (the e-mail channel, the template, the mailbox key), T-0775 (the seven
-> remaining sites) and T-0769 (the admin web bell and page); the ninth event rides T-0770 (ADR-0067). The
-> files that are the role: `Core.Domain/Notifications/AdminNotificationEventCatalog.cs` (the nine keys) ·
+> remaining sites) and T-0769 (the admin web bell and page); the ninth event rides T-0770 (ADR-0067), the
+> tenth — a chargeback that matches no order — shipped 2026-09-28. The
+> files that are the role: `Core.Domain/Notifications/AdminNotificationEventCatalog.cs` (the ten keys) ·
 > `Core.AppServices/Features/AdminNotifications/AdminEventCatalog.cs` (per key: the audience and the exact
 > arg set, in e-mail order) · `Core.AppServices/Services/{IAdminNotifier,AdminNotifier}.cs` ·
 > `Core.AppServices/Services/EmailService.AdminNotification.cs` (the copy, five locales) ·
@@ -22,7 +23,7 @@ failing e-mail can never fail the command, and nothing the notifier reads depend
 
 ## Collaborators
 
-- **`AdminNotificationEventCatalog`** (Domain) — the nine `admin.*` keys and `All`; `NotificationFeedEventKeys.Admin`
+- **`AdminNotificationEventCatalog`** (Domain) — the ten `admin.*` keys and `All`; `NotificationFeedEventKeys.Admin`
   **is** `All`, so the feed audience `NotificationFeedAudience.Admin = 2` serves the catalogue by
   construction. Disjoint from the customer and partner keysets; `IsFeedEvent` does not know them, so the
   push seam cannot write an admin row. Every key maps to `null` in `GetCategoryFor`: no category, nothing
@@ -33,8 +34,9 @@ failing e-mail can never fail the command, and nothing the notifier reads depend
   site cannot smuggle a name in. `Audience` is the **name of an administrator set** (ADR-0066 D8) — never a
   policy, because the notifier filters rows, not principals: order events, disputes, payment failures and
   crew lost → `SupportOrAbove`; erasure failures → `ManagerOrAbove`; the three company milestones →
-  `AdministratorOnly`; **`admin.dispute.chargeback` → `AdminOnly`, every role** — Support answers the bank,
-  the Accountant reconciles the money that left, so the Accountant's bell is not empty by construction.
+  `AdministratorOnly`; **`admin.dispute.chargeback` and `admin.dispute.chargeback_unmatched` → `AdminOnly`,
+  every role** — Support answers the bank, the Accountant reconciles the money that left, so the
+  Accountant's bell is not empty by construction.
 - **`AdminEvent(Key, TenantId, Subject, Args)`** — the call. `TenantId` is an **argument**; `Subject` is the
   dedup subject, unique per logical event across requests (below); `Args` never carries a person.
 - **`IUserRepository.GetActiveAdministratorsAsync(tenantId)`** — `IgnoreQueryFilters()` with an explicit
@@ -72,13 +74,17 @@ failing e-mail can never fail the command, and nothing the notifier reads depend
   `.BodyUnderWay` for a crew lost `OnTheWay`/`InProgress`; `cause` through `{key}.Cause.{value}`; an ISO
   instant as `dd.MM.yyyy HH:mm UTC`, a `yyyy-MM-dd` day as `d. M. yyyy`) — in-code defaults per locale under
   admin `EmailTemplateTranslation` rows for `EmailType.AdminNotification = 10`.
-- **The nine sites** — each names the company from the subject it already holds, never from the override:
+- **The sites** — each names the company from the subject it already holds, never from the override:
   `NewOrderAdminNotifier.NotifyIfOfferableAsync` (shared by `OrderFactory`, `HandlePaymentNotification`'s
   paid arm and `ConfirmRecurringOrder`; the same `OrderAvailability.IsOfferable` read as the preferred
   cleaner's offer; a null `TenantId` is a warning and nothing written) · `OrderCrewLostNotifier.NotifyAsync`
   (shared by `DropOrder` and `RejectEmployee`, whenever the crew emptied, subject `{orderId}:{releasedAssignmentId}`)
   · `CreateDispute` (subject the dispute id) · `HandlePaymentNotification`'s chargeback arms (subject the Stripe
-  dispute id; the open customer dispute's id in the args when one exists) and its `payment_intent.payment_failed`
+  dispute id; the open customer dispute's id in the args when one exists), its unmatched-chargeback arm
+  (a `charge.dispute.created` no order carries, found neither by stored intent nor through its Checkout
+  Session: **one event per company** in `ITenantRepository.GetAllIdsAsync()`, because the Stripe account is
+  shared, subject `{stripeDisputeId}:{tenantId}` so the companies' rows never collide on the outbox key,
+  args `amount` and `stripeDisputeId`) and its `payment_intent.payment_failed`
   arm (subject the order id, guarded by `PaymentStatus == Pending && CurrentStatus != Cancelled && !AnyForEventAsync`)
   · `RetryFailedUserDeletions` (subject `{requestId}:{day}`, in a fresh scope with the override set and its own
   commit — the failing walk's scope is discarded by design) · `WindDownCompany` (only when a date is set;

@@ -47,7 +47,12 @@ row can point at exactly the text the customer read and still find it years late
   the document; `RegisterEmployee` and the partner hosts' `GrantConsent` pass **none**.
 - **`GetLegalDocument`** (customer hosts, anonymous, `interactive` window) and **`AdminGetLegalVersions`
   / `AdminGetLegalDocument`** (`CanViewLegalDocuments`, Administrator only — ADR-0066) — the reads; the customer `/terms` and
-  `/privacy` pages and the admin `/legal-documents` page render them.
+  `/privacy` pages and the admin `/legal-documents` page render them. **The admin reads mark one version
+  per (audience, type, market) in force** — the newest whose `EffectiveFrom` is on or before today. An
+  older version that has been superseded and a version dated in the future both read *no*.
+  `AdminGetLegalVersions` computes it over the fetched list (its filters narrow on that same key, so every
+  group arrives whole); `AdminGetLegalDocument` asks `GetInForceAsync` for the document's own group and
+  compares ids.
 - **`agents/tools/check-booking-policy-parity.mjs`** — reads the newest seed version per type for the
   no-baked-figures rule (a `1 000 000 Kč` in a legal text is a red build).
 
@@ -64,7 +69,9 @@ row can point at exactly the text the customer read and still find it years late
   company; only the *copy* is per market.
 - **Today's date.** `IsInForceOn(today)` takes it; the seeder and the resolver pass UTC. The entity
   cannot refuse an edit by itself — `LegalDocumentText.Replace` exists for a not-yet-in-force document
-  and the guard lives in the seeder.
+  and the guard lives in the seeder. `IsInForceOn` means *has come into force*, which is what
+  immutability needs; it stays true after a newer version supersedes the document, so it is **not** what
+  the admin catalogue's *in force* reads.
 - **HTML.** The stored text is markdown; the HTML is a rendering with a market's figure in it, produced
   per request and never stored.
 

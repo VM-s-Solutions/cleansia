@@ -206,7 +206,7 @@ had never fired at all — see [the schedule tokens](#timer-schedules) below.
 | `PruneOutbox` | daily 04:00 UTC | Deletes drained outbox rows |
 | `RetryFailedUserDeletions` | daily 05:00 UTC | Re-runs every GDPR erasure left `Failed` (or `Processing` for over 30 min), once per row per day, in its own scope per row; logs a still-failed one at Error. Under `DataRetention__Enabled` |
 | `SendPeriodEndReminders` | daily 09:00 UTC | Emails employees whose pay period ends in 3 days |
-| `DataRetentionCleanup` | weekly, Sun 03:00 UTC | Fourteen tasks under thirteen retention settings: expired user data, old-order PII, customer/admin/cleaner audit rows (3 y per row by default), dispute text after erasure, contract-acceptance metadata, completed-order photos (7 d by default, held by unresolved disputes), and expired or revoked guest access tokens. Runs **once per operating company** under that company's own settings; token expiry/revocation needs no separate setting → [Retention](/flows/gdpr-and-audit#retention) |
+| `DataRetentionCleanup` | weekly, Sun 03:00 UTC | Fourteen tasks under thirteen retention settings: expired user data, old-order PII, customer/admin/cleaner audit rows (3 y per row by default), dispute text after erasure, contract-acceptance metadata, photos of completed or cancelled orders (7 d by default, held by unresolved disputes), and expired or revoked guest access tokens. Runs **once per operating company** under that company's own settings; token expiry/revocation needs no separate setting → [Retention](/flows/gdpr-and-audit#retention) |
 
 #### Queue consumers
 

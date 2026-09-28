@@ -54,7 +54,7 @@ Settings are loaded in order with later files overriding earlier ones. Sensitive
 | Setting | Description |
 |---------|-------------|
 | `Secret` | HMAC-SHA256 signing key (min 32 chars). Key Vault for deployed environments; the same value across every host in an environment. |
-| `AccessTokenExpMinutes` | Access-token lifetime. **Per host, and deliberately different:** Admin **15**, Partner **1440**, Mobile Customer **30**. Admin's 15 is ADR-0030 and is pinned by a test — see [ADR-0030](/decisions/adr-0030). |
+| `AccessTokenExpMinutes` | Access-token lifetime. **Per host:** Admin **15**; Partner web, Customer web and the two mobile hosts **30**. Admin's 15 is [ADR-0030](/decisions/adr-0030), the mobile hosts' 30 is [ADR-0024](/decisions/adr-0024), and the two web hosts moved from 1440 to 30 on 2026-09-28; `AccessTokenTtlConfigPinTests` pins every host's value in both config files. |
 | `RefreshTokenExpDays` | Refresh lifetime when the user chose *remember me* — **30** (Mobile Customer **90**). |
 | `RefreshTokenShortExpDays` | Refresh lifetime when they did not — **1**. |
 
@@ -122,16 +122,9 @@ operator who set a 6-hour lifetime got Admin's 15 minutes and no signal that the
 
 ### CORS Origins
 
-```json
-{
-  "CorsOrigins": [
-    "http://localhost:4200",
-    "https://partner.cleansia.cz"
-  ]
-}
-```
-
-Production (`appsettings.Production.json`):
+Every host's base `appsettings.json` carries **no** origin (`"CorsOrigins": []`). The localhost
+origins live in `appsettings.Development.json`, and each host's production origins in
+`appsettings.Production.json`:
 
 ```json
 {
@@ -141,6 +134,21 @@ Production (`appsettings.Production.json`):
   ]
 }
 ```
+
+| Host | Production origins |
+|---|---|
+| Admin | `https://admin.cleansia.cz` |
+| Partner web | `https://partner.cleansia.cz`, `https://cleansia.cz` |
+| Customer web | `https://cleansia.cz`, `https://www.cleansia.cz` |
+| Partner mobile, Customer mobile | **none** — `[]`. The native apps send a body token with no cookies, so no browser origin needs to reach them |
+
+::: danger A JSON array in configuration merges by index
+.NET configuration does not replace an array from a later file; it overlays it element by element. A
+base file with three origins and a production file with two still yields the base file's **third**
+origin in production. That is how the two mobile hosts leaked a localhost origin into production
+until 2026-09-28, and why the base file holds none. `DevCorsOriginsConfigTests` pins the composed
+production list of both mobile hosts as empty.
+:::
 
 ### Sentry (Error Tracking)
 
@@ -203,7 +211,7 @@ Production:
 
 | Setting | Value |
 |---------|-------|
-| CORS | `http://localhost:4200`, `http://localhost:4201` |
+| CORS | the host's `appsettings.Development.json` — `http://localhost:4200` and the host's own SPA or Swagger ports |
 | Stripe Success URL | `http://localhost:4202/checkout/success` — the **customer** app's port |
 | Stripe Cancel URL | `http://localhost:4202/checkout/cancel` — same, and where Stripe's back-arrow goes |
 | Blob Storage | `UseDevelopmentStorage=true` (Azurite) |
@@ -214,7 +222,7 @@ Production:
 
 | Setting | Value |
 |---------|-------|
-| CORS | `https://partner.cleansia.cz`, `https://cleansia.cz` |
+| CORS | per host — see [CORS origins](#cors-origins); none on the two mobile hosts |
 | Stripe Success URL | `https://cleansia.cz/checkout/success` |
 | Stripe Cancel URL | `https://cleansia.cz/checkout/cancel` |
 | SendGrid URLs | `https://partner.cleansia.cz/...` |

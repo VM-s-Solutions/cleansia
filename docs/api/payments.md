@@ -61,14 +61,15 @@ card. → [Paying in cash](/product/business-rules#cash)
 
 ### Create Payment (via CreateOrder)
 
-Payment is initiated through the `CreateOrder` endpoint on both the Partner and Customer APIs.
+Payment is initiated through the `CreateOrder` endpoint.
 
 ```
-POST /api/Payment/CreateOrder
-POST /api/Order/CreateOrder
+POST /api/Payment/CreateOrder     (customer web host only)
+POST /api/Order/CreateOrder       (customer web, anonymous; customer mobile, signed in)
 ```
 
-Both routes invoke the same `CreateOrder.Command` handler.
+Both routes invoke the same `CreateOrder.Command` handler. The customer mobile host serves only
+`Order/CreateOrder`, and only to a signed-in caller → [Orders - CreateOrder](/api/orders#createorder)
 
 **Request body:** See [Orders - CreateOrder](/api/orders#createorder)
 
@@ -142,8 +143,9 @@ payment initiated, waiting for the webhook" is `PaymentStatus.Pending` while `Or
 | `Disputed` | `5` | Reserved; nothing writes it. A chargeback is recorded as a `Chargeback` dispute, not on this axis |
 | `PartiallyRefunded` | `6` | Partial refund issued |
 
-A cash order therefore stays `New` + `Pending` until a cleaner takes it — and it is still offerable,
-because the offerability rule admits `New` + `Cash` explicitly.
+A cash order therefore stays `New` + `Pending` until a cleaner takes it — and a one-off one is still
+offerable, because the offerability rule's money term admits a one-off cash order without a payment
+→ [Offerability](/domain/offerability).
 
 ## Stripe Configuration
 

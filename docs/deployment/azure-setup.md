@@ -94,6 +94,26 @@ App Services access Key Vault via managed identity using Key Vault references in
 | Managed Identity | App Services authenticate to Key Vault, ACR, and Storage without credentials |
 | Service Principal | GitHub Actions authenticates to Azure via OIDC (federated identity) |
 
+**Basic publishing credentials are off.** Since 2026-09-28 the Bicep sets the `ftp` and `scm`
+`basicPublishingCredentialsPolicies` to `allow: false` on every App Service site, on its staging slot
+when the slot is enabled (`appService.bicep`), and on the Function App (`functionApp.bicep`), so
+neither FTP nor a username-and-password deploy to Kudu is accepted. Nothing depends on them: the
+deploys sign in through OIDC (`azure/login`) and publish with `azure/webapps-deploy` and
+`az functionapp config container set`. The resources are named literally rather than in a loop,
+because the loop form raised Bicep's `BCP225` and switched type checking off.
+
+**The customer site sends security headers.** The SSR server (`apps/cleansia.app/server.ts`) sets
+them in its first middleware after compression, so static files, `/health`, a fresh render and the
+landing page's micro-cache hit all carry them:
+
+| Header | Value |
+|---|---|
+| `X-Frame-Options` | `DENY` |
+| `Content-Security-Policy` | `frame-ancestors 'none'` — the only directive; there is no script or style policy yet |
+| `X-Content-Type-Options` | `nosniff` |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` |
+| `Strict-Transport-Security` | `max-age=31536000` — without `includeSubDomains` or `preload` |
+
 ## Estimated Monthly Costs
 
 ### DEV Environment (~$66/month)

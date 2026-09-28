@@ -310,8 +310,10 @@ overrides it the moment there is one. → /product/business-rules#market
   for a non-admin caller, the browse gate and `TakeOrder` all read; the pending-offer list conjoins
   `PayableTo` alone. A foreign-currency order therefore does not exist from that cleaner's side (a take
   is `order.not_found`, like a held order), so every pay row a cleaner earns is in their currency and a
-  period closes into one invoice. `AdminReassignOrder` is deliberately **not** gated — it is the admin
-  override — and an order the cleaner is already on stays visible to them whatever its currency.
+  period closes into one invoice. `AdminReassignOrder` is the admin override and does **not** read the
+  currency; it does refuse a cleaner whose work country is not the order's market
+  (`order.reassign.employee_other_market`). An order the cleaner is already on stays visible to them
+  whatever its currency.
 - Every partner-facing money aggregate is scoped to that currency and labelled with its code: dashboard
   stats, the earnings chart, personal bests, order-distribution money columns, the available-jobs
   headline, pending earnings and My Pay. Counts stay over all orders. My Pay (`GetPeriodPays`) also

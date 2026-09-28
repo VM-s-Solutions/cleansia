@@ -76,7 +76,7 @@ The admin order detail page provides a comprehensive view of a single order with
 | Customer Info | Name, email, phone, address |
 | Service Details | Selected services, packages, rooms, bathrooms |
 | Employee Info | Assigned partner details — and, per crew member, whether the **contract for work** is accepted: *accepted {date}, v{version}* or *contract pending*. **Read** on an accepted one opens the accepted text with the job facts frozen at acceptance and, for an Administrator, the accepted text row's SHA-256 (the hash a dispute cites) → [Business rules — the contract for work](/product/business-rules#work-contract) |
-| Payment Info | Method, status, amount, Stripe references |
+| Payment Info | Method, status, amount, Stripe references. On a cancelled order, **Cancellation fee** (the rate the cancellation applied, in the session language's number format — a free 0 % cancellation still shows) and **Fee still owed**: the whole fee on an order that took no payment (`Pending` or `Failed`), which nothing collects yet, and zero where the card charge covered it — zero as well on a confirmed recurring cash occurrence, which rests at `Paid` with nothing collected, so read the payment method beside it. Only an administrator's order detail carries the two figures → [Business rules — cancellation](/product/business-rules#cancellation) |
 | Status History | Timeline of all status changes |
 | Notes | All notes added by partners and admins |
 | Photos | Before/after photos from partners |
@@ -99,17 +99,25 @@ Disputes are linked to specific orders and contain a description of the issue. T
 
 **A resolution with a refund moves the money before it is recorded.** Resolving with an amount above
 zero issues that refund first: the card share through Stripe, and on an order settled partly from
-customer credit, the credit share back to the customer's balance. The dispute becomes *Resolved* with
-the amount only when the refund succeeds. A refused refund shows its error and leaves the dispute open:
+customer credit, the credit share back to the customer's balance. The dispute becomes *Resolved* only
+when the refund succeeds, and its detail then shows three figures: **Refund requested** (the amount
+the resolution named), **Refunded to card** and **Returned as credit** (what the refund moved, in the
+dispute's currency). A leg that moved nothing shows zero; a dispute resolved without a refund, or
+before the two legs were recorded, shows neither. The dispute list's refund column is still the
+requested amount. A refused refund shows its error and leaves the dispute open:
 `refund.failed`, `refund.order_not_refundable` (a cash booking has no card charge) or
 `refund.nothing_refundable`. Resolving again re-drives the first attempt's refund, never a second one,
 and at the first attempt's amount even if the new resolution names another. A resolution with no
 amount moves no money. → [Cancellation, refund and dispute](/flows/cancellation-refund-dispute#dispute)
 
 A dispute that names no account shows the booking's own customer name and e-mail, read off the order.
-A bank chargeback on a web card booking, which includes every **guest** card booking, never reaches
-the console. The webhook finds a chargeback's order by its stored payment intent, and a Checkout
-Session order stores none.
+A bank chargeback reaches the console on every card booking, **guest** ones included, as an escalated
+*Chargeback* dispute (or linked to the order's open one). A chargeback that matches no order cannot be
+a dispute; it arrives by e-mail as `admin.dispute.chargeback_unmatched`, with the amount and the Stripe
+dispute id to find it by in the Stripe dashboard. The server writes a feed row for it too, but the
+console does not know that key yet: the notifications page shows the row as an unknown event, with
+neither figure and no link, so the e-mail is where to read it.
+→ [Cancellation, refund and dispute](/flows/cancellation-refund-dispute#dispute)
 
 ## Order Reassignment
 
@@ -123,6 +131,19 @@ The reassignment process:
 2. Confirm the reassignment
 3. The order status and assignment are updated
 4. Both the original and new partners are notified
+
+**The cleaner placed must be able to do the job.** `AdminReassignOrder` refuses, in this order:
+
+| Refusal | Key |
+|---|---|
+| No such cleaner | `employee.not_found` |
+| The cleaner is not active and `Approved` — pending, rejected, terminated, or deactivated | `order.reassign.employee_not_approved` |
+| The cleaner's work country is not the order's market, or they have none | `order.reassign.employee_other_market` |
+| The cleaner has a live job that overlaps this one | `order.reassign.employee_busy` |
+
+A cleaner already on this order is not refused as busy; the handler answers that they are already
+assigned. The weekly cap, the preferred-cleaner hold and profile completeness, which a cleaner's own
+take checks, are not checked on a placement.
 
 **A reassignment writes no contract acceptance** (ADR-0068 D3): an administrator cannot accept the
 contract for work on the cleaner's behalf, so the placed cleaner's seat reads *contract pending* on

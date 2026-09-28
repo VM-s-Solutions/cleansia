@@ -1,6 +1,7 @@
 # CI/CD Pipeline
 
-Cleansia uses GitHub Actions. **Five workflows gate a pull request** — one per stack, plus the docs —
+Cleansia uses GitHub Actions. **Eight workflows gate a pull request** — one per stack, the docs, two
+dependency-free Node gates whose drift spans trees no single stack job can see, and the secret scan —
 and five more deploy or run operational jobs.
 
 ::: info Source Files
@@ -13,6 +14,9 @@ and five more deploy or run operational jobs.
 | `android-ci.yml` | the Gradle multi-module build |
 | `ios-ci.yml` | SwiftFormat, then SwiftLint, then three test schemes |
 | `docs-ci.yml` | both halves of the reference contract: two checkers with their own self-tests blocking first, then `vitepress build` with `ignoreDeadLinks: false` |
+| `ios-symbols-ci.yml` | the compiler-free half of the iOS gate — `check-ios-symbols.mjs` on Linux |
+| `booking-policy-parity.yml` | every client's stated booking figures against `BookingPolicy`, and the legal seed's currency placeholders |
+| `secret-scan.yml` | gitleaks over every commit reachable from the head — [below](#secret-scan) |
 
 **Deploy and operational**
 
@@ -20,15 +24,37 @@ and five more deploy or run operational jobs.
 - `execute-sql.yml` — the manual, environment-gated SQL runner
 :::
 
+## Secret scan (`secret-scan.yml`) {#secret-scan}
+
+Runs on every pull request, whatever its base branch, and on every push to `master`. It installs the
+gitleaks **8.30.1** CLI, pinned by version and SHA-256 (the GitHub Action needs a paid licence on an
+organisation repository), checks out the full history and runs:
+
+```bash
+./gitleaks git --config .gitleaks.toml --redact --no-banner --verbose --log-opts="HEAD" .
+```
+
+So a secret committed anywhere in a pull request fails it, even if a later commit deletes it again —
+deleting a file does not un-publish it. `--redact` keeps a finding out of the job log.
+
+| File | What it holds |
+|---|---|
+| `.gitleaks.toml` | gitleaks' default rules, plus two allow-lists that apply to the **generic API key rule only**: the test-code paths (the published test JWT key, sandbox-shaped Stripe ids) and dotted translation keys. The Stripe, SendGrid and AWS rules still fire everywhere |
+| `.gitleaksignore` | the baseline — the fingerprints of what is already in history, in commented groups (two old SendGrid keys, an old Nx Cloud token, the published test JWT key in early host settings, false positives). Only a **new** finding fails |
+
+A finding that is a real secret is revoked at its provider first; baselining it only stops the build
+failing, it does not make the secret safe.
+
 ## Workflows Overview
 
 | Workflow | Trigger | Purpose |
 |----------|---------|---------|
 | `backend-ci` | PR to any branch | Build + test .NET solution |
 | `frontend-ci` | PR to any branch | Build Angular apps |
+| `secret-scan` | PR to any branch, push to `master` | gitleaks — no new secret in the history |
 | `deploy-dev` | **Manual (`workflow_dispatch`)** | Deploy everything to DEV |
 | `deploy-pro` | Manual (`workflow_dispatch`) | Deploy everything to PRO |
-| `execute-sql` | Manual | Run ad-hoc SQL scripts |
+| `execute-sql` | Manual | Run ad-hoc SQL scripts. Refuses `insert_seed_data.sql` on PRO and `insert_local_dev_admin.sql` on DEV and PRO (compared by file name, so a relative path cannot walk around it) |
 
 ## Branch Strategy
 
@@ -238,6 +264,21 @@ Same pipeline as DEV with these differences:
 | Angular config | `staging` | `production` |
 | Resource group | `rg-cleansia-dev` | `rg-cleansia-pro` |
 | App names | `*-dev` | `*-pro` |
+| Legal-text gate | none | the `legal-texts` job runs first, in both modes — below |
+
+**A production deploy is refused while a legal text in force, or one still to come, is a draft.**
+`deploy-pro.yml`'s first job, `legal-texts`, runs `agents/tools/check-legal-drafts.test.mjs` (its
+self-test) and then `check-legal-drafts.mjs`, and the deploy job `needs:` it, so neither `what-if` nor
+`deploy` provisions anything until it passes. The checker walks every audience, document type and
+market under `src/Cleansia.Infra.Database/Seed/Legal` and reads, in each folder, the version in force
+today (the newest `yyyy-MM-dd` on or before today, UTC) **and every version dated after today** — the
+same deploy seeds a future version, and it comes into force on its date with no deploy in between. It
+fails if any of their language files carries the draft banner — a line starting `> Návrh —` (cs, sk),
+`> Draft —` (en), `> Черновик —` (ru) or `> Чернетка —` (uk). It also fails on an empty scan: no seed
+tree, nothing in force anywhere, or a version in force with no text (an upcoming folder with no text
+does not fail). A market with nothing in force yet is only noted, provided its future versions carry no
+banner. The gate is on the production deploy only; pull requests and the DEV deploy do not run it,
+because every text seeded today is a draft.
 
 ::: warning Production Safety
 Two things guard prod, and neither is the typed confirmation this page used to describe — that gate was

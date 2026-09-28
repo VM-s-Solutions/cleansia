@@ -129,7 +129,9 @@ Two rules span both axes and neither can be expressed as a status list:
 - **Offerability** — whether a cleaner may be shown, and may take, an order. See
   [Offerability](/domain/offerability).
 - **The stale-order sweep** — matches `PaymentStatus == Pending && PaymentType == Card &&
-  RecurringTemplateId == null`, with **no status term at all**.
+  RecurringTemplateId == null && CurrentStatus != Cancelled`, older than an hour. Its **one status
+  term only excludes** (since 2026-09-28): an order already cancelled is not an abandoned checkout, and
+  re-cancelling it would restage the guest e-mail under a key its first cancellation already wrote.
 
 ## Seats
 

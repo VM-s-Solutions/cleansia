@@ -675,6 +675,9 @@ public class IssuePartialRefundHandlerTests
 
     private sealed class RecordingRefundService : IRefundService
     {
+        public Task<BusinessResult<RefundResult>> RedriveAsync(string refundId, string actorId, CancellationToken cancellationToken)
+            => throw new NotSupportedException();
+
         public int CallCount { get; private set; }
         public RefundRequest? LastRequest { get; private set; }
 

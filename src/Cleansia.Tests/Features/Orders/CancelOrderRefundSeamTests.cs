@@ -11,6 +11,7 @@ using Cleansia.Infra.Common.Validations;
 using MockQueryable;
 using Cleansia.Tests.Common;
 using Moq;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -41,13 +42,14 @@ public class CancelOrderRefundSeamTests
     {
         _session.Setup(s => s.GetUserId()).Returns(UserId);
         _policyResolver
-            .Setup(r => r.ResolveForUserAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.ResolveForOrderAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new CancellationPolicy(
                 FreeCancellationHours: 48,
                 PartialCancellationHours: 24,
                 PartialCancellationFeeRate: 0.25m,
                 LastMinuteCancellationFeeRate: 0.5m,
-                OopsWindowMinutes: BookingPolicy.OopsWindowMinutesStandard));
+                OopsWindowMinutes: BookingPolicy.OopsWindowMinutesStandard,
+                OopsWindowRule: OopsWindowRule.Standard));
     }
 
     private CancelOrder.Handler CreateHandler() =>
@@ -65,7 +67,8 @@ public class CancelOrderRefundSeamTests
                 _liveActivityProducer.Object,
                 _expressWaiverConsumer.Object,
                 new AuditContext(),
-                TimeProvider.System));
+                TimeProvider.System,
+                NullLogger<CustomerOrderCancellation>.Instance));
 
     private Order ArrangeCardPaidPendingOrder()
     {
@@ -204,4 +207,85 @@ public class CancelOrderRefundSeamTests
             It.IsAny<CancellationToken>()),
             Times.Once);
     }
+
+    /// <summary>
+    /// A Stripe outage on a member's cancel used to escape after the refund claim had committed the
+    /// cancel: a 500, an order already Cancelled, and neither the card refund nor the credit share ever
+    /// coming back. The cancel now completes, the refund stays pending for the hourly re-drive, and the
+    /// credit share returns now on the refund's own key, so the re-drive cannot return it twice.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(StripeTransportFaults))]
+    public async Task A_Stripe_Outage_Leaves_The_Refund_Pending_And_Returns_The_Credit_Share_Now(Exception fault)
+    {
+        var order = ArrangeCardPaidPendingOrder();
+        order.ApplyCredit(300m, UserId);
+        _refundService
+            .Setup(s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(fault);
+
+        var result = await CreateHandler().Handle(new CancelOrder.Command(OrderId, null), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(OrderStatus.Cancelled, order.CurrentStatus);
+        Assert.False(result.Value!.RefundInitiated);
+        Assert.True(result.Value.RefundPending);
+        VerifyCreditShareReturnedOnTheRefundKey(order, 300m);
+        VerifyNoRefundNotice();
+    }
+
+    [Fact]
+    public async Task A_Stripe_Refusal_Leaves_The_Refund_Pending_And_Returns_The_Credit_Share_Now()
+    {
+        var order = ArrangeCardPaidPendingOrder();
+        order.ApplyCredit(300m, UserId);
+        _refundService
+            .Setup(s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(BusinessResult.Failure<RefundResult>(
+                new Error(nameof(RefundRequest.Amount), BusinessErrorMessage.RefundFailed)));
+
+        var result = await CreateHandler().Handle(new CancelOrder.Command(OrderId, null), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.False(result.Value!.RefundInitiated);
+        Assert.True(result.Value.RefundPending);
+        VerifyCreditShareReturnedOnTheRefundKey(order, 300m);
+        VerifyNoRefundNotice();
+    }
+
+    [Fact]
+    public async Task A_Refund_That_Went_Through_Is_Not_Pending()
+    {
+        ArrangeCardPaidPendingOrder();
+        ArrangeSeamSuccess(confirmedAmount: 1000m);
+
+        var result = await CreateHandler().Handle(new CancelOrder.Command(OrderId, null), CancellationToken.None);
+
+        Assert.True(result.Value!.RefundInitiated);
+        Assert.False(result.Value.RefundPending);
+    }
+
+    public static TheoryData<Exception> StripeTransportFaults() =>
+    [
+        new HttpRequestException("connection reset"),
+        new TimeoutException("gateway timeout"),
+        new TaskCanceledException("the request timed out"),
+    ];
+
+    private void VerifyCreditShareReturnedOnTheRefundKey(Order order, decimal amount) =>
+        _creditAccountRepository.Verify(c => c.TryReturnAsync(
+            UserId,
+            order.CurrencyId,
+            amount,
+            $"credit-return:refund:{OrderId}:cancel",
+            UserId,
+            It.IsAny<CancellationToken>(),
+            OrderId,
+            It.IsAny<string?>()), Times.Once);
+
+    private void VerifyNoRefundNotice() =>
+        _producer.Verify(p => p.NotifyAsync(
+            It.IsAny<string>(), NotificationEventCatalog.OrderRefunded, It.IsAny<Dictionary<string, string>>(),
+            It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()),
+            Times.Never);
 }

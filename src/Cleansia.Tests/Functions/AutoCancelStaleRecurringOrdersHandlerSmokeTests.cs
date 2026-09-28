@@ -4,6 +4,7 @@ using Cleansia.Infra.Common.Validations;
 using MediatR;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using Cleansia.Core.AppServices.Features.Refunds;
 
 namespace Cleansia.Tests.Functions;
 
@@ -21,6 +22,9 @@ public class AutoCancelStaleRecurringOrdersHandlerSmokeTests
         _mediator
             .Setup(m => m.Send(It.IsAny<AutoCancelStaleRecurringOrders.Command>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(BusinessResult.Success(new AutoCancelStaleRecurringOrders.Response(Cancelled: 0, Considered: 0)));
+        _mediator
+            .Setup(m => m.Send(It.IsAny<RedrivePendingRefunds.Command>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(BusinessResult.Success(new RedrivePendingRefunds.Response(Considered: 0, Redriven: 0, Alerted: 0)));
 
         var handler = CreateHandler();
 
@@ -28,6 +32,9 @@ public class AutoCancelStaleRecurringOrdersHandlerSmokeTests
 
         _mediator.Verify(
             m => m.Send(It.IsAny<AutoCancelStaleRecurringOrders.Command>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+        _mediator.Verify(
+            m => m.Send(It.IsAny<RedrivePendingRefunds.Command>(), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 }

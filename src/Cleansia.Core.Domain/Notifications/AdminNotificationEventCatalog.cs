@@ -10,10 +10,13 @@ public static class AdminNotificationEventCatalog
 {
     public const string OrderNew = "admin.order.new";
     public const string OrderCrewLost = "admin.order.crew_lost";
+    public const string OrderCleanerNotStarted = "admin.order.cleaner_not_started";
     public const string DisputeFiled = "admin.dispute.filed";
     public const string DisputeChargeback = "admin.dispute.chargeback";
     public const string DisputeChargebackUnmatched = "admin.dispute.chargeback_unmatched";
     public const string PaymentFailed = "admin.payment.failed";
+    public const string RefundStuck = "admin.payment.refund_stuck";
+    public const string RefundNeedsRetry = "admin.payment.refund_needs_retry";
     public const string ErasureFailed = "admin.erasure.failed";
     public const string CompanyWindDownRequested = "admin.company.wind_down_requested";
     public const string CompanyWindDownRun = "admin.company.wind_down_run";
@@ -23,10 +26,13 @@ public static class AdminNotificationEventCatalog
     [
         OrderNew,
         OrderCrewLost,
+        OrderCleanerNotStarted,
         DisputeFiled,
         DisputeChargeback,
         DisputeChargebackUnmatched,
         PaymentFailed,
+        RefundStuck,
+        RefundNeedsRetry,
         ErasureFailed,
         CompanyWindDownRequested,
         CompanyWindDownRun,

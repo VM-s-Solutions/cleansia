@@ -15,10 +15,13 @@ import { formatDate } from '@cleansia/utils';
 export const ADMIN_NOTIFICATION_EVENT_KEYS = [
   'admin.order.new',
   'admin.order.crew_lost',
+  'admin.order.cleaner_not_started',
   'admin.dispute.filed',
   'admin.dispute.chargeback',
   'admin.dispute.chargeback_unmatched',
   'admin.payment.failed',
+  'admin.payment.refund_stuck',
+  'admin.payment.refund_needs_retry',
   'admin.erasure.failed',
   'admin.company.wind_down_requested',
   'admin.company.wind_down_run',

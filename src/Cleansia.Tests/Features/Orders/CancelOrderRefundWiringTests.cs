@@ -10,6 +10,7 @@ using Cleansia.TestUtilities.MockDataFactories.Orders;
 using MockQueryable;
 using Cleansia.Tests.Common;
 using Moq;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -46,13 +47,14 @@ public class CancelOrderRefundWiringTests
     {
         _session.Setup(s => s.GetUserId()).Returns(UserId);
         _policyResolver
-            .Setup(r => r.ResolveForUserAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.ResolveForOrderAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new CancellationPolicy(
                 FreeCancellationHours: BookingPolicy.FreeCancellationHours,
                 PartialCancellationHours: BookingPolicy.PartialCancellationHours,
                 PartialCancellationFeeRate: BookingPolicy.PartialCancellationFeeRate,
                 LastMinuteCancellationFeeRate: BookingPolicy.LastMinuteCancellationFeeRate,
-                OopsWindowMinutes: BookingPolicy.OopsWindowMinutesStandard));
+                OopsWindowMinutes: BookingPolicy.OopsWindowMinutesStandard,
+                OopsWindowRule: OopsWindowRule.Standard));
         _refundService
             .Setup(s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((RefundRequest req, CancellationToken _) =>
@@ -75,7 +77,8 @@ public class CancelOrderRefundWiringTests
                 _liveActivityProducer.Object,
                 _expressWaiverConsumer.Object,
                 new AuditContext(),
-                TimeProvider.System));
+                TimeProvider.System,
+                NullLogger<CustomerOrderCancellation>.Instance));
 
     private void Arrange(Order order) =>
         _orderRepository

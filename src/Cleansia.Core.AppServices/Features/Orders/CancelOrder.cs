@@ -2,6 +2,7 @@ using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Shared.DTOs.Enums;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
@@ -20,13 +21,19 @@ public class CancelOrder
         string? Reason
     ) : ICommand<Response>;
 
+    /// <param name="RefundAmount">What goes back to the customer: zero on an order that took no payment.</param>
+    /// <param name="RefundPending">
+    /// A card refund was owed and Stripe did not take it; it is re-driven hourly, so the customer is told
+    /// the refund is on its way.
+    /// </param>
     public record Response(
         string OrderId,
         decimal FeeRate,
         decimal RefundAmount,
         decimal TotalPrice,
         bool RefundInitiated,
-        decimal? ActualRefundAmount = null);
+        decimal? ActualRefundAmount = null,
+        bool RefundPending = false);
 
     /// <summary>
     /// What the cancel cost and why, as the server computed it at the click (ADR-0062 D3). The reason
@@ -44,6 +51,7 @@ public class CancelOrder
         decimal MinutesSinceBooking,
         int FreeCancellationHoursApplied,
         int OopsMinutesApplied,
+        OopsWindowRule OopsRuleApplied,
         CancellationPolicyFigures PolicyFigures,
         bool ExpressWaiverReleased,
         bool RefundInitiated,
@@ -58,7 +66,8 @@ public class CancelOrder
         decimal PartialRate,
         decimal LastMinuteRate,
         int OopsMinutesStandard,
-        int OopsMinutesPlus)
+        int OopsMinutesPlus,
+        int OopsMinutesFirstBooking)
     {
         public static CancellationPolicyFigures Current() => new(
             BookingPolicy.FreeCancellationHours,
@@ -66,7 +75,8 @@ public class CancelOrder
             BookingPolicy.PartialCancellationFeeRate,
             BookingPolicy.LastMinuteCancellationFeeRate,
             BookingPolicy.OopsWindowMinutesStandard,
-            BookingPolicy.OopsWindowMinutesPlus);
+            BookingPolicy.OopsWindowMinutesPlus,
+            BookingPolicy.OopsWindowMinutesFirstBooking);
     }
 
     public class Validator : AbstractValidator<Command>
@@ -115,7 +125,7 @@ public class CancelOrder
                     BusinessErrorMessage.OrderNotFound));
             }
 
-            if (CancellationAssessor.BlockedReason(order) is { } blockedReason)
+            if (cancellation.BlockedReason(order) is { } blockedReason)
             {
                 return BusinessResult.Failure<Response>(new Error(
                     nameof(command.OrderId),

@@ -1,6 +1,7 @@
 using System.Globalization;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.Payments;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Disputes;
@@ -103,6 +104,7 @@ public class HandleChargebackNotificationTests
             _subscriptionHandler.Object,
             _tenantProvider.Object,
             _pending.Object,
+            new GuestOrderAccessTokenIssuer(Mock.Of<IGuestOrderAccessTokenRepository>()),
             _producer.Object,
             NoPreferredCleanerHold.Resolver,
             _adminNotifier.Object,

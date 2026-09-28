@@ -9,6 +9,7 @@ using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Infra.Common.Validations;
 using Cleansia.Tests.Common;
 using Moq;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -35,13 +36,14 @@ public class CustomerOrderCancellationSequencingTests
                 return Task.FromResult(BusinessResult.Success(new RefundResult("refund", "key", 400m, RefundStatus.Succeeded, false)));
             });
         var policy = new Mock<ICancellationPolicyResolver>();
-        policy.Setup(x => x.ResolveForUserAsync(order.UserId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new CancellationPolicy(24, 4, .25m, .50m, BookingPolicy.OopsWindowMinutesStandard));
+        policy.Setup(x => x.ResolveForOrderAsync(order, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new CancellationPolicy(24, 4, .25m, .50m, BookingPolicy.OopsWindowMinutesStandard, OopsWindowRule.Standard));
         var notices = new Mock<INotificationProducer>();
         var waiver = ExpressWaiverMocks.NoConsumer();
         var service = new CustomerOrderCancellation(Mock.Of<ITenantProvider>(), refunds.Object, Mock.Of<IRefundRepository>(),
             Mock.Of<ICreditAccountRepository>(), Mock.Of<ILoyaltyService>(), policy.Object, notices.Object,
-            Mock.Of<ILiveActivityProducer>(), waiver.Object, new AuditContext(), TimeProvider.System);
+            Mock.Of<ILiveActivityProducer>(), waiver.Object, new AuditContext(), TimeProvider.System,
+                NullLogger<CustomerOrderCancellation>.Instance);
 
         var result = await service.ExecuteAsync(order, null, guest ? "System" : "account", CancellationToken.None);
 
@@ -50,7 +52,7 @@ public class CustomerOrderCancellationSequencingTests
         Assert.Equal(400m, result.Response.ActualRefundAmount);
         Assert.Equal(400m, result.SuccessfulRefundAmount);
         waiver.Verify(x => x.ReleaseForOrderAsync(order.Id, It.IsAny<CancellationToken>()), Times.Once);
-        policy.Verify(x => x.ResolveForUserAsync(order.UserId, It.IsAny<CancellationToken>()), Times.Once);
+        policy.Verify(x => x.ResolveForOrderAsync(order, It.IsAny<CancellationToken>()), Times.Once);
         if (guest) Assert.Empty(notices.Invocations);
     }
 }

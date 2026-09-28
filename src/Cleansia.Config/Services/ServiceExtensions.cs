@@ -274,6 +274,7 @@ public static class ServiceExtensions
         services.AddScoped<Cleansia.Core.AppServices.Features.Orders.GuestOrderAccess>();
         services.AddScoped<Cleansia.Core.AppServices.Features.Orders.GuestOrderAccessTokenIssuer>();
         services.AddScoped<Cleansia.Core.AppServices.Features.Orders.CustomerOrderCancellation>();
+        services.AddScoped<Cleansia.Core.AppServices.Features.Orders.CleanerNoShowCancellation>();
         services.AddScoped<IPreferredCleanerHoldResolver, PreferredCleanerHoldResolver>();
         // ADR-0035 — the express-waiver seam. The period-key factory is SCOPED because it caches the
         // resolved platform zone for the request, and CreateOrder builds the key twice (validator and

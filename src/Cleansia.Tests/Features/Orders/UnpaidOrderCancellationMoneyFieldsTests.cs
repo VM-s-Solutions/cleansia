@@ -14,6 +14,7 @@ using Cleansia.TestUtilities.MockDataFactories.Orders;
 using Cleansia.Tests.Common;
 using MockQueryable;
 using Moq;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -86,12 +87,13 @@ public class UnpaidOrderCancellationMoneyFieldsTests
                 Mock.Of<IRefundRepository>(),
                 Mock.Of<ICreditAccountRepository>(),
                 Mock.Of<ILoyaltyService>(),
-                new CancellationPolicyResolver(membershipRepository.Object),
+                new CancellationPolicyResolver(membershipRepository.Object, Mock.Of<IOrderRepository>()),
                 Mock.Of<INotificationProducer>(),
                 Mock.Of<ILiveActivityProducer>(),
                 ExpressWaiverMocks.NoConsumer().Object,
                 new AuditContext(),
-                TimeProvider.System));
+                TimeProvider.System,
+                NullLogger<CustomerOrderCancellation>.Instance));
 
         var result = await handler.Handle(new CancelOrder.Command(OrderId, null), CancellationToken.None);
 

@@ -15,6 +15,7 @@ using Cleansia.TestUtilities.MockDataFactories.Memberships;
 using Cleansia.Tests.Common;
 using MockQueryable;
 using Moq;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -62,12 +63,13 @@ public sealed class CancelOrderAuditEvidenceTests
                 Mock.Of<IRefundRepository>(),
                 _creditAccountRepository.Object,
                 _loyaltyService.Object,
-                new CancellationPolicyResolver(_membershipRepository.Object),
+                new CancellationPolicyResolver(_membershipRepository.Object, Mock.Of<IOrderRepository>()),
                 _producer.Object,
                 _liveActivityProducer.Object,
                 _expressWaiverConsumer.Object,
                 _auditContext,
-                TimeProvider.System));
+                TimeProvider.System,
+                NullLogger<CustomerOrderCancellation>.Instance));
 
     private void ArrangePlusMember(int freeCancellationWindowHours = 4)
     {
@@ -176,6 +178,7 @@ public sealed class CancelOrderAuditEvidenceTests
         Assert.InRange(payload.GetProperty("minutesSinceBooking").GetDecimal(), 2879m, 2881m);
         Assert.Equal(4, payload.GetProperty("freeCancellationHoursApplied").GetInt32());
         Assert.Equal(BookingPolicy.OopsWindowMinutesPlus, payload.GetProperty("oopsMinutesApplied").GetInt32());
+        Assert.Equal("plus", payload.GetProperty("oopsRuleApplied").GetString());
         Assert.False(payload.GetProperty("expressWaiverReleased").GetBoolean());
         Assert.True(payload.GetProperty("refundInitiated").GetBoolean());
         Assert.Equal("card", payload.GetProperty("paymentType").GetString());
@@ -189,10 +192,10 @@ public sealed class CancelOrderAuditEvidenceTests
         Assert.Equal(BookingPolicy.LastMinuteCancellationFeeRate, figures.GetProperty("lastMinuteRate").GetDecimal());
         Assert.Equal(BookingPolicy.OopsWindowMinutesStandard, figures.GetProperty("oopsMinutesStandard").GetInt32());
         Assert.Equal(BookingPolicy.OopsWindowMinutesPlus, figures.GetProperty("oopsMinutesPlus").GetInt32());
-        Assert.False(figures.TryGetProperty("oopsMinutesFirstTime", out _));
+        Assert.Equal(BookingPolicy.OopsWindowMinutesFirstBooking, figures.GetProperty("oopsMinutesFirstBooking").GetInt32());
 
         var members = payload.EnumerateObject().Select(p => p.Name).ToList();
-        Assert.Equal(18, members.Count);
+        Assert.Equal(19, members.Count);
         Assert.DoesNotContain(members, m =>
             m.EndsWith("Reason", StringComparison.OrdinalIgnoreCase)
             || m.EndsWith("Name", StringComparison.OrdinalIgnoreCase)
@@ -215,6 +218,8 @@ public sealed class CancelOrderAuditEvidenceTests
         var payload = Payload(_auditContext.DrainSnapshot());
         Assert.Equal("freeNotAccepted", payload.GetProperty("tier").GetString());
         Assert.Equal(0m, payload.GetProperty("feeRate").GetDecimal());
+        // A cash order took no payment, so the evidence records nothing going back.
+        Assert.Equal(0m, payload.GetProperty("refundAmount").GetDecimal());
         Assert.False(payload.GetProperty("hasBeenAccepted").GetBoolean());
         Assert.Equal(BookingPolicy.FreeCancellationHours, payload.GetProperty("freeCancellationHoursApplied").GetInt32());
         Assert.Equal(BookingPolicy.OopsWindowMinutesStandard, payload.GetProperty("oopsMinutesApplied").GetInt32());

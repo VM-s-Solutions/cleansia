@@ -17,6 +17,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Stripe;
 using Dispute = Cleansia.Core.Domain.Disputes.Dispute;
+using Cleansia.Core.AppServices.Features.Orders;
 
 namespace Cleansia.Tests.Features.Payments;
 
@@ -75,6 +76,7 @@ public sealed class HandlePaymentNotificationTellsAdministratorsTests
         new Mock<IStripeSubscriptionWebhookHandler>().Object,
         new Mock<ITenantProvider>().Object,
         new Mock<IPendingDispatch>().Object,
+        new GuestOrderAccessTokenIssuer(Mock.Of<IGuestOrderAccessTokenRepository>()),
         new Mock<INotificationProducer>().Object,
         NoPreferredCleanerHold.Resolver,
         _adminNotifier.Object,

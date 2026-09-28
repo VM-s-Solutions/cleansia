@@ -61,10 +61,11 @@ public class PushSubjectNamesTheEventTests
         "ConfirmRecurringOrder.cs",
         "AutoCancelStaleRecurringOrders.cs",
         "CleanupStalePendingOrders.cs",
-        // Same claim, and it is load-bearing here: the cancel is ALSO this sweep's only repeat
-        // suppressor. Cancelled is outside its NeverStarted status filter, so the next tick cannot
-        // re-select the row and cannot re-send. An order reaches its slot unfilled once.
-        "CancelUnfilledOrders.cs",
+        // Same claim, and it is load-bearing here: the cancel is ALSO the unfilled sweep's only repeat
+        // suppressor, and the administrator's no-show confirmation refuses a cancelled order. Cancelled
+        // is outside the sweep's NeverStarted status filter, so the next tick cannot re-select the row
+        // and cannot re-send. An order is cancelled as a no-show once.
+        "CleanerNoShowCancellation.cs",
 
         // Swept reminders, each suppressed by its own stamp on the row it reminds about, so the sweep
         // cannot re-send for the same order however many times it ticks.

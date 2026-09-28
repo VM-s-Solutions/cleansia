@@ -334,6 +334,9 @@ public class RecurringCashEligibilityTests(PostgresContainerFixture fixture) : B
 
     private sealed class NoRefunds : IRefundService
     {
+        public Task<BusinessResult<RefundResult>> RedriveAsync(string refundId, string actorId, CancellationToken cancellationToken)
+            => throw new NotSupportedException();
+
         public Task<BusinessResult<RefundResult>> IssueRefundAsync(RefundRequest request, CancellationToken cancellationToken)
             => throw new InvalidOperationException("An unpaid cash occurrence has nothing to refund.");
     }

@@ -65,6 +65,20 @@ public class SystemCancellationReasonTests
         Assert.Null(order.MapToDetail(isCustomerCaller: false).SystemCancellationReason);
     }
 
+    /// <summary>
+    /// An administrator's no-show confirmation writes the no-cleaner KEY, never a note, so the customer
+    /// reads the same reason the unfilled sweep gives.
+    /// </summary>
+    [Fact]
+    public void An_Admins_No_Show_Confirmation_Tells_The_Customer_Why()
+    {
+        var order = CancelledBy(Core.Domain.Enums.CancelledBy.Admin, OrderCancellationReasons.NoCleanerAvailable);
+
+        Assert.Equal(
+            OrderCancellationReasons.NoCleanerAvailable,
+            order.MapToDetail(isCustomerCaller: true).SystemCancellationReason);
+    }
+
     [Theory]
     [InlineData(Core.Domain.Enums.CancelledBy.Customer)]
     [InlineData(Core.Domain.Enums.CancelledBy.Cleaner)]

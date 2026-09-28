@@ -196,6 +196,35 @@ describe('OrderDetailComponent — incident file', () => {
     expect(text).not.toContain('pages.order_detail.cancellation_fee_owed');
   });
 
+  it('shows who took the cash, when and how much once it was collected', () => {
+    details.mockReturnValue(
+      of(
+        OrderItem.fromJS({
+          id: 'order-1',
+          currency: { code: 'CZK' },
+          cashCollectedAt: '2026-09-28T09:30:00Z',
+          cashCollectedByName: 'Petra Svobodova',
+          cashCollectedAmount: 1500,
+        })
+      )
+    );
+    const text = render().nativeElement.textContent;
+
+    expect(text).toContain('pages.order_detail.cash_collected_by');
+    expect(text).toContain('Petra Svobodova');
+    expect(text).toContain('pages.order_detail.cash_collected_at');
+    expect(text).toContain('pages.order_detail.cash_collected_amount');
+    expect(text).toMatch(/1\D?500/);
+  });
+
+  it('shows no cash collected on an order whose cash was not collected', () => {
+    const text = render().nativeElement.textContent;
+
+    expect(text).not.toContain('pages.order_detail.cash_collected_by');
+    expect(text).not.toContain('pages.order_detail.cash_collected_at');
+    expect(text).not.toContain('pages.order_detail.cash_collected_amount');
+  });
+
   it('hides the panel and avoids its request without the customer policy', () => {
     grantedPolicies.delete('CanViewOrderCustomer');
     const fixture = render();

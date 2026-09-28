@@ -77,8 +77,8 @@ enum BookingPrefill {
         var next = state
         next.selectedServiceIds = Set(keptServiceIds)
         next.selectedPackageIds = Set(keptPackageIds)
-        if order.rooms > 0 { next.rooms = order.rooms }
-        if order.bathrooms > 0 { next.bathrooms = order.bathrooms }
+        if order.rooms > 0 { next.rooms = min(order.rooms, PropertySize.maxRooms) }
+        if order.bathrooms > 0 { next.bathrooms = min(order.bathrooms, PropertySize.maxBathrooms) }
         next.street = order.address?.street ?? ""
         next.city = order.address?.city ?? ""
         next.zipCode = order.address?.zipCode ?? ""

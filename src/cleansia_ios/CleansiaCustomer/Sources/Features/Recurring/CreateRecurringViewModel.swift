@@ -204,6 +204,16 @@ final class CreateRecurringViewModel: ViewModel {
         return min(startsOn, Date())
     }
 
+    /// The server refuses a start on or after the end date, and this form cannot move the end date.
+    var latestStart: Date? {
+        editing?.endsOn.flatMap { Calendar.current.date(byAdding: .day, value: -1, to: $0) }
+    }
+
+    var startRange: ClosedRange<Date> {
+        let earliest = earliestStart
+        return earliest ... max(earliest, latestStart ?? .distantFuture)
+    }
+
     /// The country of the picked saved address — the market the schedule is priced in.
     var selectedCountryId: String? {
         savedAddresses.first { $0.id == formState.savedAddressId }?.countryId
@@ -383,11 +393,11 @@ final class CreateRecurringViewModel: ViewModel {
     }
 
     func setRooms(_ count: Int) {
-        formState.rooms = max(0, count)
+        formState.rooms = min(max(0, count), PropertySize.maxRooms)
     }
 
     func setBathrooms(_ count: Int) {
-        formState.bathrooms = max(0, count)
+        formState.bathrooms = min(max(0, count), PropertySize.maxBathrooms)
     }
 
     func setSavedAddressId(_ id: String) {
@@ -530,8 +540,8 @@ final class CreateRecurringViewModel: ViewModel {
     private func prefill(from orderId: String) async {
         guard case let .success(order) = await orderClient.getById(orderId: orderId) else { return }
         var state = formState
-        state.rooms = max(0, order.rooms)
-        state.bathrooms = max(0, order.bathrooms)
+        state.rooms = min(max(0, order.rooms), PropertySize.maxRooms)
+        state.bathrooms = min(max(0, order.bathrooms), PropertySize.maxBathrooms)
         state.selectedServiceIds = Set(order.services.compactMap(\.id))
         state.selectedPackageIds = Set(order.packages.compactMap(\.id))
         if let paymentType = order.paymentType?.value {

@@ -198,6 +198,25 @@ final class BookingViewModelTests: XCTestCase {
         XCTAssertEqual(vm.state.rooms, 3)
     }
 
+    /// Every basket validator refuses a home above `BookingPolicy.MaxRooms` / `MaxBathrooms`.
+    func testTheSizeSettersStopAtTheLargestHomeTheServerAccepts() {
+        let vm = BookingViewModel()
+        vm.setRooms(PropertySize.maxRooms + 1)
+        vm.setBathrooms(PropertySize.maxBathrooms + 1)
+
+        XCTAssertEqual(vm.state.rooms, PropertySize.maxRooms)
+        XCTAssertEqual(vm.state.bathrooms, PropertySize.maxBathrooms)
+    }
+
+    func testTheSizeSettersNeverGoBelowOne() {
+        let vm = BookingViewModel()
+        vm.setRooms(0)
+        vm.setBathrooms(0)
+
+        XCTAssertEqual(vm.state.rooms, 1)
+        XCTAssertEqual(vm.state.bathrooms, 1)
+    }
+
     func testAccessInstructionsAreCappedAtTheBackendLimit() {
         let vm = BookingViewModel()
         vm.setAccessInstructions(String(repeating: "a", count: BookingInstructions.maxUtf16Length + 250))

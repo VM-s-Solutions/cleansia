@@ -4,9 +4,10 @@ import SwiftUI
 struct PropertyStepper: View {
     let label: String
     let value: Int
-    /// Greys the decrement once the floor is reached, so a tap that cannot move
-    /// the number never looks like one that can (Android's `Stepper`).
+    /// Greys a button once its bound is reached, so a tap that cannot move the
+    /// number never looks like one that can (Android's `Stepper`).
     var minimum: Int?
+    var maximum: Int?
     let onChange: (Int) -> Void
 
     var body: some View {
@@ -21,7 +22,7 @@ struct PropertyStepper: View {
                 .lineLimit(1)
                 .fixedSize()
                 .padding(.horizontal, Spacing.xxs)
-            stepButton(systemImage: "plus", enabled: true) { onChange(value + 1) }
+            stepButton(systemImage: "plus", enabled: maximum.map { value < $0 } ?? true) { onChange(value + 1) }
         }
         .background(CleansiaColors.surface)
         .clipShape(RoundedRectangle(cornerRadius: CornerRadius.pill))

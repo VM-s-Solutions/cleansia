@@ -186,6 +186,22 @@ final class BookingViewModel: ViewModel {
         }
     }
 
+    func setRooms(_ count: Int) {
+        update { current in
+            var next = current
+            next.rooms = min(max(count, 1), PropertySize.maxRooms)
+            return next
+        }
+    }
+
+    func setBathrooms(_ count: Int) {
+        update { current in
+            var next = current
+            next.bathrooms = min(max(count, 1), PropertySize.maxBathrooms)
+            return next
+        }
+    }
+
     @discardableResult
     func advance() -> Bool {
         guard currentStep < BookingStepGate.totalSteps else { return false }

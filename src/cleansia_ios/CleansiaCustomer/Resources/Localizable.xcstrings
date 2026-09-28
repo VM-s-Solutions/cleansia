@@ -7223,31 +7223,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tímto trvale smažete svůj účet a data. Toto nelze vrátit zpět. Nevyčerpaný kredit na účtu dokončením smazání propadá — nelze ho vyplatit ani obnovit."
+            "value": "Vaše osobní údaje budou odstraněny a tuto akci nelze vrátit; záznamy uvedené na této obrazovce uchováme po dobu, kterou uvádí. Nevyčerpaný kredit na účtu dokončením smazání propadá — nelze ho vyplatit ani obnovit."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This permanently deletes your account and data. This cannot be undone. Any unused credit on your account is forfeited once the deletion completes — it cannot be paid out or restored."
+            "value": "Your personal details are removed and this cannot be undone; the records listed on this screen are kept for the periods it states. Any unused credit on your account is forfeited once the deletion completes — it cannot be paid out or restored."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Это навсегда удалит ваш аккаунт и данные. Это нельзя отменить. Неиспользованные бонусы на счёте аннулируются, как только удаление завершится, — их нельзя выплатить или восстановить."
+            "value": "Ваши персональные данные будут удалены, и это действие нельзя отменить; записи, перечисленные на этом экране, мы храним в течение указанных на нём сроков. Неиспользованные бонусы на счёте аннулируются, как только удаление завершится, — их нельзя выплатить или восстановить."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Týmto natrvalo odstránite svoj účet a údaje. Toto nie je možné vrátiť späť. Nevyčerpaný kredit na účte dokončením vymazania prepadá — nedá sa vyplatiť ani obnoviť."
+            "value": "Vaše osobné údaje budú odstránené a túto akciu nie je možné vrátiť; záznamy uvedené na tejto obrazovke uchováme počas doby, ktorú uvádza. Nevyčerpaný kredit na účte dokončením vymazania prepadá — nedá sa vyplatiť ani obnoviť."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Це назавжди видалить ваш обліковий запис і дані. Це не можна скасувати. Невикористані бонуси на рахунку анулюються, щойно видалення завершиться, — їх не можна виплатити чи відновити."
+            "value": "Ваші персональні дані буде видалено, і цю дію неможливо скасувати; записи, перелічені на цьому екрані, ми зберігаємо протягом зазначених на ньому строків. Невикористані бонуси на рахунку анулюються, щойно видалення завершиться, — їх не можна виплатити чи відновити."
           }
         }
       }
@@ -7322,41 +7322,6 @@
         }
       }
     },
-    "delete_account_item_consents": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Všechny marketingové souhlasy"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "All marketing consents"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Все маркетинговые согласия"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Všetky marketingové súhlasy"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Усі маркетингові згоди"
-          }
-        }
-      }
-    },
     "delete_account_item_devices": {
       "extractionState": "stale",
       "localizations": {
@@ -7398,31 +7363,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Historie rezervací bude anonymizována"
+            "value": "Vaše jméno, kontaktní údaje, adresa a fotografie z vašich objednávek"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Booking history will be anonymised"
+            "value": "Your name, contact details, address and photos on your bookings"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "История заказов будет анонимизирована"
+            "value": "Ваше имя, контактные данные, адрес и фотографии из ваших заказов"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "História rezervácií bude anonymizovaná"
+            "value": "Vaše meno, kontaktné údaje, adresa a fotografie z vašich objednávok"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Історія бронювань буде анонімізована"
+            "value": "Ваше ім’я, контактні дані, адреса й фотографії з ваших замовлень"
           }
         }
       }
@@ -7462,37 +7427,212 @@
         }
       }
     },
+    "delete_account_kept_audit": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Záznam úkonů na vašem účtu po dobu 3 let, bez IP adres a údajů o zařízení"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The log of actions on your account, for 3 years, without IP addresses or device details"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Журнал действий в вашем аккаунте — 3 года, без IP-адресов и данных об устройстве"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Záznam úkonov na vašom účte počas 3 rokov, bez IP adries a údajov o zariadení"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Журнал дій у вашому обліковому записі — 3 роки, без IP-адрес і даних про пристрій"
+          }
+        }
+      }
+    },
+    "delete_account_kept_bookings": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaše objednávky jako záznam o každé smlouvě, bez vašich osobních údajů"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your bookings, as the record of each contract, without your personal details"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваши заказы как запись о каждом договоре, без ваших персональных данных"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaše objednávky ako záznam o každej zmluve, bez vašich osobných údajov"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваші замовлення як запис про кожен договір, без ваших персональних даних"
+          }
+        }
+      }
+    },
+    "delete_account_kept_consents": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Záznam o udělených souhlasech po dobu 3 let"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The record of the consents you gave, for 3 years"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Запись о данных согласиях — 3 года"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Záznam o udelených súhlasoch počas 3 rokov"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Запис про надані згоди — 3 роки"
+          }
+        }
+      }
+    },
+    "delete_account_kept_disputes": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Text vašich případných reklamací po dobu 3 let"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The text of any dispute you raised, for 3 years"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Текст ваших обращений, если они были, — 3 года"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Text vašich prípadných reklamácií počas 3 rokov"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Текст ваших скарг, якщо вони були, — 3 роки"
+          }
+        }
+      }
+    },
+    "delete_account_kept_receipts": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Účtenky po dobu, kterou vyžadují účetní předpisy"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Receipts, for as long as accounting law requires"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Чеки — столько, сколько требует законодательство о бухгалтерском учёте"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Účtenky počas doby, ktorú vyžadujú účtovné predpisy"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Чеки — стільки, скільки вимагає бухгалтерське законодавство"
+          }
+        }
+      }
+    },
     "delete_account_subtitle": {
       "extractionState": "stale",
       "localizations": {
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tímto trvale smažete svůj účet a všechna související data. Nevyčerpaný kredit smazáním účtu propadá — nelze ho vyplatit ani obnovit. Tuto akci nelze vrátit zpět."
+            "value": "Při smazání účtu odstraníme vaše osobní údaje. Uchováme jen to, co vyžaduje zákon nebo obrana právních nároků — viz seznam níže. Nevyčerpaný kredit smazáním účtu propadá — nelze ho vyplatit ani obnovit. Tuto akci nelze vrátit zpět."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This will permanently delete your account and all associated data. Any unused credit is forfeited when the account is deleted — it cannot be paid out or restored. This action cannot be undone."
+            "value": "Deleting your account removes your personal details. We keep only what the law or the defence of legal claims requires, listed below. Any unused credit is forfeited when the account is deleted — it cannot be paid out or restored. This action cannot be undone."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Это навсегда удалит ваш аккаунт и все связанные данные. Неиспользованные бонусы при удалении аккаунта аннулируются — их нельзя выплатить или восстановить. Это действие нельзя отменить."
+            "value": "При удалении аккаунта мы удалим ваши персональные данные. Мы храним только то, чего требует закон или защита правовых требований, — список ниже. Неиспользованные бонусы при удалении аккаунта аннулируются — их нельзя выплатить или восстановить. Это действие нельзя отменить."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Týmto natrvalo odstránite svoj účet a všetky súvisiace údaje. Nevyčerpaný kredit vymazaním účtu prepadá — nedá sa vyplatiť ani obnoviť. Túto akciu nie je možné vrátiť späť."
+            "value": "Pri vymazaní účtu odstránime vaše osobné údaje. Uchováme len to, čo vyžaduje zákon alebo obrana právnych nárokov — pozrite zoznam nižšie. Nevyčerpaný kredit vymazaním účtu prepadá — nedá sa vyplatiť ani obnoviť. Túto akciu nie je možné vrátiť späť."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Це назавжди видалить ваш обліковий запис і всі пов'язані дані. Невикористані бонуси після видалення облікового запису анулюються — їх не можна виплатити чи відновити. Цю дію не можна скасувати."
+            "value": "Під час видалення облікового запису ми видалимо ваші персональні дані. Ми зберігаємо лише те, чого вимагає закон або захист правових вимог, — перелік нижче. Невикористані бонуси після видалення облікового запису анулюються — їх не можна виплатити чи відновити. Цю дію неможливо скасувати."
           }
         }
       }
@@ -7563,6 +7703,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "Що буде видалено"
+          }
+        }
+      }
+    },
+    "delete_account_what_is_kept": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Co uchováme"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What we keep"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Что мы храним"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Čo uchováme"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Що ми зберігаємо"
           }
         }
       }
@@ -12615,31 +12790,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vyzkoušet Plus zdarma"
+            "value": "Získat Plus"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Try Plus free"
+            "value": "Get Plus"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Попробовать Plus бесплатно"
+            "value": "Оформить Plus"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vyskúšať Plus zdarma"
+            "value": "Získať Plus"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Спробувати Plus безкоштовно"
+            "value": "Отримати Plus"
           }
         }
       }
@@ -12650,31 +12825,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Šetřete na každém úklidu. 14 dní zdarma."
+            "value": "Šetřete na každém úklidu."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Save on every cleaning. 14 days free."
+            "value": "Save on every cleaning."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Экономьте на каждой уборке. 14 дней бесплатно."
+            "value": "Экономьте на каждой уборке."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Šetrite na každom upratovaní. 14 dní zdarma."
+            "value": "Šetrite na každom upratovaní."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Економте на кожному прибиранні. 14 днів безкоштовно."
+            "value": "Економте на кожному прибиранні."
           }
         }
       }
@@ -12755,31 +12930,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Oba získáte 150 bodů po jeho první objednávce"
+            "value": "Oba získáte 150 bodů po jeho prvním dokončeném úklidu"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "You both get 150 points after they book"
+            "value": "You both get 150 points after their first completed cleaning"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Оба получите 150 баллов после его бронирования"
+            "value": "Оба получите 150 баллов после первой завершённой уборки друга"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Obaja získate 150 bodov po jeho prvej objednávke"
+            "value": "Obaja získate 150 bodov po jeho prvom dokončenom upratovaní"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Обидва отримаєте 150 балів після їхнього бронювання"
+            "value": "Обидва отримаєте 150 балів після першого завершеного прибирання друга"
           }
         }
       }
@@ -15524,31 +15699,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vyzkoušet zdarma na 14 dní"
+            "value": "Získat Cleansia Plus"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Try free for 14 days"
+            "value": "Get Cleansia Plus"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Попробовать бесплатно 14 дней"
+            "value": "Оформить Cleansia Plus"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vyskúšať zdarma na 14 dní"
+            "value": "Získať Cleansia Plus"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Спробувати безкоштовно 14 днів"
+            "value": "Отримати Cleansia Plus"
           }
         }
       }
@@ -15559,31 +15734,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sleva na každou objednávku · zrušení kdykoli · pravidelný úklid"
+            "value": "Sleva na každou objednávku · pravidelný úklid"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Save on every booking · cancel anytime · recurring cleanings"
+            "value": "Save on every booking · recurring cleanings"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Экономия на каждом бронировании · отмена в любое время · регулярные уборки"
+            "value": "Экономия на каждом бронировании · регулярные уборки"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zľava na každú objednávku · zrušenie kedykoľvek · pravidelné upratovanie"
+            "value": "Zľava na každú objednávku · pravidelné upratovanie"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Економія на кожному бронюванні · скасування будь-коли · регулярні прибирання"
+            "value": "Економія на кожному бронюванні · регулярні прибирання"
           }
         }
       }

@@ -50,6 +50,12 @@ final class CreateRecurringBindingTests: XCTestCase {
         )
     }
 
+    func testTheStartPickerIsBoundedByTheViewModelsRange() throws {
+        let source = try read(Self.screen)
+        XCTAssertTrue(source.contains("range: vm.startRange"), "the start picker is not given the end-date cap")
+        XCTAssertTrue(source.contains("in: range,"), "the start picker ignores the range it is given")
+    }
+
     func testTheScreenSpellsNoLabelItself() throws {
         let source = try read(Self.screen)
         for hardcoded in ["Rooms", "Bathrooms", "Add new"] {

@@ -37,6 +37,7 @@ struct DeleteAccountView: View {
                 VStack(alignment: .leading, spacing: Spacing.l) {
                     header
                     whatGetsDeleted
+                    whatIsKept
                     appleNote
                     confirmField
                 }
@@ -74,28 +75,41 @@ struct DeleteAccountView: View {
     }
 
     private var whatGetsDeleted: some View {
+        recordList(L10n.DeleteAccount.whatHappens, [
+            L10n.DeleteAccount.itemProfile,
+            L10n.DeleteAccount.itemAddresses,
+            L10n.DeleteAccount.itemHistory,
+            L10n.DeleteAccount.itemDevices
+        ])
+    }
+
+    private var whatIsKept: some View {
+        recordList(L10n.DeleteAccount.whatIsKept, [
+            L10n.DeleteAccount.keptBookings,
+            L10n.DeleteAccount.keptReceipts,
+            L10n.DeleteAccount.keptConsents,
+            L10n.DeleteAccount.keptAudit,
+            L10n.DeleteAccount.keptDisputes
+        ])
+    }
+
+    private func recordList(_ title: String, _ items: [String]) -> some View {
         VStack(alignment: .leading, spacing: Spacing.s) {
-            Text(L10n.DeleteAccount.whatHappens.uppercased())
+            Text(title.uppercased())
                 .font(CleansiaTypography.labelSmall)
                 .foregroundColor(CleansiaColors.onSurfaceVariant)
             VStack(alignment: .leading, spacing: Spacing.xs) {
-                deletedItem(L10n.DeleteAccount.itemProfile)
-                deletedItem(L10n.DeleteAccount.itemAddresses)
-                deletedItem(L10n.DeleteAccount.itemHistory)
-                deletedItem(L10n.DeleteAccount.itemDevices)
-                deletedItem(L10n.DeleteAccount.itemConsents)
+                ForEach(items, id: \.self) { item in
+                    Text("•  \(item)")
+                        .font(CleansiaTypography.bodyMedium)
+                        .foregroundColor(CleansiaColors.onSurface)
+                }
             }
             .padding(Spacing.m)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(CleansiaColors.surface)
             .clipShape(RoundedRectangle(cornerRadius: CornerRadius.large))
         }
-    }
-
-    private func deletedItem(_ text: String) -> some View {
-        Text("•  \(text)")
-            .font(CleansiaTypography.bodyMedium)
-            .foregroundColor(CleansiaColors.onSurface)
     }
 
     private var appleNote: some View {

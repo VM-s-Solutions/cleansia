@@ -4636,41 +4636,6 @@
         }
       }
     },
-    "delete_account_kept_agreement": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dohodu o samofakturaci k těmto fakturám"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The self-billing agreement behind those invoices"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Соглашение о самовыставлении счетов к ним"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dohodu o samofakturácii k týmto faktúram"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Угоду про самовиставлення рахунків до них"
-          }
-        }
-      }
-    },
     "delete_account_kept_invoices": {
       "extractionState": "manual",
       "localizations": {

@@ -537,6 +537,65 @@ final class CreateRecurringViewModelTests: XCTestCase {
         XCTAssertEqual(vm.formState.bathrooms, 0)
     }
 
+    /// Every basket validator refuses a home above `BookingPolicy.MaxRooms` / `MaxBathrooms`.
+    func testPropertySizeStopsAtTheLargestHomeTheServerAccepts() {
+        let (vm, _) = makeVM()
+
+        vm.setRooms(PropertySize.maxRooms + 1)
+        vm.setBathrooms(PropertySize.maxBathrooms + 1)
+
+        XCTAssertEqual(vm.formState.rooms, PropertySize.maxRooms)
+        XCTAssertEqual(vm.formState.bathrooms, PropertySize.maxBathrooms)
+    }
+
+    func testAScheduleFromALargerPastOrderStartsAtTheLargestHomeTheServerAccepts() async {
+        let orderClient = FakeOrderClient()
+        orderClient.detailResults = [.success(OrderFixtures.detail(
+            id: "ord-7",
+            rooms: PropertySize.maxRooms + 3,
+            bathrooms: PropertySize.maxBathrooms + 2,
+            services: [OrderFixtures.service(id: "s-1")]
+        ))]
+        let (vm, _) = makeVM(sourceOrderId: "ord-7", orderClient: orderClient)
+
+        await vm.load()
+
+        XCTAssertEqual(vm.formState.rooms, PropertySize.maxRooms)
+        XCTAssertEqual(vm.formState.bathrooms, PropertySize.maxBathrooms)
+    }
+
+    // MARK: - The start date
+
+    /// The server refuses a start on or after the end date (`recurring_template.ends_on_before_start`),
+    /// and this form cannot move the end date, so the picker stops the day before it, as the web does.
+    func testAnEditOffersNoStartOnOrAfterTheStoredEndDate() throws {
+        let endsOn = Date(timeIntervalSince1970: 1_800_000_000)
+        let (vm, _) = makeVM(editing: RecurringFixtures.template(endsOn: endsOn))
+
+        let dayBefore = try XCTUnwrap(Calendar.current.date(byAdding: .day, value: -1, to: endsOn))
+        XCTAssertEqual(vm.latestStart, dayBefore)
+        XCTAssertEqual(vm.startRange.upperBound, dayBefore)
+        XCTAssertFalse(vm.startRange.contains(endsOn))
+    }
+
+    func testAStartWithNoEndDateIsOpenEnded() {
+        let (create, _) = makeVM()
+        let (edit, _) = makeVM(editing: RecurringFixtures.template())
+
+        XCTAssertNil(create.latestStart)
+        XCTAssertNil(edit.latestStart)
+        XCTAssertEqual(edit.startRange.upperBound, .distantFuture)
+    }
+
+    /// An end date less than a day after the start leaves no day to offer but the earliest one, and a
+    /// range whose bounds cross would trap.
+    func testAnEndDateInsideTheFirstDayCollapsesTheRangeInsteadOfCrossingIt() {
+        let startsOn = RecurringFixtures.template().startsOn
+        let (vm, _) = makeVM(editing: RecurringFixtures.template(endsOn: startsOn.addingTimeInterval(3600)))
+
+        XCTAssertEqual(vm.startRange.lowerBound, vm.startRange.upperBound)
+    }
+
     // MARK: - Addresses added from inside the form
 
     /// The form's address list is a snapshot taken on `load()`. An address added

@@ -80,7 +80,7 @@ struct CreateRecurringScreen: View {
                 )
                 StartsSection(
                     startsOn: vm.formState.startsOn,
-                    earliest: vm.earliestStart,
+                    range: vm.startRange,
                     onChange: vm.setStartsOn
                 )
 
@@ -327,15 +327,25 @@ private struct PropertySizeSection: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: Spacing.s) {
-            counter(label: L10n.Recurring.createRoomsLabel, value: rooms, onChange: onRoomsChange)
-            counter(label: L10n.Recurring.createBathroomsLabel, value: bathrooms, onChange: onBathroomsChange)
+            counter(
+                label: L10n.Recurring.createRoomsLabel,
+                value: rooms,
+                maximum: PropertySize.maxRooms,
+                onChange: onRoomsChange
+            )
+            counter(
+                label: L10n.Recurring.createBathroomsLabel,
+                value: bathrooms,
+                maximum: PropertySize.maxBathrooms,
+                onChange: onBathroomsChange
+            )
         }
     }
 
-    private func counter(label: String, value: Int, onChange: @escaping (Int) -> Void) -> some View {
+    private func counter(label: String, value: Int, maximum: Int, onChange: @escaping (Int) -> Void) -> some View {
         VStack(alignment: .leading, spacing: Spacing.s) {
             SectionLabel(text: label)
-            PropertyStepper(label: "\(value)", value: value, minimum: 0, onChange: onChange)
+            PropertyStepper(label: "\(value)", value: value, minimum: 0, maximum: maximum, onChange: onChange)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -440,12 +450,12 @@ private struct PaymentSection: View {
 
 private struct StartsSection: View {
     let startsOn: Date?
-    let earliest: Date
+    let range: ClosedRange<Date>
     let onChange: (Date) -> Void
 
     private var binding: Binding<Date> {
         Binding(
-            get: { startsOn ?? earliest },
+            get: { startsOn ?? range.lowerBound },
             set: onChange
         )
     }
@@ -453,7 +463,7 @@ private struct StartsSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.s) {
             SectionLabel(text: L10n.Recurring.createStartsLabel)
-            DatePicker("", selection: binding, in: earliest..., displayedComponents: .date)
+            DatePicker("", selection: binding, in: range, displayedComponents: .date)
                 .labelsHidden()
                 .frame(maxWidth: .infinity, alignment: .leading)
         }

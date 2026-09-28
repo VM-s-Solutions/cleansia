@@ -176,6 +176,14 @@ final class BookingPrefillTests: XCTestCase {
         XCTAssertEqual(result.state.bathrooms, 2)
     }
 
+    func testRebookCapsALargerOrderAtTheLargestHomeTheServerAccepts() {
+        let order = OrderFixtures.detail(rooms: PropertySize.maxRooms + 2, bathrooms: PropertySize.maxBathrooms + 1)
+
+        let result = BookingPrefill.rebook(BookingState(), order: order, savedAddresses: [], catalog: nil)
+        XCTAssertEqual(result.state.rooms, PropertySize.maxRooms)
+        XCTAssertEqual(result.state.bathrooms, PropertySize.maxBathrooms)
+    }
+
     func testRebookMatchesASavedAddressCaseInsensitively() {
         let order = OrderFixtures.detail(address: OrderAddress(street: "MAIN 1", city: "prague", zipCode: "11000"))
 

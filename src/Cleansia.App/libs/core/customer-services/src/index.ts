@@ -51,6 +51,8 @@ export {
   CancelOrderCommand,
   CancelOrderResponse,
   CancellationFeeTier,
+  ConfirmRecurringOrderCommand,
+  ConfirmRecurringOrderResponse,
   GetCancellationFeePreviewResponse,
   GetGuestCancellationFeePreviewQuery,
   LookupOrderQuery,

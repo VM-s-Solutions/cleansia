@@ -1143,6 +1143,14 @@
       "cleaner_no_show": {
         "action": "Upratovač neprišiel",
         "note": "Objednaný čas začiatku už uplynul, takže rezerváciu už nemožno zrušiť. Ak upratovač neprišiel, dajte nám vedieť a náš tím sa na to pozrie."
+      },
+      "recurring_confirm": {
+        "action_card": "Potvrdiť a zaplatiť",
+        "action_cash": "Potvrdiť rezerváciu",
+        "note_card": "Toto upratovanie je súčasťou vašej opakovanej rezervácie. Potvrďte ho a zaplaťte bezpečne kartou. Ak ho včas nepotvrdíte, bude zadarmo zrušené.",
+        "note_cash": "Toto upratovanie je súčasťou vašej opakovanej rezervácie. Potvrďte ho a upratovačovi zaplaťte v hotovosti v deň upratovania. Ak ho včas nepotvrdíte, bude zadarmo zrušené.",
+        "success": "Rezervácia potvrdená",
+        "begun_in_app": "Platbu za toto upratovanie ste začali v mobilnej aplikácii. Dokončite ju prosím tam."
       }
     },
     "order_contract": {

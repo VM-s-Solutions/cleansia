@@ -1143,6 +1143,14 @@
       "cleaner_no_show": {
         "action": "Uklízeč nedorazil",
         "note": "Objednaný čas začátku už uplynul, takže rezervaci už nelze zrušit. Pokud uklízeč nedorazil, dejte nám vědět a náš tým se na to podívá."
+      },
+      "recurring_confirm": {
+        "action_card": "Potvrdit a zaplatit",
+        "action_cash": "Potvrdit rezervaci",
+        "note_card": "Tento úklid je součástí vaší opakované rezervace. Potvrďte ho a zaplaťte bezpečně kartou. Pokud ho včas nepotvrdíte, bude zdarma zrušen.",
+        "note_cash": "Tento úklid je součástí vaší opakované rezervace. Potvrďte ho a uklízeči zaplaťte v hotovosti v den úklidu. Pokud ho včas nepotvrdíte, bude zdarma zrušen.",
+        "success": "Rezervace potvrzena",
+        "begun_in_app": "Platbu za tento úklid jste začali v mobilní aplikaci. Dokončete ji prosím tam."
       }
     },
     "order_contract": {

@@ -4,6 +4,7 @@ import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
   CancelOrderCommand,
   CancelOrderResponse,
+  ConfirmRecurringOrderCommand,
   CustomerAuthService,
   CustomerClient,
   GetCancellationFeePreviewResponse,
@@ -35,6 +36,9 @@ const STANDARD_FREE_CANCELLATION_HOURS = 24;
 
 const START_PASSED_CANNOT_CANCEL = 'order.start_passed_cannot_cancel';
 
+/** What ConfirmRecurringOrder answers on the web for a card occurrence already begun in the mobile app. */
+const PAYMENT_BEGUN_ON_OTHER_CHANNEL = 'order.invalid_status_transition';
+
 @Injectable()
 export class OrderDetailFacade extends UnsubscribeControlDirective {
   private readonly customerClient = inject(CustomerClient);
@@ -58,6 +62,19 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
   readonly cancelling = signal(false);
   readonly cancellationResult = signal<CancelOrderResponse | null>(null);
   private readonly startPassedRefused = signal(false);
+
+  readonly confirmingRecurring = signal(false);
+  private readonly paymentBegunInApp = signal(false);
+
+  /**
+   * The server keeps one payment surface per order, so a card occurrence begun in the mobile app is
+   * finished there and the web stops offering its own. -> /flows/booking-and-pricing#recurring-bookings
+   */
+  readonly canConfirmRecurring = computed(() =>
+    this.order()?.needsConfirmation === true && !this.paymentBegunInApp());
+
+  readonly recurringPaymentBegunInApp = computed(() =>
+    this.order()?.needsConfirmation === true && this.paymentBegunInApp());
 
   /**
    * Past the booked start with a cleaner on the job who has not started, the server refuses a
@@ -279,6 +296,39 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
         this.cancellationOpen.set(false);
         this.cancellationPreview.set(null);
         this.cancellationPreviewFailed.set(false);
+        this.loadOrder(orderId);
+      });
+  }
+
+  /**
+   * A card confirm returns the Checkout Session to pay in and the in-flight flag stays set while the
+   * browser leaves, so a second click cannot open a second session. A refusal is voiced by the shared
+   * interceptor, and the re-read shows the page the occurrence as the server now has it.
+   */
+  confirmRecurring(): void {
+    const orderId = this.order()?.id;
+    if (!orderId || !this.canConfirmRecurring() || this.confirmingRecurring()) return;
+    const command = new ConfirmRecurringOrderCommand();
+    command.orderId = orderId;
+    this.confirmingRecurring.set(true);
+    this.customerClient.orderClient
+      .confirmRecurring(command)
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError((error: unknown) => {
+          if (extractApiErrorCode(error) === PAYMENT_BEGUN_ON_OTHER_CHANNEL) this.paymentBegunInApp.set(true);
+          return of(null);
+        }),
+      )
+      .subscribe((response) => {
+        if (response?.checkoutUrl) {
+          if (this.isBrowser) window.location.href = response.checkoutUrl;
+          return;
+        }
+        this.confirmingRecurring.set(false);
+        if (response) {
+          this.snackbar.showSuccess(this.translate.instant('pages.order_detail.recurring_confirm.success'));
+        }
         this.loadOrder(orderId);
       });
   }

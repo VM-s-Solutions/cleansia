@@ -513,6 +513,15 @@
         </h2>
 
         <div class="order-detail__actions">
+          @if (canConfirmRecurring()) {
+          <cleansia-button
+            [block]="true"
+            [label]="recurringConfirmLabelKey() | translate"
+            [loading]="confirmingRecurring()"
+            [disabled]="confirmingRecurring()"
+            (onClick)="confirmRecurring()"
+          />
+          }
           @if (isCompleted()) {
           <button type="button" class="order-detail__action" (click)="makeRecurring()">
             <i class="pi pi-sync"></i>
@@ -555,6 +564,18 @@
           />
           }
         </div>
+
+        @if (canConfirmRecurring()) {
+        <p class="order-detail__policy">
+          <i class="pi pi-info-circle"></i>
+          {{ recurringConfirmNoteKey() | translate }}
+        </p>
+        } @else if (recurringPaymentBegunInApp()) {
+        <p class="order-detail__policy" role="status">
+          <i class="pi pi-mobile"></i>
+          {{ 'pages.order_detail.recurring_confirm.begun_in_app' | translate }}
+        </p>
+        }
 
         @if (canReportCleanerNoShow()) {
         <p class="order-detail__policy">

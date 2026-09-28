@@ -12,13 +12,13 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CleansiaButtonComponent, CleansiaTextareaComponent } from '@cleansia/components';
 import { OrderStatusLabelPipe } from '@cleansia/pipes';
-import { DisputeReason, OrderStatus, PaymentStatus } from '@cleansia/customer-services';
+import { DisputeReason, OrderStatus, PaymentStatus, PaymentType } from '@cleansia/customer-services';
 import {
   RECURRING_PREFILL_STORAGE_KEY,
   RecurringPrefillParams,
 } from '@cleansia-customer/recurring-bookings';
 import { CleansiaCustomerRoute } from '@cleansia/services';
-import { formatMoney, localeFor } from '@cleansia/utils';
+import { clearOnBackForwardRestore, formatMoney, localeFor } from '@cleansia/utils';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { DialogModule } from 'primeng/dialog';
 import { SkeletonModule } from 'primeng/skeleton';
@@ -118,6 +118,30 @@ export class OrderDetailComponent implements OnInit {
   readonly cancellationResult = this.facade.cancellationResult;
   readonly cancellationReasonMaxLength = CANCELLATION_REASON_MAX_LENGTH;
   readonly cancellationReason = signal('');
+
+  readonly canConfirmRecurring = this.facade.canConfirmRecurring;
+  readonly recurringPaymentBegunInApp = this.facade.recurringPaymentBegunInApp;
+  readonly confirmingRecurring = this.facade.confirmingRecurring;
+
+  private readonly recurringPaysByCard = computed(
+    () => this.order()?.paymentType?.value === PaymentType.Card,
+  );
+
+  readonly recurringConfirmLabelKey = computed(() =>
+    this.recurringPaysByCard()
+      ? 'pages.order_detail.recurring_confirm.action_card'
+      : 'pages.order_detail.recurring_confirm.action_cash',
+  );
+
+  readonly recurringConfirmNoteKey = computed(() =>
+    this.recurringPaysByCard()
+      ? 'pages.order_detail.recurring_confirm.note_card'
+      : 'pages.order_detail.recurring_confirm.note_cash',
+  );
+
+  constructor() {
+    clearOnBackForwardRestore(this.facade.confirmingRecurring);
+  }
 
   /**
    * The figure the confirmation names is what the server actually refunded, never the preview's
@@ -459,6 +483,10 @@ export class OrderDetailComponent implements OnInit {
 
   confirmCancellation(): void {
     this.facade.cancelOrder(this.cancellationReason());
+  }
+
+  confirmRecurring(): void {
+    this.facade.confirmRecurring();
   }
 
   reportIssue(): void {

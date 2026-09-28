@@ -4,6 +4,8 @@ import {
   CancelOrderCommand,
   CancelOrderResponse,
   CancellationFeeTier,
+  ConfirmRecurringOrderCommand,
+  ConfirmRecurringOrderResponse,
   CustomerAuthService,
   CustomerClient,
   GetCancellationFeePreviewResponse,
@@ -16,7 +18,7 @@ import {
 } from '@cleansia/customer-services';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { OrderDetailFacade } from './order-detail.facade';
 
 const ORDER_ID = 'ord-1';
@@ -51,6 +53,7 @@ describe('OrderDetailFacade', () => {
     submitReview: jest.Mock;
     cancellationPreview: jest.Mock;
     cancel: jest.Mock;
+    confirmRecurring: jest.Mock;
   };
   let snackbar: { showSuccess: jest.Mock; showError: jest.Mock; showApiError: jest.Mock };
   let facade: OrderDetailFacade;
@@ -62,6 +65,9 @@ describe('OrderDetailFacade', () => {
       submitReview: jest.fn().mockReturnValue(of({ rating: 5 })),
       cancellationPreview: jest.fn().mockReturnValue(of(preview)),
       cancel: jest.fn().mockReturnValue(of(cancelled)),
+      confirmRecurring: jest.fn().mockReturnValue(
+        of(ConfirmRecurringOrderResponse.fromJS({ orderId: ORDER_ID })),
+      ),
     };
     snackbar = {
       showSuccess: jest.fn(),
@@ -384,6 +390,129 @@ describe('OrderDetailFacade', () => {
     });
   });
 
+  // Cash is the plain confirm; card pays through the Checkout Session the server opens for the web.
+  describe('confirming a recurring occurrence', () => {
+    const occurrence = (type: PaymentType, needsConfirmation = true) =>
+      OrderItem.fromJS({
+        id: ORDER_ID,
+        orderStatus: { value: OrderStatus.New, name: OrderStatus[OrderStatus.New] },
+        paymentType: { value: type, name: PaymentType[type] },
+        paymentStatus: { value: PaymentStatus.Pending, name: PaymentStatus[PaymentStatus.Pending] },
+        needsConfirmation,
+      });
+    const refusal = (field: string, key: string) => () => ({ errors: { [field]: key } });
+
+    afterEach(() => {
+      window.location.hash = '';
+    });
+
+    it('is offered only while the server says the occurrence awaits confirmation', () => {
+      facade.order.set(occurrence(PaymentType.Cash));
+      expect(facade.canConfirmRecurring()).toBe(true);
+
+      facade.order.set(occurrence(PaymentType.Cash, false));
+      expect(facade.canConfirmRecurring()).toBe(false);
+
+      facade.order.set(null);
+      expect(facade.canConfirmRecurring()).toBe(false);
+    });
+
+    it('does not call the server when nothing awaits confirmation', () => {
+      facade.order.set(occurrence(PaymentType.Cash, false));
+
+      facade.confirmRecurring();
+
+      expect(orderClient.confirmRecurring).not.toHaveBeenCalled();
+    });
+
+    it('confirms a cash occurrence, says so and re-reads the order', () => {
+      facade.order.set(occurrence(PaymentType.Cash));
+      orderClient.getById.mockReturnValue(of(occurrence(PaymentType.Cash, false)));
+
+      facade.confirmRecurring();
+
+      expect(snackbar.showSuccess).toHaveBeenCalledWith('pages.order_detail.recurring_confirm.success');
+      expect(facade.confirmingRecurring()).toBe(false);
+      expect(orderClient.getById).toHaveBeenLastCalledWith(ORDER_ID);
+      expect(facade.canConfirmRecurring()).toBe(false);
+    });
+
+    it('hands the browser to the Checkout Session the server opened for a card occurrence', () => {
+      facade.order.set(occurrence(PaymentType.Card));
+      const { origin, pathname } = window.location;
+      orderClient.confirmRecurring.mockReturnValue(
+        of(ConfirmRecurringOrderResponse.fromJS({
+          orderId: ORDER_ID,
+          checkoutUrl: `${origin}${pathname}#checkout-session`,
+        })),
+      );
+
+      facade.confirmRecurring();
+
+      expect(window.location.hash).toBe('#checkout-session');
+      expect(facade.confirmingRecurring()).toBe(true);
+      expect(snackbar.showSuccess).not.toHaveBeenCalled();
+      expect(orderClient.getById).not.toHaveBeenCalled();
+    });
+
+    it('sends one confirm while the first is still in flight', () => {
+      facade.order.set(occurrence(PaymentType.Cash));
+      orderClient.confirmRecurring.mockReturnValue(new Subject<ConfirmRecurringOrderResponse>());
+
+      facade.confirmRecurring();
+      facade.confirmRecurring();
+
+      expect(orderClient.confirmRecurring).toHaveBeenCalledTimes(1);
+      expect(facade.confirmingRecurring()).toBe(true);
+    });
+
+    it('re-reads an occurrence the server says is already confirmed', () => {
+      facade.order.set(occurrence(PaymentType.Cash));
+      orderClient.confirmRecurring.mockReturnValue(
+        throwError(refusal('OrderId', 'order.recurring_already_confirmed')),
+      );
+      orderClient.getById.mockReturnValue(of(occurrence(PaymentType.Cash, false)));
+
+      facade.confirmRecurring();
+
+      expect(snackbar.showSuccess).not.toHaveBeenCalled();
+      expect(facade.confirmingRecurring()).toBe(false);
+      expect(orderClient.getById).toHaveBeenLastCalledWith(ORDER_ID);
+      expect(facade.canConfirmRecurring()).toBe(false);
+      expect(facade.recurringPaymentBegunInApp()).toBe(false);
+    });
+
+    it('points a card occurrence begun in the mobile app back there instead of offering Confirm again', () => {
+      facade.order.set(occurrence(PaymentType.Card));
+      orderClient.confirmRecurring.mockReturnValue(
+        throwError(refusal('Id', 'order.invalid_status_transition')),
+      );
+      orderClient.getById.mockReturnValue(of(occurrence(PaymentType.Card)));
+
+      facade.confirmRecurring();
+
+      expect(snackbar.showSuccess).not.toHaveBeenCalled();
+      expect(facade.confirmingRecurring()).toBe(false);
+      expect(orderClient.getById).toHaveBeenLastCalledWith(ORDER_ID);
+      expect(facade.canConfirmRecurring()).toBe(false);
+      expect(facade.recurringPaymentBegunInApp()).toBe(true);
+    });
+
+    it('keeps Confirm on offer after any other refusal', () => {
+      facade.order.set(occurrence(PaymentType.Card));
+      orderClient.confirmRecurring.mockReturnValue(
+        throwError(refusal('Id', 'order.payment_gateway_unavailable')),
+      );
+      orderClient.getById.mockReturnValue(of(occurrence(PaymentType.Card)));
+
+      facade.confirmRecurring();
+
+      expect(facade.confirmingRecurring()).toBe(false);
+      expect(facade.canConfirmRecurring()).toBe(true);
+      expect(facade.recurringPaymentBegunInApp()).toBe(false);
+    });
+  });
+
   // Every member of a generated command is optional, so a dropped assignment type-checks.
   // These pin the serialized body instead (ADR-0031).
   describe('command bodies on the wire', () => {
@@ -406,6 +535,16 @@ describe('OrderDetailFacade', () => {
 
       const command: CancelOrderCommand = orderClient.cancel.mock.calls[0][0];
       expect(command.toJSON()).toEqual({ orderId: ORDER_ID, reason: undefined });
+    });
+
+    it('serializes the recurring confirm with the order id', () => {
+      facade.order.set(OrderItem.fromJS({ id: ORDER_ID, needsConfirmation: true }));
+
+      facade.confirmRecurring();
+
+      const command: ConfirmRecurringOrderCommand = orderClient.confirmRecurring.mock.calls[0][0];
+      expect(command).toBeInstanceOf(ConfirmRecurringOrderCommand);
+      expect(command.toJSON()).toEqual({ orderId: ORDER_ID });
     });
 
     it('serializes the review with the order id, the rating and the comment', () => {

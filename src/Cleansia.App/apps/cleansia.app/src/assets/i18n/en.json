@@ -1143,6 +1143,14 @@
       "cleaner_no_show": {
         "action": "The cleaner did not arrive",
         "note": "The booked start time has passed, so this booking can no longer be cancelled. If the cleaner did not arrive, let us know and our team will look into it."
+      },
+      "recurring_confirm": {
+        "action_card": "Confirm and pay",
+        "action_cash": "Confirm booking",
+        "note_card": "This cleaning is part of your repeat booking. Confirm it and pay securely by card. If it isn't confirmed in time, it's cancelled free of charge.",
+        "note_cash": "This cleaning is part of your repeat booking. Confirm it and pay the cleaner in cash on the day. If it isn't confirmed in time, it's cancelled free of charge.",
+        "success": "Booking confirmed",
+        "begun_in_app": "You started paying for this cleaning in the mobile app. Please finish the payment there."
       }
     },
     "order_contract": {

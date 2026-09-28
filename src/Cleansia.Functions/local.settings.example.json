@@ -24,7 +24,7 @@
         "Fiscal__CzechEet2__Enabled": "false"
     },
     "ConnectionStrings": {
-        "ConnectionString": "Host=localhost;Port=5432;Username=postgres;Password=cCyb!.{w~!YC8fsZdAgTUr;Database=Cleansia",
+        "ConnectionString": "Host=localhost;Port=5432;Username=postgres;Password=YOUR_LOCAL_POSTGRES_PASSWORD;Database=Cleansia",
         "QueueStorageConnectionString": "UseDevelopmentStorage=true",
         "BlobContainerConfigurationConnectionString": "UseDevelopmentStorage=true"
     }

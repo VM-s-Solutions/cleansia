@@ -122,6 +122,40 @@ resource stagingSlot 'Microsoft.Web/sites/slots@2023-12-01' = if (stagingSlotEna
   }
 }
 
+// CI deploys through its OIDC identity (ARM and Entra-authenticated Kudu), so the basic-auth FTP and
+// SCM publishing credentials every site carries by default are only a password nobody uses.
+resource ftpBasicAuth 'Microsoft.Web/sites/basicPublishingCredentialsPolicies@2023-12-01' = {
+  parent: appService
+  name: 'ftp'
+  properties: {
+    allow: false
+  }
+}
+
+resource scmBasicAuth 'Microsoft.Web/sites/basicPublishingCredentialsPolicies@2023-12-01' = {
+  parent: appService
+  name: 'scm'
+  properties: {
+    allow: false
+  }
+}
+
+resource stagingSlotFtpBasicAuth 'Microsoft.Web/sites/slots/basicPublishingCredentialsPolicies@2023-12-01' = if (stagingSlotEnabled) {
+  parent: stagingSlot
+  name: 'ftp'
+  properties: {
+    allow: false
+  }
+}
+
+resource stagingSlotScmBasicAuth 'Microsoft.Web/sites/slots/basicPublishingCredentialsPolicies@2023-12-01' = if (stagingSlotEnabled) {
+  parent: stagingSlot
+  name: 'scm'
+  properties: {
+    allow: false
+  }
+}
+
 @description('Resource id of the host.')
 output id string = appService.id
 

@@ -71,7 +71,8 @@ public class OrderController(IMediator mediator) : CustomerMobileApiController(m
         return HandleResult<LookupOrderBatch.Response>(result);
     }
 
-    [AllowAnonymous]
+    // Guest booking is web-only: a native app books from a signed-in session or not at all.
+    [Authorize]
     [EnableRateLimiting("auth")]
     [HttpPost("CreateOrder")]
     [ProducesResponseType(typeof(CreateOrder.Response), StatusCodes.Status200OK)]

@@ -255,6 +255,12 @@ public static class DatabaseMigrationExtensions
         }
     }
 
+    // The shared fixture runs first: it defines generate_ulid() and the tenant row the administrator
+    // insert needs. The administrator's password is published, so it lives in its own file that only a
+    // local Development boot runs — execute-sql.yml refuses that file for every environment.
+    public static readonly IReadOnlyList<string> DevelopmentSeedScripts =
+        ["insert_seed_data.sql", "insert_local_dev_admin.sql"];
+
     private static void SeedDevelopmentData(Cleansia.Infra.Database.CleansiaDbContext dbContext, ILogger logger)
     {
         try
@@ -293,18 +299,20 @@ public static class DatabaseMigrationExtensions
             // The repo-root sql-scripts copy is the ONLY one. Until 2026-08-13 this read a second
             // copy inside a Cleansia.Infra.Scripts project, kept byte-identical by a unit test —
             // because it had silently drifted once and a fresh dev boot then seeded nothing.
-            var seedFilePath = Path.GetFullPath(Path.Combine(solutionDir, "..", "sql-scripts", "insert_seed_data.sql"));
-            Console.WriteLine($"[SEED] Seed file path: {seedFilePath}");
-            Console.WriteLine($"[SEED] File exists: {File.Exists(seedFilePath)}");
+            var seedFilePaths = DevelopmentSeedScripts
+                .Select(script => Path.GetFullPath(Path.Combine(solutionDir, "..", "sql-scripts", script)))
+                .ToArray();
+            Console.WriteLine($"[SEED] Seed file paths: {string.Join(", ", seedFilePaths)}");
 
-            if (!File.Exists(seedFilePath))
+            var missing = seedFilePaths.FirstOrDefault(path => !File.Exists(path));
+            if (missing is not null)
             {
-                Console.WriteLine("[SEED] Seed file not found. Skipping seed.");
+                Console.WriteLine($"[SEED] Seed file not found: {missing}. Skipping seed.");
                 return;
             }
 
             Console.WriteLine("[SEED] Reading and executing seed SQL...");
-            var sql = File.ReadAllText(seedFilePath);
+            var sql = string.Join('\n', seedFilePaths.Select(File.ReadAllText));
 
             // Use the raw connection directly to avoid EF Core parameter parsing issues
             var connection = dbContext.Database.GetDbConnection();

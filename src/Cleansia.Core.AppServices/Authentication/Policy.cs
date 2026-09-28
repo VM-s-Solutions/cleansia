@@ -188,9 +188,9 @@ public class Policy
 
     // Company Info
     public const string CanViewCompanyInfo = nameof(CanViewCompanyInfo); // Admin
-    public const string CanCreateCompanyInfo = nameof(CanCreateCompanyInfo); // ManagerOrAbove
-    public const string CanUpdateCompanyInfo = nameof(CanUpdateCompanyInfo); // ManagerOrAbove
-    public const string CanDeleteCompanyInfo = nameof(CanDeleteCompanyInfo); // ManagerOrAbove
+    public const string CanCreateCompanyInfo = nameof(CanCreateCompanyInfo); // AdministratorOnly
+    public const string CanUpdateCompanyInfo = nameof(CanUpdateCompanyInfo); // AdministratorOnly
+    public const string CanDeleteCompanyInfo = nameof(CanDeleteCompanyInfo); // AdministratorOnly
 
     // Email Templates
     public const string CanViewEmailTemplates = nameof(CanViewEmailTemplates); // Admin

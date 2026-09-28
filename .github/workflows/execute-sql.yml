@@ -38,9 +38,8 @@ jobs:
         uses: actions/checkout@v4
 
       # insert_seed_data.sql is a DEVELOPMENT FIXTURE, not an operational script. It creates the
-      # catalogue a fresh dev database needs — and, since 2026-09-05, a development administrator
-      # with a password that is written down in README.md. Running it against production would both
-      # collide with real catalogue rows and mint a known-credential admin account.
+      # catalogue a fresh dev database needs; running it against production would collide with real
+      # catalogue rows.
       #
       # The app itself cannot do this: CleansiaStartupBase reads the file only inside
       # `if (environment.IsDevelopment())`, and deployed hosts apply the EF migration bundle from CI
@@ -52,11 +51,24 @@ jobs:
           case "${{ inputs.script_path }}" in
             insert_seed_data.sql|seed/*)
               echo "::error::${{ inputs.script_path }} is a development fixture and must never run against PRO."
-              echo "::error::It seeds the dev catalogue and a known-password administrator (see README.md)."
+              echo "::error::It seeds the development catalogue (see README.md)."
               exit 1
               ;;
           esac
           echo "Not a development fixture — continuing."
+
+      # insert_local_dev_admin.sql mints an administrator whose password is in README.md. It is for a
+      # developer's own database only; the shared DEV database gets named administrators through
+      # set-admin-role.sql. Compared by basename so a path like seed/../ cannot walk around it.
+      - name: Refuse the local administrator fixture in every environment
+        env:
+          SCRIPT_PATH: ${{ inputs.script_path }}
+        run: |
+          if [ "$(basename "$SCRIPT_PATH")" = "insert_local_dev_admin.sql" ]; then
+            echo "::error::insert_local_dev_admin.sql creates a known-password administrator and never runs against DEV or PRO."
+            echo "::error::Create a named administrator with set-admin-role.sql instead (see README.md)."
+            exit 1
+          fi
 
       - name: Verify script exists
         run: |

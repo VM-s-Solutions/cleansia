@@ -438,9 +438,9 @@ export const POLICY_MAP: Record<PolicyName, PhysicalPolicy> = {
 
   // Company Info
   CanViewCompanyInfo: PhysicalPolicy.AdminOnly,
-  CanCreateCompanyInfo: PhysicalPolicy.ManagerOrAbove,
-  CanUpdateCompanyInfo: PhysicalPolicy.ManagerOrAbove,
-  CanDeleteCompanyInfo: PhysicalPolicy.ManagerOrAbove,
+  CanCreateCompanyInfo: PhysicalPolicy.AdministratorOnly,
+  CanUpdateCompanyInfo: PhysicalPolicy.AdministratorOnly,
+  CanDeleteCompanyInfo: PhysicalPolicy.AdministratorOnly,
 
   // Email Templates
   CanViewEmailTemplates: PhysicalPolicy.AdminOnly,

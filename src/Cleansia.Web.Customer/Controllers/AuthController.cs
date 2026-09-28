@@ -109,6 +109,13 @@ public class AuthController(
             RequiredAudience = JwtAudiences.Customer,
         };
         var result = await Mediator.Send(enriched, cancellationToken);
+        if (!result.IsSuccess)
+        {
+            // The lapsed access cookie would otherwise outlive the session and 401 this browser on
+            // every guest route until it expires.
+            ClearAuthCookies();
+        }
+
         return HandleTokenIssuingResult(result);
     }
 

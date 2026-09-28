@@ -32,6 +32,8 @@ public static class TestJwtFactory
     /// Administrator role unless a test names another, so every token minted before roles existed keeps
     /// its meaning. <paramref name="claimlessAdministrator"/> mints the one shape production no longer
     /// does: an Administrator with no role claim, the token of a session opened before the deploy.
+    /// <paramref name="expired"/> mints a token whose lifetime ended an hour ago: the access cookie a
+    /// browser still holds after its session lapsed.
     /// </summary>
     public static string Mint(
         string audience,
@@ -41,7 +43,8 @@ public static class TestJwtFactory
         string? employeeId = null,
         string? tenantId = HostTestTenants.Default,
         AdminRole? adminRole = null,
-        bool claimlessAdministrator = false)
+        bool claimlessAdministrator = false,
+        bool expired = false)
     {
         var claims = new List<Claim>
         {
@@ -66,8 +69,8 @@ public static class TestJwtFactory
             Issuer = Issuer,
             Audience = audience,
             Subject = new ClaimsIdentity(claims),
-            NotBefore = DateTime.UtcNow.AddMinutes(-1),
-            Expires = DateTime.UtcNow.AddMinutes(15),
+            NotBefore = expired ? DateTime.UtcNow.AddHours(-2) : DateTime.UtcNow.AddMinutes(-1),
+            Expires = expired ? DateTime.UtcNow.AddHours(-1) : DateTime.UtcNow.AddMinutes(15),
             SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature),
         };
 

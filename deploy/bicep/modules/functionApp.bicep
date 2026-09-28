@@ -163,6 +163,23 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
   }
 }
 
+// The image is pulled from ACR and configured through ARM; nothing publishes over basic-auth FTP or SCM.
+resource ftpBasicAuth 'Microsoft.Web/sites/basicPublishingCredentialsPolicies@2023-12-01' = {
+  parent: functionApp
+  name: 'ftp'
+  properties: {
+    allow: false
+  }
+}
+
+resource scmBasicAuth 'Microsoft.Web/sites/basicPublishingCredentialsPolicies@2023-12-01' = {
+  parent: functionApp
+  name: 'scm'
+  properties: {
+    allow: false
+  }
+}
+
 @description('Function App resource id.')
 output functionAppId string = functionApp.id
 

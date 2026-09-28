@@ -529,10 +529,39 @@ work the YAML cannot do. Do it **in this order**:
 > are documented in [`deploy/AZURE-PROD-POSTURE.md`](AZURE-PROD-POSTURE.md). Note especially:
 > **geo-redundant backup only exists if it is on at the FIRST provision** (immutable after create).
 
+### P0 console access checklist
+
+Before the first prod provision, and again whenever someone joins or leaves. The repository cannot see
+any of this — it lives in each provider's console — so it is recorded here and ticked off by the owner.
+
+```
+[ ] 1. MFA on every console account: Azure / Entra, GitHub, Stripe, SendGrid, Firebase (its Google
+       account), Apple Developer + App Store Connect, Google Play Console / Google Cloud, Mapbox.
+[ ] 2. Named accounts only: one person, one login. No shared logins or passwords, and no personal
+       address holding a role nobody else can take over.
+[ ] 3. Least privilege everywhere: subscription Owner only for the owner and the break-glass account
+       (item 7); everyone else the narrowest role on the resource group they need. GitHub admin only for
+       the owner. SendGrid teammates, Firebase IAM, Apple and Google Play roles at the lowest level
+       that does the job; Mapbox tokens with the minimum scopes.
+[ ] 4. GitHub Environment `prod-weu`: Required reviewers set (MANUAL_STEP P1 below), and Deployment
+       branches restricted to `master` only — a run from any other branch never reaches a prod secret.
+[ ] 5. Stripe team roles: Administrator only for the owner; others Developer, Analyst or Support as
+       their work needs. Nobody else holds the live secret key.
+[ ] 6. Stripe's own customer e-mails for failed payments switched ON (Dashboard -> Settings -> Billing
+       -> Subscriptions and emails, and Customer emails): a Plus renewal that fails must reach the
+       customer.
+[ ] 7. A break-glass account: an Entra Global Administrator used by nobody day to day, with MFA on a
+       hardware key or an offline-stored authenticator, excluded from Conditional Access policies that
+       could lock it out, and signed in to once a quarter to prove it still works.
+[ ] 8. MFA required for every identity invited to the admin console with `admin_console`
+       (docs/admin-app/overview.md): a Conditional Access policy (or security defaults) on the Entra
+       tenant requiring MFA for members and guests signing in to the admin Static Web App.
+```
+
 > **MANUAL_STEP P1 — create the `prod-weu` GitHub Environment with Required reviewers.**
 > GitHub → repo → **Settings → Environments → New environment → `prod-weu`** → add **Required
-> reviewers** = you (+ a second approver if available); **Wait timer** optional; optionally restrict
-> *Deployment branches* to `master`. This **replaces** the old typed-"deploy" confirmation gate: a
+> reviewers** = you (+ a second approver if available); **Wait timer** optional; restrict
+> *Deployment branches* to `master` (checklist item 4). This **replaces** the old typed-"deploy" confirmation gate: a
 > `Deploy to PRO` run now pauses at the first prod job until a reviewer approves — **no prod secret is
 > released before that approval.**
 

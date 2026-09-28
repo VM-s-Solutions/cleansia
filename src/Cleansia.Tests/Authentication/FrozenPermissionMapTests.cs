@@ -185,9 +185,9 @@ public class FrozenPermissionMapTests
 
         // Company Info
         [Policy.CanViewCompanyInfo] = PhysicalPolicy.AdminOnly,
-        [Policy.CanCreateCompanyInfo] = PhysicalPolicy.ManagerOrAbove,
-        [Policy.CanUpdateCompanyInfo] = PhysicalPolicy.ManagerOrAbove,
-        [Policy.CanDeleteCompanyInfo] = PhysicalPolicy.ManagerOrAbove,
+        [Policy.CanCreateCompanyInfo] = PhysicalPolicy.AdministratorOnly,
+        [Policy.CanUpdateCompanyInfo] = PhysicalPolicy.AdministratorOnly,
+        [Policy.CanDeleteCompanyInfo] = PhysicalPolicy.AdministratorOnly,
 
         // Email Templates
         [Policy.CanViewEmailTemplates] = PhysicalPolicy.AdminOnly,

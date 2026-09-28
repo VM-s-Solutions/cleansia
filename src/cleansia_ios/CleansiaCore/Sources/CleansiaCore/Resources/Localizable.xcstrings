@@ -2451,6 +2451,41 @@
         }
       }
     },
+    "error.gdpr.consent_not_editable": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tento souhlas zde nelze změnit."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This consent can't be changed here."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Это согласие здесь изменить нельзя."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tento súhlas tu nemožno zmeniť."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Цю згоду тут змінити не можна."
+          }
+        }
+      }
+    },
     "error.gdpr.consent_not_found": {
       "extractionState": "manual",
       "localizations": {
@@ -3604,6 +3639,111 @@
         }
       }
     },
+    "error.order.cleaner_already_started": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uklízeč už s úklidem začal."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The cleaner has already started this cleaning."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Уборщик уже начал уборку."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upratovač už s upratovaním začal."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Прибиральник уже розпочав прибирання."
+          }
+        }
+      }
+    },
+    "error.order.cleaning_date.outside_booking_window": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vyberte začátek mezi 8:00 a 19:45 místního času, po čtvrthodinách, nejvýše 60 dní dopředu."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick a start between 08:00 and 19:45 local time, on the quarter-hour, no more than 60 days ahead."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выберите начало между 08:00 и 19:45 по местному времени, кратно четверти часа, не более чем на 60 дней вперёд."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vyberte začiatok medzi 8:00 a 19:45 miestneho času, po štvrťhodinách, najviac 60 dní dopredu."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оберіть початок між 08:00 і 19:45 за місцевим часом, кратно чверті години, не більше ніж на 60 днів наперед."
+          }
+        }
+      }
+    },
+    "error.order.invalid_status_transition": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tato akce není pro aktuální stav objednávky povolena."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That action isn't allowed for the order's current status."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Это действие недоступно для текущего статуса заказа."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Táto akcia nie je pre aktuálny stav objednávky povolená."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ця дія недоступна для поточного статусу замовлення."
+          }
+        }
+      }
+    },
     "error.order.payment_not_outstanding": {
       "extractionState": "manual",
       "localizations": {
@@ -4584,6 +4724,41 @@
         }
       }
     },
+    "error.order.recurring_already_confirmed": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tento úklid už máte potvrzený. Uklízeči zaplatíte v hotovosti v den úklidu."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You've already confirmed this cleaning. Pay the cleaner in cash on the day."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вы уже подтвердили эту уборку. Оплатите уборщику наличными в день уборки."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toto upratovanie už máte potvrdené. Upratovačovi zaplatíte v hotovosti v deň upratovania."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ви вже підтвердили це прибирання. Сплатіть прибиральнику готівкою в день прибирання."
+          }
+        }
+      }
+    },
     "error.order.review.already_exists": {
       "extractionState": "stale",
       "localizations": {
@@ -4790,6 +4965,76 @@
           "stringUnit": {
             "state": "translated",
             "value": "Це замовлення охоплює забагато роботи для одного візиту. Будь ласка, приберіть частину послуг або пакетів чи замовте їх окремо."
+          }
+        }
+      }
+    },
+    "error.order.start_passed_cannot_cancel": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Čas začátku už uplynul a uklízeč je přidělen, takže rezervaci už nelze zrušit. Pokud uklízeč nedorazil, dejte nám vědět."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The start time has passed and a cleaner is booked, so this booking can no longer be cancelled. If the cleaner did not arrive, let us know."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Время начала уже прошло, и уборщик назначен, поэтому это бронирование больше нельзя отменить. Если уборщик не пришёл, сообщите нам."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Čas začiatku už uplynul a upratovač je pridelený, takže rezerváciu už nemožno zrušiť. Ak upratovač neprišiel, dajte nám vedieť."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Час початку вже минув, і прибиральника призначено, тому це бронювання більше не можна скасувати. Якщо прибиральник не прийшов, повідомте нам."
+          }
+        }
+      }
+    },
+    "error.order.start_time_not_reached": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Objednaný čas začátku ještě nenastal."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The booked start time has not come yet."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заказанное время начала ещё не наступило."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Objednaný čas začiatku ešte nenastal."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Замовлений час початку ще не настав."
           }
         }
       }

@@ -9,6 +9,7 @@ import XCTest
 final class MarketCopyTests: XCTestCase {
     private static let locales = ["en", "cs", "sk", "uk", "ru"]
     private static let currencyWord = "CZK|Kč|EUR|€"
+    private static let vettingClaim = "background|vetted|prověřen|preveren|перевірен|проверен"
 
     // MARK: The renderers
 
@@ -82,6 +83,22 @@ final class MarketCopyTests: XCTestCase {
             }
         }
         XCTAssertEqual(offenders, [], "money is formatted on the device from a number and a code")
+    }
+
+    /// No background check exists: approval asks for an identity card and an insurance certificate only.
+    func testNoLocalePromisesVettedCleaners() throws {
+        let strings = try customerStrings()
+        var offenders: [String] = []
+        for (key, entry) in strings {
+            guard let localizations = (entry as? [String: Any])?["localizations"] as? [String: Any] else { continue }
+            for locale in Self.locales {
+                let unit = (localizations[locale] as? [String: Any])?["stringUnit"] as? [String: Any]
+                if let value = unit?["value"] as? String, matches(Self.vettingClaim, value.lowercased()) {
+                    offenders.append("\(locale)/\(key)")
+                }
+            }
+        }
+        XCTAssertEqual(offenders, [], "the app promises a check nobody runs")
     }
 
     func testTheSeasonalCardIsGone() throws {

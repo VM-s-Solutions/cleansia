@@ -1864,31 +1864,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Do 15 minut od objednání neplatíte nic — s Cleansia Plus do 60 minut."
+            "value": "Do 15 minut od objednání neplatíte nic — u první objednávky nebo s Cleansia Plus do 60 minut."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Within 15 minutes of booking you pay nothing — within 60 minutes with Cleansia Plus."
+            "value": "Within 15 minutes of booking you pay nothing — within 60 minutes on your first booking or with Cleansia Plus."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "В течение 15 минут после заказа вы не платите ничего — с Cleansia Plus в течение 60 минут."
+            "value": "В течение 15 минут после заказа вы не платите ничего — для первого заказа или с Cleansia Plus в течение 60 минут."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Do 15 minút od objednania neplatíte nič — s Cleansia Plus do 60 minút."
+            "value": "Do 15 minút od objednania neplatíte nič — pri prvej objednávke alebo s Cleansia Plus do 60 minút."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Протягом 15 хвилин після замовлення ви не платите нічого — з Cleansia Plus протягом 60 хвилин."
+            "value": "Протягом 15 хвилин після замовлення ви не платите нічого — для першого замовлення або з Cleansia Plus протягом 60 хвилин."
           }
         }
       }
@@ -4316,31 +4316,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Máte kód od kamaráda? Po prvním úklidu oba získáte 150 bonusových bodů."
+            "value": "Máte kód od kamaráda? Po vašem prvním dokončeném úklidu oba získáte 150 bonusových bodů."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Have a friend's code? Both of you earn 150 bonus tier-points after your first cleaning."
+            "value": "Have a friend's code? Both of you earn 150 bonus tier-points after your first completed cleaning."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Есть код от друга? Оба получите 150 бонусных баллов после первой уборки."
+            "value": "Есть код от друга? Оба получите 150 бонусных баллов после вашей первой завершённой уборки."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Máte kód od kamaráta? Po prvom upratovaní obaja získate 150 bonusových bodov."
+            "value": "Máte kód od kamaráta? Po vašom prvom dokončenom upratovaní obaja získate 150 bonusových bodov."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Маєте код від друга? Обидва отримаєте 150 бонусних балів після першого прибирання."
+            "value": "Маєте код від друга? Обидва отримаєте 150 бонусних балів після вашого першого завершеного прибирання."
           }
         }
       }
@@ -4351,31 +4351,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Kód přijat — oba získáte 150 bonusových bodů."
+            "value": "Kód přijat — po vašem prvním dokončeném úklidu oba získáte 150 bonusových bodů."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Code accepted — you'll both get 150 bonus points."
+            "value": "Code accepted — you'll both get 150 bonus points after your first completed cleaning."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Код принят — оба получите 150 бонусных баллов."
+            "value": "Код принят — оба получите 150 бонусных баллов после вашей первой завершённой уборки."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Kód prijatý — obaja získate 150 bonusových bodov."
+            "value": "Kód prijatý — po vašom prvom dokončenom upratovaní obaja získate 150 bonusových bodov."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Код прийнято — обидва отримаєте 150 бонусних балів."
+            "value": "Код прийнято — обидва отримаєте 150 бонусних балів після вашого першого завершеного прибирання."
           }
         }
       }
@@ -4386,31 +4386,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Kód od %1$@ přijat — oba získáte 150 bonusových bodů."
+            "value": "Kód od %1$@ přijat — po vašem prvním dokončeném úklidu oba získáte 150 bonusových bodů."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Code from %1$@ accepted — you'll both get 150 bonus points."
+            "value": "Code from %1$@ accepted — you'll both get 150 bonus points after your first completed cleaning."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Код от %1$@ принят — оба получите 150 бонусных баллов."
+            "value": "Код от %1$@ принят — оба получите 150 бонусных баллов после вашей первой завершённой уборки."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Kód od %1$@ prijatý — obaja získate 150 bonusových bodov."
+            "value": "Kód od %1$@ prijatý — po vašom prvom dokončenom upratovaní obaja získate 150 bonusových bodov."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Код від %1$@ прийнято — обидва отримаєте 150 бонусних балів."
+            "value": "Код від %1$@ прийнято — обидва отримаєте 150 бонусних балів після вашого першого завершеного прибирання."
           }
         }
       }
@@ -6443,41 +6443,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Застраховано до %1$@"
-          }
-        }
-      }
-    },
-    "booking_trust_vetted": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Prověření uklízeči"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Background-checked cleaners"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Проверенные клинеры"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Preverené upratovačky"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Перевірені клінери"
           }
         }
       }
@@ -11528,31 +11493,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Otevřete rezervaci na kartě Objednávky a klepněte na „Zrušit“. Zrušení je zdarma až 24 hodin před začátkem úklidu. Do 15 minut od objednání neplatíte nic — s Cleansia Plus do 60 minut."
+            "value": "Otevřete rezervaci na kartě Objednávky a klepněte na „Zrušit“. Zrušení je zdarma až 24 hodin před začátkem úklidu. Do 15 minut od objednání neplatíte nic — u první objednávky nebo s Cleansia Plus do 60 minut."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Open your booking from the Orders tab and tap \"Cancel\". Cancellations are free up to 24 hours before the cleaning start time. Within 15 minutes of booking you pay nothing — within 60 minutes with Cleansia Plus."
+            "value": "Open your booking from the Orders tab and tap \"Cancel\". Cancellations are free up to 24 hours before the cleaning start time. Within 15 minutes of booking you pay nothing — within 60 minutes on your first booking or with Cleansia Plus."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Откройте заказ на вкладке Заказы и нажмите «Отменить». Отмена бесплатна за 24 часа до начала уборки. В течение 15 минут после заказа вы не платите ничего — с Cleansia Plus в течение 60 минут."
+            "value": "Откройте заказ на вкладке Заказы и нажмите «Отменить». Отмена бесплатна за 24 часа до начала уборки. В течение 15 минут после заказа вы не платите ничего — для первого заказа или с Cleansia Plus в течение 60 минут."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Otvorte rezerváciu na karte Objednávky a ťuknite na „Zrušiť“. Zrušenie je zdarma až 24 hodín pred začiatkom upratovania. Do 15 minút od objednania neplatíte nič — s Cleansia Plus do 60 minút."
+            "value": "Otvorte rezerváciu na karte Objednávky a ťuknite na „Zrušiť“. Zrušenie je zdarma až 24 hodín pred začiatkom upratovania. Do 15 minút od objednania neplatíte nič — pri prvej objednávke alebo s Cleansia Plus do 60 minút."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Відкрийте бронювання на вкладці Замовлення і натисніть «Скасувати». Скасування безкоштовне за 24 години до початку прибирання. Протягом 15 хвилин після замовлення ви не платите нічого — з Cleansia Plus протягом 60 хвилин."
+            "value": "Відкрийте бронювання на вкладці Замовлення і натисніть «Скасувати». Скасування безкоштовне за 24 години до початку прибирання. Протягом 15 хвилин після замовлення ви не платите нічого — для першого замовлення або з Cleansia Plus протягом 60 хвилин."
           }
         }
       }
@@ -11598,31 +11563,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ano. Všichni uklízeči Cleansia jsou prověřeni a pojištěni."
+            "value": "Ano. Všichni uklízeči Cleansia jsou pojištěni."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Yes. All Cleansia cleaners are background-checked and covered by insurance."
+            "value": "Yes. All Cleansia cleaners are covered by insurance."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Да. Все клинеры Cleansia проверены и застрахованы."
+            "value": "Да. Все клинеры Cleansia застрахованы."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Áno. Všetci upratovači Cleansia sú preverení a poistení."
+            "value": "Áno. Všetci upratovači Cleansia sú poistení."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Так. Усі клінери Cleansia перевірені та застраховані."
+            "value": "Так. Усі клінери Cleansia застраховані."
           }
         }
       }
@@ -11633,31 +11598,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ano. Všichni uklízeči Cleansia jsou prověřeni a pojištěni až do %1$@ na rezervaci."
+            "value": "Ano. Všichni uklízeči Cleansia jsou pojištěni až do %1$@ na rezervaci."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Yes. All Cleansia cleaners are background-checked and covered by insurance up to %1$@ per booking."
+            "value": "Yes. All Cleansia cleaners are covered by insurance up to %1$@ per booking."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Да. Все клинеры Cleansia проверены и застрахованы до %1$@ за заказ."
+            "value": "Да. Все клинеры Cleansia застрахованы до %1$@ за заказ."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Áno. Všetci upratovači Cleansia sú preverení a poistení až do %1$@ na rezerváciu."
+            "value": "Áno. Všetci upratovači Cleansia sú poistení až do %1$@ na rezerváciu."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Так. Усі клінери Cleansia перевірені та застраховані до %1$@ за бронювання."
+            "value": "Так. Усі клінери Cleansia застраховані до %1$@ за бронювання."
           }
         }
       }
@@ -11668,31 +11633,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Na kartě Objednávky otevřete nadcházející rezervaci a klepněte na „Změnit termín“. Změna je zdarma až 12 hodin před úklidem."
+            "value": "Rezervaci nelze přesunout na jiný termín. Zrušte ji a objednejte nový termín — zrušení je zdarma, dokud práci nepřevzal žádný uklízeč."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "From the Orders tab, open the upcoming booking and tap \"Reschedule\". Free rescheduling up to 12 hours before the cleaning."
+            "value": "A booking can't be moved to another date. Cancel it and book the new date instead — cancelling is free while no cleaner has taken the job."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "На вкладке Заказы откройте предстоящий заказ и нажмите «Перенести». Бесплатный перенос за 12 часов до уборки."
+            "value": "Заказ нельзя перенести на другую дату. Отмените его и закажите новую дату — отмена бесплатна, пока ни один клинер не взял заказ."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Na karte Objednávky otvorte nadchádzajúcu rezerváciu a ťuknite na „Zmeniť termín“. Zmena je zdarma až 12 hodín pred upratovaním."
+            "value": "Rezerváciu nemožno presunúť na iný termín. Zrušte ju a objednajte nový termín — zrušenie je zadarmo, kým prácu neprevzal žiadny upratovač."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "На вкладці Замовлення відкрийте майбутнє бронювання і натисніть «Перенести». Безкоштовне перенесення за 12 годин до прибирання."
+            "value": "Бронювання не можна перенести на іншу дату. Скасуйте його та замовте нову дату — скасування безкоштовне, поки жоден клінер не взяв замовлення."
           }
         }
       }
@@ -11808,31 +11773,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Jsou uklízeči pojištěni a prověřeni?"
+            "value": "Jsou uklízeči pojištěni?"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Are cleaners insured and vetted?"
+            "value": "Are cleaners insured?"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Застрахованы ли и проверены клинеры?"
+            "value": "Застрахованы ли клинеры?"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sú upratovači poistení a preverení?"
+            "value": "Sú upratovači poistení?"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Чи застраховані та перевірені клінери?"
+            "value": "Чи застраховані клінери?"
           }
         }
       }
@@ -11843,31 +11808,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Jak změním termín?"
+            "value": "Můžu změnit termín?"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "How do I reschedule?"
+            "value": "Can I change the date?"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Как перенести?"
+            "value": "Можно ли изменить дату?"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ako zmením termín?"
+            "value": "Môžem zmeniť termín?"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Як перенести?"
+            "value": "Чи можна змінити дату?"
           }
         }
       }
@@ -12749,41 +12714,6 @@
         }
       }
     },
-    "home_trust_vetted": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Prověřeno"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vetted"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Проверено"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Preverené"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Перевірено"
-          }
-        }
-      }
-    },
     "home_upsell_plus_cta": {
       "extractionState": "stale",
       "localizations": {
@@ -13095,111 +13025,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Перевага Plus"
-          }
-        }
-      }
-    },
-    "home_upsell_welcome_cta": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Objednat první úklid"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Book your first one"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Заказать первую уборку"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Objednať prvé upratovanie"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Замовити перше прибирання"
-          }
-        }
-      }
-    },
-    "home_upsell_welcome_title": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "15 % sleva na první úklid s kódem WELCOME15"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "15% off your first cleaning with WELCOME15"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Скидка 15% на первую уборку с кодом WELCOME15"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "15 % zľava na prvé upratovanie s kódom WELCOME15"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Знижка 15% на перше прибирання з кодом WELCOME15"
-          }
-        }
-      }
-    },
-    "home_upsell_welcome_top": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Uvítací nabídka"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Welcome offer"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Приветственное предложение"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Uvítacia ponuka"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Вітальна пропозиція"
           }
         }
       }
@@ -14227,31 +14052,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Získejte 150 bonusových bodů na první úklid Cleansia! Použijte můj kód %1$@ při registraci: %2$@"
+            "value": "Získejte 150 bonusových bodů po svém prvním dokončeném úklidu Cleansia! Použijte můj kód %1$@ při registraci: %2$@"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Get 150 bonus points on your first Cleansia cleaning! Use my code %1$@ at signup: %2$@"
+            "value": "Get 150 bonus points once your first Cleansia cleaning is completed! Use my code %1$@ at signup: %2$@"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Получите 150 бонусных баллов на первую уборку Cleansia! Используйте мой код %1$@ при регистрации: %2$@"
+            "value": "Получите 150 бонусных баллов после своей первой завершённой уборки Cleansia! Используйте мой код %1$@ при регистрации: %2$@"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Získajte 150 bonusových bodov na prvé upratovanie Cleansia! Použite môj kód %1$@ pri registrácii: %2$@"
+            "value": "Získajte 150 bonusových bodov po svojom prvom dokončenom upratovaní Cleansia! Použite môj kód %1$@ pri registrácii: %2$@"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Отримайте 150 бонусних балів на перше прибирання Cleansia! Використайте мій код %1$@ при реєстрації: %2$@"
+            "value": "Отримайте 150 бонусних балів після свого першого завершеного прибирання Cleansia! Використайте мій код %1$@ при реєстрації: %2$@"
           }
         }
       }
@@ -14334,13 +14159,13 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$lld friend joined — waiting on first booking"
+                  "value": "%1$lld friend joined — waiting on their first completed cleaning"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$lld friends joined — waiting on first booking"
+                  "value": "%1$lld friends joined — waiting on their first completed cleaning"
                 }
               }
             }
@@ -14352,25 +14177,25 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$lld přítel se připojil — čeká na první rezervaci"
+                  "value": "%1$lld přítel se připojil — čeká na první dokončený úklid"
                 }
               },
               "few": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$lld přátelé se připojili — čekají na první rezervaci"
+                  "value": "%1$lld přátelé se připojili — čekají na první dokončený úklid"
                 }
               },
               "many": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$lld přítele se připojilo — čeká na první rezervaci"
+                  "value": "%1$lld přítele se připojilo — čeká na první dokončený úklid"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$lld přátel se připojilo — čeká na první rezervaci"
+                  "value": "%1$lld přátel se připojilo — čeká na první dokončený úklid"
                 }
               }
             }
@@ -14382,25 +14207,25 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$lld priateľ sa pripojil — čaká na prvú rezerváciu"
+                  "value": "%1$lld priateľ sa pripojil — čaká na prvé dokončené upratovanie"
                 }
               },
               "few": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$lld priatelia sa pripojili — čakajú na prvú rezerváciu"
+                  "value": "%1$lld priatelia sa pripojili — čakajú na prvé dokončené upratovanie"
                 }
               },
               "many": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$lld priateľa sa pripojilo — čaká na prvú rezerváciu"
+                  "value": "%1$lld priateľa sa pripojilo — čaká na prvé dokončené upratovanie"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$lld priateľov sa pripojilo — čaká na prvú rezerváciu"
+                  "value": "%1$lld priateľov sa pripojilo — čaká na prvé dokončené upratovanie"
                 }
               }
             }
@@ -14412,25 +14237,25 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$lld друг приєднався — чекаємо на перше бронювання"
+                  "value": "%1$lld друг приєднався — чекаємо на перше завершене прибирання"
                 }
               },
               "few": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$lld друзі приєдналися — чекаємо на перше бронювання"
+                  "value": "%1$lld друзі приєдналися — чекаємо на перше завершене прибирання"
                 }
               },
               "many": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$lld друзів приєдналися — чекаємо на перше бронювання"
+                  "value": "%1$lld друзів приєдналися — чекаємо на перше завершене прибирання"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$lld друга приєдналося — чекаємо на перше бронювання"
+                  "value": "%1$lld друга приєдналося — чекаємо на перше завершене прибирання"
                 }
               }
             }
@@ -14442,25 +14267,25 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$lld друг присоединился — ждём первое бронирование"
+                  "value": "%1$lld друг присоединился — ждём первую завершённую уборку"
                 }
               },
               "few": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$lld друга присоединились — ждём первое бронирование"
+                  "value": "%1$lld друга присоединились — ждём первую завершённую уборку"
                 }
               },
               "many": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$lld друзей присоединились — ждём первое бронирование"
+                  "value": "%1$lld друзей присоединились — ждём первую завершённую уборку"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$lld друга присоединились — ждём первое бронирование"
+                  "value": "%1$lld друга присоединились — ждём первую завершённую уборку"
                 }
               }
             }
@@ -14474,31 +14299,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sdílejte svůj kód. Oni získají 150 bonusových bodů na první úklid, vy také."
+            "value": "Sdílejte svůj kód. Po jejich prvním dokončeném úklidu získají 150 bonusových bodů, vy také."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Share your code. They get 150 bonus points on their first cleaning, you get 150 too."
+            "value": "Share your code. Once their first cleaning is completed, they get 150 bonus points and so do you."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Поделитесь своим кодом. Они получат 150 бонусных баллов на первую уборку, вы тоже."
+            "value": "Поделитесь своим кодом. После их первой завершённой уборки они получат 150 бонусных баллов, вы тоже."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zdieľajte svoj kód. Oni získajú 150 bonusových bodov na prvé upratovanie, vy tiež."
+            "value": "Zdieľajte svoj kód. Po ich prvom dokončenom upratovaní získajú 150 bonusových bodov, vy tiež."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Поділіться своїм кодом. Вони отримають 150 бонусних балів на перше прибирання, ви теж."
+            "value": "Поділіться своїм кодом. Після їхнього першого завершеного прибирання вони отримають 150 бонусних балів, ви теж."
           }
         }
       }
@@ -16084,31 +15909,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "60 minut po objednání na bezplatné zrušení místo 15 minut"
+            "value": "60 minut po každé objednávce na bezplatné zrušení místo 15 minut"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "60 minutes after booking to cancel free, instead of 15 minutes"
+            "value": "60 minutes after every booking to cancel free, instead of 15 minutes"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "60 минут после заказа на бесплатную отмену вместо 15 минут"
+            "value": "60 минут после каждого заказа на бесплатную отмену вместо 15 минут"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "60 minút po objednaní na bezplatné zrušenie namiesto 15 minút"
+            "value": "60 minút po každej objednávke na bezplatné zrušenie namiesto 15 minút"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "60 хвилин після замовлення на безкоштовне скасування замість 15 хвилин"
+            "value": "60 хвилин після кожного замовлення на безкоштовне скасування замість 15 хвилин"
           }
         }
       }

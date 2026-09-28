@@ -33,6 +33,10 @@ final class CustomerErrorVoiceTests: XCTestCase {
         CustomerOnlyKey("order.country_operator_mismatch", emitters: "CreateOrder"),
         CustomerOnlyKey("order.cleaning_date.future", emitters: "CreateOrder"),
         CustomerOnlyKey("order.cleaning_date.below_lead_time", emitters: "CreateOrder"),
+        CustomerOnlyKey(
+            "order.cleaning_date.outside_booking_window",
+            emitters: "CreateOrder, QuoteOrder, CreateRecurringBooking, UpdateRecurringBooking"
+        ),
         CustomerOnlyKey("order.selected_services.invalid", emitters: "CreateOrder, QuoteOrder"),
         CustomerOnlyKey("order.selected_package.invalid", emitters: "CreateOrder, QuoteOrder"),
         CustomerOnlyKey("order.preferred_employee.not_eligible", emitters: "CreateOrder"),
@@ -40,6 +44,23 @@ final class CustomerErrorVoiceTests: XCTestCase {
         CustomerOnlyKey(
             "order.cash_not_available",
             emitters: "CreateOrder, CreateRecurringBooking, UpdateRecurringBooking, ConfirmRecurringOrder"
+        ),
+        CustomerOnlyKey(
+            "order.start_passed_cannot_cancel",
+            emitters: "CancelOrder, CancelGuestOrder, GetCancellationFeePreview, GetGuestCancellationFeePreview"
+        ),
+        CustomerOnlyKey(
+            "order.cleaner_already_started",
+            emitters: "ReportGuestCleanerNoShow, AdminCancelOrderAsNoShow"
+        ),
+        CustomerOnlyKey(
+            "order.start_time_not_reached",
+            emitters: "ReportGuestCleanerNoShow, AdminCancelOrderAsNoShow"
+        ),
+        CustomerOnlyKey("order.recurring_already_confirmed", emitters: "ConfirmRecurringOrder"),
+        CustomerOnlyKey(
+            "order.invalid_status_transition",
+            emitters: "ConfirmRecurringOrder, ResumeOrderCheckout, AdminOverrideOrderStatus"
         ),
         CustomerOnlyKey(
             "recurring_booking.not_found",
@@ -120,6 +141,7 @@ final class CustomerErrorVoiceTests: XCTestCase {
         "file.required": "UploadDisputeEvidence",
         "file.size_exceeded": "ImageFileValidator, UploadDisputeEvidence",
         "gdpr.consent_already_granted": "GrantConsent",
+        "gdpr.consent_not_editable": "GrantConsent, WithdrawConsent",
         "gdpr.consent_not_found": "WithdrawConsent",
         "gdpr.deletion_already_pending": "GdprDeletionService",
         "gdpr.deletion_blocked_by_invoice": "GdprDeletionService",
@@ -142,24 +164,32 @@ final class CustomerErrorVoiceTests: XCTestCase {
         "order.already_completed": "CancellationAssessor",
         "order.cash_not_available":
             "CreateOrder, CreateRecurringBooking, UpdateRecurringBooking, ConfirmRecurringOrder",
+        "order.cleaner_already_started": "ReportGuestCleanerNoShow",
         "order.cleaning_date.below_lead_time": "CreateOrder",
         "order.cleaning_date.future": "CreateOrder",
+        "order.cleaning_date.outside_booking_window":
+            "CreateOrder, CreateRecurringBooking, QuoteOrder, UpdateRecurringBooking",
         "order.country_operator_mismatch": "CreateOrder",
         "order.empty": "CreateOrder",
         "order.in_progress_cannot_cancel": "CancellationAssessor via CancelOrder, CancelGuestOrder, "
             + "GetGuestCancellationFeePreview",
+        "order.invalid_status_transition": "ConfirmRecurringOrder",
         "order.not_completed": "SubmitOrderReview",
         "order.not_found": "CancelGuestOrder, CancelOrder, ConfirmRecurringOrder, CreateDispute, "
             + "GetGuestCancellationFeePreview +10 more",
         "order.payment_gateway_unavailable":
             "CancelMembershipSubscription, CreateMembershipCheckoutSession, CreateMembershipSubscription +3 more",
         "order.preferred_employee.not_eligible": "CreateOrder, CreateRecurringBooking",
+        "order.recurring_already_confirmed": "ConfirmRecurringOrder",
         "order.review.rating_invalid": "SubmitOrderReview",
         "order.selected_package.invalid": "CreateOrder, QuoteOrder",
         "order.selected_services.invalid": "CreateOrder, QuoteOrder",
         "order.size_exceeds_maximum":
             "CreateOrder, QuoteOrder, QuotePlusSavings, CreateRecurringBooking, UpdateRecurringBooking",
         "order.span_exceeds_maximum": "CreateOrder, QuoteOrder",
+        "order.start_passed_cannot_cancel": "CancellationAssessor via CancelOrder, CancelGuestOrder, "
+            + "GetCancellationFeePreview, GetGuestCancellationFeePreview",
+        "order.start_time_not_reached": "ReportGuestCleanerNoShow",
         "order.total_price.not_match": "CreateOrder",
         "order.total_price.positive": "CreateOrder",
         "promo.below_minimum_order_amount": "CreateOrder",

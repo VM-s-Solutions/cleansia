@@ -1,10 +1,9 @@
 import XCTest
 @testable import CleansiaCustomer
 
-/// Owner ruling 2026-09-24: after booking, cancelling is free for 15 minutes, and for 60 for an entitled
-/// Plus member. Guests and first-time customers get the standard figure — the first-time window is gone
-/// from the server, so no locale may bring it back. The figures are read from `BookingPolicy.cs`, but this
-/// suite runs only when the iOS tree changes, so an edit to those constants alone is not caught here;
+/// Owner ruling 2026-09-28, reversing 2026-09-24: after booking, cancelling is free for 15 minutes, for 60 on a
+/// customer's first booking and for 60 for an entitled Plus member. The figures are read from `BookingPolicy.cs`,
+/// but this suite runs only when the iOS tree changes, so an edit to those constants alone is not caught here;
 /// `cancellation-grace-claim.spec.ts` holds the same line for web.
 ///
 /// The catalog is read through the BUILT bundle, so an assertion here fails when the shipped app is wrong
@@ -12,9 +11,11 @@ import XCTest
 final class CancellationGraceClaimTests: XCTestCase {
     private static let languages = ["en", "cs", "sk", "uk", "ru"]
 
-    /// "15 minutes … — 60 minutes with Cleansia Plus": the side that names Plus owes the Plus figure.
+    /// "15 minutes … — 60 minutes on your first booking or with Cleansia Plus": the side that names Plus owes
+    /// the longer figures and names the first booking.
     private static let bothAroundDash = ["booking_cancel_grace_note", "help_faq_a1"]
-    /// "60 minutes …, instead of 15 minutes": a Plus perk, so what it replaces is the standard figure.
+    /// "60 minutes after every booking …, instead of 15 minutes": a Plus perk, so what it replaces is the
+    /// standard figure, and the first booking's hour is not the member's benefit.
     private static let bothAroundInsteadOf = ["membership_perk_grace_desc"]
     /// The sheet's line is the customer's OWN grace: the server's figure and no number of its own.
     private static let sheetNote = "order_cancel_fee_grace_note"
@@ -35,7 +36,7 @@ final class CancellationGraceClaimTests: XCTestCase {
         #"moments? ago"#, #"just (?:now|booked)"#, #"před malou chvíl"#, #"pred malou chvíľ"#,
         #"щойно"#, #"только что"#
     ]
-    private static let firstTimeClaims = [
+    private static let firstBookingClaims = [
         #"first[-\s]time"#, #"first (?:booking|order)"#, #"new customer"#,
         #"prvn\S* (?:objedn|zákazn|úklid)"#, #"prv\S* (?:objedn|zákazn|upratov)"#, #"nov\S* zákazn"#,
         #"перш\S* (?:замовлен|прибиран)"#, #"нов\S* клієнт"#, #"перв\S* (?:заказ|уборк)"#, #"нов\S* клиент"#
@@ -53,21 +54,27 @@ final class CancellationGraceClaimTests: XCTestCase {
         super.tearDown()
     }
 
-    func testThePolicyHasTwoDifferentFigures() throws {
-        let (standard, plus) = try Self.policyMinutes()
-        XCTAssertGreaterThan(standard, 0)
-        XCTAssertGreaterThan(plus, standard)
+    func testThePolicyHasAStandardFigureAndTwoLongerOnes() throws {
+        let policy = try Self.policyMinutes()
+        XCTAssertGreaterThan(policy.standard, 0)
+        XCTAssertGreaterThan(policy.firstBooking, policy.standard)
+        XCTAssertGreaterThan(policy.plus, policy.standard)
     }
 
     func testEveryGraceSentenceStatesEachFigureOnItsOwnSide() throws {
-        let (standard, plus) = try Self.policyMinutes()
+        let policy = try Self.policyMinutes()
+        let longer = Self.distinct([policy.firstBooking, policy.plus])
         try forEachLanguage { language in
             for key in Self.bothAroundDash {
                 let parts = L10n.localized(key).components(separatedBy: "—")
-                let plusSide = parts.filter { $0.contains("Cleansia Plus") }.joined(separator: " ")
+                let longerSide = parts.filter { $0.contains("Cleansia Plus") }.joined(separator: " ")
                 let standardSide = parts.filter { !$0.contains("Cleansia Plus") }.joined(separator: " ")
-                XCTAssertEqual(Self.minutes(in: plusSide), [plus], "\(key) Plus side in \(language)")
-                XCTAssertEqual(Self.minutes(in: standardSide), [standard], "\(key) standard side in \(language)")
+                XCTAssertEqual(Self.distinct(Self.minutes(in: longerSide)), longer, "\(key) longer side in \(language)")
+                XCTAssertEqual(Self.minutes(in: standardSide), [policy.standard], "\(key) standard side in \(language)")
+                XCTAssertTrue(
+                    Self.firstBookingClaims.contains { Self.matches($0, longerSide) },
+                    "\(key) no longer names the first booking beside Plus in \(language)"
+                )
             }
             for key in Self.bothAroundInsteadOf {
                 let value = L10n.localized(key)
@@ -77,8 +84,8 @@ final class CancellationGraceClaimTests: XCTestCase {
                 )
                 let plusSide = String(value[..<split.lowerBound])
                 let standardSide = String(value[split.lowerBound...])
-                XCTAssertEqual(Self.minutes(in: plusSide), [plus], "\(key) Plus side in \(language)")
-                XCTAssertEqual(Self.minutes(in: standardSide), [standard], "\(key) standard side in \(language)")
+                XCTAssertEqual(Self.minutes(in: plusSide), [policy.plus], "\(key) Plus side in \(language)")
+                XCTAssertEqual(Self.minutes(in: standardSide), [policy.standard], "\(key) standard side in \(language)")
             }
         }
     }
@@ -93,9 +100,11 @@ final class CancellationGraceClaimTests: XCTestCase {
     }
 
     /// Every sentence that pairs a minute figure with cancelling or with the time after booking, anywhere
-    /// in the catalog.
-    func testNoLocaleStatesAnotherGraceOrAFirstTimeOne() throws {
-        let (standard, plus) = try Self.policyMinutes()
+    /// in the catalog. Only the rule sentences name the first booking: a Plus perk speaks of every booking,
+    /// and the sheet states the server's figure for this one.
+    func testNoLocaleStatesAnotherGraceOrMisplacesTheFirstBooking() throws {
+        let policy = try Self.policyMinutes()
+        let figures: Set<Int> = [policy.standard, policy.firstBooking, policy.plus]
         let stems = Self.cancelStems + Self.graceStems
         for language in Self.languages {
             let catalog = try Self.catalog(language)
@@ -110,15 +119,18 @@ final class CancellationGraceClaimTests: XCTestCase {
                 )
             }
             for (key, value) in graceSentences {
-                let strays = Self.minutes(in: value).filter { $0 != standard && $0 != plus }
+                let strays = Self.minutes(in: value).filter { !figures.contains($0) }
                 XCTAssertEqual(strays, [], "\(key) states another grace in \(language): \(value)")
             }
             for key in Self.bothAroundDash + Self.bothAroundInsteadOf + [Self.sheetNote] {
                 let value = catalog[key] ?? ""
                 XCTAssertFalse(value.isEmpty, "\(key) is missing in \(language)")
-                for claim in Self.firstTimeClaims {
-                    XCTAssertFalse(Self.matches(claim, value), "\(key) makes a first-time claim in \(language)")
-                }
+                let namesFirstBooking = Self.firstBookingClaims.contains { Self.matches($0, value) }
+                XCTAssertEqual(
+                    namesFirstBooking,
+                    Self.bothAroundDash.contains(key),
+                    "\(key) misplaces the first booking in \(language): \(value)"
+                )
             }
         }
     }
@@ -147,11 +159,12 @@ final class CancellationGraceClaimTests: XCTestCase {
 
     // MARK: - Reading
 
-    private static func policyMinutes() throws -> (standard: Int, plus: Int) {
+    private static func policyMinutes() throws -> (standard: Int, firstBooking: Int, plus: Int) {
         let policy = repoRoot().appendingPathComponent("src/Cleansia.Core.AppServices/Features/Orders/BookingPolicy.cs")
         let source = try String(contentsOf: policy, encoding: .utf8)
         return try (
             constant("OopsWindowMinutesStandard", in: source),
+            constant("OopsWindowMinutesFirstBooking", in: source),
             constant("OopsWindowMinutesPlus", in: source)
         )
     }
@@ -172,6 +185,10 @@ final class CancellationGraceClaimTests: XCTestCase {
         return regex.matches(in: text, range: NSRange(text.startIndex..., in: text)).compactMap { match in
             Range(match.range(at: 1), in: text).flatMap { Int(text[$0]) }
         }
+    }
+
+    private static func distinct(_ figures: [Int]) -> [Int] {
+        Array(Set(figures)).sorted()
     }
 
     private static func matches(_ pattern: String, _ text: String) -> Bool {

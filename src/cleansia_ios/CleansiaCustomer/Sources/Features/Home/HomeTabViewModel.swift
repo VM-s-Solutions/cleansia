@@ -89,10 +89,6 @@ final class HomeTabViewModel: ViewModel {
         await marketStore.refreshIfStale()
     }
 
-    var hasAnyOrders: Bool {
-        !recentOrders.isEmpty
-    }
-
     var displayedAddress: SavedAddress? {
         HomeSections.displayedAddress(addresses, selectedId: selectedAddressId)
     }

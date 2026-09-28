@@ -69,10 +69,6 @@ extension L10n.Booking {
         L10n.localized("booking_trust_insured_no_figure")
     }
 
-    static var trustVetted: String {
-        L10n.localized("booking_trust_vetted")
-    }
-
     static func tierDiscountMinNotMet(_ amount: String) -> String {
         L10n.format("booking_summary_tier_discount_min_not_met", amount)
     }

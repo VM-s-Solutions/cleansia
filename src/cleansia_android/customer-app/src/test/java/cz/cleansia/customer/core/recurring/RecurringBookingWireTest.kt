@@ -266,6 +266,31 @@ class RecurringBookingWireTest {
         assertEquals("\"e-9\"", sent!!["preferredEmployeeId"].toString())
     }
 
+    @Test
+    fun theCreateSendsTheFavouriteCleanerOnTheWire() = runTest {
+        val template = Json.parseToJsonElement(CAPTURED_TEMPLATES).jsonArray.first().toString()
+        var sent: JsonObject? = null
+        serving(template, onRequest = { sent = Json.parseToJsonElement(it.body.readUtf8()).jsonObject }) {
+            it.create(
+                CreateRecurringBookingRequest(
+                    frequency = 2,
+                    dayOfWeek = 3,
+                    timeOfDay = "09:30",
+                    rooms = 4,
+                    bathrooms = 2,
+                    savedAddressId = "a-1",
+                    selectedServiceIds = listOf("s-1"),
+                    selectedPackageIds = emptyList(),
+                    paymentType = 2,
+                    startsOn = "2026-08-03T09:30:00Z",
+                    preferredEmployeeId = "e-9",
+                ),
+            )
+        }
+
+        assertEquals("\"e-9\"", sent!!["preferredEmployeeId"].toString())
+    }
+
     // --- payload plumbing ---------------------------------------------------------
 
     private fun templatesWithFirstRow(transform: (JsonObject) -> JsonObject): String {

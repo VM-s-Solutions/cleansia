@@ -66,6 +66,7 @@ data class CreateRecurringBookingRequest(
     /** ISO-8601 instant; backend Validator requires today or later. */
     val startsOn: String,
     val endsOn: String? = null,
+    val preferredEmployeeId: String? = null,
 )
 
 @Serializable

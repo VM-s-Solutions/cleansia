@@ -678,6 +678,113 @@ class CreateRecurringViewModelTest {
     }
 
     @Test
+    fun `a new schedule carries the favourite cleaner the customer picked`() = runTest {
+        coEvery { recurringRepo.create(any()) } returns ApiResult.Success(template)
+        val vm = viewModel()
+        advanceUntilIdle()
+        fillValidForm(vm)
+        vm.setPreferredEmployeeId("emp-7")
+
+        vm.submit()
+        advanceUntilIdle()
+
+        val request = slot<CreateRecurringBookingRequest>()
+        coVerify(exactly = 1) { recurringRepo.create(capture(request)) }
+        assertEquals("emp-7", request.captured.preferredEmployeeId)
+    }
+
+    @Test
+    fun `a new schedule with no pick names no favourite cleaner`() = runTest {
+        coEvery { recurringRepo.create(any()) } returns ApiResult.Success(template)
+        val vm = viewModel()
+        advanceUntilIdle()
+        fillValidForm(vm)
+
+        vm.submit()
+        advanceUntilIdle()
+
+        val request = slot<CreateRecurringBookingRequest>()
+        coVerify(exactly = 1) { recurringRepo.create(capture(request)) }
+        assertNull(request.captured.preferredEmployeeId)
+    }
+
+    @Test
+    fun `a refused favourite cleaner on a new schedule is kept and offered back`() = runTest {
+        coEvery { recurringRepo.create(any()) } returns notEligible
+        val vm = viewModel()
+        advanceUntilIdle()
+        fillValidForm(vm)
+        vm.setPreferredEmployeeId("emp-7")
+
+        vm.submit()
+        advanceUntilIdle()
+
+        assertEquals(true, vm.preferredCleanerRefused.value)
+        assertEquals("emp-7", vm.state.value.preferredEmployeeId)
+        assertTrue(vm.submitState.value is ActionState.Error)
+        coVerify(exactly = 1) { recurringRepo.create(any()) }
+        verify(exactly = 0) { snackbar.showError(any<ApiError>()) }
+    }
+
+    @Test
+    fun `saving a new schedule without the favourite cleaner resends the same create with only the cleaner cleared`() = runTest {
+        val sent = mutableListOf<CreateRecurringBookingRequest>()
+        coEvery { recurringRepo.create(capture(sent)) } returnsMany listOf(notEligible, ApiResult.Success(template))
+        val vm = viewModel()
+        advanceUntilIdle()
+        fillValidForm(vm)
+        vm.setPreferredEmployeeId("emp-7")
+        vm.submit()
+        advanceUntilIdle()
+
+        vm.submitted.test {
+            vm.saveWithoutPreferredCleaner()
+            advanceUntilIdle()
+            awaitItem()
+        }
+
+        assertEquals(2, sent.size)
+        assertEquals(sent[0].copy(preferredEmployeeId = null), sent[1])
+        assertEquals(false, vm.preferredCleanerRefused.value)
+        assertEquals(ActionState.Idle, vm.submitState.value)
+    }
+
+    @Test
+    fun `an edit sends the favourite cleaner the customer changed to, and none once cleared`() = runTest {
+        templatesFlow.value = listOf(editableTemplate.copy(preferredEmployeeId = "emp-7"))
+        val sent = mutableListOf<UpdateRecurringBookingRequest>()
+        coEvery { recurringRepo.update(capture(sent)) } returns ApiResult.Success(editableTemplate)
+        val vm = viewModel(templateId = "tpl-1")
+        advanceUntilIdle()
+
+        vm.setPreferredEmployeeId("emp-9")
+        vm.submit()
+        advanceUntilIdle()
+        vm.setPreferredEmployeeId(null)
+        vm.submit()
+        advanceUntilIdle()
+
+        assertEquals(listOf("emp-9", null), sent.map { it.preferredEmployeeId })
+    }
+
+    @Test
+    fun `a new pick withdraws the refusal of the previous one`() = runTest {
+        coEvery { recurringRepo.create(any()) } returns notEligible
+        val vm = viewModel()
+        advanceUntilIdle()
+        fillValidForm(vm)
+        vm.setPreferredEmployeeId("emp-7")
+        vm.submit()
+        advanceUntilIdle()
+        assertTrue(vm.preferredCleanerRefused.value)
+
+        vm.setPreferredEmployeeId("emp-9")
+
+        assertFalse(vm.preferredCleanerRefused.value)
+        assertEquals("emp-9", vm.state.value.preferredEmployeeId)
+    }
+
+    @Test
     fun `submit failure shows the backend message, not a generic key`() = runTest {
         templatesFlow.value = listOf(editableTemplate)
         coEvery { recurringRepo.update(any()) } returns

@@ -134,8 +134,9 @@ class CreateRecurringViewModel @Inject constructor(
     val submitted: SharedFlow<Unit> = _submitted.asSharedFlow()
 
     /**
-     * The server no longer accepts the schedule's favourite cleaner. The form keeps them until the
-     * customer chooses [saveWithoutPreferredCleaner]; nothing drops them on the customer's behalf.
+     * The server does not accept the schedule's favourite cleaner. The form keeps them until the
+     * customer picks again or chooses [saveWithoutPreferredCleaner]; nothing drops them on the
+     * customer's behalf.
      */
     private val _preferredCleanerRefused = MutableStateFlow(false)
     val preferredCleanerRefused: StateFlow<Boolean> = _preferredCleanerRefused.asStateFlow()
@@ -225,6 +226,10 @@ class CreateRecurringViewModel @Inject constructor(
         _state.update { it.copy(paymentType = t) }
     }
     fun setStartsOn(iso: String) { _state.update { it.copy(startsOnIso = iso) } }
+    fun setPreferredEmployeeId(id: String?) {
+        _preferredCleanerRefused.value = false
+        _state.update { it.copy(preferredEmployeeId = id) }
+    }
 
     fun nextStep() { _step.update { (it + 1).coerceAtMost(TOTAL_STEPS) } }
     fun previousStep() { _step.update { (it - 1).coerceAtLeast(1) } }
@@ -244,7 +249,10 @@ class CreateRecurringViewModel @Inject constructor(
             timeOfDay in START_TIMES &&
             paymentType != null
 
-    private fun CreateRecurringFormState.toCreateRequest(paymentType: Int) = CreateRecurringBookingRequest(
+    private fun CreateRecurringFormState.toCreateRequest(
+        paymentType: Int,
+        withoutPreferredCleaner: Boolean,
+    ) = CreateRecurringBookingRequest(
         frequency = frequency.code,
         dayOfWeek = dayOfWeek,
         timeOfDay = timeOfDay,
@@ -255,13 +263,14 @@ class CreateRecurringViewModel @Inject constructor(
         selectedPackageIds = selectedPackageIds.toList(),
         paymentType = paymentType,
         startsOn = startsOnIso,
+        preferredEmployeeId = if (withoutPreferredCleaner) null else preferredEmployeeId,
     )
 
     /**
      * The backend's `UpdateSchedule` rewrites every schedule column from the
      * command, so a field the form does not echo back is not "left alone" —
-     * it is erased. `endsOn` and the favourite cleaner have no editor in this
-     * wizard, which is exactly why the stored values have to ride along.
+     * it is erased. `endsOn` has no editor in this wizard, which is exactly
+     * why the stored value has to ride along.
      */
     private fun CreateRecurringFormState.toUpdateRequest(
         templateId: String,
@@ -310,7 +319,7 @@ class CreateRecurringViewModel @Inject constructor(
             val result = if (editingTemplateId != null) {
                 recurringRepo.update(form.toUpdateRequest(editingTemplateId, paymentType, withoutPreferredCleaner))
             } else {
-                recurringRepo.create(form.toCreateRequest(paymentType))
+                recurringRepo.create(form.toCreateRequest(paymentType, withoutPreferredCleaner))
             }
             when (result) {
                 is ApiResult.Success -> {
@@ -323,7 +332,7 @@ class CreateRecurringViewModel @Inject constructor(
                 }
                 is ApiResult.Error -> {
                     val error = result.error
-                    if (isEditing && (error as? ApiError.BadRequest)?.errorKey == PREFERRED_CLEANER_NOT_ELIGIBLE) {
+                    if ((error as? ApiError.BadRequest)?.errorKey == PREFERRED_CLEANER_NOT_ELIGIBLE) {
                         _preferredCleanerRefused.value = true
                         _submitState.value =
                             ActionState.Error(appContext.getString(R.string.preferred_cleaner_schedule_refused))
@@ -604,7 +613,6 @@ data class CreateRecurringFormState(
     val startsOnIso: String = "",
     /** ISO-8601 instant. No editor in the wizard; carried so an edit doesn't erase it. */
     val endsOnIso: String? = null,
-    /** No editor in the wizard either; carried for the same reason. */
     val preferredEmployeeId: String? = null,
 ) {
     /** The server refuses a start on or after [endsOnIso], and this form cannot move the end date. */

@@ -79,6 +79,7 @@ import cz.cleansia.customer.core.catalog.ServiceListItem
 import cz.cleansia.customer.core.data.UserAddress
 import cz.cleansia.customer.core.recurring.RecurrenceFrequency
 import cz.cleansia.customer.features.addresses.AddressManagerSheet
+import cz.cleansia.customer.features.booking.PreferredCleanerPicker
 import cz.cleansia.customer.features.booking.localizedDescription
 import cz.cleansia.customer.features.booking.localizedName
 import cz.cleansia.customer.ui.state.ActionState
@@ -627,6 +628,12 @@ private fun WhereAndPayStep(
         isoValue = state.startsOnIso,
         latestDate = state.latestStartDate(TimeZone.currentSystemDefault()),
         onChange = viewModel::setStartsOn,
+    )
+
+    Spacer(Modifier.height(24.dp))
+    PreferredCleanerPicker(
+        selectedEmployeeId = state.preferredEmployeeId,
+        onSelect = { id, _ -> viewModel.setPreferredEmployeeId(id) },
     )
 
     if (isEditing) {

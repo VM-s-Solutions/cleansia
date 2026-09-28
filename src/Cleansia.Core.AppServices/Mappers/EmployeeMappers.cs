@@ -54,7 +54,9 @@ public static class EmployeeMappers
             ProfilePhoto: employee.User.ProfilePhotoName?.MapToDto(),
             Profile: employee.User.Profile.MapToCode(),
             AuthenticationType: employee.User.AuthenticationType.MapToCode(),
-            JobRadiusKm: employee.JobRadiusKm);
+            JobRadiusKm: employee.JobRadiusKm,
+            WeeklyOrderLimit: employee.WeeklyOrderLimit,
+            WeeklyOrderLimitReason: employee.WeeklyOrderLimitReason);
     }
 
     public static AdminEmployeeListItem MapToAdminDto(this Employee employee)
@@ -110,7 +112,8 @@ public static class EmployeeMappers
             RejectedAt: employee.RejectedAt,
             MissingFields: employee.GetMissingProfileFields(),
             UserId: employee.UserId,
-            WeeklyOrderLimit: employee.WeeklyOrderLimit
+            WeeklyOrderLimit: employee.WeeklyOrderLimit,
+            WeeklyOrderLimitReason: employee.WeeklyOrderLimitReason
         );
     }
 

@@ -8,6 +8,22 @@ public class OrderReceiptRepository(CleansiaDbContext context)
     : BaseRepository<OrderReceipt>(context), IOrderReceiptRepository
 {
 
+    public async Task<IReadOnlyList<OrderReceipt>> GetStoredBlobsIssuedBeforeAsync(
+        DateTime issuedBefore, string? afterId, int take, CancellationToken cancellationToken)
+    {
+        var query = GetDbSet().Where(r => r.BlobDeletedAt == null && r.IssuedAt < issuedBefore);
+
+        if (afterId is not null)
+        {
+            query = query.Where(r => string.Compare(r.Id, afterId) > 0);
+        }
+
+        return await query
+            .OrderBy(r => r.Id)
+            .Take(take)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<List<OrderReceipt>> GetByOrderIdAsync(
         string orderId,
         CancellationToken cancellationToken)

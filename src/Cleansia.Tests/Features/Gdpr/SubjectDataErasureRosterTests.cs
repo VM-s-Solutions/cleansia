@@ -292,6 +292,14 @@ public class SubjectDataErasureRosterTests
                 + "coarse location and catalogue names — WorkContractFactsPiiGuardTests is the standing proof.",
             InErasure("workContractAcceptanceRepository.PseudonymiseForEmployeeAsync")),
 
+        [typeof(Core.Domain.Legal.CleanerLegalDocumentAcceptance)] = new(
+            Verdict.AnonymizedInPlace,
+            "The record of which framework contract, self-billing agreement or data-processing agreement "
+                + "the cleaner worked and was self-billed under. Its subject handle is a bare EmployeeId that "
+                + "Employee.Anonymize keeps; the three request-metadata columns are personal data and are "
+                + "blanked here, as on the contract for work.",
+            InErasure("cleanerLegalDocumentAcceptanceRepository.PseudonymiseForEmployeeAsync")),
+
         [typeof(Core.Domain.Auditing.CustomerActionAudit)] = new(
             Verdict.AnonymizedInPlace,
             "ADR-0062 defence-of-claims record. Its subject handle is a bare UserId that User.Anonymize keeps, so "

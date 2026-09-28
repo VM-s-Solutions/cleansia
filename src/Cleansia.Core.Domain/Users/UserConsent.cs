@@ -78,6 +78,17 @@ public class UserConsent : TenantAuditable
     }
 
     /// <summary>
+    /// Whether this row answers for the document in force: granted, not withdrawn, and pointing at that
+    /// very document. The identity, not the version date: a market's own copy can be seeded under the
+    /// date of the platform-wide text, and an acceptance of one is not an acceptance of the other. An
+    /// unversioned row covers no text. Nothing in force is nothing to be behind.
+    /// </summary>
+    public bool Covers(LegalDocument? inForce) =>
+        IsGranted
+        && WithdrawnAt is null
+        && (inForce is null || LegalDocumentId == inForce.Id);
+
+    /// <summary>
     /// A re-acceptance of a different document on a row that is already granted — different, not newer:
     /// the row stays the truth about now and the audit trail is the history (ADR-0062 D4).
     /// </summary>

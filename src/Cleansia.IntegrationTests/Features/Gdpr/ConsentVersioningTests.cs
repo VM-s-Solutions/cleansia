@@ -11,6 +11,7 @@ using Cleansia.Core.Domain.Legal;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Configuration.Interfaces;
+using Cleansia.Infra.Common.Validations;
 using Cleansia.Infra.Database;
 using Cleansia.IntegrationTests.Features.Legal;
 using Cleansia.TestUtilities;
@@ -177,8 +178,12 @@ public class ConsentVersioningTests(PostgresContainerFixture fixture) : BaseInte
             transactional: false);
     }
 
+    /// <summary>
+    /// Owner ruling 2026-09-28: the accepted terms are shown read-only, never withdrawn. The attempt is refused, the
+    /// row keeps its acceptance, and the trail still has the attempt, out of band.
+    /// </summary>
     [Fact]
-    public async Task A_Customer_Withdrawal_Leaves_A_Withdraw_Row_Carrying_The_Version_The_Row_Was_Granted_Under()
+    public async Task A_Customer_Cannot_Withdraw_The_Accepted_Terms_And_The_Attempt_Is_Recorded()
     {
         var customer = NewUser(UserProfile.Customer);
 
@@ -194,18 +199,19 @@ public class ConsentVersioningTests(PostgresContainerFixture fixture) : BaseInte
             act: async provider => await provider.GetRequiredService<IMediator>().Send(new WithdrawConsent.Command(ConsentType.TermsOfService)),
             assert: async (context, result) =>
             {
-                Assert.True(result.IsSuccess);
+                Assert.False(result.IsSuccess);
+                Assert.Equal(
+                    BusinessErrorMessage.ConsentNotEditable,
+                    Assert.IsAssignableFrom<IValidationResult>(result).Errors.Single().Message);
 
                 var row = await TermsRowOf(context, customer.Id);
-                Assert.False(row.IsGranted);
-                Assert.NotNull(row.WithdrawnAt);
+                Assert.True(row.IsGranted);
+                Assert.Null(row.WithdrawnAt);
                 Assert.Equal(OlderVersion, row.DocumentVersion);
 
                 var audit = Assert.Single(await CustomerRows(context));
                 Assert.Equal("customer.consent.withdraw", audit.Action);
-                Assert.True(audit.Success);
-                Assert.Equal(customer.Id, audit.ResourceId);
-                Assert.Equal(OlderVersion, JsonDocument.Parse(audit.PayloadJson!).RootElement.GetProperty("documentVersion").GetString());
+                Assert.False(audit.Success);
             },
             transactional: false);
     }

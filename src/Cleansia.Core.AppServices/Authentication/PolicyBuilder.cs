@@ -55,7 +55,9 @@ public static class PolicyBuilder
         //[Policy.CanGetOrderStatus] = PhysicalPolicy.Anonymous,
 
         // User
-        [Policy.CanViewPagedUser] = PhysicalPolicy.EmployeeOrAdmin,
+        // The partner host's account list: every customer's name, e-mail and phone, so the administrator's
+        // role gates it as the admin host's order list is gated — never a cleaner.
+        [Policy.CanViewPagedUser] = PhysicalPolicy.SupportOrAbove,
         [Policy.CanViewUserDetail] = PhysicalPolicy.OwnerOrElevated,
         [Policy.CanGetCurrentUser] = PhysicalPolicy.Authenticated,
         //[Policy.CanRequestPasswordChange] = PhysicalPolicy.Anonymous,

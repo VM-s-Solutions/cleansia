@@ -211,6 +211,7 @@ public sealed class ErasureBlockingOrderStatusTests : IDisposable
             new OutboxMessageRepository(ctx),
             new CustomerActionAuditRepository(ctx),
             new WorkContractAcceptanceRepository(ctx),
+            new CleanerLegalDocumentAcceptanceRepository(ctx),
             new AddressRepository(ctx),
             new GuestOrderAccessTokenIssuer(new GuestOrderAccessTokenRepository(ctx)),
             Mock.Of<IRefreshTokenService>(),

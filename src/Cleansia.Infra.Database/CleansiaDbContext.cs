@@ -480,4 +480,6 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
     public virtual DbSet<CustomerActionAudit> CustomerActionAudits { get; set; }
 
     public virtual DbSet<WorkContractAcceptance> WorkContractAcceptances { get; set; }
+
+    public virtual DbSet<CleanerLegalDocumentAcceptance> CleanerLegalDocumentAcceptances { get; set; }
 }

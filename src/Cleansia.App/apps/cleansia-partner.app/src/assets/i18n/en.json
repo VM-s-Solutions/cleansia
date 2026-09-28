@@ -544,7 +544,10 @@
         "terms_of_service": "Terms of service",
         "privacy_policy": "Privacy policy",
         "marketing_emails": "Marketing emails",
-        "data_processing": "Data processing"
+        "data_processing": "Data processing",
+        "cleaner_framework_contract": "Framework cooperation agreement (partners)",
+        "self_billing_agreement": "Self-billing agreement",
+        "cleaner_data_processing_agreement": "Data processing agreement (partners)"
       },
       "delete_title": "Delete my account",
       "delete_description": "Permanently delete your account and anonymize your personal data. This cannot be undone.",
@@ -791,7 +794,8 @@
       "acceptance_required": "Accept the contract for work for this job before you continue."
     },
     "legal": {
-      "document_not_found": "This job cannot be taken right now."
+      "document_not_found": "This job cannot be taken right now.",
+      "document_not_in_force": "This document is no longer the version in force. Reload it and accept the current one."
     },
     "auth": {
       "google_type_error": "This account uses Google sign-in. Use the Google button.",
@@ -904,7 +908,11 @@
       "payment_gateway_unavailable": "Payment gateway is unavailable",
       "time_conflict": "This time conflicts with another booking on your schedule",
       "weekly_limit_reached": "You've reached your weekly order limit.",
-      "employee_already_has_order_in_progress": "You already have another order in progress. Finish it before starting a new one."
+      "employee_already_has_order_in_progress": "You already have another order in progress. Finish it before starting a new one.",
+      "photo": {
+        "window_closed": "This photo cannot be added now: before photos from the moment you hold the job until it is finished, after photos while the work is in progress.",
+        "locked": "Photos cannot be deleted once the order is completed or cancelled."
+      }
     },
     "user": {
       "email_confirmed": "Email is already confirmed",
@@ -925,7 +933,8 @@
       "already_approved": "Employee has already been approved",
       "already_rejected": "Employee has already been rejected",
       "job_radius_out_of_range": "The travel radius you entered is outside the allowed range",
-      "legal_entity_not_accepted": "Cleaners work with us as natural persons; a company cannot be registered here"
+      "legal_entity_not_accepted": "Cleaners work with us as natural persons; a company cannot be registered here",
+      "legal_documents_not_accepted": "Accept the current version of your contract documents before taking jobs."
     },
     "employee_document": {
       "not_found": "Document not found",
@@ -1019,7 +1028,8 @@
       "deletion_blocked_by_order": "Your account can't be deleted while you have active orders.",
       "deletion_blocked_by_invoice": "Your account can't be deleted while invoices are outstanding.",
       "deletion_blocked_by_assigned_order": "Your account can't be deleted while you are still assigned to a job.",
-      "deletion_blocked_by_unsettled_pay": "Your account can't be deleted while pay is still owed to you. Contact the office to settle it first."
+      "deletion_blocked_by_unsettled_pay": "Your account can't be deleted while pay is still owed to you. Contact the office to settle it first.",
+      "consent_not_editable": "This consent cannot be changed here."
     },
     "company": {
       "not_found": "Company information not found",

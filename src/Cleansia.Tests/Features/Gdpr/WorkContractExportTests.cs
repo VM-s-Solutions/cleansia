@@ -101,7 +101,8 @@ public sealed class WorkContractExportTests : IDisposable
             consents.Object,
             new CustomerActionAuditRepository(ctx),
             new WorkContractAcceptanceRepository(ctx),
-            new LegalDocumentRepository(ctx));
+            new LegalDocumentRepository(ctx),
+            new CleanerLegalDocumentAcceptanceRepository(ctx));
 
         return await service.BuildAsync(userId, exportedBy: "self", CancellationToken.None);
     }

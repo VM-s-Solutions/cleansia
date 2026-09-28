@@ -71,6 +71,12 @@ public static class TenantSettingCatalog
     public static readonly IntTenantSetting EmployeeAuditRetentionYears = Years(
         RetentionDefaults.EmployeeAuditRetentionYearsKey, RetentionDefaults.DefaultEmployeeAuditRetentionYears);
 
+    // Floored at the statutory period, not the generic one year: the sweep deletes the PDF for good and
+    // nothing re-renders it, so a lower figure would destroy tax documents still owed to the authority.
+    public static readonly IntTenantSetting ReceiptsYears = new(
+        RetentionDefaults.ReceiptsYearsKey, RetentionCategory, RetentionDefaults.DefaultReceiptsYears,
+        min: RetentionDefaults.DefaultReceiptsYears, max: MaxYears);
+
     public static readonly IntTenantSetting ChargebackHorizonDays = new(
         ChargebackHorizonDaysKey, LifecycleCategory, DefaultChargebackHorizonDays, min: 0, max: MaxChargebackHorizonDays);
 
@@ -92,6 +98,7 @@ public static class TenantSettingCatalog
         OrderPhotosDays,
         AdminAuditRetentionYears,
         EmployeeAuditRetentionYears,
+        ReceiptsYears,
         ChargebackHorizonDays,
         AdminNotificationEmail,
     ];

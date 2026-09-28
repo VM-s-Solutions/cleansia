@@ -1,3 +1,4 @@
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Database;
 using Cleansia.TestUtilities;
@@ -264,12 +265,11 @@ public class SeededCataloguePricingTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// Owner rulings 2026-09-13: CZE is the default market and states the 1 000 000 CZK insurance
-    /// ceiling; every other configuration is unflagged and figure-less until the owner authors that
-    /// market's figure.
+    /// Owner rulings 2026-09-13 and 2026-09-28: CZE is the default market, and no market
+    /// states an insurance figure until the owner decides whose policy covers a booking.
     /// </summary>
     [Fact]
-    public async Task Czechia_Is_The_Seeded_Default_Market_With_The_Insurance_Figure_And_Nothing_Else_Is()
+    public async Task Czechia_Is_The_Seeded_Default_Market_And_No_Market_States_An_Insurance_Figure()
     {
         await using var ctx = NewContext();
 
@@ -280,8 +280,22 @@ public class SeededCataloguePricingTests : IAsyncLifetime
 
         var czechia = Assert.Single(configurations, c => c.IsDefaultMarket);
         Assert.Equal("CZE", czechia.IsoCode);
-        Assert.Equal(1_000_000m, czechia.InsuranceCoverageAmount);
-        Assert.All(configurations.Where(c => c.IsoCode != "CZE"), c => Assert.Null(c.InsuranceCoverageAmount));
+        Assert.All(configurations, c => Assert.Null(c.InsuranceCoverageAmount));
+    }
+
+    /// <summary>Owner ruling 2026-09-28: a cleaner working in Czechia or Slovakia is approved only with a valid insurance certificate.</summary>
+    [Fact]
+    public async Task The_Insurance_Certificate_Is_A_Required_Cleaner_Document_In_Czechia_And_Slovakia()
+    {
+        await using var ctx = NewContext();
+
+        var required = await ctx.EmployeeDocumentRequirements
+            .Where(r => r.IsRequired && r.DocumentType == DocumentType.InsuranceDocument)
+            .Join(ctx.Countries, r => r.CountryId, c => c.Id, (_, c) => c.IsoCode)
+            .OrderBy(iso => iso)
+            .ToListAsync();
+
+        Assert.Equal(["CZE", "SVK"], required);
     }
 
     private sealed class FixedTenantProvider(string? tenantId) : ITenantProvider

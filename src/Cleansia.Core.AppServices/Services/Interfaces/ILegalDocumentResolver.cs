@@ -14,4 +14,8 @@ namespace Cleansia.Core.AppServices.Services.Interfaces;
 public interface ILegalDocumentResolver
 {
     Task<LegalDocument?> ResolveInForceAsync(LegalDocumentType type, string? countryId, CancellationToken cancellationToken);
+
+    /// <summary>The same resolution for a named audience — the cleaner's documents are employee-audience texts.</summary>
+    Task<LegalDocument?> ResolveInForceAsync(
+        LegalDocumentAudience audience, LegalDocumentType type, string? countryId, CancellationToken cancellationToken);
 }

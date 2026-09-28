@@ -10598,7 +10598,17 @@ export interface IAdminOrderClient {
      * @param body (optional) 
      * @return OK
      */
+    cancelNoShow(body?: AdminCancelOrderAsNoShowCommand | undefined): Observable<AdminCancelOrderAsNoShowResponse>;
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
     overrideStatus(body?: AdminOverrideOrderStatusCommand | undefined): Observable<AdminOverrideOrderStatusResponse>;
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    recordCash(body?: AdminRecordCashReceivedCommand | undefined): Observable<AdminRecordCashReceivedResponse>;
     /**
      * @param body (optional) 
      * @return OK
@@ -11123,6 +11133,83 @@ export class AdminOrderClient implements IAdminOrderClient {
      * @param body (optional) 
      * @return OK
      */
+    cancelNoShow(body?: AdminCancelOrderAsNoShowCommand | undefined): Observable<AdminCancelOrderAsNoShowResponse> {
+        let url = this.baseUrl + "/api/AdminOrder/cancel-no-show";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processCancelNoShow(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processCancelNoShow(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<AdminCancelOrderAsNoShowResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<AdminCancelOrderAsNoShowResponse>;
+        }));
+    }
+
+    protected processCancelNoShow(response: HttpResponseBase): Observable<AdminCancelOrderAsNoShowResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = AdminCancelOrderAsNoShowResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
     overrideStatus(body?: AdminOverrideOrderStatusCommand | undefined): Observable<AdminOverrideOrderStatusResponse> {
         let url = this.baseUrl + "/api/AdminOrder/override-status";
         url = url.replace(/[?&]$/, "");
@@ -11165,6 +11252,83 @@ export class AdminOrderClient implements IAdminOrderClient {
             let result200: any = null;
             let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result200 = AdminOverrideOrderStatusResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    recordCash(body?: AdminRecordCashReceivedCommand | undefined): Observable<AdminRecordCashReceivedResponse> {
+        let url = this.baseUrl + "/api/AdminOrder/record-cash";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processRecordCash(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processRecordCash(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<AdminRecordCashReceivedResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<AdminRecordCashReceivedResponse>;
+        }));
+    }
+
+    protected processRecordCash(response: HttpResponseBase): Observable<AdminRecordCashReceivedResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = AdminRecordCashReceivedResponse.fromJS(resultData200);
             return ObservableOf(result200);
             }));
         } else if (status === 400) {
@@ -17672,6 +17836,90 @@ export interface IAdminActionAuditDto {
     actorAdminRole: AdminRole;
 }
 
+export class AdminCancelOrderAsNoShowCommand implements IAdminCancelOrderAsNoShowCommand {
+    orderId!: string | undefined;
+
+    constructor(data?: IAdminCancelOrderAsNoShowCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.orderId = Data["orderId"];
+        }
+    }
+
+    static fromJS(data: any): AdminCancelOrderAsNoShowCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new AdminCancelOrderAsNoShowCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["orderId"] = this.orderId;
+        return data;
+    }
+}
+
+export interface IAdminCancelOrderAsNoShowCommand {
+    orderId: string | undefined;
+}
+
+export class AdminCancelOrderAsNoShowResponse implements IAdminCancelOrderAsNoShowResponse {
+    orderId!: string | undefined;
+    refundedAmount!: number | undefined;
+    refundPending!: boolean;
+    apologyCredit!: number | undefined;
+
+    constructor(data?: IAdminCancelOrderAsNoShowResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.orderId = Data["orderId"];
+            this.refundedAmount = Data["refundedAmount"];
+            this.refundPending = Data["refundPending"];
+            this.apologyCredit = Data["apologyCredit"];
+        }
+    }
+
+    static fromJS(data: any): AdminCancelOrderAsNoShowResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new AdminCancelOrderAsNoShowResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["orderId"] = this.orderId;
+        data["refundedAmount"] = this.refundedAmount;
+        data["refundPending"] = this.refundPending;
+        data["apologyCredit"] = this.apologyCredit;
+        return data;
+    }
+}
+
+export interface IAdminCancelOrderAsNoShowResponse {
+    orderId: string | undefined;
+    refundedAmount: number | undefined;
+    refundPending: boolean;
+    apologyCredit: number | undefined;
+}
+
 export class AdminCancelOrderCommand implements IAdminCancelOrderCommand {
     orderId!: string | undefined;
     reason!: string | undefined;
@@ -17959,6 +18207,7 @@ export class AdminEmployeeDetail implements IAdminEmployeeDetail {
     missingFields!: string[] | undefined;
     userId!: string | undefined;
     weeklyOrderLimit!: number | undefined;
+    weeklyOrderLimitReason!: string | undefined;
 
     constructor(data?: IAdminEmployeeDetail) {
         if (data) {
@@ -18009,6 +18258,7 @@ export class AdminEmployeeDetail implements IAdminEmployeeDetail {
             }
             this.userId = Data["userId"];
             this.weeklyOrderLimit = Data["weeklyOrderLimit"];
+            this.weeklyOrderLimitReason = Data["weeklyOrderLimitReason"];
         }
     }
 
@@ -18059,6 +18309,7 @@ export class AdminEmployeeDetail implements IAdminEmployeeDetail {
         }
         data["userId"] = this.userId;
         data["weeklyOrderLimit"] = this.weeklyOrderLimit;
+        data["weeklyOrderLimitReason"] = this.weeklyOrderLimitReason;
         return data;
     }
 }
@@ -18098,6 +18349,7 @@ export interface IAdminEmployeeDetail {
     missingFields: string[] | undefined;
     userId: string | undefined;
     weeklyOrderLimit: number | undefined;
+    weeklyOrderLimitReason: string | undefined;
 }
 
 export class AdminEmployeeListItem implements IAdminEmployeeListItem {
@@ -18403,6 +18655,7 @@ export interface IAdminLoginCommand {
 export class AdminOverrideOrderStatusCommand implements IAdminOverrideOrderStatusCommand {
     orderId!: string | undefined;
     targetStatus!: OrderStatus;
+    reason!: string | undefined;
 
     constructor(data?: IAdminOverrideOrderStatusCommand) {
         if (data) {
@@ -18417,6 +18670,7 @@ export class AdminOverrideOrderStatusCommand implements IAdminOverrideOrderStatu
         if (Data) {
             this.orderId = Data["orderId"];
             this.targetStatus = Data["targetStatus"];
+            this.reason = Data["reason"];
         }
     }
 
@@ -18431,6 +18685,7 @@ export class AdminOverrideOrderStatusCommand implements IAdminOverrideOrderStatu
         data = typeof data === 'object' ? data : {};
         data["orderId"] = this.orderId;
         data["targetStatus"] = this.targetStatus;
+        data["reason"] = this.reason;
         return data;
     }
 }
@@ -18438,6 +18693,7 @@ export class AdminOverrideOrderStatusCommand implements IAdminOverrideOrderStatu
 export interface IAdminOverrideOrderStatusCommand {
     orderId: string | undefined;
     targetStatus: OrderStatus;
+    reason: string | undefined;
 }
 
 export class AdminOverrideOrderStatusResponse implements IAdminOverrideOrderStatusResponse {
@@ -18588,6 +18844,7 @@ export class AdminReassignOrderCommand implements IAdminReassignOrderCommand {
     orderId!: string | undefined;
     fromEmployeeId!: string | undefined;
     toEmployeeId!: string | undefined;
+    removalReason!: string | undefined;
 
     constructor(data?: IAdminReassignOrderCommand) {
         if (data) {
@@ -18603,6 +18860,7 @@ export class AdminReassignOrderCommand implements IAdminReassignOrderCommand {
             this.orderId = Data["orderId"];
             this.fromEmployeeId = Data["fromEmployeeId"];
             this.toEmployeeId = Data["toEmployeeId"];
+            this.removalReason = Data["removalReason"];
         }
     }
 
@@ -18618,6 +18876,7 @@ export class AdminReassignOrderCommand implements IAdminReassignOrderCommand {
         data["orderId"] = this.orderId;
         data["fromEmployeeId"] = this.fromEmployeeId;
         data["toEmployeeId"] = this.toEmployeeId;
+        data["removalReason"] = this.removalReason;
         return data;
     }
 }
@@ -18626,6 +18885,7 @@ export interface IAdminReassignOrderCommand {
     orderId: string | undefined;
     fromEmployeeId: string | undefined;
     toEmployeeId: string | undefined;
+    removalReason: string | undefined;
 }
 
 export class AdminReassignOrderResponse implements IAdminReassignOrderResponse {
@@ -18666,6 +18926,94 @@ export class AdminReassignOrderResponse implements IAdminReassignOrderResponse {
 export interface IAdminReassignOrderResponse {
     orderId: string | undefined;
     toEmployeeId: string | undefined;
+}
+
+export class AdminRecordCashReceivedCommand implements IAdminRecordCashReceivedCommand {
+    orderId!: string | undefined;
+    employeeId!: string | undefined;
+    receivedAt!: Date;
+    amount!: number;
+
+    constructor(data?: IAdminRecordCashReceivedCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.orderId = Data["orderId"];
+            this.employeeId = Data["employeeId"];
+            this.receivedAt = Data["receivedAt"] ? new Date(Data["receivedAt"].toString()) : undefined as any;
+            this.amount = Data["amount"];
+        }
+    }
+
+    static fromJS(data: any): AdminRecordCashReceivedCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new AdminRecordCashReceivedCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["orderId"] = this.orderId;
+        data["employeeId"] = this.employeeId;
+        data["receivedAt"] = this.receivedAt ? this.receivedAt.toISOString() : undefined as any;
+        data["amount"] = this.amount;
+        return data;
+    }
+}
+
+export interface IAdminRecordCashReceivedCommand {
+    orderId: string | undefined;
+    employeeId: string | undefined;
+    receivedAt: Date;
+    amount: number;
+}
+
+export class AdminRecordCashReceivedResponse implements IAdminRecordCashReceivedResponse {
+    orderId!: string | undefined;
+    paymentStatus!: PaymentStatus;
+
+    constructor(data?: IAdminRecordCashReceivedResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.orderId = Data["orderId"];
+            this.paymentStatus = Data["paymentStatus"];
+        }
+    }
+
+    static fromJS(data: any): AdminRecordCashReceivedResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new AdminRecordCashReceivedResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["orderId"] = this.orderId;
+        data["paymentStatus"] = this.paymentStatus;
+        return data;
+    }
+}
+
+export interface IAdminRecordCashReceivedResponse {
+    orderId: string | undefined;
+    paymentStatus: PaymentStatus;
 }
 
 export class AdminReferralListItem implements IAdminReferralListItem {
@@ -18965,6 +19313,7 @@ export interface IAdminServicePriceDto {
 
 export class AdminSetEmployeeWeeklyOrderLimitRequest implements IAdminSetEmployeeWeeklyOrderLimitRequest {
     weeklyOrderLimit!: number | undefined;
+    reason!: string | undefined;
 
     constructor(data?: IAdminSetEmployeeWeeklyOrderLimitRequest) {
         if (data) {
@@ -18978,6 +19327,7 @@ export class AdminSetEmployeeWeeklyOrderLimitRequest implements IAdminSetEmploye
     init(Data?: any) {
         if (Data) {
             this.weeklyOrderLimit = Data["weeklyOrderLimit"];
+            this.reason = Data["reason"];
         }
     }
 
@@ -18991,17 +19341,20 @@ export class AdminSetEmployeeWeeklyOrderLimitRequest implements IAdminSetEmploye
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
         data["weeklyOrderLimit"] = this.weeklyOrderLimit;
+        data["reason"] = this.reason;
         return data;
     }
 }
 
 export interface IAdminSetEmployeeWeeklyOrderLimitRequest {
     weeklyOrderLimit: number | undefined;
+    reason: string | undefined;
 }
 
 export class AdminSetEmployeeWeeklyOrderLimitResponse implements IAdminSetEmployeeWeeklyOrderLimitResponse {
     employeeId!: string | undefined;
     weeklyOrderLimit!: number | undefined;
+    reason!: string | undefined;
 
     constructor(data?: IAdminSetEmployeeWeeklyOrderLimitResponse) {
         if (data) {
@@ -19016,6 +19369,7 @@ export class AdminSetEmployeeWeeklyOrderLimitResponse implements IAdminSetEmploy
         if (Data) {
             this.employeeId = Data["employeeId"];
             this.weeklyOrderLimit = Data["weeklyOrderLimit"];
+            this.reason = Data["reason"];
         }
     }
 
@@ -19030,6 +19384,7 @@ export class AdminSetEmployeeWeeklyOrderLimitResponse implements IAdminSetEmploy
         data = typeof data === 'object' ? data : {};
         data["employeeId"] = this.employeeId;
         data["weeklyOrderLimit"] = this.weeklyOrderLimit;
+        data["reason"] = this.reason;
         return data;
     }
 }
@@ -19037,6 +19392,7 @@ export class AdminSetEmployeeWeeklyOrderLimitResponse implements IAdminSetEmploy
 export interface IAdminSetEmployeeWeeklyOrderLimitResponse {
     employeeId: string | undefined;
     weeklyOrderLimit: number | undefined;
+    reason: string | undefined;
 }
 
 export class AdminUpdateEmployeeCommand implements IAdminUpdateEmployeeCommand {
@@ -20569,6 +20925,9 @@ export enum ConsentType {
     PrivacyPolicy = 1,
     MarketingEmails = 2,
     DataProcessing = 3,
+    CleanerFrameworkContract = 4,
+    SelfBillingAgreement = 5,
+    CleanerDataProcessingAgreement = 6,
 }
 
 export enum ContractStatus {
@@ -23361,6 +23720,7 @@ export class DisputeDetails implements IDisputeDetails {
     updatedOn!: Date | undefined;
     filedWithinWindow!: boolean | undefined;
     lines!: DisputeLineDto[] | undefined;
+    settlementPreference!: DisputeSettlementPreference;
 
     constructor(data?: IDisputeDetails) {
         if (data) {
@@ -23405,6 +23765,7 @@ export class DisputeDetails implements IDisputeDetails {
                 for (let item of Data["lines"])
                     this.lines!.push(DisputeLineDto.fromJS(item));
             }
+            this.settlementPreference = Data["settlementPreference"];
         }
     }
 
@@ -23449,6 +23810,7 @@ export class DisputeDetails implements IDisputeDetails {
             for (let item of this.lines)
                 data["lines"].push(item ? item.toJSON() : undefined as any);
         }
+        data["settlementPreference"] = this.settlementPreference;
         return data;
     }
 }
@@ -23474,6 +23836,7 @@ export interface IDisputeDetails {
     updatedOn: Date | undefined;
     filedWithinWindow: boolean | undefined;
     lines: DisputeLineDto[] | undefined;
+    settlementPreference: DisputeSettlementPreference;
 }
 
 export class DisputeEvidenceDto implements IDisputeEvidenceDto {
@@ -23782,6 +24145,11 @@ export interface IDisputeMessageDto {
     authorName: string | undefined;
     isStaffMessage: boolean;
     createdOn: Date;
+}
+
+export enum DisputeSettlementPreference {
+    CardRefund = 1,
+    Credit = 2,
 }
 
 export enum DisputeStatus {
@@ -25421,6 +25789,74 @@ export interface IGdprExportAddressDto {
     countryId: string | undefined;
 }
 
+export class GdprExportCleanerLegalDocumentAcceptanceDto implements IGdprExportCleanerLegalDocumentAcceptanceDto {
+    documentType!: LegalDocumentType;
+    legalDocumentTextId!: string | undefined;
+    documentVersion!: string | undefined;
+    language!: string | undefined;
+    acceptedOn!: Date;
+    clientAudience!: string | undefined;
+    ipAddress!: string | undefined;
+    deviceLabel!: string | undefined;
+    deviceId!: string | undefined;
+
+    constructor(data?: IGdprExportCleanerLegalDocumentAcceptanceDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.documentType = Data["documentType"];
+            this.legalDocumentTextId = Data["legalDocumentTextId"];
+            this.documentVersion = Data["documentVersion"];
+            this.language = Data["language"];
+            this.acceptedOn = Data["acceptedOn"] ? new Date(Data["acceptedOn"].toString()) : undefined as any;
+            this.clientAudience = Data["clientAudience"];
+            this.ipAddress = Data["ipAddress"];
+            this.deviceLabel = Data["deviceLabel"];
+            this.deviceId = Data["deviceId"];
+        }
+    }
+
+    static fromJS(data: any): GdprExportCleanerLegalDocumentAcceptanceDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new GdprExportCleanerLegalDocumentAcceptanceDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["documentType"] = this.documentType;
+        data["legalDocumentTextId"] = this.legalDocumentTextId;
+        data["documentVersion"] = this.documentVersion;
+        data["language"] = this.language;
+        data["acceptedOn"] = this.acceptedOn ? this.acceptedOn.toISOString() : undefined as any;
+        data["clientAudience"] = this.clientAudience;
+        data["ipAddress"] = this.ipAddress;
+        data["deviceLabel"] = this.deviceLabel;
+        data["deviceId"] = this.deviceId;
+        return data;
+    }
+}
+
+export interface IGdprExportCleanerLegalDocumentAcceptanceDto {
+    documentType: LegalDocumentType;
+    legalDocumentTextId: string | undefined;
+    documentVersion: string | undefined;
+    language: string | undefined;
+    acceptedOn: Date;
+    clientAudience: string | undefined;
+    ipAddress: string | undefined;
+    deviceLabel: string | undefined;
+    deviceId: string | undefined;
+}
+
 export class GdprExportConsentDto implements IGdprExportConsentDto {
     id!: string | undefined;
     consentType!: ConsentType;
@@ -25762,6 +26198,7 @@ export class GdprExportDto implements IGdprExportDto {
     customerActions!: GdprExportCustomerActionDto[] | undefined;
     metadata!: GdprExportMetadataDto;
     workContractAcceptances!: GdprExportWorkContractAcceptanceDto[] | undefined;
+    cleanerLegalDocumentAcceptances!: GdprExportCleanerLegalDocumentAcceptanceDto[] | undefined;
 
     constructor(data?: IGdprExportDto) {
         if (data) {
@@ -25813,6 +26250,11 @@ export class GdprExportDto implements IGdprExportDto {
                 this.workContractAcceptances = [] as any;
                 for (let item of Data["workContractAcceptances"])
                     this.workContractAcceptances!.push(GdprExportWorkContractAcceptanceDto.fromJS(item));
+            }
+            if (Array.isArray(Data["cleanerLegalDocumentAcceptances"])) {
+                this.cleanerLegalDocumentAcceptances = [] as any;
+                for (let item of Data["cleanerLegalDocumentAcceptances"])
+                    this.cleanerLegalDocumentAcceptances!.push(GdprExportCleanerLegalDocumentAcceptanceDto.fromJS(item));
             }
         }
     }
@@ -25866,6 +26308,11 @@ export class GdprExportDto implements IGdprExportDto {
             for (let item of this.workContractAcceptances)
                 data["workContractAcceptances"].push(item ? item.toJSON() : undefined as any);
         }
+        if (Array.isArray(this.cleanerLegalDocumentAcceptances)) {
+            data["cleanerLegalDocumentAcceptances"] = [];
+            for (let item of this.cleanerLegalDocumentAcceptances)
+                data["cleanerLegalDocumentAcceptances"].push(item ? item.toJSON() : undefined as any);
+        }
         return data;
     }
 }
@@ -25883,6 +26330,7 @@ export interface IGdprExportDto {
     customerActions: GdprExportCustomerActionDto[] | undefined;
     metadata: GdprExportMetadataDto;
     workContractAcceptances: GdprExportWorkContractAcceptanceDto[] | undefined;
+    cleanerLegalDocumentAcceptances: GdprExportCleanerLegalDocumentAcceptanceDto[] | undefined;
 }
 
 export class GdprExportEmployeeDto implements IGdprExportEmployeeDto {
@@ -27957,6 +28405,10 @@ export enum LegalDocumentType {
     TermsOfService = 0,
     PrivacyPolicy = 1,
     WorkContract = 2,
+    CleanerFrameworkContract = 3,
+    SelfBillingAgreement = 4,
+    CleanerDataProcessingAgreement = 5,
+    ComplaintsProcedure = 6,
 }
 
 export class LegalDocumentVersionDto implements ILegalDocumentVersionDto {
@@ -28952,6 +29404,7 @@ export class OrderEmployeePayDto implements IOrderEmployeePayDto {
     isApproved!: boolean;
     createdOn!: Date;
     currencyCode!: string | undefined;
+    deductionReason!: string | undefined;
 
     constructor(data?: IOrderEmployeePayDto) {
         if (data) {
@@ -28981,6 +29434,7 @@ export class OrderEmployeePayDto implements IOrderEmployeePayDto {
             this.isApproved = Data["isApproved"];
             this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
             this.currencyCode = Data["currencyCode"];
+            this.deductionReason = Data["deductionReason"];
         }
     }
 
@@ -29010,6 +29464,7 @@ export class OrderEmployeePayDto implements IOrderEmployeePayDto {
         data["isApproved"] = this.isApproved;
         data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
         data["currencyCode"] = this.currencyCode;
+        data["deductionReason"] = this.deductionReason;
         return data;
     }
 }
@@ -29032,6 +29487,7 @@ export interface IOrderEmployeePayDto {
     isApproved: boolean;
     createdOn: Date;
     currencyCode: string | undefined;
+    deductionReason: string | undefined;
 }
 
 export class OrderIssueDto implements IOrderIssueDto {
@@ -29152,6 +29608,10 @@ export class OrderItem implements IOrderItem {
     workContractAcceptances!: WorkContractAcceptanceDto[] | undefined;
     cancellationFeeRate!: number | undefined;
     cancellationFeeOwed!: number | undefined;
+    needsConfirmation!: boolean | undefined;
+    cashCollectedAt!: Date | undefined;
+    cashCollectedByName!: string | undefined;
+    cashCollectedAmount!: number | undefined;
 
     constructor(data?: IOrderItem) {
         if (data) {
@@ -29259,6 +29719,10 @@ export class OrderItem implements IOrderItem {
             }
             this.cancellationFeeRate = Data["cancellationFeeRate"];
             this.cancellationFeeOwed = Data["cancellationFeeOwed"];
+            this.needsConfirmation = Data["needsConfirmation"];
+            this.cashCollectedAt = Data["cashCollectedAt"] ? new Date(Data["cashCollectedAt"].toString()) : undefined as any;
+            this.cashCollectedByName = Data["cashCollectedByName"];
+            this.cashCollectedAmount = Data["cashCollectedAmount"];
         }
     }
 
@@ -29366,6 +29830,10 @@ export class OrderItem implements IOrderItem {
         }
         data["cancellationFeeRate"] = this.cancellationFeeRate;
         data["cancellationFeeOwed"] = this.cancellationFeeOwed;
+        data["needsConfirmation"] = this.needsConfirmation;
+        data["cashCollectedAt"] = this.cashCollectedAt ? this.cashCollectedAt.toISOString() : undefined as any;
+        data["cashCollectedByName"] = this.cashCollectedByName;
+        data["cashCollectedAmount"] = this.cashCollectedAmount;
         return data;
     }
 }
@@ -29432,6 +29900,10 @@ export interface IOrderItem {
     workContractAcceptances: WorkContractAcceptanceDto[] | undefined;
     cancellationFeeRate: number | undefined;
     cancellationFeeOwed: number | undefined;
+    needsConfirmation: boolean | undefined;
+    cashCollectedAt: Date | undefined;
+    cashCollectedByName: string | undefined;
+    cashCollectedAmount: number | undefined;
 }
 
 export class OrderListItem implements IOrderListItem {
@@ -32782,10 +33254,55 @@ export interface IResetTenantSettingResponse {
     value: string | undefined;
 }
 
+export class ResolveDisputeCleanerCharge implements IResolveDisputeCleanerCharge {
+    employeeId!: string | undefined;
+    amount!: number;
+    reason!: string | undefined;
+
+    constructor(data?: IResolveDisputeCleanerCharge) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.employeeId = Data["employeeId"];
+            this.amount = Data["amount"];
+            this.reason = Data["reason"];
+        }
+    }
+
+    static fromJS(data: any): ResolveDisputeCleanerCharge {
+        data = typeof data === 'object' ? data : {};
+        let result = new ResolveDisputeCleanerCharge();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["employeeId"] = this.employeeId;
+        data["amount"] = this.amount;
+        data["reason"] = this.reason;
+        return data;
+    }
+}
+
+export interface IResolveDisputeCleanerCharge {
+    employeeId: string | undefined;
+    amount: number;
+    reason: string | undefined;
+}
+
 export class ResolveDisputeCommand implements IResolveDisputeCommand {
     disputeId!: string | undefined;
     refundAmount!: number | undefined;
     resolutionNotes!: string | undefined;
+    chargeToCleaner!: ResolveDisputeCleanerCharge;
 
     constructor(data?: IResolveDisputeCommand) {
         if (data) {
@@ -32801,6 +33318,7 @@ export class ResolveDisputeCommand implements IResolveDisputeCommand {
             this.disputeId = Data["disputeId"];
             this.refundAmount = Data["refundAmount"];
             this.resolutionNotes = Data["resolutionNotes"];
+            this.chargeToCleaner = Data["chargeToCleaner"] ? ResolveDisputeCleanerCharge.fromJS(Data["chargeToCleaner"]) : undefined as any;
         }
     }
 
@@ -32816,6 +33334,7 @@ export class ResolveDisputeCommand implements IResolveDisputeCommand {
         data["disputeId"] = this.disputeId;
         data["refundAmount"] = this.refundAmount;
         data["resolutionNotes"] = this.resolutionNotes;
+        data["chargeToCleaner"] = this.chargeToCleaner ? this.chargeToCleaner.toJSON() : undefined as any;
         return data;
     }
 }
@@ -32824,6 +33343,7 @@ export interface IResolveDisputeCommand {
     disputeId: string | undefined;
     refundAmount: number | undefined;
     resolutionNotes: string | undefined;
+    chargeToCleaner: ResolveDisputeCleanerCharge;
 }
 
 export class ResolveDocumentDeletionRequestRequest implements IResolveDocumentDeletionRequestRequest {
@@ -36480,6 +37000,8 @@ export class UserConsentDto implements IUserConsentDto {
     grantedAt!: Date | undefined;
     withdrawnAt!: Date | undefined;
     createdOn!: Date;
+    documentVersion!: string | undefined;
+    coversCurrentVersion!: boolean;
 
     constructor(data?: IUserConsentDto) {
         if (data) {
@@ -36498,6 +37020,8 @@ export class UserConsentDto implements IUserConsentDto {
             this.grantedAt = Data["grantedAt"] ? new Date(Data["grantedAt"].toString()) : undefined as any;
             this.withdrawnAt = Data["withdrawnAt"] ? new Date(Data["withdrawnAt"].toString()) : undefined as any;
             this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
+            this.documentVersion = Data["documentVersion"];
+            this.coversCurrentVersion = Data["coversCurrentVersion"];
         }
     }
 
@@ -36516,6 +37040,8 @@ export class UserConsentDto implements IUserConsentDto {
         data["grantedAt"] = this.grantedAt ? this.grantedAt.toISOString() : undefined as any;
         data["withdrawnAt"] = this.withdrawnAt ? this.withdrawnAt.toISOString() : undefined as any;
         data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
+        data["documentVersion"] = this.documentVersion;
+        data["coversCurrentVersion"] = this.coversCurrentVersion;
         return data;
     }
 }
@@ -36527,6 +37053,8 @@ export interface IUserConsentDto {
     grantedAt: Date | undefined;
     withdrawnAt: Date | undefined;
     createdOn: Date;
+    documentVersion: string | undefined;
+    coversCurrentVersion: boolean;
 }
 
 export class UserItem implements IUserItem {

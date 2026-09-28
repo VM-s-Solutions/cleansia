@@ -88,6 +88,21 @@ public class OrderPhoto : TenantAuditable
     }
 
     /// <summary>
+    /// When a photo may be taken, the same on every client: a before photo from the moment a
+    /// cleaner holds the job until it is finished, an after photo while the work is under way.
+    /// </summary>
+    public static bool MayBeAddedAt(PhotoType photoType, OrderStatus status) => photoType switch
+    {
+        PhotoType.Before => status is OrderStatus.Confirmed or OrderStatus.OnTheWay or OrderStatus.InProgress,
+        PhotoType.After => status is OrderStatus.InProgress,
+        _ => false
+    };
+
+    /// <summary>A photo is the record of a finished job: once the order is over it can no longer be removed by the cleaner.</summary>
+    public static bool MayBeDeletedAt(OrderStatus status) =>
+        status is not (OrderStatus.Completed or OrderStatus.Cancelled);
+
+    /// <summary>
     /// The free text an erasure has to reach on a row it KEEPS. The order aggregate is retained and
     /// anonymized rather than deleted, and its own walk already blanks the review, note and issue text; the
     /// photo row was simply not in that walk, so the uploader's own file name — which routinely carries the

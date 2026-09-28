@@ -73,11 +73,11 @@ public sealed class TenantSettingCatalogTests
     }
 
     [Fact]
-    public void The_Catalogue_Holds_Exactly_The_Thirteen_Retention_Keys_The_Lifecycle_Horizon_The_Admin_Mailbox_And_No_Duplicate()
+    public void The_Catalogue_Holds_Exactly_The_Fourteen_Retention_Keys_The_Lifecycle_Horizon_The_Admin_Mailbox_And_No_Duplicate()
     {
-        Assert.Equal(15, TenantSettingCatalog.All.Count);
+        Assert.Equal(16, TenantSettingCatalog.All.Count);
         Assert.Equal(TenantSettingCatalog.All.Count, TenantSettingCatalog.All.Select(d => d.Key).Distinct(StringComparer.Ordinal).Count());
-        Assert.Equal(13, TenantSettingCatalog.All.Count(d => d.Category == TenantSettingCatalog.RetentionCategory));
+        Assert.Equal(14, TenantSettingCatalog.All.Count(d => d.Category == TenantSettingCatalog.RetentionCategory));
         Assert.Equal(1, TenantSettingCatalog.All.Count(d => d.Category == TenantSettingCatalog.LifecycleCategory));
         Assert.Equal(1, TenantSettingCatalog.All.Count(d => d.Category == TenantSettingCatalog.NotificationsCategory));
     }
@@ -173,10 +173,24 @@ public sealed class TenantSettingCatalogTests
             .Where(w => w.Category == TenantSettingCatalog.RetentionCategory)
             .ToList();
 
-        Assert.Equal(12, windows.Count);
-        Assert.All(windows, w => Assert.Equal(1, w.Min));
+        Assert.Equal(13, windows.Count);
+        Assert.All(windows.Where(w => w != TenantSettingCatalog.ReceiptsYears), w => Assert.Equal(1, w.Min));
         Assert.All(windows.Where(w => w.Key.EndsWith(".years", StringComparison.Ordinal)), w => Assert.Equal(100, w.Max));
         Assert.All(windows.Where(w => w.Key.EndsWith(".days", StringComparison.Ordinal)), w => Assert.Equal(36_500, w.Max));
+    }
+
+    /// <summary>
+    /// Owner ruling 2026-09-28 (D71): receipts are tax documents, kept for the statutory period. The
+    /// sweep deletes their PDFs for good and nothing re-renders one, so a company cannot shorten it.
+    /// </summary>
+    [Theory]
+    [InlineData("1", false)]
+    [InlineData("9", false)]
+    [InlineData("10", true)]
+    [InlineData("25", true)]
+    public void The_Receipt_Period_Cannot_Be_Set_Below_The_Statutory_Ten_Years(string value, bool accepted)
+    {
+        Assert.Equal(accepted, TenantSettingCatalog.ReceiptsYears.TryParse(value, out _));
     }
 
     /// <summary>

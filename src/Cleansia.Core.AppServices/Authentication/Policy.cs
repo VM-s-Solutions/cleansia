@@ -54,7 +54,7 @@ public class Policy
     public const string CanManageRecurringBookings = nameof(CanManageRecurringBookings); // Customer
 
     // User
-    public const string CanViewPagedUser = nameof(CanViewPagedUser); // Admin + Employee
+    public const string CanViewPagedUser = nameof(CanViewPagedUser); // SupportOrAbove (every account of the company, with contact details)
     public const string CanViewUserDetail = nameof(CanViewUserDetail); // Authenticated (All roles) + Admin + Employee
     public const string CanGetCurrentUser = nameof(CanGetCurrentUser); // Authenticated (All roles)
     public const string CanRequestPasswordChange = nameof(CanRequestPasswordChange); // Authenticated (All roles)

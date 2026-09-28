@@ -58,6 +58,9 @@ public sealed class ArchivedCompanyWriteGuardRosterTests : IDisposable
         // A contract record for a retained order: a frozen company forms no contracts, and the archive
         // preconditions leave no open order, so the guard is belt rather than path here.
         typeof(Cleansia.Core.Domain.Contracts.WorkContractAcceptance),
+        // The cleaner's acceptance of the company's own contract texts: a frozen company forms no new
+        // contract with anyone, and its cleaners are refused on the partner apps before they could.
+        typeof(Cleansia.Core.Domain.Legal.CleanerLegalDocumentAcceptance),
     ];
 
     /// <summary>

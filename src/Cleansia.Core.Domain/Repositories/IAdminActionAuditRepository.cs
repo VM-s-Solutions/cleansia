@@ -10,4 +10,8 @@ public interface IAdminActionAuditRepository : IRepository<AdminActionAudit, str
     /// override. Returns the number deleted.
     /// </summary>
     Task<int> DeleteExpiredAsync(DateTimeOffset cutoff, CancellationToken cancellationToken);
+
+    /// <summary>The successful rows of one action on one resource in the ambient company, newest first.</summary>
+    Task<IReadOnlyList<AdminActionAudit>> GetSucceededForResourceAsync(
+        string action, string resourceType, string resourceId, CancellationToken cancellationToken);
 }

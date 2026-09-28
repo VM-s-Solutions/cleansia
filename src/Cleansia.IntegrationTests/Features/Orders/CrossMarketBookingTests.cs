@@ -190,7 +190,8 @@ public partial class CreateOrderCallerCurrencyTests
                 var mediator = provider.GetRequiredService<IMediator>();
                 var starts = DateTime.UtcNow.AddDays(2).Date;
                 var created = await mediator.Send(new CreateRecurringBooking.Command((int)RecurrenceFrequency.Weekly,
-                    (int)starts.DayOfWeek, "10:00", 2, 1, SavedSlovakAddressId, [ServiceId], [PackageId], (int)PaymentType.Cash, starts));
+                    (int)starts.DayOfWeek, "10:00", 2, 1, SavedSlovakAddressId, [ServiceId], [PackageId], (int)PaymentType.Cash, starts,
+                    TermsAccepted: true));
                 Assert.True(created.IsSuccess, created.Error?.Message);
                 var own = await provider.GetRequiredService<IRecurringBookingTemplateRepository>().GetByIdForOwnerAsync(created.Value.Id, CustomerUserId, CancellationToken.None);
                 Assert.NotNull(own);

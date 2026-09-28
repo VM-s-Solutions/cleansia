@@ -315,4 +315,19 @@ public class OrderController(IMediator mediator) : ApiController(mediator)
         var result = await Mediator.Send(query, cancellationToken);
         return HandleResult<WorkContractDto>(result);
     }
+
+    // Why an administrator took the caller off this job (owner ruling 2026-09-28): the reason stays on the
+    // server and is read here, never carried in the notice. Anyone not removed answers order.not_found.
+    [HttpGet("GetMyAssignmentRemoval")]
+    [Permission(Policy.CanTakeOrder)]
+    [EnableRateLimiting("interactive")]
+    [ProducesResponseType(typeof(GetMyAssignmentRemoval.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetMyAssignmentRemoval([FromQuery] GetMyAssignmentRemoval.Query query, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(query, cancellationToken);
+        return HandleResult<GetMyAssignmentRemoval.Response>(result);
+    }
 }

@@ -123,7 +123,7 @@ public class ReceiptLanguageTests
         // The same word in every locale, or — the two units — in every Latin-script one.
         var untranslatable = new[]
         {
-            nameof(ReceiptLabels.Iban), nameof(ReceiptLabels.Email),
+            nameof(ReceiptLabels.Iban),
             nameof(ReceiptLabels.HoursUnit), nameof(ReceiptLabels.MinutesUnit),
         };
 

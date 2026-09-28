@@ -1,4 +1,5 @@
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Legal;
 
 namespace Cleansia.Core.AppServices.Features.Gdpr.DTOs;
 
@@ -14,7 +15,8 @@ public record GdprExportDto(
     List<GdprExportConsentDto> Consents,
     List<GdprExportCustomerActionDto> CustomerActions,
     GdprExportMetadataDto Metadata,
-    List<GdprExportWorkContractAcceptanceDto> WorkContractAcceptances
+    List<GdprExportWorkContractAcceptanceDto> WorkContractAcceptances,
+    List<GdprExportCleanerLegalDocumentAcceptanceDto> CleanerLegalDocumentAcceptances
 );
 
 public record GdprExportProfileDto(
@@ -120,6 +122,24 @@ public record GdprExportWorkContractAcceptanceDto(
     string? DeviceLabel,
     string? DeviceId,
     string FactsJson
+);
+
+/// <summary>
+/// A cleaner's own acceptances of their documents — the framework contract, the self-billing agreement,
+/// the data-processing agreement — row for row: which document and text, the version, the instant, the
+/// client and the request context. After an erasure or the per-company metadata window the IP address,
+/// device label and device id read null.
+/// </summary>
+public record GdprExportCleanerLegalDocumentAcceptanceDto(
+    LegalDocumentType DocumentType,
+    string LegalDocumentTextId,
+    string DocumentVersion,
+    string Language,
+    DateTimeOffset AcceptedOn,
+    string ClientAudience,
+    string? IpAddress,
+    string? DeviceLabel,
+    string? DeviceId
 );
 
 /// <summary>

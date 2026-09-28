@@ -122,7 +122,9 @@ public class CleanerCurrencyGateTests
             employeeRepository.Object,
             AccessService().Object,
             ValidatorTestHelpers.CurrencyResolver(paidIn),
-            WorkContractTestData.LegalDocumentRepository().Object);
+            WorkContractTestData.LegalDocumentRepository().Object,
+            Mock.Of<ILegalDocumentResolver>(),
+            Mock.Of<IUserConsentRepository>());
     }
 
     private static OrderAccessService BrowseGate(string paidIn)

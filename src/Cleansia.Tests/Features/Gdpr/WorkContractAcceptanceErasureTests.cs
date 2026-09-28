@@ -175,6 +175,7 @@ public sealed class WorkContractAcceptanceErasureTests : IDisposable
             new OutboxMessageRepository(ctx),
             customerAudits,
             new WorkContractAcceptanceRepository(ctx),
+            new CleanerLegalDocumentAcceptanceRepository(ctx),
             new AddressRepository(ctx),
             new GuestOrderAccessTokenIssuer(new GuestOrderAccessTokenRepository(ctx)),
             Mock.Of<IRefreshTokenService>(),

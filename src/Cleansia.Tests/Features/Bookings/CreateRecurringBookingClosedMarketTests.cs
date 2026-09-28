@@ -72,7 +72,9 @@ public class CreateRecurringBookingClosedMarketTests
             OrderMarketDoubles.Trading(CreateOrderTestData.DefaultCurrency()),
             countryRepository ?? OrderMarketDoubles.Servicing(OpenCountryId),
             CatalogueDoubles.Services(),
-            CatalogueDoubles.Packages());
+            CatalogueDoubles.Packages(),
+            Cleansia.Tests.Features.Legal.CustomerConsentDoubles.Consented(),
+            Mock.Of<Cleansia.Core.AppServices.Services.Interfaces.ILegalDocumentResolver>());
 
     private static CreateRecurringBooking.Command CommandAt(string savedAddressId) =>
         new(

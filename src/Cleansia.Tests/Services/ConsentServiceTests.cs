@@ -24,8 +24,9 @@ public class ConsentServiceTests
 
     private readonly Mock<IUserConsentRepository> _userConsentRepository = new();
     private readonly Mock<IRequestMetadataProvider> _requestMetadata = new();
+    private readonly Mock<ITenantProvider> _tenantProvider = new();
 
-    private ConsentService CreateService() => new(_requestMetadata.Object, _userConsentRepository.Object);
+    private ConsentService CreateService() => new(_requestMetadata.Object, _userConsentRepository.Object, _tenantProvider.Object);
 
     public ConsentServiceTests()
     {
@@ -53,6 +54,23 @@ public class ConsentServiceTests
         Assert.Equal("Chrome/Windows", added.UserAgent);
         Assert.Null(added.DocumentVersion);
         Assert.Null(added.LegalDocumentId);
+    }
+
+    /// <summary>
+    /// A booking made across the border grants the consents under the account's company and only then
+    /// sets the operator's override for the order; the stamp at commit would read the operator.
+    /// </summary>
+    [Fact]
+    public async Task First_Grant_Carries_The_Company_Ambient_When_It_Is_Granted()
+    {
+        UserConsent? added = null;
+        _userConsentRepository.Setup(r => r.Add(It.IsAny<UserConsent>())).Callback<UserConsent>(c => added = c);
+        _tenantProvider.Setup(p => p.GetCurrentTenantId()).Returns("cleansia-cz");
+
+        await CreateService().TryGrantAsync(UserId, ConsentType.TermsOfService, _current, CancellationToken.None);
+        _tenantProvider.Setup(p => p.GetCurrentTenantId()).Returns("cleansia-sk");
+
+        Assert.Equal("cleansia-cz", added!.TenantId);
     }
 
     [Fact]

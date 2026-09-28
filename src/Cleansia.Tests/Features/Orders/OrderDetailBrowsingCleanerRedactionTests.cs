@@ -4,6 +4,7 @@ using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.Orders.DTOs;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Auditing;
+using Cleansia.Core.Domain.Contracts;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
@@ -32,6 +33,7 @@ public class OrderDetailBrowsingCleanerRedactionTests
     private const string OrderId = "order-redaction-1";
     private const string AssignedEmployeeId = "employee-assigned-red";
     private const string BrowsingEmployeeId = "employee-browsing-red";
+    private const string ColleagueEmployeeId = "employee-colleague-red";
     private const string CustomerUserId = "user-customer-red";
 
     private const string CustomerName = "Jana Novakova";
@@ -64,6 +66,7 @@ public class OrderDetailBrowsingCleanerRedactionTests
     private readonly Mock<IEmployeeRepository> _employeeRepository = new();
     private readonly Mock<IExpressWaiverConsumer> _expressWaiverConsumer = ExpressWaiverMocks.NoConsumer();
     private readonly Mock<IEmployeeActionAuditRepository> _employeeActionAuditRepository = new();
+    private readonly Mock<IWorkContractAcceptanceRepository> _acceptances = WorkContractTestData.AcceptanceRepository();
 
     // ── The browsing cleaner: admitted by the loose gate, entitled to nothing about the customer ──
 
@@ -375,6 +378,83 @@ public class OrderDetailBrowsingCleanerRedactionTests
             r => r.RecordOnceOutOfBandAsync(It.IsAny<EmployeeActionAudit>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    // ── The assigned cleaner after the job: owner ruling 2026-09-28, 24 hours after completion, at once on cancel ──
+
+    [Fact]
+    public async Task Past_The_Window_The_Assigned_Cleaner_Gets_The_Past_Job_Shape()
+    {
+        var order = BuildFullyPopulatedOrder();
+        typeof(Order).GetProperty(nameof(Order.CompletedAt))!.SetValue(order, DateTime.UtcNow.AddHours(-25));
+        order.AddNote(OrderNote.Create(OrderId, ColleagueEmployeeId, "The colleague's own note."));
+        _acceptances
+            .Setup(r => r.GetForSeatsAsync(It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([Acceptance("acceptance-own", AssignedEmployeeId), Acceptance("acceptance-colleague", ColleagueEmployeeId)]);
+
+        var detail = await AssignedCleanerDetailAsync(order);
+
+        Assert.Equal(string.Empty, detail.CustomerName);
+        Assert.Equal(string.Empty, detail.CustomerEmail);
+        Assert.Equal(string.Empty, detail.CustomerPhone);
+        Assert.Null(detail.Address);
+        Assert.Null(detail.AccessInstructions);
+        Assert.Null(detail.SpecialInstructions);
+        Assert.Null(detail.CustomerFloor);
+        Assert.Null(detail.AccessMode);
+        Assert.Null(detail.ReceiptNumber);
+        Assert.Equal(order.DisplayOrderNumber, detail.DisplayOrderNumber);
+        Assert.Equal(CompletionNotes, detail.CompletionNotes);
+        Assert.Equal(NoteContent, Assert.Single(detail.OrderNotes).Content);
+        Assert.Equal("acceptance-own", Assert.Single(detail.WorkContractAcceptances!).Id);
+    }
+
+    private static WorkContractAcceptanceRow Acceptance(string id, string employeeId) =>
+        new(id, OrderId, "CZ-000123", $"seat-{employeeId}", employeeId, "text-en", "2026-09-14", "en",
+            DateTimeOffset.UtcNow.AddDays(-2), "cleansia.partner", null, null, null, "{}");
+
+    [Fact]
+    public async Task Inside_The_Window_The_Assigned_Cleaner_Still_Reads_The_Customer()
+    {
+        var order = BuildFullyPopulatedOrder();
+        typeof(Order).GetProperty(nameof(Order.CompletedAt))!.SetValue(order, DateTime.UtcNow.AddHours(-23));
+
+        var detail = await AssignedCleanerDetailAsync(order);
+
+        Assert.Equal(CustomerName, detail.CustomerName);
+        Assert.Equal(CustomerPhone, detail.CustomerPhone);
+        Assert.NotNull(detail.Address);
+        Assert.Equal(AccessInstructions, detail.AccessInstructions);
+    }
+
+    [Fact]
+    public async Task A_Cancelled_Order_Closes_The_Customer_To_Its_Crew_At_Once()
+    {
+        var order = BuildFullyPopulatedOrder();
+        var cancelled = OrderStatusTrack.Create(OrderStatus.Cancelled, order);
+        cancelled.Created("test", DateTimeOffset.UtcNow);
+        order.AddOrderStatus(cancelled);
+
+        var detail = await AssignedCleanerDetailAsync(order);
+
+        Assert.Equal(string.Empty, detail.CustomerName);
+        Assert.Null(detail.Address);
+        Assert.Null(detail.AccessInstructions);
+    }
+
+    [Theory]
+    [InlineData(OrderStatus.Confirmed, null, true)]
+    [InlineData(OrderStatus.InProgress, null, true)]
+    [InlineData(OrderStatus.Completed, -23, true)]
+    [InlineData(OrderStatus.Completed, -25, false)]
+    [InlineData(OrderStatus.Completed, null, false)]
+    [InlineData(OrderStatus.Cancelled, null, false)]
+    public void The_Crew_Window_Is_Live_Plus_Twenty_Four_Hours(OrderStatus status, int? completedHoursAgo, bool open)
+    {
+        var now = DateTime.UtcNow;
+        DateTime? completedAt = completedHoursAgo is { } hours ? now.AddHours(hours) : null;
+
+        Assert.Equal(open, Order.CustomerDetailsOpenToCrew(status, completedAt, now));
+    }
+
     // ── Arrangement ──
 
     private async Task<OrderItem> BrowsingCleanerDetailAsync(Order? seed = null)
@@ -413,7 +493,7 @@ public class OrderDetailBrowsingCleanerRedactionTests
             Mock.Of<ITenantRepository>(),
             _expressWaiverConsumer.Object,
             Mock.Of<IUserMembershipRepository>(),
-            WorkContractTestData.AcceptanceRepository().Object,
+            _acceptances.Object,
             _employeeActionAuditRepository.Object);
 
     private void ArrangeCommon(Order order)
@@ -505,6 +585,7 @@ public class OrderDetailBrowsingCleanerRedactionTests
         order.AddOrderStatus(finished);
 
         order.CompleteOrder(175, CompletionNotes);
+        order.MarkCompletedAt(DateTime.UtcNow.AddHours(-1));
         order.AddAssignedEmployee(OrderEmployee.Create(order, BuildCleaner()));
         order.AddNote(OrderNote.Create(OrderId, AssignedEmployeeId, NoteContent));
         order.AddIssue(OrderIssue.Create(OrderId, AssignedEmployeeId, IssueDescription));

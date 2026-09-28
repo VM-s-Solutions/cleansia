@@ -26,6 +26,12 @@ public class OrderReceipt : TenantAuditable
     public string LanguageId { get; private set; } = default!;
     public Language? Language { get; private set; }
 
+    /// <summary>
+    /// When the rendered PDF was deleted at the end of the company's receipt retention period; the row
+    /// stays as the record of the number, the sale and its fiscal registration.
+    /// </summary>
+    public DateTime? BlobDeletedAt { get; private set; }
+
     public bool EmailSent { get; private set; }
     public DateTime? EmailSentAt { get; private set; }
 
@@ -99,6 +105,8 @@ public class OrderReceipt : TenantAuditable
             EmailSent = false
         };
     }
+
+    public void MarkBlobDeleted(DateTime deletedAtUtc) => BlobDeletedAt ??= deletedAtUtc;
 
     public void MarkEmailSent(string messageId)
     {

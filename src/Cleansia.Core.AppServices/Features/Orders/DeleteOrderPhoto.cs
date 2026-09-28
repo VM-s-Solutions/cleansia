@@ -2,6 +2,7 @@ using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Blobs.Abstractions;
+using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
@@ -17,14 +18,19 @@ public class DeleteOrderPhoto
 
     public class Validator : AbstractValidator<Command>
     {
-        public Validator(IOrderPhotoRepository photoRepository)
+        public Validator(IOrderPhotoRepository photoRepository, IOrderRepository orderRepository)
         {
             RuleFor(x => x.PhotoId)
                 .Cascade(CascadeMode.Stop)
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required)
                 .MustAsync(photoRepository.ExistsAsync)
-                .WithMessage(BusinessErrorMessage.NotFound);
+                .WithMessage(BusinessErrorMessage.NotFound)
+                .MustAsync(async (photoId, cancellationToken) =>
+                    await photoRepository.GetByIdAsync(photoId, cancellationToken) is not { } photo
+                    || await orderRepository.GetCurrentStatusAsync(photo.OrderId, cancellationToken) is not { } status
+                    || OrderPhoto.MayBeDeletedAt(status))
+                .WithMessage(BusinessErrorMessage.OrderPhotoLocked);
         }
     }
 

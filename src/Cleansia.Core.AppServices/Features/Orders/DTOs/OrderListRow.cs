@@ -40,7 +40,8 @@ public sealed record OrderListRow(
     List<OrderListEmployeeRow> AssignedEmployees,
     int RequiredEmployees,
     int MaxEmployees,
-    bool HasReview);
+    bool HasReview,
+    DateTime? CompletedAt);
 
 public sealed record OrderListAddressRow(
     string Id,

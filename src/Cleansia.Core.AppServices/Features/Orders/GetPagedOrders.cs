@@ -189,7 +189,9 @@ public class GetPagedOrders
                     && order.AssignedEmployees.Any(ae => ae.EmployeeId == callerEmployeeId);
                 if (isAssigned)
                 {
-                    items.Add(dto);
+                    items.Add(Order.CustomerDetailsOpenToCrew(order.OrderStatus, order.CompletedAt, DateTime.UtcNow)
+                        ? dto
+                        : dto.RedactForBrowsingCleaner());
                     continue;
                 }
 

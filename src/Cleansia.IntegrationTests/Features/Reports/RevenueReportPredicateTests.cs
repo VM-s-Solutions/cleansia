@@ -161,7 +161,8 @@ public class RevenueReportPredicateTests(PostgresContainerFixture fixture) : Bas
             {
                 var mediator = provider.GetRequiredService<IMediator>();
                 var before = DateTime.UtcNow;
-                var overridden = await mediator.Send(new AdminOverrideOrderStatus.Command(orderId, OrderStatus.Completed));
+                var overridden = await mediator.Send(new AdminOverrideOrderStatus.Command(
+                    orderId, OrderStatus.Completed, "The cleaner left without closing the job."));
                 Assert.True(overridden.IsSuccess, overridden.Error?.Message);
                 var report = await mediator.Send(new GetRevenueReport.Query(
                     new ReportFilter(before.AddMinutes(-1), DateTime.UtcNow.AddMinutes(1), Czk)));

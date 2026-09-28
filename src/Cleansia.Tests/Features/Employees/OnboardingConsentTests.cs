@@ -52,7 +52,7 @@ public class OnboardingConsentTests
         _session.Object,
         _blobClientFactory.Object,
         _addressGeocoder.Object,
-        new ConsentService(_requestMetadata.Object, _userConsentRepository.Object));
+        new ConsentService(_requestMetadata.Object, _userConsentRepository.Object, Mock.Of<ITenantProvider>()));
 
     private static UpdateEmployee.Command Valid() => new(
         EmployeeId: EmployeeId,

@@ -8,7 +8,8 @@ namespace Cleansia.Core.AppServices.Services;
 
 public class ConsentService(
     IRequestMetadataProvider requestMetadata,
-    IUserConsentRepository userConsentRepository) : IConsentService
+    IUserConsentRepository userConsentRepository,
+    ITenantProvider tenantProvider) : IConsentService
 {
     public async Task<bool> TryGrantAsync(string userId, ConsentType consentType, LegalDocument? document, CancellationToken cancellationToken)
     {
@@ -21,7 +22,12 @@ public class ConsentService(
 
         if (existing is null)
         {
-            userConsentRepository.Add(UserConsent.Grant(userId, consentType, ipAddress, userAgent, document?.Version, document?.Id));
+            var consent = UserConsent.Grant(userId, consentType, ipAddress, userAgent, document?.Version, document?.Id);
+
+            // Stamped with the company ambient NOW, not at commit: a booking made across the border sets
+            // the operator's override after granting, and the account's consent must not land there.
+            consent.TenantId = tenantProvider.GetCurrentTenantId();
+            userConsentRepository.Add(consent);
             return true;
         }
 

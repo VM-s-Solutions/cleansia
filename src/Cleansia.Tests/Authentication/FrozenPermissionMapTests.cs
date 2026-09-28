@@ -55,7 +55,7 @@ public class FrozenPermissionMapTests
         [Policy.CanManageRecurringBookings] = PhysicalPolicy.CustomerOnly,
 
         // User
-        [Policy.CanViewPagedUser] = PhysicalPolicy.EmployeeOrAdmin,
+        [Policy.CanViewPagedUser] = PhysicalPolicy.SupportOrAbove, // was EmployeeOrAdmin: a cleaner could list every customer's contact details
         [Policy.CanViewUserDetail] = PhysicalPolicy.OwnerOrElevated,
         [Policy.CanGetCurrentUser] = PhysicalPolicy.Authenticated,
         [Policy.CanChangeOwnPassword] = PhysicalPolicy.Authenticated, // additive — [OWN-DATA] authenticated change-own-password

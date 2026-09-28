@@ -461,6 +461,10 @@ const PARTNER_SURFACE_ERROR_KEYS: readonly string[] = [
   'common.required',
   // Order lifecycle the cleaner drives: take → on the way → start → cash → complete
   'order.after_photos.required',
+  // Photo windows and deletion: SavePhotos / UploadPhoto outside the type's window, DeletePhoto once
+  // the order is completed or cancelled.
+  'order.photo.window_closed',
+  'order.photo.locked',
   'order.card_payment_already_settled',
   'order.card_payment_in_progress',
   'order.card_payment_unverified',
@@ -498,6 +502,10 @@ const PARTNER_SURFACE_ERROR_KEYS: readonly string[] = [
   'contract.text_mismatch',
   'contract.acceptance_required',
   'legal.document_not_found',
+  // The cleaner's own contract documents: AcceptLegalDocument echoes a text that is no longer in force,
+  // and TakeOrder refuses while a document in force is not accepted.
+  'legal.document_not_in_force',
+  'employee.legal_documents_not_accepted',
   // Employee profile + documents
   'employee.job_radius_out_of_range',
   // A cleaner contracts as a natural person; UpdateEmployee refuses EntityType = LegalEntity. The
@@ -546,6 +554,8 @@ const PARTNER_SURFACE_ERROR_KEYS: readonly string[] = [
   // GDPR consents
   'gdpr.consent_already_granted',
   'gdpr.consent_not_found',
+  // Only the terms and the privacy policy are accepted there, and no accepted document is withdrawn.
+  'gdpr.consent_not_editable',
   // Payout destination — UpdateBankDetails runs the whole PayoutDetailsValidator
   // chain, so every arm of it is reachable from the cleaner's bank-details form;
   // GetMyPayoutDetails returns payout.not_found.

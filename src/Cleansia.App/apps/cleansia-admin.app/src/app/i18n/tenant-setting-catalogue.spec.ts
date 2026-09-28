@@ -109,8 +109,8 @@ describe('tenant setting catalogue', () => {
   const keys = catalogueKeys();
   const categories = catalogueCategories();
 
-  it('reads a fifteen-key, three-category catalogue off the backend', () => {
-    expect(keys).toHaveLength(15);
+  it('reads a sixteen-key, three-category catalogue off the backend', () => {
+    expect(keys).toHaveLength(16);
     expect(categories).toEqual(['retention', 'lifecycle', 'notifications']);
   });
 

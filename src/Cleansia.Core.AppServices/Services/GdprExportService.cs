@@ -18,7 +18,8 @@ public class GdprExportService(
     IUserConsentRepository userConsentRepository,
     ICustomerActionAuditRepository customerActionAuditRepository,
     IWorkContractAcceptanceRepository workContractAcceptanceRepository,
-    ILegalDocumentRepository legalDocumentRepository) : IGdprExportService
+    ILegalDocumentRepository legalDocumentRepository,
+    ICleanerLegalDocumentAcceptanceRepository cleanerLegalDocumentAcceptanceRepository) : IGdprExportService
 {
     public async Task<GdprExportDto> BuildAsync(
         string userId,
@@ -157,12 +158,31 @@ public class GdprExportService(
                 .ToList();
         }
 
+        var legalDocumentAcceptances = new List<GdprExportCleanerLegalDocumentAcceptanceDto>();
+        if (user.Employee is not null)
+        {
+            var rows = await cleanerLegalDocumentAcceptanceRepository.GetByEmployeeIdNoTrackingAsync(user.Employee.Id, cancellationToken);
+            var textIds = rows.Select(a => a.LegalDocumentTextId).Distinct().ToList();
+            var texts = await legalDocumentRepository.GetQueryable()
+                .AsNoTracking()
+                .SelectMany(d => d.Texts, (d, t) => new { t.Id, d.Type, t.Language })
+                .Where(t => textIds.Contains(t.Id))
+                .ToDictionaryAsync(t => t.Id, cancellationToken);
+            legalDocumentAcceptances = rows
+                .Select(a => new GdprExportCleanerLegalDocumentAcceptanceDto(
+                    texts[a.LegalDocumentTextId].Type, a.LegalDocumentTextId, a.DocumentVersion,
+                    texts[a.LegalDocumentTextId].Language, a.AcceptedOn, a.ClientAudience,
+                    a.IpAddress, a.DeviceLabel, a.DeviceId))
+                .ToList();
+        }
+
         var metadata = new GdprExportMetadataDto(
             DateTimeOffset.UtcNow, exportedBy, "JSON");
 
         return new GdprExportDto(
             profile, address, employee, payoutDetails, orders, disputeDtos,
-            documents, invoices, consentDtos, customerActions, metadata, workContractAcceptances);
+            documents, invoices, consentDtos, customerActions, metadata, workContractAcceptances,
+            legalDocumentAcceptances);
     }
 
     private static GdprExportDisputeDto MapDispute(Dispute dispute) =>

@@ -1557,6 +1557,16 @@ export interface IEmployeeClient {
      * @return OK
      */
     getMyDocumentRequirements(): Observable<MyDocumentRequirementDto[]>;
+    /**
+     * @param language (optional) 
+     * @return OK
+     */
+    getMyLegalDocuments(language?: string | undefined): Observable<CleanerLegalDocumentDto[]>;
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    acceptLegalDocument(body?: AcceptLegalDocumentCommand | undefined): Observable<AcceptLegalDocumentResponse>;
 }
 
 @Injectable({
@@ -2373,6 +2383,153 @@ export class EmployeeClient implements IEmployeeClient {
                 result200 = null as any;
             }
             return ObservableOf(result200);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param language (optional) 
+     * @return OK
+     */
+    getMyLegalDocuments(language?: string | undefined): Observable<CleanerLegalDocumentDto[]> {
+        let url = this.baseUrl + "/api/Employee/GetMyLegalDocuments?";
+        if (language === null)
+            throw new globalThis.Error("The parameter 'language' cannot be null.");
+        else if (language !== undefined)
+            url += "Language=" + encodeURIComponent("" + language) + "&";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGetMyLegalDocuments(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processGetMyLegalDocuments(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<CleanerLegalDocumentDto[]>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<CleanerLegalDocumentDto[]>;
+        }));
+    }
+
+    protected processGetMyLegalDocuments(response: HttpResponseBase): Observable<CleanerLegalDocumentDto[]> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(CleanerLegalDocumentDto.fromJS(item));
+            }
+            else {
+                result200 = null as any;
+            }
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    acceptLegalDocument(body?: AcceptLegalDocumentCommand | undefined): Observable<AcceptLegalDocumentResponse> {
+        let url = this.baseUrl + "/api/Employee/AcceptLegalDocument";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processAcceptLegalDocument(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processAcceptLegalDocument(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<AcceptLegalDocumentResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<AcceptLegalDocumentResponse>;
+        }));
+    }
+
+    protected processAcceptLegalDocument(response: HttpResponseBase): Observable<AcceptLegalDocumentResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = AcceptLegalDocumentResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
             }));
         } else if (status === 401) {
             return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
@@ -3511,6 +3668,11 @@ export interface IOrderClient {
      * @return OK
      */
     getWorkContract(acceptanceId?: string | undefined, language?: string | undefined): Observable<WorkContractDto>;
+    /**
+     * @param orderId (optional) 
+     * @return OK
+     */
+    getMyAssignmentRemoval(orderId?: string | undefined): Observable<GetMyAssignmentRemovalResponse>;
 }
 
 @Injectable({
@@ -5261,6 +5423,83 @@ export class OrderClient implements IOrderClient {
         }
         return ObservableOf(null as any);
     }
+
+    /**
+     * @param orderId (optional) 
+     * @return OK
+     */
+    getMyAssignmentRemoval(orderId?: string | undefined): Observable<GetMyAssignmentRemovalResponse> {
+        let url = this.baseUrl + "/api/Order/GetMyAssignmentRemoval?";
+        if (orderId === null)
+            throw new globalThis.Error("The parameter 'orderId' cannot be null.");
+        else if (orderId !== undefined)
+            url += "OrderId=" + encodeURIComponent("" + orderId) + "&";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGetMyAssignmentRemoval(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processGetMyAssignmentRemoval(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<GetMyAssignmentRemovalResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<GetMyAssignmentRemovalResponse>;
+        }));
+    }
+
+    protected processGetMyAssignmentRemoval(response: HttpResponseBase): Observable<GetMyAssignmentRemovalResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = GetMyAssignmentRemovalResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
 }
 
 export interface IPaymentClient {
@@ -5986,6 +6225,82 @@ export class UserClient implements IUserClient {
     }
 }
 
+export class AcceptLegalDocumentCommand implements IAcceptLegalDocumentCommand {
+    acceptedTextId!: string | undefined;
+
+    constructor(data?: IAcceptLegalDocumentCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.acceptedTextId = Data["acceptedTextId"];
+        }
+    }
+
+    static fromJS(data: any): AcceptLegalDocumentCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new AcceptLegalDocumentCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["acceptedTextId"] = this.acceptedTextId;
+        return data;
+    }
+}
+
+export interface IAcceptLegalDocumentCommand {
+    acceptedTextId: string | undefined;
+}
+
+export class AcceptLegalDocumentResponse implements IAcceptLegalDocumentResponse {
+    type!: LegalDocumentType;
+    version!: string | undefined;
+
+    constructor(data?: IAcceptLegalDocumentResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.type = Data["type"];
+            this.version = Data["version"];
+        }
+    }
+
+    static fromJS(data: any): AcceptLegalDocumentResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new AcceptLegalDocumentResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["type"] = this.type;
+        data["version"] = this.version;
+        return data;
+    }
+}
+
+export interface IAcceptLegalDocumentResponse {
+    type: LegalDocumentType;
+    version: string | undefined;
+}
+
 export class AcceptWorkContractCommand implements IAcceptWorkContractCommand {
     orderId!: string | undefined;
     acceptedWorkContractTextId!: string | undefined;
@@ -6440,6 +6755,86 @@ export class CheckCurrentEmployeeQuery implements ICheckCurrentEmployeeQuery {
 export interface ICheckCurrentEmployeeQuery {
 }
 
+export class CleanerLegalDocumentDto implements ICleanerLegalDocumentDto {
+    type!: LegalDocumentType;
+    legalDocumentId!: string | undefined;
+    legalDocumentTextId!: string | undefined;
+    version!: string | undefined;
+    effectiveFrom!: Date;
+    language!: string | undefined;
+    title!: string | undefined;
+    contentHtml!: string | undefined;
+    contentHash!: string | undefined;
+    isAccepted!: boolean;
+    acceptedVersion!: string | undefined;
+    acceptedAt!: Date | undefined;
+
+    constructor(data?: ICleanerLegalDocumentDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.type = Data["type"];
+            this.legalDocumentId = Data["legalDocumentId"];
+            this.legalDocumentTextId = Data["legalDocumentTextId"];
+            this.version = Data["version"];
+            this.effectiveFrom = Data["effectiveFrom"] ? new Date(Data["effectiveFrom"].toString()) : undefined as any;
+            this.language = Data["language"];
+            this.title = Data["title"];
+            this.contentHtml = Data["contentHtml"];
+            this.contentHash = Data["contentHash"];
+            this.isAccepted = Data["isAccepted"];
+            this.acceptedVersion = Data["acceptedVersion"];
+            this.acceptedAt = Data["acceptedAt"] ? new Date(Data["acceptedAt"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): CleanerLegalDocumentDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new CleanerLegalDocumentDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["type"] = this.type;
+        data["legalDocumentId"] = this.legalDocumentId;
+        data["legalDocumentTextId"] = this.legalDocumentTextId;
+        data["version"] = this.version;
+        data["effectiveFrom"] = this.effectiveFrom ? formatDate(this.effectiveFrom) : undefined as any;
+        data["language"] = this.language;
+        data["title"] = this.title;
+        data["contentHtml"] = this.contentHtml;
+        data["contentHash"] = this.contentHash;
+        data["isAccepted"] = this.isAccepted;
+        data["acceptedVersion"] = this.acceptedVersion;
+        data["acceptedAt"] = this.acceptedAt ? this.acceptedAt.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface ICleanerLegalDocumentDto {
+    type: LegalDocumentType;
+    legalDocumentId: string | undefined;
+    legalDocumentTextId: string | undefined;
+    version: string | undefined;
+    effectiveFrom: Date;
+    language: string | undefined;
+    title: string | undefined;
+    contentHtml: string | undefined;
+    contentHash: string | undefined;
+    isAccepted: boolean;
+    acceptedVersion: string | undefined;
+    acceptedAt: Date | undefined;
+}
+
 export class Code implements ICode {
     type!: string | undefined;
     name!: string | undefined;
@@ -6617,6 +7012,9 @@ export enum ConsentType {
     PrivacyPolicy = 1,
     MarketingEmails = 2,
     DataProcessing = 3,
+    CleanerFrameworkContract = 4,
+    SelfBillingAgreement = 5,
+    CleanerDataProcessingAgreement = 6,
 }
 
 export enum ContractStatus {
@@ -7647,6 +8045,8 @@ export class EmployeeItem implements IEmployeeItem {
     legalEntityName!: string | undefined;
     emergencyContactName!: string | undefined;
     emergencyContactPhone!: string | undefined;
+    weeklyOrderLimit!: number | undefined;
+    weeklyOrderLimitReason!: string | undefined;
     profilePhoto!: BlobFileDto;
     profile!: Code;
     authenticationType!: Code;
@@ -7681,6 +8081,8 @@ export class EmployeeItem implements IEmployeeItem {
             this.legalEntityName = Data["legalEntityName"];
             this.emergencyContactName = Data["emergencyContactName"];
             this.emergencyContactPhone = Data["emergencyContactPhone"];
+            this.weeklyOrderLimit = Data["weeklyOrderLimit"];
+            this.weeklyOrderLimitReason = Data["weeklyOrderLimitReason"];
             this.profilePhoto = Data["profilePhoto"] ? BlobFileDto.fromJS(Data["profilePhoto"]) : undefined as any;
             this.profile = Data["profile"] ? Code.fromJS(Data["profile"]) : undefined as any;
             this.authenticationType = Data["authenticationType"] ? Code.fromJS(Data["authenticationType"]) : undefined as any;
@@ -7715,6 +8117,8 @@ export class EmployeeItem implements IEmployeeItem {
         data["legalEntityName"] = this.legalEntityName;
         data["emergencyContactName"] = this.emergencyContactName;
         data["emergencyContactPhone"] = this.emergencyContactPhone;
+        data["weeklyOrderLimit"] = this.weeklyOrderLimit;
+        data["weeklyOrderLimitReason"] = this.weeklyOrderLimitReason;
         data["profilePhoto"] = this.profilePhoto ? this.profilePhoto.toJSON() : undefined as any;
         data["profile"] = this.profile ? this.profile.toJSON() : undefined as any;
         data["authenticationType"] = this.authenticationType ? this.authenticationType.toJSON() : undefined as any;
@@ -7742,6 +8146,8 @@ export interface IEmployeeItem {
     legalEntityName: string | undefined;
     emergencyContactName: string | undefined;
     emergencyContactPhone: string | undefined;
+    weeklyOrderLimit: number | undefined;
+    weeklyOrderLimitReason: string | undefined;
     profilePhoto: BlobFileDto;
     profile: Code;
     authenticationType: Code;
@@ -7798,6 +8204,74 @@ export interface IGdprExportAddressDto {
     zipCode: string | undefined;
     state: string | undefined;
     countryId: string | undefined;
+}
+
+export class GdprExportCleanerLegalDocumentAcceptanceDto implements IGdprExportCleanerLegalDocumentAcceptanceDto {
+    documentType!: LegalDocumentType;
+    legalDocumentTextId!: string | undefined;
+    documentVersion!: string | undefined;
+    language!: string | undefined;
+    acceptedOn!: Date;
+    clientAudience!: string | undefined;
+    ipAddress!: string | undefined;
+    deviceLabel!: string | undefined;
+    deviceId!: string | undefined;
+
+    constructor(data?: IGdprExportCleanerLegalDocumentAcceptanceDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.documentType = Data["documentType"];
+            this.legalDocumentTextId = Data["legalDocumentTextId"];
+            this.documentVersion = Data["documentVersion"];
+            this.language = Data["language"];
+            this.acceptedOn = Data["acceptedOn"] ? new Date(Data["acceptedOn"].toString()) : undefined as any;
+            this.clientAudience = Data["clientAudience"];
+            this.ipAddress = Data["ipAddress"];
+            this.deviceLabel = Data["deviceLabel"];
+            this.deviceId = Data["deviceId"];
+        }
+    }
+
+    static fromJS(data: any): GdprExportCleanerLegalDocumentAcceptanceDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new GdprExportCleanerLegalDocumentAcceptanceDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["documentType"] = this.documentType;
+        data["legalDocumentTextId"] = this.legalDocumentTextId;
+        data["documentVersion"] = this.documentVersion;
+        data["language"] = this.language;
+        data["acceptedOn"] = this.acceptedOn ? this.acceptedOn.toISOString() : undefined as any;
+        data["clientAudience"] = this.clientAudience;
+        data["ipAddress"] = this.ipAddress;
+        data["deviceLabel"] = this.deviceLabel;
+        data["deviceId"] = this.deviceId;
+        return data;
+    }
+}
+
+export interface IGdprExportCleanerLegalDocumentAcceptanceDto {
+    documentType: LegalDocumentType;
+    legalDocumentTextId: string | undefined;
+    documentVersion: string | undefined;
+    language: string | undefined;
+    acceptedOn: Date;
+    clientAudience: string | undefined;
+    ipAddress: string | undefined;
+    deviceLabel: string | undefined;
+    deviceId: string | undefined;
 }
 
 export class GdprExportConsentDto implements IGdprExportConsentDto {
@@ -8141,6 +8615,7 @@ export class GdprExportDto implements IGdprExportDto {
     customerActions!: GdprExportCustomerActionDto[] | undefined;
     metadata!: GdprExportMetadataDto;
     workContractAcceptances!: GdprExportWorkContractAcceptanceDto[] | undefined;
+    cleanerLegalDocumentAcceptances!: GdprExportCleanerLegalDocumentAcceptanceDto[] | undefined;
 
     constructor(data?: IGdprExportDto) {
         if (data) {
@@ -8192,6 +8667,11 @@ export class GdprExportDto implements IGdprExportDto {
                 this.workContractAcceptances = [] as any;
                 for (let item of Data["workContractAcceptances"])
                     this.workContractAcceptances!.push(GdprExportWorkContractAcceptanceDto.fromJS(item));
+            }
+            if (Array.isArray(Data["cleanerLegalDocumentAcceptances"])) {
+                this.cleanerLegalDocumentAcceptances = [] as any;
+                for (let item of Data["cleanerLegalDocumentAcceptances"])
+                    this.cleanerLegalDocumentAcceptances!.push(GdprExportCleanerLegalDocumentAcceptanceDto.fromJS(item));
             }
         }
     }
@@ -8245,6 +8725,11 @@ export class GdprExportDto implements IGdprExportDto {
             for (let item of this.workContractAcceptances)
                 data["workContractAcceptances"].push(item ? item.toJSON() : undefined as any);
         }
+        if (Array.isArray(this.cleanerLegalDocumentAcceptances)) {
+            data["cleanerLegalDocumentAcceptances"] = [];
+            for (let item of this.cleanerLegalDocumentAcceptances)
+                data["cleanerLegalDocumentAcceptances"].push(item ? item.toJSON() : undefined as any);
+        }
         return data;
     }
 }
@@ -8262,6 +8747,7 @@ export interface IGdprExportDto {
     customerActions: GdprExportCustomerActionDto[] | undefined;
     metadata: GdprExportMetadataDto;
     workContractAcceptances: GdprExportWorkContractAcceptanceDto[] | undefined;
+    cleanerLegalDocumentAcceptances: GdprExportCleanerLegalDocumentAcceptanceDto[] | undefined;
 }
 
 export class GdprExportEmployeeDto implements IGdprExportEmployeeDto {
@@ -8924,6 +9410,50 @@ export class GetCurrentUserQuery implements IGetCurrentUserQuery {
 export interface IGetCurrentUserQuery {
 }
 
+export class GetMyAssignmentRemovalResponse implements IGetMyAssignmentRemovalResponse {
+    orderId!: string | undefined;
+    reason!: string | undefined;
+    removedOn!: Date;
+
+    constructor(data?: IGetMyAssignmentRemovalResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.orderId = Data["orderId"];
+            this.reason = Data["reason"];
+            this.removedOn = Data["removedOn"] ? new Date(Data["removedOn"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): GetMyAssignmentRemovalResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new GetMyAssignmentRemovalResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["orderId"] = this.orderId;
+        data["reason"] = this.reason;
+        data["removedOn"] = this.removedOn ? this.removedOn.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IGetMyAssignmentRemovalResponse {
+    orderId: string | undefined;
+    reason: string | undefined;
+    removedOn: Date;
+}
+
 export class GetMyDocumentsMyDocumentDto implements IGetMyDocumentsMyDocumentDto {
     documentId!: string | undefined;
     fileName!: string | undefined;
@@ -9550,6 +10080,16 @@ export interface ILanguageListItem {
     id: string | undefined;
     code: string | undefined;
     name: string | undefined;
+}
+
+export enum LegalDocumentType {
+    TermsOfService = 0,
+    PrivacyPolicy = 1,
+    WorkContract = 2,
+    CleanerFrameworkContract = 3,
+    SelfBillingAgreement = 4,
+    CleanerDataProcessingAgreement = 5,
+    ComplaintsProcedure = 6,
 }
 
 export class LogoutCommand implements ILogoutCommand {
@@ -10258,6 +10798,7 @@ export class OrderEmployeePayDto implements IOrderEmployeePayDto {
     isApproved!: boolean;
     createdOn!: Date;
     currencyCode!: string | undefined;
+    deductionReason!: string | undefined;
 
     constructor(data?: IOrderEmployeePayDto) {
         if (data) {
@@ -10287,6 +10828,7 @@ export class OrderEmployeePayDto implements IOrderEmployeePayDto {
             this.isApproved = Data["isApproved"];
             this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
             this.currencyCode = Data["currencyCode"];
+            this.deductionReason = Data["deductionReason"];
         }
     }
 
@@ -10316,6 +10858,7 @@ export class OrderEmployeePayDto implements IOrderEmployeePayDto {
         data["isApproved"] = this.isApproved;
         data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
         data["currencyCode"] = this.currencyCode;
+        data["deductionReason"] = this.deductionReason;
         return data;
     }
 }
@@ -10338,6 +10881,7 @@ export interface IOrderEmployeePayDto {
     isApproved: boolean;
     createdOn: Date;
     currencyCode: string | undefined;
+    deductionReason: string | undefined;
 }
 
 export class OrderIssueDto implements IOrderIssueDto {
@@ -10458,6 +11002,10 @@ export class OrderItem implements IOrderItem {
     workContractAcceptances!: WorkContractAcceptanceDto[] | undefined;
     cancellationFeeRate!: number | undefined;
     cancellationFeeOwed!: number | undefined;
+    needsConfirmation!: boolean | undefined;
+    cashCollectedAt!: Date | undefined;
+    cashCollectedByName!: string | undefined;
+    cashCollectedAmount!: number | undefined;
 
     constructor(data?: IOrderItem) {
         if (data) {
@@ -10565,6 +11113,10 @@ export class OrderItem implements IOrderItem {
             }
             this.cancellationFeeRate = Data["cancellationFeeRate"];
             this.cancellationFeeOwed = Data["cancellationFeeOwed"];
+            this.needsConfirmation = Data["needsConfirmation"];
+            this.cashCollectedAt = Data["cashCollectedAt"] ? new Date(Data["cashCollectedAt"].toString()) : undefined as any;
+            this.cashCollectedByName = Data["cashCollectedByName"];
+            this.cashCollectedAmount = Data["cashCollectedAmount"];
         }
     }
 
@@ -10672,6 +11224,10 @@ export class OrderItem implements IOrderItem {
         }
         data["cancellationFeeRate"] = this.cancellationFeeRate;
         data["cancellationFeeOwed"] = this.cancellationFeeOwed;
+        data["needsConfirmation"] = this.needsConfirmation;
+        data["cashCollectedAt"] = this.cashCollectedAt ? this.cashCollectedAt.toISOString() : undefined as any;
+        data["cashCollectedByName"] = this.cashCollectedByName;
+        data["cashCollectedAmount"] = this.cashCollectedAmount;
         return data;
     }
 }
@@ -10738,6 +11294,10 @@ export interface IOrderItem {
     workContractAcceptances: WorkContractAcceptanceDto[] | undefined;
     cancellationFeeRate: number | undefined;
     cancellationFeeOwed: number | undefined;
+    needsConfirmation: boolean | undefined;
+    cashCollectedAt: Date | undefined;
+    cashCollectedByName: string | undefined;
+    cashCollectedAmount: number | undefined;
 }
 
 export class OrderListItem implements IOrderListItem {
@@ -12249,8 +12809,6 @@ export class ProductivityMetricsDto implements IProductivityMetricsDto {
     ordersCompleted!: number;
     ordersTarget!: number;
     completionPercentage!: number;
-    averageCompletionTimeMinutes!: number;
-    onTimeCompletionRate!: number;
     efficiencyScore!: number;
     personalBests!: PersonalBests;
 
@@ -12268,8 +12826,6 @@ export class ProductivityMetricsDto implements IProductivityMetricsDto {
             this.ordersCompleted = Data["ordersCompleted"];
             this.ordersTarget = Data["ordersTarget"];
             this.completionPercentage = Data["completionPercentage"];
-            this.averageCompletionTimeMinutes = Data["averageCompletionTimeMinutes"];
-            this.onTimeCompletionRate = Data["onTimeCompletionRate"];
             this.efficiencyScore = Data["efficiencyScore"];
             this.personalBests = Data["personalBests"] ? PersonalBests.fromJS(Data["personalBests"]) : undefined as any;
         }
@@ -12287,8 +12843,6 @@ export class ProductivityMetricsDto implements IProductivityMetricsDto {
         data["ordersCompleted"] = this.ordersCompleted;
         data["ordersTarget"] = this.ordersTarget;
         data["completionPercentage"] = this.completionPercentage;
-        data["averageCompletionTimeMinutes"] = this.averageCompletionTimeMinutes;
-        data["onTimeCompletionRate"] = this.onTimeCompletionRate;
         data["efficiencyScore"] = this.efficiencyScore;
         data["personalBests"] = this.personalBests ? this.personalBests.toJSON() : undefined as any;
         return data;
@@ -12299,8 +12853,6 @@ export interface IProductivityMetricsDto {
     ordersCompleted: number;
     ordersTarget: number;
     completionPercentage: number;
-    averageCompletionTimeMinutes: number;
-    onTimeCompletionRate: number;
     efficiencyScore: number;
     personalBests: PersonalBests;
 }
@@ -13690,7 +14242,6 @@ export class TimeAnalyticsDto implements ITimeAnalyticsDto {
     byServiceType!: ServiceTimeBreakdown[] | undefined;
     totalMinutesWorked!: number;
     averageMinutesPerOrder!: number;
-    efficiencyRate!: number;
     totalOrders!: number;
 
     constructor(data?: ITimeAnalyticsDto) {
@@ -13721,7 +14272,6 @@ export class TimeAnalyticsDto implements ITimeAnalyticsDto {
             }
             this.totalMinutesWorked = Data["totalMinutesWorked"];
             this.averageMinutesPerOrder = Data["averageMinutesPerOrder"];
-            this.efficiencyRate = Data["efficiencyRate"];
             this.totalOrders = Data["totalOrders"];
         }
     }
@@ -13752,7 +14302,6 @@ export class TimeAnalyticsDto implements ITimeAnalyticsDto {
         }
         data["totalMinutesWorked"] = this.totalMinutesWorked;
         data["averageMinutesPerOrder"] = this.averageMinutesPerOrder;
-        data["efficiencyRate"] = this.efficiencyRate;
         data["totalOrders"] = this.totalOrders;
         return data;
     }
@@ -13764,7 +14313,6 @@ export interface ITimeAnalyticsDto {
     byServiceType: ServiceTimeBreakdown[] | undefined;
     totalMinutesWorked: number;
     averageMinutesPerOrder: number;
-    efficiencyRate: number;
     totalOrders: number;
 }
 
@@ -14363,6 +14911,8 @@ export class UserConsentDto implements IUserConsentDto {
     grantedAt!: Date | undefined;
     withdrawnAt!: Date | undefined;
     createdOn!: Date;
+    documentVersion!: string | undefined;
+    coversCurrentVersion!: boolean;
 
     constructor(data?: IUserConsentDto) {
         if (data) {
@@ -14381,6 +14931,8 @@ export class UserConsentDto implements IUserConsentDto {
             this.grantedAt = Data["grantedAt"] ? new Date(Data["grantedAt"].toString()) : undefined as any;
             this.withdrawnAt = Data["withdrawnAt"] ? new Date(Data["withdrawnAt"].toString()) : undefined as any;
             this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
+            this.documentVersion = Data["documentVersion"];
+            this.coversCurrentVersion = Data["coversCurrentVersion"];
         }
     }
 
@@ -14399,6 +14951,8 @@ export class UserConsentDto implements IUserConsentDto {
         data["grantedAt"] = this.grantedAt ? this.grantedAt.toISOString() : undefined as any;
         data["withdrawnAt"] = this.withdrawnAt ? this.withdrawnAt.toISOString() : undefined as any;
         data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
+        data["documentVersion"] = this.documentVersion;
+        data["coversCurrentVersion"] = this.coversCurrentVersion;
         return data;
     }
 }
@@ -14410,6 +14964,8 @@ export interface IUserConsentDto {
     grantedAt: Date | undefined;
     withdrawnAt: Date | undefined;
     createdOn: Date;
+    documentVersion: string | undefined;
+    coversCurrentVersion: boolean;
 }
 
 export class UserItem implements IUserItem {

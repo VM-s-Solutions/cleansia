@@ -3646,6 +3646,75 @@
         }
       }
     },
+    "/api/Order/ReportGuestNoShow": {
+      "post": {
+        "tags": [
+          "Order"
+        ],
+        "operationId": "Order_ReportGuestNoShow",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportGuestCleanerNoShow_Command"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportGuestCleanerNoShow_Command"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportGuestCleanerNoShow_Command"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportGuestCleanerNoShow_Response"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportGuestCleanerNoShow_Response"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportGuestCleanerNoShow_Response"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/Order/Lookup": {
       "post": {
         "tags": [
@@ -7459,6 +7528,9 @@
             "type": "number",
             "format": "double",
             "nullable": true
+          },
+          "refundPending": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -7624,6 +7696,10 @@
           "ephemeralKey": {
             "type": "string",
             "nullable": true
+          },
+          "checkoutUrl": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -7647,7 +7723,10 @@
           0,
           1,
           2,
-          3
+          3,
+          4,
+          5,
+          6
         ],
         "type": "integer",
         "format": "int32",
@@ -7655,7 +7734,10 @@
           "TermsOfService",
           "PrivacyPolicy",
           "MarketingEmails",
-          "DataProcessing"
+          "DataProcessing",
+          "CleanerFrameworkContract",
+          "SelfBillingAgreement",
+          "CleanerDataProcessingAgreement"
         ]
       },
       "ContractStatus": {
@@ -7728,6 +7810,9 @@
               "$ref": "#/components/schemas/CreateDispute_DisputeLineSelection"
             },
             "nullable": true
+          },
+          "settlementPreference": {
+            "$ref": "#/components/schemas/DisputeSettlementPreference"
           }
         },
         "additionalProperties": false
@@ -8049,6 +8134,10 @@
           "preferredEmployeeId": {
             "type": "string",
             "nullable": true
+          },
+          "termsAccepted": {
+            "type": "boolean",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -8241,6 +8330,9 @@
               "$ref": "#/components/schemas/DisputeLineDto"
             },
             "nullable": true
+          },
+          "settlementPreference": {
+            "$ref": "#/components/schemas/DisputeSettlementPreference"
           }
         },
         "additionalProperties": false
@@ -8396,6 +8488,18 @@
           "Chargeback"
         ]
       },
+      "DisputeSettlementPreference": {
+        "enum": [
+          1,
+          2
+        ],
+        "type": "integer",
+        "format": "int32",
+        "x-enumNames": [
+          "CardRefund",
+          "Credit"
+        ]
+      },
       "EmployeeEntityType": {
         "enum": [
           1,
@@ -8489,6 +8593,47 @@
             "nullable": true
           },
           "countryId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "GdprExportCleanerLegalDocumentAcceptanceDto": {
+        "type": "object",
+        "properties": {
+          "documentType": {
+            "$ref": "#/components/schemas/LegalDocumentType"
+          },
+          "legalDocumentTextId": {
+            "type": "string",
+            "nullable": true
+          },
+          "documentVersion": {
+            "type": "string",
+            "nullable": true
+          },
+          "language": {
+            "type": "string",
+            "nullable": true
+          },
+          "acceptedOn": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "clientAudience": {
+            "type": "string",
+            "nullable": true
+          },
+          "ipAddress": {
+            "type": "string",
+            "nullable": true
+          },
+          "deviceLabel": {
+            "type": "string",
+            "nullable": true
+          },
+          "deviceId": {
             "type": "string",
             "nullable": true
           }
@@ -8748,6 +8893,13 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/GdprExportWorkContractAcceptanceDto"
+            },
+            "nullable": true
+          },
+          "cleanerLegalDocumentAcceptances": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GdprExportCleanerLegalDocumentAcceptanceDto"
             },
             "nullable": true
           }
@@ -9756,14 +9908,22 @@
         "enum": [
           0,
           1,
-          2
+          2,
+          3,
+          4,
+          5,
+          6
         ],
         "type": "integer",
         "format": "int32",
         "x-enumNames": [
           "TermsOfService",
           "PrivacyPolicy",
-          "WorkContract"
+          "WorkContract",
+          "CleanerFrameworkContract",
+          "SelfBillingAgreement",
+          "CleanerDataProcessingAgreement",
+          "ComplaintsProcedure"
         ]
       },
       "Logout_Command": {
@@ -10516,6 +10676,24 @@
             "nullable": true
           },
           "cancellationFeeOwed": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "needsConfirmation": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "cashCollectedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "cashCollectedByName": {
+            "type": "string",
+            "nullable": true
+          },
+          "cashCollectedAmount": {
             "type": "number",
             "format": "double",
             "nullable": true
@@ -11459,6 +11637,10 @@
           },
           "requiresPaymentMethodChange": {
             "type": "boolean"
+          },
+          "timeZoneId": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -11578,6 +11760,26 @@
           },
           "termsAccepted": {
             "type": "boolean",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ReportGuestCleanerNoShow_Command": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ReportGuestCleanerNoShow_Response": {
+        "type": "object",
+        "properties": {
+          "orderId": {
+            "type": "string",
             "nullable": true
           }
         },
@@ -12252,6 +12454,13 @@
           "createdOn": {
             "type": "string",
             "format": "date-time"
+          },
+          "documentVersion": {
+            "type": "string",
+            "nullable": true
+          },
+          "coversCurrentVersion": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false

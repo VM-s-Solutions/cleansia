@@ -306,6 +306,35 @@ public sealed class LegalDocumentSeederTests : IDisposable
         Assert.Equal(LegalDocumentAudience.Employee, resource.Audience);
     }
 
+    /// <summary>
+    /// Owner ruling 2026-09-28: the cleaner's three documents are read from the employee folder, the complaints
+    /// procedure from the customer one.
+    /// </summary>
+    [Theory]
+    [InlineData("Seed/Legal/employee/framework-contract/any/2026-12-01/cs.md", LegalDocumentAudience.Employee, LegalDocumentType.CleanerFrameworkContract)]
+    [InlineData("Seed/Legal/employee/self-billing-agreement/any/2026-12-01/cs.md", LegalDocumentAudience.Employee, LegalDocumentType.SelfBillingAgreement)]
+    [InlineData("Seed/Legal/employee/data-processing-agreement/cze/2026-12-01/cs.md", LegalDocumentAudience.Employee, LegalDocumentType.CleanerDataProcessingAgreement)]
+    [InlineData("Seed/Legal/customer/complaints-procedure/any/2026-12-01/cs.md", LegalDocumentAudience.Customer, LegalDocumentType.ComplaintsProcedure)]
+    public void The_Cleaner_Documents_And_The_Complaints_Procedure_Have_Their_Folders(
+        string logicalName, LegalDocumentAudience audience, LegalDocumentType type)
+    {
+        var resource = LegalSeedResource.Parse(logicalName, "---\ntitle: T\n---\nBody");
+
+        Assert.Equal(audience, resource.Audience);
+        Assert.Equal(type, resource.Type);
+    }
+
+    [Theory]
+    [InlineData("Seed/Legal/customer/framework-contract/any/2026-12-01/cs.md")]
+    [InlineData("Seed/Legal/customer/self-billing-agreement/any/2026-12-01/cs.md")]
+    [InlineData("Seed/Legal/customer/data-processing-agreement/any/2026-12-01/cs.md")]
+    public void A_Cleaner_Document_Under_The_Customer_Folder_Fails_Naming_Itself(string logicalName)
+    {
+        var ex = Assert.Throws<InvalidOperationException>(() => LegalSeedResource.Parse(logicalName, "---\ntitle: T\n---\nBody"));
+
+        Assert.Contains(logicalName, ex.Message);
+    }
+
     [Theory]
     [InlineData("Seed/Legal/customer/terms-of-service/any/2026-09-14/en.md", "no front matter")]
     [InlineData("Seed/Legal/customer/terms-of-service/any/2026-09-14/en.md", "---\nsubtitle: x\n---\nBody")]

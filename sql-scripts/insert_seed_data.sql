@@ -765,9 +765,9 @@ CROSS JOIN (SELECT "Id" FROM public."Currencies" WHERE "Code" = 'CZK' LIMIT 1) c
 -- of are in the same currency by construction. That is not a tidiness point: pay is a multiple of a
 -- price, and taking the multiple from one currency while stamping the row with another is roughly a
 -- 24x error in what a cleaner is paid. BulkCreateEmployeePayConfigs joins the same way for the same
--- reason. The rate is the JUNIOR template's multiplier (0.5), the same number that command uses for
--- that grade — a starting point the admin tunes per entry or per cleaner, not a pricing decision made
--- in a seed file. Pay rates are the operator's money, so the rows are stamped with the operating
+-- reason. The rate is the STANDARD rate template's multiplier (0.5), the same number that command uses
+-- for that template — a starting point the admin tunes per entry or per cleaner, not a pricing decision
+-- made in a seed file. Pay rates are the operator's money, so the rows are stamped with the operating
 -- company (ADR-0061 D7); an admin of another company reads and writes its own defaults.
 INSERT INTO public."EmployeePayConfigs" (
   "Id", "IsActive", "CreatedBy", "CreatedOn",
@@ -779,7 +779,7 @@ INSERT INTO public."EmployeePayConfigs" (
 SELECT generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
        'cleansia-cz', NULL, sp."ServiceId", NULL,
        ROUND(sp."BasePrice" * 0.5, 2), ROUND(sp."PerRoomPrice" * 0.5, 2), 0,
-       'Platform-wide default (junior template)',
+       'Platform-wide default (standard rate template)',
        sp."CurrencyId",
        0, 0
 FROM public."ServicePrices" sp
@@ -795,7 +795,7 @@ INSERT INTO public."EmployeePayConfigs" (
 SELECT generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
        'cleansia-cz', NULL, NULL, pp."PackageId",
        ROUND(pp."Price" * 0.5, 2), 0, 0,
-       'Platform-wide default (junior template)',
+       'Platform-wide default (standard rate template)',
        pp."CurrencyId",
        0, 0
 FROM public."PackagePrices" pp
@@ -982,9 +982,9 @@ WHERE "CountryId" = (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE'
 -- COUNTRY CONFIGURATIONS
 -- ============================================================
 -- "InsuranceCoverageAmount" is the per-booking insurance ceiling customer copy states, a number in the
--- row's DefaultCurrencyCode. CZE carries the 1 000 000 CZK figure (owner ruling 2026-09-13, Q-MARKET-02);
--- every other row stays NULL -- the clients render the no-figure copy variant -- until the owner authors
--- that market's figure on the admin country form (SVK's EUR figure is still his to write).
+-- row's DefaultCurrencyCode. Every row is NULL -- the clients render the no-figure copy variant -- until
+-- the owner decides whose policy covers a booking and at what figure (owner ruling 2026-09-28), and
+-- authors it on the admin country form.
 -- "IsDefaultMarket" is what a customer surface pre-selects before any choice is made (Q-MARKET-01):
 -- exactly one row carries it (partial unique index), CZE today; SetDefaultMarket moves it.
 -- "OperatorTenantId" is the operating company that serves the market (ADR-0061 D2). Only CZE has one;
@@ -1011,7 +1011,7 @@ VALUES
    'IČO', '^\d{8}$', true,
    'DIČ', '^CZ\d{8,10}$', false,
    'Stripe', 1,
-   1000000.00, true, 'cleansia-cz'),
+   NULL, true, 'cleansia-cz'),
 
   -- Slovakia — IČO mandatory, IČ DPH (VAT) optional
   (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
@@ -1116,6 +1116,9 @@ VALUES
 -- jurisdiction may demand is left for the admin screen to add, which is the entire reason these are
 -- rows rather than a constant.
 --
+-- InsuranceDocument is required (owner ruling 2026-09-28): a cleaner is approved only with a
+-- valid liability insurance certificate, whichever policy the platform finally promises.
+--
 -- WorkPermit is seeded NOT required on purpose. It applies to non-EU nationals and to nobody else,
 -- and a per-country flag cannot say "required for some of these people" — so it appears on the
 -- cleaner's checklist as expected-but-optional and an admin judges the individual case.
@@ -1132,9 +1135,10 @@ SELECT
   c."Id", r.document_type, r.is_required, r.sort_order
 FROM public."Countries" c
 CROSS JOIN (VALUES
-  -- 1 = IdentityCard, 4 = WorkPermit (Cleansia.Core.Domain.Enums.DocumentType)
+  -- 1 = IdentityCard, 4 = WorkPermit, 9 = InsuranceDocument (Cleansia.Core.Domain.Enums.DocumentType)
   (1, true, 1),
-  (4, false, 2)
+  (4, false, 2),
+  (9, true, 3)
 ) AS r(document_type, is_required, sort_order)
 WHERE c."IsoCode" IN ('CZE', 'SVK')
 ON CONFLICT ("CountryId", "DocumentType") DO NOTHING;

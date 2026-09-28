@@ -544,7 +544,10 @@
         "terms_of_service": "Obchodné podmienky",
         "privacy_policy": "Zásady ochrany osobných údajov",
         "marketing_emails": "Marketingové e-maily",
-        "data_processing": "Spracovanie údajov"
+        "data_processing": "Spracovanie údajov",
+        "cleaner_framework_contract": "Rámcová zmluva o spolupráci (partneri)",
+        "self_billing_agreement": "Dohoda o samofakturácii",
+        "cleaner_data_processing_agreement": "Zmluva o spracúvaní osobných údajov (partneri)"
       },
       "delete_title": "Vymazať môj účet",
       "delete_description": "Natrvalo vymaže váš účet a anonymizuje vaše osobné údaje. Túto akciu nemožno vrátiť.",
@@ -791,7 +794,8 @@
       "acceptance_required": "Skôr než budete pokračovať, prijmite zmluvu o dielo k tejto zákazke."
     },
     "legal": {
-      "document_not_found": "Túto zákazku teraz nie je možné prevziať."
+      "document_not_found": "Túto zákazku teraz nie je možné prevziať.",
+      "document_not_in_force": "Tento dokument už nie je platnou verziou. Načítajte ho znova a prijmite aktuálnu verziu."
     },
     "auth": {
       "google_type_error": "Tento účet používa prihlásenie cez Google. Použite tlačidlo Google.",
@@ -904,7 +908,11 @@
       "payment_gateway_unavailable": "Platobná brána nie je k dispozícii",
       "time_conflict": "Tento termín sa prekrýva s inou objednávkou vo vašom rozvrhu",
       "weekly_limit_reached": "Dosiahli ste týždenný limit zákaziek.",
-      "employee_already_has_order_in_progress": "Už máte inú zákazku v priebehu. Pred začatím novej ju prosím dokončite."
+      "employee_already_has_order_in_progress": "Už máte inú zákazku v priebehu. Pred začatím novej ju prosím dokončite.",
+      "photo": {
+        "window_closed": "Túto fotografiu teraz nemožno pridať: fotografie pred upratovaním od prevzatia zákazky do jej dokončenia, fotografie po upratovaní počas práce.",
+        "locked": "Po dokončení alebo zrušení objednávky nemožno fotografie vymazať."
+      }
     },
     "user": {
       "email_confirmed": "E-mail je už potvrdený",
@@ -925,7 +933,8 @@
       "already_approved": "Zamestnanec už bol schválený",
       "already_rejected": "Zamestnanec už bol zamietnutý",
       "job_radius_out_of_range": "Zadaný dojazdový okruh je mimo povoleného rozsahu",
-      "legal_entity_not_accepted": "Upratovači s nami spolupracujú ako fyzické osoby; firmu tu nie je možné registrovať"
+      "legal_entity_not_accepted": "Upratovači s nami spolupracujú ako fyzické osoby; firmu tu nie je možné registrovať",
+      "legal_documents_not_accepted": "Skôr než začnete prijímať zákazky, prijmite aktuálnu verziu svojich zmluvných dokumentov."
     },
     "employee_document": {
       "not_found": "Dokument nenájdený",
@@ -1019,7 +1028,8 @@
       "deletion_blocked_by_order": "Váš účet sa nedá zmazať, kým máte aktívne objednávky.",
       "deletion_blocked_by_invoice": "Váš účet sa nedá zmazať, kým sú nevybavené faktúry.",
       "deletion_blocked_by_assigned_order": "Váš účet sa nedá zmazať, kým ste priradený k zakázke.",
-      "deletion_blocked_by_unsettled_pay": "Váš účet sa nedá zmazať, kým vám dlžíme odmenu. Najprv to vyriešte s kanceláriou."
+      "deletion_blocked_by_unsettled_pay": "Váš účet sa nedá zmazať, kým vám dlžíme odmenu. Najprv to vyriešte s kanceláriou.",
+      "consent_not_editable": "Tento súhlas tu nemožno zmeniť."
     },
     "company": {
       "not_found": "Informácie o spoločnosti nenájdené",

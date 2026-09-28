@@ -26,11 +26,12 @@ namespace Cleansia.Core.AppServices.Features.Employees;
 public class AdminSetEmployeeWeeklyOrderLimit
 {
     /// <param name="WeeklyOrderLimit">Null clears the cap back to unlimited.</param>
-    public record Command(string EmployeeId, int? WeeklyOrderLimit) : ICommand<Response>;
+    /// <param name="Reason">Why the cap is set, shown to the cleaner; required with a cap, dropped with it.</param>
+    public record Command(string EmployeeId, int? WeeklyOrderLimit, string? Reason = null) : ICommand<Response>;
 
-    public record Request(int? WeeklyOrderLimit);
+    public record Request(int? WeeklyOrderLimit, string? Reason = null);
 
-    public record Response(string EmployeeId, int? WeeklyOrderLimit);
+    public record Response(string EmployeeId, int? WeeklyOrderLimit, string? Reason);
 
     /// <summary>
     /// Unlike its sibling snapshots this one carries the VALUES, not just ids: a weekly order limit is
@@ -57,6 +58,15 @@ public class AdminSetEmployeeWeeklyOrderLimit
                 .GreaterThanOrEqualTo(1)
                 .WithMessage(BusinessErrorMessage.WeeklyOrderLimitInvalid)
                 .When(c => c.WeeklyOrderLimit.HasValue);
+
+            // A limit on how much someone may work comes with its reason (owner ruling 2026-09-28).
+            RuleFor(c => c.Reason)
+                .Cascade(CascadeMode.Stop)
+                .Must(reason => !string.IsNullOrWhiteSpace(reason))
+                .WithMessage(BusinessErrorMessage.WeeklyOrderLimitReasonRequired)
+                .MaximumLength(500)
+                .WithMessage(BusinessErrorMessage.MaxLength)
+                .When(c => c.WeeklyOrderLimit.HasValue);
         }
     }
 
@@ -79,16 +89,16 @@ public class AdminSetEmployeeWeeklyOrderLimit
 
             var before = new WeeklyLimitSnapshot(employee.UserId, employee.Id, employee.WeeklyOrderLimit);
 
-            employee.SetWeeklyOrderLimit(command.WeeklyOrderLimit);
+            employee.SetWeeklyOrderLimit(command.WeeklyOrderLimit, command.Reason?.Trim());
 
             var after = new WeeklyLimitSnapshot(employee.UserId, employee.Id, employee.WeeklyOrderLimit);
-            auditContext.RecordChange("User", employee.UserId, before, after);
+            auditContext.RecordChange("User", employee.UserId, before, after, employee.WeeklyOrderLimitReason);
 
             await NotifyIfTightenedAsync(
                 employee.UserId, employee.TenantId, before.WeeklyOrderLimit, after.WeeklyOrderLimit,
                 DateTime.UtcNow, cancellationToken);
 
-            return BusinessResult.Success(new Response(employee.Id, employee.WeeklyOrderLimit));
+            return BusinessResult.Success(new Response(employee.Id, employee.WeeklyOrderLimit, employee.WeeklyOrderLimitReason));
         }
 
         /// <summary>

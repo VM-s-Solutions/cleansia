@@ -521,16 +521,7 @@
         "title": "Let someone else do the cleaning",
         "desc": "Order in two minutes, no sign-up. You see the price before you confirm.",
         "button": "Book a clean",
-        "secondary": "Our services",
-        "promo_title": "Discount code for your first clean",
-        "promo_badge": "One-off",
-        "promo_note": "No further messages unless you ask for them.",
-        "promo_placeholder": "you@email.com",
-        "promo_button": "Send the code",
-        "promo_consent": "I agree to my e-mail being processed under the privacy policy.",
-        "promo_sending": "Sending…",
-        "promo_sent": "Thanks — if we can issue a code for this address, it is on its way.",
-        "promo_failed": "That did not go through. Try again in a moment, or write to info@cleansia.cz."
+        "secondary": "Our services"
       },
       "footer": {
         "contacts": "Contact Us",

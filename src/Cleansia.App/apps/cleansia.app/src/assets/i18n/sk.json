@@ -521,16 +521,7 @@
         "title": "Nech sa o upratovanie stará niekto iný",
         "desc": "Objednáte za dve minúty, bez registrácie. Cenu vidíte ešte pred potvrdením.",
         "button": "Objednať upratovanie",
-        "secondary": "Naše služby",
-        "promo_title": "Zľavový kód na prvé upratovanie",
-        "promo_badge": "Jednorazovo",
-        "promo_note": "Žiadne ďalšie správy, pokiaľ si ich nevyžiadate.",
-        "promo_placeholder": "vas@email.com",
-        "promo_button": "Poslať kód",
-        "promo_consent": "Súhlasím so spracovaním e-mailu podľa zásad ochrany údajov.",
-        "promo_sending": "Odosielame…",
-        "promo_sent": "Ďakujeme — ak pre túto adresu môžeme kód vystaviť, už mieri k vám.",
-        "promo_failed": "Odoslanie sa nepodarilo. Skúste to o chvíľu znova, alebo nám napíšte na info@cleansia.cz."
+        "secondary": "Naše služby"
       },
       "footer": {
         "contacts": "Kontaktujte nás",

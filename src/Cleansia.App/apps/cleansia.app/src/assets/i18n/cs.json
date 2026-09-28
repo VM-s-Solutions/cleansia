@@ -521,16 +521,7 @@
         "title": "Ať se o úklid stará někdo jiný",
         "desc": "Objednáte za dvě minuty, bez registrace. Cenu vidíte ještě před potvrzením.",
         "button": "Objednat úklid",
-        "secondary": "Naše služby",
-        "promo_title": "Slevový kód na první úklid",
-        "promo_badge": "Jednorázově",
-        "promo_note": "Žádné další zprávy, pokud si je nevyžádáte.",
-        "promo_placeholder": "vas@email.com",
-        "promo_button": "Poslat kód",
-        "promo_consent": "Souhlasím se zpracováním e-mailu podle zásad ochrany údajů.",
-        "promo_sending": "Odesíláme…",
-        "promo_sent": "Děkujeme — pokud pro tuto adresu můžeme kód vystavit, už míří k vám.",
-        "promo_failed": "Odeslání se nezdařilo. Zkuste to za chvíli znovu, nebo nám napište na info@cleansia.cz."
+        "secondary": "Naše služby"
       },
       "footer": {
         "contacts": "Kontaktujte nás",

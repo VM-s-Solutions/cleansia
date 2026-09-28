@@ -257,6 +257,20 @@
           <span class="detail-grid__value">{{ facade.order()?.receiptNumber }}</span>
         </div>
         }
+        @if (facade.order()?.cashCollectedAt) {
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.order_detail.cash_collected_by' | translate }}</span>
+          <span class="detail-grid__value">{{ facade.order()?.cashCollectedByName || '-' }}</span>
+        </div>
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.order_detail.cash_collected_at' | translate }}</span>
+          <span class="detail-grid__value">{{ facade.formatDateTime(facade.order()?.cashCollectedAt) }}</span>
+        </div>
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.order_detail.cash_collected_amount' | translate }}</span>
+          <span class="detail-grid__value">{{ facade.formatPrice(facade.order()?.cashCollectedAmount) }}</span>
+        </div>
+        }
         @if (facade.cancellationFee(); as fee) {
         <div class="detail-grid__item">
           <span class="detail-grid__label">{{ 'pages.order_detail.cancellation_fee_rate' | translate }}</span>

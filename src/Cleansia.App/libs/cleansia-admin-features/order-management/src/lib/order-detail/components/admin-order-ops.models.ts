@@ -5,7 +5,8 @@ export type AdminOrderOpsPanel =
   | 'overrideStatus'
   | 'reassign'
   | 'refund'
-  | 'noShow';
+  | 'noShow'
+  | 'recordCash';
 
 export const NO_SHOW_OUTCOME_TOAST_MS = 10_000;
 

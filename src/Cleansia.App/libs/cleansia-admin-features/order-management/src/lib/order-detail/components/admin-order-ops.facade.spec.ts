@@ -9,6 +9,8 @@ import {
   AdminOverrideOrderStatusResponse,
   AdminReassignOrderCommand,
   AdminReassignOrderResponse,
+  AdminRecordCashReceivedCommand,
+  AdminRecordCashReceivedResponse,
   AdminRefundOrderCommand,
   AdminRefundOrderResponse,
   OrderStatus,
@@ -27,6 +29,7 @@ const TRANSLATED = new Set([
   'api.order.no_available_spots',
   'api.refund.order_not_refundable',
   'api.order.cleaner_already_started',
+  'api.order.cash_received_at_before_clean',
 ]);
 
 function translated(key: string, params?: Record<string, unknown>): string {
@@ -46,6 +49,7 @@ describe('AdminOrderOpsFacade', () => {
     reassign: jest.Mock;
     refund: jest.Mock;
     cancelNoShow: jest.Mock;
+    recordCash: jest.Mock;
   };
   let snackbar: {
     showSuccess: jest.Mock;
@@ -84,6 +88,10 @@ describe('AdminOrderOpsFacade', () => {
       apologyCredit: null,
       ...outcome,
     });
+  const recordCashResponse = AdminRecordCashReceivedResponse.fromJS({
+    orderId: 'order-1',
+    paymentStatus: PaymentStatus.Paid,
+  });
 
   beforeEach(() => {
     orderClient = {
@@ -92,6 +100,7 @@ describe('AdminOrderOpsFacade', () => {
       reassign: jest.fn(),
       refund: jest.fn(),
       cancelNoShow: jest.fn(),
+      recordCash: jest.fn(),
     };
     snackbar = {
       showSuccess: jest.fn(),
@@ -379,6 +388,112 @@ describe('AdminOrderOpsFacade', () => {
       expect(facade.submitting()).toBe(false);
       expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
       expect(onSuccess).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('record cash received', () => {
+    const receivedAt = new Date('2026-09-28T09:30:00Z');
+
+    function fillRecordCash(amount = ' 1200.50 '): void {
+      facade.setCashEmployeeId('employee-1');
+      facade.setCashReceivedAt(receivedAt);
+      facade.setCashAmount(amount);
+    }
+
+    it('enables submit only once the cleaner, the time and the amount are all given', () => {
+      expect(facade.canSubmitRecordCash()).toBe(false);
+
+      facade.setCashEmployeeId('employee-1');
+      expect(facade.canSubmitRecordCash()).toBe(false);
+
+      facade.setCashReceivedAt(receivedAt);
+      expect(facade.canSubmitRecordCash()).toBe(false);
+
+      facade.setCashAmount('1200.50');
+      expect(facade.canSubmitRecordCash()).toBe(true);
+    });
+
+    it('does not enable submit on an amount that is not a number', () => {
+      fillRecordCash('twelve');
+      expect(facade.canSubmitRecordCash()).toBe(false);
+    });
+
+    it('builds a typed command with who took the cash, when and how much', () => {
+      orderClient.recordCash.mockReturnValue(of(recordCashResponse));
+      fillRecordCash();
+
+      facade.recordCashReceived('order-1', jest.fn());
+
+      const command: AdminRecordCashReceivedCommand = orderClient.recordCash.mock.calls[0][0];
+      expect(command).toBeInstanceOf(AdminRecordCashReceivedCommand);
+      expect(command.toJSON()).toEqual({
+        orderId: 'order-1',
+        employeeId: 'employee-1',
+        receivedAt: '2026-09-28T09:30:00.000Z',
+        amount: 1200.5,
+      });
+    });
+
+    it('does not call the endpoint while any field is missing', () => {
+      facade.setCashEmployeeId('employee-1');
+      facade.setCashAmount('1200');
+      facade.recordCashReceived('order-1', jest.fn());
+
+      facade.setCashEmployeeId(null);
+      facade.setCashReceivedAt(receivedAt);
+      facade.recordCashReceived('order-1', jest.fn());
+
+      fillRecordCash();
+      facade.recordCashReceived('', jest.fn());
+
+      expect(orderClient.recordCash).not.toHaveBeenCalled();
+    });
+
+    it('confirms, closes the panel, clears the form and re-loads on success', () => {
+      orderClient.recordCash.mockReturnValue(of(recordCashResponse));
+      facade.openPanel('recordCash');
+      fillRecordCash();
+      const onSuccess = jest.fn();
+
+      facade.recordCashReceived('order-1', onSuccess);
+
+      expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
+        'pages.order_management.ops.record_cash.success'
+      );
+      expect(facade.activePanel()).toBeNull();
+      expect(facade.cashEmployeeId()).toBeNull();
+      expect(facade.cashReceivedAt()).toBeNull();
+      expect(facade.cashAmount()).toBe('');
+      expect(onSuccess).toHaveBeenCalledTimes(1);
+    });
+
+    it('shows the refusal inline, keeps what was typed and does not re-load', () => {
+      orderClient.recordCash.mockReturnValue(
+        throwError(() => ({ result: { detail: 'order.cash_received_at_before_clean' } }))
+      );
+      facade.openPanel('recordCash');
+      fillRecordCash();
+      const onSuccess = jest.fn();
+
+      facade.recordCashReceived('order-1', onSuccess);
+
+      expect(facade.errorKey()).toBe('api.order.cash_received_at_before_clean');
+      expect(facade.activePanel()).toBe('recordCash');
+      expect(facade.cashAmount()).toBe(' 1200.50 ');
+      expect(facade.submitting()).toBe(false);
+      expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
+      expect(onSuccess).not.toHaveBeenCalled();
+    });
+
+    it('clears the record-cash form when another panel is opened', () => {
+      facade.openPanel('recordCash');
+      fillRecordCash();
+
+      facade.openPanel('refund');
+
+      expect(facade.cashEmployeeId()).toBeNull();
+      expect(facade.cashReceivedAt()).toBeNull();
+      expect(facade.cashAmount()).toBe('');
     });
   });
 });

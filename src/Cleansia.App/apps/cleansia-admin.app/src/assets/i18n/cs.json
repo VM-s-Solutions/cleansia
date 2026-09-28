@@ -661,6 +661,16 @@
           "nothing_refunded": "Nebyla žádná platba kartou k vrácení.",
           "credit_granted": "Zákazník dostal omluvný kredit {{amount}}.",
           "no_credit": "Omluvný kredit nebyl vydán: jde o objednávku hosta, nebo pro tuto měnu není nastaven."
+        },
+        "record_cash": {
+          "action": "Zaznamenat přijatou hotovost",
+          "context": "Použijte, když uklízeč převzal hotovost, ale nemohl ji zaznamenat ve své aplikaci. Objednávka se tím stane zaplacenou, takže ji uklízeč může dokončit; pokud už je dokončená, účtenka se vystaví hned.",
+          "no_cleaner": "Na této zakázce nikdo není. Nejprve na ni přiřaďte uklízeče, který hotovost převzal.",
+          "cleaner": "Uklízeč, který hotovost převzal",
+          "received_at": "Přijato",
+          "amount": "Přijatá částka",
+          "submit": "Zaznamenat hotovost",
+          "success": "Hotovost byla zaznamenána. Objednávka je zaplacená."
         }
       },
       "messages": {
@@ -698,6 +708,9 @@
       "payment_status": "Stav platby",
       "total_price": "Celková cena",
       "receipt_number": "Číslo účtenky",
+      "cash_collected_by": "Hotovost převzal",
+      "cash_collected_at": "Hotovost přijata",
+      "cash_collected_amount": "Přijatá hotovost",
       "cancellation_fee_rate": "Storno poplatek",
       "cancellation_fee_owed": "Dosud dlužný poplatek",
       "assigned_employee": "Přiřazený partner",

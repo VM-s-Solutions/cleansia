@@ -661,6 +661,16 @@
           "nothing_refunded": "Nebola žiadna platba kartou na vrátenie.",
           "credit_granted": "Zákazník dostal ospravedlňujúci kredit {{amount}}.",
           "no_credit": "Ospravedlňujúci kredit nebol vydaný: ide o objednávku hosťa, alebo pre túto menu nie je nastavený."
+        },
+        "record_cash": {
+          "action": "Zaznamenať prijatú hotovosť",
+          "context": "Použite, keď upratovač prevzal hotovosť, ale nemohol ju zaznamenať vo svojej aplikácii. Objednávka sa tým stane zaplatenou, takže ju upratovač môže dokončiť; ak už je dokončená, účtenka sa vystaví hneď.",
+          "no_cleaner": "Na tejto zakázke nikto nie je. Najprv na ňu priraďte upratovača, ktorý hotovosť prevzal.",
+          "cleaner": "Upratovač, ktorý hotovosť prevzal",
+          "received_at": "Prijaté",
+          "amount": "Prijatá suma",
+          "submit": "Zaznamenať hotovosť",
+          "success": "Hotovosť bola zaznamenaná. Objednávka je zaplatená."
         }
       },
       "messages": {
@@ -698,6 +708,9 @@
       "payment_status": "Stav platby",
       "total_price": "Celková cena",
       "receipt_number": "Číslo účtenky",
+      "cash_collected_by": "Hotovosť prevzal",
+      "cash_collected_at": "Hotovosť prijatá",
+      "cash_collected_amount": "Prijatá hotovosť",
       "cancellation_fee_rate": "Storno poplatok",
       "cancellation_fee_owed": "Doteraz dlžný poplatok",
       "assigned_employee": "Priradený partner",

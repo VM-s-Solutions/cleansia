@@ -661,6 +661,16 @@
           "nothing_refunded": "There was no card payment to refund.",
           "credit_granted": "The customer received {{amount}} in apology credit.",
           "no_credit": "No apology credit was issued: a guest order, or none is set for this currency."
+        },
+        "record_cash": {
+          "action": "Record cash received",
+          "context": "Use this when the cleaner took the cash but could not record it in their app. The order becomes paid, so the cleaner can complete it; if it is already completed, its receipt is issued now.",
+          "no_cleaner": "Nobody is on this job. Put the cleaner who took the cash on it first.",
+          "cleaner": "Cleaner who took the cash",
+          "received_at": "Received at",
+          "amount": "Amount received",
+          "submit": "Record cash",
+          "success": "Cash recorded. The order is paid."
         }
       },
       "messages": {
@@ -698,6 +708,9 @@
       "payment_status": "Payment Status",
       "total_price": "Total Price",
       "receipt_number": "Receipt Number",
+      "cash_collected_by": "Cash taken by",
+      "cash_collected_at": "Cash received at",
+      "cash_collected_amount": "Cash received",
       "cancellation_fee_rate": "Cancellation fee",
       "cancellation_fee_owed": "Fee still owed",
       "assigned_employee": "Assigned Partner",

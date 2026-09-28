@@ -17,6 +17,8 @@ import {
   ICleansiaSelectOption,
 } from '@cleansia/components';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { DatePickerModule } from 'primeng/datepicker';
+import { FloatLabelModule } from 'primeng/floatlabel';
 import { AdminOrderOpsFacade } from './admin-order-ops.facade';
 import {
   AdminOrderOpsPanel,
@@ -34,6 +36,8 @@ import {
     CleansiaTextInputComponent,
     CleansiaTextareaComponent,
     CleansiaButtonComponent,
+    DatePickerModule,
+    FloatLabelModule,
   ],
   templateUrl: './admin-order-ops.component.html',
   providers: [AdminOrderOpsFacade],
@@ -90,6 +94,18 @@ export class AdminOrderOpsComponent {
     this.facade.setToEmployeeId(value);
   }
 
+  onCashEmployeeChange(value: string | null): void {
+    this.facade.setCashEmployeeId(value);
+  }
+
+  onCashReceivedAtChange(value: Date | null): void {
+    this.facade.setCashReceivedAt(value);
+  }
+
+  onCashAmountChange(value: string): void {
+    this.facade.setCashAmount(value);
+  }
+
   submitCancel(): void {
     const orderId = this.order().id;
     if (!orderId) return;
@@ -118,5 +134,11 @@ export class AdminOrderOpsComponent {
     const order = this.order();
     if (!order.id) return;
     this.facade.cancelAsNoShow(order.id, order.currency?.code, () => this.changed.emit());
+  }
+
+  submitRecordCash(): void {
+    const orderId = this.order().id;
+    if (!orderId) return;
+    this.facade.recordCashReceived(orderId, () => this.changed.emit());
   }
 }

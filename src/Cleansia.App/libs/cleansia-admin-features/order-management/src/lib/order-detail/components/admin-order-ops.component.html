@@ -31,6 +31,12 @@
   [outlined]="facade.activePanel() !== 'noShow'"
   (onClick)="togglePanel('noShow')"
 />
+<cleansia-button
+  [label]="'pages.order_management.ops.record_cash.action' | translate"
+  icon="pi pi-wallet"
+  [outlined]="facade.activePanel() !== 'recordCash'"
+  (onClick)="togglePanel('recordCash')"
+/>
 
 @if (facade.activePanel() === 'cancel') {
 <div class="detail-actions__panel">
@@ -160,5 +166,57 @@
     [loading]="facade.submitting()"
     (onClick)="submitNoShow()"
   />
+</div>
+}
+
+@if (facade.activePanel() === 'recordCash') {
+<div class="detail-actions__panel">
+  <p class="detail-actions__hint">
+    {{ 'pages.order_management.ops.record_cash.context' | translate }}
+  </p>
+  @if (!hasAssignedEmployees()) {
+  <p class="detail-actions__hint">
+    {{ 'pages.order_management.ops.record_cash.no_cleaner' | translate }}
+  </p>
+  } @else {
+  <cleansia-select
+    [label]="'pages.order_management.ops.record_cash.cleaner' | translate"
+    [options]="fromEmployeeOptions()"
+    [ngModel]="facade.cashEmployeeId()"
+    (valueChanges)="onCashEmployeeChange($event)"
+    [showClear]="false"
+  />
+  <p-floatlabel variant="on">
+    <p-datepicker
+      inputId="admin-order-ops-cash-received-at"
+      [ngModel]="facade.cashReceivedAt()"
+      (ngModelChange)="onCashReceivedAtChange($event)"
+      [showTime]="true"
+      [showIcon]="true"
+      iconDisplay="input"
+      dateFormat="dd.mm.yy"
+      appendTo="body"
+    />
+    <label for="admin-order-ops-cash-received-at">
+      {{ 'pages.order_management.ops.record_cash.received_at' | translate }}
+    </label>
+  </p-floatlabel>
+  <cleansia-text-input
+    dataType="number"
+    [label]="'pages.order_management.ops.record_cash.amount' | translate"
+    [ngModel]="facade.cashAmount()"
+    (valueChanges)="onCashAmountChange($event)"
+  />
+  @if (facade.errorKey()) {
+  <p class="detail-actions__error">{{ facade.errorKey()! | translate }}</p>
+  }
+  <cleansia-button
+    [label]="'pages.order_management.ops.record_cash.submit' | translate"
+    icon="pi pi-wallet"
+    [loading]="facade.submitting()"
+    [disabled]="!facade.canSubmitRecordCash()"
+    (onClick)="submitRecordCash()"
+  />
+  }
 </div>
 }

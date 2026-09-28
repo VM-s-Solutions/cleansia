@@ -6,6 +6,7 @@ import {
   AdminClient,
   AdminOverrideOrderStatusCommand,
   AdminReassignOrderCommand,
+  AdminRecordCashReceivedCommand,
   AdminRefundOrderCommand,
   OrderStatus,
 } from '@cleansia/admin-services';
@@ -15,6 +16,15 @@ import { formatMoney, localeFor } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { Observable, catchError, finalize, of, takeUntil } from 'rxjs';
 import { AdminOrderOpsPanel, NO_SHOW_OUTCOME_TOAST_MS } from './admin-order-ops.models';
+
+function parseAmount(value: string): number | null {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+  const parsed = Number(trimmed);
+  return Number.isFinite(parsed) ? parsed : null;
+}
 
 @Injectable()
 export class AdminOrderOpsFacade extends UnsubscribeControlDirective {
@@ -30,6 +40,9 @@ export class AdminOrderOpsFacade extends UnsubscribeControlDirective {
   readonly targetStatus = signal<OrderStatus | null>(null);
   readonly fromEmployeeId = signal<string | null>(null);
   readonly toEmployeeId = signal<string>('');
+  readonly cashEmployeeId = signal<string | null>(null);
+  readonly cashReceivedAt = signal<Date | null>(null);
+  readonly cashAmount = signal<string>('');
 
   readonly canSubmitOverrideStatus = computed(
     () => this.targetStatus() !== null && !this.submitting()
@@ -42,6 +55,13 @@ export class AdminOrderOpsFacade extends UnsubscribeControlDirective {
    */
   readonly canSubmitReassign = computed(
     () => this.toEmployeeId().trim().length > 0 && !this.submitting()
+  );
+  readonly canSubmitRecordCash = computed(
+    () =>
+      !!this.cashEmployeeId() &&
+      this.cashReceivedAt() !== null &&
+      parseAmount(this.cashAmount()) !== null &&
+      !this.submitting()
   );
 
   openPanel(panel: AdminOrderOpsPanel): void {
@@ -72,6 +92,18 @@ export class AdminOrderOpsFacade extends UnsubscribeControlDirective {
 
   setToEmployeeId(value: string): void {
     this.toEmployeeId.set(value);
+  }
+
+  setCashEmployeeId(value: string | null): void {
+    this.cashEmployeeId.set(value);
+  }
+
+  setCashReceivedAt(value: Date | null): void {
+    this.cashReceivedAt.set(value);
+  }
+
+  setCashAmount(value: string): void {
+    this.cashAmount.set(value);
   }
 
   cancelOrder(orderId: string, onSuccess: () => void): void {
@@ -163,6 +195,28 @@ export class AdminOrderOpsFacade extends UnsubscribeControlDirective {
     );
   }
 
+  recordCashReceived(orderId: string, onSuccess: () => void): void {
+    const employeeId = this.cashEmployeeId();
+    const receivedAt = this.cashReceivedAt();
+    const amount = parseAmount(this.cashAmount());
+    if (!orderId || !employeeId || receivedAt === null || amount === null) {
+      return;
+    }
+    const command = new AdminRecordCashReceivedCommand();
+    command.orderId = orderId;
+    command.employeeId = employeeId;
+    command.receivedAt = receivedAt;
+    command.amount = amount;
+    this.run(
+      this.adminClient.adminOrderClient.recordCash(command),
+      () =>
+        this.snackbar.showSuccessTranslated(
+          'pages.order_management.ops.record_cash.success'
+        ),
+      onSuccess
+    );
+  }
+
   private announceNoShow(
     outcome: AdminCancelOrderAsNoShowResponse,
     currencyCode: string | undefined
@@ -224,6 +278,9 @@ export class AdminOrderOpsFacade extends UnsubscribeControlDirective {
     this.targetStatus.set(null);
     this.fromEmployeeId.set(null);
     this.toEmployeeId.set('');
+    this.cashEmployeeId.set(null);
+    this.cashReceivedAt.set(null);
+    this.cashAmount.set('');
     this.errorKey.set(null);
   }
 

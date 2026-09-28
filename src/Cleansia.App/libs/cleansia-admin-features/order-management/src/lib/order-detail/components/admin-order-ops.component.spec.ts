@@ -111,8 +111,12 @@ class FacadeStub {
   readonly targetStatus = signal<OrderStatus | null>(null);
   readonly fromEmployeeId = signal<string | null>(null);
   readonly toEmployeeId = signal<string>('');
+  readonly cashEmployeeId = signal<string | null>(null);
+  readonly cashReceivedAt = signal<Date | null>(null);
+  readonly cashAmount = signal<string>('');
   readonly canSubmitOverrideStatus = signal<boolean>(false);
   readonly canSubmitReassign = signal<boolean>(false);
+  readonly canSubmitRecordCash = signal<boolean>(false);
   openPanel = jest.fn((panel: AdminOrderOpsPanel) =>
     this.activePanel.set(this.activePanel() === panel ? null : panel)
   );
@@ -121,11 +125,15 @@ class FacadeStub {
   setTargetStatus = jest.fn();
   setFromEmployeeId = jest.fn();
   setToEmployeeId = jest.fn();
+  setCashEmployeeId = jest.fn();
+  setCashReceivedAt = jest.fn();
+  setCashAmount = jest.fn();
   cancelOrder = jest.fn();
   overrideStatus = jest.fn();
   reassignOrder = jest.fn();
   refundOrder = jest.fn();
   cancelAsNoShow = jest.fn();
+  recordCashReceived = jest.fn();
 }
 
 function makeOrder(partial: Partial<OrderItem>): OrderItem {
@@ -189,7 +197,7 @@ describe('AdminOrderOpsComponent', () => {
     expect(meta.onPush).toBe(true);
   });
 
-  it('renders the five action buttons', () => {
+  it('renders the six action buttons', () => {
     setOrder(makeOrder({}));
     const buttons = fixture.debugElement
       .queryAll(By.directive(ButtonStub))
@@ -201,6 +209,7 @@ describe('AdminOrderOpsComponent', () => {
         'pages.order_management.ops.reassign.action',
         'pages.order_management.ops.refund.action',
         'pages.order_management.ops.no_show.action',
+        'pages.order_management.ops.record_cash.action',
       ])
     );
   });
@@ -229,6 +238,35 @@ describe('AdminOrderOpsComponent', () => {
       'order-1',
       'CZK',
       expect.any(Function)
+    );
+  });
+
+  it('opens the record-cash panel, offers the assigned cleaners and delegates submit', () => {
+    setOrder(makeOrder({}));
+    component.togglePanel('recordCash');
+    expect(facade.openPanel).toHaveBeenCalledWith('recordCash');
+    fixture.detectChanges();
+
+    const select = fixture.debugElement.query(By.directive(SelectStub))
+      .componentInstance as SelectStub;
+    expect(select.label()).toBe('pages.order_management.ops.record_cash.cleaner');
+    expect(select.options()).toEqual([{ label: 'Jane Cleaner', value: 'employee-1' }]);
+
+    component.submitRecordCash();
+    expect(facade.recordCashReceived).toHaveBeenCalledWith(
+      'order-1',
+      expect.any(Function)
+    );
+  });
+
+  it('shows no record-cash form when nobody is on the job', () => {
+    setOrder(makeOrder({ assignedEmployees: [] }));
+    component.togglePanel('recordCash');
+    fixture.detectChanges();
+
+    expect(fixture.debugElement.query(By.directive(SelectStub))).toBeNull();
+    expect(fixture.nativeElement.textContent).toContain(
+      'pages.order_management.ops.record_cash.no_cleaner'
     );
   });
 

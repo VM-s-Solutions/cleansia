@@ -125,6 +125,7 @@ public class RecurringMaterializationRequiresPaidMembershipTests
             _templateRepository.Object,
             _savedAddressRepository.Object,
             _addressRepository.Object,
+            Mock.Of<ICountryConfigurationRepository>(),
             OrderMarketDoubles.Trading(Currency.Create("CZK", "Kč", "Czech Koruna")),
             _orderRepository.Object,
             _pricingCalculator.Object,

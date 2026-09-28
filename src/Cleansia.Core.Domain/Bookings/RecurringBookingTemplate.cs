@@ -23,10 +23,13 @@ public class RecurringBookingTemplate : TenantAuditable
     [Required]
     public RecurrenceFrequency Frequency { get; private set; }
 
-    /// <summary>Day of the week the cleaning happens.</summary>
+    /// <summary>Day of the week the cleaning happens, in the saved address's market calendar.</summary>
     public System.DayOfWeek DayOfWeek { get; private set; }
 
-    /// <summary>Time of day the cleaning starts (in the user's local time, UTC stored).</summary>
+    /// <summary>
+    /// Wall-clock time the cleaning starts in the saved address's market zone, not UTC: each occurrence is
+    /// converted on its own date, so 10:00 stays 10:00 across a daylight-saving change.
+    /// </summary>
     public TimeOnly TimeOfDay { get; private set; }
 
     public int Rooms { get; private set; }

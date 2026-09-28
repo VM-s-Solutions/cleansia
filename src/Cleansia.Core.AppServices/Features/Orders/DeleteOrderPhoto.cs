@@ -61,8 +61,7 @@ public class DeleteOrderPhoto
             try
             {
                 var blobClient = blobClientFactory.GetBlobContainerClient(Constants.BlobContainers.OrderPhotos);
-                var blobName = ExtractBlobNameFromUrl(photo.BlobUrl);
-                await blobClient.DeleteAsync(blobName, cancellationToken);
+                await blobClient.DeleteAsync(OrderPhotoBlobName.FromUrl(photo.BlobUrl), cancellationToken);
             }
             catch
             {
@@ -71,13 +70,6 @@ public class DeleteOrderPhoto
             photoRepository.Remove(photo);
 
             return BusinessResult.Success(new Response(Success: true));
-        }
-
-        private static string ExtractBlobNameFromUrl(string blobUrl)
-        {
-            var uri = new Uri(blobUrl);
-            var segments = uri.Segments.Skip(2);
-            return string.Join("", segments);
         }
     }
 }

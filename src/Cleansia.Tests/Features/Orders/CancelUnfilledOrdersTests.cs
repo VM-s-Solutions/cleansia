@@ -9,6 +9,8 @@ using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Core.Domain.Notifications;
+using Cleansia.Core.Queue.Abstractions;
+using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Infra.Common.Validations;
 using Microsoft.Extensions.Logging;
 using MockQueryable;
@@ -42,6 +44,8 @@ public class CancelUnfilledOrdersTests
     private readonly Mock<ICreditAccountRepository> _credit = new();
     private readonly Mock<IRefundService> _refunds = new();
     private readonly Mock<INotificationProducer> _notifications = new();
+    private readonly Mock<IGuestOrderAccessTokenRepository> _guestTokens = new();
+    private readonly List<(string Queue, string Key, object Message)> _enqueued = [];
     private readonly Mock<ITenantProvider> _tenants = new();
     private readonly Mock<IUnitOfWork> _uow = new();
     private readonly List<(LogLevel Level, string Message)> _log = [];
@@ -69,6 +73,10 @@ public class CancelUnfilledOrdersTests
                 It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(BusinessResult.Success(
                 new RefundResult("refund-1", "refund:key", 1000m, RefundStatus.Succeeded, false)));
+
+        _guestTokens.Setup(r => r.GetLiveForOrderIgnoringTenantAsync(
+                It.IsAny<string>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<GuestOrderAccessToken>());
 
         _credit.Setup(c => c.EnsureForUserAsync(
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -156,7 +164,8 @@ public class CancelUnfilledOrdersTests
 
     private CancelUnfilledOrders.Handler Handler() =>
         new(_orders.Object, _credit.Object, _refunds.Object,
-            _notifications.Object, _tenants.Object, _uow.Object,
+            _notifications.Object, new GuestOrderAccessTokenIssuer(_guestTokens.Object), new RecordingDispatch(_enqueued),
+            _tenants.Object, _uow.Object,
             new CapturingLogger(_log));
 
     private Task<BusinessResult<CancelUnfilledOrders.Response>> Sweep() =>
@@ -615,6 +624,71 @@ public class CancelUnfilledOrdersTests
         _uow.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Exactly(2));
         _tenants.Verify(t => t.SetTenantOverride("tenant-a"), Times.Once);
         _tenants.Verify(t => t.SetTenantOverride("tenant-b"), Times.Once);
+    }
+
+    /// <summary>
+    /// A guest has no push and no feed, so the e-mail is the only word they get that nobody is coming. It
+    /// retires every link they hold — the send mints the one that still opens the booking — and states the
+    /// refund that actually went through.
+    /// </summary>
+    [Fact]
+    public async Task AGuestIsEmailedWithTheirOldLinksRetiredAndTheRefundThatWentThrough()
+    {
+        var order = UnfilledOrder(userId: null);
+        order.SetLanguage("cs");
+        var oldLink = GuestOrderAccessToken.Issue(order.Id, DateTimeOffset.UtcNow.AddDays(3));
+        _guestTokens.Setup(r => r.GetLiveForOrderIgnoringTenantAsync(
+                order.Id, It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([oldLink]);
+        Arrange(order);
+
+        await Sweep();
+
+        Assert.NotNull(oldLink.RevokedOn);
+        var (queue, key, message) = Assert.Single(_enqueued);
+        Assert.Equal(QueueNames.SendEmail, queue);
+        Assert.Equal(MessageKeys.GuestOrderCancelledEmail(order.Id), key);
+        var email = Assert.IsType<QueueEnvelope<SendGuestOrderCancellationEmailMessage>>(message).Payload;
+        Assert.Equal(order.Id, email.OrderId);
+        Assert.Equal("cs", email.LanguageCode);
+        Assert.Equal(1000m, email.SuccessfulRefundAmount);
+    }
+
+    [Fact]
+    public async Task AGuestWhoseRefundDidNotGoThroughIsNotToldTheyWereRefunded()
+    {
+        var order = UnfilledOrder(userId: null);
+        _refunds.Setup(r => r.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(BusinessResult.Failure<RefundResult>(
+                new Error(nameof(RefundRequest.Amount), BusinessErrorMessage.RefundFailed)));
+        Arrange(order);
+
+        await Sweep();
+
+        var (_, _, message) = Assert.Single(_enqueued);
+        var email = Assert.IsType<QueueEnvelope<SendGuestOrderCancellationEmailMessage>>(message).Payload;
+        Assert.Null(email.SuccessfulRefundAmount);
+        Assert.Equal(Constants.Language.English, email.LanguageCode);
+    }
+
+    [Fact]
+    public async Task AnAccountHolderIsToldByTheirOwnNotificationAndGetsNoGuestEmail()
+    {
+        Arrange(UnfilledOrder());
+
+        await Sweep();
+
+        Assert.Empty(_enqueued);
+        _guestTokens.Verify(r => r.GetLiveForOrderIgnoringTenantAsync(
+            It.IsAny<string>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    private sealed class RecordingDispatch(List<(string Queue, string Key, object Message)> enqueued) : IPendingDispatch
+    {
+        public void Enqueue<T>(string queueName, T message, string messageKey) =>
+            enqueued.Add((queueName, messageKey, message!));
+
+        public IReadOnlyList<PendingMessage> Drain() => [];
     }
 
     private sealed class CapturingLogger(List<(LogLevel Level, string Message)> entries)

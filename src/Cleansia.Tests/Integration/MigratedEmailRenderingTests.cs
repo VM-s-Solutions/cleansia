@@ -316,7 +316,8 @@ public class MigratedEmailRenderingTests
             NullLogger<EmailService>.Instance,
             factory.Object,
             repository.Object,
-            new EmailTemplateRenderer());
+            new EmailTemplateRenderer(),
+            Mock.Of<ICountryConfigurationRepository>());
 
         return (service, wire);
     }

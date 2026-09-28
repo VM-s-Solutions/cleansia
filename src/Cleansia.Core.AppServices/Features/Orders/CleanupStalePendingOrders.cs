@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Notifications;
@@ -6,6 +7,7 @@ using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
 using Cleansia.Core.AppServices.Services;
+using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -50,6 +52,8 @@ public class CleanupStalePendingOrders
         IOrderRepository orderRepository,
         ICreditAccountRepository creditAccountRepository,
         INotificationProducer notificationProducer,
+        GuestOrderAccessTokenIssuer guestAccessTokenIssuer,
+        IPendingDispatch pending,
         ITenantProvider tenantProvider,
         IUnitOfWork unitOfWork,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
@@ -69,10 +73,17 @@ public class CleanupStalePendingOrders
             // AutoCancelStaleRecurringOrders, which fires at T-1h once the reminder has gone
             // unanswered; this term is the exact complement of that sweep's RecurringTemplateId !=
             // null, so every Pending order has exactly one retractor.
+            //
+            // An order already cancelled is not an abandoned checkout, however its money axis reads — a
+            // cancel before paying leaves it Pending, and anonymisation clears RecurringTemplateId on old
+            // cancelled occurrences. Re-cancelling one would overwrite who cancelled it and why, and stage
+            // the guest e-mail again under a key its first cancellation already wrote: a commit that fails
+            // on every tick and takes the rest of the sweep with it.
             var stale = await orderRepository.GetQueryableIgnoringTenant()
                 .Where(o => o.PaymentStatus == PaymentStatus.Pending
                     && o.PaymentType == PaymentType.Card
                     && o.RecurringTemplateId == null
+                    && o.CurrentStatus != OrderStatus.Cancelled
                     && o.CreatedOn < cutoff)
                 .Include(o => o.OrderStatusHistory)
                 .ToListAsync(cancellationToken);
@@ -131,6 +142,9 @@ public class CleanupStalePendingOrders
                             order.Id,
                             cancellationToken);
                     }
+
+                    await GuestCancellationEmail.EnqueueAsync(order, EmailLocale.Resolve(order.LanguageCode),
+                        successfulRefundAmount: null, guestAccessTokenIssuer, pending, cancellationToken);
 
                     cancelledCount++;
                 }

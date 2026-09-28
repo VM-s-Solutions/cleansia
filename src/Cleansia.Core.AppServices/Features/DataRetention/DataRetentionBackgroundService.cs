@@ -134,10 +134,13 @@ public class DataRetentionBackgroundService(
 
         var totalDeleted = 0;
 
+        // A logged-out device is a tombstone kept for a later login to reclaim; it goes on the same window,
+        // counted from the logout.
         while (true)
         {
             var batch = await deviceRepository.GetQueryable()
-                .Where(device => device.IsActive && device.LastActiveAt < cutoff)
+                .Where(device => (device.IsActive && device.LastActiveAt < cutoff)
+                    || (!device.IsActive && (device.DeactivatedOn ?? device.LastActiveAt) < cutoff))
                 .Take(RetentionDefaults.BatchSize)
                 .ToListAsync(ct);
 
@@ -180,7 +183,8 @@ public class DataRetentionBackgroundService(
             var batch = await orderRepository.GetQueryable()
                 .Where(o => o.CleaningDateTime < cutoff
                          && o.CustomerName != AnonymizationMarker.Value
-                         && o.OrderStatusHistory.Any(h => h.Status == OrderStatus.Completed))
+                         && (o.CurrentStatus == OrderStatus.Cancelled
+                             || o.OrderStatusHistory.Any(h => h.Status == OrderStatus.Completed)))
                 .Include(o => o.Reviews)
                 .Include(o => o.OrderNotes)
                 .Include(o => o.OrderIssues)
@@ -217,7 +221,7 @@ public class DataRetentionBackgroundService(
             totalProcessed += batch.Count;
         }
 
-        logger.LogInformation("Anonymized PII on {Total} completed orders older than {Years} years",
+        logger.LogInformation("Anonymized PII on {Total} completed or cancelled orders older than {Years} years",
             totalProcessed, years);
     }
 
@@ -254,15 +258,26 @@ public class DataRetentionBackgroundService(
 
         var blobClient = blobClientFactory.GetBlobContainerClient(Constants.BlobContainers.EmployeeDocuments);
         var totalDeleted = 0;
+        string? afterId = null;
 
+        // Paged by id rather than re-reading the head: a document whose blob would not delete keeps its row,
+        // since FilePath is the only name the blob has, and must not be read again in this run.
         while (true)
         {
-            var batch = await employeeDocumentRepository.GetQueryable()
-                .Where(doc => !doc.IsActive && doc.DeactivatedOn < cutoff)
+            var query = employeeDocumentRepository.GetQueryable()
+                .Where(doc => !doc.IsActive && doc.DeactivatedOn < cutoff);
+            if (afterId is not null)
+            {
+                query = query.Where(doc => string.Compare(doc.Id, afterId) > 0);
+            }
+
+            var batch = await query
+                .OrderBy(doc => doc.Id)
                 .Take(RetentionDefaults.BatchSize)
                 .ToListAsync(ct);
 
             if (batch.Count == 0) break;
+            afterId = batch[^1].Id;
 
             foreach (var doc in batch)
             {
@@ -278,10 +293,10 @@ public class DataRetentionBackgroundService(
                 }
 
                 employeeDocumentRepository.Remove(doc);
+                totalDeleted++;
             }
 
             await employeeDocumentRepository.CommitAsync(ct);
-            totalDeleted += batch.Count;
         }
 
         logger.LogInformation("Purged {Total} superseded documents older than {Days} days",
@@ -402,7 +417,7 @@ public class DataRetentionBackgroundService(
     private async Task CleanOrderPhotosAsync(CancellationToken ct)
     {
         var days = await configProvider.GetAsync(TenantSettingCatalog.OrderPhotosDays, ct);
-        var completedBefore = DateTime.UtcNow.AddDays(-days);
+        var endedBefore = DateTime.UtcNow.AddDays(-days);
         var operatorTenantId = tenantProvider.GetCurrentTenantId()!;
 
         var blobClient = blobClientFactory.GetBlobContainerClient(Constants.BlobContainers.OrderPhotos);
@@ -414,7 +429,7 @@ public class DataRetentionBackgroundService(
         while (true)
         {
             var batch = await orderPhotoRepository.GetPastRetentionAsync(
-                operatorTenantId, completedBefore, afterId, RetentionDefaults.BatchSize, ct);
+                operatorTenantId, endedBefore, afterId, RetentionDefaults.BatchSize, ct);
 
             if (batch.Count == 0) break;
             afterId = batch[^1].Id;
@@ -439,7 +454,7 @@ public class DataRetentionBackgroundService(
             await orderPhotoRepository.CommitAsync(ct);
         }
 
-        logger.LogInformation("Deleted {Total} order photos of orders completed more than {Days} days ago",
+        logger.LogInformation("Deleted {Total} order photos of orders completed or cancelled more than {Days} days ago",
             totalDeleted, days);
     }
 

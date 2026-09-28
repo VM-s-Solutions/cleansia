@@ -166,7 +166,8 @@ public class EmailServiceCurrencySymbolTests
             NullLogger<EmailService>.Instance,
             httpClientFactory.Object,
             translationRepository.Object,
-            renderer.Object);
+            renderer.Object,
+            Mock.Of<ICountryConfigurationRepository>());
 
         return (service, captured);
     }

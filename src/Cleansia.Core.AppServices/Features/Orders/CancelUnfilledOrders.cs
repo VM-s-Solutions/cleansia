@@ -9,6 +9,7 @@ using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
+using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -90,6 +91,8 @@ public class CancelUnfilledOrders
         ICreditAccountRepository creditAccountRepository,
         IRefundService refundService,
         INotificationProducer notificationProducer,
+        GuestOrderAccessTokenIssuer guestAccessTokenIssuer,
+        IPendingDispatch pending,
         ITenantProvider tenantProvider,
         IUnitOfWork unitOfWork,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
@@ -163,18 +166,19 @@ public class CancelUnfilledOrders
                     // saves this cancel before Stripe is called, so however the refund fails, the order
                     // is already out of every later tick.
 
-                    var refundIssued = false;
+                    decimal? refundedAmount = null;
                     if (order.PaymentType == PaymentType.Card
                         && order.PaymentStatus == PaymentStatus.Paid
                         && order.TotalPrice > 0m
                         && order.HasRefundableChargeSurface)
                     {
-                        refundIssued = await TryRefundAsync(order, cancellationToken);
-                        if (refundIssued)
+                        refundedAmount = await TryRefundAsync(order, cancellationToken);
+                        if (refundedAmount is not null)
                         {
                             refunded++;
                         }
                     }
+                    var refundIssued = refundedAmount is not null;
 
                     // A refund of the whole sale already returned the applied credit on its own leg.
                     // Without one — none attempted, or it failed — the credit comes back here, now:
@@ -229,6 +233,9 @@ public class CancelUnfilledOrders
                             order.Id,
                             cancellationToken);
                     }
+
+                    await GuestCancellationEmail.EnqueueAsync(order, EmailLocale.Resolve(order.LanguageCode),
+                        refundedAmount, guestAccessTokenIssuer, pending, cancellationToken);
                 }
 
                 // Inside the loop: rows are stamped from the ambient tenant AT COMMIT TIME, so one
@@ -250,9 +257,9 @@ public class CancelUnfilledOrders
         }
 
         /// <summary>
-        /// The full card refund, and whether it went through. A failure is logged for a person and
-        /// carried on from: the cancellation is still right, and a refund that did not go through is
-        /// not a reason to leave the customer holding a booking nobody is coming to.
+        /// The full card refund: what it returned, or null when it did not go through. A failure is logged
+        /// for a person and carried on from: the cancellation is still right, and a refund that did not go
+        /// through is not a reason to leave the customer holding a booking nobody is coming to.
         ///
         /// <para><b>A Stripe transport fault is a failed refund, not a crash.</b> RefundService turns a
         /// Stripe refusal into a Failure but lets a timeout, a dropped connection or an open circuit
@@ -260,7 +267,7 @@ public class CancelUnfilledOrders
         /// would never come back. Caught here and not in RefundService, whose guest cancellation relies
         /// on that escape to stay retryable.</para>
         /// </summary>
-        private async Task<bool> TryRefundAsync(Order order, CancellationToken cancellationToken)
+        private async Task<decimal?> TryRefundAsync(Order order, CancellationToken cancellationToken)
         {
             BusinessResult<RefundResult> refund;
             try
@@ -278,7 +285,7 @@ public class CancelUnfilledOrders
                 logger.LogError(ex,
                     "CancelUnfilledOrders could not reach Stripe to refund order {OrderId}; the refund is left pending",
                     order.Id);
-                return false;
+                return null;
             }
 
             if (refund.IsFailure)
@@ -286,9 +293,10 @@ public class CancelUnfilledOrders
                 logger.LogError(
                     "CancelUnfilledOrders could not refund order {OrderId}: {Error}",
                     order.Id, refund.Error?.Message);
+                return null;
             }
 
-            return refund.IsSuccess;
+            return refund.Value!.Amount;
         }
 
         private static bool IsStripeTransportFailure(Exception ex, CancellationToken cancellationToken) =>

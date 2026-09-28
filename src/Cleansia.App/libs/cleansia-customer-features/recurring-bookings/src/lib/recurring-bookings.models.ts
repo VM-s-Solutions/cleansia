@@ -181,9 +181,12 @@ export function canSubmit(data: RecurringWizardFormData): boolean {
  * This is a LINE-BY-LINE mirror of the backend's own derivation —
  * `MaterializeRecurringBookingTemplate.ComputeOccurrences` — and it has to
  * stay one: the card states a date the customer will plan around, and a second
- * opinion about the cadence is worse than no date at all. Every step is in UTC
- * for the same reason, because that is the clock the backend walks; the caller
- * renders the result in the reader's zone.
+ * opinion about the cadence is worse than no date at all. The schedule's day
+ * and time are wall-clock time where the home is, so the walk runs over dates
+ * in that zone and each date is converted to an instant on its own.
+ *
+ * The template carries no zone, so the reader's stands in for the market's —
+ * the same zone the wizard's "HH:mm" was typed in.
  *
  * `lastMaterializedFor` only moves the START of the search forward — it is not
  * a duplicate guard here any more than it is there.
@@ -198,6 +201,7 @@ export function nextOccurrenceUtc(
     lastMaterializedFor?: Date | string;
   },
   now: Date = new Date(),
+  timeZone: string = Intl.DateTimeFormat().resolvedOptions().timeZone,
 ): Date | null {
   const stepDays =
     template.frequency === RecurrenceFrequency.Biweekly
@@ -205,7 +209,6 @@ export function nextOccurrenceUtc(
       : template.frequency === RecurrenceFrequency.Monthly
         ? 30 // the backend's own approximation — mirrored, not corrected
         : 7;
-  const stepMs = stepDays * 24 * 60 * 60 * 1000;
 
   const asDate = (v: Date | string | undefined): Date | null => {
     if (!v) return null;
@@ -218,38 +221,73 @@ export function nextOccurrenceUtc(
   const endsOn = asDate(template.endsOn);
   const lastMaterializedFor = asDate(template.lastMaterializedFor);
 
-  let searchStart = lastMaterializedFor
-    ? new Date(lastMaterializedFor.getTime() + stepMs)
-    : startsOn;
-  if (searchStart.getTime() < now.getTime()) searchStart = now;
+  // Market dates are held as midnight-UTC stand-ins, so day arithmetic is exact.
+  let searchDate = lastMaterializedFor
+    ? addDays(marketDate(lastMaterializedFor, timeZone), stepDays)
+    : marketDate(startsOn, timeZone);
+  const today = marketDate(now, timeZone);
+  if (searchDate.getTime() < today.getTime()) searchDate = today;
 
-  // Midnight UTC of the search start, then walk forward to the template's day.
-  const candidate = new Date(
-    Date.UTC(
-      searchStart.getUTCFullYear(),
-      searchStart.getUTCMonth(),
-      searchStart.getUTCDate(),
-    ),
-  );
-  while (candidate.getUTCDay() !== template.dayOfWeek) {
-    candidate.setUTCDate(candidate.getUTCDate() + 1);
+  while (searchDate.getUTCDay() !== template.dayOfWeek) {
+    searchDate = addDays(searchDate, 1);
   }
 
   const [hours, minutes] = (template.timeOfDay ?? '00:00').split(':');
-  let occurrence = new Date(
-    candidate.getTime() +
-      (Number(hours) || 0) * 3600000 +
-      (Number(minutes) || 0) * 60000,
-  );
+  const hour = Number(hours) || 0;
+  const minute = Number(minutes) || 0;
 
   // The backend yields only occurrences inside [startsOn, endsOn]; anything
   // earlier steps forward. Bounded so a malformed template cannot spin.
   for (let i = 0; i < 64; i++) {
+    const occurrence = marketTimeToUtc(searchDate, hour, minute, timeZone);
     if (endsOn && occurrence.getTime() > endsOn.getTime()) return null;
     if (occurrence.getTime() >= startsOn.getTime()) return occurrence;
-    occurrence = new Date(occurrence.getTime() + stepMs);
+    searchDate = addDays(searchDate, stepDays);
   }
   return null;
+}
+
+function addDays(date: Date, days: number): Date {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() + days));
+}
+
+/** The wall clock in `timeZone` at `instant`, as if it were UTC. */
+function wallClock(instant: Date, timeZone: string): Date {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    hourCycle: 'h23',
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+  }).formatToParts(instant);
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    Number(parts.find((p) => p.type === type)?.value ?? 0);
+  return new Date(
+    Date.UTC(part('year'), part('month') - 1, part('day'), part('hour'), part('minute')),
+  );
+}
+
+function marketDate(instant: Date, timeZone: string): Date {
+  const local = wallClock(instant, timeZone);
+  return new Date(Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate()));
+}
+
+/**
+ * The instant at which `timeZone` reads `hour:minute` on `date`, the way .NET's
+ * `ConvertTimeToUtc` reads it: a time the autumn change repeats is the later,
+ * standard-time one, and a time the spring change skips reads with the offset
+ * in force before the gap, which moves it forward by the gap.
+ */
+function marketTimeToUtc(date: Date, hour: number, minute: number, timeZone: string): Date {
+  const day = 24 * 60 * 60 * 1000;
+  const asUtc = Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), hour, minute);
+  const offsetAt = (ms: number) =>
+    wallClock(new Date(ms), timeZone).getTime() - Math.floor(ms / 60000) * 60000;
+  const candidates = [asUtc - offsetAt(asUtc - day), asUtc - offsetAt(asUtc + day)];
+  const exact = candidates.filter((ms) => wallClock(new Date(ms), timeZone).getTime() === asUtc);
+  return new Date(exact.length > 0 ? Math.max(...exact) : candidates[0]);
 }
 
 /** A required field the form is still missing, in the order the form asks. */

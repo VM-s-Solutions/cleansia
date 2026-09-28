@@ -124,6 +124,7 @@ public class RecurringMaterializationCurrencyTests
             _templateRepository.Object,
             _savedAddressRepository.Object,
             _addressRepository.Object,
+            Mock.Of<ICountryConfigurationRepository>(),
             OrderMarketDoubles.Trading(Czk, (Czechia, Czk), (Slovakia, Eur)),
             _orderRepository.Object,
             _pricingCalculator.Object,

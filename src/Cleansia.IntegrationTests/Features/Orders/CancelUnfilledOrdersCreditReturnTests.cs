@@ -152,6 +152,8 @@ public class CancelUnfilledOrdersCreditReturnTests(PostgresContainerFixture fixt
             new CreditAccountRepository(ctx),
             NewRefundService(ctx),
             new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx), new UserRepository(ctx), NullLogger<NotificationProducer>.Instance),
+            new GuestOrderAccessTokenIssuer(new GuestOrderAccessTokenRepository(ctx)),
+            new OutboxPendingDispatch(ctx),
             new FixedTenantProvider(TestTenants.Default),
             ctx,
             NullLogger<CancelUnfilledOrders.Handler>.Instance);

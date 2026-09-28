@@ -220,6 +220,8 @@ public sealed class MaterializeRecurringBookingsTenantStampingTests : IDisposabl
             sp => new SavedAddressRepository(sp.GetRequiredService<CleansiaDbContext>(), session));
         services.AddScoped<IAddressRepository>(
             sp => new AddressRepository(sp.GetRequiredService<CleansiaDbContext>()));
+        services.AddScoped<ICountryConfigurationRepository>(
+            sp => new CountryConfigurationRepository(sp.GetRequiredService<CleansiaDbContext>()));
         services.AddScoped<ICurrencyRepository>(
             sp => new CurrencyRepository(sp.GetRequiredService<CleansiaDbContext>()));
         services.AddScoped<ICurrencyResolutionService>(

@@ -21,6 +21,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using AppConstants = Cleansia.Core.AppServices.Common.Constants;
 
 namespace Cleansia.Tests.Features.Gdpr;
 
@@ -143,6 +144,28 @@ public sealed class SubjectResidueErasureTests : IDisposable
     }
 
     /// <summary>
+    /// The row survives the erasure, anonymised, so the blob delete is the only thing that removes the file —
+    /// and a delete sent to a name that still carries the container reports nothing. Azure serves
+    /// <c>/&lt;container&gt;/&lt;blob&gt;</c> and Azurite <c>/&lt;account&gt;/&lt;container&gt;/&lt;blob&gt;</c>.
+    /// </summary>
+    [Theory]
+    [InlineData($"https://account.blob.core.windows.net/order-photos/2026/{ErasedOrderId}/after.jpg")]
+    [InlineData($"http://127.0.0.1:10000/devstoreaccount1/order-photos/2026/{ErasedOrderId}/after.jpg")]
+    public async Task Erasure_Deletes_The_Photo_File_By_Its_Name_Inside_The_Container(string blobUrl)
+    {
+        var photoClient = new Mock<IBlobContainerClient>();
+        _blobClientFactory
+            .Setup(f => f.GetBlobContainerClient(AppConstants.BlobContainers.OrderPhotos))
+            .Returns(photoClient.Object);
+        await SeedAsync(erasedPhotoUrl: blobUrl);
+
+        await EraseAsync(ErasedUserId);
+
+        photoClient.Verify(c => c.DeleteAsync($"2026/{ErasedOrderId}/after.jpg", It.IsAny<CancellationToken>()), Times.Once);
+        photoClient.Verify(c => c.DeleteAsync(It.Is<string>(name => name.Contains(BystanderOrderId)), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>
     /// Asserted at the seam rather than over rows, because what matters is the exact call: the subject, the
     /// STAGED revoke (the self-committing one would split the erasure into two commits — owner ruling
     /// 2026-09-14), and a reason that is NOT <c>password_reset</c> — that string alone drives ADR-0027's
@@ -233,7 +256,7 @@ public sealed class SubjectResidueErasureTests : IDisposable
         return await ctx.Set<T>().IgnoreQueryFilters().ToListAsync();
     }
 
-    private async Task SeedAsync()
+    private async Task SeedAsync(string? erasedPhotoUrl = null)
     {
         await using (var schema = NewContext())
         {
@@ -263,7 +286,7 @@ public sealed class SubjectResidueErasureTests : IDisposable
 
         ctx.Add(NewOrder(ErasedUserId, ErasedOrderId));
         ctx.Add(NewOrder(BystanderUserId, BystanderOrderId));
-        ctx.Add(NewPhoto(ErasedOrderId, ErasedPhotoOriginalName, ErasedPhotoNotes, ErasedEmployeeId));
+        ctx.Add(NewPhoto(ErasedOrderId, ErasedPhotoOriginalName, ErasedPhotoNotes, ErasedEmployeeId, erasedPhotoUrl));
         ctx.Add(NewPhoto(BystanderOrderId, BystanderPhotoOriginalName, "Nothing to report.", BystanderEmployeeId));
 
         // Its own code: the order factory above already seeds the CZK row.
@@ -306,9 +329,10 @@ public sealed class SubjectResidueErasureTests : IDisposable
             CurrentStatus = OrderStatus.Completed,
         });
 
-    private static OrderPhoto NewPhoto(string orderId, string originalFileName, string notes, string employeeId) =>
+    private static OrderPhoto NewPhoto(
+        string orderId, string originalFileName, string notes, string employeeId, string? blobUrl = null) =>
         OrderPhoto.Create(
-            orderId, PhotoType.After, $"https://blobs.test/order-photos/{orderId}.jpg", $"{orderId}.jpg",
+            orderId, PhotoType.After, blobUrl ?? $"https://blobs.test/order-photos/{orderId}.jpg", $"{orderId}.jpg",
             originalFileName, 1024, "image/jpeg", employeeId, notes);
 
     private CleansiaDbContext NewContext() =>

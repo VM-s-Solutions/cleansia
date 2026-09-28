@@ -25,19 +25,22 @@ public sealed partial class EmailService : IEmailService
     private readonly IHttpClientFactory httpClientFactory;
     private readonly IEmailTemplateTranslationRepository emailTemplateTranslationRepository;
     private readonly IEmailTemplateRenderer templateRenderer;
+    private readonly ICountryConfigurationRepository countryConfigurationRepository;
 
     public EmailService(
         ISendGridConfig cfg,
         ILogger<EmailService> log,
         IHttpClientFactory httpClientFactory,
         IEmailTemplateTranslationRepository emailTemplateTranslationRepository,
-        IEmailTemplateRenderer templateRenderer)
+        IEmailTemplateRenderer templateRenderer,
+        ICountryConfigurationRepository countryConfigurationRepository)
     {
         sendGridConfig = cfg;
         logger = log;
         this.httpClientFactory = httpClientFactory;
         this.emailTemplateTranslationRepository = emailTemplateTranslationRepository;
         this.templateRenderer = templateRenderer;
+        this.countryConfigurationRepository = countryConfigurationRepository;
     }
 
     public async Task<string> SendResetPasswordEmailAsync(
@@ -90,6 +93,16 @@ public sealed partial class EmailService : IEmailService
             ? BuildGuestTrackLink(order.DisplayOrderNumber, email, guestAccessToken)
             : $"{sendGridConfig.ClientDomainUrl}/orders/{Uri.EscapeDataString(order.Id)}";
 
+    /// <summary>The market's own clock — the zone the receipt dates the same order in.</summary>
+    private async Task<TimeZoneInfo> MarketZoneAsync(Order order, CancellationToken ct) =>
+        order.CustomerAddress?.CountryId is not { } countryId
+            ? TimeZoneInfo.Utc
+            : TimeZoneResolution.Resolve(
+                (await countryConfigurationRepository.GetByCountryIdAsync(countryId, ct))?.TimeZoneId);
+
+    private static CultureInfo CultureFor(string languageCode) =>
+        CultureInfo.GetCultureInfo(EmailLocale.Resolve(languageCode));
+
     private string BuildGuestTrackLink(string displayOrderNumber, string email, string? guestAccessToken)
     {
         var link = $"{sendGridConfig.ClientDomainUrl}/track-order?orderNumber={Uri.EscapeDataString(displayOrderNumber)}&email={Uri.EscapeDataString(email)}";
@@ -111,12 +124,13 @@ public sealed partial class EmailService : IEmailService
             .GetTranslationsByTypeAndLanguageAsync(EmailType.OrderReceipt, languageCode, ct);
 
         var orderStatusLink = BuildOrderStatusLink(order, email, guestAccessToken);
+        var marketZone = await MarketZoneAsync(order, ct);
 
         var values = BuildTemplateValues(translations, new
         {
             CustomerName = order.CustomerName,
             OrderNumber = order.DisplayOrderNumber,
-            OrderDate = order.CreatedOn.ToString("d"),
+            OrderDate = TimeZoneInfo.ConvertTime(order.CreatedOn, marketZone).ToString("d", CultureFor(languageCode)),
             // An unloaded Currency navigation is a loader omission, not a CZK order: no unit rather than a guessed one. → /architecture/platform-expandability#_5-where-czk-kc-is-hardcoded-vs-configurable
             TotalAmount = $"{order.Currency?.Symbol ?? string.Empty}{order.TotalPrice:N2}",
             OrderStatusLink = orderStatusLink
@@ -286,6 +300,11 @@ public sealed partial class EmailService : IEmailService
                 ["StatusTitle_Cancelled"] = "Order cancelled",
                 ["StatusMessage_Cancelled"] = "Your order has been cancelled.",
                 ["RefundMessage"] = "Refund issued:",
+                ["CancelledReason_NoCleaner"] = "No cleaner was available for this booking, so it was cancelled.",
+                ["CancelledReason_PaymentNotCompleted"] = "The payment wasn't completed, so this booking was released.",
+                ["CancelledReason_ByUs"] = "We had to cancel this booking.",
+                ["RefundPendingMessage"] = "Your refund is being processed.",
+                ["NothingChargedMessage"] = "Nothing was charged.",
                 ["StatusSectionLabel"] = "Current status",
                 ["OrderNumberLabel"] = "Order #",
                 ["CleaningDateLabel"] = "Cleaning date",
@@ -302,6 +321,11 @@ public sealed partial class EmailService : IEmailService
                 ["StatusTitle_Cancelled"] = "Rezervace zrušena",
                 ["StatusMessage_Cancelled"] = "Vaše rezervace byla zrušena.",
                 ["RefundMessage"] = "Vrácená částka:",
+                ["CancelledReason_NoCleaner"] = "Pro tuto rezervaci nebyl k dispozici žádný uklízeč, a proto byla zrušena.",
+                ["CancelledReason_PaymentNotCompleted"] = "Platba nebyla dokončena, a proto byla tato rezervace uvolněna.",
+                ["CancelledReason_ByUs"] = "Tuto rezervaci jsme museli zrušit.",
+                ["RefundPendingMessage"] = "Vrácení peněz zpracováváme.",
+                ["NothingChargedMessage"] = "Nic vám nebylo účtováno.",
                 ["StatusSectionLabel"] = "Aktuální stav",
                 ["OrderNumberLabel"] = "Rezervace č.",
                 ["CleaningDateLabel"] = "Datum úklidu",
@@ -318,6 +342,11 @@ public sealed partial class EmailService : IEmailService
                 ["StatusTitle_Cancelled"] = "Rezervácia zrušená",
                 ["StatusMessage_Cancelled"] = "Vaša rezervácia bola zrušená.",
                 ["RefundMessage"] = "Vrátená suma:",
+                ["CancelledReason_NoCleaner"] = "Pre túto rezerváciu nebol k dispozícii žiadny upratovač, a preto bola zrušená.",
+                ["CancelledReason_PaymentNotCompleted"] = "Platba nebola dokončená, a preto bola táto rezervácia uvoľnená.",
+                ["CancelledReason_ByUs"] = "Túto rezerváciu sme museli zrušiť.",
+                ["RefundPendingMessage"] = "Vrátenie peňazí spracúvame.",
+                ["NothingChargedMessage"] = "Nič vám nebolo účtované.",
                 ["StatusSectionLabel"] = "Aktuálny stav",
                 ["OrderNumberLabel"] = "Rezervácia č.",
                 ["CleaningDateLabel"] = "Dátum upratovania",
@@ -334,6 +363,11 @@ public sealed partial class EmailService : IEmailService
                 ["StatusTitle_Cancelled"] = "Бронювання скасовано",
                 ["StatusMessage_Cancelled"] = "Ваше бронювання скасовано.",
                 ["RefundMessage"] = "Сума повернення:",
+                ["CancelledReason_NoCleaner"] = "Для цього бронювання не знайшлося вільного прибиральника, тому його скасовано.",
+                ["CancelledReason_PaymentNotCompleted"] = "Оплату не було завершено, тому це бронювання було скасовано.",
+                ["CancelledReason_ByUs"] = "Нам довелося скасувати це бронювання.",
+                ["RefundPendingMessage"] = "Повернення коштів обробляється.",
+                ["NothingChargedMessage"] = "З вас нічого не стягнуто.",
                 ["StatusSectionLabel"] = "Поточний статус",
                 ["OrderNumberLabel"] = "Бронювання №",
                 ["CleaningDateLabel"] = "Дата прибирання",
@@ -350,6 +384,11 @@ public sealed partial class EmailService : IEmailService
                 ["StatusTitle_Cancelled"] = "Бронирование отменено",
                 ["StatusMessage_Cancelled"] = "Ваше бронирование отменено.",
                 ["RefundMessage"] = "Сумма возврата:",
+                ["CancelledReason_NoCleaner"] = "Для этого бронирования не нашлось свободного уборщика, поэтому оно отменено.",
+                ["CancelledReason_PaymentNotCompleted"] = "Оплата не была завершена, поэтому это бронирование было отменено.",
+                ["CancelledReason_ByUs"] = "Нам пришлось отменить это бронирование.",
+                ["RefundPendingMessage"] = "Возврат средств обрабатывается.",
+                ["NothingChargedMessage"] = "С вас ничего не списано.",
                 ["StatusSectionLabel"] = "Текущий статус",
                 ["OrderNumberLabel"] = "Бронирование №",
                 ["CleaningDateLabel"] = "Дата уборки",
@@ -423,12 +462,39 @@ public sealed partial class EmailService : IEmailService
         var orderLabel = statusClass == "cancelled" ? translations.GetValueOrDefault("OrderNumberLabel", "Order") : "Order";
         var subject = translations.GetValueOrDefault("Subject", $"{orderLabel} {order.DisplayOrderNumber} — {statusTitle}");
 
+        var refundLine = refundedAmount is > 0m
+            ? $"{translations.GetValueOrDefault("RefundMessage", "Refund issued:")} {currencySymbol}{refundedAmount.Value:N2}."
+            : null;
+        string? platformReason = null;
+        if (statusClass == "cancelled" && order.CancelledBy is CancelledBy.Admin or CancelledBy.System)
+        {
+            // The reason code, never an admin's free text: that is written for the company, not the guest.
+            platformReason = translations.GetValueOrDefault(order.CancellationReason switch
+            {
+                OrderCancellationReasons.NoCleanerAvailable => "CancelledReason_NoCleaner",
+                OrderCancellationReasons.PaymentNotCompleted => "CancelledReason_PaymentNotCompleted",
+                _ => "CancelledReason_ByUs",
+            });
+            // "Being processed" only for the card charge a platform cancellation sends back — the one state in
+            // which PlatformOrderCancellation and CancelUnfilledOrders both attempt the refund. Anything else
+            // (already refunded, disputed, nothing to refund, no charge to refund against) promises nothing.
+            var refundAttempted = order.PaymentType == PaymentType.Card
+                && order.PaymentStatus == PaymentStatus.Paid
+                && order.TotalPrice > 0m
+                && order.HasRefundableChargeSurface;
+            refundLine ??= order.TookNoPayment ? translations.GetValueOrDefault("NothingChargedMessage")
+                : refundAttempted ? translations.GetValueOrDefault("RefundPendingMessage")
+                : null;
+        }
+
+        var cleaningTime = TimeZoneInfo.ConvertTimeFromUtc(
+            DateTime.SpecifyKind(order.CleaningDateTime, DateTimeKind.Utc), await MarketZoneAsync(order, ct));
+
         var values = BuildTemplateValues(translations, new
         {
             Subject = subject,
-            StatusMessage = refundedAmount is > 0m
-                ? $"{statusMessage} {translations.GetValueOrDefault("RefundMessage", "Refund issued:")} {currencySymbol}{refundedAmount.Value:N2}."
-                : statusMessage,
+            StatusMessage = string.Join(" ",
+                new[] { statusMessage, platformReason, refundLine }.Where(line => !string.IsNullOrWhiteSpace(line))),
             StatusSectionLabel = translations.GetValueOrDefault("StatusSectionLabel", "Current Status"),
             StatusClass = statusClass,
             StatusLabel = newStatus.Equals("cancelled", StringComparison.OrdinalIgnoreCase)
@@ -436,7 +502,7 @@ public sealed partial class EmailService : IEmailService
             OrderNumberLabel = translations.GetValueOrDefault("OrderNumberLabel", "Order #"),
             OrderNumber = order.DisplayOrderNumber,
             CleaningDateLabel = translations.GetValueOrDefault("CleaningDateLabel", "Cleaning Date"),
-            CleaningDate = order.CleaningDateTime.ToString("dd.MM.yyyy HH:mm"),
+            CleaningDate = cleaningTime.ToString("g", CultureFor(languageCode)),
             AddressLabel = translations.GetValueOrDefault("AddressLabel", "Address"),
             Address = address,
             TotalLabel = translations.GetValueOrDefault("TotalLabel", "Total"),

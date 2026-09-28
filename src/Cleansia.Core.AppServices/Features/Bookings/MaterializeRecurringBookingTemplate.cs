@@ -78,6 +78,7 @@ public class MaterializeRecurringBookingTemplate
         IRecurringBookingTemplateRepository templateRepository,
         ISavedAddressRepository savedAddressRepository,
         IAddressRepository addressRepository,
+        ICountryConfigurationRepository countryConfigurationRepository,
         ICurrencyResolutionService currencyResolutionService,
         IOrderRepository orderRepository,
         IOrderPricingCalculator pricingCalculator,
@@ -144,7 +145,28 @@ public class MaterializeRecurringBookingTemplate
                 return BusinessResult.Success(new Response(0));
             }
 
-            var occurrences = ComputeOccurrences(template, now, horizon).ToList();
+            // Resolve the template's address, fail-soft. Its market's clock is the one the template's day and
+            // time are written in.
+            var saved = await savedAddressRepository.GetByIdAsync(template.SavedAddressId, cancellationToken);
+            if (saved == null)
+            {
+                logger.LogWarning(
+                    "Template {TemplateId} references missing SavedAddress {SavedAddressId}; skipping",
+                    template.Id, template.SavedAddressId);
+                return BusinessResult.Success(new Response(0));
+            }
+            var address = saved.Address
+                ?? await addressRepository.GetByIdAsync(saved.AddressId, cancellationToken);
+            if (address == null)
+            {
+                logger.LogWarning(
+                    "SavedAddress {SavedAddressId} references missing Address {AddressId}; skipping template {TemplateId}",
+                    saved.Id, saved.AddressId, template.Id);
+                return BusinessResult.Success(new Response(0));
+            }
+
+            var marketZone = await MarketZoneAsync(address.CountryId, cancellationToken);
+            var occurrences = ComputeOccurrences(template, now, horizon, marketZone).ToList();
             if (occurrences.Count == 0)
             {
                 return BusinessResult.Success(new Response(0));
@@ -195,25 +217,6 @@ public class MaterializeRecurringBookingTemplate
             {
                 template.MarkMaterializedFor(resumeFrom);
                 await unitOfWork.CommitAsync(cancellationToken);
-                return BusinessResult.Success(new Response(0));
-            }
-
-            // Resolve the template's address, fail-soft.
-            var saved = await savedAddressRepository.GetByIdAsync(template.SavedAddressId, cancellationToken);
-            if (saved == null)
-            {
-                logger.LogWarning(
-                    "Template {TemplateId} references missing SavedAddress {SavedAddressId}; skipping",
-                    template.Id, template.SavedAddressId);
-                return BusinessResult.Success(new Response(0));
-            }
-            var address = saved.Address
-                ?? await addressRepository.GetByIdAsync(saved.AddressId, cancellationToken);
-            if (address == null)
-            {
-                logger.LogWarning(
-                    "SavedAddress {SavedAddressId} references missing Address {AddressId}; skipping template {TemplateId}",
-                    saved.Id, saved.AddressId, template.Id);
                 return BusinessResult.Success(new Response(0));
             }
 
@@ -327,41 +330,40 @@ public class MaterializeRecurringBookingTemplate
         }
 
         /// <summary>
-        /// The CANDIDATE UTC instants for this template in the [now, horizon] window.
+        /// The CANDIDATE UTC instants for this template in the [now, horizon] window. The template's day and
+        /// time are the market's wall clock, so the walk runs over dates in <paramref name="marketZone"/> and
+        /// each date is converted on its own — a 10:00 schedule stays 10:00 across a daylight-saving change.
         /// <see cref="RecurringBookingTemplate.LastMaterializedFor"/> only moves the start of the
         /// derivation forward; it is not the duplicate guard, and it is null on every tick that follows an
         /// edit. Whether a candidate already has an order is decided by the caller.
         /// </summary>
-        internal static IEnumerable<DateTime> ComputeOccurrences(
+        public static IEnumerable<DateTime> ComputeOccurrences(
             RecurringBookingTemplate template,
             DateTime now,
-            DateTime horizon)
+            DateTime horizon,
+            TimeZoneInfo marketZone)
         {
             // Determine the search start: max(template.StartsOn, lastMaterialized + step, now).
-            var step = template.Frequency switch
+            var stepDays = template.Frequency switch
             {
-                RecurrenceFrequency.Weekly => TimeSpan.FromDays(7),
-                RecurrenceFrequency.Biweekly => TimeSpan.FromDays(14),
-                RecurrenceFrequency.Monthly => TimeSpan.FromDays(30), // approximation, fine for matching pool
-                _ => TimeSpan.FromDays(7),
+                RecurrenceFrequency.Weekly => 7,
+                RecurrenceFrequency.Biweekly => 14,
+                RecurrenceFrequency.Monthly => 30, // approximation, fine for matching pool
+                _ => 7,
             };
 
-            var searchStart = template.LastMaterializedFor.HasValue
-                ? template.LastMaterializedFor.Value + step
-                : template.StartsOn;
-            if (searchStart < now) searchStart = now;
+            var searchDate = template.LastMaterializedFor.HasValue
+                ? MarketDate(template.LastMaterializedFor.Value, marketZone).AddDays(stepDays)
+                : MarketDate(template.StartsOn, marketZone);
+            var today = MarketDate(now, marketZone);
+            if (searchDate < today) searchDate = today;
 
-            // Find the first occurrence on or after searchStart that lands on
-            // template.DayOfWeek at template.TimeOfDay.
-            var candidate = searchStart.Date;
-            while (candidate.DayOfWeek != template.DayOfWeek)
+            while (searchDate.DayOfWeek != template.DayOfWeek)
             {
-                candidate = candidate.AddDays(1);
+                searchDate = searchDate.AddDays(1);
             }
-            var occurrence = candidate
-                .AddHours(template.TimeOfDay.Hour)
-                .AddMinutes(template.TimeOfDay.Minute);
 
+            var occurrence = MarketTimeToUtc(searchDate, template.TimeOfDay, marketZone);
             while (occurrence <= horizon)
             {
                 if (occurrence >= template.StartsOn
@@ -369,8 +371,35 @@ public class MaterializeRecurringBookingTemplate
                 {
                     yield return occurrence;
                 }
-                occurrence = occurrence.Add(step);
+                searchDate = searchDate.AddDays(stepDays);
+                occurrence = MarketTimeToUtc(searchDate, template.TimeOfDay, marketZone);
             }
+        }
+
+        private static DateOnly MarketDate(DateTime utc, TimeZoneInfo marketZone) =>
+            DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utc, DateTimeKind.Utc), marketZone));
+
+        private static DateTime MarketTimeToUtc(DateOnly date, TimeOnly time, TimeZoneInfo marketZone)
+        {
+            var local = date.ToDateTime(time, DateTimeKind.Unspecified);
+
+            // ConvertTimeToUtc throws on a wall-clock time the spring change skips, which would fail the
+            // template's whole tick; read with the offset in force before the gap, it moves forward by it.
+            return marketZone.IsInvalidTime(local)
+                ? DateTime.SpecifyKind(local - marketZone.GetUtcOffset(local.AddDays(-1)), DateTimeKind.Utc)
+                : TimeZoneInfo.ConvertTimeToUtc(local, marketZone);
+        }
+
+        /// <summary>The saved address's market zone; a market with none reads the default market's.</summary>
+        private async Task<TimeZoneInfo> MarketZoneAsync(string countryId, CancellationToken cancellationToken)
+        {
+            var zoneId = (await countryConfigurationRepository.GetByCountryIdAsync(countryId, cancellationToken))?.TimeZoneId;
+            if (string.IsNullOrWhiteSpace(zoneId))
+            {
+                zoneId = (await countryConfigurationRepository.GetDefaultMarketAsync(cancellationToken))?.TimeZoneId;
+            }
+
+            return TimeZoneResolution.Resolve(zoneId);
         }
     }
 }

@@ -32,16 +32,15 @@ public class DeviceConfiguration : TenantAuditableEntityConfiguration<Device, st
         // (GetByUserAndDeviceIdIncludingInactiveAsync) and RECLAIMS the
         // tombstone via Device.MarkRegistered (reactivate + refresh token)
         // — never a second INSERT — so there is at most one row per
-        // (UserId, DeviceId) and the retention sweep (which only prunes
-        // IsActive rows) never needs to reclaim it.
+        // (UserId, DeviceId).
         builder.HasIndex(d => d.UserId);
         builder.HasIndex(d => new { d.UserId, d.DeviceId }).IsUnique();
 
         // The stale-device retention sweep (DataRetentionBackgroundService.CleanStaleDevicesAsync) runs
-        // once per operating company on the filtered set: TenantId = ambient AND IsActive AND
-        // LastActiveAt < cutoff. This (IsActive, LastActiveAt) composite still backs the selective part
-        // (the equality + range) so the sweep is index-backed, not a full scan; the tenant term is
-        // applied to the rows it yields, which costs nothing while one company holds a database's rows.
+        // once per operating company: an active row unseen past the cutoff, or a tombstone logged out
+        // (or, undated, last seen) before it. The IsActive prefix of this composite splits the two, and
+        // LastActiveAt backs the active half's range; the tombstones are the small half. The tenant term
+        // is applied to the rows it yields, which costs nothing while one company holds a database's rows.
         builder.HasIndex(d => new { d.IsActive, d.LastActiveAt });
 
         builder.HasOne(d => d.User)

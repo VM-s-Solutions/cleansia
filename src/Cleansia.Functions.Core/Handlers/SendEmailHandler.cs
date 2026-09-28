@@ -178,7 +178,9 @@ public class SendEmailHandler(
             .Include(o => o.Currency).Include(o => o.CustomerAddress)
             .AsNoTracking()
             .FirstOrDefaultAsync(o => o.Id == message.OrderId && o.UserId == null
-                && o.CurrentStatus == OrderStatus.Cancelled && o.CancelledBy == CancelledBy.Customer, ct);
+                && o.CurrentStatus == OrderStatus.Cancelled
+                && (o.CancelledBy == CancelledBy.Customer || o.CancelledBy == CancelledBy.Admin
+                    || o.CancelledBy == CancelledBy.System), ct);
         if (order is null || string.IsNullOrWhiteSpace(order.CustomerEmail)
             || order.CustomerEmail == AnonymizationMarker.Value)
         {

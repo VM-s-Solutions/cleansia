@@ -356,8 +356,7 @@ public class GdprDeletionService(
         {
             try
             {
-                var blobName = ExtractBlobNameFromUrl(photo.BlobUrl);
-                await photoBlobClient.DeleteAsync(blobName, ct);
+                await photoBlobClient.DeleteAsync(OrderPhotoBlobName.FromUrl(photo.BlobUrl), ct);
             }
             catch (Exception ex)
             {
@@ -378,9 +377,14 @@ public class GdprDeletionService(
             .Include(o => o.OrderIssues)
             .ToListAsync(ct);
 
-        var savedAddresses = await savedAddressRepository.GetByUserAsync(user.Id, ct);
+        // Removed address-book entries too: a soft-deleted row still names the subject's home, and the address
+        // it points at is theirs to lose when nobody else uses it.
+        var savedAddresses = await savedAddressRepository.GetFiltered(s => s.UserId == user.Id)
+            .Include(s => s.Address)
+            .ToListAsync(ct);
         var sourceAddresses = orders.Where(o => o.CustomerAddress is not null)
             .Select(o => o.CustomerAddress!)
+            .Concat(savedAddresses.Where(s => s.Address is not null).Select(s => s.Address!))
             .Concat(user.Employee?.Address is { } employeeAddress ? [employeeAddress] : [])
             .DistinctBy(a => a.Id).ToList();
 
@@ -407,8 +411,8 @@ public class GdprDeletionService(
         }
 
         // Every device row, not the active ones: logout soft-deletes a device and leaves the row present so
-        // a later login can reclaim the tombstone, and the stale-device retention sweep filters on IsActive
-        // too — so a logged-out handset's id and push token were reachable by neither path.
+        // a later login can reclaim the tombstone, and the stale-device retention sweep reaches a tombstone
+        // only ninety days after the logout — an erasure does not wait for it.
         await deviceRepository.RemoveForSubjectAsync(user.Id, ct);
 
         // The same handset's other APNs address. ADR-0029 D3 keeps activity registrations off the Device
@@ -541,12 +545,5 @@ public class GdprDeletionService(
 
         user.Anonymize();
         user.Deactivated(deactivationReason, DateTimeOffset.UtcNow);
-    }
-
-    private static string ExtractBlobNameFromUrl(string blobUrl)
-    {
-        if (string.IsNullOrEmpty(blobUrl)) return blobUrl;
-        var uri = new Uri(blobUrl);
-        return uri.AbsolutePath.TrimStart('/');
     }
 }

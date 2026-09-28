@@ -159,6 +159,33 @@ public sealed class RecurringMaterializationDedupeTests : IDisposable
     }
 
     /// <summary>
+    /// The template's Thursday 10:00 is the wall clock where the home is. Prague is on summer time in
+    /// September, so the occurrence is 08:00 UTC, not the 10:00 UTC every other test here reads for a
+    /// market with no zone.
+    /// </summary>
+    [Fact]
+    public async Task An_Occurrence_Lands_At_The_Homes_Market_Wall_Clock_Time()
+    {
+        await SeedAsync(marketZone: "Europe/Prague");
+
+        var result = await RunAsync(Now, horizonDays: 7);
+
+        Assert.Equal(1, result.OrdersCreated);
+        Assert.Equal([FirstOccurrence.AddHours(-2)], await OccurrencesAsync());
+    }
+
+    [Fact]
+    public async Task A_Market_With_No_Zone_Of_Its_Own_Reads_The_Default_Markets_Clock()
+    {
+        await SeedAsync(marketZone: null, defaultMarketZone: "Europe/Prague");
+
+        var result = await RunAsync(Now, horizonDays: 7);
+
+        Assert.Equal(1, result.OrdersCreated);
+        Assert.Equal([FirstOccurrence.AddHours(-2)], await OccurrencesAsync());
+    }
+
+    /// <summary>
     /// The dangerous edit is the ordinary one: a customer changing the room count leaves the schedule
     /// fields untouched, so every occurrence already inside the horizon is an occurrence of the new
     /// schedule too — and <see cref="RecurringBookingTemplate.UpdateSchedule"/> clears the watermark all
@@ -273,6 +300,8 @@ public sealed class RecurringMaterializationDedupeTests : IDisposable
             sp => new SavedAddressRepository(sp.GetRequiredService<CleansiaDbContext>(), session));
         services.AddScoped<IAddressRepository>(
             sp => new AddressRepository(sp.GetRequiredService<CleansiaDbContext>()));
+        services.AddScoped<ICountryConfigurationRepository>(
+            sp => new CountryConfigurationRepository(sp.GetRequiredService<CleansiaDbContext>()));
         services.AddScoped<ICurrencyRepository>(
             sp => new CurrencyRepository(sp.GetRequiredService<CleansiaDbContext>()));
         services.AddScoped<ICurrencyResolutionService>(
@@ -350,7 +379,7 @@ public sealed class RecurringMaterializationDedupeTests : IDisposable
         return calculator.Object;
     }
 
-    private async Task SeedAsync()
+    private async Task SeedAsync(string? marketZone = null, string? defaultMarketZone = null)
     {
         _tenantProvider.SetTenantOverride(TestTenants.Default);
 
@@ -367,7 +396,16 @@ public sealed class RecurringMaterializationDedupeTests : IDisposable
         var country = Country.Create("Czechia", "CZ", "CZ", isServiced: true);
         country.Id = "country-cz";
         ctx.Set<Country>().Add(country);
-        ctx.Set<CountryConfiguration>().Add(CountryConfiguration.Create("country-cz", "CZK", "cs", 0.21m));
+        ctx.Set<CountryConfiguration>().Add(CountryConfiguration.Create("country-cz", "CZK", "cs", 0.21m, timeZoneId: marketZone));
+        if (defaultMarketZone is not null)
+        {
+            var defaultCountry = Country.Create("Slovakia", "SK", "SK", isServiced: true);
+            defaultCountry.Id = "country-sk";
+            ctx.Set<Country>().Add(defaultCountry);
+            ctx.Set<CountryConfiguration>().Add(
+                CountryConfiguration.Create("country-sk", "EUR", "sk", 0.23m, timeZoneId: defaultMarketZone)
+                    .SetAsDefaultMarket(true));
+        }
 
         var user = User.CreateWithPassword(
             $"{UserId}@cleansia.test", "Password1!", "Rita", "Recurring", UserProfile.Customer);

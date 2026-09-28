@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Cleansia.Core.AppServices.Features.Bookings;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services;
@@ -60,7 +61,7 @@ public sealed class CleanupStalePendingOrdersSweepTests : IDisposable
 
     private static Order PendingOrder(
         string orderId,
-        string userId,
+        string? userId,
         PaymentType paymentType,
         string? recurringTemplateId,
         TimeSpan createdAgo,
@@ -99,7 +100,7 @@ public sealed class CleanupStalePendingOrdersSweepTests : IDisposable
             createdAgo: TimeSpan.FromHours(2),
             cleaningIn: TimeSpan.FromDays(7));
 
-    private static Order AbandonedOneOffCardCheckout(string orderId, string userId) =>
+    private static Order AbandonedOneOffCardCheckout(string orderId, string? userId) =>
         PendingOrder(
             orderId,
             userId,
@@ -130,6 +131,8 @@ public sealed class CleanupStalePendingOrdersSweepTests : IDisposable
             new OrderRepository(ctx),
             new CreditAccountRepository(ctx),
             new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx), new UserRepository(ctx), Microsoft.Extensions.Logging.Abstractions.NullLogger<NotificationProducer>.Instance),
+            new GuestOrderAccessTokenIssuer(new GuestOrderAccessTokenRepository(ctx)),
+            new OutboxPendingDispatch(ctx),
             _tenantProvider,
             ctx,
             NullLogger<CleanupStalePendingOrders.Handler>.Instance);
@@ -295,6 +298,78 @@ public sealed class CleanupStalePendingOrdersSweepTests : IDisposable
         Assert.Equal(
             MessageKeys.Push("user-8", NotificationEventCatalog.OrderCancelled, "01HZX9N6M7Q8R9S0T1V2W3Y408"),
             outboxKey);
+    }
+
+    /// <summary>
+    /// A guest's abandoned checkout is theirs to hear about too. No push can reach them, so the e-mail is the
+    /// message, and every link they were holding is retired with it; the send mints the one that still works.
+    /// </summary>
+    [Fact]
+    public async Task A_Cancelled_Guest_Is_Emailed_And_Their_Old_Links_Retired()
+    {
+        const string orderId = "01HZX9N6M7Q8R9S0T1V2W3Y413";
+        await EnsureSchemaAsync();
+        var checkout = AbandonedOneOffCardCheckout(orderId, userId: null);
+        checkout.SetLanguage("sk");
+        await SeedAsync(checkout);
+        await using (var seed = NewContext())
+        {
+            seed.Add(GuestOrderAccessToken.Issue(orderId, DateTimeOffset.UtcNow.AddDays(3)));
+            await seed.CommitAsync(CancellationToken.None);
+        }
+
+        await RunSweepAsync();
+
+        await using var ctx = NewContext();
+        Assert.All(await ctx.GuestOrderAccessTokens.IgnoreQueryFilters().ToListAsync(),
+            token => Assert.NotNull(token.RevokedOn));
+        var row = Assert.Single(await ctx.OutboxMessages.IgnoreQueryFilters()
+            .Where(m => m.QueueName == QueueNames.SendEmail).ToListAsync());
+        Assert.Equal(MessageKeys.GuestOrderCancelledEmail(orderId), row.MessageKey);
+        var email = JsonSerializer.Deserialize<QueueEnvelope<SendGuestOrderCancellationEmailMessage>>(
+            row.Body, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase })!.Payload;
+        Assert.Equal(orderId, email.OrderId);
+        Assert.Equal("sk", email.LanguageCode);
+        Assert.Null(email.SuccessfulRefundAmount);
+        Assert.Empty(await ReadFeedAsync());
+    }
+
+    /// <summary>
+    /// A guest who cancels before paying leaves the order Cancelled with its money still Pending, and that
+    /// cancellation already staged their e-mail. The sweep leaves the order alone: cancelling it again would
+    /// rewrite who cancelled it and why, and stage the same e-mail key a second time, which the unique outbox
+    /// index refuses at the commit on every tick.
+    /// </summary>
+    [Fact]
+    public async Task An_Order_The_Guest_Already_Cancelled_Is_Left_Alone()
+    {
+        const string orderId = "01HZX9N6M7Q8R9S0T1V2W3Y414";
+        var cancelledAt = DateTime.UtcNow.AddMinutes(-90);
+        await EnsureSchemaAsync();
+        var checkout = AbandonedOneOffCardCheckout(orderId, userId: null);
+        checkout.Cancel(cancelledAt, CancelledBy.Customer, 0m, 0m, "Changed my plans");
+        checkout.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Cancelled, checkout));
+        await SeedAsync(checkout);
+        await using (var seed = NewContext())
+        {
+            await GuestCancellationEmail.EnqueueAsync(checkout, "en", successfulRefundAmount: null,
+                new GuestOrderAccessTokenIssuer(new GuestOrderAccessTokenRepository(seed)),
+                new OutboxPendingDispatch(seed), CancellationToken.None);
+            await seed.CommitAsync(CancellationToken.None);
+        }
+
+        var response = await RunSweepAsync();
+
+        Assert.Equal(0, response.CancelledCount);
+        var order = await ReadOrderAsync(orderId);
+        Assert.Equal(CancelledBy.Customer, order.CancelledBy);
+        Assert.Equal("Changed my plans", order.CancellationReason);
+        Assert.Equal(cancelledAt, order.CancelledAt);
+        Assert.Single(order.OrderStatusHistory, track => track.Status == OrderStatus.Cancelled);
+        await using var ctx = NewContext();
+        var row = Assert.Single(await ctx.OutboxMessages.IgnoreQueryFilters()
+            .Where(m => m.QueueName == QueueNames.SendEmail).ToListAsync());
+        Assert.Equal(MessageKeys.GuestOrderCancelledEmail(orderId), row.MessageKey);
     }
 
     [Fact]

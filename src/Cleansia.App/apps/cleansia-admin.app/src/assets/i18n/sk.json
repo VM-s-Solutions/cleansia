@@ -546,6 +546,8 @@
       "weekly_order_limit": "Týždenný limit zakázok",
       "weekly_order_limit_unlimited": "Neobmedzený",
       "weekly_order_limit_hint": "Nechajte prázdne pre neobmedzený počet",
+      "weekly_order_limit_reason": "Dôvod limitu",
+      "weekly_order_limit_reason_hint": "Povinné, ak nastavujete limit. Dôvod sa upratovačovi zobrazí.",
       "not_found": "Partner sa nenašiel",
       "actions_section": "Akcie",
       "rate_format": "{{base}} + {{room}}/izba + {{bath}}/kúpeľňa"
@@ -629,6 +631,8 @@
           "action": "Prepísať stav",
           "confirm": "Ručne nastaviť stav objednávky. Povolené sú iba platné prechody.",
           "target": "Nový stav",
+          "reason": "Dôvod",
+          "reason_hint": "Uloží sa do auditného záznamu. Povinný na dokončenie objednávky bez fotografie po upratovaní.",
           "submit": "Použiť stav",
           "success": "Stav objednávky bol úspešne aktualizovaný."
         },
@@ -638,6 +642,8 @@
           "none_assigned": "K tejto objednávke nie je priradený žiadny upratovač, ktorého by bolo možné preradiť.",
           "add_only_hint": "Na tejto zakázke nikto nie je. Zadajte upratovača, ktorého na ňu chcete priradiť.",
           "from": "Od upratovača",
+          "removal_reason": "Prečo upratovača odoberáte",
+          "removal_reason_hint": "Povinné. Dôvod sa upratovačovi zobrazí.",
           "to": "Na upratovača (ID partnera)",
           "to_hint": "Zadajte ID cieľového partnera.",
           "unnamed": "Nepomenovaný upratovač",

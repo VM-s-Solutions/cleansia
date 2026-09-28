@@ -74,6 +74,12 @@
     (valueChanges)="onTargetStatusChange($event)"
     [showClear]="false"
   />
+  <cleansia-textarea
+    [label]="'pages.order_management.ops.override_status.reason' | translate"
+    [placeholder]="'pages.order_management.ops.override_status.reason_hint' | translate"
+    [ngModel]="facade.overrideReason()"
+    (valueChanges)="onOverrideReasonChange($event)"
+  />
   @if (facade.errorKey()) {
   <p class="detail-actions__error">{{ facade.errorKey()! | translate }}</p>
   }
@@ -110,6 +116,14 @@
     (valueChanges)="onFromEmployeeChange($event)"
     [showClear]="true"
   />
+  @if (facade.removesCleaner()) {
+  <cleansia-textarea
+    [label]="'pages.order_management.ops.reassign.removal_reason' | translate"
+    [placeholder]="'pages.order_management.ops.reassign.removal_reason_hint' | translate"
+    [ngModel]="facade.removalReason()"
+    (valueChanges)="onRemovalReasonChange($event)"
+  />
+  }
   }
   <cleansia-text-input
     [label]="'pages.order_management.ops.reassign.to' | translate"

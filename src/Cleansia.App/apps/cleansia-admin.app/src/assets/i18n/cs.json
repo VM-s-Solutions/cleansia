@@ -546,6 +546,8 @@
       "weekly_order_limit": "Týdenní limit zakázek",
       "weekly_order_limit_unlimited": "Neomezený",
       "weekly_order_limit_hint": "Ponechte prázdné pro neomezený počet",
+      "weekly_order_limit_reason": "Důvod limitu",
+      "weekly_order_limit_reason_hint": "Povinné, pokud nastavujete limit. Důvod se uklízeči zobrazí.",
       "not_found": "Partner nenalezen",
       "actions_section": "Akce",
       "rate_format": "{{base}} + {{room}}/pokoj + {{bath}}/koupelna"
@@ -629,6 +631,8 @@
           "action": "Přepsat stav",
           "confirm": "Ručně nastavit stav objednávky. Povoleny jsou pouze platné přechody.",
           "target": "Nový stav",
+          "reason": "Důvod",
+          "reason_hint": "Uloží se do auditního záznamu. Povinný pro dokončení objednávky bez fotografie po úklidu.",
           "submit": "Použít stav",
           "success": "Stav objednávky byl úspěšně aktualizován."
         },
@@ -638,6 +642,8 @@
           "none_assigned": "K této objednávce není přiřazen žádný uklízeč, kterého by bylo možné přeřadit.",
           "add_only_hint": "Na této zakázce nikdo není. Zadejte uklízeče, kterýho na ni chcete přiřadit.",
           "from": "Od uklízeče",
+          "removal_reason": "Proč uklízeče odebíráte",
+          "removal_reason_hint": "Povinné. Důvod se uklízeči zobrazí.",
           "to": "Na uklízeče (ID partnera)",
           "to_hint": "Zadejte ID cílového partnera.",
           "unnamed": "Nepojmenovaný uklízeč",

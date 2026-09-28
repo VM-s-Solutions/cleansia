@@ -108,11 +108,14 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
   protected readonly weeklyLimitControl = new FormControl<number | null>(null, [
     Validators.min(1),
   ]);
+  protected readonly weeklyLimitReasonControl = new FormControl<string>('', {
+    nonNullable: true,
+  });
 
   protected startEditingWeeklyLimit(): void {
-    this.weeklyLimitControl.setValue(
-      this.facade.employee()?.weeklyOrderLimit ?? null
-    );
+    const employee = this.facade.employee();
+    this.weeklyLimitControl.setValue(employee?.weeklyOrderLimit ?? null);
+    this.weeklyLimitReasonControl.setValue(employee?.weeklyOrderLimitReason ?? '');
     this.facade.startEditingWeeklyLimit();
   }
 
@@ -129,7 +132,8 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
         : Number(raw);
 
     this.facade.setWeeklyOrderLimit(
-      limit === null || Number.isNaN(limit) ? null : limit
+      limit === null || Number.isNaN(limit) ? null : limit,
+      this.weeklyLimitReasonControl.value
     );
   }
 

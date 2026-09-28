@@ -86,12 +86,20 @@ export class AdminOrderOpsComponent {
     this.facade.setTargetStatus(value);
   }
 
+  onOverrideReasonChange(value: string): void {
+    this.facade.setOverrideReason(value);
+  }
+
   onFromEmployeeChange(value: string | null): void {
     this.facade.setFromEmployeeId(value);
   }
 
   onToEmployeeChange(value: string): void {
     this.facade.setToEmployeeId(value);
+  }
+
+  onRemovalReasonChange(value: string): void {
+    this.facade.setRemovalReason(value);
   }
 
   onCashEmployeeChange(value: string | null): void {

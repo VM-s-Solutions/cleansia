@@ -57,6 +57,15 @@
           }}</strong>
         </span>
       </div>
+      @if (employee.weeklyOrderLimitReason) {
+      <p class="detail-identity__note">
+        <i class="pi pi-info-circle"></i>
+        <span>
+          {{ 'pages.employee_detail.weekly_order_limit_reason' | translate }}:
+          {{ employee.weeklyOrderLimitReason }}
+        </span>
+      </p>
+      }
       <p
         class="detail-identity__note"
         [class.detail-identity__note--success]="employee.isProfileComplete"
@@ -124,6 +133,13 @@
           />
           <p class="detail-actions__hint">
             {{ 'pages.employee_detail.weekly_order_limit_hint' | translate }}
+          </p>
+          <cleansia-textarea
+            [label]="'pages.employee_detail.weekly_order_limit_reason' | translate"
+            [formControl]="weeklyLimitReasonControl"
+          />
+          <p class="detail-actions__hint">
+            {{ 'pages.employee_detail.weekly_order_limit_reason_hint' | translate }}
           </p>
           <div class="detail-actions">
             <cleansia-button

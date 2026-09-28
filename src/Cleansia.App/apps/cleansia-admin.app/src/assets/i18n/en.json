@@ -546,6 +546,8 @@
       "weekly_order_limit": "Weekly order limit",
       "weekly_order_limit_unlimited": "Unlimited",
       "weekly_order_limit_hint": "Leave empty for no limit",
+      "weekly_order_limit_reason": "Reason for the limit",
+      "weekly_order_limit_reason_hint": "Required with a limit. The cleaner is shown the reason.",
       "not_found": "Partner not found",
       "actions_section": "Actions",
       "rate_format": "{{base}} + {{room}}/room + {{bath}}/bath"
@@ -629,6 +631,8 @@
           "action": "Override status",
           "confirm": "Manually set the order status. Only valid transitions are allowed.",
           "target": "New status",
+          "reason": "Reason",
+          "reason_hint": "Kept in the audit log. Required to complete an order that has no after photo.",
           "submit": "Apply status",
           "success": "Order status updated successfully."
         },
@@ -638,6 +642,8 @@
           "none_assigned": "This order has no assigned cleaner to reassign.",
           "add_only_hint": "Nobody is on this job. Enter a cleaner to put one on it.",
           "from": "From cleaner",
+          "removal_reason": "Why this cleaner is taken off",
+          "removal_reason_hint": "Required. The cleaner is shown the reason.",
           "to": "To cleaner (partner ID)",
           "to_hint": "Enter the target partner ID.",
           "unnamed": "Unnamed cleaner",

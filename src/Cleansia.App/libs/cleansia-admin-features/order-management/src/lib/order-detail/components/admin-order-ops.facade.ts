@@ -38,8 +38,10 @@ export class AdminOrderOpsFacade extends UnsubscribeControlDirective {
 
   readonly cancelReason = signal<string>('');
   readonly targetStatus = signal<OrderStatus | null>(null);
+  readonly overrideReason = signal<string>('');
   readonly fromEmployeeId = signal<string | null>(null);
   readonly toEmployeeId = signal<string>('');
+  readonly removalReason = signal<string>('');
   readonly cashEmployeeId = signal<string | null>(null);
   readonly cashReceivedAt = signal<Date | null>(null);
   readonly cashAmount = signal<string>('');
@@ -47,14 +49,19 @@ export class AdminOrderOpsFacade extends UnsubscribeControlDirective {
   readonly canSubmitOverrideStatus = computed(
     () => this.targetStatus() !== null && !this.submitting()
   );
+  readonly removesCleaner = computed(() => !!this.fromEmployeeId());
   /**
-   * Only the DESTINATION is required. `fromEmployeeId` stays optional because the server's command
+   * The DESTINATION is required, and a reason only when someone is taken off — the cleaner is shown
+   * it. `fromEmployeeId` stays optional because the server's command
    * documents null as "a pure add into an open spot (no cleaner removed)" — and that is the case an
    * admin is called into: a job whose crew walked, or which nobody ever took, with nothing to
    * replace. Requiring a source here made the platform's own escalation path unreachable from the UI.
    */
   readonly canSubmitReassign = computed(
-    () => this.toEmployeeId().trim().length > 0 && !this.submitting()
+    () =>
+      this.toEmployeeId().trim().length > 0 &&
+      (!this.removesCleaner() || this.removalReason().trim().length > 0) &&
+      !this.submitting()
   );
   readonly canSubmitRecordCash = computed(
     () =>
@@ -86,12 +93,20 @@ export class AdminOrderOpsFacade extends UnsubscribeControlDirective {
     this.targetStatus.set(value);
   }
 
+  setOverrideReason(value: string): void {
+    this.overrideReason.set(value);
+  }
+
   setFromEmployeeId(value: string | null): void {
     this.fromEmployeeId.set(value);
   }
 
   setToEmployeeId(value: string): void {
     this.toEmployeeId.set(value);
+  }
+
+  setRemovalReason(value: string): void {
+    this.removalReason.set(value);
   }
 
   setCashEmployeeId(value: string | null): void {
@@ -131,6 +146,7 @@ export class AdminOrderOpsFacade extends UnsubscribeControlDirective {
     const command = new AdminOverrideOrderStatusCommand();
     command.orderId = orderId;
     command.targetStatus = targetStatus;
+    command.reason = this.overrideReason().trim() || undefined;
     this.run(
       this.adminClient.adminOrderClient.overrideStatus(command),
       () =>
@@ -144,7 +160,8 @@ export class AdminOrderOpsFacade extends UnsubscribeControlDirective {
   reassignOrder(orderId: string, onSuccess: () => void): void {
     const fromEmployeeId = this.fromEmployeeId();
     const toEmployeeId = this.toEmployeeId().trim();
-    if (!orderId || !toEmployeeId) {
+    const removalReason = fromEmployeeId ? this.removalReason().trim() : '';
+    if (!orderId || !toEmployeeId || (fromEmployeeId && !removalReason)) {
       return;
     }
     const command = new AdminReassignOrderCommand();
@@ -152,6 +169,7 @@ export class AdminOrderOpsFacade extends UnsubscribeControlDirective {
     // Undefined, not null, when nobody is being replaced: this is an ADD.
     command.fromEmployeeId = fromEmployeeId ?? undefined;
     command.toEmployeeId = toEmployeeId;
+    command.removalReason = removalReason || undefined;
     this.run(
       this.adminClient.adminOrderClient.reassign(command),
       () =>
@@ -276,8 +294,10 @@ export class AdminOrderOpsFacade extends UnsubscribeControlDirective {
   private resetInputs(): void {
     this.cancelReason.set('');
     this.targetStatus.set(null);
+    this.overrideReason.set('');
     this.fromEmployeeId.set(null);
     this.toEmployeeId.set('');
+    this.removalReason.set('');
     this.cashEmployeeId.set(null);
     this.cashReceivedAt.set(null);
     this.cashAmount.set('');

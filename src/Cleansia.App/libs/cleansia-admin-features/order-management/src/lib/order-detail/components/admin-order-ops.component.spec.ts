@@ -109,8 +109,11 @@ class FacadeStub {
   readonly errorKey = signal<string | null>(null);
   readonly cancelReason = signal<string>('');
   readonly targetStatus = signal<OrderStatus | null>(null);
+  readonly overrideReason = signal<string>('');
   readonly fromEmployeeId = signal<string | null>(null);
   readonly toEmployeeId = signal<string>('');
+  readonly removalReason = signal<string>('');
+  readonly removesCleaner = signal<boolean>(false);
   readonly cashEmployeeId = signal<string | null>(null);
   readonly cashReceivedAt = signal<Date | null>(null);
   readonly cashAmount = signal<string>('');
@@ -123,8 +126,10 @@ class FacadeStub {
   closePanel = jest.fn(() => this.activePanel.set(null));
   setCancelReason = jest.fn();
   setTargetStatus = jest.fn();
+  setOverrideReason = jest.fn();
   setFromEmployeeId = jest.fn();
   setToEmployeeId = jest.fn();
+  setRemovalReason = jest.fn();
   setCashEmployeeId = jest.fn();
   setCashReceivedAt = jest.fn();
   setCashAmount = jest.fn();
@@ -268,6 +273,36 @@ describe('AdminOrderOpsComponent', () => {
     expect(fixture.nativeElement.textContent).toContain(
       'pages.order_management.ops.record_cash.no_cleaner'
     );
+  });
+
+  it('offers a reason on the status override and hands what is typed to the facade', () => {
+    setOrder(makeOrder({}));
+    component.togglePanel('overrideStatus');
+    fixture.detectChanges();
+
+    const textarea = fixture.debugElement.query(By.directive(TextareaStub));
+    expect((textarea.componentInstance as TextareaStub).label()).toBe(
+      'pages.order_management.ops.override_status.reason'
+    );
+    textarea.triggerEventHandler('valueChanges', 'no photo, confirmed by phone');
+    expect(facade.setOverrideReason).toHaveBeenCalledWith('no photo, confirmed by phone');
+  });
+
+  it('asks for a removal reason only once a cleaner is being taken off', () => {
+    setOrder(makeOrder({}));
+    component.togglePanel('reassign');
+    fixture.detectChanges();
+    expect(fixture.debugElement.query(By.directive(TextareaStub))).toBeNull();
+
+    facade.removesCleaner.set(true);
+    fixture.detectChanges();
+
+    const textarea = fixture.debugElement.query(By.directive(TextareaStub));
+    expect((textarea.componentInstance as TextareaStub).label()).toBe(
+      'pages.order_management.ops.reassign.removal_reason'
+    );
+    textarea.triggerEventHandler('valueChanges', 'did not show up');
+    expect(facade.setRemovalReason).toHaveBeenCalledWith('did not show up');
   });
 
   it('exposes the seven order status options for the override select', () => {

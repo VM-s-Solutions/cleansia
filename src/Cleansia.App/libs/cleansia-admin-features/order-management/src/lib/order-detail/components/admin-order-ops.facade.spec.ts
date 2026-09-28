@@ -30,6 +30,7 @@ const TRANSLATED = new Set([
   'api.refund.order_not_refundable',
   'api.order.cleaner_already_started',
   'api.order.cash_received_at_before_clean',
+  'api.order.status.force_complete_reason_required',
 ]);
 
 function translated(key: string, params?: Record<string, unknown>): string {
@@ -189,12 +190,65 @@ describe('AdminOrderOpsFacade', () => {
     expect(orderClient.overrideStatus).not.toHaveBeenCalled();
   });
 
-  it('builds a typed reassign command with from/to employee ids', () => {
+  it('sends the trimmed override reason, which the server requires to complete without an after photo', () => {
+    orderClient.overrideStatus.mockReturnValue(of(overrideResponse));
+    facade.setTargetStatus(OrderStatus.Completed);
+    facade.setOverrideReason('  cleaner unreachable, customer confirmed the clean  ');
+
+    facade.overrideStatus('order-1', jest.fn());
+
+    const command: AdminOverrideOrderStatusCommand =
+      orderClient.overrideStatus.mock.calls[0][0];
+    expect(command.toJSON()).toEqual({
+      orderId: 'order-1',
+      targetStatus: OrderStatus.Completed,
+      reason: 'cleaner unreachable, customer confirmed the clean',
+    });
+  });
+
+  it('omits a blank override reason and leaves the photo rule to the server', () => {
+    orderClient.overrideStatus.mockReturnValue(of(overrideResponse));
+    facade.setTargetStatus(OrderStatus.Completed);
+    facade.setOverrideReason('   ');
+    expect(facade.canSubmitOverrideStatus()).toBe(true);
+
+    facade.overrideStatus('order-1', jest.fn());
+
+    const command: AdminOverrideOrderStatusCommand =
+      orderClient.overrideStatus.mock.calls[0][0];
+    expect(command.reason).toBeUndefined();
+  });
+
+  it('shows the force-complete refusal inline and keeps the panel open', () => {
+    orderClient.overrideStatus.mockReturnValue(
+      throwError(() => ({
+        result: { detail: 'order.status.force_complete_reason_required' },
+      }))
+    );
+    facade.openPanel('overrideStatus');
+    facade.setTargetStatus(OrderStatus.Completed);
+    const onSuccess = jest.fn();
+
+    facade.overrideStatus('order-1', onSuccess);
+
+    expect(facade.errorKey()).toBe('api.order.status.force_complete_reason_required');
+    expect(facade.activePanel()).toBe('overrideStatus');
+    expect(onSuccess).not.toHaveBeenCalled();
+  });
+
+  it('requires a removal reason before a cleaner can be taken off, and sends it trimmed', () => {
     orderClient.reassign.mockReturnValue(of(reassignResponse));
     expect(facade.canSubmitReassign()).toBe(false);
 
     facade.setFromEmployeeId('employee-1');
     facade.setToEmployeeId('  employee-2  ');
+    expect(facade.removesCleaner()).toBe(true);
+    expect(facade.canSubmitReassign()).toBe(false);
+
+    facade.setRemovalReason('   ');
+    expect(facade.canSubmitReassign()).toBe(false);
+
+    facade.setRemovalReason('  customer asked for another cleaner  ');
     expect(facade.canSubmitReassign()).toBe(true);
 
     facade.reassignOrder('order-1', jest.fn());
@@ -206,13 +260,51 @@ describe('AdminOrderOpsFacade', () => {
       orderId: 'order-1',
       fromEmployeeId: 'employee-1',
       toEmployeeId: 'employee-2',
+      removalReason: 'customer asked for another cleaner',
     });
+  });
+
+  it('adds a cleaner without a removal reason, and drops one typed before the removal was cleared', () => {
+    orderClient.reassign.mockReturnValue(of(reassignResponse));
+    facade.setFromEmployeeId('employee-1');
+    facade.setRemovalReason('changed my mind');
+    facade.setFromEmployeeId(null);
+    facade.setToEmployeeId('employee-2');
+    expect(facade.removesCleaner()).toBe(false);
+    expect(facade.canSubmitReassign()).toBe(true);
+
+    facade.reassignOrder('order-1', jest.fn());
+
+    const command: AdminReassignOrderCommand =
+      orderClient.reassign.mock.calls[0][0];
+    expect(command.fromEmployeeId).toBeUndefined();
+    expect(command.removalReason).toBeUndefined();
   });
 
   it('does not call reassign when an employee id is missing', () => {
     facade.setFromEmployeeId('employee-1');
+    facade.setRemovalReason('reason');
     facade.reassignOrder('order-1', jest.fn());
     expect(orderClient.reassign).not.toHaveBeenCalled();
+  });
+
+  it('does not call reassign when a cleaner is taken off without a reason', () => {
+    facade.setFromEmployeeId('employee-1');
+    facade.setToEmployeeId('employee-2');
+    facade.reassignOrder('order-1', jest.fn());
+    expect(orderClient.reassign).not.toHaveBeenCalled();
+  });
+
+  it('clears both reasons when another panel is opened', () => {
+    facade.openPanel('overrideStatus');
+    facade.setOverrideReason('no photo, confirmed by phone');
+    facade.openPanel('reassign');
+    facade.setRemovalReason('did not show up');
+
+    facade.openPanel('refund');
+
+    expect(facade.overrideReason()).toBe('');
+    expect(facade.removalReason()).toBe('');
   });
 
   it('builds a typed refund-only command carrying just the order id', () => {
@@ -283,6 +375,7 @@ describe('AdminOrderOpsFacade', () => {
     );
     facade.setFromEmployeeId('employee-1');
     facade.setToEmployeeId('employee-2');
+    facade.setRemovalReason('did not show up');
 
     facade.reassignOrder('order-1', jest.fn());
 

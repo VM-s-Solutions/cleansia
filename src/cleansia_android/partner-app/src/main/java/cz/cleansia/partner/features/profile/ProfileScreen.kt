@@ -30,8 +30,10 @@ import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.material.icons.outlined.AccountBalance
 import androidx.compose.material.icons.outlined.Badge
 import androidx.compose.material.icons.outlined.DarkMode
+import androidx.compose.material.icons.outlined.DateRange
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Devices
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.MyLocation
 import androidx.compose.material.icons.outlined.Person
@@ -70,6 +72,8 @@ import cz.cleansia.partner.core.settings.LanguagePreference
 import cz.cleansia.partner.core.settings.ThemePreference
 import cz.cleansia.partner.features.main.MainBottomNavInset
 import cz.cleansia.partner.features.settings.SettingsViewModel
+
+internal const val HOW_JOBS_ARE_OFFERED_URL = "https://partner.${CleansiaWeb.DOMAIN}/how-jobs-are-offered"
 
 @Composable
 fun ProfileScreen(
@@ -182,6 +186,13 @@ fun ProfileScreen(
                             summary = stringResource(R.string.documents_summary_view),
                             onClick = onNavigateToDocuments,
                         )
+                        employee.weeklyOrderLimit?.let { limit ->
+                            RowDivider()
+                            WeeklyLimitRow(
+                                limit = limit,
+                                reason = employee.weeklyOrderLimitReason?.takeIf { it.isNotBlank() },
+                            )
+                        }
                     }
                 }
                 item {
@@ -241,6 +252,13 @@ fun ProfileScreen(
                             title = stringResource(R.string.profile_privacy),
                             summary = stringResource(R.string.profile_privacy_summary),
                             onClick = { uriHandler.openUri(CleansiaWeb.PRIVACY_URL) },
+                        )
+                        RowDivider()
+                        ProfileSectionRow(
+                            icon = Icons.Outlined.Info,
+                            title = stringResource(R.string.profile_how_jobs_are_offered),
+                            summary = stringResource(R.string.profile_how_jobs_are_offered_summary),
+                            onClick = { uriHandler.openUri(HOW_JOBS_ARE_OFFERED_URL) },
                         )
                     }
                 }
@@ -485,20 +503,7 @@ private fun ProfileSectionRow(
             .padding(horizontal = Spacing.M, vertical = Spacing.S + 2.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            modifier = Modifier
-                .size(32.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(18.dp),
-            )
-        }
+        RowIcon(icon)
         Spacer(Modifier.width(Spacing.M))
         Column(modifier = Modifier.weight(1f)) {
             Text(
@@ -517,6 +522,51 @@ private fun ProfileSectionRow(
             imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun WeeklyLimitRow(limit: Int, reason: String?) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = Spacing.M, vertical = Spacing.S + 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        RowIcon(Icons.Outlined.DateRange)
+        Spacer(Modifier.width(Spacing.M))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = stringResource(R.string.profile_weekly_limit, limit),
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            reason?.let {
+                Text(
+                    text = stringResource(R.string.profile_weekly_limit_reason, it),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun RowIcon(icon: ImageVector) {
+    Box(
+        modifier = Modifier
+            .size(32.dp)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(18.dp),
         )
     }
 }

@@ -77,6 +77,9 @@ interface OrdersRepository {
 
     suspend fun getById(orderId: String): ApiResult<OrderItem>
 
+    /** The written reason an administrator gave for taking this cleaner off [orderId]. */
+    suspend fun getMyAssignmentRemovalReason(orderId: String): ApiResult<String>
+
     /**
      * The take echoes the text row the cleaner was shown: the server records the acceptance of that
      * exact text beside the seat, and refuses a take that names none or another order's text.
@@ -309,6 +312,10 @@ class OrdersRepositoryImpl @Inject constructor(
                 // failure doesn't pretend we have a fresh cache.
                 if (result is ApiResult.Success) stalenessFor(orderId).markFresh()
             }
+
+    override suspend fun getMyAssignmentRemovalReason(orderId: String): ApiResult<String> =
+        safeApiCall(json) { orderApi.orderGetMyAssignmentRemoval(orderId) }
+            .mapWire { it.reason.required("reason") }
 
     override suspend fun takeOrder(orderId: String, acceptedWorkContractTextId: String): ApiResult<Unit> =
         safeApiCall(json) {

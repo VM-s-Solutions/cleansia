@@ -1317,6 +1317,8 @@
     <string name="offer_decline_body">Воно одразу повернеться до всіх прибиральників. Це ніяк не зараховується вам у мінус, і поки воно вільне, ви можете взяти його зі списку.</string>
     <string name="offer_decline_cta">Звільнити</string>
     <string name="offer_declined_toast">Звільнено \u2014 замовлення тепер відкрите для всіх.</string>
+    <string name="order_removal_title">Вас знято з цього замовлення</string>
+    <string name="order_removal_message">Адміністратор зняв вас із цього замовлення і вказав причину:\n\n%1$s</string>
     <string name="offer_empty">Зараз нічого не чекає на вашу відповідь.</string>
     <string name="offer_blocked_title">Ми не змогли передати вам це замовлення</string>
     <string name="offer_blocked_body">%1$s\n\nЦе наша провина \u2014 ми зарезервували замовлення на ваше ім\'я без перевірки, тож це ніяк не зараховується вам у мінус.</string>
@@ -1354,6 +1356,10 @@
     <string name="profile_terms_summary">Відкриється у браузері</string>
     <string name="profile_privacy">Політика конфіденційності</string>
     <string name="profile_privacy_summary">Як ми обробляємо ваші дані</string>
+    <string name="profile_weekly_limit">Тижневий ліміт замовлень: %1$d</string>
+    <string name="profile_weekly_limit_reason">Причина: %1$s</string>
+    <string name="profile_how_jobs_are_offered">Як ми пропонуємо замовлення</string>
+    <string name="profile_how_jobs_are_offered_summary">Правила списку замовлень</string>
 
     <!-- Profile photo. Copy shared verbatim with the customer app. -->
     <string name="profile_avatar_change">Змінити фото</string>

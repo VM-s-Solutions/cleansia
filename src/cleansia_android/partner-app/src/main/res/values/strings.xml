@@ -1347,6 +1347,8 @@
     <string name="offer_decline_body">It goes back to every cleaner straight away. Nothing about this is held against you, and you can still take it from the board while it is free.</string>
     <string name="offer_decline_cta">Release it</string>
     <string name="offer_declined_toast">Released \u2014 the job is open to every cleaner now.</string>
+    <string name="order_removal_title">You were taken off this job</string>
+    <string name="order_removal_message">An administrator took you off this job and gave this reason:\n\n%1$s</string>
     <string name="offer_empty">Nothing is waiting for your answer right now.</string>
     <string name="offer_blocked_title">We couldn\'t hand this job over</string>
     <string name="offer_blocked_body">%1$s\n\nThat one is on us \u2014 we put your name on this job without checking, so nothing here counts against you.</string>
@@ -1384,6 +1386,10 @@
     <string name="profile_terms_summary">Opens in your browser</string>
     <string name="profile_privacy">Privacy policy</string>
     <string name="profile_privacy_summary">How we handle your data</string>
+    <string name="profile_weekly_limit">Weekly job limit: %1$d</string>
+    <string name="profile_weekly_limit_reason">Reason: %1$s</string>
+    <string name="profile_how_jobs_are_offered">How jobs are offered</string>
+    <string name="profile_how_jobs_are_offered_summary">The rules behind the job board</string>
 
     <!-- Profile photo. Copy shared verbatim with the customer app. -->
     <string name="profile_avatar_change">Change photo</string>

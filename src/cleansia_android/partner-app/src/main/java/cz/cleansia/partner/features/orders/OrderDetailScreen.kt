@@ -103,6 +103,7 @@ fun OrderDetailScreen(
     val preferredOffer by viewModel.preferredOffer.collectAsStateWithLifecycle()
     val contractRequest by viewModel.contractRequest.collectAsStateWithLifecycle()
     val contractStanding by viewModel.contractStanding.collectAsStateWithLifecycle()
+    val removalReason by viewModel.removalReason.collectAsStateWithLifecycle()
     val checkedIds by checklistViewModel.checkedIds.collectAsStateWithLifecycle()
 
     // No local SnackbarHostState — all VMs push directly to the
@@ -258,6 +259,16 @@ fun OrderDetailScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background),
+        )
+    }
+
+    removalReason?.let { reason ->
+        CleansiaDialog(
+            onDismiss = viewModel::dismissRemovalReason,
+            title = stringResource(R.string.order_removal_title),
+            message = stringResource(R.string.order_removal_message, reason),
+            confirmLabel = stringResource(R.string.ok),
+            onConfirm = viewModel::dismissRemovalReason,
         )
     }
 }

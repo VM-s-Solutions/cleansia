@@ -1317,6 +1317,8 @@
     <string name="offer_decline_body">Он сразу вернётся ко всем уборщикам. Это никак не засчитывается вам в минус, и пока он свободен, вы можете взять его из списка.</string>
     <string name="offer_decline_cta">Освободить</string>
     <string name="offer_declined_toast">Освобождено \u2014 заказ теперь открыт для всех.</string>
+    <string name="order_removal_title">Вас сняли с этого заказа</string>
+    <string name="order_removal_message">Администратор снял вас с этого заказа и указал причину:\n\n%1$s</string>
     <string name="offer_empty">Сейчас ничего не ждёт вашего ответа.</string>
     <string name="offer_blocked_title">Мы не смогли передать вам этот заказ</string>
     <string name="offer_blocked_body">%1$s\n\nЭто наша вина \u2014 мы зарезервировали заказ на ваше имя без проверки, так что это никак не засчитывается вам в минус.</string>
@@ -1354,6 +1356,10 @@
     <string name="profile_terms_summary">Откроется в браузере</string>
     <string name="profile_privacy">Политика конфиденциальности</string>
     <string name="profile_privacy_summary">Как мы обрабатываем ваши данные</string>
+    <string name="profile_weekly_limit">Недельный лимит заказов: %1$d</string>
+    <string name="profile_weekly_limit_reason">Причина: %1$s</string>
+    <string name="profile_how_jobs_are_offered">Как мы предлагаем заказы</string>
+    <string name="profile_how_jobs_are_offered_summary">Правила списка заказов</string>
 
     <!-- Profile photo. Copy shared verbatim with the customer app. -->
     <string name="profile_avatar_change">Изменить фото</string>

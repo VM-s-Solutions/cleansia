@@ -44,6 +44,8 @@ class OrderDetailViewModel @Inject constructor(
     private val orderId: String = savedStateHandle.get<String>("orderId")
         ?: error("orderId required for OrderDetail route")
 
+    private val showRemovalReason: Boolean = savedStateHandle.get<Boolean>("showRemovalReason") == true
+
     private val _uiState = MutableStateFlow<OrderDetailUiState>(OrderDetailUiState.Loading)
     val uiState: StateFlow<OrderDetailUiState> = _uiState.asStateFlow()
 
@@ -67,6 +69,9 @@ class OrderDetailViewModel @Inject constructor(
     private val _offerRefusal = MutableStateFlow<OfferRefusal?>(null)
     val offerRefusal: StateFlow<OfferRefusal?> = _offerRefusal.asStateFlow()
 
+    private val _removalReason = MutableStateFlow<String?>(null)
+    val removalReason: StateFlow<String?> = _removalReason.asStateFlow()
+
     /** The contract sheet the screen is showing, if any: a take, a standalone acceptance or a read. */
     private val _contractRequest = MutableStateFlow<WorkContractRequest?>(null)
     val contractRequest: StateFlow<WorkContractRequest?> = _contractRequest.asStateFlow()
@@ -87,6 +92,15 @@ class OrderDetailViewModel @Inject constructor(
         ensureFreshOrCachedAsync()
         ensureOffersFresh()
         viewModelScope.launch { myEmployeeId.value = employeeIdResolver.resolve() }
+        if (showRemovalReason) {
+            viewModelScope.launch {
+                _removalReason.value = ordersRepository.getMyAssignmentRemovalReason(orderId).getOrNull()
+            }
+        }
+    }
+
+    fun dismissRemovalReason() {
+        _removalReason.value = null
     }
 
     /**

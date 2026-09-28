@@ -1333,6 +1333,8 @@
     <string name="offer_decline_body">Ihned se vrátí všem uklízečům. Nijak se vám to nezapočítává a dokud je volná, můžete si ji z nabídky vzít i vy.</string>
     <string name="offer_decline_cta">Uvolnit</string>
     <string name="offer_declined_toast">Uvolněno \u2014 zakázka je teď otevřená všem.</string>
+    <string name="order_removal_title">Byli jste z této zakázky odebráni</string>
+    <string name="order_removal_message">Administrátor vás z této zakázky odebral s tímto odůvodněním:\n\n%1$s</string>
     <string name="offer_empty">Právě teď na vaši odpověď nic nečeká.</string>
     <string name="offer_blocked_title">Zakázku se nám nepodařilo předat</string>
     <string name="offer_blocked_body">%1$s\n\nTohle je na nás \u2014 rezervovali jsme zakázku na vaše jméno, aniž bychom to ověřili, takže se vám to nijak nezapočítává.</string>
@@ -1370,6 +1372,10 @@
     <string name="profile_terms_summary">Otevře se v prohlížeči</string>
     <string name="profile_privacy">Zásady ochrany osobních údajů</string>
     <string name="profile_privacy_summary">Jak nakládáme s vašimi údaji</string>
+    <string name="profile_weekly_limit">Týdenní limit zakázek: %1$d</string>
+    <string name="profile_weekly_limit_reason">Důvod: %1$s</string>
+    <string name="profile_how_jobs_are_offered">Jak nabízíme zakázky</string>
+    <string name="profile_how_jobs_are_offered_summary">Pravidla nabídky zakázek</string>
 
     <!-- Profile photo. Copy shared verbatim with the customer app. -->
     <string name="profile_avatar_change">Změnit fotku</string>

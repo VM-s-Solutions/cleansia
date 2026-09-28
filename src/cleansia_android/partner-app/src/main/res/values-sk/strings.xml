@@ -1312,6 +1312,8 @@
     <string name="offer_decline_body">Ihneď sa vráti všetkým upratovačom. Nijako sa vám to nezapočítava a kým je voľná, môžete si ju z ponuky vziať aj vy.</string>
     <string name="offer_decline_cta">Uvoľniť</string>
     <string name="offer_declined_toast">Uvoľnené \u2014 zákazka je teraz otvorená všetkým.</string>
+    <string name="order_removal_title">Boli ste z tejto zákazky odobraní</string>
+    <string name="order_removal_message">Administrátor vás z tejto zákazky odobral s týmto odôvodnením:\n\n%1$s</string>
     <string name="offer_empty">Práve teraz na vašu odpoveď nič nečaká.</string>
     <string name="offer_blocked_title">Zákazku sa nám nepodarilo odovzdať</string>
     <string name="offer_blocked_body">%1$s\n\nToto je na nás \u2014 rezervovali sme zákazku na vaše meno bez overenia, takže sa vám to nijako nezapočítava.</string>
@@ -1349,6 +1351,10 @@
     <string name="profile_terms_summary">Otvorí sa v prehliadači</string>
     <string name="profile_privacy">Zásady ochrany osobných údajov</string>
     <string name="profile_privacy_summary">Ako nakladáme s vašimi údajmi</string>
+    <string name="profile_weekly_limit">Týždenný limit zákaziek: %1$d</string>
+    <string name="profile_weekly_limit_reason">Dôvod: %1$s</string>
+    <string name="profile_how_jobs_are_offered">Ako ponúkame zákazky</string>
+    <string name="profile_how_jobs_are_offered_summary">Pravidlá ponuky zákaziek</string>
 
     <!-- Profile photo. Copy shared verbatim with the customer app. -->
     <string name="profile_avatar_change">Zmeniť fotku</string>

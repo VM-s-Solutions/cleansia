@@ -658,7 +658,7 @@
           "success": "Objednávka byla zrušena jako nedostavení uklízeče. {{refund}} {{credit}}",
           "refunded": "Na kartu bylo vráceno {{amount}}.",
           "refund_pending": "Vrácení platby na kartu zatím neproběhlo; opakuje se automaticky.",
-          "nothing_refunded": "Nebyla žádná platba kartou k vrácení.",
+          "nothing_refunded": "Tato akce nevrátila žádnou platbu kartou. Zkontrolujte stav platby objednávky.",
           "credit_granted": "Zákazník dostal omluvný kredit {{amount}}.",
           "no_credit": "Omluvný kredit nebyl vydán: jde o objednávku hosta, nebo pro tuto měnu není nastaven."
         },

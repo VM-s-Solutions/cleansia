@@ -658,7 +658,7 @@
           "success": "Order cancelled as a cleaner no-show. {{refund}} {{credit}}",
           "refunded": "{{amount}} was refunded to the card.",
           "refund_pending": "The card refund has not gone through yet; it is retried automatically.",
-          "nothing_refunded": "There was no card payment to refund.",
+          "nothing_refunded": "This action made no card refund. Check the order's payment status.",
           "credit_granted": "The customer received {{amount}} in apology credit.",
           "no_credit": "No apology credit was issued: a guest order, or none is set for this currency."
         },

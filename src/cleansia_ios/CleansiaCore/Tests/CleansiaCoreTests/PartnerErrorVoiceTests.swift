@@ -212,15 +212,6 @@ final class PartnerErrorVoiceTests: XCTestCase {
         "ru": "пустым"
     ]
 
-    /// A cleaner is a partner paid a reward, never an employee paid a wage.
-    private static let employmentVocabulary = [
-        "en": ["employee", "wage", "payroll"],
-        "cs": ["zaměstn", "mzd"],
-        "sk": ["zamestn", "mzd"],
-        "uk": ["працівник", "співробітник", "зарплат"],
-        "ru": ["сотрудник", "работник", "зарплат"]
-    ]
-
     /// The take refusals a cleaner actually meets. Pinned because every client ships these sentences and a
     /// silent re-word on one of them is the divergence this suite exists to stop. The contract keys are
     /// the chain's first and last rules now that a take echoes the contract text it was shown, and the
@@ -281,22 +272,6 @@ final class PartnerErrorVoiceTests: XCTestCase {
             }
         }
         assertNoViolations(lifted, "partner-only error keys voiced for a customer")
-    }
-
-    func testPartnerReachableKeysCarryNoEmploymentVocabulary() {
-        let keys = Set(Self.partnerReachable.keys).union(Self.partnerOnly.map(\.key))
-        var employment: [String] = []
-        for locale in Self.locales {
-            let banned = Self.employmentVocabulary[locale] ?? []
-            for key in keys {
-                let resolved = resolve(key, locale: locale)
-                guard resolved != key else { continue }
-                for word in banned where resolved.lowercased().contains(word) {
-                    employment.append("\(key) · \(locale) · \"\(word)\"")
-                }
-            }
-        }
-        assertNoViolations(employment, "partner-reachable error keys voiced as employment")
     }
 
     func testTheTakeRefusalsKeepTheirBoundEnglishCopy() {

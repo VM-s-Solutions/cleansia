@@ -59,6 +59,14 @@ final class StringCatalogCompletenessTests: XCTestCase {
     /// Every locale other than the English source — for entries that genuinely are locale-invariant.
     private static let allLocalized = ["cs", "sk", "uk", "ru"]
 
+    private static let partnerFacingCatalogs = ["Core", "Partner"]
+
+    /// A cleaner is a partner paid a reward, never an employee paid a wage. Values only: keys are wire names.
+    private static let employmentVocabulary = [
+        "employee", "wage", "payroll", "zaměstn", "zamestn", "mzd", "сотрудник", "работник", "працівник",
+        "співробітник", "зарплат", "заработн", "заробітн"
+    ]
+
     func testEveryKeyCarriesAValueInAllFiveLocales() throws {
         var gaps: [String] = []
         for (catalog, entries) in try loadAll() {
@@ -129,6 +137,21 @@ final class StringCatalogCompletenessTests: XCTestCase {
             }
         }
         assertNoViolations(stale, "exceptions that no longer describe the catalog")
+    }
+
+    func testPartnerFacingCopyNeverSpeaksOfEmployment() throws {
+        var employment: [String] = []
+        for (catalog, entries) in try loadAll() where Self.partnerFacingCatalogs.contains(catalog) {
+            for (key, byLocale) in entries {
+                for (locale, value) in byLocale {
+                    let copy = value.texts.joined(separator: "\n").lowercased()
+                    for word in Self.employmentVocabulary where copy.contains(word) {
+                        employment.append("\(catalog) · \(key) · \(locale) · \"\(word)\"")
+                    }
+                }
+            }
+        }
+        assertNoViolations(employment, "partner-facing values that speak of employment")
     }
 
     // MARK: - Loading
@@ -242,9 +265,12 @@ private struct LocalizedValue: Equatable {
         plain == nil && plural.isEmpty
     }
 
+    var texts: [String] {
+        [plain].compactMap { $0 } + Array(plural.values)
+    }
+
     var isComplete: Bool {
-        !isEmpty && ([plain].compactMap { $0 } + Array(plural.values))
-            .allSatisfy { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        !isEmpty && texts.allSatisfy { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
     }
 
     init(_ localization: Any) {

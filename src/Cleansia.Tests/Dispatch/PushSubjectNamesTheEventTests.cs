@@ -66,6 +66,10 @@ public class PushSubjectNamesTheEventTests
         // is outside the sweep's NeverStarted status filter, so the next tick cannot re-select the row
         // and cannot re-send. An order is cancelled as a no-show once.
         "CleanerNoShowCancellation.cs",
+        // Same claim: the administrator's lockout confirmation refuses an order already cancelled or
+        // completed, so the customer's order.cancelled push goes out once per order, under the key every
+        // other cancel path mints for the same news.
+        "AdminCancelOrderAsLockout.cs",
 
         // Swept reminders, each suppressed by its own stamp on the row it reminds about, so the sweep
         // cannot re-send for the same order however many times it ticks.

@@ -34,8 +34,21 @@ public sealed class LegalDocumentSeederTests : IDisposable
         (LegalDocumentType.PrivacyPolicy, new DateOnly(2026, 9, 14)),
         (LegalDocumentType.PrivacyPolicy, new DateOnly(2026, 9, 29)),
         (LegalDocumentType.WorkContract, new DateOnly(2026, 9, 20)),
+        (LegalDocumentType.WorkContract, new DateOnly(2026, 9, 29)),
+        (LegalDocumentType.CleanerFrameworkContract, new DateOnly(2026, 9, 29)),
+        (LegalDocumentType.SelfBillingAgreement, new DateOnly(2026, 9, 29)),
+        (LegalDocumentType.CleanerDataProcessingAgreement, new DateOnly(2026, 9, 29)),
         (LegalDocumentType.ComplaintsProcedure, new DateOnly(2026, 9, 29)),
     ];
+
+    /// <summary>
+    /// The contract for work binds the operating company and the cleaner (decision 45), and the cleaner's
+    /// three documents are theirs: all four are employee texts; the rest are the customer's.
+    /// </summary>
+    private static LegalDocumentAudience AudienceOf(LegalDocumentType type) =>
+        type == LegalDocumentType.WorkContract || LegalDocument.CleanerConsentTypeFor(type) is not null
+            ? LegalDocumentAudience.Employee
+            : LegalDocumentAudience.Customer;
 
     private readonly SqliteConnection _connection;
 
@@ -96,9 +109,7 @@ public sealed class LegalDocumentSeederTests : IDisposable
             documents.Select(d => (d.Type, d.EffectiveFrom)).OrderBy(v => v.Type).ThenBy(v => v.EffectiveFrom));
         foreach (var document in documents)
         {
-            Assert.Equal(
-                document.Type == LegalDocumentType.WorkContract ? LegalDocumentAudience.Employee : LegalDocumentAudience.Customer,
-                document.Audience);
+            Assert.Equal(AudienceOf(document.Type), document.Audience);
             Assert.Null(document.CountryId);
             Assert.Equal(LegalDocument.VersionFor(document.EffectiveFrom), document.Version);
             Assert.Equal(new[] { "cs", "en", "ru", "sk", "uk" }, document.Texts.Select(t => t.Language).OrderBy(l => l));
@@ -114,7 +125,8 @@ public sealed class LegalDocumentSeederTests : IDisposable
 
         Assert.All(documents.Where(d => d.Type == LegalDocumentType.TermsOfService),
             d => Assert.Equal("Terms of Service", d.TextFor("en")!.Title));
-        Assert.Equal("Contract for Work", documents.Single(d => d.Type == LegalDocumentType.WorkContract).TextFor("en")!.Title);
+        Assert.All(documents.Where(d => d.Type == LegalDocumentType.WorkContract),
+            d => Assert.Equal("Contract for Work", d.TextFor("en")!.Title));
     }
 
     // The contract is a template: it names the job by what the acceptance shows and binds the figures
@@ -124,15 +136,100 @@ public sealed class LegalDocumentSeederTests : IDisposable
     {
         await SeedAsync();
 
-        var contract = (await DocumentsAsync()).Single(d => d.Type == LegalDocumentType.WorkContract);
-        Assert.Equal(new[] { "cs", "en", "ru", "sk", "uk" }, contract.Texts.Select(t => t.Language).OrderBy(l => l));
-        foreach (var text in contract.Texts)
+        var contracts = (await DocumentsAsync()).Where(d => d.Type == LegalDocumentType.WorkContract).ToList();
+        Assert.Equal(SeededVersions.Count(v => v.Type == LegalDocumentType.WorkContract), contracts.Count);
+        foreach (var contract in contracts)
         {
-            Assert.Contains("{{currency}}", text.ContentMarkdown);
-            Assert.DoesNotContain(text.ContentMarkdown, c => char.IsDigit(c));
-            Assert.StartsWith("> ", text.ContentMarkdown);
+            Assert.Equal(new[] { "cs", "en", "ru", "sk", "uk" }, contract.Texts.Select(t => t.Language).OrderBy(l => l));
+            foreach (var text in contract.Texts)
+            {
+                Assert.Contains("{{currency}}", text.ContentMarkdown);
+                Assert.DoesNotContain(text.ContentMarkdown, c => char.IsDigit(c));
+                Assert.StartsWith("> ", text.ContentMarkdown);
+            }
         }
     }
+
+    /// <summary>
+    /// The contract for work binds the operating company and the cleaner (decision 45): the newest text names
+    /// the client — the company that operates the order — through the placeholders the partner read fills
+    /// from its company record, in every language, beside the currency its reward is stated in. The
+    /// 2026-09-20 text named the customer as the client and said Cleansia was not a party.
+    /// </summary>
+    [Fact]
+    public void The_Newest_Work_Contract_Names_The_Operating_Company_As_The_Client_Through_Its_Placeholders()
+    {
+        var newest = NewestOf(LegalDocumentType.WorkContract);
+
+        Assert.Equal(new[] { "cs", "en", "ru", "sk", "uk" }, newest.Select(r => r.Language).Order());
+        Assert.All(newest, r =>
+        {
+            Assert.Equal(LegalDocumentAudience.Employee, r.Audience);
+            Assert.Equal(
+                new[]
+                {
+                    LegalMarkdownRenderer.CurrencyPlaceholder,
+                    LegalMarkdownRenderer.CompanyLegalNamePlaceholder,
+                    LegalMarkdownRenderer.CompanyRegistrationNumberPlaceholder,
+                    LegalMarkdownRenderer.CompanySeatPlaceholder,
+                }.Order(StringComparer.Ordinal),
+                LegalMarkdownRenderer.PlaceholdersIn(r.ContentMarkdown).Order(StringComparer.Ordinal));
+            Assert.DoesNotContain("Cleansia s.r.o.", r.ContentMarkdown);
+        });
+    }
+
+    /// <summary>
+    /// The cleaner's three documents (decision 47) are employee texts in five languages that name the market's
+    /// operating company only through the placeholders the partner read fills from its company record — never
+    /// the VAT number, which a company that is not a VAT payer, the launch state, does not hold, so its
+    /// placeholder would reach the cleaner as braces — and carry no identity of their own. The framework
+    /// contract also states the reward in the market's currency.
+    /// </summary>
+    [Theory]
+    [InlineData(LegalDocumentType.CleanerFrameworkContract)]
+    [InlineData(LegalDocumentType.SelfBillingAgreement)]
+    [InlineData(LegalDocumentType.CleanerDataProcessingAgreement)]
+    public void The_Cleaner_Documents_Name_The_Company_Only_Through_Its_Placeholders_In_Every_Language(LegalDocumentType type)
+    {
+        var newest = NewestOf(type);
+        var expected = type == LegalDocumentType.CleanerFrameworkContract
+            ? TermsPlaceholders
+            : TermsPlaceholders.Where(p => p != LegalMarkdownRenderer.CurrencyPlaceholder).ToArray();
+
+        Assert.Equal(new[] { "cs", "en", "ru", "sk", "uk" }, newest.Select(r => r.Language).Order());
+        Assert.All(newest, r =>
+        {
+            Assert.Equal(LegalDocumentAudience.Employee, r.Audience);
+            Assert.StartsWith("> ", r.ContentMarkdown);
+            Assert.Equal(expected, LegalMarkdownRenderer.PlaceholdersIn(r.ContentMarkdown).Order(StringComparer.Ordinal));
+            Assert.DoesNotContain("@cleansia", r.ContentMarkdown);
+            Assert.DoesNotContain("+420", r.ContentMarkdown);
+            Assert.DoesNotContain("s.r.o.", r.ContentMarkdown);
+        });
+    }
+
+    /// <summary>
+    /// The framework contract tells the cleaner how long to wait at a closed door before reporting a lockout —
+    /// the wait the report is refused before — so moving that constant without publishing a new version of the
+    /// contract fails here, in every language. It states no other minute figure.
+    /// </summary>
+    [Fact]
+    public void The_Framework_Contract_States_The_Lockout_Wait_In_Every_Language()
+    {
+        var newest = NewestOf(LegalDocumentType.CleanerFrameworkContract);
+
+        Assert.Equal(new[] { "cs", "en", "ru", "sk", "uk" }, newest.Select(r => r.Language).Order());
+        Assert.All(newest, r => Assert.Equal(
+            new[] { BookingPolicy.LockoutWaitMinutes },
+            MinutePhrase.Matches(r.ContentMarkdown).Select(m => int.Parse(m.Groups[1].Value))));
+    }
+
+    private static List<LegalSeedResource> NewestOf(LegalDocumentType type) =>
+        LegalSeedResource.ReadAll()
+            .Where(r => r.Type == type)
+            .GroupBy(r => r.EffectiveFrom)
+            .MaxBy(g => g.Key)?
+            .ToList() ?? [];
 
     // The money figure in the terms comes from the market (ADR-0060): the seed carries the placeholder,
     // never a currency word, so the API fills it the way the locale copy was filled before. The privacy
@@ -440,8 +537,7 @@ public sealed class LegalDocumentSeederTests : IDisposable
         var resources = LegalSeedResource.ReadAll();
 
         Assert.Equal(SeededVersions.Length * 5, resources.Count);
-        Assert.All(resources, r => Assert.Equal(
-            r.Type == LegalDocumentType.WorkContract ? LegalDocumentAudience.Employee : LegalDocumentAudience.Customer, r.Audience));
+        Assert.All(resources, r => Assert.Equal(AudienceOf(r.Type), r.Audience));
         Assert.All(resources, r => Assert.Null(r.CountryIsoCode));
         Assert.Equal(
             SeededVersions.OrderBy(v => v.Type).ThenBy(v => v.EffectiveFrom),

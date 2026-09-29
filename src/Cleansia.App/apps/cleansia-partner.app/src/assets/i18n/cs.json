@@ -266,7 +266,8 @@
       "address": "Adresa",
       "cleaning_date": "Datum úklidu",
       "total_price": "Celková cena",
-      "your_pay": "Vaše odměna",
+      "your_pay": "Vaše odměna (za místo)",
+      "dirtiness_level": "Znečištění",
       "payment_status": "Stav platby",
       "order_status": "Stav objednávky",
       "order_id": "ID objednávky",
@@ -370,6 +371,7 @@
       "cleaning_date": "Datum úklidu",
       "rooms": "Pokoje",
       "bathrooms": "Koupelny",
+      "dirtiness_level": "Znečištění",
       "estimated_time": "Odhadovaný čas",
       "estimated_time_minutes": "{{minutes}} minut",
       "selected_package": "Vybraný balíček",
@@ -500,6 +502,7 @@
       "order_number": "Číslo objednávky",
       "base_pay": "Základní odměna",
       "extras_pay": "Odměna za příplatky",
+      "dirtiness_pay": "Odměna za znečištění",
       "expenses_pay": "Náhrada nákladů",
       "bonus_pay": "Bonus",
       "deduction_pay": "Srážky",
@@ -524,6 +527,7 @@
       "total_orders": "Celkem objednávek",
       "base_pay": "Základní odměna",
       "extras_pay": "Odměna za příplatky",
+      "dirtiness_pay": "Odměna za znečištění",
       "expenses_pay": "Náhrada nákladů",
       "bonus_pay": "Bonus",
       "deduction_pay": "Srážky",
@@ -1169,6 +1173,11 @@
       "open": "Otevřené",
       "closed": "Uzavřené",
       "paid": "Vyplacené"
+    },
+    "dirtiness_level": {
+      "normal": "Běžné",
+      "increased": "Zvýšené",
+      "heavy": "Silné"
     }
   },
   "help": {

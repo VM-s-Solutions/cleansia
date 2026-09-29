@@ -252,6 +252,11 @@
       "active": "Aktívne",
       "inactive": "Neaktívne",
       "expired": "Expirované"
+    },
+    "dirtiness_level": {
+      "normal": "Bežné",
+      "increased": "Zvýšené",
+      "heavy": "Silné"
     }
   },
   "sidebar": {
@@ -703,6 +708,7 @@
       "cleaning_time": "Čas upratovania",
       "rooms": "Izby",
       "bathrooms": "Kúpeľne",
+      "dirtiness_level": "Znečistenie",
       "estimated_time": "Odhadovaný čas",
       "actual_time": "Skutočný čas",
       "completed_at": "Dokončené",
@@ -712,6 +718,7 @@
       "payment_info": "Informácie o platbe",
       "payment_type": "Typ platby",
       "payment_status": "Stav platby",
+      "dirtiness_surcharge": "Príplatok za znečistenie",
       "total_price": "Celková cena",
       "receipt_number": "Číslo účtenky",
       "cash_collected_by": "Hotovosť prevzal",
@@ -1107,6 +1114,7 @@
       "price_required": "Povinné",
       "price_optional": "Nepovinné",
       "estimated_time": "Odhadovaný čas (minúty)",
+      "minutes_per_room": "Minúty na izbu alebo kúpeľňu",
       "messages": {
         "load_error": "Nepodarilo sa načítať službu",
         "create_success": "Služba bola úspešne vytvorená",

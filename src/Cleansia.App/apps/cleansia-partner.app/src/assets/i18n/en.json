@@ -266,7 +266,8 @@
       "address": "Address",
       "cleaning_date": "Cleaning Date",
       "total_price": "Total Price",
-      "your_pay": "Your Pay",
+      "your_pay": "Your Pay (per spot)",
+      "dirtiness_level": "Dirtiness",
       "payment_status": "Payment Status",
       "order_status": "Order Status",
       "order_id": "Order ID",
@@ -370,6 +371,7 @@
       "cleaning_date": "Cleaning Date",
       "rooms": "Rooms",
       "bathrooms": "Bathrooms",
+      "dirtiness_level": "Dirtiness",
       "estimated_time": "Estimated Time",
       "estimated_time_minutes": "{{minutes}} minutes",
       "selected_package": "Selected Package",
@@ -500,6 +502,7 @@
       "order_number": "Order Number",
       "base_pay": "Base Pay",
       "extras_pay": "Extras Pay",
+      "dirtiness_pay": "Dirtiness Pay",
       "expenses_pay": "Expenses Pay",
       "bonus_pay": "Bonus Pay",
       "deduction_pay": "Deduction Pay",
@@ -524,6 +527,7 @@
       "total_orders": "Total Orders",
       "base_pay": "Base Pay",
       "extras_pay": "Extras Pay",
+      "dirtiness_pay": "Dirtiness Pay",
       "expenses_pay": "Expenses Pay",
       "bonus_pay": "Bonus Pay",
       "deduction_pay": "Deduction Pay",
@@ -1169,6 +1173,11 @@
       "open": "Open",
       "closed": "Closed",
       "paid": "Paid"
+    },
+    "dirtiness_level": {
+      "normal": "Normal",
+      "increased": "Increased",
+      "heavy": "Heavy"
     }
   },
   "help": {

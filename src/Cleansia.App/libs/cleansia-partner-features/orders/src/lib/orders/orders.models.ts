@@ -102,6 +102,16 @@ function yourPayColumn(lang: string | undefined): TableColumn<OrderListItem> {
   };
 }
 
+function dirtinessColumn(template?: TemplateRef<OrderListItem>): TableColumn<OrderListItem> {
+  return {
+    id: 'dirtinessLevel',
+    field: 'dirtinessLevel',
+    header: 'pages.orders.dirtiness_level',
+    customTemplate: template,
+    width: '10%',
+  };
+}
+
 export function getAvailableOrdersTableDefinition(
   defs: {
     onTakeOrder: (row: OrderListItem) => void;
@@ -109,7 +119,8 @@ export function getAvailableOrdersTableDefinition(
   },
   lang: string | undefined,
   statusTemplate?: TemplateRef<OrderListItem>,
-  orderStatusTemplate?: TemplateRef<OrderListItem>
+  orderStatusTemplate?: TemplateRef<OrderListItem>,
+  dirtinessTemplate?: TemplateRef<OrderListItem>
 ): {
   columns: TableColumn<OrderListItem>[];
   actions: TableAction<OrderListItem>[];
@@ -140,6 +151,7 @@ export function getAvailableOrdersTableDefinition(
           `${row?.customerAddress || ''}`.trim().replace(/^,\s*/, ''),
         width: '20%',
       },
+      dirtinessColumn(dirtinessTemplate),
       yourPayColumn(lang),
       {
         id: 'availableSpots',
@@ -195,7 +207,8 @@ export function getMyOrdersTableDefinition(
   },
   lang: string | undefined,
   statusTemplate?: TemplateRef<OrderListItem>,
-  orderStatusTemplate?: TemplateRef<OrderListItem>
+  orderStatusTemplate?: TemplateRef<OrderListItem>,
+  dirtinessTemplate?: TemplateRef<OrderListItem>
 ): {
   columns: TableColumn<OrderListItem>[];
   actions: TableAction<OrderListItem>[];
@@ -239,6 +252,7 @@ export function getMyOrdersTableDefinition(
           `${row?.customerAddress || ''}`.trim().replace(/^,\s*/, ''),
         width: '18%',
       },
+      dirtinessColumn(dirtinessTemplate),
       yourPayColumn(lang),
       {
         id: 'orderStatus',

@@ -173,6 +173,10 @@
           <span class="detail-grid__label">{{ 'pages.order_detail.bathrooms' | translate }}</span>
           <span class="detail-grid__value">{{ facade.order()?.bathrooms || 0 }}</span>
         </div>
+        <div class="detail-grid__item cleansia-order-detail__dirtiness-level">
+          <span class="detail-grid__label">{{ 'pages.order_detail.dirtiness_level' | translate }}</span>
+          <span class="detail-grid__value">{{ facade.dirtinessLevelKey() | translate }}</span>
+        </div>
         <div class="detail-grid__item">
           <span class="detail-grid__label">{{ 'pages.order_detail.estimated_time' | translate }}</span>
           <span class="detail-grid__value">{{ facade.formatDuration(facade.order()?.estimatedTime) }}</span>
@@ -283,6 +287,12 @@
         }
       </div>
       <div class="detail-ledger">
+        @if (facade.order()?.dirtinessSurchargeAmount) {
+        <div class="detail-ledger__row cleansia-order-detail__dirtiness-surcharge">
+          <span class="detail-ledger__label">{{ 'pages.order_detail.dirtiness_surcharge' | translate }}</span>
+          <span class="detail-ledger__value">{{ facade.formatPrice(facade.order()?.dirtinessSurchargeAmount) }}</span>
+        </div>
+        }
         <div class="detail-ledger__row detail-ledger__row--total">
           <span class="detail-ledger__label">{{ 'pages.order_detail.total_price' | translate }}</span>
           <span class="detail-ledger__value">{{ facade.formatPrice(facade.order()?.totalPrice) }}</span>

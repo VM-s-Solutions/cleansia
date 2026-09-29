@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import {
   DashboardStatsDto,
+  DirtinessLevel,
   OrderListItem,
   OrderStatus,
   PartnerClient,
@@ -129,6 +130,19 @@ describe('DashboardFacade', () => {
       expect(card.yourPay).toBe('650,00 Kč');
       expect(Object.values(card)).not.toContain('1 250,00 Kč');
       expect(card.orderStatus).toEqual({ name: 'New', value: OrderStatus.New });
+    });
+
+    it('names the dirtiness level the customer booked', () => {
+      upcoming = [
+        OrderListItem.fromJS({ id: 'o-3', dirtinessLevel: DirtinessLevel.Heavy }),
+        OrderListItem.fromJS({ id: 'o-4', dirtinessLevel: DirtinessLevel.Increased }),
+        OrderListItem.fromJS({ id: 'o-5' }),
+      ];
+      expect(facade.upcomingOrderCards().map((card) => card.dirtinessLevelKey)).toEqual([
+        'enums.dirtiness_level.heavy',
+        'enums.dirtiness_level.increased',
+        'enums.dirtiness_level.normal',
+      ]);
     });
 
     it('prints no amount when the server sent no cleaner pay', () => {

@@ -193,3 +193,7 @@
     <cleansia-status-badge kind="order" [value]="item.orderStatus" />
   </div>
 </ng-template>
+
+<ng-template #dirtinessTemplate let-item>
+  {{ dirtinessLevelLabelKey(item.dirtinessLevel) | translate }}
+</ng-template>

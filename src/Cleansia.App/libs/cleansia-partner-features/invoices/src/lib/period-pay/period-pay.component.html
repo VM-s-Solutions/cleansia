@@ -83,6 +83,12 @@
             <span>{{ 'pages.period_pay.extras_pay' | translate }}</span>
             <span class="amount">{{ amounts().extras }}</span>
           </div>
+          @if (summary.totalDirtinessPay > 0) {
+          <div class="amount-row">
+            <span>{{ 'pages.period_pay.dirtiness_pay' | translate }}</span>
+            <span class="amount">{{ amounts().dirtiness }}</span>
+          </div>
+          }
           <div class="amount-row">
             <span>{{ 'pages.period_pay.expenses_pay' | translate }}</span>
             <span class="amount">{{ amounts().expenses }}</span>

@@ -45,6 +45,7 @@ import {
   findCallerWorkContractAcceptance,
   computeElapsedTime,
   buildCurrencyOptions,
+  dirtinessLevelLabelKey,
   hasExtras,
   getExtrasEntries,
 } from './order-details.helpers';
@@ -350,6 +351,7 @@ export class OrderDetailsComponent implements OnInit {
       rooms: [{ value: '', disabled: true }],
       bathrooms: [{ value: '', disabled: true }],
       estimatedTime: [{ value: '', disabled: true }],
+      dirtinessLevel: [{ value: '', disabled: true }],
       paymentType: [{ value: '', disabled: true }],
       totalPrice: [{ value: '', disabled: true }],
       currency: [{ value: '', disabled: true }],
@@ -386,6 +388,7 @@ export class OrderDetailsComponent implements OnInit {
         'pages.order_details.estimated_time_minutes',
         { minutes: orderDetails.estimatedTime }
       ),
+      dirtinessLevel: this.translateService.instant(dirtinessLevelLabelKey(orderDetails.dirtinessLevel)),
       paymentType: orderDetails.paymentType.name,
       totalPrice: this.formatCurrency(orderDetails.totalPrice, orderDetails.currency.code),
       currency: `${orderDetails.currency.name} (${orderDetails.currency.code})`,

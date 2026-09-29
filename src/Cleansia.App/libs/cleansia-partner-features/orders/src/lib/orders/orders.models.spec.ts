@@ -1,6 +1,8 @@
+import { TemplateRef } from '@angular/core';
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { OrderListItem, OrderStatus } from '@cleansia/partner-services';
+import { DirtinessLevel, OrderListItem, OrderStatus } from '@cleansia/partner-services';
+import { dirtinessLevelLabelKey } from '../order-details/order-details.helpers';
 import {
   getAvailableOrdersTableDefinition,
   getMyOrdersTableDefinition,
@@ -126,6 +128,50 @@ describe("the pay column is the partner's own pay, never the customer's price", 
       const value = resolveKey(bundle, 'pages.orders.your_pay');
 
       expect({ locale, named: typeof value === 'string' && value.trim().length > 0 }).toEqual({ locale, named: true });
+    }
+  });
+});
+
+describe('the dirtiness level the customer booked is a column on both lists', () => {
+  it('sits before the pay on both lists and renders through the template the page hands in', () => {
+    const template = {} as TemplateRef<OrderListItem>;
+    const defs = [
+      getAvailableOrdersTableDefinition(
+        { onTakeOrder: jest.fn(), isTakeInFlight: () => false },
+        'cs',
+        undefined,
+        undefined,
+        template
+      ),
+      getMyOrdersTableDefinition(
+        { onStartOrder: jest.fn(), onCompleteOrder: jest.fn() },
+        'cs',
+        undefined,
+        undefined,
+        template
+      ),
+    ];
+
+    for (const def of defs) {
+      const ids = def.columns.map((c) => c.id);
+      expect(ids.indexOf('dirtinessLevel')).toBe(ids.indexOf('estimatedCleanerPay') - 1);
+      expect(def.columns.find((c) => c.id === 'dirtinessLevel')?.customTemplate).toBe(template);
+    }
+  });
+
+  it('names the column and every level in all five partner locales', () => {
+    const keys = [
+      'pages.orders.dirtiness_level',
+      ...[DirtinessLevel.Normal, DirtinessLevel.Increased, DirtinessLevel.Heavy].map(dirtinessLevelLabelKey),
+    ];
+    for (const locale of PARTNER_LOCALES) {
+      const bundle = JSON.parse(readFileSync(join(I18N_DIR, `${locale}.json`), 'utf8')) as unknown;
+      const missing = keys.filter((key) => {
+        const value = resolveKey(bundle, key);
+        return typeof value !== 'string' || !value.trim();
+      });
+
+      expect({ locale, missing }).toEqual({ locale, missing: [] });
     }
   });
 });

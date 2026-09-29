@@ -266,7 +266,8 @@
       "address": "Адрес",
       "cleaning_date": "Дата уборки",
       "total_price": "Общая стоимость",
-      "your_pay": "Ваше вознаграждение",
+      "your_pay": "Ваше вознаграждение (за место)",
+      "dirtiness_level": "Загрязнение",
       "payment_status": "Статус оплаты",
       "order_status": "Статус заказа",
       "order_id": "ID заказа",
@@ -370,6 +371,7 @@
       "cleaning_date": "Дата уборки",
       "rooms": "Комнаты",
       "bathrooms": "Ванные комнаты",
+      "dirtiness_level": "Загрязнение",
       "estimated_time": "Ориентировочное время",
       "estimated_time_minutes": "{{minutes}} минут",
       "selected_package": "Выбранный пакет",
@@ -500,6 +502,7 @@
       "order_number": "Номер заказа",
       "base_pay": "Базовая оплата",
       "extras_pay": "Оплата за дополнения",
+      "dirtiness_pay": "Оплата за загрязнение",
       "expenses_pay": "Компенсация расходов",
       "bonus_pay": "Бонус",
       "deduction_pay": "Удержания",
@@ -524,6 +527,7 @@
       "total_orders": "Всего заказов",
       "base_pay": "Базовая оплата",
       "extras_pay": "Оплата за дополнения",
+      "dirtiness_pay": "Оплата за загрязнение",
       "expenses_pay": "Компенсация расходов",
       "bonus_pay": "Бонус",
       "deduction_pay": "Удержания",
@@ -1169,6 +1173,11 @@
       "open": "Открыт",
       "closed": "Закрыт",
       "paid": "Выплачен"
+    },
+    "dirtiness_level": {
+      "normal": "Обычное",
+      "increased": "Повышенное",
+      "heavy": "Сильное"
     }
   },
   "help": {

@@ -252,6 +252,11 @@
       "active": "Активні",
       "inactive": "Неактивні",
       "expired": "Прострочені"
+    },
+    "dirtiness_level": {
+      "normal": "Звичайне",
+      "increased": "Підвищене",
+      "heavy": "Сильне"
     }
   },
   "sidebar": {
@@ -703,6 +708,7 @@
       "cleaning_time": "Час прибирання",
       "rooms": "Кімнати",
       "bathrooms": "Ванні кімнати",
+      "dirtiness_level": "Забруднення",
       "estimated_time": "Орієнтовний час",
       "actual_time": "Фактичний час",
       "completed_at": "Завершено",
@@ -712,6 +718,7 @@
       "payment_info": "Інформація про оплату",
       "payment_type": "Тип оплати",
       "payment_status": "Статус оплати",
+      "dirtiness_surcharge": "Доплата за забруднення",
       "total_price": "Загальна вартість",
       "receipt_number": "Номер квитанції",
       "cash_collected_by": "Готівку отримав",
@@ -1107,6 +1114,7 @@
       "price_required": "Обов'язково",
       "price_optional": "Необов’язково",
       "estimated_time": "Орієнтовний час (хвилини)",
+      "minutes_per_room": "Хвилин на кімнату або ванну",
       "messages": {
         "load_error": "Не вдалося завантажити послугу",
         "create_success": "Послугу успішно створено",

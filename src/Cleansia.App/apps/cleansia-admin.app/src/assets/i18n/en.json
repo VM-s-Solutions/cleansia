@@ -252,6 +252,11 @@
       "active": "Active",
       "inactive": "Inactive",
       "expired": "Expired"
+    },
+    "dirtiness_level": {
+      "normal": "Normal",
+      "increased": "Increased",
+      "heavy": "Heavy"
     }
   },
   "sidebar": {
@@ -703,6 +708,7 @@
       "cleaning_time": "Cleaning Time",
       "rooms": "Rooms",
       "bathrooms": "Bathrooms",
+      "dirtiness_level": "Dirtiness",
       "estimated_time": "Estimated Time",
       "actual_time": "Actual Time",
       "completed_at": "Completed at",
@@ -712,6 +718,7 @@
       "payment_info": "Payment Information",
       "payment_type": "Payment Type",
       "payment_status": "Payment Status",
+      "dirtiness_surcharge": "Dirtiness surcharge",
       "total_price": "Total Price",
       "receipt_number": "Receipt Number",
       "cash_collected_by": "Cash taken by",
@@ -1107,6 +1114,7 @@
       "price_required": "Required",
       "price_optional": "Optional",
       "estimated_time": "Estimated Time (minutes)",
+      "minutes_per_room": "Minutes per room or bathroom",
       "messages": {
         "load_error": "Failed to load service",
         "create_success": "Service created successfully",

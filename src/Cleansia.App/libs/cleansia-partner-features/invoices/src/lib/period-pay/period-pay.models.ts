@@ -74,6 +74,14 @@ export function getPeriodPayTableDefinition(
         getValue: (pay?: OrderEmployeePayDto) => format(pay, pay?.extrasPay),
       },
       {
+        id: 'dirtinessPay',
+        field: 'dirtinessPay',
+        header: 'pages.period_pay.dirtiness_pay',
+        sortable: false,
+        numeric: true,
+        getValue: (pay?: OrderEmployeePayDto) => format(pay, pay?.dirtinessPay),
+      },
+      {
         id: 'expensesPay',
         field: 'expensesPay',
         header: 'pages.period_pay.expenses_pay',

@@ -266,7 +266,8 @@
       "address": "Адреса",
       "cleaning_date": "Дата прибирання",
       "total_price": "Загальна вартість",
-      "your_pay": "Ваша винагорода",
+      "your_pay": "Ваша винагорода (за місце)",
+      "dirtiness_level": "Забруднення",
       "payment_status": "Статус оплати",
       "order_status": "Статус замовлення",
       "order_id": "ID замовлення",
@@ -370,6 +371,7 @@
       "cleaning_date": "Дата прибирання",
       "rooms": "Кімнати",
       "bathrooms": "Ванні кімнати",
+      "dirtiness_level": "Забруднення",
       "estimated_time": "Орієнтовний час",
       "estimated_time_minutes": "{{minutes}} хвилин",
       "selected_package": "Обраний пакет",
@@ -500,6 +502,7 @@
       "order_number": "Номер замовлення",
       "base_pay": "Базова оплата",
       "extras_pay": "Оплата за додатки",
+      "dirtiness_pay": "Оплата за забруднення",
       "expenses_pay": "Компенсація витрат",
       "bonus_pay": "Бонус",
       "deduction_pay": "Утримання",
@@ -524,6 +527,7 @@
       "total_orders": "Усього замовлень",
       "base_pay": "Базова оплата",
       "extras_pay": "Оплата за додатки",
+      "dirtiness_pay": "Оплата за забруднення",
       "expenses_pay": "Компенсація витрат",
       "bonus_pay": "Бонус",
       "deduction_pay": "Утримання",
@@ -1169,6 +1173,11 @@
       "open": "Відкритий",
       "closed": "Закритий",
       "paid": "Виплачений"
+    },
+    "dirtiness_level": {
+      "normal": "Звичайне",
+      "increased": "Підвищене",
+      "heavy": "Сильне"
     }
   },
   "help": {

@@ -2,6 +2,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import {
   AssignedEmployeeDto,
+  DirtinessLevel,
   OrderItem,
   OrderStatus,
   PaymentStatus,
@@ -17,6 +18,7 @@ import {
   cashCollectionRefusal,
   cashRefusedOnCardOrder,
   customerDetailsClosedNoticeKey,
+  dirtinessLevelLabelKey,
   findCallerWorkContractAcceptance,
 } from './order-details.helpers';
 
@@ -319,5 +321,22 @@ describe('the customer on a past job', () => {
     );
 
     expect(missingIn(locale, keys)).toEqual([]);
+  });
+});
+
+describe('the dirtiness level on the job', () => {
+  it('names each level the customer can book', () => {
+    expect(dirtinessLevelLabelKey(DirtinessLevel.Normal)).toBe('enums.dirtiness_level.normal');
+    expect(dirtinessLevelLabelKey(DirtinessLevel.Increased)).toBe('enums.dirtiness_level.increased');
+    expect(dirtinessLevelLabelKey(DirtinessLevel.Heavy)).toBe('enums.dirtiness_level.heavy');
+  });
+
+  // The server stores Normal for a client that sent no level, so an absent one reads the same way.
+  it('reads an absent level as normal', () => {
+    expect(dirtinessLevelLabelKey(undefined)).toBe('enums.dirtiness_level.normal');
+  });
+
+  it.each(PARTNER_LOCALES)('labels the level on the job detail in %s', (locale) => {
+    expect(missingIn(locale, ['pages.order_details.dirtiness_level'])).toEqual([]);
   });
 });

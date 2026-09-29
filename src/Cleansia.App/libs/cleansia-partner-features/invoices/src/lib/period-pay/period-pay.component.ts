@@ -53,6 +53,7 @@ export class PeriodPayComponent implements OnInit {
     return {
       base: amount(summary?.totalBasePay),
       extras: amount(summary?.totalExtrasPay),
+      dirtiness: amount(summary?.totalDirtinessPay),
       expenses: amount(summary?.totalExpensesPay),
       bonus: amount(summary?.totalBonusPay),
       deduction: amount(summary?.totalDeductionPay),

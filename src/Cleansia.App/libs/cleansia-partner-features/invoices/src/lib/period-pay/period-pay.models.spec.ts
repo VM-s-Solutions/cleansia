@@ -47,6 +47,7 @@ describe('getPeriodPayTableDefinition', () => {
       'orderNumber',
       'basePay',
       'extrasPay',
+      'dirtinessPay',
       'expensesPay',
       'bonusPay',
       'deductionPay',
@@ -71,6 +72,22 @@ describe('getPeriodPayTableDefinition', () => {
   it.each(PARTNER_LOCALES)('names the reason column of the pay lines and of the invoice in %s', (locale) => {
     const headers = [getPeriodPayTableDefinition('CZK', 'cs'), getOrderPaysTableDefinition('CZK', 'cs')].map(
       ({ columns }) => columns.find((column) => column.id === 'deductionReason')?.header ?? ''
+    );
+
+    expect(missingIn(locale, headers)).toEqual([]);
+  });
+
+  it('prints the dirtiness term of a row in the row currency', () => {
+    const { columns } = getPeriodPayTableDefinition('CZK', 'en');
+    const dirtiness = columns.find((column) => column.id === 'dirtinessPay');
+    if (!dirtiness?.getValue) throw new Error('dirtinessPay column missing or static');
+
+    expect(dirtiness.getValue(OrderEmployeePayDto.fromJS({ dirtinessPay: 195, currencyCode: 'EUR' }))).toBe('€195.00');
+  });
+
+  it.each(PARTNER_LOCALES)('names the dirtiness column of the pay lines and of the invoice in %s', (locale) => {
+    const headers = [getPeriodPayTableDefinition('CZK', 'cs'), getOrderPaysTableDefinition('CZK', 'cs')].map(
+      ({ columns }) => columns.find((column) => column.id === 'dirtinessPay')?.header ?? ''
     );
 
     expect(missingIn(locale, headers)).toEqual([]);

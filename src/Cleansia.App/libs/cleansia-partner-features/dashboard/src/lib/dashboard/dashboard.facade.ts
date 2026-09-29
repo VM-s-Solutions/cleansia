@@ -29,7 +29,7 @@ import { currentLanguage, formatDate, formatMoney, localeFor } from '@cleansia/u
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
 import { takeUntil } from 'rxjs';
-import { StatCard, UpcomingOrderCard } from './dashboard.models';
+import { StatCard, UpcomingOrderCard, dirtinessLevelLabelKey } from './dashboard.models';
 
 @Injectable()
 export class DashboardFacade extends UnsubscribeControlDirective {
@@ -115,6 +115,7 @@ export class DashboardFacade extends UnsubscribeControlDirective {
       customerName: order.customerName ?? '',
       cleaningDate: formatDate(order.cleaningDateTime, lang, 'dateTime'),
       customerAddress: order.customerAddress ?? '',
+      dirtinessLevelKey: dirtinessLevelLabelKey(order.dirtinessLevel),
       yourPay:
         typeof order.estimatedCleanerPay === 'number'
           ? formatMoney(order.estimatedCleanerPay, order.currency?.code, localeFor(lang), {

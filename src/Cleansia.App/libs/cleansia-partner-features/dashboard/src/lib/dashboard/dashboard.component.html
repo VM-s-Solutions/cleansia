@@ -151,6 +151,10 @@
               <i class="pi pi-map-marker"></i>
               <span>{{ order.customerAddress }}</span>
             </div>
+            <div class="detail-row">
+              <i class="pi pi-sparkles"></i>
+              <span>{{ 'pages.orders.dirtiness_level' | translate }}: {{ order.dirtinessLevelKey | translate }}</span>
+            </div>
           </div>
           <div class="order-card__footer">
             @if (order.yourPay) {

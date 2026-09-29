@@ -123,9 +123,21 @@ final class CustomerShellRoutingTests: XCTestCase {
         file: StaticString = #filePath,
         line: UInt = #line
     ) throws {
-        let encoder = JSONEncoder()
-        let actual = try encoder.encode(XCTUnwrap(path.codable, file: file, line: line))
-        let wanted = try encoder.encode(XCTUnwrap(NavigationPath(expected).codable, file: file, line: line))
+        let actual = try canonical(path, file: file, line: line)
+        let wanted = try canonical(NavigationPath(expected), file: file, line: line)
         XCTAssertEqual(actual, wanted, file: file, line: line)
+    }
+
+    /// The path's entries with each route's JSON re-serialised with sorted keys: a route with two
+    /// associated values (createDispute) encodes its keys in no fixed order, so raw bytes can differ.
+    private func canonical(_ path: NavigationPath, file: StaticString, line: UInt) throws -> [String] {
+        let data = try JSONEncoder().encode(XCTUnwrap(path.codable, file: file, line: line))
+        let entries = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String], file: file, line: line)
+        return try entries.map { entry in
+            guard let object = try? JSONSerialization.jsonObject(with: Data(entry.utf8), options: .fragmentsAllowed)
+            else { return entry }
+            let sorted = try JSONSerialization.data(withJSONObject: object, options: [.sortedKeys, .fragmentsAllowed])
+            return String(decoding: sorted, as: UTF8.self)
+        }
     }
 }

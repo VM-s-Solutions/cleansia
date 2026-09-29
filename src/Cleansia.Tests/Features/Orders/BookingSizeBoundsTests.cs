@@ -30,14 +30,7 @@ public class BookingSizeBoundsTests
     {
         var result = endpoint switch
         {
-            "create" => await ValidateSize(new CreateOrder.Validator(
-                    Mock.Of<IPackageRepository>(), Mock.Of<IServiceRepository>(), Mock.Of<IOrderPricingCalculator>(),
-                    Mock.Of<IOrderRepository>(), Mock.Of<IUserMembershipRepository>(), Mock.Of<IUserSessionProvider>(),
-                    Mock.Of<IEmployeePayConfigRepository>(), Mock.Of<ICurrencyRepository>(), Mock.Of<IOrderAddressResolver>(),
-                    Mock.Of<ICurrencyResolutionService>(), Mock.Of<IServicePriceRepository>(), Mock.Of<IPackagePriceRepository>(),
-                    Mock.Of<IPromoCodeService>(), Mock.Of<IOperatorTenantResolver>(), Mock.Of<ITenantProvider>(),
-                    Mock.Of<IUserConsentRepository>(), Mock.Of<ILanguageRepository>(),
-                    Mock.Of<ICountryConfigurationRepository>(), Mock.Of<ILegalDocumentResolver>()),
+            "create" => await ValidateSize(CreateOrderValidator(),
                 CreateOrderTestData.ValidCommand() with { Rooms = rooms, Bathrooms = bathrooms }),
             "quote" => await ValidateSize(new QuoteOrder.Validator(
                     Mock.Of<IServiceRepository>(), Mock.Of<IPackageRepository>(), Mock.Of<ICurrencyRepository>(),
@@ -75,6 +68,31 @@ public class BookingSizeBoundsTests
             Assert.Equal(bathrooms > 4, result.Errors.Any(f => f.PropertyName == "Bathrooms"));
         }
     }
+
+    [Theory]
+    [InlineData(-1, 0)]
+    [InlineData(0, -1)]
+    [InlineData(-1, -1)]
+    [InlineData(int.MinValue, int.MinValue)]
+    public async Task A_Booking_Cannot_Shorten_Its_Time_With_A_Negative_Room_Count(int rooms, int bathrooms)
+    {
+        var result = await ValidateSize(CreateOrderValidator(),
+            CreateOrderTestData.ValidCommand() with { Rooms = rooms, Bathrooms = bathrooms });
+
+        Assert.False(result.IsValid);
+        Assert.All(result.Errors, failure => Assert.Equal("validation.must_be_positive", failure.ErrorMessage));
+        Assert.Equal(rooms < 0, result.Errors.Any(f => f.PropertyName == "Rooms"));
+        Assert.Equal(bathrooms < 0, result.Errors.Any(f => f.PropertyName == "Bathrooms"));
+    }
+
+    private static CreateOrder.Validator CreateOrderValidator() => new(
+        Mock.Of<IPackageRepository>(), Mock.Of<IServiceRepository>(), Mock.Of<IOrderPricingCalculator>(),
+        Mock.Of<IOrderRepository>(), Mock.Of<IUserMembershipRepository>(), Mock.Of<IUserSessionProvider>(),
+        Mock.Of<IEmployeePayConfigRepository>(), Mock.Of<ICurrencyRepository>(), Mock.Of<IOrderAddressResolver>(),
+        Mock.Of<ICurrencyResolutionService>(), Mock.Of<IServicePriceRepository>(), Mock.Of<IPackagePriceRepository>(),
+        Mock.Of<IPromoCodeService>(), Mock.Of<IOperatorTenantResolver>(), Mock.Of<ITenantProvider>(),
+        Mock.Of<IUserConsentRepository>(), Mock.Of<ILanguageRepository>(),
+        Mock.Of<ICountryConfigurationRepository>(), Mock.Of<ILegalDocumentResolver>());
 
     private static Task<ValidationResult> ValidateSize<T>(IValidator<T> validator, T request) =>
         validator.ValidateAsync(request, options => options.IncludeProperties("Rooms", "Bathrooms"));

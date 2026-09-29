@@ -99,9 +99,15 @@ public class CreateOrder
             RuleFor(x => x.PaymentType)
                 .IsInEnum().WithMessage(BusinessErrorMessage.InvalidEnumValue);
 
-            RuleFor(x => x.Rooms).LessThanOrEqualTo(BookingPolicy.MaxRooms)
+            RuleFor(x => x.Rooms)
+                .GreaterThanOrEqualTo(0)
+                .WithMessage(BusinessErrorMessage.MustBePositive)
+                .LessThanOrEqualTo(BookingPolicy.MaxRooms)
                 .WithMessage(BusinessErrorMessage.OrderSizeExceedsMaximum);
-            RuleFor(x => x.Bathrooms).LessThanOrEqualTo(BookingPolicy.MaxBathrooms)
+            RuleFor(x => x.Bathrooms)
+                .GreaterThanOrEqualTo(0)
+                .WithMessage(BusinessErrorMessage.MustBePositive)
+                .LessThanOrEqualTo(BookingPolicy.MaxBathrooms)
                 .WithMessage(BusinessErrorMessage.OrderSizeExceedsMaximum);
 
             // Ahead of the price chain on purpose: the failure row records the FIRST refusal, and a

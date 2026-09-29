@@ -7,6 +7,7 @@ using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
 using Cleansia.Infra.Common.Validations;
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -24,6 +25,8 @@ namespace Cleansia.Core.AppServices.Features.CashHeld;
 public class RequestCashRemittances
 {
     public record Command : ICommand<Response>;
+
+    public class Validator : AbstractValidator<Command>;
 
     public record Response(int Requested);
 

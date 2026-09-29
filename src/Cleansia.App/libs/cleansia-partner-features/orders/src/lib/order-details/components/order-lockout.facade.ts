@@ -1,21 +1,37 @@
+import { DOCUMENT } from '@angular/common';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { PartnerClient, PhotoType, ReportOrderLockoutCommand } from '@cleansia/partner-services';
 import { extractApiErrorCode, SnackbarService } from '@cleansia/services';
 import { currentLanguage } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
-import { catchError, finalize, of, Subscription, takeUntil, tap, timer } from 'rxjs';
+import {
+  catchError,
+  defer,
+  finalize,
+  fromEvent,
+  map,
+  merge,
+  of,
+  repeat,
+  Subscription,
+  takeUntil,
+  takeWhile,
+  tap,
+  timer,
+} from 'rxjs';
 import { OrderPhotosFacade } from './order-photos.facade';
 import { createStagedPhoto, filterPhotosByType } from './order-photos.helpers';
 
-// A timer past a signed 32-bit millisecond count fires at once.
-const MAX_TIMER_DELAY_MS = 2_147_483_647;
+// A browser timer runs on the monotonic clock, which stops while the phone sleeps, so the wait is walked in short steps.
+const CLOCK_STEP_MS = 30_000;
 
 @Injectable()
 export class OrderLockoutFacade extends UnsubscribeControlDirective {
   private readonly partnerClient = inject(PartnerClient);
   private readonly snackbarService = inject(SnackbarService);
   private readonly photos = inject(OrderPhotosFacade);
+  private readonly document = inject(DOCUMENT);
 
   readonly lang = currentLanguage(inject(TranslateService));
   readonly now = signal(Date.now());
@@ -72,9 +88,14 @@ export class OrderLockoutFacade extends UnsubscribeControlDirective {
 
   wakeAt(moment: Date): void {
     this.wake?.unsubscribe();
-    const delay = Math.min(Math.max(moment.getTime() - Date.now(), 0), MAX_TIMER_DELAY_MS);
-    this.wake = timer(delay)
-      .pipe(takeUntil(this.destroyed$))
-      .subscribe(() => this.now.set(Date.now()));
+    const opensAt = moment.getTime();
+    const step$ = defer(() => timer(Math.min(Math.max(opensAt - Date.now(), 0), CLOCK_STEP_MS))).pipe(repeat());
+    this.wake = merge(step$, fromEvent(this.document, 'visibilitychange'))
+      .pipe(
+        map(() => Date.now()),
+        takeWhile((now) => now < opensAt, true),
+        takeUntil(this.destroyed$)
+      )
+      .subscribe((now) => this.now.set(now));
   }
 }

@@ -154,17 +154,49 @@ describe('OrderLockoutFacade', () => {
     });
   });
 
-  it('moves its clock to the moment the report opens', () => {
-    jest.useFakeTimers();
-    jest.setSystemTime(new Date('2026-09-29T10:10:00Z'));
-    const facade = createFacade();
+  describe('the clock', () => {
+    const OPENS_AT = new Date('2026-09-29T10:15:00Z');
+    const at = (iso: string) => new Date(iso).getTime();
 
-    facade.wakeAt(new Date('2026-09-29T10:15:00Z'));
-    jest.advanceTimersByTime(5 * 60_000 - 1);
-    expect(facade.now()).toBe(new Date('2026-09-29T10:10:00Z').getTime());
+    it('moves to the moment the report opens', () => {
+      jest.useFakeTimers();
+      jest.setSystemTime(new Date('2026-09-29T10:10:00Z'));
+      const facade = createFacade();
 
-    jest.advanceTimersByTime(1);
-    expect(facade.now()).toBe(new Date('2026-09-29T10:15:00Z').getTime());
+      facade.wakeAt(OPENS_AT);
+      jest.advanceTimersByTime(5 * 60_000 - 1);
+      expect(facade.now()).toBeLessThan(OPENS_AT.getTime());
+
+      jest.advanceTimersByTime(1);
+      expect(facade.now()).toBe(OPENS_AT.getTime());
+    });
+
+    // A sleeping phone stops the browser's timers but not the wall clock.
+    it('re-reads the wall clock when the page is shown again after the phone slept through the opening', () => {
+      jest.useFakeTimers();
+      jest.setSystemTime(new Date('2026-09-29T10:02:00Z'));
+      const facade = createFacade();
+      facade.wakeAt(OPENS_AT);
+
+      jest.setSystemTime(new Date('2026-09-29T10:20:00Z'));
+      document.dispatchEvent(new Event('visibilitychange'));
+
+      expect(facade.now()).toBe(at('2026-09-29T10:20:00Z'));
+    });
+
+    it('keeps waiting when a step lands before the opening, and still reaches it', () => {
+      jest.useFakeTimers();
+      jest.setSystemTime(new Date('2026-09-29T10:10:00Z'));
+      const facade = createFacade();
+      facade.wakeAt(OPENS_AT);
+
+      jest.setSystemTime(new Date('2026-09-29T10:09:00Z'));
+      jest.advanceTimersByTime(5 * 60_000);
+      expect(facade.now()).toBeLessThan(OPENS_AT.getTime());
+
+      jest.advanceTimersByTime(60_000);
+      expect(facade.now()).toBe(OPENS_AT.getTime());
+    });
   });
 });
 

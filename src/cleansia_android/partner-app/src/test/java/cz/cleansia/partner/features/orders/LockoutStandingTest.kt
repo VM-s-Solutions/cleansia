@@ -40,6 +40,15 @@ class LockoutStandingTest {
     }
 
     @Test
+    fun `a cleaner waiting at the door has the wall clock re-read every thirty seconds, not once at the end`() {
+        val opensAt = start.plusSeconds(LOCKOUT_WAIT_MINUTES * 60)
+
+        assertEquals(30_000L, lockoutClockStep(start, opensAt))
+        assertEquals(5_000L, lockoutClockStep(opensAt.minusSeconds(5), opensAt))
+        assertEquals(0L, lockoutClockStep(opensAt.plusSeconds(300), opensAt))
+    }
+
+    @Test
     fun `the wait is the fifteen minutes the server holds the cleaner to`() {
         assertEquals(15L, LOCKOUT_WAIT_MINUTES)
     }

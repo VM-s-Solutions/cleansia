@@ -15,6 +15,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.format.formatOrderTime
 import cz.cleansia.core.ui.components.CleansiaOutlinedButton
@@ -54,6 +56,10 @@ internal fun OrderItem.lockoutStanding(now: Instant): LockoutStanding {
     return if (now.isBefore(opensAt)) LockoutStanding.NotYet(opensAt) else LockoutStanding.Open
 }
 
+/** A delay runs on the monotonic clock, which stops while the device sleeps, so the wait is walked in short steps. */
+internal fun lockoutClockStep(now: Instant, opensAt: Instant): Long =
+    Duration.between(now, opensAt).toMillis().coerceIn(0L, 30_000L)
+
 @Composable
 internal fun LockoutCard(
     order: OrderItem,
@@ -62,10 +68,13 @@ internal fun LockoutCard(
     onReport: (String) -> Unit,
 ) {
     var now by remember { mutableStateOf(Instant.now()) }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { now = Instant.now() }
     val standing = order.lockoutStanding(now)
     if (standing is LockoutStanding.NotYet) {
         LaunchedEffect(standing.opensAt) {
-            delay(Duration.between(Instant.now(), standing.opensAt).toMillis().coerceAtLeast(0L))
+            while (Instant.now().isBefore(standing.opensAt)) {
+                delay(lockoutClockStep(Instant.now(), standing.opensAt))
+            }
             now = Instant.now()
         }
     }

@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cleansia.Infra.Database.Migrations
 {
     [DbContext(typeof(CleansiaDbContext))]
-    [Migration("20260929022837_Initial")]
+    [Migration("20260929031611_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -5582,6 +5582,11 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
+
+                    b.Property<int>("MinutesPerRoom")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
 
                     b.Property<string>("Name")
                         .IsRequired()

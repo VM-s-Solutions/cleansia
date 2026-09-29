@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
+using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Packages;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Services;
@@ -28,6 +29,7 @@ public class QuoteOrderSpanCapTests
     private const string CategoryId = "category-span-quote";
     private const string ServiceId = CreateOrderTestData.ServiceId;
     private const string PackageId = CreateOrderTestData.PackageId;
+    private const int MinutesPerRoom = 10;
 
     private readonly Mock<IServiceRepository> _serviceRepository = new();
     private readonly Mock<IPackageRepository> _packageRepository = new();
@@ -142,14 +144,75 @@ public class QuoteOrderSpanCapTests
         Assert.Equal(accepted, create.IsValid);
     }
 
-    /// <summary>Both validators are handed the same catalog under the ids both commands select.</summary>
-    private void SeedCatalog(int serviceMinutes, int packageServiceMinutes)
+    /// <summary>
+    /// The level and the home's size lengthen the booking, so they count toward the cap on both paths,
+    /// and both draw it on the minute <see cref="OrderDuration"/> draws it: the longest selection it
+    /// accepts is booked, one minute more is refused.
+    /// </summary>
+    [Theory]
+    [InlineData(DirtinessLevel.Increased, 0, 0)]
+    [InlineData(DirtinessLevel.Heavy, 0, 0)]
+    [InlineData(DirtinessLevel.Normal, 8, 4)]
+    [InlineData(DirtinessLevel.Heavy, 2, 1)]
+    public async Task The_Level_And_The_Home_Size_Count_Toward_The_Cap_On_Both_Paths(
+        DirtinessLevel level, int rooms, int bathrooms)
     {
-        var service = Service.Create(CategoryId, "Span Service", "Under test", serviceMinutes);
+        var longest = LongestBookableServiceMinutes(level, rooms + bathrooms);
+
+        foreach (var (serviceMinutes, accepted) in new[] { (longest, true), (longest + 1, false) })
+        {
+            SeedCatalog(serviceMinutes, packageServiceMinutes: 0, MinutesPerRoom);
+
+            var quote = await QuoteValidator().ValidateAsync(
+                QuoteCommand() with { Rooms = rooms, Bathrooms = bathrooms, DirtinessLevel = level });
+            var create = await CreateValidator().ValidateAsync(
+                CreateOrderTestData.ValidCommand() with { Rooms = rooms, Bathrooms = bathrooms, DirtinessLevel = level });
+
+            Assert.Equal(accepted, quote.IsValid);
+            Assert.Equal(accepted, create.IsValid);
+        }
+    }
+
+    [Fact]
+    public async Task An_Undefined_Level_Is_Refused_By_The_Quote_Rather_Than_Thrown_On()
+    {
+        var result = await QuoteValidator().ValidateAsync(QuoteCommand() with { DirtinessLevel = (DirtinessLevel)7 });
+
+        var error = Assert.Single(result.Errors);
+        Assert.Equal(BusinessErrorMessage.InvalidEnumValue, error.ErrorMessage);
+    }
+
+    private static int LongestBookableServiceMinutes(DirtinessLevel level, int unitCount)
+    {
+        var minutes = BookingPolicy.MaxBookableOrderSpanMinutes;
+        while (BookingPolicy.ExceedsMaxBookableSpan(OrderDuration.EstimateMinutes(
+                   [Service.Create(CategoryId, "Span Service", "Under test", minutes, MinutesPerRoom)],
+                   [PackageOf(Service.Create(CategoryId, "Packaged Service", "Inside the bundle", 0, MinutesPerRoom))],
+                   unitCount,
+                   BookingPolicy.DirtinessSurchargeRate(level))))
+        {
+            minutes--;
+        }
+
+        return minutes;
+    }
+
+    private static Package PackageOf(Service included)
+    {
+        var package = Package.Create("Span Package", "Under test");
+        package.Id = PackageId;
+        package.AddService(included);
+        return package;
+    }
+
+    /// <summary>Both validators are handed the same catalog under the ids both commands select.</summary>
+    private void SeedCatalog(int serviceMinutes, int packageServiceMinutes, int minutesPerRoom = 0)
+    {
+        var service = Service.Create(CategoryId, "Span Service", "Under test", serviceMinutes, minutesPerRoom);
         service.Id = ServiceId;
 
         var packagedService = Service.Create(
-            CategoryId, "Packaged Service", "Inside the bundle", packageServiceMinutes);
+            CategoryId, "Packaged Service", "Inside the bundle", packageServiceMinutes, minutesPerRoom);
         packagedService.Id = $"{ServiceId}-packaged";
 
         var package = Package.Create("Span Package", "Under test");

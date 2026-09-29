@@ -227,7 +227,8 @@ public class CreateRecurringBooking
                || (await RecurringCashEligibility.LoadAsync(
                        _serviceRepository, _packageRepository,
                        command.SelectedServiceIds, command.SelectedPackageIds, cancellationToken))
-                   .Allows(command.SelectedServiceIds, command.SelectedPackageIds);
+                   .Allows(command.SelectedServiceIds, command.SelectedPackageIds,
+                       command.Rooms, command.Bathrooms, DirtinessLevel.Normal);
 
         private async Task<Address?> FindSavedAddressAsync(string userId, string savedAddressId, CancellationToken cancellationToken)
         {

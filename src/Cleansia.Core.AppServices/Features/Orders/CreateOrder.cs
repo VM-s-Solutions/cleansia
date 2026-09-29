@@ -258,11 +258,11 @@ public class CreateOrder
                 .WithErrorCode(nameof(Command.CurrencyId))
                 .Must(OrderMustNotBeEmpty)
                 .WithMessage(BusinessErrorMessage.EmptyOrder)
-                .MustAsync(SpanWithinCapAsync)
-                .WithMessage(BusinessErrorMessage.OrderSpanExceedsMaximum)
                 .Must(command => Enum.IsDefined(command.DirtinessLevel))
                 .WithMessage(BusinessErrorMessage.InvalidEnumValue)
                 .WithErrorCode(nameof(Command.DirtinessLevel))
+                .MustAsync(SpanWithinCapAsync)
+                .WithMessage(BusinessErrorMessage.OrderSpanExceedsMaximum)
                 .MustAsync(ExpressWaiverStillAvailableAsync)
                 .WithMessage(BusinessErrorMessage.ExpressWaiverNoLongerAvailable)
                 .MustAsync(PriceMatchesAsync)
@@ -621,16 +621,19 @@ public class CreateOrder
         /// </remarks>
         private async Task<bool> SpanWithinCapAsync(Command command, CancellationToken cancellationToken)
         {
+            var unitCount = command.Rooms + command.Bathrooms;
+
             var serviceMinutes = await _serviceRepository
                 .GetByIds(command.SelectedServiceIds)
-                .SumAsync(s => s.EstimatedTime, cancellationToken);
+                .SumAsync(s => s.EstimatedTime + s.MinutesPerRoom * unitCount, cancellationToken);
 
             var packagedServiceMinutes = await _packageRepository
                 .GetByIds(command.SelectedPackageIds)
                 .SelectMany(p => p.IncludedServices)
-                .SumAsync(ps => ps.Service!.EstimatedTime, cancellationToken);
+                .SumAsync(ps => ps.Service!.EstimatedTime + ps.Service!.MinutesPerRoom * unitCount, cancellationToken);
 
-            return !BookingPolicy.ExceedsMaxBookableSpan(serviceMinutes + packagedServiceMinutes);
+            return !BookingPolicy.ExceedsMaxBookableSpan(OrderDuration.ScaleForDirtiness(
+                serviceMinutes + packagedServiceMinutes, BookingPolicy.DirtinessSurchargeRate(command.DirtinessLevel)));
         }
 
         private const string PricingResultKey = "createOrder.pricingResult";

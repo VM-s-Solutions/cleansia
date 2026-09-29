@@ -19186,6 +19186,7 @@ export class AdminServiceDetailDto implements IAdminServiceDetailDto {
     categoryId!: string | undefined;
     prices!: { [key: string]: AdminServicePriceDto; } | undefined;
     estimatedTime!: number;
+    minutesPerRoom!: number;
     translations!: { [key: string]: Translation; } | undefined;
     createdOn!: Date;
     updatedOn!: Date | undefined;
@@ -19213,6 +19214,7 @@ export class AdminServiceDetailDto implements IAdminServiceDetailDto {
                 }
             }
             this.estimatedTime = Data["estimatedTime"];
+            this.minutesPerRoom = Data["minutesPerRoom"];
             if (Data["translations"]) {
                 this.translations = {} as any;
                 for (let key in Data["translations"]) {
@@ -19246,6 +19248,7 @@ export class AdminServiceDetailDto implements IAdminServiceDetailDto {
             }
         }
         data["estimatedTime"] = this.estimatedTime;
+        data["minutesPerRoom"] = this.minutesPerRoom;
         if (this.translations) {
             data["translations"] = {};
             for (let key in this.translations) {
@@ -19266,6 +19269,7 @@ export interface IAdminServiceDetailDto {
     categoryId: string | undefined;
     prices: { [key: string]: AdminServicePriceDto; } | undefined;
     estimatedTime: number;
+    minutesPerRoom: number;
     translations: { [key: string]: Translation; } | undefined;
     createdOn: Date;
     updatedOn: Date | undefined;
@@ -22425,6 +22429,7 @@ export class CreateServiceCommand implements ICreateServiceCommand {
     estimatedTime!: number;
     prices!: { [key: string]: CreateServiceServicePriceInput; } | undefined;
     translations!: { [key: string]: CreateServiceTranslationInput; } | undefined;
+    minutesPerRoom!: number;
 
     constructor(data?: ICreateServiceCommand) {
         if (data) {
@@ -22455,6 +22460,7 @@ export class CreateServiceCommand implements ICreateServiceCommand {
                         (this.translations as any)![key] = Data["translations"][key] ? CreateServiceTranslationInput.fromJS(Data["translations"][key]) : new CreateServiceTranslationInput();
                 }
             }
+            this.minutesPerRoom = Data["minutesPerRoom"];
         }
     }
 
@@ -22485,6 +22491,7 @@ export class CreateServiceCommand implements ICreateServiceCommand {
                     (data["translations"] as any)[key] = this.translations[key] ? this.translations[key].toJSON() : undefined as any;
             }
         }
+        data["minutesPerRoom"] = this.minutesPerRoom;
         return data;
     }
 }
@@ -22496,6 +22503,7 @@ export interface ICreateServiceCommand {
     estimatedTime: number;
     prices: { [key: string]: CreateServiceServicePriceInput; } | undefined;
     translations: { [key: string]: CreateServiceTranslationInput; } | undefined;
+    minutesPerRoom: number;
 }
 
 export class CreateServiceResponse implements ICreateServiceResponse {
@@ -36793,6 +36801,7 @@ export class UpdateServiceCommand implements IUpdateServiceCommand {
     estimatedTime!: number;
     prices!: { [key: string]: CreateServiceServicePriceInput; } | undefined;
     translations!: { [key: string]: CreateServiceTranslationInput; } | undefined;
+    minutesPerRoom!: number;
 
     constructor(data?: IUpdateServiceCommand) {
         if (data) {
@@ -36824,6 +36833,7 @@ export class UpdateServiceCommand implements IUpdateServiceCommand {
                         (this.translations as any)![key] = Data["translations"][key] ? CreateServiceTranslationInput.fromJS(Data["translations"][key]) : new CreateServiceTranslationInput();
                 }
             }
+            this.minutesPerRoom = Data["minutesPerRoom"];
         }
     }
 
@@ -36855,6 +36865,7 @@ export class UpdateServiceCommand implements IUpdateServiceCommand {
                     (data["translations"] as any)[key] = this.translations[key] ? this.translations[key].toJSON() : undefined as any;
             }
         }
+        data["minutesPerRoom"] = this.minutesPerRoom;
         return data;
     }
 }
@@ -36867,6 +36878,7 @@ export interface IUpdateServiceCommand {
     estimatedTime: number;
     prices: { [key: string]: CreateServiceServicePriceInput; } | undefined;
     translations: { [key: string]: CreateServiceTranslationInput; } | undefined;
+    minutesPerRoom: number;
 }
 
 export class UpdateServiceResponse implements IUpdateServiceResponse {

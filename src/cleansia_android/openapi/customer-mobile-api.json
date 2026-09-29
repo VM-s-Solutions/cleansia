@@ -5413,6 +5413,29 @@
                 "type": "string"
               }
             }
+          },
+          {
+            "name": "Rooms",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "Bathrooms",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "DirtinessLevel",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/DirtinessLevel"
+            }
           }
         ],
         "responses": {

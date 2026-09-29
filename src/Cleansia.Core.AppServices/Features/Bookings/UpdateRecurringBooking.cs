@@ -187,7 +187,8 @@ public class UpdateRecurringBooking
                || (await RecurringCashEligibility.LoadAsync(
                        _serviceRepository, _packageRepository,
                        command.SelectedServiceIds, command.SelectedPackageIds, cancellationToken))
-                   .Allows(command.SelectedServiceIds, command.SelectedPackageIds);
+                   .Allows(command.SelectedServiceIds, command.SelectedPackageIds,
+                       command.Rooms, command.Bathrooms, DirtinessLevel.Normal);
 
         private async Task<bool> BeOwnedByCallerAsync(string id, CancellationToken cancellationToken)
         {

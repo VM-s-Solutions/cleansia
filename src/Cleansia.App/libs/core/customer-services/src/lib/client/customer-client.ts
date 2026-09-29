@@ -3741,9 +3741,12 @@ export interface IOrderClient {
      * @param cleaningDateTimeUtc (optional) 
      * @param selectedServiceIds (optional) 
      * @param selectedPackageIds (optional) 
+     * @param rooms (optional) 
+     * @param bathrooms (optional) 
+     * @param dirtinessLevel (optional) 
      * @return OK
      */
-    myServingCleaners(cleaningDateTimeUtc?: Date | undefined, selectedServiceIds?: string[] | undefined, selectedPackageIds?: string[] | undefined): Observable<GetMyServingCleanersResponse[]>;
+    myServingCleaners(cleaningDateTimeUtc?: Date | undefined, selectedServiceIds?: string[] | undefined, selectedPackageIds?: string[] | undefined, rooms?: number | undefined, bathrooms?: number | undefined, dirtinessLevel?: DirtinessLevel | undefined): Observable<GetMyServingCleanersResponse[]>;
     /**
      * @param body (optional) 
      * @return OK
@@ -5321,9 +5324,12 @@ export class OrderClient implements IOrderClient {
      * @param cleaningDateTimeUtc (optional) 
      * @param selectedServiceIds (optional) 
      * @param selectedPackageIds (optional) 
+     * @param rooms (optional) 
+     * @param bathrooms (optional) 
+     * @param dirtinessLevel (optional) 
      * @return OK
      */
-    myServingCleaners(cleaningDateTimeUtc?: Date | undefined, selectedServiceIds?: string[] | undefined, selectedPackageIds?: string[] | undefined): Observable<GetMyServingCleanersResponse[]> {
+    myServingCleaners(cleaningDateTimeUtc?: Date | undefined, selectedServiceIds?: string[] | undefined, selectedPackageIds?: string[] | undefined, rooms?: number | undefined, bathrooms?: number | undefined, dirtinessLevel?: DirtinessLevel | undefined): Observable<GetMyServingCleanersResponse[]> {
         let url = this.baseUrl + "/api/Order/MyServingCleaners?";
         if (cleaningDateTimeUtc === null)
             throw new globalThis.Error("The parameter 'cleaningDateTimeUtc' cannot be null.");
@@ -5337,6 +5343,18 @@ export class OrderClient implements IOrderClient {
             throw new globalThis.Error("The parameter 'selectedPackageIds' cannot be null.");
         else if (selectedPackageIds !== undefined)
             selectedPackageIds && selectedPackageIds.forEach(item => { url += "SelectedPackageIds=" + encodeURIComponent("" + item) + "&"; });
+        if (rooms === null)
+            throw new globalThis.Error("The parameter 'rooms' cannot be null.");
+        else if (rooms !== undefined)
+            url += "Rooms=" + encodeURIComponent("" + rooms) + "&";
+        if (bathrooms === null)
+            throw new globalThis.Error("The parameter 'bathrooms' cannot be null.");
+        else if (bathrooms !== undefined)
+            url += "Bathrooms=" + encodeURIComponent("" + bathrooms) + "&";
+        if (dirtinessLevel === null)
+            throw new globalThis.Error("The parameter 'dirtinessLevel' cannot be null.");
+        else if (dirtinessLevel !== undefined)
+            url += "DirtinessLevel=" + encodeURIComponent("" + dirtinessLevel) + "&";
         url = url.replace(/[?&]$/, "");
 
         let options : any = {

@@ -541,6 +541,7 @@ namespace Cleansia.Infra.Database.Migrations
                     Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
                     EstimatedTime = table.Column<int>(type: "integer", nullable: false),
+                    MinutesPerRoom = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
                     CategoryId = table.Column<string>(type: "character varying(26)", nullable: false),
                     Translations = table.Column<string>(type: "text", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),

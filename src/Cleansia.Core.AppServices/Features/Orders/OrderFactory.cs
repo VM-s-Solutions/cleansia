@@ -278,7 +278,9 @@ public sealed class OrderFactory(
 
         var estimatedTime = OrderDuration.EstimateMinutes(
             selectedServices.Select(s => s.Service!),
-            selectedPackages.Select(p => p.Package!));
+            selectedPackages.Select(p => p.Package!),
+            unitCount,
+            BookingPolicy.DirtinessSurchargeRate(input.DirtinessLevel));
 
         // Ahead of CalculateRequiredEmployees, so an over-cap span cannot mint a crew on its way out.
         // CreateOrder.Validator turns this into a business error for the customer; this is the backstop

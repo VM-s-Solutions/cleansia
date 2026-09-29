@@ -15,8 +15,8 @@ namespace Cleansia.Tests.Features.Bookings;
 /// <summary>
 /// Owner ruling 2026-09-24 on the recurring entry points. A template always belongs to an account, so
 /// only the crew term can fail: cash is refused when the selection needs more than one cleaner, by the
-/// live catalogue's minutes through the same sum the order factory stamps. Rooms and bathrooms do not
-/// enter that sum, so every case here crosses the line through services and packages.
+/// live catalogue's minutes through the same sum the order factory stamps. Rooms and bathrooms enter
+/// that sum through a service's per-room minutes; every template here is two rooms and a bathroom.
 /// </summary>
 public class RecurringCashEligibilityTests
 {
@@ -28,6 +28,8 @@ public class RecurringCashEligibilityTests
     private static readonly Service OneHour = CatalogueDoubles.Service("svc-60", 60);
     private static readonly Service OneHourAndAMinute = CatalogueDoubles.Service("svc-61", 61);
     private static readonly Package PackageOf61 = CatalogueDoubles.Package("pkg-61", OneHourAndAMinute);
+    private static readonly Service TwoHoursWithTheRooms = CatalogueDoubles.Service("svc-90-10", 90, minutesPerRoom: 10);
+    private static readonly Service OverTwoHoursWithTheRooms = CatalogueDoubles.Service("svc-90-11", 90, minutesPerRoom: 11);
 
     private readonly Mock<IUserSessionProvider> _session = new();
     private readonly Mock<ISavedAddressRepository> _savedAddressRepository = new();
@@ -54,6 +56,8 @@ public class RecurringCashEligibilityTests
         { PaymentType.Cash, ["svc-121"], [], false },
         { PaymentType.Cash, ["svc-60"], ["pkg-61"], false },
         { PaymentType.Cash, ["svc-61", "svc-61"], [], true },
+        { PaymentType.Cash, ["svc-90-10"], [], true },
+        { PaymentType.Cash, ["svc-90-11"], [], false },
         { PaymentType.Card, ["svc-121"], [], true },
         { PaymentType.Card, ["svc-60"], ["pkg-61"], true },
     };
@@ -104,9 +108,10 @@ public class RecurringCashEligibilityTests
         var eligible = Template(PaymentType.Cash, [TwoHours.Id], [], "tpl-cash-120");
         var card = Template(PaymentType.Card, [TwoHoursAndAMinute.Id], [], "tpl-card-121");
         var paused = Template(PaymentType.Cash, [TwoHoursAndAMinute.Id], [], "tpl-paused").Pause();
+        var roomsTipIt = Template(PaymentType.Cash, [OverTwoHoursWithTheRooms.Id], [], "tpl-cash-rooms");
         _templateRepository
             .Setup(r => r.GetByUserAsync(UserId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync([needsChange, packaged, eligible, card, paused]);
+            .ReturnsAsync([needsChange, packaged, eligible, card, paused, roomsTipIt]);
 
         var result = await new GetMyRecurringBookings.Handler(
                 _templateRepository.Object, _savedAddressRepository.Object, _session.Object, Services(), Packages(), Mock.Of<ICountryConfigurationRepository>())
@@ -119,6 +124,7 @@ public class RecurringCashEligibilityTests
         Assert.False(flags["tpl-cash-120"]);
         Assert.False(flags["tpl-card-121"]);
         Assert.True(flags["tpl-paused"]);
+        Assert.True(flags["tpl-cash-rooms"]);
     }
 
     [Fact]
@@ -151,7 +157,8 @@ public class RecurringCashEligibilityTests
     }
 
     private static IServiceRepository Services() =>
-        CatalogueDoubles.Services(TwoHours, TwoHoursAndAMinute, OneHour, OneHourAndAMinute);
+        CatalogueDoubles.Services(
+            TwoHours, TwoHoursAndAMinute, OneHour, OneHourAndAMinute, TwoHoursWithTheRooms, OverTwoHoursWithTheRooms);
 
     private static IPackageRepository Packages() => CatalogueDoubles.Packages(PackageOf61);
 

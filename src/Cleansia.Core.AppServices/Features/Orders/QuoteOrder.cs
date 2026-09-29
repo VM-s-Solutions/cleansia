@@ -221,7 +221,8 @@ public class QuoteOrder
                 .WithMessage(BusinessErrorMessage.InvalidCurrency)
                 .WithErrorCode(nameof(Command.CurrencyId))
                 .MustAsync(SpanWithinCapAsync)
-                .WithMessage(BusinessErrorMessage.OrderSpanExceedsMaximum);
+                .WithMessage(BusinessErrorMessage.OrderSpanExceedsMaximum)
+                .When(x => Enum.IsDefined(x.DirtinessLevel), ApplyConditionTo.CurrentValidator);
         }
 
         private async Task<bool> IsBookableStartAsync(
@@ -329,16 +330,19 @@ public class QuoteOrder
         /// </summary>
         private async Task<bool> SpanWithinCapAsync(Command command, CancellationToken cancellationToken)
         {
+            var unitCount = command.Rooms + command.Bathrooms;
+
             var serviceMinutes = await _serviceRepository
                 .GetByIds(command.SelectedServiceIds)
-                .SumAsync(s => s.EstimatedTime, cancellationToken);
+                .SumAsync(s => s.EstimatedTime + s.MinutesPerRoom * unitCount, cancellationToken);
 
             var packagedServiceMinutes = await _packageRepository
                 .GetByIds(command.SelectedPackageIds)
                 .SelectMany(p => p.IncludedServices)
-                .SumAsync(ps => ps.Service!.EstimatedTime, cancellationToken);
+                .SumAsync(ps => ps.Service!.EstimatedTime + ps.Service!.MinutesPerRoom * unitCount, cancellationToken);
 
-            return !BookingPolicy.ExceedsMaxBookableSpan(serviceMinutes + packagedServiceMinutes);
+            return !BookingPolicy.ExceedsMaxBookableSpan(OrderDuration.ScaleForDirtiness(
+                serviceMinutes + packagedServiceMinutes, BookingPolicy.DirtinessSurchargeRate(command.DirtinessLevel)));
         }
     }
 

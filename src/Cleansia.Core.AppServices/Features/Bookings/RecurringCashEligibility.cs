@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Packages;
 using Cleansia.Core.Domain.Repositories;
@@ -49,10 +50,17 @@ internal sealed class RecurringCashEligibility
     /// Ids are counted once each, as the factory's <c>GetByIds</c> load counts them; an id the catalogue
     /// does not hold adds nothing here and is refused by the factory's own gates.
     /// </summary>
-    public bool Allows(IEnumerable<string> serviceIds, IEnumerable<string> packageIds)
+    public bool Allows(
+        IEnumerable<string> serviceIds,
+        IEnumerable<string> packageIds,
+        int rooms,
+        int bathrooms,
+        DirtinessLevel dirtinessLevel)
         => BookingPolicy.AllowsCash(
             signedIn: true,
             OrderDuration.RequiredEmployees(OrderDuration.EstimateMinutes(
                 serviceIds.Distinct().Where(_services.ContainsKey).Select(id => _services[id]),
-                packageIds.Distinct().Where(_packages.ContainsKey).Select(id => _packages[id]))));
+                packageIds.Distinct().Where(_packages.ContainsKey).Select(id => _packages[id]),
+                rooms + bathrooms,
+                BookingPolicy.DirtinessSurchargeRate(dirtinessLevel))));
 }

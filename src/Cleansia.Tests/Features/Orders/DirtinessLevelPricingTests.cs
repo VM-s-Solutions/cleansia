@@ -36,7 +36,7 @@ public class DirtinessLevelPricingTests
 
     private static readonly Currency Czk = CreateOrderTestData.DefaultCurrency();
 
-    private readonly Service _service;
+    private Service _service;
     private readonly Extra _extra = Extra.Create(ExtraSlug, "Inside oven", null);
     private readonly Mock<ILoyaltyService> _loyaltyService = new();
     private readonly Mock<IUserMembershipRepository> _memberships = new();
@@ -140,6 +140,32 @@ public class DirtinessLevelPricingTests
             lines + order.DirtinessSurchargeAmount + order.ExpressSurchargeAmount - discounts);
         Assert.Equal(quote.DirtinessSurchargeAmount, order.DirtinessSurchargeAmount);
         Assert.Equal(Cents(quote.FinalPriceAfterDiscount), Cents(order.TotalPrice));
+    }
+
+    /// <summary>
+    /// The level and the per-room minutes lengthen the booked time (owner rulings 2026-09-28), and the
+    /// quote states the length and crew the order is then staffed with, so a client re-evaluates cash
+    /// from the quote. The home here is two rooms and a bathroom.
+    /// </summary>
+    [Theory]
+    [InlineData(DirtinessLevel.Normal, 0, 120, 1)]
+    [InlineData(DirtinessLevel.Increased, 0, 156, 2)]
+    [InlineData(DirtinessLevel.Heavy, 0, 192, 2)]
+    [InlineData(DirtinessLevel.Normal, 10, 150, 2)]
+    [InlineData(DirtinessLevel.Heavy, 10, 240, 2)]
+    public async Task The_Booked_Time_Follows_The_Level_And_The_Home_And_The_Quote_States_The_Crew(
+        DirtinessLevel level, int minutesPerRoom, int expectedMinutes, int expectedCrew)
+    {
+        _service = Service.Create("category-dirtiness", "Standard clean", "Under test", 120, minutesPerRoom);
+        _service.Id = ServiceId;
+
+        var quote = await QuoteAsync(level, express: false, userId: null);
+        var order = await CreateOrderAsync(level, express: false, userId: null);
+
+        Assert.Equal(expectedMinutes, quote.EstimatedDurationMinutes);
+        Assert.Equal(expectedCrew, quote.RequiredEmployees);
+        Assert.Equal(expectedMinutes, order.EstimatedTime);
+        Assert.Equal(expectedCrew, order.RequiredEmployees);
     }
 
     [Fact]

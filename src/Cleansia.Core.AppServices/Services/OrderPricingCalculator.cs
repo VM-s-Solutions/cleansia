@@ -184,7 +184,8 @@ public sealed class OrderPricingCalculator(
             ExpressSurchargeWaivedByMembership: waiver.Waived,
             ExpressUpgradesRemaining: waiver.Quota > 0 ? waiver.RemainingBeforeThisBooking : null,
             Lines: lines,
-            EstimatedDurationMinutes: OrderDuration.EstimateMinutes(services, packages),
+            EstimatedDurationMinutes: OrderDuration.EstimateMinutes(
+                services, packages, unitCount, BookingPolicy.DirtinessSurchargeRate(dirtinessLevel)),
             DirtinessSurchargeAmount: dirtinessSurchargeAmount);
     }
 

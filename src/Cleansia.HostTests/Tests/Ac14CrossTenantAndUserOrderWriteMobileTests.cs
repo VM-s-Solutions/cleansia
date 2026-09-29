@@ -149,6 +149,7 @@ public sealed class Ac14CrossTenantAndUserOrderWriteMobileTests(HostTestPostgres
             var emp = DomainSeed.ApprovedEmployee(empUser, tenantId: TenantA);
             ctx.Employees.Add(emp);
             ctx.EmployeeDocuments.Add(DomainSeed.ActiveDocument(emp.Id, tenantId: TenantA));
+            await DomainSeed.AcceptCleanerDocumentsAsync(ctx, emp);
 
             employeeId = emp.Id;
             orderId = order.Id;

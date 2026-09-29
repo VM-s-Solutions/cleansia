@@ -46,11 +46,14 @@ public sealed class LegalDocumentRouteTests(HostTestPostgresFixture db) : AuthzH
 
         var documents = await QueryAsync(ctx => ctx.LegalDocuments.Include(d => d.Texts).AsNoTracking().ToListAsync());
 
-        Assert.Equal(7, documents.Count);
+        Assert.Equal(11, documents.Count);
         Assert.Equal(3, documents.Count(d => d.Type == LegalDocumentType.TermsOfService));
         Assert.Contains(documents, d => d.Type == LegalDocumentType.WorkContract);
         Assert.All(documents, d => Assert.Equal(
-            d.Type == LegalDocumentType.WorkContract ? LegalDocumentAudience.Employee : LegalDocumentAudience.Customer, d.Audience));
+            d.Type == LegalDocumentType.WorkContract || LegalDocument.CleanerConsentTypeFor(d.Type) is not null
+                ? LegalDocumentAudience.Employee
+                : LegalDocumentAudience.Customer,
+            d.Audience));
         Assert.All(documents, d => Assert.Null(d.CountryId));
         Assert.All(documents, d => Assert.Equal(LegalDocument.VersionFor(d.EffectiveFrom), d.Version));
         Assert.All(documents, d => Assert.Equal(5, d.Texts.Count));

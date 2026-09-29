@@ -84,6 +84,43 @@ public static class DomainSeed
         return (document, document.TextFor("en")!.Id);
     }
 
+    /// <summary>
+    /// The cleaner's acceptance of the documents the host's boot seeded for them — the framework
+    /// contract, the self-billing agreement and the data-processing agreement in force today — as
+    /// <c>AcceptLegalDocument</c> writes it: the consent row of each type pointing at the document, which
+    /// is what the take gate reads, and the acceptance row that keeps the act. With those texts in force a
+    /// cleaner without them is refused work, so a take fixture that expects a 200 calls this. The rows take
+    /// the employee's company when the builder named one, else they are stamped at commit.
+    /// </summary>
+    public static async Task AcceptCleanerDocumentsAsync(CleansiaDbContext ctx, Employee employee)
+    {
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        foreach (var type in LegalDocument.CleanerAcceptedTypes)
+        {
+            var document = await ctx.LegalDocuments
+                .Include(d => d.Texts)
+                .Where(d => d.Audience == LegalDocumentAudience.Employee && d.Type == type
+                    && d.CountryId == null && d.EffectiveFrom <= today)
+                .OrderByDescending(d => d.EffectiveFrom)
+                .FirstAsync();
+
+            var consent = UserConsent.Grant(
+                employee.UserId, LegalDocument.CleanerConsentTypeFor(type)!.Value,
+                ipAddress: null, userAgent: null, documentVersion: document.Version, legalDocumentId: document.Id);
+            var acceptance = CleanerLegalDocumentAcceptance.Create(
+                employee.Id, document.TextFor(LanguageCode)!, document.Version, clientAudience: "cleansia.partner",
+                ipAddress: null, deviceLabel: null, deviceId: null);
+            if (employee.TenantId is not null)
+            {
+                consent.TenantId = employee.TenantId;
+                acceptance.TenantId = employee.TenantId;
+            }
+
+            ctx.UserConsents.Add(consent);
+            ctx.CleanerLegalDocumentAcceptances.Add(acceptance);
+        }
+    }
+
     public static User Customer(string email, string? tenantId = null)
     {
         var user = User.CreateWithPassword(email, "12345678Test!", "Cust", "Omer", UserProfile.Customer);

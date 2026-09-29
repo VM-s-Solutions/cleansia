@@ -133,15 +133,60 @@ describe('PartnerGdprFacade', () => {
       facade.loadConsents();
 
       expect(facade.consents()).toEqual([]);
-      expect(facade.legalConsents().map((row) => row.detailKey)).toEqual([
-        'pages.gdpr.legal.not_accepted',
-        'pages.gdpr.legal.not_accepted',
-      ]);
+      expect(facade.legalConsents()).toEqual([]);
     });
   });
 
-  describe('terms and privacy, read-only', () => {
-    it('shows the terms and the privacy policy, and nothing else', () => {
+  describe('the cooperation documents a cleaner accepted, read-only', () => {
+    const cleanerRows = (): UserConsentDto[] => [
+      consent(ConsentType.CleanerDataProcessingAgreement, { documentVersion: '2026-08-20' }),
+      consent(ConsentType.CleanerFrameworkContract, { documentVersion: '2026-09-01' }),
+      consent(ConsentType.SelfBillingAgreement, { documentVersion: '2026-09-15' }),
+    ];
+
+    it('states the version and date of each document the cleaner holds, in a fixed order', () => {
+      const facade = createFacade(true);
+      gdprClient.consentsGet.mockReturnValue(of(cleanerRows()));
+
+      facade.loadConsents();
+
+      const date = formatDate(grantedAt, 'en');
+      expect(facade.legalConsents()).toEqual([
+        {
+          type: ConsentType.CleanerFrameworkContract,
+          labelKey: 'pages.gdpr.consent_types.cleaner_framework_contract',
+          detailKey: 'pages.gdpr.legal.accepted_version',
+          detailParams: { version: '2026-09-01', date },
+        },
+        {
+          type: ConsentType.SelfBillingAgreement,
+          labelKey: 'pages.gdpr.consent_types.self_billing_agreement',
+          detailKey: 'pages.gdpr.legal.accepted_version',
+          detailParams: { version: '2026-09-15', date },
+        },
+        {
+          type: ConsentType.CleanerDataProcessingAgreement,
+          labelKey: 'pages.gdpr.consent_types.cleaner_data_processing_agreement',
+          detailKey: 'pages.gdpr.legal.accepted_version',
+          detailParams: { version: '2026-08-20', date },
+        },
+      ]);
+    });
+
+    it('lists only the documents the cleaner accepted, never one they do not hold', () => {
+      const facade = createFacade(true);
+      gdprClient.consentsGet.mockReturnValue(
+        of([consent(ConsentType.CleanerFrameworkContract, { documentVersion: '2026-09-01' })])
+      );
+
+      facade.loadConsents();
+
+      expect(facade.legalConsents().map((row) => row.type)).toEqual([
+        ConsentType.CleanerFrameworkContract,
+      ]);
+    });
+
+    it('lists no customer consent as a cooperation document', () => {
       const facade = createFacade(true);
       gdprClient.consentsGet.mockReturnValue(
         of([
@@ -149,58 +194,41 @@ describe('PartnerGdprFacade', () => {
           consent(ConsentType.PrivacyPolicy),
           consent(ConsentType.MarketingEmails),
           consent(ConsentType.DataProcessing),
-          consent(ConsentType.CleanerFrameworkContract),
+        ])
+      );
+
+      facade.loadConsents();
+
+      expect(facade.legalConsents()).toEqual([]);
+    });
+
+    it('states the date alone for an acceptance recorded without a version', () => {
+      const facade = createFacade(true);
+      gdprClient.consentsGet.mockReturnValue(
+        of([consent(ConsentType.SelfBillingAgreement, { documentVersion: undefined })])
+      );
+
+      facade.loadConsents();
+
+      const [agreement] = facade.legalConsents();
+      expect(agreement.detailKey).toBe('pages.gdpr.legal.accepted');
+      expect(agreement.detailParams.date).toBe(formatDate(grantedAt, 'en'));
+    });
+
+    it('drops a withdrawn row rather than showing it as accepted', () => {
+      const facade = createFacade(true);
+      gdprClient.consentsGet.mockReturnValue(
+        of([
+          consent(ConsentType.CleanerFrameworkContract, { isGranted: false }),
+          consent(ConsentType.CleanerDataProcessingAgreement),
         ])
       );
 
       facade.loadConsents();
 
       expect(facade.legalConsents().map((row) => row.type)).toEqual([
-        ConsentType.TermsOfService,
-        ConsentType.PrivacyPolicy,
+        ConsentType.CleanerDataProcessingAgreement,
       ]);
-    });
-
-    it('states the accepted version and the date it was accepted', () => {
-      const facade = createFacade(true);
-      gdprClient.consentsGet.mockReturnValue(of([consent(ConsentType.TermsOfService)]));
-
-      facade.loadConsents();
-
-      const [terms] = facade.legalConsents();
-      expect(terms.labelKey).toBe('pages.gdpr.consent_types.terms_of_service');
-      expect(terms.detailKey).toBe('pages.gdpr.legal.accepted_version');
-      expect(terms.detailParams).toEqual({
-        version: '2026-09',
-        date: formatDate(grantedAt, 'en'),
-      });
-    });
-
-    it('states the date alone for an acceptance recorded without a version', () => {
-      const facade = createFacade(true);
-      gdprClient.consentsGet.mockReturnValue(
-        of([consent(ConsentType.PrivacyPolicy, { documentVersion: undefined })])
-      );
-
-      facade.loadConsents();
-
-      const privacy = facade.legalConsents()[1];
-      expect(privacy.labelKey).toBe('pages.gdpr.consent_types.privacy_policy');
-      expect(privacy.detailKey).toBe('pages.gdpr.legal.accepted');
-      expect(privacy.detailParams.date).toBe(formatDate(grantedAt, 'en'));
-    });
-
-    it('treats a withdrawn row as not accepted', () => {
-      const facade = createFacade(true);
-      gdprClient.consentsGet.mockReturnValue(
-        of([consent(ConsentType.TermsOfService, { isGranted: false })])
-      );
-
-      facade.loadConsents();
-
-      const [terms] = facade.legalConsents();
-      expect(terms.detailKey).toBe('pages.gdpr.legal.not_accepted');
-      expect(terms.detailParams).toEqual({ version: '', date: '' });
     });
   });
 

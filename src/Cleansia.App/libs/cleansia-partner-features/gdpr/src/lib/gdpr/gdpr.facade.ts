@@ -13,14 +13,18 @@ import { currentLanguage, formatDate } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, filter, finalize, of, takeUntil } from 'rxjs';
 
-const LEGAL_CONSENTS = [
+const CLEANER_DOCUMENTS = [
   {
-    type: ConsentType.TermsOfService,
-    labelKey: 'pages.gdpr.consent_types.terms_of_service',
+    type: ConsentType.CleanerFrameworkContract,
+    labelKey: 'pages.gdpr.consent_types.cleaner_framework_contract',
   },
   {
-    type: ConsentType.PrivacyPolicy,
-    labelKey: 'pages.gdpr.consent_types.privacy_policy',
+    type: ConsentType.SelfBillingAgreement,
+    labelKey: 'pages.gdpr.consent_types.self_billing_agreement',
+  },
+  {
+    type: ConsentType.CleanerDataProcessingAgreement,
+    labelKey: 'pages.gdpr.consent_types.cleaner_data_processing_agreement',
   },
 ];
 
@@ -42,23 +46,18 @@ export class PartnerGdprFacade extends UnsubscribeControlDirective {
 
   readonly legalConsents = computed(() => {
     const lang = this.lang();
-    return LEGAL_CONSENTS.map(({ type, labelKey }) => {
-      const consent = this.consents().find((c) => c.consentType === type);
-      const accepted = consent?.isGranted === true;
-      const version = accepted ? consent.documentVersion ?? '' : '';
-      return {
-        type,
-        labelKey,
-        detailKey: !accepted
-          ? 'pages.gdpr.legal.not_accepted'
-          : version
-            ? 'pages.gdpr.legal.accepted_version'
-            : 'pages.gdpr.legal.accepted',
-        detailParams: {
-          version,
-          date: accepted ? formatDate(consent.grantedAt, lang) : '',
+    return CLEANER_DOCUMENTS.flatMap(({ type, labelKey }) => {
+      const consent = this.consents().find((c) => c.consentType === type && c.isGranted);
+      if (!consent) return [];
+      const version = consent.documentVersion ?? '';
+      return [
+        {
+          type,
+          labelKey,
+          detailKey: version ? 'pages.gdpr.legal.accepted_version' : 'pages.gdpr.legal.accepted',
+          detailParams: { version, date: formatDate(consent.grantedAt, lang) },
         },
-      };
+      ];
     });
   });
 

@@ -556,16 +556,17 @@
       "export_success": "Export vašich dat byl stažen.",
       "export_error": "Vaše data se nepodařilo exportovat. Zkuste to později.",
       "consents_title": "Správa souhlasů",
-      "consents_description": "Verze obchodních podmínek a zásad ochrany osobních údajů, které jste přijali.",
+      "consents_description": "Které verze dokumentů o spolupráci jste přijali a kdy.",
       "consents_load_error": "Souhlasy se nepodařilo načíst.",
       "consent_types": {
-        "terms_of_service": "Obchodní podmínky",
-        "privacy_policy": "Zásady ochrany osobních údajů"
+        "cleaner_framework_contract": "Rámcová smlouva o spolupráci (partneři)",
+        "self_billing_agreement": "Dohoda o samofakturaci",
+        "cleaner_data_processing_agreement": "Smlouva o zpracování osobních údajů (partneři)"
       },
       "legal": {
         "accepted_version": "Verze {{version}}, přijato {{date}}",
         "accepted": "Přijato {{date}}",
-        "not_accepted": "Zatím nepřijato"
+        "none": "Nemáme záznam o žádném přijatém dokumentu o spolupráci."
       },
       "delete_title": "Smazat můj účet",
       "delete_description": "Pošlete nám žádost o smazání účtu. Spolupráce se poté formálně ukončí osobně a teprve potom bude váš účet uzavřen a vaše osobní údaje anonymizovány. Faktury a záznamy o odměnách se uchovávají jako účetní doklady.",

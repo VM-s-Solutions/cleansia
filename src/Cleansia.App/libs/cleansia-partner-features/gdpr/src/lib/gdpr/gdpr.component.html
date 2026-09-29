@@ -47,6 +47,8 @@
                   {{ row.detailKey | translate: row.detailParams }}
                 </span>
               </div>
+            } @empty {
+              <p class="cleansia-gdpr__text">{{ 'pages.gdpr.legal.none' | translate }}</p>
             }
           </div>
         }

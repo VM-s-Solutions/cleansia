@@ -5,6 +5,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { WizardPreferredCleanerComponent } from './components/wizard-preferred-cleaner.component';
+import { AmountDueComponent } from '@cleansia-customer/orders';
 import { CleansiaAddressAutocompleteComponent, CleansiaButtonComponent, CleansiaScrollTopComponent, CleansiaSelectComponent, CleansiaTelephoneComponent } from '@cleansia/components';
 import { CategoryDto, CUSTOMER_API_BASE_URL, DIRTINESS_LEVELS, DirtinessLevel, dirtinessLevelOption, GetMembershipPlansResponse, MembershipStatus, PackageListItem, PackageServiceSummary, PaymentType, QuoteOrderQuoteLine, QuotePlusSavingsQuery, SavedAddressDto, ServiceListItem } from '@cleansia/customer-services';
 import type { MapboxAddressSuggestion } from '@cleansia/services';
@@ -78,6 +79,7 @@ function startOfMonth(date: Date): Date {
     CleansiaSelectComponent,
     CleansiaTelephoneComponent,
     WizardPreferredCleanerComponent,
+    AmountDueComponent,
     RouterModule,
   ],
   templateUrl: './order-wizard.component.html',
@@ -805,7 +807,7 @@ export class OrderWizardComponent implements OnInit {
     ]);
   }
 
-  private parkDraft(): void {
+  protected parkDraft(): void {
     this.draft.park(this.facade.activeStep(), this.facade.formData());
   }
 

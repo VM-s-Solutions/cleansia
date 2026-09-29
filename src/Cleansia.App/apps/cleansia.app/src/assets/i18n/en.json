@@ -998,6 +998,7 @@
       "cash_needs_card": "Cleaners needed for this booking: {{count}}. Cash is only for bookings one cleaner handles alone, so this one is paid by card.",
       "cash_pending": "Whether you can pay in cash is confirmed once the price is ready.",
       "cash_cleared": "Cash is no longer available for this booking, so no payment method is selected. Choose how you want to pay.",
+      "cash_owed": "Cash is not available while an amount from an earlier booking is unpaid. Pay it below and this booking will be waiting when you come back to book — or pay this booking by card now.",
       "cash_sign_in": "Sign in",
       "plus_perk_grace": "60 minutes after every booking to cancel free, instead of 15 minutes",
       "dirtiness": {
@@ -1210,6 +1211,20 @@
         "note_cash": "This cleaning is part of your repeat booking. Confirm it and pay the cleaner in cash on the day. If it isn't confirmed in time, it's cancelled free of charge.",
         "success": "Booking confirmed",
         "begun_in_app": "You started paying for this cleaning in the mobile app. Please finish the payment there."
+      }
+    },
+    "amount_due": {
+      "title": "Amount due",
+      "intro": "Until it is paid, you cannot book with cash. Bookings paid by card are not affected.",
+      "after_payment": "Just paid? It can take a minute before it disappears from here.",
+      "pay": "Pay now",
+      "load_error": "We couldn't check whether you owe anything.",
+      "none": "Nothing is owed any more.",
+      "kind": {
+        "cash_cancellation_fee": "Late-cancellation fee",
+        "lockout": "Fee: the cleaner could not get in",
+        "unpaid_cash": "Cash not paid for the cleaning",
+        "top_up": "Extra charge you approved"
       }
     },
     "order_contract": {

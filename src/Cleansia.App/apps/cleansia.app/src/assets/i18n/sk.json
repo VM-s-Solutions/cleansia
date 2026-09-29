@@ -998,6 +998,7 @@
       "cash_needs_card": "Počet upratovačov potrebných pre túto objednávku: {{count}}. V hotovosti sa dá platiť len za objednávky, ktoré zvládne jeden upratovač, túto preto zaplatíte kartou.",
       "cash_pending": "Či môžete platiť v hotovosti, potvrdíme, keď bude známa cena.",
       "cash_cleared": "Platba v hotovosti už pre túto objednávku nie je možná, preto nie je vybraný žiadny spôsob platby. Zvoľte, ako chcete platiť.",
+      "cash_owed": "Platba v hotovosti nie je možná, kým nie je uhradená suma z predchádzajúcej rezervácie. Zaplaťte ju nižšie a táto rezervácia na vás počká, keď sa k objednávke vrátite — alebo túto rezerváciu zaplaťte hneď kartou.",
       "cash_sign_in": "Prihlásiť sa",
       "plus_perk_grace": "60 minút po každej objednávke na bezplatné zrušenie namiesto 15 minút",
       "dirtiness": {
@@ -1210,6 +1211,20 @@
         "note_cash": "Toto upratovanie je súčasťou vašej opakovanej rezervácie. Potvrďte ho a upratovačovi zaplaťte v hotovosti v deň upratovania. Ak ho včas nepotvrdíte, bude zadarmo zrušené.",
         "success": "Rezervácia potvrdená",
         "begun_in_app": "Platbu za toto upratovanie ste začali v mobilnej aplikácii. Dokončite ju prosím tam."
+      }
+    },
+    "amount_due": {
+      "title": "Dlžná suma",
+      "intro": "Kým nebude uhradená, nie je možné objednávať s platbou v hotovosti. Rezervácií platených kartou sa to netýka.",
+      "after_payment": "Práve ste zaplatili? Môže chvíľu trvať, kým odtiaľto zmizne.",
+      "pay": "Zaplatiť",
+      "load_error": "Nepodarilo sa overiť, či nám niečo dlhujete.",
+      "none": "Nič už nedlhujete.",
+      "kind": {
+        "cash_cancellation_fee": "Poplatok za neskoré zrušenie",
+        "lockout": "Poplatok: upratovač sa nedostal dnu",
+        "unpaid_cash": "Nezaplatená hotovosť za upratovanie",
+        "top_up": "Doplatok, ktorý ste schválili"
       }
     },
     "order_contract": {

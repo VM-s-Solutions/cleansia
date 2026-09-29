@@ -1548,6 +1548,13 @@
   flex: 1 1 260px;
 }
 
+.cl-wiz__pay-owed {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 640px;
+}
+
 // ---- the promo code ---------------------------------------------------------
 .cl-wiz__promo-signin {
   margin: 12px 0 0;

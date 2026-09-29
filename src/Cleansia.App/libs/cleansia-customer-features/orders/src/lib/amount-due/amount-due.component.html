@@ -1,0 +1,51 @@
+@if (facade.loading()) {
+  @if (!orderId()) {
+  <p-skeleton width="100%" height="3.5rem" borderRadius="16px" />
+  }
+} @else if (facade.hasError()) {
+<div class="customer-amount-due__error" role="alert">
+  <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
+  <p>{{ 'pages.amount_due.load_error' | translate }}</p>
+  <cleansia-button
+    [label]="'global.actions.retry' | translate"
+    severity="secondary"
+    icon="pi pi-refresh"
+    [outlined]="true"
+    buttonSize="small"
+    (onClick)="facade.load()"
+  />
+</div>
+} @else if (facade.rows().length > 0) {
+<section class="order-detail__card customer-amount-due">
+  <h2 class="order-detail__card-title">{{ 'pages.amount_due.title' | translate }}</h2>
+  <p class="order-detail__card-lead">{{ 'pages.amount_due.intro' | translate }}</p>
+  <ul class="customer-amount-due__list">
+    @for (row of facade.rows(); track row.id) {
+    <li class="customer-amount-due__row">
+      <div class="customer-amount-due__info">
+        <span class="customer-amount-due__kind">{{ row.kindLabelKey | translate }}</span>
+        <span class="customer-amount-due__order">
+          {{ 'pages.order_detail.order' | translate }} {{ row.displayOrderNumber }}
+        </span>
+      </div>
+      <span class="customer-amount-due__amount cl-num">{{ formatAmount(row) }}</span>
+      <cleansia-button
+        [label]="'pages.amount_due.pay' | translate"
+        buttonSize="small"
+        [loading]="facade.payingId() === row.id"
+        [disabled]="facade.payingId() !== null"
+        (onClick)="pay(row)"
+      />
+    </li>
+    }
+  </ul>
+  @if (orderId()) {
+  <p class="order-detail__policy">
+    <i class="pi pi-info-circle" aria-hidden="true"></i>
+    {{ 'pages.amount_due.after_payment' | translate }}
+  </p>
+  }
+</section>
+} @else if (!orderId()) {
+<p class="customer-amount-due__none" role="status">{{ 'pages.amount_due.none' | translate }}</p>
+}

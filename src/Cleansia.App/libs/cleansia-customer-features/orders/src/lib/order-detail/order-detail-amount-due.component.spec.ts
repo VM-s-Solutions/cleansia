@@ -5,9 +5,10 @@ import { ActivatedRoute, provideRouter } from '@angular/router';
 import {
   CustomerAuthService,
   CustomerClient,
-  DirtinessLevel,
+  MyReceivableDto,
   OrderItem,
   OrderStatus,
+  PaymentType,
 } from '@cleansia/customer-services';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateLoader, TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -21,15 +22,12 @@ const ORDER_ID = 'ord-1';
 
 const COPY = {
   pages: {
-    order: {
-      dirtiness: {
-        normal: { name: 'Normal' },
-        increased: { name: 'Increased', surcharge_line: 'Increased dirtiness surcharge' },
-        heavy: { name: 'Heavy', surcharge_line: 'Heavy dirtiness surcharge' },
-      },
-    },
-    order_detail: {
-      label_dirtiness: 'Dirtiness level',
+    order_detail: { order: 'Order' },
+    amount_due: {
+      title: 'Amount due',
+      pay: 'Pay now',
+      after_payment: 'Just paid?',
+      kind: { cash_cancellation_fee: 'Late-cancellation fee', lockout: 'Lockout fee' },
     },
   },
 };
@@ -40,26 +38,34 @@ class PreferredOfferStub {
   locale = input<string>();
 }
 
-function order(dirtinessLevel: DirtinessLevel, dirtinessSurchargeAmount: number): OrderItem {
-  return OrderItem.fromJS({
-    id: ORDER_ID,
-    displayOrderNumber: 'ORD-1',
-    orderStatus: { value: OrderStatus.Confirmed, name: 'Confirmed' },
-    cleaningDateTime: '2026-09-25T08:00:00Z',
-    originalSubtotal: 1000 + dirtinessSurchargeAmount,
-    totalPrice: 1000 + dirtinessSurchargeAmount,
-    currency: { code: 'CZK' },
-    selectedServices: [{ id: 's-1', name: 'Standard cleaning' }],
-    selectedPackages: [],
-    dirtinessLevel,
-    dirtinessSurchargeAmount,
+const cancelledCashOrder = OrderItem.fromJS({
+  id: ORDER_ID,
+  displayOrderNumber: 'CL-1001',
+  orderStatus: { value: OrderStatus.Cancelled, name: 'Cancelled' },
+  paymentType: { value: PaymentType.Cash, name: 'Cash' },
+  cleaningDateTime: '2026-09-25T08:00:00Z',
+  totalPrice: 1200,
+  currency: { code: 'CZK' },
+  selectedServices: [],
+  selectedPackages: [],
+});
+
+function receivable(id: string, orderId: string, kind: number, amount: number): MyReceivableDto {
+  return MyReceivableDto.fromJS({
+    id,
+    orderId,
+    displayOrderNumber: orderId === ORDER_ID ? 'CL-1001' : 'CL-2002',
+    kind: { value: kind },
+    amount,
+    currencyCode: 'CZK',
+    createdOn: '2026-09-28T10:00:00Z',
   });
 }
 
-describe('OrderDetailComponent — the dirtiness level', () => {
+describe('OrderDetailComponent — an amount due on the order', () => {
   let fixture: ComponentFixture<OrderDetailComponent>;
 
-  async function setup(booked: OrderItem): Promise<void> {
+  async function setup(owed: MyReceivableDto[]): Promise<void> {
     await TestBed.configureTestingModule({
       imports: [
         OrderDetailComponent,
@@ -75,9 +81,9 @@ describe('OrderDetailComponent — the dirtiness level', () => {
         {
           provide: CustomerClient,
           useValue: {
-            orderClient: { getById: jest.fn().mockReturnValue(of(booked)) },
+            orderClient: { getById: jest.fn().mockReturnValue(of(cancelledCashOrder)) },
             membershipClient: { getMine: () => of(null) },
-            receivableClient: { getMine: () => of([]) },
+            receivableClient: { getMine: () => of(owed), createPayLink: jest.fn() },
           },
         },
         { provide: CustomerAuthService, useValue: { isLoggedIn: () => true } },
@@ -107,32 +113,26 @@ describe('OrderDetailComponent — the dirtiness level', () => {
   }
 
   const text = (el: Element | null): string => (el?.textContent ?? '').replace(/\s+/g, ' ').trim();
-  const levelFact = (): string =>
-    text((fixture.nativeElement as HTMLElement).querySelector('[data-spec-dirtiness-level]'));
-  const priceLines = (): string[][] =>
-    Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('.order-detail__price-line')).map(
-      (line) => Array.from(line.children).map(text),
+  const card = (): HTMLElement | null =>
+    (fixture.nativeElement as HTMLElement).querySelector('.customer-amount-due');
+  const rows = (): string[][] =>
+    Array.from(card()?.querySelectorAll('.customer-amount-due__row') ?? []).map((row) =>
+      ['.customer-amount-due__kind', '.customer-amount-due__order', '.customer-amount-due__amount', 'cleansia-button'].map(
+        (part) => text(row.querySelector(part)),
+      ),
     );
 
-  it('names the level the order was booked at', async () => {
-    await setup(order(DirtinessLevel.Increased, 300));
+  it('offers to pay what this order owes, and not what another order owes', async () => {
+    await setup([receivable('rcv-1', ORDER_ID, 1, 450), receivable('rcv-2', 'ord-2', 2, 1200)]);
 
-    expect(levelFact()).toBe('Dirtiness level Increased');
+    expect(text(card()?.querySelector('.order-detail__card-title') ?? null)).toBe('Amount due');
+    expect(rows()).toEqual([['Late-cancellation fee', 'Order CL-1001', 'CZK 450', 'Pay now']]);
+    expect(text(card())).toContain('Just paid?');
   });
 
-  it('itemises the surcharge under its level and leaves the services line the rest of the subtotal', async () => {
-    await setup(order(DirtinessLevel.Heavy, 600));
+  it('shows no amount-due card when the order owes nothing', async () => {
+    await setup([receivable('rcv-2', 'ord-2', 2, 1200)]);
 
-    expect(priceLines()).toEqual([
-      ['Standard cleaning', 'CZK 1,000'],
-      ['Heavy dirtiness surcharge', 'CZK 600'],
-    ]);
-  });
-
-  it('names a normal level and adds no surcharge line when the level added nothing', async () => {
-    await setup(order(DirtinessLevel.Normal, 0));
-
-    expect(levelFact()).toBe('Dirtiness level Normal');
-    expect(priceLines()).toEqual([['Standard cleaning', 'CZK 1,000']]);
+    expect(card()).toBeNull();
   });
 });

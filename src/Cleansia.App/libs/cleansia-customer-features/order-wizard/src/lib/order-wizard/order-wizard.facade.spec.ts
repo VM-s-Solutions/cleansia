@@ -1527,6 +1527,23 @@ describe('OrderWizardFacade', () => {
       },
     );
 
+    it.each([
+      ['order.cash_unpaid_receivable', true],
+      ['order.cash_open_bookings_limit_reached', false],
+      ['order.cash_not_available', false],
+    ])('lists what is owed on the payment step only when %s refuses cash for an unpaid amount', async (code, owed) => {
+      signedIn.set(true);
+      completeOrder();
+      await quoted();
+      facade.selectPaymentType(PaymentType.Cash);
+      orderClient.createOrder.mockReturnValue(throwError(() => ({ errors: { PaymentType: code } })));
+
+      expect(facade.cashOwed()).toBe(false);
+      await facade.submitOrder();
+
+      expect(facade.cashOwed()).toBe(owed);
+    });
+
     describe('without a saved card', () => {
       async function refusedForWantOfACard(): Promise<void> {
         signedIn.set(true);

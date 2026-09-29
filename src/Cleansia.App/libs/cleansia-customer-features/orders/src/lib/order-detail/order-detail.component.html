@@ -499,6 +499,8 @@
 
     <!-- ================= RIGHT ================= -->
     <div class="order-detail__col">
+      <cleansia-customer-amount-due [orderId]="order()!.id ?? null" />
+
       <!-- What it cost, line by line. -->
       <section class="order-detail__card">
         <h2 class="order-detail__card-title">{{ 'pages.order_detail.price' | translate }}</h2>

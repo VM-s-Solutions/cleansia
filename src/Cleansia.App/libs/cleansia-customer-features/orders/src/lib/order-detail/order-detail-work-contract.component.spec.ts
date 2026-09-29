@@ -87,6 +87,7 @@ describe('OrderDetailComponent — the contract for work', () => {
           useValue: {
             orderClient: { getById: jest.fn().mockReturnValue(of(order(acceptances))) },
             membershipClient: { getMine: () => of(null) },
+            receivableClient: { getMine: () => of([]) },
           },
         },
         { provide: CustomerAuthService, useValue: { isLoggedIn: () => true } },

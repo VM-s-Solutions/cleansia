@@ -820,6 +820,64 @@ cleansia-customer-order-preferred-offer {
   margin-top: calc(0.75 * var(--cl-u));
 }
 
+// ---- Amount due -------------------------------------------------------------
+// Rendered by amount-due.component, here and on the booking wizard's payment
+// step. Its host takes no room while nothing is owed, as the preferred offer's.
+cleansia-customer-amount-due {
+  display: contents;
+}
+
+.customer-amount-due__list {
+  list-style: none;
+  margin: var(--cl-u) 0 0;
+  padding: 0;
+}
+
+.customer-amount-due__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: calc(0.5 * var(--cl-u)) var(--cl-u);
+  padding: calc(0.75 * var(--cl-u)) 0;
+
+  + .customer-amount-due__row {
+    border-top: 1px solid var(--cl-border);
+  }
+}
+
+.customer-amount-due__info {
+  display: flex;
+  flex: 1 1 12rem;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.customer-amount-due__kind,
+.customer-amount-due__amount {
+  font-weight: 800;
+  color: var(--cl-heading);
+}
+
+.customer-amount-due__order {
+  font-size: calc(0.8125 * var(--cl-u));
+  color: var(--cl-muted);
+}
+
+.customer-amount-due__error,
+.customer-amount-due__none {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: calc(0.5 * var(--cl-u));
+  margin: 0;
+  font-size: calc(0.875 * var(--cl-u));
+  color: var(--cl-body);
+
+  p {
+    margin: 0;
+  }
+}
+
 // ---- Narrow -----------------------------------------------------------------
 @media (max-width: 1000px) {
   .order-detail__grid {

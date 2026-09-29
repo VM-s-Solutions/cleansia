@@ -84,6 +84,16 @@ export type {
   IRemoveSavedCardResponse,
 } from './lib/client/customer-client';
 export {
+  ReceivableClient,
+  MyReceivableDto,
+  CreateReceivablePayLinkResponse,
+} from './lib/client/customer-client';
+export type {
+  IReceivableClient,
+  IMyReceivableDto,
+  ICreateReceivablePayLinkResponse,
+} from './lib/client/customer-client';
+export {
   CreateOrderCommand,
   AddressDto,
   CustomerAddress,

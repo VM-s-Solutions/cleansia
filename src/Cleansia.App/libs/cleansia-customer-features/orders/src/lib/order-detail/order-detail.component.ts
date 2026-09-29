@@ -29,6 +29,7 @@ import { clearOnBackForwardRestore, formatMoney, localeFor } from '@cleansia/uti
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { DialogModule } from 'primeng/dialog';
 import { SkeletonModule } from 'primeng/skeleton';
+import { AmountDueComponent } from '../amount-due/amount-due.component';
 import { OrderPreferredOfferComponent } from './components/order-preferred-offer.component';
 import { OrderDetailFacade } from './order-detail.facade';
 import { OrderMarketFacade } from '../order-market.facade';
@@ -89,6 +90,7 @@ interface EntryDetail {
     CleansiaTextareaComponent,
     OrderStatusLabelPipe,
     OrderPreferredOfferComponent,
+    AmountDueComponent,
   ],
   providers: [OrderDetailFacade, OrderPreferredOfferFacade, OrderMarketFacade],
   templateUrl: './order-detail.component.html',

@@ -8,9 +8,12 @@ import { CleansiaSelectComponent } from '@cleansia/components';
 import { lastBookableDay } from '@cleansia/models';
 import { SnackbarService } from '@cleansia/services';
 import {
+  CreateReceivablePayLinkResponse,
+  CustomerClient,
   DirtinessLevel,
   GetMembershipPlansResponse,
   GetMyMembershipResponse,
+  MyReceivableDto,
   PackageListItem,
   PaymentType,
   QuoteOrderResponse,
@@ -20,6 +23,7 @@ import {
   ServiceListItem,
 } from '@cleansia/customer-services';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { of } from 'rxjs';
 import { OrderWizardComponent } from './order-wizard.component';
 import { OrderWizardFacade } from './order-wizard.facade';
 import { ORDER_WIZARD_INITIAL_DATA, OrderWizardFormData, createAddressDto } from './order-wizard.models';
@@ -149,6 +153,7 @@ class FakeOrderWizardFacade {
   cashReason = signal<{ key: string; params: Record<string, number> } | null>(null);
   cashNeedsAccount = signal(false);
   cashClearedNotice = signal(false);
+  cashOwed = signal(false);
   selectPaymentType = jest.fn((paymentType: PaymentType) => this.updateFormData({ paymentType }));
   cardCaptureVisible = signal(false);
   cardCaptureConsent = signal(false);
@@ -162,15 +167,35 @@ describe('OrderWizardComponent (a11y)', () => {
   let fixture: ComponentFixture<OrderWizardComponent>;
   let facade: FakeOrderWizardFacade;
   let el: HTMLElement;
+  let receivableClient: { getMine: jest.Mock; createPayLink: jest.Mock };
 
   async function setup(beforeCreate?: () => void): Promise<void> {
     facade = new FakeOrderWizardFacade();
+    const { origin, pathname } = window.location;
+    receivableClient = {
+      getMine: jest.fn().mockReturnValue(
+        of([
+          MyReceivableDto.fromJS({
+            id: 'rcv-1',
+            orderId: 'ord-1',
+            displayOrderNumber: 'CL-1001',
+            kind: { value: 1 },
+            amount: 450,
+            currencyCode: 'CZK',
+          }),
+        ]),
+      ),
+      createPayLink: jest.fn().mockReturnValue(
+        of(CreateReceivablePayLinkResponse.fromJS({ receivableId: 'rcv-1', checkoutUrl: `${origin}${pathname}#pay` })),
+      ),
+    };
     await TestBed.configureTestingModule({
       imports: [OrderWizardComponent, TranslateModule.forRoot()],
       providers: [
         provideHttpClient(),
         provideNoopAnimations(),
         { provide: SnackbarService, useValue: { showError: jest.fn(), showSuccess: jest.fn() } },
+        { provide: CustomerClient, useValue: { receivableClient } },
         {
           provide: ActivatedRoute,
           useValue: { snapshot: { queryParamMap: { get: () => null } } },
@@ -662,6 +687,36 @@ describe('OrderWizardComponent (a11y)', () => {
       facade.cashClearedNotice.set(false);
       fixture.detectChanges();
       expect(el.textContent).not.toContain('pages.order.cash_cleared');
+    });
+  });
+
+  describe('cash refused for an unpaid amount', () => {
+    afterEach(() => sessionStorage.clear());
+
+    it('says nothing about an unpaid amount until the server refuses cash for one', async () => {
+      await setup();
+      facade.activeStep.set(4);
+      fixture.detectChanges();
+
+      expect(el.textContent).not.toContain('pages.order.cash_owed');
+      expect(el.querySelector('cleansia-customer-amount-due')).toBeNull();
+      expect(receivableClient.getMine).not.toHaveBeenCalled();
+    });
+
+    it('says why and lists what is owed, and parks the booking before the pay link opens', async () => {
+      await setup();
+      facade.activeStep.set(4);
+      facade.cashOwed.set(true);
+      fixture.detectChanges();
+
+      expect(el.textContent).toContain('pages.order.cash_owed');
+      const row = fixture.debugElement.query(By.css('.customer-amount-due__row'));
+      expect(row.nativeElement.textContent).toContain('CL-1001');
+
+      row.query(By.css('cleansia-button')).triggerEventHandler('onClick', new MouseEvent('click'));
+
+      expect(receivableClient.createPayLink).toHaveBeenCalledWith('rcv-1');
+      expect(sessionStorage.getItem('cleansia_order_draft')).not.toBeNull();
     });
   });
 

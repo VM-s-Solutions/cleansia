@@ -33,10 +33,13 @@ export const OUTSIDE_BOOKING_WINDOW = 'order.cleaning_date.outside_booking_windo
 /** How CreateOrder refuses cash to a customer with no usable card saved in the booking's currency. */
 export const CASH_REQUIRES_SAVED_CARD = 'order.cash_requires_saved_card';
 
+/** How CreateOrder refuses cash while the customer owes an amount from an earlier booking. */
+export const CASH_UNPAID_RECEIVABLE = 'order.cash_unpaid_receivable';
+
 /** How CreateOrder refuses cash that the customer cannot fix on this booking except by paying by card. */
 export const CASH_REFUSALS: readonly string[] = [
   'order.cash_not_available',
-  'order.cash_unpaid_receivable',
+  CASH_UNPAID_RECEIVABLE,
   'order.cash_open_bookings_limit_reached',
 ];
 

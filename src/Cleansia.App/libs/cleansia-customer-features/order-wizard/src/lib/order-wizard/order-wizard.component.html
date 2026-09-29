@@ -777,6 +777,15 @@
           }
         </div>
         }
+        @if (facade.cashOwed()) {
+        <div class="cl-wiz__pay-owed">
+          <p class="cl-wiz__pay-note cl-wiz__pay-note--warn" role="status">
+            <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
+            <span class="cl-wiz__pay-note-text">{{ 'pages.order.cash_owed' | translate }}</span>
+          </p>
+          <cleansia-customer-amount-due (leaving)="parkDraft()" />
+        </div>
+        }
 
         <div class="cl-wiz__rule"></div>
 

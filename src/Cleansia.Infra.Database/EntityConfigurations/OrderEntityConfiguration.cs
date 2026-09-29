@@ -133,6 +133,15 @@ public class OrderEntityConfiguration : TenantAuditableEntityConfiguration<Order
             .HasPrecision(18, 2)
             .HasDefaultValue(0m);
 
+        builder.Property(o => o.DirtinessLevel)
+            .IsRequired()
+            .HasDefaultValue(DirtinessLevel.Normal);
+
+        builder.Property(o => o.DirtinessSurchargeAmount)
+            .IsRequired()
+            .HasPrecision(18, 2)
+            .HasDefaultValue(0m);
+
         // Loyalty tier discount applied at create-time. Nullable; not
         // required on existing/anon orders.
         builder.Property(o => o.TierDiscountAmount)

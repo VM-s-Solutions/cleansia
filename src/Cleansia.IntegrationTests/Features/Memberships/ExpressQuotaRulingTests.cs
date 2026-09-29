@@ -270,7 +270,7 @@ public class ExpressQuotaRulingTests(PostgresContainerFixture fixture) : BaseInt
     private static Task<OrderPricingResult> PriceAsync(
         IOrderPricingCalculator pricing, DateTime cleaningUtc)
         => pricing.CalculateAsync(
-            [ServiceId], [], [], rooms: 0, bathrooms: 0, CurrencyId, cleaningUtc, UserId, AugustUtc,
+            [ServiceId], [], [], rooms: 0, bathrooms: 0, dirtinessLevel: DirtinessLevel.Normal, CurrencyId, cleaningUtc, UserId, AugustUtc,
             CancellationToken.None);
 
     private static IMembershipBenefitUsageRepository Repository(IServiceProvider provider)

@@ -5,6 +5,7 @@ using Cleansia.Core.AppServices.Features.Catalog;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Shared.DTOs.Enums;
 using Cleansia.Core.AppServices.Tenancy;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
@@ -33,7 +34,8 @@ public class QuoteOrder
         /// explicitly; null with no currency is the platform default, which is what a quote taken
         /// before the address step gets.
         /// </summary>
-        string? CountryId = null) : ICommand<Response>, IOperatorScopedRequest;
+        string? CountryId = null,
+        DirtinessLevel DirtinessLevel = DirtinessLevel.Normal) : ICommand<Response>, IOperatorScopedRequest;
 
     /// <summary>
     /// Quote response. <see cref="TotalPrice"/> is the undiscounted total INCLUDING any express surcharge
@@ -114,7 +116,12 @@ public class QuoteOrder
         /// currency — so the same arithmetic done in a browser is silently wrong at any
         /// exchange rate but 1.
         /// </summary>
-        IReadOnlyList<QuoteLine>? Lines = null);
+        IReadOnlyList<QuoteLine>? Lines = null,
+        /// <summary>
+        /// The dirtiness level's surcharge on the lines' sum, in cents. Inside <see cref="TotalPrice"/>
+        /// and inside the base the discounts come off; the express surcharge is measured on top of it.
+        /// </summary>
+        decimal DirtinessSurchargeAmount = 0m);
 
     /// <param name="Kind">"package", "service" or "extra".</param>
     /// <param name="ItemId">Package/Service id, or an Extra's slug. The client holds the
@@ -156,6 +163,10 @@ public class QuoteOrder
             _currencyResolutionService = currencyResolutionService;
             _servicePriceRepository = servicePriceRepository;
             _packagePriceRepository = packagePriceRepository;
+
+            RuleFor(x => x.DirtinessLevel)
+                .IsInEnum()
+                .WithMessage(BusinessErrorMessage.InvalidEnumValue);
 
             RuleFor(x => x.Rooms)
                 .GreaterThanOrEqualTo(0)
@@ -402,6 +413,7 @@ public class QuoteOrder
                 command.SelectedExtraSlugs ?? Array.Empty<string>(),
                 command.Rooms,
                 command.Bathrooms,
+                command.DirtinessLevel,
                 // Validated offerable above; null is the platform default. Safe to honour because
                 // nothing converts -- a currency selects which price ROWS are read, it no longer scales
                 // the CZK catalogue by a stored rate (the Wave A hole).
@@ -413,9 +425,10 @@ public class QuoteOrder
 
             // Two different bases, deliberately. The gross (surcharge included) is what the client
             // must resubmit — CreateOrder.PriceMatchesAsync compares it against the same calculator
-            // call. The discount is resolved on the RAW pre-surcharge subtotal because that is what
-            // OrderFactory persists; discounting the gross yields the same final charge but a bigger
-            // itemised saving than the receipt (and the lifetime-savings stat) will ever show.
+            // call. The discount is resolved on the RAW pre-express subtotal, dirtiness surcharge included,
+            // because that is what OrderFactory persists; discounting the gross yields the same final
+            // charge but a bigger itemised saving than the receipt (and the lifetime-savings stat) will
+            // ever show.
             var grossSubtotal = result.TotalPrice;
             var rawSubtotal = grossSubtotal - result.ExpressSurchargeAmount;
             var userId = userSessionProvider.GetUserId();
@@ -492,6 +505,7 @@ public class QuoteOrder
                 ExtrasSubtotal: result.ExtrasSubtotal,
                 ExpressSurchargeApplied: result.ExpressSurchargeApplied,
                 ExpressSurchargeAmount: result.ExpressSurchargeAmount,
+                DirtinessSurchargeAmount: result.DirtinessSurchargeAmount,
                 EstimatedDurationMinutes: estimatedMinutes,
                 RequiredEmployees: requiredEmployees,
                 Lines: (result.Lines ?? [])

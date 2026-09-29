@@ -4155,6 +4155,17 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<DateTimeOffset?>("DeactivatedOn")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int>("DirtinessLevel")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<decimal>("DirtinessSurchargeAmount")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasDefaultValue(0m);
+
                     b.Property<string>("DisplayOrderNumber")
                         .IsRequired()
                         .HasMaxLength(50)

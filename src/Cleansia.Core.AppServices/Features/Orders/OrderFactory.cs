@@ -262,10 +262,19 @@ public sealed class OrderFactory(
         order.AddSelectedPackages(selectedPackages);
         var extraPrices = await CataloguePriceLookup.ForExtrasAsync(
             extraPriceRepository, selectedExtras.Select(e => e.Id).ToList(), input.Currency.Id, cancellationToken);
-        order.AddSelectedExtras(selectedExtras
+        var selectedExtraLines = selectedExtras
             .Where(e => extraPrices.ContainsKey(e.Id))
             .Select(e => OrderExtra.Create(order, e, unitPrice: extraPrices[e.Id]))
-            .ToList());
+            .ToList();
+        order.AddSelectedExtras(selectedExtraLines);
+
+        // From the lines this order stores, so lines + dirtiness + express - discounts = TotalPrice holds
+        // on the order's own figures; RawSubtotal carries the same surcharge, priced from the same rows.
+        var linesSubtotal = selectedServices.Sum(s => s.LineTotal)
+            + selectedPackages.Sum(p => p.LineTotal)
+            + selectedExtraLines.Sum(e => e.UnitPrice);
+        order.SetDirtinessSurcharge(
+            input.DirtinessLevel, BookingPolicy.DirtinessSurchargeFor(linesSubtotal, input.DirtinessLevel));
 
         var estimatedTime = OrderDuration.EstimateMinutes(
             selectedServices.Select(s => s.Service!),

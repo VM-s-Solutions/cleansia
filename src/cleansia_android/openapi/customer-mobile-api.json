@@ -8019,6 +8019,9 @@
           "termsAccepted": {
             "type": "boolean",
             "nullable": true
+          },
+          "dirtinessLevel": {
+            "$ref": "#/components/schemas/DirtinessLevel"
           }
         },
         "additionalProperties": false
@@ -8236,6 +8239,20 @@
           }
         },
         "additionalProperties": false
+      },
+      "DirtinessLevel": {
+        "enum": [
+          0,
+          1,
+          2
+        ],
+        "type": "integer",
+        "format": "int32",
+        "x-enumNames": [
+          "Normal",
+          "Increased",
+          "Heavy"
+        ]
       },
       "DisputeDetails": {
         "type": "object",
@@ -11433,6 +11450,9 @@
           "countryId": {
             "type": "string",
             "nullable": true
+          },
+          "dirtinessLevel": {
+            "$ref": "#/components/schemas/DirtinessLevel"
           }
         },
         "additionalProperties": false
@@ -11557,6 +11577,10 @@
               "$ref": "#/components/schemas/QuoteOrder_QuoteLine"
             },
             "nullable": true
+          },
+          "dirtinessSurchargeAmount": {
+            "type": "number",
+            "format": "double"
           }
         },
         "additionalProperties": false

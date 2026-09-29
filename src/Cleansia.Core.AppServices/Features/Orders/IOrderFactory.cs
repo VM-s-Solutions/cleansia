@@ -48,8 +48,8 @@ public record CreateOrderInput(
     IEnumerable<string> SelectedServiceIds,
     IEnumerable<string> SelectedPackageIds,
     /// <summary>
-    /// Raw pre-discount subtotal (matches <c>IOrderPricingCalculator</c>).
-    /// The factory applies discount + express surcharge on top.
+    /// Raw pre-discount subtotal (matches <c>IOrderPricingCalculator</c>), the dirtiness surcharge for
+    /// <see cref="DirtinessLevel"/> included. The factory applies discount + express surcharge on top.
     /// </summary>
     decimal RawSubtotal,
     /// <summary>
@@ -105,4 +105,9 @@ public record CreateOrderInput(
     /// The language the booking request was made in. Null for the recurring pipeline: an occurrence has
     /// no request of its own, so its documents fall back to the account's preference.
     /// </summary>
-    string? LanguageCode = null);
+    string? LanguageCode = null,
+    /// <summary>
+    /// The level <see cref="RawSubtotal"/> was priced at. Normal for the recurring pipeline until a
+    /// template carries a level of its own.
+    /// </summary>
+    DirtinessLevel DirtinessLevel = DirtinessLevel.Normal);

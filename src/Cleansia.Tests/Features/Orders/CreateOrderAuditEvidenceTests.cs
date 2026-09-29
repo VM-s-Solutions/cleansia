@@ -75,7 +75,7 @@ public sealed class CreateOrderAuditEvidenceTests
         _pricingCalculator
             .Setup(c => c.CalculateAsync(
                 It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(),
-                It.IsAny<int>(), It.IsAny<int>(), It.IsAny<string?>(), It.IsAny<DateTime?>(), It.IsAny<string?>(),
+                It.IsAny<int>(), It.IsAny<int>(), It.IsAny<DirtinessLevel>(), It.IsAny<string?>(), It.IsAny<DateTime?>(), It.IsAny<string?>(),
                 It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(CreateOrderTestData.MatchingPricing());
         _stripeClientFactory.Setup(f => f.CreateClient()).Returns(_stripeClient.Object);

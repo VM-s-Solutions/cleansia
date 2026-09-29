@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Catalog;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Tenancy;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
@@ -41,7 +42,8 @@ public static class QuotePlusSavings
         IEnumerable<string>? SelectedExtraSlugs = null,
         DateTime? CleaningDate = null,
         /// <summary>The service address's country -- see <see cref="QuoteOrder.Command.CountryId"/>.</summary>
-        string? CountryId = null) : IQuery<Response>, IOperatorScopedRequest;
+        string? CountryId = null,
+        DirtinessLevel DirtinessLevel = DirtinessLevel.Normal) : IQuery<Response>, IOperatorScopedRequest;
 
     public record Response(
         /// <summary>What the plan's discount is worth on this basket, in the charge currency.</summary>
@@ -82,6 +84,10 @@ public static class QuotePlusSavings
             RuleFor(x => x.PlanCode)
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required);
+
+            RuleFor(x => x.DirtinessLevel)
+                .IsInEnum()
+                .WithMessage(BusinessErrorMessage.InvalidEnumValue);
 
             RuleFor(x => x.Rooms).GreaterThanOrEqualTo(0)
                 .LessThanOrEqualTo(BookingPolicy.MaxRooms)
@@ -249,6 +255,7 @@ public static class QuotePlusSavings
                 query.SelectedExtraSlugs ?? [],
                 query.Rooms,
                 query.Bathrooms,
+                query.DirtinessLevel,
                 // The same resolution as QuoteOrder, validated offerable; null is the platform default.
                 await QuoteOrder.ResolveQuoteCurrencyId(
                     query.CurrencyId, query.CountryId, currencyResolutionService, cancellationToken),

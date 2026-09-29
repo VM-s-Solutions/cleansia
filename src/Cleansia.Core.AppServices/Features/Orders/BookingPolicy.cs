@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Shared.DTOs.Enums;
+using Cleansia.Core.Domain.Enums;
 
 namespace Cleansia.Core.AppServices.Features.Orders;
 
@@ -30,6 +31,30 @@ public static class BookingPolicy
     /// 0.20 = +20%.
     /// </summary>
     public const decimal ExpressSurchargeRate = 0.20m;
+
+    /// <summary>
+    /// The dirtiness surcharge rates, on the whole basket, extras included (owner ruling 2026-09-28).
+    /// Normal adds nothing.
+    /// </summary>
+    public const decimal IncreasedDirtinessSurchargeRate = 0.30m;
+    public const decimal HeavyDirtinessSurchargeRate = 0.60m;
+
+    public static decimal DirtinessSurchargeRate(DirtinessLevel level) => level switch
+    {
+        DirtinessLevel.Normal => 0m,
+        DirtinessLevel.Increased => IncreasedDirtinessSurchargeRate,
+        DirtinessLevel.Heavy => HeavyDirtinessSurchargeRate,
+        _ => throw new ArgumentOutOfRangeException(nameof(level), level, null),
+    };
+
+    /// <summary>
+    /// The dirtiness surcharge on a sum of lines, in cents. It sits inside the raw subtotal: discounts
+    /// come off lines + surcharge and express compounds on top, so heavy + express is x1.92. Rounded
+    /// here, once, so the raw subtotal stays whole cents and lines + dirtiness + express - discounts
+    /// reconciles to the stored total. Shared by the calculator and <c>OrderFactory</c>.
+    /// </summary>
+    public static decimal DirtinessSurchargeFor(decimal linesSubtotal, DirtinessLevel level)
+        => Math.Round(linesSubtotal * DirtinessSurchargeRate(level), 2, MidpointRounding.AwayFromZero);
 
     /// <summary>
     /// Largest home supported by the booking picker and every basket validator.

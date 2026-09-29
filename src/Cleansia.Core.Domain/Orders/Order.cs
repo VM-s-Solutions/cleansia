@@ -328,6 +328,14 @@ public class Order : TenantAuditable
     /// </summary>
     public decimal ExpressSurchargeAmount { get; private set; }
 
+    public DirtinessLevel DirtinessLevel { get; private set; }
+
+    /// <summary>
+    /// The dirtiness surcharge this booking was charged, in the order's currency: the level's rate on the
+    /// lines' sum, in cents. Stored for the same reason as <see cref="ExpressSurchargeAmount"/>.
+    /// </summary>
+    public decimal DirtinessSurchargeAmount { get; private set; }
+
     /// <summary>
     /// The language the customer booked in, as the booking request stated it. Null where no customer
     /// made a request — a recurring occurrence — and on orders booked before it was recorded.
@@ -836,6 +844,15 @@ public class Order : TenantAuditable
         ArgumentOutOfRangeException.ThrowIfLessThan(amount, 0m);
 
         ExpressSurchargeAmount = amount;
+        return this;
+    }
+
+    public Order SetDirtinessSurcharge(DirtinessLevel level, decimal amount)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(amount, 0m);
+
+        DirtinessLevel = level;
+        DirtinessSurchargeAmount = amount;
         return this;
     }
 

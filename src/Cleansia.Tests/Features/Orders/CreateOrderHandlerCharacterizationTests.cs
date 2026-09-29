@@ -96,6 +96,7 @@ public class CreateOrderHandlerCharacterizationTests
                 It.IsAny<IEnumerable<string>>(),
                 It.IsAny<int>(),
                 It.IsAny<int>(),
+                It.IsAny<DirtinessLevel>(),
                 It.IsAny<string?>(),
                 It.IsAny<DateTime?>(),
                 It.IsAny<string?>(),
@@ -479,6 +480,7 @@ public class CreateOrderHandlerCharacterizationTests
         _pricingCalculator.Verify(c => c.CalculateAsync(
             It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(),
             It.IsAny<IEnumerable<string>>(), It.IsAny<int>(), It.IsAny<int>(),
+            It.IsAny<DirtinessLevel>(),
             Eur.Id, It.IsAny<DateTime?>(), It.IsAny<string?>(),
             It.IsAny<DateTime>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
     }
@@ -542,6 +544,7 @@ public class CreateOrderHandlerCharacterizationTests
             .Setup(c => c.CalculateAsync(
                 It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(),
                 It.IsAny<IEnumerable<string>>(), It.IsAny<int>(), It.IsAny<int>(),
+                It.IsAny<DirtinessLevel>(),
                 It.IsAny<string?>(), It.IsAny<DateTime?>(), It.IsAny<string?>(),
                 It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(CreateOrderTestData.MatchingPricing(totalPrice: 1800m) with

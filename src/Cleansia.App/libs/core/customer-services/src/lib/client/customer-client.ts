@@ -8867,6 +8867,7 @@ export class CreateOrderCommand implements ICreateOrderCommand {
     customerApartment!: string | undefined;
     accessMode!: string | undefined;
     termsAccepted!: boolean | undefined;
+    dirtinessLevel!: DirtinessLevel;
 
     constructor(data?: ICreateOrderCommand) {
         if (data) {
@@ -8917,6 +8918,7 @@ export class CreateOrderCommand implements ICreateOrderCommand {
             this.customerApartment = Data["customerApartment"];
             this.accessMode = Data["accessMode"];
             this.termsAccepted = Data["termsAccepted"];
+            this.dirtinessLevel = Data["dirtinessLevel"];
         }
     }
 
@@ -8967,6 +8969,7 @@ export class CreateOrderCommand implements ICreateOrderCommand {
         data["customerApartment"] = this.customerApartment;
         data["accessMode"] = this.accessMode;
         data["termsAccepted"] = this.termsAccepted;
+        data["dirtinessLevel"] = this.dirtinessLevel;
         return data;
     }
 }
@@ -8996,6 +8999,7 @@ export interface ICreateOrderCommand {
     customerApartment: string | undefined;
     accessMode: string | undefined;
     termsAccepted: boolean | undefined;
+    dirtinessLevel: DirtinessLevel;
 }
 
 export class CreateOrderResponse implements ICreateOrderResponse {
@@ -9456,6 +9460,12 @@ export interface IDeviceDto {
     deviceId: string | undefined;
     lastActiveAt: Date;
     isCurrent: boolean;
+}
+
+export enum DirtinessLevel {
+    Normal = 0,
+    Increased = 1,
+    Heavy = 2,
 }
 
 export class DisputeDetails implements IDisputeDetails {
@@ -14620,6 +14630,7 @@ export class QuoteOrderCommand implements IQuoteOrderCommand {
     selectedExtraSlugs!: string[] | undefined;
     cleaningDate!: Date | undefined;
     countryId!: string | undefined;
+    dirtinessLevel!: DirtinessLevel;
 
     constructor(data?: IQuoteOrderCommand) {
         if (data) {
@@ -14652,6 +14663,7 @@ export class QuoteOrderCommand implements IQuoteOrderCommand {
             }
             this.cleaningDate = Data["cleaningDate"] ? new Date(Data["cleaningDate"].toString()) : undefined as any;
             this.countryId = Data["countryId"];
+            this.dirtinessLevel = Data["dirtinessLevel"];
         }
     }
 
@@ -14684,6 +14696,7 @@ export class QuoteOrderCommand implements IQuoteOrderCommand {
         }
         data["cleaningDate"] = this.cleaningDate ? this.cleaningDate.toISOString() : undefined as any;
         data["countryId"] = this.countryId;
+        data["dirtinessLevel"] = this.dirtinessLevel;
         return data;
     }
 }
@@ -14697,6 +14710,7 @@ export interface IQuoteOrderCommand {
     selectedExtraSlugs: string[] | undefined;
     cleaningDate: Date | undefined;
     countryId: string | undefined;
+    dirtinessLevel: DirtinessLevel;
 }
 
 export class QuoteOrderQuoteLine implements IQuoteOrderQuoteLine {
@@ -14777,6 +14791,7 @@ export class QuoteOrderResponse implements IQuoteOrderResponse {
     creditBalance!: number;
     creditMaxShareOfOrder!: number;
     lines!: QuoteOrderQuoteLine[] | undefined;
+    dirtinessSurchargeAmount!: number;
 
     constructor(data?: IQuoteOrderResponse) {
         if (data) {
@@ -14814,6 +14829,7 @@ export class QuoteOrderResponse implements IQuoteOrderResponse {
                 for (let item of Data["lines"])
                     this.lines!.push(QuoteOrderQuoteLine.fromJS(item));
             }
+            this.dirtinessSurchargeAmount = Data["dirtinessSurchargeAmount"];
         }
     }
 
@@ -14851,6 +14867,7 @@ export class QuoteOrderResponse implements IQuoteOrderResponse {
             for (let item of this.lines)
                 data["lines"].push(item ? item.toJSON() : undefined as any);
         }
+        data["dirtinessSurchargeAmount"] = this.dirtinessSurchargeAmount;
         return data;
     }
 }
@@ -14877,6 +14894,7 @@ export interface IQuoteOrderResponse {
     creditBalance: number;
     creditMaxShareOfOrder: number;
     lines: QuoteOrderQuoteLine[] | undefined;
+    dirtinessSurchargeAmount: number;
 }
 
 export class QuotePlusSavingsQuery implements IQuotePlusSavingsQuery {
@@ -14889,6 +14907,7 @@ export class QuotePlusSavingsQuery implements IQuotePlusSavingsQuery {
     selectedExtraSlugs!: string[] | undefined;
     cleaningDate!: Date | undefined;
     countryId!: string | undefined;
+    dirtinessLevel!: DirtinessLevel;
 
     constructor(data?: IQuotePlusSavingsQuery) {
         if (data) {
@@ -14922,6 +14941,7 @@ export class QuotePlusSavingsQuery implements IQuotePlusSavingsQuery {
             }
             this.cleaningDate = Data["cleaningDate"] ? new Date(Data["cleaningDate"].toString()) : undefined as any;
             this.countryId = Data["countryId"];
+            this.dirtinessLevel = Data["dirtinessLevel"];
         }
     }
 
@@ -14955,6 +14975,7 @@ export class QuotePlusSavingsQuery implements IQuotePlusSavingsQuery {
         }
         data["cleaningDate"] = this.cleaningDate ? this.cleaningDate.toISOString() : undefined as any;
         data["countryId"] = this.countryId;
+        data["dirtinessLevel"] = this.dirtinessLevel;
         return data;
     }
 }
@@ -14969,6 +14990,7 @@ export interface IQuotePlusSavingsQuery {
     selectedExtraSlugs: string[] | undefined;
     cleaningDate: Date | undefined;
     countryId: string | undefined;
+    dirtinessLevel: DirtinessLevel;
 }
 
 export class QuotePlusSavingsResponse implements IQuotePlusSavingsResponse {

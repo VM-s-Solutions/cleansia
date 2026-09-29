@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Features.Catalog;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -23,6 +24,7 @@ public sealed class OrderPricingCalculator(
         IEnumerable<string> selectedExtraSlugs,
         int rooms,
         int bathrooms,
+        DirtinessLevel dirtinessLevel,
         string? currencyId,
         DateTime? cleaningDateUtc,
         string? userId,
@@ -108,7 +110,8 @@ public sealed class OrderPricingCalculator(
         // Owner ruling 2026-09-08 (Option B): a price is AUTHORED per currency, never converted. Wave B
         // replaces the catalogue reads above with a join on per-currency price rows; until then there is
         // exactly one active currency and the identity is the honest scaling.
-        var chargeSubtotal = baseSubtotal;
+        var dirtinessSurchargeAmount = BookingPolicy.DirtinessSurchargeFor(baseSubtotal, dirtinessLevel);
+        var chargeSubtotal = baseSubtotal + dirtinessSurchargeAmount;
 
         // PURE READ — the resolver never writes, which is what lets the quote path and the create
         // validator both call it without burning a credit. The reservation happens once, in
@@ -181,7 +184,8 @@ public sealed class OrderPricingCalculator(
             ExpressSurchargeWaivedByMembership: waiver.Waived,
             ExpressUpgradesRemaining: waiver.Quota > 0 ? waiver.RemainingBeforeThisBooking : null,
             Lines: lines,
-            EstimatedDurationMinutes: OrderDuration.EstimateMinutes(services, packages));
+            EstimatedDurationMinutes: OrderDuration.EstimateMinutes(services, packages),
+            DirtinessSurchargeAmount: dirtinessSurchargeAmount);
     }
 
     /// <summary>

@@ -260,6 +260,9 @@ public class CreateOrder
                 .WithMessage(BusinessErrorMessage.EmptyOrder)
                 .MustAsync(SpanWithinCapAsync)
                 .WithMessage(BusinessErrorMessage.OrderSpanExceedsMaximum)
+                .Must(command => Enum.IsDefined(command.DirtinessLevel))
+                .WithMessage(BusinessErrorMessage.InvalidEnumValue)
+                .WithErrorCode(nameof(Command.DirtinessLevel))
                 .MustAsync(ExpressWaiverStillAvailableAsync)
                 .WithMessage(BusinessErrorMessage.ExpressWaiverNoLongerAvailable)
                 .MustAsync(PriceMatchesAsync)
@@ -656,6 +659,7 @@ public class CreateOrder
                 selectedExtraSlugs,
                 command.Rooms,
                 command.Bathrooms,
+                command.DirtinessLevel,
                 // The address country's currency -- already offerable, because this chain stops on the
                 // currency rules before it reaches here. A quote taken with the same country priced from
                 // the same rows, so the price being compared was computed the same way.
@@ -813,7 +817,8 @@ public class CreateOrder
         // or the signed-in account already holds both legal consents (ADR-0062 D4 as amended
         // 2026-09-14). Nullable so the wire contract every client was built against is unchanged — a
         // guest's null is refused, not unbindable.
-        bool? TermsAccepted = null) : ICommand<Response>, IOperatorScopedRequest
+        bool? TermsAccepted = null,
+        DirtinessLevel DirtinessLevel = DirtinessLevel.Normal) : ICommand<Response>, IOperatorScopedRequest
     {
         // A guest's market is the inline address's country; a guest cannot name a saved address, and a
         // request with no country lands in the default market (ADR-0061 D3). The validator's operator
@@ -1016,6 +1021,7 @@ public class CreateOrder
                 selectedExtraSlugs,
                 command.Rooms,
                 command.Bathrooms,
+                command.DirtinessLevel,
                 currency.Id,
                 command.CleaningDate,
                 userId,
@@ -1095,7 +1101,8 @@ public class CreateOrder
                 CustomerFloor: command.CustomerFloor,
                 CustomerApartment: command.CustomerApartment,
                 AccessMode: command.AccessMode,
-                LanguageCode: command.Language), cancellationToken);
+                LanguageCode: command.Language,
+                DirtinessLevel: command.DirtinessLevel), cancellationToken);
 
             if (reservation != null)
             {

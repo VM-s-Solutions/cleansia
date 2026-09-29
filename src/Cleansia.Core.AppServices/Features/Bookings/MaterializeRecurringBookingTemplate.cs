@@ -261,6 +261,7 @@ public class MaterializeRecurringBookingTemplate
                 Array.Empty<string>(),
                 template.Rooms,
                 template.Bathrooms,
+                DirtinessLevel.Normal,
                 currency.Id,
                 cleaningDateUtc: null,
                 userId: null,

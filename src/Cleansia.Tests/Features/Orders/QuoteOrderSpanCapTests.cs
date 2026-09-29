@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Packages;
 using Cleansia.Core.Domain.Repositories;
@@ -58,6 +59,7 @@ public class QuoteOrderSpanCapTests
                 It.IsAny<IEnumerable<string>>(),
                 It.IsAny<int>(),
                 It.IsAny<int>(),
+                It.IsAny<DirtinessLevel>(),
                 It.IsAny<string?>(),
                 It.IsAny<DateTime?>(),
                 It.IsAny<string?>(),

@@ -130,6 +130,10 @@ final class OrderPhotosViewModel: ViewModel {
             .success(.preview)
         }
 
+        func getMyAssignmentRemovalReason(orderId _: String) async -> ApiResult<String> {
+            .success("")
+        }
+
         func myPendingOffers() async -> ApiResult<[CleansiaPartnerApi.PendingOfferItem]> {
             .success([])
         }

@@ -22,6 +22,8 @@ protocol PartnerOrderClient: AnyObject {
 
     func getPaged(_ query: OrderPageQuery) async -> ApiResult<[OrderListItem]>
     func getById(orderId: String) async -> ApiResult<OrderDetail>
+    /// The written reason an administrator gave for taking this cleaner off `orderId`.
+    func getMyAssignmentRemovalReason(orderId: String) async -> ApiResult<String>
 
     /// The orders reserved for this cleaner alone until their deadline (ADR-0045).
     func myPendingOffers() async -> ApiResult<[PendingOfferItem]>
@@ -118,6 +120,12 @@ final class LivePartnerOrderClient: PartnerOrderClient {
     func getById(orderId: String) async -> ApiResult<OrderDetail> {
         await apiResult(mapError: ApiError.fromGenerated) {
             try await OrderDetail(PartnerOrderAPI.orderGetById(orderId: orderId))
+        }
+    }
+
+    func getMyAssignmentRemovalReason(orderId: String) async -> ApiResult<String> {
+        await apiResult(mapError: ApiError.fromGenerated) {
+            try await PartnerOrderAPI.orderGetMyAssignmentRemoval(orderId: orderId).reason.require("reason")
         }
     }
 

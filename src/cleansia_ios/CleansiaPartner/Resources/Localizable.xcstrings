@@ -10201,6 +10201,391 @@
         }
       }
     },
+    "legal_documents_accept": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Přijmout dokument"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accept this document"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Принять документ"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prijať dokument"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Прийняти документ"
+          }
+        }
+      }
+    },
+    "legal_documents_accepted_on": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Přijato %1$@, verze %2$@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accepted on %1$@, version %2$@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Принято %1$@, версия %2$@"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prijaté %1$@, verzia %2$@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Прийнято %1$@, версія %2$@"
+          }
+        }
+      }
+    },
+    "legal_documents_accepted_toast": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dokument přijat."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Document accepted."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Документ принят."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dokument prijatý."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Документ прийнято."
+          }
+        }
+      }
+    },
+    "legal_documents_awaiting": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Čeká na vaše přijetí"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Awaiting your acceptance"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ожидает вашего принятия"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Čaká na vaše prijatie"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Очікує вашого прийняття"
+          }
+        }
+      }
+    },
+    "legal_documents_empty": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Momentálně nemáte žádné dokumenty k přijetí."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "There are no documents for you to accept right now."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сейчас у вас нет документов для принятия."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Momentálne nemáte žiadne dokumenty na prijatie."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Зараз у вас немає документів для прийняття."
+          }
+        }
+      }
+    },
+    "legal_documents_intro": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tyto dokumenty upravují vaši spolupráci s Cleansia. Každý si přečtěte a přijměte jeho aktuální verzi — dokud to neuděláte, nemůžete být schváleni ani přijímat zakázky."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "These documents govern your cooperation with Cleansia. Read each one and accept its current version — until you do, you can't be approved or take jobs."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Эти документы регулируют ваше сотрудничество с Cleansia. Прочитайте каждый и примите его действующую версию — пока вы этого не сделаете, вас не смогут одобрить и вы не сможете брать заказы."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tieto dokumenty upravujú vašu spoluprácu s Cleansia. Každý si prečítajte a prijmite jeho aktuálnu verziu — kým to neurobíte, nemôžete byť schválení ani prijímať zákazky."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ці документи регулюють вашу співпрацю з Cleansia. Прочитайте кожен і прийміть його чинну версію — доки ви цього не зробите, вас не можуть схвалити і ви не можете брати замовлення."
+          }
+        }
+      }
+    },
+    "legal_documents_new_version": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Platí nová verze. Přijali jste verzi %1$@."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A new version is in force. You accepted version %1$@."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Действует новая версия. Вы приняли версию %1$@."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Platí nová verzia. Prijali ste verziu %1$@."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Діє нова версія. Ви прийняли версію %1$@."
+          }
+        }
+      }
+    },
+    "legal_documents_review": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zobrazit dokumenty"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Review documents"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Посмотреть документы"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zobraziť dokumenty"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Переглянути документи"
+          }
+        }
+      }
+    },
+    "legal_documents_text_updated": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tento dokument byl aktualizován — přečtěte si jej prosím znovu."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This document was updated — please read it again."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Этот документ обновлён — пожалуйста, прочитайте его ещё раз."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tento dokument bol aktualizovaný — prečítajte si ho prosím znova."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Цей документ оновлено — будь ласка, прочитайте його ще раз."
+          }
+        }
+      }
+    },
+    "legal_documents_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Smluvní dokumenty"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contract documents"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Договорные документы"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zmluvné dokumenty"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Договірні документи"
+          }
+        }
+      }
+    },
+    "legal_documents_version": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verze %1$@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version %1$@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Версия %1$@"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verzia %1$@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Версія %1$@"
+          }
+        }
+      }
+    },
     "login": {
       "extractionState": "stale",
       "localizations": {
@@ -12612,6 +12997,76 @@
           "stringUnit": {
             "state": "translated",
             "value": "Замовлення позначено як виконане"
+          }
+        }
+      }
+    },
+    "order_removal_message": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Administrátor vás z této zakázky odebral s tímto odůvodněním:\n\n%1$@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "An administrator took you off this job and gave this reason:\n\n%1$@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Администратор снял вас с этого заказа и указал причину:\n\n%1$@"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Administrátor vás z tejto zákazky odobral s týmto odôvodnením:\n\n%1$@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Адміністратор зняв вас із цього замовлення і вказав причину:\n\n%1$@"
+          }
+        }
+      }
+    },
+    "order_removal_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Byli jste z této zakázky odebráni"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You were taken off this job"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вас сняли с этого заказа"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Boli ste z tejto zákazky odobraní"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вас знято з цього замовлення"
           }
         }
       }
@@ -15486,6 +15941,76 @@
         }
       }
     },
+    "profile_how_jobs_are_offered": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jak nabízíme zakázky"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How jobs are offered"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Как мы предлагаем заказы"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ako ponúkame zákazky"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Як ми пропонуємо замовлення"
+          }
+        }
+      }
+    },
+    "profile_how_jobs_are_offered_summary": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pravidla nabídky zakázek"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The rules behind the job board"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Правила списка заказов"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pravidlá ponuky zákaziek"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Правила списку замовлень"
+          }
+        }
+      }
+    },
     "profile_iban": {
       "extractionState": "stale",
       "localizations": {
@@ -15552,6 +16077,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "Прізвище"
+          }
+        }
+      }
+    },
+    "profile_legal_documents_summary": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Přečtěte si a přijměte dokumenty, podle kterých pracujete"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Read and accept the documents you work under"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Прочитайте и примите документы, по которым вы работаете"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prečítajte si a prijmite dokumenty, podľa ktorých pracujete"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Прочитайте та прийміть документи, за якими ви працюєте"
           }
         }
       }
@@ -16112,6 +16672,76 @@
           "stringUnit": {
             "state": "translated",
             "value": "Відкриється у браузері"
+          }
+        }
+      }
+    },
+    "profile_weekly_limit": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Týdenní limit zakázek: %1$d"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weekly job limit: %1$d"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Недельный лимит заказов: %1$d"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Týždenný limit zákaziek: %1$d"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Тижневий ліміт замовлень: %1$d"
+          }
+        }
+      }
+    },
+    "profile_weekly_limit_reason": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Důvod: %1$@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reason: %1$@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Причина: %1$@"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dôvod: %1$@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Причина: %1$@"
           }
         }
       }
@@ -19013,6 +19643,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "Документи"
+          }
+        }
+      }
+    },
+    "registration_lock_category_legal_documents": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Smluvní dokumenty"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contract documents"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Договорные документы"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zmluvné dokumenty"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Договірні документи"
           }
         }
       }

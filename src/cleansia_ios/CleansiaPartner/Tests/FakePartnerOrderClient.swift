@@ -64,6 +64,9 @@ final class FakePartnerOrderClient: PartnerOrderClient {
     /// view model always issues sees the write it just made.
     var onDeclinePreferredOffer: ((String) -> Void)?
 
+    var removalReasonResult: ApiResult<String> = .success("The customer asked for another cleaner.")
+    private(set) var removalReasonRequests: [String] = []
+
     var previewResult: ApiResult<WorkContract> = .success(.sample())
     var contractResult: ApiResult<WorkContract> = .success(.sample(acceptance: .sample()))
     /// Every contract read, by the id it was keyed on and the language asked for.
@@ -99,6 +102,11 @@ final class FakePartnerOrderClient: PartnerOrderClient {
         case let .failure(error):
             return .failure(error)
         }
+    }
+
+    func getMyAssignmentRemovalReason(orderId: String) async -> ApiResult<String> {
+        removalReasonRequests.append(orderId)
+        return removalReasonResult
     }
 
     func resumeCommand() {

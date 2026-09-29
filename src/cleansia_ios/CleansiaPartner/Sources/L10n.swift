@@ -222,6 +222,10 @@ enum L10n {
             localized("registration_lock_category_documents")
         }
 
+        static var categoryLegalDocuments: String {
+            localized("registration_lock_category_legal_documents")
+        }
+
         static var categoryApproval: String {
             localized("registration_lock_category_approval")
         }

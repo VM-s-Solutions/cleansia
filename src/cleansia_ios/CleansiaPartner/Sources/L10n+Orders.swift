@@ -7,6 +7,14 @@ extension L10n {
             localized("orders")
         }
 
+        static var removalTitle: String {
+            localized("order_removal_title")
+        }
+
+        static func removalMessage(_ reason: String) -> String {
+            format("order_removal_message", reason)
+        }
+
         static var available: String {
             localized("available")
         }

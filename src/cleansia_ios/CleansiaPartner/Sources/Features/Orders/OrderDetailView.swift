@@ -9,6 +9,7 @@ struct OrderDetailView: View {
     @State private var snapAnchor: SnapAnchor = .peek
     private let client: PartnerOrderClient
     private let mapProvider: MapProvider
+    private let onOpenLegalDocuments: () -> Void
 
     init(
         orderId: String,
@@ -17,7 +18,9 @@ struct OrderDetailView: View {
         checklistStore: CleaningChecklistStore,
         snackbar: SnackbarController,
         mapProvider: MapProvider,
-        pendingOffers: PendingOffersStore
+        pendingOffers: PendingOffersStore,
+        showRemovalReason: Bool = false,
+        onOpenLegalDocuments: @escaping () -> Void
     ) {
         _vm = StateObject(
             wrappedValue: OrderDetailViewModel(
@@ -25,7 +28,8 @@ struct OrderDetailView: View {
                 client: client,
                 staleness: staleness,
                 snackbar: snackbar,
-                pendingOffers: pendingOffers
+                pendingOffers: pendingOffers,
+                showRemovalReason: showRemovalReason
             )
         )
         _checklistVM = StateObject(
@@ -39,10 +43,12 @@ struct OrderDetailView: View {
         )
         self.client = client
         self.mapProvider = mapProvider
+        self.onOpenLegalDocuments = onOpenLegalDocuments
     }
 
     var body: some View {
         content
+            .overlay { removalReasonDialog }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar(.hidden, for: .tabBar)
             .sheet(item: contractRequest) { request in
@@ -50,7 +56,11 @@ struct OrderDetailView: View {
                     request: request,
                     client: client,
                     onDismiss: vm.dismissContract,
-                    onOutcome: { outcome in Task { await vm.onWorkContractOutcome(outcome) } }
+                    onOutcome: { outcome in Task { await vm.onWorkContractOutcome(outcome) } },
+                    onOpenLegalDocuments: {
+                        vm.dismissContract()
+                        onOpenLegalDocuments()
+                    }
                 )
             }
             .task { await vm.load() }
@@ -64,6 +74,19 @@ struct OrderDetailView: View {
             get: { vm.contractRequest },
             set: { if $0 == nil { vm.dismissContract() } }
         )
+    }
+
+    @ViewBuilder
+    private var removalReasonDialog: some View {
+        if let reason = vm.removalReason {
+            CleansiaDialog(
+                title: L10n.Orders.removalTitle,
+                confirmLabel: L10n.close,
+                onConfirm: { vm.dismissRemovalReason() },
+                onDismiss: { vm.dismissRemovalReason() },
+                message: L10n.Orders.removalMessage(reason)
+            )
+        }
     }
 
     @ViewBuilder

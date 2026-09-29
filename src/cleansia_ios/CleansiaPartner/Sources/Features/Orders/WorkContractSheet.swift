@@ -11,16 +11,19 @@ struct WorkContractSheet: View {
     @StateObject private var vm: WorkContractSheetViewModel
     private let onDismiss: () -> Void
     private let onOutcome: (WorkContractOutcome) -> Void
+    private let onOpenLegalDocuments: () -> Void
 
     init(
         request: WorkContractRequest,
         client: PartnerOrderClient,
         onDismiss: @escaping () -> Void,
-        onOutcome: @escaping (WorkContractOutcome) -> Void
+        onOutcome: @escaping (WorkContractOutcome) -> Void,
+        onOpenLegalDocuments: @escaping () -> Void
     ) {
         _vm = StateObject(wrappedValue: WorkContractSheetViewModel(request: request, client: client))
         self.onDismiss = onDismiss
         self.onOutcome = onOutcome
+        self.onOpenLegalDocuments = onOpenLegalDocuments
     }
 
     private var submitting: Bool {
@@ -36,7 +39,8 @@ struct WorkContractSheet: View {
                 submitting: submitting,
                 onAccept: { Task { await vm.accept() } },
                 onRetry: { Task { await vm.load() } },
-                onClose: onDismiss
+                onClose: onDismiss,
+                onOpenLegalDocuments: onOpenLegalDocuments
             )
             .navigationTitle(vm.state.loadedContract?.title ?? L10n.WorkContract.title)
             .navigationBarTitleDisplayMode(.inline)
@@ -61,6 +65,7 @@ struct WorkContractSheetContent: View {
     var onAccept: () -> Void = {}
     var onRetry: () -> Void = {}
     var onClose: () -> Void = {}
+    var onOpenLegalDocuments: () -> Void = {}
 
     var body: some View {
         switch state {
@@ -71,6 +76,12 @@ struct WorkContractSheetContent: View {
             SheetMessage(text: L10n.WorkContract.loadError, ctaLabel: L10n.retry, onCta: onRetry)
         case let .unavailable(error):
             SheetMessage(text: ApiErrorLocalizer().message(for: error), ctaLabel: L10n.close, onCta: onClose)
+        case .legalDocumentsNotAccepted:
+            SheetMessage(
+                text: ApiErrorLocalizer().message(for: ApiError(code: WorkContractErrorKey.legalDocumentsNotAccepted)),
+                ctaLabel: L10n.LegalDocuments.review,
+                onCta: onOpenLegalDocuments
+            )
         case let .loaded(contract):
             LoadedContract(
                 request: request,
@@ -229,7 +240,7 @@ private struct AcceptanceFacts: View {
     }
 }
 
-private struct NoticeRow: View {
+struct NoticeRow: View {
     let text: String
 
     var body: some View {
@@ -309,6 +320,8 @@ private struct SheetMessage: View {
                     state: .unavailable(ApiError(code: WorkContractErrorKey.documentNotFound))
                 )
                 .previewDisplayName("Unavailable")
+                WorkContractSheetContent(request: .take(orderId: "order-1"), state: .legalDocumentsNotAccepted)
+                    .previewDisplayName("Contract documents owed")
             }
             .background(CleansiaColors.surface)
         }

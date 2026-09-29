@@ -36,7 +36,11 @@ struct RegistrationLockView: View {
         onCompleted: @escaping () -> Void,
         onSignedOut: @escaping () -> Void
     ) {
-        _vm = StateObject(wrappedValue: RegistrationLockViewModel(client: client, authClient: authClient))
+        _vm = StateObject(wrappedValue: RegistrationLockViewModel(
+            client: client,
+            authClient: authClient,
+            legalDocumentsClient: profileClient
+        ))
         _chainVM = StateObject(wrappedValue: OnboardingChainViewModel(client: profileClient))
         _avatarVM = StateObject(
             wrappedValue: ProfileAvatarViewModel(client: userClient, snackbar: snackbar)
@@ -166,6 +170,8 @@ struct RegistrationLockView: View {
             )
         case .documents:
             path.append(ProfileRoute.documents)
+        case .legalDocuments:
+            path.append(ProfileRoute.legalDocuments)
         case .approval:
             break
         }
@@ -213,6 +219,8 @@ struct RegistrationLockView: View {
             )
         case .documents:
             DocumentsSectionView(client: profileClient, snackbar: snackbar)
+        case .legalDocuments:
+            LegalDocumentsView(client: profileClient, snackbar: snackbar)
         case .language:
             LanguagePickerView(preferences: preferences, onSelected: { path.removeLast() })
         // Reachable only from the profile HUB, not from the registration-lock stack: this switch
@@ -387,7 +395,7 @@ private struct StepRow: View {
     private var canFix: Bool {
         guard step.status != .done else { return false }
         switch step.category {
-        case .profile, .documents: return true
+        case .profile, .documents, .legalDocuments: return true
         case .approval: return false
         }
     }
@@ -406,6 +414,7 @@ private struct StepRow: View {
         switch step.category {
         case .profile: L10n.RegistrationLock.categoryProfile
         case .documents: L10n.RegistrationLock.categoryDocuments
+        case .legalDocuments: L10n.RegistrationLock.categoryLegalDocuments
         case .approval: L10n.RegistrationLock.categoryApproval
         }
     }

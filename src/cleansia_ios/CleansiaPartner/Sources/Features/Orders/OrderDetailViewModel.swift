@@ -73,25 +73,32 @@ final class OrderDetailViewModel: ViewModel {
     /// alongside the fetch and kept; a resolve that failed is asked again on the next load. Nil until
     /// it is, when the standing reads as none.
     @Published private(set) var myEmployeeId: String?
+    /// The administrator's written reason for taking this cleaner off the job, asked for only when the
+    /// removal notice opened the screen. Shown even when the job itself is no longer readable.
+    @Published private(set) var removalReason: String?
 
     private let orderId: String
     private let client: PartnerOrderClient
     private let staleness: OrdersStaleness
     private let snackbar: SnackbarController
     private let pendingOffers: PendingOffersStore
+    private let showRemovalReason: Bool
+    private var removalReasonAsked = false
 
     init(
         orderId: String,
         client: PartnerOrderClient,
         staleness: OrdersStaleness,
         snackbar: SnackbarController,
-        pendingOffers: PendingOffersStore
+        pendingOffers: PendingOffersStore,
+        showRemovalReason: Bool = false
     ) {
         self.orderId = orderId
         self.client = client
         self.staleness = staleness
         self.snackbar = snackbar
         self.pendingOffers = pendingOffers
+        self.showRemovalReason = showRemovalReason
         super.init()
         pendingOffers.$offers
             .map { offers in offers.first { $0.id == orderId } }
@@ -127,9 +134,24 @@ final class OrderDetailViewModel: ViewModel {
         // prewarming after the order loads shares a main-thread turn with the puck's first render.
         AnimatedMascotView.prewarm(.cleaningInProgress)
         async let identity: Void = resolveMyEmployeeId()
+        async let removal: Void = askRemovalReasonOnce()
         await ensureOffersFresh()
         await fetch()
         await identity
+        await removal
+    }
+
+    func dismissRemovalReason() {
+        removalReason = nil
+    }
+
+    /// Silent on failure: a reason the server cannot find is not a failure the cleaner can act on.
+    private func askRemovalReasonOnce() async {
+        guard showRemovalReason, !removalReasonAsked else { return }
+        removalReasonAsked = true
+        if case let .success(reason) = await client.getMyAssignmentRemovalReason(orderId: orderId) {
+            removalReason = reason
+        }
     }
 
     /// Refusing the reservation from the job it belongs to; the same one write the offers list makes.

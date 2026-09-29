@@ -25,13 +25,20 @@ public enum CleansiaWeb {
         url("/work-contract")
     }
 
+    public static let partnerOrigin = "https://partner.\(domain)"
+
+    /// Routed by the partner web app (`app.routes.ts`, `HOW_JOBS_ARE_OFFERED_PATH`).
+    public static var howJobsAreOfferedURL: URL {
+        url("/how-jobs-are-offered", base: partnerOrigin)
+    }
+
     public static func referralLink(code: String) -> String {
         "\(origin)/r/\(code)"
     }
 
-    private static func url(_ path: String) -> URL {
-        guard let url = URL(string: origin + path) else {
-            fatalError("CleansiaWeb.origin is malformed: \(origin)")
+    private static func url(_ path: String, base: String = CleansiaWeb.origin) -> URL {
+        guard let url = URL(string: base + path) else {
+            fatalError("CleansiaWeb origin is malformed: \(base)")
         }
         return url
     }

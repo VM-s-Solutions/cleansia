@@ -100,6 +100,13 @@ final class CleansiaWebTests: XCTestCase {
         )
     }
 
+    func testTheJobRulesPageIsTheOneThePartnerWebServes() {
+        XCTAssertEqual(
+            CleansiaWeb.howJobsAreOfferedURL.absoluteString,
+            "https://partner.\(CleansiaWeb.domain)/how-jobs-are-offered"
+        )
+    }
+
     func testReferralLinkAndSupportEmailShareTheSameDomain() {
         XCTAssertEqual(CleansiaWeb.referralLink(code: "ABC123"), "\(CleansiaWeb.origin)/r/ABC123")
         XCTAssertEqual(CleansiaWeb.supportEmail, "support@\(CleansiaWeb.domain)")

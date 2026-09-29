@@ -63,7 +63,7 @@ class WorkContractSheetViewModelTest {
             orderNumber = "CL-2026-0042",
             cleaningDateTimeUtc = "2026-08-12T09:00:00Z",
             estimatedMinutes = 180,
-            totalPrice = 1850.0,
+            reward = 1850.0,
             currencyCode = "CZK",
             locationApproximate = "Praha 4 · 14000",
             rooms = 3,

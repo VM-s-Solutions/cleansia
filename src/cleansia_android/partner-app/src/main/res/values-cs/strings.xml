@@ -916,8 +916,10 @@
     <string name="work_contract_pending_banner">Než začnete, přijměte smlouvu o dílo</string>
     <string name="work_contract_accept_cta">Přijmout smlouvu</string>
     <string name="work_contract_read">Přečíst smlouvu</string>
+    <string name="work_contract_reward">Vaše odměna</string>
+    <string name="work_contract_parties">Mezi provozní společností, která tento úklid prodala (objednatel), a vámi (zhotovitel)</string>
     <string name="legal_documents_title">Smluvní dokumenty</string>
-    <string name="legal_documents_intro">Tyto dokumenty upravují vaši spolupráci s Cleansia. Každý si přečtěte a přijměte jeho aktuální verzi — dokud to neuděláte, nemůžete být schváleni ani přijímat zakázky.</string>
+    <string name="legal_documents_intro">Tyto dokumenty upravují vaši práci pro provozní společnost trhu, na kterém pracujete. Každý si přečtěte a přijměte jeho aktuální verzi — dokud to neuděláte, nemůžete být schváleni ani přijímat zakázky.</string>
     <string name="legal_documents_empty">Momentálně nemáte žádné dokumenty k přijetí.</string>
     <string name="legal_documents_version">Verze %1$s</string>
     <string name="legal_documents_accepted_on">Přijato %1$s, verze %2$s</string>

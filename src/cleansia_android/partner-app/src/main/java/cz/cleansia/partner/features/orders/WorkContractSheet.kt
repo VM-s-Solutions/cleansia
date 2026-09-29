@@ -170,6 +170,11 @@ private fun LoadedContract(
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        Text(
+            text = stringResource(R.string.work_contract_parties),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
         Spacer(Modifier.height(Spacing.S))
         JobFacts(facts = contract.facts)
         contract.acceptance?.let { acceptance ->
@@ -224,11 +229,18 @@ private fun JobFacts(facts: WorkContractJobFacts) {
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f),
             )
-            Text(
-                text = formatOrderPrice(facts.totalPrice, facts.currencyCode),
-                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.primary,
-            )
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = stringResource(R.string.work_contract_reward),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    text = formatOrderPrice(facts.reward, facts.currencyCode),
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
         }
         if (!facts.orderNumber.isNullOrBlank()) {
             FactLine(formatOrderDateRange(facts.cleaningDateTimeUtc, facts.estimatedMinutes))
@@ -333,15 +345,15 @@ private fun WorkContractSheetPreview() {
             uiState = WorkContractUiState.Loaded(
                 WorkContract(
                     legalDocumentTextId = "text-1",
-                    version = "2026-09-20",
+                    version = "2026-09-29",
                     language = "en",
                     title = "Contract for Work",
-                    contentHtml = "<p>This contract for work is concluded between the customer and the cleaner.</p>",
+                    contentHtml = "<p>This contract for work is concluded between the operating company (the client) and you (the contractor).</p>",
                     facts = WorkContractJobFacts(
                         orderNumber = "CL-2026-0042",
                         cleaningDateTimeUtc = "2026-08-12T09:00:00Z",
                         estimatedMinutes = 180,
-                        totalPrice = 1850.0,
+                        reward = 620.0,
                         currencyCode = "CZK",
                         locationApproximate = "Praha 4 · 14000",
                         rooms = 3,

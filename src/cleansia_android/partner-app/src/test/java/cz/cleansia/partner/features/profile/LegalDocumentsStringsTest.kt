@@ -59,6 +59,15 @@ class LegalDocumentsStringsTest {
         }
     }
 
+    /** The documents bind the operating company of the cleaner's market, not the brand. */
+    @Test
+    fun `the intro names the operating company as the other party`() {
+        (listOf("values") + translations).forEach { locale ->
+            val intro = valueOf(stringsXml(locale), "legal_documents_intro")!!
+            assertTrue("$locale/legal_documents_intro names Cleansia as the party: \"$intro\"", "Cleansia" !in intro)
+        }
+    }
+
     private fun stringsXml(locale: String): String {
         val file = File(resDir, "$locale/strings.xml")
         assertTrue("missing $locale/strings.xml", file.isFile)

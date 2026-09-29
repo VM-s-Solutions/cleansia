@@ -565,12 +565,10 @@ class NotificationTemplatesTest {
         }
     }
 
-    /** Push copy first; the server adds these to its customer keyset afterwards, and this set follows it. */
     @Test
-    fun `the new outcomes render as push but stay out of the feed keyset until the server lists them`() {
+    fun `the new outcomes bump the badge now that the server lists them in its customer keyset`() {
         listOf("order.no_cleaner_refund_pending", "order.no_cleaner_nothing_charged", "membership.payment_failed").forEach { key ->
-            assertNotNull(key, NotificationTemplates.templateFor(key))
-            assertFalse(key, CustomerFeedEventKeys.contains(key))
+            assertTrue(key, CustomerFeedEventKeys.contains(key))
         }
     }
 

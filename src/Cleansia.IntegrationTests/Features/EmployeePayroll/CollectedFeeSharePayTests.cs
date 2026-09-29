@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.EmployeePayroll;
+using Cleansia.Core.Domain.Credit;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
@@ -121,6 +122,71 @@ public class CollectedFeeSharePayTests(PostgresContainerFixture fixture) : BaseI
                 Assert.False(await context.Set<OrderEmployeePay>()
                     .IgnoreQueryFilters()
                     .AnyAsync(p => p.OrderId == _orderId));
+            });
+    }
+
+    [Fact]
+    public async Task A_Card_Order_Refunded_In_Full_Before_Its_Lockout_Collected_Nothing_And_Pays_Nothing()
+    {
+        await TestMethod(
+            arrange: async ctx =>
+            {
+                var order = SeedCancelledOrder(ctx, PaymentType.Card, PaymentStatus.Paid, totalPrice: 1000m, seats: 1);
+                order.ApplyCredit(400m, order.UserId!);
+
+                var cardLeg = Refund.Create(_orderId, "refund:admin-full", 600m, "CZK",
+                    RefundReason.AdminDiscretion, RefundSource.AppRefund);
+                cardLeg.MarkSucceeded("re_admin_full", DateTimeOffset.UtcNow);
+                ctx.Refunds.Add(cardLeg);
+                var credit = CreditAccount.Create(order.UserId!, CurrencyId, "admin");
+                credit.Issue(400m, CreditTransactionReason.OrderPaymentReturned, "credit-return:refund:admin-full",
+                    "admin", orderId: _orderId);
+                ctx.CreditAccounts.Add(credit);
+                order.UpdatePaymentStatus(PaymentStatus.Refunded);
+
+                order.Cancel(DateTime.UtcNow, CancelledBy.Admin, feeRate: 1m, refundAmount: 0m,
+                    reason: OrderCancellationReasons.CustomerLockout);
+                await ctx.CommitAsync(CancellationToken.None);
+            },
+            act: provider => provider.GetRequiredService<IMediator>()
+                .Send(new CalculateOrderPay.Command(_orderId, _firstSeatEmployeeId)),
+            assert: async (CleansiaDbContext context, BusinessResult<CalculateOrderPay.Response> result) =>
+            {
+                var validation = Assert.IsAssignableFrom<IValidationResult>(result);
+                Assert.Contains(validation.Errors, e => e.Message == BusinessErrorMessage.NoCollectedFee);
+                Assert.False(await context.Set<OrderEmployeePay>()
+                    .IgnoreQueryFilters()
+                    .AnyAsync(p => p.OrderId == _orderId));
+            });
+    }
+
+    [Fact]
+    public async Task A_Late_Cancellation_After_A_Partial_Refund_Pays_Half_Of_What_The_Company_Still_Holds()
+    {
+        await TestMethod(
+            arrange: async ctx =>
+            {
+                var order = SeedCancelledOrder(ctx, PaymentType.Card, PaymentStatus.Paid, totalPrice: 1000m, seats: 1);
+                var partial = Refund.Create(_orderId, "refund:partial", 700m, "CZK",
+                    RefundReason.AdminDiscretion, RefundSource.AppRefund);
+                partial.MarkSucceeded("re_partial", DateTimeOffset.UtcNow);
+                ctx.Refunds.Add(partial);
+                order.UpdatePaymentStatus(PaymentStatus.PartiallyRefunded);
+
+                order.Cancel(DateTime.UtcNow, CancelledBy.Customer, feeRate: 0.5m, refundAmount: 500m, reason: null);
+                await ctx.CommitAsync(CancellationToken.None);
+            },
+            act: provider => provider.GetRequiredService<IMediator>()
+                .Send(new CalculateOrderPay.Command(_orderId, _firstSeatEmployeeId)),
+            assert: async (CleansiaDbContext context, BusinessResult<CalculateOrderPay.Response> result) =>
+            {
+                Assert.True(result.IsSuccess, result.Error?.Message);
+
+                var pay = await context.Set<OrderEmployeePay>()
+                    .IgnoreQueryFilters()
+                    .SingleAsync(p => p.OrderId == _orderId);
+                Assert.Equal(150m, pay.TotalPay);
+                Assert.Contains("Collected fee: 300.00", pay.PayBreakdown);
             });
     }
 

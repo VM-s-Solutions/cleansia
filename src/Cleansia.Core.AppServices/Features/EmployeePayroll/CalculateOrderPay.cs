@@ -44,7 +44,11 @@ public class CalculateOrderPay
     /// that took no payment, the fee receivables paid since. Zero on a cancellation that charged no fee.
     /// </summary>
     private static async Task<decimal> CollectedFeeAsync(
-        Order order, IReceivableRepository receivableRepository, CancellationToken cancellationToken)
+        Order order,
+        IReceivableRepository receivableRepository,
+        IRefundRepository refundRepository,
+        ICreditAccountRepository creditAccountRepository,
+        CancellationToken cancellationToken)
     {
         if (order.CancellationFeeRate is not > 0m)
         {
@@ -53,7 +57,14 @@ public class CalculateOrderPay
 
         if (!order.TookNoPayment)
         {
-            return order.TotalPrice - (order.CancellationRefundAmount ?? 0m);
+            // Never more than the company still holds. An order refunded before it was cancelled or locked
+            // out is no longer Paid, so the cancellation refunds nothing and the price less the recorded
+            // refund would count money already given back. A cancellation refund still waiting for its
+            // re-drive is not among the succeeded refunds yet, so the first term keeps the fee to its size.
+            var stillHeld = order.TotalPrice
+                - await refundRepository.GetSucceededRefundTotalForOrderAsync(order.Id, cancellationToken)
+                - await creditAccountRepository.GetReturnedTotalForOrderAsync(order.Id, cancellationToken);
+            return Math.Max(0m, Math.Min(order.TotalPrice - (order.CancellationRefundAmount ?? 0m), stillHeld));
         }
 
         return await receivableRepository
@@ -70,6 +81,8 @@ public class CalculateOrderPay
         private readonly IEmployeePayConfigRepository _payConfigRepository;
         private readonly IOrderEmployeePayRepository _orderEmployeePayRepository;
         private readonly IReceivableRepository _receivableRepository;
+        private readonly IRefundRepository _refundRepository;
+        private readonly ICreditAccountRepository _creditAccountRepository;
 
         public Validator(
             IOrderRepository orderRepository,
@@ -77,12 +90,16 @@ public class CalculateOrderPay
             IPayPeriodRepository payPeriodRepository,
             IEmployeePayConfigRepository payConfigRepository,
             IOrderEmployeePayRepository orderEmployeePayRepository,
-            IReceivableRepository receivableRepository)
+            IReceivableRepository receivableRepository,
+            IRefundRepository refundRepository,
+            ICreditAccountRepository creditAccountRepository)
         {
             _orderRepository = orderRepository;
             _payConfigRepository = payConfigRepository;
             _orderEmployeePayRepository = orderEmployeePayRepository;
             _receivableRepository = receivableRepository;
+            _refundRepository = refundRepository;
+            _creditAccountRepository = creditAccountRepository;
 
             RuleFor(x => x.OrderId)
                 .Cascade(CascadeMode.Stop)
@@ -132,7 +149,8 @@ public class CalculateOrderPay
                 .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);
 
             return order?.CancelledAt is null
-                || await CollectedFeeAsync(order, _receivableRepository, cancellationToken) > 0m;
+                || await CollectedFeeAsync(
+                    order, _receivableRepository, _refundRepository, _creditAccountRepository, cancellationToken) > 0m;
         }
 
         private async Task<bool> EmployeeIsAssignedToOrderAsync(Command command, CancellationToken cancellationToken)
@@ -182,7 +200,9 @@ public class CalculateOrderPay
         IPayPeriodRepository payPeriodRepository,
         IEmployeePayConfigRepository payConfigRepository,
         IOrderEmployeePayRepository orderEmployeePayRepository,
-        IReceivableRepository receivableRepository)
+        IReceivableRepository receivableRepository,
+        IRefundRepository refundRepository,
+        ICreditAccountRepository creditAccountRepository)
         : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -215,7 +235,8 @@ public class CalculateOrderPay
 
             if (order.CancelledAt is not null)
             {
-                var collectedFee = await CollectedFeeAsync(order, receivableRepository, cancellationToken);
+                var collectedFee = await CollectedFeeAsync(
+                    order, receivableRepository, refundRepository, creditAccountRepository, cancellationToken);
                 var share = PayCalculatorExtensions.CalculateSeatFeeShare(
                     collectedFee, BookingPolicy.CleanerFeeShareRate, order.RequiredEmployees, firstSeat);
                 var feeShare = OrderEmployeePay.CreateFeeShare(

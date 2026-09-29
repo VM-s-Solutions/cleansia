@@ -83,6 +83,7 @@ public sealed class HandlePaymentNotificationTellsAdministratorsTests
         _userNotifications.Object,
         Mock.Of<IStripeClientFactory>(),
         Mock.Of<ITenantRepository>(),
+        Mock.Of<ISavedCardRepository>(),
         NullLogger<HandlePaymentNotification.Handler>.Instance);
 
     private Order ArrangeOrder(PaymentStatus paymentStatus = PaymentStatus.Pending)

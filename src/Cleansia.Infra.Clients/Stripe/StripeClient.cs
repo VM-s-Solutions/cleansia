@@ -342,6 +342,79 @@ public class StripeClient : IStripeClient
         return new SetupIntentResult(intent.Id, intent.ClientSecret);
     }
 
+    public async Task<SetupIntentResult> CreateCardSetupIntentAsync(
+        string stripeCustomerId,
+        string savedCardId,
+        CancellationToken cancellationToken)
+    {
+        var service = new SetupIntentService(stripe);
+        var options = new SetupIntentCreateOptions
+        {
+            Customer = stripeCustomerId,
+            Usage = "off_session",
+            PaymentMethodTypes = ["card"],
+            Metadata = new Dictionary<string, string> { { SavedCardMetadataKey, savedCardId } },
+        };
+        var requestOptions = new RequestOptions { IdempotencyKey = $"saved-card-setup-{savedCardId}" };
+        var intent = await ClassifyAsync(
+            nameof(CreateCardSetupIntentAsync),
+            () => service.CreateAsync(options, requestOptions, cancellationToken));
+        return new SetupIntentResult(intent.Id, intent.ClientSecret);
+    }
+
+    public async Task<string> CreateCardSetupCheckoutSessionAsync(
+        string stripeCustomerId,
+        string savedCardId,
+        CancellationToken cancellationToken)
+    {
+        var metadata = new Dictionary<string, string> { { SavedCardMetadataKey, savedCardId } };
+        var profileUrl = new Uri(config.SuccessUrlBase).GetLeftPart(UriPartial.Authority) + ProfilePagePath;
+        var options = new SessionCreateOptions
+        {
+            Mode = "setup",
+            Customer = stripeCustomerId,
+            PaymentMethodTypes = ["card"],
+            SetupIntentData = new SessionSetupIntentDataOptions { Metadata = metadata },
+            Metadata = metadata,
+            SuccessUrl = $"{profileUrl}?cardSetup=success",
+            CancelUrl = $"{profileUrl}?cardSetup=cancel",
+        };
+        var requestOptions = new RequestOptions { IdempotencyKey = $"saved-card-checkout-{savedCardId}" };
+        var service = new SessionService(stripe);
+        var session = await ClassifyAsync(
+            nameof(CreateCardSetupCheckoutSessionAsync),
+            () => service.CreateAsync(options, requestOptions, cancellationToken));
+        return session.Url;
+    }
+
+    public async Task<SavedCardDetails?> GetSetupIntentCardAsync(
+        string setupIntentId,
+        CancellationToken cancellationToken)
+    {
+        var service = new SetupIntentService(stripe);
+        var options = new SetupIntentGetOptions { Expand = ["payment_method"] };
+        var intent = await ClassifyAsync(
+            nameof(GetSetupIntentCardAsync),
+            () => service.GetAsync(setupIntentId, options, cancellationToken: cancellationToken));
+
+        if (intent.Status != "succeeded" || intent.PaymentMethod is not { Card: { } card } paymentMethod)
+        {
+            return null;
+        }
+
+        return new SavedCardDetails(paymentMethod.Id, card.Brand, card.Last4, (int)card.ExpMonth, (int)card.ExpYear);
+    }
+
+    public async Task DetachPaymentMethodAsync(
+        string paymentMethodId,
+        CancellationToken cancellationToken)
+    {
+        var service = new PaymentMethodService(stripe);
+        await ClassifyAsync(
+            nameof(DetachPaymentMethodAsync),
+            () => service.DetachAsync(paymentMethodId, cancellationToken: cancellationToken));
+    }
+
     public async Task<SubscriptionResult> CreateSubscriptionAsync(
         string stripeCustomerId,
         string stripePriceId,
@@ -527,8 +600,8 @@ public class StripeClient : IStripeClient
         return session.Url;
     }
 
-    // The customer-app routes a checkout returns to: the two of a membership checkout, and the orders
-    // mount an expiring order checkout cancels back to. Pinned by
+    // The customer-app routes a checkout returns to: the two of a membership checkout, the orders
+    // mount an expiring order checkout cancels back to, and the profile a card setup returns to. Pinned by
     // MembershipReturnPathTests, which reads them back out of the Angular route table — because a
     // frontend path living in a backend assembly is invisible to `nx affected`, to every Angular
     // test, and to the compiler, which is precisely how SuccessUrlBase came to point at the partner
@@ -536,6 +609,9 @@ public class StripeClient : IStripeClient
     private const string MembershipWelcomePath = "/membership/welcome";
     private const string PlusPagePath = "/plus";
     private const string OrdersPagePath = "/orders";
+    private const string ProfilePagePath = "/profile";
+
+    private const string SavedCardMetadataKey = "SavedCardId";
 
     /// <summary>
     /// Where Stripe sends the browser back to after a membership checkout.

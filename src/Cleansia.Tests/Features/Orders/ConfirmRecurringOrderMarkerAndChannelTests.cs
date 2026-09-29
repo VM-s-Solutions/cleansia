@@ -359,6 +359,7 @@ public sealed class ConfirmRecurringOrderMarkerAndChannelTests
             Mock.Of<IUserNotificationRepository>(),
             Mock.Of<IStripeClientFactory>(),
             Mock.Of<ITenantRepository>(),
+            Mock.Of<ISavedCardRepository>(),
             NullLogger<HandlePaymentNotification.Handler>.Instance);
     }
 

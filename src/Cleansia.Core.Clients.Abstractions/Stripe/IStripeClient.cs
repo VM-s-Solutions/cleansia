@@ -130,6 +130,41 @@ public interface IStripeClient
         CancellationToken cancellationToken);
 
     /// <summary>
+    /// A card-only SetupIntent that saves a card on <paramref name="stripeCustomerId"/> for later
+    /// off-session use, confirmed by the mobile PaymentSheet in setup mode. It charges nothing. The
+    /// intent carries <paramref name="savedCardId"/> as <c>SavedCardId</c> metadata, which is how the
+    /// <c>setup_intent.succeeded</c> webhook finds the row the card lands on.
+    /// </summary>
+    Task<SetupIntentResult> CreateCardSetupIntentAsync(
+        string stripeCustomerId,
+        string savedCardId,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// The web twin of <see cref="CreateCardSetupIntentAsync"/>: a Checkout Session in setup mode,
+    /// card only, on <paramref name="stripeCustomerId"/>. It charges nothing. The session and the
+    /// SetupIntent it creates both carry <c>SavedCardId</c> metadata. Returns the URL the browser is
+    /// sent to; the return URLs are derived from <c>Stripe:SuccessUrlBase</c>, never taken from a caller.
+    /// </summary>
+    Task<string> CreateCardSetupCheckoutSessionAsync(
+        string stripeCustomerId,
+        string savedCardId,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// The card a SetupIntent saved, or null when the intent has not succeeded or saved no card.
+    /// Read-only; an unreachable Stripe throws.
+    /// </summary>
+    Task<SavedCardDetails?> GetSetupIntentCardAsync(
+        string setupIntentId,
+        CancellationToken cancellationToken);
+
+    /// <summary>Detach a saved card from its Stripe Customer, so it can no longer be charged.</summary>
+    Task DetachPaymentMethodAsync(
+        string paymentMethodId,
+        CancellationToken cancellationToken);
+
+    /// <summary>
     /// Create a Stripe subscription against a price. Caller is expected to
     /// have already attached a payment method via SetupIntent — first invoice
     /// is charged immediately (or after the trial if <paramref name="trialPeriodDays"/>
@@ -232,6 +267,9 @@ public record StripePaymentSnapshot(StripePaymentState State, string? Outstandin
 /// payment method; the Id is opaque to us.
 /// </summary>
 public record SetupIntentResult(string Id, string ClientSecret);
+
+/// <summary>Result of <see cref="IStripeClient.GetSetupIntentCardAsync"/>: the saved card, as Stripe describes it.</summary>
+public record SavedCardDetails(string PaymentMethodId, string Brand, string Last4, int ExpMonth, int ExpYear);
 
 /// <summary>
 /// Snapshot of a freshly-created subscription. Period bounds are mirrored

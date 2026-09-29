@@ -52,6 +52,7 @@ public class FrozenPermissionMapTests
         // Customer self-service
         [Policy.CanManageSavedAddresses] = PhysicalPolicy.CustomerOnly,
         [Policy.CanManageMembership] = PhysicalPolicy.CustomerOnly,
+        [Policy.CanManageSavedCard] = PhysicalPolicy.CustomerOnly, // additive — the saved card, the guarantee for cash bookings
         [Policy.CanManageRecurringBookings] = PhysicalPolicy.CustomerOnly,
 
         // User

@@ -1701,6 +1701,56 @@ namespace Cleansia.Infra.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "SavedCards",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    UserId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    CurrencyId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    StripeCustomerId = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
+                    StripePaymentMethodId = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: true),
+                    Brand = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: true),
+                    Last4 = table.Column<string>(type: "character varying(4)", maxLength: 4, nullable: true),
+                    ExpMonth = table.Column<int>(type: "integer", nullable: true),
+                    ExpYear = table.Column<int>(type: "integer", nullable: true),
+                    CapturedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    ConsentTextVersion = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
+                    ConsentedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    ConsentIpAddress = table.Column<string>(type: "character varying(45)", maxLength: 45, nullable: true),
+                    ConsentDeviceLabel = table.Column<string>(type: "character varying(120)", maxLength: 120, nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SavedCards", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_SavedCards_Currencies_CurrencyId",
+                        column: x => x.CurrencyId,
+                        principalTable: "Currencies",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_SavedCards_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_SavedCards_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "UserConsents",
                 columns: table => new
                 {
@@ -4577,6 +4627,21 @@ namespace Cleansia.Infra.Database.Migrations
                 filter: "\"IsDefault\" = true AND \"IsActive\" = true");
 
             migrationBuilder.CreateIndex(
+                name: "IX_SavedCards_CurrencyId",
+                table: "SavedCards",
+                column: "CurrencyId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SavedCards_TenantId",
+                table: "SavedCards",
+                column: "TenantId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SavedCards_UserId_CurrencyId",
+                table: "SavedCards",
+                columns: new[] { "UserId", "CurrencyId" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_ServiceCategories_Slug",
                 table: "ServiceCategories",
                 column: "Slug",
@@ -4970,6 +5035,9 @@ namespace Cleansia.Infra.Database.Migrations
 
             migrationBuilder.DropTable(
                 name: "SavedAddresses");
+
+            migrationBuilder.DropTable(
+                name: "SavedCards");
 
             migrationBuilder.DropTable(
                 name: "ServiceCities");

@@ -7105,6 +7105,218 @@ export class SavedAddressClient implements ISavedAddressClient {
     }
 }
 
+export interface ISavedCardClient {
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    createCheckoutSession(body?: CreateSavedCardCheckoutSessionCommand | undefined): Observable<CreateSavedCardCheckoutSessionResponse>;
+    /**
+     * @return OK
+     */
+    getMine(): Observable<SavedCardDto[]>;
+    /**
+     * @return OK
+     */
+    remove(id: string): Observable<RemoveSavedCardResponse>;
+}
+
+@Injectable({
+    providedIn: 'root'
+})
+export class SavedCardClient implements ISavedCardClient {
+    private http: HttpClient;
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(CUSTOMERAPIBASEURL) baseUrl?: string) {
+        this.http = http;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    createCheckoutSession(body?: CreateSavedCardCheckoutSessionCommand | undefined): Observable<CreateSavedCardCheckoutSessionResponse> {
+        let url = this.baseUrl + "/api/SavedCard/CreateCheckoutSession";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processCreateCheckoutSession(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processCreateCheckoutSession(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<CreateSavedCardCheckoutSessionResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<CreateSavedCardCheckoutSessionResponse>;
+        }));
+    }
+
+    protected processCreateCheckoutSession(response: HttpResponseBase): Observable<CreateSavedCardCheckoutSessionResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = CreateSavedCardCheckoutSessionResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    getMine(): Observable<SavedCardDto[]> {
+        let url = this.baseUrl + "/api/SavedCard/GetMine";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGetMine(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processGetMine(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<SavedCardDto[]>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<SavedCardDto[]>;
+        }));
+    }
+
+    protected processGetMine(response: HttpResponseBase): Observable<SavedCardDto[]> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(SavedCardDto.fromJS(item));
+            }
+            else {
+                result200 = null as any;
+            }
+            return ObservableOf(result200);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    remove(id: string): Observable<RemoveSavedCardResponse> {
+        let url = this.baseUrl + "/api/SavedCard/Remove/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url = url.replace("{id}", encodeURIComponent("" + id));
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("delete", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processRemove(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processRemove(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<RemoveSavedCardResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<RemoveSavedCardResponse>;
+        }));
+    }
+
+    protected processRemove(response: HttpResponseBase): Observable<RemoveSavedCardResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = RemoveSavedCardResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+}
+
 export interface IServiceClient {
     /**
      * @param countryId (optional) 
@@ -9254,6 +9466,86 @@ export interface ICreateRecurringBookingCommand {
     preferredEmployeeId: string | undefined;
     termsAccepted: boolean | undefined;
     dirtinessLevel: DirtinessLevel;
+}
+
+export class CreateSavedCardCheckoutSessionCommand implements ICreateSavedCardCheckoutSessionCommand {
+    consentAccepted!: boolean;
+    countryId!: string | undefined;
+
+    constructor(data?: ICreateSavedCardCheckoutSessionCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.consentAccepted = Data["consentAccepted"];
+            this.countryId = Data["countryId"];
+        }
+    }
+
+    static fromJS(data: any): CreateSavedCardCheckoutSessionCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new CreateSavedCardCheckoutSessionCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["consentAccepted"] = this.consentAccepted;
+        data["countryId"] = this.countryId;
+        return data;
+    }
+}
+
+export interface ICreateSavedCardCheckoutSessionCommand {
+    consentAccepted: boolean;
+    countryId: string | undefined;
+}
+
+export class CreateSavedCardCheckoutSessionResponse implements ICreateSavedCardCheckoutSessionResponse {
+    savedCardId!: string | undefined;
+    checkoutUrl!: string | undefined;
+
+    constructor(data?: ICreateSavedCardCheckoutSessionResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.savedCardId = Data["savedCardId"];
+            this.checkoutUrl = Data["checkoutUrl"];
+        }
+    }
+
+    static fromJS(data: any): CreateSavedCardCheckoutSessionResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new CreateSavedCardCheckoutSessionResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["savedCardId"] = this.savedCardId;
+        data["checkoutUrl"] = this.checkoutUrl;
+        return data;
+    }
+}
+
+export interface ICreateSavedCardCheckoutSessionResponse {
+    savedCardId: string | undefined;
+    checkoutUrl: string | undefined;
 }
 
 export class CurrencyDetailDto implements ICurrencyDetailDto {
@@ -15398,6 +15690,42 @@ export interface IRegisterCommand {
     termsAccepted: boolean | undefined;
 }
 
+export class RemoveSavedCardResponse implements IRemoveSavedCardResponse {
+    savedCardId!: string | undefined;
+
+    constructor(data?: IRemoveSavedCardResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.savedCardId = Data["savedCardId"];
+        }
+    }
+
+    static fromJS(data: any): RemoveSavedCardResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new RemoveSavedCardResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["savedCardId"] = this.savedCardId;
+        return data;
+    }
+}
+
+export interface IRemoveSavedCardResponse {
+    savedCardId: string | undefined;
+}
+
 export class ReportGuestCleanerNoShowCommand implements IReportGuestCleanerNoShowCommand {
     accessToken!: string | undefined;
 
@@ -15914,6 +16242,62 @@ export interface ISavedAddressDto {
     latitude: number | undefined;
     longitude: number | undefined;
     isDefault: boolean;
+}
+
+export class SavedCardDto implements ISavedCardDto {
+    id!: string | undefined;
+    brand!: string | undefined;
+    last4!: string | undefined;
+    expMonth!: number;
+    expYear!: number;
+    currencyCode!: string | undefined;
+
+    constructor(data?: ISavedCardDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.brand = Data["brand"];
+            this.last4 = Data["last4"];
+            this.expMonth = Data["expMonth"];
+            this.expYear = Data["expYear"];
+            this.currencyCode = Data["currencyCode"];
+        }
+    }
+
+    static fromJS(data: any): SavedCardDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new SavedCardDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["brand"] = this.brand;
+        data["last4"] = this.last4;
+        data["expMonth"] = this.expMonth;
+        data["expYear"] = this.expYear;
+        data["currencyCode"] = this.currencyCode;
+        return data;
+    }
+}
+
+export interface ISavedCardDto {
+    id: string | undefined;
+    brand: string | undefined;
+    last4: string | undefined;
+    expMonth: number;
+    expYear: number;
+    currencyCode: string | undefined;
 }
 
 export class SearchAddressesAddressSuggestion implements ISearchAddressesAddressSuggestion {

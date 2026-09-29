@@ -132,6 +132,7 @@ public class HandlePaymentNotification
         IUserNotificationRepository userNotificationRepository,
         IStripeClientFactory stripeClientFactory,
         ITenantRepository tenantRepository,
+        ISavedCardRepository savedCardRepository,
         ILogger<Handler> logger) : ICommandHandler<Command>
     {
         public async Task<BusinessResult> Handle(Command command, CancellationToken cancellationToken)
@@ -183,6 +184,18 @@ public class HandlePaymentNotification
             {
                 var subscriptionId = await subscriptionWebhookHandler.HandleAsync(stripeEvent, cancellationToken);
                 return BusinessResult.Success();
+            }
+
+            // A saved card lands here from either channel. A web capture raises both events, and the second
+            // finds the card already captured.
+            switch (stripeEvent.Data.Object)
+            {
+                case SetupIntent intent when stripeEvent.Type == Constants.StripeEventType.SetupIntentSucceeded:
+                    return await CaptureSavedCard(
+                        intent.Metadata?.GetValueOrDefault(SavedCardMetadataKey), intent.Id, cancellationToken);
+                case Session { Mode: "setup" } session when stripeEvent.Type == Constants.StripeEventType.CompletedSession:
+                    return await CaptureSavedCard(
+                        session.Metadata?.GetValueOrDefault(SavedCardMetadataKey), session.SetupIntentId, cancellationToken);
             }
 
             // Bank chargeback (ADR-0006 D4). No OrderId metadata — the event
@@ -445,6 +458,57 @@ public class HandlePaymentNotification
             logger.LogInformation(
                 "Checkout session {SessionId} for recurring order {OrderId} expired; the occurrence stays confirmable",
                 sessionId, order.Id);
+            return BusinessResult.Success();
+        }
+
+        private const string SavedCardMetadataKey = "SavedCardId";
+
+        /// <summary>
+        /// The card a customer saved lands on the row their capture started. A SetupIntent with no saved
+        /// card behind it — the Plus subscribe flow's — is not this flow's and is ignored. The card is read
+        /// from Stripe, so an unreachable Stripe throws, the processed-event stamp rolls back and Stripe
+        /// retries. A new card replaces the customer's earlier one in the same currency.
+        /// </summary>
+        private async Task<BusinessResult> CaptureSavedCard(
+            string? savedCardId, string? setupIntentId, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrEmpty(savedCardId) || string.IsNullOrEmpty(setupIntentId))
+            {
+                logger.LogInformation("Setup event {SetupIntentId} carries no saved card; ignoring", setupIntentId);
+                return BusinessResult.Success();
+            }
+
+            var card = await savedCardRepository.GetByIdIgnoringTenantAsync(savedCardId, cancellationToken);
+            if (card is null || card.IsCaptured || !card.IsActive)
+            {
+                logger.LogInformation(
+                    "Saved card {SavedCardId} is unknown, already captured or removed; setup event {SetupIntentId} ignored",
+                    savedCardId, setupIntentId);
+                return BusinessResult.Success();
+            }
+
+            if (!string.IsNullOrEmpty(card.TenantId))
+            {
+                tenantProvider.SetTenantOverride(card.TenantId);
+            }
+
+            var details = await stripeClientFactory.CreateClient().GetSetupIntentCardAsync(setupIntentId, cancellationToken);
+            if (details is null)
+            {
+                logger.LogWarning(
+                    "Setup intent {SetupIntentId} for saved card {SavedCardId} saved no card; nothing captured",
+                    setupIntentId, card.Id);
+                return BusinessResult.Success();
+            }
+
+            foreach (var replaced in await savedCardRepository.GetCapturedForUserInCurrencyAsync(
+                         card.UserId, card.CurrencyId, cancellationToken))
+            {
+                savedCardRepository.Deactivate(replaced);
+            }
+
+            card.Capture(details.PaymentMethodId, details.Brand, details.Last4, details.ExpMonth, details.ExpYear);
+            logger.LogInformation("Captured saved card {SavedCardId} for user {UserId}", card.Id, card.UserId);
             return BusinessResult.Success();
         }
 

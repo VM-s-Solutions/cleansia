@@ -331,6 +331,13 @@ public class SubjectDataErasureRosterTests
                 + "Anonymize() clears; two tables recording one fact are treated the same way.",
             InErasure("userStripeCustomerRepository.RemoveForUserAsync(user.Id, ct)")),
 
+        [typeof(SavedCard)] = new(
+            Verdict.Deleted,
+            "A card saved on one of those Stripe Customers, with the IP address and device it was saved "
+                + "from. The Customer ids go at erasure, so the card can no longer be charged, and the row "
+                + "goes with them.",
+            InErasure("savedCardRepository.RemoveForUserAsync(user.Id, ct)")),
+
         [typeof(Core.Domain.EmployeePayroll.EmployeePayConfig)] = new(
             Verdict.RetainedPseudonymous,
             "Pay rates keyed to an employee id that no longer resolves to a person; no name, contact or "

@@ -2054,6 +2054,10 @@
         "no_longer_available": "Your free express upgrade is no longer available for this booking — this month's included express bookings have just been used up. You can still book at the standard express price."
       }
     },
+    "saved_card": {
+      "consent_not_accepted": "Please agree that fees and unpaid cash may be charged to your card before saving it.",
+      "not_found": "We couldn't find that saved card."
+    },
     "recurring_booking": {
       "not_found": "That recurring booking no longer exists.",
       "not_owned_by_user": "You can't manage this recurring booking.",

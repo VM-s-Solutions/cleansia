@@ -40,6 +40,26 @@ public sealed class RecordingStripeClient : IStripeClient
     public Task<string> CreateEphemeralKeyAsync(string stripeCustomerId, CancellationToken cancellationToken)
         => Task.FromResult($"ek_{stripeCustomerId}");
 
+    public List<(string StripeCustomerId, string SavedCardId)> CardSetupCheckouts { get; } = [];
+    public List<string> DetachedPaymentMethods { get; } = [];
+
+    public Task<string> CreateCardSetupCheckoutSessionAsync(string stripeCustomerId, string savedCardId, CancellationToken cancellationToken)
+    {
+        CardSetupCheckouts.Add((stripeCustomerId, savedCardId));
+        return Task.FromResult($"https://checkout.stripe.test/setup/{savedCardId}");
+    }
+
+    public Task<SetupIntentResult> CreateCardSetupIntentAsync(string stripeCustomerId, string savedCardId, CancellationToken cancellationToken)
+        => Task.FromResult(new SetupIntentResult($"seti_{savedCardId}", $"seti_secret_{savedCardId}"));
+
+    public Task DetachPaymentMethodAsync(string paymentMethodId, CancellationToken cancellationToken)
+    {
+        DetachedPaymentMethods.Add(paymentMethodId);
+        return Task.CompletedTask;
+    }
+
+    public Task<SavedCardDetails?> GetSetupIntentCardAsync(string setupIntentId, CancellationToken cancellationToken) => throw new NotSupportedException();
+
     public Task<CheckoutSessionResult> CreateCheckoutSessionAsync(Order order, CancellationToken cancellationToken) => throw new NotSupportedException();
     public Task<CheckoutSessionResult> CreateCheckoutSessionAsync(Order order, DateTime expiresAtUtc, CancellationToken cancellationToken) => throw new NotSupportedException();
     public Task RefundCheckoutSessionAsync(string stripeSessionId, decimal amount, string idempotencyKey, CancellationToken cancellationToken) => throw new NotSupportedException();

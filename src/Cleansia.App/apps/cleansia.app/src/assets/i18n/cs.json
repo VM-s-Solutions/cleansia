@@ -2054,6 +2054,10 @@
         "no_longer_available": "Vaše bezplatné expresní vylepšení už pro tuto objednávku není k dispozici — expresní objednávky zahrnuté v tomto měsíci byly právě vyčerpány. Objednat můžete i za běžnou expresní cenu."
       }
     },
+    "saved_card": {
+      "consent_not_accepted": "Před uložením karty prosím potvrďte souhlas, že na ni mohou být účtovány poplatky a nezaplacená hotovost.",
+      "not_found": "Tuto uloženou kartu jsme nenašli."
+    },
     "recurring_booking": {
       "not_found": "Tato opakovaná objednávka už neexistuje.",
       "not_owned_by_user": "Tuto opakovanou objednávku nemůžete spravovat.",

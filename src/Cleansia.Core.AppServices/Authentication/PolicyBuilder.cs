@@ -49,6 +49,9 @@ public static class PolicyBuilder
         // Cleansia Plus membership — subscribe / cancel / read own status
         [Policy.CanManageMembership] = PhysicalPolicy.CustomerOnly,
 
+        // The saved card — capture, read own, remove own
+        [Policy.CanManageSavedCard] = PhysicalPolicy.CustomerOnly,
+
         // Recurring booking templates — Plus perk, customer-only
         [Policy.CanManageRecurringBookings] = PhysicalPolicy.CustomerOnly,
         //[Policy.CanCreateOrder] = PhysicalPolicy.Anonymous,

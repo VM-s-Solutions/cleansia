@@ -219,6 +219,12 @@ public static class BusinessErrorMessage
     /// </summary>
     public const string MembershipPlanTrialNotPermitted = "membership.plan.trial_not_permitted";
 
+    // Saved card, the guarantee for cash bookings
+    /// <summary>A card capture started without the customer's consent that fees and unpaid cash may be charged to the card.</summary>
+    public const string SavedCardConsentNotAccepted = "saved_card.consent_not_accepted";
+    /// <summary>No active card of the caller's has this id; another customer's card answers the same, so its existence is not revealed.</summary>
+    public const string SavedCardNotFound = "saved_card.not_found";
+
     // Recurring booking template errors. Backend rejects with these keys; the
     // customer UI maps to localized strings. NotOwnedByUser is the per-user
     // ownership check inside the handler — Validator can't see UserId at the

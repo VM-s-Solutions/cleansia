@@ -53,12 +53,21 @@ public class MembershipReturnPathTests
         Assert.Equal($"/{orders}", PrivateConst("OrdersPagePath"));
     }
 
+    /// <summary>A card-setup checkout returns to the profile, whether the card was saved or not.</summary>
+    [Fact]
+    public void ProfilePath_Is_The_Profile_Route_A_Card_Setup_Returns_To()
+    {
+        var profile = CustomerRouteValue("PROFILE");
+
+        Assert.Equal($"/{profile}", PrivateConst("ProfilePagePath"));
+    }
+
     [Fact]
     public void Every_Path_Is_Rooted_And_Carries_No_Origin()
     {
         // The origin comes from Stripe:SuccessUrlBase; a path that smuggled one in would silently
         // win over it and send the customer somewhere else entirely.
-        foreach (var name in new[] { "PlusPagePath", "MembershipWelcomePath", "OrdersPagePath" })
+        foreach (var name in new[] { "PlusPagePath", "MembershipWelcomePath", "OrdersPagePath", "ProfilePagePath" })
         {
             var path = PrivateConst(name);
             Assert.StartsWith("/", path);

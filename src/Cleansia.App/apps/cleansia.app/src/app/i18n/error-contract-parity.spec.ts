@@ -618,6 +618,9 @@ const CUSTOMER_SURFACE_ERROR_KEYS: readonly string[] = [
   // The CreateOrder waiver rule runs BEFORE the price rule and has its own code
   // precisely so this never renders as the generic "the price changed".
   'membership.express_waiver.no_longer_available',
+  // Saved card — the guarantee for cash bookings
+  'saved_card.consent_not_accepted',
+  'saved_card.not_found',
   // Recurring booking — create / manage
   'recurring_booking.not_found',
   'recurring_booking.not_owned_by_user',

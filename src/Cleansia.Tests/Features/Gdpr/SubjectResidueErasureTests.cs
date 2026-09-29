@@ -205,6 +205,23 @@ public sealed class SubjectResidueErasureTests : IDisposable
         Assert.Equal("cus_kept_bystander", Assert.Single(remaining, c => c.UserId == BystanderUserId).StripeCustomerId);
     }
 
+    /// <summary>
+    /// A card saved on one of those Customers carries the IP address and device it was saved from; it
+    /// cannot be charged once the Customer ids go, so it goes with them, and the bystander's stays.
+    /// </summary>
+    [Fact]
+    public async Task Erasure_Removes_The_Subjects_Saved_Cards()
+    {
+        await SeedAsync();
+        Assert.Contains(await ReadAsync<SavedCard>(), c => c.UserId == ErasedUserId);
+
+        await EraseAsync(ErasedUserId);
+
+        var remaining = await ReadAsync<SavedCard>();
+        Assert.DoesNotContain(remaining, c => c.UserId == ErasedUserId);
+        Assert.Equal("cus_kept_bystander", Assert.Single(remaining, c => c.UserId == BystanderUserId).StripeCustomerId);
+    }
+
     private async Task EraseAsync(string userId)
     {
         await using var ctx = NewContext();
@@ -219,6 +236,7 @@ public sealed class SubjectResidueErasureTests : IDisposable
             new EmployeePayoutDetailsRepository(ctx),
             new UserMembershipRepository(ctx),
             new UserStripeCustomerRepository(ctx),
+            new SavedCardRepository(ctx),
             new OrderPhotoRepository(ctx),
             new DeviceRepository(ctx, session),
             new LiveActivityTokenRepository(ctx),
@@ -296,6 +314,8 @@ public sealed class SubjectResidueErasureTests : IDisposable
         ctx.Add(currency);
         ctx.Add(UserStripeCustomer.Create(ErasedUserId, currency.Id, "cus_erased_subject"));
         ctx.Add(UserStripeCustomer.Create(BystanderUserId, currency.Id, "cus_kept_bystander"));
+        ctx.Add(SavedCard.Start(ErasedUserId, currency.Id, "cus_erased_subject", "203.0.113.9", "Milada's phone"));
+        ctx.Add(SavedCard.Start(BystanderUserId, currency.Id, "cus_kept_bystander", "198.51.100.2", "Tomas's phone"));
 
         await ctx.CommitAsync(CancellationToken.None);
     }

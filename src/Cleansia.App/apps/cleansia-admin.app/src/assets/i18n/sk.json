@@ -3293,6 +3293,10 @@
     "receipt": {
       "not_found": "Účtenka nebola nájdená"
     },
+    "receivable": {
+      "not_found": "Táto pohľadávka už neexistuje.",
+      "not_open": "Odpísať možno len otvorenú pohľadávku."
+    },
     "referral": {
       "action_failed": "Akcia s odporúčaním sa nepodarila. Skúste to znova.",
       "not_accepted": "Odporúčanie nie je v stave „prijaté“.",

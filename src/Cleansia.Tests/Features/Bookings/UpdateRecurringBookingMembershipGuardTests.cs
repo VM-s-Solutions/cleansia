@@ -116,7 +116,7 @@ public class UpdateRecurringBookingMembershipGuardTests
             _orderRepository.Object, _savedAddressRepository.Object,
             OrderMarketDoubles.Trading(CreateOrderTestData.DefaultCurrency()), OrderMarketDoubles.Servicing("country-cz"),
             CatalogueDoubles.Services(), CatalogueDoubles.Packages(),
-            SavedCards.SavedCardDoubles.Guaranteed());
+            SavedCards.SavedCardDoubles.Guaranteed(), Mock.Of<IReceivableRepository>());
 
     private void ArrangeActiveMembership()
     {

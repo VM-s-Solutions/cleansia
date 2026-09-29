@@ -238,6 +238,9 @@ public class FrozenPermissionMapTests
         [Policy.CanIssueCustomerCredit] = PhysicalPolicy.SupportOrAbove,
         [Policy.CanViewUserCredit] = PhysicalPolicy.AdminOnly,
         [Policy.CanExpireCustomerCredit] = PhysicalPolicy.ManagerOrAbove,
+        // Receivables (additive): any administrator reads what customers owe, a Manager writes it off
+        [Policy.CanViewReceivables] = PhysicalPolicy.AdminOnly,
+        [Policy.CanWriteOffReceivable] = PhysicalPolicy.ManagerOrAbove,
         [Policy.CanRedeemPromoCode] = PhysicalPolicy.CustomerOnly,
         [Policy.CanViewMyReferral] = PhysicalPolicy.CustomerOnly,
 

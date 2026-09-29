@@ -190,7 +190,7 @@ public class CreateRecurringBookingPreferredCleanerTests
             CatalogueDoubles.Packages(),
             Cleansia.Tests.Features.Legal.CustomerConsentDoubles.Consented(),
             Mock.Of<Cleansia.Core.AppServices.Services.Interfaces.ILegalDocumentResolver>(),
-            SavedCards.SavedCardDoubles.Guaranteed());
+            SavedCards.SavedCardDoubles.Guaranteed(), Mock.Of<IReceivableRepository>());
 
     private CreateRecurringBooking.Handler CreateHandler() =>
         new(

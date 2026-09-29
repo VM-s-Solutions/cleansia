@@ -5,6 +5,7 @@ using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
+using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Infra.Common.Validations;
@@ -17,6 +18,7 @@ public sealed class CustomerOrderCancellation(
     ITenantProvider tenantProvider,
     IRefundService refundService,
     IRefundRepository refundRepository,
+    IReceivableRepository receivableRepository,
     ICreditAccountRepository creditAccountRepository,
     ILoyaltyService loyaltyService,
     ICancellationPolicyResolver cancellationPolicyResolver,
@@ -60,6 +62,11 @@ public sealed class CustomerOrderCancellation(
         order.AddOrderStatus(transition);
         await liveActivityProducer.NotifyOrderTransitionAsync(
             order, LiveActivityEventKeys.End, transition, cancellationToken);
+
+        if (!guest && order.PaymentType == PaymentType.Cash && order.TookNoPayment && assessment.FeeAmount > 0m)
+        {
+            receivableRepository.Add(Receivable.ForCashCancellationFee(order, assessment.FeeAmount));
+        }
 
         if (!guest)
         {

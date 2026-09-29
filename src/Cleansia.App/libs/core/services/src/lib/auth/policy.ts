@@ -258,6 +258,10 @@ export const Policy = {
   CanViewUserCredit: 'CanViewUserCredit',
   CanExpireCustomerCredit: 'CanExpireCustomerCredit',
 
+  // Receivables
+  CanViewReceivables: 'CanViewReceivables',
+  CanWriteOffReceivable: 'CanWriteOffReceivable',
+
   // Admin Action Audit Log
   CanViewAuditLog: 'CanViewAuditLog',
 
@@ -519,6 +523,10 @@ export const POLICY_MAP: Record<PolicyName, PhysicalPolicy> = {
   CanIssueCustomerCredit: PhysicalPolicy.SupportOrAbove,
   CanViewUserCredit: PhysicalPolicy.AdminOnly,
   CanExpireCustomerCredit: PhysicalPolicy.ManagerOrAbove,
+
+  // Receivables
+  CanViewReceivables: PhysicalPolicy.AdminOnly,
+  CanWriteOffReceivable: PhysicalPolicy.ManagerOrAbove,
 
   // Admin Action Audit Log
   CanViewAuditLog: PhysicalPolicy.SupportOrAbove,

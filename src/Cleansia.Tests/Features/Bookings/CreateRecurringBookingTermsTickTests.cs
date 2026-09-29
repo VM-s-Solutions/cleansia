@@ -145,7 +145,7 @@ public sealed class CreateRecurringBookingTermsTickTests
             CatalogueDoubles.Packages(),
             _consents.Object,
             _resolver.Object,
-            SavedCards.SavedCardDoubles.Guaranteed());
+            SavedCards.SavedCardDoubles.Guaranteed(), Mock.Of<IReceivableRepository>());
 
     private CreateRecurringBooking.Handler Handler() =>
         new(

@@ -113,6 +113,8 @@ public static class BusinessErrorMessage
     public const string OrderCashRequiresSavedCard = "order.cash_requires_saved_card";
     /// <summary>The customer already holds the most open unpaid cash bookings allowed; the next one pays by card.</summary>
     public const string OrderCashOpenBookingsLimitReached = "order.cash_open_bookings_limit_reached";
+    /// <summary>The customer owes the company an open receivable (an unpaid fee or unpaid cash); cash waits until it is settled, card stays open.</summary>
+    public const string OrderCashUnpaidReceivable = "order.cash_unpaid_receivable";
     public const string OrderPaymentNotConfirmed = "order.payment_not_confirmed";
     // Reconciliation outcomes when the cleaner tries to take cash for an order booked on a card: the
     // handler asks Stripe what really happened before any second tender is recorded.
@@ -228,6 +230,11 @@ public static class BusinessErrorMessage
     public const string SavedCardConsentNotAccepted = "saved_card.consent_not_accepted";
     /// <summary>No active card of the caller's has this id; another customer's card answers the same, so its existence is not revealed.</summary>
     public const string SavedCardNotFound = "saved_card.not_found";
+
+    // Receivables, the money a customer owes the company on an order
+    public const string ReceivableNotFound = "receivable.not_found";
+    /// <summary>Only an open receivable can be written off; one already paid or written off stays as it is.</summary>
+    public const string ReceivableNotOpen = "receivable.not_open";
 
     // Recurring booking template errors. Backend rejects with these keys; the
     // customer UI maps to localized strings. NotOwnedByUser is the per-user

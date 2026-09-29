@@ -48,6 +48,7 @@ public class CreateRecurringBooking
         private readonly IUserConsentRepository _userConsentRepository;
         private readonly ILegalDocumentResolver _legalDocumentResolver;
         private readonly ISavedCardRepository _savedCardRepository;
+        private readonly IReceivableRepository _receivableRepository;
 
         public Validator(
             IOrderRepository orderRepository,
@@ -59,7 +60,8 @@ public class CreateRecurringBooking
             IPackageRepository packageRepository,
             IUserConsentRepository userConsentRepository,
             ILegalDocumentResolver legalDocumentResolver,
-            ISavedCardRepository savedCardRepository)
+            ISavedCardRepository savedCardRepository,
+            IReceivableRepository receivableRepository)
         {
             _orderRepository = orderRepository;
             _userSessionProvider = userSessionProvider;
@@ -71,6 +73,7 @@ public class CreateRecurringBooking
             _userConsentRepository = userConsentRepository;
             _legalDocumentResolver = legalDocumentResolver;
             _savedCardRepository = savedCardRepository;
+            _receivableRepository = receivableRepository;
 
             RuleFor(x => x.TermsAccepted)
                 .MustAsync((command, termsAccepted, cancellationToken) =>
@@ -118,6 +121,8 @@ public class CreateRecurringBooking
                 .MustAsync(CashIsAvailableForSelectionAsync)
                 .WithMessage(BusinessErrorMessage.OrderCashNotAvailable)
                 .When(x => Enum.IsDefined(x.DirtinessLevel), ApplyConditionTo.CurrentValidator)
+                .MustAsync(CashOwesNothingAsync)
+                .WithMessage(BusinessErrorMessage.OrderCashUnpaidReceivable)
                 .MustAsync(CashLeavesRoomForAnotherOpenBookingAsync)
                 .WithMessage(BusinessErrorMessage.OrderCashOpenBookingsLimitReached)
                 .MustAsync(CashIsGuaranteedBySavedCardAsync)
@@ -242,6 +247,15 @@ public class CreateRecurringBooking
                        command.SelectedServiceIds, command.SelectedPackageIds, cancellationToken))
                    .Allows(command.SelectedServiceIds, command.SelectedPackageIds,
                        command.Rooms, command.Bathrooms, command.DirtinessLevel);
+
+        private async Task<bool> CashOwesNothingAsync(
+            Command command, int paymentType, CancellationToken cancellationToken)
+        {
+            var userId = _userSessionProvider.GetUserId();
+            return paymentType != (int)PaymentType.Cash
+                || string.IsNullOrEmpty(userId)
+                || await CustomerCashStanding.OwesNothingAsync(_receivableRepository, userId, cancellationToken);
+        }
 
         private async Task<bool> CashLeavesRoomForAnotherOpenBookingAsync(
             Command command, int paymentType, CancellationToken cancellationToken)

@@ -3293,6 +3293,10 @@
     "receipt": {
       "not_found": "Potvrzení nenalezeno"
     },
+    "receivable": {
+      "not_found": "Tato pohledávka už neexistuje.",
+      "not_open": "Odepsat lze jen otevřenou pohledávku."
+    },
     "referral": {
       "action_failed": "Akce s doporučením se nezdařila. Zkuste to znovu.",
       "not_accepted": "Doporučení není ve stavu „přijaté“.",

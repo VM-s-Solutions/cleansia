@@ -14758,6 +14758,228 @@ export class AdminPromoCodeClient implements IAdminPromoCodeClient {
     }
 }
 
+export interface IAdminReceivableClient {
+    /**
+     * @param status (optional) 
+     * @param kind (optional) 
+     * @param userId (optional) 
+     * @param orderId (optional) 
+     * @param sort (optional) 
+     * @param offset (optional) 
+     * @param limit (optional) 
+     * @return OK
+     */
+    getPaged(status?: ReceivableStatus | undefined, kind?: ReceivableKind | undefined, userId?: string | undefined, orderId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfReceivableListItem>;
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    writeOff(body?: WriteOffReceivableCommand | undefined): Observable<WriteOffReceivableResponse>;
+}
+
+@Injectable({
+    providedIn: 'root'
+})
+export class AdminReceivableClient implements IAdminReceivableClient {
+    private http: HttpClient;
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(ADMINAPIBASEURL) baseUrl?: string) {
+        this.http = http;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * @param status (optional) 
+     * @param kind (optional) 
+     * @param userId (optional) 
+     * @param orderId (optional) 
+     * @param sort (optional) 
+     * @param offset (optional) 
+     * @param limit (optional) 
+     * @return OK
+     */
+    getPaged(status?: ReceivableStatus | undefined, kind?: ReceivableKind | undefined, userId?: string | undefined, orderId?: string | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfReceivableListItem> {
+        let url = this.baseUrl + "/api/AdminReceivable/get-paged?";
+        if (status === null)
+            throw new globalThis.Error("The parameter 'status' cannot be null.");
+        else if (status !== undefined)
+            url += "Filter.Status=" + encodeURIComponent("" + status) + "&";
+        if (kind === null)
+            throw new globalThis.Error("The parameter 'kind' cannot be null.");
+        else if (kind !== undefined)
+            url += "Filter.Kind=" + encodeURIComponent("" + kind) + "&";
+        if (userId === null)
+            throw new globalThis.Error("The parameter 'userId' cannot be null.");
+        else if (userId !== undefined)
+            url += "Filter.UserId=" + encodeURIComponent("" + userId) + "&";
+        if (orderId === null)
+            throw new globalThis.Error("The parameter 'orderId' cannot be null.");
+        else if (orderId !== undefined)
+            url += "Filter.OrderId=" + encodeURIComponent("" + orderId) + "&";
+        if (sort === null)
+            throw new globalThis.Error("The parameter 'sort' cannot be null.");
+        else if (sort !== undefined)
+            sort && sort.forEach((item, index) => {
+                for (const attr in item)
+        			if (item.hasOwnProperty(attr)) {
+        				url += "Sort[" + index + "]." + attr + "=" + encodeURIComponent("" + (item as any)[attr]) + "&";
+        			}
+            });
+        if (offset === null)
+            throw new globalThis.Error("The parameter 'offset' cannot be null.");
+        else if (offset !== undefined)
+            url += "Offset=" + encodeURIComponent("" + offset) + "&";
+        if (limit === null)
+            throw new globalThis.Error("The parameter 'limit' cannot be null.");
+        else if (limit !== undefined)
+            url += "Limit=" + encodeURIComponent("" + limit) + "&";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGetPaged(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processGetPaged(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<PagedDataOfReceivableListItem>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<PagedDataOfReceivableListItem>;
+        }));
+    }
+
+    protected processGetPaged(response: HttpResponseBase): Observable<PagedDataOfReceivableListItem> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = PagedDataOfReceivableListItem.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    writeOff(body?: WriteOffReceivableCommand | undefined): Observable<WriteOffReceivableResponse> {
+        let url = this.baseUrl + "/api/AdminReceivable/write-off";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processWriteOff(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processWriteOff(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<WriteOffReceivableResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<WriteOffReceivableResponse>;
+        }));
+    }
+
+    protected processWriteOff(response: HttpResponseBase): Observable<WriteOffReceivableResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = WriteOffReceivableResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+}
+
 export interface IAdminReferralClient {
     /**
      * @param status (optional) 
@@ -31826,6 +32048,62 @@ export interface IPagedDataOfPromoCodeRedemptionListItem {
     data: PromoCodeRedemptionListItem[] | undefined;
 }
 
+export class PagedDataOfReceivableListItem implements IPagedDataOfReceivableListItem {
+    pageNumber!: number;
+    pageSize!: number;
+    total!: number;
+    data!: ReceivableListItem[] | undefined;
+
+    constructor(data?: IPagedDataOfReceivableListItem) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.pageNumber = Data["pageNumber"];
+            this.pageSize = Data["pageSize"];
+            this.total = Data["total"];
+            if (Array.isArray(Data["data"])) {
+                this.data = [] as any;
+                for (let item of Data["data"])
+                    this.data!.push(ReceivableListItem.fromJS(item));
+            }
+        }
+    }
+
+    static fromJS(data: any): PagedDataOfReceivableListItem {
+        data = typeof data === 'object' ? data : {};
+        let result = new PagedDataOfReceivableListItem();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["pageNumber"] = this.pageNumber;
+        data["pageSize"] = this.pageSize;
+        data["total"] = this.total;
+        if (Array.isArray(this.data)) {
+            data["data"] = [];
+            for (let item of this.data)
+                data["data"].push(item ? item.toJSON() : undefined as any);
+        }
+        return data;
+    }
+}
+
+export interface IPagedDataOfReceivableListItem {
+    pageNumber: number;
+    pageSize: number;
+    total: number;
+    data: ReceivableListItem[] | undefined;
+}
+
 export class PagedDataOfServiceListItem implements IPagedDataOfServiceListItem {
     pageNumber!: number;
     pageSize!: number;
@@ -32816,6 +33094,99 @@ export class ReactivateCompanyResponse implements IReactivateCompanyResponse {
 
 export interface IReactivateCompanyResponse {
     state: CompanyLifecycleState;
+}
+
+export enum ReceivableKind {
+    CashCancellationFee = 1,
+    Lockout = 2,
+    UnpaidCash = 3,
+    TopUp = 4,
+}
+
+export class ReceivableListItem implements IReceivableListItem {
+    id!: string | undefined;
+    orderId!: string | undefined;
+    displayOrderNumber!: string | undefined;
+    userId!: string | undefined;
+    kind!: Code;
+    status!: Code;
+    amount!: number;
+    currencyCode!: string | undefined;
+    attempts!: number;
+    createdOn!: Date;
+    writtenOffOn!: Date | undefined;
+    writeOffNote!: string | undefined;
+
+    constructor(data?: IReceivableListItem) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.orderId = Data["orderId"];
+            this.displayOrderNumber = Data["displayOrderNumber"];
+            this.userId = Data["userId"];
+            this.kind = Data["kind"] ? Code.fromJS(Data["kind"]) : undefined as any;
+            this.status = Data["status"] ? Code.fromJS(Data["status"]) : undefined as any;
+            this.amount = Data["amount"];
+            this.currencyCode = Data["currencyCode"];
+            this.attempts = Data["attempts"];
+            this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
+            this.writtenOffOn = Data["writtenOffOn"] ? new Date(Data["writtenOffOn"].toString()) : undefined as any;
+            this.writeOffNote = Data["writeOffNote"];
+        }
+    }
+
+    static fromJS(data: any): ReceivableListItem {
+        data = typeof data === 'object' ? data : {};
+        let result = new ReceivableListItem();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["orderId"] = this.orderId;
+        data["displayOrderNumber"] = this.displayOrderNumber;
+        data["userId"] = this.userId;
+        data["kind"] = this.kind ? this.kind.toJSON() : undefined as any;
+        data["status"] = this.status ? this.status.toJSON() : undefined as any;
+        data["amount"] = this.amount;
+        data["currencyCode"] = this.currencyCode;
+        data["attempts"] = this.attempts;
+        data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
+        data["writtenOffOn"] = this.writtenOffOn ? this.writtenOffOn.toISOString() : undefined as any;
+        data["writeOffNote"] = this.writeOffNote;
+        return data;
+    }
+}
+
+export interface IReceivableListItem {
+    id: string | undefined;
+    orderId: string | undefined;
+    displayOrderNumber: string | undefined;
+    userId: string | undefined;
+    kind: Code;
+    status: Code;
+    amount: number;
+    currencyCode: string | undefined;
+    attempts: number;
+    createdOn: Date;
+    writtenOffOn: Date | undefined;
+    writeOffNote: string | undefined;
+}
+
+export enum ReceivableStatus {
+    Open = 1,
+    Paid = 2,
+    WrittenOff = 3,
 }
 
 export enum ReferralStatus {
@@ -37647,6 +38018,86 @@ export class WorkContractFactsLine implements IWorkContractFactsLine {
 export interface IWorkContractFactsLine {
     id: string | undefined;
     name: string | undefined;
+}
+
+export class WriteOffReceivableCommand implements IWriteOffReceivableCommand {
+    receivableId!: string | undefined;
+    note!: string | undefined;
+
+    constructor(data?: IWriteOffReceivableCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.receivableId = Data["receivableId"];
+            this.note = Data["note"];
+        }
+    }
+
+    static fromJS(data: any): WriteOffReceivableCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new WriteOffReceivableCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["receivableId"] = this.receivableId;
+        data["note"] = this.note;
+        return data;
+    }
+}
+
+export interface IWriteOffReceivableCommand {
+    receivableId: string | undefined;
+    note: string | undefined;
+}
+
+export class WriteOffReceivableResponse implements IWriteOffReceivableResponse {
+    receivableId!: string | undefined;
+    status!: ReceivableStatus;
+
+    constructor(data?: IWriteOffReceivableResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.receivableId = Data["receivableId"];
+            this.status = Data["status"];
+        }
+    }
+
+    static fromJS(data: any): WriteOffReceivableResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new WriteOffReceivableResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["receivableId"] = this.receivableId;
+        data["status"] = this.status;
+        return data;
+    }
+}
+
+export interface IWriteOffReceivableResponse {
+    receivableId: string | undefined;
+    status: ReceivableStatus;
 }
 
 function formatDate(d: Date) {

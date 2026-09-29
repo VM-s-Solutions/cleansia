@@ -8,10 +8,12 @@ using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Orders;
+using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.TestUtilities.MockDataFactories.Orders;
 using Cleansia.Tests.Common;
+using Cleansia.Infra.Common.Validations;
 using MockQueryable;
 using Moq;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -21,7 +23,8 @@ namespace Cleansia.Tests.Features.Orders;
 /// <summary>
 /// A cancelled order that never took money records no refund: a cash booking or a card never charged
 /// used to store price × (1 − fee) as a refund of money nobody had paid. The fee it carries is instead
-/// what the customer still owes, and the admin order detail says so — rate and amount.
+/// what the customer still owes, and the admin order detail says so — rate and amount. On a cash booking
+/// that fee becomes an open receivable (owner ruling 2026-09-28, decision 17).
 /// </summary>
 public class UnpaidOrderCancellationMoneyFieldsTests
 {
@@ -66,16 +69,74 @@ public class UnpaidOrderCancellationMoneyFieldsTests
     [Fact]
     public async Task A_Customer_Cancelling_An_Accepted_Cash_Order_Records_The_Fee_Rate_And_No_Refund()
     {
+        var refundService = new Mock<IRefundService>();
+        var order = ArrangeAcceptedOrder(DateTime.UtcNow.AddHours(12), PaymentType.Cash);
+
+        var result = await CancelAsCustomerAsync(order, refundService, Mock.Of<IReceivableRepository>());
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Equal(BookingPolicy.PartialCancellationFeeRate, order.CancellationFeeRate);
+        Assert.Equal(0m, order.CancellationRefundAmount);
+        refundService.Verify(
+            s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task A_Late_Cancellation_Of_A_Cash_Order_Opens_A_Receivable_For_The_Fee()
+    {
+        var receivables = new Mock<IReceivableRepository>();
+        var opened = new List<Receivable>();
+        receivables.Setup(r => r.Add(It.IsAny<Receivable>())).Callback<Receivable>(opened.Add);
+        var order = ArrangeAcceptedOrder(DateTime.UtcNow.AddHours(12), PaymentType.Cash);
+
+        var result = await CancelAsCustomerAsync(order, new Mock<IRefundService>(), receivables.Object);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        var receivable = Assert.Single(opened);
+        Assert.Equal(ReceivableKind.CashCancellationFee, receivable.Kind);
+        Assert.Equal(ReceivableStatus.Open, receivable.Status);
+        Assert.Equal(1000m * BookingPolicy.PartialCancellationFeeRate, receivable.Amount);
+        Assert.Equal((OrderId, UserId, order.CurrencyId), (receivable.OrderId, receivable.UserId, receivable.CurrencyId));
+        Assert.Equal(0, receivable.Attempts);
+    }
+
+    [Fact]
+    public async Task A_Free_Cancellation_Of_A_Cash_Order_Opens_No_Receivable()
+    {
+        var receivables = new Mock<IReceivableRepository>();
+        var order = ArrangeAcceptedOrder(DateTime.UtcNow.AddDays(5), PaymentType.Cash);
+
+        var result = await CancelAsCustomerAsync(order, new Mock<IRefundService>(), receivables.Object);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Equal(0m, order.CancellationFeeRate);
+        receivables.Verify(r => r.Add(It.IsAny<Receivable>()), Times.Never);
+    }
+
+    /// <summary>A card booking is prepaid, so one never charged opens no receivable for its fee.</summary>
+    [Fact]
+    public async Task A_Late_Cancellation_Of_An_Unpaid_Card_Order_Opens_No_Receivable()
+    {
+        var receivables = new Mock<IReceivableRepository>();
+        var order = ArrangeAcceptedOrder(DateTime.UtcNow.AddHours(12), PaymentType.Card);
+
+        var result = await CancelAsCustomerAsync(order, new Mock<IRefundService>(), receivables.Object);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Equal(BookingPolicy.PartialCancellationFeeRate, order.CancellationFeeRate);
+        receivables.Verify(r => r.Add(It.IsAny<Receivable>()), Times.Never);
+    }
+
+    private static Task<BusinessResult<CancelOrder.Response>> CancelAsCustomerAsync(
+        Order order, Mock<IRefundService> refundService, IReceivableRepository receivables)
+    {
         var orderRepository = new Mock<IOrderRepository>();
         var session = new Mock<IUserSessionProvider>();
         session.Setup(s => s.GetUserId()).Returns(UserId);
-        var refundService = new Mock<IRefundService>();
         var membershipRepository = new Mock<IUserMembershipRepository>();
         membershipRepository
             .Setup(r => r.GetEntitledForUserNoTrackingAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
-
-        var order = ArrangeAcceptedCashOrder(DateTime.UtcNow.AddHours(12));
         orderRepository.Setup(r => r.GetQueryable()).Returns(new[] { order }.AsQueryable().BuildMock());
 
         var handler = new CancelOrder.Handler(
@@ -85,6 +146,7 @@ public class UnpaidOrderCancellationMoneyFieldsTests
                 Mock.Of<ITenantProvider>(),
                 refundService.Object,
                 Mock.Of<IRefundRepository>(),
+                receivables,
                 Mock.Of<ICreditAccountRepository>(),
                 Mock.Of<ILoyaltyService>(),
                 new CancellationPolicyResolver(membershipRepository.Object, Mock.Of<IOrderRepository>()),
@@ -95,13 +157,7 @@ public class UnpaidOrderCancellationMoneyFieldsTests
                 TimeProvider.System,
                 NullLogger<CustomerOrderCancellation>.Instance));
 
-        var result = await handler.Handle(new CancelOrder.Command(OrderId, null), CancellationToken.None);
-
-        Assert.True(result.IsSuccess, result.Error?.Message);
-        Assert.Equal(BookingPolicy.PartialCancellationFeeRate, order.CancellationFeeRate);
-        Assert.Equal(0m, order.CancellationRefundAmount);
-        refundService.Verify(
-            s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()), Times.Never);
+        return handler.Handle(new CancelOrder.Command(OrderId, null), CancellationToken.None);
     }
 
     [Theory]
@@ -192,7 +248,7 @@ public class UnpaidOrderCancellationMoneyFieldsTests
         return result.Value!;
     }
 
-    private static Order ArrangeAcceptedCashOrder(DateTime cleaningUtc)
+    private static Order ArrangeAcceptedOrder(DateTime cleaningUtc, PaymentType paymentType)
     {
         var currency = Currency.Create("CZK", "Kč", "Czech Koruna");
         var order = Order.Create(
@@ -203,7 +259,7 @@ public class UnpaidOrderCancellationMoneyFieldsTests
             rooms: 2,
             bathrooms: 1,
             cleaningDateTime: cleaningUtc,
-            paymentType: PaymentType.Cash,
+            paymentType: paymentType,
             totalPrice: 1000m,
             currencyId: currency.Id,
             paymentStatus: PaymentStatus.Pending,

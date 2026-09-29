@@ -286,6 +286,10 @@ public static class PolicyBuilder
         [Policy.CanViewUserCredit] = PhysicalPolicy.AdminOnly,
         [Policy.CanExpireCustomerCredit] = PhysicalPolicy.ManagerOrAbove,
 
+        // Receivables (what customers owe the company)
+        [Policy.CanViewReceivables] = PhysicalPolicy.AdminOnly,
+        [Policy.CanWriteOffReceivable] = PhysicalPolicy.ManagerOrAbove,
+
         // Admin Action Audit Log (read surface — ADR-0012 D7)
         [Policy.CanViewAuditLog] = PhysicalPolicy.SupportOrAbove,
 

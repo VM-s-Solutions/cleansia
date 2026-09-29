@@ -48,7 +48,7 @@ public sealed class ConfirmRecurringOrderCashEligibilityTests
     private ConfirmRecurringOrder.Handler Handler() => new(
         OrderAccessDoubles.Over(_orderRepository, _session),
         _orderRepository.Object,
-        SavedCards.SavedCardDoubles.Guaranteed(),
+        SavedCards.SavedCardDoubles.Guaranteed(), Mock.Of<IReceivableRepository>(),
         _creditAccounts.Object,
         _users.Object,
         _session.Object,

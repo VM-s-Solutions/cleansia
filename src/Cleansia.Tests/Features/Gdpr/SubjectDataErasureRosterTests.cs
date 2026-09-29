@@ -338,6 +338,12 @@ public class SubjectDataErasureRosterTests
                 + "goes with them.",
             InErasure("savedCardRepository.RemoveForUserAsync(user.Id, ct)")),
 
+        [typeof(Core.Domain.Payments.Receivable)] = new(
+            Verdict.RetainedPseudonymous,
+            "What a customer owed the company on a retained order: the order, customer and administrator ids, "
+                + "an amount and a status. The customer id no longer resolves to a person once the account is "
+                + "anonymized, and the debt is the company's books."),
+
         [typeof(Core.Domain.EmployeePayroll.EmployeePayConfig)] = new(
             Verdict.RetainedPseudonymous,
             "Pay rates keyed to an employee id that no longer resolves to a person; no name, contact or "

@@ -143,6 +143,7 @@ public class MemberCancellationRefundRedriveTests(PostgresContainerFixture fixtu
             new FixedTenantProvider(TestTenants.Default),
             NewRefundService(ctx),
             new RefundRepository(ctx),
+            new ReceivableRepository(ctx),
             new CreditAccountRepository(ctx),
             Mock.Of<ILoyaltyService>(),
             new CancellationPolicyResolver(new UserMembershipRepository(ctx), new OrderRepository(ctx)),

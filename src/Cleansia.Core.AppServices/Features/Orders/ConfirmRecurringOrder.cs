@@ -78,6 +78,7 @@ public class ConfirmRecurringOrder
         IOrderAccessService orderAccessService,
         IOrderRepository orderRepository,
         ISavedCardRepository savedCardRepository,
+        IReceivableRepository receivableRepository,
         ICreditAccountRepository creditAccountRepository,
         IUserRepository userRepository,
         IUserSessionProvider userSessionProvider,
@@ -146,6 +147,14 @@ public class ConfirmRecurringOrder
             {
                 return BusinessResult.Failure<Response>(new Error(
                     nameof(order.PaymentType), BusinessErrorMessage.OrderCashNotAvailable));
+            }
+
+            if (order.PaymentType == PaymentType.Cash
+                && !await CustomerCashStanding.OwesNothingAsync(
+                    receivableRepository, sessionUserId, cancellationToken))
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(order.PaymentType), BusinessErrorMessage.OrderCashUnpaidReceivable));
             }
 
             if (order.PaymentType == PaymentType.Cash

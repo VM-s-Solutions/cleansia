@@ -1946,6 +1946,7 @@
       "cash_not_available": "Cash is only available when you're signed in and the booking needs a single cleaner.",
       "cash_requires_saved_card": "To pay in cash, first save a card as a guarantee — or pay by card.",
       "cash_open_bookings_limit_reached": "You already have as many unpaid cash bookings as allowed. Choose card, or pay in cash again once one of them is paid.",
+      "cash_unpaid_receivable": "You have an unpaid amount with us, such as a cancellation fee. Pay by card for now; cash is available again once it is settled.",
       "country_operator_mismatch": "This address is served by another Cleansia company, so it can't be booked here.",
       "payment": {
         "already_paid": "This order has already been paid."

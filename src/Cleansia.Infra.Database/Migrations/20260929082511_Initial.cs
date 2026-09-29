@@ -2839,6 +2839,59 @@ namespace Cleansia.Infra.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Receivables",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    OrderId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    UserId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    CurrencyId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    Kind = table.Column<int>(type: "integer", nullable: false),
+                    Amount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    Status = table.Column<int>(type: "integer", nullable: false),
+                    Attempts = table.Column<int>(type: "integer", nullable: false),
+                    WrittenOffOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    WrittenOffByUserId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    WriteOffNote = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Receivables", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Receivables_Currencies_CurrencyId",
+                        column: x => x.CurrencyId,
+                        principalTable: "Currencies",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Receivables_Orders_OrderId",
+                        column: x => x.OrderId,
+                        principalTable: "Orders",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Receivables_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Receivables_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "WorkContractAcceptances",
                 columns: table => new
                 {
@@ -4494,6 +4547,26 @@ namespace Cleansia.Infra.Database.Migrations
                 columns: new[] { "CountryId", "SortOrder" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_Receivables_CurrencyId",
+                table: "Receivables",
+                column: "CurrencyId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Receivables_OrderId",
+                table: "Receivables",
+                column: "OrderId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Receivables_TenantId",
+                table: "Receivables",
+                column: "TenantId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Receivables_UserId_Status",
+                table: "Receivables",
+                columns: new[] { "UserId", "Status" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_RecurringBookingTemplates_IsActive_StartsOn",
                 table: "RecurringBookingTemplates",
                 columns: new[] { "IsActive", "StartsOn" });
@@ -5020,6 +5093,9 @@ namespace Cleansia.Infra.Database.Migrations
 
             migrationBuilder.DropTable(
                 name: "PropertySizePresets");
+
+            migrationBuilder.DropTable(
+                name: "Receivables");
 
             migrationBuilder.DropTable(
                 name: "RecurringBookingTemplates");

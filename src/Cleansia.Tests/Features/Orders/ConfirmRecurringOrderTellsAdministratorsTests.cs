@@ -49,7 +49,7 @@ public sealed class ConfirmRecurringOrderTellsAdministratorsTests
     private ConfirmRecurringOrder.Handler Handler() => new(
         OrderAccessDoubles.Over(_orderRepository, _session),
         _orderRepository.Object,
-        SavedCards.SavedCardDoubles.Guaranteed(),
+        SavedCards.SavedCardDoubles.Guaranteed(), Mock.Of<IReceivableRepository>(),
         new Mock<ICreditAccountRepository>().Object,
         new Mock<IUserRepository>().Object,
         _session.Object,

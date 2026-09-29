@@ -619,6 +619,9 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'order.cash_received_at_in_future',
   'order.cash_received_at_before_clean',
   'receipt.not_found',
+  // What customers owe the company: AdminReceivableController.WriteOff (owner ruling 2026-09-28).
+  'receivable.not_found',
+  'receivable.not_open',
   'refund.line_invalid',
   'refund.lines_required',
   'refund.nothing_refundable',

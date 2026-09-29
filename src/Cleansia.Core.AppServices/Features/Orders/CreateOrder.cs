@@ -49,6 +49,7 @@ public class CreateOrder
         private readonly ICountryConfigurationRepository _countryConfigurationRepository;
         private readonly ILegalDocumentResolver _legalDocumentResolver;
         private readonly ISavedCardRepository _savedCardRepository;
+        private readonly IReceivableRepository _receivableRepository;
 
         public Validator(
             IPackageRepository packageRepository,
@@ -70,11 +71,13 @@ public class CreateOrder
             ILanguageRepository languageRepository,
             ICountryConfigurationRepository countryConfigurationRepository,
             ILegalDocumentResolver legalDocumentResolver,
-            ISavedCardRepository savedCardRepository)
+            ISavedCardRepository savedCardRepository,
+            IReceivableRepository receivableRepository)
         {
             _countryConfigurationRepository = countryConfigurationRepository;
             _legalDocumentResolver = legalDocumentResolver;
             _savedCardRepository = savedCardRepository;
+            _receivableRepository = receivableRepository;
             _operatorTenantResolver = operatorTenantResolver;
             _tenantProvider = tenantProvider;
             _userConsentRepository = userConsentRepository;
@@ -278,6 +281,9 @@ public class CreateOrder
                 .WithMessage(BusinessErrorMessage.TotalPriceNotMatch)
                 .Must(CashIsAvailable)
                 .WithMessage(BusinessErrorMessage.OrderCashNotAvailable)
+                .WithErrorCode(nameof(Command.PaymentType))
+                .MustAsync(CashOwesNothingAsync)
+                .WithMessage(BusinessErrorMessage.OrderCashUnpaidReceivable)
                 .WithErrorCode(nameof(Command.PaymentType))
                 .MustAsync(CashLeavesRoomForAnotherOpenBookingAsync)
                 .WithMessage(BusinessErrorMessage.OrderCashOpenBookingsLimitReached)
@@ -715,10 +721,15 @@ public class CreateOrder
                    OrderDuration.RequiredEmployees(CachedPricing(context).EstimatedDurationMinutes));
 
         /// <summary>
-        /// Past <see cref="CashIsAvailable"/> only a signed-in customer's cash booking remains. The limit is
-        /// asked before the card, so a customer who could not book cash even with a card is not sent to
-        /// save one first.
+        /// Past <see cref="CashIsAvailable"/> only a signed-in customer's cash booking remains. The debt and
+        /// the limit are asked before the card, so a customer who could not book cash even with a card is
+        /// not sent to save one first.
         /// </summary>
+        private async Task<bool> CashOwesNothingAsync(Command command, CancellationToken cancellationToken)
+            => command.PaymentType != PaymentType.Cash
+               || await CustomerCashStanding.OwesNothingAsync(
+                   _receivableRepository, _userSessionProvider.GetUserId()!, cancellationToken);
+
         private async Task<bool> CashLeavesRoomForAnotherOpenBookingAsync(
             Command command, CancellationToken cancellationToken)
             => command.PaymentType != PaymentType.Cash

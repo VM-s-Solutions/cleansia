@@ -108,6 +108,7 @@ public class CancellationAcceptanceSignalTests
                 Mock.Of<ITenantProvider>(),
                 _refundService.Object,
                 Mock.Of<IRefundRepository>(),
+                Mock.Of<IReceivableRepository>(),
                 _creditAccountRepository.Object,
                 _loyaltyService.Object,
                 new CancellationPolicyResolver(_membershipRepository.Object, Mock.Of<IOrderRepository>()),
@@ -142,7 +143,7 @@ public class CancellationAcceptanceSignalTests
         new(
             Cleansia.Tests.Common.OrderAccessDoubles.Over(_orderRepository, _session),
             _orderRepository.Object,
-            SavedCards.SavedCardDoubles.Guaranteed(),
+            SavedCards.SavedCardDoubles.Guaranteed(), Mock.Of<IReceivableRepository>(),
             _creditAccountRepository.Object,
             _userRepository.Object,
             _session.Object,

@@ -3293,6 +3293,10 @@
     "receipt": {
       "not_found": "Receipt not found"
     },
+    "receivable": {
+      "not_found": "This receivable no longer exists.",
+      "not_open": "Only an open receivable can be written off."
+    },
     "referral": {
       "action_failed": "The referral action failed. Try again.",
       "not_accepted": "The referral is not in the accepted state.",

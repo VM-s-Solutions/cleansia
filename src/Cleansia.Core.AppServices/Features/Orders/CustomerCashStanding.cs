@@ -7,12 +7,18 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 
 /// <summary>
 /// What a signed-in customer must hold to book cash, beyond the one-cleaner rule of
-/// <see cref="BookingPolicy.AllowsCash"/> (owner ruling 2026-09-28): a usable card saved in the booking's
-/// currency, and room under <see cref="BookingPolicy.MaxOpenUnpaidCashBookings"/>. Asked by the one-off
-/// booking, both recurring schedule writes and the confirmation of a recurring cash occurrence.
+/// <see cref="BookingPolicy.AllowsCash"/> (owner ruling 2026-09-28): no open receivable, room under
+/// <see cref="BookingPolicy.MaxOpenUnpaidCashBookings"/>, and a usable card saved in the booking's currency.
+/// Asked by the one-off booking, both recurring schedule writes and the confirmation of a recurring cash
+/// occurrence, in that order.
 /// </summary>
 internal static class CustomerCashStanding
 {
+    /// <summary>Owed to any operating company, like the open-bookings limit.</summary>
+    public static async Task<bool> OwesNothingAsync(
+        IReceivableRepository receivableRepository, string userId, CancellationToken cancellationToken)
+        => !await receivableRepository.HasOpenForUserAsync(userId, cancellationToken);
+
     public static async Task<bool> HoldsUsableCardAsync(
         ISavedCardRepository savedCardRepository, string userId, string currencyId, CancellationToken cancellationToken)
         => (await savedCardRepository.GetCapturedForUserInCurrencyAsync(userId, currencyId, cancellationToken))

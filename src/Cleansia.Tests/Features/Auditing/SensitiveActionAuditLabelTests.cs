@@ -5,6 +5,7 @@ using Cleansia.Core.AppServices.Features.Gdpr;
 using Cleansia.Core.AppServices.Features.Loyalty.Admin;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.PayConfig;
+using Cleansia.Core.AppServices.Features.Receivables;
 using Cleansia.Core.AppServices.Features.Refunds;
 
 namespace Cleansia.Tests.Features.Auditing;
@@ -26,6 +27,7 @@ public sealed class SensitiveActionAuditLabelTests
     [InlineData(typeof(GrantPointsManually.Command), "loyalty.points.grant", "LoyaltyAccount")]
     [InlineData(typeof(IssueCustomerCredit.Command), "credit.issue", "CreditAccount")]
     [InlineData(typeof(ExpireCustomerCredit.Command), "credit.expire", "CreditAccount")]
+    [InlineData(typeof(WriteOffReceivable.Command), "receivable.write_off", "Receivable")]
     [InlineData(typeof(RevokePointsManually.Command), "loyalty.points.revoke", "LoyaltyAccount")]
     [InlineData(typeof(AdminDeleteUserAccount.Command), "gdpr.user.delete", "User")]
     [InlineData(typeof(AdminRetryUserDeletion.Command), "gdpr.user.delete.retry", "GdprRequest")]

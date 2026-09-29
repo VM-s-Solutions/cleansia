@@ -47,6 +47,7 @@ public class UpdateRecurringBooking
         private readonly IServiceRepository _serviceRepository;
         private readonly IPackageRepository _packageRepository;
         private readonly ISavedCardRepository _savedCardRepository;
+        private readonly IReceivableRepository _receivableRepository;
 
         public Validator(
             IRecurringBookingTemplateRepository templateRepository,
@@ -58,7 +59,8 @@ public class UpdateRecurringBooking
             ICountryRepository countryRepository,
             IServiceRepository serviceRepository,
             IPackageRepository packageRepository,
-            ISavedCardRepository savedCardRepository)
+            ISavedCardRepository savedCardRepository,
+            IReceivableRepository receivableRepository)
         {
             _templateRepository = templateRepository;
             _userMembershipRepository = userMembershipRepository;
@@ -70,6 +72,7 @@ public class UpdateRecurringBooking
             _serviceRepository = serviceRepository;
             _packageRepository = packageRepository;
             _savedCardRepository = savedCardRepository;
+            _receivableRepository = receivableRepository;
 
             // The entitlement link is the LAST link of THIS chain, never a second RuleFor: the
             // class-level default is Continue, so a parallel chain would answer "you need Plus" for a
@@ -138,6 +141,8 @@ public class UpdateRecurringBooking
                 .MustAsync(CashIsAvailableForSelectionAsync)
                 .WithMessage(BusinessErrorMessage.OrderCashNotAvailable)
                 .When(x => Enum.IsDefined(x.DirtinessLevel), ApplyConditionTo.CurrentValidator)
+                .MustAsync(CashOwesNothingAsync)
+                .WithMessage(BusinessErrorMessage.OrderCashUnpaidReceivable)
                 .MustAsync(CashLeavesRoomForAnotherOpenBookingAsync)
                 .WithMessage(BusinessErrorMessage.OrderCashOpenBookingsLimitReached)
                 .MustAsync(CashIsGuaranteedBySavedCardAsync)
@@ -202,6 +207,15 @@ public class UpdateRecurringBooking
                        command.SelectedServiceIds, command.SelectedPackageIds, cancellationToken))
                    .Allows(command.SelectedServiceIds, command.SelectedPackageIds,
                        command.Rooms, command.Bathrooms, command.DirtinessLevel);
+
+        private async Task<bool> CashOwesNothingAsync(
+            Command command, int paymentType, CancellationToken cancellationToken)
+        {
+            var userId = _userSessionProvider.GetUserId();
+            return paymentType != (int)PaymentType.Cash
+                || string.IsNullOrEmpty(userId)
+                || await CustomerCashStanding.OwesNothingAsync(_receivableRepository, userId, cancellationToken);
+        }
 
         private async Task<bool> CashLeavesRoomForAnotherOpenBookingAsync(
             Command command, int paymentType, CancellationToken cancellationToken)

@@ -249,6 +249,32 @@ public class Order : TenantAuditable
     [MaxLength(26)]
     public string? WorkContractDocumentId { get; private set; }
 
+    /// <summary>
+    /// The wording of the early-performance tick the clients show. A draft until the lawyer's wording
+    /// arrives; bump it with every change to that wording, so each booking records the text it was made under.
+    /// </summary>
+    public const string EarlyPerformanceConsentTextVersionInForce = "early-performance-draft-2026-09-29";
+
+    /// <summary>
+    /// The customer's express request that performance start within the 14-day withdrawal period, with
+    /// the acknowledgement that the right is lost once the service is fully performed (decision 61): the
+    /// wording's version, when, and the client and request it came from. A recurring occurrence carries the
+    /// act of the schedule that created it. Null on an order booked before the act existed.
+    /// </summary>
+    [MaxLength(64)]
+    public string? EarlyPerformanceConsentTextVersion { get; private set; }
+
+    public DateTimeOffset? EarlyPerformanceConsentedOn { get; private set; }
+
+    [MaxLength(40)]
+    public string? EarlyPerformanceConsentClient { get; private set; }
+
+    [MaxLength(45)]
+    public string? EarlyPerformanceConsentIpAddress { get; private set; }
+
+    [MaxLength(120)]
+    public string? EarlyPerformanceConsentDeviceLabel { get; private set; }
+
     public string? UserId { get; private set; }
     public User? User { get; private set; }
 
@@ -842,6 +868,17 @@ public class Order : TenantAuditable
         return this;
     }
 
+    public Order RecordEarlyPerformanceConsent(
+        string textVersion, DateTimeOffset consentedOn, string client, string? ipAddress, string? deviceLabel)
+    {
+        EarlyPerformanceConsentTextVersion = textVersion;
+        EarlyPerformanceConsentedOn = consentedOn;
+        EarlyPerformanceConsentClient = client;
+        EarlyPerformanceConsentIpAddress = ipAddress;
+        EarlyPerformanceConsentDeviceLabel = deviceLabel;
+        return this;
+    }
+
     public Order MarkEmployeePayCalculated()
     {
         EmployeePayCalculated = true;
@@ -1086,6 +1123,8 @@ public class Order : TenantAuditable
         AccessMode = null;
         CompletionNotes = null;
         LockoutCallAttempts = null;
+        EarlyPerformanceConsentIpAddress = null;
+        EarlyPerformanceConsentDeviceLabel = null;
         // A platform reason is a code, not personal data, and the wind-down's refund re-drive selects its
         // cancelled orders by it; the customer's or an admin's free text goes.
         if (CancelledBy != Enums.CancelledBy.System)

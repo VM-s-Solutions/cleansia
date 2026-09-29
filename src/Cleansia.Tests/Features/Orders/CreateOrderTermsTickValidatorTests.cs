@@ -23,7 +23,8 @@ namespace Cleansia.Tests.Features.Orders;
 /// customer sees no box on any client and sends nothing. A guest has no account to hold a consent on,
 /// so a guest always asserts it. The consent read is skipped when the tick is asserted: the tick is
 /// the answer, and a customer re-consenting at checkout must not be refused for a record the server
-/// has not written yet.
+/// has not written yet. The request to start within the withdrawal period (decision 61) is the other
+/// tick, and it has no such excuse: every booking asserts it, a guest's and a consented customer's alike.
 /// </summary>
 public sealed class CreateOrderTermsTickValidatorTests
 {
@@ -269,6 +270,47 @@ public sealed class CreateOrderTermsTickValidatorTests
         OnRecord(Granted(ConsentType.TermsOfService, "2026-09-14"), Granted(ConsentType.PrivacyPolicy, "2026-09-14"));
 
         AssertNotRefusedOnTheTick(await Validator().ValidateAsync(Booking(termsAccepted: true)));
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData(false)]
+    public async Task A_Guest_Without_The_Early_Performance_Request_Is_Refused(bool? earlyPerformanceRequested)
+    {
+        SignedInAs(null);
+
+        AssertRefusedOnTheEarlyPerformanceRequest(await Validator().ValidateAsync(
+            CreateOrderTestData.ValidCommand(earlyPerformanceRequested: earlyPerformanceRequested)));
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData(false)]
+    public async Task A_Customer_Holding_Both_Legal_Consents_Is_Still_Refused_Without_The_Early_Performance_Request(bool? earlyPerformanceRequested)
+    {
+        SignedInAs(CustomerId);
+        OnRecord(Granted(ConsentType.TermsOfService), Granted(ConsentType.PrivacyPolicy));
+
+        AssertRefusedOnTheEarlyPerformanceRequest(await Validator().ValidateAsync(
+            CreateOrderTestData.ValidCommand(termsAccepted: null, earlyPerformanceRequested: earlyPerformanceRequested)));
+    }
+
+    [Fact]
+    public async Task A_Customer_Holding_Both_Legal_Consents_Books_With_The_Early_Performance_Request()
+    {
+        SignedInAs(CustomerId);
+        OnRecord(Granted(ConsentType.TermsOfService), Granted(ConsentType.PrivacyPolicy));
+
+        AssertNotRefusedOnTheTick(await Validator().ValidateAsync(
+            CreateOrderTestData.ValidCommand(termsAccepted: null, earlyPerformanceRequested: true)));
+    }
+
+    private static void AssertRefusedOnTheEarlyPerformanceRequest(FluentValidation.Results.ValidationResult result)
+    {
+        var error = Assert.Single(result.Errors);
+        Assert.Equal(BusinessErrorMessage.EarlyPerformanceNotRequested, error.ErrorMessage);
+        Assert.Equal(nameof(CreateOrder.Command.EarlyPerformanceRequested), error.ErrorCode);
+        Assert.Equal(nameof(CreateOrder.Command.EarlyPerformanceRequested), error.PropertyName);
     }
 
     [Fact]

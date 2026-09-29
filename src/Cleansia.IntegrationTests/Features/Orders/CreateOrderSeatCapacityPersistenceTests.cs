@@ -109,7 +109,8 @@ public class CreateOrderSeatCapacityPersistenceTests(PostgresContainerFixture fi
         CurrencyId: CurrencyId,
         TotalPrice: totalPrice,
         PromoCode: null,
-        TermsAccepted: true);
+        TermsAccepted: true,
+        EarlyPerformanceRequested: true);
 
     private static Task ConfigureCustomerSession(IServiceCollection services)
     {

@@ -170,7 +170,7 @@ public class RecurringPreferredCleanerCarryThroughTests
             .Callback((RecurringBookingTemplate t) => created = t);
 
         var result = await new CreateRecurringBooking.Handler(
-                templates.Object, savedAddresses.Object, memberships.Object, session.Object, OrderMarketDoubles.OperatedBy("cleansia-cz"), Mock.Of<ICountryConfigurationRepository>(), Mock.Of<Cleansia.Core.AppServices.Services.Interfaces.IConsentService>(), Cleansia.Tests.Features.Legal.CustomerConsentDoubles.Consented(), Mock.Of<Cleansia.Core.AppServices.Services.Interfaces.ILegalDocumentResolver>(), new AuditContext())
+                templates.Object, savedAddresses.Object, memberships.Object, session.Object, OrderMarketDoubles.OperatedBy("cleansia-cz"), Mock.Of<ICountryConfigurationRepository>(), Mock.Of<Cleansia.Core.AppServices.Services.Interfaces.IConsentService>(), Cleansia.Tests.Features.Legal.CustomerConsentDoubles.Consented(), Mock.Of<Cleansia.Core.AppServices.Services.Interfaces.ILegalDocumentResolver>(), new AuditContext(), new Cleansia.Core.AppServices.Authentication.HostAudienceProvider("cleansia.customer"), new Cleansia.TestUtilities.TestRequestMetadataProvider())
             .Handle(
                 new CreateRecurringBooking.Command(
                     Frequency: (int)RecurrenceFrequency.Weekly,

@@ -675,6 +675,11 @@ public static class BusinessErrorMessage
     /// sees no box and is not asked again; a guest always asserts it.
     /// </summary>
     public const string TermsNotAccepted = "consent.terms_not_accepted";
+    /// <summary>
+    /// A booking or a recurring schedule that does not assert the request to start within the 14-day
+    /// withdrawal period is refused (decision 61). Unlike the terms, it is asked on every booking.
+    /// </summary>
+    public const string EarlyPerformanceNotRequested = "consent.early_performance_not_requested";
 
     // Contract for work (ADR-0068)
     /// <summary>The client sent no text id with the take or the standalone accept: a broken or stale client, shown as an error.</summary>

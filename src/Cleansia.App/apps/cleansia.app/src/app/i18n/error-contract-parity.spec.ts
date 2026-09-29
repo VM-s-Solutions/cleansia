@@ -599,6 +599,9 @@ const CUSTOMER_SURFACE_ERROR_KEYS: readonly string[] = [
   // Consent — the terms gate on Register and CreateOrder: a registration, or a booking by a guest or
   // by a customer whose account does not already hold both legal consents, that asserts no tick.
   'consent.terms_not_accepted',
+  // The request to start within the 14-day withdrawal period, asked on every CreateOrder and
+  // CreateRecurringBooking, a consented customer's included.
+  'consent.early_performance_not_requested',
   // Promo — request a first-clean code, and CreateOrder refusing a promo the
   // server will not honour (one key per PromoCodeError reason, plus a code on
   // an anonymous booking, which the applier would otherwise drop silently)

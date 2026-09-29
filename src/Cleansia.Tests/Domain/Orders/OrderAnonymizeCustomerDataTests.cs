@@ -40,6 +40,23 @@ public sealed class OrderAnonymizeCustomerDataTests
     }
 
     [Fact]
+    public void The_Early_Performance_Request_Loses_Its_Request_Context_And_Keeps_The_Act()
+    {
+        var order = NewOrder();
+        var consentedOn = DateTimeOffset.UtcNow.AddDays(-2);
+        order.RecordEarlyPerformanceConsent(
+            Order.EarlyPerformanceConsentTextVersionInForce, consentedOn, "cleansia.customer", "203.0.113.9", "iPhone 15");
+
+        order.AnonymizeCustomerData();
+
+        Assert.Null(order.EarlyPerformanceConsentIpAddress);
+        Assert.Null(order.EarlyPerformanceConsentDeviceLabel);
+        Assert.Equal(Order.EarlyPerformanceConsentTextVersionInForce, order.EarlyPerformanceConsentTextVersion);
+        Assert.Equal(consentedOn, order.EarlyPerformanceConsentedOn);
+        Assert.Equal("cleansia.customer", order.EarlyPerformanceConsentClient);
+    }
+
+    [Fact]
     public void An_Admins_Free_Text_Reason_Is_Cleared()
     {
         var order = NewOrder();

@@ -215,7 +215,9 @@ public class RecurringTemplateDirtinessLevelTests
             Mock.Of<IConsentService>(),
             CustomerConsentDoubles.Consented(),
             Mock.Of<ILegalDocumentResolver>(),
-            new AuditContext());
+            new AuditContext(),
+            new Cleansia.Core.AppServices.Authentication.HostAudienceProvider("cleansia.customer"),
+            new Cleansia.TestUtilities.TestRequestMetadataProvider());
     }
 
     private static CreateRecurringBooking.Command CreateCommand() =>

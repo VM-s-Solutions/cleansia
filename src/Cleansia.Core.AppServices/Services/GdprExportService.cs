@@ -69,7 +69,9 @@ public class GdprExportService(
             .Select(o => new GdprExportOrderDto(
                 o.Id, o.DisplayOrderNumber, o.CustomerName, o.CustomerEmail,
                 o.CurrentStatus,
-                o.TotalPrice, o.CleaningDateTime, o.CreatedOn))
+                o.TotalPrice, o.CleaningDateTime, o.CreatedOn,
+                o.EarlyPerformanceConsentTextVersion, o.EarlyPerformanceConsentedOn, o.EarlyPerformanceConsentClient,
+                o.EarlyPerformanceConsentIpAddress, o.EarlyPerformanceConsentDeviceLabel))
             .ToListAsync(cancellationToken);
 
         // Filed on the account, or on one of the orders above: the second term keeps the section in step

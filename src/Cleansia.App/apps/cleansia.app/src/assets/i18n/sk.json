@@ -1948,7 +1948,8 @@
       "document_not_found": "Tento právny dokument zatiaľ nie je k dispozícii."
     },
     "consent": {
-      "terms_not_accepted": "Pre pokračovanie prosím prijmite obchodné podmienky a zásady ochrany súkromia."
+      "terms_not_accepted": "Pre pokračovanie prosím prijmite obchodné podmienky a zásady ochrany súkromia.",
+      "early_performance_not_requested": "Pre pokračovanie prosím potvrďte, že žiadate o začatie poskytovania služby v 14-dňovej lehote na odstúpenie od zmluvy."
     },
     "order": {
       "cleaning_date": {

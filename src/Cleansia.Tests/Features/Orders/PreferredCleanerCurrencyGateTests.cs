@@ -315,7 +315,8 @@ public class PreferredCleanerCurrencyGateTests
             PaymentType: (int)PaymentType.Card,
             StartsOn: DateTime.UtcNow.AddDays(3),
             EndsOn: null,
-            PreferredEmployeeId: preferredEmployeeId);
+            PreferredEmployeeId: preferredEmployeeId,
+            EarlyPerformanceRequested: true);
 
     private static UpdateRecurringBooking.Command UpdateRecurringCommand(string preferredEmployeeId) =>
         new(

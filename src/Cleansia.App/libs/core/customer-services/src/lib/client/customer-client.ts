@@ -9154,6 +9154,7 @@ export class CreateOrderCommand implements ICreateOrderCommand {
     accessMode!: string | undefined;
     termsAccepted!: boolean | undefined;
     dirtinessLevel!: DirtinessLevel;
+    earlyPerformanceRequested!: boolean | undefined;
 
     constructor(data?: ICreateOrderCommand) {
         if (data) {
@@ -9205,6 +9206,7 @@ export class CreateOrderCommand implements ICreateOrderCommand {
             this.accessMode = Data["accessMode"];
             this.termsAccepted = Data["termsAccepted"];
             this.dirtinessLevel = Data["dirtinessLevel"];
+            this.earlyPerformanceRequested = Data["earlyPerformanceRequested"];
         }
     }
 
@@ -9256,6 +9258,7 @@ export class CreateOrderCommand implements ICreateOrderCommand {
         data["accessMode"] = this.accessMode;
         data["termsAccepted"] = this.termsAccepted;
         data["dirtinessLevel"] = this.dirtinessLevel;
+        data["earlyPerformanceRequested"] = this.earlyPerformanceRequested;
         return data;
     }
 }
@@ -9286,6 +9289,7 @@ export interface ICreateOrderCommand {
     accessMode: string | undefined;
     termsAccepted: boolean | undefined;
     dirtinessLevel: DirtinessLevel;
+    earlyPerformanceRequested: boolean | undefined;
 }
 
 export class CreateOrderResponse implements ICreateOrderResponse {
@@ -9475,6 +9479,7 @@ export class CreateRecurringBookingCommand implements ICreateRecurringBookingCom
     preferredEmployeeId!: string | undefined;
     termsAccepted!: boolean | undefined;
     dirtinessLevel!: DirtinessLevel;
+    earlyPerformanceRequested!: boolean | undefined;
 
     constructor(data?: ICreateRecurringBookingCommand) {
         if (data) {
@@ -9509,6 +9514,7 @@ export class CreateRecurringBookingCommand implements ICreateRecurringBookingCom
             this.preferredEmployeeId = Data["preferredEmployeeId"];
             this.termsAccepted = Data["termsAccepted"];
             this.dirtinessLevel = Data["dirtinessLevel"];
+            this.earlyPerformanceRequested = Data["earlyPerformanceRequested"];
         }
     }
 
@@ -9543,6 +9549,7 @@ export class CreateRecurringBookingCommand implements ICreateRecurringBookingCom
         data["preferredEmployeeId"] = this.preferredEmployeeId;
         data["termsAccepted"] = this.termsAccepted;
         data["dirtinessLevel"] = this.dirtinessLevel;
+        data["earlyPerformanceRequested"] = this.earlyPerformanceRequested;
         return data;
     }
 }
@@ -9562,6 +9569,7 @@ export interface ICreateRecurringBookingCommand {
     preferredEmployeeId: string | undefined;
     termsAccepted: boolean | undefined;
     dirtinessLevel: DirtinessLevel;
+    earlyPerformanceRequested: boolean | undefined;
 }
 
 export class CreateSavedCardCheckoutSessionCommand implements ICreateSavedCardCheckoutSessionCommand {
@@ -11137,6 +11145,11 @@ export class GdprExportOrderDto implements IGdprExportOrderDto {
     totalPrice!: number;
     cleaningDateTime!: Date;
     createdOn!: Date;
+    earlyPerformanceConsentTextVersion!: string | undefined;
+    earlyPerformanceConsentedOn!: Date | undefined;
+    earlyPerformanceConsentClient!: string | undefined;
+    earlyPerformanceConsentIpAddress!: string | undefined;
+    earlyPerformanceConsentDeviceLabel!: string | undefined;
 
     constructor(data?: IGdprExportOrderDto) {
         if (data) {
@@ -11157,6 +11170,11 @@ export class GdprExportOrderDto implements IGdprExportOrderDto {
             this.totalPrice = Data["totalPrice"];
             this.cleaningDateTime = Data["cleaningDateTime"] ? new Date(Data["cleaningDateTime"].toString()) : undefined as any;
             this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
+            this.earlyPerformanceConsentTextVersion = Data["earlyPerformanceConsentTextVersion"];
+            this.earlyPerformanceConsentedOn = Data["earlyPerformanceConsentedOn"] ? new Date(Data["earlyPerformanceConsentedOn"].toString()) : undefined as any;
+            this.earlyPerformanceConsentClient = Data["earlyPerformanceConsentClient"];
+            this.earlyPerformanceConsentIpAddress = Data["earlyPerformanceConsentIpAddress"];
+            this.earlyPerformanceConsentDeviceLabel = Data["earlyPerformanceConsentDeviceLabel"];
         }
     }
 
@@ -11177,6 +11195,11 @@ export class GdprExportOrderDto implements IGdprExportOrderDto {
         data["totalPrice"] = this.totalPrice;
         data["cleaningDateTime"] = this.cleaningDateTime ? this.cleaningDateTime.toISOString() : undefined as any;
         data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
+        data["earlyPerformanceConsentTextVersion"] = this.earlyPerformanceConsentTextVersion;
+        data["earlyPerformanceConsentedOn"] = this.earlyPerformanceConsentedOn ? this.earlyPerformanceConsentedOn.toISOString() : undefined as any;
+        data["earlyPerformanceConsentClient"] = this.earlyPerformanceConsentClient;
+        data["earlyPerformanceConsentIpAddress"] = this.earlyPerformanceConsentIpAddress;
+        data["earlyPerformanceConsentDeviceLabel"] = this.earlyPerformanceConsentDeviceLabel;
         return data;
     }
 }
@@ -11190,6 +11213,11 @@ export interface IGdprExportOrderDto {
     totalPrice: number;
     cleaningDateTime: Date;
     createdOn: Date;
+    earlyPerformanceConsentTextVersion: string | undefined;
+    earlyPerformanceConsentedOn: Date | undefined;
+    earlyPerformanceConsentClient: string | undefined;
+    earlyPerformanceConsentIpAddress: string | undefined;
+    earlyPerformanceConsentDeviceLabel: string | undefined;
 }
 
 export class GdprExportPayoutDetailsDto implements IGdprExportPayoutDetailsDto {

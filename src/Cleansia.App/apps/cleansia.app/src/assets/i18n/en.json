@@ -1948,7 +1948,8 @@
       "document_not_found": "This legal text is not available yet."
     },
     "consent": {
-      "terms_not_accepted": "Please accept the Terms of Service and Privacy Policy to continue."
+      "terms_not_accepted": "Please accept the Terms of Service and Privacy Policy to continue.",
+      "early_performance_not_requested": "To continue, please confirm that you want the service to start within the 14-day withdrawal period."
     },
     "order": {
       "cleaning_date": {

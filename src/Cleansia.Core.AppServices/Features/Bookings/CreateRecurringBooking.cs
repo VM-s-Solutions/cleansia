@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Auditing;
+using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Bookings.DTOs;
 using Cleansia.Core.AppServices.Features.Legal;
@@ -8,6 +9,7 @@ using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.Domain.Bookings;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Validations;
@@ -34,7 +36,9 @@ public class CreateRecurringBooking
         // The same tick a one-off booking asks for, and on the same terms: required while either legal
         // consent is not an acceptance of the text in force for the saved address's market.
         bool? TermsAccepted = null,
-        DirtinessLevel DirtinessLevel = DirtinessLevel.Normal) : ICommand<RecurringBookingTemplateDto>;
+        DirtinessLevel DirtinessLevel = DirtinessLevel.Normal,
+        // One early-performance tick covers every occurrence the schedule creates.
+        bool? EarlyPerformanceRequested = null) : ICommand<RecurringBookingTemplateDto>;
 
     public class Validator : AbstractValidator<Command>
     {
@@ -80,6 +84,11 @@ public class CreateRecurringBooking
                     AssertedOrAlreadyConsentedAsync(command, termsAccepted, cancellationToken))
                 .WithMessage(BusinessErrorMessage.TermsNotAccepted)
                 .WithErrorCode(nameof(Command.TermsAccepted));
+
+            RuleFor(x => x.EarlyPerformanceRequested)
+                .Equal(true)
+                .WithMessage(BusinessErrorMessage.EarlyPerformanceNotRequested)
+                .WithErrorCode(nameof(Command.EarlyPerformanceRequested));
 
             RuleFor(x => x.Frequency)
                 .Must(f => Enum.IsDefined(typeof(RecurrenceFrequency), f))
@@ -307,7 +316,9 @@ public class CreateRecurringBooking
         IConsentService consentService,
         IUserConsentRepository userConsentRepository,
         ILegalDocumentResolver legalDocumentResolver,
-        IAuditContext auditContext) : ICommandHandler<Command, RecurringBookingTemplateDto>
+        IAuditContext auditContext,
+        IHostAudienceProvider hostAudienceProvider,
+        IRequestMetadataProvider requestMetadataProvider) : ICommandHandler<Command, RecurringBookingTemplateDto>
     {
         public async Task<BusinessResult<RecurringBookingTemplateDto>> Handle(Command command, CancellationToken cancellationToken)
         {
@@ -349,6 +360,12 @@ public class CreateRecurringBooking
                 endsOn: command.EndsOn,
                 preferredEmployeeId: command.PreferredEmployeeId,
                 dirtinessLevel: command.DirtinessLevel);
+            template.RecordEarlyPerformanceConsent(
+                Order.EarlyPerformanceConsentTextVersionInForce,
+                DateTimeOffset.UtcNow,
+                hostAudienceProvider.Audience,
+                requestMetadataProvider.IpAddress,
+                requestMetadataProvider.DeviceLabel);
 
             template.TenantId = (await operatorTenantResolver.ResolveAsync(address.Address.CountryId, cancellationToken)).OperatorTenantId;
             templateRepository.Add(template);

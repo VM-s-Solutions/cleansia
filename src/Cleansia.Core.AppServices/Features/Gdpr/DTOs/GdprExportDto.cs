@@ -82,6 +82,8 @@ public record GdprExportPayoutDetailsDto(
 /// anonymise is an order this lists (a guest booking still live is listed here and left for the sweep
 /// there); a guest booking under another address is never listed, whoever asks. The trail section is
 /// narrower: the account's own rows only, never the guest rows the erasure blanks on these orders.
+/// The early-performance members are the customer's request to start within the withdrawal period, as
+/// recorded on the order; after an erasure its IP address and device label read null.
 /// </summary>
 public record GdprExportOrderDto(
     string Id,
@@ -91,7 +93,12 @@ public record GdprExportOrderDto(
     OrderStatus Status,
     decimal TotalPrice,
     DateTime CleaningDateTime,
-    DateTimeOffset CreatedOn
+    DateTimeOffset CreatedOn,
+    string? EarlyPerformanceConsentTextVersion = null,
+    DateTimeOffset? EarlyPerformanceConsentedOn = null,
+    string? EarlyPerformanceConsentClient = null,
+    string? EarlyPerformanceConsentIpAddress = null,
+    string? EarlyPerformanceConsentDeviceLabel = null
 );
 
 /// <summary>

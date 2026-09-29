@@ -66,6 +66,7 @@ public class GuestOrderErasureTests(PostgresContainerFixture fixture) : BaseInte
     private const string LiveGuestDeviceId = "device-live-9";
     private const string Payload = "{\"isGuest\": true, \"totalPrice\": 1250}";
     private const string PhotoNotes = "Left the key with the neighbour at no. 14.";
+    private static readonly DateTimeOffset EarlyPerformanceConsentedOn = new(2026, 8, 30, 9, 15, 0, TimeSpan.Zero);
 
     private static Task AsTheSubject(IServiceCollection services)
     {
@@ -118,6 +119,9 @@ public class GuestOrderErasureTests(PostgresContainerFixture fixture) : BaseInte
                     Assert.Equal(AnonymizationMarker.Value, erased.CustomerAddress.City);
                     Assert.Equal(AnonymizationMarker.Value, photos[erasedId].OriginalFileName);
                     Assert.Null(photos[erasedId].Notes);
+                    Assert.Null(erased.EarlyPerformanceConsentIpAddress);
+                    Assert.Null(erased.EarlyPerformanceConsentDeviceLabel);
+                    Assert.Equal(EarlyPerformanceConsentedOn, erased.EarlyPerformanceConsentedOn);
                 }
 
                 Assert.Equal(TestTenants.Second, orders[GuestOrderId].TenantId);
@@ -139,6 +143,7 @@ public class GuestOrderErasureTests(PostgresContainerFixture fixture) : BaseInte
                 Assert.Equal("Svobodova 7", stranger.CustomerAddress.Street);
                 Assert.Equal("Tomas_Svoboda_hallway.jpg", photos[StrangerOrderId].OriginalFileName);
                 Assert.Equal(PhotoNotes, photos[StrangerOrderId].Notes);
+                Assert.Equal(GuestIp, stranger.EarlyPerformanceConsentIpAddress);
 
                 var strangersBooking = Assert.Single(guestRows, r => r.ResourceId == StrangerOrderId);
                 Assert.Equal(StrangerIp, strangersBooking.IpAddress);
@@ -215,6 +220,13 @@ public class GuestOrderErasureTests(PostgresContainerFixture fixture) : BaseInte
                 Assert.Equal(SubjectEmail.ToUpperInvariant(), guest.CustomerEmail);
                 Assert.Equal(OrderStatus.Confirmed, Assert.Single(result.Value.Orders, o => o.Id == LiveGuestOrderId).Status);
                 Assert.DoesNotContain(result.Value.Orders, o => o.Id == StrangerOrderId);
+
+                var own = Assert.Single(result.Value.Orders, o => o.Id == OwnOrderId);
+                Assert.Equal(Order.EarlyPerformanceConsentTextVersionInForce, own.EarlyPerformanceConsentTextVersion);
+                Assert.Equal(EarlyPerformanceConsentedOn, own.EarlyPerformanceConsentedOn);
+                Assert.Equal(JwtAudiences.Customer, own.EarlyPerformanceConsentClient);
+                Assert.Equal(GuestIp, own.EarlyPerformanceConsentIpAddress);
+                Assert.Equal(GuestDevice, own.EarlyPerformanceConsentDeviceLabel);
 
                 var audit = Assert.Single(await context.CustomerActionAudits.IgnoreQueryFilters().ToListAsync(), a => a.Action == "customer.gdpr.export");
                 Assert.Equal(3, JsonDocument.Parse(audit.PayloadJson!).RootElement.GetProperty("orderCount").GetInt32());
@@ -302,6 +314,8 @@ public class GuestOrderErasureTests(PostgresContainerFixture fixture) : BaseInte
             userId: userId);
         order.Id = id;
         order.AddOrderStatus(OrderStatusTrack.Create(status, order));
+        order.RecordEarlyPerformanceConsent(
+            Order.EarlyPerformanceConsentTextVersionInForce, EarlyPerformanceConsentedOn, JwtAudiences.Customer, GuestIp, GuestDevice);
         return order;
     }
 

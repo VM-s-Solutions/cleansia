@@ -92,7 +92,7 @@ public partial class CreateOrderCallerCurrencyTests
                 var starts = DateTime.UtcNow.AddDays(2).Date;
                 var recurring = await mediator.Send(new CreateRecurringBooking.Command((int)RecurrenceFrequency.Weekly,
                     (int)starts.DayOfWeek, "10:00", 2, 1, SavedSlovakAddressId, [ServiceId], [PackageId], (int)PaymentType.Cash, starts,
-                    PreferredEmployeeId: cleanerIds[0]));
+                    PreferredEmployeeId: cleanerIds[0], EarlyPerformanceRequested: true));
                 Assert.True(recurring.IsSuccess, recurring.Error?.Message);
                 var update = await mediator.Send(new UpdateRecurringBooking.Command(recurring.Value.Id, (int)RecurrenceFrequency.Weekly,
                     (int)starts.DayOfWeek, "10:00", 2, 1, SavedSlovakAddressId, [ServiceId], [PackageId], (int)PaymentType.Cash, starts,

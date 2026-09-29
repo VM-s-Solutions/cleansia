@@ -129,6 +129,8 @@ public class CreateOrderExpressWaiverConsentTests
             OrderMarketDoubles.OperatedBy("tenant-1"),
             Mock.Of<ITenantProvider>(),
             new AuditContext(),
+            new Cleansia.Core.AppServices.Authentication.HostAudienceProvider("cleansia.customer"),
+            new Cleansia.TestUtilities.TestRequestMetadataProvider(),
             NullLogger<CreateOrder.Handler>.Instance);
 
     /// <summary>

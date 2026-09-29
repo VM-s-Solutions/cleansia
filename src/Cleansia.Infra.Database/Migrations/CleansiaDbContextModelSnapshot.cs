@@ -290,6 +290,25 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("integer")
                         .HasDefaultValue(0);
 
+                    b.Property<string>("EarlyPerformanceConsentClient")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<string>("EarlyPerformanceConsentDeviceLabel")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<string>("EarlyPerformanceConsentIpAddress")
+                        .HasMaxLength(45)
+                        .HasColumnType("character varying(45)");
+
+                    b.Property<string>("EarlyPerformanceConsentTextVersion")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTimeOffset?>("EarlyPerformanceConsentedOn")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTime?>("EndsOn")
                         .HasColumnType("timestamp with time zone");
 
@@ -4192,6 +4211,25 @@ namespace Cleansia.Infra.Database.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
+
+                    b.Property<string>("EarlyPerformanceConsentClient")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<string>("EarlyPerformanceConsentDeviceLabel")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<string>("EarlyPerformanceConsentIpAddress")
+                        .HasMaxLength(45)
+                        .HasColumnType("character varying(45)");
+
+                    b.Property<string>("EarlyPerformanceConsentTextVersion")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTimeOffset?>("EarlyPerformanceConsentedOn")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<bool>("EmployeePayCalculated")
                         .HasColumnType("boolean");

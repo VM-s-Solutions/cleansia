@@ -351,7 +351,8 @@ public partial class CreateOrderCallerCurrencyTests(PostgresContainerFixture fix
         CurrencyId: currencyId,
         TotalPrice: totalPrice,
         PromoCode: null,
-        TermsAccepted: true);
+        TermsAccepted: true,
+        EarlyPerformanceRequested: true);
 
     private static Task ConfigureCustomerSession(IServiceCollection services)
     {

@@ -126,7 +126,8 @@ public class CreateOrderSpanCapTests(PostgresContainerFixture fixture)
         CurrencyId: CurrencyId,
         TotalPrice: totalPrice,
         PromoCode: null,
-        TermsAccepted: true);
+        TermsAccepted: true,
+        EarlyPerformanceRequested: true);
 
     private static Task ConfigureCustomerSession(IServiceCollection services)
     {

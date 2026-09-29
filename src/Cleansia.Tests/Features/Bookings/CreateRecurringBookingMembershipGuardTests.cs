@@ -49,7 +49,9 @@ public class CreateRecurringBookingMembershipGuardTests
             Mock.Of<Cleansia.Core.AppServices.Services.Interfaces.IConsentService>(),
             Cleansia.Tests.Features.Legal.CustomerConsentDoubles.Consented(),
             Mock.Of<Cleansia.Core.AppServices.Services.Interfaces.ILegalDocumentResolver>(),
-            new AuditContext());
+            new AuditContext(),
+            new Cleansia.Core.AppServices.Authentication.HostAudienceProvider("cleansia.customer"),
+            new Cleansia.TestUtilities.TestRequestMetadataProvider());
 
     private static SavedAddress ArrangeSavedAddress()
     {

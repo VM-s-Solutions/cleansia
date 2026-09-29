@@ -74,6 +74,7 @@ public sealed class RecurringBookingMembershipGateRouteTests(HostTestPostgresFix
         endsOn = (DateTime?)null,
         preferredEmployeeId = (string?)null,
         termsAccepted = true,
+        earlyPerformanceRequested = true,
     });
 
     private static readonly string UpdateBodyJson = ReAuthorBodyFor(TemplateId);

@@ -27245,6 +27245,11 @@ export class GdprExportOrderDto implements IGdprExportOrderDto {
     totalPrice!: number;
     cleaningDateTime!: Date;
     createdOn!: Date;
+    earlyPerformanceConsentTextVersion!: string | undefined;
+    earlyPerformanceConsentedOn!: Date | undefined;
+    earlyPerformanceConsentClient!: string | undefined;
+    earlyPerformanceConsentIpAddress!: string | undefined;
+    earlyPerformanceConsentDeviceLabel!: string | undefined;
 
     constructor(data?: IGdprExportOrderDto) {
         if (data) {
@@ -27265,6 +27270,11 @@ export class GdprExportOrderDto implements IGdprExportOrderDto {
             this.totalPrice = Data["totalPrice"];
             this.cleaningDateTime = Data["cleaningDateTime"] ? new Date(Data["cleaningDateTime"].toString()) : undefined as any;
             this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
+            this.earlyPerformanceConsentTextVersion = Data["earlyPerformanceConsentTextVersion"];
+            this.earlyPerformanceConsentedOn = Data["earlyPerformanceConsentedOn"] ? new Date(Data["earlyPerformanceConsentedOn"].toString()) : undefined as any;
+            this.earlyPerformanceConsentClient = Data["earlyPerformanceConsentClient"];
+            this.earlyPerformanceConsentIpAddress = Data["earlyPerformanceConsentIpAddress"];
+            this.earlyPerformanceConsentDeviceLabel = Data["earlyPerformanceConsentDeviceLabel"];
         }
     }
 
@@ -27285,6 +27295,11 @@ export class GdprExportOrderDto implements IGdprExportOrderDto {
         data["totalPrice"] = this.totalPrice;
         data["cleaningDateTime"] = this.cleaningDateTime ? this.cleaningDateTime.toISOString() : undefined as any;
         data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
+        data["earlyPerformanceConsentTextVersion"] = this.earlyPerformanceConsentTextVersion;
+        data["earlyPerformanceConsentedOn"] = this.earlyPerformanceConsentedOn ? this.earlyPerformanceConsentedOn.toISOString() : undefined as any;
+        data["earlyPerformanceConsentClient"] = this.earlyPerformanceConsentClient;
+        data["earlyPerformanceConsentIpAddress"] = this.earlyPerformanceConsentIpAddress;
+        data["earlyPerformanceConsentDeviceLabel"] = this.earlyPerformanceConsentDeviceLabel;
         return data;
     }
 }
@@ -27298,6 +27313,11 @@ export interface IGdprExportOrderDto {
     totalPrice: number;
     cleaningDateTime: Date;
     createdOn: Date;
+    earlyPerformanceConsentTextVersion: string | undefined;
+    earlyPerformanceConsentedOn: Date | undefined;
+    earlyPerformanceConsentClient: string | undefined;
+    earlyPerformanceConsentIpAddress: string | undefined;
+    earlyPerformanceConsentDeviceLabel: string | undefined;
 }
 
 export class GdprExportPayoutDetailsDto implements IGdprExportPayoutDetailsDto {

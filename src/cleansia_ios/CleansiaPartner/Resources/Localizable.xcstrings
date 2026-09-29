@@ -4572,7 +4572,7 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Stále máte nevyrovnanou mzdu. Až bude mzdové období vyplaceno, můžete o smazání požádat znovu."
+            "value": "Stále máte nevyplacenou odměnu. Až bude výplatní období vyplaceno, můžete o smazání požádat znovu."
           }
         },
         "en": {
@@ -4590,7 +4590,7 @@
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Stále máte nevyrovnanú mzdu. Keď bude mzdové obdobie vyplatené, môžete o zmazanie požiadať znova."
+            "value": "Stále máte nevyplatenú odmenu. Keď bude výplatné obdobie vyplatené, môžete o zmazanie požiadať znova."
           }
         },
         "uk": {
@@ -4712,7 +4712,7 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Mzdové záznamy za dokončené zakázky"
+            "value": "Záznamy o odměnách za dokončené zakázky"
           }
         },
         "en": {
@@ -4730,7 +4730,7 @@
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Mzdové záznamy za dokončené zákazky"
+            "value": "Záznamy o odmenách za dokončené zákazky"
           }
         },
         "uk": {

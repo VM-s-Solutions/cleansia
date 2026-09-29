@@ -1687,31 +1687,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tento zaměstnanec je již schválen."
+            "value": "Tento partner je již schválen."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This employee is already approved."
+            "value": "This partner is already approved."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Этот сотрудник уже одобрен."
+            "value": "Этот партнёр уже одобрен."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tento zamestnanec je už schválený."
+            "value": "Tento partner je už schválený."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Цього працівника вже схвалено."
+            "value": "Цього партнера вже схвалено."
           }
         }
       }
@@ -1722,31 +1722,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tento zaměstnanec je již zamítnut."
+            "value": "Tento partner je již zamítnut."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This employee is already rejected."
+            "value": "This partner is already rejected."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Этот сотрудник уже отклонён."
+            "value": "Этот партнёр уже отклонён."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tento zamestnanec je už zamietnutý."
+            "value": "Tento partner je už zamietnutý."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Цього працівника вже відхилено."
+            "value": "Цього партнера вже відхилено."
           }
         }
       }
@@ -1821,37 +1821,72 @@
         }
       }
     },
+    "error.employee.legal_documents_not_accepted": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Než začnete přijímat zakázky, přijměte aktuální verzi svých smluvních dokumentů."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accept the current version of your contract documents before taking jobs."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Прежде чем брать заказы, примите действующую версию своих договорных документов."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skôr než začnete prijímať zákazky, prijmite aktuálnu verziu svojich zmluvných dokumentov."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перш ніж брати замовлення, прийміть чинну версію своїх договірних документів."
+          }
+        }
+      }
+    },
     "error.employee.not_allowed_to_update": {
       "extractionState": "stale",
       "localizations": {
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tohoto zaměstnance nemůžete upravovat."
+            "value": "Tohoto partnera nemůžete upravovat."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "You can't edit this employee."
+            "value": "You can't edit this partner."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Вы не можете редактировать этого сотрудника."
+            "value": "Вы не можете редактировать этого партнёра."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tohto zamestnanca nemôžete upravovať."
+            "value": "Tohto partnera nemôžete upravovať."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ви не можете редагувати цього працівника."
+            "value": "Ви не можете редагувати цього партнера."
           }
         }
       }
@@ -1897,31 +1932,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zaměstnanec s tímto e-mailem nebyl nalezen."
+            "value": "Partner s tímto e-mailem nebyl nalezen."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "No employee found with this email."
+            "value": "No partner found with this email."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Сотрудник с этим е-мейлом не найден."
+            "value": "Партнёр с этим е-мейлом не найден."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zamestnanec s týmto e-mailom sa nenašiel."
+            "value": "Partner s týmto e-mailom sa nenašiel."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Працівника з цією е-поштою не знайдено."
+            "value": "Партнера з цією е-поштою не знайдено."
           }
         }
       }
@@ -1932,31 +1967,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zaměstnanec nenalezen."
+            "value": "Partner nenalezen."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Employee not found."
+            "value": "Partner not found."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Сотрудник не найден."
+            "value": "Партнёр не найден."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zamestnanec sa nenašiel."
+            "value": "Partner sa nenašiel."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Працівника не знайдено."
+            "value": "Партнера не знайдено."
           }
         }
       }
@@ -2866,6 +2901,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "Це замовлення зараз неможливо взяти."
+          }
+        }
+      }
+    },
+    "error.legal.document_not_in_force": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tento dokument už není platnou verzí. Načtěte jej znovu a přijměte aktuální verzi."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This document is no longer the version in force. Reload it and accept the current one."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Этот документ больше не является действующей версией. Загрузите его заново и примите действующую версию."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tento dokument už nie je platnou verziou. Načítajte ho znova a prijmite aktuálnu verziu."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Цей документ уже не є чинною версією. Завантажте його знову та прийміть чинну версію."
           }
         }
       }
@@ -4650,6 +4720,76 @@
           "stringUnit": {
             "state": "translated",
             "value": "Оплату за це замовлення ще не підтверджено."
+          }
+        }
+      }
+    },
+    "error.order.photo.locked": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Po dokončení nebo zrušení zakázky nelze fotografie smazat."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photos can't be deleted once the order is completed or cancelled."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "После завершения или отмены заказа фото удалить нельзя."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Po dokončení alebo zrušení zákazky nemožno fotografie vymazať."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Після завершення або скасування замовлення фото видалити не можна."
+          }
+        }
+      }
+    },
+    "error.order.photo.window_closed": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tuto fotografii teď nelze přidat: fotografie před úklidem od převzetí zakázky do jejího dokončení, fotografie po úklidu během práce."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This photo can't be added now: before photos from the moment you hold the job until it's finished, after photos while the work is in progress."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Это фото сейчас нельзя добавить: фото до уборки — с момента, когда вы взяли заказ, до его завершения, фото после — во время работы."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Túto fotografiu teraz nemožno pridať: fotografie pred upratovaním od prevzatia zákazky do jej dokončenia, fotografie po upratovaní počas práce."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Це фото зараз не можна додати: фото до прибирання — від моменту, коли ви взяли замовлення, до його завершення, фото після — під час роботи."
           }
         }
       }

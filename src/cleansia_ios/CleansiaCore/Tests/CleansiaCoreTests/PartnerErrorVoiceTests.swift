@@ -36,6 +36,13 @@ final class PartnerErrorVoiceTests: XCTestCase {
         PartnerOnlyKey("contract.not_accepted", emitters: "TakeOrder, AcceptWorkContract"),
         PartnerOnlyKey("contract.text_mismatch", emitters: "TakeOrder, AcceptWorkContract"),
         PartnerOnlyKey("contract.acceptance_required", emitters: "StartOrder, CompleteOrder"),
+        PartnerOnlyKey(
+            "employee.legal_documents_not_accepted",
+            emitters: "TakeOrder, ApproveEmployee, AdminReassignOrder"
+        ),
+        PartnerOnlyKey("legal.document_not_in_force", emitters: "AcceptLegalDocument"),
+        PartnerOnlyKey("order.photo.window_closed", emitters: "SaveOrderPhotos, UploadOrderPhoto"),
+        PartnerOnlyKey("order.photo.locked", emitters: "DeleteOrderPhoto"),
         PartnerOnlyKey("employee.profile_incomplete", emitters: "TakeOrder, CompleteOrder, ApproveEmployee"),
         PartnerOnlyKey("employee.not_approved", emitters: "TakeOrder, StartOrder, CompleteOrder, MarkCashCollected"),
         PartnerOnlyKey(
@@ -95,6 +102,7 @@ final class PartnerErrorVoiceTests: XCTestCase {
         "device.not_found": "RevokeDevice",
         "dispute.max_length_exceeded": "UpdateBankDetails, UpdateEmployee, UpdateIdentificationInfo",
         "email.invalid_format": "BaseAuthValidator, UserEmailValidator",
+        "employee.legal_documents_not_accepted": "TakeOrder",
         "employee.not_allowed_to_update": "UpdateAddressInfo, UpdateBankDetails, UpdateEmergencyContact +4 more",
         "employee.not_approved": "CompleteOrder, MarkCashCollected, StartOrder +1 more",
         "employee.not_found": "GetAvailableJobsPreview, GetDashboardStats, GetEarningsAnalytics +14 more",
@@ -110,6 +118,7 @@ final class PartnerErrorVoiceTests: XCTestCase {
         "file.size_exceeded": "DocumentFileValidator, ImageFileValidator, SaveOrderPhotos +1 more",
         "file.type_not_allowed": "DocumentFileValidator",
         "gdpr.consent_already_granted": "GrantConsent",
+        "gdpr.consent_not_editable": "GrantConsent, WithdrawConsent",
         "gdpr.consent_not_found": "WithdrawConsent",
         "gdpr.deletion_already_pending": "GdprDeletionService",
         "gdpr.deletion_blocked_by_invoice": "GdprDeletionService",
@@ -118,6 +127,7 @@ final class PartnerErrorVoiceTests: XCTestCase {
         "language.not_found": "ReceiptService",
         "language.not_supported": "LanguageValidator, UpdateCurrentUser",
         "legal.document_not_found": "GetWorkContractPreview",
+        "legal.document_not_in_force": "AcceptLegalDocument",
         "order.after_photos.required": "CompleteOrder",
         "order.card_payment_already_settled": "MarkCashCollected",
         "order.card_payment_in_progress": "MarkCashCollected",
@@ -139,6 +149,8 @@ final class PartnerErrorVoiceTests: XCTestCase {
         "order.not_takeable": "TakeOrder",
         "order.note.content_required": "UpdateOrderNote",
         "order.payment_not_confirmed": "CompleteOrder",
+        "order.photo.locked": "DeleteOrderPhoto",
+        "order.photo.window_closed": "SaveOrderPhotos, UploadOrderPhoto",
         "order.take.already_cancelled": "TakeOrder",
         "order.take.already_completed": "TakeOrder",
         "order.time_conflict": "TakeOrder",
@@ -198,6 +210,15 @@ final class PartnerErrorVoiceTests: XCTestCase {
         "sk": "prázdny",
         "uk": "порожнім",
         "ru": "пустым"
+    ]
+
+    /// A cleaner is a partner paid a reward, never an employee paid a wage.
+    private static let employmentVocabulary = [
+        "en": ["employee", "wage", "payroll"],
+        "cs": ["zaměstn", "mzd"],
+        "sk": ["zamestn", "mzd"],
+        "uk": ["працівник", "співробітник", "зарплат"],
+        "ru": ["сотрудник", "работник", "зарплат"]
     ]
 
     /// The take refusals a cleaner actually meets. Pinned because every client ships these sentences and a
@@ -260,6 +281,22 @@ final class PartnerErrorVoiceTests: XCTestCase {
             }
         }
         assertNoViolations(lifted, "partner-only error keys voiced for a customer")
+    }
+
+    func testPartnerReachableKeysCarryNoEmploymentVocabulary() {
+        let keys = Set(Self.partnerReachable.keys).union(Self.partnerOnly.map(\.key))
+        var employment: [String] = []
+        for locale in Self.locales {
+            let banned = Self.employmentVocabulary[locale] ?? []
+            for key in keys {
+                let resolved = resolve(key, locale: locale)
+                guard resolved != key else { continue }
+                for word in banned where resolved.lowercased().contains(word) {
+                    employment.append("\(key) · \(locale) · \"\(word)\"")
+                }
+            }
+        }
+        assertNoViolations(employment, "partner-reachable error keys voiced as employment")
     }
 
     func testTheTakeRefusalsKeepTheirBoundEnglishCopy() {

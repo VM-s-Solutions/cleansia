@@ -79,7 +79,9 @@ scheduled.
 
 The booked span is a caller-chosen window pointed at the preferred-cleaner availability answer. Left
 uncapped, that is a binary-search primitive over a cleaner's private schedule. It is also a crew cap:
-24 h implies at most 12 seats.
+24 h implies at most 12 seats. The span judged is the booked time as the order will store it — the
+level and the home's size included ([Crew size](#crew-size)) — on the quote, the Plus preview and the
+booking alike (`order.span_exceeds_maximum`).
 
 > `Order.MaxOrderSpanHours = 168` is a **different** number — the overlap-scan floor. `cap ≤ floor` is
 > the safety argument, and neither may move alone.
@@ -494,16 +496,135 @@ a 35-day interval and ten visits a year. Every cadence is counted from the start
 from the previous visit, so an edit — which clears the resume pointer — keeps a monthly schedule on
 its weekday and a fortnightly one on its own weeks. → [Recurring bookings](/flows/booking-and-pricing#recurring-bookings)
 
+## The dirtiness level {#dirtiness}
+
+**Owner rulings 2026-09-28** (decisions 28–40 of the meeting plan). The customer says how dirty the
+home is, and that one statement moves the price, the booked time and the cleaner pay by the same rate:
+
+| Level | On the wire | Price | Booked time | Cleaner pay |
+|---|---|---|---|---|
+| Normal | `0` | — | × 1 | × 1 |
+| Increased | `1` | **+30 %** | × 1.3 | × 1.3 |
+| Heavy | `2` | **+60 %** | × 1.6 | × 1.6 |
+
+`DirtinessLevel` is an integer enum, append-only on the wire, and **Normal is `0`**, so a request that
+carries no level books at Normal. That default is for old clients and API callers: every shipped
+booking flow — web, Android and iOS — asks as a required step of its own after the services, with the
+three descriptions and the hint to pick the higher level when unsure, and picks nothing for the
+customer. An unknown value is `common.invalid_enum_value` on the quote, the Plus preview, the booking,
+the serving-cleaners picker and both recurring commands. The order stores the level
+(`Order.DirtinessLevel`), and nothing changes it after booking.
+→ [ADR-0069](/decisions/adr-0069)
+
+### What the rate applies to {#dirtiness-price}
+
+**The whole basket — packages, services and extras — inside the raw subtotal** (decision 28):
+
+```
+lines     = Σ packages + Σ services (base + per-room × (rooms + bathrooms)) + Σ extras
+dirtiness = round(lines × rate(level), 2)     # BookingPolicy.DirtinessSurchargeFor, half away from zero
+raw       = lines + dirtiness                 # the base the discounts come off and the 12 % cap judges
+express   = raw × 0.20 on an express slot     # compounds on top: Heavy + express = × 1.92
+```
+
+The discounts come off a price that already carries the surcharge, and the tier floor and the 12 %
+cap are judged on it; express is measured on top. It is the base express already used, so refunds
+needed no change. The quote and the Plus preview price at the level they are asked about, and the
+quote echoes it with the surcharge (`dirtinessLevel`, `dirtinessSurchargeAmount`); the booking re-prices
+at the level it carries, so the quote is the charge. `OrderFactory` stores the surcharge in cents as `Order.DirtinessSurchargeAmount`,
+computed from the lines it stores, so the order's terms add up
+([the identity](#discount-express-correction)).
+
+**The rates are constants** (decision 29) — `BookingPolicy.IncreasedDirtinessSurchargeRate = 0.30` and
+`HeavyDirtinessSurchargeRate = 0.60` — the same in every market, like express, until a market needs
+others. `check-booking-policy-parity.mjs` reads both and pins every copy that states them: the web mirror
+constants in `booking-window.models.ts`, the web chip that renders `{{rate}}` and bakes no percentage in,
+and the Android and iOS level chips and surcharge lines, each of which must state its own level's rate
+and no other.
+
+**The descriptions are client strings in five locales** (decision 30). The order stores the level, not
+the words the customer read; if the on-site top-up comes to depend on that exact wording, the text moves
+to a catalogue the server serves and snapshots on the order.
+
+### Where the surcharge is shown
+
+It is **a line of its own** wherever a price is itemised. The receipt prints *Increased* or *Heavy
+dirtiness surcharge* in the receipt's language, and the fiscal request carries a *Dirtiness surcharge*
+line, so the declared lines still sum to the total. The customer web, Android and iOS summaries and
+order details name the level and itemise its surcharge; the admin order detail shows both; the partner
+board flags an *Increased* or *Heavy* home and the job detail names the level. The booking and
+recurring-confirmation audit rows and the company-archive order row carry the level.
+→ [What the receipt says](/flows/payment-and-fiscal#what-the-receipt-says)
+
+### A schedule carries its level {#dirtiness-recurring}
+
+A recurring schedule has a level of its own (decision 34) — by the descriptions the customer reads, a
+home cleaned once a month (last cleaned 3–6 weeks ago) is *Increased*.
+`RecurringBookingTemplate.DirtinessLevel` is Normal when a client sends none, editable on update and
+refused as an unknown value, and **every occurrence is priced, timed, crewed and paid at it**: the
+materialiser hands it to `OrderFactory`, which stores it on the occurrence. The cash check on create and
+update, the list's `requiresPaymentMethodChange` flag and the schedule's audit facts read it too, so
+raising a cash schedule's level can make it a two-cleaner job the [cash rule](#cash) no longer admits.
+The web, Android and iOS schedule forms ask for the level on a new schedule — the web starts with none
+chosen and names it as missing on save — and keep the stored one on an edit; the web form's quote prices
+at the chosen level (Normal until one is picked), and its schedule cards are quoted at their own. →
+[Recurring bookings](/flows/booking-and-pricing#recurring-bookings)
+
+### The catalogue does not charge twice
+
+**The pet-hair extra is retired** (decision 35) — seeded inactive — because *Increased* covers a home
+with pets and a pet owner would otherwise pay twice for the same effort. The deep-cleaning services stay:
+they are scope, and the level applies on top of them.
+
+### Fixed at booking {#dirtiness-fixed}
+
+The **on-site top-up** — the cleaner finds a dirtier home than booked, and the customer, present,
+approves and pays the difference — is approved in principle (decision 36) and **not built**: it waits for
+the lawyer's answer to PR-10 and ships after launch. When it does it raises pay by the same rule and never
+re-crews the order, so a one-cleaner cash job stays one cleaner. **Extra work on site is not offered**
+(decision 37): the cleaner does the booked scope, and anything else is a new order. The cleaner brings the
+supplies, included in the price (decision 38).
+
 ## Crew size
 
 ```
+EstimatedTime     = ceil( Σ (service.EstimatedTime + service.MinutesPerRoom × (rooms + bathrooms))
+                          × (1 + rate(level)) )       # a packaged service is counted the same way
 RequiredEmployees = ceil(EstimatedTime / 120 minutes)
 MaxEmployees      = RequiredEmployees + SpareSeatsPerOrder
 ```
 
-**`SpareSeatsPerOrder` is `0`.** There is no spare seat, by owner ruling, and the reasoning is pay:
-a cleaner is paid one row per assignment with **no crew-size term**, so a filled spare seat is a second
-full wage against an unchanged customer price.
+**The booked time follows the home** (owner rulings 2026-09-28, decisions 32 and 39). A dirtier home is
+given longer — the minutes × (1 + the level's rate), up to the next whole minute, so it is never booked
+shorter than the work — and so is a bigger one: each service has **minutes per room**
+(`Service.MinutesPerRoom`, edited on the admin catalogue's service form) added for every room and
+bathroom, the same count its per-room price multiplies. `OrderDuration.EstimateMinutes` is the one
+definition; its SQL twins sum the catalogue in the database and scale through the same
+`OrderDuration.ScaleForDirtiness`.
+
+> **Per-room minutes are 0 until the real durations are supplied.** The column is seeded 0 on every
+> service and only the admin form writes it, so today an 8-room flat and a 1-room flat with the same
+> services still get the same time and the same crew; only the level lengthens a job. Size scaling
+> starts when the real service durations — a launch value the owner supplies (decision 77) — are typed
+> into the catalogue. An order stores its `EstimatedTime` and `RequiredEmployees` at booking, so a
+> catalogue edit changes the next booking and never one already made.
+
+**The level can add a cleaner, and with it take cash away.** A 120-minute job is one cleaner; the same
+job is 156 minutes at *Increased* and 192 at *Heavy*, so it needs two, and a two-cleaner job pays by card
+([Paying in cash](#cash)). With the seeded catalogue a lone *General Cleaning* (120 min) is exactly that
+case. The quote answers `estimatedDurationMinutes` and `requiredEmployees` at the level it priced, so
+every client knows before the customer submits.
+
+Every reader of "how long is this job" asks the same estimate: the order, the quote, the Plus preview,
+the [24 h span cap](#maximum-booked-duration-24-h-and-it-is-not-about-calendars) on all three, the
+preferred-cleaner picker's availability window (`GetMyServingCleaners` takes rooms, bathrooms and the
+level with the slot), recurring cash eligibility, and everything that later reads the order's stored
+`EstimatedTime`. A booking with a negative room or bathroom count is refused
+(`validation.must_be_positive`): a negative count would shorten the job and shrink the crew.
+
+**`SpareSeatsPerOrder` is `0`.** There is no spare seat, by owner ruling, and the reasoning is pay: a
+job's pay is split across its `RequiredEmployees` seats ([Cleaner pay](#cleaner-pay)), so a filled spare
+seat would be paid a seat's share on top of the whole job's pay, against an unchanged customer price.
 
 That single fact is also why the seat is arbitrated by a unique database index rather than by an
 in-memory check — see [Offerability](/domain/offerability#seat-allocation).
@@ -522,10 +643,11 @@ AllowsCash = signedIn && RequiredEmployees == 1        # BookingPolicy.AllowsCas
 ```
 
 - **The crew is the server's, from the duration.** `RequiredEmployees` is computed from the selected
-  services and packages exactly as the order will be staffed ([Crew size](#crew-size)) — never a count a
-  client sends, never the assigned crew, and never spare seats: capacity is not a second cleaner the
-  work needs. The command carries no duration, so nothing a client says can make a two-cleaner job
-  cash-eligible.
+  services and packages, the home's size and the [dirtiness level](#dirtiness) exactly as the order will
+  be staffed ([Crew size](#crew-size)) — never a count a client sends, never the assigned crew, and never
+  spare seats: capacity is not a second cleaner the work needs. The command carries no duration, so
+  nothing a client says can make a two-cleaner job cash-eligible — but the level it carries can make a
+  one-cleaner selection a two-cleaner job, and so take cash away.
 - **A refusal is `order.cash_not_available`**, on the `paymentType` field, and it comes before anything
   moves: on `CreateOrder` it is a rule in the validator's price chain, after the price match and before
   the promo rules, so a refused booking has reserved no express waiver, debited no credit, accepted no
@@ -828,46 +950,68 @@ which is why *both* was the right ruling and not a redundancy. → [Admin notifi
 
 ## Cleaner pay
 
-One `EmployeePayConfig` is selected per selected service **and** per selected package, then summed —
-for **each** assigned cleaner, at that cleaner's rates:
+**A rate describes the job, and each seat earns an equal share of it** (owner rulings 2026-09-28,
+decisions 33 and 40). One `EmployeePayConfig` is selected per selected service **and** per selected
+package, at the paid cleaner's rates, and summed into the job's figures; one seat of the job's
+`RequiredEmployees` is paid an equal share of each, and the [dirtiness level](#dirtiness) raises it by
+the level's rate after the clamp:
 
 ```
-basePay     = Σ config.BasePay                                  # one config per service / package
-extrasPay   = Σ (config.ExtraPerRoom × max(0, rooms - 1))       # the FIRST room is inside BasePay
+# the job
+jobBase     = Σ config.BasePay                                  # one config per service / package
+jobExtras   = Σ (config.ExtraPerRoom × max(0, rooms - 1))       # the FIRST room is inside BasePay
             + Σ (config.ExtraPerBathroom × bathrooms)
-expensesPay = 0                                                 # no distance component
+jobMin      = max(config.MinimumPay > 0)     # the strongest guarantee wins; 0 = no bound
+jobMax      = min(config.MaximumPay > 0)     # the tightest cap wins;        0 = no bound
+jobDirt     = round(clamp(jobBase + jobExtras, jobMin, jobMax) × rate(level), 2)
 
-minPay      = max(config.MinimumPay > 0)     # the strongest guarantee wins; 0 = no bound
-maxPay      = min(config.MaximumPay > 0)     # the tightest cap wins;        0 = no bound
+# one seat, n = RequiredEmployees
+share(x)    = floor(x × 100 / n) / 100       # the first seat takes x − share(x) × (n − 1)
+basePay     = share(jobBase)       extrasPay    = share(jobExtras)
+minPay      = share(jobMin)        maxPay       = share(jobMax)
+dirtinessPay = share(jobDirt)      expensesPay  = 0          # no distance component
 
-TotalPay    = max(0, clamp(base + extras, minPay, maxPay) + bonus - deduction)
+TotalPay    = max(0, clamp(basePay + extrasPay, minPay, maxPay) + dirtinessPay + bonus - deduction)
 ```
 
-`CalculateOrderPay` writes the pay row, and it reads the order's packages beside its services — so a
-package-only order is paid like any other, and one with no rate for any of its lines in its currency
-is refused (`payroll.no_pay_configuration`). There is one formula, in `PayCalculatorExtensions`, and
-the first room is inside `BasePay` everywhere it is applied.
+`CalculateOrderPay` writes one assigned cleaner's pay row, and it reads the order's packages beside its
+services — so a package-only order is paid like any other, and one with no rate for any of its lines in
+its currency is refused (`payroll.no_pay_configuration`). There is one formula,
+`PayCalculatorExtensions.CalculateSeatPay`, and the first room is inside `BasePay` everywhere it is
+applied. For a one-cleaner job at *Normal* it is exactly the old figure.
 
-Four things that surprise people:
+Six things that surprise people:
 
 - **`extrasPay` is rooms and bathrooms, not the extras the customer bought.** The order's extra lines
   (`OrderExtra`) are read by nothing on this path; they earn the cleaner no pay.
 - **A cleaner is not paid for distance** (owner ruling 2026-09-24). Neither calculator path in
   `PayCalculatorExtensions`, nor any pay estimate or preview, reads a kilometre rate or a travel
-  distance: every new pay row carries `ExpensesPay = 0` and a breakdown with no distance term (`Base` and
-  `Extras` only), whatever an old configuration or order still stores. The two legacy columns
-  (`EmployeePayConfig.DistanceRatePerKm`, `Order.TravelDistance`) stay in the schema, unread — nothing
-  writes a travel distance, and no admin command, form or DTO carries a kilometre rate any more, so a
-  rate stored before the ruling is neither shown nor applied. Pay rows, invoices and manual adjustments
-  written before it are not recalculated; a pay view that still draws an *Expenses* line shows 0 on
-  every new row. Neither partner app's address screen (Android `AddressSectionScreen`, iOS
+  distance: every new pay row carries `ExpensesPay = 0` and a breakdown with no distance term (`Base`,
+  `Extras` and `Dirtiness` only), whatever an old configuration or order still stores. The two legacy
+  columns (`EmployeePayConfig.DistanceRatePerKm`, `Order.TravelDistance`) stay in the schema, unread —
+  nothing writes a travel distance, and no admin command, form or DTO carries a kilometre rate any more,
+  so a rate stored before the ruling is neither shown nor applied. Pay rows, invoices and manual
+  adjustments written before it are not recalculated; a pay view that still draws an *Expenses* line
+  shows 0 on every new row. Neither partner app's address screen (Android `AddressSectionScreen`, iOS
   `AddressSectionView`) gives travel pay as a reason for asking for the address.
-- **The clamp bounds are persisted on the pay row.** A later bonus or deduction re-clamps the same
-  core identically, instead of silently dropping the clamp.
-- **Every assigned cleaner is paid the whole figure.** Pay is one row per assigned cleaner with no
-  crew-size term, so a job with a crew of three pays its rates three times against one customer price.
-  Whether a rate describes the job or one cleaner is an open owner question; until it is answered,
-  this is the rule. → [Pay and payouts](/flows/pay-and-payouts)
+- **The clamp bounds are persisted on the pay row** — the seat's share of them. A later bonus or
+  deduction re-clamps the same core identically, instead of silently dropping the clamp.
+- **The dirtiness term sits outside the clamp.** It is the job's clamped pay × the level's rate, split
+  like the rest and added after the seat's clamp, so a maximum cannot swallow it; a later bonus or
+  deduction re-clamps base + extras (and any legacy expenses) and adds it back outside the clamp. It
+  is stored as `OrderEmployeePays.DirtinessPay` and named in the breakdown
+  (`Base: …, Extras: …, Dirtiness: …`).
+- **A full crew adds up to the job, and an empty seat's share is nobody's.** The divisor is
+  `RequiredEmployees`, not the number of cleaners who turned up. Every term's cent residue goes to the
+  first seat — the crew member with the lowest `SeatOrdinal` when the pay is calculated — so a full
+  crew's rows sum to the job's figures exactly; a cleaner who works a two-seat job alone is paid one
+  seat. Until 2026-09-28 every assigned cleaner was paid the whole figure, so a crew of three paid its
+  rates three times against one customer price.
+- **What a cleaner is shown is the seat's share.** The board, the job detail, the dashboard estimate and
+  the available-jobs preview quote `OrderPayEstimator`'s figure — one seat, raised by the level, without
+  the first seat's residue cents — and the partner web labels it *per spot*. My Pay carries the term as
+  `dirtinessPay` on each row and `totalDirtinessPay` on the period summary, and the partner web, Android
+  and iOS show it in the pay breakdown. → [Pay and payouts](/flows/pay-and-payouts)
 
 ### Per-employee rates
 
@@ -880,7 +1024,8 @@ otherwise the global one.
 chosen currency (`BulkCreateEmployeePayConfigs`, field `grade`). Every template leaves the company a
 margin. Until then the tool offered ranks — junior 0.5, medior 0.75 and senior 1.0, the last paying the
 cleaner the whole customer price; the rank names are now refused (`common.invalid_enum_value`). The
-seed's platform-wide default is the standard template's 0.5.
+seed's platform-wide default is the standard template's 0.5. A template's rate describes the job like
+any other rate, so on a two-cleaner job each seat earns half of it.
 
 **A deduction linked to a complaint carries its reason.** An administrator's finding that the cleaner
 was at fault in a dispute is recorded on the pay row with the dispute and a reason the cleaner sees;
@@ -1055,9 +1200,11 @@ When a promo wins, it fully replaces the combined figure and both go to zero.
 
 ### The express-surcharge correction {#discount-express-correction}
 
-Discount resolution happens on the **raw, pre-surcharge** subtotal and stays there: the tier floor and
+Discount resolution happens on the **raw, pre-express** subtotal and stays there: the tier floor and
 the 12 % cap must be judged on the same base the quote judged them on, or a booking straddling the
-floor qualifies in the wizard and loses the discount at submit.
+floor qualifies in the wizard and loses the discount at submit. The dirtiness surcharge is **inside**
+that raw subtotal — lines + dirtiness — so the discounts come off it
+([What the rate applies to](#dirtiness-price)).
 
 But the price the discount comes off **carries the surcharge**. On an express order the raw figure
 under-states the saving: the customer would have paid `raw × 1.2` and pays `(raw − d) × 1.2`, so they
@@ -1068,12 +1215,14 @@ the lifetime-savings sum, every client's `totalPrice − discount` — and reads
 saving. So the correction is made once, before the amount is persisted, and no consumer re-applies it.
 
 **The order stores every term of its price in cents, and the terms add up.** `OrderFactory` stores
-the surcharge it charged as an amount — `Order.ExpressSurchargeAmount` = `raw × 1.2 − raw` rounded to
-the cent, zero when none applied — and each discount rounded to the cent on its own, with whatever cent
-the three roundings leave over added to the largest source. The result holds exactly:
+both surcharges it charged as amounts — `Order.DirtinessSurchargeAmount`, the level's rate on the stored
+lines rounded to the cent, and `Order.ExpressSurchargeAmount` = `raw × 1.2 − raw` on the raw subtotal
+(lines + dirtiness) rounded to the cent, each zero when none applied — and each discount rounded to the
+cent on its own, with whatever cent the three roundings leave over added to the largest source. The
+result holds exactly:
 
 ```
-Σ lines + ExpressSurchargeAmount
+Σ lines + DirtinessSurchargeAmount + ExpressSurchargeAmount
         − (TierDiscountAmount + MembershipDiscountAmount + PromoDiscountAmount) = TotalPrice
 ```
 

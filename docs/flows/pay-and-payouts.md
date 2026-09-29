@@ -22,15 +22,20 @@ a bank by hand, and `MarkInvoicePaid` records that it happened, with a transfer 
 to a bank, a PSP payout account or a SEPA file — which is why approval, not payment, is where the
 platform does its last checking (below).
 
-**One pay row per assigned employee**, with no crew-size term. That single fact is why there is no
-spare seat and why the order seat needs a database-level arbiter — a second cleaner on a one-seat job
-is a second full wage against an unchanged customer price.
+**One pay row per assigned employee, and each is one seat's share of the job** (owner rulings
+2026-09-28). A rate describes the job, so `CalculateOrderPay` divides the job's base, extras and clamp
+bounds by its `RequiredEmployees`, clamps the seat, and adds the dirtiness term — the job's clamped pay ×
+the level's rate, split the same way — after the clamp. Every term's cent residue goes to the first seat,
+so a full crew's rows add up to the job; the divisor is the seats the job needs, not the cleaners who
+came, so a cleaner who works a two-seat job alone is paid one seat. That is also why there is still no
+spare seat and why the order seat needs a database-level arbiter — a cleaner on a seat the job does not
+need would be paid a share on top of the whole job's pay, against an unchanged customer price.
 
-The formula, why `extrasPay` is not what it sounds like, and why nothing is paid for distance
-(`ExpensesPay` is 0 on every new row; older rows keep what they were calculated with) are in
-[Business rules](/product/business-rules#cleaner-pay). A rate is an amount in a currency, and the pay
-writer reads only rates in the order's currency — so every pay row is in the currency of the order that
-earned it.
+The formula, why `extrasPay` is not what it sounds like, why the dirtiness term sits outside the clamp,
+and why nothing is paid for distance (`ExpensesPay` is 0 on every new row; older rows keep what they were
+calculated with) are in [Business rules](/product/business-rules#cleaner-pay). A rate is an amount in a
+currency, and the pay writer reads only rates in the order's currency — so every pay row is in the
+currency of the order that earned it.
 
 **And the order is in the cleaner's currency, because the board is.** A cleaner is paid in the currency
 of the country they work in (owner ruling 2026-09-12), and `OrderVisibility.PayableTo` keeps every
@@ -157,6 +162,18 @@ against CZK-only rows) answers `[EUR, CZK]` with an empty row list rather than a
 selected option. The member is additive and nullable; the mobile apps ignore it until a mobile ticket
 reads it.
 
+**The dirtiness term is its own figure.** Each pay row carries `dirtinessPay` beside `basePay` and
+`extrasPay`, and the period summary totals it as `totalDirtinessPay`, in the view's currency like every
+other total. The partner web's period view and its invoice lines, and My Pay on Android and iOS, show it
+in the pay breakdown — the partner web only when it is not zero. The company archive's pay row keeps it
+beside the other terms, so an archived row on an *Increased* or *Heavy* job reproduces its `TotalPay`
+from its own columns.
+
+**What the board promised is one seat.** The pay a cleaner sees before taking a job — the board card,
+the job detail, the dashboard estimate and the available-jobs preview — is `OrderPayEstimator`'s
+per-seat figure, raised by the level, the same share `CalculateOrderPay` writes for every seat but the
+first (which also takes the residue cents). The partner web labels it *per spot*.
+
 ## Numbering is allocated, never derived
 
 Both the invoice number and the payout variable symbol come from an atomic `ON CONFLICT` counter, and
@@ -204,6 +221,9 @@ already does.
 | My Pay opened from a EUR invoice | A client that passes the invoice's `currencyId` gets the EUR view exactly, whatever the cleaner's resolved currency; one that passes nothing gets the fallback rule above. |
 | An open period with CZK and EUR pay rows | The summary lists both; the partner web shows the switch before any invoice exists. |
 | A period whose only second currency is a cancelled invoice's | Not offered — the switch follows pay rows, and a cancelled invoice has no live row in that currency. |
-| Bonus or deduction applied later | Re-clamps the same core identically, because the clamp bounds are persisted on the row. |
+| Bonus or deduction applied later | Re-clamps the same core identically, because the clamp bounds are persisted on the row, and adds the dirtiness term back outside the clamp. |
+| A two-seat job | Each cleaner's row is half the job's base, extras and bounds, clamped, plus half the job's dirtiness term; the first seat also takes the residue cents, so the two rows add up to the job. |
+| A two-seat job worked by one cleaner | That cleaner is paid one seat — the divisor is the seats the job needs — plus the residue, since they hold the lowest seat on the crew. |
+| A *Heavy* job whose rates hit their maximum | The seat is capped, then the dirtiness term (60 % of the job's capped pay, split per seat) is added on top; the cap never swallows it. |
 | A dispute finds the cleaner at fault | The administrator's resolution may charge that cleaner's pay row on the order (`chargeToCleaner`): the deduction is linked to the dispute (`DeductionDisputeId`) and carries a reason (`DeductionReason`) that My Pay on the partner web, Android and iOS shows beside the deduction. Refused when the row is missing, already invoiced, already charged or smaller than the charge. A refund alone never touches pay. → [Business rules](/product/business-rules#dispute-cleaner-charge) |
-| An administrator writes a cleaner's rates from a template | Standard 0.5, experienced 0.6 or expert 0.7 of each list price — every template leaves a margin; the old junior/medior/senior ranks are refused. → [Business rules — per-employee rates](/product/business-rules#per-employee-rates) |
+| An administrator writes a cleaner's rates from a template | Standard 0.5, experienced 0.6 or expert 0.7 of each list price — every template leaves a margin, and like every rate it describes the job, so each seat of a two-seat job earns half; the old junior/medior/senior ranks are refused. → [Business rules — per-employee rates](/product/business-rules#per-employee-rates) |

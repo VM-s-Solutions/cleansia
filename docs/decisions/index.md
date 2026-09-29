@@ -72,8 +72,11 @@ because the acceptance gesture has to sit under the text it accepts; D9's other 
 ADR-0063 carries the dated pointer in place. It builds on ADR-0041 D2/D3 (the accepted, never-built
 shape of "echo the exact text row served") and ADR-0062 D1/D4/D5, so there is no arrow. It was
 **amended in place on 2026-09-27** by the owner's own-name-sale ruling, which reverses its basis (the
-lawyer's intermediary model); the contract's parties change when the lawyer confirms, and until then
-the record describes what runs. **[ADR-0069](./adr-0069)** (the dirtiness level; `accepted` 2026-09-28
+lawyer's intermediary model), and **on 2026-09-29**, when the change shipped under our own draft
+texts: the parties are the operating company and the cleaner, the text is an employee-audience
+document, the price is the seat's reward and the customer reads no contract for work. ADR-0063 D9's
+*"no employee-audience document"* no longer holds, and ADR-0063 carries that pointer in place too.
+**[ADR-0069](./adr-0069)** (the dirtiness level; `accepted` 2026-09-28
 by owner ruling, shipped as phase 2 of the 2026-09-27 meeting plan) supersedes nothing: it removes a
 premise of ADR-0037 D9 — pay had no crew-size term, and now a job's pay is split across its seats —
 while the no-spare-seat ruling D9 argued for stands, so there is no arrow.
@@ -154,7 +157,7 @@ is no arrow.
 | **[ADR-0065](./adr-0065)** | Administrators are told: an in-app feed and an e-mail per event (owner ruling D5, 2026-09-19; shipped as T-0768 / T-0769 / T-0774 / T-0775) | `accepted` |
 | **[ADR-0066](./adr-0066)** | Four administrator roles: Administrator, Manager, Support, Accountant (owner ruling D8, 2026-09-19; supersedes ADR-0001 D2's admin rows; T-0748 / T-0773) | `accepted` |
 | **[ADR-0067](./adr-0067)** | Confirmed → New when the last cleaner leaves; the administrators are told (owner ruling D2, 2026-09-19; supersedes ADR-0057's open consequence; shipped as T-0770) | `accepted` |
-| **[ADR-0068](./adr-0068)** | A contract for work per job: the text the order is booked under, the cleaner's acceptance of it, what both parties can see (owner ruling 2026-09-20; amends ADR-0063 D9 by one sentence; shipped as T-0777–T-0784; amended 2026-09-27: the company sells in its own name, and the parties change when the lawyer confirms) | `accepted` |
+| **[ADR-0068](./adr-0068)** | A contract for work per job: the text the order is booked under, the cleaner's acceptance of it, what both parties can see (owner ruling 2026-09-20; amends ADR-0063 D9 by one sentence; shipped as T-0777–T-0784; amended 2026-09-27: the company sells in its own name; amended 2026-09-29: the operating company and the cleaner are the parties, under our draft texts) | `accepted` |
 | **[ADR-0069](./adr-0069)** | The dirtiness level prices, times, crews and pays the job, and a job's pay is split across its seats (owner rulings 2026-09-28, meeting-plan decisions 28–40; changes a premise of ADR-0037 D9, whose no-spare-seat ruling stands) | `accepted` |
 | **[ADR-0070](./adr-0070)** | A saved card guarantees cash, and what a customer owes is a receivable — paid through a pay link, charged to the card only once the terms allow it; a lockout is the customer's cancellation at the whole price; the crew shares a fee once it is collected (owner rulings 2026-09-28, meeting-plan decisions 11–13, 16–18 and 24) | `accepted` |
 

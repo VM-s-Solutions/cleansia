@@ -115,9 +115,12 @@ export class DashboardFacade extends UnsubscribeControlDirective {
       customerName: order.customerName ?? '',
       cleaningDate: formatDate(order.cleaningDateTime, lang, 'dateTime'),
       customerAddress: order.customerAddress ?? '',
-      totalPrice: formatMoney(order.totalPrice, order.currency?.code, localeFor(lang), {
-        fractionDigits: 2,
-      }),
+      yourPay:
+        typeof order.estimatedCleanerPay === 'number'
+          ? formatMoney(order.estimatedCleanerPay, order.currency?.code, localeFor(lang), {
+              fractionDigits: 2,
+            })
+          : '',
     }));
   });
 

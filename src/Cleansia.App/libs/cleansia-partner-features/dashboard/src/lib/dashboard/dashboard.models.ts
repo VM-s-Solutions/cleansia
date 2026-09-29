@@ -19,5 +19,5 @@ export interface UpcomingOrderCard {
   customerName: string;
   cleaningDate: string;
   customerAddress: string;
-  totalPrice: string;
+  yourPay: string;
 }

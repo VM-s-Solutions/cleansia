@@ -153,7 +153,9 @@
             </div>
           </div>
           <div class="order-card__footer">
-            <div class="order-card__price">{{ order.totalPrice }}</div>
+            @if (order.yourPay) {
+            <div class="order-card__price">{{ 'pages.orders.your_pay' | translate }}: {{ order.yourPay }}</div>
+            }
             <i class="pi pi-chevron-right"></i>
           </div>
         </div>

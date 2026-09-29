@@ -92,7 +92,9 @@ private struct PeriodPayErrorView: View {
                         id: "line-\(index)",
                         orderNumber: "ORD-100\(index)",
                         totalPay: 1400,
-                        createdOn: Date()
+                        createdOn: Date(),
+                        deductionPay: index == 1 ? 50 : 0,
+                        deductionReason: index == 1 ? "Windows left streaked in two rooms" : nil
                     )
                 }
             )

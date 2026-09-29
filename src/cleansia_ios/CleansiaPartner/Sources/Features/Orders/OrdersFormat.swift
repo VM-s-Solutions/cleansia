@@ -95,7 +95,7 @@ enum OrdersFormat {
     }
 
     static func compactSubtitle(_ order: OrderListItem) -> String {
-        nonBlank(order.customerAddress) ?? nonBlank(order.customerName) ?? L10n.Orders.guest
+        nonBlank(order.customerAddress) ?? nonBlank(order.customerName) ?? "#\(order.displayOrderNumber ?? "")"
     }
 
     static func bannerTitle(_ order: OrderListItem) -> String {

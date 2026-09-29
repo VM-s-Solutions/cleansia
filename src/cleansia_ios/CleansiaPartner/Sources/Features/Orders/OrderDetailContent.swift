@@ -31,16 +31,6 @@ struct OrderDetailContent: View {
         order.status == ._5 || order.status == ._6
     }
 
-    /// Before photos upload once OnTheWay/InProgress; after photos only once
-    /// InProgress (OrderDetailScreen.kt:530-532 parity).
-    private var canUploadBefore: Bool {
-        order.status == ._3 || order.status == ._4
-    }
-
-    private var canUploadAfter: Bool {
-        order.status == ._4
-    }
-
     @State private var confirmingCash = false
     @State private var decliningOffer = false
 
@@ -129,8 +119,8 @@ struct OrderDetailContent: View {
                     if order.showsWorkSections {
                         PhotosSection(
                             vm: photosVM,
-                            canUploadBefore: canUploadBefore,
-                            canUploadAfter: canUploadAfter
+                            canUploadBefore: order.photoWindowOpen(for: ._1),
+                            canUploadAfter: order.photoWindowOpen(for: ._2)
                         )
                     }
                     PaymentCard(order: order)

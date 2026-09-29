@@ -8171,41 +8171,6 @@
         }
       }
     },
-    "guest": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Host"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Guest"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Гость"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hosť"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Гість"
-          }
-        }
-      }
-    },
     "history": {
       "extractionState": "stale",
       "localizations": {
@@ -10831,6 +10796,76 @@
         }
       }
     },
+    "order_customer_details_closed_completed": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jméno, adresa a telefon zákazníka byly odstraněny 24 hodin po dokončení zakázky."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The customer's name, address and phone number were removed 24 hours after the job was completed."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Имя, адрес и номер телефона клиента удалены через 24 часа после завершения заказа."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meno, adresa a telefón zákazníka boli odstránené 24 hodín po dokončení zákazky."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ім'я, адресу й номер телефону клієнта видалено через 24 години після завершення замовлення."
+          }
+        }
+      }
+    },
+    "order_customer_details_closed_cancelled": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jméno, adresa a telefon zákazníka byly odstraněny při zrušení objednávky."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The customer's name, address and phone number were removed when the order was cancelled."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Имя, адрес и номер телефона клиента удалены при отмене заказа."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meno, adresa a telefón zákazníka boli odstránené pri zrušení objednávky."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ім'я, адресу й номер телефону клієнта видалено під час скасування замовлення."
+          }
+        }
+      }
+    },
     "my_documents": {
       "extractionState": "stale",
       "localizations": {
@@ -12966,6 +13001,76 @@
         }
       }
     },
+    "camera_unavailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toto zařízení nemá fotoaparát."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This device has no camera."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "На этом устройстве нет камеры."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toto zariadenie nemá fotoaparát."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "На цьому пристрої немає камери."
+          }
+        }
+      }
+    },
+    "job_photos_camera_only": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotografie k zakázce lze pořídit jen fotoaparátem, nelze je vybrat z galerie. K jejich přidání použijte telefon s fotoaparátem."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Job photos can only be taken with the camera, not chosen from the gallery. Use a phone with a camera to add them."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Фото к заказу можно сделать только камерой, выбрать их из галереи нельзя. Чтобы добавить их, воспользуйтесь телефоном с камерой."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotografie k zákazke sa dajú urobiť len fotoaparátom, nedajú sa vybrať z galérie. Na ich pridanie použite telefón s fotoaparátom."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Фото до замовлення можна зробити лише камерою, вибрати їх із галереї не можна. Щоб додати їх, скористайтеся телефоном із камерою."
+          }
+        }
+      }
+    },
     "order_completed_toast": {
       "extractionState": "stale",
       "localizations": {
@@ -14362,6 +14467,76 @@
           "stringUnit": {
             "state": "translated",
             "value": "Замовлення за цей період"
+          }
+        }
+      }
+    },
+    "period_pay_line_deduction": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Srážka %1$@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deduction %1$@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Удержание %1$@"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zrážka %1$@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Утримання %1$@"
+          }
+        }
+      }
+    },
+    "period_pay_line_deduction_reason": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Srážka %1$@: %2$@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deduction %1$@: %2$@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Удержание %1$@: %2$@"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zrážka %1$@: %2$@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Утримання %1$@: %2$@"
           }
         }
       }

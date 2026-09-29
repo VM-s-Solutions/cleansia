@@ -96,6 +96,11 @@ struct CustomerCard: View {
                         .font(CleansiaTypography.bodyMedium)
                         .foregroundColor(CleansiaColors.onSurfaceVariant)
                 }
+                if let closedNote = order.customerDetailsClosedNote {
+                    Text(closedNote)
+                        .font(CleansiaTypography.bodyMedium)
+                        .foregroundColor(CleansiaColors.onSurfaceVariant)
+                }
                 contactActions
             }
         }

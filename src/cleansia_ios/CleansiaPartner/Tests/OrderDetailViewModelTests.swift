@@ -150,6 +150,20 @@ final class OrderDetailViewModelTests: XCTestCase {
         XCTAssertEqual(vm.primaryAction, .collectCash)
     }
 
+    /// The customer's confirm of a recurring cash occurrence no longer marks it Paid, so it reaches the
+    /// door owing cash like a one-off booking and the partner records it the same way.
+    func testAConfirmedRecurringCashOccurrenceAsksForTheCash() async {
+        var occurrence = loadedItem(
+            status: 4, isMine: true, hasAfterPhotos: true, paymentType: 1, paymentStatus: 1
+        )
+        occurrence.recurringTemplateId = "tpl-1"
+        occurrence.needsConfirmation = false
+        client.byIdResult = .success(occurrence)
+        let vm = makeVM()
+        await vm.load()
+        XCTAssertEqual(vm.primaryAction, .collectCash)
+    }
+
     func testPrimaryActionCompleteOnceCashCollected() async {
         client.byIdResult = .success(loadedItem(
             status: 4, isMine: true, hasAfterPhotos: true, paymentType: 1, paymentStatus: 2

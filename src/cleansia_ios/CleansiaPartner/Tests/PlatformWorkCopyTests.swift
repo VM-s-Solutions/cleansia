@@ -2,7 +2,8 @@ import Foundation
 import XCTest
 
 /// What a cleaner is told about the controls over their work: why they were taken off a job, why their
-/// week is capped, where the rules of the board are written down, and the contract documents they accept.
+/// week is capped, what was deducted from their pay and why, where the rules of the board are written
+/// down, and the contract documents they accept.
 final class PlatformWorkCopyTests: XCTestCase {
     private static let locales = ["en", "cs", "sk", "uk", "ru"]
 
@@ -12,6 +13,8 @@ final class PlatformWorkCopyTests: XCTestCase {
         "order_removal_message": ["%1$@"],
         "profile_weekly_limit": ["%1$d"],
         "profile_weekly_limit_reason": ["%1$@"],
+        "period_pay_line_deduction": ["%1$@"],
+        "period_pay_line_deduction_reason": ["%1$@", "%2$@"],
         "profile_how_jobs_are_offered": [],
         "profile_how_jobs_are_offered_summary": [],
         "profile_legal_documents_summary": [],

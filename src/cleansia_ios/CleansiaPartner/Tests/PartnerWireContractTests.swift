@@ -196,8 +196,21 @@ final class PartnerWireContractTests: XCTestCase {
             grandTotal: 4200,
             hasInvoice: false,
             orderPays: [
-                OrderEmployeePayDto(id: "line-1", orderNumber: "ORD-1", totalPay: 2100, createdOn: Date()),
-                OrderEmployeePayDto(id: "line-2", orderNumber: "ORD-2", totalPay: 2100, createdOn: Date())
+                OrderEmployeePayDto(
+                    id: "line-1",
+                    orderNumber: "ORD-1",
+                    deductionPay: 50,
+                    totalPay: 2100,
+                    createdOn: Date(),
+                    deductionReason: "Windows left streaked in two rooms"
+                ),
+                OrderEmployeePayDto(
+                    id: "line-2",
+                    orderNumber: "ORD-2",
+                    deductionPay: 0,
+                    totalPay: 2100,
+                    createdOn: Date()
+                )
             ],
             currencyCode: "EUR"
         )
@@ -270,6 +283,19 @@ final class PartnerWireContractTests: XCTestCase {
         var payload = summaryPayload()
         payload.orderPays?[1].totalPay = nil
         assertRefused("totalPay") { try PeriodPaySummary(payload) }
+
+        var noDeduction = summaryPayload()
+        noDeduction.orderPays?[1].deductionPay = nil
+        assertRefused("deductionPay") { try PeriodPaySummary(noDeduction) }
+    }
+
+    func testADisputeChargeReachesTheLineWithTheReasonThePartnerIsShown() throws {
+        let lines = try PeriodPaySummary(summaryPayload()).orderPays
+
+        XCTAssertEqual(lines.first?.deductionPay, 50)
+        XCTAssertEqual(lines.first?.deductionReason, "Windows left streaked in two rooms")
+        XCTAssertEqual(lines.last?.deductionPay, 0)
+        XCTAssertNil(lines.last?.deductionReason)
     }
 
     // MARK: OrderItem — the detail

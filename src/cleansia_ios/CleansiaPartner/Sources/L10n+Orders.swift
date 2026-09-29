@@ -159,10 +159,6 @@ extension L10n {
             localized("jobs")
         }
 
-        static var guest: String {
-            localized("guest")
-        }
-
         static var unscheduled: String {
             localized("unscheduled")
         }
@@ -187,6 +183,14 @@ extension L10n {
 
         static var mapApproximateArea: String {
             localized("map_approximate_area")
+        }
+
+        static var customerDetailsClosedCompleted: String {
+            localized("order_customer_details_closed_completed")
+        }
+
+        static var customerDetailsClosedCancelled: String {
+            localized("order_customer_details_closed_cancelled")
         }
 
         static var scopeSectionTitle: String {
@@ -311,12 +315,12 @@ extension L10n {
             localized("delete_photo")
         }
 
-        static var takePhoto: String {
-            localized("take_photo")
+        static var cameraUnavailable: String {
+            localized("camera_unavailable")
         }
 
-        static var chooseFromLibrary: String {
-            localized("choose_from_library")
+        static var jobPhotosCameraOnly: String {
+            localized("job_photos_camera_only")
         }
 
         static var photoEncodeFailed: String {

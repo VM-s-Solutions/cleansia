@@ -142,6 +142,8 @@ struct OrderPayLine: Equatable, Identifiable {
     let orderNumber: String?
     let totalPay: Double
     let createdOn: Date?
+    let deductionPay: Double
+    let deductionReason: String?
 }
 
 extension OrderPayLine {
@@ -151,5 +153,7 @@ extension OrderPayLine {
         orderNumber = dto.orderNumber
         totalPay = try dto.totalPay.require("totalPay")
         createdOn = dto.createdOn
+        deductionPay = try dto.deductionPay.require("deductionPay")
+        deductionReason = dto.deductionReason
     }
 }

@@ -96,6 +96,14 @@ extension L10n {
             localized("period_pay_jobs_section")
         }
 
+        static func lineDeduction(_ amount: String) -> String {
+            format("period_pay_line_deduction", amount)
+        }
+
+        static func lineDeductionReason(_ amount: String, _ reason: String) -> String {
+            format("period_pay_line_deduction_reason", amount, reason)
+        }
+
         static var empty: String {
             localized("period_pay_empty")
         }

@@ -133,7 +133,10 @@ struct OrderDetailView: View {
         if let coordinate = order.mapCoordinate {
             mapProvider.fullBleedMap(coordinate: coordinate)
         } else {
-            ApproximateAreaBackdrop(zone: order.location.line)
+            ApproximateAreaBackdrop(
+                zone: order.location.line,
+                customerDetailsClosed: order.customerDetailsClosedNote != nil
+            )
         }
     }
 }
@@ -147,6 +150,7 @@ private struct ApproximateAreaBackdrop: View {
     @Environment(\.snapSheetTop) private var sheetTop
     @Environment(\.snapSheetSafeTop) private var safeTop
     let zone: String?
+    let customerDetailsClosed: Bool
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -174,10 +178,12 @@ private struct ApproximateAreaBackdrop: View {
                     .font(CleansiaTypography.titleMedium)
                     .foregroundColor(CleansiaColors.onPrimaryContainer)
             }
-            Text(L10n.Orders.mapApproximateArea)
-                .font(CleansiaTypography.bodyMedium)
-                .foregroundColor(CleansiaColors.onPrimaryContainer.opacity(0.8))
-                .multilineTextAlignment(.center)
+            if !customerDetailsClosed {
+                Text(L10n.Orders.mapApproximateArea)
+                    .font(CleansiaTypography.bodyMedium)
+                    .foregroundColor(CleansiaColors.onPrimaryContainer.opacity(0.8))
+                    .multilineTextAlignment(.center)
+            }
         }
     }
 }

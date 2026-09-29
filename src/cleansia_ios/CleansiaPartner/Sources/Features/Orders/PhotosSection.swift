@@ -7,6 +7,7 @@ struct PhotosSection: View {
     @ObservedObject var vm: OrderPhotosViewModel
     let canUploadBefore: Bool
     let canUploadAfter: Bool
+    @StateObject private var imageCache = RemoteImageCache()
 
     var body: some View {
         OrderSectionCard(title: L10n.Orders.photosSectionTitle, systemImage: "camera") {
@@ -20,7 +21,8 @@ struct PhotosSection: View {
                     photos: [],
                     mutation: vm.mutation,
                     canUploadBefore: false,
-                    canUploadAfter: false
+                    canUploadAfter: false,
+                    imageCache: imageCache
                 ) { _, _ in } onDelete: { _ in }
             case let .loaded(photos):
                 PhotoRailsContent(
@@ -28,6 +30,7 @@ struct PhotosSection: View {
                     mutation: vm.mutation,
                     canUploadBefore: canUploadBefore,
                     canUploadAfter: canUploadAfter,
+                    imageCache: imageCache,
                     onPick: { type, image in Task { await vm.upload(type: type, image: image) } },
                     onDelete: { id in Task { await vm.delete(photoId: id) } }
                 )
@@ -41,6 +44,7 @@ private struct PhotoRailsContent: View {
     let mutation: PhotoMutationState
     let canUploadBefore: Bool
     let canUploadAfter: Bool
+    let imageCache: RemoteImageCache
     var onPick: (PhotoType, UIImage) -> Void
     var onDelete: (String) -> Void
 
@@ -52,6 +56,7 @@ private struct PhotoRailsContent: View {
                 photos: photos.filter { $0.photoType == ._1 },
                 isReadOnly: !canUploadBefore,
                 mutation: mutation,
+                imageCache: imageCache,
                 onPick: onPick,
                 onDelete: onDelete
             )
@@ -61,6 +66,7 @@ private struct PhotoRailsContent: View {
                 photos: photos.filter { $0.photoType == ._2 },
                 isReadOnly: !canUploadAfter,
                 mutation: mutation,
+                imageCache: imageCache,
                 onPick: onPick,
                 onDelete: onDelete
             )
@@ -74,12 +80,13 @@ private struct PhotoRail: View {
     let photos: [OrderPhoto]
     let isReadOnly: Bool
     let mutation: PhotoMutationState
+    let imageCache: RemoteImageCache
     var onPick: (PhotoType, UIImage) -> Void
     var onDelete: (String) -> Void
 
-    @State private var showSourceDialog = false
-    @State private var pickerSource: UIImagePickerController.SourceType?
+    @State private var showCamera = false
     @State private var showPermissionAlert = false
+    @State private var showNoCameraAlert = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xs) {
@@ -95,19 +102,14 @@ private struct PhotoRail: View {
                 rail
             }
         }
-        .confirmationDialog(L10n.Orders.addPhoto, isPresented: $showSourceDialog, titleVisibility: .visible) {
-            Button(L10n.Orders.takePhoto) { requestCamera() }
-            Button(L10n.Orders.chooseFromLibrary) { pickerSource = .photoLibrary }
-            Button(L10n.cancel, role: .cancel) {}
-        }
-        .sheet(item: $pickerSource) { source in
+        .sheet(isPresented: $showCamera) {
             CameraOrLibraryPicker(
-                sourceType: source,
+                sourceType: .camera,
                 onImagePicked: { image in
-                    pickerSource = nil
+                    showCamera = false
                     onPick(type, image)
                 },
-                onCancel: { pickerSource = nil }
+                onCancel: { showCamera = false }
             )
             .ignoresSafeArea()
         }
@@ -117,17 +119,23 @@ private struct PhotoRail: View {
         } message: {
             Text(L10n.Orders.cameraPermissionMessage)
         }
+        .alert(L10n.Orders.cameraUnavailable, isPresented: $showNoCameraAlert) {
+            Button(L10n.close, role: .cancel) {}
+        } message: {
+            Text(L10n.Orders.jobPhotosCameraOnly)
+        }
     }
 
     private var rail: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: Spacing.s) {
                 if !isReadOnly {
-                    AddPhotoTile(isUploading: mutation.isUploading) { showSourceDialog = true }
+                    AddPhotoTile(isUploading: mutation.isUploading) { openCamera() }
                 }
                 ForEach(photos) { photo in
                     PhotoTile(
                         photo: photo,
+                        imageCache: imageCache,
                         isDeleting: mutation.deletingId == photo.id,
                         isReadOnly: isReadOnly,
                         onDelete: { onDelete(photo.id) }
@@ -137,14 +145,18 @@ private struct PhotoRail: View {
         }
     }
 
-    private func requestCamera() {
+    private func openCamera() {
+        guard UIImagePickerController.isSourceTypeAvailable(.camera) else {
+            showNoCameraAlert = true
+            return
+        }
         switch AVCaptureDevice.authorizationStatus(for: .video) {
         case .authorized:
-            pickerSource = .camera
+            showCamera = true
         case .notDetermined:
             AVCaptureDevice.requestAccess(for: .video) { granted in
                 Task { @MainActor in
-                    if granted { pickerSource = .camera } else { showPermissionAlert = true }
+                    if granted { showCamera = true } else { showPermissionAlert = true }
                 }
             }
         default:
@@ -197,9 +209,12 @@ private struct AddPhotoTile: View {
 
 private struct PhotoTile: View {
     let photo: OrderPhoto
+    let imageCache: RemoteImageCache
     let isDeleting: Bool
     let isReadOnly: Bool
     let onDelete: () -> Void
+
+    @State private var loadFailed = false
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
@@ -211,27 +226,42 @@ private struct PhotoTile: View {
     }
 
     private var thumbnail: some View {
-        AsyncImage(url: photo.blobUrl.flatMap(URL.init(string:))) { phase in
-            switch phase {
-            case .empty:
-                ZStack {
-                    CleansiaColors.surfaceVariant
-                    ProgressView()
-                }
-            case let .success(image):
-                image.resizable().scaledToFill()
-            case .failure:
-                ZStack {
-                    CleansiaColors.surfaceVariant
-                    Image(systemName: "photo")
-                        .foregroundColor(CleansiaColors.onSurfaceVariant)
-                }
-            @unknown default:
-                CleansiaColors.surfaceVariant
+        Group {
+            if let url = photo.blobUrl.flatMap(URL.init(string:)) {
+                CachedRemoteImage(
+                    cacheKey: photo.id,
+                    url: url,
+                    cache: imageCache,
+                    onLoadFailure: { loadFailed = true },
+                    onLoadSuccess: { loadFailed = false },
+                    placeholder: { placeholder }
+                )
+            } else {
+                unavailable
             }
         }
         .frame(width: 80, height: 80)
         .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium))
+    }
+
+    @ViewBuilder
+    private var placeholder: some View {
+        if loadFailed {
+            unavailable
+        } else {
+            ZStack {
+                CleansiaColors.surfaceVariant
+                ProgressView()
+            }
+        }
+    }
+
+    private var unavailable: some View {
+        ZStack {
+            CleansiaColors.surfaceVariant
+            Image(systemName: "photo")
+                .foregroundColor(CleansiaColors.onSurfaceVariant)
+        }
     }
 
     private var deleteButton: some View {
@@ -267,6 +297,7 @@ private struct PhotoTile: View {
                     mutation: PhotoMutationState(),
                     canUploadBefore: true,
                     canUploadAfter: true,
+                    imageCache: RemoteImageCache(),
                     onPick: { _, _ in },
                     onDelete: { _ in }
                 )
@@ -278,6 +309,7 @@ private struct PhotoTile: View {
                     mutation: PhotoMutationState(),
                     canUploadBefore: false,
                     canUploadAfter: false,
+                    imageCache: RemoteImageCache(),
                     onPick: { _, _ in },
                     onDelete: { _ in }
                 )

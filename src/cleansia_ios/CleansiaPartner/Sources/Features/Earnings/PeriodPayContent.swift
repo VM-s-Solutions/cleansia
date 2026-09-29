@@ -137,6 +137,11 @@ private struct JobRow: View {
                         .font(CleansiaTypography.labelSmall)
                         .foregroundColor(CleansiaColors.onSurfaceVariant)
                 }
+                if let deduction {
+                    Text(deduction)
+                        .font(CleansiaTypography.labelSmall)
+                        .foregroundColor(CleansiaColors.error)
+                }
             }
             Spacer()
             Text(EarningsFormat.decimalMoney(line.totalPay, currencyCode: currencyCode))
@@ -148,6 +153,13 @@ private struct JobRow: View {
     private var orderNumber: String {
         if let number = line.orderNumber, !number.isEmpty { return number }
         return "—"
+    }
+
+    private var deduction: String? {
+        guard line.deductionPay != 0 else { return nil }
+        let amount = EarningsFormat.decimalMoney(-line.deductionPay, currencyCode: currencyCode)
+        guard let reason = line.deductionReason, !reason.isBlank else { return L10n.PeriodPay.lineDeduction(amount) }
+        return L10n.PeriodPay.lineDeductionReason(amount, reason)
     }
 }
 

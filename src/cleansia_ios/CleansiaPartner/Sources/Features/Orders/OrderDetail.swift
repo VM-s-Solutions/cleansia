@@ -183,6 +183,27 @@ extension OrderDetail {
         isAssignedToCurrentUser && (status == ._2 || status == ._3 || status == ._4)
     }
 
+    /// The server's photo windows (`OrderPhoto.MayBeAddedAt`): before photos from Confirmed through
+    /// InProgress, after photos only while InProgress. Outside its window a rail is read-only.
+    func photoWindowOpen(for type: PhotoType) -> Bool {
+        switch type {
+        case ._1: status == ._2 || status == ._3 || status == ._4
+        case ._2: status == ._4
+        }
+    }
+
+    /// What stands where the customer was on a job the caller worked, once the server has closed it to
+    /// the crew (24 hours after completion, at once on cancellation). Nil while it is open, and for a
+    /// caller who never had the details.
+    var customerDetailsClosedNote: String? {
+        guard isAssignedToCurrentUser, location.navigationTarget == nil else { return nil }
+        switch status {
+        case ._5: return L10n.Orders.customerDetailsClosedCompleted
+        case ._6: return L10n.Orders.customerDetailsClosedCancelled
+        case ._0, ._1, ._2, ._3, ._4, .none: return nil
+        }
+    }
+
     /// The fields `OrderPiiRedaction` blanks by caller class are rendered off their **own arrival**.
     /// The server decides disclosure on `CanAccessOrderAsync`; `isAssignedToCurrentUser` counts the
     /// assignment list. They disagree for the employee who booked this cleaning for their own home,

@@ -29,6 +29,7 @@ public class ReceivableRepository(CleansiaDbContext context)
     {
         return GetQueryableIgnoringTenant()
             .Include(r => r.Order)
+                .ThenInclude(o => o!.AssignedEmployees)
             .Include(r => r.Currency)
             .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
     }

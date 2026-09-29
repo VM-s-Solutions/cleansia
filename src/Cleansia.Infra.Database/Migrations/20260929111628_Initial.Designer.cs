@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cleansia.Infra.Database.Migrations
 {
     [DbContext(typeof(CleansiaDbContext))]
-    [Migration("20260929105442_Initial")]
+    [Migration("20260929111628_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -2084,6 +2084,11 @@ namespace Cleansia.Infra.Database.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
+
+                    b.Property<int>("LineType")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
 
                     b.Property<decimal>("MaxPay")
                         .ValueGeneratedOnAdd()

@@ -63,7 +63,8 @@ public static class FileExtensions
                 PerformedOn = op.Order?.CleaningDateTime ?? DateTime.UtcNow,
                 Quantity = 1,
                 UnitPrice = LineAmount(op),
-                LineTotal = LineAmount(op)
+                LineTotal = LineAmount(op),
+                LineType = op.LineType
             }).ToList(),
             LegalDisclaimer = countryContext?.ReviewedLegalNotice,
             Company = new CompanyInfoData

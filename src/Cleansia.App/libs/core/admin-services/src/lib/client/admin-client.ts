@@ -29804,6 +29804,7 @@ export class OrderEmployeePayDto implements IOrderEmployeePayDto {
     currencyCode!: string | undefined;
     deductionReason!: string | undefined;
     dirtinessPay!: number;
+    lineType!: PayLineType;
 
     constructor(data?: IOrderEmployeePayDto) {
         if (data) {
@@ -29835,6 +29836,7 @@ export class OrderEmployeePayDto implements IOrderEmployeePayDto {
             this.currencyCode = Data["currencyCode"];
             this.deductionReason = Data["deductionReason"];
             this.dirtinessPay = Data["dirtinessPay"];
+            this.lineType = Data["lineType"];
         }
     }
 
@@ -29866,6 +29868,7 @@ export class OrderEmployeePayDto implements IOrderEmployeePayDto {
         data["currencyCode"] = this.currencyCode;
         data["deductionReason"] = this.deductionReason;
         data["dirtinessPay"] = this.dirtinessPay;
+        data["lineType"] = this.lineType;
         return data;
     }
 }
@@ -29890,6 +29893,7 @@ export interface IOrderEmployeePayDto {
     currencyCode: string | undefined;
     deductionReason: string | undefined;
     dirtinessPay: number;
+    lineType: PayLineType;
 }
 
 export class OrderIssueDto implements IOrderIssueDto {
@@ -32440,6 +32444,12 @@ export interface IPagedDataOfUserNotificationDto {
     pageSize: number;
     total: number;
     data: UserNotificationDto[] | undefined;
+}
+
+export enum PayLineType {
+    Job = 0,
+    CancellationFeeShare = 1,
+    LockoutFeeShare = 2,
 }
 
 export class PayPeriodDto implements IPayPeriodDto {

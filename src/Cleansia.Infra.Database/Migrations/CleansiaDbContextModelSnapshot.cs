@@ -2082,6 +2082,11 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
 
+                    b.Property<int>("LineType")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
                     b.Property<decimal>("MaxPay")
                         .ValueGeneratedOnAdd()
                         .HasPrecision(18, 2)

@@ -115,6 +115,7 @@ public class CancellationAcceptanceSignalTests
                 _producer.Object,
                 _liveActivityProducer.Object,
                 _expressWaiverConsumer.Object,
+                Mock.Of<IPendingDispatch>(),
                 new AuditContext(),
                 TimeProvider.System,
                 NullLogger<CustomerOrderCancellation>.Instance));

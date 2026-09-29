@@ -14,6 +14,7 @@ using MockQueryable;
 using Cleansia.Tests.Common;
 using Moq;
 using Microsoft.Extensions.Logging.Abstractions;
+using Cleansia.Core.Queue.Abstractions;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -78,6 +79,7 @@ public class CancelOrderStandardTierFeeTests
                 _producer.Object,
                 _liveActivityProducer.Object,
                 _expressWaiverConsumer.Object,
+                Mock.Of<IPendingDispatch>(),
                 new AuditContext(),
                 TimeProvider.System,
                 NullLogger<CustomerOrderCancellation>.Instance));

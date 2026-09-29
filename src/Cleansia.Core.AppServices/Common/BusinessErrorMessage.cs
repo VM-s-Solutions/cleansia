@@ -350,6 +350,7 @@ public static class BusinessErrorMessage
     public const string NoUnpaidOrderPays = "payroll.no_unpaid_order_pays";
     public const string NoActivePeriod = "payroll.no_active_period";
     public const string NoPayConfiguration = "payroll.no_pay_configuration";
+    public const string NoCollectedFee = "payroll.no_collected_fee";
     public const string EmployeeNotAssigned = "payroll.employee_not_assigned";
     public const string PdfGenerationFailed = "payroll.invoice.pdf_generation_failed";
     public const string CannotCancelPaidInvoice = "payroll.invoice.cannot_cancel_paid";

@@ -121,6 +121,24 @@ public class ReceivableWebhookTests
     }
 
     [Fact]
+    public async Task A_Paid_Fee_Receivable_Asks_For_The_Crews_Share_Under_The_Orders_Company()
+    {
+        var order = _receivable.Order!;
+        order.TenantId = TenantId;
+        order.AddAssignedEmployee(OrderEmployee.Create(
+            order, ValidatorTestHelpers.BuildEmployee("emp-owed-share", ContractStatus.Approved)));
+
+        var result = await DeliverAsync(PayLinkCompleted("evt_link_share", _receivable.Id, "pi_share"));
+
+        Assert.True(result.IsSuccess);
+        _pending.Verify(p => p.Enqueue(
+            QueueNames.CalculateOrderPay,
+            It.Is<QueueEnvelope<CalculateOrderPayMessage>>(e => e.TenantId == TenantId
+                && e.Payload.OrderId == order.Id && e.Payload.EmployeeId == "emp-owed-share"),
+            MessageKeys.Pay(order.Id, "emp-owed-share")), Times.Once);
+    }
+
+    [Fact]
     public async Task A_Successful_Off_Session_Charge_Settles_Its_Receivable_And_Leaves_The_Orders_Sale_Alone()
     {
         var result = await DeliverAsync(IntentEvent(

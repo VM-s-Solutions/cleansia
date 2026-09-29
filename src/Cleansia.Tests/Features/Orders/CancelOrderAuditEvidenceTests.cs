@@ -16,6 +16,7 @@ using Cleansia.Tests.Common;
 using MockQueryable;
 using Moq;
 using Microsoft.Extensions.Logging.Abstractions;
+using Cleansia.Core.Queue.Abstractions;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -68,6 +69,7 @@ public sealed class CancelOrderAuditEvidenceTests
                 _producer.Object,
                 _liveActivityProducer.Object,
                 _expressWaiverConsumer.Object,
+                Mock.Of<IPendingDispatch>(),
                 _auditContext,
                 TimeProvider.System,
                 NullLogger<CustomerOrderCancellation>.Instance));

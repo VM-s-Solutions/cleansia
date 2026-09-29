@@ -1,5 +1,6 @@
 ﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Features.EmployeePayroll;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Clients.Abstractions.Stripe;
@@ -532,7 +533,8 @@ public class HandlePaymentNotification
         private const string ReceivableMetadataKey = "ReceivableId";
 
         /// <summary>
-        /// The receivable is paid, and its fee receipt is asked for. A second payment of one already paid is
+        /// The receivable is paid, and its fee receipt and, on a late-cancellation or lockout fee, the crew's
+        /// share of it are asked for. A second payment of one already paid is
         /// money taken twice for one debt, and it is refunded in full, keyed on its own PaymentIntent so a
         /// redelivery replays the same refund. The refund is made here, so an unreachable Stripe throws, the
         /// processed-event stamp rolls back and Stripe redelivers.
@@ -570,6 +572,10 @@ public class HandlePaymentNotification
             }
 
             receivable.MarkPaid(paymentIntentId, DateTimeOffset.UtcNow);
+            if (receivable.Kind is ReceivableKind.CashCancellationFee or ReceivableKind.Lockout)
+            {
+                CalculateOrderPay.EnqueueForCrew(receivable.Order!, pending);
+            }
 
             var key = MessageKeys.FeeReceipt(receivable.Id);
             pending.Enqueue(

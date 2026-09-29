@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Features.EmployeePayroll;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
@@ -25,6 +26,7 @@ public sealed class CustomerOrderCancellation(
     INotificationProducer notificationProducer,
     ILiveActivityProducer liveActivityProducer,
     IExpressWaiverConsumer expressWaiverConsumer,
+    IPendingDispatch pending,
     IAuditContext auditContext,
     TimeProvider timeProvider,
     ILogger<CustomerOrderCancellation> logger)
@@ -76,6 +78,11 @@ public sealed class CustomerOrderCancellation(
         if (paymentStatusAtCancel != PaymentStatus.Paid && !refundInitiated)
         {
             await creditAccountRepository.ReturnUnpaidOrderCreditAsync(order, actorId, cancellationToken);
+        }
+
+        if (!order.TookNoPayment && assessment.FeeAmount > 0m)
+        {
+            CalculateOrderPay.EnqueueForCrew(order, pending);
         }
 
         var waiverReleased = !assessment.HasBeenAccepted

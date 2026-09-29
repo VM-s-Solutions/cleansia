@@ -139,6 +139,12 @@ public static class BookingPolicy
     public const decimal LockoutFeeRate = 1.00m;
 
     /// <summary>
+    /// The assigned crew's share of a late-cancellation or lockout fee, paid once the fee is collected and
+    /// split across the seats as job pay is (owner ruling 2026-09-28, decision 12).
+    /// </summary>
+    public const decimal CleanerFeeShareRate = 0.50m;
+
+    /// <summary>
     /// "Oops window" — free cancellation within N minutes of booking, even with a cleaner already on the
     /// job. Owner ruling 2026-09-28: this for every returning customer, guests included;
     /// <see cref="OopsWindowMinutesFirstBooking"/> on a customer's first booking and

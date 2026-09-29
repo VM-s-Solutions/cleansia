@@ -1,4 +1,5 @@
 using System.Globalization;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Infra.Services.Pdf.Components;
 using Cleansia.Infra.Services.Pdf.Models;
 using Cleansia.Infra.Services.Pdf.Theme;
@@ -218,8 +219,16 @@ public class DefaultInvoiceLayoutBuilder : IInvoiceLayoutBuilder
             });
     }
 
-    protected virtual string DescribeLine(InvoiceLineItem line) =>
-        $"{Labels.LineDescription} {line.OrderNumber} ({FormatDate(line.PerformedOn)})";
+    protected virtual string DescribeLine(InvoiceLineItem line)
+    {
+        var description = line.LineType switch
+        {
+            PayLineType.CancellationFeeShare => Labels.CancellationFeeShareLineDescription,
+            PayLineType.LockoutFeeShare => Labels.LockoutFeeShareLineDescription,
+            _ => Labels.LineDescription,
+        };
+        return $"{description} {line.OrderNumber} ({FormatDate(line.PerformedOn)})";
+    }
 
     /// <summary>
     /// The document's one legal notice: the jurisdiction's own reviewed text where it has one, otherwise

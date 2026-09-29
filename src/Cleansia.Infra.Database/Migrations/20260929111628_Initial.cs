@@ -3043,6 +3043,7 @@ namespace Cleansia.Infra.Database.Migrations
                     EmployeeId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     PayPeriodId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     CurrencyId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    LineType = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
                     BasePay = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
                     ExtrasPay = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 0m),
                     ExpensesPay = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 0m),

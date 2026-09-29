@@ -10255,6 +10255,9 @@
           "dirtinessPay": {
             "type": "number",
             "format": "double"
+          },
+          "lineType": {
+            "$ref": "#/components/schemas/PayLineType"
           }
         },
         "additionalProperties": false
@@ -11105,6 +11108,20 @@
           }
         },
         "additionalProperties": false
+      },
+      "PayLineType": {
+        "enum": [
+          0,
+          1,
+          2
+        ],
+        "type": "integer",
+        "format": "int32",
+        "x-enumNames": [
+          "Job",
+          "CancellationFeeShare",
+          "LockoutFeeShare"
+        ]
       },
       "PaymentStatus": {
         "enum": [

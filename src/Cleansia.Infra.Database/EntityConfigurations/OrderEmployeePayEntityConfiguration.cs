@@ -1,4 +1,5 @@
 using Cleansia.Core.Domain.EmployeePayroll;
+using Cleansia.Core.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -24,6 +25,10 @@ public class OrderEmployeePayEntityConfiguration : TenantAuditableEntityConfigur
 
         builder.Property(e => e.EmployeeInvoiceId)
             .HasMaxLength(26);
+
+        builder.Property(e => e.LineType)
+            .IsRequired()
+            .HasDefaultValue(PayLineType.Job);
 
         builder.Property(e => e.BasePay)
             .IsRequired()

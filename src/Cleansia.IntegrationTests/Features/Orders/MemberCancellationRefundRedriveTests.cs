@@ -19,6 +19,7 @@ using Moq;
 using Npgsql;
 using Respawn;
 using StripeException = Stripe.StripeException;
+using Cleansia.Core.Queue.Abstractions;
 
 namespace Cleansia.IntegrationTests.Features.Orders;
 
@@ -150,6 +151,7 @@ public class MemberCancellationRefundRedriveTests(PostgresContainerFixture fixtu
             NewProducer(ctx),
             Mock.Of<ILiveActivityProducer>(),
             Mock.Of<IExpressWaiverConsumer>(),
+            Mock.Of<IPendingDispatch>(),
             new AuditContext(),
             TimeProvider.System,
             NullLogger<CustomerOrderCancellation>.Instance);

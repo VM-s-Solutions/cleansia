@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Features.EmployeePayroll;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
@@ -115,6 +116,11 @@ public class AdminCancelOrderAsLockout
                     receivableRepository.Add(Receivable.ForLockout(order, order.TotalPrice));
                     receivableAmount = order.TotalPrice;
                 }
+            }
+
+            if (!order.TookNoPayment)
+            {
+                CalculateOrderPay.EnqueueForCrew(order, pending);
             }
 
             await OrderAssignmentCancellationNotifier.NotifyAssignedEmployeesOfCancellationAsync(

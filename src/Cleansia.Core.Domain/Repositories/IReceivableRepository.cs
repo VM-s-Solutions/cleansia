@@ -11,8 +11,8 @@ public interface IReceivableRepository : IRepository<Receivable, string>
     Task<IReadOnlyList<Receivable>> GetOpenForUserAsync(string userId, CancellationToken cancellationToken);
 
     /// <summary>
-    /// A receivable of any company with its order and currency: the Stripe webhook and the customer's pay
-    /// link carry no company of their own.
+    /// A receivable of any company with its order, the order's crew and its currency: the Stripe webhook and
+    /// the customer's pay link carry no company of their own.
     /// </summary>
     Task<Receivable?> GetByIdIgnoringTenantAsync(string id, CancellationToken cancellationToken);
 

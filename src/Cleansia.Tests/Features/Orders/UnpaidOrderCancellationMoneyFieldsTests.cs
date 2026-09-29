@@ -17,6 +17,7 @@ using Cleansia.Infra.Common.Validations;
 using MockQueryable;
 using Moq;
 using Microsoft.Extensions.Logging.Abstractions;
+using Cleansia.Core.Queue.Abstractions;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -153,6 +154,7 @@ public class UnpaidOrderCancellationMoneyFieldsTests
                 Mock.Of<INotificationProducer>(),
                 Mock.Of<ILiveActivityProducer>(),
                 ExpressWaiverMocks.NoConsumer().Object,
+                Mock.Of<IPendingDispatch>(),
                 new AuditContext(),
                 TimeProvider.System,
                 NullLogger<CustomerOrderCancellation>.Instance));

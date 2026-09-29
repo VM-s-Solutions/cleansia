@@ -398,4 +398,35 @@ public class PayCalculatorExtensionsTests
         Assert.Equal(45m, seat.dirtinessPay);
         Assert.Equal(195m, seat.totalPay);
     }
+
+    // ── CalculateSeatFeeShare — the crew's half of a collected fee, split like job pay ──
+
+    [Fact]
+    public void CalculateSeatFeeShare_A_Lone_Cleaner_Takes_Half_The_Collected_Fee()
+    {
+        var share = PayCalculatorExtensions.CalculateSeatFeeShare(
+            1000m, BookingPolicy.CleanerFeeShareRate, seats: 1, firstSeat: true);
+
+        Assert.Equal(500m, share);
+    }
+
+    [Fact]
+    public void CalculateSeatFeeShare_Seats_Split_The_Half_And_The_First_Takes_The_Cent_Residue()
+    {
+        // Half of 333.33 is 166.665, rounded to 166.67, which halves to 83.33 and a cent.
+        var first = PayCalculatorExtensions.CalculateSeatFeeShare(
+            333.33m, BookingPolicy.CleanerFeeShareRate, seats: 2, firstSeat: true);
+        var second = PayCalculatorExtensions.CalculateSeatFeeShare(
+            333.33m, BookingPolicy.CleanerFeeShareRate, seats: 2, firstSeat: false);
+
+        Assert.Equal(83.34m, first);
+        Assert.Equal(83.33m, second);
+    }
+
+    [Fact]
+    public void CalculateSeatFeeShare_Nothing_Collected_Pays_Nothing()
+    {
+        Assert.Equal(0m, PayCalculatorExtensions.CalculateSeatFeeShare(
+            0m, BookingPolicy.CleanerFeeShareRate, seats: 2, firstSeat: true));
+    }
 }

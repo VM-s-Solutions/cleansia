@@ -184,6 +184,33 @@ public class AdminCancelOrderAsLockoutTests
     }
 
     [Fact]
+    public async Task A_Card_Order_Whose_Payment_Is_Kept_Asks_For_The_Crews_Share_Of_The_Fee()
+    {
+        ArrangeOrder();
+
+        await ConfirmAsync();
+
+        _pending.Verify(p => p.Enqueue(
+            QueueNames.CalculateOrderPay,
+            It.Is<QueueEnvelope<CalculateOrderPayMessage>>(e => e.TenantId == TenantId
+                && e.Payload.OrderId == OrderId && e.Payload.EmployeeId == EmployeeId),
+            MessageKeys.Pay(OrderId, EmployeeId)), Times.Once);
+    }
+
+    [Fact]
+    public async Task An_Unpaid_Cash_Booking_Asks_For_No_Share_While_Its_Lockout_Fee_Is_Owed()
+    {
+        ArrangeOrder(status: OrderStatus.Confirmed, paymentType: PaymentType.Cash, paymentStatus: PaymentStatus.Pending);
+
+        await ConfirmAsync();
+
+        Assert.Single(_opened);
+        _pending.Verify(p => p.Enqueue(
+            QueueNames.CalculateOrderPay, It.IsAny<QueueEnvelope<CalculateOrderPayMessage>>(), It.IsAny<string>()),
+            Times.Never);
+    }
+
+    [Fact]
     public async Task A_Guest_Keeps_Nothing_Back_Owes_Nothing_More_And_Is_Told_By_The_Guest_Cancellation_Email()
     {
         var order = ArrangeOrder(userId: null);

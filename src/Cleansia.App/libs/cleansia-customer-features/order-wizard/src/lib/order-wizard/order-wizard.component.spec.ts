@@ -5,6 +5,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { By } from '@angular/platform-browser';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { CleansiaSelectComponent } from '@cleansia/components';
+import { lastBookableDay } from '@cleansia/models';
 import { SnackbarService } from '@cleansia/services';
 import {
   GetMembershipPlansResponse,
@@ -247,6 +248,60 @@ describe('OrderWizardComponent (a11y)', () => {
       fixture.componentInstance.lang.set('');
 
       expect(fixture.componentInstance.weekdayNames()[0]).toBe('Mon');
+    });
+  });
+
+  describe('the booking horizon on the calendar', () => {
+    const now = new Date(2026, 8, 10, 12, 0);
+    const lastDay = lastBookableDay(now);
+    const monthsAhead =
+      (lastDay.getFullYear() - now.getFullYear()) * 12 + lastDay.getMonth() - now.getMonth();
+
+    afterEach(() => jest.useRealTimers());
+
+    async function openWhenStep(): Promise<void> {
+      await setup(() => jest.useFakeTimers().setSystemTime(now));
+      facade.activeStep.set(2);
+      fixture.detectChanges();
+    }
+
+    const nextMonth = () => el.querySelectorAll<HTMLButtonElement>('.cl-wiz__cal-nav')[1];
+
+    function showNextMonth(): void {
+      nextMonth().click();
+      fixture.detectChanges();
+    }
+
+    const dayCell = (day: number) =>
+      Array.from(el.querySelectorAll<HTMLButtonElement>('button.cl-wiz__cal-day')).find(
+        (cell) => cell.textContent?.trim() === String(day)
+      );
+
+    it('moves forward only until the month of the last bookable day', async () => {
+      expect(monthsAhead).toBeGreaterThan(0);
+      await openWhenStep();
+
+      for (let month = 0; month < monthsAhead; month += 1) {
+        expect(nextMonth().disabled).toBe(false);
+        showNextMonth();
+      }
+
+      expect(nextMonth().disabled).toBe(true);
+    });
+
+    it('offers the last bookable day and not the day after it', async () => {
+      await openWhenStep();
+      for (let month = 0; month < monthsAhead; month += 1) {
+        showNextMonth();
+      }
+
+      const last = dayCell(lastDay.getDate());
+      const after = dayCell(lastDay.getDate() + 1);
+
+      expect(last?.disabled).toBe(false);
+      expect(last?.classList.contains('cl-wiz__cal-day--off')).toBe(false);
+      expect(after?.disabled).toBe(true);
+      expect(after?.classList.contains('cl-wiz__cal-day--off')).toBe(true);
     });
   });
 

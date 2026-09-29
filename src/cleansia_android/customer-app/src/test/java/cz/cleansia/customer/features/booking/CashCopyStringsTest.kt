@@ -133,6 +133,11 @@ class CashCopyStringsTest {
         val sheet = source("features/booking/BookingBottomSheet.kt")
         assertTrue("the guarantee no longer opens PaymentSheet in setup mode", sheet.contains("cardGuaranteeSheet.presentWithSetupIntent("))
         assertTrue("a saved card no longer books the cash order", sheet.contains("bookingVm.submitAfterCardGuarantee()"))
+        assertEquals(
+            "a cancelled or failed setup sheet no longer lets the next swipe capture afresh",
+            2,
+            Regex("bookingVm\\.abandonCardGuarantee\\(\\)").findAll(sheet).count(),
+        )
         assertTrue(
             "the consent is no longer shown when a card is needed",
             source("features/booking/ConfirmStep.kt").contains("if (needsCardGuarantee)"),

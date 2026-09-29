@@ -52,6 +52,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import okhttp3.ResponseBody.Companion.toResponseBody
 
 /**
  * Outcome of a submit attempt. The sheet maps these to snackbar + navigation.
@@ -75,8 +76,8 @@ sealed interface BookingSubmitOutcome {
     ) : BookingSubmitOutcome
 
     /**
-     * A cash booking by a customer with no usable card in the booking's currency: the card is captured
-     * in PaymentSheet's setup mode first, and [BookingViewModel.submitAfterCardGuarantee] books once it lands.
+     * A cash booking CreateOrder refused for want of a usable saved card: the card is captured in
+     * PaymentSheet's setup mode first, and [BookingViewModel.submitAfterCardGuarantee] books once it lands.
      */
     data class CardGuaranteeNeeded(val setup: CardGuaranteeSheetParams) : BookingSubmitOutcome
 
@@ -304,7 +305,8 @@ class BookingViewModel @Inject constructor(
     /**
      * Cash chosen, and the customer is known to hold no usable card in the booking's currency: the
      * review step shows the card-guarantee consent, and the slide waits for its tick. An unanswered
-     * card read asks nothing; the submit reads the cards again before it books.
+     * card read asks nothing. Only CreateOrder's refusal starts a capture: it asks about debt and the
+     * open-bookings limit first, so a customer who could not book cash even with a card saves none.
      */
     val needsCardGuarantee: StateFlow<Boolean> =
         combine(_state, savedCardRepository.cards, displayCurrencyCode) { s, cards, currencyCode ->
@@ -613,15 +615,12 @@ class BookingViewModel @Inject constructor(
             }
 
             if (paymentType == PAYMENT_TYPE_CASH) {
-                val cards = when (val read = savedCardRepository.refresh()) {
-                    is ApiResult.Success -> read.data
-                    is ApiResult.Error -> {
-                        surfaceError(read.error)
+                guaranteeCurrencyCode?.let { pending ->
+                    if (!awaitUsableCard(pending)) {
+                        snackbar.showInfoKey(R.string.booking_card_guarantee_pending)
                         return BookingSubmitOutcome.Failed
                     }
-                }
-                if (cards.usableIn(quoted.currencyCode) == null) {
-                    return startCardGuarantee(s, resolvedCountryId, quoted.currencyCode)
+                    guaranteeCurrencyCode = null
                 }
             }
 
@@ -696,8 +695,11 @@ class BookingViewModel @Inject constructor(
                 return BookingSubmitOutcome.Failed
             }
             if (!createResp.isSuccessful) {
-                val msg = ApiErrorParser.parseToUserMessage(appContext, createResp.errorBody(), createResp.code())
-                snackbar.showError(msg)
+                val raw = runCatching { createResp.errorBody()?.string() }.getOrNull()
+                if (paymentType == PAYMENT_TYPE_CASH && ApiErrorParser.firstErrorKey(raw) == CASH_REQUIRES_SAVED_CARD) {
+                    return startCardGuarantee(s, resolvedCountryId, quoted.currencyCode)
+                }
+                snackbar.showError(ApiErrorParser.parseToUserMessage(appContext, raw?.toResponseBody(), createResp.code()))
                 return BookingSubmitOutcome.Failed
             }
             val body = createResp.body() ?: run {
@@ -735,7 +737,10 @@ class BookingViewModel @Inject constructor(
         }
     }
 
-    /** The currency of the card PaymentSheet is saving; the booking waits for that card to land. */
+    /**
+     * The currency of the card PaymentSheet is saving, until it is seen to land or the sheet is abandoned.
+     * While it is set a cash submit waits for that card instead of capturing a second one.
+     */
     private var guaranteeCurrencyCode: String? = null
 
     private suspend fun startCardGuarantee(
@@ -744,6 +749,8 @@ class BookingViewModel @Inject constructor(
         currencyCode: String,
     ): BookingSubmitOutcome {
         if (!s.cardGuaranteeAccepted) {
+            // The consent box follows the card read; a stale or failed one would hide the tick asked for here.
+            savedCardRepository.refresh()
             snackbar.showErrorKey(R.string.booking_card_guarantee_consent_required)
             return BookingSubmitOutcome.Failed
         }
@@ -771,20 +778,13 @@ class BookingViewModel @Inject constructor(
      * in time, nothing is booked and the customer swipes again.
      */
     suspend fun submitAfterCardGuarantee(): BookingSubmitOutcome {
-        val currencyCode = guaranteeCurrencyCode ?: return BookingSubmitOutcome.Failed
-        if (_submitState.value is ActionState.Submitting) return BookingSubmitOutcome.Failed
-        _submitState.value = ActionState.Submitting
-        val landed = try {
-            awaitUsableCard(currencyCode)
-        } finally {
-            _submitState.value = ActionState.Idle
-        }
-        if (!landed) {
-            snackbar.showInfoKey(R.string.booking_card_guarantee_pending)
-            return BookingSubmitOutcome.Failed
-        }
-        guaranteeCurrencyCode = null
+        if (guaranteeCurrencyCode == null) return BookingSubmitOutcome.Failed
         return submit()
+    }
+
+    /** A cancelled or failed setup sheet saved nothing, so the next cash submit may capture afresh. */
+    fun abandonCardGuarantee() {
+        guaranteeCurrencyCode = null
     }
 
     private suspend fun awaitUsableCard(currencyCode: String): Boolean {
@@ -923,6 +923,8 @@ class BookingViewModel @Inject constructor(
         /** How long a booking waits for a just-saved card: 8 reads, 1.5 s apart. */
         const val CARD_CAPTURE_READS = 8
         const val CARD_CAPTURE_READ_INTERVAL_MS = 1_500L
+
+        private const val CASH_REQUIRES_SAVED_CARD = "order.cash_requires_saved_card"
 
         /** The backend's `PaymentType`. */
         private const val PAYMENT_TYPE_CASH = 1

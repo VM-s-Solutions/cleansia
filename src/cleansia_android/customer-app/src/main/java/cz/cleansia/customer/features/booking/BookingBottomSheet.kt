@@ -290,10 +290,12 @@ private fun SheetContent(
                 }
             }
             is com.stripe.android.paymentsheet.PaymentSheetResult.Canceled -> {
+                bookingVm.abandonCardGuarantee()
                 snackbarController.showErrorKey(R.string.booking_card_guarantee_cancelled)
                 submitFailedCount++
             }
             is com.stripe.android.paymentsheet.PaymentSheetResult.Failed -> {
+                bookingVm.abandonCardGuarantee()
                 snackbarController.showError(
                     result.error.localizedMessage ?: context.getString(R.string.booking_card_guarantee_cancelled),
                 )

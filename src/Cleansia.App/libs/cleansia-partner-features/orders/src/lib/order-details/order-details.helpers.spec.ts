@@ -1,3 +1,5 @@
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import {
   AssignedEmployeeDto,
   OrderItem,
@@ -10,12 +12,31 @@ import {
   canAcceptWorkContract,
   canMarkCashCollected,
   canTakeOrder,
+  canUploadAfterPhotos,
+  canUploadBeforePhotos,
   cashCollectionRefusal,
   cashRefusedOnCardOrder,
+  customerDetailsClosedNoticeKey,
   findCallerWorkContractAcceptance,
 } from './order-details.helpers';
 
 const EMPLOYEE_ID = 'emp-1';
+
+const PARTNER_LOCALES = ['en', 'cs', 'sk', 'uk', 'ru'] as const;
+const I18N_DIR = join(__dirname, '../../../../../../apps/cleansia-partner.app/src/assets/i18n');
+
+function missingIn(locale: string, keys: string[]): string[] {
+  const bundle = JSON.parse(readFileSync(join(I18N_DIR, `${locale}.json`), 'utf8')) as unknown;
+  return keys.filter((key) => {
+    const value = key
+      .split('.')
+      .reduce<unknown>(
+        (node, segment) => (node && typeof node === 'object' ? (node as Record<string, unknown>)[segment] : undefined),
+        bundle
+      );
+    return typeof value !== 'string' || !value.trim();
+  });
+}
 
 const assigned = (employeeId: string): AssignedEmployeeDto[] => [
   AssignedEmployeeDto.fromJS({ employeeId }),
@@ -227,5 +248,76 @@ describe('collecting cash', () => {
       )
     ).toBe('api.credit.cash_not_collectable_on_credit_order');
     expect(cashCollectionRefusal(jobSheet({ paymentType: PaymentType.Card }))).toBeNull();
+  });
+});
+
+// The server's windows (OrderPhoto.MayBeAddedAt): a before photo from the take until the work is done,
+// an after photo only while the work is in progress. Anything else is answered order.photo.window_closed.
+describe('the photo windows', () => {
+  it.each([OrderStatus.Confirmed, OrderStatus.OnTheWay, OrderStatus.InProgress])(
+    'offers a before photo to the crew at status %s',
+    (status) => {
+      expect(canUploadBeforePhotos(status, assigned(EMPLOYEE_ID), EMPLOYEE_ID)).toBe(true);
+    }
+  );
+
+  it.each([OrderStatus.New, OrderStatus.Completed, OrderStatus.Cancelled])(
+    'offers no before photo at status %s',
+    (status) => {
+      expect(canUploadBeforePhotos(status, assigned(EMPLOYEE_ID), EMPLOYEE_ID)).toBe(false);
+    }
+  );
+
+  it('offers an after photo only while the work is in progress', () => {
+    expect(canUploadAfterPhotos(OrderStatus.InProgress, assigned(EMPLOYEE_ID), EMPLOYEE_ID)).toBe(true);
+    for (const status of [OrderStatus.Confirmed, OrderStatus.OnTheWay, OrderStatus.Completed, OrderStatus.Cancelled]) {
+      expect(canUploadAfterPhotos(status, assigned(EMPLOYEE_ID), EMPLOYEE_ID)).toBe(false);
+    }
+  });
+
+  it('offers no photo to a cleaner who is not on the crew', () => {
+    expect(canUploadBeforePhotos(OrderStatus.Confirmed, assigned('emp-2'), EMPLOYEE_ID)).toBe(false);
+    expect(canUploadAfterPhotos(OrderStatus.InProgress, assigned('emp-2'), EMPLOYEE_ID)).toBe(false);
+  });
+});
+
+// Owner ruling 2026-09-28: the crew keeps the customer for 24 hours after completion and loses them at
+// once on cancellation. Past that, the server answers the crew with no customer and no address.
+describe('the customer on a past job', () => {
+  const order = (status: OrderStatus, employeeId: string, withAddress: boolean): OrderItem =>
+    OrderItem.fromJS({
+      orderStatus: { value: status },
+      assignedEmployees: [{ employeeId }],
+      customerName: withAddress ? 'Jana Nováková' : '',
+      address: withAddress ? { street: 'Dlouhá 1', city: 'Praha', zipCode: '11000', country: 'CZ' } : null,
+    });
+
+  it('says nothing while the crew still sees the customer', () => {
+    expect(customerDetailsClosedNoticeKey(order(OrderStatus.Completed, EMPLOYEE_ID, true), EMPLOYEE_ID)).toBeNull();
+    expect(customerDetailsClosedNoticeKey(order(OrderStatus.InProgress, EMPLOYEE_ID, true), EMPLOYEE_ID)).toBeNull();
+  });
+
+  it('explains the removal on a completed job the server no longer shows the customer on', () => {
+    expect(customerDetailsClosedNoticeKey(order(OrderStatus.Completed, EMPLOYEE_ID, false), EMPLOYEE_ID)).toBe(
+      'pages.order_details.customer_details_closed_completed'
+    );
+  });
+
+  it('explains the removal on a cancelled job', () => {
+    expect(customerDetailsClosedNoticeKey(order(OrderStatus.Cancelled, EMPLOYEE_ID, false), EMPLOYEE_ID)).toBe(
+      'pages.order_details.customer_details_closed_cancelled'
+    );
+  });
+
+  it('says nothing to a cleaner browsing a job they are not on', () => {
+    expect(customerDetailsClosedNoticeKey(order(OrderStatus.Confirmed, 'emp-2', false), EMPLOYEE_ID)).toBeNull();
+  });
+
+  it.each(PARTNER_LOCALES)('explains both removals in %s', (locale) => {
+    const keys = [OrderStatus.Completed, OrderStatus.Cancelled].map(
+      (status) => customerDetailsClosedNoticeKey(order(status, EMPLOYEE_ID, false), EMPLOYEE_ID) ?? ''
+    );
+
+    expect(missingIn(locale, keys)).toEqual([]);
   });
 });

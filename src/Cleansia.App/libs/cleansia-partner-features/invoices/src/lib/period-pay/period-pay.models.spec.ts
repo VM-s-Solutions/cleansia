@@ -1,9 +1,28 @@
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { OrderEmployeePayDto, PeriodPaySummaryDto } from '@cleansia/partner-services';
+import { getOrderPaysTableDefinition } from '../invoice-detail/invoice-detail.models';
 import {
   formatPayAmount,
   getPeriodCurrencies,
   getPeriodPayTableDefinition,
 } from './period-pay.models';
+
+const PARTNER_LOCALES = ['en', 'cs', 'sk', 'uk', 'ru'] as const;
+const I18N_DIR = join(__dirname, '../../../../../../apps/cleansia-partner.app/src/assets/i18n');
+
+function missingIn(locale: string, keys: string[]): string[] {
+  const bundle = JSON.parse(readFileSync(join(I18N_DIR, `${locale}.json`), 'utf8')) as unknown;
+  return keys.filter((key) => {
+    const value = key
+      .split('.')
+      .reduce<unknown>(
+        (node, segment) => (node && typeof node === 'object' ? (node as Record<string, unknown>)[segment] : undefined),
+        bundle
+      );
+    return typeof value !== 'string' || !value.trim();
+  });
+}
 
 describe('formatPayAmount', () => {
   it('formats an amount with two decimals the way the session language writes money', () => {
@@ -31,8 +50,30 @@ describe('getPeriodPayTableDefinition', () => {
       'expensesPay',
       'bonusPay',
       'deductionPay',
+      'deductionReason',
       'totalPay',
     ]);
+  });
+
+  // A deduction charged to the partner when a dispute found them at fault carries the reason the
+  // administrator wrote; the partner reads it beside the amount.
+  it('prints the reason given for a deduction, and nothing for a row without one', () => {
+    const { columns } = getPeriodPayTableDefinition('CZK', 'cs');
+    const reason = columns.find((column) => column.id === 'deductionReason');
+    if (!reason?.getValue) throw new Error('deductionReason column missing or static');
+
+    expect(
+      reason.getValue(OrderEmployeePayDto.fromJS({ deductionPay: 200, deductionReason: 'Kitchen left uncleaned' }))
+    ).toBe('Kitchen left uncleaned');
+    expect(reason.getValue(OrderEmployeePayDto.fromJS({ deductionPay: 0 }))).toBe('');
+  });
+
+  it.each(PARTNER_LOCALES)('names the reason column of the pay lines and of the invoice in %s', (locale) => {
+    const headers = [getPeriodPayTableDefinition('CZK', 'cs'), getOrderPaysTableDefinition('CZK', 'cs')].map(
+      ({ columns }) => columns.find((column) => column.id === 'deductionReason')?.header ?? ''
+    );
+
+    expect(missingIn(locale, headers)).toEqual([]);
   });
 
   it('renders the amount with no symbol when the server sent no currency', () => {

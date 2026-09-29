@@ -41,6 +41,7 @@ import {
   canAddNoteOrIssue,
   canMarkCashCollected,
   canAcceptWorkContract,
+  customerDetailsClosedNoticeKey,
   findCallerWorkContractAcceptance,
   computeElapsedTime,
   buildCurrencyOptions,
@@ -205,10 +206,16 @@ export class OrderDetailsComponent implements OnInit {
     return canUploadAfterPhotos(order.orderStatus.value, order.assignedEmployees, eid);
   });
 
-  // canDelete: only while staff can still mutate photos (Before during prep, After during InProgress).
-  // Photos remain visible once Completed but cannot be removed.
+  // Photos stay visible once the order is over but are locked (order.photo.locked).
   protected readonly canDeletePhotos = computed((): boolean => {
     return this.canUploadBeforePhotos() || this.canUploadAfterPhotos();
+  });
+
+  protected readonly customerDetailsClosedNoticeKey = computed((): string | null => {
+    const order = this.orderDetails();
+    const eid = this.currentEmployeeId();
+    if (!order || !eid) return null;
+    return customerDetailsClosedNoticeKey(order, eid);
   });
 
   protected readonly canAddNoteOrIssue = computed((): boolean => {
@@ -364,12 +371,14 @@ export class OrderDetailsComponent implements OnInit {
       customerName: orderDetails.customerName,
       customerEmail: orderDetails.customerEmail,
       customerPhone: orderDetails.customerPhone,
-      address: formatAddress({
-        street: orderDetails.address.street ?? '',
-        city: orderDetails.address.city ?? '',
-        zipCode: orderDetails.address.zipCode ?? '',
-        country: orderDetails.address.country ?? '',
-      }),
+      address: orderDetails.address
+        ? formatAddress({
+            street: orderDetails.address.street ?? '',
+            city: orderDetails.address.city ?? '',
+            zipCode: orderDetails.address.zipCode ?? '',
+            country: orderDetails.address.country ?? '',
+          })
+        : '',
       cleaningDateTime: this.formatDateTime(orderDetails.cleaningDateTime),
       rooms: orderDetails.rooms?.toString(),
       bathrooms: orderDetails.bathrooms?.toString(),

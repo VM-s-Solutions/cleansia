@@ -24,4 +24,5 @@ import { TranslatePipe } from '@ngx-translate/core';
 })
 export class OrderCustomerInfoComponent {
   formGroup = input.required<FormGroup>();
+  closedNoticeKey = input<string | null>(null);
 }

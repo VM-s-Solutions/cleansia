@@ -83,6 +83,25 @@ export const PAYMENT_STATUS_FLOW: StatusFlowItem[] = [
   },
 ];
 
+// The partner's own pay for the job (the booked pay row, else the server's estimate), never the
+// customer's price.
+function yourPayColumn(lang: string | undefined): TableColumn<OrderListItem> {
+  return {
+    id: 'estimatedCleanerPay',
+    field: 'estimatedCleanerPay',
+    header: 'pages.orders.your_pay',
+    getValue: (row?: OrderListItem) => {
+      const pay = row?.estimatedCleanerPay;
+      return typeof pay === 'number'
+        ? formatMoney(pay, row?.currency?.code, localeFor(lang), { fractionDigits: 2 })
+        : '';
+    },
+    sortable: true,
+    width: '12%',
+    numeric: true,
+  };
+}
+
 export function getAvailableOrdersTableDefinition(
   defs: {
     onTakeOrder: (row: OrderListItem) => void;
@@ -121,18 +140,7 @@ export function getAvailableOrdersTableDefinition(
           `${row?.customerAddress || ''}`.trim().replace(/^,\s*/, ''),
         width: '20%',
       },
-      {
-        id: 'totalPrice',
-        field: 'totalPrice',
-        header: 'pages.orders.total_price',
-        getValue: (row?: OrderListItem) =>
-          row?.totalPrice
-            ? formatMoney(row.totalPrice, row.currency?.code, localeFor(lang), { fractionDigits: 2 })
-            : '',
-        sortable: true,
-        width: '12%',
-        numeric: true,
-      },
+      yourPayColumn(lang),
       {
         id: 'availableSpots',
         field: 'availableSpots',
@@ -231,18 +239,7 @@ export function getMyOrdersTableDefinition(
           `${row?.customerAddress || ''}`.trim().replace(/^,\s*/, ''),
         width: '18%',
       },
-      {
-        id: 'totalPrice',
-        field: 'totalPrice',
-        header: 'pages.orders.total_price',
-        getValue: (row?: OrderListItem) =>
-          row?.totalPrice
-            ? formatMoney(row.totalPrice, row.currency?.code, localeFor(lang), { fractionDigits: 2 })
-            : '',
-        sortable: true,
-        width: '12%',
-        numeric: true,
-      },
+      yourPayColumn(lang),
       {
         id: 'orderStatus',
         field: 'orderStatus',

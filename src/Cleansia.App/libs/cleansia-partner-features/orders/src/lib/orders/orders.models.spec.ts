@@ -96,18 +96,37 @@ function cellValues(lang: string | undefined, columnId: string, order: OrderList
   return bothTables(lang).map((def) => def.columns.find((c) => c.id === columnId)?.getValue?.(order));
 }
 
-describe('the total price column names the order currency in the language of the session', () => {
-  it('labels the total with the code the order carries', () => {
-    const order = OrderListItem.fromJS({ totalPrice: 1200, currency: { code: 'EUR' } });
-    expect(cellValues('cs', 'totalPrice', order)).toEqual([`1${NBSP}200,00${NBSP}€`, `1${NBSP}200,00${NBSP}€`]);
-    expect(cellValues('en', 'totalPrice', order)).toEqual(['€1,200.00', '€1,200.00']);
+describe("the pay column is the partner's own pay, never the customer's price", () => {
+  it('prints the pay the server names for the partner, in the order currency', () => {
+    const order = OrderListItem.fromJS({ totalPrice: 1200, estimatedCleanerPay: 650, currency: { code: 'EUR' } });
+    expect(cellValues('cs', 'estimatedCleanerPay', order)).toEqual([`650,00${NBSP}€`, `650,00${NBSP}€`]);
+    expect(cellValues('en', 'estimatedCleanerPay', order)).toEqual(['€650.00', '€650.00']);
+  });
+
+  it('shows no column with the customer price on either list', () => {
+    for (const def of bothTables('cs')) {
+      expect(def.columns.map((c) => c.id)).not.toContain('totalPrice');
+    }
   });
 
   // The server always sends the order's currency; a bare number is honest when it does not, and
   // crowns would mislabel every non-crown order.
   it('prints a bare number rather than a currency the order does not name', () => {
-    const order = OrderListItem.fromJS({ totalPrice: 1200 });
-    expect(cellValues('cs', 'totalPrice', order)).toEqual([`1${NBSP}200,00`, `1${NBSP}200,00`]);
+    const order = OrderListItem.fromJS({ estimatedCleanerPay: 1200 });
+    expect(cellValues('cs', 'estimatedCleanerPay', order)).toEqual([`1${NBSP}200,00`, `1${NBSP}200,00`]);
+  });
+
+  it('prints nothing when the server names no pay', () => {
+    expect(cellValues('cs', 'estimatedCleanerPay', OrderListItem.fromJS({ totalPrice: 1200 }))).toEqual(['', '']);
+  });
+
+  it('names the column in all five partner locales', () => {
+    for (const locale of PARTNER_LOCALES) {
+      const bundle = JSON.parse(readFileSync(join(I18N_DIR, `${locale}.json`), 'utf8')) as unknown;
+      const value = resolveKey(bundle, 'pages.orders.your_pay');
+
+      expect({ locale, named: typeof value === 'string' && value.trim().length > 0 }).toEqual({ locale, named: true });
+    }
   });
 });
 

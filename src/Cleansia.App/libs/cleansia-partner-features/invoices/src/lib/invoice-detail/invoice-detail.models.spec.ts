@@ -20,9 +20,22 @@ describe('getOrderPaysTableDefinition', () => {
 
   it('right-aligns every amount column in tabular figures', () => {
     const { columns } = getOrderPaysTableDefinition('CZK', 'cs');
-    for (const column of columns.filter((c) => c.id !== 'orderNumber')) {
+    for (const column of columns.filter((c) => c.id !== 'orderNumber' && c.id !== 'deductionReason')) {
       expect(column.numeric).toBe(true);
     }
+  });
+
+  it('prints the reason given for a deduction beside it, and nothing for a row without one', () => {
+    const { columns } = getOrderPaysTableDefinition('CZK', 'cs');
+    const ids = columns.map((column) => column.id);
+    expect(ids.indexOf('deductionReason')).toBe(ids.indexOf('deductionPay') + 1);
+
+    const reason = columns.find((column) => column.id === 'deductionReason');
+    if (!reason?.getValue) throw new Error('deductionReason column missing or static');
+    expect(
+      reason.getValue(OrderEmployeePayDto.fromJS({ deductionPay: 200, deductionReason: 'Kitchen left uncleaned' }))
+    ).toBe('Kitchen left uncleaned');
+    expect(reason.getValue(OrderEmployeePayDto.fromJS({ deductionPay: 0 }))).toBe('');
   });
 });
 

@@ -98,6 +98,13 @@ export function getPeriodPayTableDefinition(
         getValue: (pay?: OrderEmployeePayDto) => format(pay, pay?.deductionPay),
       },
       {
+        id: 'deductionReason',
+        field: 'deductionReason',
+        header: 'pages.period_pay.deduction_reason',
+        sortable: false,
+        getValue: (pay?: OrderEmployeePayDto) => pay?.deductionReason ?? '',
+      },
+      {
         id: 'totalPay',
         field: 'totalPay',
         header: 'pages.period_pay.total_pay',

@@ -216,7 +216,10 @@
       />
 
       <!-- Customer Information Section -->
-      <cleansia-partner-order-customer-info [formGroup]="formGroup" />
+      <cleansia-partner-order-customer-info
+        [formGroup]="formGroup"
+        [closedNoticeKey]="customerDetailsClosedNoticeKey()"
+      />
 
       <!-- Service Details Section -->
       <cleansia-partner-order-service-details [formGroup]="formGroup" />

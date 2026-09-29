@@ -76,6 +76,13 @@ export function getOrderPaysTableDefinition(
           pay ? amount(pay.deductionPay) : '',
       },
       {
+        id: 'deductionReason',
+        field: 'deductionReason',
+        header: 'pages.invoice_detail.deduction_reason',
+        sortable: false,
+        getValue: (pay?: OrderEmployeePayDto) => pay?.deductionReason ?? '',
+      },
+      {
         id: 'totalPay',
         field: 'totalPay',
         header: 'pages.invoice_detail.total_pay',

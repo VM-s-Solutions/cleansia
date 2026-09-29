@@ -60,6 +60,17 @@ function buildFixture(overrides = {}) {
     lastHour: '20',
     tsExpressRate: '0.2',
     tsExpressLead: '2',
+    tsIncreasedDirtinessRate: '0.3',
+    tsHeavyDirtinessRate: '0.6',
+    webDirtinessSurcharge: '+{{rate}}%',
+    androidIncreasedPrice: '+30%',
+    androidHeavyPrice: '+60%',
+    androidSurchargeIncreased: 'Increased dirtiness surcharge (+30%)',
+    androidSurchargeHeavy: 'Heavy dirtiness surcharge (+60%)',
+    iosIncreasedRate: '+30%',
+    iosHeavyRate: '+60%',
+    iosSurchargeIncreased: 'Increased dirtiness surcharge (+30%)',
+    iosSurchargeHeavy: 'Heavy dirtiness surcharge (+60%)',
     webTier3: '25% charge',
     webTier4: '50% charge',
     webCancelDesc: 'Between 4 and 24 hours it is 25%, under 4 hours 50%.',
@@ -71,14 +82,23 @@ function buildFixture(overrides = {}) {
     iosTier2: '25% charge',
     iosTier3: '50% charge',
     graceStandard: '15',
+    /** `null` leaves the constant out of the fixture's BookingPolicy. */
+    graceFirstBooking: '60',
     gracePlus: '60',
-    webGraceWithout: '15 minutes',
+    webGraceWithout: '15 minutes (60 on your first booking)',
     webGraceWith: '60 minutes',
     webPlusPerkGrace: '60 minutes after booking to cancel free, instead of 15 minutes',
-    androidGraceNote: 'Within 15 minutes of booking you pay nothing — within 60 minutes with Cleansia Plus.',
+    webRethinkDesc: 'Once someone has, you still have 15 minutes from when you booked — 60 minutes on your first booking or with Cleansia Plus.',
+    webHomePlusPerkGrace: 'Cancel free within 60 minutes of every booking, instead of 15 minutes',
+    webCancelPolicyNote: 'Free cancellation up to 24 hours ahead. Within 15 minutes of booking you pay nothing — within 60 minutes on your first booking or with Cleansia Plus.',
+    webMembershipPerkGrace: '60 minutes after every booking to cancel free, instead of 15 minutes',
+    webPlusPerkCancelBody: 'Without membership the line is 24 hours. And after every booking you have 60 minutes to cancel free of charge, instead of 15 minutes.',
+    androidGraceNote: 'Within 15 minutes of booking you pay nothing — within 60 minutes on your first booking or with Cleansia Plus.',
     androidPerkGrace: '60 minutes after booking to cancel free, instead of 15 minutes',
-    iosGraceNote: 'Within 15 minutes of booking you pay nothing — within 60 minutes with Cleansia Plus.',
+    androidFaqA1: 'Cancellations free of charge up to 24 hours before. Within 15 minutes of booking you pay nothing — within 60 minutes on your first booking or with Cleansia Plus.',
+    iosGraceNote: 'Within 15 minutes of booking you pay nothing — within 60 minutes on your first booking or with Cleansia Plus.',
     iosPerkGrace: '60 minutes after booking to cancel free, instead of 15 minutes',
+    iosFaqA1: 'Cancellations are free up to 24 hours before. Within 15 minutes of booking you pay nothing — within 60 minutes on your first booking or with Cleansia Plus.',
     webWeCancelValue: 'Everything back + {{amount}} credit',
     webWeCancelRefundOnly: 'Everything back',
     /**
@@ -138,6 +158,7 @@ public static class BookingPolicy
     public const decimal LastMinuteCancellationFeeRate = ${o.lastMinuteRate};
     public const int PartialCancellationHours = 4;
     public const int OopsWindowMinutesStandard = ${o.graceStandard};
+${o.graceFirstBooking === null ? '' : `    public const int OopsWindowMinutesFirstBooking = ${o.graceFirstBooking};`}
     public const int OopsWindowMinutesPlus = ${o.gracePlus};
 ${o.increasedDirtinessRate === null ? '' : `    public const decimal IncreasedDirtinessSurchargeRate = ${o.increasedDirtinessRate};`}
 ${o.heavyDirtinessRate === null ? '' : `    public const decimal HeavyDirtinessSurchargeRate = ${o.heavyDirtinessRate};`}
@@ -201,6 +222,8 @@ export const LAST_WINDOW_HOUR = ${o.lastHour};
 export const EXPRESS_LEAD_TIME_HOURS = ${o.tsExpressLead};
 export const STANDARD_LEAD_TIME_HOURS = ${o.standardLead};
 export const EXPRESS_SURCHARGE_RATE = ${o.tsExpressRate};
+export const INCREASED_DIRTINESS_SURCHARGE_RATE = ${o.tsIncreasedDirtinessRate};
+export const HEAVY_DIRTINESS_SURCHARGE_RATE = ${o.tsHeavyDirtinessRate};
 `);
 
   for (const locale of LOCALES) {
@@ -212,15 +235,25 @@ export const EXPRESS_SURCHARGE_RATE = ${o.tsExpressRate};
           order: {
             cancel_policy_tier3_value: o.webTier3,
             cancel_policy_tier4_value: o.webTier4,
+            cancel_policy_note: o.webCancelPolicyNote,
             plus_perk_grace: o.webPlusPerkGrace,
+            dirtiness: { surcharge: o.webDirtinessSurcharge },
           },
           plus: {
             row_grace_without: o.webGraceWithout,
             row_grace_with: o.webGraceWith,
+            perk_cancel_body: o.webPlusPerkCancelBody,
+          },
+          membership: {
+            perk_grace: o.webMembershipPerkGrace,
           },
           home: {
+            plus: {
+              perk_grace: o.webHomePlusPerkGrace,
+            },
             rules: {
               cancel_desc: o.webCancelDesc,
+              rethink_desc: o.webRethinkDesc,
               lead_value: o.webLeadValue,
               express_value: o.webExpressValue,
               we_cancel_value: o.webWeCancelValue,
@@ -247,6 +280,11 @@ export const EXPRESS_SURCHARGE_RATE = ${o.tsExpressRate};
     <string name="booking_cancel_tier3_value">${o.androidTier3}</string>
     <string name="booking_cancel_grace_note">${o.androidGraceNote}</string>
     <string name="membership_perk_grace_desc">${o.androidPerkGrace}</string>
+    <string name="help_faq_a1">${o.androidFaqA1}</string>
+    <string name="dirtiness_increased_price" formatted="false">${o.androidIncreasedPrice}</string>
+    <string name="dirtiness_heavy_price" formatted="false">${o.androidHeavyPrice}</string>
+    <string name="dirtiness_surcharge_increased" formatted="false">${o.androidSurchargeIncreased}</string>
+    <string name="dirtiness_surcharge_heavy" formatted="false">${o.androidSurchargeHeavy}</string>
     <string name="notification_order_no_cleaner_refunded_body">${o.androidNoShowBody}</string>
     <string name="booking_trust_insured">${o.androidInsured}</string>
     <string name="booking_trust_insured_no_figure">${o.androidInsuredNoFigure}</string>
@@ -267,6 +305,11 @@ ${mapped('android-locale').map((r) => `    <string name="order_cancelled_reason_
         booking_cancel_tier3_value: { localizations: localizations(o.iosTier3) },
         booking_cancel_grace_note: { localizations: localizations(o.iosGraceNote) },
         membership_perk_grace_desc: { localizations: localizations(o.iosPerkGrace) },
+        help_faq_a1: { localizations: localizations(o.iosFaqA1) },
+        booking_dirtiness_increased_rate: { localizations: localizations(o.iosIncreasedRate) },
+        booking_dirtiness_heavy_rate: { localizations: localizations(o.iosHeavyRate) },
+        booking_dirtiness_surcharge_increased: { localizations: localizations(o.iosSurchargeIncreased) },
+        booking_dirtiness_surcharge_heavy: { localizations: localizations(o.iosSurchargeHeavy) },
         'push.order.no_cleaner_refunded.body': { localizations: localizations(o.iosNoShowBody) },
         booking_trust_insured: { localizations: localizations(o.iosInsured) },
         booking_trust_insured_no_figure: { localizations: localizations(o.iosInsuredNoFigure) },
@@ -345,6 +388,53 @@ scenario(
   'a policy change to the Plus grace flags every surface that still states the old figure',
   { gracePlus: '90' },
   { code: 1, mentions: ['web/en', 'android/values', 'ios/en', 'does not state 90 minutes'] },
+);
+// The first booking gets 60 minutes since the 2026-09-28 ruling; the 2026-09-24 copy gave a
+// first-time customer the standard 15. The comparison row naming only those two figures is where
+// that copy would come back.
+scenario(
+  'a web comparison row that gives a first booking only 15 minutes again is caught',
+  { webGraceWithout: '15 minutes' },
+  { code: 1, mentions: ['pages.plus.row_grace_without', 'does not state 60 minutes'] },
+);
+scenario(
+  'a policy change to the first-booking grace flags every sentence that names a first booking',
+  { graceFirstBooking: '30' },
+  {
+    code: 1,
+    mentions: [
+      'does not state 30 minutes',
+      'pages.home.rules.rethink_desc',
+      'pages.order.cancel_policy_note',
+      'pages.plus.row_grace_without',
+      'android/values',
+      'ios/en',
+      'booking_cancel_grace_note',
+      'help_faq_a1',
+    ],
+    // The Plus perks name the standard and Plus figures only.
+    silentAbout: ['membership_perk_grace_desc', 'pages.membership.perk_grace', 'pages.home.plus.perk_grace', 'pages.plus.row_grace_with ='],
+  },
+);
+for (const [where, override] of [
+  ['web/en — pages.home.rules.rethink_desc', { webRethinkDesc: 'Once someone has, cancelling costs a fee.' }],
+  ['web/en — pages.home.plus.perk_grace', { webHomePlusPerkGrace: 'Cancel free after every booking' }],
+  ['web/en — pages.order.cancel_policy_note', { webCancelPolicyNote: 'Free cancellation up to 24 hours ahead.' }],
+  ['web/en — pages.membership.perk_grace', { webMembershipPerkGrace: 'Cancel free after every booking' }],
+  ['web/en — pages.plus.perk_cancel_body', { webPlusPerkCancelBody: 'Without membership the line is 24 hours.' }],
+  ['android/values — help_faq_a1', { androidFaqA1: 'Cancellations free of charge up to 24 hours before.' }],
+  ['ios/en — help_faq_a1', { iosFaqA1: 'Cancellations are free up to 24 hours before.' }],
+]) {
+  scenario(
+    `${where} that no longer states the grace is caught`,
+    override,
+    { code: 1, mentions: [where, 'does not state 15 minutes'] },
+  );
+}
+scenario(
+  'a BookingPolicy that no longer declares OopsWindowMinutesFirstBooking is a finding',
+  { graceFirstBooking: null },
+  { code: 1, mentions: ['could not read `OopsWindowMinutesFirstBooking`'] },
 );
 
 // ─── 1b. Every platform cancellation reason renders on the three clients ────
@@ -552,18 +642,55 @@ scenario(
   { code: 1, mentions: ['the floor is 3 h'] },
 );
 
-// ─── 4b. The dirtiness rates are read from BookingPolicy ────────────────────
-// No client states them yet; until one does, the gate still has to fail when the constants it will
-// compare the copy against stop being readable, and report the rates the policy actually holds.
+// ─── 4b. The dirtiness rates are read from BookingPolicy and pinned in the copy ─────────────
+// The web states them through `{{rate}}` from its shared mirror; Android and iOS state them as
+// literals on the level chip and on the surcharge line. Strictly: the rate the key belongs to, and
+// no other.
 scenario(
   'states the dirtiness rates BookingPolicy holds',
   {},
   { code: 0, mentions: ['dirtiness +30%/+60%'] },
 );
 scenario(
-  'moving a dirtiness rate in C# moves the rate the gate reports',
+  'moving a dirtiness rate in C# fails every surface still quoting the old one',
   { increasedDirtinessRate: '0.35m' },
-  { code: 0, mentions: ['dirtiness +35%/+60%'] },
+  {
+    code: 1,
+    mentions: [
+      'INCREASED_DIRTINESS_SURCHARGE_RATE',
+      'android/values — dirtiness_increased_price',
+      'android/values — dirtiness_surcharge_increased',
+      'ios/en — booking_dirtiness_increased_rate',
+      'ios/en — booking_dirtiness_surcharge_increased',
+      'IncreasedDirtinessSurchargeRate is 35%',
+    ],
+    silentAbout: ['HEAVY_DIRTINESS_SURCHARGE_RATE', 'dirtiness_heavy_price', 'surcharge_heavy'],
+  },
+);
+scenario(
+  'catches the web mirror drifting from a dirtiness rate',
+  { tsHeavyDirtinessRate: '0.5' },
+  { code: 1, mentions: ['HEAVY_DIRTINESS_SURCHARGE_RATE', 'is 0.5'] },
+);
+scenario(
+  'catches an Android increased chip showing the heavy rate',
+  { androidIncreasedPrice: '+60%' },
+  { code: 1, mentions: ['dirtiness_increased_price', 'states 60%', 'is 30%'] },
+);
+scenario(
+  'catches an iOS surcharge line quoting a stale rate beside the right one',
+  { iosSurchargeHeavy: 'Heavy dirtiness surcharge (+60%, was +50%)' },
+  { code: 1, mentions: ['booking_dirtiness_surcharge_heavy', 'states 60%, 50%'] },
+);
+scenario(
+  'catches a rate chip that states no rate at all',
+  { iosIncreasedRate: 'Surcharge' },
+  { code: 1, mentions: ['booking_dirtiness_increased_rate', 'states no rate'] },
+);
+scenario(
+  'catches the web level chip baking a rate in instead of the placeholder',
+  { webDirtinessSurcharge: '+30%' },
+  { code: 1, mentions: ['pages.order.dirtiness.surcharge', 'does not carry the {{rate}} placeholder', 'bakes a rate in'] },
 );
 for (const [name, override] of [
   ['IncreasedDirtinessSurchargeRate', { increasedDirtinessRate: null }],
@@ -590,6 +717,15 @@ scenario(
 scenario(
   'the hours in the sentence are never mistaken for percentages',
   { webCancelDesc: 'Mezi 4 a 24 hodinami 25 %, pod 4 hodiny 50 %.' },
+  { code: 0 },
+);
+scenario(
+  'a space before the percent sign in the dirtiness copy is the same rate',
+  {
+    androidIncreasedPrice: '+30 %',
+    iosSurchargeHeavy: 'Příplatek za silné znečištění (+60 %)',
+    webDirtinessSurcharge: '+{{rate}} %',
+  },
   { code: 0 },
 );
 scenario(

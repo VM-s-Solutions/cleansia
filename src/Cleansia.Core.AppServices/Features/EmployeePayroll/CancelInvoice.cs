@@ -93,7 +93,8 @@ public class CancelInvoice
 
             if (invoice.CashSetOffAmount > 0m)
             {
-                cashLedgerRepository.Add(CashLedgerEntry.ForSetOffReversal(invoice));
+                cashLedgerRepository.Add(
+                    CashLedgerEntry.ForSetOffReversal(invoice, invoice.CashSetOffAmount, invoice.CancelledAt!.Value));
             }
 
             return BusinessResult.Success(new Response(invoice.Id));

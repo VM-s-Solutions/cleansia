@@ -14,6 +14,13 @@ public interface ICashLedgerRepository : IRepository<CashLedgerEntry, string>
     Task<decimal> GetHeldAsync(string employeeId, string currencyId, CancellationToken cancellationToken);
 
     /// <summary>
+    /// The cash one cleaner holds in one currency, read under the lock <see cref="TryDebitAsync"/> takes and
+    /// held until the unit of work commits, so a set-off staged from it and a remittance or a write-off
+    /// cannot take the same cash.
+    /// </summary>
+    Task<decimal> GetHeldUnderLockAsync(string employeeId, string currencyId, CancellationToken cancellationToken);
+
+    /// <summary>
     /// Adds <paramref name="debit"/> only while the cleaner still holds at least its amount in its currency,
     /// reading the balance under a lock held until the unit of work commits, so two debits of the same cash
     /// cannot both land; false when the balance is short.

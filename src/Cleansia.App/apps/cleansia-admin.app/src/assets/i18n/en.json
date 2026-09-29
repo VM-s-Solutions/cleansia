@@ -1824,7 +1824,8 @@
       "categories": {
         "retention": "Data retention",
         "lifecycle": "Company lifecycle",
-        "notifications": "Notifications"
+        "notifications": "Notifications",
+        "cash": "Cash held by cleaners"
       },
       "descriptions": {
         "retention": {
@@ -1876,6 +1877,10 @@
         },
         "notifications": {
           "admin_email": "Mailbox that receives one e-mail in English per admin event instead of every administrator; at its default, each administrator is e-mailed in their own language"
+        },
+        "cash": {
+          "float_cap": "The most cash a cleaner may hold in one currency; above it, cash jobs are hidden from them with the reason shown. 0 means no cap",
+          "remittance_request_days": "Days a cleaner may keep cash still held after a pay-period close before they are asked to hand it over (1–365)"
         }
       }
     },
@@ -1941,6 +1946,7 @@
         "unpaidInvoices": "Unpaid cleaner invoices",
         "uninvoicedPayRows": "Uninvoiced pay rows in closed periods",
         "openDisputes": "Open disputes",
+        "cleanersHoldingCash": "Cleaner cash balances not settled",
         "chargebackHorizonEndsOn": "Chargeback horizon",
         "windDownLastRunOn": "Last wind-down run",
         "windDownRunStartedOn": "Wind-down run in progress since"

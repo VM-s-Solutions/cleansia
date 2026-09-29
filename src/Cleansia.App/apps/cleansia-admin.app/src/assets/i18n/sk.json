@@ -1824,7 +1824,8 @@
       "categories": {
         "retention": "Uchovávanie údajov",
         "lifecycle": "Životný cyklus spoločnosti",
-        "notifications": "Notifikácie"
+        "notifications": "Notifikácie",
+        "cash": "Hotovosť u upratovačov"
       },
       "descriptions": {
         "retention": {
@@ -1876,6 +1877,10 @@
         },
         "notifications": {
           "admin_email": "Schránka, ktorá dostáva jeden e-mail v angličtine za každú administrátorskú udalosť namiesto všetkých administrátorov; v predvolenom stave dostane e-mail každý administrátor vo svojom jazyku"
+        },
+        "cash": {
+          "float_cap": "Najvyššia suma hotovosti, ktorú smie upratovač držať v jednej mene; nad ňou sa mu hotovostné zákazky skryjú a uvidí prečo. 0 znamená bez limitu",
+          "remittance_request_days": "Počet dní, počas ktorých smie upratovač držať hotovosť, ktorá mu zostala po uzávierke výplatného obdobia, kým bude požiadaný o jej odovzdanie (1–365)"
         }
       }
     },
@@ -1941,6 +1946,7 @@
         "unpaidInvoices": "Neuhradené faktúry upratovačov",
         "uninvoicedPayRows": "Nefakturované odmeny v uzavretých obdobiach",
         "openDisputes": "Otvorené reklamácie",
+        "cleanersHoldingCash": "Nevyrovnané zostatky hotovosti u upratovačov",
         "chargebackHorizonEndsOn": "Lehota na chargeback",
         "windDownLastRunOn": "Posledný beh ukončovania",
         "windDownRunStartedOn": "Beh ukončovania prebieha od"

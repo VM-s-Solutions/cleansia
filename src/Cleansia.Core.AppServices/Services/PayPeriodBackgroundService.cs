@@ -452,7 +452,7 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
             orderPay.AssignToInvoice(invoice.Id);
         }
 
-        var cashHeld = await _cashLedgerRepository.GetHeldAsync(employee.Id, currencyId, cancellationToken);
+        var cashHeld = await _cashLedgerRepository.GetHeldUnderLockAsync(employee.Id, currencyId, cancellationToken);
         if (invoice.SetOffCash(cashHeld) > 0m)
         {
             _cashLedgerRepository.Add(CashLedgerEntry.ForSetOff(invoice));

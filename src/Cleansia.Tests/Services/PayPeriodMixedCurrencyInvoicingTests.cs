@@ -383,7 +383,7 @@ public class PayPeriodMixedCurrencyInvoicingTests
 
     private void HoldsCash(string currencyId, decimal amount) =>
         _cashLedger
-            .Setup(r => r.GetHeldAsync(PayrollMockFactory.EmployeeId, currencyId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetHeldUnderLockAsync(PayrollMockFactory.EmployeeId, currencyId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(amount);
 
     private Task Run() => new PayPeriodBackgroundService(

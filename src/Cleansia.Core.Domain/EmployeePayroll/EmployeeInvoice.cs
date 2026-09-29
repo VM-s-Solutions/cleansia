@@ -367,7 +367,11 @@ public class EmployeeInvoice : TenantAuditable
         return this;
     }
 
-    public EmployeeInvoice UpdateAmounts(decimal bonusAmount, decimal deductionAmount, string? adminNotes = null)
+    /// <summary>
+    /// Returns the cash set off that a lowered total no longer covers, which the cleaner holds again; nothing
+    /// on a cancelled invoice, whose cancel already gave all of it back.
+    /// </summary>
+    public decimal UpdateAmounts(decimal bonusAmount, decimal deductionAmount, string? adminNotes = null)
     {
         if (Status == EmployeeInvoiceStatus.Paid)
         {
@@ -383,12 +387,15 @@ public class EmployeeInvoice : TenantAuditable
             TotalAmount = 0;
         }
 
+        var released = Math.Max(0m, CashSetOffAmount - TotalAmount);
+        CashSetOffAmount -= released;
+
         if (adminNotes != null)
         {
             AdminNotes = adminNotes;
         }
 
-        return this;
+        return IsCancelled ? 0m : released;
     }
 
     // Derived, not stored: GeneratedAt is immutable once the invoice exists, so a regenerated PDF

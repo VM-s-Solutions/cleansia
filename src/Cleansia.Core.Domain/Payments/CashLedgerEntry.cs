@@ -104,16 +104,18 @@ public class CashLedgerEntry : TenantAuditable
             Note = invoice.InvoiceNumber,
         };
 
-    /// <summary>A cancelled invoice transfers nothing, so the cash it set off is the cleaner's to hold again.</summary>
-    public static CashLedgerEntry ForSetOffReversal(EmployeeInvoice invoice) =>
+    /// <summary>
+    /// Cash an invoice set off and no longer takes off its transfer is the cleaner's to hold again: all of it
+    /// when the invoice is cancelled, the part above a total an administrator lowered.
+    /// </summary>
+    public static CashLedgerEntry ForSetOffReversal(EmployeeInvoice invoice, decimal amount, DateTime occurredAt) =>
         new()
         {
             EmployeeId = invoice.EmployeeId,
             CurrencyId = invoice.CurrencyId,
             Kind = CashLedgerEntryKind.SetOff,
-            Amount = invoice.CashSetOffAmount,
-            OccurredAt = invoice.CancelledAt
-                ?? throw new InvalidOperationException($"Invoice {invoice.Id} is not cancelled."),
+            Amount = amount,
+            OccurredAt = occurredAt,
             Note = invoice.InvoiceNumber,
         };
 

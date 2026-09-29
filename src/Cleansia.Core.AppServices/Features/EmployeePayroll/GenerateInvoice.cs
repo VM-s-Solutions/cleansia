@@ -145,7 +145,7 @@ public class GenerateInvoice
                 }
                 invoices.Add(invoice);
 
-                var cashHeld = await cashLedgerRepository.GetHeldAsync(command.EmployeeId, invoice.CurrencyId, cancellationToken);
+                var cashHeld = await cashLedgerRepository.GetHeldUnderLockAsync(command.EmployeeId, invoice.CurrencyId, cancellationToken);
                 if (invoice.SetOffCash(cashHeld) > 0m)
                 {
                     var setOff = CashLedgerEntry.ForSetOff(invoice);

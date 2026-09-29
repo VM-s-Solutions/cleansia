@@ -175,7 +175,7 @@ public class GenerateInvoiceCommandHandlerTests
     {
         ArrangeOrderPays(PayrollMockFactory.OrderPay(basePay: 400m));
         _cashLedger
-            .Setup(r => r.GetHeldAsync(EmployeeId, PayrollMockFactory.CurrencyId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetHeldUnderLockAsync(EmployeeId, PayrollMockFactory.CurrencyId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(650m);
         EmployeeInvoice? added = null;
         _invoiceRepository.Setup(r => r.Add(It.IsAny<EmployeeInvoice>())).Callback<EmployeeInvoice>(i => added = i);

@@ -1,3 +1,4 @@
+using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
@@ -10,9 +11,9 @@ using Npgsql;
 namespace Cleansia.IntegrationTests.Features.CashHeld;
 
 /// <summary>
-/// Two administrators taking the same cash off a cleaner at once, on Postgres: the second debit waits for
-/// the first to commit, then reads the balance it left and is refused, so the cash held never goes below
-/// zero.
+/// Two writers taking the same cash off a cleaner at once, on Postgres - two administrators, or an invoice's
+/// set-off and an administrator: the second debit waits for the first to commit, then reads the balance it
+/// left and is refused, so the cash held never goes below zero.
 /// </summary>
 [Collection("PostgresCollection")]
 public sealed class CashLedgerDebitRaceTests(PostgresContainerFixture fixture) : IAsyncLifetime
@@ -97,6 +98,31 @@ public sealed class CashLedgerDebitRaceTests(PostgresContainerFixture fixture) :
 
         Assert.False(await writeOff);
         writingOff.Rollback();
+
+        await using var read = NewContext();
+        Assert.Equal(0m, await new CashLedgerRepository(read).GetHeldAsync(EmployeeId, CurrencyId, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task A_Remittance_Racing_A_Set_Off_Of_The_Whole_Cash_Held_Waits_For_It_And_Is_Refused_Once_It_Commits()
+    {
+        await using var settingOff = NewContext();
+        var ledger = new CashLedgerRepository(settingOff);
+        var invoice = EmployeeInvoice.Create(
+            EmployeeId, "period-cash-race", 1, 2000m, CurrencyId, "1", "INV-CASH-RACE");
+        invoice.SetOffCash(await ledger.GetHeldUnderLockAsync(EmployeeId, CurrencyId, CancellationToken.None));
+        ledger.Add(CashLedgerEntry.ForSetOff(invoice));
+
+        await using var remitting = NewContext();
+        var remittance = new CashLedgerRepository(remitting).TryDebitAsync(
+            CashLedgerEntry.ForRemittance(EmployeeId, CurrencyId, Held, null, DateTime.UtcNow), CancellationToken.None);
+        await Task.Delay(TimeSpan.FromMilliseconds(500));
+        Assert.False(remittance.IsCompleted);
+
+        await settingOff.CommitAsync(CancellationToken.None);
+
+        Assert.False(await remittance);
+        remitting.Rollback();
 
         await using var read = NewContext();
         Assert.Equal(0m, await new CashLedgerRepository(read).GetHeldAsync(EmployeeId, CurrencyId, CancellationToken.None));

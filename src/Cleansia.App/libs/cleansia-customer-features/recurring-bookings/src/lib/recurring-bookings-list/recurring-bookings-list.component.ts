@@ -108,7 +108,10 @@ export class RecurringBookingsListComponent implements OnInit {
       : translated;
   }
 
-  /** "Wednesday 10:00 · next 3 Sep" — the second half only once we have one. */
+  /**
+   * "Wednesday 10:00 · next 3 Sep" — the second half only once we have one. The date is read in
+   * the market's zone, like the day and time beside it; the reader's zone would put it a day off.
+   */
   whenLine(template: RecurringBookingTemplateDto): string {
     const base = `${this.dayName(template.dayOfWeek)} ${template.timeOfDay ?? ''}`.trim();
     const next = this.facade.nextRun(template);
@@ -118,6 +121,7 @@ export class RecurringBookingsListComponent implements OnInit {
       date: next.toLocaleDateString(localeFor(this.translate.currentLang), {
         day: 'numeric',
         month: 'long',
+        timeZone: template.timeZoneId || undefined,
       }),
     })}`;
   }

@@ -163,9 +163,41 @@ class BackendKeyStringsTest {
         "order.recurring_already_confirmed",
         "order.cleaning_date.below_lead_time",
         "order.cash_not_available",
+        "order.cash_unpaid_receivable",
+        "order.cash_open_bookings_limit_reached",
+        "order.cash_requires_saved_card",
         "order.payment_gateway_unavailable",
         "order.invalid_status_transition",
         "user.not_found",
+    )
+
+    /**
+     * Beyond the one-cleaner rule, cash needs no open receivable, room under the open unpaid cash
+     * bookings and a usable card saved in the booking's currency (owner ruling 2026-09-28). Refused on
+     * `CreateOrder`, both recurring writes and `ConfirmRecurringOrder`.
+     */
+    private val cashStandingKeys = listOf(
+        "order.cash_unpaid_receivable",
+        "order.cash_open_bookings_limit_reached",
+        "order.cash_requires_saved_card",
+    )
+
+    /** Every refusal `SavedCard/CreateSetupIntent` and `SavedCard/Remove` can answer. */
+    private val savedCardKeys = listOf(
+        "saved_card.consent_not_accepted",
+        "saved_card.not_found",
+        "country.not_serviced",
+        "order.payment_gateway_unavailable",
+        "user.not_found",
+        "common.required",
+    )
+
+    /** Every refusal `Receivable/CreatePayLink` can answer. */
+    private val receivableKeys = listOf(
+        "receivable.not_found",
+        "receivable.not_open",
+        "order.payment_gateway_unavailable",
+        "common.required",
     )
 
     /** Every refusal `GrantConsent` and `WithdrawConsent` can answer beyond the common validators. */
@@ -262,6 +294,21 @@ class BackendKeyStringsTest {
     @Test
     fun `every consent refusal resolves to a sentence in all five locales`() {
         assertAllResolve(consentKeys)
+    }
+
+    @Test
+    fun `every cash-standing refusal a booking or schedule can answer resolves to a sentence in all five locales`() {
+        assertAllResolve(cashStandingKeys)
+    }
+
+    @Test
+    fun `every saved-card refusal resolves to a sentence in all five locales`() {
+        assertAllResolve(savedCardKeys)
+    }
+
+    @Test
+    fun `every pay-link refusal resolves to a sentence in all five locales`() {
+        assertAllResolve(receivableKeys)
     }
 
     private fun assertAllResolve(keys: List<String>) {

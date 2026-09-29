@@ -511,7 +511,7 @@
     <string name="help_faq_q1">Ako môžem zrušiť rezerváciu?</string>
     <string name="help_faq_a1">Otvorte rezerváciu v záložke Objednávky a klepnite na \"Zrušiť\". Zrušenie zdarma až 24 hodín pred začiatkom upratovania. Do 15 minút od objednania neplatíte nič — pri prvej objednávke alebo s Cleansia Plus do 60 minút.</string>
     <string name="help_faq_q2">Čo ak nebudem doma, keď príde upratovačka?</string>
-    <string name="help_faq_a2">Pri rezervácii pridajte pokyny ku vstupu (napr. kód pri dverách, miesto kľúča). Upratovačky čakajú až 15 minút; ak vás nemôžeme zastihnúť, rezervácia môže byť zrušená.</string>
+    <string name="help_faq_a2">Pri rezervácii pridajte pokyny ku vstupu (napr. kód pri dverách, miesto kľúča). Upratovačka čaká 15 minút po začiatku upratovania a skúsi vám zavolať. Ak sa ani potom nedostane dnu, rezervácia sa zruší a účtuje sa plná cena.</string>
     <string name="help_faq_q3">Sú upratovačky poistené?</string>
     <string name="help_faq_a3">Áno. Všetky upratovačky Cleansia sú poistené až do výšky %1$s na rezerváciu.</string>
     <string name="help_faq_a3_no_figure">Áno. Všetky upratovačky Cleansia sú poistené.</string>
@@ -776,6 +776,12 @@
     <string name="booking_cash_needs_card">Počet upratovačov potrebných pre túto objednávku: %1$d. V hotovosti sa dá platiť len za objednávky, ktoré zvládne jeden upratovač, túto preto zaplatíte kartou.</string>
     <string name="booking_cash_pending">Či môžete platiť v hotovosti, potvrdíme, keď bude známa cena.</string>
     <string name="booking_cash_cleared">Platba v hotovosti už pre túto objednávku nie je možná, preto nie je vybraný žiadny spôsob platby. Zvoľte, ako chcete platiť.</string>
+    <string name="booking_card_guarantee_title">Karta ako záruka platieb v hotovosti</string>
+    <string name="booking_card_guarantee_body">Pri prvej objednávke v hotovosti si uložíte kartu. Teraz sa nič nestrháva: za upratovanie zaplatíte v hotovosti ako zvyčajne.</string>
+    <string name="consent_card_guarantee_draft_2026_09_28">Súhlasím, že Cleansia môže pri mojich objednávkach v hotovosti strhnúť z tejto karty stornovací poplatok, poplatok za neumožnenie vstupu, nezaplatenú hotovosť a doplatok, ktorý som schválil(a).</string>
+    <string name="booking_card_guarantee_consent_required">Na platbu v hotovosti potvrďte súhlas so zárukou kartou, alebo zvoľte platbu kartou.</string>
+    <string name="booking_card_guarantee_pending">Kartu ešte overujeme. O chvíľu objednávku potvrďte znova.</string>
+    <string name="booking_card_guarantee_cancelled">Karta sa neuložila, preto sa nič neobjednalo. Na platbu v hotovosti si uložte kartu, alebo zvoľte platbu kartou.</string>
     <string name="booking_special_instructions_hint">Špeciálne požiadavky? (nepovinné)</string>
     <string name="booking_access_instructions_hint">Pokyny ku vstupu? (nepovinné)</string>
 
@@ -1109,6 +1115,13 @@
     <string name="error_order_recurring_already_confirmed">Toto upratovanie už máte potvrdené. Upratovačovi zaplatíte v hotovosti v deň upratovania.</string>
     <string name="error_order_creation_failed">Nie je možné vytvoriť rezerváciu. Skúste to znova.</string>
     <string name="error_order_cash_not_available">Platba v hotovosti je možná len po prihlásení a pri objednávke, ktorú zvládne jeden upratovač.</string>
+    <string name="error_order_cash_requires_saved_card">Na platbu v hotovosti si najprv uložte kartu ako záruku — alebo zaplaťte kartou.</string>
+    <string name="error_order_cash_open_bookings_limit_reached">Už máte najvyšší povolený počet nezaplatených objednávok v hotovosti. Zvoľte kartu alebo hotovosť znova, keď bude niektorá z nich zaplatená.</string>
+    <string name="error_order_cash_unpaid_receivable">Máte u nás nezaplatenú sumu, napríklad stornovací poplatok. Zatiaľ zaplaťte kartou; v hotovosti budete môcť platiť znova, keď ju uhradíte v profile v sekcii Platby.</string>
+    <string name="error_saved_card_consent_not_accepted">Pred uložením karty prosím potvrďte súhlas, že na ňu môžu byť účtované poplatky a nezaplatená hotovosť.</string>
+    <string name="error_saved_card_not_found">Túto uloženú kartu sme nenašli.</string>
+    <string name="error_receivable_not_found">Túto dlžnú sumu sme nenašli.</string>
+    <string name="error_receivable_not_open">Táto suma už bola uhradená alebo odpustená.</string>
     <string name="error_order_review_already_exists">Túto rezerváciu ste už hodnotili.</string>
     <string name="error_order_review_rating_invalid">Hodnotenie musí byť medzi 1 a 5.</string>
     <string name="error_order_not_owned_by_user">K tejto rezervácii nemáte prístup.</string>
@@ -1295,6 +1308,31 @@
     <string name="notification_order_assignment_cancelled_body">Zákazka, ktorú ste prijali, bola zrušená: #%1$s. Ťuknutím zobrazíte detaily.</string>
     <string name="notification_payroll_invoice_paid_title">Boli ste vyplatení</string>
     <string name="notification_payroll_invoice_paid_body">Vaša faktúra za posledné výplatné obdobie bola uhradená. Ťuknutím zobrazíte.</string>
+    <!-- ── Payments ── -->
+    <string name="profile_row_payments">Platby</string>
+    <string name="payments_title">Platby</string>
+    <string name="payments_due_title">Na úhradu</string>
+    <string name="payments_due_intro">Uhraďte dlžnú sumu a budete môcť znova platiť v hotovosti. Objednávok platených kartou sa to netýka.</string>
+    <string name="payments_due_order">Objednávka %1$s</string>
+    <string name="payments_pay_action">Zaplatiť</string>
+    <string name="receivable_kind_cancellation_fee">Stornovací poplatok</string>
+    <string name="receivable_kind_lockout">Poplatok za neumožnenie vstupu</string>
+    <string name="receivable_kind_unpaid_cash">Nezaplatená hotovosť</string>
+    <string name="receivable_kind_top_up">Schválený doplatok</string>
+    <string name="receivable_kind_other">Suma na úhradu</string>
+    <string name="payments_card_title">Uložená karta</string>
+    <string name="payments_card_intro">Karta, ktorá zaručuje vaše objednávky v hotovosti. Môže z nej byť strhnutý stornovací poplatok, poplatok za neumožnenie vstupu, nezaplatená hotovosť alebo schválený doplatok.</string>
+    <string name="payments_card_label">%1$s •••• %2$s</string>
+    <string name="payments_card_expires">Platnosť do %1$02d/%2$02d · %3$s</string>
+    <string name="payments_card_empty">Nemáte uloženú kartu. Požiadame o ňu pri prvej objednávke v hotovosti.</string>
+    <string name="payments_card_remove_action">Odstrániť kartu</string>
+    <string name="payments_card_remove_title">Odstrániť túto kartu?</string>
+    <string name="payments_card_remove_message">Pri ďalšej objednávke v hotovosti vás o kartu požiadame znova.</string>
+    <string name="payments_card_remove_confirm">Odstrániť</string>
+    <string name="payments_card_removed">Karta odstránená</string>
+    <string name="payments_card_remove_retry_hint">Kartu sa nepodarilo odstrániť. Skúste to prosím znova.</string>
+    <string name="payments_error_message">Platby sa nepodarilo načítať. Skontrolujte pripojenie a skúste to znova.</string>
+    <string name="payments_error_retry">Skúsiť znova</string>
     <!-- ── Vaše zariadenia ── -->
     <string name="profile_row_devices">Vaše zariadenia</string>
     <string name="devices_title">Vaše zariadenia</string>

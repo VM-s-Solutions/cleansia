@@ -271,6 +271,37 @@ private fun SheetContent(
         }
     }
 
+    val cardGuaranteeSheet = com.stripe.android.paymentsheet.rememberPaymentSheet { result ->
+        when (result) {
+            is com.stripe.android.paymentsheet.PaymentSheetResult.Completed -> scope.launch {
+                when (val outcome = bookingVm.submitAfterCardGuarantee()) {
+                    is BookingSubmitOutcome.Success -> {
+                        bookingVm.reset()
+                        onComplete(outcome.response.confirmationCode, outcome.response.id)
+                    }
+                    BookingSubmitOutcome.ProfileIncomplete -> {
+                        onDismiss()
+                        onNavigateToEditProfile()
+                    }
+                    is BookingSubmitOutcome.CardPending,
+                    is BookingSubmitOutcome.CardGuaranteeNeeded,
+                    BookingSubmitOutcome.Failed,
+                    -> submitFailedCount++
+                }
+            }
+            is com.stripe.android.paymentsheet.PaymentSheetResult.Canceled -> {
+                snackbarController.showErrorKey(R.string.booking_card_guarantee_cancelled)
+                submitFailedCount++
+            }
+            is com.stripe.android.paymentsheet.PaymentSheetResult.Failed -> {
+                snackbarController.showError(
+                    result.error.localizedMessage ?: context.getString(R.string.booking_card_guarantee_cancelled),
+                )
+                submitFailedCount++
+            }
+        }
+    }
+
     // Hydrate from the repo whenever the sheet becomes visible OR a different
     // preferred address arrives. Keying on (visible, preferred?.id) means the
     // re-open after a fresh-open reset still triggers re-hydration even though
@@ -623,6 +654,28 @@ private fun SheetContent(
                                                 // The PaymentIntent's own currency wins on the sheet; this
                                                 // is the Google Pay availability hint.
                                                 currencyCode = outcome.paymentSheet.currencyCode,
+                                            ),
+                                            allowsDelayedPaymentMethods = false,
+                                        ),
+                                    )
+                                }
+                                is BookingSubmitOutcome.CardGuaranteeNeeded -> {
+                                    cardGuaranteeSheet.presentWithSetupIntent(
+                                        setupIntentClientSecret = outcome.setup.setupIntentClientSecret,
+                                        configuration = com.stripe.android.paymentsheet.PaymentSheet.Configuration(
+                                            merchantDisplayName = "Cleansia",
+                                            customer = com.stripe.android.paymentsheet.PaymentSheet.CustomerConfiguration(
+                                                id = outcome.setup.customerId,
+                                                ephemeralKeySecret = outcome.setup.ephemeralKey,
+                                            ),
+                                            googlePay = com.stripe.android.paymentsheet.PaymentSheet.GooglePayConfiguration(
+                                                environment = if (cz.cleansia.customer.BuildConfig.GOOGLE_PAY_PRODUCTION) {
+                                                    com.stripe.android.paymentsheet.PaymentSheet.GooglePayConfiguration.Environment.Production
+                                                } else {
+                                                    com.stripe.android.paymentsheet.PaymentSheet.GooglePayConfiguration.Environment.Test
+                                                },
+                                                countryCode = "CZ",
+                                                currencyCode = outcome.setup.currencyCode,
                                             ),
                                             allowsDelayedPaymentMethods = false,
                                         ),

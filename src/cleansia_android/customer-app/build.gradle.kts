@@ -194,7 +194,8 @@ android {
 }
 
 // Copy guards read every locale's strings.xml, and the grace and referral claims read the backend's
-// BookingPolicy.cs and ReferralPolicy.cs, straight off disk. None of them changes a compiled class, so
+// BookingPolicy.cs and ReferralPolicy.cs, and the card-guarantee consent its version in SavedCard.cs,
+// straight off disk. None of them changes a compiled class, so
 // undeclared, a copy-only edit or a changed policy figure leaves this task UP-TO-DATE or FROM-CACHE
 // with the old verdict.
 tasks.withType<Test>().configureEach {
@@ -208,6 +209,10 @@ tasks.withType<Test>().configureEach {
 
     inputs.file("$rootDir/../Cleansia.Core.AppServices/Features/Orders/ReferralPolicy.cs")
         .withPropertyName("referralPolicy")
+        .withPathSensitivity(PathSensitivity.NONE)
+
+    inputs.file("$rootDir/../Cleansia.Core.Domain/Users/SavedCard.cs")
+        .withPropertyName("savedCardConsentVersion")
         .withPathSensitivity(PathSensitivity.NONE)
 }
 

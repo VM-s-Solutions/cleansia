@@ -70,6 +70,10 @@ object Routes {
     @Serializable
     data object Devices
 
+    /** What the customer owes, paid through a pay link, and the card that guarantees cash bookings. */
+    @Serializable
+    data object Payments
+
     @Serializable
     data object Notifications
 

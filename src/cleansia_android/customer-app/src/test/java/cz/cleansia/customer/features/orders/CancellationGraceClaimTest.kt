@@ -139,6 +139,26 @@ class CancellationGraceClaimTest {
     /** Minute figures beside a cancel word that are not the grace: how long the cleaner waits at the door. */
     private val notGraceMinutes = setOf("help_faq_a2")
 
+    /** The whole price, in each locale's words: what a confirmed lockout costs. */
+    private val wholePrice = mapOf(
+        "values" to Regex("full price", RegexOption.IGNORE_CASE),
+        "values-cs" to Regex("pln\\S* cen", RegexOption.IGNORE_CASE),
+        "values-sk" to Regex("pln\\S* cen", RegexOption.IGNORE_CASE),
+        "values-uk" to Regex("повн\\S* вартіст", RegexOption.IGNORE_CASE),
+        "values-ru" to Regex("полн\\S* стоимост", RegexOption.IGNORE_CASE),
+    )
+
+    /** Owner ruling 2026-09-28: the cleaner waits the policy's minutes past the start, then a lockout costs the whole price. */
+    @Test
+    fun `the FAQ's door wait is the lockout wait, and it names the whole price, in every locale`() {
+        val lockoutWait = policyMinutes("LockoutWaitMinutes")
+        locales.forEach { locale ->
+            val answer = strings(locale)["help_faq_a2"] ?: error("$locale/help_faq_a2 is missing")
+            assertEquals("$locale/help_faq_a2 — $answer", listOf(lockoutWait), minuteFigures(answer))
+            assertTrue("$locale/help_faq_a2 does not name the whole price — $answer", wholePrice.getValue(locale).containsMatchIn(answer))
+        }
+    }
+
     /** Known grace claims that name cancelling, so the sweep must find them by its own stems. */
     private val sweptGraceClaims = listOf("help_faq_a1", "membership_perk_grace_desc")
 

@@ -155,7 +155,15 @@
       "request_deletion_title": "Požiadať o odstránenie?",
       "request_deletion_message": "Zatiaľ sa nič neodstráni. Niektoré dokumenty musíme uchovávať, preto vašu žiadosť posúdi administrátor — súbor {{fileName}} zostáva až do jeho odpovede bez zmeny.",
       "deletion_reason": "Prečo má byť odstránený?",
-      "replace_document": "Nahradiť"
+      "replace_document": "Nahradiť",
+      "legal_documents": "Zmluvné dokumenty",
+      "legal_documents_intro": "Prečítajte si a prijmite každý z dokumentov nižšie. Kým neprijmete platnú verziu, vašu registráciu nemožno schváliť a nemôžete prijímať zákazky.",
+      "legal_documents_version": "Verzia {{version}}, účinná od {{date}}",
+      "legal_documents_accepted_on": "Prijaté {{date}}, verzia {{version}}",
+      "legal_documents_new_version": "Platí nová verzia. Prijali ste verziu {{version}}.",
+      "legal_documents_awaiting": "Zatiaľ neprijaté",
+      "legal_documents_text": "Úplné znenie",
+      "legal_documents_accept": "Prečítal(a) som si tento dokument a prijímam ho"
     },
     "dashboard": {
       "title": "Prehľad",
@@ -650,7 +658,9 @@
         "bank_details_load_error": "Vaše bankové údaje sa nepodarilo načítať. Skúste to prosím znova.",
         "not_loaded": "Profil sa ešte nenačítal",
         "job_radius_saved": "Vzdialenosť pre upozornenia bola uložená",
-        "job_radius_load_error": "Nepodarilo sa načítať vašu vzdialenosť pre upozornenia. Skúste to prosím znova."
+        "job_radius_load_error": "Nepodarilo sa načítať vašu vzdialenosť pre upozornenia. Skúste to prosím znova.",
+        "legal_document_accepted": "Dokument bol prijatý.",
+        "legal_documents_load_error": "Zmluvné dokumenty sa nepodarilo načítať. Skúste to prosím znova."
       },
       "documents": {
         "load_error": "Nepodarilo sa načítať dokumenty. Skúste to prosím znova.",
@@ -959,7 +969,7 @@
       "already_rejected": "Partner už bol zamietnutý",
       "job_radius_out_of_range": "Zadaný dojazdový okruh je mimo povoleného rozsahu",
       "legal_entity_not_accepted": "Upratovači s nami spolupracujú ako fyzické osoby; firmu tu nie je možné registrovať",
-      "legal_documents_not_accepted": "Skôr než začnete prijímať zákazky, prijmite aktuálnu verziu svojich zmluvných dokumentov."
+      "legal_documents_not_accepted": "Skôr než začnete prijímať zákazky, prijmite vo svojom profile aktuálnu verziu svojich zmluvných dokumentov."
     },
     "employee_document": {
       "not_found": "Dokument nenájdený",

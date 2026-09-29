@@ -29,6 +29,7 @@ import { ProfileFormData, ProfileFormFactory } from './profile.models';
 import { ProfileBankFacade } from './profile-bank.facade';
 import { ProfileDocumentsFacade } from './profile-documents.facade';
 import { ProfileJobRadiusFacade } from './profile-job-radius.facade';
+import { ProfileLegalDocumentsFacade } from './profile-legal-documents.facade';
 
 @Injectable()
 export class ProfileFacade extends UnsubscribeControlDirective {
@@ -40,6 +41,7 @@ export class ProfileFacade extends UnsubscribeControlDirective {
   readonly documentsFacade = inject(ProfileDocumentsFacade);
   readonly bankFacade = inject(ProfileBankFacade);
   readonly jobRadiusFacade = inject(ProfileJobRadiusFacade);
+  readonly legalDocumentsFacade = inject(ProfileLegalDocumentsFacade);
 
   readonly formGroup: FormGroup =
     ProfileFormFactory.createEmployeeProfileForm();

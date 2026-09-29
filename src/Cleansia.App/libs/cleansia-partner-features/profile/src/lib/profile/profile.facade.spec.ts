@@ -12,6 +12,7 @@ import { EMPTY, of, throwError } from 'rxjs';
 import { ProfileBankFacade } from './profile-bank.facade';
 import { ProfileDocumentsFacade } from './profile-documents.facade';
 import { ProfileJobRadiusFacade } from './profile-job-radius.facade';
+import { ProfileLegalDocumentsFacade } from './profile-legal-documents.facade';
 import { ProfileFacade } from './profile.facade';
 
 /**
@@ -30,6 +31,7 @@ describe('ProfileFacade — job radius seeding', () => {
         ProfileBankFacade,
         ProfileDocumentsFacade,
         ProfileJobRadiusFacade,
+        ProfileLegalDocumentsFacade,
         {
           provide: PartnerClient,
           useValue: {

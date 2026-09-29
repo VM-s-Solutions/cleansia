@@ -1,0 +1,81 @@
+@if (facade.visible()) {
+<cleansia-section [title]="'pages.profile.legal_documents' | translate">
+  <p class="cleansia-profile__description">
+    {{ 'pages.profile.legal_documents_intro' | translate }}
+  </p>
+
+  @if (facade.loadFailed()) {
+    <div class="cleansia-profile__load-error">
+      <p class="cleansia-profile__load-error-message">
+        {{ 'global.messages.profile.legal_documents_load_error' | translate }}
+      </p>
+      <cleansia-button
+        [label]="'global.actions.retry' | translate"
+        [icon]="'pi pi-refresh'"
+        (onClick)="facade.retry()"
+      />
+    </div>
+  } @else if (!facade.loaded()) {
+    <cleansia-loader />
+  } @else {
+    <ul class="legal-documents">
+      @for (document of facade.documents(); track document.type) {
+      <li class="legal-documents__item">
+        <h3 class="legal-documents__title">{{ document.title }}</h3>
+        <!-- The effective date is a calendar day, so it is read in UTC like the work contract. -->
+        <p class="legal-documents__meta">
+          {{
+            'pages.profile.legal_documents_version'
+              | translate
+                : { version: document.version, date: document.effectiveFrom | date: 'dd.MM.yyyy' : 'UTC' }
+          }}
+        </p>
+
+        @if (document.isAccepted) {
+        <p class="legal-documents__status legal-documents__status--accepted">
+          <i class="pi pi-verified"></i>
+          <span>
+            {{
+              'pages.profile.legal_documents_accepted_on'
+                | translate
+                  : { date: document.acceptedAt | date: 'dd.MM.yyyy', version: document.acceptedVersion }
+            }}
+          </span>
+        </p>
+        } @else {
+        <p class="legal-documents__status legal-documents__status--pending">
+          <i class="pi pi-exclamation-circle"></i>
+          <span>
+            @if (document.acceptedVersion) {
+              {{ 'pages.profile.legal_documents_new_version' | translate: { version: document.acceptedVersion } }}
+            } @else {
+              {{ 'pages.profile.legal_documents_awaiting' | translate }}
+            }
+          </span>
+        </p>
+        }
+
+        <details class="legal-documents__text" [open]="!document.isAccepted">
+          <summary class="legal-documents__summary">
+            {{ 'pages.profile.legal_documents_text' | translate }}
+          </summary>
+          <div class="legal-documents__content" [innerHTML]="document.contentHtml"></div>
+        </details>
+
+        @if (!document.isAccepted) {
+        <div class="cleansia-profile__actions">
+          <cleansia-button
+            [label]="'pages.profile.legal_documents_accept' | translate"
+            [icon]="'pi pi-check'"
+            [loading]="facade.acceptingType() === document.type"
+            [disabled]="facade.accepting()"
+            (onClick)="facade.accept(document)"
+          />
+        </div>
+        }
+      </li>
+      }
+    </ul>
+  }
+</cleansia-section>
+}

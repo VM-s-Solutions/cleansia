@@ -17,11 +17,13 @@ import {
   ProfileBankComponent,
   ProfileDocumentsComponent,
   ProfileJobRadiusComponent,
+  ProfileLegalDocumentsComponent,
 } from '../components';
 import { ProfileFacade } from './profile.facade';
 import { ProfileBankFacade } from './profile-bank.facade';
 import { ProfileDocumentsFacade } from './profile-documents.facade';
 import { ProfileJobRadiusFacade } from './profile-job-radius.facade';
+import { ProfileLegalDocumentsFacade } from './profile-legal-documents.facade';
 
 @Component({
   selector: 'cleansia-partner-profile',
@@ -40,12 +42,14 @@ import { ProfileJobRadiusFacade } from './profile-job-radius.facade';
     ProfileBankComponent,
     ProfileDocumentsComponent,
     ProfileJobRadiusComponent,
+    ProfileLegalDocumentsComponent,
   ],
   templateUrl: './profile.component.html',
   providers: [
     ProfileBankFacade,
     ProfileDocumentsFacade,
     ProfileJobRadiusFacade,
+    ProfileLegalDocumentsFacade,
     ProfileFacade,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,

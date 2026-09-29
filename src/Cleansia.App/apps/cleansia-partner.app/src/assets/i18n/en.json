@@ -155,7 +155,15 @@
       "request_deletion_title": "Ask us to remove this?",
       "request_deletion_message": "Nothing is removed yet. Some of these documents we have to keep, so an admin reviews your request — {{fileName}} stays exactly as it is until they answer.",
       "deletion_reason": "Why should it be removed?",
-      "replace_document": "Replace"
+      "replace_document": "Replace",
+      "legal_documents": "Contract documents",
+      "legal_documents_intro": "Read and accept each document below. Until you accept the version in force, your registration cannot be approved and you cannot take jobs.",
+      "legal_documents_version": "Version {{version}}, effective from {{date}}",
+      "legal_documents_accepted_on": "Accepted on {{date}}, version {{version}}",
+      "legal_documents_new_version": "A new version is in force. You accepted version {{version}}.",
+      "legal_documents_awaiting": "Not accepted yet",
+      "legal_documents_text": "Full text",
+      "legal_documents_accept": "I have read and accept this document"
     },
     "dashboard": {
       "title": "Dashboard",
@@ -650,7 +658,9 @@
         "bank_details_load_error": "We could not load your bank details. Please try again.",
         "not_loaded": "Profile not loaded yet",
         "job_radius_saved": "Job alert distance saved",
-        "job_radius_load_error": "We could not load your job alert distance. Please try again."
+        "job_radius_load_error": "We could not load your job alert distance. Please try again.",
+        "legal_document_accepted": "Document accepted.",
+        "legal_documents_load_error": "Your contract documents could not be loaded. Please try again."
       },
       "documents": {
         "load_error": "Failed to load documents. Please try again.",
@@ -959,7 +969,7 @@
       "already_rejected": "Partner has already been rejected",
       "job_radius_out_of_range": "The travel radius you entered is outside the allowed range",
       "legal_entity_not_accepted": "Cleaners work with us as natural persons; a company cannot be registered here",
-      "legal_documents_not_accepted": "Accept the current version of your contract documents before taking jobs."
+      "legal_documents_not_accepted": "Accept the current version of your contract documents in your profile before taking jobs."
     },
     "employee_document": {
       "not_found": "Document not found",

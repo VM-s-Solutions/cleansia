@@ -155,7 +155,15 @@
       "request_deletion_title": "Požádat o odstranění?",
       "request_deletion_message": "Zatím se nic neodstraní. Některé dokumenty musíme uchovávat, proto vaši žádost posoudí administrátor — soubor {{fileName}} zůstává až do jeho odpovědi beze změny.",
       "deletion_reason": "Proč má být odstraněn?",
-      "replace_document": "Nahradit"
+      "replace_document": "Nahradit",
+      "legal_documents": "Smluvní dokumenty",
+      "legal_documents_intro": "Přečtěte si a přijměte každý z dokumentů níže. Dokud nepřijmete platnou verzi, nelze vaši registraci schválit a nemůžete přijímat zakázky.",
+      "legal_documents_version": "Verze {{version}}, účinná od {{date}}",
+      "legal_documents_accepted_on": "Přijato {{date}}, verze {{version}}",
+      "legal_documents_new_version": "Platí nová verze. Přijali jste verzi {{version}}.",
+      "legal_documents_awaiting": "Zatím nepřijato",
+      "legal_documents_text": "Plné znění",
+      "legal_documents_accept": "Přečetl(a) jsem si tento dokument a přijímám jej"
     },
     "dashboard": {
       "title": "Nástěnka",
@@ -650,7 +658,9 @@
         "bank_details_load_error": "Vaše bankovní údaje se nepodařilo načíst. Zkuste to prosím znovu.",
         "not_loaded": "Profil se ještě nenačetl",
         "job_radius_saved": "Vzdálenost pro upozornění byla uložena",
-        "job_radius_load_error": "Nepodařilo se načíst vaši vzdálenost pro upozornění. Zkuste to prosím znovu."
+        "job_radius_load_error": "Nepodařilo se načíst vaši vzdálenost pro upozornění. Zkuste to prosím znovu.",
+        "legal_document_accepted": "Dokument byl přijat.",
+        "legal_documents_load_error": "Smluvní dokumenty se nepodařilo načíst. Zkuste to prosím znovu."
       },
       "documents": {
         "load_error": "Nepodařilo se načíst dokumenty. Zkuste to prosím znovu.",
@@ -959,7 +969,7 @@
       "already_rejected": "Partner již byl zamítnut",
       "job_radius_out_of_range": "Zadaný dojezdový okruh je mimo povolený rozsah",
       "legal_entity_not_accepted": "Úklidoví pracovníci s námi spolupracují jako fyzické osoby; firmu zde nelze registrovat",
-      "legal_documents_not_accepted": "Než začnete přijímat zakázky, přijměte aktuální verzi svých smluvních dokumentů."
+      "legal_documents_not_accepted": "Než začnete přijímat zakázky, přijměte ve svém profilu aktuální verzi svých smluvních dokumentů."
     },
     "employee_document": {
       "not_found": "Dokument nenalezen",

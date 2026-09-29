@@ -2,6 +2,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { computed, inject, Injectable, PLATFORM_ID, signal } from '@angular/core';
 import {
   CustomerClient,
+  DirtinessLevel,
   GetMyServingCleanersResponse,
   PreferredCleanerOption,
   survivingPreferredSelection,
@@ -24,10 +25,10 @@ interface PreferredCleanerConnection {
  * The Plus-only picker that lets a customer ask for a cleaner who has already cleaned for them.
  *
  * The roster is `GET /api/Order/MyServingCleaners`, the same call both mobile clients make, asked
- * with the slot and the selection so the server can answer the availability question about the
- * booking actually being composed rather than about nothing. A cleaner it cannot take is shown and
- * unselectable; the server would not withhold a seat for them, and offering the row would produce a
- * booking whose preference is silently dropped.
+ * with the slot, the selection, the home size and the dirtiness level so the server can answer the
+ * availability question about the booking actually being composed rather than about nothing. A
+ * cleaner it cannot take is shown and unselectable; the server would not withhold a seat for them,
+ * and offering the row would produce a booking whose preference is silently dropped.
  *
  * A failed read degrades to a hidden picker rather than to a banner: the perk is an enrichment on
  * the checkout screen, and a red box there costs more than the picker is worth.
@@ -74,7 +75,10 @@ export class OrderPreferredCleanerFacade extends UnsubscribeControlDirective {
       .myServingCleaners(
         composeSlotInstant(data),
         data.selectedServiceIds,
-        data.selectedPackageIds
+        data.selectedPackageIds,
+        data.rooms,
+        data.bathrooms,
+        data.dirtinessLevel ?? DirtinessLevel.Normal
       )
       .pipe(
         takeUntil(this.destroyed$),

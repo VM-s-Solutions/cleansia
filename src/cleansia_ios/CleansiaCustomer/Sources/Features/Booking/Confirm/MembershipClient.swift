@@ -47,7 +47,7 @@ struct LiveMembershipClient: MembershipClient {
                 expressUpgradesPerMonth: response.expressUpgradesPerMonth,
                 expressUpgradesRemaining: response.expressUpgradesRemaining,
                 trialEndsAtUtc: response.trialEndsAtUtc,
-                benefitsPaused: response.status.map { $0 == ._2 || $0 == ._4 } ?? false
+                benefitsPaused: response.benefitsPaused
             )
         }
     }

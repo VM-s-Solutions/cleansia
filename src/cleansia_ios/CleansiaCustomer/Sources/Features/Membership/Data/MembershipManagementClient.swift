@@ -94,8 +94,13 @@ extension GetMyMembershipResponse {
             price: price,
             monthlyEquivalentPrice: monthlyEquivalentPrice,
             currencyCode: currencyCode,
-            benefitsPaused: status.map { $0 == ._2 || $0 == ._4 } ?? false
+            benefitsPaused: benefitsPaused
         )
+    }
+
+    /// `._2` is PastDue and `._4` is Paused: the enrolment is live, but no benefit runs.
+    var benefitsPaused: Bool {
+        status.map { $0 == ._2 || $0 == ._4 } ?? false
     }
 }
 

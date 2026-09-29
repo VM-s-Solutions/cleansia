@@ -35,7 +35,9 @@ public class ChangeOwnPassword
             RuleFor(x => x.NewPassword)
                 .ValidatePassword()
                 .MinimumLength(ValidationExtensions.AdminPasswordMinLength)
-                .WithMessage(BusinessErrorMessage.AdminPasswordTooShort);
+                .WithMessage(BusinessErrorMessage.AdminPasswordTooShort)
+                .NotEqual(x => x.CurrentPassword)
+                .WithMessage(BusinessErrorMessage.SameResetPassword);
         }
     }
 

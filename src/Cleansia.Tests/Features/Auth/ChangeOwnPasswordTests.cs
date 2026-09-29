@@ -263,6 +263,18 @@ public class ChangeOwnPasswordTests
     }
 
     [Fact]
+    public async Task A_New_Password_Equal_To_The_Current_One_Fails_With_SameResetPassword()
+    {
+        var validator = new ChangeOwnPassword.Validator();
+
+        var result = await validator.ValidateAsync(new ChangeOwnPassword.Command(NewPassword, NewPassword));
+
+        var error = Assert.Single(result.Errors);
+        Assert.Equal(nameof(ChangeOwnPassword.Command.NewPassword), error.PropertyName);
+        Assert.Equal(BusinessErrorMessage.SameResetPassword, error.ErrorMessage);
+    }
+
+    [Fact]
     public async Task Empty_Current_Password_Fails_With_Required()
     {
         var validator = new ChangeOwnPassword.Validator();

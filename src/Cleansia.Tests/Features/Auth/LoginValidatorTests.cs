@@ -1,4 +1,5 @@
-﻿using Cleansia.Core.AppServices.Auditing;
+﻿using System.Diagnostics;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Auth;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -139,6 +140,45 @@ public class LoginValidatorTests
         Assert.NotEmpty(wrongPassword);
         Assert.Equal(wrongPassword, await RefusalFor(unknownEmail));
         Assert.Equal(wrongPassword, await RefusalFor(googleUser.Email));
+    }
+
+    /// <summary>
+    /// A refusal that answered without deriving a hash would tell the caller, by its speed alone, that no
+    /// password account holds the address. Fastest of three per address, so a busy machine can only make
+    /// a sample slower, and the bar is a quarter of the wrong-password time, far above a refusal that
+    /// skips the derivation.
+    /// </summary>
+    [Fact]
+    public async Task An_Unknown_Address_And_A_Social_Account_Take_As_Long_To_Refuse_As_A_Wrong_Password()
+    {
+        const string unknownEmail = "nonexistent@example.com";
+        var googleUser = UserMockFactory.Generate(new UserMockFactory.UserPartial { AuthenticationType = AuthenticationType.Google });
+        var passwordUser = UserMockFactory.Generate(new UserMockFactory.UserPartial { Password = TestUtilities.Constants.TestUserSession.TestUserPassword.HashAndSaltPassword() });
+        _mockRepo.Setup(r => r.GetByEmailIgnoringTenantAsync(unknownEmail, It.IsAny<CancellationToken>())).ReturnsAsync((User)null);
+        _mockRepo.Setup(r => r.GetByEmailIgnoringTenantAsync(googleUser.Email, It.IsAny<CancellationToken>())).ReturnsAsync(googleUser);
+        _mockRepo.Setup(r => r.GetByEmailIgnoringTenantAsync(passwordUser.Email, It.IsAny<CancellationToken>())).ReturnsAsync(passwordUser);
+
+        async Task<TimeSpan> FastestRefusal(string email)
+        {
+            var fastest = TimeSpan.MaxValue;
+            for (var sample = 0; sample < 3; sample++)
+            {
+                var clock = Stopwatch.StartNew();
+                var result = await _validator.ValidateAsync(new Login.Command(email, TestUtilities.Constants.TestUserSession.TestUserPassword + "s", true));
+                clock.Stop();
+                Assert.False(result.IsValid);
+                fastest = clock.Elapsed < fastest ? clock.Elapsed : fastest;
+            }
+
+            return fastest;
+        }
+
+        var wrongPassword = await FastestRefusal(passwordUser.Email);
+        var unknownAddress = await FastestRefusal(unknownEmail);
+        var socialAccount = await FastestRefusal(googleUser.Email);
+
+        Assert.True(unknownAddress >= wrongPassword / 4, $"Unknown address refused in {unknownAddress.TotalMilliseconds} ms, a wrong password in {wrongPassword.TotalMilliseconds} ms.");
+        Assert.True(socialAccount >= wrongPassword / 4, $"Social account refused in {socialAccount.TotalMilliseconds} ms, a wrong password in {wrongPassword.TotalMilliseconds} ms.");
     }
 
     [Fact]

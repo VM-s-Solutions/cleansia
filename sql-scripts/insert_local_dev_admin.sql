@@ -34,7 +34,7 @@ INSERT INTO public."Users" (
   "Email", "Password", "FirstName", "LastName",
   "Profile", "AdminRole", "AuthenticationType", "IsEmailConfirmed",
   "FailedLoginAttempts", "ConfirmationCodeAttempts", "ResetPasswordCodeAttempts",
-  "PreferredLanguageCode", "TenantId"
+  "MustChangePassword", "PreferredLanguageCode", "TenantId"
 )
 SELECT generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP,
        'admin@cleansia.local',
@@ -42,5 +42,5 @@ SELECT generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP,
        'Dev', 'Administrator',
        100, 1, 1, true,
        0, 0, 0,
-       'en', 'cleansia-cz'
+       false, 'en', 'cleansia-cz'
 WHERE NOT EXISTS (SELECT 1 FROM public."Users");

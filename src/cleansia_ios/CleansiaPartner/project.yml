@@ -115,6 +115,13 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         TARGETED_DEVICE_FAMILY: "1"
         API_BASE_URL: https:/$()/api-cleansia-partner-mobile-weu-dev.azurewebsites.net
+      configs:
+        # The production custom domain, matching the Android release build. It resolves once the
+        # owner has created its CNAME + asuid TXT records and bound it to the prod Partner Mobile
+        # host (deploy/AZURE-DEV-RUNBOOK.md §12). The TestFlight lanes archive Release, so an upload
+        # that must still reach DEV passes API_BASE_URL as an xcarg.
+        Release:
+          API_BASE_URL: https:/$()/api-partner-mobile.cleansia.cz
     preBuildScripts:
       - name: Verify local build configuration
         basedOnDependencyAnalysis: false

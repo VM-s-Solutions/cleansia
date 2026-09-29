@@ -68,26 +68,6 @@ android {
                     ?: ""
         buildConfigField("String", "MAPBOX_ACCESS_TOKEN", "\"$mapboxAccessToken\"")
 
-        // Backend API base URL — points at the dedicated Customer Mobile API host
-        // (Cleansia.Web.Mobile.Customer). The Customer Web host is for browser clients and blanks
-        // body tokens per the HttpOnly cookie migration; native clients need the token in the JSON
-        // response (EncryptedSharedPreferences storage), which the Mobile.Customer host preserves.
-        //
-        // The DEFAULT is the Azure DEV host, deliberately matching what iOS ships in
-        // CleansiaCustomer/project.yml — a fresh clone of either platform talks to the same backend
-        // with no local setup, which is the whole point when comparing the two apps side by side.
-        // For a locally-running backend, override without editing this file:
-        //     ./gradlew :customer-app:installDebug -PAPI_BASE_URL=http://10.0.2.2:5004/
-        // (10.0.2.2 is the emulator's alias for the host machine; use the LAN IP on a real device),
-        // or set API_BASE_URL in ~/.gradle/gradle.properties to make it sticky.
-        //
-        // MUST end with a slash: Retrofit rejects a base URL without one. ensureTrailingSlash() in
-        // AuthModule is the belt to this braces, so an override that forgets it still works.
-        val apiBaseUrl = providers.gradleProperty("API_BASE_URL").orNull
-            ?: System.getenv("API_BASE_URL")
-                    ?: "https://api-cleansia-customer-mobile-weu-dev.azurewebsites.net/"
-        buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
-
         // Sentry DSN — read from ~/.gradle/gradle.properties (SENTRY_DSN) or CI env.
         // Empty string = Sentry stays dormant (no-op init), so dev builds without a DSN
         // still run normally. Real DSN goes into the Play-store release pipeline.
@@ -108,9 +88,9 @@ android {
         // Google Pay environment follows the STRIPE KEY, not the build type.
         //
         // It used to be `if (BuildConfig.DEBUG) Test else Production` at the PaymentSheet call
-        // site, which is wrong the moment a release build carries a test key — and every release
-        // build does today, because they point at the Azure DEV backend. Google Pay Production
-        // against pk_test_ fails at the sheet, after the user has committed to paying.
+        // site, which is wrong the moment a release build carries a test key, as one built against
+        // the DEV backend does. Google Pay Production against pk_test_ fails at the sheet, after
+        // the user has committed to paying.
         //
         // Deriving it from the key prefix makes the two impossible to desync: there is no second
         // flag to remember to flip when the live key lands. An empty or unrecognised key falls to
@@ -130,6 +110,17 @@ android {
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$googleWebClientId\"")
     }
 
+    // Backend API base URL — the dedicated Customer Mobile API host (Cleansia.Web.Mobile.Customer).
+    // The Customer Web host blanks body tokens for its HttpOnly cookie flow; native clients need the
+    // token in the JSON response, which the Mobile.Customer host keeps. A non-null override wins for
+    // every build type, same seam as the partner app:
+    //     ./gradlew :customer-app:installDebug -PAPI_BASE_URL=http://10.0.2.2:5004/
+    // (10.0.2.2 is the emulator's alias for the host machine; use the LAN IP on a real device), or
+    // API_BASE_URL in ~/.gradle/gradle.properties to make it sticky. MUST end with a slash: Retrofit
+    // rejects a base URL without one, and ensureTrailingSlash() in AuthModule normalises one that forgets.
+    val apiBaseUrlOverride: String? = providers.gradleProperty("API_BASE_URL").orNull
+        ?: System.getenv("API_BASE_URL")
+
     signingConfigs {
         create("release") {
             val keystoreFile = rootProject.file("keystore/release.jks")
@@ -147,10 +138,21 @@ android {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
             isMinifyEnabled = false
+            // The Azure DEV host, matching the Debug configuration in CleansiaCustomer/project.yml.
+            val url = apiBaseUrlOverride
+                ?: "https://api-cleansia-customer-mobile-weu-dev.azurewebsites.net/"
+            buildConfigField("String", "API_BASE_URL", "\"$url\"")
         }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
+            // The production custom domain, matching the Release configuration in
+            // CleansiaCustomer/project.yml. Owner step before it resolves: the CNAME + asuid TXT
+            // records, and the `api-customer-mobile` entry in weu.prod.bicepparam's customDomains
+            // (deploy/AZURE-DEV-RUNBOOK.md §12). Until then a release build that must reach DEV passes
+            // -PAPI_BASE_URL=https://api-cleansia-customer-mobile-weu-dev.azurewebsites.net/
+            val url = apiBaseUrlOverride ?: "https://api-customer-mobile.cleansia.cz/"
+            buildConfigField("String", "API_BASE_URL", "\"$url\"")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
@@ -216,7 +218,7 @@ tasks.withType<Test>().configureEach {
         .withPathSensitivity(PathSensitivity.NONE)
 }
 
-// ─── Release signing assertion ──────────────────────────────────────
+// ─── Release assertions: Firebase config, signing ───────────────────
 // The `if (keystoreFile.exists())` guard above is what keeps debug builds and IDE sync working on
 // a machine with no keystore — but AGP then treats the empty signingConfig as "package it
 // unsigned" and emits the artifact with no error, so the first signal is Play rejecting the
@@ -244,6 +246,22 @@ run {
     val wantsRelease = gradle.startParameter.taskNames.any { name ->
         releaseTask.containsMatchIn(name) &&
             (!name.startsWith(":") || name.startsWith("${project.path}:"))
+    }
+    // The fallback at the top of this file copies the placeholder in whenever the real config is
+    // absent, so without this a release build ships with push dead and nothing says so. The
+    // google-services plugin reads src/release/ ahead of the module root for a release build.
+    if (wantsRelease) {
+        val firebaseConfig = listOf("src/release/google-services.json", "google-services.json")
+            .firstNotNullOfOrNull { providers.fileContents(layout.projectDirectory.file(it)).asText.orNull }
+        if (firebaseConfig == null || firebaseConfig.contains("PLACEHOLDER_REPLACE_WITH_REAL_API_KEY")) {
+            throw GradleException(
+                "The release build's google-services.json is the committed placeholder, so it would " +
+                    "ship with push notifications dead. Owner step: download the config of the " +
+                    "production Firebase project's Android app cz.cleansia.customer from the Firebase " +
+                    "console into customer-app/src/release/google-services.json (gitignored), which " +
+                    "release builds read ahead of customer-app/google-services.json."
+            )
+        }
     }
     // Android Studio's "Generate Signed Bundle / APK" wizard passes the keystore as
     // -Pandroid.injected.signing.*, which AGP honours over the DSL. Signing IS configured on that

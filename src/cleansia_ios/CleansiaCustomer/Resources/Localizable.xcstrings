@@ -27708,31 +27708,206 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nemáte uloženou kartu. Požádáme o ni při první objednávce v hotovosti."
+            "value": "Nemáte uloženou kartu. Objednávky v hotovosti ji vyžadují."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "No card saved. Your first cash booking asks for one."
+            "value": "No card saved. Cash bookings need one."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Карта не сохранена. Мы попросим её при первом заказе с оплатой наличными."
+            "value": "Карта не сохранена. Для заказов с оплатой наличными она нужна."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nemáte uloženú kartu. Požiadame o ňu pri prvej objednávke v hotovosti."
+            "value": "Nemáte uloženú kartu. Objednávky v hotovosti ju vyžadujú."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Картку не збережено. Ми попросимо її під час першого замовлення з оплатою готівкою."
+            "value": "Картку не збережено. Для замовлень з оплатою готівкою вона потрібна."
+          }
+        }
+      }
+    },
+    "payments_card_add_note": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uložením karty se nic nestrhává: za úklid zaplatíte v hotovosti jako obvykle."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saving a card charges nothing: you still pay the cleaner in cash."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "При сохранении карты ничего не списывается: за уборку вы платите наличными, как обычно."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uložením karty sa nič nestrháva: za upratovanie zaplatíte v hotovosti ako zvyčajne."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Збереження картки нічого не списує: за прибирання ви платите готівкою, як завжди."
+          }
+        }
+      }
+    },
+    "payments_card_add_action": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uložit kartu"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save a card"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сохранить карту"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uložiť kartu"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Зберегти картку"
+          }
+        }
+      }
+    },
+    "payments_card_added": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Karta uložena"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Card saved"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Карта сохранена"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Karta uložená"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Картку збережено"
+          }
+        }
+      }
+    },
+    "payments_card_add_cancelled": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Karta se neuložila."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your card wasn't saved."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Карта не сохранена."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Karta sa neuložila."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Картку не збережено."
+          }
+        }
+      }
+    },
+    "payments_card_add_pending": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kartu ještě ověřujeme. Podívejte se sem za chvíli."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We're still confirming your card. Check back here in a moment."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Мы ещё подтверждаем вашу карту. Загляните сюда через мгновение."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kartu ešte overujeme. Pozrite sa sem o chvíľu."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ми ще підтверджуємо вашу картку. Загляньте сюди за мить."
           }
         }
       }
@@ -27813,31 +27988,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Při další objednávce v hotovosti vás o kartu požádáme znovu."
+            "value": "Objednávky v hotovosti vyžadují uloženou kartu. Jinou si můžete uložit zde."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your next cash booking will ask for a card again."
+            "value": "Cash bookings need a saved card. You can save another one here."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "При следующем заказе с оплатой наличными мы снова попросим карту."
+            "value": "Для заказов с оплатой наличными нужна сохранённая карта. Другую можно сохранить здесь."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pri ďalšej objednávke v hotovosti vás o kartu požiadame znova."
+            "value": "Objednávky v hotovosti vyžadujú uloženú kartu. Inú si môžete uložiť tu."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Під час наступного замовлення з оплатою готівкою ми знову попросимо картку."
+            "value": "Для замовлень з оплатою готівкою потрібна збережена картка. Іншу можна зберегти тут."
           }
         }
       }

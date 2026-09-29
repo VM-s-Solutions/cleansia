@@ -6,13 +6,23 @@ struct PaymentsView: View {
     @State private var cardToRemove: SavedCard?
     @Environment(\.openURL) private var openURL
     @Environment(\.scenePhase) private var scenePhase
+    private let paymentSheet: PaymentSheetPresenting
 
-    init(savedCardClient: SavedCardClient, receivableClient: ReceivableClient, snackbar: SnackbarController) {
+    init(
+        savedCardClient: SavedCardClient,
+        receivableClient: ReceivableClient,
+        snackbar: SnackbarController,
+        paymentSheet: PaymentSheetPresenting,
+        market: Market?
+    ) {
         _vm = StateObject(wrappedValue: PaymentsViewModel(
             savedCardClient: savedCardClient,
             receivableClient: receivableClient,
-            snackbar: snackbar
+            snackbar: snackbar,
+            countryId: market?.countryId,
+            currencyCode: market?.currencyCode
         ))
+        self.paymentSheet = paymentSheet
     }
 
     var body: some View {
@@ -21,17 +31,28 @@ struct PaymentsView: View {
             removeState: vm.removeState,
             paying: vm.payState.isSubmitting,
             cardToRemove: cardToRemove,
+            offersCardCapture: vm.offersCardCapture,
+            cardConsentAccepted: vm.cardConsentAccepted,
+            addingCard: vm.addCardState.isSubmitting,
             onRetry: { Task { await vm.load() } },
             onPay: { receivable in Task { await vm.pay(receivable) } },
             onRemoveRequested: { cardToRemove = $0 },
             onRemoveConfirmed: { card in Task { await vm.remove(card) } },
-            onRemoveDismissed: { cardToRemove = nil }
+            onRemoveDismissed: { cardToRemove = nil },
+            onCardConsentChanged: vm.setCardConsentAccepted,
+            onAddCard: { Task { await vm.addCard() } }
         )
         .navigationTitle(L10n.Payments.title)
         .navigationBarTitleDisplayMode(.inline)
         .task { await vm.load() }
         .onReceive(vm.removed) { _ in cardToRemove = nil }
         .onReceive(vm.payLinks) { openURL($0) }
+        .onReceive(vm.cardSetups) { presentation in
+            Task {
+                let outcome = await paymentSheet.present(presentation)
+                await vm.cardSheetFinished(outcome)
+            }
+        }
         .onChange(of: scenePhase) { phase in
             if phase == .active {
                 Task { await vm.onResumed() }
@@ -45,11 +66,16 @@ private struct PaymentsContent: View {
     let removeState: ActionState
     let paying: Bool
     let cardToRemove: SavedCard?
+    let offersCardCapture: Bool
+    let cardConsentAccepted: Bool
+    let addingCard: Bool
     let onRetry: () -> Void
     let onPay: (Receivable) -> Void
     let onRemoveRequested: (SavedCard) -> Void
     let onRemoveConfirmed: (SavedCard) -> Void
     let onRemoveDismissed: () -> Void
+    let onCardConsentChanged: (Bool) -> Void
+    let onAddCard: () -> Void
 
     var body: some View {
         ZStack {
@@ -98,6 +124,14 @@ private struct PaymentsContent: View {
                         ForEach(snapshot.cards) { card in
                             SavedCardRow(card: card, onRemove: { onRemoveRequested(card) })
                         }
+                    }
+                    if offersCardCapture {
+                        AddCardBlock(
+                            consentAccepted: cardConsentAccepted,
+                            adding: addingCard,
+                            onConsentChanged: onCardConsentChanged,
+                            onAdd: onAddCard
+                        )
                     }
                 }
                 .padding(Spacing.ml)
@@ -197,6 +231,34 @@ private struct SavedCardRow: View {
     }
 }
 
+private struct AddCardBlock: View {
+    let consentAccepted: Bool
+    let adding: Bool
+    let onConsentChanged: (Bool) -> Void
+    let onAdd: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.s) {
+            SectionIntro(text: L10n.Payments.cardAddNote)
+            CleansiaConsentCheckbox(
+                checked: Binding(get: { consentAccepted }, set: onConsentChanged),
+                markdown: L10n.Booking.cardGuaranteeConsent,
+                toggleAccessibilityLabel: L10n.Booking.cardGuaranteeTitle
+            )
+            CleansiaPrimaryButton(
+                L10n.Payments.cardAddAction,
+                size: .medium,
+                loading: adding,
+                enabled: consentAccepted && !adding,
+                action: onAdd
+            )
+        }
+        .padding(Spacing.m)
+        .background(CleansiaColors.surface)
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium))
+    }
+}
+
 private struct LeadingIcon: View {
     let systemName: String
 
@@ -257,11 +319,16 @@ private struct PaymentsErrorState: View {
                 removeState: .idle,
                 paying: false,
                 cardToRemove: nil,
+                offersCardCapture: true,
+                cardConsentAccepted: false,
+                addingCard: false,
                 onRetry: {},
                 onPay: { _ in },
                 onRemoveRequested: { _ in },
                 onRemoveConfirmed: { _ in },
-                onRemoveDismissed: {}
+                onRemoveDismissed: {},
+                onCardConsentChanged: { _ in },
+                onAddCard: {}
             )
         }
     }

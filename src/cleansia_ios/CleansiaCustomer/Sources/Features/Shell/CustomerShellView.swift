@@ -364,7 +364,9 @@ extension CustomerShellView {
             PaymentsView(
                 savedCardClient: LiveSavedCardClient(),
                 receivableClient: LiveReceivableClient(),
-                snackbar: snackbar
+                snackbar: snackbar,
+                paymentSheet: StripePaymentController(),
+                market: container.marketStore.selected
             )
         case .devices:
             CustomerDevicesView(

@@ -56,6 +56,26 @@ extension L10n {
             format("payments_card_expires", month, year % 100, currencyCode)
         }
 
+        static var cardAddAction: String {
+            localized("payments_card_add_action")
+        }
+
+        static var cardAddNote: String {
+            localized("payments_card_add_note")
+        }
+
+        static var cardAdded: String {
+            localized("payments_card_added")
+        }
+
+        static var cardAddCancelled: String {
+            localized("payments_card_add_cancelled")
+        }
+
+        static var cardAddPending: String {
+            localized("payments_card_add_pending")
+        }
+
         static var cardRemoveAction: String {
             localized("payments_card_remove_action")
         }

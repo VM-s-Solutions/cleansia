@@ -18,8 +18,19 @@ final class PaymentsViewModelTests: XCTestCase {
         snackbar = SnackbarController()
     }
 
-    private func makeVM() -> PaymentsViewModel {
-        PaymentsViewModel(savedCardClient: cards, receivableClient: receivables, snackbar: snackbar)
+    private func makeVM(
+        countryId: String? = nil,
+        currencyCode: String? = nil,
+        pauses: @escaping () -> Void = {}
+    ) -> PaymentsViewModel {
+        PaymentsViewModel(
+            savedCardClient: cards,
+            receivableClient: receivables,
+            snackbar: snackbar,
+            countryId: countryId,
+            currencyCode: currencyCode,
+            pauseBetweenCardReads: pauses
+        )
     }
 
     func testLoadShowsWhatIsOwedAndTheCard() async {
@@ -109,6 +120,98 @@ final class PaymentsViewModelTests: XCTestCase {
         XCTAssertEqual(vm.state.loadedValue?.cards, [PaymentsFixtures.czkCard])
         XCTAssertEqual(vm.removeState, .error(L10n.Payments.cardRemoveRetryHint))
         XCTAssertNotNil(snackbar.current)
+    }
+
+    // MARK: - Saving a card here
+
+    /// A recurring cash booking never captures a card, so without one saved it is refused and this
+    /// screen is the only place to save it.
+    func testTheCardIsOfferedOnlyWithoutAUsableOneInTheMarketsCurrency() async {
+        let expired = PaymentsFixtures.card(id: "card-old", currencyCode: "CZK", expMonth: 1, expYear: 2020)
+        let euro = PaymentsFixtures.card(id: "card-eur", currencyCode: "EUR")
+
+        cards.reads = [.success([expired, euro])]
+        let czech = makeVM(currencyCode: "CZK")
+        await czech.load()
+        XCTAssertTrue(czech.offersCardCapture, "an expired card and a card in another currency guarantee nothing")
+
+        let slovak = makeVM(currencyCode: "EUR")
+        await slovak.load()
+        XCTAssertFalse(slovak.offersCardCapture)
+
+        let noMarket = makeVM()
+        await noMarket.load()
+        XCTAssertFalse(noMarket.offersCardCapture, "with no market known any usable card counts")
+    }
+
+    func testSavingACardStartsTheCaptureOnlyWithTheConsentTicked() async {
+        cards.reads = [.success([])]
+        let vm = makeVM(countryId: "country-cz", currencyCode: "CZK")
+        await vm.load()
+        var sheets: [PaymentSheetPresentation] = []
+        vm.cardSetups.sink { sheets.append($0) }.store(in: &cancellables)
+
+        await vm.addCard()
+
+        XCTAssertEqual(cards.captureConsents, [], "a card capture started without the consent")
+        XCTAssertEqual(sheets, [])
+        XCTAssertFalse(vm.addCardState.isSubmitting)
+
+        vm.setCardConsentAccepted(true)
+        await vm.addCard()
+
+        XCTAssertEqual(cards.captureConsents, [true])
+        XCTAssertEqual(cards.captureCountryIds, ["country-cz"])
+        XCTAssertEqual(sheets, [PaymentSheetPresentation(
+            clientSecret: PaymentsFixtures.setup.setupIntentClientSecret,
+            ephemeralKey: PaymentsFixtures.setup.ephemeralKey,
+            stripeCustomerId: PaymentsFixtures.setup.stripeCustomerId,
+            merchantDisplayName: "Cleansia",
+            intentKind: .setup
+        )])
+        XCTAssertTrue(vm.addCardState.isSubmitting)
+    }
+
+    func testASavedCardIsShownOnceTheServerListsIt() async {
+        let saved = PaymentsFixtures.card(id: PaymentsFixtures.setup.savedCardId, currencyCode: "CZK")
+        cards.reads = [.success([]), .success([]), .success([]), .success([saved])]
+        var pauses = 0
+        let vm = makeVM(currencyCode: "CZK", pauses: { pauses += 1 })
+        await vm.load()
+        vm.setCardConsentAccepted(true)
+        await vm.addCard()
+
+        await vm.cardSheetFinished(.completed)
+
+        XCTAssertEqual(vm.state.loadedValue?.cards, [saved])
+        XCTAssertEqual(vm.state.loadedValue?.receivables, [PaymentsFixtures.receivable()])
+        XCTAssertFalse(vm.offersCardCapture)
+        XCTAssertEqual(pauses, 2, "the reads were not spaced")
+        XCTAssertEqual(snackbar.current?.text, L10n.Payments.cardAdded)
+        XCTAssertFalse(vm.cardConsentAccepted, "the next capture would go out under this one's tick")
+        XCTAssertEqual(vm.addCardState, .idle)
+    }
+
+    func testACardTheServerNeverListsOrAClosedSheetChangesNothing() async {
+        cards.reads = [.success([])]
+        let vm = makeVM(currencyCode: "CZK")
+        await vm.load()
+        vm.setCardConsentAccepted(true)
+        await vm.addCard()
+
+        await vm.cardSheetFinished(.completed)
+
+        XCTAssertEqual(cards.readCount, 1 + BookingViewModel.cardCaptureReads)
+        XCTAssertEqual(vm.state.loadedValue?.cards, [])
+        XCTAssertEqual(snackbar.current?.text, L10n.Payments.cardAddPending)
+        XCTAssertEqual(vm.addCardState, .idle)
+
+        await vm.addCard()
+        await vm.cardSheetFinished(.canceled)
+
+        XCTAssertEqual(cards.readCount, 1 + BookingViewModel.cardCaptureReads, "a closed sheet waited for a card")
+        XCTAssertEqual(snackbar.current?.text, L10n.Payments.cardAddCancelled)
+        XCTAssertEqual(vm.addCardState, .idle)
     }
 
     func testEveryKindTheServerSendsHasItsOwnLabelAndANewOneReadsAsAmountDue() {

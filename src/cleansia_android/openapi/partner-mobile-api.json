@@ -9340,35 +9340,6 @@
           "createdOn": {
             "type": "string",
             "format": "date-time"
-          },
-          "workContractDocumentVersion": {
-            "type": "string",
-            "nullable": true
-          },
-          "workContractAcceptances": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/GdprExportOrderWorkContractAcceptanceDto"
-            },
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "GdprExportOrderWorkContractAcceptanceDto": {
-        "type": "object",
-        "properties": {
-          "acceptedOn": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "documentVersion": {
-            "type": "string",
-            "nullable": true
-          },
-          "language": {
-            "type": "string",
-            "nullable": true
           }
         },
         "additionalProperties": false

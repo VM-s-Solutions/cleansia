@@ -91,17 +91,7 @@ public record GdprExportOrderDto(
     OrderStatus Status,
     decimal TotalPrice,
     DateTime CleaningDateTime,
-    DateTimeOffset CreatedOn,
-    /// <summary>The customer's half of the contract for work: the version the order was booked under (ADR-0068).</summary>
-    string? WorkContractDocumentVersion = null,
-    /// <summary>The crew's acceptances of it — when, which version, in which language. No cleaner id or name: the counterparty's identity is the platform's to hold.</summary>
-    List<GdprExportOrderWorkContractAcceptanceDto>? WorkContractAcceptances = null
-);
-
-public record GdprExportOrderWorkContractAcceptanceDto(
-    DateTimeOffset AcceptedOn,
-    string DocumentVersion,
-    string Language
+    DateTimeOffset CreatedOn
 );
 
 /// <summary>

@@ -68,14 +68,19 @@ public static class DomainSeed
 
     /// <summary>
     /// The contract-for-work document the host's boot seeded from the embedded files (the hosted
-    /// seeder runs before the host serves), with its texts — what a booked order is stamped with and
-    /// what a take echoes. The host must have booted before this is asked.
+    /// seeder runs before the host serves), with its texts — the cleaner's text in force today, which is
+    /// what a booked order is stamped with and what a take echoes. The host must have booted before this
+    /// is asked.
     /// </summary>
     public static async Task<(LegalDocument Document, string TextEnId)> WorkContractInForceAsync(CleansiaDbContext ctx)
     {
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
         var document = await ctx.LegalDocuments
             .Include(d => d.Texts)
-            .SingleAsync(d => d.Type == LegalDocumentType.WorkContract && d.CountryId == null);
+            .Where(d => d.Audience == LegalDocumentAudience.Employee && d.Type == LegalDocumentType.WorkContract
+                && d.CountryId == null && d.EffectiveFrom <= today)
+            .OrderByDescending(d => d.EffectiveFrom)
+            .FirstAsync();
         return (document, document.TextFor("en")!.Id);
     }
 

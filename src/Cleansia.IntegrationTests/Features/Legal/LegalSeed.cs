@@ -14,13 +14,14 @@ public static class LegalSeed
             .SeedAsync(DateOnly.FromDateTime(DateTime.UtcNow), CancellationToken.None);
 
     /// <summary>The platform-wide version in force today, the one the resolver serves.</summary>
-    public static Task<LegalDocument> PlatformWideAsync(CleansiaDbContext context, LegalDocumentType type)
+    public static Task<LegalDocument> PlatformWideAsync(
+        CleansiaDbContext context, LegalDocumentType type, LegalDocumentAudience audience = LegalDocumentAudience.Customer)
     {
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         return context.LegalDocuments
             .Include(d => d.Texts)
             .AsNoTracking()
-            .Where(d => d.Audience == LegalDocumentAudience.Customer && d.Type == type && d.CountryId == null
+            .Where(d => d.Audience == audience && d.Type == type && d.CountryId == null
                 && d.EffectiveFrom <= today)
             .OrderByDescending(d => d.EffectiveFrom)
             .FirstAsync();

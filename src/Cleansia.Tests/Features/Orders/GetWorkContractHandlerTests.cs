@@ -1,7 +1,9 @@
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.Domain.Company;
 using Cleansia.Core.Domain.Contracts;
+using Cleansia.Core.Domain.Legal;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.TestUtilities;
 using Moq;
@@ -10,11 +12,12 @@ namespace Cleansia.Tests.Features.Orders;
 
 /// <summary>
 /// ADR-0068 D4 (Verification #5) — the read is keyed on the acceptance: access is derived from the
-/// row's order (owner-pinned for a customer, the company's for staff) and, for a cleaner, from the row
-/// naming them — so the order's customer, the accepting cleaner (even after dropping) and an
-/// administrator read it, and another customer or another cleaner answer not-found. The facts are the
-/// STORED ones; the text is the requested language when the accepted document has it, else the
-/// accepted text, with the accepted language on the DTO either way.
+/// row's order (the company's) and, for a cleaner, from the row naming them — so the accepting cleaner
+/// (even after dropping) and an administrator read it, and another cleaner or a caller the order does
+/// not exist for answer not-found. The contract binds the company and the cleaner, so no customer host
+/// serves it. The facts are the STORED ones; the text is the requested language when the accepted
+/// document has it, else the accepted text, with the accepted language on the DTO either way, and the
+/// company that operates the order is named as the client.
 /// </summary>
 public sealed class GetWorkContractHandlerTests
 {
@@ -29,14 +32,18 @@ public sealed class GetWorkContractHandlerTests
 
     private readonly Mock<IWorkContractAcceptanceRepository> _acceptanceRepository = new();
     private readonly Mock<IOrderAccessService> _accessService = new();
+    private readonly Mock<ICompanyInfoRepository> _companyInfoRepository = new();
 
     private static WorkContractAcceptance AcceptedInCzech() =>
         WorkContractAcceptance.Create(
             OrderId, SeatId, EmployeeId, WorkContractTestData.Document().TextFor("cs")!, WorkContractTestData.Version,
             "cleansia.mobile", "203.0.113.9", "Pixel 8", "device-1", StoredFacts.ToJson());
 
-    private GetWorkContract.Handler CreateHandler() =>
-        new(_acceptanceRepository.Object, WorkContractTestData.LegalDocumentRepository().Object);
+    private GetWorkContract.Handler CreateHandler(Mock<ILegalDocumentRepository>? legalDocumentRepository = null) =>
+        new(
+            _acceptanceRepository.Object,
+            (legalDocumentRepository ?? WorkContractTestData.LegalDocumentRepository()).Object,
+            _companyInfoRepository.Object);
 
     private GetWorkContract.Validator CreateValidator() =>
         new(_acceptanceRepository.Object, _accessService.Object);
@@ -59,17 +66,7 @@ public sealed class GetWorkContractHandlerTests
     // ── Access, keyed on the acceptance ─────────────────────────────────────────────────────────
 
     [Fact]
-    public async Task The_Orders_Customer_Reads_It()
-    {
-        var acceptance = Arrange(orderExistsForCaller: true, callerEmployeeId: null);
-
-        var result = await CreateValidator().ValidateAsync(new GetWorkContract.Query(acceptance.Id));
-
-        Assert.True(result.IsValid);
-    }
-
-    [Fact]
-    public async Task Another_Customer_Is_Told_Nothing()
+    public async Task A_Caller_The_Order_Does_Not_Exist_For_Is_Told_Nothing()
     {
         var acceptance = Arrange(orderExistsForCaller: false, callerEmployeeId: null);
 
@@ -150,6 +147,31 @@ public sealed class GetWorkContractHandlerTests
         Assert.Equal(WorkContractTestData.TextIdCs, dto.LegalDocumentTextId);
         Assert.Equal("cs", dto.Language);
         Assert.Contains("EUR", dto.ContentHtml);
+    }
+
+    [Fact]
+    public async Task The_Read_Names_The_Company_That_Operates_The_Order_As_The_Client()
+    {
+        const string orderTenant = "cleansia-cz";
+        var contract = LegalDocument.Create(LegalDocumentAudience.Employee, LegalDocumentType.WorkContract, null, WorkContractTestData.EffectiveFrom);
+        var text = contract.AddText("en", "Contract for Work", "The client is {{companyLegalName}}, seated at {{companySeat}}.");
+        var legalDocuments = new Mock<ILegalDocumentRepository>();
+        legalDocuments.Setup(r => r.GetByTextIdWithTextsAsync(text.Id, It.IsAny<CancellationToken>())).ReturnsAsync(contract);
+        var acceptance = WorkContractAcceptance.Create(
+            OrderId, SeatId, EmployeeId, text, contract.Version, "cleansia.mobile", null, null, null, StoredFacts.ToJson());
+        acceptance.TenantId = orderTenant;
+        _acceptanceRepository
+            .Setup(r => r.GetByIdIgnoringTenantAsync(acceptance.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(acceptance);
+        _companyInfoRepository
+            .Setup(r => r.GetActiveForOperatorAsync(orderTenant, StoredFacts.CountryId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CompanyInfo.Create("Cleansia CZ s.r.o.", "Cleansia", "12345678", "Na Příkopě 1", "Praha", "11000", "cz"));
+
+        var result = await CreateHandler(legalDocuments).Handle(new GetWorkContract.Query(acceptance.Id, "en"), CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Contains("The client is Cleansia CZ s.r.o., seated at", result.Value!.ContentHtml);
+        Assert.DoesNotContain("{{", result.Value.ContentHtml);
     }
 
     [Fact]

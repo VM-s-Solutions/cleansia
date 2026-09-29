@@ -31,7 +31,7 @@ public sealed class WorkContractAcceptor(
                 $"Text '{textId}' is not a text of order {order.Id}'s work-contract document '{order.WorkContractDocumentId}'.");
         }
 
-        var facts = await factsBuilder.BuildAsync(order.Id, cancellationToken)
+        var facts = await factsBuilder.BuildAsync(order.Id, seat.EmployeeId, cancellationToken)
             ?? throw new InvalidOperationException($"Order {order.Id} has no facts to freeze on its acceptance.");
 
         // The device is the session's signed claim or nothing — never the X-Device-Id header, which is

@@ -15,8 +15,9 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 /// the text is the accepted document's in the requested language when it has one, else the accepted
 /// text, with the accepted language on the DTO so a page can say "accepted in Czech".
 ///
-/// <para>Access is derived from the row: its order must exist for the caller (owner-pinned for a
-/// customer, the company's for staff) and, when the caller is a cleaner, the row must be theirs — an
+/// <para>The contract binds the operating company and the cleaner, so its readers are the cleaner who
+/// accepted it and an administrator, never the customer. Access is derived from the row: its order must
+/// exist for the caller (the company's) and, when the caller is a cleaner, the row must be theirs — an
 /// ex-crew cleaner keeps reading the contract they accepted; anyone else answers not-found.</para>
 /// </summary>
 public class GetWorkContract
@@ -65,7 +66,8 @@ public class GetWorkContract
 
     public class Handler(
         IWorkContractAcceptanceRepository acceptanceRepository,
-        ILegalDocumentRepository legalDocumentRepository) : IQueryHandler<Query, WorkContractDto>
+        ILegalDocumentRepository legalDocumentRepository,
+        ICompanyInfoRepository companyInfoRepository) : IQueryHandler<Query, WorkContractDto>
     {
         public async Task<BusinessResult<WorkContractDto>> Handle(Query query, CancellationToken cancellationToken)
         {
@@ -88,8 +90,12 @@ public class GetWorkContract
                 OrderEmployeeId: acceptance.OrderEmployeeId,
                 EmployeeId: acceptance.EmployeeId);
 
-            return BusinessResult.Success(
-                document.MapToWorkContractDto(rendered, WorkContractFacts.FromJson(acceptance.FactsJson), details));
+            var facts = WorkContractFacts.FromJson(acceptance.FactsJson);
+            var company = acceptance.TenantId is { } operatorTenantId
+                ? await companyInfoRepository.GetActiveForOperatorAsync(operatorTenantId, facts.CountryId, cancellationToken)
+                : null;
+
+            return BusinessResult.Success(document.MapToWorkContractDto(rendered, facts, details, company));
         }
 
         // The requested language by its primary subtag when the document has it; otherwise the text

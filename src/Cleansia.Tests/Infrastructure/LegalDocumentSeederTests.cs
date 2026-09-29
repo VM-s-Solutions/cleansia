@@ -85,7 +85,7 @@ public sealed class LegalDocumentSeederTests : IDisposable
         new(LegalDocumentAudience.Customer, type, countryIso, effectiveFrom ?? Today, language, title, body);
 
     [Fact]
-    public async Task The_Embedded_Seed_Creates_Every_Customer_Document_Version_In_Five_Languages()
+    public async Task The_Embedded_Seed_Creates_Every_Document_Version_In_Five_Languages()
     {
         var outcome = await SeedAsync();
 
@@ -96,7 +96,9 @@ public sealed class LegalDocumentSeederTests : IDisposable
             documents.Select(d => (d.Type, d.EffectiveFrom)).OrderBy(v => v.Type).ThenBy(v => v.EffectiveFrom));
         foreach (var document in documents)
         {
-            Assert.Equal(LegalDocumentAudience.Customer, document.Audience);
+            Assert.Equal(
+                document.Type == LegalDocumentType.WorkContract ? LegalDocumentAudience.Employee : LegalDocumentAudience.Customer,
+                document.Audience);
             Assert.Null(document.CountryId);
             Assert.Equal(LegalDocument.VersionFor(document.EffectiveFrom), document.Version);
             Assert.Equal(new[] { "cs", "en", "ru", "sk", "uk" }, document.Texts.Select(t => t.Language).OrderBy(l => l));
@@ -438,7 +440,8 @@ public sealed class LegalDocumentSeederTests : IDisposable
         var resources = LegalSeedResource.ReadAll();
 
         Assert.Equal(SeededVersions.Length * 5, resources.Count);
-        Assert.All(resources, r => Assert.Equal(LegalDocumentAudience.Customer, r.Audience));
+        Assert.All(resources, r => Assert.Equal(
+            r.Type == LegalDocumentType.WorkContract ? LegalDocumentAudience.Employee : LegalDocumentAudience.Customer, r.Audience));
         Assert.All(resources, r => Assert.Null(r.CountryIsoCode));
         Assert.Equal(
             SeededVersions.OrderBy(v => v.Type).ThenBy(v => v.EffectiveFrom),

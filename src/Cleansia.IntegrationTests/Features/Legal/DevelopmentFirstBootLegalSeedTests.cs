@@ -82,7 +82,8 @@ public sealed class DevelopmentFirstBootLegalSeedTests(PostgresContainerFixture 
         Assert.Equal(
             [LegalDocumentType.TermsOfService, LegalDocumentType.TermsOfService, LegalDocumentType.TermsOfService, LegalDocumentType.PrivacyPolicy, LegalDocumentType.PrivacyPolicy, LegalDocumentType.WorkContract, LegalDocumentType.ComplaintsProcedure],
             documents.Select(d => d.Type).Order());
-        Assert.All(documents, d => Assert.Equal(LegalDocumentAudience.Customer, d.Audience));
+        Assert.All(documents, d => Assert.Equal(
+            d.Type == LegalDocumentType.WorkContract ? LegalDocumentAudience.Employee : LegalDocumentAudience.Customer, d.Audience));
         Assert.All(documents, d => Assert.True(d.IsInForceOn(today), $"{d.Type} {d.Version} is not in force"));
 
         var contract = documents.Single(d => d.Type == LegalDocumentType.WorkContract);

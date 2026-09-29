@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Company;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Legal;
@@ -39,7 +40,7 @@ public sealed class LegalDocumentRouteTests(HostTestPostgresFixture db) : AuthzH
     private Task ArrangeMarketAsync() => SeedAsync(DomainSeed.EnsureReferenceDataAsync);
 
     [Fact]
-    public async Task Booting_a_host_seeds_every_customer_document_version_in_five_languages()
+    public async Task Booting_a_host_seeds_every_document_version_in_five_languages()
     {
         await ArrangeMarketAsync();
 
@@ -48,7 +49,8 @@ public sealed class LegalDocumentRouteTests(HostTestPostgresFixture db) : AuthzH
         Assert.Equal(7, documents.Count);
         Assert.Equal(3, documents.Count(d => d.Type == LegalDocumentType.TermsOfService));
         Assert.Contains(documents, d => d.Type == LegalDocumentType.WorkContract);
-        Assert.All(documents, d => Assert.Equal(LegalDocumentAudience.Customer, d.Audience));
+        Assert.All(documents, d => Assert.Equal(
+            d.Type == LegalDocumentType.WorkContract ? LegalDocumentAudience.Employee : LegalDocumentAudience.Customer, d.Audience));
         Assert.All(documents, d => Assert.Null(d.CountryId));
         Assert.All(documents, d => Assert.Equal(LegalDocument.VersionFor(d.EffectiveFrom), d.Version));
         Assert.All(documents, d => Assert.Equal(5, d.Texts.Count));
@@ -103,25 +105,19 @@ public sealed class LegalDocumentRouteTests(HostTestPostgresFixture db) : AuthzH
     }
 
     /// <summary>
-    /// The contract for work is a customer-audience text (ADR-0068 D1), published where the customer's
-    /// texts are: the wizard's sentence links to it before anyone signs in.
+    /// The contract for work binds the operating company and the cleaner (decision 45): it is an employee
+    /// text, and the customer host's read of the legal texts does not serve it.
     /// </summary>
     [Fact]
-    public async Task Anonymous_read_of_the_work_contract_answers_on_the_customer_host_with_the_markets_currency()
+    public async Task Anonymous_read_of_the_work_contract_is_refused_on_the_customer_host()
     {
         await ArrangeMarketAsync();
 
         var resp = await CustomerClientAnonymous().GetAsync(
             $"/api/Legal/GetDocument?type={(int)LegalDocumentType.WorkContract}&countryId={DomainSeed.CountryId}&language=en");
 
-        HttpAssert.IsOk(resp);
-        using var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync());
-        Assert.Equal((int)LegalDocumentType.WorkContract, doc.RootElement.GetProperty("type").GetInt32());
-        Assert.Equal("Contract for Work", doc.RootElement.GetProperty("title").GetString());
-        var html = doc.RootElement.GetProperty("contentHtml").GetString()!;
-        Assert.Contains("CZK", html);
-        Assert.DoesNotContain("{{", html);
-        Assert.Contains("<blockquote>", html);
+        await HttpAssert.RejectedAsync(resp, BusinessErrorMessage.LegalDocumentNotFound);
+        HttpAssert.ClearedTheGate(resp);
     }
 
     [Fact]

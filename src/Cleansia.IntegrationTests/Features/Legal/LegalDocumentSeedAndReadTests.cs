@@ -90,11 +90,11 @@ public sealed class LegalDocumentSeedAndReadTests(PostgresContainerFixture fixtu
     }
 
     /// <summary>
-    /// The contract for work is a customer-audience text (ADR-0068 D1): published where the customer's
-    /// texts are, so the wizard's sentence can link to it before anyone signs in.
+    /// The contract for work binds the operating company and the cleaner (decision 45), so it is seeded as
+    /// an employee text and the customer's read of the legal texts does not serve it.
     /// </summary>
     [Fact]
-    public async Task The_Anonymous_Read_Serves_The_Work_Contract_With_The_Markets_Currency_And_No_Figure()
+    public async Task The_Anonymous_Read_Does_Not_Serve_The_Work_Contract()
     {
         await TestMethod(
             setup: Anonymous,
@@ -102,18 +102,10 @@ public sealed class LegalDocumentSeedAndReadTests(PostgresContainerFixture fixtu
             act: async provider => await ReadAsync(provider, LegalDocumentType.WorkContract, Czechia, "cs"),
             assert: async (context, result) =>
             {
-                Assert.True(result.IsSuccess, result.Error?.Message);
-                var dto = result.Value;
-                var seeded = await LegalSeed.PlatformWideAsync(context, LegalDocumentType.WorkContract);
-
-                Assert.Equal(LegalDocumentType.WorkContract, dto.Type);
-                Assert.Equal(seeded.Version, dto.Version);
-                Assert.Equal("cs", dto.Language);
-                Assert.Equal("Smlouva o dílo", dto.Title);
-                Assert.Contains(" CZK", dto.ContentHtml);
-                Assert.DoesNotContain("{{", dto.ContentHtml);
-                Assert.Contains("<blockquote>", dto.ContentHtml);
-                Assert.DoesNotContain(seeded.TextFor("cs")!.ContentMarkdown, c => char.IsDigit(c));
+                Assert.False(result.IsSuccess);
+                Assert.Equal(BusinessErrorMessage.LegalDocumentNotFound, result.Error!.Message);
+                var seeded = await LegalSeed.PlatformWideAsync(context, LegalDocumentType.WorkContract, LegalDocumentAudience.Employee);
+                Assert.Equal(LegalDocumentAudience.Employee, seeded.Audience);
             },
             transactional: false);
     }

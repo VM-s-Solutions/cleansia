@@ -10,7 +10,7 @@ title: Політика конфіденційності
 
 Контролером ваших персональних даних є операційна компанія вашого ринку — щодо замовлення це операційна компанія ринку, на якому розташоване житло, що прибирається:
 
-{{companyLegalName}}, ідентифікаційний номер (IČO) {{companyRegistrationNumber}}, податковий номер (DIČ) {{companyVatNumber}}, місцезнаходження {{companySeat}}, e-mail {{companyEmail}}, телефон {{companyPhone}} (далі — «компанія» або «ми»).
+{{companyLegalName}}, ідентифікаційний номер (IČO) {{companyRegistrationNumber}}, місцезнаходження {{companySeat}}, e-mail {{companyEmail}}, телефон {{companyPhone}} (далі — «компанія» або «ми»).
 
 З усіх питань щодо ваших персональних даних пишіть нам на {{companyEmail}}.
 

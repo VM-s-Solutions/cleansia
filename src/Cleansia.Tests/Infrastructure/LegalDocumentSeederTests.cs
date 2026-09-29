@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
 using Cleansia.Core.AppServices.Features.Legal;
 using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.Domain.Company;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Legal;
 using Cleansia.Core.Domain.Repositories;
@@ -312,6 +313,8 @@ public sealed class LegalDocumentSeederTests : IDisposable
     /// complaint — the market's operating company, as the terms name the seller (decision 54) — through
     /// the placeholders the read path fills from its company record, in every language, and neither
     /// carries an identity of its own: the 2026-09-14 privacy policy hard-coded an e-mail and a phone.
+    /// Like the terms, neither names the VAT number: a company that is not a VAT payer, the launch state,
+    /// holds none, so rendered from such a record the text must leave no placeholder behind.
     /// </summary>
     [Theory]
     [InlineData(LegalDocumentType.PrivacyPolicy)]
@@ -323,6 +326,11 @@ public sealed class LegalDocumentSeederTests : IDisposable
             .GroupBy(r => r.EffectiveFrom)
             .MaxBy(g => g.Key)?
             .ToList() ?? [];
+        var nonPayer = LegalMarkdownRenderer.MarketPlaceholders(null, CompanyInfo.Create(
+                legalName: "Seller Test a.s.", tradingName: "Seller", registrationNumber: "87654321",
+                street: "Hlavná 1", city: "Bratislava", zipCode: "81101", countryId: Czechia,
+                vatNumber: "SK2020123456", phone: "+421 900 000 000", email: "info@seller.test")
+            .SetVatPayerStatus(false));
 
         Assert.Equal(new[] { "cs", "en", "ru", "sk", "uk" }, newest.Select(r => r.Language).Order());
         Assert.All(newest, r =>
@@ -331,13 +339,15 @@ public sealed class LegalDocumentSeederTests : IDisposable
             Assert.DoesNotContain("@cleansia", r.ContentMarkdown);
             Assert.DoesNotContain("+420", r.ContentMarkdown);
             Assert.DoesNotContain("s.r.o.", r.ContentMarkdown);
+
+            var html = LegalMarkdownRenderer.Render(r.ContentMarkdown, nonPayer);
+            Assert.Contains("Seller Test a.s.", html);
+            Assert.DoesNotContain("{{", html);
         });
     }
 
     private static readonly string[] CompanyPlaceholders = TermsPlaceholders
         .Where(p => p != LegalMarkdownRenderer.CurrencyPlaceholder)
-        .Append(LegalMarkdownRenderer.CompanyVatNumberPlaceholder)
-        .Order(StringComparer.Ordinal)
         .ToArray();
 
     /// <summary>

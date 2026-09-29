@@ -10,7 +10,7 @@ This policy explains which personal data we process when you use the Cleansia mo
 
 The controller of your personal data is the operating company of your market — for a booking, of the market in which the home to be cleaned is located:
 
-{{companyLegalName}}, company ID (IČO) {{companyRegistrationNumber}}, tax ID (DIČ) {{companyVatNumber}}, registered office {{companySeat}}, e-mail {{companyEmail}}, phone {{companyPhone}} (the "company" or "we").
+{{companyLegalName}}, company ID (IČO) {{companyRegistrationNumber}}, registered office {{companySeat}}, e-mail {{companyEmail}}, phone {{companyPhone}} (the "company" or "we").
 
 For anything about your personal data, write to us at {{companyEmail}}.
 

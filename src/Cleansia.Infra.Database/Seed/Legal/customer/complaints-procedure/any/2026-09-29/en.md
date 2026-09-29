@@ -10,7 +10,7 @@ This complaints procedure describes how you complain about a cleaning ordered th
 
 Your complaint is decided by the company that sold you the cleaning — the operating company of the market in which the home was cleaned:
 
-{{companyLegalName}}, company ID (IČO) {{companyRegistrationNumber}}, tax ID (DIČ) {{companyVatNumber}}, registered office {{companySeat}}, e-mail {{companyEmail}}, phone {{companyPhone}} (the "company" or "we").
+{{companyLegalName}}, company ID (IČO) {{companyRegistrationNumber}}, registered office {{companySeat}}, e-mail {{companyEmail}}, phone {{companyPhone}} (the "company" or "we").
 
 The company is responsible to you for the proper performance of the cleaning and for damage caused while performing it, including the work of the cleaners it engages. You complain to the company, not to the cleaner; the company deals with the cleaner.
 

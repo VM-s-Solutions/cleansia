@@ -10,7 +10,7 @@ Tieto zásady vysvetľujú, aké osobné údaje spracúvame, keď používate mo
 
 Prevádzkovateľom vašich osobných údajov je prevádzková spoločnosť vášho trhu — pri objednávke prevádzková spoločnosť trhu, na ktorom sa upratovaná domácnosť nachádza:
 
-{{companyLegalName}}, IČO {{companyRegistrationNumber}}, DIČ {{companyVatNumber}}, so sídlom {{companySeat}}, e-mail {{companyEmail}}, telefón {{companyPhone}} (ďalej len „spoločnosť“ alebo „my“).
+{{companyLegalName}}, IČO {{companyRegistrationNumber}}, so sídlom {{companySeat}}, e-mail {{companyEmail}}, telefón {{companyPhone}} (ďalej len „spoločnosť“ alebo „my“).
 
 Vo všetkých záležitostiach týkajúcich sa vašich osobných údajov nám píšte na {{companyEmail}}.
 

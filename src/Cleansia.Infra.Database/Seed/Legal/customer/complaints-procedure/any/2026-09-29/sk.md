@@ -10,7 +10,7 @@ Tento reklamačný poriadok opisuje, ako reklamovať upratovanie objednané v mo
 
 O vašej reklamácii rozhoduje spoločnosť, ktorá vám upratovanie predala — prevádzková spoločnosť trhu, na ktorom sa upratovaná domácnosť nachádza:
 
-{{companyLegalName}}, IČO {{companyRegistrationNumber}}, DIČ {{companyVatNumber}}, so sídlom {{companySeat}}, e-mail {{companyEmail}}, telefón {{companyPhone}} (ďalej len „spoločnosť“ alebo „my“).
+{{companyLegalName}}, IČO {{companyRegistrationNumber}}, so sídlom {{companySeat}}, e-mail {{companyEmail}}, telefón {{companyPhone}} (ďalej len „spoločnosť“ alebo „my“).
 
 Spoločnosť vám zodpovedá za riadne vykonanie upratovania a za škodu spôsobenú pri jeho vykonávaní, a to aj za prácu upratovačov, ktorých si najíma. Reklamáciu uplatňujete u spoločnosti, nie u upratovača; s upratovačom vec rieši spoločnosť.
 

@@ -10,7 +10,7 @@ Tyto zásady vysvětlují, jaké osobní údaje zpracováváme, když používá
 
 Správcem vašich osobních údajů je provozní společnost vašeho trhu — u objednávky provozní společnost trhu, na kterém se uklízená domácnost nachází:
 
-{{companyLegalName}}, IČO {{companyRegistrationNumber}}, DIČ {{companyVatNumber}}, se sídlem {{companySeat}}, e-mail {{companyEmail}}, telefon {{companyPhone}} (dále jen „společnost“ nebo „my“).
+{{companyLegalName}}, IČO {{companyRegistrationNumber}}, se sídlem {{companySeat}}, e-mail {{companyEmail}}, telefon {{companyPhone}} (dále jen „společnost“ nebo „my“).
 
 Ve všech záležitostech týkajících se vašich osobních údajů nám pište na {{companyEmail}}.
 

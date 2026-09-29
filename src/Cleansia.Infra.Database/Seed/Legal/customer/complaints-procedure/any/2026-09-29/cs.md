@@ -10,7 +10,7 @@ Tento reklamační řád popisuje, jak reklamovat úklid objednaný v mobilních
 
 O vaší reklamaci rozhoduje společnost, která vám úklid prodala — provozní společnost trhu, na kterém se uklízená domácnost nachází:
 
-{{companyLegalName}}, IČO {{companyRegistrationNumber}}, DIČ {{companyVatNumber}}, se sídlem {{companySeat}}, e-mail {{companyEmail}}, telefon {{companyPhone}} (dále jen „společnost“ nebo „my“).
+{{companyLegalName}}, IČO {{companyRegistrationNumber}}, se sídlem {{companySeat}}, e-mail {{companyEmail}}, telefon {{companyPhone}} (dále jen „společnost“ nebo „my“).
 
 Společnost vám odpovídá za řádné provedení úklidu a za škodu způsobenou při jeho provádění, a to i za práci uklízečů, které si najímá. Reklamaci uplatňujete u společnosti, nikoli u uklízeče; s uklízečem věc řeší společnost.
 

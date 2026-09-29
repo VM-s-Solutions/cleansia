@@ -20,6 +20,8 @@ struct OrderDetail: Equatable {
 
     let rooms: Int
     let bathrooms: Int
+    /// Nil when the wire carried no level — a server that predates it.
+    let dirtinessLevel: DirtinessLevel?
     let crew: OrderCrew?
     let seats: [OrderSeat]
     let workContractAcceptances: [WorkContractAcceptance]
@@ -270,6 +272,7 @@ extension OrderDetail {
 
         rooms = try item.rooms.require("rooms")
         bathrooms = try item.bathrooms.require("bathrooms")
+        dirtinessLevel = item.dirtinessLevel
         crew = try OrderCrew(item)
         seats = item.assignedEmployees?.compactMap(OrderSeat.init) ?? []
         workContractAcceptances = item.workContractAcceptances?.compactMap(WorkContractAcceptance.init) ?? []

@@ -212,13 +212,15 @@ final class PartnerWireContractTests: XCTestCase {
                     createdOn: Date()
                 )
             ],
-            currencyCode: "EUR"
+            currencyCode: "EUR",
+            totalDirtinessPay: 187.35
         )
     }
 
     func testAFullyPopulatedSummaryMaps() throws {
         let summary = try PeriodPaySummary(summaryPayload())
         XCTAssertEqual(summary.grandTotal, 4200)
+        XCTAssertEqual(summary.totalDirtinessPay, 187.35)
         XCTAssertEqual(summary.orderPays.count, 2)
         XCTAssertEqual(summary.currencyCode, "EUR")
     }
@@ -256,6 +258,7 @@ final class PartnerWireContractTests: XCTestCase {
             ("grandTotal", { (dto: inout PeriodPaySummaryDto) in dto.grandTotal = nil }),
             ("totalBasePay", { dto in dto.totalBasePay = nil }),
             ("totalExtrasPay", { dto in dto.totalExtrasPay = nil }),
+            ("totalDirtinessPay", { dto in dto.totalDirtinessPay = nil }),
             ("totalExpensesPay", { dto in dto.totalExpensesPay = nil }),
             ("totalBonusPay", { dto in dto.totalBonusPay = nil }),
             ("totalDeductionPay", { dto in dto.totalDeductionPay = nil }),

@@ -64,6 +64,9 @@ private struct BreakdownCard: View {
             if summary.totalExtrasPay != 0 {
                 MoneyRow(label: L10n.PeriodPay.extras, amount: summary.totalExtrasPay, currencyCode: currencyCode)
             }
+            if summary.totalDirtinessPay != 0 {
+                MoneyRow(label: L10n.PeriodPay.dirtiness, amount: summary.totalDirtinessPay, currencyCode: currencyCode)
+            }
             if summary.totalExpensesPay != 0 {
                 MoneyRow(label: L10n.PeriodPay.expenses, amount: summary.totalExpensesPay, currencyCode: currencyCode)
             }

@@ -295,6 +295,7 @@ private struct OrderMetadataRow: View {
             customerPhone: "+420 777 123 456",
             rooms: 3,
             bathrooms: 2,
+            dirtinessLevel: ._1,
             crew: .spotsOpen(crewSize: 2, openSpots: 1),
             seats: [OrderSeat(id: "seat-1", employeeId: "emp-1")],
             workContractAcceptances: [

@@ -109,6 +109,7 @@ struct PeriodPaySummary: Equatable {
     let totalOrders: Int
     let totalBasePay: Double
     let totalExtrasPay: Double
+    let totalDirtinessPay: Double
     let totalExpensesPay: Double
     let totalBonusPay: Double
     let totalDeductionPay: Double
@@ -126,6 +127,7 @@ extension PeriodPaySummary {
         totalOrders = try dto.totalOrders.require("totalOrders")
         totalBasePay = try dto.totalBasePay.require("totalBasePay")
         totalExtrasPay = try dto.totalExtrasPay.require("totalExtrasPay")
+        totalDirtinessPay = try dto.totalDirtinessPay.require("totalDirtinessPay")
         totalExpensesPay = try dto.totalExpensesPay.require("totalExpensesPay")
         totalBonusPay = try dto.totalBonusPay.require("totalBonusPay")
         totalDeductionPay = try dto.totalDeductionPay.require("totalDeductionPay")

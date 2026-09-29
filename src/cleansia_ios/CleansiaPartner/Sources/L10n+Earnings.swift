@@ -76,6 +76,10 @@ extension L10n {
             localized("period_pay_extras")
         }
 
+        static var dirtiness: String {
+            localized("period_pay_dirtiness")
+        }
+
         static var expenses: String {
             localized("period_pay_expenses")
         }

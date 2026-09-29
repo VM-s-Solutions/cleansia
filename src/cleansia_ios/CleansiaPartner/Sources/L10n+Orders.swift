@@ -407,5 +407,14 @@ extension L10n {
             case .none: "—"
             }
         }
+
+        static func dirtinessLevel(_ level: DirtinessLevel?) -> String? {
+            switch level {
+            case ._0: localized("dirtiness_level_normal")
+            case ._1: localized("dirtiness_level_increased")
+            case ._2: localized("dirtiness_level_heavy")
+            case .none: nil
+            }
+        }
     }
 }

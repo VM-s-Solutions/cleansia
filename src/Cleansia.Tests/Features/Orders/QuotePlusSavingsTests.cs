@@ -97,6 +97,24 @@ public class QuotePlusSavingsTests
         Assert.Equal(1140m, result.Value.WouldPayTotal);
     }
 
+    [Fact]
+    public async Task Prices_The_Basket_At_The_Dirtiness_Level_The_Customer_Picked()
+    {
+        var pricing = new Mock<IOrderPricingCalculator>();
+        var handler = Build(discountPercent: 5m, tierDiscount: 0m, pricing: pricing);
+
+        var result = await handler.Handle(
+            QueryFor("PLUS_MONTHLY") with { DirtinessLevel = DirtinessLevel.Heavy }, CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        pricing.Verify(c => c.CalculateAsync(
+            It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(),
+            It.IsAny<IEnumerable<string>>(), It.IsAny<int>(), It.IsAny<int>(),
+            DirtinessLevel.Heavy,
+            It.IsAny<string?>(), It.IsAny<DateTime?>(), It.IsAny<string?>(),
+            It.IsAny<DateTime>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
     // ── plumbing ────────────────────────────────────────────────────────────────────
 
     private static QuotePlusSavings.Query QueryFor(string planCode) =>
@@ -119,7 +137,8 @@ public class QuotePlusSavingsTests
         decimal tierDiscount,
         decimal expressSurcharge = 0m,
         MembershipPlan? plan = null,
-        bool planExists = true)
+        bool planExists = true,
+        Mock<IOrderPricingCalculator>? pricing = null)
     {
         var resolvedPlan = planExists ? plan ?? MakePlan(discountPercent) : null;
 
@@ -127,7 +146,7 @@ public class QuotePlusSavingsTests
         plans.Setup(r => r.GetByCodeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(resolvedPlan);
 
-        var pricing = new Mock<IOrderPricingCalculator>();
+        pricing ??= new Mock<IOrderPricingCalculator>();
         pricing.Setup(c => c.CalculateAsync(
                 It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(),
                 It.IsAny<IEnumerable<string>>(), It.IsAny<int>(), It.IsAny<int>(),

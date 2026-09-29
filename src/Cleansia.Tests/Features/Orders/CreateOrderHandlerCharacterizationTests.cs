@@ -451,6 +451,39 @@ public class CreateOrderHandlerCharacterizationTests
         Assert.Null(captured!.AccessInstructions);
     }
 
+    /// <summary>
+    /// The level has to reach both the price and the stored order. Priced at Normal, a Heavy booking is
+    /// charged 60 % less than the quote the validator accepted; stored as Normal, its total carries a
+    /// surcharge with no dirtiness line under it, and lines + dirtiness + express - discounts no longer
+    /// equal the total.
+    /// </summary>
+    [Fact]
+    public async Task The_Dirtiness_Level_Reaches_The_Calculator_And_The_Order_Factory()
+    {
+        CreateOrderInput? captured = null;
+        _orderFactory
+            .Setup(f => f.CreateAsync(It.IsAny<CreateOrderInput>(), It.IsAny<CancellationToken>()))
+            .Callback((CreateOrderInput input, CancellationToken _) => captured = input)
+            .ReturnsAsync(OrderMockFactory.Generate(new OrderMockFactory.OrderPartial
+            {
+                Id = CreatedOrderId,
+                TenantId = "tenant-1",
+            }));
+
+        var command = CreateOrderTestData.ValidCommand() with { DirtinessLevel = DirtinessLevel.Heavy };
+
+        var result = await CreateHandler().Handle(command, CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Equal(DirtinessLevel.Heavy, captured!.DirtinessLevel);
+        _pricingCalculator.Verify(c => c.CalculateAsync(
+            It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(),
+            It.IsAny<IEnumerable<string>>(), It.IsAny<int>(), It.IsAny<int>(),
+            DirtinessLevel.Heavy,
+            It.IsAny<string?>(), It.IsAny<DateTime?>(), It.IsAny<string?>(),
+            It.IsAny<DateTime>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
     // ---------------------------------------------------------------- the order's currency
 
     /// <summary>

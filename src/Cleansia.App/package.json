@@ -28,16 +28,16 @@
   },
   "private": true,
   "dependencies": {
-    "@angular/animations": "~20.3.30",
+    "@angular/animations": "~20.3.31",
     "@angular/cdk": "~20.2.14",
-    "@angular/common": "~20.3.30",
-    "@angular/compiler": "~20.3.30",
-    "@angular/core": "~20.3.30",
-    "@angular/forms": "~20.3.30",
-    "@angular/platform-browser": "~20.3.30",
-    "@angular/platform-browser-dynamic": "~20.3.30",
-    "@angular/platform-server": "~20.3.30",
-    "@angular/router": "~20.3.30",
+    "@angular/common": "~20.3.31",
+    "@angular/compiler": "~20.3.31",
+    "@angular/core": "~20.3.31",
+    "@angular/forms": "~20.3.31",
+    "@angular/platform-browser": "~20.3.31",
+    "@angular/platform-browser-dynamic": "~20.3.31",
+    "@angular/platform-server": "~20.3.31",
+    "@angular/router": "~20.3.31",
     "@angular/ssr": "~20.3.35",
     "@ngrx/effects": "~20.1.0",
     "@ngrx/store": "~20.1.0",
@@ -64,7 +64,16 @@
     "brace-expansion@1": "^1.1.16",
     "brace-expansion@2": "^2.1.2",
     "@module-federation/enhanced": "^2.9.0",
-    "chokidar": "^4.0.3"
+    "chokidar": "^4.0.3",
+    "@verdaccio/config": {
+      "js-yaml": "^5.4.1"
+    },
+    "nx": {
+      "smol-toml": "~1.7.1"
+    },
+    "sockjs": {
+      "uuid": "^11.1.1"
+    }
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "~20.3.35",
@@ -72,8 +81,8 @@
     "@angular-devkit/schematics": "~20.3.35",
     "@angular/build": "~20.3.35",
     "@angular/cli": "~20.3.35",
-    "@angular/compiler-cli": "~20.3.30",
-    "@angular/language-service": "~20.3.30",
+    "@angular/compiler-cli": "~20.3.31",
+    "@angular/language-service": "~20.3.31",
     "@eslint/js": "^9.8.0",
     "@nx/angular": "23.1.2",
     "@nx/devkit": "23.1.2",

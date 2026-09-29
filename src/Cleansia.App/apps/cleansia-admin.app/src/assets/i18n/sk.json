@@ -3045,6 +3045,7 @@
       "has_open_pay_period": "Výplatné obdobie je stále otvorené; najprv ho uzavrite.",
       "has_unpaid_invoices": "Faktúra upratovača ešte nie je zaplatená; archivácia čaká, kým nebude každá faktúra zaplatená alebo stornovaná.",
       "has_uninvoiced_pay": "Uzavreté výplatné obdobie obsahuje odmenu, ktorá nebola nikdy vyfakturovaná; archivácia na ňu čaká.",
+      "has_cash_held": "Upratovač má stále pri sebe hotovosť spoločnosti; najprv zaznamenajte jej odovzdanie alebo ju odpíšte.",
       "has_open_disputes": "Reklamácia je stále otvorená; najprv ju vyriešte.",
       "within_chargeback_horizon": "Držiteľ karty môže poslednú kartovú platbu spoločnosti stále rozporovať; archivácia bude možná, keď uplynie lehota na chargeback."
     },

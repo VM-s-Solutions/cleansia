@@ -3045,6 +3045,7 @@
       "has_open_pay_period": "Výplatní období je stále otevřené; nejprve ho uzavřete.",
       "has_unpaid_invoices": "Faktura uklízeče ještě není zaplacena; archivace čeká, dokud nebude každá faktura zaplacena nebo stornována.",
       "has_uninvoiced_pay": "Uzavřené výplatní období obsahuje odměnu, která nebyla nikdy vyfakturována; archivace na ni čeká.",
+      "has_cash_held": "Uklízeč má stále u sebe hotovost společnosti; nejprve zaznamenejte její odevzdání nebo ji odepište.",
       "has_open_disputes": "Reklamace je stále otevřená; nejprve ji vyřešte.",
       "within_chargeback_horizon": "Držitel karty může poslední kartovou platbu společnosti stále rozporovat; archivace bude možná, jakmile uplyne lhůta pro chargeback."
     },

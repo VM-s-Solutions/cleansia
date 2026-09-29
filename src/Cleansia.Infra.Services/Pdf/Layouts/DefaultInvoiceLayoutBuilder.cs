@@ -281,6 +281,38 @@ public class DefaultInvoiceLayoutBuilder : IInvoiceLayoutBuilder
                     .FontColor(CleansiaPdfTheme.TextSecondary)
                     .Italic();
             }
+
+            if (data.CashSetOffAmount > 0m)
+            {
+                col.Item().PaddingTop(CleansiaPdfTheme.InnerPadding).Element(c => BuildCashSetOffStatement(c, data));
+            }
+        });
+    }
+
+    protected virtual IReadOnlyList<(string Label, string Value, bool IsBold)> CashSetOffStatementLines(InvoicePdfData data)
+    {
+        var statement = CashSetOffStatementLabels.For(data.StatementLanguageCode);
+
+        return
+        [
+            (statement.InvoiceTotal, FormatMoney(data.TotalAmount, data), false),
+            (statement.CashSetOff, $"-{FormatMoney(data.CashSetOffAmount, data)}", false),
+            (statement.Transfer, FormatMoney(data.TotalAmount - data.CashSetOffAmount, data), true),
+        ];
+    }
+
+    protected virtual void BuildCashSetOffStatement(IContainer container, InvoicePdfData data)
+    {
+        var statement = CashSetOffStatementLabels.For(data.StatementLanguageCode);
+
+        container.Column(col =>
+        {
+            col.Item().BlockTitle(statement.Title);
+            col.Item().SummaryBox(CashSetOffStatementLines(data));
+            col.Item().PaddingTop(6)
+                .Text(statement.Note)
+                .FontSize(CleansiaPdfTheme.FontSizeLabel)
+                .FontColor(CleansiaPdfTheme.TextSecondary);
         });
     }
 

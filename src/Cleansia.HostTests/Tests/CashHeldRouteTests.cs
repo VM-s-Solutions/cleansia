@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Payments;
@@ -131,7 +132,34 @@ public sealed class CashHeldRouteTests(HostTestPostgresFixture db) : AuthzHostTe
         {
             var mine = Assert.Single((await BodyAsync(await client.GetAsync(MyCashRoute))).EnumerateArray());
             Assert.Equal(("CZK", 3000m), (mine.GetProperty("currencyCode").GetString(), mine.GetProperty("amount").GetDecimal()));
+            Assert.Equal(JsonValueKind.Null, mine.GetProperty("floatCap").ValueKind);
+            Assert.False(mine.GetProperty("cashJobsHidden").GetBoolean());
         }
+    }
+
+    /// <summary>
+    /// Owner ruling 2026-09-28, decision 25: above the company's cash float cap, "cash I hold" states the cap
+    /// and that cash jobs are hidden from the cleaner.
+    /// </summary>
+    [Fact]
+    public async Task Above_The_Companys_Float_Cap_Cash_I_Hold_States_The_Cap_And_That_Cash_Jobs_Are_Hidden()
+    {
+        var a = await ArrangeAsync();
+        await SeedAsync(ctx =>
+        {
+            var cap = TenantConfiguration.Create("cash.float_cap", "1000", category: "cash");
+            cap.TenantId = HostTestTenants.Default;
+            ctx.TenantConfigurations.Add(cap);
+            return Task.CompletedTask;
+        });
+        var web = PartnerClient(TestJwtFactory.Mint(
+            PartnerAudience, CleanerUserId, CleanerEmail, UserProfile.Employee, employeeId: a.CleanerId));
+
+        var mine = Assert.Single((await BodyAsync(await web.GetAsync(MyCashRoute))).EnumerateArray());
+
+        Assert.Equal(
+            (1500m, 1000m, true),
+            (mine.GetProperty("amount").GetDecimal(), mine.GetProperty("floatCap").GetDecimal(), mine.GetProperty("cashJobsHidden").GetBoolean()));
     }
 
     [Fact]

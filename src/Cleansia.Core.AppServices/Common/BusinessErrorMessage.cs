@@ -156,6 +156,8 @@ public static class BusinessErrorMessage
     public const string OrderNotTakeable = "order.not_takeable";
     public const string NoAvailableSpots = "order.no_available_spots";
     public const string WeeklyOrderLimitReached = "order.weekly_limit_reached";
+    /// <summary>A cash job taken by a cleaner who holds more of the company's cash than its float cap allows.</summary>
+    public const string OrderCashFloatCapExceeded = "order.cash_float_cap_exceeded";
     public const string WeeklyOrderLimitInvalid = "employee.weekly_limit_invalid";
     /// <summary>A weekly cap is set with a reason the cleaner is shown.</summary>
     public const string WeeklyOrderLimitReasonRequired = "employee.weekly_limit_reason_required";
@@ -607,6 +609,8 @@ public static class BusinessErrorMessage
     public const string CompanyHasOpenPayPeriod = "company.has_open_pay_period";
     public const string CompanyHasUnpaidInvoices = "company.has_unpaid_invoices";
     public const string CompanyHasUninvoicedPay = "company.has_uninvoiced_pay";
+    /// <summary>A cleaner still holds the company's cash; it is remitted or written off before the books are sealed.</summary>
+    public const string CompanyHasCashHeld = "company.has_cash_held";
     public const string CompanyHasOpenDisputes = "company.has_open_disputes";
     /// <summary>A cardholder can still dispute the company's latest card charge; the archive waits for the horizon to pass.</summary>
     public const string CompanyWithinChargebackHorizon = "company.within_chargeback_horizon";

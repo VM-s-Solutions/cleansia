@@ -503,6 +503,7 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'company.has_open_pay_period',
   'company.has_unpaid_invoices',
   'company.has_uninvoiced_pay',
+  'company.has_cash_held',
   'company.has_open_disputes',
   'company.within_chargeback_horizon',
   // A write against a company frozen for archive is refused at the commit and answered 409 by

@@ -6739,6 +6739,8 @@ export class CashHeldDto implements ICashHeldDto {
     currencyId!: string | undefined;
     currencyCode!: string | undefined;
     amount!: number;
+    floatCap!: number | undefined;
+    cashJobsHidden!: boolean;
 
     constructor(data?: ICashHeldDto) {
         if (data) {
@@ -6754,6 +6756,8 @@ export class CashHeldDto implements ICashHeldDto {
             this.currencyId = Data["currencyId"];
             this.currencyCode = Data["currencyCode"];
             this.amount = Data["amount"];
+            this.floatCap = Data["floatCap"];
+            this.cashJobsHidden = Data["cashJobsHidden"];
         }
     }
 
@@ -6769,6 +6773,8 @@ export class CashHeldDto implements ICashHeldDto {
         data["currencyId"] = this.currencyId;
         data["currencyCode"] = this.currencyCode;
         data["amount"] = this.amount;
+        data["floatCap"] = this.floatCap;
+        data["cashJobsHidden"] = this.cashJobsHidden;
         return data;
     }
 }
@@ -6777,6 +6783,8 @@ export interface ICashHeldDto {
     currencyId: string | undefined;
     currencyCode: string | undefined;
     amount: number;
+    floatCap: number | undefined;
+    cashJobsHidden: boolean;
 }
 
 export class CategoryDto implements ICategoryDto {
@@ -7960,6 +7968,8 @@ export class EmployeeInvoiceDetailDto implements IEmployeeInvoiceDetailDto {
     bonusAmount!: number;
     deductionAmount!: number;
     totalAmount!: number;
+    cashSetOffAmount!: number;
+    transferAmount!: number;
     currencyCode!: string | undefined;
     currencyId!: string | undefined;
     status!: EmployeeInvoiceStatus;
@@ -7999,6 +8009,8 @@ export class EmployeeInvoiceDetailDto implements IEmployeeInvoiceDetailDto {
             this.bonusAmount = Data["bonusAmount"];
             this.deductionAmount = Data["deductionAmount"];
             this.totalAmount = Data["totalAmount"];
+            this.cashSetOffAmount = Data["cashSetOffAmount"];
+            this.transferAmount = Data["transferAmount"];
             this.currencyCode = Data["currencyCode"];
             this.currencyId = Data["currencyId"];
             this.status = Data["status"];
@@ -8042,6 +8054,8 @@ export class EmployeeInvoiceDetailDto implements IEmployeeInvoiceDetailDto {
         data["bonusAmount"] = this.bonusAmount;
         data["deductionAmount"] = this.deductionAmount;
         data["totalAmount"] = this.totalAmount;
+        data["cashSetOffAmount"] = this.cashSetOffAmount;
+        data["transferAmount"] = this.transferAmount;
         data["currencyCode"] = this.currencyCode;
         data["currencyId"] = this.currencyId;
         data["status"] = this.status;
@@ -8078,6 +8092,8 @@ export interface IEmployeeInvoiceDetailDto {
     bonusAmount: number;
     deductionAmount: number;
     totalAmount: number;
+    cashSetOffAmount: number;
+    transferAmount: number;
     currencyCode: string | undefined;
     currencyId: string | undefined;
     status: EmployeeInvoiceStatus;
@@ -8107,6 +8123,8 @@ export class EmployeeInvoiceDto implements IEmployeeInvoiceDto {
     bonusAmount!: number;
     deductionAmount!: number;
     totalAmount!: number;
+    cashSetOffAmount!: number;
+    transferAmount!: number;
     currencyCode!: string | undefined;
     currencyId!: string | undefined;
     status!: EmployeeInvoiceStatus;
@@ -8144,6 +8162,8 @@ export class EmployeeInvoiceDto implements IEmployeeInvoiceDto {
             this.bonusAmount = Data["bonusAmount"];
             this.deductionAmount = Data["deductionAmount"];
             this.totalAmount = Data["totalAmount"];
+            this.cashSetOffAmount = Data["cashSetOffAmount"];
+            this.transferAmount = Data["transferAmount"];
             this.currencyCode = Data["currencyCode"];
             this.currencyId = Data["currencyId"];
             this.status = Data["status"];
@@ -8181,6 +8201,8 @@ export class EmployeeInvoiceDto implements IEmployeeInvoiceDto {
         data["bonusAmount"] = this.bonusAmount;
         data["deductionAmount"] = this.deductionAmount;
         data["totalAmount"] = this.totalAmount;
+        data["cashSetOffAmount"] = this.cashSetOffAmount;
+        data["transferAmount"] = this.transferAmount;
         data["currencyCode"] = this.currencyCode;
         data["currencyId"] = this.currencyId;
         data["status"] = this.status;
@@ -8211,6 +8233,8 @@ export interface IEmployeeInvoiceDto {
     bonusAmount: number;
     deductionAmount: number;
     totalAmount: number;
+    cashSetOffAmount: number;
+    transferAmount: number;
     currencyCode: string | undefined;
     currencyId: string | undefined;
     status: EmployeeInvoiceStatus;

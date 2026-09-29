@@ -23,6 +23,13 @@ public interface IOrderAccessService
     Task<string?> GetCallerEmployeeIdAsync(CancellationToken cancellationToken);
 
     /// <summary>
+    /// Whether the cleaner holds more of the company's cash in <paramref name="currencyId"/> than the
+    /// company's float cap, so cash jobs are hidden from their board and refused at the take (owner ruling
+    /// 2026-09-28, decision 25). Never, while the company sets no cap.
+    /// </summary>
+    Task<bool> CashJobsHiddenFromAsync(string employeeId, string currencyId, CancellationToken cancellationToken);
+
+    /// <summary>
     /// Owner-pinned across companies for a customer; tenant-filtered for staff.
     /// Handlers must still apply the access or browse gate to the returned order.
     /// </summary>

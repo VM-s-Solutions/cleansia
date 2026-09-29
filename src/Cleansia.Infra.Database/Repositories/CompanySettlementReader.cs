@@ -63,6 +63,10 @@ public sealed class CompanySettlementReader(CleansiaDbContext context, ITenantPr
                 cancellationToken);
         var openDisputes = await context.Disputes
             .CountAsync(d => OpenDisputeStatuses.Contains(d.Status), cancellationToken);
+        var cleanersHoldingCash = await context.CashLedgerEntries
+            .GroupBy(e => new { e.EmployeeId, e.CurrencyId })
+            .Where(g => g.Sum(e => e.Amount) != 0m)
+            .CountAsync(cancellationToken);
         var latestCardPaidCleaning = await context.Orders
             .Where(o => o.PaymentType == PaymentType.Card && CardMoneyMoved.Contains(o.PaymentStatus))
             .MaxAsync(o => (DateTime?)o.CleaningDateTime, cancellationToken);
@@ -81,6 +85,7 @@ public sealed class CompanySettlementReader(CleansiaDbContext context, ITenantPr
             UnpaidInvoices: unpaidInvoices,
             UninvoicedPayRows: uninvoicedPayRows,
             OpenDisputes: openDisputes,
+            CleanersHoldingCash: cleanersHoldingCash,
             LatestCardPaidCleaningDateTime: latestCardPaidCleaning);
     }
 

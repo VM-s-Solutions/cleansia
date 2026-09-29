@@ -958,6 +958,7 @@
       "payment_gateway_unavailable": "Platební brána není k dispozici",
       "time_conflict": "Tento termín se překrývá s jinou objednávkou ve vašem rozvrhu",
       "weekly_limit_reached": "Dosáhli jste týdenního limitu zakázek.",
+      "cash_float_cap_exceeded": "Máte u sebe více hotovosti společnosti, než je povoleno, proto pro vás zakázky za hotovost nejsou dostupné, dokud část neodevzdáte.",
       "employee_already_has_order_in_progress": "Již máte jinou zakázku v průběhu. Před zahájením nové ji prosím dokončete.",
       "photo": {
         "window_closed": "Tuto fotografii teď nelze přidat: fotografie před úklidem od převzetí zakázky do jejího dokončení, fotografie po úklidu během práce.",

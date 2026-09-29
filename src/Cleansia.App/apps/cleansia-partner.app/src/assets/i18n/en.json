@@ -958,6 +958,7 @@
       "payment_gateway_unavailable": "Payment gateway is unavailable",
       "time_conflict": "This time conflicts with another booking on your schedule",
       "weekly_limit_reached": "You've reached your weekly order limit.",
+      "cash_float_cap_exceeded": "You hold more of the company's cash than it allows, so cash jobs are not available to you until you hand some over.",
       "employee_already_has_order_in_progress": "You already have another order in progress. Finish it before starting a new one.",
       "photo": {
         "window_closed": "This photo cannot be added now: before photos from the moment you hold the job until it is finished, after photos while the work is in progress.",

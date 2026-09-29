@@ -1727,6 +1727,12 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<string>("CancelledBy")
                         .HasColumnType("text");
 
+                    b.Property<decimal>("CashSetOffAmount")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasDefaultValue(0m);
+
                     b.Property<string>("CountryId")
                         .HasColumnType("character varying(26)");
 
@@ -5238,6 +5244,9 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<string>("OrderId")
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
+
+                    b.Property<DateTime?>("RemittanceRequestedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("TenantId")
                         .IsRequired()

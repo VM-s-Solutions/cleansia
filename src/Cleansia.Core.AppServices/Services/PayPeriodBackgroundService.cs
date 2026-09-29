@@ -9,6 +9,7 @@ using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Core.Domain.Internationalization;
+using Cleansia.Core.Domain.Payments;
 using Cleansia.Infra.Services.Pdf;
 using Cleansia.Infra.Services.Pdf.Models;
 using Microsoft.EntityFrameworkCore;
@@ -39,6 +40,7 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
     private readonly ITenantProvider _tenantProvider;
     private readonly IPayoutReferenceAllocator _payoutReferenceAllocator;
     private readonly ITenantRepository _tenantRepository;
+    private readonly ICashLedgerRepository _cashLedgerRepository;
 
     public PayPeriodBackgroundService(
         IPayPeriodRepository payPeriodRepository,
@@ -58,7 +60,8 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
         IBlobContainerClientFactory blobContainerClientFactory,
         ITenantProvider tenantProvider,
         IPayoutReferenceAllocator payoutReferenceAllocator,
-        ITenantRepository tenantRepository)
+        ITenantRepository tenantRepository,
+        ICashLedgerRepository cashLedgerRepository)
     {
         _payPeriodRepository = payPeriodRepository;
         _employeeRepository = employeeRepository;
@@ -78,6 +81,7 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
         _tenantProvider = tenantProvider;
         _payoutReferenceAllocator = payoutReferenceAllocator;
         _tenantRepository = tenantRepository;
+        _cashLedgerRepository = cashLedgerRepository;
     }
 
     public async Task EnsureOpenPeriodAsync(CancellationToken cancellationToken = default)
@@ -448,6 +452,12 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
             orderPay.AssignToInvoice(invoice.Id);
         }
 
+        var cashHeld = await _cashLedgerRepository.GetHeldAsync(employee.Id, currencyId, cancellationToken);
+        if (invoice.SetOffCash(cashHeld) > 0m)
+        {
+            _cashLedgerRepository.Add(CashLedgerEntry.ForSetOff(invoice));
+        }
+
         // C1 — make the reference durable BEFORE any document carrying it is rendered, uploaded or
         // emailed. Today the whole group commits at the end, after every cleaner has already been
         // emailed their PDF, so one bad row means everyone has an invoice in their inbox and no
@@ -559,7 +569,7 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
         var payoutDetails = await _employeePayoutDetailsRepository
             .GetByEmployeeIdAsync(invoice.EmployeeId, cancellationToken);
 
-        var pdfData = invoice.CreatePdfData(employee, currency, orderPays, countryContext, companyInfo, payoutDetails, dateFormat);
+        var pdfData = invoice.CreatePdfData(employee, currency, orderPays, countryContext, companyInfo, payoutDetails, dateFormat, languageCode);
 
         var countryCode = employee.Address?.Country?.IsoCode;
 

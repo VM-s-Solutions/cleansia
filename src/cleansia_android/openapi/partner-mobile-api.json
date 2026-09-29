@@ -7895,6 +7895,14 @@
           "amount": {
             "type": "number",
             "format": "double"
+          },
+          "floatCap": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "cashJobsHidden": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -8570,6 +8578,14 @@
             "type": "number",
             "format": "double"
           },
+          "cashSetOffAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "transferAmount": {
+            "type": "number",
+            "format": "double"
+          },
           "currencyCode": {
             "type": "string",
             "nullable": true
@@ -8680,6 +8696,14 @@
             "format": "double"
           },
           "totalAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "cashSetOffAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "transferAmount": {
             "type": "number",
             "format": "double"
           },

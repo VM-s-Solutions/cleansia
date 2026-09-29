@@ -44,4 +44,18 @@ public class CashLedgerRepository(CleansiaDbContext context)
                 b.EmployeeId, $"{b.FirstName} {b.LastName}".Trim(), b.CurrencyId, b.Code, b.Amount))
             .ToList();
     }
+
+    public Task<decimal> GetHeldAsync(string employeeId, string currencyId, CancellationToken cancellationToken) =>
+        GetQueryable()
+            .Where(e => e.EmployeeId == employeeId && e.CurrencyId == currencyId)
+            .SumAsync(e => e.Amount, cancellationToken);
+
+    public async Task<IReadOnlyList<CashLedgerEntry>> GetForEmployeesAsync(
+        IReadOnlyCollection<string> employeeIds, CancellationToken cancellationToken) =>
+        await GetQueryable()
+            .Where(e => employeeIds.Contains(e.EmployeeId))
+            .OrderBy(e => e.OccurredAt)
+            .ThenBy(e => e.CreatedOn)
+            .ThenBy(e => e.Id)
+            .ToListAsync(cancellationToken);
 }

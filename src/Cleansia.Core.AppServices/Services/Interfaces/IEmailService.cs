@@ -40,6 +40,12 @@ public interface IEmailService
     Task<string> SendReceivablePayLinkEmailAsync(string email, Order order, Receivable receivable, string payUrl, string languageCode = Constants.Language.English, CancellationToken ct = default);
 
     /// <summary>
+    /// Asks a cleaner to hand over the company's cash they have held since a pay-period close could not set it
+    /// off against their pay (owner ruling 2026-09-28, decision 23): the amount and the close it dates from.
+    /// </summary>
+    Task<string> SendCashRemittanceRequestEmailAsync(string email, string employeeName, decimal amount, string currencySymbol, DateTime carriedSince, string languageCode = Constants.Language.English, CancellationToken ct = default);
+
+    /// <summary>
     /// The wind-down notice to a customer of a closing company (ADR-0064 D2 step 1): the company
     /// names as the receipts print them, the last day of service, and what happens to bookings, Plus,
     /// credit and the account.

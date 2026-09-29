@@ -3045,6 +3045,7 @@
       "has_open_pay_period": "A pay period is still open; close it first.",
       "has_unpaid_invoices": "A cleaner's invoice is not yet paid; the archive waits until every invoice is paid or cancelled.",
       "has_uninvoiced_pay": "A closed pay period holds pay that was never invoiced; the archive waits for it.",
+      "has_cash_held": "A cleaner still holds the company's cash; record its remittance or write it off first.",
       "has_open_disputes": "A dispute is still open; resolve it first.",
       "within_chargeback_horizon": "A cardholder can still dispute the company's latest card payment; the archive becomes admissible once the chargeback horizon has passed."
     },

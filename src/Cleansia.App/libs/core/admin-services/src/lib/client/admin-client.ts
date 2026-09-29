@@ -21493,6 +21493,7 @@ export class CompanyLifecycleDto implements ICompanyLifecycleDto {
     unpaidInvoices!: number;
     uninvoicedPayRows!: number;
     openDisputes!: number;
+    cleanersHoldingCash!: number;
     chargebackHorizonEndsOn!: Date | undefined;
 
     constructor(data?: ICompanyLifecycleDto) {
@@ -21533,6 +21534,7 @@ export class CompanyLifecycleDto implements ICompanyLifecycleDto {
             this.unpaidInvoices = Data["unpaidInvoices"];
             this.uninvoicedPayRows = Data["uninvoicedPayRows"];
             this.openDisputes = Data["openDisputes"];
+            this.cleanersHoldingCash = Data["cleanersHoldingCash"];
             this.chargebackHorizonEndsOn = Data["chargebackHorizonEndsOn"] ? new Date(Data["chargebackHorizonEndsOn"].toString()) : undefined as any;
         }
     }
@@ -21573,6 +21575,7 @@ export class CompanyLifecycleDto implements ICompanyLifecycleDto {
         data["unpaidInvoices"] = this.unpaidInvoices;
         data["uninvoicedPayRows"] = this.uninvoicedPayRows;
         data["openDisputes"] = this.openDisputes;
+        data["cleanersHoldingCash"] = this.cleanersHoldingCash;
         data["chargebackHorizonEndsOn"] = this.chargebackHorizonEndsOn ? this.chargebackHorizonEndsOn.toISOString() : undefined as any;
         return data;
     }
@@ -21606,6 +21609,7 @@ export interface ICompanyLifecycleDto {
     unpaidInvoices: number;
     uninvoicedPayRows: number;
     openDisputes: number;
+    cleanersHoldingCash: number;
     chargebackHorizonEndsOn: Date | undefined;
 }
 
@@ -25510,6 +25514,8 @@ export class EmployeeInvoiceDetailDto implements IEmployeeInvoiceDetailDto {
     bonusAmount!: number;
     deductionAmount!: number;
     totalAmount!: number;
+    cashSetOffAmount!: number;
+    transferAmount!: number;
     currencyCode!: string | undefined;
     currencyId!: string | undefined;
     status!: EmployeeInvoiceStatus;
@@ -25549,6 +25555,8 @@ export class EmployeeInvoiceDetailDto implements IEmployeeInvoiceDetailDto {
             this.bonusAmount = Data["bonusAmount"];
             this.deductionAmount = Data["deductionAmount"];
             this.totalAmount = Data["totalAmount"];
+            this.cashSetOffAmount = Data["cashSetOffAmount"];
+            this.transferAmount = Data["transferAmount"];
             this.currencyCode = Data["currencyCode"];
             this.currencyId = Data["currencyId"];
             this.status = Data["status"];
@@ -25592,6 +25600,8 @@ export class EmployeeInvoiceDetailDto implements IEmployeeInvoiceDetailDto {
         data["bonusAmount"] = this.bonusAmount;
         data["deductionAmount"] = this.deductionAmount;
         data["totalAmount"] = this.totalAmount;
+        data["cashSetOffAmount"] = this.cashSetOffAmount;
+        data["transferAmount"] = this.transferAmount;
         data["currencyCode"] = this.currencyCode;
         data["currencyId"] = this.currencyId;
         data["status"] = this.status;
@@ -25628,6 +25638,8 @@ export interface IEmployeeInvoiceDetailDto {
     bonusAmount: number;
     deductionAmount: number;
     totalAmount: number;
+    cashSetOffAmount: number;
+    transferAmount: number;
     currencyCode: string | undefined;
     currencyId: string | undefined;
     status: EmployeeInvoiceStatus;
@@ -25657,6 +25669,8 @@ export class EmployeeInvoiceDto implements IEmployeeInvoiceDto {
     bonusAmount!: number;
     deductionAmount!: number;
     totalAmount!: number;
+    cashSetOffAmount!: number;
+    transferAmount!: number;
     currencyCode!: string | undefined;
     currencyId!: string | undefined;
     status!: EmployeeInvoiceStatus;
@@ -25694,6 +25708,8 @@ export class EmployeeInvoiceDto implements IEmployeeInvoiceDto {
             this.bonusAmount = Data["bonusAmount"];
             this.deductionAmount = Data["deductionAmount"];
             this.totalAmount = Data["totalAmount"];
+            this.cashSetOffAmount = Data["cashSetOffAmount"];
+            this.transferAmount = Data["transferAmount"];
             this.currencyCode = Data["currencyCode"];
             this.currencyId = Data["currencyId"];
             this.status = Data["status"];
@@ -25731,6 +25747,8 @@ export class EmployeeInvoiceDto implements IEmployeeInvoiceDto {
         data["bonusAmount"] = this.bonusAmount;
         data["deductionAmount"] = this.deductionAmount;
         data["totalAmount"] = this.totalAmount;
+        data["cashSetOffAmount"] = this.cashSetOffAmount;
+        data["transferAmount"] = this.transferAmount;
         data["currencyCode"] = this.currencyCode;
         data["currencyId"] = this.currencyId;
         data["status"] = this.status;
@@ -25761,6 +25779,8 @@ export interface IEmployeeInvoiceDto {
     bonusAmount: number;
     deductionAmount: number;
     totalAmount: number;
+    cashSetOffAmount: number;
+    transferAmount: number;
     currencyCode: string | undefined;
     currencyId: string | undefined;
     status: EmployeeInvoiceStatus;

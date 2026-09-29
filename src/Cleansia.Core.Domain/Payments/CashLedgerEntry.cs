@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Cleansia.Core.Domain.Common;
+using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
@@ -9,9 +10,10 @@ namespace Cleansia.Core.Domain.Payments;
 
 /// <summary>
 /// One movement of the company's cash in a cleaner's hands (owner ruling 2026-09-28, decision 23): a
-/// collection at the door adds to what the cleaner holds, a remittance to the company or a write-off by an
-/// administrator takes from it. <see cref="Amount"/> is signed that way, so the cash a cleaner holds in a
-/// currency is the sum of their entries in it. Entries are never edited; a correction is a new entry.
+/// collection at the door adds to what the cleaner holds, a remittance to the company, a write-off by an
+/// administrator or a set-off against the cleaner's invoice takes from it. <see cref="Amount"/> is signed
+/// that way, so the cash a cleaner holds in a currency is the sum of their entries in it. An entry's amount
+/// is never edited; a correction is a new entry.
 /// </summary>
 public class CashLedgerEntry : TenantAuditable
 {
@@ -39,9 +41,18 @@ public class CashLedgerEntry : TenantAuditable
     [MaxLength(500)]
     public string? Note { get; private set; }
 
+    /// <summary>
+    /// Set on the entry that took the cleaner's cash in its currency above zero, once they were asked to
+    /// hand that cash over; a later balance that starts afresh from zero is asked about again.
+    /// </summary>
+    public DateTime? RemittanceRequestedAt { get; private set; }
+
     private CashLedgerEntry()
     {
     }
+
+    /// <summary>A company's float cap of zero is no cap; above a set one, cash jobs are hidden from the cleaner.</summary>
+    public static bool HoldsAboveFloatCap(decimal cashHeld, int floatCap) => floatCap > 0 && cashHeld > floatCap;
 
     public static CashLedgerEntry ForCollection(Order order) =>
         new()
@@ -80,4 +91,31 @@ public class CashLedgerEntry : TenantAuditable
             OccurredAt = occurredAt,
             Note = note,
         };
+
+    /// <summary>The cash <see cref="EmployeeInvoice.SetOffCash"/> took off the invoice's transfer, when the invoice was issued.</summary>
+    public static CashLedgerEntry ForSetOff(EmployeeInvoice invoice) =>
+        new()
+        {
+            EmployeeId = invoice.EmployeeId,
+            CurrencyId = invoice.CurrencyId,
+            Kind = CashLedgerEntryKind.SetOff,
+            Amount = -invoice.CashSetOffAmount,
+            OccurredAt = invoice.GeneratedAt,
+            Note = invoice.InvoiceNumber,
+        };
+
+    /// <summary>A cancelled invoice transfers nothing, so the cash it set off is the cleaner's to hold again.</summary>
+    public static CashLedgerEntry ForSetOffReversal(EmployeeInvoice invoice) =>
+        new()
+        {
+            EmployeeId = invoice.EmployeeId,
+            CurrencyId = invoice.CurrencyId,
+            Kind = CashLedgerEntryKind.SetOff,
+            Amount = invoice.CashSetOffAmount,
+            OccurredAt = invoice.CancelledAt
+                ?? throw new InvalidOperationException($"Invoice {invoice.Id} is not cancelled."),
+            Note = invoice.InvoiceNumber,
+        };
+
+    public void MarkRemittanceRequested(DateTime requestedAt) => RemittanceRequestedAt = requestedAt;
 }

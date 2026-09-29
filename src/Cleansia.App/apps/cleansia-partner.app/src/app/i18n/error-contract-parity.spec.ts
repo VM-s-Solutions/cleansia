@@ -500,6 +500,8 @@ const PARTNER_SURFACE_ERROR_KEYS: readonly string[] = [
   'order.take.already_completed',
   'order.time_conflict',
   'order.weekly_limit_reached',
+  // A cash job refused to a cleaner holding more of the company's cash than its float cap (decision 25).
+  'order.cash_float_cap_exceeded',
   // The contract for work (ADR-0068): the take and the standalone accept refuse a missing or a
   // foreign text, Start and Complete refuse a seat with no acceptance, and the preview answers the
   // legal key for an order booked under no document.

@@ -32,7 +32,7 @@ public sealed class GetCompanyLifecycleTests
         OpenOrders: 1, OpenOrdersOnOrAfterWindDownFrom: 2, ActiveTemplates: 3, ActiveMemberships: 4,
         CreditBalances: 5, PendingRefunds: 6, OrdersAwaitingPay: 7, OrdersAwaitingReceipt: 8,
         ReceiptsAwaitingFiscalRegistration: 9, OpenPayPeriods: 10, UnpaidInvoices: 11, UninvoicedPayRows: 12,
-        OpenDisputes: 13, LatestCardPaidCleaningDateTime: LatestClean);
+        OpenDisputes: 13, CleanersHoldingCash: 14, LatestCardPaidCleaningDateTime: LatestClean);
 
     public GetCompanyLifecycleTests()
     {
@@ -74,6 +74,7 @@ public sealed class GetCompanyLifecycleTests
         Assert.Null(dto.DeactivatedByEmail);
         Assert.Equal((1, 2, 3, 4, 5, 6, 7), (dto.OpenOrders, dto.OpenOrdersOnOrAfterWindDownFrom, dto.ActiveTemplates, dto.ActiveMemberships, dto.CreditBalances, dto.PendingRefunds, dto.OrdersAwaitingPay));
         Assert.Equal((8, 9, 10, 11, 12, 13), (dto.OrdersAwaitingReceipt, dto.ReceiptsAwaitingFiscalRegistration, dto.OpenPayPeriods, dto.UnpaidInvoices, dto.UninvoicedPayRows, dto.OpenDisputes));
+        Assert.Equal(14, dto.CleanersHoldingCash);
         Assert.Equal(LatestClean.AddDays(180), dto.ChargebackHorizonEndsOn);
     }
 

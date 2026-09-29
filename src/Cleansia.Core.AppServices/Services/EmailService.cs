@@ -638,6 +638,102 @@ public sealed partial class EmailService : IEmailService
             },
         };
 
+    // In-code copy on the admin-notification template, whose chrome is a subject, a greeting, one body
+    // paragraph and a hint; its translation rows are the admin events' and are not read here.
+    public async Task<string> SendCashRemittanceRequestEmailAsync(
+        string email,
+        string employeeName,
+        decimal amount,
+        string currencySymbol,
+        DateTime carriedSince,
+        string languageCode = Constants.Language.English,
+        CancellationToken ct = default)
+    {
+        var locale = EmailLocale.Resolve(languageCode);
+        var copy = CashRemittanceRequestDefaults[locale];
+        var culture = CultureFor(locale);
+
+        var values = new Dictionary<string, string?>(StringComparer.Ordinal);
+        foreach (var (key, value) in copy)
+        {
+            values[key] = value;
+        }
+
+        values["lang"] = locale;
+        values["Greeting"] = string.Format(culture, copy["Greeting"], employeeName);
+        values["Body"] = string.Format(
+            culture, copy["Body"], Money(amount, currencySymbol, locale), carriedSince.ToString("d", culture));
+        values["SupportEmail"] = sendGridConfig.AddressFrom;
+
+        return await SendRenderedAsync(
+            email,
+            templateRenderer.Render(TemplateFileFor(EmailType.AdminNotification), values),
+            copy["Subject"],
+            "Cash remittance request",
+            ct);
+    }
+
+    /// <summary>The remittance request's copy per locale; in the body <c>{0}</c> is the cash held and <c>{1}</c> the close it dates from.</summary>
+    private static readonly IReadOnlyDictionary<string, Dictionary<string, string>> CashRemittanceRequestDefaults =
+        new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["en"] = new()
+            {
+                ["Subject"] = "Please hand over the cash you hold",
+                ["Greeting"] = "Hello {0}",
+                ["Body"] = "You still hold {0} of customer cash that belongs to the company. Your pay could not cover it when the pay period closed on {1}, and it has been carried forward since. Please hand it over to the company as soon as you can; an administrator records it when it arrives.",
+                ["HintText"] = "Cash you hand over, or that is set off against your next invoice, is taken off what you hold.",
+                ["SupportText"] = "Questions? Write to us at",
+                ["Closing"] = "Kind regards,",
+                ["TeamName"] = "the Cleansia team",
+                ["FooterText"] = "© Cleansia s.r.o. All rights reserved.",
+            },
+            ["cs"] = new()
+            {
+                ["Subject"] = "Odevzdejte prosím hotovost, kterou máte u sebe",
+                ["Greeting"] = "Dobrý den, {0}",
+                ["Body"] = "Stále máte u sebe {0} hotovosti od zákazníků, která patří společnosti. Při uzavření výplatního období {1} ji nebylo možné započíst proti vaší odměně, a od té doby se proto převádí dál. Odevzdejte ji prosím společnosti co nejdříve; administrátor její převzetí zaznamená.",
+                ["HintText"] = "Hotovost, kterou odevzdáte nebo která se započte proti vaší další faktuře, se odečte od částky, kterou máte u sebe.",
+                ["SupportText"] = "Máte dotazy? Napište nám na",
+                ["Closing"] = "S pozdravem",
+                ["TeamName"] = "tým Cleansia",
+                ["FooterText"] = "© Cleansia s.r.o. Všechna práva vyhrazena.",
+            },
+            ["sk"] = new()
+            {
+                ["Subject"] = "Odovzdajte, prosím, hotovosť, ktorú máte pri sebe",
+                ["Greeting"] = "Dobrý deň, {0}",
+                ["Body"] = "Stále máte pri sebe {0} hotovosti od zákazníkov, ktorá patrí spoločnosti. Pri uzavretí výplatného obdobia {1} ju nebolo možné započítať proti vašej odmene, a odvtedy sa preto prenáša ďalej. Odovzdajte ju, prosím, spoločnosti čo najskôr; administrátor jej prevzatie zaznamená.",
+                ["HintText"] = "Hotovosť, ktorú odovzdáte alebo ktorá sa započíta proti vašej ďalšej faktúre, sa odpočíta od sumy, ktorú máte pri sebe.",
+                ["SupportText"] = "Máte otázky? Napíšte nám na",
+                ["Closing"] = "S pozdravom",
+                ["TeamName"] = "tím Cleansia",
+                ["FooterText"] = "© Cleansia s.r.o. Všetky práva vyhradené.",
+            },
+            ["uk"] = new()
+            {
+                ["Subject"] = "Будь ласка, передайте готівку, яка є у вас",
+                ["Greeting"] = "Вітаємо, {0}",
+                ["Body"] = "У вас досі є {0} готівки від клієнтів, яка належить компанії. Під час закриття розрахункового періоду {1} її не вдалося зарахувати проти вашої винагороди, тож відтоді вона переноситься далі. Будь ласка, передайте її компанії якнайшвидше; адміністратор зафіксує її отримання.",
+                ["HintText"] = "Готівка, яку ви передасте або яку буде зараховано проти вашого наступного рахунку, віднімається від суми, що є у вас.",
+                ["SupportText"] = "Є запитання? Напишіть нам на",
+                ["Closing"] = "З повагою,",
+                ["TeamName"] = "команда Cleansia",
+                ["FooterText"] = "© Cleansia s.r.o. Усі права захищено.",
+            },
+            ["ru"] = new()
+            {
+                ["Subject"] = "Пожалуйста, передайте наличные, которые у вас",
+                ["Greeting"] = "Здравствуйте, {0}",
+                ["Body"] = "У вас всё ещё есть {0} наличных от клиентов, которые принадлежат компании. При закрытии расчётного периода {1} их не удалось зачесть против вашего вознаграждения, поэтому с тех пор они переносятся дальше. Пожалуйста, передайте их компании как можно скорее; администратор зафиксирует их получение.",
+                ["HintText"] = "Наличные, которые вы передадите или которые будут зачтены против вашего следующего счёта, вычитаются из суммы, которая у вас.",
+                ["SupportText"] = "Есть вопросы? Напишите нам на",
+                ["Closing"] = "С уважением,",
+                ["TeamName"] = "команда Cleansia",
+                ["FooterText"] = "© Cleansia s.r.o. Все права защищены.",
+            },
+        };
+
     private const string BookedStatus = "booked";
 
     private async Task<string> SendStatusEmailAsync(

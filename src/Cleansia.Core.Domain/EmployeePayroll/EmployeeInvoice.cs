@@ -35,6 +35,15 @@ public class EmployeeInvoice : TenantAuditable
     [Required]
     public decimal TotalAmount { get; private set; }
 
+    /// <summary>
+    /// The company's cash the cleaner held in the invoice's currency when it was issued, set off against it
+    /// up to its total (owner ruling 2026-09-28, decision 23). The invoice's own amounts do not change; the
+    /// bank transfer is <see cref="TransferAmount"/>.
+    /// </summary>
+    public decimal CashSetOffAmount { get; private set; }
+
+    public decimal TransferAmount => TotalAmount - CashSetOffAmount;
+
     [Required]
     public string CurrencyId { get; private set; }
     public Currency? Currency { get; private set; }
@@ -228,6 +237,21 @@ public class EmployeeInvoice : TenantAuditable
         }
 
         return (subTotal, bonusAmount, deductionAmount);
+    }
+
+    /// <summary>
+    /// Sets <paramref name="cashHeld"/> off against the invoice up to its total and returns the amount set
+    /// off; nothing when the cleaner holds no cash in its currency.
+    /// </summary>
+    public decimal SetOffCash(decimal cashHeld)
+    {
+        if (CashSetOffAmount != 0m)
+        {
+            throw new InvalidOperationException($"Invoice {Id} has already set off cash.");
+        }
+
+        CashSetOffAmount = Math.Max(0m, Math.Min(cashHeld, TotalAmount));
+        return CashSetOffAmount;
     }
 
     public EmployeeInvoice SetPdfBlobUrl(string pdfBlobUrl)

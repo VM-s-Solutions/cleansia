@@ -35,4 +35,5 @@ public record CompanyLifecycleDto(
     int UnpaidInvoices,
     int UninvoicedPayRows,
     int OpenDisputes,
+    int CleanersHoldingCash,
     DateTime? ChargebackHorizonEndsOn);

@@ -958,6 +958,7 @@
       "payment_gateway_unavailable": "Platobná brána nie je k dispozícii",
       "time_conflict": "Tento termín sa prekrýva s inou objednávkou vo vašom rozvrhu",
       "weekly_limit_reached": "Dosiahli ste týždenný limit zákaziek.",
+      "cash_float_cap_exceeded": "Máte pri sebe viac hotovosti spoločnosti, než je povolené, preto pre vás zákazky za hotovosť nie sú dostupné, kým časť neodovzdáte.",
       "employee_already_has_order_in_progress": "Už máte inú zákazku v priebehu. Pred začatím novej ju prosím dokončite.",
       "photo": {
         "window_closed": "Túto fotografiu teraz nemožno pridať: fotografie pred upratovaním od prevzatia zákazky do jej dokončenia, fotografie po upratovaní počas práce.",

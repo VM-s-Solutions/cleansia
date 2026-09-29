@@ -27,7 +27,7 @@ public static class FileExtensions
 
     public static InvoicePdfData CreatePdfData(this EmployeeInvoice invoice, Employee employee, Currency? currency,
         IReadOnlyList<OrderEmployeePay> orderPays, CountryInvoiceContext? countryContext, CompanyInfo companyInfo,
-        EmployeePayoutDetails? payoutDetails, string dateFormat = "dd.MM.yyyy")
+        EmployeePayoutDetails? payoutDetails, string dateFormat = "dd.MM.yyyy", string? statementLanguageCode = null)
     {
         // A tax document in a guessed unit is a false one, not a degraded one. The caller records the
         // exception as the invoice's render failure; it never prints CZK for a EUR invoice.
@@ -55,6 +55,8 @@ public static class FileExtensions
             DeductionAmount = invoice.DeductionAmount,
             VatAmount = vatAmount,
             TotalAmount = invoice.TotalAmount,
+            CashSetOffAmount = invoice.CashSetOffAmount,
+            StatementLanguageCode = statementLanguageCode,
             CurrencyCode = currency.Code,
             CurrencySymbol = currency.Symbol,
             LineItems = orderPays.Select(op => new InvoiceLineItem

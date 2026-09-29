@@ -137,7 +137,8 @@ public class CleanerCurrencyGateTests
             .Returns(new Claim(ClaimTypes.Role, UserProfile.Employee.ToString()));
 
         return new OrderAccessService(
-            session.Object, new Mock<IEmployeeRepository>().Object, Mock.Of<IOrderRepository>(), ValidatorTestHelpers.CurrencyResolver(paidIn));
+            session.Object, new Mock<IEmployeeRepository>().Object, Mock.Of<IOrderRepository>(), ValidatorTestHelpers.CurrencyResolver(paidIn),
+            Mock.Of<ICashLedgerRepository>(), Mock.Of<Cleansia.Core.Domain.Configuration.IAppConfigurationProvider>());
     }
 
     private static Task<Infra.Common.Validations.BusinessResult<IReadOnlyList<Core.AppServices.Features.Orders.DTOs.PendingOfferItem>>>

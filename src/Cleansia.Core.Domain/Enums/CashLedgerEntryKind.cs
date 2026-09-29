@@ -7,5 +7,6 @@ public enum CashLedgerEntryKind
 {
     Collection = 1,
     Remittance = 2,
-    WriteOff = 3
+    WriteOff = 3,
+    SetOff = 4
 }

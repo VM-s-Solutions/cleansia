@@ -9,4 +9,11 @@ public interface ICashLedgerRepository : IRepository<CashLedgerEntry, string>
     /// of; one cleaner's alone when <paramref name="employeeId"/> is given.
     /// </summary>
     Task<IReadOnlyList<CashHeldBalance>> GetBalancesAsync(string? employeeId, CancellationToken cancellationToken);
+
+    /// <summary>The cash one cleaner holds in one currency.</summary>
+    Task<decimal> GetHeldAsync(string employeeId, string currencyId, CancellationToken cancellationToken);
+
+    /// <summary>Every entry of the given cleaners, tracked, oldest first.</summary>
+    Task<IReadOnlyList<CashLedgerEntry>> GetForEmployeesAsync(
+        IReadOnlyCollection<string> employeeIds, CancellationToken cancellationToken);
 }

@@ -124,7 +124,7 @@ final class BookingViewModelTests: XCTestCase {
         XCTAssertFalse(vm.isLastStep)
     }
 
-    func testAdvanceWalksOneTwoThreeAndStopsAtThree() {
+    func testAdvanceWalksEveryStepAndStopsAtTheLast() {
         let vm = BookingViewModel()
 
         XCTAssertTrue(vm.advance())
@@ -132,10 +132,14 @@ final class BookingViewModelTests: XCTestCase {
 
         XCTAssertTrue(vm.advance())
         XCTAssertEqual(vm.currentStep, 3)
+        XCTAssertFalse(vm.isLastStep)
+
+        XCTAssertTrue(vm.advance())
+        XCTAssertEqual(vm.currentStep, 4)
         XCTAssertTrue(vm.isLastStep)
 
         XCTAssertFalse(vm.advance())
-        XCTAssertEqual(vm.currentStep, 3)
+        XCTAssertEqual(vm.currentStep, 4)
     }
 
     func testBackWalksThreeTwoOneAndStopsAtOne() {

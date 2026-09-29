@@ -62,7 +62,7 @@ final class BookingSubmitTests: XCTestCase {
 
     /// The duplicate-order guard: the session-lived draft must be wiped AT the
     /// success outcome — a sheet swiped away over the success screen skips the
-    /// exit closures, and a stale draft would re-arm slide-to-pay at step 3.
+    /// exit closures, and a stale draft would re-arm slide-to-pay on the last step.
     func testSuccessfulCashSubmitWipesTheDraftForTheNextBooking() async {
         let create = FakeOrderCreateClient(result: .success(CreatedOrder(id: "o-10", confirmationCode: "CLN-10")))
         let vm = makeVM(create: create)
@@ -366,6 +366,29 @@ final class BookingSubmitTests: XCTestCase {
 
         XCTAssertEqual(quote.requests.first?.cleaningDate, instant)
         XCTAssertEqual(create.commands.first?.cleaningDate, instant)
+    }
+
+    /// The server checks the submitted total against its own price for the level it is sent, so the
+    /// level the customer picked must reach both the quote and the order, or the booking is refused
+    /// (or priced at Normal while the screen showed the surcharge).
+    func testThePickedLevelIsPricedAndBooked() async {
+        let quote = FakeQuoteClient(result: .success(BookingQuote(
+            totalPrice: 1600,
+            currencyId: "cur-czk",
+            currencyCode: "CZK",
+            dirtiness: .heavy,
+            dirtinessSurchargeAmount: 600
+        )))
+        let create = FakeOrderCreateClient()
+        let vm = makeVM(quote: quote, create: create)
+        vm.update(readyState())
+        vm.setDirtiness(.heavy)
+
+        _ = await vm.submit()
+
+        XCTAssertEqual(quote.requests.last?.dirtiness, .heavy)
+        XCTAssertEqual(create.commands.first?.dirtinessLevel, ._2)
+        XCTAssertEqual(create.commands.first?.totalPrice, 1600)
     }
 
     /// The confirm step has always captured this text into `BookingState`, but

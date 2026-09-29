@@ -55,6 +55,10 @@ struct OrderPriceBreakdown: Equatable {
         let amount: Double
     }
 
+    let dirtiness: Dirtiness
+    let dirtinessSurcharge: Double
+    /// Stated without the dirtiness surcharge, so subtotal + surcharge - discounts is the total; the
+    /// express part stays inside it, since the order does not itemise it.
     let subtotal: Double?
     let discounts: [DiscountLine]
     let total: Double
@@ -64,8 +68,12 @@ struct OrderPriceBreakdown: Equatable {
 
     static func resolve(_ order: CustomerOrderDetail) -> OrderPriceBreakdown {
         let original = order.originalSubtotal
+        let surcharged = order.dirtiness != .normal && order.dirtinessSurchargeAmount > 0
+        let showsSubtotal = surcharged || (original > 0 && original != order.total)
         return OrderPriceBreakdown(
-            subtotal: original > 0 && original != order.total ? original : nil,
+            dirtiness: order.dirtiness,
+            dirtinessSurcharge: order.dirtinessSurchargeAmount,
+            subtotal: showsSubtotal ? original - order.dirtinessSurchargeAmount : nil,
             discounts: [
                 line(.tier, order.tierDiscountAmount),
                 line(.membership, order.membershipDiscountAmount),
@@ -139,6 +147,12 @@ struct OrderPriceBreakdownCard: View {
                 OrderInfoRow(
                     label: L10n.OrderDetail.subtotal,
                     value: OrdersFormat.price(subtotal, currencyCode: breakdown.currencyCode)
+                )
+            }
+            if breakdown.dirtinessSurcharge > 0, let label = L10n.Booking.dirtinessSurcharge(breakdown.dirtiness) {
+                OrderInfoRow(
+                    label: label,
+                    value: "+" + OrdersFormat.price(breakdown.dirtinessSurcharge, currencyCode: breakdown.currencyCode)
                 )
             }
             ForEach(breakdown.discounts, id: \.source) { discount in
@@ -239,7 +253,9 @@ struct OrderDiscountChip: View {
             tierDiscountAmount: 210,
             membershipDiscountAmount: 300,
             estimatedTime: 180,
-            currency: CurrencyDetailDto(code: "CZK")
+            currency: CurrencyDetailDto(code: "CZK"),
+            dirtinessLevel: ._1,
+            dirtinessSurchargeAmount: 480
         ))
 
         static var previews: some View {

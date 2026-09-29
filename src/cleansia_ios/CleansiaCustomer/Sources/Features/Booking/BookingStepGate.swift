@@ -1,7 +1,7 @@
 import Foundation
 
 enum BookingStepGate {
-    static let totalSteps = 3
+    static let totalSteps = 4
 
     /// `alreadyConsented` is the account's record of both documents the review step's tick names;
     /// with it the box is not shown, so the tick is not asked for either.
@@ -10,8 +10,10 @@ enum BookingStepGate {
         case 1:
             (!state.selectedServiceIds.isEmpty || !state.selectedPackageIds.isEmpty) && state.rooms >= 1
         case 2:
-            !state.street.isBlank && !state.selectedDate.isBlank && !state.selectedTime.isBlank
+            state.dirtiness != nil
         case 3:
+            !state.street.isBlank && !state.selectedDate.isBlank && !state.selectedTime.isBlank
+        case 4:
             state.paymentMethod != nil && (alreadyConsented || state.termsAccepted)
         default:
             false

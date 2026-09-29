@@ -202,6 +202,14 @@ final class BookingViewModel: ViewModel {
         }
     }
 
+    func setDirtiness(_ level: Dirtiness) {
+        update { current in
+            var next = current
+            next.dirtiness = level
+            return next
+        }
+    }
+
     @discardableResult
     func advance() -> Bool {
         guard currentStep < BookingStepGate.totalSteps else { return false }
@@ -476,7 +484,8 @@ extension BookingState {
             rooms: rooms,
             bathrooms: bathrooms,
             cleaningDate: selectedInstant,
-            countryId: countryId ?? marketCountryId
+            countryId: countryId ?? marketCountryId,
+            dirtiness: dirtiness
         )
     }
 }

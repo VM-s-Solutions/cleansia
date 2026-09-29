@@ -238,7 +238,8 @@ private struct BookingSheetContent: View {
         ZStack {
             switch step {
             case 1: ServicesStep(viewModel: viewModel)
-            case 2: WhenWhereStep(
+            case 2: DirtinessStep(viewModel: viewModel)
+            case 3: WhenWhereStep(
                     viewModel: viewModel,
                     geocoding: geocoding,
                     mapProvider: mapProvider,

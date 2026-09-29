@@ -33541,6 +33541,916 @@
           }
         }
       }
+    },
+    "booking_dirtiness_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How clean is your home?"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jak moc je u vás uklizeno?"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ako veľmi je u vás upratané?"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Наскільки у вас прибрано?"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Насколько у вас убрано?"
+          }
+        }
+      }
+    },
+    "booking_dirtiness_hint": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose the state that best fits the whole home. If you are torn between two levels, choose the higher one. The cleaner then has enough time and the result will be as expected."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vyberte stav, který nejlépe odpovídá celé domácnosti. Pokud váháte mezi dvěma stupni, zvolte vyšší. Uklízečka pak má dost času a výsledek bude odpovídat."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vyberte stav, ktorý najlepšie zodpovedá celej domácnosti. Ak váhate medzi dvoma stupňami, zvoľte vyšší. Upratovačka potom bude mať dosť času a výsledok bude zodpovedať."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оберіть стан, який найкраще відповідає всьому помешканню. Якщо вагаєтеся між двома рівнями, оберіть вищий. Тоді прибиральник матиме достатньо часу, і результат відповідатиме очікуванням."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выберите состояние, которое лучше всего соответствует всему жилью. Если сомневаетесь между двумя уровнями, выберите более высокий. Тогда у клинера будет достаточно времени, и результат оправдает ожидания."
+          }
+        }
+      }
+    },
+    "booking_dirtiness_normal_name": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Normal"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Běžné"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bežné"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Звичайний"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Обычный"
+          }
+        }
+      }
+    },
+    "booking_dirtiness_increased_name": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Increased"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zvýšené"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zvýšené"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Підвищений"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Повышенный"
+          }
+        }
+      }
+    },
+    "booking_dirtiness_heavy_name": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heavy"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Silné"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Silné"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сильний"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сильный"
+          }
+        }
+      }
+    },
+    "booking_dirtiness_normal_rate": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No surcharge"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bez příplatku"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bez príplatku"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Без доплати"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Без доплаты"
+          }
+        }
+      }
+    },
+    "booking_dirtiness_increased_rate": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+30%"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+30%"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+30%"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+30%"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+30%"
+          }
+        }
+      }
+    },
+    "booking_dirtiness_heavy_rate": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+60%"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+60%"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+60%"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+60%"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+60%"
+          }
+        }
+      }
+    },
+    "booking_dirtiness_normal_lead": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The home is cleaned regularly, the last time about 1–2 weeks ago."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Domácnost se uklízí pravidelně, naposledy zhruba před 1–2 týdny."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Domácnosť sa upratuje pravidelne, naposledy zhruba pred 1–2 týždňami."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Помешкання прибирають регулярно, востаннє приблизно 1–2 тижні тому."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Жильё убирают регулярно, последний раз примерно 1–2 недели назад."
+          }
+        }
+      }
+    },
+    "booking_dirtiness_increased_lead": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last cleaned 3–6 weeks ago, or a home with pets or small children."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poslední úklid před 3–6 týdny, nebo domácnost se zvířaty či malými dětmi."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Posledné upratovanie pred 3–6 týždňami alebo domácnosť so zvieratami či malými deťmi."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Останнє прибирання 3–6 тижнів тому або помешкання з тваринами чи маленькими дітьми."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Последняя уборка 3–6 недель назад или жильё с животными либо маленькими детьми."
+          }
+        }
+      }
+    },
+    "booking_dirtiness_heavy_lead": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More than 2 months without cleaning, or a home neglected for a long time."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Déle než 2 měsíce bez úklidu, nebo dlouhodobě zanedbaná domácnost."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Viac ako 2 mesiace bez upratovania alebo dlhodobo zanedbaná domácnosť."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Понад 2 місяці без прибирання або тривалий час занедбане помешкання."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Больше 2 месяцев без уборки или давно запущенное жильё."
+          }
+        }
+      }
+    },
+    "booking_dirtiness_normal_sign_1": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dust on furniture and shelves, crumbs and hair on the floor"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prach na nábytku a policích, drobečky a chlupy na podlaze"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prach na nábytku a policiach, omrvinky a chlpy na podlahe"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пил на меблях і полицях, крихти й волосся на підлозі"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пыль на мебели и полках, крошки и волосы на полу"
+          }
+        }
+      }
+    },
+    "booking_dirtiness_normal_sign_2": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ordinary water marks in the bathroom, a toilet with no deposits"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "V koupelně běžné vodní skvrny, WC bez usazenin"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "V kúpeľni bežné vodné škvrny, WC bez usadenín"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "У ванній звичайні сліди від води, унітаз без нальоту"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "В ванной обычные следы от воды, унитаз без налёта"
+          }
+        }
+      }
+    },
+    "booking_dirtiness_normal_sign_3": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A kitchen after everyday cooking: the worktop and stove need a wipe, nothing baked on"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kuchyň po běžném vaření: linka a sporák otřít, bez připečenin"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kuchyňa po bežnom varení: linku a sporák utrieť, bez pripečenín"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Кухня після звичайного готування: стільницю й плиту протерти, без пригорілого"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Кухня после обычной готовки: столешницу и плиту протереть, без пригоревшего"
+          }
+        }
+      }
+    },
+    "booking_dirtiness_normal_sign_4": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dishes washed or in the dishwasher"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nádobí umyté nebo v myčce"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Riad umytý alebo v umývačke"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Посуд вимитий або в посудомийній машині"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Посуда вымыта или в посудомоечной машине"
+          }
+        }
+      }
+    },
+    "booking_dirtiness_increased_sign_1": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A visible layer of dust, stains and grimy patches on the floor"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Viditelná vrstva prachu, skvrny a zašlá místa na podlaze"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Viditeľná vrstva prachu, škvrny a zašlé miesta na podlahe"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Помітний шар пилу, плями й затерті місця на підлозі"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заметный слой пыли, пятна и затёртые места на полу"
+          }
+        }
+      }
+    },
+    "booking_dirtiness_increased_sign_2": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Limescale on the taps, shower and bath, grimy grout"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vodní kámen na bateriích, sprchovém koutě a vaně, zašlé spáry"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vodný kameň na batériách, sprchovom kúte a vani, zašlé škáry"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вапняний наліт на змішувачах, у душовій і ванні, потемнілі шви"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Известковый налёт на смесителях, в душевой и ванне, потемневшие швы"
+          }
+        }
+      }
+    },
+    "booking_dirtiness_increased_sign_3": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grease on the kitchen worktop, tiles and extractor hood, an oven or microwave dirty on the outside"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mastnota na kuchyňské lince, obkladu a digestoři, znečištěná trouba nebo mikrovlnka zvenku"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mastnota na kuchynskej linke, obklade a digestore, znečistená rúra alebo mikrovlnka zvonka"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Жир на кухонній стільниці, плитці й витяжці, забруднена ззовні духовка чи мікрохвильовка"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Жир на кухонной столешнице, плитке и вытяжке, загрязнённая снаружи духовка или микроволновка"
+          }
+        }
+      }
+    },
+    "booking_dirtiness_increased_sign_4": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pet hair on the sofa, rugs and in the corners"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chlupy zvířat na sedačce, kobercích a v rozích"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chlpy zvierat na sedačke, kobercoch a v rohoch"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Шерсть тварин на дивані, килимах і в кутках"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Шерсть животных на диване, коврах и в углах"
+          }
+        }
+      }
+    },
+    "booking_dirtiness_heavy_sign_1": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heavy limescale and deposits that do not come off with one wipe"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Silný vodní kámen a usazeniny, které nejdou dolů jedním setřením"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Silný vodný kameň a usadeniny, ktoré nejdú dole jedným utretím"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сильний вапняний наліт і відкладення, які не сходять з одного протирання"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сильный известковый налёт и отложения, которые не оттираются за один раз"
+          }
+        }
+      }
+    },
+    "booking_dirtiness_heavy_sign_2": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Baked-on grease on the stove, extractor hood and cupboards"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Připečená mastnota na sporáku, digestoři a skříňkách"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pripečená mastnota na sporáku, digestore a skrinkách"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пригорілий жир на плиті, витяжці й шафках"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пригоревший жир на плите, вытяжке и шкафчиках"
+          }
+        }
+      }
+    },
+    "booking_dirtiness_heavy_sign_3": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Black spots (mould) on silicone or in the grout"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Černé skvrny (plíseň) na silikonu nebo ve spárách"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Čierne škvrny (pleseň) na silikóne alebo v škárach"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Чорні плями (цвіль) на силіконі або у швах"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Чёрные пятна (плесень) на силиконе или в швах"
+          }
+        }
+      }
+    },
+    "booking_dirtiness_heavy_sign_4": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dried-on dirt on the floor, sticky surfaces, a strong smell"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaschlé nečistoty na podlaze, lepkavé povrchy, výrazný zápach"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaschnuté nečistoty na podlahe, lepkavé povrchy, výrazný zápach"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Засохлий бруд на підлозі, липкі поверхні, сильний запах"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Засохшая грязь на полу, липкие поверхности, сильный запах"
+          }
+        }
+      }
+    },
+    "booking_dirtiness_surcharge_increased": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Increased dirtiness surcharge (+30%)"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Příplatek za zvýšené znečištění (+30%)"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Príplatok za zvýšené znečistenie (+30%)"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Доплата за підвищене забруднення (+30%)"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Доплата за повышенное загрязнение (+30%)"
+          }
+        }
+      }
+    },
+    "booking_dirtiness_surcharge_heavy": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heavy dirtiness surcharge (+60%)"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Příplatek za silné znečištění (+60%)"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Príplatok za silné znečistenie (+60%)"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Доплата за сильне забруднення (+60%)"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Доплата за сильное загрязнение (+60%)"
+          }
+        }
+      }
+    },
+    "booking_dirtiness_level_label": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dirtiness level"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Míra znečištění"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Miera znečistenia"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Рівень забруднення"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Уровень загрязнения"
+          }
+        }
+      }
     }
   },
   "version": "1.1"

@@ -69,6 +69,9 @@ struct CustomerOrderDetail: Equatable {
     let bathrooms: Int
     let estimatedMinutes: Int
     let extras: [String: Bool]
+    let dirtiness: Dirtiness
+    /// Inside ``total``: the stored surcharge the level added, itemised on the receipt.
+    let dirtinessSurchargeAmount: Double
 
     let services: [CustomerOrderService]
     let packages: [CustomerOrderPackage]
@@ -130,6 +133,8 @@ extension CustomerOrderDetail {
         bathrooms = try item.bathrooms.require("bathrooms")
         estimatedMinutes = try item.estimatedTime.require("estimatedTime")
         extras = item.extras ?? [:]
+        dirtiness = try Dirtiness(wire: item.dirtinessLevel.require("dirtinessLevel"))
+        dirtinessSurchargeAmount = try item.dirtinessSurchargeAmount.require("dirtinessSurchargeAmount")
 
         services = try (item.selectedServices ?? []).map(CustomerOrderService.init)
         packages = try (item.selectedPackages ?? []).map(CustomerOrderPackage.init)

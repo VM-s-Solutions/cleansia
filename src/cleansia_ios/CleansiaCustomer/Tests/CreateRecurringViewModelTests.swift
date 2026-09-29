@@ -36,6 +36,7 @@ final class CreateRecurringViewModelTests: XCTestCase {
     private func fillValid(_ vm: CreateRecurringViewModel) {
         vm.setSavedAddressId("addr-1")
         vm.toggleService("s-1")
+        vm.setDirtiness(.normal)
         vm.setStartsOn(Date(timeIntervalSince1970: 1_780_000_000))
     }
 
@@ -45,7 +46,7 @@ final class CreateRecurringViewModelTests: XCTestCase {
         XCTAssertFalse(vm.isValid)
     }
 
-    func testIsValidRequiresAddressServiceAndStart() async {
+    func testIsValidRequiresAddressServiceLevelAndStart() async {
         let (vm, _) = makeVM()
         await vm.load()
         vm.setSavedAddressId("addr-1")
@@ -53,6 +54,8 @@ final class CreateRecurringViewModelTests: XCTestCase {
         vm.toggleService("s-1")
         XCTAssertFalse(vm.isValid)
         vm.setStartsOn(Date(timeIntervalSince1970: 1_780_000_000))
+        XCTAssertFalse(vm.isValid, "a new schedule is submittable without a level")
+        vm.setDirtiness(.normal)
         XCTAssertTrue(vm.isValid)
     }
 
@@ -76,6 +79,8 @@ final class CreateRecurringViewModelTests: XCTestCase {
         XCTAssertTrue(vm.canAdvance(step: 1))
 
         vm.togglePackage("p-1")
+        XCTAssertFalse(vm.canAdvance(step: 2), "a selection without a level advances")
+        vm.setDirtiness(.increased)
         XCTAssertTrue(vm.canAdvance(step: 2))
         vm.togglePackage("p-1")
         vm.toggleService("s-1")
@@ -92,6 +97,7 @@ final class CreateRecurringViewModelTests: XCTestCase {
         var state = CreateRecurringFormState()
         state.savedAddressId = "addr-1"
         state.selectedServiceIds = ["s-1"]
+        state.dirtiness = .normal
         state.startsOn = Date(timeIntervalSince1970: 1_780_000_000)
         XCTAssertTrue(state.isValid)
 
@@ -177,6 +183,7 @@ final class CreateRecurringViewModelTests: XCTestCase {
         XCTAssertEqual(vm.formState.selectedPackageIds, [])
         XCTAssertEqual(events, [.selectionPrunedForMarket])
         vm.setStartsOn(Date(timeIntervalSince1970: 1_780_000_000))
+        vm.setDirtiness(.normal)
         XCTAssertTrue(vm.isValid)
     }
 
@@ -527,6 +534,50 @@ final class CreateRecurringViewModelTests: XCTestCase {
 
         XCTAssertEqual(client.createInputs.first?.rooms, 4)
         XCTAssertEqual(client.createInputs.first?.bathrooms, 2)
+    }
+
+    // MARK: - Dirtiness level
+
+    /// A new schedule asks for the level the way a booking does; nothing is preselected.
+    func testANewScheduleStartsWithoutALevelAndBooksTheLevelPicked() async {
+        let (vm, client) = makeVM()
+        XCTAssertNil(vm.formState.dirtiness)
+        await vm.load()
+        fillValid(vm)
+
+        vm.setDirtiness(.increased)
+        _ = await vm.submit()
+
+        XCTAssertEqual(client.createInputs.first?.dirtiness, .increased)
+    }
+
+    /// Repeating an order does not carry its level over: how soiled the home was then says little
+    /// about a home cleaned on a schedule.
+    func testAScheduleFromAnOrderStillAsksForTheLevel() async {
+        let orderClient = FakeOrderClient()
+        orderClient.detailResults = [.success(OrderFixtures.detail(
+            id: "ord-7",
+            dirtiness: .heavy,
+            dirtinessSurchargeAmount: 600,
+            services: [OrderFixtures.service(id: "s-1")]
+        ))]
+        let (vm, _) = makeVM(sourceOrderId: "ord-7", orderClient: orderClient)
+
+        await vm.load()
+
+        XCTAssertEqual(vm.formState.selectedServiceIds, ["s-1"])
+        XCTAssertNil(vm.formState.dirtiness)
+    }
+
+    /// An edit replaces every field it sends, so the schedule's own level is seeded and sent back.
+    func testAnEditKeepsTheSchedulesLevel() async {
+        let (vm, client) = makeVM(editing: RecurringFixtures.template(dirtiness: .heavy))
+        await vm.load()
+        XCTAssertEqual(vm.formState.dirtiness, .heavy)
+
+        _ = await vm.submit()
+
+        XCTAssertEqual(client.updateInputs.first?.dirtiness, .heavy)
     }
 
     func testPropertySizeNeverGoesNegative() {

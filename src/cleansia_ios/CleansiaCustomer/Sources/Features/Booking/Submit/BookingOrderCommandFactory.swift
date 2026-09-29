@@ -54,7 +54,8 @@ enum BookingOrderCommandFactory {
             preferredEmployeeId: state.preferredEmployeeId,
             specialInstructions: BookingInstructions.trimmedOrNil(state.specialInstructions),
             accessInstructions: BookingInstructions.trimmedOrNil(state.accessInstructions),
-            termsAccepted: termsAccepted
+            termsAccepted: termsAccepted,
+            dirtinessLevel: state.dirtiness?.wire
         )
     }
 }

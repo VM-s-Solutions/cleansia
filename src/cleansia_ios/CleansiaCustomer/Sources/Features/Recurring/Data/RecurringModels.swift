@@ -57,6 +57,7 @@ struct RecurringTemplate: Equatable, Identifiable {
     let timeOfDay: String
     let rooms: Int
     let bathrooms: Int
+    let dirtiness: Dirtiness
     let savedAddressId: String
     let addressLine: String?
     let selectedServiceIds: [String]
@@ -88,6 +89,7 @@ struct CreateRecurringInput: Equatable {
     let timeOfDay: String
     let rooms: Int
     let bathrooms: Int
+    let dirtiness: Dirtiness
     let savedAddressId: String
     let selectedServiceIds: [String]
     let selectedPackageIds: [String]
@@ -106,6 +108,7 @@ struct UpdateRecurringInput: Equatable {
     let timeOfDay: String
     let rooms: Int
     let bathrooms: Int
+    let dirtiness: Dirtiness
     let savedAddressId: String
     let selectedServiceIds: [String]
     let selectedPackageIds: [String]

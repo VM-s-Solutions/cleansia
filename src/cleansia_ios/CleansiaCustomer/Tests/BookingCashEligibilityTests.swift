@@ -169,6 +169,28 @@ final class BookingCashEligibilityTests: XCTestCase {
         XCTAssertEqual(received(), [.cashCleared])
     }
 
+    /// A heavier level lengthens the job, so the crew the server quotes for it can outgrow cash.
+    func testALevelThatNeedsTwoCleanersTakesCashAwayOnTheReQuote() async {
+        let scheduler = TestScheduler.dispatch
+        let (vm, quote) = makeVM(requiredEmployees: 1, scheduler: scheduler)
+        let received = events(of: vm)
+        vm.update(readyState())
+        vm.setDirtiness(.normal)
+        scheduler.advance(by: .milliseconds(400))
+        await drain()
+        vm.selectPayment(.cash)
+        XCTAssertEqual(vm.state.paymentMethod, .cash)
+
+        quote.result = .success(Self.quote(requiredEmployees: 2))
+        vm.setDirtiness(.heavy)
+        scheduler.advance(by: .milliseconds(400))
+        await drain()
+
+        XCTAssertEqual(quote.requests.last?.dirtiness, .heavy)
+        XCTAssertNil(vm.state.paymentMethod, "cash survived a level the server crews with two cleaners")
+        XCTAssertEqual(received(), [.cashCleared])
+    }
+
     func testTheNextChoiceClearsTheNotice() async {
         let (vm, _) = makeVM(requiredEmployees: 2)
         vm.update(readyState(payment: .cash))

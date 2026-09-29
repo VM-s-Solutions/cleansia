@@ -24,6 +24,37 @@ final class OrderDetailSummaryTests: XCTestCase {
         XCTAssertEqual(OrderPriceBreakdown.resolve(order).total, 1890)
     }
 
+    // MARK: - Dirtiness line
+
+    /// The receipt itemises the surcharge the order stored; the breakdown carries the same figure and
+    /// the level it was charged for, never one derived from a rate, under a subtotal stated without it.
+    func testTheStoredSurchargeIsItsOwnRowUnderASubtotalWithoutIt() {
+        let order = OrderFixtures.detail(
+            dirtiness: .increased,
+            dirtinessSurchargeAmount: 480,
+            total: 2080,
+            originalSubtotal: 2080
+        )
+        let breakdown = OrderPriceBreakdown.resolve(order)
+        XCTAssertEqual(breakdown.dirtiness, .increased)
+        XCTAssertEqual(breakdown.dirtinessSurcharge, 480)
+        XCTAssertEqual(breakdown.subtotal, 1600, "nothing was discounted, yet the surcharge needs a base")
+    }
+
+    func testTheRowsAddUpToTheTotalWhenADiscountCameOff() {
+        let order = OrderFixtures.detail(
+            dirtiness: .heavy,
+            dirtinessSurchargeAmount: 600,
+            total: 1400,
+            originalSubtotal: 1600,
+            tierDiscountAmount: 200
+        )
+        let breakdown = OrderPriceBreakdown.resolve(order)
+        let discounts = breakdown.discounts.reduce(0.0) { $0 + $1.amount }
+        XCTAssertEqual(breakdown.subtotal, 1000)
+        XCTAssertEqual((breakdown.subtotal ?? 0) + breakdown.dirtinessSurcharge - discounts, breakdown.total)
+    }
+
     // MARK: - Discount lines
 
     func testEveryNonZeroSourceGetsItsOwnLineInAndroidsOrder() {

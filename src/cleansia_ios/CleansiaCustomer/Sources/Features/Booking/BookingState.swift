@@ -6,6 +6,8 @@ struct BookingState: Equatable {
     var selectedExtraSlugs: Set<String> = []
     var rooms: Int = 1
     var bathrooms: Int = 1
+    /// Nil until the customer picks one: the level step asks for an active choice.
+    var dirtiness: Dirtiness?
 
     var street: String = ""
     var city: String = ""

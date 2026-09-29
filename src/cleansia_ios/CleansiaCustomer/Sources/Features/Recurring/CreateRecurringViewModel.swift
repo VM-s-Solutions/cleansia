@@ -8,6 +8,8 @@ struct CreateRecurringFormState: Equatable {
     var timeOfDay = RecurringTime.defaultTime
     var rooms = 2
     var bathrooms = 1
+    /// Nil on a new schedule until the customer picks one; an edit starts from the stored level.
+    var dirtiness: Dirtiness?
     var savedAddressId = ""
     var selectedServiceIds: Set<String> = []
     var selectedPackageIds: Set<String> = []
@@ -19,13 +21,13 @@ struct CreateRecurringFormState: Equatable {
     static let totalSteps = 3
 
     /// The Android form's per-step gate (`CreateRecurringViewModel.kt` `canAdvance`): the schedule
-    /// (1), the selection (2), the address and the start (3). The one-page form here reads the
+    /// (1), the selection and its level (2), the address and the start (3). The one-page form here reads the
     /// conjunction, so both platforms refuse the same incomplete form. The schedule step also refuses a
     /// start the server would refuse.
     func canAdvance(step: Int) -> Bool {
         switch step {
         case 1: RecurringTime.bookableTimes.contains(timeOfDay)
-        case 2: !selectedServiceIds.isEmpty || !selectedPackageIds.isEmpty
+        case 2: (!selectedServiceIds.isEmpty || !selectedPackageIds.isEmpty) && dirtiness != nil
         case 3: !savedAddressId.isBlank && startsOn != nil
         default: false
         }
@@ -43,6 +45,7 @@ struct CreateRecurringFormState: Equatable {
         timeOfDay = RecurringTime.nearestBookable(template.timeOfDay)
         rooms = template.rooms
         bathrooms = template.bathrooms
+        dirtiness = template.dirtiness
         savedAddressId = template.savedAddressId
         selectedServiceIds = Set(template.selectedServiceIds)
         selectedPackageIds = Set(template.selectedPackageIds)
@@ -61,6 +64,7 @@ extension UpdateRecurringInput {
             timeOfDay: input.timeOfDay,
             rooms: input.rooms,
             bathrooms: input.bathrooms,
+            dirtiness: input.dirtiness,
             savedAddressId: input.savedAddressId,
             selectedServiceIds: input.selectedServiceIds,
             selectedPackageIds: input.selectedPackageIds,
@@ -78,6 +82,7 @@ struct RecurringPricedSelection: Equatable {
     let packageIds: [String]
     let rooms: Int
     let bathrooms: Int
+    let dirtiness: Dirtiness?
     let countryId: String?
 
     init(_ form: CreateRecurringFormState, countryId: String?) {
@@ -85,6 +90,7 @@ struct RecurringPricedSelection: Equatable {
         packageIds = form.selectedPackageIds.sorted()
         rooms = form.rooms
         bathrooms = form.bathrooms
+        dirtiness = form.dirtiness
         self.countryId = countryId
     }
 
@@ -100,7 +106,8 @@ struct RecurringPricedSelection: Equatable {
             rooms: rooms,
             bathrooms: bathrooms,
             cleaningDate: nil,
-            countryId: countryId
+            countryId: countryId,
+            dirtiness: dirtiness
         )
     }
 }
@@ -415,6 +422,10 @@ final class CreateRecurringViewModel: ViewModel {
         formState.bathrooms = min(max(0, count), PropertySize.maxBathrooms)
     }
 
+    func setDirtiness(_ level: Dirtiness) {
+        formState.dirtiness = level
+    }
+
     func setSavedAddressId(_ id: String) {
         formState.savedAddressId = id
     }
@@ -536,7 +547,8 @@ final class CreateRecurringViewModel: ViewModel {
               !state.selectedServiceIds.isEmpty || !state.selectedPackageIds.isEmpty,
               let startsOn = state.startsOn,
               RecurringTime.bookableTimes.contains(state.timeOfDay),
-              let paymentType = state.paymentType
+              let paymentType = state.paymentType,
+              let dirtiness = state.dirtiness
         else { return nil }
         return CreateRecurringInput(
             frequency: state.frequency.rawValue,
@@ -544,6 +556,7 @@ final class CreateRecurringViewModel: ViewModel {
             timeOfDay: state.timeOfDay,
             rooms: state.rooms,
             bathrooms: state.bathrooms,
+            dirtiness: dirtiness,
             savedAddressId: state.savedAddressId,
             selectedServiceIds: Array(state.selectedServiceIds),
             selectedPackageIds: Array(state.selectedPackageIds),

@@ -73,6 +73,10 @@ struct CreateRecurringScreen: View {
                     onRoomsChange: vm.setRooms,
                     onBathroomsChange: vm.setBathrooms
                 )
+                VStack(alignment: .leading, spacing: Spacing.s) {
+                    SectionLabel(text: L10n.Booking.dirtinessQuestion)
+                    DirtinessPicker(selected: vm.formState.dirtiness, onSelect: vm.setDirtiness)
+                }
                 PaymentSection(
                     selected: vm.formState.paymentType,
                     cash: vm.cashEligibility,

@@ -272,6 +272,7 @@ private struct PopularPackageCard: View {
                 timeOfDay: "10:00",
                 rooms: 2,
                 bathrooms: 1,
+                dirtiness: .normal,
                 savedAddressId: "a1",
                 addressLine: "Zenklova 6, Praha",
                 selectedServiceIds: [],

@@ -84,6 +84,7 @@ export class OrderDetailsComponent implements OnInit {
   protected readonly orderDetails = this.facade.orderDetails;
   protected readonly loading = this.facade.loading;
   protected readonly error = this.facade.error;
+  protected readonly removalReason = computed(() => this.facade.removal()?.reason ?? null);
   protected readonly currentEmployeeId = this.facade.currentEmployeeId;
 
   private readonly currentLang = toSignal(

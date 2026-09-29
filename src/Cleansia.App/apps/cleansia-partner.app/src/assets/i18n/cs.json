@@ -35,6 +35,7 @@
       "invoices": "Faktury",
       "invoice_details": "Detail faktury",
       "my_pay": "Moje výplata",
+      "how_jobs_are_offered": "Jak nabízíme zakázky",
       "not_found": "Stránka nenalezena"
     }
   },
@@ -145,6 +146,9 @@
       "job_radius_off_hint": "Budeme vás upozorňovat na každou novou zakázku ve vaší zemi.",
       "job_radius_distance": "Vzdálenost od domova (km)",
       "job_radius_distance_hint": "Mezi {{min}} a {{max}} km.",
+      "weekly_limit": "Týdenní limit zakázek",
+      "weekly_limit_text": "Administrátor omezil, kolik zakázek můžete mít za jeden týden: {{count}}.",
+      "weekly_limit_reason": "Důvod: {{reason}}",
       "bank_account": "Bankovní účet",
       "bank_account_hint": "Předčíslí, číslo účtu a kód banky — vložte celý účet a rozdělí se sám.",
       "request_deletion": "Požádat o odstranění",
@@ -408,6 +412,8 @@
       "not_found_title": "Objednávka nenalezena",
       "not_found_message": "Objednávka, kterou hledáte, nebyla nalezena.",
       "load_failed": "Nepodařilo se načíst detail objednávky",
+      "removed_title": "Byli jste z této zakázky odebráni",
+      "removed_message": "Administrátor vás z této zakázky odebral s tímto odůvodněním: {{reason}}",
       "note_content": "Poznámka",
       "note_content_placeholder": "Zadejte poznámku...",
       "issue_description": "Popis problému",
@@ -557,6 +563,24 @@
       "delete_confirm_yes": "Požádat o smazání",
       "delete_error": "Váš účet se nepodařilo smazat.",
       "delete_requested": "Vaše žádost o smazání byla odeslána. Ozveme se vám ohledně podpisu dokumentů."
+    },
+    "how_jobs_are_offered": {
+      "title": "Jak nabízíme zakázky",
+      "description": "Pravidla nabídky zakázek: co vidíte, co se děje automaticky a jak požádat, aby rozhodnutí posoudil člověk.",
+      "board_title": "Nabídka zakázek",
+      "board_text": "Všichni schválení partneři vidí stejné volné zakázky. Nabídka ukazuje zakázky na trhu, kde pracujete, a v měně, ve které dostáváte odměnu. Ve výchozím stavu jsou seřazené podle toho, kdy byly zveřejněny, a řazení si můžete změnit. Volné místo získá ten, kdo si ho vezme první.",
+      "preferred_title": "Když si vás zákazník vyžádá",
+      "preferred_text": "Zákazník, u kterého jste už uklízeli, si vás může vyžádat jménem. První místo na takové zakázce pak máte na omezenou dobu jen pro sebe; čím dříve úklid je, tím je tato doba kratší. Pokud si zakázku v té době nevezmete nebo ji uvolníte, přejde do nabídky pro všechny. Uvolnění vám nikdy nebude přičteno k tíži.",
+      "radius_title": "Upozornění na nové zakázky",
+      "radius_text": "Na nové zakázky vás upozorňujeme automaticky. Pokud si v profilu nastavíte vzdálenost, upozorníme vás jen na zakázky v jejím okruhu; jinak na každou novou zakázku ve vaší zemi. Vzdálenost mění jen upozornění: nabídka dál zobrazuje všechny zakázky a kteroukoli z nich si můžete vzít.",
+      "automatic_title": "Co se děje automaticky",
+      "automatic_text": "Několik kroků proběhne samo, aniž by o vás kdokoli rozhodoval: vyžádání od zákazníka skončí ve stanovený čas a zakázka se otevře všem; zakázka, kterou si do začátku nikdo nevzal, se zruší a zákazník dostane peníze zpět; a připomínáme vám zakázky, které jste si vzali. Žádný z těchto kroků nehodnotí vás ani nemění, které zakázky si můžete vzít.",
+      "no_score_title": "O vašem přístupu nerozhoduje žádné skóre",
+      "no_score_text": "Partnery nebodujeme ani je neřadíme do pořadí. Hodnocení nemění, které zakázky vidíte nebo si můžete vzít. Jediným omezením počtu zakázek je týdenní limit, který vám může nastavit administrátor; pokud je nastaven, uvidíte ho i s důvodem ve svém profilu.",
+      "approval_title": "Jak probíhá schválení",
+      "approval_text": "Než si budete moct brát zakázky, administrátor schválí váš účet. Ověří, že máte vyplněný profil, že jste nahráli všechny dokumenty, které vyžaduje země, kde budete pracovat, a že byly přijaty, že jste přijali platné partnerské dokumenty a že v této zemi působíme. O schválení i zamítnutí vždy rozhoduje člověk, nikdy automat.",
+      "review_title": "Požádejte, aby rozhodnutí posoudil člověk",
+      "review_text": "Pokud nesouhlasíte s rozhodnutím o svém účtu nebo zakázkách, například se zamítnutím, odebráním ze zakázky nebo týdenním limitem, napište na info@cleansia.cz. Posoudí to člověk, ne automatický systém, a odpoví vám."
     }
   },
   "sidebar": {
@@ -565,6 +589,7 @@
     "orders": "Objednávky",
     "invoices": "Faktury",
     "my_pay": "Moje výplata",
+    "how_jobs_are_offered": "Jak nabízíme zakázky",
     "logout": "Odhlásit se"
   },
   "components": {

@@ -35,6 +35,7 @@
       "invoices": "Invoices",
       "invoice_details": "Invoice Details",
       "my_pay": "My Pay",
+      "how_jobs_are_offered": "How jobs are offered",
       "not_found": "Page Not Found"
     }
   },
@@ -145,6 +146,9 @@
       "job_radius_off_hint": "We'll notify you about every new job in your country.",
       "job_radius_distance": "Distance from home (km)",
       "job_radius_distance_hint": "Between {{min}} and {{max}} km.",
+      "weekly_limit": "Weekly job limit",
+      "weekly_limit_text": "An administrator has limited how many jobs you can have in one week: {{count}}.",
+      "weekly_limit_reason": "Reason: {{reason}}",
       "bank_account": "Bank account",
       "bank_account_hint": "Prefix, account number and bank code — paste a whole account and it splits itself.",
       "request_deletion": "Request removal",
@@ -408,6 +412,8 @@
       "not_found_title": "Order Not Found",
       "not_found_message": "The order you are looking for could not be found.",
       "load_failed": "Failed to load order details",
+      "removed_title": "You were taken off this job",
+      "removed_message": "An administrator took you off this job and gave this reason: {{reason}}",
       "note_content": "Note",
       "note_content_placeholder": "Enter your note here...",
       "issue_description": "Issue Description",
@@ -557,6 +563,24 @@
       "delete_confirm_yes": "Request deletion",
       "delete_error": "We couldn't delete your account.",
       "delete_requested": "Your deletion request has been submitted. We will be in touch to arrange the paperwork."
+    },
+    "how_jobs_are_offered": {
+      "title": "How jobs are offered",
+      "description": "The rules behind the job board: what you see, what happens automatically, and how to ask a person to look at a decision.",
+      "board_title": "The job board",
+      "board_text": "Every approved partner sees the same open jobs. The board shows the jobs in the market you work in, in the currency you are paid in. By default they are listed by when they were posted, and you can sort the list yourself. A free place goes to whoever takes it first.",
+      "preferred_title": "When a customer asks for you",
+      "preferred_text": "A customer you have cleaned for can ask for you by name. You then have the first place on that job to yourself for a limited time, which is shorter the sooner the clean is. If you do not take it in that time, or you release it, it goes to the open board for everyone. Releasing it is never held against you.",
+      "radius_title": "New-job notifications",
+      "radius_text": "We tell you about new jobs automatically. If you set a distance on your profile, we tell you only about jobs within it; if you do not, about every new job in your country. The distance changes only the notifications: the board still lists every job, and you can take any of them.",
+      "automatic_title": "What happens automatically",
+      "automatic_text": "A few things happen on their own, without anyone deciding about you: a customer's request for you ends at its deadline and the job opens to everyone; a job nobody has taken by its start time is cancelled and the customer is refunded; and we remind you of the jobs you have taken. None of these steps looks at you or changes which jobs you can take.",
+      "no_score_title": "No score decides your access",
+      "no_score_text": "We do not score partners or put them in order. Ratings do not change which jobs you see or can take. The only limit on how many jobs you take is a weekly limit an administrator may set for you; if one is set, you see it and its reason on your profile.",
+      "approval_title": "How approval works",
+      "approval_text": "Before you can take jobs, an administrator approves your account. They check that your profile is complete, that every document the country you will work in requires has been uploaded and accepted, that you have accepted the partner documents in force, and that we operate in that country. Approval and rejection are always decided by a person, never automatically.",
+      "review_title": "Ask a person to review a decision",
+      "review_text": "If you disagree with a decision about your account or your jobs, such as a rejection, a removal from a job or a weekly limit, write to info@cleansia.cz. A person, not an automated system, will look at it and answer you."
     }
   },
   "sidebar": {
@@ -565,6 +589,7 @@
     "orders": "Orders",
     "invoices": "Invoices",
     "my_pay": "My Pay",
+    "how_jobs_are_offered": "How jobs are offered",
     "logout": "Logout"
   },
   "components": {

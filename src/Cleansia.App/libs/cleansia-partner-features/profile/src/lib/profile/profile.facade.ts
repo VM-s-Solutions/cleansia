@@ -65,6 +65,8 @@ export class ProfileFacade extends UnsubscribeControlDirective {
   // Display only — an operator may onboard a company by hand, but this surface can only ever save a
   // natural person, so the stored name is shown beside the form rather than edited on it.
   legalEntityName = signal<string | null>(null);
+  weeklyOrderLimit = signal<number | null>(null);
+  weeklyOrderLimitReason = signal<string | null>(null);
 
   private profileData$: Observable<unknown> | null = null;
 
@@ -116,6 +118,8 @@ export class ProfileFacade extends UnsubscribeControlDirective {
             ? employee.legalEntityName ?? null
             : null
         );
+        this.weeklyOrderLimit.set(employee.weeklyOrderLimit ?? null);
+        this.weeklyOrderLimitReason.set(employee.weeklyOrderLimitReason || null);
         this.jobRadiusFacade.seed(employee);
 
         // `?? []` because the generated client answers a 200 whose body is not a JSON array — an

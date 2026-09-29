@@ -28,6 +28,25 @@
   <div class="cleansia-order-details__form-card page-wrapper page-wrapper--narrow">
     @if (loading() && !orderDetails()) {
     <cleansia-loader />
+    } @else if (removalReason()) {
+    <div class="not-found-state">
+      <div class="not-found-state__icon">
+        <i class="pi pi-user-minus"></i>
+      </div>
+      <h3 class="not-found-state__title">{{ 'pages.order_details.removed_title' | translate }}</h3>
+      <p class="not-found-state__message">
+        {{ 'pages.order_details.removed_message' | translate: { reason: removalReason() } }}
+      </p>
+      <div class="not-found-state__actions">
+        <cleansia-button
+          [label]="'global.actions.back' | translate"
+          [icon]="'pi pi-arrow-left'"
+          [severity]="'secondary'"
+          [outlined]="true"
+          (onClick)="navigateToOrders()"
+        />
+      </div>
+    </div>
     } @else if (error()) {
     <div class="not-found-state">
       <div class="not-found-state__icon">

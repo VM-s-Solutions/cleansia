@@ -2,7 +2,10 @@ import { Injectable, inject, signal } from '@angular/core';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
   AddOrderNoteCommand,
+  APIBASEURL,
+  GetMyAssignmentRemovalResponse,
   MarkCashCollectedCommand,
+  OrderClient,
   OrderItem,
   OrderStatus,
   PartnerClient,
@@ -10,7 +13,11 @@ import {
   StartOrderCommand,
 } from '@cleansia/partner-services';
 import * as OrderActions from '@cleansia/partner-stores';
-import { extractApiErrorCode, SnackbarService } from '@cleansia/services';
+import {
+  errorToastSuppressingHttpClient,
+  extractApiErrorCode,
+  SnackbarService,
+} from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { Actions, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
@@ -42,6 +49,7 @@ import {
 } from './order-details.helpers';
 
 const ACCEPTANCE_REQUIRED = 'contract.acceptance_required';
+const ORDER_NOT_FOUND = 'order.not_found';
 
 @Injectable()
 export class OrderDetailsFacade extends UnsubscribeControlDirective {
@@ -51,11 +59,17 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
   private readonly dialogService = inject(DialogService);
   private readonly store = inject(Store);
   private readonly actions$ = inject(Actions);
+  // Anyone who was not taken off the order answers order.not_found here, which the page already says.
+  private readonly removalClient = new OrderClient(
+    errorToastSuppressingHttpClient(),
+    inject(APIBASEURL, { optional: true }) ?? undefined
+  );
 
   // Signals for reactive state management
   readonly orderDetails = signal<OrderItem | null>(null);
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
+  readonly removal = signal<GetMyAssignmentRemovalResponse | null>(null);
   readonly currentEmployeeId = signal<string | null>(null);
   readonly takeInFlight = signal(false);
 
@@ -67,6 +81,7 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
 
     this.loading.set(true);
     this.error.set(null);
+    this.removal.set(null);
 
     this.partnerClient.orderClient
       .getById(orderId)
@@ -84,11 +99,24 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
             ? this.translateService.instant('pages.order_details.not_found_message')
             : this.translateService.instant('pages.order_details.load_failed');
           this.error.set(errorMessage);
+          if (extractApiErrorCode(error) === ORDER_NOT_FOUND) {
+            this.loadRemoval(orderId);
+          }
           return of(null);
         }),
         finalize(() => this.loading.set(false))
       )
       .subscribe();
+  }
+
+  private loadRemoval(orderId: string): void {
+    this.removalClient
+      .getMyAssignmentRemoval(orderId)
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError(() => of(null))
+      )
+      .subscribe((removal) => this.removal.set(removal));
   }
 
   downloadInvoice(): void {

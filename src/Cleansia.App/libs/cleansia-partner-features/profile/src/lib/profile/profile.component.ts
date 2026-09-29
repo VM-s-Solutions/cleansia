@@ -4,6 +4,7 @@ import {
   CleansiaButtonComponent,
   CleansiaCheckboxComponent,
   CleansiaLoaderComponent,
+  CleansiaSectionComponent,
   CleansiaTitleComponent,
 } from '@cleansia/components';
 import { PartnerAuthService } from '@cleansia/partner-services';
@@ -33,6 +34,7 @@ import { ProfileJobRadiusFacade } from './profile-job-radius.facade';
     CleansiaTitleComponent,
     CleansiaButtonComponent,
     CleansiaCheckboxComponent,
+    CleansiaSectionComponent,
     ProfilePersonalInfoComponent,
     ProfileEmergencyContactComponent,
     ProfileBankComponent,

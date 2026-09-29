@@ -212,7 +212,9 @@ public sealed class CompanyArchiveBundleTests(PostgresContainerFixture fixture) 
                 Assert.False(invoice.TryGetProperty("adminNotes", out _));
 
                 Assert.Single(Lines(Archived("books/pay-periods.jsonl")));
-                Assert.Single(Lines(Archived("books/order-employee-pays.jsonl")));
+                var payRow = Assert.Single(Lines(Archived("books/order-employee-pays.jsonl")));
+                Assert.Equal(18m, payRow.GetProperty("dirtinessPay").GetDecimal());
+                Assert.Equal(78m, payRow.GetProperty("totalPay").GetDecimal());
                 // Both receipt rows are the books; only the one whose PDF still exists has a file in the
                 // layout below.
                 Assert.Equal(2, Lines(Archived("books/order-receipts.jsonl")).Count);
@@ -537,11 +539,11 @@ public sealed class CompanyArchiveBundleTests(PostgresContainerFixture fixture) 
 
         var period = Stamped(PayPeriod.Create(new DateOnly(2026, 9, 1), new DateOnly(2026, 9, 15)).Close(AdminBId, "last period").MarkAsPaid(), B);
         ctx.PayPeriods.Add(period);
-        var invoice = Stamped(EmployeeInvoice.Create(cleanerB.Id, period.Id, 1, 60m, EurId, "2026000001", "INV-2026-000001"), B);
+        var invoice = Stamped(EmployeeInvoice.Create(cleanerB.Id, period.Id, 1, 78m, EurId, "2026000001", "INV-2026-000001"), B);
         invoice.SetPdfBlobUrl(_blobs.Container(AppConstants.BlobContainers.GeneratedInvoices).Put("2026-09/emp-b/INV-2026-000001.pdf", InvoicePdf).ToString());
         invoice.Approve(AdminBId, adminNotes: "checked by hand").MarkAsPaid();
         ctx.EmployeeInvoices.Add(invoice);
-        var pay = Stamped(OrderEmployeePay.Create(receiptedOrder.Id, cleanerB.Id, period.Id, EurId, basePay: 60m, totalPay: 60m), B);
+        var pay = Stamped(OrderEmployeePay.Create(receiptedOrder.Id, cleanerB.Id, period.Id, EurId, basePay: 60m, dirtinessPay: 18m, totalPay: 78m), B);
         pay.AssignToInvoice(invoice.Id);
         ctx.OrderEmployeePays.Add(pay);
 

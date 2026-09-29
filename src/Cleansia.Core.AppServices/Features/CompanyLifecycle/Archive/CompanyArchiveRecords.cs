@@ -90,6 +90,7 @@ public static class CompanyArchiveRecords
         decimal BasePay,
         decimal ExtrasPay,
         decimal ExpensesPay,
+        decimal DirtinessPay,
         decimal BonusPay,
         decimal DeductionPay,
         decimal MinPay,

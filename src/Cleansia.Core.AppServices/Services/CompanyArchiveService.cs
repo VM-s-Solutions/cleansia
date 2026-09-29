@@ -386,7 +386,7 @@ public sealed class CompanyArchiveService(
 
     private static CompanyArchiveRecords.OrderEmployeePay ToRow(Domain.EmployeePayroll.OrderEmployeePay p) => new(
         p.Id, p.OrderId, p.EmployeeId, p.PayPeriodId, p.CurrencyId,
-        p.BasePay, p.ExtrasPay, p.ExpensesPay, p.BonusPay, p.DeductionPay, p.MinPay, p.MaxPay, p.TotalPay, p.PayBreakdown,
+        p.BasePay, p.ExtrasPay, p.ExpensesPay, p.DirtinessPay, p.BonusPay, p.DeductionPay, p.MinPay, p.MaxPay, p.TotalPay, p.PayBreakdown,
         p.IsApproved, p.ApprovedAt, p.ApprovedBy, p.EmployeeInvoiceId, p.CreatedOn);
 
     private static CompanyArchiveRecords.OrderReceipt ToRow(Domain.Receipts.OrderReceipt r) => new(

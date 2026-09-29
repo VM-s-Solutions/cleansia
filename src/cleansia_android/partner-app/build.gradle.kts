@@ -124,9 +124,10 @@ android {
             isShrinkResources = true
             // The production custom domain, matching the Release configuration in
             // CleansiaPartner/project.yml. Not `api.cleansia.cz`: that name is planned for the partner
-            // WEB API. Owner step before it resolves: the CNAME + asuid TXT records, and the
-            // `api-partner-mobile` entry in weu.prod.bicepparam's customDomains
-            // (deploy/AZURE-DEV-RUNBOOK.md §12). Until then a release build that must reach DEV passes
+            // WEB API. Owner step before a release build ships: the CNAME + asuid TXT records
+            // (deploy/AZURE-DEV-RUNBOOK.md §12.1), then an `api-partner-mobile` key in
+            // weu.prod.bicepparam's customDomains, which main.bicep binds to the prod Partner Mobile
+            // host. Until then a release build that must reach DEV passes
             // -PAPI_BASE_URL=https://api-cleansia-partner-mobile-weu-dev.azurewebsites.net/
             val url = apiBaseUrlOverride ?: "https://api-partner-mobile.cleansia.cz/"
             buildConfigField("String", "API_BASE_URL", "\"$url\"")

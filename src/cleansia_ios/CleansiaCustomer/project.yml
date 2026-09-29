@@ -137,10 +137,11 @@ targets:
         GID_SERVER_CLIENT_ID: "834394881207-3r8mue033iimtrkn5u1ko9d5m5p7oh25.apps.googleusercontent.com"
         GID_REVERSED_CLIENT_ID: "com.googleusercontent.apps.834394881207-4um0ikpfpavpl0usplaqpul413d8mvqq"
       configs:
-        # The production custom domain, matching the Android release build. It resolves once the
-        # owner has created its CNAME + asuid TXT records and bound it to the prod Customer Mobile
-        # host (deploy/AZURE-DEV-RUNBOOK.md §12). The TestFlight lanes archive Release, so an upload
-        # that must still reach DEV passes API_BASE_URL as an xcarg.
+        # The production custom domain, matching the Android release build. The TestFlight lanes
+        # archive Release, so this is also the host a TestFlight upload calls by default. Owner step
+        # before the first one: the CNAME + asuid TXT records (deploy/AZURE-DEV-RUNBOOK.md §12.1),
+        # then an `api-customer-mobile` key in weu.prod.bicepparam's customDomains, which main.bicep
+        # binds to the prod Customer Mobile host.
         Release:
           API_BASE_URL: https:/$()/api-customer-mobile.cleansia.cz
     preBuildScripts:

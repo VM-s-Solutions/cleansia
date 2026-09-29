@@ -15,7 +15,8 @@ namespace Cleansia.Core.AppServices.Features.Receivables;
 /// The customer pays what they owe on an order through a pay link: a payment-mode Stripe Checkout Session
 /// for the receivable's amount (owner ruling 2026-09-28, decision 18). It works whether off-session
 /// charging is on or off, which is how a receivable is settled while the charges stay switched off. The
-/// checkout.session.completed webhook marks it paid.
+/// link is recorded on the receivable, so the same one is handed out while it is open and the off-session
+/// charge can close it first. The checkout.session.completed webhook marks it paid.
 /// </summary>
 public class CreateReceivablePayLink
 {
@@ -66,6 +67,7 @@ public class CreateReceivablePayLink
             {
                 link = await stripeClient.CreateReceivableCheckoutSessionAsync(
                     receivable.Id,
+                    receivable.PayLinkSessionId,
                     receivable.OrderId,
                     receivable.Order!.DisplayOrderNumber,
                     receivable.Amount,
@@ -79,6 +81,7 @@ public class CreateReceivablePayLink
                     nameof(command.ReceivableId), BusinessErrorMessage.PaymentGatewayUnavailable));
             }
 
+            receivable.RecordPayLink(link.Id);
             return BusinessResult.Success(new Response(receivable.Id, link.Url));
         }
     }

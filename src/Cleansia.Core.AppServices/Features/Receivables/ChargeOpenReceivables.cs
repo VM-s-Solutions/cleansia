@@ -16,8 +16,9 @@ namespace Cleansia.Core.AppServices.Features.Receivables;
 /// 2026-09-28, decisions 16 to 18) — and does nothing at all unless <c>Payments:OffSessionChargesEnabled</c>
 /// is on, which it stays until the terms carry the lawyer's consent wording. The outcome arrives by
 /// webhook: a success settles the receivable, a decline or an authentication demand e-mails the customer
-/// a pay link. A customer with no usable card in the currency is not charged, and the receivable stays open
-/// for their own pay link and the administrators.
+/// a pay link. A pay link the customer holds is closed before the charge, and one they have already paid is
+/// not charged again. A customer with no usable card in the currency is not charged, and the receivable
+/// stays open for their own pay link and the administrators.
 /// </summary>
 public class ChargeOpenReceivables
 {
@@ -84,6 +85,15 @@ public class ChargeOpenReceivables
 
                 try
                 {
+                    if (receivable.PayLinkSessionId is { } payLink
+                        && !await stripe.ExpireReceivableCheckoutSessionAsync(payLink, cancellationToken))
+                    {
+                        logger.LogInformation(
+                            "Receivable {ReceivableId} was paid through its pay link {SessionId}; not charged",
+                            receivable.Id, payLink);
+                        continue;
+                    }
+
                     var paymentIntentId = await stripe.ChargeReceivableOffSessionAsync(
                         receivable.Id,
                         receivable.Amount,
@@ -99,7 +109,7 @@ public class ChargeOpenReceivables
                 catch (StripeException ex)
                 {
                     logger.LogWarning(ex,
-                        "Off-session charge of receivable {ReceivableId} refused ({FailureCode}); the failure webhook e-mails the pay link",
+                        "Off-session charge of receivable {ReceivableId} not taken ({FailureCode}); a decline's failure webhook e-mails the pay link",
                         receivable.Id, ex.StripeError?.Code);
                 }
             }

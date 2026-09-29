@@ -4,6 +4,7 @@ using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Payments;
 using Cleansia.HostTests.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -12,8 +13,8 @@ namespace Cleansia.HostTests.Tests;
 /// <summary>
 /// What a customer owes, on the Customer host with a recording Stripe client and the default configuration,
 /// where off-session charging is switched off (owner ruling 2026-09-28, decisions 16 and 18): a customer reads
-/// their own open receivables across companies and opens a pay link for one; another customer's receivable
-/// and one written off are refused; an anonymous caller is refused.
+/// their own open receivables across companies and opens a pay link for one, which the receivable records;
+/// another customer's receivable and one written off are refused; an anonymous caller is refused.
 /// </summary>
 public sealed class ReceivableRouteTests(HostTestPostgresFixture db) : AuthzHostTestBase(db)
 {
@@ -90,6 +91,10 @@ public sealed class ReceivableRouteTests(HostTestPostgresFixture db) : AuthzHost
         var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync()).RootElement;
         Assert.Equal($"https://checkout.stripe.test/pay/{s.OwnId}", body.GetProperty("checkoutUrl").GetString());
         Assert.Equal((s.OwnId, 375m, "CZK"), Assert.Single(_stripe.ReceivableCheckouts));
+        Assert.Equal(
+            $"cs_receivable_{s.OwnId}",
+            await QueryAsync(ctx => ctx.Receivables.IgnoreQueryFilters()
+                .Where(r => r.Id == s.OwnId).Select(r => r.PayLinkSessionId).SingleAsync()));
     }
 
     [Fact]

@@ -39,6 +39,7 @@ public class ReceivableRepository(CleansiaDbContext context)
             .Include(r => r.Order)
             .Include(r => r.Currency)
             .Where(r => r.Status == ReceivableStatus.Open && r.Attempts == 0)
+            .Where(r => Context.Tenants.Any(t => t.Id == r.TenantId && t.ArchiveRequestedOn == null))
             .OrderBy(r => r.CreatedOn)
             .Take(take)
             .ToListAsync(cancellationToken);

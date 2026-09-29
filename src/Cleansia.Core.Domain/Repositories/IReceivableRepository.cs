@@ -17,8 +17,8 @@ public interface IReceivableRepository : IRepository<Receivable, string>
     Task<Receivable?> GetByIdIgnoringTenantAsync(string id, CancellationToken cancellationToken);
 
     /// <summary>
-    /// The off-session charge sweep's batch: open receivables of every company never yet charged, with their
-    /// order and currency, oldest first.
+    /// The off-session charge sweep's batch: open receivables never yet charged, with their order and
+    /// currency, oldest first, of every company but a frozen one, whose books refuse the attempt's write.
     /// </summary>
     Task<IReadOnlyList<Receivable>> GetUnchargedOpenIgnoringTenantAsync(int take, CancellationToken cancellationToken);
 }

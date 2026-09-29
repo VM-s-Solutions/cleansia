@@ -36,6 +36,9 @@ public class ReceivableEntityConfiguration : TenantAuditableEntityConfiguration<
         builder.Property(r => r.StripePaymentIntentId)
             .HasMaxLength(255);
 
+        builder.Property(r => r.PayLinkSessionId)
+            .HasMaxLength(255);
+
         builder.Property(r => r.WrittenOffByUserId)
             .HasMaxLength(26);
 

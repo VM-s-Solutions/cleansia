@@ -17,7 +17,8 @@ namespace Cleansia.IntegrationTests.Features.Receipts;
 /// More than one receipt per order, on real Postgres: an order holds its sale receipt and a fee receipt
 /// for a receivable paid on it, and reads the sale receipt as its own; one receivable earns one fee receipt;
 /// and a registered fee receipt does not stand in for the sale receipt the reconciliation sweep is owed.
-/// The receivable reads the sweep and the customer use cross companies.
+/// The receivable reads the sweep and the customer use cross companies, and the sweep's leaves out a frozen
+/// company, whose books would refuse the charge attempt's write.
 /// </summary>
 [Collection("PostgresCollection")]
 public class FeeReceiptPersistenceTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
@@ -142,6 +143,37 @@ public class FeeReceiptPersistenceTests(PostgresContainerFixture fixture) : Base
                 Assert.Equal(new HashSet<string> { _receivableId, attempted, elsewhere }, r.Mine);
                 Assert.DoesNotContain(paid, r.Mine);
                 Assert.True(r.Loaded);
+                return Task.CompletedTask;
+            });
+    }
+
+    [Fact]
+    public async Task A_Frozen_Companys_Receivables_Are_Left_Out_Of_The_Sweep_Batch()
+    {
+        await TestMethod(
+            arrange: async ctx =>
+            {
+                var (order, _) = Seed(ctx, paid: false);
+                var owedToFrozen = Receivable.ForCashCancellationFee(order, 300m);
+                owedToFrozen.TenantId = TestTenants.Second;
+                ctx.Receivables.Add(owedToFrozen);
+                await ctx.CommitAsync(CancellationToken.None);
+
+                var company = await ctx.Tenants.SingleAsync(t => t.Id == TestTenants.Second);
+                company.RequestWindDown(DateOnly.FromDateTime(DateTime.UtcNow), "admin-frozen", DateTimeOffset.UtcNow.AddDays(-2));
+                company.Deactivate("admin-frozen", DateTimeOffset.UtcNow.AddDays(-1));
+                company.RequestArchive("admin-frozen", DateTimeOffset.UtcNow);
+                await ctx.CommitAsync(CancellationToken.None);
+            },
+            act: async provider =>
+            {
+                var batch = await provider.GetRequiredService<IReceivableRepository>()
+                    .GetUnchargedOpenIgnoringTenantAsync(50, CancellationToken.None);
+                return batch.Select(r => r.Id).ToHashSet();
+            },
+            assert: (CleansiaDbContext _, HashSet<string> batch) =>
+            {
+                Assert.Equal(new HashSet<string> { _receivableId }, batch);
                 return Task.CompletedTask;
             });
     }

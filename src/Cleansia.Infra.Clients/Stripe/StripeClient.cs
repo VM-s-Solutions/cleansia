@@ -435,12 +435,25 @@ public class StripeClient : IStripeClient
 
     public async Task<CheckoutSessionResult> CreateReceivableCheckoutSessionAsync(
         string receivableId,
+        string? currentSessionId,
         string orderId,
         string displayOrderNumber,
         decimal amount,
         string currency,
         CancellationToken cancellationToken)
     {
+        var service = new SessionService(stripe);
+        if (!string.IsNullOrEmpty(currentSessionId))
+        {
+            var current = await ClassifyAsync(
+                nameof(CreateReceivableCheckoutSessionAsync),
+                () => service.GetAsync(currentSessionId, cancellationToken: cancellationToken));
+            if (current.Status == "open" && current.ExpiresAt > DateTime.UtcNow)
+            {
+                return new CheckoutSessionResult(current.Id, current.Url);
+            }
+        }
+
         var orderPage = new Uri(config.SuccessUrlBase).GetLeftPart(UriPartial.Authority) + $"{OrdersPagePath}/{orderId}";
         var options = new SessionCreateOptions
         {
@@ -467,12 +480,37 @@ public class StripeClient : IStripeClient
             CancelUrl = orderPage,
             Metadata = new Dictionary<string, string> { { ReceivableMetadataKey, receivableId } },
         };
-        var requestOptions = new RequestOptions { IdempotencyKey = $"receivable-checkout-{receivableId}" };
-        var service = new SessionService(stripe);
+        var requestOptions = new RequestOptions
+        {
+            IdempotencyKey = string.IsNullOrEmpty(currentSessionId)
+                ? $"receivable-checkout-{receivableId}"
+                : $"receivable-checkout-{receivableId}-after-{currentSessionId}",
+        };
         var session = await ClassifyAsync(
             nameof(CreateReceivableCheckoutSessionAsync),
             () => service.CreateAsync(options, requestOptions, cancellationToken));
         return new CheckoutSessionResult(session.Id, session.Url);
+    }
+
+    public async Task<bool> ExpireReceivableCheckoutSessionAsync(string sessionId, CancellationToken cancellationToken)
+    {
+        var service = new SessionService(stripe);
+        var session = await ClassifyAsync(
+            nameof(ExpireReceivableCheckoutSessionAsync),
+            () => service.GetAsync(sessionId, cancellationToken: cancellationToken));
+        if (session.Status == "complete")
+        {
+            return false;
+        }
+
+        if (session.Status == "open")
+        {
+            await ClassifyAsync(
+                nameof(ExpireReceivableCheckoutSessionAsync),
+                () => service.ExpireAsync(sessionId, cancellationToken: cancellationToken));
+        }
+
+        return true;
     }
 
     public async Task<SubscriptionResult> CreateSubscriptionAsync(

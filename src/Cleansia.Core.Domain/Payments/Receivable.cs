@@ -46,6 +46,13 @@ public class Receivable : TenantAuditable
 
     public DateTimeOffset? PaidOn { get; private set; }
 
+    /// <summary>
+    /// The Stripe Checkout Session of the customer's latest pay link. It is handed out again while it is
+    /// open, and the off-session charge closes it first so the customer cannot pay both.
+    /// </summary>
+    [MaxLength(255)]
+    public string? PayLinkSessionId { get; private set; }
+
     public DateTimeOffset? WrittenOffOn { get; private set; }
 
     [MaxLength(26)]
@@ -80,6 +87,8 @@ public class Receivable : TenantAuditable
         };
 
     public void RecordChargeAttempt() => Attempts++;
+
+    public void RecordPayLink(string checkoutSessionId) => PayLinkSessionId = checkoutSessionId;
 
     /// <summary>
     /// Money arrived for it. A receivable written off and then paid anyway is paid: the money is the

@@ -5262,6 +5262,10 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<DateTimeOffset?>("PaidOn")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("PayLinkSessionId")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 

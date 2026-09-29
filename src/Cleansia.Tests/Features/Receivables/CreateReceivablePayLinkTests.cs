@@ -15,8 +15,10 @@ namespace Cleansia.Tests.Features.Receivables;
 
 /// <summary>
 /// The customer's pay link for what they owe on an order (owner ruling 2026-09-28, decision 18). It takes no
-/// off-session switch, so it works while those charges stay off. It is refused for another customer's
-/// receivable, one no longer open, and whenever card payments are switched off or Stripe refuses.
+/// off-session switch, so it works while those charges stay off. The link is recorded on the receivable and
+/// the one recorded is offered to Stripe again, which hands it back while it is open. It is refused for
+/// another customer's receivable, one no longer open, and whenever card payments are switched off or Stripe
+/// refuses.
 /// </summary>
 public sealed class CreateReceivablePayLinkTests
 {
@@ -45,7 +47,7 @@ public sealed class CreateReceivablePayLinkTests
             .ReturnsAsync(_receivable);
         _stripe
             .Setup(c => c.CreateReceivableCheckoutSessionAsync(
-                _receivable.Id, _receivable.OrderId, order.DisplayOrderNumber, 250m, "CZK", It.IsAny<CancellationToken>()))
+                _receivable.Id, null, _receivable.OrderId, order.DisplayOrderNumber, 250m, "CZK", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new CheckoutSessionResult("cs_link", "https://checkout.stripe.test/pay/link"));
     }
 
@@ -65,6 +67,23 @@ public sealed class CreateReceivablePayLinkTests
 
         Assert.True(result.IsSuccess, result.Error?.Message);
         Assert.Equal(new CreateReceivablePayLink.Response(_receivable.Id, "https://checkout.stripe.test/pay/link"), result.Value);
+        Assert.Equal("cs_link", _receivable.PayLinkSessionId);
+    }
+
+    [Fact]
+    public async Task The_Link_Already_Given_Out_Is_Offered_Again_And_Its_Replacement_Recorded()
+    {
+        _receivable.RecordPayLink("cs_earlier");
+        _stripe
+            .Setup(c => c.CreateReceivableCheckoutSessionAsync(
+                _receivable.Id, "cs_earlier", It.IsAny<string>(), It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new CheckoutSessionResult("cs_replacement", "https://checkout.stripe.test/pay/replacement"));
+
+        var result = await Handler().Handle(new CreateReceivablePayLink.Command(_receivable.Id), CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Equal("https://checkout.stripe.test/pay/replacement", result.Value!.CheckoutUrl);
+        Assert.Equal("cs_replacement", _receivable.PayLinkSessionId);
     }
 
     [Fact]
@@ -106,12 +125,13 @@ public sealed class CreateReceivablePayLinkTests
     {
         _stripe
             .Setup(c => c.CreateReceivableCheckoutSessionAsync(
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new StripeException("Stripe is unavailable"));
 
         var result = await Handler().Handle(new CreateReceivablePayLink.Command(_receivable.Id), CancellationToken.None);
 
         Assert.True(result.IsFailure);
         Assert.Equal(BusinessErrorMessage.PaymentGatewayUnavailable, result.Error!.Message);
+        Assert.Null(_receivable.PayLinkSessionId);
     }
 }

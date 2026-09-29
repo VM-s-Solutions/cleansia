@@ -533,7 +533,9 @@ public class HandlePaymentNotification
 
         /// <summary>
         /// The receivable is paid, and its fee receipt is asked for. A second payment of one already paid is
-        /// money taken twice, and the refund of one of them is an administrator's call.
+        /// money taken twice for one debt, and it is refunded in full, keyed on its own PaymentIntent so a
+        /// redelivery replays the same refund. The refund is made here, so an unreachable Stripe throws, the
+        /// processed-event stamp rolls back and Stripe redelivers.
         /// </summary>
         private async Task<BusinessResult> SettleReceivable(
             string receivableId, string? paymentIntentId, string language, CancellationToken cancellationToken)
@@ -552,10 +554,15 @@ public class HandlePaymentNotification
 
             if (receivable.IsPaid)
             {
-                if (receivable.StripePaymentIntentId != paymentIntentId)
+                if (!string.IsNullOrEmpty(paymentIntentId) && receivable.StripePaymentIntentId != paymentIntentId)
                 {
-                    logger.LogError(
-                        "Receivable {ReceivableId} paid by {PaymentIntentId} was paid again by {SecondPaymentIntentId}; refund one of the two payments",
+                    await stripeClientFactory.CreateClient().RefundPaymentIntentAsync(
+                        paymentIntentId,
+                        receivable.Amount,
+                        $"refund:receivable:{receivable.Id}:{paymentIntentId}",
+                        cancellationToken);
+                    logger.LogWarning(
+                        "Receivable {ReceivableId} paid by {PaymentIntentId} was paid again by {SecondPaymentIntentId}; the second payment was refunded in full",
                         receivable.Id, receivable.StripePaymentIntentId, paymentIntentId);
                 }
 
@@ -609,11 +616,13 @@ public class HandlePaymentNotification
 
             var link = await stripeClientFactory.CreateClient().CreateReceivableCheckoutSessionAsync(
                 receivable.Id,
+                receivable.PayLinkSessionId,
                 receivable.OrderId,
                 receivable.Order!.DisplayOrderNumber,
                 receivable.Amount,
                 receivable.Currency!.Code,
                 cancellationToken);
+            receivable.RecordPayLink(link.Id);
 
             var key = MessageKeys.ReceivablePayLinkEmail(receivable.Id, receivable.Attempts);
             pending.Enqueue(

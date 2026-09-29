@@ -20,7 +20,8 @@ namespace Cleansia.Tests.Features.Receivables;
 /// The off-session charge sweep (owner ruling 2026-09-28, decisions 16 to 18). Switched off, it reads and
 /// charges nothing — the state it ships in until the terms carry the consent wording. Switched on, it
 /// charges each open receivable once to the customer's usable card in its currency, the attempt committed
-/// before the call; a customer with no usable card is not charged, and a declined charge leaves the
+/// before the call; a pay link the customer holds is closed first, and one they have already paid is not
+/// charged again; a customer with no usable card is not charged, and a declined charge leaves the
 /// receivable open for the failure webhook's pay link. With card payments switched off it refuses.
 /// </summary>
 public class ChargeOpenReceivablesTests
@@ -127,6 +128,38 @@ public class ChargeOpenReceivablesTests
             _receivable.Id, 375m, "CZK", "cus_owing", "pm_owing", 1, It.IsAny<CancellationToken>()), Times.Once);
         Assert.Equal(new[] { "commit attempt 1", "charge" }, _sequence);
         _tenantProvider.Verify(t => t.SetTenantOverride(TenantId), Times.Once);
+    }
+
+    [Fact]
+    public async Task A_Pay_Link_The_Customer_Holds_Is_Closed_Before_The_Charge()
+    {
+        CustomerHoldsCard(DateTime.UtcNow.Year + 2);
+        _receivable.RecordPayLink("cs_held");
+        _stripe
+            .Setup(c => c.ExpireReceivableCheckoutSessionAsync("cs_held", It.IsAny<CancellationToken>()))
+            .Callback(() => _sequence.Add("close pay link"))
+            .ReturnsAsync(true);
+
+        var result = await Handler().Handle(new ChargeOpenReceivables.Command(), CancellationToken.None);
+
+        Assert.Equal(new ChargeOpenReceivables.Response(1, 1), result.Value);
+        Assert.Equal(new[] { "commit attempt 1", "close pay link", "charge" }, _sequence);
+    }
+
+    [Fact]
+    public async Task A_Receivable_Already_Paid_Through_Its_Pay_Link_Is_Not_Charged()
+    {
+        CustomerHoldsCard(DateTime.UtcNow.Year + 2);
+        _receivable.RecordPayLink("cs_paid");
+        _stripe
+            .Setup(c => c.ExpireReceivableCheckoutSessionAsync("cs_paid", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        var result = await Handler().Handle(new ChargeOpenReceivables.Command(), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(new ChargeOpenReceivables.Response(1, 0), result.Value);
+        Assert.Equal(new[] { "commit attempt 1" }, _sequence);
     }
 
     [Fact]

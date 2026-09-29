@@ -23,9 +23,9 @@ namespace Cleansia.Tests.Features.Payments;
 /// <summary>
 /// What a customer owes on an order is settled through the webhook (owner ruling 2026-09-28, decision 18):
 /// a paid pay link or a successful off-session charge marks the receivable paid under its own company and
-/// asks for its fee receipt, and never touches the order's sale; a declined off-session charge, or one the
-/// bank wants authenticated, e-mails the customer a pay link for the amount; a receivable already paid or
-/// no longer open is left alone.
+/// asks for its fee receipt, and never touches the order's sale; a second payment of a receivable already
+/// paid is refunded in full; a declined off-session charge, or one the bank wants authenticated, e-mails the
+/// customer a pay link for the amount and records it; a receivable no longer open is left alone.
 /// </summary>
 public class ReceivableWebhookTests
 {
@@ -50,8 +50,8 @@ public class ReceivableWebhookTests
         _stripeFactory.Setup(f => f.CreateClient()).Returns(_stripe.Object);
         _stripe
             .Setup(c => c.CreateReceivableCheckoutSessionAsync(
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((string receivableId, string orderId, string orderNumber, decimal amount, string currency, CancellationToken ct) =>
+                It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string receivableId, string? currentSessionId, string orderId, string orderNumber, decimal amount, string currency, CancellationToken ct) =>
                 new CheckoutSessionResult($"cs_{receivableId}", $"https://checkout.stripe.test/pay/{receivableId}"));
         _receivables
             .Setup(r => r.GetByIdIgnoringTenantAsync(_receivable.Id, It.IsAny<CancellationToken>()))
@@ -145,6 +145,23 @@ public class ReceivableWebhookTests
         Assert.True(result.IsSuccess);
         Assert.Equal("pi_first", _receivable.StripePaymentIntentId);
         _pending.VerifyNoOtherCalls();
+        _stripe.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task A_Second_Payment_Of_A_Paid_Receivable_Is_Refunded_In_Full()
+    {
+        _receivable.MarkPaid("pi_first", DateTimeOffset.UtcNow.AddMinutes(-5));
+
+        var result = await DeliverAsync(IntentEvent(
+            "evt_pi_twice", Constants.StripeEventType.PaymentIntentSucceeded, "pi_second", "succeeded", _receivable.Id));
+
+        Assert.True(result.IsSuccess);
+        _stripe.Verify(c => c.RefundPaymentIntentAsync(
+            "pi_second", 375m, $"refund:receivable:{_receivable.Id}:pi_second", It.IsAny<CancellationToken>()), Times.Once);
+        _stripe.VerifyNoOtherCalls();
+        Assert.Equal("pi_first", _receivable.StripePaymentIntentId);
+        _pending.VerifyNoOtherCalls();
     }
 
     [Fact]
@@ -159,8 +176,9 @@ public class ReceivableWebhookTests
         Assert.True(result.IsSuccess);
         Assert.True(_receivable.IsOpen);
         _stripe.Verify(c => c.CreateReceivableCheckoutSessionAsync(
-            _receivable.Id, _receivable.OrderId, _receivable.Order!.DisplayOrderNumber, 375m, "CZK", It.IsAny<CancellationToken>()),
+            _receivable.Id, null, _receivable.OrderId, _receivable.Order!.DisplayOrderNumber, 375m, "CZK", It.IsAny<CancellationToken>()),
             Times.Once);
+        Assert.Equal($"cs_{_receivable.Id}", _receivable.PayLinkSessionId);
         _pending.Verify(p => p.Enqueue(
             QueueNames.SendEmail,
             It.Is<QueueEnvelope<SendReceivablePayLinkEmailMessage>>(e => e.TenantId == TenantId

@@ -180,15 +180,29 @@ public interface IStripeClient
     /// The pay link for a receivable: a payment-mode Checkout Session for its amount, card only, returning
     /// to the order's page. The <c>ReceivableId</c> metadata is on the session and deliberately not on its
     /// PaymentIntent, so only <c>checkout.session.completed</c> settles it and a card the customer mistypes
-    /// on the page is not reported as a failed off-session charge. One session per receivable inside
-    /// Stripe's idempotency window, so a link e-mailed and a link opened in the app are the same one.
+    /// on the page is not reported as a failed off-session charge. <paramref name="currentSessionId"/> is
+    /// the receivable's latest link: it is handed back while Stripe still has it open, so a link e-mailed
+    /// and a link opened in the app are the same one, and otherwise a new session is opened, keyed on the
+    /// one it replaces. It is never keyed on the receivable alone, because Stripe replays a key's first
+    /// answer for a day or more, and that answer is by then an expired session.
     /// </summary>
     Task<CheckoutSessionResult> CreateReceivableCheckoutSessionAsync(
         string receivableId,
+        string? currentSessionId,
         string orderId,
         string displayOrderNumber,
         decimal amount,
         string currency,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Closes a receivable's pay link before its off-session charge, so the customer cannot pay it twice.
+    /// Returns false when the customer has already paid through the link, and the charge must not be
+    /// taken; a link that expired on its own is closed already. An unreachable Stripe, or a customer who
+    /// pays in the instant between the read and the close, throws.
+    /// </summary>
+    Task<bool> ExpireReceivableCheckoutSessionAsync(
+        string sessionId,
         CancellationToken cancellationToken);
 
     /// <summary>

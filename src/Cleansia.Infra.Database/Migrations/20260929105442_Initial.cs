@@ -2797,6 +2797,7 @@ namespace Cleansia.Infra.Database.Migrations
                     Attempts = table.Column<int>(type: "integer", nullable: false),
                     StripePaymentIntentId = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     PaidOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    PayLinkSessionId = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     WrittenOffOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     WrittenOffByUserId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
                     WriteOffNote = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),

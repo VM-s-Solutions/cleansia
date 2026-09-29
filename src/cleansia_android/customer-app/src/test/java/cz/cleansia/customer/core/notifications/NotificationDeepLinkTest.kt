@@ -39,11 +39,11 @@ class NotificationDeepLinkTest {
 
     @Test
     fun `membership events land on the profile tab, not the sales page`() {
-        for (key in listOf("membership.expiring_soon", "membership.cancellation_effective")) {
+        for (key in listOf("membership.expiring_soon", "membership.cancellation_effective", "membership.payment_failed")) {
             assertEquals(
                 "$key must open the membership management surface",
                 Routes.Home(tab = MainTab.Profile.name),
-                NotificationDeepLink.resolve(key, emptyMap()),
+                NotificationDeepLink.resolve(key, mapOf("membershipId" to "mem-1")),
             )
         }
     }
@@ -74,6 +74,14 @@ class NotificationDeepLinkTest {
     fun `home defaults to no tab`() {
         assertNull(Routes.Home().tab)
         assertEquals(Routes.Home(), Routes.Home(tab = null))
+    }
+
+    @Test
+    fun `every no-cleaner outcome opens the cancelled booking and needs its id`() {
+        for (key in listOf("order.no_cleaner_refunded", "order.no_cleaner_refund_pending", "order.no_cleaner_nothing_charged")) {
+            assertEquals(key, Routes.OrderDetail("ord-1"), NotificationDeepLink.resolve(key, mapOf("orderId" to "ord-1")))
+            assertNull(key, NotificationDeepLink.resolve(key, emptyMap()))
+        }
     }
 
     @Test

@@ -1241,6 +1241,10 @@
     <string name="notification_order_refunded_body">Возврат за заказ #%1$s обрабатывается.</string>
     <string name="notification_order_no_cleaner_refunded_title">Свободных уборщиков не нашлось</string>
     <string name="notification_order_no_cleaner_refunded_body">Заказ #%1$s никто не взял, поэтому мы вернули всю сумму и добавили бонус %2$s на следующую уборку. Простите.</string>
+    <string name="notification_order_no_cleaner_refund_pending_title">Свободных уборщиков не нашлось</string>
+    <string name="notification_order_no_cleaner_refund_pending_body">На заказ #%1$s не смог приехать ни один уборщик, поэтому мы его отменили. Возврат средств обрабатывается, а ещё мы добавили бонус %2$s на следующую уборку. Простите.</string>
+    <string name="notification_order_no_cleaner_nothing_charged_title">Свободных уборщиков не нашлось</string>
+    <string name="notification_order_no_cleaner_nothing_charged_body">На заказ #%1$s не смог приехать ни один уборщик, поэтому мы его отменили. Мы ничего с вас не списали, а ещё добавили бонус %2$s на следующую уборку. Простите.</string>
     <string name="notification_dispute_reply_title">Поддержка ответила</string>
     <string name="notification_dispute_reply_body">У вас новое сообщение по вашей жалобе. Нажмите, чтобы прочитать.</string>
     <string name="notification_recurring_scheduled_title">Подтвердите завтрашнюю уборку</string>
@@ -1254,6 +1258,8 @@
     <string name="notification_membership_expiring_body">Ваша подписка продлится через 3 дня. Управляйте планом в приложении.</string>
     <string name="notification_membership_cancelled_title">Cleansia Plus завершён</string>
     <string name="notification_membership_cancelled_body">Ваша подписка завершилась. Возобновите её, чтобы вернуть привилегии Plus.</string>
+    <string name="notification_membership_payment_failed_title">Платёж за Cleansia Plus не прошёл</string>
+    <string name="notification_membership_payment_failed_body">Последний платёж за Plus не прошёл, поэтому преимущества Plus приостановлены, пока он не пройдёт. Управляйте планом в приложении.</string>
 
     <string name="notification_order_assignment_cancelled_title">Заказ отменён</string>
     <string name="notification_order_assignment_cancelled_body">Заказ, который вы приняли, отменён: #%1$s. Нажмите, чтобы посмотреть детали.</string>

@@ -487,10 +487,92 @@ class NotificationTemplatesTest {
         )
     }
 
-    private val noCleanerKeys = listOf(
-        "notification_order_no_cleaner_refunded_title",
-        "notification_order_no_cleaner_refunded_body",
+    private val noCleanerOutcomes = listOf("refunded", "refund_pending", "nothing_charged")
+
+    private val noCleanerKeys = noCleanerOutcomes.flatMap {
+        listOf("notification_order_no_cleaner_${it}_title", "notification_order_no_cleaner_${it}_body")
+    }
+
+    private val paymentFailedKeys = listOf(
+        "notification_membership_payment_failed_title",
+        "notification_membership_payment_failed_body",
     )
+
+    @Test
+    fun `the refund-pending and nothing-charged outcomes render under cancellations with their own copy`() {
+        mapOf(
+            "order.no_cleaner_refund_pending" to (R.string.notification_order_no_cleaner_refund_pending_title to R.string.notification_order_no_cleaner_refund_pending_body),
+            "order.no_cleaner_nothing_charged" to (R.string.notification_order_no_cleaner_nothing_charged_title to R.string.notification_order_no_cleaner_nothing_charged_body),
+        ).forEach { (key, resources) ->
+            val template = NotificationTemplates.templateFor(key)
+            assertEquals(key, resources.first, template?.titleRes)
+            assertEquals(key, resources.second, template?.bodyRes)
+            assertEquals(key, NotificationCategoryDto.OrderCancelled, template?.category)
+        }
+    }
+
+    @Test
+    fun `formatBody places the order number and the server-formatted amount into both new no-cleaner outcomes`() {
+        listOf(
+            "order.no_cleaner_refund_pending" to R.string.notification_order_no_cleaner_refund_pending_body,
+            "order.no_cleaner_nothing_charged" to R.string.notification_order_no_cleaner_nothing_charged_body,
+        ).forEach { (key, bodyRes) ->
+            val context = mockk<Context>()
+            every { context.getString(bodyRes, "A-1042", "250 Kč") } returns "$key A-1042 250 Kč"
+
+            val body = NotificationTemplates.formatBody(
+                context,
+                key,
+                bodyRes,
+                mapOf("orderId" to "ord-7", "orderNumber" to "A-1042", "amount" to "250 Kč"),
+            )
+
+            assertEquals("$key A-1042 250 Kč", body)
+        }
+    }
+
+    @Test
+    fun `a failed Plus renewal renders on the renewal channel with argless copy`() {
+        val template = NotificationTemplates.templateFor("membership.payment_failed")
+        assertEquals(R.string.notification_membership_payment_failed_title, template?.titleRes)
+        assertEquals(R.string.notification_membership_payment_failed_body, template?.bodyRes)
+        assertEquals(NotificationCategoryDto.MembershipExpiring, template?.category)
+
+        val context = mockk<Context>()
+        val bodyRes = R.string.notification_membership_payment_failed_body
+        every { context.getString(bodyRes) } returns "Plus payment failed."
+        assertEquals(
+            "Plus payment failed.",
+            NotificationTemplates.formatBody(context, "membership.payment_failed", bodyRes, mapOf("membershipId" to "mem-1")),
+        )
+    }
+
+    @Test
+    fun `the failed Plus renewal copy is argless and translated in every locale`() {
+        val english = paymentFailedKeys.associateWith { valueOf(stringsXml("values"), it) }
+        locales.forEach { locale ->
+            val xml = stringsXml(locale)
+            paymentFailedKeys.forEach { key ->
+                val value = valueOf(xml, key)
+                assertNotNull("$locale/strings.xml is missing $key", value)
+                assertTrue("$locale/strings.xml has a blank $key", value!!.isNotBlank())
+                assertEquals("$locale/strings.xml puts a format slot on $key", emptyList<String>(), formatSlots(value))
+                assertTrue("$locale/$key must name Plus", value.contains("Plus"))
+                if (locale != "values") {
+                    assertTrue("$locale/strings.xml left $key in English", value != english[key])
+                }
+            }
+        }
+    }
+
+    /** Push copy first; the server adds these to its customer keyset afterwards, and this set follows it. */
+    @Test
+    fun `the new outcomes render as push but stay out of the feed keyset until the server lists them`() {
+        listOf("order.no_cleaner_refund_pending", "order.no_cleaner_nothing_charged", "membership.payment_failed").forEach { key ->
+            assertNotNull(key, NotificationTemplates.templateFor(key))
+            assertFalse(key, CustomerFeedEventKeys.contains(key))
+        }
+    }
 
     @Test
     fun `formatBody renders the order number and the server-formatted amount into the no-cleaner body`() {
@@ -554,24 +636,33 @@ class NotificationTemplatesTest {
      * takes it as a second slot and states no number and no currency of its own.
      */
     @Test
-    fun `the no-cleaner body takes the order number and the amount and the title takes nothing in every locale`() {
+    fun `every no-cleaner body takes the order number and the amount and every title takes nothing in every locale`() {
         locales.forEach { locale ->
             val xml = stringsXml(locale)
-            val body = valueOf(xml, "notification_order_no_cleaner_refunded_body")!!
-            assertEquals(
-                "$locale/strings.xml does not pass exactly the order number and the amount to the no-cleaner body",
-                listOf("%1\$s", "%2\$s"),
-                formatSlots(body),
-            )
-            assertFalse(
-                "$locale/strings.xml bakes a figure into the no-cleaner body: \"$body\"",
-                body.replace(Regex("%\\d+\\$[sd]"), "").contains(Regex("\\d")),
-            )
-            assertEquals(
-                "$locale/strings.xml puts a format slot on the argless no-cleaner title",
-                emptyList<String>(),
-                formatSlots(valueOf(xml, "notification_order_no_cleaner_refunded_title")!!),
-            )
+            val refunded = valueOf(xml, "notification_order_no_cleaner_refunded_body")
+            noCleanerOutcomes.forEach { outcome ->
+                val bodyKey = "notification_order_no_cleaner_${outcome}_body"
+                val body = valueOf(xml, bodyKey)
+                assertNotNull("$locale/strings.xml is missing $bodyKey", body)
+                assertEquals(
+                    "$locale/strings.xml does not pass exactly the order number and the amount to $bodyKey",
+                    listOf("%1\$s", "%2\$s"),
+                    formatSlots(body!!),
+                )
+                assertTrue("$locale/$bodyKey dropped the # before the order number", body.contains("#%1\$s"))
+                assertFalse(
+                    "$locale/strings.xml bakes a figure into $bodyKey: \"$body\"",
+                    body.replace(Regex("%\\d+\\$[sd]"), "").contains(Regex("\\d")),
+                )
+                if (outcome != "refunded") {
+                    assertTrue("$locale/$bodyKey reuses the refunded sentence", body != refunded)
+                }
+                assertEquals(
+                    "$locale/strings.xml puts a format slot on the argless no-cleaner $outcome title",
+                    emptyList<String>(),
+                    formatSlots(valueOf(xml, "notification_order_no_cleaner_${outcome}_title")!!),
+                )
+            }
         }
     }
 

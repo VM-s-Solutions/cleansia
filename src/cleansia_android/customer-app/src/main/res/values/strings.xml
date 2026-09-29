@@ -1268,6 +1268,10 @@
     <string name="notification_order_refunded_body">Your refund for booking #%1$s is being processed.</string>
     <string name="notification_order_no_cleaner_refunded_title">No cleaner was available</string>
     <string name="notification_order_no_cleaner_refunded_body">Nobody was able to take booking #%1$s, so we have refunded it in full and added %2$s credit towards your next clean. Sorry.</string>
+    <string name="notification_order_no_cleaner_refund_pending_title">No cleaner was available</string>
+    <string name="notification_order_no_cleaner_refund_pending_body">No cleaner could make it to booking #%1$s, so we have cancelled it. Your refund is on its way, and we have added %2$s credit towards your next clean. Sorry.</string>
+    <string name="notification_order_no_cleaner_nothing_charged_title">No cleaner was available</string>
+    <string name="notification_order_no_cleaner_nothing_charged_body">No cleaner could make it to booking #%1$s, so we have cancelled it. You have not been charged, and we have added %2$s credit towards your next clean. Sorry.</string>
     <string name="notification_dispute_reply_title">Support replied</string>
     <string name="notification_dispute_reply_body">You have a new message about your dispute. Tap to read.</string>
     <string name="notification_recurring_scheduled_title">Confirm tomorrow\'s cleaning</string>
@@ -1281,6 +1285,8 @@
     <string name="notification_membership_expiring_body">Your subscription renews in 3 days. Manage your plan in the app.</string>
     <string name="notification_membership_cancelled_title">Cleansia Plus has ended</string>
     <string name="notification_membership_cancelled_body">Your subscription has ended. Resubscribe to keep your Plus perks.</string>
+    <string name="notification_membership_payment_failed_title">Cleansia Plus payment failed</string>
+    <string name="notification_membership_payment_failed_body">Your last Plus payment didn\'t go through, so your Plus benefits are paused until it does. Manage your plan in the app.</string>
 
     <string name="notification_order_assignment_cancelled_title">Job cancelled</string>
     <string name="notification_order_assignment_cancelled_body">A job you accepted was cancelled: #%1$s. Tap for details.</string>

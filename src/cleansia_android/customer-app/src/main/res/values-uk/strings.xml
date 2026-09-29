@@ -1241,6 +1241,10 @@
     <string name="notification_order_refunded_body">Повернення коштів за замовлення #%1$s обробляється.</string>
     <string name="notification_order_no_cleaner_refunded_title">Вільних прибиральників не знайшлося</string>
     <string name="notification_order_no_cleaner_refunded_body">Замовлення #%1$s ніхто не взяв, тому ми повернули всю суму та додали бонус %2$s на наступне прибирання. Вибачте.</string>
+    <string name="notification_order_no_cleaner_refund_pending_title">Вільних прибиральників не знайшлося</string>
+    <string name="notification_order_no_cleaner_refund_pending_body">На замовлення #%1$s не зміг приїхати жоден прибиральник, тому ми його скасували. Повернення коштів обробляється, а ще ми додали бонус %2$s на наступне прибирання. Вибачте.</string>
+    <string name="notification_order_no_cleaner_nothing_charged_title">Вільних прибиральників не знайшлося</string>
+    <string name="notification_order_no_cleaner_nothing_charged_body">На замовлення #%1$s не зміг приїхати жоден прибиральник, тому ми його скасували. Ми нічого з вас не списали, а ще додали бонус %2$s на наступне прибирання. Вибачте.</string>
     <string name="notification_dispute_reply_title">Підтримка відповіла</string>
     <string name="notification_dispute_reply_body">У вас нове повідомлення щодо вашої скарги. Натисніть, щоб прочитати.</string>
     <string name="notification_recurring_scheduled_title">Підтвердіть завтрашнє прибирання</string>
@@ -1254,6 +1258,8 @@
     <string name="notification_membership_expiring_body">Ваша підписка поновиться через 3 дні. Керуйте планом у застосунку.</string>
     <string name="notification_membership_cancelled_title">Cleansia Plus завершено</string>
     <string name="notification_membership_cancelled_body">Ваша підписка завершилася. Поновіть її, щоб повернути переваги Plus.</string>
+    <string name="notification_membership_payment_failed_title">Платіж за Cleansia Plus не пройшов</string>
+    <string name="notification_membership_payment_failed_body">Останній платіж за Plus не пройшов, тому переваги Plus призупинено, доки він не пройде. Керуйте планом у застосунку.</string>
 
     <string name="notification_order_assignment_cancelled_title">Замовлення скасовано</string>
     <string name="notification_order_assignment_cancelled_body">Замовлення, яке ви прийняли, скасовано: #%1$s. Торкніться, щоб переглянути деталі.</string>

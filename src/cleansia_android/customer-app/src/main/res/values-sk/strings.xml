@@ -1241,6 +1241,10 @@
     <string name="notification_order_refunded_body">Vaše vrátenie peňazí za rezerváciu #%1$s sa spracováva.</string>
     <string name="notification_order_no_cleaner_refunded_title">Žiadny upratovač nebol k dispozícii</string>
     <string name="notification_order_no_cleaner_refunded_body">Objednávku #%1$s nikto nestihol prevziať, preto vám vraciame celú sumu a pridávame kredit %2$s na ďalšie upratovanie. Ospravedlňujeme sa.</string>
+    <string name="notification_order_no_cleaner_refund_pending_title">Žiadny upratovač nebol k dispozícii</string>
+    <string name="notification_order_no_cleaner_refund_pending_body">Na objednávku #%1$s nemohol prísť žiadny upratovač, preto sme ju zrušili. Vrátenie peňazí je na ceste a pridali sme vám kredit %2$s na ďalšie upratovanie. Ospravedlňujeme sa.</string>
+    <string name="notification_order_no_cleaner_nothing_charged_title">Žiadny upratovač nebol k dispozícii</string>
+    <string name="notification_order_no_cleaner_nothing_charged_body">Na objednávku #%1$s nemohol prísť žiadny upratovač, preto sme ju zrušili. Nič sme vám neúčtovali a pridali sme vám kredit %2$s na ďalšie upratovanie. Ospravedlňujeme sa.</string>
     <string name="notification_dispute_reply_title">Podpora odpovedala</string>
     <string name="notification_dispute_reply_body">Máte novú správu k vašej reklamácii. Ťuknutím si ju prečítate.</string>
     <string name="notification_recurring_scheduled_title">Potvrďte zajtrajšie upratovanie</string>
@@ -1254,6 +1258,8 @@
     <string name="notification_membership_expiring_body">Vaše predplatné sa obnoví o 3 dni. Plán spravujete v aplikácii.</string>
     <string name="notification_membership_cancelled_title">Cleansia Plus skončilo</string>
     <string name="notification_membership_cancelled_body">Vaše predplatné skončilo. Obnovte ho a získajte späť výhody Plus.</string>
+    <string name="notification_membership_payment_failed_title">Platba za Cleansia Plus neprešla</string>
+    <string name="notification_membership_payment_failed_body">Posledná platba za Plus neprešla, takže výhody Plus sú pozastavené, kým neprejde. Plán spravujete v aplikácii.</string>
 
     <string name="notification_order_assignment_cancelled_title">Zákazka zrušená</string>
     <string name="notification_order_assignment_cancelled_body">Zákazka, ktorú ste prijali, bola zrušená: #%1$s. Ťuknutím zobrazíte detaily.</string>

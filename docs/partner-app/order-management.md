@@ -79,7 +79,7 @@ The order detail page (`/orders/:id`) shows comprehensive order information thro
 | `OrderPackagesComponent` | Selected packages |
 | `OrderAdditionalServicesComponent` | Add-on services |
 | `OrderExtrasComponent` | Extra options |
-| `OrderCustomerInfoComponent` | Customer name, email, phone, address |
+| `OrderCustomerInfoComponent` | Customer name, email, phone, address — while the job is live and for 24 h after completion; on a past or cancelled job a note says the customer's details were removed ([Execution and completion](/flows/execution-and-completion#crew-access)) |
 | `OrderPaymentInfoComponent` | Payment method, status, amount |
 | `OrderPhotosComponent` | Before/after photo gallery with upload |
 
@@ -152,8 +152,9 @@ needed the work, and no admin ever chose it for anyone.
 What replaced it is `Employee.WeeklyOrderLimit`, a nullable per-cleaner column. `null` means unlimited,
 which is every cleaner today. An admin sets a number on one cleaner through
 `PUT /api/AdminEmployee/{employeeId}/weekly-order-limit`; the action is audited with a real before/after
-snapshot, because throttling someone's earnings is a thing they may later ask about. Taking a job past
-the cap fails with `order.weekly_limit_reached`.
+snapshot, because throttling someone's earnings is a thing they may later ask about, and since
+2026-09-28 it needs a written reason the partner sees on their profile. Taking a job past the cap fails
+with `order.weekly_limit_reached`.
 
 The count behind the cap is **status-aware**: only orders in a slot-blocking status count. A cancelled
 order no longer consumes a week's allowance the way it did under the ladder — and neither does a
@@ -167,7 +168,14 @@ a week.
 
 **Profile and approval checks:** the partner needs an address on file (`employee.profile_incomplete`)
 and `ContractStatus == Approved` (`employee.not_approved`). A rejected, still-pending or terminated
-cleaner is turned away. Document upload alone is not the gate.
+cleaner is turned away. Document upload alone is not the gate. And while a partner document — the
+framework contract, the self-billing agreement, the data-processing agreement — is in force and its
+current version not accepted, the take is refused with `employee.legal_documents_not_accepted` and the
+page points to the profile, where the documents are read and accepted (none is seeded yet).
+
+**Taken off a job by an administrator:** the job detail shows the reason the administrator gave, read
+from `GetMyAssignmentRemoval`; the notice itself carries only the order. A placement is an offer the
+partner may drop without consequence → [Business rules](/product/business-rules#placement-is-an-offer).
 
 **The contract for work** (ADR-0068) — a take without `acceptedWorkContractTextId` is
 `contract.not_accepted`, judged before existence; a text row that is not of this order's document is
@@ -252,13 +260,19 @@ The `OrderPhotosComponent` provides before/after photo management with a staging
 
 | Type | Value | Description |
 |---|---|---|
-| `Before` | `1` | Photos taken before cleaning starts |
-| `After` | `2` | Photos taken after cleaning is complete |
+| `Before` | `1` | Photos taken before cleaning starts — offered while the job is `Confirmed`, `OnTheWay` or `InProgress` |
+| `After` | `2` | Photos of the finished work — offered only while the job is `InProgress` |
+
+The windows are the server's: an upload outside them is refused `order.photo.window_closed`, and a
+delete once the job is `Completed` or `Cancelled` is refused `order.photo.locked`, so the page offers
+neither there ([Photos](/flows/execution-and-completion#photo-windows)).
 
 ### Upload Flow
 
 1. Partner clicks "Add Before Photos" or "Add After Photos"
-2. Files are selected via native file input (`image/jpeg, image/jpg, image/png, image/webp`)
+2. Files are selected via native file input (`image/jpeg, image/jpg, image/png, image/webp`), which asks
+   for the rear camera — a browser cannot guarantee that no copy stays on the device, so the mobile
+   apps, which take job photos with the camera only, are the preferred place
 3. Files are validated (max 10MB, allowed types only)
 4. Files are read as base64 and **staged** locally (shown with a yellow "Staged" badge)
 5. Partner can review staged photos and remove unwanted ones
@@ -266,7 +280,7 @@ The `OrderPhotosComponent` provides before/after photo management with a staging
 7. Photos are uploaded to Azure Blob Storage and served via **SAS URLs**
 
 ::: tip SAS URLs
-Photos are stored in Azure Blob Storage. The `blobUrl` returned by the API contains a time-limited SAS (Shared Access Signature) token for secure access. Photos are displayed directly from these URLs.
+Photos are stored in Azure Blob Storage. The `blobUrl` returned by the API contains a 15-minute SAS (Shared Access Signature) token for secure access. Photos are displayed directly from these URLs.
 :::
 
 ### Photo Gallery

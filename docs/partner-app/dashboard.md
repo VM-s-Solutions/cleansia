@@ -81,7 +81,13 @@ Visualizes time-related metrics such as average completion time, time per order,
 
 **Component:** `CleansiaProductivityGaugesComponent`
 
-Displays productivity metrics as gauge/meter visualizations, showing metrics like completion rate, on-time percentage, and efficiency scores.
+Displays the partner's own volume as gauges: completed jobs against the monthly target
+(`EfficiencyScore` is that completion percentage) and personal bests — the best month's completion
+percentage, the highest-earning month and the busiest day and month. **No figure is about time.**
+Since 2026-09-28 the partner is not measured on punctuality or speed: `ProductivityMetricsDto` no longer
+carries `OnTimeCompletionRate` or `AverageCompletionTimeMinutes`, the on-time gauge and the time
+analytics' efficiency tile are gone, and the work minutes recorded on an order are kept for estimates
+only.
 
 **Data source:** `selectProductivityMetrics` NgRx selector
 

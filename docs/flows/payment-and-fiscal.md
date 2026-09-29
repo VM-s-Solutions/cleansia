@@ -1,7 +1,8 @@
 # Payment and fiscal
 
 Money arrives and is recorded on the payment axis — the order stays `New` until a cleaner takes it —
-and a receipt is issued: at booking for cash, on settlement for card. Almost all of the difficulty is
+and a receipt is issued once money has been received: on settlement for card, at completion for cash,
+after the cleaner has recorded the handover. Almost all of the difficulty is
 in making a webhook that can arrive twice, late, or out of order behave as though it arrived once.
 
 ## The path
@@ -54,6 +55,9 @@ sequenceDiagram
 | Chargeback on a web order paid before its intent was recorded | No order carries the intent, so the webhook asks Stripe for the Checkout Session behind it and reads the order id from the session's metadata. The order gets the intent then, and the dispute is written as above. |
 | Chargeback that matches no order | Nothing is recorded, and the webhook acknowledges so Stripe does not retry. The administrators of **every** company are told (`admin.dispute.chargeback_unmatched`, the amount and the Stripe dispute id), because the Stripe account is shared. Only `charge.dispute.created` alerts; an update or close for an unknown dispute is logged and ignored. → [Cancellation, refund and dispute](/flows/cancellation-refund-dispute#dispute) |
 | Card order paid | `admin.order.new` to the company's administrators — the order became offerable on this write, never at creation; a redelivery never reaches the site. |
+| Card payment settles after the order was cancelled | The order is **not** marked `Paid`: the customer paid for a clean that will not happen, so the webhook escalates a dispute for a refund (the customer's open one, or a new one), as it does for a card payment that lands on an order already settled in cash. |
+| Checkout expired or payment cancelled (`checkout.session.expired`, `payment_intent.canceled`) | An order not yet cancelled is cancelled through `Order.Cancel` — by the system, `order.cancelled.payment_not_completed`, no fee, no refund — and a guest is e-mailed, with the old links revoked and a fresh one minted. |
+| A recurring occurrence's Checkout Session expires | Nothing is cancelled: the session is released and the occurrence stays confirmable until the stale-occurrence sweep's cut-off. |
 
 ## Amounts are never reconciled, and do not need to be
 
@@ -97,12 +101,29 @@ needs. The cleaner's invoice PDF applies the same rule on its side: no resolved
 
 ## What the receipt says {#what-the-receipt-says}
 
-An order gets one receipt, under a number from its operator's gapless counter: at booking for a cash
-sale, when the customer confirms a recurring cash occurrence, and when the payment settles for a card
-one. Completion issues one only to an order that still has none and has earned one: a cash booking,
-or a card booking the cleaner settled in cash. An unpaid card order gets no receipt. The
-`FiscalReconciliation` timer re-sends the issue for an eligible order whose receipt never landed. The
-PDF is stored and the customer's download serves that stored copy.
+An order gets one receipt, under a number from its operator's gapless counter, **once money has been
+received** — `GenerateReceiptHandler` requires `Paid` for every tender (owner ruling 2026-09-28). A card
+sale's is issued when the payment settles. A cash sale's is issued **at completion**, after the cleaner
+has recorded the cash, by the completion fallback that issues one to any order still without it; an
+administrator's override to `Completed` and an administrator's *record cash received* on a completed
+order issue it too. A cash booking, a confirmed recurring cash occurrence and an unpaid card order get
+none, and neither does a cancelled cash order, which is never paid. The `FiscalReconciliation` timer
+re-sends the issue for a `Paid` order whose receipt never landed, but not while collected cash waits for
+the completion. The PDF is stored and the customer's download serves that stored copy.
+→ [Business rules — cash is paid when the cleaner records it](/product/business-rules#cash-handover)
+
+**A cash booking gets an e-mail instead.** Booking cash, or confirming a recurring cash occurrence,
+queues an informational booking e-mail (`email:order-booked:{orderId}`): the amount to pay the cleaner
+in cash, the slot in market time, the address and this customer's free-cancellation window, in the
+booking's language, then the account's. It is skipped for a booking cancelled before it is read. A card
+booking gets no such e-mail.
+
+**It names the buyer, not how to reach them.** The receipt prints the customer's name and address only;
+the e-mail address and the phone are not printed (owner ruling 2026-09-28) — they add nothing to a tax
+document and would outlive the account on it. **Its PDF is kept for the statutory period**: the
+retention sweep deletes a receipt's stored PDF ten years (`retention.receipts.years`) after the end of
+the calendar year it was issued in, keeps the receipt row stamped `BlobDeletedAt`, and a download
+afterwards answers `receipt.not_found` → [Retention](/product/business-rules#customer-record).
 
 **Its lines add up to its total.** First the catalogue lines at their snapshot prices — each service,
 each package (marked *package*), each extra. Then the express surcharge as a line of its own. Then each
@@ -131,14 +152,19 @@ the validation does not repair stored company identities.
 **Its cleaning time is local to the market.** The stored UTC `CleaningDateTime` is converted with the
 receipt's resolved market zone before formatting, including daylight-saving offsets and date rollover.
 Initial issuance and later renders use the same conversion: a Prague summer booking at 08:00 UTC
-prints 10:00, and 22:30 UTC prints 00:30 on the next day.
+prints 10:00, and 22:30 UTC prints 00:30 on the next day. A receipt issued after the clean also prints
+the **completion** time beside the booked slot, and a cash sale the time the **cash was received**, both
+in the same market time.
 
 **So are the e-mails** (since 2026-09-28; they used to print UTC, one or two hours early, in the
 server's culture). The order status e-mails convert `CleaningDateTime` to the same market zone — the
 address country's `TimeZoneId`, else UTC — and format it with the short date-and-time pattern of the
 e-mail's language. The receipt e-mail's order date is the booking's creation instant in the market
 zone, in that language's short date pattern, so a booking made at 23:30 UTC on 31 March reads 1 April
-in Prague. Neither reads the server's culture.
+in Prague. Neither reads the server's culture. **Money in a customer e-mail is written the way the
+e-mail's language writes it** — the status total, the refund line, the receipt total and the cash due
+("1 234,50 €" in Czech, "€1,234.50" in English). A receipt e-mail sent after the clean has a
+post-service subject and a thank-you line; a translation row still wins.
 
 **It is in the customer's language.** Every label comes from the document's language: headings, line
 captions, the payment status and the payment method. Status and method print as words, never as enum
@@ -152,26 +178,16 @@ issue**:
 2. else the account's preferred language (a recurring occurrence has no booking request of its own),
 3. else whatever the producer passed.
 
-The receipt row records the choice, and every later render — a fiscal retry, a restate — reuses it.
+The receipt row records the choice, and every later render — a fiscal retry — reuses it.
 → [The order records its language](/flows/booking-and-pricing#booking-language)
 
-### A cash receipt is restated as paid {#cash-receipt-restated}
+### Nothing restates a receipt {#cash-receipt-restated}
 
-A cash sale's receipt is issued at booking, before any money moves, so it says *awaiting payment*.
-When the assigned cleaner records the collection (`MarkCashCollected`) on an order that already has its
-receipt, the same commit stages a **restate**. The receipt is rendered again from the order as it now
-stands — *paid*, by the tender actually taken — over the **same number, issue date, language and
-stored PDF**. A restate allocates no number, registers nothing with a fiscal authority and sends no
-e-mail, so a redelivery only restates it again.
-
-It rides the receipt queue under a key of its own, `receipt-reissue:{orderId}`, one per order, so it
-cannot dedup against the issue's `receipt:{orderId}`. [ADR-0002](/decisions/adr-0002) declares that
-queue's key table frozen, and whether this second formula belongs in it is an **open owner question**
-— the ADR is not amended.
-
-A signed-in customer who downloads the receipt gets the restated copy. Nothing sends it, though: the
-copy already in the customer's inbox, and the only copy a guest has (a guest has no receipt download),
-still say *awaiting payment*.
+Until 2026-09-28 a cash sale's receipt was issued at booking, before any money moved, said *awaiting
+payment*, and was re-rendered as *paid* under the same number when the cleaner recorded the cash
+(`receipt-reissue:{orderId}`). That path is deleted — the reissue key, the message flag, the handler
+branch and the service method — because the receipt is now issued only once the money is in. A receipt
+issued before the change keeps whatever it said.
 
 ## The stale-checkout sweep
 

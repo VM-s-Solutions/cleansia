@@ -207,21 +207,23 @@ refreshCurrentReport(): void {
 
 Route: `/pay-config-management`
 
-Admins can manage employee pay configurations through a dedicated CRUD interface. Pay configs define how employees are compensated based on their grade level.
+Admins can manage partner pay configurations through a dedicated CRUD interface.
 
-### Grade Templates
+### Rate Templates
 
-| Grade | Multiplier | Description |
-|---|---|---|
-| Junior | 0.5x | Entry-level rate |
-| Medior | 0.75x | Mid-level rate |
-| Senior | 1.0x | Full rate |
+| Template | Multiplier |
+|---|---|
+| Standard | 0.5x |
+| Experienced | 0.6x |
+| Expert | 0.7x |
 
-The multiplier is applied to the base pay rate for each service to determine the employee's compensation.
+The multiplier is applied to each entry's list price in the chosen currency. Every template leaves the
+company a margin (owner ruling 2026-09-28); the old junior / medior / senior ranks — the last paying the
+whole customer price — are refused. → [Business rules — per-employee rates](/product/business-rules#per-employee-rates)
 
 ### Operations
 
-- **Create** -- Add a new pay config with grade selection
+- **Create** -- Add a new pay config with rate-template selection
 - **Read** -- View all existing pay configs
 - **Update** -- Modify grade or rate parameters
 - **Delete** -- Remove a pay config

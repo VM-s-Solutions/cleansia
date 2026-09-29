@@ -80,16 +80,19 @@ reads it; none re-derives it:
 ```csharp
 (CurrentStatus == New || CurrentStatus == Confirmed
     || CurrentStatus == OnTheWay || CurrentStatus == InProgress)
-&& (PaymentStatus == Paid || (PaymentType == Cash && RecurringTemplateId == null))
+&& (PaymentStatus == Paid
+    || (PaymentType == Cash && (RecurringTemplateId == null || CustomerConfirmedAt != null)))
 ```
 
 A plain status list cannot express it. The status term only says the work is not over; the money term
-decides. A one-off cash order is offerable from creation, a paid card order at `New`, and nothing is
-offerable while something scheduled can still retract it: the two production retractors are
-`CleanupStalePendingOrders` (15-min timer; card + `PaymentStatus.Pending` + non-recurring) and
-`AutoCancelStaleRecurringOrders` (hourly; recurring + `PaymentStatus.Pending`), and the money term
-above refuses everything either can still retract — an order is offerable only when neither WHERE
-clause matches it. The one `Pending` order it admits is a one-off cash order, which neither touches.
+decides. A one-off cash order is offerable from creation, a recurring cash occurrence from the
+customer's confirm (which stamps `CustomerConfirmedAt` and leaves it `Pending` until the cash is
+recorded), a paid card order at `New`, and nothing is offerable while something scheduled can still
+retract it: the two production retractors are `CleanupStalePendingOrders` (15-min timer; card +
+`PaymentStatus.Pending` + non-recurring) and `AutoCancelStaleRecurringOrders` (hourly; recurring +
+`PaymentStatus.Pending`, and for cash not yet confirmed), and the money term above refuses everything
+either can still retract — an order is offerable only when neither WHERE clause matches it. The
+`Pending` orders it admits are the cash orders neither touches.
 → [Offerability](/domain/offerability)
 
 The rule is enforced **at the take**, not only in the list — see [TakeOrder](#takeorder-validations).
@@ -182,13 +185,21 @@ before any other rule.
 
 | `paymentType` | Value | Behavior |
 |---------------|-------|----------|
-| `Cash` | `1` | **Only for a signed-in caller whose selection needs one cleaner** — `requiredEmployees == 1` on the server's own duration; otherwise `order.cash_not_available` ([the cash rule](/product/business-rules#cash)). Receipt queued. The order stays `New` + `PaymentStatus.Pending` and becomes offerable immediately; the cleaner's take is what writes `Confirmed` |
+| `Cash` | `1` | **Only for a signed-in caller whose selection needs one cleaner** — `requiredEmployees == 1` on the server's own duration; otherwise `order.cash_not_available` ([the cash rule](/product/business-rules#cash)). The informational booking e-mail is queued — no receipt, which is issued at completion once the cash is recorded. The order stays `New` + `PaymentStatus.Pending` and becomes offerable immediately; the cleaner's take is what writes `Confirmed` |
 | `Card` | `2` | Web: a Stripe Checkout Session is created. Mobile: no session — the client drives a PaymentSheet against the PaymentIntent. Either way the order stays `New` + `PaymentStatus.Pending` and is **not** offerable until the webhook writes `Paid`; the status stays `New` until a cleaner takes it (ADR-0057) |
 
-::: warning A cash order is not auto-confirmed at creation
-`OrderPaymentDispatcher` queues a receipt for cash and nothing else — it writes neither
-`OrderStatus.Confirmed` nor `PaymentStatus.Paid`. The only cash path that auto-confirms is
-`ConfirmRecurringOrder`, for a recurring occurrence the customer confirms.
+::: warning A cash order is never paid before the cash is in hand
+`OrderPaymentDispatcher` queues the cash booking e-mail and nothing else — it writes neither
+`OrderStatus.Confirmed` nor `PaymentStatus.Paid`. `ConfirmRecurringOrder` on a cash occurrence stamps
+`CustomerConfirmedAt` and writes no `Paid` either (since 2026-09-28). Only the cleaner's
+`MarkCashCollected`, or an administrator's *record cash received*, makes a cash order `Paid`.
+:::
+
+::: info Start-time window and horizon
+`cleaningDate` must be on the 15-minute grid from 08:00 to 19:45 in the service address's market zone,
+and no more than 60 days ahead — else `order.cleaning_date.outside_booking_window`, after the future and
+lead-time rules. `Quote` answers the same key for the same slot.
+→ [Business rules — the start-time window](/product/business-rules#start-time-window)
 :::
 
 ::: info Duration cap
@@ -664,9 +675,10 @@ POST /api/Order/LookupBatch
 nothing simply yields no row, so the response never says which of the presented tokens was wrong.
 
 ::: tip The same token cancels
-`POST /api/Order/GuestCancellationPreview` and `POST /api/Order/CancelGuest` take `accessToken` too,
-in the `auth` window on the customer web and customer mobile hosts. Cancelling revokes every live
-token on the booking. → [Guest cancellation](/flows/booking-and-pricing#guest-cancellation)
+`POST /api/Order/GuestCancellationPreview`, `POST /api/Order/CancelGuest` and
+`POST /api/Order/ReportGuestNoShow` (after the start, *the cleaner did not arrive* → `{ orderId }`) take
+`accessToken` too, in the `auth` window on the customer web and customer mobile hosts. Cancelling
+revokes every live token on the booking. → [Guest cancellation](/flows/booking-and-pricing#guest-cancellation)
 :::
 
 ---
@@ -770,6 +782,7 @@ on nothing about the order, so it can leak neither existence nor the hold) and t
 | 8 | Caller resolves to an employee | `employee.not_found` |
 | 9 | Employee has an address on file | `employee.profile_incomplete` |
 | 10 | `ContractStatus == Approved` | `employee.not_approved` |
+| 10a | Every cleaner document in force for the caller's market is accepted at its current version (nothing in force → passes) | `employee.legal_documents_not_accepted` |
 | 11 | Not already assigned to this order | `order.employee_already_assigned` |
 | 12 | Weekly cap, **only if an admin set one** on this cleaner (`Employee.WeeklyOrderLimit`; null = unlimited, the default) | `order.weekly_limit_reached` |
 | 13 | No scheduling overlap with the employee's live commitments | `order.time_conflict` |
@@ -935,6 +948,10 @@ POST /api/Order/UploadPhoto
 
 **Auth:** `CanUploadOrderPhoto` (Employee)
 
+A *before* photo is accepted while the order is `Confirmed`, `OnTheWay` or `InProgress`, an *after*
+photo only while it is `InProgress`; otherwise `order.photo.window_closed`. `SavePhotos` applies the
+same windows.
+
 **Request body:**
 
 ```json
@@ -970,7 +987,7 @@ GET /api/Order/GetPhotos?orderId=order-id
 
 **Auth:** `CanViewOrderPhotos` (Authenticated -- all roles)
 
-**Response:** Photo URLs are returned as **SAS URLs** (Azure Blob Storage Shared Access Signatures) with a **1-hour expiry**. Clients must handle URL refresh if photos are displayed for extended periods.
+**Response:** Photo URLs are returned as **SAS URLs** (Azure Blob Storage Shared Access Signatures) with a **15-minute expiry** (one hour until 2026-09-28). Clients must handle URL refresh if photos are displayed for extended periods. More than 24 hours after completion, or on a cancelled order, an assigned cleaner gets only the photos they took.
 
 ---
 
@@ -983,6 +1000,9 @@ DELETE /api/Order/DeletePhoto?photoId=photo-id
 ```
 
 **Auth:** `CanDeleteOrderPhoto` (Employee)
+
+Refused once the order is `Completed` or `Cancelled` (`order.photo.locked`): a finished job's photos are
+its record.
 
 ---
 
@@ -1104,7 +1124,7 @@ GET /api/Order/DownloadReceipt?orderId=order-id
 **Response:** Binary PDF file (`application/pdf`).
 
 ::: tip Receipt Generation
-Receipts are generated asynchronously via an Azure Queue message (`GenerateReceipt`) processed by Azure Functions. The PDF is stored in Azure Blob Storage, and this endpoint returns the stored copy — for a cash booking whose collection a cleaner has recorded, the copy restated as paid. The number, the issue date and the language are fixed when the receipt is issued. → [What the receipt says](/flows/payment-and-fiscal#what-the-receipt-says)
+Receipts are generated asynchronously via an Azure Queue message (`GenerateReceipt`) processed by Azure Functions, and only for a `Paid` order — a cash sale's at completion, after the cash was recorded. The PDF is stored in Azure Blob Storage, and this endpoint returns the stored copy; once the retention sweep has deleted it (`retention.receipts.years`, 10) the answer is `receipt.not_found`. An assigned cleaner is answered `order.not_found`, because the receipt names the customer. The number, the issue date and the language are fixed when the receipt is issued. → [What the receipt says](/flows/payment-and-fiscal#what-the-receipt-says)
 :::
 
 ## Error Responses

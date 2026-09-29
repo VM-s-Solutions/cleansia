@@ -106,8 +106,8 @@ service needs two people and stays partly open until both seats are taken.
 by the cleaner and marked on the job. Cash is only for a signed-in customer on a job one cleaner does
 alone — a guest, or a booking long enough to need two cleaners, pays by card, and the server refuses
 anything else ([the cash rule](/product/business-rules#cash)). Refunds and cancellation fees differ between them, and so does
-the receipt: a cash booking's receipt is issued at booking as *awaiting payment* and restated as
-*paid*, under the same number, when the cleaner records the cash.
+the receipt: a card booking's is issued on payment; a cash booking gets an informational e-mail, and
+its receipt is issued at completion, after the cleaner has recorded the cash.
 
 **Plus is a paid subscription, with no trial.** Two plans, monthly and annual, each with a discount on
 every booking; both carry zero trial days and the admin plan commands refuse any other value. Every

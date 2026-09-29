@@ -45,7 +45,9 @@ axes move independently, and the combination is what any real question is actual
 | Card order awaiting the Stripe webhook | `New` | `Card` | `Pending` |
 | Card order paid, nobody has taken it | `New` | `Card` | `Paid` |
 | One-off cash order, nobody has taken it | `New` | `Cash` | `Pending` |
+| Recurring cash occurrence the customer confirmed | `New` | `Cash` | `Pending` — with `CustomerConfirmedAt` set |
 | Cash order a cleaner has taken | `Confirmed` | `Cash` | `Pending` |
+| Cash order whose cleaner recorded the cash | `InProgress` | `Cash` | `Paid` — with `CashCollectedAt`, the collector and `CashCollectedAmount` |
 | Card order a cleaner has taken | `Confirmed` | `Card` | `Paid` |
 
 **The two axes are genuinely independent, and the table shows it.** Paying does not move the
@@ -63,7 +65,7 @@ more. Two producers stopped writing it:
 | `TakeOrder` | a cleaner took the job | **yes** |
 | `AdminReassignOrder` | an admin assigned a cleaner | **yes** — added with the split |
 | `HandlePaymentNotification` | the Stripe webhook landed | no — sets `PaymentStatus.Paid` only |
-| `ConfirmRecurringOrder` | the customer confirmed a recurring occurrence | no — money axis only |
+| `ConfirmRecurringOrder` | the customer confirmed a recurring occurrence | no — it stamps `CustomerConfirmedAt`; a card occurrence then asks for the money, and only the webhook writes `Paid` (since 2026-09-28 a cash confirm writes no `Paid`) |
 | `AdminOverrideOrderStatus` | an admin forced it | yes — but only onto an order that has a crew; on an unstaffed one the target is refused (`order.status.confirmed_needs_crew`, ADR-0067) |
 
 > **`Confirmed` means a cleaner took it — and since [ADR-0067](/decisions/adr-0067) (owner ruling

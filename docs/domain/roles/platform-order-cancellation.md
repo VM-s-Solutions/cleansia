@@ -41,9 +41,10 @@ the same key.
   refund:{id}:cancel`, anything else → `refund:{id}:admin`. That is why the `refundReason` parameter
   exists: **the admin cancel keeps `CustomerCancellation` and its byte-identical key; the wind-down passes
   `ServiceNotRendered` and writes `:admin`**, and the platform absorbs the Stripe fee (`RefundPolicy`).
-- **`AdminCancelOrder.Handler`** — a status-gated caller: loads the order, checks
-  `CancellationAssessor.BlockedReason`, then `CancelAsync(…, CancelledBy.Admin, command.Reason,
-  RefundReason.CustomerCancellation)`. Holds no refund, credit, waiver, loyalty or notification
+- **`AdminCancelOrder.Handler`** — a status-gated caller: loads the order, refuses `Cancelled`,
+  `Completed` and `InProgress` itself — not through `CancellationAssessor.BlockedReason`, whose
+  start-passed refusal (2026-09-28) binds the customer only — then `CancelAsync(…, CancelledBy.Admin,
+  command.Reason, RefundReason.CustomerCancellation)`. Holds no refund, credit, waiver, loyalty or notification
   collaborator of its own any more.
 - **`CompanyWindDownService`** — `CancelAsync(order, WindDownRequestedBy, CancelledBy.System,
   OrderCancellationReasons.CompanyWindDown, RefundReason.ServiceNotRendered)` per open order, committed
@@ -53,10 +54,12 @@ the same key.
 
 ## Does NOT know
 
-- **Whether the order may be cancelled.** `CancellationAssessor.BlockedReason` (Cancelled, Completed,
-  InProgress) is the caller's gate; the sweep re-reads `CurrentStatus` untracked right before calling.
-- **The apology credit.** `CancelUnfilledOrders` grants the no-show credit and raises a different push; it
-  is **not** a caller — a third arm to serve one caller is what CLAUDE.md §4 forbids.
+- **Whether the order may be cancelled.** The status gate is the caller's; the sweep re-reads
+  `CurrentStatus` untracked right before calling.
+- **The apology credit.** `CleanerNoShowCancellation` — the one body behind the unfilled sweep and an
+  administrator's no-show confirmation (`AdminCancelOrderAsNoShow`, 2026-09-28) — grants the no-show
+  credit and raises its own outcome push; it is **not** a caller — a third arm to serve one caller is what
+  CLAUDE.md §4 forbids.
 - **The customer's own cancellation.** `CancelOrder` (fee tiers, the oops window) is its own path.
 - **When to commit.** Never inside; the admin path commits once through the pipeline, the sweep once per
   order so a refund that succeeded is recorded before the next Stripe call.
@@ -73,8 +76,9 @@ the same key.
 3. **The refund is attempted only on a card order that is `Paid` with a charge surface**; any order not
    `Paid` gets its credit back. An order that took no payment (`Pending` or `Failed` — a cash booking not
    yet collected, a card never charged) records a refund of **0** on the row, and the admin cancel's
-   `RefundAmount` reads the row, so it reports 0 too. A `Paid` cash order — a confirmed recurring
-   occurrence, nothing collected — gets neither refund nor credit and still records the full price
+   `RefundAmount` reads the row, so it reports 0 too. Since 2026-09-28 a confirmed recurring cash
+   occurrence stays `Pending` until the cash is recorded, so it records 0 like any cash booking; cash is
+   recorded only while `InProgress`, which neither caller cancels
    → [Business rules — cancellation](/product/business-rules#cancellation).
 4. **`RefundAsync` on a `Pending` row replays under the same key and never inserts a second row**
    (`The_Refund_Leg_Alone_Re_Drives_The_Same_Key_And_Notifies_On_Success`).

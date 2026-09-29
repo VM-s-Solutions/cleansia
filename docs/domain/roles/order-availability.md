@@ -29,23 +29,31 @@ Offerable(o) ⟺ o.CurrentStatus ∈ { New, Confirmed, OnTheWay, InProgress }
              ∧ NotRetractable(o)
 
 NotRetractable(o) ⟺ o.PaymentStatus == Paid
-                  ∨ (o.PaymentType == Cash ∧ o.RecurringTemplateId == null)
+                  ∨ (o.PaymentType == Cash
+                     ∧ (o.RecurringTemplateId == null ∨ o.CustomerConfirmedAt ≠ null))
 ```
 
 > **Status term amended twice since the panel.** The owner ruling of 2026-09-06 admitted `OnTheWay`
 > and `InProgress` (the work is not *over*, not "has not started"), and
 > [ADR-0057](/decisions/adr-0057) (2026-09-08) dropped the `New ∧ Cash` qualifier — a paid card
 > order now rests at `New`, and the money term already carried the payment qualification.
+>
+> **Money term amended 2026-09-28** (owner ruling: a recurring cash occurrence shows *paid* only when the
+> cleaner records the cash). The customer's confirm no longer writes `Paid`; it stamps
+> `Order.CustomerConfirmedAt`, and a confirmed recurring cash occurrence is admitted on that marker while
+> it stays `Pending`. `AutoCancelStaleRecurringOrders` and `SendRecurringOrderReminders` gained the matching
+> term — they select a cash occurrence only while it is unconfirmed — so the negation still holds.
 
 | Member | Job |
 |---|---|
 | `OfferableStatuses` = `[New, Confirmed, OnTheWay, InProgress]` | the **coarse** fulfilment floor — exactly the status term, the index-served prefilter on `Orders.CurrentStatus`, and the thing the clients mirror. **Not the rule** — it has no money term. |
 | `IsOfferableSql` : `Expression<Func<Order,bool>>` | queryable form, composed into `OrderSpecification` |
-| `IsOfferable(OrderStatus?, PaymentType, PaymentStatus, string? recurringTemplateId)` | in-memory form, for the `TakeOrder` write gate. **Four scalars, all columns on `Order`** — no navigation properties, no I/O, no collaborator. |
+| `IsOfferable(OrderStatus?, PaymentType, PaymentStatus, string? recurringTemplateId, DateTime? customerConfirmedAt)` | in-memory form, for the `TakeOrder` write gate. **Five scalars, all columns on `Order`** — no navigation properties, no I/O, no collaborator. `IsOfferable(Order)` is the overload for callers that hold the entity; the take's probe projects the five columns. |
 
 **`NotRetractable` is the union of the negations of the two sweeps that actually run**, read off their
-own `WHERE` clauses — `CleanupStalePendingOrders.cs:50-53` (**no `OrderStatus` term**) and
-`AutoCancelStaleRecurringOrders.cs:63-69` (**no `PaymentType` term**). If a third scheduled retractor
+own `WHERE` clauses — `CleanupStalePendingOrders` (**no `OrderStatus` term**) and
+`AutoCancelStaleRecurringOrders` (a `PaymentType` term only for the cash confirmation: cash is
+retractable while `CustomerConfirmedAt` is null). If a third scheduled retractor
 is ever added, **this term is where it must be reflected** — a sweep whose predicate is not negated
 here silently re-creates the defect the panel caught.
 

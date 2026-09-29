@@ -113,21 +113,24 @@ is proven; a foreign or missing resource probe retains the caller’s account co
 company’s admin can read the customer’s trail across operators after proving access to that account.
 → [What is recorded about a customer](/product/business-rules#customer-record)
 
-## The terms tick is required, unless the account already consented
+## The terms tick is required, unless the account already accepted the texts in force
 
-A booking asserts `termsAccepted: true` or is refused — **unless** the signed-in customer's account
-already holds both the terms and the privacy consent, granted and not withdrawn (owner ruling
-2026-09-14). That customer sees no box on any client and sends nothing; a guest has no account to hold
-a consent on and always asserts it; a customer whose consent was withdrawn is asked again, which is the
-right answer to a withdrawal. The tick short-circuits the consent read, so a customer re-consenting at
-checkout is never refused for a row the server has not written yet. Every client behaves alike: the
-web wizard, the Android and the iOS customer apps show the sentence on the review step when the
-account lacks a consent (or there is no account), gate the confirmation on it, and send the tick only
-when the box was shown and ticked. The booking row records the tick and the version in force — the
-effective date of the terms document for the address's market ([ADR-0063](/decisions/adr-0063)) — and
-grants **no** consent rows for it (a residual stated in ADR-0062 D4 as amended: in production every
-account holds both from registration). Confirming a recurring occurrence is not gated — the template
-was accepted.
+A booking asserts `termsAccepted: true` or is refused — **unless** the signed-in customer's terms and
+privacy consents both **cover the texts in force** for the booking's market: granted, not withdrawn,
+and pointing at the very document in force (owner rulings 2026-09-14 and 2026-09-28). That customer
+sees no box and sends nothing; a guest has no account to hold a consent on and always asserts it; a
+customer whose consent was withdrawn, or who accepted an older version, is asked again — so a new terms
+version is accepted before the next booking, and bookings already made keep theirs. The tick
+short-circuits the consent read, so a customer re-consenting at checkout is never refused for a row the
+server has not written yet. The web wizard, the Android and the iOS customer apps show the sentence on
+the review step when the consents on record (`coversCurrentVersion` on the consent read) do not cover
+the texts in force, or there is no account, gate the confirmation on it, and send the tick only when the
+box was shown and ticked. With the tick, a signed-in customer's two consent rows move to the texts in
+force, with the IP and device, and the booking row records the versions **actually accepted**
+([ADR-0063](/decisions/adr-0063)); without it, the versions the customer's rows hold. **Creating a
+recurring schedule is gated the same way** (`CreateRecurringBooking`); Android's schedule form asks for
+the tick, the web and iOS schedule forms do not yet. Confirming a recurring occurrence is not gated —
+the template was accepted. → [Business rules — what is recorded about a customer](/product/business-rules#customer-record)
 
 ## The order is stamped with the contract for work it is booked under {#work-contract-stamp}
 
@@ -200,10 +203,15 @@ already refuses anything larger. Android
 (`PropertySize.kt`) and iOS (`PropertySize.swift`) each hold the two caps once, and a test on each
 reads them against `BookingPolicy.MaxRooms` and `MaxBathrooms` in `BookingPolicy.cs`.
 
-Web, Android, and iOS offer starts every 15 minutes from 08:00 through 19:45. The two-hour minimum
-lead time and the express window still apply to the exact selected instant, including its minutes.
-The picker range and grid are not additional API restrictions today; enforcing them on API callers
-awaits an owner decision.
+**Starts are 08:00 – 19:45 in 15-minute steps, in the market's time zone, at most 60 days ahead — and
+the server enforces it** (owner ruling 2026-09-28). `CreateOrder` and `QuoteOrder` refuse a start off the
+grid, outside the window or past the horizon as `order.cleaning_date.outside_booking_window`, reading the
+wall clock in the service address's market zone, never the device's; the future and lead-time rules keep
+their own keys and run first. Web, Android and iOS offer exactly those starts: the web's one-off
+calendar, its next-month arrow and the home calculator's date picker stop at the 60-day horizon, and a
+start the server refuses holds the wizard on the time step with its reason. The two-hour minimum lead
+time and the express window still apply to the exact selected instant, including its minutes.
+→ [Business rules — the start-time window](/product/business-rules#start-time-window)
 
 ## Edge cases
 
@@ -212,6 +220,7 @@ awaits an owner decision.
 | The quoted price no longer matches | Refused. The client re-quotes. |
 | **The quote included an express waiver, and the monthly quota ran out in between** | Refused with its **own** error rather than a generic mismatch — this is the one pricing input that can legitimately change between two runs of a fixed command, and the customer is told exactly that. |
 | Under 2 h lead time | Refused outright. Not priced higher — refused. |
+| A start off the 15-minute grid, before 08:00 or after 19:45 in the market's zone, or more than 60 days ahead | Refused on the quote and the booking alike, `order.cleaning_date.outside_booking_window`. |
 | 2–4 h lead time | Accepted with a **+20 %** express surcharge, unless a Plus waiver applies. |
 | Booked span over 24 h | Refused. See [why that bound exists](/product/business-rules#maximum-booked-duration-24-h-and-it-is-not-about-calendars). |
 | A package **and** a service the package includes | Charged twice, performed twice, takes twice as long. Owner ruling — not a bug, and not to be de-duplicated. |
@@ -222,10 +231,34 @@ awaits an owner decision.
 
 ## Recurring bookings
 
-A template materialises occurrences up to 7 days ahead. A materialised occurrence stays unconfirmed
-until the customer confirms it, so *"pending for over an hour"* is its **normal** state, not an
-abandoned checkout — which is why the stale-checkout sweep explicitly excludes rows with a
-`RecurringTemplateId`. A separate sweep retracts unconfirmed occurrences an hour before the slot.
+A template materialises occurrences up to 7 days ahead, and never one closer than the 2 h floor a
+one-off booking gets — so the materialiser no longer creates same-day occurrences that are already past
+or express-charged. A template whose time is outside the start-time window is skipped with a warning
+and kept as authored; `CreateRecurringBooking` and `UpdateRecurringBooking` refuse such a time
+(`order.cleaning_date.outside_booking_window`) and a `StartsOn` more than 60 days ahead. A materialised
+occurrence stays unconfirmed until the customer confirms it, so *"pending for over an hour"* is its
+**normal** state, not an abandoned checkout — which is why the stale-checkout sweep explicitly excludes
+rows with a `RecurringTemplateId`. A separate sweep retracts unconfirmed occurrences an hour before the
+slot.
+
+**Confirming an occurrence** (`ConfirmRecurringOrder`, owner ruling 2026-09-28) stamps
+`Order.CustomerConfirmedAt` for both tenders — the first stamp wins — and the card path then asks for
+the money:
+
+| Tender | What the confirm does | When it is offerable to cleaners |
+|---|---|---|
+| Cash | nothing more: the occurrence stays `Pending` until the cleaner records the cash, gets the informational booking e-mail, no receipt and no *payment confirmed* push; a second confirm is `order.recurring_already_confirmed` | at the confirm |
+| Card, mobile | a PaymentIntent for the PaymentSheet (`clientSecret`) | when the webhook writes `Paid` |
+| Card, web | a Stripe Checkout Session (`checkoutUrl`), built like a resumed checkout; the customer web's order detail confirms and redirects | when `checkout.session.completed` writes `Paid` |
+
+A card occurrence begun on the other channel is refused (`InvalidOrderStatusTransition`), so no order
+ever has two capturable payment surfaces; a card occurrence can be confirmed again until its payment
+settles, and a Checkout Session that expires leaves it confirmable. The confirm refuses a cancelled
+occurrence, a paid one, and one closer than 2 h (`order.cleaning_date.below_lead_time`). The
+stale-occurrence sweep and the confirm reminders select only occurrences still awaiting the customer
+(`Order.AwaitsCustomerConfirmation`: open, `Pending`, and for cash not yet confirmed); the order detail
+carries it as `needsConfirmation`, and every client offers the confirm on it. Until the web confirm
+existed, every occurrence of a web-only customer was auto-cancelled an hour before its slot.
 
 **A schedule's weekday and time are the market's wall-clock time** (since 2026-09-28; they used to be
 read as UTC, so a Prague 10:00 schedule ran at 11:00 in winter and 12:00 in summer). The materialiser
@@ -241,8 +274,9 @@ plus `TimeOfDay` to UTC on its own, so 10:00 stays 10:00 across the clock change
 
 The duplicate guard is unchanged and still compares exact UTC instants. A template whose saved address
 is missing now stops before it can move its resume marker.
-The web schedule list's *next visit* walks the same rule in the **browser's** time zone, because the
-template's DTO carries no zone; for a customer in the market's own zone the two agree.
+The template's DTO carries the market zone the materialiser walks (`RecurringBookingTemplateDto.timeZoneId`,
+filled by create, update and the schedule list), and the web schedule card reads its *next visit* in that
+zone, so the date lands on the weekday beside it from any reader's zone.
 
 **An edit cannot move the start past the end.** The server refuses a start on or after the stored end
 date (`recurring_booking.ends_on_before_start`), and no edit form has an end-date editor, so on the
@@ -298,9 +332,18 @@ the express surcharge once, from that occurrence's date and lead time. Recurring
 extras, and this path reserves no monthly express waiver. The undated pricing call does not mean
 that a short-notice occurrence is exempt from the surcharge.
 
-The `Monthly` frequency currently adds 30 days and then advances to the selected weekday, normally
-an interval of 35 days. Calendar-month semantics, including short months, await an owner decision;
-"every 30 days" would not describe the current algorithm either.
+**`Monthly` is the nth weekday** (owner ruling 2026-09-28): the ordinal is read off the first chosen
+weekday on or after `StartsOn`, in the market's calendar — the 2nd Thursday stays the 2nd Thursday — and a
+schedule that began on a 5th weekday takes the **last** one in months that have no 5th. Twelve visits a
+year; it used to add 30 days and move to the weekday, about ten. **Every cadence is counted from
+`StartsOn`**, and `LastMaterializedFor` is only a resume pointer, so an edit — which clears it — keeps a
+monthly schedule on its weekday and a fortnightly one on its own weeks. The web's *next visit* walks the
+same rule and skips a visit under two hours away. → [Business rules — Cleansia Plus](/product/business-rules#cleansia-plus)
+
+**The favourite cleaner can be chosen when the schedule is created**, not only kept on an edit. The web,
+Android and iOS schedule forms offer the cleaners who have served the customer (`GetMyServingCleaners`,
+asked with no slot, so it costs no availability query) and send the choice as `preferredEmployeeId`;
+it can be changed or cleared on an edit, and on the web a refusal on create offers saving without them.
 
 > The materialiser decides "did I already spawn this occurrence?" with an unlocked read, and **the
 > answer is enforced by a unique index** — `IX_Orders_RecurringTemplateId_CleaningDateTime`, on the
@@ -371,12 +414,11 @@ about the receipt afterwards, short enough that a mailbox read years later is no
 somebody's home. **Every cancellation the guest or the platform makes revokes every existing live
 token on the booking at once** — the guest's own, an administrator's, the company wind-down, the
 unfilled-slot sweep and the stale-checkout sweep — because there is nothing left to do with them, with
-one deliberate exception: the cancellation e-mail itself ([below](#guest-cancellation)). One
-cancellation does neither: when Stripe reports the checkout expired or the payment cancelled
-(`checkout.session.expired`, `payment_intent.canceled`), the webhook cancels the booking but revokes no
-token and sends no e-mail. It is rare — no expiry is set on the Checkout Session, so Stripe's own comes
-long after the stale-checkout sweep's hour. An account booking mints none at all: its owner signs in
-instead.
+one deliberate exception: the cancellation e-mail itself ([below](#guest-cancellation)). That includes the webhook's cancellation
+when Stripe reports the checkout expired or the payment cancelled (`checkout.session.expired`,
+`payment_intent.canceled`), which since 2026-09-28 cancels through the same writer and sends the same
+e-mail. It is rare — no expiry is set on the Checkout Session, so Stripe's own comes long after the
+stale-checkout sweep's hour. An account booking mints none at all: its owner signs in instead.
 Erasing an ended guest booking also revokes its live tokens in the same database commit as its
 personal data is anonymised. Live guest bookings excluded from erasure keep their tokens. The weekly
 retention sweep deletes expired or revoked token rows; it does not extend their lifetime.
@@ -390,12 +432,15 @@ operations require a guest booking (`UserId` null); an account-owned booking is 
 order, so the guest need not choose its market and an unrelated browsing or account market cannot
 redirect the cancellation.
 
-The preview shows the standard cancellation tier, fee and policy refund in the order’s currency.
-The cancellation recalculates those figures at the time it is submitted, with the same notice,
-cleaner-assignment and oops-window rules as the signed-in path, and records `CancelledBy.Customer`.
-A guest has no Plus entitlement, so their oops window is the standard 15 minutes, and the preview's
-`oopsWindowMinutes` says 15. An order already cancelled, completed or under way cannot be
-cancelled again. → [Cancellation rules](/product/business-rules#cancellation)
+The preview shows the standard cancellation tier, fee and policy refund in the order’s currency —
+**0** refund on a booking that took no payment. The cancellation recalculates those figures at the time
+it is submitted, with the same notice, cleaner-assignment and oops-window rules as the signed-in path,
+and records `CancelledBy.Customer`. A guest has no Plus entitlement, so their oops window is 60 minutes
+on their **first booking** — the first on that e-mail or phone, guest or account — and the standard 15
+otherwise; the preview's `oopsWindowMinutes` says which. An order already cancelled, completed or under
+way cannot be cancelled; nor can one whose booked start has passed with a cleaner on the job
+(`order.start_passed_cannot_cancel`), which the guest reports as a no-show instead.
+→ [Cancellation rules](/product/business-rules#cancellation)
 
 The two anonymous routes are available on the customer web and customer mobile API hosts, both in
 the `auth` rate-limit window. Each request body carries the access token and nothing else that
@@ -405,6 +450,7 @@ proves anything:
 |---|---|
 | `POST api/Order/GuestCancellationPreview` | The same fee-preview response shape as the signed-in API, under the standard guest policy |
 | `POST api/Order/CancelGuest` | The cancellation response: policy fee/refund, whether a refund succeeded, and its actual amount when available |
+| `POST api/Order/ReportGuestNoShow` | After the booked start, when the assigned cleaner has not started: tells the company's administrators once (`admin.order.cleaner_not_started`) and moves no money — an administrator confirms the no-show. Refused before the start (`order.start_time_not_reached`) and once the job is under way (`order.cleaner_already_started`); on a booking nobody took it raises nothing, because the unfilled sweep cancels and refunds that one → [When the cleaner no-shows](/product/business-rules#when-the-cleaner-cancels-or-no-shows) |
 
 A cancellation e-mail goes to the **persisted booking address**, with a refund line only for a
 successfully issued refund and its actual amount. A deleted or anonymised destination receives

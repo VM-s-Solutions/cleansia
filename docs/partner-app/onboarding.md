@@ -157,7 +157,9 @@ An **optional** row is a prompt, not a gate. It is how a document type is offere
 expected-but-not-blocking; removing the row drops it from the screen entirely, clearing its required
 flag keeps the prompt and drops the gate.
 
-Seeded today: **CZ and SK** carry `IdentityCard` (required) and `WorkPermit` (optional). The list is
+Seeded today: **CZ and SK** carry `IdentityCard` (required), `WorkPermit` (optional) and, since
+2026-09-28, `InsuranceDocument` (required — a cleaner is approved only with a valid liability insurance
+certificate, whichever policy the platform finally promises). The list is
 deliberately short and is not a statement about Czech or Slovak employment law — `WorkPermit` is
 optional because it applies to non-EU nationals and to nobody else, and a per-country flag cannot say
 "required for some of these people".
@@ -202,6 +204,10 @@ After the partner completes their profile and uploads required documents, an adm
 - Profile is complete (`isProfileComplete === true`)
 - Contract status is `Pending`
 - Every document type the **work country** marks required is present **and** `Approved`
+- Every partner document in force for that market — the framework contract, the self-billing
+  agreement, the data-processing agreement — is accepted at its current version
+  (`employee.legal_documents_not_accepted`; none is seeded yet, so nothing is refused today)
+  → [A cleaner's own documents](/product/business-rules#cleaner-documents)
 
 That last line is enforced, not advisory. Approval used to consult `isProfileComplete()` alone, which
 excludes documents deliberately — so an admin could approve a cleaner who had uploaded nothing, or whose

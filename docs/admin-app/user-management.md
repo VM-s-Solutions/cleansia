@@ -76,7 +76,7 @@ overrides the platform-wide row for the same service or package **in the same cu
 one exists and falls back to the global one otherwise. The unique index is
 `(EmployeeId, ServiceId, PackageId, CurrencyId)`, so a cleaner legitimately holds a CZK rate and a EUR
 rate for the same service, and neither counts for an order in the other currency. The bulk apply seeds a
-whole grade at once (junior 0.5×, medior 0.75×, senior 1.0×) in one currency.
+whole rate template at once (standard 0.5×, experienced 0.6×, expert 0.7×) in one currency.
 → [/product/business-rules#rates-per-currency](/product/business-rules#rates-per-currency)
 
 ### Weekly Order Limit — a brake, and nobody is behind it by default
@@ -99,6 +99,12 @@ Treat it accordingly. It caps somebody's earnings, so it is a narrow audited com
 (`employee.weekly_limit.update`) with a real before/after snapshot, not a field on the bulk profile
 save — an admin should not be able to throttle a cleaner as a side effect of correcting their address.
 A cleaner at their cap sees `order.weekly_limit_reached` when they try to take a job.
+
+**A cap needs a reason, and the cleaner sees it** (owner ruling 2026-09-28). The body is
+`{ weeklyOrderLimit, reason }`; a cap without a reason is refused (`employee.weekly_limit_reason_required`,
+at most 500 characters), the reason goes on the audit row, lifting the cap clears it, and an erasure
+clears it too. The employee detail shows the recorded reason and prefills it in the editor; the cleaner
+reads the cap and its reason on their profile (partner web, Android, iOS).
 
 **Read the number as "outstanding commitments", not "jobs this week".** The count behind it includes only
 orders in a slot-blocking status, which excludes `Completed` as well as `Cancelled` — so a finished job
@@ -315,15 +321,18 @@ Services: X / Y configured
 Packages: X / Y configured
 ```
 
-### Bulk Apply Grade Template
+### Bulk Apply Rate Template
 
-The fastest way to onboard an employee. Pick a grade and currency, click **Apply to All**:
+The fastest way to onboard a partner. Pick a rate template and currency, click **Apply to All**:
 
-| Grade  | Multiplier | Use Case                          |
-|--------|-----------|-----------------------------------|
-| Junior | 0.5x      | New hire, in training             |
-| Medior | 0.75x     | Experienced cleaner               |
-| Senior | 1.0x      | Top performer, full base rate     |
+| Template    | Multiplier |
+|-------------|-----------|
+| Standard    | 0.5x      |
+| Experienced | 0.6x      |
+| Expert      | 0.7x      |
+
+Every template leaves the company a margin (owner ruling 2026-09-28). The old junior / medior / senior
+ranks — senior paid the whole customer price — are refused (`common.invalid_enum_value`).
 
 The multiplier is applied to the catalogue price **in the currency picked**: the `ServicePrices` row
 (`BasePrice`, `PerRoomPrice`) and the `PackagePrices` row (`Price`) for that currency. A service or
@@ -333,7 +342,7 @@ result is a per-employee `EmployeePayConfig` in that same currency:
 ```
 service:  BasePay = BasePrice × m      ExtraPerRoom = PerRoomPrice × m      (rounded to 2 places)
 package:  BasePay = Price × m          ExtraPerRoom = 0
-          ExtraPerBathroom = 0, description "Auto-generated from {grade} grade template"
+          ExtraPerBathroom = 0, description "Auto-generated from the {template} rate template"
 ```
 
 An entry with no price row in that currency is **skipped and counted in `skippedCount`**, never
@@ -355,7 +364,7 @@ API call:
 POST /api/AdminPayConfig/bulk-create-for-employee
 {
   "employeeId": "...",
-  "grade": "junior" | "medior" | "senior",
+  "grade": "standard" | "experienced" | "expert",   // the field keeps its wire name
   "currencyId": "...",
   "overwriteExisting": false
 }

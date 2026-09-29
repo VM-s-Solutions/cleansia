@@ -212,6 +212,13 @@ final class FakePartnerOrderClient: PartnerOrderClient {
         await recordNote("deleteIssue", id: issueId, content: nil)
     }
 
+    private(set) var lockoutReports: [(orderId: String, callAttempts: String)] = []
+
+    func reportLockout(orderId: String, callAttempts: String) async -> ApiResult<Void> {
+        lockoutReports.append((orderId: orderId, callAttempts: callAttempts))
+        return await record("reportLockout", orderId)
+    }
+
     func getPhotos(orderId _: String) async -> ApiResult<[OrderPhoto]> {
         getPhotosCallCount += 1
         return getPhotosResult

@@ -7051,6 +7051,146 @@
         }
       }
     },
+    "earnings_cash_held_jobs_hidden": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Držíte více, než je limit, proto se vám zakázky za hotové nezobrazují, dokud hotovost neodevzdáte."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You hold more than the limit, so cash jobs are hidden from you until you hand cash over."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "У вас больше лимита, поэтому заказы с оплатой наличными скрыты, пока вы не сдадите наличные."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Držíte viac, než je limit, preto sa vám zákazky za hotovosť nezobrazujú, kým hotovosť neodovzdáte."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "У вас більше, ніж дозволяє ліміт, тому замовлення з оплатою готівкою приховані, доки ви не передасте готівку."
+          }
+        }
+      }
+    },
+    "earnings_cash_held_limit": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Limit %1$@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Limit %1$@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Лимит %1$@"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Limit %1$@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ліміт %1$@"
+          }
+        }
+      }
+    },
+    "earnings_cash_held_subtitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hotovost, kterou jste převzali u dveří a ještě neodevzdali. Započte se proti vaší další výplatě."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cash you took at the door and have not handed over yet. It is set off against your next payout."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Наличные, которые вы получили у двери и ещё не сдали. Они будут зачтены в счёт вашей следующей выплаты."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hotovosť, ktorú ste prevzali pri dverách a ešte ste ju neodovzdali. Započíta sa proti vašej ďalšej výplate."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Готівка, яку ви отримали біля дверей і ще не передали. Її буде зараховано в рахунок вашої наступної виплати."
+          }
+        }
+      }
+    },
+    "earnings_cash_held_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hotovost u mě"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cash I hold"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Наличные у меня"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hotovosť u mňa"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Готівка в мене"
+          }
+        }
+      }
+    },
     "earnings_current_period": {
       "extractionState": "stale",
       "localizations": {
@@ -10652,6 +10792,461 @@
           "stringUnit": {
             "state": "translated",
             "value": "Версія %1$@"
+          }
+        }
+      }
+    },
+    "lockout_call_attempts_label": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaše hovory"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calls you made"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваши звонки"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaše hovory"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваші дзвінки"
+          }
+        }
+      }
+    },
+    "lockout_card_body": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vyfoťte vchod, poznamenejte si, kdy jste zákazníkovi volali, a nahlaste to. Než se uplatní jakýkoli poplatek, potvrdí to administrátor."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Take a photo of the entrance, note when you called the customer, and report it. An administrator confirms it before any fee applies."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сфотографируйте вход, запишите, когда вы звонили клиенту, и сообщите об этом. Администратор подтверждает это, прежде чем будет применён какой-либо сбор."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odfoťte vchod, poznačte si, kedy ste zákazníkovi volali, a nahláste to. Skôr než sa uplatní akýkoľvek poplatok, potvrdí to administrátor."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сфотографуйте вхід, запишіть, коли ви телефонували клієнту, і повідомте про це. Адміністратор підтверджує це, перш ніж буде застосовано будь-який збір."
+          }
+        }
+      }
+    },
+    "lockout_card_not_yet": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pokud vám nikdo neotevře, můžete to nahlásit od %1$@, %2$d minut po začátku."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If nobody opens the door, you can report it from %1$@, %2$d minutes after the start."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Если вам никто не открывает, вы можете сообщить об этом с %1$@, через %2$d минут после начала."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ak vám nikto neotvorí, môžete to nahlásiť od %1$@, %2$d minút po začiatku."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Якщо вам ніхто не відчиняє, ви можете повідомити про це з %1$@, через %2$d хвилин після початку."
+          }
+        }
+      }
+    },
+    "lockout_card_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nemůžete se dostat dovnitř?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cannot get in?"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не можете попасть внутрь?"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nemôžete sa dostať dnu?"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не можете потрапити всередину?"
+          }
+        }
+      }
+    },
+    "lockout_entrance_photo": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotka vchodu"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entrance photo"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Фото входа"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotka vchodu"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Фото входу"
+          }
+        }
+      }
+    },
+    "lockout_photo_needed": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nejdřív vyfoťte vchod."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Take a photo of the entrance first."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сначала сфотографируйте вход."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Najprv odfoťte vchod."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Спершу сфотографуйте вхід."
+          }
+        }
+      }
+    },
+    "lockout_report_action": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nemohu se dostat dovnitř"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I cannot get in"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не могу попасть внутрь"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nemôžem sa dostať dnu"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не можу потрапити всередину"
+          }
+        }
+      }
+    },
+    "lockout_reported_body": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nahlášeno v %1$@. Administrátor to potvrdí; do té doby zakázka zůstává beze změny."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reported at %1$@. An administrator will confirm it; until then the job stays as it is."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сообщено в %1$@. Администратор это подтвердит; до тех пор заказ остаётся без изменений."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nahlásené o %1$@. Administrátor to potvrdí; dovtedy zákazka zostáva bez zmeny."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Повідомлено о %1$@. Адміністратор це підтвердить; до того замовлення залишається без змін."
+          }
+        }
+      }
+    },
+    "lockout_reported_calls": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hovory: %1$@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calls: %1$@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Звонки: %1$@"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hovory: %1$@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Дзвінки: %1$@"
+          }
+        }
+      }
+    },
+    "lockout_reported_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nahlásili jste, že se nemůžete dostat dovnitř"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You reported you cannot get in"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вы сообщили, что не можете попасть внутрь"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nahlásili ste, že sa nemôžete dostať dnu"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ви повідомили, що не можете потрапити всередину"
+          }
+        }
+      }
+    },
+    "lockout_reported_toast": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nahlášeno. Administrátor to potvrdí."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reported. An administrator will confirm it."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сообщение отправлено. Администратор его подтвердит."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nahlásené. Administrátor to potvrdí."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Повідомлено. Адміністратор це підтвердить."
+          }
+        }
+      }
+    },
+    "lockout_sheet_description": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poznamenejte si, kdy jste zákazníkovi volali nebo psali a co se stalo. Administrátor si to přečte spolu s vaší fotkou."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Note when you called or messaged the customer and what happened. The administrator reads it with your photo."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Запишите, когда вы звонили или писали клиенту и что произошло. Администратор прочитает это вместе с вашим фото."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poznačte si, kedy ste zákazníkovi volali alebo písali a čo sa stalo. Administrátor si to prečíta spolu s vašou fotkou."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Запишіть, коли ви телефонували або писали клієнту і що сталося. Адміністратор прочитає це разом із вашим фото."
+          }
+        }
+      }
+    },
+    "lockout_sheet_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nahlásit, že se nemůžete dostat dovnitř"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Report that you cannot get in"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сообщить, что вы не можете попасть внутрь"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nahlásiť, že sa nemôžete dostať dnu"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Повідомити, що ви не можете потрапити всередину"
           }
         }
       }
@@ -14611,6 +15206,41 @@
         }
       }
     },
+    "period_pay_line_cancellation_fee_share": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Váš podíl z poplatku za pozdní zrušení"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your share of the late-cancellation fee"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваша доля сбора за позднюю отмену"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Váš podiel z poplatku za neskoré zrušenie"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваша частка збору за пізнє скасування"
+          }
+        }
+      }
+    },
     "period_pay_line_deduction": {
       "extractionState": "manual",
       "localizations": {
@@ -14677,6 +15307,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "Утримання %1$@: %2$@"
+          }
+        }
+      }
+    },
+    "period_pay_line_lockout_fee_share": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Váš podíl z poplatku za neumožněný přístup"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your share of the lockout fee"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваша доля сбора за непредоставленный доступ"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Váš podiel z poplatku za neumožnený prístup"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваша частка збору за ненаданий доступ"
           }
         }
       }

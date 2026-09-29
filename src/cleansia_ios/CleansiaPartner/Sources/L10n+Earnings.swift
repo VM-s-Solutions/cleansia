@@ -49,6 +49,22 @@ extension L10n {
         static var viewInvoicesSubtitle: String {
             localized("earnings_view_invoices_subtitle")
         }
+
+        static var cashHeldTitle: String {
+            localized("earnings_cash_held_title")
+        }
+
+        static var cashHeldSubtitle: String {
+            localized("earnings_cash_held_subtitle")
+        }
+
+        static func cashHeldLimit(_ amount: String) -> String {
+            format("earnings_cash_held_limit", amount)
+        }
+
+        static var cashHeldJobsHidden: String {
+            localized("earnings_cash_held_jobs_hidden")
+        }
     }
 
     enum PeriodPay {
@@ -106,6 +122,14 @@ extension L10n {
 
         static func lineDeductionReason(_ amount: String, _ reason: String) -> String {
             format("period_pay_line_deduction_reason", amount, reason)
+        }
+
+        static var lineCancellationFeeShare: String {
+            localized("period_pay_line_cancellation_fee_share")
+        }
+
+        static var lineLockoutFeeShare: String {
+            localized("period_pay_line_lockout_fee_share")
         }
 
         static var empty: String {

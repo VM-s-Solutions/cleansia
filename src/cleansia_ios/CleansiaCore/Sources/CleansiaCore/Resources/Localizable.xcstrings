@@ -3674,6 +3674,41 @@
         }
       }
     },
+    "error.order.cash_float_cap_exceeded": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Držíte více hotovosti firmy, než dovoluje váš limit. Než vezmete další zakázku za hotové, odevzdejte ji."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You hold more company cash than your limit allows. Hand it over before you take another cash job."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "У вас больше наличных компании, чем позволяет ваш лимит. Сдайте их, прежде чем брать следующий заказ с оплатой наличными."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Držíte viac hotovosti firmy, než dovoľuje váš limit. Skôr než vezmete ďalšiu zákazku za hotovosť, odovzdajte ju."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "У вас більше готівки компанії, ніж дозволяє ваш ліміт. Передайте її, перш ніж брати наступне замовлення з оплатою готівкою."
+          }
+        }
+      }
+    },
     "error.order.cash_not_allowed_on_card_order": {
       "extractionState": "manual",
       "localizations": {
@@ -3810,6 +3845,146 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ця дія недоступна для поточного статусу замовлення."
+          }
+        }
+      }
+    },
+    "error.order.lockout.already_reported": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Už jste nahlásili, že se nemůžete dostat dovnitř."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You have already reported that you cannot get in."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вы уже сообщили, что не можете попасть внутрь."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Už ste nahlásili, že sa nemôžete dostať dnu."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ви вже повідомили, що не можете потрапити всередину."
+          }
+        }
+      }
+    },
+    "error.order.lockout.order_closed": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tato zakázka je už dokončená nebo zrušená."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This job is already completed or cancelled."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Этот заказ уже выполнен или отменён."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Táto zákazka je už dokončená alebo zrušená."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Це замовлення вже виконане або скасоване."
+          }
+        }
+      }
+    },
+    "error.order.lockout.photo_required": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Než nahlásíte, že se nemůžete dostat dovnitř, vyfoťte vchod."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Take a photo of the entrance before you report that you cannot get in."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Прежде чем сообщить, что вы не можете попасть внутрь, сфотографируйте вход."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skôr než nahlásite, že sa nemôžete dostať dnu, odfoťte vchod."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перш ніж повідомити, що ви не можете потрапити всередину, сфотографуйте вхід."
+          }
+        }
+      }
+    },
+    "error.order.lockout.too_early": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na nahlášení je příliš brzy. Že se nemůžete dostat dovnitř, můžete nahlásit od 15 minut po začátku."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It is too early to report this. You can report that you cannot get in from 15 minutes after the start."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сообщать ещё рано. Сообщить, что вы не можете попасть внутрь, можно через 15 минут после начала."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na nahlásenie je príliš skoro. Že sa nemôžete dostať dnu, môžete nahlásiť od 15 minút po začiatku."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ще зарано повідомляти. Повідомити, що ви не можете потрапити всередину, можна через 15 хвилин після початку."
           }
         }
       }

@@ -95,7 +95,8 @@ private struct PeriodPayErrorView: View {
                         totalPay: 1400,
                         createdOn: Date(),
                         deductionPay: index == 1 ? 50 : 0,
-                        deductionReason: index == 1 ? "Windows left streaked in two rooms" : nil
+                        deductionReason: index == 1 ? "Windows left streaked in two rooms" : nil,
+                        lineType: index == 3 ? ._2 : ._0
                     )
                 }
             )

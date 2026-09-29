@@ -38,6 +38,9 @@ struct OrderDetail: Equatable {
     let isAssignedToCurrentUser: Bool
     let hasAfterPhotos: Bool
 
+    let lockoutReportedAt: Date?
+    let lockoutCallAttempts: String?
+
     let orderNotes: [OrderNoteDto]
     let orderIssues: [OrderIssueDto]
     let statusHistory: [OrderStatusTrackDto]
@@ -307,6 +310,9 @@ extension OrderDetail {
 
         isAssignedToCurrentUser = try item.isAssignedToCurrentUser.require("isAssignedToCurrentUser")
         hasAfterPhotos = try item.hasAfterPhotos.require("hasAfterPhotos")
+
+        lockoutReportedAt = item.lockoutReportedAt
+        lockoutCallAttempts = item.lockoutCallAttempts
 
         orderNotes = item.orderNotes ?? []
         orderIssues = item.orderIssues ?? []

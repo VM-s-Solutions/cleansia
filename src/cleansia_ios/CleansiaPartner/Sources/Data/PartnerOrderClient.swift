@@ -54,6 +54,9 @@ protocol PartnerOrderClient: AnyObject {
     func updateIssue(orderId: String, issueId: String, description: String) async -> ApiResult<Void>
     func deleteIssue(orderId: String, issueId: String) async -> ApiResult<Void>
 
+    /// "Cannot get in": needs an entrance photo already saved; an administrator confirms it.
+    func reportLockout(orderId: String, callAttempts: String) async -> ApiResult<Void>
+
     func getPhotos(orderId: String) async -> ApiResult<[OrderPhoto]>
     func savePhoto(
         orderId: String,
@@ -256,6 +259,14 @@ final class LivePartnerOrderClient: PartnerOrderClient {
     func deleteIssue(orderId: String, issueId: String) async -> ApiResult<Void> {
         await apiResult(mapError: ApiError.fromGenerated) {
             _ = try await PartnerOrderAPI.orderDeleteIssue(orderId: orderId, issueId: issueId)
+        }
+    }
+
+    func reportLockout(orderId: String, callAttempts: String) async -> ApiResult<Void> {
+        await apiResult(mapError: ApiError.fromGenerated) {
+            _ = try await PartnerOrderAPI.orderReportLockout(
+                reportOrderLockoutCommand: ReportOrderLockoutCommand(orderId: orderId, callAttempts: callAttempts)
+            )
         }
     }
 

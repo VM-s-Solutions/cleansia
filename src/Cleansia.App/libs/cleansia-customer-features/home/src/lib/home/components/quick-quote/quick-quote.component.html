@@ -62,6 +62,7 @@
         [ngModel]="selectedDate()"
         (ngModelChange)="onDate($event)"
         [minDate]="today"
+        [maxDate]="lastDay"
         dateFormat="dd.mm.yy"
         appendTo="body"
         [showIcon]="true"

@@ -27,6 +27,9 @@ export const PROMO_ERROR_KEYS: Record<string, string> = {
 /** Falls back to a generic message for an error code this client does not know. */
 export const PROMO_ERROR_FALLBACK = 'pages.order.promo.error_generic';
 
+/** How QuoteOrder and CreateOrder refuse a start off the server's grid, window or horizon. */
+export const OUTSIDE_BOOKING_WINDOW = 'order.cleaning_date.outside_booking_window';
+
 /** Why cash cannot be chosen right now, or null when it can. */
 export function cashReasonCopy(
   eligibility: CashEligibility,

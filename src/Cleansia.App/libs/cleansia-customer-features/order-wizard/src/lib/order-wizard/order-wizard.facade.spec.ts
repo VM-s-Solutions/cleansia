@@ -943,6 +943,48 @@ describe('OrderWizardFacade', () => {
       expect(facade.submitting()).toBe(false);
     });
 
+    // The interceptor has already toasted the server's sentence for the window; a generic toast
+    // would replace it, and the step that can fix it is the one with the time on it.
+    describe('a start the server puts outside the booking window', () => {
+      const outsideWindow = () =>
+        throwError(() => ({
+          errors: { CleaningDate: 'order.cleaning_date.outside_booking_window' },
+        }));
+
+      it('holds the when step with the server reason once the quote refuses the slot', async () => {
+        orderClient.quote.mockReturnValue(outsideWindow());
+
+        await facade.refreshQuoteNow();
+
+        expect(facade.missingReasons(2)).toEqual([
+          'api.order.cleaning_date.outside_booking_window',
+        ]);
+      });
+
+      it('sends the customer back to the when step when the quote at submit refuses it', async () => {
+        facade.updateFormData({ paymentType: PaymentType.Card });
+        orderClient.quote.mockReturnValue(outsideWindow());
+
+        await facade.submitOrder();
+
+        expect(snackbar.showError).not.toHaveBeenCalled();
+        expect(paymentClient.createOrder).not.toHaveBeenCalled();
+        expect(facade.activeStep()).toBe(2);
+        expect(facade.submitting()).toBe(false);
+      });
+
+      it('sends the customer back to the when step when the create refuses it', async () => {
+        facade.updateFormData({ paymentType: PaymentType.Card });
+        paymentClient.createOrder.mockReturnValue(outsideWindow());
+
+        await facade.submitOrder();
+
+        expect(snackbar.showError).not.toHaveBeenCalled();
+        expect(facade.activeStep()).toBe(2);
+        expect(facade.submitting()).toBe(false);
+      });
+    });
+
     it('routes through the payment client on a card order with a stripe redirect', async () => {
       facade.updateFormData({ paymentType: PaymentType.Card });
       paymentClient.createOrder.mockReturnValue(

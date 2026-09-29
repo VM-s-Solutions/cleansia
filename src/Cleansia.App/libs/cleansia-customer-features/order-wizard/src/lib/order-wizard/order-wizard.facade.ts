@@ -53,11 +53,13 @@ import { OrderServiceAreaFacade } from './order-service-area.facade';
 import {
   ORDER_WIZARD_INITIAL_DATA,
   OrderWizardFormData,
+  OUTSIDE_BOOKING_WINDOW,
   PromoCodeUiState,
   RebookParams,
   cashReasonCopy,
 } from './order-wizard.models';
 
+const WHEN_STEP = 2;
 const PAYMENT_STEP = 3;
 /** The index of the Plus step in `steps`. */
 const PLUS_STEP = 4;
@@ -792,9 +794,12 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
         break;
       }
 
-      case 2:
+      case WHEN_STEP:
         if (!data.cleaningDate) {
           reasons.push('pages.order.missing.date');
+        }
+        if (this.pricing.slotOutsideWindow()) {
+          reasons.push(`api.${OUTSIDE_BOOKING_WINDOW}`);
         }
         break;
 
@@ -887,6 +892,10 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
     }
     if (!quoted) {
       this.submitting.set(false);
+      if (this.pricing.slotOutsideWindow()) {
+        this.goToStep(WHEN_STEP);
+        return;
+      }
       this.snackbarService.showError(
         this.translate.instant('pages.order.quote_failed'),
       );
@@ -1038,7 +1047,8 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
    * price. The interceptor has already toasted which promo rule refused it, and a second, generic
    * toast would replace that sentence — so this one only takes the code off the order, which is
    * what lets the customer submit again. Refused cash is handled the same way: taken off, and the
-   * customer sent back to choose how to pay.
+   * customer sent back to choose how to pay; a start outside the booking window sends them back to
+   * the time.
    */
   private onCreateRefused(error: unknown): void {
     const code = extractApiErrorCode(error);
@@ -1049,6 +1059,10 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
     if (code === 'order.cash_not_available') {
       this.dropCash(false);
       this.goToPaymentStep();
+      return;
+    }
+    if (code === OUTSIDE_BOOKING_WINDOW) {
+      this.goToStep(WHEN_STEP);
       return;
     }
     this.snackbarService.showError(this.translate.instant('pages.order.submit_error'));

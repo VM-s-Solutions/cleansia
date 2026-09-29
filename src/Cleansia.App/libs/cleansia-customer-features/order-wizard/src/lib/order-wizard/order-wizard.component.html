@@ -557,6 +557,7 @@
               <button
                 type="button"
                 class="cl-wiz__cal-nav"
+                [disabled]="!canGoNextMonth()"
                 [attr.aria-label]="'aria.next_month' | translate"
                 (click)="shiftMonth(1)"
               >

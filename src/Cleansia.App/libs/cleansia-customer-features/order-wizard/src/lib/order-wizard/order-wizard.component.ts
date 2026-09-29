@@ -43,6 +43,7 @@ import {
   EXPRESS_SURCHARGE_RATE,
   FIRST_WINDOW_HOUR,
   LAST_WINDOW_HOUR,
+  lastBookableDay,
   STANDARD_LEAD_TIME_HOURS,
 } from '@cleansia/models';
 import { formatMoney, localeFor } from '@cleansia/utils';
@@ -146,6 +147,8 @@ export class OrderWizardComponent implements OnInit {
     tomorrow.setDate(tomorrow.getDate() + 1);
     return tomorrow;
   });
+
+  readonly maxDate = lastBookableDay(new Date());
 
   timeOptions = computed(() =>
     filterTimeOptionsForToday(this.allTimeOptions, this.facade.formData().cleaningDate)
@@ -638,6 +641,7 @@ export class OrderWizardComponent implements OnInit {
     const leading = (month.getDay() + 6) % 7;
 
     const earliest = startOfDay(this.minDate());
+    const latest = this.maxDate.getTime();
     const cells: { key: string; day: number | null; date: Date | null; bookable: boolean }[] = [];
 
     for (let i = 0; i < leading; i += 1) {
@@ -645,11 +649,12 @@ export class OrderWizardComponent implements OnInit {
     }
     for (let day = 1; day <= daysInMonth; day += 1) {
       const date = new Date(year, monthIndex, day);
+      const time = startOfDay(date).getTime();
       cells.push({
         key: `${year}-${monthIndex}-${day}`,
         day,
         date,
-        bookable: startOfDay(date).getTime() >= earliest.getTime(),
+        bookable: time >= earliest.getTime() && time <= latest,
       });
     }
     return cells;
@@ -658,6 +663,11 @@ export class OrderWizardComponent implements OnInit {
   /** No month is offered that is entirely behind the earliest bookable day. */
   readonly canGoPreviousMonth = computed(
     () => this.visibleMonth().getTime() > startOfMonth(this.minDate()).getTime()
+  );
+
+  /** Nor one entirely past the last. */
+  readonly canGoNextMonth = computed(
+    () => this.visibleMonth().getTime() < startOfMonth(this.maxDate).getTime()
   );
 
   shiftMonth(delta: number): void {

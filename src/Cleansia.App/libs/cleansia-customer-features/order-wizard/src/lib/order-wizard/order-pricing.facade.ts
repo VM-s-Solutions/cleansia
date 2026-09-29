@@ -7,6 +7,7 @@ import {
   QuoteOrderCommand,
   QuoteOrderResponse,
 } from '@cleansia/customer-services';
+import { extractApiErrorCode } from '@cleansia/services';
 import {
   catchError,
   distinctUntilChanged,
@@ -28,6 +29,7 @@ import {
   composeFinalPriceForUnquotedDiscount,
   composeSlotMoment,
   OrderWizardFormData,
+  OUTSIDE_BOOKING_WINDOW,
 } from './order-wizard.models';
 
 const QUOTE_DEBOUNCE_MS = 200;
@@ -92,6 +94,7 @@ export class OrderPricingFacade extends UnsubscribeControlDirective {
   readonly quoting = signal(false);
   /** Snapshot of inputs that produced the current `quote()`, for cache reuse. */
   private readonly lastQuotedInputs = signal<QuoteInputs | null>(null);
+  private readonly windowRefusedInputs = signal<QuoteInputs | null>(null);
   private readonly cancelQuote$ = new Subject<void>();
   private pendingQuote: {
     inputs: QuoteInputs;
@@ -224,6 +227,17 @@ export class OrderPricingFacade extends UnsubscribeControlDirective {
     };
   });
 
+  /** The server refused the chosen start, read in the quoted market, as outside its booking window. */
+  readonly slotOutsideWindow = computed(() => {
+    const refused = this.windowRefusedInputs();
+    const current = this.quoteInputs();
+    return (
+      !!refused &&
+      refused.cleaningDate === current.cleaningDate &&
+      refused.countryId === current.countryId
+    );
+  });
+
   private isEmptyInputs(i: QuoteInputs): boolean {
     return i.selectedServiceIds.length === 0 && i.selectedPackageIds.length === 0;
   }
@@ -302,12 +316,18 @@ export class OrderPricingFacade extends UnsubscribeControlDirective {
     const response$ = this.customerClient.orderClient.quote(this.toQuoteCommand(inputs)).pipe(
       takeUntil(this.cancelQuote$),
       takeUntil(this.destroyed$),
-      catchError(() => of(null)),
+      catchError((error: unknown) => {
+        if (extractApiErrorCode(error) === OUTSIDE_BOOKING_WINDOW) {
+          this.windowRefusedInputs.set(inputs);
+        }
+        return of(null);
+      }),
       map((resp) => this.quoteInputsEqual(inputs, this.quoteInputs()) ? resp : null),
       tap((resp) => {
         if (resp) {
           this.quote.set(resp);
           this.lastQuotedInputs.set(inputs);
+          this.windowRefusedInputs.set(null);
         }
       }),
       finalize(() => {

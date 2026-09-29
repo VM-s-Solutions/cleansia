@@ -3,7 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { EXPRESS_LEAD_TIME_HOURS, generateTimeOptions } from '@cleansia/models';
+import { EXPRESS_LEAD_TIME_HOURS, generateTimeOptions, lastBookableDay } from '@cleansia/models';
 import { localeFor } from '@cleansia/utils';
 import { DatePickerModule } from 'primeng/datepicker';
 import { SelectModule } from 'primeng/select';
@@ -85,6 +85,8 @@ export class QuickQuoteComponent {
     d.setHours(0, 0, 0, 0);
     return d;
   })();
+
+  readonly lastDay = lastBookableDay(new Date());
 
   /** The facade keeps the date as `YYYY-MM-DD`; the picker wants a Date. */
   readonly selectedDate = computed<Date | null>(() => {

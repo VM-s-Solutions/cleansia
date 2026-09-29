@@ -89,6 +89,62 @@ describe('OrderPricingFacade', () => {
     });
   });
 
+  describe('a start the server puts outside the booking window', () => {
+    beforeEach(() => build('server'));
+
+    const refusedWith = (code: string) =>
+      orderClient.quote.mockReturnValue(throwError(() => ({ errors: { CleaningDate: code } })));
+
+    function pickSlot(time: string): void {
+      formData.update((d) => ({
+        ...d,
+        selectedServiceIds: ['s1'],
+        cleaningDate: new Date(2026, 9, 5),
+        cleaningTime: time,
+      }));
+    }
+
+    it('is flagged for the slot the quote refused', async () => {
+      pickSlot('19:45');
+      refusedWith('order.cleaning_date.outside_booking_window');
+
+      await facade.refreshQuoteNow();
+
+      expect(facade.slotOutsideWindow()).toBe(true);
+    });
+
+    it('is no longer flagged once another slot is chosen', async () => {
+      pickSlot('19:45');
+      refusedWith('order.cleaning_date.outside_booking_window');
+      await facade.refreshQuoteNow();
+
+      pickSlot('10:00');
+
+      expect(facade.slotOutsideWindow()).toBe(false);
+    });
+
+    it('is cleared when the same slot is quoted after all', async () => {
+      pickSlot('19:45');
+      refusedWith('order.cleaning_date.outside_booking_window');
+      await facade.refreshQuoteNow();
+
+      orderClient.quote.mockReturnValue(of(PLAIN_QUOTE));
+      formData.update((d) => ({ ...d, rooms: 2 }));
+      await facade.refreshQuoteNow();
+
+      expect(facade.slotOutsideWindow()).toBe(false);
+    });
+
+    it('is not flagged for any other refusal', async () => {
+      pickSlot('19:45');
+      refusedWith('currency.invalid');
+
+      await facade.refreshQuoteNow();
+
+      expect(facade.slotOutsideWindow()).toBe(false);
+    });
+  });
+
   describe('the price shown is the price charged', () => {
     beforeEach(() => build('server'));
 

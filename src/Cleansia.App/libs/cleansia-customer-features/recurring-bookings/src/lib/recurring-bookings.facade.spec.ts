@@ -1,8 +1,10 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import {
+  CreateRecurringBookingCommand,
   CustomerClient,
   DeleteRecurringBookingCommand,
+  GetMyServingCleanersResponse,
   PackageListItem,
   PaymentType,
   QuoteOrderResponse,
@@ -40,7 +42,7 @@ describe('RecurringBookingsFacade', () => {
     setActive: jest.Mock;
     delete: jest.Mock;
   };
-  let orderClient: { quote: jest.Mock };
+  let orderClient: { quote: jest.Mock; myServingCleaners: jest.Mock };
   let savedAddressStore: {
     addresses: ReturnType<typeof signal<SavedAddressDto[]>>;
     loaded: ReturnType<typeof signal<boolean>>;
@@ -67,7 +69,7 @@ describe('RecurringBookingsFacade', () => {
       setActive: jest.fn().mockReturnValue(of(undefined)),
       delete: jest.fn().mockReturnValue(of(undefined)),
     };
-    orderClient = { quote: jest.fn() };
+    orderClient = { quote: jest.fn(), myServingCleaners: jest.fn().mockReturnValue(of([])) };
     savedAddressStore = {
       addresses: signal<SavedAddressDto[]>([]),
       loaded: signal(true),
@@ -995,6 +997,151 @@ describe('RecurringBookingsFacade', () => {
       expect(body).not.toHaveProperty('preferredEmployeeId');
       expect(body).not.toHaveProperty('endsOn');
       expect(facade.latestStartsOn()).toBeNull();
+    });
+  });
+
+  // Decision 44: the schedule form offers the cleaners who have served this customer, asked with no
+  // slot because a schedule has no single instant, and the one refusal handling covers create and edit.
+  describe('the favourite cleaner on a schedule', () => {
+    const cleaner = (employeeId: string, fullName: string) =>
+      GetMyServingCleanersResponse.fromJS({
+        employeeId,
+        fullName,
+        lastServedOn: '2026-09-01T10:00:00Z',
+        isAvailableForRequestedSlot: null,
+      });
+    const notEligible = () =>
+      throwError(() => ({
+        detail: 'A validation problem occurred.',
+        errors: { PreferredEmployeeId: 'order.preferred_employee.not_eligible' },
+      }));
+    const createBody = (call: number) =>
+      JSON.parse(JSON.stringify(client.create.mock.calls[call][0] as CreateRecurringBookingCommand));
+    const updateBody = (call: number) =>
+      JSON.parse(JSON.stringify(client.update.mock.calls[call][0] as UpdateRecurringBookingCommand));
+    const completeForm = () =>
+      facade.updateFormData({
+        selectedServiceIds: ['s1'],
+        savedAddressId: 'addr-1',
+        startsOn: new Date('2026-10-01T00:00:00Z'),
+      });
+    const storedWith = (preferredEmployeeId: string) =>
+      template({
+        id: 't1',
+        timeOfDay: '10:00',
+        savedAddressId: 'addr-1',
+        selectedServiceIds: ['s1'],
+        paymentType: PaymentType.Card,
+        startsOn: new Date('2026-10-01T00:00:00Z'),
+        preferredEmployeeId,
+      });
+
+    it('asks for the cleaners with no slot and offers each by name', async () => {
+      orderClient.myServingCleaners.mockReturnValue(
+        of([cleaner('e-1', 'Jana Nováková'), cleaner('e-2', 'Petr Svoboda')]),
+      );
+
+      await facade.loadServingCleaners();
+
+      expect(orderClient.myServingCleaners).toHaveBeenCalledWith();
+      expect(facade.preferredCleanerVisible()).toBe(true);
+      expect(facade.preferredCleanerOptions()).toEqual([
+        { label: 'Jana Nováková', value: 'e-1', disabled: false },
+        { label: 'Petr Svoboda', value: 'e-2', disabled: false },
+      ]);
+    });
+
+    it('is loading only while the cleaners are being read', async () => {
+      const roster = new Subject<GetMyServingCleanersResponse[]>();
+      orderClient.myServingCleaners.mockReturnValue(roster);
+
+      const loading = facade.loadServingCleaners();
+      expect(facade.servingCleanersLoading()).toBe(true);
+
+      roster.next([cleaner('e-1', 'Jana Nováková')]);
+      roster.complete();
+      await loading;
+
+      expect(facade.servingCleanersLoading()).toBe(false);
+    });
+
+    it('offers no picker when nobody has cleaned for the customer yet', async () => {
+      await facade.loadServingCleaners();
+
+      expect(facade.preferredCleanerVisible()).toBe(false);
+    });
+
+    it('hides the picker without an error when the cleaners cannot be read', async () => {
+      orderClient.myServingCleaners.mockReturnValue(throwError(() => new Error('offline')));
+
+      await facade.loadServingCleaners();
+
+      expect(facade.preferredCleanerVisible()).toBe(false);
+      expect(facade.servingCleanersLoading()).toBe(false);
+      expect(snackbar.showError).not.toHaveBeenCalled();
+    });
+
+    it('sends the chosen cleaner when the schedule is created', async () => {
+      client.create.mockReturnValue(of(template({ id: 't-new' })));
+      completeForm();
+      facade.selectPreferredCleaner('e-1');
+
+      const ok = await facade.submit();
+
+      expect(ok).toBe(true);
+      expect(createBody(0).preferredEmployeeId).toBe('e-1');
+    });
+
+    it('keeps a refused cleaner on a new schedule and offers creating it without them', async () => {
+      client.create.mockReturnValueOnce(notEligible());
+      completeForm();
+      facade.selectPreferredCleaner('e-1');
+
+      const refused = await facade.submit();
+
+      expect(refused).toBe(false);
+      expect(snackbar.showError).not.toHaveBeenCalled();
+      expect(facade.preferredCleanerRefused()).toBe(true);
+      expect(facade.formData().preferredEmployeeId).toBe('e-1');
+
+      client.create.mockReturnValueOnce(of(template({ id: 't-new' })));
+      const ok = await facade.saveWithoutPreferredCleaner();
+
+      expect(ok).toBe(true);
+      expect(createBody(1)).not.toHaveProperty('preferredEmployeeId');
+      expect(facade.formData().preferredEmployeeId).toBeNull();
+    });
+
+    it('sends another cleaner chosen on edit', async () => {
+      client.update.mockReturnValue(of(template({ id: 't1' })));
+      facade.loadForEdit(storedWith('e-1'));
+      facade.selectPreferredCleaner('e-2');
+
+      await facade.submit();
+
+      expect(updateBody(0).preferredEmployeeId).toBe('e-2');
+    });
+
+    it('sends no cleaner once the customer clears the one the schedule had', async () => {
+      client.update.mockReturnValue(of(template({ id: 't1' })));
+      facade.loadForEdit(storedWith('e-1'));
+      facade.selectPreferredCleaner(null);
+
+      await facade.submit();
+
+      expect(updateBody(0)).not.toHaveProperty('preferredEmployeeId');
+    });
+
+    it('puts a refusal notice down once another cleaner is chosen', async () => {
+      client.create.mockReturnValueOnce(notEligible());
+      completeForm();
+      facade.selectPreferredCleaner('e-1');
+      await facade.submit();
+
+      facade.selectPreferredCleaner('e-2');
+
+      expect(facade.preferredCleanerRefused()).toBe(false);
+      expect(facade.formData().preferredEmployeeId).toBe('e-2');
     });
   });
 

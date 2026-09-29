@@ -155,6 +155,7 @@ export class CreateRecurringWizardComponent implements OnInit {
     // membership and returns early for a non-member, which left this screen
     // with an address select that could never fill.
     this.facade.ensureAddresses();
+    this.facade.loadServingCleaners();
 
     const prefillFlag = this.route.snapshot.queryParamMap.get('prefill');
     if (prefillFlag === 'true' && this.isBrowser) {
@@ -284,6 +285,10 @@ export class CreateRecurringWizardComponent implements OnInit {
 
   selectPayment(type: PaymentType): void {
     this.facade.selectPayment(type);
+  }
+
+  selectPreferredCleaner(employeeId: string | null): void {
+    this.facade.selectPreferredCleaner(employeeId ?? null);
   }
 
   onStartsOnChange(date: Date | null): void {

@@ -2208,7 +2208,9 @@
     "list_error": "We couldn't load your cleaners. Please try again.",
     "list_empty": "There's no one to ask yet — the list fills up as your cleanings are completed.",
     "schedule_refused": "We can no longer ask your favourite cleaner first on this schedule — for example, because its address is now in another country. You can save it without them, and each cleaning will then open to our whole team.",
-    "schedule_save_without": "Save without your favourite cleaner"
+    "schedule_save_without": "Save without your favourite cleaner",
+    "schedule_explainer": "Plus benefit · we'll ask them first for every cleaning on this schedule, and a cleaning they can't take opens to our whole team.",
+    "schedule_refused_new": "We can't ask this cleaner first on this schedule — for example, because its address is in a country they don't work in. You can save it without them, and each cleaning will then open to our whole team."
   },
   "enums": {
     "order_status": {

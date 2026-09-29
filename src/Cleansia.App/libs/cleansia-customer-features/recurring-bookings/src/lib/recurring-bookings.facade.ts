@@ -5,13 +5,16 @@ import {
   CreateRecurringBookingCommand,
   CustomerClient,
   DeleteRecurringBookingCommand,
+  GetMyServingCleanersResponse,
   PackageListItem,
   PaymentType,
+  PreferredCleanerOption,
   QuoteOrderCommand,
   QuoteOrderResponse,
   RecurringBookingTemplateDto,
   ServiceListItem,
   SetRecurringBookingActiveCommand,
+  toPreferredCleanerOptions,
   UpdateRecurringBookingCommand,
 } from '@cleansia/customer-services';
 import { CashEligibility, cashIsRefused, resolveCashEligibility } from '@cleansia/models';
@@ -109,8 +112,8 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
   /** Template being edited, or null when the form is creating a new one. */
   readonly editingId = signal<string | null>(null);
   /**
-   * The server no longer accepts the schedule's preferred cleaner (the address may now be in a
-   * market they are not paid in). The preference is kept until the customer chooses to save without it.
+   * The server does not accept the schedule's preferred cleaner (the address may be in a market they
+   * are not paid in). The preference is kept until the customer chooses to save without it.
    */
   readonly preferredCleanerRefused = signal(false);
   /** The server refuses a start on or after the schedule's end date, which this form cannot edit. */
@@ -153,6 +156,17 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
       untracked(() => this.dropCash(true));
     }
   });
+
+  // ─── The favourite cleaner (Plus) ──────────────────────────────────
+  readonly servingCleaners = signal<GetMyServingCleanersResponse[]>([]);
+  readonly servingCleanersLoading = signal(false);
+  readonly preferredCleanerOptions = computed<PreferredCleanerOption[]>(() =>
+    toPreferredCleanerOptions(
+      this.servingCleaners(),
+      this.translate.instant('preferred_cleaner.unavailable'),
+    ),
+  );
+  readonly preferredCleanerVisible = computed(() => this.servingCleaners().length > 0);
 
   /** Drives the address field's own spinner — see `ensureAddresses`. */
   readonly addressesLoading = signal(false);
@@ -531,6 +545,32 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     return bundle?.['name'] || item.name || null;
   }
 
+  /**
+   * The cleaners who have served this customer, asked with no slot: a schedule has no single instant,
+   * so the roster says who may be asked, never who is free. A failed read hides the picker, as on the
+   * one-off booking.
+   */
+  async loadServingCleaners(): Promise<void> {
+    if (this.servingCleanersLoading()) return;
+    this.servingCleanersLoading.set(true);
+    try {
+      const roster = await firstValueFrom(
+        this.orderClient.myServingCleaners().pipe(takeUntil(this.destroyed$)),
+      );
+      this.servingCleaners.set(roster ?? []);
+    } catch {
+      this.servingCleaners.set([]);
+    } finally {
+      this.servingCleanersLoading.set(false);
+    }
+  }
+
+  /** A new choice answers any refusal of the previous one. */
+  selectPreferredCleaner(employeeId: string | null): void {
+    this.preferredCleanerRefused.set(false);
+    this.updateFormData({ preferredEmployeeId: employeeId });
+  }
+
   /** Look one template up in the loaded list — the edit screen's entry point. */
   findTemplate(templateId: string): RecurringBookingTemplateDto | null {
     return this.templates().find((t) => t.id === templateId) ?? null;
@@ -720,14 +760,17 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     const paymentType = d.paymentType;
     if (!d.savedAddressId || !d.startsOn || paymentType === null) return false;
     const editingId = this.editingId();
+    const preferredEmployeeId = withoutPreferredCleaner
+      ? undefined
+      : (d.preferredEmployeeId ?? undefined);
 
     this.preferredCleanerRefused.set(false);
     this.submitting.set(true);
     try {
       if (paymentType === PaymentType.Cash && !(await this.cashConfirmedForForm())) return false;
       const saved = editingId
-        ? await this.sendUpdate(editingId, d, paymentType, withoutPreferredCleaner)
-        : await this.sendCreate(d, paymentType);
+        ? await this.sendUpdate(editingId, d, paymentType, preferredEmployeeId)
+        : await this.sendCreate(d, paymentType, preferredEmployeeId);
       if (withoutPreferredCleaner) this.updateFormData({ preferredEmployeeId: null });
 
       if (saved) {
@@ -761,7 +804,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
         this.dropCash(false);
         return false;
       }
-      if (editingId && code === 'order.preferred_employee.not_eligible') {
+      if (code === 'order.preferred_employee.not_eligible') {
         this.preferredCleanerRefused.set(true);
         return false;
       }
@@ -791,6 +834,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
   private sendCreate(
     d: RecurringWizardFormData,
     paymentType: PaymentType,
+    preferredEmployeeId: string | undefined,
   ): Promise<RecurringBookingTemplateDto> {
     const command = new CreateRecurringBookingCommand();
     command.frequency = d.frequency as unknown as number;
@@ -804,6 +848,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     command.paymentType = paymentType;
     command.startsOn = d.startsOn as Date;
     command.endsOn = undefined;
+    command.preferredEmployeeId = preferredEmployeeId;
     return firstValueFrom(this.client.create(command).pipe(takeUntil(this.destroyed$)));
   }
 
@@ -811,7 +856,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     templateId: string,
     d: RecurringWizardFormData,
     paymentType: PaymentType,
-    withoutPreferredCleaner: boolean,
+    preferredEmployeeId: string | undefined,
   ): Promise<RecurringBookingTemplateDto> {
     const command = new UpdateRecurringBookingCommand();
     command.templateId = templateId;
@@ -826,9 +871,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     command.paymentType = paymentType;
     command.startsOn = d.startsOn as Date;
     command.endsOn = d.endsOn ?? undefined;
-    command.preferredEmployeeId = withoutPreferredCleaner
-      ? undefined
-      : (d.preferredEmployeeId ?? undefined);
+    command.preferredEmployeeId = preferredEmployeeId;
     return firstValueFrom(this.client.update(command).pipe(takeUntil(this.destroyed$)));
   }
 

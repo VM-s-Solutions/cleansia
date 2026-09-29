@@ -6,6 +6,7 @@ import { ActivatedRoute, provideRouter, Router } from '@angular/router';
 import {
   PackageListItem,
   PaymentType,
+  PreferredCleanerOption,
   SavedAddressDto,
   ServiceListItem,
 } from '@cleansia/customer-services';
@@ -38,6 +39,9 @@ class FakeRecurringBookingsFacade {
   cashReason = signal<{ key: string; params: Record<string, number> } | null>(null);
   cashClearedNotice = signal(false);
   preferredCleanerRefused = signal(false);
+  servingCleanersLoading = signal(false);
+  preferredCleanerVisible = signal(false);
+  preferredCleanerOptions = signal<PreferredCleanerOption[]>([]);
   latestStartsOn = signal<Date | null>(null);
   packages = signal<PackageListItem[]>([]);
   services = signal<ServiceListItem[]>([]);
@@ -52,6 +56,8 @@ class FakeRecurringBookingsFacade {
   formPrice = signal(null);
   initialize = jest.fn();
   ensureAddresses = jest.fn();
+  loadServingCleaners = jest.fn();
+  selectPreferredCleaner = jest.fn();
   quoteForm = jest.fn();
   prefill = jest.fn();
   findTemplate = jest.fn(() => null);
@@ -268,6 +274,74 @@ describe('CreateRecurringWizardComponent — a refused preferred cleaner', () =>
 
     expect(facade.resetWizard).not.toHaveBeenCalled();
     expect(navigate).not.toHaveBeenCalled();
+  });
+});
+
+describe('CreateRecurringWizardComponent — the favourite cleaner', () => {
+  let fixture: ComponentFixture<CreateRecurringWizardComponent>;
+  let facade: FakeRecurringBookingsFacade;
+  let el: HTMLElement;
+
+  beforeEach(async () => {
+    facade = new FakeRecurringBookingsFacade();
+    await TestBed.configureTestingModule({
+      imports: [CreateRecurringWizardComponent, TranslateModule.forRoot()],
+      providers: [
+        provideRouter([]),
+        provideNoopAnimations(),
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: { paramMap: { get: () => null }, queryParamMap: { get: () => null } },
+          },
+        },
+      ],
+    })
+      .overrideComponent(CreateRecurringWizardComponent, {
+        set: {
+          providers: [
+            { provide: RecurringBookingsFacade, useValue: facade },
+            ConfirmationService,
+          ],
+        },
+      })
+      .compileComponents();
+    fixture = TestBed.createComponent(CreateRecurringWizardComponent);
+    el = fixture.nativeElement;
+    fixture.detectChanges();
+  });
+
+  const picker = () => el.querySelector('[data-spec-preferred-picker]');
+
+  it('asks for the cleaners who have served the customer when the form opens', () => {
+    expect(facade.loadServingCleaners).toHaveBeenCalledTimes(1);
+  });
+
+  it('offers the picker only when there is someone to ask', () => {
+    expect(picker()).toBeNull();
+
+    facade.preferredCleanerVisible.set(true);
+    fixture.detectChanges();
+
+    expect(picker()?.textContent).toContain('preferred_cleaner.schedule_explainer');
+  });
+
+  it('hands a choice or a clear to the facade', () => {
+    fixture.componentInstance.selectPreferredCleaner('e-1');
+    fixture.componentInstance.selectPreferredCleaner(null);
+
+    expect(facade.selectPreferredCleaner).toHaveBeenNthCalledWith(1, 'e-1');
+    expect(facade.selectPreferredCleaner).toHaveBeenNthCalledWith(2, null);
+  });
+
+  it('words a refusal on a new schedule without "no longer"', () => {
+    facade.preferredCleanerRefused.set(true);
+    fixture.detectChanges();
+
+    expect(el.querySelector('[data-spec-preferred-refused]')?.textContent).toContain(
+      'preferred_cleaner.schedule_refused_new',
+    );
+    expect(el.querySelector('[data-spec-save-without-preferred]')).not.toBeNull();
   });
 });
 

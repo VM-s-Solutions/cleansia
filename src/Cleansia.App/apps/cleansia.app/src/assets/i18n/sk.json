@@ -2208,7 +2208,9 @@
     "list_error": "Vašich upratovačov sa nepodarilo načítať. Skúste to prosím znova.",
     "list_empty": "Zatiaľ nie je koho požiadať — zoznam sa plní s dokončenými upratovaniami.",
     "schedule_refused": "Pri tomto rozvrhu už nemôžeme vášho obľúbeného upratovača požiadať ako prvého — napríklad preto, že adresa upratovania je teraz v inej krajine. Rozvrh môžete uložiť bez neho a každé upratovanie sa potom otvorí celému nášmu tímu.",
-    "schedule_save_without": "Uložiť bez obľúbeného upratovača"
+    "schedule_save_without": "Uložiť bez obľúbeného upratovača",
+    "schedule_explainer": "Výhoda Plus · pri každom upratovaní z tohto rozvrhu ho požiadame ako prvého a upratovanie, ktoré nemôže prevziať, sa otvorí celému nášmu tímu.",
+    "schedule_refused_new": "Pri tomto rozvrhu nemôžeme tohto upratovača požiadať ako prvého — napríklad preto, že adresa upratovania je v krajine, kde nepracuje. Rozvrh môžete uložiť bez neho a každé upratovanie sa potom otvorí celému nášmu tímu."
   },
   "enums": {
     "order_status": {

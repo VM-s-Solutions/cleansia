@@ -2208,7 +2208,9 @@
     "list_error": "Vaše uklízeče se nepodařilo načíst. Zkuste to prosím znovu.",
     "list_empty": "Zatím není koho požádat — seznam se plní s dokončenými úklidy.",
     "schedule_refused": "U tohoto rozvrhu už nemůžeme vašeho oblíbeného uklízeče požádat jako prvního — například proto, že adresa úklidu je teď v jiné zemi. Rozvrh můžete uložit bez něj a každý úklid se pak otevře celému našemu týmu.",
-    "schedule_save_without": "Uložit bez oblíbeného uklízeče"
+    "schedule_save_without": "Uložit bez oblíbeného uklízeče",
+    "schedule_explainer": "Výhoda Plus · u každého úklidu z tohoto rozvrhu ho požádáme jako prvního a úklid, který nemůže převzít, se otevře celému našemu týmu.",
+    "schedule_refused_new": "U tohoto rozvrhu nemůžeme tohoto uklízeče požádat jako prvního — například proto, že adresa úklidu je v zemi, kde nepracuje. Rozvrh můžete uložit bez něj a každý úklid se pak otevře celému našemu týmu."
   },
   "enums": {
     "order_status": {

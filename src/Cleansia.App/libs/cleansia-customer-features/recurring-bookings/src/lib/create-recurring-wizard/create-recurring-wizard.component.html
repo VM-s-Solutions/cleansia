@@ -325,6 +325,34 @@
           }
         </section>
 
+        @if (facade.servingCleanersLoading()) {
+          <section class="cl-rec__section">
+            <p class="cl-rec__hint">
+              <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>
+              {{ 'preferred_cleaner.loading' | translate }}
+            </p>
+          </section>
+        } @else if (facade.preferredCleanerVisible()) {
+          <section class="cl-rec__section" data-spec-preferred-picker>
+            <h2 class="cl-rec__section-title">{{ 'preferred_cleaner.title' | translate }}</h2>
+            <p class="cl-rec__section-hint">
+              {{ 'preferred_cleaner.schedule_explainer' | translate }}
+            </p>
+            <div class="cl-rec__field">
+              <cleansia-select
+                [options]="facade.preferredCleanerOptions()"
+                [ngModel]="facade.formData().preferredEmployeeId"
+                (ngModelChange)="selectPreferredCleaner($event)"
+                [placeholder]="'preferred_cleaner.placeholder' | translate"
+                [showClear]="true"
+                [floatVariant]="null"
+                [appendTo]="'body'"
+                [showErrors]="false"
+              />
+            </div>
+          </section>
+        }
+
         <!-- ── What it costs, and the two ways out ───────────────────── -->
         <div class="cl-rec__summary">
           <div class="cl-rec__summary-main">
@@ -340,7 +368,12 @@
             } @else if (facade.preferredCleanerRefused()) {
               <p class="cl-rec__error cl-rec__error--summary" role="alert" data-spec-preferred-refused>
                 <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
-                {{ 'preferred_cleaner.schedule_refused' | translate }}
+                {{
+                  (isEditing()
+                    ? 'preferred_cleaner.schedule_refused'
+                    : 'preferred_cleaner.schedule_refused_new'
+                  ) | translate
+                }}
               </p>
             } @else {
               <p class="cl-rec__summary-note">{{ 'recurring_booking.price_note' | translate }}</p>

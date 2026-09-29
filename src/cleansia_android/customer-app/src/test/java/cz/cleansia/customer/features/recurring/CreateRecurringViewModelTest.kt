@@ -18,6 +18,8 @@ import cz.cleansia.customer.core.catalog.CatalogRepository
 import cz.cleansia.customer.core.catalog.CategoryDto
 import cz.cleansia.customer.core.catalog.PackageListItem
 import cz.cleansia.customer.core.catalog.ServiceListItem
+import cz.cleansia.customer.core.consent.GdprConsentClient
+import cz.cleansia.customer.core.consent.SignupConsentType
 import cz.cleansia.customer.core.data.AddressRepository
 import cz.cleansia.customer.core.data.UserAddress
 import cz.cleansia.customer.core.market.MarketListItem
@@ -73,6 +75,7 @@ class CreateRecurringViewModelTest {
     private lateinit var addressRepo: AddressRepository
     private lateinit var marketRepo: MarketRepository
     private lateinit var bookingApi: BookingApi
+    private lateinit var consentClient: GdprConsentClient
     private lateinit var snackbar: SnackbarController
     private lateinit var appContext: Context
     private lateinit var marketFlow: MutableStateFlow<MarketState>
@@ -93,6 +96,9 @@ class CreateRecurringViewModelTest {
         marketRepo = mockk(relaxed = true)
         bookingApi = mockk()
         coEvery { bookingApi.quote(any()) } returns Response.success(crewQuote(1))
+        consentClient = mockk()
+        coEvery { consentClient.grantedTypes() } returns
+            setOf(SignupConsentType.TermsOfService, SignupConsentType.PrivacyPolicy)
         snackbar = mockk(relaxed = true)
         appContext = mockk(relaxed = true)
         marketFlow = MutableStateFlow(MarketState.Unavailable)
@@ -128,6 +134,7 @@ class CreateRecurringViewModelTest {
             addressRepo = addressRepo,
             marketRepo = marketRepo,
             bookingApi = bookingApi,
+            consentClient = consentClient,
             snackbar = snackbar,
             appContext = appContext,
         )
@@ -1439,5 +1446,75 @@ class CreateRecurringViewModelTest {
 
         assertEquals(false, vm.canAdvance.value)
         coVerify(exactly = 0) { recurringRepo.create(any()) }
+    }
+
+    // ── the booking's terms tick — a new schedule asks for it until both consents cover the texts in force ──
+
+    private fun kotlinx.coroutines.test.TestScope.onStepThree(): CreateRecurringViewModel {
+        coEvery { recurringRepo.create(any()) } returns ApiResult.Success(template)
+        val vm = viewModel()
+        advanceUntilIdle()
+        fillValidForm(vm)
+        vm.nextStep()
+        vm.nextStep()
+        runCurrent()
+        return vm
+    }
+
+    @Test
+    fun `a consent to an older text shows the tick and holds the schedule until it is ticked`() = runTest {
+        coEvery { consentClient.grantedTypes() } returns setOf(SignupConsentType.PrivacyPolicy)
+        val vm = onStepThree()
+
+        assertEquals(true, vm.termsAsked.value)
+        assertEquals(false, vm.canAdvance.value)
+        vm.submit()
+        advanceUntilIdle()
+        coVerify(exactly = 0) { recurringRepo.create(any()) }
+
+        vm.setTermsAccepted(true)
+        runCurrent()
+        assertEquals(true, vm.canAdvance.value)
+        val sent = slot<CreateRecurringBookingRequest>()
+        coEvery { recurringRepo.create(capture(sent)) } returns ApiResult.Success(template)
+        vm.submit()
+        advanceUntilIdle()
+
+        assertEquals(true, sent.captured.termsAccepted)
+    }
+
+    @Test
+    fun `consents covering the texts in force show no tick and assert nothing`() = runTest {
+        val vm = onStepThree()
+
+        assertEquals(false, vm.termsAsked.value)
+        assertEquals(true, vm.canAdvance.value)
+        val sent = slot<CreateRecurringBookingRequest>()
+        coEvery { recurringRepo.create(capture(sent)) } returns ApiResult.Success(template)
+        vm.submit()
+        advanceUntilIdle()
+
+        assertNull(sent.captured.termsAccepted)
+    }
+
+    @Test
+    fun `a failed consent read asks for the tick`() = runTest {
+        coEvery { consentClient.grantedTypes() } returns null
+        val vm = onStepThree()
+
+        assertEquals(true, vm.termsAsked.value)
+        assertEquals(false, vm.canAdvance.value)
+    }
+
+    @Test
+    fun `an edit asks for no tick and reads no consents`() = runTest {
+        coEvery { consentClient.grantedTypes() } returns emptySet()
+        templatesFlow.value = listOf(template)
+
+        val vm = viewModel(templateId = template.id)
+        advanceUntilIdle()
+
+        assertEquals(false, vm.termsAsked.value)
+        coVerify(exactly = 0) { consentClient.grantedTypes() }
     }
 }

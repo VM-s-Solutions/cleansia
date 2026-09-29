@@ -52,6 +52,7 @@ class RecurringBookingApi(
                 startsOn = Instant.parse(body.startsOn),
                 endsOn = body.endsOn?.let { Instant.parse(it) },
                 preferredEmployeeId = body.preferredEmployeeId,
+                termsAccepted = body.termsAccepted,
             ),
         )
         return raw.mapWire { it.required("RecurringBookingTemplateDto").toAppDto() }

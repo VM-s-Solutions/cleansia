@@ -67,6 +67,7 @@ data class CreateRecurringBookingRequest(
     val startsOn: String,
     val endsOn: String? = null,
     val preferredEmployeeId: String? = null,
+    val termsAccepted: Boolean? = null,
 )
 
 @Serializable

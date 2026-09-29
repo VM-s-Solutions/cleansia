@@ -17,6 +17,8 @@ import cz.cleansia.customer.core.booking.QuoteOrderCommand
 import cz.cleansia.customer.core.catalog.CatalogRepository
 import cz.cleansia.customer.core.catalog.PackageListItem
 import cz.cleansia.customer.core.catalog.ServiceListItem
+import cz.cleansia.customer.core.consent.GdprConsentClient
+import cz.cleansia.customer.core.consent.SIGNUP_TICK_CONSENTS
 import cz.cleansia.customer.core.data.AddressRepository
 import cz.cleansia.customer.core.data.UserAddress
 import cz.cleansia.customer.core.market.MarketRepository
@@ -78,6 +80,7 @@ class CreateRecurringViewModel @Inject constructor(
     private val addressRepo: AddressRepository,
     private val marketRepo: MarketRepository,
     private val bookingApi: BookingApi,
+    private val consentClient: GdprConsentClient,
     private val snackbar: SnackbarController,
     @ApplicationContext private val appContext: Context,
 ) : ViewModel() {
@@ -89,6 +92,14 @@ class CreateRecurringViewModel @Inject constructor(
     val editingTemplateId: String? = savedStateHandle.get<String>("templateId")?.takeIf { it.isNotBlank() }
 
     val isEditing: Boolean = editingTemplateId != null
+
+    /**
+     * A new schedule is a new booking, so it asks for the booking's terms tick on the same rule: shown
+     * until both consents on record cover the versions in force, and on a failed read. An edit asks
+     * nothing — the server only gates a create.
+     */
+    private val _termsAsked = MutableStateFlow(!isEditing)
+    val termsAsked: StateFlow<Boolean> = _termsAsked.asStateFlow()
 
     private val _state = MutableStateFlow(CreateRecurringFormState())
     val state: StateFlow<CreateRecurringFormState> = _state.asStateFlow()
@@ -108,14 +119,15 @@ class CreateRecurringViewModel @Inject constructor(
      */
     val catalogState: StateFlow<RecurringCatalogState> = _catalogState.asStateFlow()
 
-    val canAdvance: StateFlow<Boolean> = combine(_state, _step, _catalogState) { s, step, catalog ->
+    val canAdvance: StateFlow<Boolean> = combine(_state, _step, _catalogState, _termsAsked) { s, step, catalog, asked ->
         when (step) {
             1 -> s.timeOfDay in START_TIMES
             2 -> s.selectedServiceIds.isNotEmpty() || s.selectedPackageIds.isNotEmpty()
             3 -> s.savedAddressId.isNotBlank() &&
                 s.startsOnIso.isNotBlank() &&
                 s.paymentType != null &&
-                catalog is RecurringCatalogState.Loaded
+                catalog is RecurringCatalogState.Loaded &&
+                (!asked || s.termsAccepted)
             else -> false
         }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
@@ -195,6 +207,9 @@ class CreateRecurringViewModel @Inject constructor(
                 }
             }
             if (sourceOrderId != null) prefillFromOrder(sourceOrderId)
+            viewModelScope.launch {
+                _termsAsked.value = consentClient.grantedTypes()?.containsAll(SIGNUP_TICK_CONSENTS) != true
+            }
         }
     }
 
@@ -230,6 +245,7 @@ class CreateRecurringViewModel @Inject constructor(
         _preferredCleanerRefused.value = false
         _state.update { it.copy(preferredEmployeeId = id) }
     }
+    fun setTermsAccepted(accepted: Boolean) { _state.update { it.copy(termsAccepted = accepted) } }
 
     fun nextStep() { _step.update { (it + 1).coerceAtMost(TOTAL_STEPS) } }
     fun previousStep() { _step.update { (it - 1).coerceAtLeast(1) } }
@@ -264,6 +280,7 @@ class CreateRecurringViewModel @Inject constructor(
         paymentType = paymentType,
         startsOn = startsOnIso,
         preferredEmployeeId = if (withoutPreferredCleaner) null else preferredEmployeeId,
+        termsAccepted = if (_termsAsked.value && termsAccepted) true else null,
     )
 
     /**
@@ -311,6 +328,7 @@ class CreateRecurringViewModel @Inject constructor(
         if (_catalogState.value !is RecurringCatalogState.Loaded) return
         val form = _state.value
         if (!form.isSubmittable()) return
+        if (_termsAsked.value && !form.termsAccepted) return
         val paymentType = form.paymentType ?: return
         _preferredCleanerRefused.value = false
         _submitState.value = ActionState.Submitting
@@ -614,6 +632,8 @@ data class CreateRecurringFormState(
     /** ISO-8601 instant. No editor in the wizard; carried so an edit doesn't erase it. */
     val endsOnIso: String? = null,
     val preferredEmployeeId: String? = null,
+    /** Read only while [CreateRecurringViewModel.termsAsked] is true. */
+    val termsAccepted: Boolean = false,
 ) {
     /** The server refuses a start on or after [endsOnIso], and this form cannot move the end date. */
     fun latestStartDate(tz: TimeZone): LocalDate? = endsOnIso

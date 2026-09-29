@@ -83,6 +83,7 @@ import cz.cleansia.customer.features.booking.PreferredCleanerPicker
 import cz.cleansia.customer.features.booking.localizedDescription
 import cz.cleansia.customer.features.booking.localizedName
 import cz.cleansia.customer.ui.state.ActionState
+import cz.cleansia.core.ui.components.CleansiaConsentCheckbox
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.Instant
@@ -119,6 +120,7 @@ fun CreateRecurringScreen(
     val cashEligibility by viewModel.cashEligibility.collectAsStateWithLifecycle()
     val cashClearedNotice by viewModel.cashClearedNotice.collectAsStateWithLifecycle()
     val preferredCleanerRefused by viewModel.preferredCleanerRefused.collectAsStateWithLifecycle()
+    val termsAsked by viewModel.termsAsked.collectAsStateWithLifecycle()
     val submitting = submitState is ActionState.Submitting
     val isEditing = viewModel.isEditing
 
@@ -218,6 +220,7 @@ fun CreateRecurringScreen(
                             savedAddresses = savedAddresses,
                             cashEligibility = cashEligibility,
                             cashClearedNotice = cashClearedNotice,
+                            termsAsked = termsAsked,
                             viewModel = viewModel,
                             onOpenAddressSheet = { addressSheetOpen = true },
                             isEditing = isEditing,
@@ -570,6 +573,7 @@ private fun WhereAndPayStep(
     savedAddresses: List<UserAddress>,
     cashEligibility: CashEligibility,
     cashClearedNotice: Boolean,
+    termsAsked: Boolean,
     viewModel: CreateRecurringViewModel,
     onOpenAddressSheet: () -> Unit,
     isEditing: Boolean,
@@ -635,6 +639,16 @@ private fun WhereAndPayStep(
         selectedEmployeeId = state.preferredEmployeeId,
         onSelect = { id, _ -> viewModel.setPreferredEmployeeId(id) },
     )
+
+    if (termsAsked) {
+        Spacer(Modifier.height(24.dp))
+        CleansiaConsentCheckbox(
+            checked = state.termsAccepted,
+            onCheckedChange = viewModel::setTermsAccepted,
+            html = stringResource(R.string.register_terms_and_conditions),
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
 
     if (isEditing) {
         Spacer(Modifier.height(24.dp))

@@ -291,6 +291,32 @@ class RecurringBookingWireTest {
         assertEquals("\"e-9\"", sent!!["preferredEmployeeId"].toString())
     }
 
+    /** The server refuses a new schedule without it while the consents on record cover an older text. */
+    @Test
+    fun theCreateSendsTheTermsTickOnTheWire() = runTest {
+        val template = Json.parseToJsonElement(CAPTURED_TEMPLATES).jsonArray.first().toString()
+        var sent: JsonObject? = null
+        serving(template, onRequest = { sent = Json.parseToJsonElement(it.body.readUtf8()).jsonObject }) {
+            it.create(
+                CreateRecurringBookingRequest(
+                    frequency = 2,
+                    dayOfWeek = 3,
+                    timeOfDay = "09:30",
+                    rooms = 4,
+                    bathrooms = 2,
+                    savedAddressId = "a-1",
+                    selectedServiceIds = listOf("s-1"),
+                    selectedPackageIds = emptyList(),
+                    paymentType = 2,
+                    startsOn = "2026-08-03T09:30:00Z",
+                    termsAccepted = true,
+                ),
+            )
+        }
+
+        assertEquals("true", sent!!["termsAccepted"].toString())
+    }
+
     // --- payload plumbing ---------------------------------------------------------
 
     private fun templatesWithFirstRow(transform: (JsonObject) -> JsonObject): String {

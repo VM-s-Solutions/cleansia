@@ -2354,31 +2354,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Potvrzením objednávky uzavíráte smlouvu o úklidu se společností, která Cleansia provozuje ve vaší zemi, za [těchto podmínek](cleansia://terms)."
+            "value": "Potvrzením objednávky uzavíráte smlouvu o úklidu s provozní společností trhu, na kterém se vaše domácnost nachází, za jejích [Podmínek služby](cleansia://terms). Úklid provede uklízeč jako subdodavatel společnosti a stranou vaší smlouvy není."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "By confirming the order you conclude a cleaning contract with the company that operates Cleansia in your country, on [these terms](cleansia://terms)."
+            "value": "By confirming the order you conclude a contract for the cleaning with the operating company of the market where your home is, under its [Terms of Service](cleansia://terms). The cleaner carries it out as a subcontractor of the company and is not a party to your contract."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Подтверждая заказ, вы заключаете договор на уборку с компанией, которая управляет Cleansia в вашей стране, на [этих условиях](cleansia://terms)."
+            "value": "Подтверждая заказ, вы заключаете договор на уборку с операционной компанией рынка, на котором находится ваше жильё, в соответствии с её [Условиями использования](cleansia://terms). Уборку выполняет уборщик как субподрядчик компании, и он не является стороной вашего договора."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Potvrdením objednávky uzatvárate zmluvu o upratovaní so spoločnosťou, ktorá prevádzkuje Cleansia vo vašej krajine, za [týchto podmienok](cleansia://terms)."
+            "value": "Potvrdením objednávky uzatvárate zmluvu o upratovaní s prevádzkovou spoločnosťou trhu, na ktorom sa vaša domácnosť nachádza, za jej [Podmienok služby](cleansia://terms). Upratovanie vykoná upratovač ako subdodávateľ spoločnosti a stranou vašej zmluvy nie je."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Підтверджуючи замовлення, ви укладаєте договір про прибирання з компанією, яка керує Cleansia у вашій країні, на [цих умовах](cleansia://terms)."
+            "value": "Підтверджуючи замовлення, ви укладаєте договір про прибирання з операційною компанією ринку, на якому розташоване ваше житло, відповідно до її [Умов використання](cleansia://terms). Прибирання виконує прибиральник як субпідрядник компанії, і він не є стороною вашого договору."
           }
         }
       }
@@ -7223,31 +7223,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Žádám, aby úklid začal ve 14denní lhůtě pro odstoupení od smlouvy, a beru na vědomí, že po úplném poskytnutí služby právo na odstoupení ztrácím."
+            "value": "Žádám, aby úklid začal ve 14denní lhůtě pro odstoupení od smlouvy, a beru na vědomí, že po úplném provedení úklidu právo na odstoupení ztrácím."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "I ask for the cleaning to start within the 14-day withdrawal period, and I acknowledge that I lose the right to withdraw once the service has been fully performed."
+            "value": "I ask for the cleaning to start within the 14-day withdrawal period, and I acknowledge that I lose the right to withdraw once the cleaning has been fully performed."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Я прошу начать уборку в течение 14-дневного срока для отказа от договора и подтверждаю, что теряю право на отказ после полного оказания услуги."
+            "value": "Я прошу начать уборку в течение 14-дневного срока для отказа от договора и признаю, что после полного выполнения уборки теряю право на отказ."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Žiadam, aby sa upratovanie začalo v 14-dňovej lehote na odstúpenie od zmluvy, a beriem na vedomie, že po úplnom poskytnutí služby právo na odstúpenie strácam."
+            "value": "Žiadam, aby sa upratovanie začalo v 14-dňovej lehote na odstúpenie od zmluvy, a beriem na vedomie, že po úplnom vykonaní upratovania právo na odstúpenie strácam."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Я прошу розпочати прибирання протягом 14-денного строку для відмови від договору та підтверджую, що втрачаю право на відмову після повного надання послуги."
+            "value": "Я прошу розпочати прибирання протягом 14-денного строку для відмови від договору та визнаю, що після повного виконання прибирання втрачаю право на відмову."
           }
         }
       }

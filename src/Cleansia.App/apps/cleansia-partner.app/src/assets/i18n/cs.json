@@ -453,6 +453,20 @@
         "pending_banner": "Před zahájením práce přijměte smlouvu o dílo",
         "accept": "Přijmout smlouvu",
         "accepted_success": "Smlouva o dílo byla přijata."
+      },
+      "lockout": {
+        "title": "Nemůžete se dostat dovnitř?",
+        "not_yet": "Pokud vám nikdo neotevře, můžete to nahlásit od {{time}}, {{minutes}} minut po začátku.",
+        "body": "Vyfoťte vchod, poznamenejte si, kdy jste zákazníkovi volali, a nahlaste to. Než se uplatní jakýkoli poplatek, potvrdí to administrátor.",
+        "entrance_photo": "Fotka vchodu",
+        "take_photo": "Vyfotit vchod",
+        "photo_needed": "Nejdřív vyfoťte vchod.",
+        "call_attempts": "Vaše hovory",
+        "call_attempts_placeholder": "Kdy jste zákazníkovi volali nebo psali a co se stalo",
+        "report": "Nemohu se dostat dovnitř",
+        "reported_title": "Nahlášeno: nelze se dostat dovnitř",
+        "reported_body": "Nahlášeno v {{time}}. Administrátor to potvrdí; do té doby zakázka zůstává beze změny.",
+        "reported_calls": "Hovory: {{calls}}"
       }
     },
     "invoices": {
@@ -536,10 +550,20 @@
       "grand_total": "Celkem za období",
       "order_lines": "Výplata podle objednávek",
       "order_number": "Číslo objednávky",
+      "line_type": "Položka",
       "no_order_pays": "Pro toto období nejsou žádné výplatní položky",
       "no_periods": "Zatím nejsou k dispozici žádná platební období",
       "load_error": "Nepodařilo se načíst výplatu za období",
-      "view_invoice": "Zobrazit fakturu"
+      "view_invoice": "Zobrazit fakturu",
+      "cash_held": {
+        "title": "Hotovost u mě",
+        "description": "Hotovost, kterou jste převzali u dveří a ještě neodevzdali. Započte se proti vaší další výplatě.",
+        "none": "Nedržíte žádnou hotovost společnosti.",
+        "load_error": "Hotovost, kterou držíte, se nepodařilo načíst.",
+        "held": "Držíte",
+        "limit": "Limit",
+        "jobs_hidden": "Držíte více, než je limit, proto se vám zakázky za hotové nezobrazují, dokud hotovost neodevzdáte."
+      }
     },
     "gdpr": {
       "title": "Zásady ochrany osobních údajů & GDPR",
@@ -701,7 +725,8 @@
         "photo_upload_failed": "Nepodařilo se nahrát fotografii. Zkuste to prosím znovu.",
         "photo_read_failed": "Nepodařilo se přečíst soubor fotografie. Zkuste to prosím znovu.",
         "photo_deleted": "Fotografie byla úspěšně smazána.",
-        "photo_delete_failed": "Nepodařilo se smazat fotografii. Zkuste to prosím znovu."
+        "photo_delete_failed": "Nepodařilo se smazat fotografii. Zkuste to prosím znovu.",
+        "lockout_reported": "Nahlášeno. Administrátor to potvrdí."
       },
       "invoices": {
         "invoice_generated": "Faktura byla vygenerována z časových záznamů.",
@@ -1185,6 +1210,11 @@
       "normal": "Běžné",
       "increased": "Zvýšené",
       "heavy": "Silné"
+    },
+    "pay_line_type": {
+      "job": "Zakázka",
+      "cancellation_fee_share": "Váš podíl z poplatku za pozdní zrušení",
+      "lockout_fee_share": "Váš podíl z poplatku za neumožněný přístup"
     }
   },
   "help": {

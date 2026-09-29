@@ -16,7 +16,7 @@ import {
   CleansiaTitleComponent,
   ICleansiaSelectOption,
 } from '@cleansia/components';
-import { PayPeriodDto, PeriodPaySummaryDto } from '@cleansia/partner-services';
+import { CashHeldDto, PayPeriodDto, PeriodPaySummaryDto } from '@cleansia/partner-services';
 import { TranslateModule } from '@ngx-translate/core';
 import { Subject } from 'rxjs';
 import { PeriodPayComponent } from './period-pay.component';
@@ -121,6 +121,10 @@ class FacadeStub {
   readonly currencyOptions = signal<ICleansiaSelectOption[]>([]);
   readonly hasMultipleCurrencies = signal<boolean>(false);
   readonly selectedPeriod = signal<PayPeriodDto | null>(null);
+  readonly cashHeld = signal<CashHeldDto[]>([]);
+  readonly cashHeldLoading = signal<boolean>(false);
+  readonly cashHeldError = signal<boolean>(false);
+  loadCashHeld = jest.fn();
   connectPeriodControl = jest.fn();
   connectCurrencyControl = jest.fn();
   init = jest.fn();
@@ -189,5 +193,35 @@ describe('PeriodPayComponent pay breakdown', () => {
 
     expect(breakdownAmount('pages.period_pay.dirtiness_pay')).toBeUndefined();
     expect(breakdownAmount('pages.period_pay.base_pay')).toBe(`650,00${NBSP}Kč`);
+  });
+
+  it('states the cash the cleaner holds, the company limit and that cash jobs are hidden above it', () => {
+    facade.cashHeld.set([
+      CashHeldDto.fromJS({ currencyId: 'cur-czk', currencyCode: 'CZK', amount: 650, floatCap: 500, cashJobsHidden: true }),
+    ]);
+    fixture.detectChanges();
+
+    expect(breakdownAmount('pages.period_pay.cash_held.held')).toBe(`650,00${NBSP}Kč`);
+    expect(breakdownAmount('pages.period_pay.cash_held.limit')).toBe(`500,00${NBSP}Kč`);
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('.amount-row.negative')?.textContent?.trim()
+    ).toBe('pages.period_pay.cash_held.jobs_hidden');
+  });
+
+  it('names no limit and hides nothing when the company sets no cap', () => {
+    facade.cashHeld.set([
+      CashHeldDto.fromJS({ currencyId: 'cur-czk', currencyCode: 'CZK', amount: 650, cashJobsHidden: false }),
+    ]);
+    fixture.detectChanges();
+
+    expect(breakdownAmount('pages.period_pay.cash_held.held')).toBe(`650,00${NBSP}Kč`);
+    expect(breakdownAmount('pages.period_pay.cash_held.limit')).toBeUndefined();
+    expect((fixture.nativeElement as HTMLElement).querySelector('.amount-row.negative')).toBeNull();
+  });
+
+  it('says so when the cleaner holds no company cash', () => {
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('pages.period_pay.cash_held.none');
   });
 });

@@ -9,6 +9,51 @@
       </div>
     </div>
 
+    <cleansia-section [title]="'pages.period_pay.cash_held.title' | translate">
+      <p class="cleansia-period-pay__cash-held-hint">
+        {{ 'pages.period_pay.cash_held.description' | translate }}
+      </p>
+      @if (facade.cashHeldLoading()) {
+      <cleansia-loader />
+      } @else if (facade.cashHeldError()) {
+      <div class="empty-state">
+        <i class="pi pi-exclamation-triangle"></i>
+        <p>{{ 'pages.period_pay.cash_held.load_error' | translate }}</p>
+        <cleansia-button
+          [label]="'global.actions.retry' | translate"
+          [icon]="'pi pi-refresh'"
+          [outlined]="true"
+          (onClick)="retryCashHeld()"
+        />
+      </div>
+      } @else if (cashHeldRows().length === 0) {
+      <div class="empty-state">
+        <i class="pi pi-wallet"></i>
+        <p>{{ 'pages.period_pay.cash_held.none' | translate }}</p>
+      </div>
+      } @else {
+      <div class="amount-breakdown">
+        @for (row of cashHeldRows(); track row.currencyId) {
+        <div class="amount-row">
+          <span>{{ 'pages.period_pay.cash_held.held' | translate }}</span>
+          <span class="amount">{{ row.amount }}</span>
+        </div>
+        @if (row.limit) {
+        <div class="amount-row">
+          <span>{{ 'pages.period_pay.cash_held.limit' | translate }}</span>
+          <span class="amount">{{ row.limit }}</span>
+        </div>
+        }
+        @if (row.cashJobsHidden) {
+        <div class="amount-row negative">
+          <span>{{ 'pages.period_pay.cash_held.jobs_hidden' | translate }}</span>
+        </div>
+        }
+        }
+      </div>
+      }
+    </cleansia-section>
+
     @if (facade.initialLoading()) {
     <cleansia-section>
       <cleansia-loader />

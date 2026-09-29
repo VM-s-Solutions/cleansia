@@ -270,6 +270,34 @@ export function canAcceptWorkContract(
   );
 }
 
+// BookingPolicy.LockoutWaitMinutes: how long past the booked start the crew waits before reporting.
+export const LOCKOUT_WAIT_MINUTES = 15;
+
+export enum LockoutStanding {
+  Hidden,
+  NotYet,
+  Open,
+  Reported,
+}
+
+export function lockoutOpensAt(cleaningDateTime: Date | string | undefined): Date | null {
+  if (!cleaningDateTime) return null;
+  const start = new Date(cleaningDateTime).getTime();
+  return Number.isNaN(start) ? null : new Date(start + LOCKOUT_WAIT_MINUTES * 60_000);
+}
+
+// Mirrors ReportOrderLockout: the crew of a job being worked reports once, from the wait past the start.
+export function lockoutStanding(order: OrderItem, employeeId: string, now: number): LockoutStanding {
+  const status = order.orderStatus?.value;
+  const isWorked =
+    status === OrderStatus.Confirmed || status === OrderStatus.OnTheWay || status === OrderStatus.InProgress;
+  if (!isWorked || !isEmployeeAssigned(order.assignedEmployees, employeeId)) return LockoutStanding.Hidden;
+  if (order.lockoutReportedAt) return LockoutStanding.Reported;
+  const opensAt = lockoutOpensAt(order.cleaningDateTime);
+  if (!opensAt) return LockoutStanding.Hidden;
+  return now < opensAt.getTime() ? LockoutStanding.NotYet : LockoutStanding.Open;
+}
+
 export function computeElapsedTime(
   orderStatusValue: number,
   statusHistory: { status: { value: number }; createdOn: string | Date }[] | undefined

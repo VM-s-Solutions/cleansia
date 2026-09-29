@@ -20,6 +20,10 @@ import {
   customerDetailsClosedNoticeKey,
   dirtinessLevelLabelKey,
   findCallerWorkContractAcceptance,
+  LOCKOUT_WAIT_MINUTES,
+  LockoutStanding,
+  lockoutOpensAt,
+  lockoutStanding,
 } from './order-details.helpers';
 
 const EMPLOYEE_ID = 'emp-1';
@@ -338,5 +342,92 @@ describe('the dirtiness level on the job', () => {
 
   it.each(PARTNER_LOCALES)('labels the level on the job detail in %s', (locale) => {
     expect(missingIn(locale, ['pages.order_details.dirtiness_level'])).toEqual([]);
+  });
+});
+
+// Owner ruling 2026-09-28, decision 11: the crew reports "cannot get in" no earlier than 15 minutes past the
+// booked start, once, on a job that is not over. → ReportOrderLockout
+describe('cannot get in', () => {
+  const START = '2026-09-29T10:00:00Z';
+  const at = (iso: string) => new Date(iso).getTime();
+  const order = (
+    status: OrderStatus,
+    employeeId: string,
+    lockoutReportedAt?: string
+  ): OrderItem =>
+    OrderItem.fromJS({
+      orderStatus: { value: status },
+      assignedEmployees: [{ employeeId }],
+      cleaningDateTime: START,
+      lockoutReportedAt,
+    });
+
+  it('opens the report the booked start plus the wait the server enforces', () => {
+    expect(LOCKOUT_WAIT_MINUTES).toBe(15);
+    expect(lockoutOpensAt(new Date(START))?.toISOString()).toBe('2026-09-29T10:15:00.000Z');
+    expect(lockoutOpensAt(undefined)).toBeNull();
+  });
+
+  it.each([OrderStatus.Confirmed, OrderStatus.OnTheWay, OrderStatus.InProgress])(
+    'states when the report opens before the wait is over, status %s',
+    (status) => {
+      expect(lockoutStanding(order(status, EMPLOYEE_ID), EMPLOYEE_ID, at('2026-09-29T10:14:59Z'))).toBe(
+        LockoutStanding.NotYet
+      );
+    }
+  );
+
+  it('offers the report from the moment the wait is over', () => {
+    expect(lockoutStanding(order(OrderStatus.Confirmed, EMPLOYEE_ID), EMPLOYEE_ID, at('2026-09-29T10:15:00Z'))).toBe(
+      LockoutStanding.Open
+    );
+    expect(lockoutStanding(order(OrderStatus.InProgress, EMPLOYEE_ID), EMPLOYEE_ID, at('2026-09-29T12:00:00Z'))).toBe(
+      LockoutStanding.Open
+    );
+  });
+
+  it('reads back a report already made instead of offering another', () => {
+    expect(
+      lockoutStanding(
+        order(OrderStatus.OnTheWay, EMPLOYEE_ID, '2026-09-29T10:20:00Z'),
+        EMPLOYEE_ID,
+        at('2026-09-29T10:30:00Z')
+      )
+    ).toBe(LockoutStanding.Reported);
+  });
+
+  it('shows nothing to a cleaner who is not on the crew', () => {
+    expect(lockoutStanding(order(OrderStatus.Confirmed, 'emp-2'), EMPLOYEE_ID, at('2026-09-29T10:30:00Z'))).toBe(
+      LockoutStanding.Hidden
+    );
+  });
+
+  it.each([OrderStatus.New, OrderStatus.Completed, OrderStatus.Cancelled])(
+    'shows nothing on a job that is not being worked, status %s',
+    (status) => {
+      expect(
+        lockoutStanding(order(status, EMPLOYEE_ID, '2026-09-29T10:20:00Z'), EMPLOYEE_ID, at('2026-09-29T10:30:00Z'))
+      ).toBe(LockoutStanding.Hidden);
+    }
+  );
+
+  it.each(PARTNER_LOCALES)('words every line of the card in %s', (locale) => {
+    expect(
+      missingIn(locale, [
+        'pages.order_details.lockout.title',
+        'pages.order_details.lockout.not_yet',
+        'pages.order_details.lockout.body',
+        'pages.order_details.lockout.entrance_photo',
+        'pages.order_details.lockout.take_photo',
+        'pages.order_details.lockout.photo_needed',
+        'pages.order_details.lockout.call_attempts',
+        'pages.order_details.lockout.call_attempts_placeholder',
+        'pages.order_details.lockout.report',
+        'pages.order_details.lockout.reported_title',
+        'pages.order_details.lockout.reported_body',
+        'pages.order_details.lockout.reported_calls',
+        'global.messages.orders.lockout_reported',
+      ])
+    ).toEqual([]);
   });
 });

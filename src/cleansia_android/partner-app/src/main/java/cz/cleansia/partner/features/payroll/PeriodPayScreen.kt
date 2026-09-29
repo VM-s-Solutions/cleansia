@@ -206,6 +206,9 @@ private fun BreakdownCard(summary: PeriodPaySummary, symbol: String) {
         if (summary.totalExtrasPay != 0.0) {
             MoneyRow(stringResource(R.string.period_pay_extras), summary.totalExtrasPay, symbol)
         }
+        if (summary.totalDirtinessPay != 0.0) {
+            MoneyRow(stringResource(R.string.period_pay_dirtiness), summary.totalDirtinessPay, symbol)
+        }
         if (summary.totalExpensesPay != 0.0) {
             MoneyRow(stringResource(R.string.period_pay_expenses), summary.totalExpensesPay, symbol)
         }

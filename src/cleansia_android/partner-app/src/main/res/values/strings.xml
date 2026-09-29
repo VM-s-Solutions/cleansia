@@ -912,6 +912,9 @@
     <string name="scope_section_title">Property &amp; scope</string>
     <string name="scope_services_label">Services &amp; packages</string>
     <string name="scope_extras_label">Extras</string>
+    <string name="dirtiness_level_normal">Normal dirtiness</string>
+    <string name="dirtiness_level_increased">Increased dirtiness</string>
+    <string name="dirtiness_level_heavy">Heavy dirtiness</string>
 
     <!-- Extra names, `extra_name_<slug with - as _>`. The wire carries the bare slug and
          nothing else, so the names live here; the values are the seed's own translations
@@ -1321,6 +1324,7 @@
     <string name="period_pay_breakdown_section">Pay breakdown</string>
     <string name="period_pay_base">Base pay</string>
     <string name="period_pay_extras">Extras</string>
+    <string name="period_pay_dirtiness">Dirtiness supplement</string>
     <string name="period_pay_expenses">Expenses</string>
     <string name="period_pay_jobs_section">Jobs in this period</string>
     <string name="period_pay_empty">No jobs in this period yet.</string>

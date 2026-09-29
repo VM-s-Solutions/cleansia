@@ -910,6 +910,9 @@
     <string name="scope_section_title">Objekt &amp; rozsah</string>
     <string name="scope_services_label">Služby a balíky</string>
     <string name="scope_extras_label">Doplnky</string>
+    <string name="dirtiness_level_normal">Bežné znečistenie</string>
+    <string name="dirtiness_level_increased">Zvýšené znečistenie</string>
+    <string name="dirtiness_level_heavy">Silné znečistenie</string>
 
     <!-- Extra names — the seed's own translations (insert_seed_data.sql §7b), copied verbatim. -->
     <string name="extra_name_inside_oven">Čistenie vnútra rúry</string>
@@ -1286,6 +1289,7 @@
     <string name="period_pay_breakdown_section">Rozpis výplaty</string>
     <string name="period_pay_base">Základná odmena</string>
     <string name="period_pay_extras">Príplatky</string>
+    <string name="period_pay_dirtiness">Príplatok za znečistenie</string>
     <string name="period_pay_expenses">Náhrady výdavkov</string>
     <string name="period_pay_jobs_section">Zákazky v tomto období</string>
     <string name="period_pay_empty">V tomto období zatiaľ nie sú žiadne zákazky.</string>

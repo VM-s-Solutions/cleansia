@@ -164,6 +164,7 @@ class PeriodPayWireTest {
 
         assertEquals(4200.50, summary.totalBasePay, 0.0)
         assertEquals(310.25, summary.totalExtrasPay, 0.0)
+        assertEquals(187.35, summary.totalDirtinessPay, 0.0)
         assertEquals(128.75, summary.totalExpensesPay, 0.0)
         assertEquals(512.40, summary.totalBonusPay, 0.0)
         assertEquals(90.10, summary.totalDeductionPay, 0.0)
@@ -323,7 +324,7 @@ class PeriodPayWireTest {
         const val PAY_PERIOD_ID = "pp-9"
 
         /**
-         * Every member non-zero and non-default, including the five line properties the domain model
+         * Every member non-zero and non-default, including the six line properties the domain model
          * deliberately drops — a payload that leans on defaults cannot tell a mapped field from a
          * forgotten one.
          */
@@ -336,6 +337,7 @@ class PeriodPayWireTest {
               "totalOrders": 2,
               "totalBasePay": 4200.50,
               "totalExtrasPay": 310.25,
+              "totalDirtinessPay": 187.35,
               "totalExpensesPay": 128.75,
               "totalBonusPay": 512.40,
               "totalDeductionPay": 90.10,
@@ -358,6 +360,7 @@ class PeriodPayWireTest {
                   "payPeriodLabel": "1 - 15 Aug 2026",
                   "basePay": 1400.10,
                   "extrasPay": 103.20,
+                  "dirtinessPay": 62.45,
                   "expensesPay": 42.90,
                   "bonusPay": 170.80,
                   "deductionPay": 30.05,
@@ -378,6 +381,7 @@ class PeriodPayWireTest {
                   "payPeriodLabel": "1 - 15 Aug 2026",
                   "basePay": 2800.40,
                   "extrasPay": 207.05,
+                  "dirtinessPay": 124.90,
                   "expensesPay": 85.85,
                   "bonusPay": 341.60,
                   "deductionPay": 60.05,
@@ -436,6 +440,7 @@ class PeriodPayWireTest {
             "totalOrders",
             "totalBasePay",
             "totalExtrasPay",
+            "totalDirtinessPay",
             "totalExpensesPay",
             "totalBonusPay",
             "totalDeductionPay",

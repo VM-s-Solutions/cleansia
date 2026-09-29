@@ -915,6 +915,9 @@
     <string name="scope_section_title">Об\'єкт та обсяг</string>
     <string name="scope_services_label">Послуги та пакети</string>
     <string name="scope_extras_label">Додатки</string>
+    <string name="dirtiness_level_normal">Звичайне забруднення</string>
+    <string name="dirtiness_level_increased">Підвищене забруднення</string>
+    <string name="dirtiness_level_heavy">Сильне забруднення</string>
 
     <!-- Extra names — the seed's own translations (insert_seed_data.sql §7b), copied verbatim. -->
     <string name="extra_name_inside_oven">Чистка духовки зсередини</string>
@@ -1291,6 +1294,7 @@
     <string name="period_pay_breakdown_section">Розбивка оплати</string>
     <string name="period_pay_base">Базова оплата</string>
     <string name="period_pay_extras">Додаткові послуги</string>
+    <string name="period_pay_dirtiness">Доплата за забруднення</string>
     <string name="period_pay_expenses">Компенсація витрат</string>
     <string name="period_pay_jobs_section">Замовлення за цей період</string>
     <string name="period_pay_empty">У цьому періоді поки немає замовлень.</string>

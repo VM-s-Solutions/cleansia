@@ -48,7 +48,6 @@
       "order": "Book a Cleaning",
       "orders": "My Orders",
       "order_detail": "Order Detail",
-      "order_contract": "Contract for work",
       "profile": "My Profile",
       "disputes": "My Disputes",
       "rewards": "My Rewards",
@@ -514,13 +513,12 @@
         "help_center": "Help Center",
         "gdpr_link": "Privacy & GDPR",
         "terms_link": "Terms of Service",
-        "work_contract_link": "Contract for work",
+        "complaints_procedure_link": "Complaints procedure",
         "description": "Professional mobile cleaning services. Furniture, carpets, mattresses — we come to you.",
         "address": "Prague, Czech Republic",
         "services_col": "Services",
         "hours_label": "Open daily",
         "hours_value": "08:00-20:00",
-        "registration": "Reg. no. [ICO] · VAT [DIC]",
         "apps": "Get the app",
         "apps_coming_soon": "Coming soon",
         "svc_home": "Home cleaning",
@@ -820,6 +818,7 @@
         "time": "Pick a time that is still available.",
         "address_fields": "Fill in the street, city and postcode.",
         "terms": "Accept the terms to continue.",
+        "early_performance": "Confirm that you want the cleaning to start within the withdrawal period.",
         "payment": "Choose how you want to pay."
       },
       "new_address": "Enter a new address",
@@ -984,7 +983,10 @@
       "summary_services": "Services",
       "summary_with_plus": "With Plus you would pay",
       "terms_already_accepted": "You accepted our Terms of Service and Privacy Policy with your account.",
-      "work_contract_notice": "By confirming the order you conclude a contract for work with the cleaner on <a href='/work-contract' target='_blank' rel='noopener'>these terms</a>.",
+      "contract_notice": "By confirming the order you conclude a contract for the cleaning with the operating company of the market where your home is, under its <a href='/terms' target='_blank' rel='noopener'>terms of service</a>. The cleaner carries it out as a subcontractor of the company and is not a party to your contract.",
+      "early_performance": {
+        "early-performance-draft-2026-09-29": "I ask for the cleaning to start within the 14-day withdrawal period, and I acknowledge that I lose the right to withdraw once the cleaning has been fully performed."
+      },
       "time_label": "Select Time",
       "time_note": "Greyed times are already inside today’s lead time. Daily windows {{first}}:00–{{last}}:00.",
       "title": "Book a Cleaning",
@@ -1156,10 +1158,6 @@
       "step_refunded": "Refunded",
       "step_not_assigned_yet": "Not assigned yet",
       "crew_others": "and {{count}} more",
-      "work_contract": {
-        "accepted_line": "Contract for work accepted by {{name}} on {{date}}, version {{version}}",
-        "read": "Read the contract"
-      },
       "the_booking": "The booking",
       "label_when": "When",
       "label_address": "Address",
@@ -1226,25 +1224,6 @@
         "unpaid_cash": "Cash not paid for the cleaning",
         "top_up": "Extra charge you approved"
       }
-    },
-    "order_contract": {
-      "eyebrow": "Your booking's contract",
-      "title": "Contract for work",
-      "back": "Back to the order",
-      "facts": {
-        "title": "The job as accepted",
-        "order_number": "Order number",
-        "window": "Date and time",
-        "price": "Price",
-        "location": "Location",
-        "rooms_bathrooms": "Rooms / bathrooms",
-        "services": "Services",
-        "packages": "Packages",
-        "extras": "Extras"
-      },
-      "accepted_on": "Accepted by the cleaner on {{date}}, version {{version}}",
-      "accepted_in_language": "Accepted in {{language}}",
-      "load_error": "We couldn't load this contract. Please try again."
     },
     "checkout": {
       "success": {
@@ -1901,8 +1880,8 @@
   "privacy_page": {
     "title": "Privacy Policy"
   },
-  "work_contract_page": {
-    "title": "Contract for Work"
+  "complaints_page": {
+    "title": "Complaints Procedure"
   },
   "api": {
     "auth": {
@@ -2285,6 +2264,8 @@
     "cash_unchecked": "We couldn't confirm whether this schedule can be paid in cash. Save it again in a moment, or choose card.",
     "payment_placeholder": "Choose how to pay",
     "error_payment": "Choose how the schedule is paid.",
+    "early_performance_label": "Request to start within the withdrawal period",
+    "error_early_performance": "Confirm that you want the cleanings to start within the withdrawal period.",
     "cash_change_title": "This schedule can no longer be paid in cash",
     "cash_change_body": "Each clean needs more than one cleaner, and cash is only for cleans one cleaner handles alone, so no new cleanings are booked from it until you change it. Switch it to card, or pick services or packages one cleaner can do. A cleaning already booked from it can be cancelled free of charge in Orders while no cleaner has taken it.",
     "cash_change_action": "Change the schedule"

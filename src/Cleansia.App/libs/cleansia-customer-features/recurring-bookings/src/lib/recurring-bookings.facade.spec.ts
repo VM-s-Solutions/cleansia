@@ -474,6 +474,7 @@ describe('RecurringBookingsFacade', () => {
         selectedServiceIds: ['s1'],
         savedAddressId: 'addr-1',
         startsOn: new Date('2026-10-01T00:00:00Z'),
+        earlyPerformanceRequested: true,
       });
     const stored = (dirtinessLevel?: DirtinessLevel) =>
       template({
@@ -721,6 +722,58 @@ describe('RecurringBookingsFacade', () => {
 
       expect(ok).toBe(false);
       expect(client.create).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('the request to start within the withdrawal period', () => {
+    beforeEach(() => {
+      facade.updateFormData({
+        savedAddressId: 'addr-1',
+        startsOn: new Date('2026-07-01T00:00:00Z'),
+        selectedServiceIds: ['s1'],
+        dirtinessLevel: DirtinessLevel.Normal,
+      });
+    });
+
+    it('is missing on a new schedule until the customer makes it', () => {
+      expect(facade.missing()).toEqual(['earlyPerformance']);
+
+      facade.updateFormData({ earlyPerformanceRequested: true });
+
+      expect(facade.missing()).toEqual([]);
+    });
+
+    it('rides the create command once made', async () => {
+      client.create.mockReturnValue(of(template({ id: 'new' })));
+      facade.updateFormData({ earlyPerformanceRequested: true });
+
+      await facade.submit();
+
+      const body = JSON.parse(JSON.stringify(client.create.mock.calls[0][0]));
+      expect(body.earlyPerformanceRequested).toBe(true);
+    });
+
+    it('is not asked of a schedule being edited', () => {
+      facade.loadForEdit(
+        template({
+          savedAddressId: 'addr-1',
+          selectedServiceIds: ['s1'],
+          timeOfDay: '10:00',
+          paymentType: PaymentType.Card,
+          startsOn: new Date('2026-07-01T00:00:00Z'),
+          dirtinessLevel: DirtinessLevel.Normal,
+        }),
+      );
+
+      expect(facade.missing()).toEqual([]);
+    });
+
+    it('is asked again after the wizard is reset', () => {
+      facade.updateFormData({ earlyPerformanceRequested: true });
+
+      facade.resetWizard();
+
+      expect(facade.formData().earlyPerformanceRequested).toBe(false);
     });
   });
 

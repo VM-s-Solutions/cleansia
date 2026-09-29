@@ -1143,11 +1143,20 @@
         }
 
         <!--
-          The customer's half of the contract for work, stated at the offer. Not a tick and not
-          gated on the consent above: the contract is concluded when a cleaner accepts the job, on
-          the text published at /work-contract, whether or not this account has consented before.
+          Asked on every booking, an account that consented to the terms included: the request is
+          tied to this contract, and the server refuses a booking without it.
         -->
-        <p class="cl-wiz__contract-note" [innerHTML]="'pages.order.work_contract_notice' | translate"></p>
+        <label class="cl-wiz__consent" data-spec-early-performance>
+          <p-checkbox
+            [ngModel]="requestedEarlyStart()"
+            (ngModelChange)="requestedEarlyStart.set($event)"
+            [binary]="true"
+            inputId="wizard-early-performance"
+          />
+          <span>{{ 'pages.order.early_performance.early-performance-draft-2026-09-29' | translate }}</span>
+        </label>
+
+        <p class="cl-wiz__contract-note" [innerHTML]="'pages.order.contract_notice' | translate"></p>
       </div>
       }
 

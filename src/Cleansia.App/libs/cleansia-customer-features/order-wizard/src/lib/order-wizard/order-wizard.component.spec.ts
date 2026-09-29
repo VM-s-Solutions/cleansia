@@ -870,45 +870,32 @@ describe('OrderWizardComponent (a11y)', () => {
     });
   });
 
-  describe('the contract for work on the confirm step', () => {
+  describe('who the contract is with, on the confirm step', () => {
     const CONFIRM_STEP = 6;
 
     function contractNote(): HTMLElement | null {
       return el.querySelector('.cl-wiz__contract-note');
     }
 
-    /**
-     * The customer's half of the contract for work is stated at the offer as a sentence, never as
-     * a second tick, and it is not part of the consent block: an account that already consented
-     * still concludes a contract with every booking.
-     */
-    it('names the contract and links to its public text while the consent tick is asked', async () => {
+    it('states it whether or not the tick for the terms is asked', async () => {
       await setup();
       facade.activeStep.set(CONFIRM_STEP);
       fixture.detectChanges();
+      expect(contractNote()?.textContent).toContain('pages.order.contract_notice');
 
-      expect(contractNote()).not.toBeNull();
-      expect(contractNote()?.textContent).toContain('pages.order.work_contract_notice');
-      expect(el.querySelector('.cl-wiz__consent')).not.toBeNull();
-    });
-
-    it('still names the contract when the account has already consented', async () => {
-      await setup();
       facade.alreadyConsented.set(true);
-      facade.activeStep.set(CONFIRM_STEP);
       fixture.detectChanges();
-
-      expect(contractNote()).not.toBeNull();
-      expect(el.querySelector('.cl-wiz__consent')).toBeNull();
+      expect(contractNote()?.textContent).toContain('pages.order.contract_notice');
+      expect(el.querySelector('.cl-wiz__consent #wizard-terms')).toBeNull();
     });
 
-    it('renders the translated sentence as markup, so its link to /work-contract survives', async () => {
+    it('renders the translated sentence as markup, so its link to the terms survives', async () => {
       await setup();
       TestBed.inject(TranslateService).setTranslation('en', {
         pages: {
           order: {
-            work_contract_notice:
-              "By confirming the order you conclude a contract for work with the cleaner on <a href='/work-contract'>these terms</a>.",
+            contract_notice:
+              "You buy the cleaning from the company on <a href='/terms'>its terms of service</a>.",
           },
         },
       });
@@ -917,8 +904,55 @@ describe('OrderWizardComponent (a11y)', () => {
       fixture.detectChanges();
 
       const link = contractNote()?.querySelector<HTMLAnchorElement>('a');
-      expect(link?.getAttribute('href')).toBe('/work-contract');
-      expect(link?.textContent).toBe('these terms');
+      expect(link?.getAttribute('href')).toBe('/terms');
+      expect(link?.textContent).toBe('its terms of service');
+    });
+  });
+
+  describe('the request to start within the withdrawal period', () => {
+    const CONFIRM_STEP = 6;
+    const TICK_KEY = 'pages.order.early_performance.early-performance-draft-2026-09-29';
+
+    function earlyStartTick(): HTMLElement | null {
+      return el.querySelector('[data-spec-early-performance]');
+    }
+
+    it('is asked on every booking, an account that already consented included', async () => {
+      await setup();
+      facade.activeStep.set(CONFIRM_STEP);
+      fixture.detectChanges();
+      expect(earlyStartTick()?.textContent).toContain(TICK_KEY);
+
+      facade.alreadyConsented.set(true);
+      fixture.detectChanges();
+      expect(earlyStartTick()?.textContent).toContain(TICK_KEY);
+    });
+
+    it('holds the order and names what is missing until it is ticked', async () => {
+      await setup();
+      facade.alreadyConsented.set(true);
+      facade.activeStep.set(CONFIRM_STEP);
+      fixture.detectChanges();
+
+      await fixture.componentInstance.onPlaceOrder();
+      fixture.detectChanges();
+
+      expect(facade.submitOrder).not.toHaveBeenCalled();
+      expect(el.querySelector('.cl-wiz__blocked')?.textContent).toContain(
+        'pages.order.missing.early_performance',
+      );
+    });
+
+    it('places the order with the request once it is ticked', async () => {
+      await setup();
+      facade.alreadyConsented.set(true);
+      facade.activeStep.set(CONFIRM_STEP);
+      fixture.detectChanges();
+
+      fixture.componentInstance.requestedEarlyStart.set(true);
+      await fixture.componentInstance.onPlaceOrder();
+
+      expect(facade.submitOrder).toHaveBeenCalledWith(null, false, true);
     });
   });
 

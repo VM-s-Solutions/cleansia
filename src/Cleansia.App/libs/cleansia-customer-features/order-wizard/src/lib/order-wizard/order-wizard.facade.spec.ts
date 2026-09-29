@@ -1123,6 +1123,20 @@ describe('OrderWizardFacade', () => {
       expect(orderClient.createOrder.mock.calls[2][0].termsAccepted).toBeUndefined();
     });
 
+    it('asserts the request to start within the withdrawal period only when it was ticked', async () => {
+      facade.updateFormData({ paymentType: PaymentType.Cash });
+
+      await facade.submitOrder(null, false, true);
+      expect(orderClient.createOrder.mock.calls[0][0].earlyPerformanceRequested).toBe(true);
+      expect(orderClient.createOrder.mock.calls[0][0].termsAccepted).toBeUndefined();
+
+      await facade.submitOrder(null, true, false);
+      expect(orderClient.createOrder.mock.calls[1][0].earlyPerformanceRequested).toBeUndefined();
+
+      await facade.submitOrder();
+      expect(orderClient.createOrder.mock.calls[2][0].earlyPerformanceRequested).toBeUndefined();
+    });
+
     it('omits special instructions entirely when the customer typed none', async () => {
       facade.updateFormData({
         paymentType: PaymentType.Cash,

@@ -413,6 +413,26 @@
           </section>
         }
 
+        @if (!isEditing()) {
+          <section class="cl-rec__section">
+            <label class="cl-wiz__consent" data-spec-early-performance>
+              <p-checkbox
+                [ngModel]="facade.formData().earlyPerformanceRequested"
+                (ngModelChange)="facade.updateFormData({ earlyPerformanceRequested: $event })"
+                [binary]="true"
+                inputId="recurring-early-performance"
+              />
+              <span>{{ 'pages.order.early_performance.early-performance-draft-2026-09-29' | translate }}</span>
+            </label>
+            @if (showError('earlyPerformance')) {
+              <p class="cl-rec__error" data-spec-early-performance-error>
+                <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
+                {{ 'recurring_booking.error_early_performance' | translate }}
+              </p>
+            }
+          </section>
+        }
+
         <!-- ── What it costs, and the two ways out ───────────────────── -->
         <div class="cl-rec__summary">
           <div class="cl-rec__summary-main">

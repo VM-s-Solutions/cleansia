@@ -837,6 +837,9 @@ export class OrderWizardComponent implements OnInit {
   /** Ticked before the order can be placed. Not a default — it is a consent. */
   readonly acceptedTerms = signal(false);
 
+  /** The customer's request to start within the withdrawal period, asked on every booking. */
+  readonly requestedEarlyStart = signal(false);
+
   /**
    * What was chosen, restated per step, each with a way back to the step that
    * owns it. Built from the form so it cannot describe a choice that is not
@@ -1107,6 +1110,9 @@ export class OrderWizardComponent implements OnInit {
     ) {
       reasons.push('pages.order.missing.terms');
     }
+    if (this.facade.activeStep() === 6 && !this.requestedEarlyStart()) {
+      reasons.push('pages.order.missing.early_performance');
+    }
     return reasons;
   });
 
@@ -1267,9 +1273,9 @@ export class OrderWizardComponent implements OnInit {
         return;
       }
       this.labelError.set(null);
-      await this.facade.submitOrder({ label }, this.acceptedTerms());
+      await this.facade.submitOrder({ label }, this.acceptedTerms(), this.requestedEarlyStart());
       return;
     }
-    await this.facade.submitOrder(null, this.acceptedTerms());
+    await this.facade.submitOrder(null, this.acceptedTerms(), this.requestedEarlyStart());
   }
 }

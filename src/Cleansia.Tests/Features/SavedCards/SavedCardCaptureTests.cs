@@ -55,8 +55,7 @@ public class SavedCardCaptureTests
         _userRepository.Object, _savedCards.Object, MarketResolution.Resolving(_eur).Object, _customerResolver.Object,
         _session.Object, _requestMetadata.Object, _stripe.Object, NullLogger<CreateSavedCardSetupIntent.Handler>.Instance);
 
-    private RemoveSavedCard.Handler RemoveHandler() => new(
-        _savedCards.Object, _session.Object, _stripe.Object, NullLogger<RemoveSavedCard.Handler>.Instance);
+    private RemoveSavedCard.Handler RemoveHandler() => new(_savedCards.Object, _session.Object);
 
     private static void AssertConsentEvidence(SavedCard card)
     {
@@ -141,11 +140,10 @@ public class SavedCardCaptureTests
         Assert.True(result.IsFailure);
         Assert.Equal(BusinessErrorMessage.SavedCardNotFound, result.Error!.Message);
         _savedCards.Verify(r => r.Deactivate(It.IsAny<SavedCard>()), Times.Never);
-        _stripe.Verify(c => c.DetachPaymentMethodAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
-    public async Task Removing_Ones_Own_Card_Deactivates_It_And_Detaches_It_At_Stripe()
+    public async Task Removing_Ones_Own_Card_Deactivates_It()
     {
         var card = CapturedCard(userId: UserId);
 
@@ -153,20 +151,16 @@ public class SavedCardCaptureTests
 
         Assert.True(result.IsSuccess);
         _savedCards.Verify(r => r.Deactivate(card), Times.Once);
-        _stripe.Verify(c => c.DetachPaymentMethodAsync("pm_card_1", It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
-    public async Task A_Detach_Stripe_Refuses_Still_Removes_The_Card()
+    public void Removing_A_Card_Never_Reaches_Stripe_Whose_Customer_Also_Bills_Plus()
     {
-        var card = CapturedCard(userId: UserId);
-        _stripe.Setup(c => c.DetachPaymentMethodAsync("pm_card_1", It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new StripeException("already detached"));
+        var dependencies = typeof(RemoveSavedCard.Handler).GetConstructors()
+            .SelectMany(c => c.GetParameters())
+            .Select(p => p.ParameterType);
 
-        var result = await RemoveHandler().Handle(new RemoveSavedCard.Command(card.Id), CancellationToken.None);
-
-        Assert.True(result.IsSuccess);
-        _savedCards.Verify(r => r.Deactivate(card), Times.Once);
+        Assert.DoesNotContain(dependencies, t => t.Namespace == typeof(IStripeClient).Namespace);
     }
 
     private SavedCard CapturedCard(string userId)

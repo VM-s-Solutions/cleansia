@@ -123,11 +123,10 @@ public sealed class SavedCardRouteTests(HostTestPostgresFixture db) : AuthzHostT
 
         await HttpAssert.RejectedAsync(response, BusinessErrorMessage.SavedCardNotFound);
         Assert.True(await QueryAsync(ctx => ctx.SavedCards.IgnoreQueryFilters().AnyAsync(c => c.Id == s.OutsiderCardId && c.IsActive)));
-        Assert.Empty(_stripe.DetachedPaymentMethods);
     }
 
     [Fact]
-    public async Task A_customer_removes_their_own_card_and_it_is_detached_at_stripe()
+    public async Task A_customer_removes_their_own_card()
     {
         var s = await ArrangeAsync();
 
@@ -135,7 +134,6 @@ public sealed class SavedCardRouteTests(HostTestPostgresFixture db) : AuthzHostT
 
         HttpAssert.IsOk(response);
         Assert.False(await QueryAsync(ctx => ctx.SavedCards.IgnoreQueryFilters().AnyAsync(c => c.Id == s.OwnerCardId && c.IsActive)));
-        Assert.Equal(["pm_owner"], _stripe.DetachedPaymentMethods);
     }
 
     [Fact]

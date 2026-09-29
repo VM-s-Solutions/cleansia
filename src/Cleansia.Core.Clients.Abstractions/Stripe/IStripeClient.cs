@@ -159,11 +159,6 @@ public interface IStripeClient
         string setupIntentId,
         CancellationToken cancellationToken);
 
-    /// <summary>Detach a saved card from its Stripe Customer, so it can no longer be charged.</summary>
-    Task DetachPaymentMethodAsync(
-        string paymentMethodId,
-        CancellationToken cancellationToken);
-
     /// <summary>
     /// Create a Stripe subscription against a price. Caller is expected to
     /// have already attached a payment method via SetupIntent — first invoice

@@ -405,16 +405,6 @@ public class StripeClient : IStripeClient
         return new SavedCardDetails(paymentMethod.Id, card.Brand, card.Last4, (int)card.ExpMonth, (int)card.ExpYear);
     }
 
-    public async Task DetachPaymentMethodAsync(
-        string paymentMethodId,
-        CancellationToken cancellationToken)
-    {
-        var service = new PaymentMethodService(stripe);
-        await ClassifyAsync(
-            nameof(DetachPaymentMethodAsync),
-            () => service.DetachAsync(paymentMethodId, cancellationToken: cancellationToken));
-    }
-
     public async Task<SubscriptionResult> CreateSubscriptionAsync(
         string stripeCustomerId,
         string stripePriceId,

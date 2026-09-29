@@ -56,6 +56,8 @@ public sealed class ArchivedCompanyWriteGuardRosterTests : IDisposable
         typeof(Cleansia.Core.Domain.Payments.Refund),
         // Money a customer owes the company on one of its orders: its ledger, frozen with it.
         typeof(Cleansia.Core.Domain.Payments.Receivable),
+        // The company's cash in its cleaners' hands: its ledger, frozen with it.
+        typeof(Cleansia.Core.Domain.Payments.CashLedgerEntry),
         // The guarantee a customer gives the company for its fees and unpaid cash: a frozen company
         // takes no booking for a card to guarantee.
         typeof(SavedCard),

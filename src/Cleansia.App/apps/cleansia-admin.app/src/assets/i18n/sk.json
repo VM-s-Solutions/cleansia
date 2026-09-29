@@ -3304,6 +3304,10 @@
       "not_found": "Táto pohľadávka už neexistuje.",
       "not_open": "Odpísať možno len otvorenú pohľadávku."
     },
+    "cash_held": {
+      "amount_invalid": "Zadajte sumu väčšiu ako nula, najviac na centy",
+      "amount_exceeds_balance": "To je viac hotovosti, než má partner v tejto mene pri sebe"
+    },
     "referral": {
       "action_failed": "Akcia s odporúčaním sa nepodarila. Skúste to znova.",
       "not_accepted": "Odporúčanie nie je v stave „prijaté“.",

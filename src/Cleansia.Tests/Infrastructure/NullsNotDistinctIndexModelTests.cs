@@ -153,6 +153,8 @@ public sealed class NullsNotDistinctIndexModelTests : IDisposable
         "Order (RecurringTemplateId, CleaningDateTime)",
         // Filtered "ReceivableId" IS NOT NULL — one fee receipt per receivable; sale receipts are not in it.
         "OrderReceipt (ReceivableId)",
+        // Filtered "OrderId" IS NOT NULL — one collection per order; remittances and write-offs name no order.
+        "CashLedgerEntry (OrderId)",
         // The documented backstop behind GetLifecycleForUserAsync, deliberately left nulls-distinct.
         "UserMembership (TenantId, UserId)",
     };

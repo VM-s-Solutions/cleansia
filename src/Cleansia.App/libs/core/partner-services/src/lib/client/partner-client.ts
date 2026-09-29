@@ -2578,6 +2578,10 @@ export interface IEmployeePayrollClient {
     /**
      * @return OK
      */
+    getCashHeld(): Observable<CashHeldDto[]>;
+    /**
+     * @return OK
+     */
     downloadInvoice(invoiceId: string): Observable<FileResponse>;
 }
 
@@ -2870,6 +2874,78 @@ export class EmployeePayrollClient implements IEmployeePayrollClient {
             let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result400 = ProblemDetails.fromJS(resultData400);
             return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    getCashHeld(): Observable<CashHeldDto[]> {
+        let url = this.baseUrl + "/api/EmployeePayroll/GetCashHeld";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGetCashHeld(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processGetCashHeld(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<CashHeldDto[]>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<CashHeldDto[]>;
+        }));
+    }
+
+    protected processGetCashHeld(response: HttpResponseBase): Observable<CashHeldDto[]> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(CashHeldDto.fromJS(item));
+            }
+            else {
+                result200 = null as any;
+            }
+            return ObservableOf(result200);
             }));
         } else if (status === 401) {
             return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
@@ -6657,6 +6733,50 @@ export interface IBlobFileDto {
     base64Content: string | undefined;
     contentType: string | undefined;
     blobUrl: string | undefined;
+}
+
+export class CashHeldDto implements ICashHeldDto {
+    currencyId!: string | undefined;
+    currencyCode!: string | undefined;
+    amount!: number;
+
+    constructor(data?: ICashHeldDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.currencyId = Data["currencyId"];
+            this.currencyCode = Data["currencyCode"];
+            this.amount = Data["amount"];
+        }
+    }
+
+    static fromJS(data: any): CashHeldDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new CashHeldDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["currencyId"] = this.currencyId;
+        data["currencyCode"] = this.currencyCode;
+        data["amount"] = this.amount;
+        return data;
+    }
+}
+
+export interface ICashHeldDto {
+    currencyId: string | undefined;
+    currencyCode: string | undefined;
+    amount: number;
 }
 
 export class CategoryDto implements ICategoryDto {

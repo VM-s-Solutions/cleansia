@@ -624,6 +624,9 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   // What customers owe the company: AdminReceivableController.WriteOff (owner ruling 2026-09-28).
   'receivable.not_found',
   'receivable.not_open',
+  // The company's cash in its cleaners' hands: AdminCashHeldController.RecordRemittance and WriteOff.
+  'cash_held.amount_invalid',
+  'cash_held.amount_exceeds_balance',
   'refund.line_invalid',
   'refund.lines_required',
   'refund.nothing_refundable',

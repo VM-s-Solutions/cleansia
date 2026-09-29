@@ -2301,6 +2301,56 @@ namespace Cleansia.Infra.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "CashLedgerEntries",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    EmployeeId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    OrderId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    CurrencyId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    Kind = table.Column<int>(type: "integer", nullable: false),
+                    Amount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    OccurredAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    Note = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CashLedgerEntries", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_CashLedgerEntries_Currencies_CurrencyId",
+                        column: x => x.CurrencyId,
+                        principalTable: "Currencies",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_CashLedgerEntries_Employees_EmployeeId",
+                        column: x => x.EmployeeId,
+                        principalTable: "Employees",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_CashLedgerEntries_Orders_OrderId",
+                        column: x => x.OrderId,
+                        principalTable: "Orders",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_CashLedgerEntries_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Disputes",
                 columns: table => new
                 {
@@ -3427,6 +3477,28 @@ namespace Cleansia.Infra.Database.Migrations
                 table: "CampaignProgresses",
                 column: "CampaignId",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CashLedgerEntries_CurrencyId",
+                table: "CashLedgerEntries",
+                column: "CurrencyId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CashLedgerEntries_EmployeeId_CurrencyId",
+                table: "CashLedgerEntries",
+                columns: new[] { "EmployeeId", "CurrencyId" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CashLedgerEntries_OrderId",
+                table: "CashLedgerEntries",
+                column: "OrderId",
+                unique: true,
+                filter: "\"OrderId\" IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CashLedgerEntries_TenantId",
+                table: "CashLedgerEntries",
+                column: "TenantId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_CleanerLegalDocumentAcceptances_EmployeeId_AcceptedOn",
@@ -4983,6 +5055,9 @@ namespace Cleansia.Infra.Database.Migrations
 
             migrationBuilder.DropTable(
                 name: "CampaignProgresses");
+
+            migrationBuilder.DropTable(
+                name: "CashLedgerEntries");
 
             migrationBuilder.DropTable(
                 name: "CleanerLegalDocumentAcceptances");

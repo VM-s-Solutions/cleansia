@@ -243,6 +243,12 @@ public static class BusinessErrorMessage
     /// <summary>Only an open receivable can be written off; one already paid or written off stays as it is.</summary>
     public const string ReceivableNotOpen = "receivable.not_open";
 
+    // The company's cash a cleaner holds
+    /// <summary>A remittance or write-off is a positive amount of money, in whole cents.</summary>
+    public const string CashHeldAmountInvalid = "cash_held.amount_invalid";
+    /// <summary>More than the cleaner holds in that currency; the cash they hold never turns into money the company owes them.</summary>
+    public const string CashHeldAmountExceedsBalance = "cash_held.amount_exceeds_balance";
+
     // Recurring booking template errors. Backend rejects with these keys; the
     // customer UI maps to localized strings. NotOwnedByUser is the per-user
     // ownership check inside the handler — Validator can't see UserId at the

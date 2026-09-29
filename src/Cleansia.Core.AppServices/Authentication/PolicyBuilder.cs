@@ -290,6 +290,11 @@ public static class PolicyBuilder
         [Policy.CanViewReceivables] = PhysicalPolicy.AdminOnly,
         [Policy.CanWriteOffReceivable] = PhysicalPolicy.ManagerOrAbove,
 
+        // Cash held by cleaners: the Accountant reads it and records what is handed back, a Manager writes it off
+        [Policy.CanViewCashHeld] = PhysicalPolicy.AccountantOrAbove,
+        [Policy.CanRecordCashRemittance] = PhysicalPolicy.AccountantOrAbove,
+        [Policy.CanWriteOffCashHeld] = PhysicalPolicy.ManagerOrAbove,
+
         // Admin Action Audit Log (read surface — ADR-0012 D7)
         [Policy.CanViewAuditLog] = PhysicalPolicy.SupportOrAbove,
 

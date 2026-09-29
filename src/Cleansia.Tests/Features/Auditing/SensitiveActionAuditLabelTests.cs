@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Auditing;
+using Cleansia.Core.AppServices.Features.CashHeld;
 using Cleansia.Core.AppServices.Features.Credit.Admin;
 using Cleansia.Core.AppServices.Features.Disputes;
 using Cleansia.Core.AppServices.Features.Gdpr;
@@ -28,6 +29,7 @@ public sealed class SensitiveActionAuditLabelTests
     [InlineData(typeof(IssueCustomerCredit.Command), "credit.issue", "CreditAccount")]
     [InlineData(typeof(ExpireCustomerCredit.Command), "credit.expire", "CreditAccount")]
     [InlineData(typeof(WriteOffReceivable.Command), "receivable.write_off", "Receivable")]
+    [InlineData(typeof(WriteOffCashHeld.Command), "cash_held.write_off", "Employee")]
     [InlineData(typeof(RevokePointsManually.Command), "loyalty.points.revoke", "LoyaltyAccount")]
     [InlineData(typeof(AdminDeleteUserAccount.Command), "gdpr.user.delete", "User")]
     [InlineData(typeof(AdminRetryUserDeletion.Command), "gdpr.user.delete.retry", "GdprRequest")]

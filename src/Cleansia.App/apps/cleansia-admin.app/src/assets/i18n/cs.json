@@ -3304,6 +3304,10 @@
       "not_found": "Tato pohledávka už neexistuje.",
       "not_open": "Odepsat lze jen otevřenou pohledávku."
     },
+    "cash_held": {
+      "amount_invalid": "Zadejte částku větší než nula, nejvýše na haléře",
+      "amount_exceeds_balance": "To je víc hotovosti, než má partner v této měně u sebe"
+    },
     "referral": {
       "action_failed": "Akce s doporučením se nezdařila. Zkuste to znovu.",
       "not_accepted": "Doporučení není ve stavu „přijaté“.",

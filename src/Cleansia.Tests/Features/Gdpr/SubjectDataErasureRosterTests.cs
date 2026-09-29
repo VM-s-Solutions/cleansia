@@ -344,6 +344,12 @@ public class SubjectDataErasureRosterTests
                 + "an amount and a status. The customer id no longer resolves to a person once the account is "
                 + "anonymized, and the debt is the company's books."),
 
+        [typeof(Core.Domain.Payments.CashLedgerEntry)] = new(
+            Verdict.RetainedPseudonymous,
+            "The company's cash a cleaner collected, handed back or had written off: employee, order and "
+                + "administrator ids, an amount, a currency and an administrator's note. The employee id no "
+                + "longer resolves to a person once the account is anonymized, and the cash is the company's books."),
+
         [typeof(Core.Domain.EmployeePayroll.EmployeePayConfig)] = new(
             Verdict.RetainedPseudonymous,
             "Pay rates keyed to an employee id that no longer resolves to a person; no name, contact or "

@@ -241,6 +241,10 @@ public class FrozenPermissionMapTests
         // Receivables (additive): any administrator reads what customers owe, a Manager writes it off
         [Policy.CanViewReceivables] = PhysicalPolicy.AdminOnly,
         [Policy.CanWriteOffReceivable] = PhysicalPolicy.ManagerOrAbove,
+        // Cash held by cleaners (additive): the Accountant reads it and records remittances, a Manager writes it off
+        [Policy.CanViewCashHeld] = PhysicalPolicy.AccountantOrAbove,
+        [Policy.CanRecordCashRemittance] = PhysicalPolicy.AccountantOrAbove,
+        [Policy.CanWriteOffCashHeld] = PhysicalPolicy.ManagerOrAbove,
         [Policy.CanRedeemPromoCode] = PhysicalPolicy.CustomerOnly,
         [Policy.CanViewMyReferral] = PhysicalPolicy.CustomerOnly,
 

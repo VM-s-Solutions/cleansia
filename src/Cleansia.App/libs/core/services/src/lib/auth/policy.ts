@@ -262,6 +262,11 @@ export const Policy = {
   CanViewReceivables: 'CanViewReceivables',
   CanWriteOffReceivable: 'CanWriteOffReceivable',
 
+  // Cash held by cleaners
+  CanViewCashHeld: 'CanViewCashHeld',
+  CanRecordCashRemittance: 'CanRecordCashRemittance',
+  CanWriteOffCashHeld: 'CanWriteOffCashHeld',
+
   // Admin Action Audit Log
   CanViewAuditLog: 'CanViewAuditLog',
 
@@ -527,6 +532,11 @@ export const POLICY_MAP: Record<PolicyName, PhysicalPolicy> = {
   // Receivables
   CanViewReceivables: PhysicalPolicy.AdminOnly,
   CanWriteOffReceivable: PhysicalPolicy.ManagerOrAbove,
+
+  // Cash held by cleaners
+  CanViewCashHeld: PhysicalPolicy.AccountantOrAbove,
+  CanRecordCashRemittance: PhysicalPolicy.AccountantOrAbove,
+  CanWriteOffCashHeld: PhysicalPolicy.ManagerOrAbove,
 
   // Admin Action Audit Log
   CanViewAuditLog: PhysicalPolicy.SupportOrAbove,

@@ -569,6 +569,263 @@ export class AdminAuthClient implements IAdminAuthClient {
     }
 }
 
+export interface IAdminCashHeldClient {
+    /**
+     * @return OK
+     */
+    getAll(): Observable<CleanerCashHeldDto[]>;
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    recordRemittance(body?: RecordCashRemittanceCommand | undefined): Observable<RecordCashRemittanceResponse>;
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    writeOff(body?: WriteOffCashHeldCommand | undefined): Observable<WriteOffCashHeldResponse>;
+}
+
+@Injectable({
+    providedIn: 'root'
+})
+export class AdminCashHeldClient implements IAdminCashHeldClient {
+    private http: HttpClient;
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(ADMINAPIBASEURL) baseUrl?: string) {
+        this.http = http;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * @return OK
+     */
+    getAll(): Observable<CleanerCashHeldDto[]> {
+        let url = this.baseUrl + "/api/AdminCashHeld/get-all";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGetAll(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processGetAll(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<CleanerCashHeldDto[]>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<CleanerCashHeldDto[]>;
+        }));
+    }
+
+    protected processGetAll(response: HttpResponseBase): Observable<CleanerCashHeldDto[]> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(CleanerCashHeldDto.fromJS(item));
+            }
+            else {
+                result200 = null as any;
+            }
+            return ObservableOf(result200);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    recordRemittance(body?: RecordCashRemittanceCommand | undefined): Observable<RecordCashRemittanceResponse> {
+        let url = this.baseUrl + "/api/AdminCashHeld/record-remittance";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processRecordRemittance(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processRecordRemittance(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<RecordCashRemittanceResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<RecordCashRemittanceResponse>;
+        }));
+    }
+
+    protected processRecordRemittance(response: HttpResponseBase): Observable<RecordCashRemittanceResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = RecordCashRemittanceResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    writeOff(body?: WriteOffCashHeldCommand | undefined): Observable<WriteOffCashHeldResponse> {
+        let url = this.baseUrl + "/api/AdminCashHeld/write-off";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processWriteOff(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processWriteOff(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<WriteOffCashHeldResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<WriteOffCashHeldResponse>;
+        }));
+    }
+
+    protected processWriteOff(response: HttpResponseBase): Observable<WriteOffCashHeldResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = WriteOffCashHeldResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+}
+
 export interface IAdminCodeClient {
     /**
      * @return OK
@@ -20856,6 +21113,58 @@ export interface IChangeOwnPasswordResponse {
     id: string | undefined;
 }
 
+export class CleanerCashHeldDto implements ICleanerCashHeldDto {
+    employeeId!: string | undefined;
+    employeeName!: string | undefined;
+    currencyId!: string | undefined;
+    currencyCode!: string | undefined;
+    amount!: number;
+
+    constructor(data?: ICleanerCashHeldDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.employeeId = Data["employeeId"];
+            this.employeeName = Data["employeeName"];
+            this.currencyId = Data["currencyId"];
+            this.currencyCode = Data["currencyCode"];
+            this.amount = Data["amount"];
+        }
+    }
+
+    static fromJS(data: any): CleanerCashHeldDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new CleanerCashHeldDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["employeeId"] = this.employeeId;
+        data["employeeName"] = this.employeeName;
+        data["currencyId"] = this.currencyId;
+        data["currencyCode"] = this.currencyCode;
+        data["amount"] = this.amount;
+        return data;
+    }
+}
+
+export interface ICleanerCashHeldDto {
+    employeeId: string | undefined;
+    employeeName: string | undefined;
+    currencyId: string | undefined;
+    currencyCode: string | undefined;
+    amount: number;
+}
+
 export class ClosePayPeriodCommand implements IClosePayPeriodCommand {
     payPeriodId!: string | undefined;
     notes!: string | undefined;
@@ -33370,6 +33679,90 @@ export enum ReceivableStatus {
     WrittenOff = 3,
 }
 
+export class RecordCashRemittanceCommand implements IRecordCashRemittanceCommand {
+    employeeId!: string | undefined;
+    currencyId!: string | undefined;
+    amount!: number;
+    note!: string | undefined;
+
+    constructor(data?: IRecordCashRemittanceCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.employeeId = Data["employeeId"];
+            this.currencyId = Data["currencyId"];
+            this.amount = Data["amount"];
+            this.note = Data["note"];
+        }
+    }
+
+    static fromJS(data: any): RecordCashRemittanceCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new RecordCashRemittanceCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["employeeId"] = this.employeeId;
+        data["currencyId"] = this.currencyId;
+        data["amount"] = this.amount;
+        data["note"] = this.note;
+        return data;
+    }
+}
+
+export interface IRecordCashRemittanceCommand {
+    employeeId: string | undefined;
+    currencyId: string | undefined;
+    amount: number;
+    note: string | undefined;
+}
+
+export class RecordCashRemittanceResponse implements IRecordCashRemittanceResponse {
+    id!: string | undefined;
+
+    constructor(data?: IRecordCashRemittanceResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+        }
+    }
+
+    static fromJS(data: any): RecordCashRemittanceResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new RecordCashRemittanceResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        return data;
+    }
+}
+
+export interface IRecordCashRemittanceResponse {
+    id: string | undefined;
+}
+
 export enum ReferralStatus {
     Accepted = 1,
     Qualified = 2,
@@ -38199,6 +38592,90 @@ export class WorkContractFactsLine implements IWorkContractFactsLine {
 export interface IWorkContractFactsLine {
     id: string | undefined;
     name: string | undefined;
+}
+
+export class WriteOffCashHeldCommand implements IWriteOffCashHeldCommand {
+    employeeId!: string | undefined;
+    currencyId!: string | undefined;
+    amount!: number;
+    note!: string | undefined;
+
+    constructor(data?: IWriteOffCashHeldCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.employeeId = Data["employeeId"];
+            this.currencyId = Data["currencyId"];
+            this.amount = Data["amount"];
+            this.note = Data["note"];
+        }
+    }
+
+    static fromJS(data: any): WriteOffCashHeldCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new WriteOffCashHeldCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["employeeId"] = this.employeeId;
+        data["currencyId"] = this.currencyId;
+        data["amount"] = this.amount;
+        data["note"] = this.note;
+        return data;
+    }
+}
+
+export interface IWriteOffCashHeldCommand {
+    employeeId: string | undefined;
+    currencyId: string | undefined;
+    amount: number;
+    note: string | undefined;
+}
+
+export class WriteOffCashHeldResponse implements IWriteOffCashHeldResponse {
+    id!: string | undefined;
+
+    constructor(data?: IWriteOffCashHeldResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+        }
+    }
+
+    static fromJS(data: any): WriteOffCashHeldResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new WriteOffCashHeldResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        return data;
+    }
+}
+
+export interface IWriteOffCashHeldResponse {
+    id: string | undefined;
 }
 
 export class WriteOffReceivableCommand implements IWriteOffReceivableCommand {

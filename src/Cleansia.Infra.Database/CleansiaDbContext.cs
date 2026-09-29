@@ -471,6 +471,7 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
     public virtual DbSet<ProcessedStripeEvent> ProcessedStripeEvents { get; set; }
     public virtual DbSet<Refund> Refunds { get; set; }
     public virtual DbSet<Receivable> Receivables { get; set; }
+    public virtual DbSet<CashLedgerEntry> CashLedgerEntries { get; set; }
     public virtual DbSet<DeadLetter> DeadLetters { get; set; }
     public virtual DbSet<OutboxMessage> OutboxMessages { get; set; }
     public virtual DbSet<AdminActionAudit> AdminActionAudits { get; set; }

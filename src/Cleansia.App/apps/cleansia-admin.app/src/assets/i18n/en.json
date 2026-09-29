@@ -3304,6 +3304,10 @@
       "not_found": "This receivable no longer exists.",
       "not_open": "Only an open receivable can be written off."
     },
+    "cash_held": {
+      "amount_invalid": "Enter an amount above zero, to the cent",
+      "amount_exceeds_balance": "That is more cash than the partner holds in this currency"
+    },
     "referral": {
       "action_failed": "The referral action failed. Try again.",
       "not_accepted": "The referral is not in the accepted state.",

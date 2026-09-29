@@ -280,6 +280,11 @@ public class Policy
     public const string CanViewReceivables = nameof(CanViewReceivables); // Admin
     public const string CanWriteOffReceivable = nameof(CanWriteOffReceivable); // ManagerOrAbove
 
+    // Cash held by cleaners (the company's cash in a cleaner's hands)
+    public const string CanViewCashHeld = nameof(CanViewCashHeld); // AccountantOrAbove
+    public const string CanRecordCashRemittance = nameof(CanRecordCashRemittance); // AccountantOrAbove
+    public const string CanWriteOffCashHeld = nameof(CanWriteOffCashHeld); // ManagerOrAbove
+
     // Admin Action Audit Log (read surface — ADR-0012 D7)
     public const string CanViewAuditLog = nameof(CanViewAuditLog); // SupportOrAbove
 

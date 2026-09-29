@@ -9,6 +9,8 @@ using Cleansia.Core.Domain.Contracts;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Queue.Abstractions;
+using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.TestUtilities;
 using Moq;
 
@@ -18,8 +20,8 @@ namespace Cleansia.Tests.Features.Orders;
 /// ADR-0068 D3 — the one writer of the acceptance row: it names the seat and the exact text, freezes the
 /// builder's facts, takes the IP and device label from the request, the device id from the session's
 /// signed claim (never the header), the client from the host, stamps both rows with the ORDER's company,
-/// stages the audit index row beside it, commits nothing, and refuses to stage a text that is not of the
-/// order's document.
+/// stages the audit index row and the cleaner's copy of the contract beside it, commits nothing, and
+/// refuses to stage a text that is not of the order's document.
 /// </summary>
 public sealed class WorkContractAcceptorTests
 {
@@ -33,6 +35,7 @@ public sealed class WorkContractAcceptorTests
     private readonly Mock<IWorkContractFactsBuilder> _factsBuilder = new();
     private readonly Mock<IWorkContractAcceptanceRepository> _acceptanceRepository = new();
     private readonly Mock<IEmployeeActionAuditRepository> _auditRepository = new();
+    private readonly Mock<IPendingDispatch> _pending = new();
 
     private WorkContractAcceptor CreateAcceptor(IUserSessionProvider session, IRequestMetadataProvider metadata, string audience = "cleansia.mobile") =>
         new(
@@ -42,7 +45,8 @@ public sealed class WorkContractAcceptorTests
             _auditRepository.Object,
             metadata,
             session,
-            new HostAudienceProvider(audience));
+            new HostAudienceProvider(audience),
+            _pending.Object);
 
     private static (Order Order, OrderEmployee Seat) ArrangeSeat()
     {
@@ -118,6 +122,22 @@ public sealed class WorkContractAcceptorTests
     }
 
     [Fact]
+    public async Task Stage_Sends_The_Cleaner_A_Copy_Of_The_Contract_Once_The_Acceptance_Commits_Under_The_Orders_Company()
+    {
+        var (order, seat) = ArrangeSeat();
+        _factsBuilder.Setup(b => b.BuildAsync(OrderId, EmployeeId, It.IsAny<CancellationToken>())).ReturnsAsync(Facts);
+
+        var acceptance = await CreateAcceptor(SessionWithDeviceClaim(null), new TestRequestMetadataProvider())
+            .StageAsync(order, seat, WorkContractTestData.TextIdEn, CancellationToken.None);
+
+        _pending.Verify(p => p.Enqueue(
+            QueueNames.SendEmail,
+            It.Is<QueueEnvelope<SendWorkContractEmailMessage>>(e =>
+                e.TenantId == OrderTenant && e.Payload.AcceptanceId == acceptance.Id && e.Payload.TenantId == OrderTenant),
+            MessageKeys.WorkContractEmail(acceptance.Id)), Times.Once);
+    }
+
+    [Fact]
     public async Task A_Text_Of_Another_Document_Is_A_Programming_Error_Not_A_Row()
     {
         var (order, seat) = ArrangeSeat();
@@ -129,6 +149,7 @@ public sealed class WorkContractAcceptorTests
 
         _acceptanceRepository.Verify(r => r.Add(It.IsAny<WorkContractAcceptance>()), Times.Never);
         _auditRepository.Verify(r => r.Add(It.IsAny<EmployeeActionAudit>()), Times.Never);
+        _pending.Verify(p => p.Enqueue(It.IsAny<string>(), It.IsAny<It.IsAnyType>(), It.IsAny<string>()), Times.Never);
     }
 
     [Fact]

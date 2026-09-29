@@ -71,7 +71,7 @@ public sealed class SendEmailHandlerReceivablePayLinkTests
         TestGuestOrderAccessTokenIssuer.WithNoLiveTokens(),
         Mock.Of<IUnitOfWork>(),
         Mock.Of<ICancellationPolicyResolver>(),
-        _receivables.Object);
+        _receivables.Object, Mock.Of<IContractConfirmationService>(), Mock.Of<IWorkContractAcceptanceRepository>(), Mock.Of<IEmployeeRepository>());
 
     private string Body() => JsonSerializer.Serialize(
         new QueueEnvelope<SendReceivablePayLinkEmailMessage>(

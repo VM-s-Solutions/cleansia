@@ -2,6 +2,7 @@ using System.Text.RegularExpressions;
 using Cleansia.Core.Domain.Company;
 using Cleansia.Core.Domain.Configuration;
 using Markdig;
+using Markdig.Syntax;
 
 namespace Cleansia.Core.AppServices.Features.Legal;
 
@@ -61,15 +62,30 @@ public static partial class LegalMarkdownRenderer
         return placeholders;
     }
 
-    public static string Render(string markdown, IReadOnlyDictionary<string, string>? placeholders = null)
+    public static string Render(string markdown, IReadOnlyDictionary<string, string>? placeholders = null) =>
+        Markdown.ToHtml(Fill(markdown, placeholders), Pipeline);
+
+    /// <summary>
+    /// The text for a document that is not a page — the PDF copy of a contract: one entry per top-level
+    /// block in reading order, its inline markup dropped, a heading flagged.
+    /// </summary>
+    public static IReadOnlyList<(string Text, bool IsHeading)> RenderPlainBlocks(
+        string markdown, IReadOnlyDictionary<string, string>? placeholders = null)
     {
-        var source = placeholders is null || placeholders.Count == 0
+        var source = Fill(markdown, placeholders);
+        return Markdown.Parse(source, Pipeline)
+            .Select(block => (
+                Text: Markdown.ToPlainText(source.Substring(block.Span.Start, block.Span.Length), Pipeline).Trim(),
+                IsHeading: block is HeadingBlock))
+            .Where(block => block.Text.Length > 0)
+            .ToList();
+    }
+
+    private static string Fill(string markdown, IReadOnlyDictionary<string, string>? placeholders) =>
+        placeholders is null || placeholders.Count == 0
             ? markdown
             : Placeholder().Replace(markdown, match =>
                 placeholders.TryGetValue(match.Groups["name"].Value, out var value) ? value : match.Value);
-
-        return Markdown.ToHtml(source, Pipeline);
-    }
 
     /// <summary>The placeholder names a text carries, for the seed tests and the admin preview.</summary>
     public static IReadOnlySet<string> PlaceholdersIn(string markdown) =>

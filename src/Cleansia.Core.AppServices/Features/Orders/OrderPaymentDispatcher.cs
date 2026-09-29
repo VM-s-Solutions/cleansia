@@ -82,7 +82,7 @@ public sealed class OrderPaymentDispatcher(
                 // No money has moved, so there is nothing to receipt yet: the receipt is issued at
                 // completion, after the cleaner records the cash (owner ruling 2026-09-28). ADR-0002
                 // D1/D5 — recorded as intent and put on the wire only after the order commits.
-                OrderBookedEmail.Enqueue(order, languageCode, pending);
+                OrderBookedEmail.Enqueue(order, languageCode, pending, DateTimeOffset.UtcNow);
                 return OrderPaymentDispatchResult.Ok(null);
 
             default:

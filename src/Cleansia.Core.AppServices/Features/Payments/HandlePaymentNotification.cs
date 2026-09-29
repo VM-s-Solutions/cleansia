@@ -381,6 +381,9 @@ public class HandlePaymentNotification
                     new GenerateReceiptMessage(orderId, language)),
                 MessageKeys.Receipt(orderId));
 
+            // The payment is what concludes a card booking's contract, so its confirmation goes out now.
+            OrderBookedEmail.Enqueue(order, language, pending, DateTimeOffset.UtcNow);
+
             if (!string.IsNullOrEmpty(order.UserId))
             {
                 await notificationProducer.NotifyAsync(

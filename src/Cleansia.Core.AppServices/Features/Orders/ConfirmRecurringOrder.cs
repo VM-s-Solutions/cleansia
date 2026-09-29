@@ -213,9 +213,10 @@ public class ConfirmRecurringOrder
             // occurrence is not a cleaner taking it (owner ruling 2026-09-08). The stamp is what
             // OrderAvailability admits a recurring cash occurrence on; the cleaner records the cash at
             // the door and the receipt follows at completion (owner ruling 2026-09-28).
-            order.ConfirmByCustomer(DateTime.UtcNow);
+            var confirmedAt = DateTime.UtcNow;
+            order.ConfirmByCustomer(confirmedAt);
 
-            OrderBookedEmail.Enqueue(order, Constants.Language.English, pending);
+            OrderBookedEmail.Enqueue(order, Constants.Language.English, pending, new DateTimeOffset(confirmedAt, TimeSpan.Zero));
 
             // Q-BROWSE-01 (b): an unconfirmed recurring cash occurrence is not offerable, because
             // AutoCancelStaleRecurringOrders retracts it. The stamp above is that transition, so this is

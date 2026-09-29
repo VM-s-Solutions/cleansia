@@ -157,7 +157,7 @@
       "deletion_reason": "Proč má být odstraněn?",
       "replace_document": "Nahradit",
       "legal_documents": "Smluvní dokumenty",
-      "legal_documents_intro": "Přečtěte si a přijměte každý z dokumentů níže. Dokud nepřijmete platnou verzi, nelze vaši registraci schválit a nemůžete přijímat zakázky.",
+      "legal_documents_intro": "Tyto dokumenty upravují vaši práci pro provozní společnost trhu, na kterém pracujete. Přečtěte si a přijměte každý z dokumentů níže. Dokud nepřijmete platnou verzi, nelze vaši registraci schválit a nemůžete přijímat zakázky.",
       "legal_documents_version": "Verze {{version}}, účinná od {{date}}",
       "legal_documents_accepted_on": "Přijato {{date}}, verze {{version}}",
       "legal_documents_new_version": "Platí nová verze. Přijali jste verzi {{version}}.",
@@ -334,11 +334,12 @@
       "work_contract": {
         "title": "Smlouva o dílo",
         "version_line": "Verze {{version}}, účinná od {{date}}",
+        "parties": "Mezi provozní společností, která tento úklid prodala (objednatel), a vámi (zhotovitel)",
         "facts": {
           "title": "Zakázka",
           "order_number": "Číslo objednávky",
           "window": "Datum a čas",
-          "price": "Cena",
+          "reward": "Vaše odměna za místo",
           "location": "Místo",
           "rooms_bathrooms": "Pokoje / koupelny",
           "services": "Služby",

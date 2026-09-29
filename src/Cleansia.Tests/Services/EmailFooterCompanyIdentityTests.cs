@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Company;
+using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Notifications;
@@ -12,6 +13,7 @@ using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Configuration.Interfaces;
 using Microsoft.Extensions.Logging.Abstractions;
+using MockQueryable;
 using Moq;
 
 namespace Cleansia.Tests.Services;
@@ -69,6 +71,51 @@ public sealed class EmailFooterCompanyIdentityTests
         await Send(service, email, "en");
 
         AssertFooter($"{AmbientCompany} All rights reserved.", values["FooterText"]);
+    }
+
+    [Fact]
+    public async Task The_Period_End_Reminder_Job_Names_The_Company_That_Owns_The_Period()
+    {
+        const string periodTenant = "tenant-cz";
+        string? overriddenTenant = null;
+        var tenantProvider = new Mock<ITenantProvider>();
+        tenantProvider
+            .Setup(p => p.SetTenantOverride(It.IsAny<string>()))
+            .Callback((string tenantId) => overriddenTenant = tenantId);
+        tenantProvider
+            .Setup(p => p.ClearTenantOverride())
+            .Callback(() => overriddenTenant = null);
+        _companies
+            .Setup(r => r.GetActiveCompanyInfoAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() => overriddenTenant == periodTenant ? Company(AmbientCompany) : null);
+
+        var period = PayPeriod.CreateBiWeekly(DateOnly.FromDateTime(DateTime.UtcNow.AddDays(3)).AddDays(-13));
+        period.TenantId = periodTenant;
+        var periods = new Mock<IPayPeriodRepository>();
+        periods
+            .Setup(r => r.GetQueryableIgnoringTenant())
+            .Returns(new[] { period }.AsQueryable().BuildMock());
+
+        var cleaner = Employee.CreateWithUser(
+            User.CreateWithPassword("cleaner@example.com", "Password1", "Petr", "Svoboda", UserProfile.Employee, "en"));
+        cleaner.TenantId = periodTenant;
+        var employees = new Mock<IEmployeeRepository>();
+        employees
+            .Setup(r => r.GetQueryableIgnoringTenant())
+            .Returns(new[] { cleaner }.AsQueryable().BuildMock());
+
+        var (emailService, values) = BuildService();
+        var job = new PeriodReminderBackgroundService(
+            periods.Object,
+            employees.Object,
+            emailService,
+            tenantProvider.Object,
+            NullLogger<PeriodReminderBackgroundService>.Instance);
+
+        await job.SendPeriodEndRemindersAsync(CancellationToken.None);
+
+        AssertFooter($"{AmbientCompany} All rights reserved.", values["FooterText"]);
+        Assert.Null(overriddenTenant);
     }
 
     [Theory]

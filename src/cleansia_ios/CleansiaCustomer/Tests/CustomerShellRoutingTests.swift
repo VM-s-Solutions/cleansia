@@ -79,6 +79,7 @@ final class CustomerShellRoutingTests: XCTestCase {
             .createDispute(orderId: "order-3", reason: DisputeReasonOption.serviceNotProvided),
             .disputeDetail("d-1"),
             .addresses,
+            .payments,
             .editProfile(showBookingHint: false),
             .editProfile(showBookingHint: true),
             .devices,

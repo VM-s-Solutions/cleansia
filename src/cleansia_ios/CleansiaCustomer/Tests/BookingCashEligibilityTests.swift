@@ -24,6 +24,7 @@ final class BookingCashEligibilityTests: XCTestCase {
             profileClient: FakeProfileClient(),
             orderCreateClient: create,
             countryResolver: FakeCountryResolver(),
+            savedCardClient: FakeSavedCardClient.holdingCzkCard(),
             tokenStore: tokenStore,
             isCardPaymentAvailable: false,
             quoteDebounce: .milliseconds(400),

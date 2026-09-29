@@ -2278,6 +2278,216 @@
         }
       }
     },
+    "booking_card_guarantee_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Karta jako záruka plateb v hotovosti"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A card to guarantee cash bookings"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Карта как гарантия для оплаты наличными"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Karta ako záruka platieb v hotovosti"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Картка як гарантія для оплати готівкою"
+          }
+        }
+      }
+    },
+    "booking_card_guarantee_body": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Při první objednávce v hotovosti si uložíte kartu. Nic se teď nestrhává: za úklid zaplatíte v hotovosti jako obvykle."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your first cash booking saves a card. Nothing is charged now: you still pay the cleaner in cash."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "При первом заказе с оплатой наличными вы сохраняете карту. Сейчас ничего не списывается: за уборку вы платите наличными, как обычно."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pri prvej objednávke v hotovosti si uložíte kartu. Teraz sa nič nestrháva: za upratovanie zaplatíte v hotovosti ako zvyčajne."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Під час першого замовлення з оплатою готівкою ви зберігаєте картку. Зараз нічого не списується: за прибирання ви платите готівкою, як завжди."
+          }
+        }
+      }
+    },
+    "consent_card_guarantee_draft_2026_09_28": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Souhlasím, že Cleansia může u mých objednávek v hotovosti strhnout z této karty storno poplatek, poplatek za neumožnění vstupu, nezaplacenou hotovost a doplatek, který jsem schválil(a)."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I agree that Cleansia may charge this card for a cancellation fee, a lockout fee, cash I did not pay and a top-up I approved on my cash bookings."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Я согласен(на), что по моим заказам с оплатой наличными Cleansia может списать с этой карты плату за отмену, плату за непредоставление доступа, неоплаченные наличные и одобренную мной доплату."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Súhlasím, že Cleansia môže pri mojich objednávkach v hotovosti strhnúť z tejto karty stornovací poplatok, poplatok za neumožnenie vstupu, nezaplatenú hotovosť a doplatok, ktorý som schválil(a)."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Я погоджуюся, що за моїми замовленнями з оплатою готівкою Cleansia може списати з цієї картки плату за скасування, плату за ненадання доступу, неоплачену готівку та схвалену мною доплату."
+          }
+        }
+      }
+    },
+    "booking_card_guarantee_consent_required": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro platbu v hotovosti potvrďte souhlas se zárukou kartou, nebo zvolte platbu kartou."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agree to the card guarantee to pay in cash, or choose card."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Чтобы платить наличными, согласитесь на гарантию картой или выберите оплату картой."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na platbu v hotovosti potvrďte súhlas so zárukou kartou, alebo zvoľte platbu kartou."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Щоб платити готівкою, погодьтеся на гарантію карткою або оберіть оплату карткою."
+          }
+        }
+      }
+    },
+    "booking_card_guarantee_pending": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kartu ještě ověřujeme. Za chvíli objednávku potvrďte znovu."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We're still confirming your card. Swipe again in a moment."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Мы ещё подтверждаем вашу карту. Через мгновение подтвердите заказ ещё раз."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kartu ešte overujeme. O chvíľu objednávku potvrďte znova."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ми ще підтверджуємо вашу картку. За мить підтвердьте замовлення ще раз."
+          }
+        }
+      }
+    },
+    "booking_card_guarantee_cancelled": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Karta se neuložila, takže se nic neobjednalo. Pro platbu v hotovosti si uložte kartu, nebo zvolte platbu kartou."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your card wasn't saved, so nothing was booked. Save a card to pay in cash, or choose card."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Карта не сохранена, поэтому ничего не забронировано. Сохраните карту, чтобы платить наличными, или выберите оплату картой."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Karta sa neuložila, preto sa nič neobjednalo. Na platbu v hotovosti si uložte kartu, alebo zvoľte platbu kartou."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Картку не збережено, тому нічого не заброньовано. Збережіть картку, щоб платити готівкою, або оберіть оплату карткою."
+          }
+        }
+      }
+    },
     "booking_cash_needs_account": {
       "extractionState": "manual",
       "localizations": {
@@ -11738,31 +11948,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Při rezervaci přidejte pokyny k přístupu (např. kód, umístění klíče). Uklízeči čekají až 15 minut; pokud vás nezastihneme, rezervace může být zrušena."
+            "value": "Při rezervaci přidejte pokyny ke vstupu (např. kód u dveří, místo klíče). Uklízeč čeká 15 minut po začátku úklidu a zkusí vám zavolat. Pokud se ani pak nedostane dovnitř, rezervace se zruší a účtuje se plná cena."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Add access instructions when booking (e.g., door code, key location). Cleaners wait up to 15 minutes; if we can't reach you, the booking may be cancelled."
+            "value": "Add access instructions when booking (e.g., door code, key location). The cleaner waits 15 minutes past the start time and tries to call you. If they still can't get in, the booking is cancelled and the full price is charged."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Добавьте инструкции по доступу при заказе (например, код, расположение ключа). Клинеры ждут до 15 минут; если мы не сможем связаться, заказ может быть отменён."
+            "value": "Добавьте инструкции по доступу при бронировании (напр. код от двери, место ключа). Клинер ждёт 15 минут после начала уборки и пытается вам позвонить. Если и тогда не удастся попасть внутрь, бронирование отменяется и взимается полная стоимость."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pri rezervácii pridajte pokyny na prístup (napr. kód, umiestnenie kľúča). Upratovači čakajú až 15 minút; ak vás nezastihneme, rezervácia môže byť zrušená."
+            "value": "Pri rezervácii pridajte pokyny ku vstupu (napr. kód pri dverách, miesto kľúča). Upratovačka čaká 15 minút po začiatku upratovania a skúsi vám zavolať. Ak sa ani potom nedostane dnu, rezervácia sa zruší a účtuje sa plná cena."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Додайте інструкції доступу при бронюванні (наприклад, код, місце ключа). Клінери чекають до 15 хвилин; якщо ми не зможемо до вас додзвонитися, бронювання може бути скасоване."
+            "value": "Додайте інструкції щодо доступу при бронюванні (напр. код від дверей, місце ключа). Клінер чекає 15 хвилин після початку прибирання і намагається вам зателефонувати. Якщо й тоді не вдасться потрапити всередину, бронювання скасовується і стягується повна вартість."
           }
         }
       }
@@ -26963,6 +27173,811 @@
           "stringUnit": {
             "state": "translated",
             "value": "Пристрої"
+          }
+        }
+      }
+    },
+    "profile_row_payments": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Platby"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Payments"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Платежи"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Platby"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Платежі"
+          }
+        }
+      }
+    },
+    "payments_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Platby"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Payments"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Платежи"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Platby"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Платежі"
+          }
+        }
+      }
+    },
+    "payments_due_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "K úhradě"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Amounts due"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "К оплате"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na úhradu"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "До сплати"
+          }
+        }
+      }
+    },
+    "payments_due_intro": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uhraďte dlužnou částku a budete moci znovu platit v hotovosti. Objednávek placených kartou se to netýká."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pay what you owe to book in cash again. Card bookings are not affected."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Погасите задолженность, чтобы снова платить наличными. Заказов с оплатой картой это не касается."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uhraďte dlžnú sumu a budete môcť znova platiť v hotovosti. Objednávok platených kartou sa to netýka."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сплатіть заборгованість, щоб знову платити готівкою. Замовлень з оплатою карткою це не стосується."
+          }
+        }
+      }
+    },
+    "payments_due_order": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Objednávka %1$@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Order %1$@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заказ %1$@"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Objednávka %1$@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Замовлення %1$@"
+          }
+        }
+      }
+    },
+    "payments_pay_action": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaplatit"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pay"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оплатить"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaplatiť"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сплатити"
+          }
+        }
+      }
+    },
+    "receivable_kind_cancellation_fee": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Storno poplatek"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancellation fee"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Плата за отмену"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stornovací poplatok"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Плата за скасування"
+          }
+        }
+      }
+    },
+    "receivable_kind_lockout": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poplatek za neumožnění vstupu"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lockout fee"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Плата за непредоставление доступа"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poplatok za neumožnenie vstupu"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Плата за ненадання доступу"
+          }
+        }
+      }
+    },
+    "receivable_kind_unpaid_cash": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nezaplacená hotovost"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unpaid cash"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Неоплаченные наличные"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nezaplatená hotovosť"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Неоплачена готівка"
+          }
+        }
+      }
+    },
+    "receivable_kind_top_up": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schválený doplatek"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Approved top-up"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Одобренная доплата"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schválený doplatok"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Схвалена доплата"
+          }
+        }
+      }
+    },
+    "receivable_kind_other": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Částka k úhradě"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Amount due"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сумма к оплате"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suma na úhradu"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сума до сплати"
+          }
+        }
+      }
+    },
+    "payments_card_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uložená karta"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saved card"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сохранённая карта"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uložená karta"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Збережена картка"
+          }
+        }
+      }
+    },
+    "payments_card_intro": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Karta, která zaručuje vaše objednávky v hotovosti. Může z ní být stržen storno poplatek, poplatek za neumožnění vstupu, nezaplacená hotovost nebo schválený doplatek."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The card that guarantees your cash bookings. A cancellation fee, a lockout fee, unpaid cash or a top-up you approved may be charged to it."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Карта, которая гарантирует ваши заказы с оплатой наличными. С неё могут быть списаны плата за отмену, плата за непредоставление доступа, неоплаченные наличные или одобренная вами доплата."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Karta, ktorá zaručuje vaše objednávky v hotovosti. Môže z nej byť strhnutý stornovací poplatok, poplatok za neumožnenie vstupu, nezaplatená hotovosť alebo schválený doplatok."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Картка, яка гарантує ваші замовлення з оплатою готівкою. З неї можуть бути списані плата за скасування, плата за ненадання доступу, неоплачена готівка або схвалена вами доплата."
+          }
+        }
+      }
+    },
+    "payments_card_label": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ •••• %2$@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ •••• %2$@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ •••• %2$@"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ •••• %2$@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ •••• %2$@"
+          }
+        }
+      }
+    },
+    "payments_card_expires": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Platnost do %1$02d/%2$02d · %3$@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expires %1$02d/%2$02d · %3$@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Действует до %1$02d/%2$02d · %3$@"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Platnosť do %1$02d/%2$02d · %3$@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Дійсна до %1$02d/%2$02d · %3$@"
+          }
+        }
+      }
+    },
+    "payments_card_empty": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nemáte uloženou kartu. Požádáme o ni při první objednávce v hotovosti."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No card saved. Your first cash booking asks for one."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Карта не сохранена. Мы попросим её при первом заказе с оплатой наличными."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nemáte uloženú kartu. Požiadame o ňu pri prvej objednávke v hotovosti."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Картку не збережено. Ми попросимо її під час першого замовлення з оплатою готівкою."
+          }
+        }
+      }
+    },
+    "payments_card_remove_action": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odebrat kartu"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove card"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Удалить карту"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odstrániť kartu"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Видалити картку"
+          }
+        }
+      }
+    },
+    "payments_card_remove_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odebrat tuto kartu?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove this card?"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Удалить эту карту?"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odstrániť túto kartu?"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Видалити цю картку?"
+          }
+        }
+      }
+    },
+    "payments_card_remove_message": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Při další objednávce v hotovosti vás o kartu požádáme znovu."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your next cash booking will ask for a card again."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "При следующем заказе с оплатой наличными мы снова попросим карту."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pri ďalšej objednávke v hotovosti vás o kartu požiadame znova."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Під час наступного замовлення з оплатою готівкою ми знову попросимо картку."
+          }
+        }
+      }
+    },
+    "payments_card_remove_confirm": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odebrat"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Удалить"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odstrániť"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Видалити"
+          }
+        }
+      }
+    },
+    "payments_card_removed": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Karta odebrána"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Card removed"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Карта удалена"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Karta odstránená"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Картку видалено"
+          }
+        }
+      }
+    },
+    "payments_card_remove_retry_hint": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kartu se nepodařilo odebrat. Zkuste to prosím znovu."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't remove the card. Please try again."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось удалить карту. Попробуйте ещё раз."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kartu sa nepodarilo odstrániť. Skúste to prosím znova."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не вдалося видалити картку. Спробуйте ще раз."
+          }
+        }
+      }
+    },
+    "payments_error_message": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Platby se nepodařilo načíst. Zkontrolujte připojení a zkuste to znovu."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We couldn't load your payments. Check your connection and try again."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось загрузить платежи. Проверьте подключение и попробуйте ещё раз."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Platby sa nepodarilo načítať. Skontrolujte pripojenie a skúste to znova."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не вдалося завантажити платежі. Перевірте з’єднання та спробуйте ще раз."
           }
         }
       }

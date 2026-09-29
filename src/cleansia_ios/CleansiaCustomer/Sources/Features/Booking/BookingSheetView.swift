@@ -102,7 +102,11 @@ struct BookingSheetView: View {
     }
 
     private func submit() async {
-        switch await vm.submit() {
+        await handle(vm.submit())
+    }
+
+    private func handle(_ outcome: BookingSubmitOutcome) async {
+        switch outcome {
         case let .success(orderId, confirmationCode):
             success = BookingSuccess(orderId: orderId, confirmationCode: confirmationCode)
         case let .cardPending(orderId, confirmationCode, presentation):
@@ -112,6 +116,14 @@ struct BookingSheetView: View {
             onCompleteProfile()
         case .paymentMethodCleared:
             slideResetCount += 1
+        case let .cardGuaranteeNeeded(presentation):
+            await saveCardGuarantee(presentation)
+        case .cardGuaranteeConsentRequired:
+            slideResetCount += 1
+            snackbar.showError(L10n.Booking.cardGuaranteeConsentRequired)
+        case .cardGuaranteePending:
+            slideResetCount += 1
+            snackbar.showInfo(L10n.Booking.cardGuaranteePending)
         case let .failed(error):
             slideResetCount += 1
             // Prefer the server's own business error — "no cleaner is available
@@ -124,6 +136,16 @@ struct BookingSheetView: View {
             } else {
                 snackbar.showError(L10n.Booking.errorGenericNetwork)
             }
+        }
+    }
+
+    private func saveCardGuarantee(_ presentation: PaymentSheetPresentation) async {
+        switch await paymentSheet.present(presentation) {
+        case .completed:
+            await handle(vm.submitAfterCardGuarantee())
+        case .canceled, .failed:
+            slideResetCount += 1
+            snackbar.showError(L10n.Booking.cardGuaranteeCancelled)
         }
     }
 
@@ -177,7 +199,8 @@ private struct BookingSheetContent: View {
         BookingStepGate.canContinue(
             step: step,
             state: viewModel.state,
-            alreadyConsented: viewModel.alreadyConsented
+            alreadyConsented: viewModel.alreadyConsented,
+            needsCardGuarantee: viewModel.needsCardGuarantee
         )
     }
 

@@ -140,6 +140,12 @@ struct ConfirmStep: View {
             if let reason = L10n.Booking.cashReason(cash) {
                 PaymentNote(systemImage: "info.circle", text: reason)
             }
+            if viewModel.needsCardGuarantee {
+                CardGuaranteeConsent(accepted: Binding(
+                    get: { viewModel.state.cardGuaranteeAccepted },
+                    set: viewModel.setCardGuaranteeAccepted
+                ))
+            }
         }
     }
 
@@ -193,6 +199,35 @@ struct ConfirmStep: View {
             next.termsAccepted = accepted
             return next
         }
+    }
+}
+
+/// Cash is guaranteed by a saved card; the first cash booking asks for the consent before PaymentSheet
+/// saves one.
+private struct CardGuaranteeConsent: View {
+    @Binding var accepted: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.xs) {
+            Text(L10n.Booking.cardGuaranteeTitle)
+                .font(CleansiaTypography.titleMedium)
+                .foregroundColor(CleansiaColors.onSurface)
+            Text(L10n.Booking.cardGuaranteeBody)
+                .font(CleansiaTypography.bodyMedium)
+                .foregroundColor(CleansiaColors.onSurfaceVariant)
+                .fixedSize(horizontal: false, vertical: true)
+            CleansiaConsentCheckbox(
+                checked: $accepted,
+                markdown: L10n.Booking.cardGuaranteeConsent,
+                toggleAccessibilityLabel: L10n.Booking.cardGuaranteeTitle
+            )
+        }
+        .padding(Spacing.s)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .overlay(
+            RoundedRectangle(cornerRadius: CornerRadius.medium)
+                .stroke(CleansiaColors.outlineVariant, lineWidth: 1)
+        )
     }
 }
 

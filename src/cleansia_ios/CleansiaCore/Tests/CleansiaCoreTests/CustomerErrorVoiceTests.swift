@@ -46,6 +46,18 @@ final class CustomerErrorVoiceTests: XCTestCase {
             emitters: "CreateOrder, CreateRecurringBooking, UpdateRecurringBooking, ConfirmRecurringOrder"
         ),
         CustomerOnlyKey(
+            "order.cash_unpaid_receivable",
+            emitters: "CreateOrder, CreateRecurringBooking, UpdateRecurringBooking, ConfirmRecurringOrder"
+        ),
+        CustomerOnlyKey(
+            "order.cash_open_bookings_limit_reached",
+            emitters: "CreateOrder, CreateRecurringBooking, UpdateRecurringBooking, ConfirmRecurringOrder"
+        ),
+        CustomerOnlyKey(
+            "order.cash_requires_saved_card",
+            emitters: "CreateOrder, CreateRecurringBooking, UpdateRecurringBooking, ConfirmRecurringOrder"
+        ),
+        CustomerOnlyKey(
             "order.start_passed_cannot_cancel",
             emitters: "CancelOrder, CancelGuestOrder, GetCancellationFeePreview, GetGuestCancellationFeePreview"
         ),
@@ -164,6 +176,12 @@ final class CustomerErrorVoiceTests: XCTestCase {
         "order.already_completed": "CancellationAssessor",
         "order.cash_not_available":
             "CreateOrder, CreateRecurringBooking, UpdateRecurringBooking, ConfirmRecurringOrder",
+        "order.cash_open_bookings_limit_reached":
+            "CreateOrder, CreateRecurringBooking, UpdateRecurringBooking, ConfirmRecurringOrder",
+        "order.cash_requires_saved_card":
+            "CreateOrder, CreateRecurringBooking, UpdateRecurringBooking, ConfirmRecurringOrder",
+        "order.cash_unpaid_receivable":
+            "CreateOrder, CreateRecurringBooking, UpdateRecurringBooking, ConfirmRecurringOrder",
         "order.cleaner_already_started": "ReportGuestCleanerNoShow",
         "order.cleaning_date.below_lead_time": "CreateOrder",
         "order.cleaning_date.future": "CreateOrder",
@@ -202,6 +220,8 @@ final class CustomerErrorVoiceTests: XCTestCase {
         "promo.per_user_limit_reached": "CreateOrder",
         "promo.requires_account": "CreateOrder",
         "receipt.not_found": "DownloadOrderReceipt",
+        "receivable.not_found": "CreateReceivablePayLink",
+        "receivable.not_open": "CreateReceivablePayLink",
         "recurring_booking.ends_on_before_start": "CreateRecurringBooking, UpdateRecurringBooking",
         "recurring_booking.membership_required": "CreateRecurringBooking, UpdateRecurringBooking",
         "recurring_booking.no_services_or_packages": "CreateRecurringBooking, UpdateRecurringBooking",
@@ -213,6 +233,8 @@ final class CustomerErrorVoiceTests: XCTestCase {
         "refund.failed": "RefundService",
         "refund.nothing_refundable": "RefundService",
         "refund.order_not_refundable": "RefundService",
+        "saved_card.consent_not_accepted": "CreateSavedCardSetupIntent",
+        "saved_card.not_found": "RemoveSavedCard",
         "tenant.archived": "CleansiaDbContext.CommitAsync via RequestValidationExceptionFilterAttribute (409)",
         "tenant.not_found": "OperatorTenantScopeBehavior",
         "user.email_confirmed": "ResendConfirmationEmail",

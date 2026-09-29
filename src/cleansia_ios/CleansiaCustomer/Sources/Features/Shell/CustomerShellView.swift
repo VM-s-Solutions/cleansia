@@ -360,6 +360,12 @@ extension CustomerShellView {
     @ViewBuilder
     private func settingsDestination(_ route: ShellRoute) -> some View {
         switch route {
+        case .payments:
+            PaymentsView(
+                savedCardClient: LiveSavedCardClient(),
+                receivableClient: LiveReceivableClient(),
+                snackbar: snackbar
+            )
         case .devices:
             CustomerDevicesView(
                 client: container.devicesClient,

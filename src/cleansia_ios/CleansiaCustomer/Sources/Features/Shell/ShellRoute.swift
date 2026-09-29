@@ -20,6 +20,7 @@ enum ShellRoute: Hashable, Codable {
     case createDispute(orderId: String, reason: Int? = nil)
     case disputeDetail(String)
     case addresses
+    case payments
     case editProfile(showBookingHint: Bool)
     case devices
     case notifications

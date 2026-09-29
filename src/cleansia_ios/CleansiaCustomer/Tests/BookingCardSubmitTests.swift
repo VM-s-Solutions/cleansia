@@ -20,6 +20,7 @@ final class BookingCardSubmitTests: XCTestCase {
             orderCreateClient: create,
             paymentIntentClient: paymentIntent,
             countryResolver: FakeCountryResolver(),
+            savedCardClient: FakeSavedCardClient.holdingCzkCard(),
             tokenStore: FakeTokenStore.signedIn(),
             isCardPaymentAvailable: cardAvailable,
             quoteDebounce: .milliseconds(400),

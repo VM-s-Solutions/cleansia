@@ -3884,6 +3884,251 @@
         }
       }
     },
+    "error.order.cash_requires_saved_card": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro platbu v hotovosti si nejdřív uložte kartu jako záruku — nebo zaplaťte kartou."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To pay in cash, first save a card as a guarantee — or pay by card."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Чтобы платить наличными, сначала сохраните карту как гарантию — или оплатите картой."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na platbu v hotovosti si najprv uložte kartu ako záruku — alebo zaplaťte kartou."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Щоб платити готівкою, спершу збережіть картку як гарантію — або оплатіть карткою."
+          }
+        }
+      }
+    },
+    "error.order.cash_open_bookings_limit_reached": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Už máte nejvyšší povolený počet nezaplacených objednávek v hotovosti. Zvolte kartu, nebo hotovost znovu, až bude některá z nich zaplacena."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You already have as many unpaid cash bookings as allowed. Choose card, or pay in cash again once one of them is paid."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "У вас уже максимально допустимое количество неоплаченных заказов наличными. Выберите карту или снова наличные, когда один из них будет оплачен."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Už máte najvyšší povolený počet nezaplatených objednávok v hotovosti. Zvoľte kartu alebo hotovosť znova, keď bude niektorá z nich zaplatená."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "У вас уже максимально дозволена кількість неоплачених замовлень готівкою. Оберіть картку або знову готівку, коли одне з них буде оплачено."
+          }
+        }
+      }
+    },
+    "error.order.cash_unpaid_receivable": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Máte u nás nezaplacenou částku, například storno poplatek. Zatím zaplaťte kartou; v hotovosti budete moci platit znovu, až ji uhradíte v profilu v sekci Platby."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You have an unpaid amount with us, such as a cancellation fee. Pay by card for now; cash is available again once you settle it under Payments in your profile."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "У вас есть неоплаченная сумма, например плата за отмену. Пока оплатите картой; наличными можно будет платить снова, когда вы погасите её в профиле в разделе Платежи."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Máte u nás nezaplatenú sumu, napríklad stornovací poplatok. Zatiaľ zaplaťte kartou; v hotovosti budete môcť platiť znova, keď ju uhradíte v profile v sekcii Platby."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "У вас є неоплачена сума, наприклад плата за скасування. Поки що оплатіть карткою; готівкою можна буде платити знову, коли ви сплатите її в профілі в розділі Платежі."
+          }
+        }
+      }
+    },
+    "error.saved_card.consent_not_accepted": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Před uložením karty prosím potvrďte souhlas, že na ni mohou být účtovány poplatky a nezaplacená hotovost."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Please agree that fees and unpaid cash may be charged to your card before saving it."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Прежде чем сохранить карту, согласитесь, что с неё могут списываться сборы и неоплаченные наличные."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pred uložením karty prosím potvrďte súhlas, že na ňu môžu byť účtované poplatky a nezaplatená hotovosť."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перш ніж зберегти картку, погодьтеся, що з неї можуть стягуватися збори та неоплачена готівка."
+          }
+        }
+      }
+    },
+    "error.saved_card.not_found": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tuto uloženou kartu jsme nenašli."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We couldn't find that saved card."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Мы не нашли эту сохранённую карту."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Túto uloženú kartu sme nenašli."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ми не знайшли цю збережену картку."
+          }
+        }
+      }
+    },
+    "error.receivable.not_found": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tuto dlužnou částku jsme nenašli."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We couldn't find that amount due."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Мы не нашли эту сумму к оплате."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Túto dlžnú sumu sme nenašli."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ми не знайшли цю суму до сплати."
+          }
+        }
+      }
+    },
+    "error.receivable.not_open": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tato částka už byla uhrazena nebo prominuta."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This amount has already been paid or waived."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Эта сумма уже оплачена или списана."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Táto suma už bola uhradená alebo odpustená."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Цю суму вже сплачено або списано."
+          }
+        }
+      }
+    },
     "error.order.cash_not_collected": {
       "extractionState": "manual",
       "localizations": {

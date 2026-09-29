@@ -28,6 +28,7 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { DialogModule } from 'primeng/dialog';
 import { NotificationPreferencesComponent } from '../notification-preferences/notification-preferences.component';
+import { SavedCardsComponent } from '../saved-cards/saved-cards.component';
 import { PROFILE_SECTIONS, SectionDef, setupScrollSpy } from './profile.helpers';
 import { ProfileFacade } from './profile.facade';
 import {
@@ -60,6 +61,7 @@ import {
     CleansiaSelectComponent,
     CleansiaAddressAutocompleteComponent,
     NotificationPreferencesComponent,
+    SavedCardsComponent,
   ],
   providers: [ProfileFacade],
   templateUrl: './profile.component.html',

@@ -70,6 +70,20 @@ export {
   SetDefaultSavedAddressCommand,
 } from './lib/client/customer-client';
 export {
+  SavedCardClient,
+  SavedCardDto,
+  CreateSavedCardCheckoutSessionCommand,
+  CreateSavedCardCheckoutSessionResponse,
+  RemoveSavedCardResponse,
+} from './lib/client/customer-client';
+export type {
+  ISavedCardClient,
+  ISavedCardDto,
+  ICreateSavedCardCheckoutSessionCommand,
+  ICreateSavedCardCheckoutSessionResponse,
+  IRemoveSavedCardResponse,
+} from './lib/client/customer-client';
+export {
   CreateOrderCommand,
   AddressDto,
   CustomerAddress,

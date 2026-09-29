@@ -150,6 +150,12 @@ class FakeOrderWizardFacade {
   cashNeedsAccount = signal(false);
   cashClearedNotice = signal(false);
   selectPaymentType = jest.fn((paymentType: PaymentType) => this.updateFormData({ paymentType }));
+  cardCaptureVisible = signal(false);
+  cardCaptureConsent = signal(false);
+  cardCaptureStarting = signal(false);
+  setCardCaptureConsent = jest.fn((accepted: boolean) => this.cardCaptureConsent.set(accepted));
+  closeCardCapture = jest.fn(() => this.cardCaptureVisible.set(false));
+  startCardCapture = jest.fn();
 }
 
 describe('OrderWizardComponent (a11y)', () => {

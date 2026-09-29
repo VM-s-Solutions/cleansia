@@ -45,6 +45,7 @@ import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { catchError, finalize, map, of, takeUntil } from 'rxjs';
+import { OrderCardCaptureFacade } from './order-card-capture.facade';
 import { OrderMembershipFacade } from './order-membership.facade';
 import { OrderPreferredCleanerFacade } from './order-preferred-cleaner.facade';
 import { OrderPricingFacade } from './order-pricing.facade';
@@ -52,6 +53,8 @@ import { OrderPromoFacade } from './order-promo.facade';
 import { OrderSavedAddressFacade } from './order-saved-address.facade';
 import { OrderServiceAreaFacade } from './order-service-area.facade';
 import {
+  CASH_REFUSALS,
+  CASH_REQUIRES_SAVED_CARD,
   ORDER_WIZARD_INITIAL_DATA,
   OrderWizardFormData,
   OUTSIDE_BOOKING_WINDOW,
@@ -83,6 +86,7 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   private readonly savedAddress = inject(OrderSavedAddressFacade);
   private readonly membership = inject(OrderMembershipFacade);
   private readonly preferredCleaner = inject(OrderPreferredCleanerFacade);
+  private readonly cardCapture = inject(OrderCardCaptureFacade);
   private readonly injector = inject(Injector);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
@@ -283,6 +287,10 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   readonly preferredCleanerLoading = this.preferredCleaner.loading;
   readonly preferredCleanerOptions = this.preferredCleaner.options;
 
+  readonly cardCaptureVisible = this.cardCapture.visible;
+  readonly cardCaptureConsent = this.cardCapture.consentAccepted;
+  readonly cardCaptureStarting = this.cardCapture.starting;
+
   // ─── Service-area (city-serviced) check ─────────────────────────
   //
   // The client-side service-area lookup lives in OrderServiceAreaFacade,
@@ -323,6 +331,10 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
       currentFormData: () => this.formData(),
       patchFormData: (partial) => this.updateFormData(partial),
     });
+    this.cardCapture.connect({
+      countryId: () => this.addressCountryId(),
+      snapshot: () => ({ step: this.activeStep(), data: this.formData() }),
+    });
     effect(() => {
       if (this.formData().paymentType === PaymentType.Cash && cashIsRefused(this.cashEligibility())) {
         untracked(() => this.dropCash(true));
@@ -334,6 +346,18 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
     if (type === PaymentType.Cash && !this.cashSelectable()) return;
     this.cashCleared.set(false);
     this.updateFormData({ paymentType: type });
+  }
+
+  setCardCaptureConsent(accepted: boolean): void {
+    this.cardCapture.setConsent(accepted);
+  }
+
+  closeCardCapture(): void {
+    this.cardCapture.close();
+  }
+
+  startCardCapture(): void {
+    this.cardCapture.start();
   }
 
   /** Never replaced by card: the customer is told and chooses again. */
@@ -1066,8 +1090,8 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
    * price. The interceptor has already toasted which promo rule refused it, and a second, generic
    * toast would replace that sentence — so this one only takes the code off the order, which is
    * what lets the customer submit again. Refused cash is handled the same way: taken off, and the
-   * customer sent back to choose how to pay; a start outside the booking window sends them back to
-   * the time.
+   * customer sent back to choose how to pay; cash refused for want of a saved card opens the step
+   * that saves one; a start outside the booking window sends them back to the time.
    */
   private onCreateRefused(error: unknown): void {
     const code = extractApiErrorCode(error);
@@ -1075,7 +1099,11 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
       this.promo.clearPromoCode();
       return;
     }
-    if (code === 'order.cash_not_available') {
+    if (code === CASH_REQUIRES_SAVED_CARD) {
+      this.cardCapture.open();
+      return;
+    }
+    if (code && CASH_REFUSALS.includes(code)) {
       this.dropCash(false);
       this.goToPaymentStep();
       return;

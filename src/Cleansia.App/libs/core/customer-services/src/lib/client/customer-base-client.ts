@@ -47,6 +47,8 @@ import {
   ReferralClient,
   ISavedAddressClient,
   SavedAddressClient,
+  ISavedCardClient,
+  SavedCardClient,
   IServiceClient,
   ServiceClient,
   IUserClient,
@@ -76,6 +78,7 @@ interface ICustomerClient {
   consentsClient: IConsentsClient;
   disputeClient: IDisputeClient;
   savedAddressClient: ISavedAddressClient;
+  savedCardClient: ISavedCardClient;
   loyaltyClient: ILoyaltyClient;
   marketClient: IMarketClient;
   creditClient: ICreditClient;
@@ -148,6 +151,10 @@ export class CustomerClient implements ICustomerClient {
     this.apiBaseUrl
   );
   savedAddressClient: ISavedAddressClient = new SavedAddressClient(
+    this.httpClient,
+    this.apiBaseUrl
+  );
+  savedCardClient: ISavedCardClient = new SavedCardClient(
     this.httpClient,
     this.apiBaseUrl
   );

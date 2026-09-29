@@ -17,6 +17,7 @@ import { SelectModule } from 'primeng/select';
 import { DialogModule } from 'primeng/dialog';
 import { CheckboxModule } from 'primeng/checkbox';
 import { OrderWizardFacade } from './order-wizard.facade';
+import { OrderCardCaptureFacade } from './order-card-capture.facade';
 import { OrderMembershipFacade } from './order-membership.facade';
 import { OrderDraftService } from './order-draft.service';
 import { OrderPreferredCleanerFacade } from './order-preferred-cleaner.facade';
@@ -81,6 +82,7 @@ function startOfMonth(date: Date): Date {
   ],
   templateUrl: './order-wizard.component.html',
   providers: [
+    OrderCardCaptureFacade,
     OrderMembershipFacade,
     OrderPreferredCleanerFacade,
     OrderPricingFacade,

@@ -684,6 +684,18 @@
       "credit": {
         "auto_applied": "Kredit — automaticky se použije na vaši nejbližší objednávku.",
         "expires_on": "Vyprší {{date}} — každá objednávka lhůtu prodlouží."
+      },
+      "saved_cards": {
+        "title": "Uložené karty",
+        "desc": "Karta, která zaručuje vaše rezervace s platbou v hotovosti. Strhávají se z ní jen poplatky a nezaplacená hotovost, se kterými jste při uložení souhlasili.",
+        "empty": "Nemáte uloženou kartu. Až budete příště platit v hotovosti, požádáme vás o její uložení.",
+        "load_error": "Uložené karty se nepodařilo načíst.",
+        "card_label": "{{brand}} končící {{last4}}",
+        "expires": "Platnost do {{expiry}} · pro rezervace v {{currency}}",
+        "remove_confirm": "Odebrat kartu končící {{last4}}? Při příští rezervaci s platbou v hotovosti vás znovu požádáme o uložení karty.",
+        "remove_success": "Karta byla odebrána.",
+        "setup_success": "Karta je uložená. Teď můžete dokončit rezervaci s platbou v hotovosti.",
+        "setup_cancelled": "Žádná karta nebyla uložena. Chcete-li platit v hotovosti, uložte si kartu — nebo zaplaťte kartou."
       }
     },
     "services": {
@@ -1020,6 +1032,15 @@
           "sign_4": "zaschlé nečistoty na podlaze, lepkavé povrchy, výrazný zápach",
           "surcharge_line": "Příplatek za silné znečištění"
         }
+      },
+      "card_capture": {
+        "title": "Uložte si kartu pro platbu v hotovosti",
+        "intro": "Rezervace s platbou v hotovosti je zaručena kartou uloženou ve vašem účtu. Uložení karty nic nestojí a uklízeči dál platíte v hotovosti.",
+        "consent": {
+          "card-guarantee-draft-2026-09-28": "Souhlasím, že Cleansia může z této karty, aniž by se mě pokaždé ptala, strhnout poplatek za pozdní zrušení, poplatek, když se uklízeč nedostane do mé domácnosti, hotovost, kterou jsem za rezervaci nezaplatil(a), a doplatek, který jsem schválil(a)."
+        },
+        "continue": "Uložit kartu",
+        "cancel": "Teď ne"
       }
     },
     "orders": {

@@ -30,6 +30,16 @@ export const PROMO_ERROR_FALLBACK = 'pages.order.promo.error_generic';
 /** How QuoteOrder and CreateOrder refuse a start off the server's grid, window or horizon. */
 export const OUTSIDE_BOOKING_WINDOW = 'order.cleaning_date.outside_booking_window';
 
+/** How CreateOrder refuses cash to a customer with no usable card saved in the booking's currency. */
+export const CASH_REQUIRES_SAVED_CARD = 'order.cash_requires_saved_card';
+
+/** How CreateOrder refuses cash that the customer cannot fix on this booking except by paying by card. */
+export const CASH_REFUSALS: readonly string[] = [
+  'order.cash_not_available',
+  'order.cash_unpaid_receivable',
+  'order.cash_open_bookings_limit_reached',
+];
+
 /** Why cash cannot be chosen right now, or null when it can. */
 export function cashReasonCopy(
   eligibility: CashEligibility,

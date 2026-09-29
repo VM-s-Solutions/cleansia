@@ -30,6 +30,23 @@ public class QueueTriggerIdentityConnectionTests
         Assert.DoesNotContain("ConnectionStrings__", settings, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// Without <c>BlobContainerConfiguration__AccountUrl</c> the blob client factory falls back to the
+    /// connection string, and every deployed host resolves the <c>UseDevelopmentStorage=true</c> its
+    /// appsettings.json commits — against an account that refuses shared keys. The branch only reaches a
+    /// host through the two places main.bicep passes it on.
+    /// </summary>
+    [Fact]
+    public void Every_host_reaches_blobs_by_account_url_under_managed_identity()
+    {
+        var settings = ManagedIdentityStorageSettings();
+        Assert.Matches(@"(?m)^\s*BlobContainerConfiguration__AccountUrl:\s*storage\.outputs\.blobEndpoint\s*$", settings);
+
+        var main = File.ReadAllText(RepoPath("deploy", "bicep", "main.bicep"));
+        Assert.Matches(@"(?s)var apiBaseSettings = union\(\{.*?\n\},[^\n]*\bstorageSettings\b[^\n]*\)", main.ReplaceLineEndings("\n"));
+        Assert.Matches(@"(?m)^\s*storageAppSettings:\s*storageSettings\s*$", main);
+    }
+
     private static IReadOnlyList<string> QueueTriggerConnections()
     {
         var triggers = typeof(SendEmailFunction).Assembly.GetTypes()

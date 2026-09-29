@@ -330,4 +330,9 @@ non-superuser administrator shaped like Azure's (`CREATEROLE`, a member of the d
 the login reads, writes, locks rows, takes advisory locks and inserts through serial and identity
 columns, is refused `DROP`, `TRUNCATE`, `ALTER`, `CREATE TABLE`/`SCHEMA`/`INDEX`/`ROLE`/`DATABASE`,
 reaches a table created after the grant, and the second run moved it to the new password. Nothing was
-deployed and no Azure command was run.
+deployed and no Azure command was run. The backend CI now repeats the core of that run on every build:
+`AppLoginGrantScriptTests` (integration suite) migrates a Testcontainers Postgres as that administrator,
+runs the script twice through psql with the deploy step's variables, and fails if the login cannot
+write the rows the hosts write (an EF commit, the outbox claim, the fiscal counter upsert), can create,
+alter, drop or truncate a table, or cannot insert through a serial table that existed before the grant
+or was created after it; it also pins that the deploy runs the script after the migration.

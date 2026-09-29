@@ -32,7 +32,7 @@ final class BookingCardGuaranteeTests: XCTestCase {
         )
     }
 
-    private func readyState(payment: PaymentMethod = .cash, consent: Bool = true) -> (BookingState) -> BookingState {
+    private func readyState(payment: PaymentMethod? = .cash, consent: Bool = true) -> (BookingState) -> BookingState {
         { _ in
             var s = BookingState()
             s.selectedServiceIds = ["s-1"]

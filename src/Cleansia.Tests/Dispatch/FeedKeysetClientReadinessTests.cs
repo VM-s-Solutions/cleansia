@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Infra.Clients.Fcm;
 
@@ -57,34 +58,29 @@ public class FeedKeysetClientReadinessTests
     }
 
     /// <summary>
-    /// The two no-show outcomes the sweep and the administrator's confirmation announce (refund pending,
-    /// nothing charged) ship backend-first: until both iOS catalogs and the Android templates carry
-    /// <c>push.order.no_cleaner_refund_pending|nothing_charged.title|body</c>, they are data-only pushes
-    /// and no inbox row. The wave that ships the copy registers them in the display map with
-    /// <c>OrderNumberAndAmountArgs</c>, adds them to the customer keyset, and deletes this test.
-    /// </summary>
-    [Theory]
-    [InlineData(NotificationEventCatalog.OrderNoCleanerRefundPending)]
-    [InlineData(NotificationEventCatalog.OrderNoCleanerNothingCharged)]
-    public void The_No_Show_Outcome_Events_Wait_For_Their_Client_Copy(string eventKey)
-    {
-        Assert.DoesNotContain(eventKey, FcmMessageFactory.ApnsDisplayMap.Keys);
-        Assert.False(NotificationFeedEventKeys.IsFeedEvent(eventKey));
-        Assert.Equal(NotificationCategory.OrderCancelled, NotificationEventCatalog.GetCategoryFor(eventKey));
-    }
-
-    /// <summary>
-    /// The failed Plus renewal ships backend-first on the same terms: a data-only push and no inbox row
-    /// until both iOS catalogs and the Android templates carry <c>push.membership.payment_failed.title|body</c>.
-    /// The wave that ships the copy registers it in the display map with no args, adds it to the customer
-    /// keyset, and deletes this test. It stays non-mutable either way.
+    /// Whatever the no-show body tells the customer — refunded, refund pending, nothing charged, or the
+    /// plain cancellation — must show on an iPhone and answer to the one cancellation toggle. Read from
+    /// the source rather than driven through outcomes, so a new branch naming a new key is caught without
+    /// anyone remembering to arrange it.
     /// </summary>
     [Fact]
-    public void The_Failed_Plus_Renewal_Waits_For_Its_Client_Copy()
+    public void Every_Key_The_No_Show_Body_Can_Send_Renders_On_iOS_Under_The_Cancellation_Toggle()
     {
-        Assert.DoesNotContain(NotificationEventCatalog.MembershipPaymentFailed, FcmMessageFactory.ApnsDisplayMap.Keys);
-        Assert.False(NotificationFeedEventKeys.IsFeedEvent(NotificationEventCatalog.MembershipPaymentFailed));
-        Assert.Null(NotificationEventCatalog.GetCategoryFor(NotificationEventCatalog.MembershipPaymentFailed));
+        var source = File.ReadAllText(Path.Combine(
+            RequireSolutionDirectory(), "Cleansia.Core.AppServices", "Features", "Orders", "CleanerNoShowCancellation.cs"));
+        var emitted = Regex.Matches(source, @"NotificationEventCatalog\.(\w+)")
+            .Select(match => typeof(NotificationEventCatalog).GetField(match.Groups[1].Value))
+            .Where(field => field is { IsLiteral: true })
+            .Select(field => (string)field!.GetRawConstantValue()!)
+            .Distinct()
+            .ToList();
+
+        Assert.Contains(NotificationEventCatalog.OrderCancelled, emitted);
+        Assert.All(emitted, key =>
+        {
+            Assert.Contains(key, FcmMessageFactory.ApnsDisplayMap.Keys);
+            Assert.Equal(NotificationCategory.OrderCancelled, NotificationEventCatalog.GetCategoryFor(key));
+        });
     }
 
     /// <summary>
@@ -190,4 +186,16 @@ public class FeedKeysetClientReadinessTests
     [InlineData(NotificationEventCatalog.OrderAssignmentRevoked)]
     public void The_Admin_Reassign_Events_Are_Non_Mutable(string eventKey) =>
         Assert.Null(NotificationEventCatalog.GetCategoryFor(eventKey));
+
+    private static string RequireSolutionDirectory()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && directory.GetFiles("*.sln").Length == 0)
+        {
+            directory = directory.Parent;
+        }
+
+        Assert.True(directory is not null, "Could not locate the solution directory from the test base directory.");
+        return directory!.FullName;
+    }
 }

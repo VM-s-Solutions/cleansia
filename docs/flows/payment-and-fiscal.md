@@ -233,9 +233,11 @@ states **the fee alone** — one line labelled by the receivable's kind in the r
 (*Late cancellation fee*, *Fee for denied access*, …) — on the PDF and on the fiscal request. It is
 issued when the webhook settles the receivable, and stored, fiscally registered and retried like the
 sale's; it is **not e-mailed**. So a cancelled cash booking, which never gets a sale receipt, gets a
-fee receipt once its fee is paid. Everything that asks about *the* receipt — the customer's download,
-the fiscal-reconciliation sweep, the archive's settlement facts — reads the sale receipt only; refunds
-and the refundable ceiling read the order's own sale, never a receivable's payment.
+fee receipt once its fee is paid. The customer's download, the fiscal-reconciliation sweep and the
+archive's count of orders awaiting a receipt read the sale receipt only; the archive's count of receipts
+awaiting fiscal registration reads every receipt, so a fee receipt still to be registered holds the
+archive like a sale receipt. Refunds and the refundable ceiling read the order's own sale, never a
+receivable's payment.
 → [Business rules — what a customer owes](/product/business-rules#receivables)
 
 ### Nothing restates a receipt {#cash-receipt-restated}

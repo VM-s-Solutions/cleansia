@@ -36,6 +36,15 @@ final class LockoutStandingTests: XCTestCase {
         XCTAssertEqual(try order().lockoutStanding(now: opensAt), .open)
     }
 
+    func testACleanerWaitingAtTheDoorHasTheWallClockReReadEveryThirtySecondsNotOnceAtTheEnd() {
+        let opensAt = Self.start.addingTimeInterval(TimeInterval(LockoutStanding.waitMinutes * 60))
+        let step = { (now: Date) in LockoutStanding.clockStep(now: now, opensAt: opensAt) }
+
+        XCTAssertEqual(step(Self.start), 30, accuracy: 0.001)
+        XCTAssertEqual(step(opensAt.addingTimeInterval(-5)), 5, accuracy: 0.001)
+        XCTAssertEqual(step(opensAt.addingTimeInterval(300)), 0, accuracy: 0.001)
+    }
+
     func testTheWaitIsTheOneTheServerHoldsTheCleanerTo() throws {
         XCTAssertEqual(LockoutStanding.waitMinutes, try Self.serverWaitMinutes())
     }

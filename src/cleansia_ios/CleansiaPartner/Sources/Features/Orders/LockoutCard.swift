@@ -12,6 +12,11 @@ enum LockoutStanding: Equatable {
 
     /// `BookingPolicy.LockoutWaitMinutes`.
     static let waitMinutes = 15
+
+    /// `Task.sleep` runs on the uptime clock, which stops while the device sleeps, so the wait is walked in steps.
+    static func clockStep(now: Date, opensAt: Date) -> TimeInterval {
+        min(max(opensAt.timeIntervalSince(now), 0), 30)
+    }
 }
 
 extension OrderDetail {
@@ -30,6 +35,7 @@ struct LockoutCard: View {
     static let icon = "door.left.hand.closed"
 
     @Environment(\.locale) private var locale
+    @Environment(\.scenePhase) private var scenePhase
     let order: OrderDetail
     let isReporting: Bool
     let actionsEnabled: Bool
@@ -39,6 +45,14 @@ struct LockoutCard: View {
     @State private var now = Date()
 
     var body: some View {
+        Group { standingCard }
+            .onChange(of: scenePhase) { phase in
+                if phase == .active { now = Date() }
+            }
+    }
+
+    @ViewBuilder
+    private var standingCard: some View {
         switch order.lockoutStanding(now: now) {
         case .hidden:
             EmptyView()
@@ -77,11 +91,11 @@ struct LockoutCard: View {
 
     @MainActor
     private func reopen(at opensAt: Date) async {
-        let wait = opensAt.timeIntervalSinceNow
-        if wait > 0 {
-            try? await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000))
+        while Date() < opensAt {
+            let step = LockoutStanding.clockStep(now: Date(), opensAt: opensAt)
+            try? await Task.sleep(nanoseconds: UInt64(step * 1_000_000_000))
+            if Task.isCancelled { return }
         }
-        guard !Task.isCancelled else { return }
         now = Date()
     }
 }

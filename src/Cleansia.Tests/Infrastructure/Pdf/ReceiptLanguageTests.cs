@@ -210,6 +210,16 @@ public class ReceiptLanguageTests
         Assert.Contains(lines, l => l.Description == "Stěhovací balíček (balíček)");
     }
 
+    [Theory]
+    [InlineData(DirtinessLevel.Increased, "Příplatek za zvýšené znečištění")]
+    [InlineData(DirtinessLevel.Heavy, "Příplatek za silné znečištění")]
+    public void The_Dirtiness_Line_Names_The_Level_In_The_Documents_Language(DirtinessLevel level, string expected)
+    {
+        var lines = Layout.Items(CzechReceipt() with { DirtinessLevel = level, DirtinessSurcharge = 300m });
+
+        Assert.Equal(300m, Assert.Single(lines, l => l.Description == expected).Amount);
+    }
+
     private static ReceiptPdfData CzechReceipt() =>
         new()
         {

@@ -625,7 +625,9 @@ VALUES
    40,
    '{"en": {"Name": "Laundry & ironing", "Description": "Up to one hour of laundry and ironing as part of the visit."}, "cs": {"Name": "Praní a žehlení", "Description": "Až jedna hodina praní a žehlení v rámci úklidu."}, "sk": {"Name": "Pranie a žehlenie", "Description": "Až jedna hodina prania a žehlenia v rámci upratovania."}, "uk": {"Name": "Прання та прасування", "Description": "До однієї години прання та прасування під час візиту."}, "ru": {"Name": "Стирка и глажка", "Description": "До часа стирки и глажки во время уборки."}}'),
 
-  (generate_ulid()::TEXT, true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
+  -- Retired inactive: the Increased dirtiness level covers homes with pets, so the extra would charge
+  -- a pet owner twice for the same effort (owner ruling 2026-09-28).
+  (generate_ulid()::TEXT, false, 'system', CURRENT_TIMESTAMP, NULL, NULL, 'system', CURRENT_TIMESTAMP,
    'pet-hair-supplement', 'Pet hair deep-clean',
    'Extra effort on pet hair removal for homes with shedding pets.',
    50,

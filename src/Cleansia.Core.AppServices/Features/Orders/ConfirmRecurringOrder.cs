@@ -46,6 +46,7 @@ public class ConfirmRecurringOrder
         decimal TotalPrice,
         string? CurrencyCode,
         PaymentType PaymentType,
+        DirtinessLevel DirtinessLevel,
         DateTimeOffset CleaningDateTime,
         decimal LeadTimeHours) : ICustomerAuditPayload;
 
@@ -167,6 +168,7 @@ public class ConfirmRecurringOrder
                     TotalPrice: order.TotalPrice,
                     CurrencyCode: order.Currency?.Code,
                     PaymentType: order.PaymentType,
+                    DirtinessLevel: order.DirtinessLevel,
                     CleaningDateTime: new DateTimeOffset(DateTime.SpecifyKind(order.CleaningDateTime, DateTimeKind.Utc)),
                     LeadTimeHours: Math.Round((decimal)(order.CleaningDateTime - nowUtc).TotalHours, 2)));
             }

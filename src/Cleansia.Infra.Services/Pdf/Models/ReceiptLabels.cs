@@ -61,6 +61,8 @@ public record ReceiptLabels
     public string Amount { get; init; } = "Amount";
     public string NoItems { get; init; } = "No items";
     public string PackageSuffix { get; init; } = "package";
+    public string IncreasedDirtinessSurcharge { get; init; } = "Increased dirtiness surcharge";
+    public string HeavyDirtinessSurcharge { get; init; } = "Heavy dirtiness surcharge";
     public string ExpressSurcharge { get; init; } = "Express surcharge";
     public string TierDiscount { get; init; } = "Loyalty discount";
     public string MembershipDiscount { get; init; } = "Cleansia Plus discount";
@@ -152,6 +154,8 @@ public record ReceiptLabels
         Amount = "Částka",
         NoItems = "Žádné položky",
         PackageSuffix = "balíček",
+        IncreasedDirtinessSurcharge = "Příplatek za zvýšené znečištění",
+        HeavyDirtinessSurcharge = "Příplatek za silné znečištění",
         ExpressSurcharge = "Expresní příplatek",
         TierDiscount = "Věrnostní sleva",
         MembershipDiscount = "Sleva Cleansia Plus",
@@ -227,6 +231,8 @@ public record ReceiptLabels
         Amount = "Suma",
         NoItems = "Žiadne položky",
         PackageSuffix = "balík",
+        IncreasedDirtinessSurcharge = "Príplatok za zvýšené znečistenie",
+        HeavyDirtinessSurcharge = "Príplatok za silné znečistenie",
         ExpressSurcharge = "Expresný príplatok",
         TierDiscount = "Vernostná zľava",
         MembershipDiscount = "Zľava Cleansia Plus",
@@ -302,6 +308,8 @@ public record ReceiptLabels
         Amount = "Сума",
         NoItems = "Немає позицій",
         PackageSuffix = "пакет",
+        IncreasedDirtinessSurcharge = "Доплата за підвищене забруднення",
+        HeavyDirtinessSurcharge = "Доплата за сильне забруднення",
         ExpressSurcharge = "Доплата за терміновість",
         TierDiscount = "Знижка за лояльність",
         MembershipDiscount = "Знижка Cleansia Plus",
@@ -377,6 +385,8 @@ public record ReceiptLabels
         Amount = "Сумма",
         NoItems = "Нет позиций",
         PackageSuffix = "пакет",
+        IncreasedDirtinessSurcharge = "Доплата за повышенное загрязнение",
+        HeavyDirtinessSurcharge = "Доплата за сильное загрязнение",
         ExpressSurcharge = "Доплата за срочность",
         TierDiscount = "Скидка за лояльность",
         MembershipDiscount = "Скидка Cleansia Plus",

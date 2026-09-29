@@ -356,6 +356,7 @@ public sealed class ReceiptService(
         }
 
         // The receipt's own breakdown below the lines, so the declared lines sum to the declared total.
+        AddBreakdownLine(items, "Dirtiness surcharge", order.DirtinessSurchargeAmount, vatRate);
         AddBreakdownLine(items, "Express surcharge", order.ExpressSurchargeAmount, vatRate);
         AddBreakdownLine(items, "Loyalty discount", -(order.TierDiscountAmount ?? 0m), vatRate);
         AddBreakdownLine(items, "Cleansia Plus discount", -(order.MembershipDiscountAmount ?? 0m), vatRate);
@@ -506,8 +507,10 @@ public sealed class ReceiptService(
                     e.Extra is { } extra ? NameIn(languageCode, extra.Translations, extra.Name) : e.Slug,
                     e.UnitPrice))
                 .ToList(),
-            // The surcharge was applied to the lines' sum and each discount came off the result, so the
-            // stored discounts are measured against the charged price. → OrderFactory.DiscountResolution
+            DirtinessLevel = order.DirtinessLevel,
+            DirtinessSurcharge = order.DirtinessSurchargeAmount,
+            // Express was applied to the lines' sum, dirtiness included, and each discount came off the
+            // result, so the stored discounts are measured against the charged price. → OrderFactory.DiscountResolution
             ExpressSurcharge = order.ExpressSurchargeAmount,
             TierDiscount = order.TierDiscountAmount ?? 0m,
             MembershipDiscount = order.MembershipDiscountAmount ?? 0m,

@@ -357,6 +357,8 @@ public sealed class CompanyArchiveService(
         o.AppliedVatRate,
         o.CurrencyId,
         o.CreditAppliedAmount,
+        o.DirtinessLevel,
+        o.DirtinessSurchargeAmount,
         o.ExpressSurchargeAmount,
         o.TierDiscountAmount,
         o.TierAtPurchase,

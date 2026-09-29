@@ -150,6 +150,8 @@ public sealed class CompanyArchiveBundleTests(PostgresContainerFixture fixture) 
                 Assert.Equal("Bratislava", receipted.GetProperty("city").GetString());
                 Assert.Equal("Completed", receipted.GetProperty("currentStatus").GetString());
                 Assert.Single(receipted.GetProperty("extras").EnumerateArray());
+                Assert.Equal("Increased", receipted.GetProperty("dirtinessLevel").GetString());
+                Assert.Equal(3.60m, receipted.GetProperty("dirtinessSurchargeAmount").GetDecimal());
                 // The cash handed over sits beside the price: an administrator may record less than it.
                 Assert.Equal(100m, receipted.GetProperty("cashCollectedAmount").GetDecimal());
                 var anonymised = Assert.Single(orders, o => o.GetProperty("id").GetString() == seeded.AnonymisedOrderId);
@@ -492,6 +494,7 @@ public sealed class CompanyArchiveBundleTests(PostgresContainerFixture fixture) 
         var receiptedOrder = NewOrder("bundle-b-receipted", SvkId, EurId, customerB.Id, DateTime.UtcNow.AddDays(-40), B);
         receiptedOrder.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Completed, receiptedOrder));
         receiptedOrder.AddSelectedExtras([OrderExtra.Create(receiptedOrder, extra, 12m)]);
+        receiptedOrder.SetDirtinessSurcharge(DirtinessLevel.Increased, 3.60m);
         receiptedOrder.SetWorkContractDocument(contractDocument);
         var seatB = OrderEmployee.Create(receiptedOrder, cleanerB);
         receiptedOrder.AddAssignedEmployee(seatB);

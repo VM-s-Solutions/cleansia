@@ -34,6 +34,8 @@ public static class CompanyArchiveRecords
         decimal? AppliedVatRate,
         string CurrencyId,
         decimal CreditAppliedAmount,
+        DirtinessLevel DirtinessLevel,
+        decimal DirtinessSurchargeAmount,
         decimal ExpressSurchargeAmount,
         decimal? TierDiscountAmount,
         LoyaltyTier? TierAtPurchase,

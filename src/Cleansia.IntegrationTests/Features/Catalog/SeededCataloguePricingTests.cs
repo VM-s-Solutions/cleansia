@@ -161,6 +161,19 @@ public class SeededCataloguePricingTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// Owner ruling 2026-09-28: the pet-hair extra is retired, because the Increased dirtiness level
+    /// covers homes with pets and a pet owner would otherwise pay twice for the same effort. Seeded
+    /// inactive, so the booking wizard no longer offers it; every other extra still is.
+    /// </summary>
+    [Fact]
+    public async Task The_Pet_Hair_Extra_Is_Seeded_Retired()
+    {
+        await using var ctx = NewContext();
+
+        Assert.Equal(["pet-hair-supplement"], await ctx.Extras.Where(e => !e.IsActive).Select(e => e.Slug).ToListAsync());
+    }
+
+    /// <summary>
     /// Zero prices outside the default currency. EUR exists so the schema and the admin surfaces have a
     /// second currency to be exercised against, and it is seeded INACTIVE and unpriced precisely so the
     /// claim "only CZK is operated" has something enforcing it.

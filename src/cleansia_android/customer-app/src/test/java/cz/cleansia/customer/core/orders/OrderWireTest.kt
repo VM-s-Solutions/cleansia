@@ -689,6 +689,8 @@ class OrderWireTest {
             "hasReview",
             "creditAppliedAmount",
             "amountDueOnCard",
+            "dirtinessLevel",
+            "dirtinessSurchargeAmount",
         )
 
         val CURRENCY_SPEC_PROPERTIES = setOf("id", "code", "symbol", "name", "isDefault")

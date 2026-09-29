@@ -330,6 +330,8 @@ class BookingQuoteWireTest {
             "creditBalance",
             "creditMaxShareOfOrder",
             "lines",
+            "dirtinessSurchargeAmount",
+            "dirtinessLevel",
         )
 
         val QUOTE_REQUIRED_MONEY = listOf(

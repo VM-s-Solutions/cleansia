@@ -408,6 +408,7 @@ class PeriodPayWireTest {
             "orderPays",
             "currencyCode",
             "availableCurrencies",
+            "totalDirtinessPay",
         )
 
         val LINE_SPEC_PROPERTIES = setOf(
@@ -428,6 +429,7 @@ class PeriodPayWireTest {
             "isApproved",
             "createdOn",
             "currencyCode", "deductionReason",
+            "dirtinessPay",
         )
 
         val SUMMARY_REQUIRED_NUMBERS = listOf(

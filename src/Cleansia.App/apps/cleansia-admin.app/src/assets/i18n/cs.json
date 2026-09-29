@@ -88,7 +88,9 @@
       "profile": "Můj profil",
       "customer_detail": "Zákazník",
       "audit_log_customers": "Akce zákazníků",
-      "audit_log_customer_entry": "Akce zákazníka"
+      "audit_log_customer_entry": "Akce zákazníka",
+      "receivables": "Pohledávky",
+      "cash_held": "Hotovost u uklízečů"
     }
   },
   "components": {
@@ -257,6 +259,22 @@
       "normal": "Běžné",
       "increased": "Zvýšené",
       "heavy": "Silné"
+    },
+    "receivable_status": {
+      "open": "Otevřená",
+      "paid": "Zaplacená",
+      "written_off": "Odepsaná"
+    },
+    "receivable_kind": {
+      "cash_cancellation_fee": "Poplatek za pozdní zrušení",
+      "lockout": "Poplatek za znemožněný vstup",
+      "unpaid_cash": "Nezaplacená hotovost",
+      "top_up": "Doplatek"
+    },
+    "pay_line_type": {
+      "job": "Zakázka",
+      "cancellation_fee_share": "Podíl z poplatku za zrušení",
+      "lockout_fee_share": "Podíl z poplatku za znemožněný vstup"
     }
   },
   "sidebar": {
@@ -295,7 +313,9 @@
     "data_protection": "Ochrana údajů",
     "audit_log": "Protokol akcí",
     "notifications": "Upozornění",
-    "profile": "Můj profil"
+    "profile": "Můj profil",
+    "receivables": "Pohledávky",
+    "cash_held": "Hotovost u uklízečů"
   },
   "pages": {
     "unauthorized": {
@@ -682,6 +702,15 @@
           "amount": "Přijatá částka",
           "submit": "Zaznamenat hotovost",
           "success": "Hotovost byla zaznamenána. Objednávka je zaplacená."
+        },
+        "lockout": {
+          "action": "Potvrdit znemožněný vstup",
+          "context": "Použijte, když uklízeč nahlásil, že se nemůže dostat dovnitř. Před potvrzením zkontrolujte fotografii vchodu a jeho pokusy o volání.",
+          "confirm": "Rezervace se zruší jako vstup znemožněný zákazníkem za plnou cenu. Objednávka placená kartou si ponechá platbu i uplatněný kredit; nezaplacená hotovostní rezervace přihlášeného zákazníka dluží plnou cenu jako pohledávku; host nedostane nic zpět a nic dalšího se mu neúčtuje. Tým dostane svůj podíl z poplatku, jakmile bude vybrán. Akci nelze vrátit zpět.",
+          "submit": "Potvrdit znemožněný vstup",
+          "success": "Objednávka byla zrušena jako znemožněný vstup za {{fee}}. {{receivable}}",
+          "receivable_opened": "Zákazník dluží {{amount}}, zaznamenáno jako pohledávka.",
+          "no_receivable": "Co zákazník zaplatil, zůstává, a nic dalšího se neúčtuje."
         }
       },
       "messages": {
@@ -796,7 +825,16 @@
           "load_failed": "Smlouvu se nepodařilo načíst. Zkuste to prosím znovu.",
           "retry": "Zkusit znovu"
         }
-      }
+      },
+      "lockout": {
+        "title": "Hlášení znemožněného vstupu",
+        "reported_at": "Nahlášeno",
+        "call_attempts": "Pokusy uklízeče o volání",
+        "photo": "Fotografie vchodu",
+        "photo_hint": "V části Fotografie objednávky"
+      },
+      "entrance_photos": "Fotografie vchodu",
+      "entrance": "Vchod"
     },
     "invoice_management": {
       "title": "Správa faktur",
@@ -1054,7 +1092,8 @@
         "bonus_pay": "Bonus",
         "deduction_pay": "Srážka",
         "total_pay": "Celkem",
-        "created_on": "Vytvořeno"
+        "created_on": "Vytvořeno",
+        "line_type": "Položka"
       },
       "cancel_dialog": {
         "title": "Zrušit fakturu",
@@ -2862,6 +2901,73 @@
         "orders_truncated": "Zobrazeno {{shown}} nejnovějších z {{total}} objednávek.",
         "success": "Spis incidentu byl stažen a zaznamenán",
         "error": "Spis incidentu se nepodařilo sestavit"
+      }
+    },
+    "receivables": {
+      "title": "Pohledávky",
+      "description": "Co zákazníci dluží společnosti u objednávky: poplatek za pozdní zrušení nebo za znemožněný vstup u hotovostní rezervace, případně nezaplacenou hotovost. Dokud zákazník nějakou dluží, jeho nové rezervace s platbou v hotovosti se odmítají; platba kartou zůstává možná. Odepsání zaznamená, proč už částka dlužná není.",
+      "filters": {
+        "status": "Stav"
+      },
+      "load_error": "Pohledávky se nepodařilo načíst.",
+      "retry": "Zkusit znovu",
+      "empty": "Nikdo nic nedluží.",
+      "columns": {
+        "order": "Objednávka",
+        "kind": "Druh",
+        "amount": "Částka",
+        "status": "Stav",
+        "attempts": "Pokusy o stržení",
+        "created_on": "Vznikla",
+        "written_off_on": "Odepsána",
+        "write_off_note": "Důvod odepsání"
+      },
+      "actions": {
+        "view_order": "Otevřít objednávku",
+        "write_off": "Odepsat"
+      },
+      "write_off": {
+        "title": "Odepsat pohledávku",
+        "lede": "Zákazník už tuto částku dlužit nebude, a jakmile nemá otevřenou žádnou jinou, může znovu rezervovat s platbou v hotovosti. Poznámka je jediným záznamem o důvodu.",
+        "note": "Proč se odepisuje",
+        "note_hint": "Například: zákazník ji uhradil osobně",
+        "submit": "Odepsat"
+      },
+      "messages": {
+        "write_off_success": "Pohledávka byla odepsána"
+      }
+    },
+    "cash_held": {
+      "title": "Hotovost u uklízečů",
+      "description": "Hotovost společnosti, kterou uklízeči převzali na místě a stále ji mají u sebe, podle měny. Uzávěrka platebního období ji započte proti faktuře uklízeče; zaznamenejte, co uklízeč odevzdal, nebo odepište, co se nevrátí.",
+      "load_error": "Hotovost u uklízečů se nepodařilo načíst.",
+      "retry": "Zkusit znovu",
+      "empty": "Žádný uklízeč nemá u sebe hotovost.",
+      "amount": "Částka",
+      "columns": {
+        "cleaner": "Uklízeč",
+        "currency": "Měna",
+        "amount": "Hotovost u sebe"
+      },
+      "actions": {
+        "record_remittance": "Zaznamenat odevzdanou hotovost",
+        "write_off": "Odepsat"
+      },
+      "remittance": {
+        "title": "Zaznamenat odevzdanou hotovost",
+        "lede": "Odečte částku, kterou uklízeč odevzdal, od hotovosti, kterou má u sebe v této měně.",
+        "note": "Poznámka (nepovinná)",
+        "submit": "Zaznamenat"
+      },
+      "write_off": {
+        "title": "Odepsat hotovost",
+        "lede": "Odečte hotovost, kterou uklízeč neodevzdá, od toho, co má u sebe, aniž by byla přijata. Poznámka je jediným záznamem o důvodu.",
+        "note": "Proč se odepisuje",
+        "submit": "Odepsat"
+      },
+      "messages": {
+        "remittance_success": "Odevzdaná hotovost byla zaznamenána",
+        "write_off_success": "Hotovost byla odepsána"
       }
     }
   },

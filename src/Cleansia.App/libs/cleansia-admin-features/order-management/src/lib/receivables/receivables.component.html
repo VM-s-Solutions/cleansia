@@ -1,0 +1,109 @@
+<div class="cleansia-receivables cleansia-page">
+  <div class="cleansia-receivables__container page-wrapper">
+    <div class="cleansia-page-header">
+      <div class="cleansia-page-header__heading">
+        <cleansia-title [title]="'pages.receivables.title' | translate" [level]="1" />
+        <p class="cleansia-page-header__description">
+          {{ 'pages.receivables.description' | translate }}
+        </p>
+      </div>
+    </div>
+
+    <cleansia-section>
+      <div class="cleansia-list-filter">
+        <cleansia-select
+          [label]="'pages.receivables.filters.status' | translate"
+          [options]="statusOptions()"
+          [showClear]="true"
+          [ngModel]="facade.status()"
+          (valueChanges)="facade.selectStatus($event)"
+        />
+      </div>
+
+      @if (facade.initialLoading()) {
+      <cleansia-loader />
+      } @else if (facade.hasError()) {
+      <div class="not-found-state">
+        <div class="not-found-state__icon"><i class="pi pi-exclamation-triangle"></i></div>
+        <p class="not-found-state__message">{{ 'pages.receivables.load_error' | translate }}</p>
+        <div class="not-found-state__actions">
+          <cleansia-button
+            [label]="'pages.receivables.retry' | translate"
+            icon="pi pi-refresh"
+            severity="secondary"
+            [outlined]="true"
+            (onClick)="facade.loadReceivables()"
+          />
+        </div>
+      </div>
+      } @else {
+      <cleansia-table
+        [data]="facade.receivables()"
+        [columns]="table().columns"
+        [actions]="table().actions"
+        [config]="{
+          paginator: true,
+          rows: 20,
+          lazy: true,
+          totalRecords: facade.totalRecords(),
+          emptyMessage: 'pages.receivables.empty'
+        }"
+        [loading]="facade.loading()"
+        (pageChange)="facade.onPageChange($event)"
+        (sortChange)="facade.onSortChange($event)"
+      />
+      }
+    </cleansia-section>
+
+    @if (facade.writingOff(); as receivable) {
+    <cleansia-section [title]="'pages.receivables.write_off.title' | translate">
+      <p class="form-hint">{{ 'pages.receivables.write_off.lede' | translate }}</p>
+      <div class="detail-grid">
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.receivables.columns.order' | translate }}</span>
+          <span class="detail-grid__value">{{ receivable.displayOrderNumber || '-' }}</span>
+        </div>
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.receivables.columns.kind' | translate }}</span>
+          <span class="detail-grid__value">{{ kindOf(receivable) }}</span>
+        </div>
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.receivables.columns.amount' | translate }}</span>
+          <span class="detail-grid__value">{{ amountOf(receivable) }}</span>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-field form-field--full">
+          <cleansia-textarea
+            [label]="'pages.receivables.write_off.note' | translate"
+            [placeholder]="'pages.receivables.write_off.note_hint' | translate"
+            [rows]="3"
+            [maxLength]="500"
+            [ngModel]="facade.writeOffNote()"
+            (valueChanges)="facade.setWriteOffNote($event)"
+          />
+        </div>
+      </div>
+      <div class="form-actions">
+        <cleansia-button
+          [label]="'global.actions.cancel' | translate"
+          severity="secondary"
+          [outlined]="true"
+          [disabled]="facade.submitting()"
+          (onClick)="facade.cancelWriteOff()"
+        />
+        <cleansia-button
+          *cleansiaPermission="Policy.CanWriteOffReceivable"
+          [label]="'pages.receivables.write_off.submit' | translate"
+          icon="pi pi-times-circle"
+          severity="danger"
+          [outlined]="true"
+          [loading]="facade.submitting()"
+          [disabled]="!facade.canSubmitWriteOff()"
+          (onClick)="facade.writeOff()"
+        />
+      </div>
+    </cleansia-section>
+    }
+  </div>
+</div>

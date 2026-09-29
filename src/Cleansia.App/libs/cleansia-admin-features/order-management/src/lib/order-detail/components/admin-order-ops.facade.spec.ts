@@ -1,5 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import {
+  AdminCancelOrderAsLockoutCommand,
+  AdminCancelOrderAsLockoutResponse,
   AdminCancelOrderAsNoShowCommand,
   AdminCancelOrderAsNoShowResponse,
   AdminCancelOrderCommand,
@@ -31,6 +33,7 @@ const TRANSLATED = new Set([
   'api.order.cleaner_already_started',
   'api.order.cash_received_at_before_clean',
   'api.order.status.force_complete_reason_required',
+  'api.order.lockout.not_reported',
 ]);
 
 function translated(key: string, params?: Record<string, unknown>): string {
@@ -50,6 +53,7 @@ describe('AdminOrderOpsFacade', () => {
     reassign: jest.Mock;
     refund: jest.Mock;
     cancelNoShow: jest.Mock;
+    cancelLockout: jest.Mock;
     recordCash: jest.Mock;
   };
   let snackbar: {
@@ -89,6 +93,12 @@ describe('AdminOrderOpsFacade', () => {
       apologyCredit: null,
       ...outcome,
     });
+  const lockoutResponse = (receivableAmount: number | null) =>
+    AdminCancelOrderAsLockoutResponse.fromJS({
+      orderId: 'order-1',
+      feeAmount: 1800,
+      receivableAmount,
+    });
   const recordCashResponse = AdminRecordCashReceivedResponse.fromJS({
     orderId: 'order-1',
     paymentStatus: PaymentStatus.Paid,
@@ -101,6 +111,7 @@ describe('AdminOrderOpsFacade', () => {
       reassign: jest.fn(),
       refund: jest.fn(),
       cancelNoShow: jest.fn(),
+      cancelLockout: jest.fn(),
       recordCash: jest.fn(),
     };
     snackbar = {
@@ -478,6 +489,71 @@ describe('AdminOrderOpsFacade', () => {
 
       expect(facade.errorKey()).toBe('api.order.cleaner_already_started');
       expect(facade.activePanel()).toBe('noShow');
+      expect(facade.submitting()).toBe(false);
+      expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
+      expect(onSuccess).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('confirm a customer lockout', () => {
+    it('builds a typed lockout command carrying just the order id', () => {
+      orderClient.cancelLockout.mockReturnValue(of(lockoutResponse(null)));
+
+      facade.cancelAsLockout('order-1', 'CZK', jest.fn());
+
+      const command: AdminCancelOrderAsLockoutCommand = orderClient.cancelLockout.mock.calls[0][0];
+      expect(command).toBeInstanceOf(AdminCancelOrderAsLockoutCommand);
+      expect(command.toJSON()).toEqual({ orderId: 'order-1' });
+    });
+
+    it('does not call the endpoint without an order id', () => {
+      facade.cancelAsLockout('', 'CZK', jest.fn());
+      expect(orderClient.cancelLockout).not.toHaveBeenCalled();
+    });
+
+    it('announces the whole-price fee and the receivable a cash booking now owes, closes the panel and re-loads', () => {
+      orderClient.cancelLockout.mockReturnValue(of(lockoutResponse(1800)));
+      facade.openPanel('lockout');
+      const onSuccess = jest.fn();
+
+      facade.cancelAsLockout('order-1', 'CZK', onSuccess);
+
+      expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
+        'pages.order_management.ops.lockout.success',
+        {
+          fee: czk(1800),
+          receivable: translated('pages.order_management.ops.lockout.receivable_opened', {
+            amount: czk(1800),
+          }),
+        },
+        NO_SHOW_OUTCOME_TOAST_MS
+      );
+      expect(facade.activePanel()).toBeNull();
+      expect(onSuccess).toHaveBeenCalledTimes(1);
+    });
+
+    it('says nothing more is charged when the order owes no receivable', () => {
+      orderClient.cancelLockout.mockReturnValue(of(lockoutResponse(null)));
+
+      facade.cancelAsLockout('order-1', 'CZK', jest.fn());
+
+      expect(snackbar.showSuccessTranslated.mock.calls[0][1]).toEqual({
+        fee: czk(1800),
+        receivable: 'pages.order_management.ops.lockout.no_receivable',
+      });
+    });
+
+    it('shows the refusal inline and does not re-load when no lockout was reported', () => {
+      orderClient.cancelLockout.mockReturnValue(
+        throwError(() => ({ result: { detail: 'order.lockout.not_reported' } }))
+      );
+      facade.openPanel('lockout');
+      const onSuccess = jest.fn();
+
+      facade.cancelAsLockout('order-1', 'CZK', onSuccess);
+
+      expect(facade.errorKey()).toBe('api.order.lockout.not_reported');
+      expect(facade.activePanel()).toBe('lockout');
       expect(facade.submitting()).toBe(false);
       expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
       expect(onSuccess).not.toHaveBeenCalled();

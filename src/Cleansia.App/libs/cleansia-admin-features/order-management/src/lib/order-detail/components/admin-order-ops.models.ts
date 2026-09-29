@@ -1,4 +1,4 @@
-import { OrderStatus } from '@cleansia/admin-services';
+import { OrderItem, OrderStatus } from '@cleansia/admin-services';
 
 export type AdminOrderOpsPanel =
   | 'cancel'
@@ -6,7 +6,8 @@ export type AdminOrderOpsPanel =
   | 'reassign'
   | 'refund'
   | 'noShow'
-  | 'recordCash';
+  | 'recordCash'
+  | 'lockout';
 
 export const NO_SHOW_OUTCOME_TOAST_MS = 10_000;
 
@@ -43,3 +44,11 @@ export const OVERRIDE_STATUS_OPTIONS: ReadonlyArray<OrderStatusOption> = [
   },
 ];
 
+export function isLockoutConfirmable(order: OrderItem): boolean {
+  const status = order.orderStatus?.value;
+  return (
+    !!order.lockoutReportedAt &&
+    status !== OrderStatus.Cancelled &&
+    status !== OrderStatus.Completed
+  );
+}

@@ -88,7 +88,9 @@
       "profile": "My Profile",
       "customer_detail": "Customer",
       "audit_log_customers": "Customer actions",
-      "audit_log_customer_entry": "Customer action"
+      "audit_log_customer_entry": "Customer action",
+      "receivables": "Receivables",
+      "cash_held": "Cash held by cleaners"
     }
   },
   "components": {
@@ -257,6 +259,22 @@
       "normal": "Normal",
       "increased": "Increased",
       "heavy": "Heavy"
+    },
+    "receivable_status": {
+      "open": "Open",
+      "paid": "Paid",
+      "written_off": "Written off"
+    },
+    "receivable_kind": {
+      "cash_cancellation_fee": "Late-cancellation fee",
+      "lockout": "Lockout fee",
+      "unpaid_cash": "Unpaid cash",
+      "top_up": "Top-up"
+    },
+    "pay_line_type": {
+      "job": "Job",
+      "cancellation_fee_share": "Share of a cancellation fee",
+      "lockout_fee_share": "Share of a lockout fee"
     }
   },
   "sidebar": {
@@ -295,7 +313,9 @@
     "data_protection": "Data Protection",
     "audit_log": "Audit Log",
     "notifications": "Notifications",
-    "profile": "My Profile"
+    "profile": "My Profile",
+    "receivables": "Receivables",
+    "cash_held": "Cash held"
   },
   "pages": {
     "unauthorized": {
@@ -682,6 +702,15 @@
           "amount": "Amount received",
           "submit": "Record cash",
           "success": "Cash recorded. The order is paid."
+        },
+        "lockout": {
+          "action": "Confirm customer lockout",
+          "context": "Use this when the cleaner reported that they could not get in. Check the entrance photo and the calls they made before you confirm.",
+          "confirm": "This cancels the booking as a customer lockout at the whole price. A card order keeps its payment and any credit applied to it; a signed-in customer's unpaid cash booking owes the whole price as a receivable; a guest keeps nothing back and is never charged more. The crew is paid its share of the fee once it is collected. It cannot be undone.",
+          "submit": "Confirm lockout",
+          "success": "Order cancelled as a customer lockout at {{fee}}. {{receivable}}",
+          "receivable_opened": "The customer owes {{amount}}, recorded as a receivable.",
+          "no_receivable": "What the customer paid is kept and nothing more is charged."
         }
       },
       "messages": {
@@ -796,7 +825,16 @@
           "load_failed": "The contract could not be loaded. Please try again.",
           "retry": "Try again"
         }
-      }
+      },
+      "lockout": {
+        "title": "Lockout report",
+        "reported_at": "Reported at",
+        "call_attempts": "Calls the cleaner made",
+        "photo": "Entrance photo",
+        "photo_hint": "Under Order Photos"
+      },
+      "entrance_photos": "Entrance photos",
+      "entrance": "Entrance"
     },
     "invoice_management": {
       "title": "Invoice Management",
@@ -2091,7 +2129,8 @@
         "bonus_pay": "Bonus",
         "deduction_pay": "Deduction",
         "total_pay": "Total",
-        "created_on": "Created"
+        "created_on": "Created",
+        "line_type": "Line"
       },
       "cancel_dialog": {
         "title": "Cancel Invoice",
@@ -2862,6 +2901,73 @@
         "orders_truncated": "Showing the newest {{shown}} of {{total}} orders.",
         "success": "The incident file was downloaded and recorded",
         "error": "The incident file could not be built"
+      }
+    },
+    "receivables": {
+      "title": "Receivables",
+      "description": "What customers owe the company on an order: a late-cancellation or lockout fee on a cash booking, or unpaid cash. While a customer owes any, their new cash bookings are refused; card bookings stay open. Writing one off records why it is no longer owed.",
+      "filters": {
+        "status": "Status"
+      },
+      "load_error": "Could not load the receivables.",
+      "retry": "Try again",
+      "empty": "Nothing is owed.",
+      "columns": {
+        "order": "Order",
+        "kind": "Kind",
+        "amount": "Amount",
+        "status": "Status",
+        "attempts": "Charge attempts",
+        "created_on": "Opened",
+        "written_off_on": "Written off",
+        "write_off_note": "Write-off note"
+      },
+      "actions": {
+        "view_order": "Open the order",
+        "write_off": "Write off"
+      },
+      "write_off": {
+        "title": "Write off a receivable",
+        "lede": "The customer will no longer owe this amount, and once nothing else is open they can book cash again. The note is the only record of why.",
+        "note": "Why it is written off",
+        "note_hint": "For example: the customer settled it in person",
+        "submit": "Write off"
+      },
+      "messages": {
+        "write_off_success": "Receivable written off"
+      }
+    },
+    "cash_held": {
+      "title": "Cash held by cleaners",
+      "description": "The company's cash each cleaner took at the door and still holds, per currency. A pay-period close sets it off against the cleaner's invoice; record what a cleaner hands back, or write off what will not come back.",
+      "load_error": "Could not load the cash cleaners hold.",
+      "retry": "Try again",
+      "empty": "No cleaner holds any cash.",
+      "amount": "Amount",
+      "columns": {
+        "cleaner": "Cleaner",
+        "currency": "Currency",
+        "amount": "Cash held"
+      },
+      "actions": {
+        "record_remittance": "Record cash handed back",
+        "write_off": "Write off"
+      },
+      "remittance": {
+        "title": "Record cash handed back",
+        "lede": "Takes the amount the cleaner handed back off the cash they hold in this currency.",
+        "note": "Note (optional)",
+        "submit": "Record"
+      },
+      "write_off": {
+        "title": "Write off cash held",
+        "lede": "Takes cash the cleaner will not hand back off what they hold, without it being received. The note is the only record of why.",
+        "note": "Why it is written off",
+        "submit": "Write off"
+      },
+      "messages": {
+        "remittance_success": "Cash handed back recorded",
+        "write_off_success": "Cash written off"
       }
     }
   },

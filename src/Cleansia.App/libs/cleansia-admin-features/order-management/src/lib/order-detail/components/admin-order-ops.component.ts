@@ -22,6 +22,7 @@ import { FloatLabelModule } from 'primeng/floatlabel';
 import { AdminOrderOpsFacade } from './admin-order-ops.facade';
 import {
   AdminOrderOpsPanel,
+  isLockoutConfirmable,
   OVERRIDE_STATUS_OPTIONS,
 } from './admin-order-ops.models';
 
@@ -73,6 +74,8 @@ export class AdminOrderOpsComponent {
   readonly hasAssignedEmployees = computed(
     () => this.fromEmployeeOptions().length > 0
   );
+
+  readonly canConfirmLockout = computed(() => isLockoutConfirmable(this.order()));
 
   togglePanel(panel: AdminOrderOpsPanel): void {
     this.facade.openPanel(panel);
@@ -142,6 +145,12 @@ export class AdminOrderOpsComponent {
     const order = this.order();
     if (!order.id) return;
     this.facade.cancelAsNoShow(order.id, order.currency?.code, () => this.changed.emit());
+  }
+
+  submitLockout(): void {
+    const order = this.order();
+    if (!order.id) return;
+    this.facade.cancelAsLockout(order.id, order.currency?.code, () => this.changed.emit());
   }
 
   submitRecordCash(): void {

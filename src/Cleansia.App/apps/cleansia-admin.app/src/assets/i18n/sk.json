@@ -88,7 +88,9 @@
       "profile": "Môj profil",
       "customer_detail": "Zákazník",
       "audit_log_customers": "Akcie zákazníkov",
-      "audit_log_customer_entry": "Akcia zákazníka"
+      "audit_log_customer_entry": "Akcia zákazníka",
+      "receivables": "Pohľadávky",
+      "cash_held": "Hotovosť u upratovačov"
     }
   },
   "components": {
@@ -257,6 +259,22 @@
       "normal": "Bežné",
       "increased": "Zvýšené",
       "heavy": "Silné"
+    },
+    "receivable_status": {
+      "open": "Otvorená",
+      "paid": "Zaplatená",
+      "written_off": "Odpísaná"
+    },
+    "receivable_kind": {
+      "cash_cancellation_fee": "Poplatok za neskoré zrušenie",
+      "lockout": "Poplatok za znemožnený vstup",
+      "unpaid_cash": "Nezaplatená hotovosť",
+      "top_up": "Doplatok"
+    },
+    "pay_line_type": {
+      "job": "Zákazka",
+      "cancellation_fee_share": "Podiel z poplatku za zrušenie",
+      "lockout_fee_share": "Podiel z poplatku za znemožnený vstup"
     }
   },
   "sidebar": {
@@ -295,7 +313,9 @@
     "data_protection": "Ochrana údajov",
     "audit_log": "Protokol akcií",
     "notifications": "Upozornenia",
-    "profile": "Môj profil"
+    "profile": "Môj profil",
+    "receivables": "Pohľadávky",
+    "cash_held": "Hotovosť u upratovačov"
   },
   "pages": {
     "unauthorized": {
@@ -682,6 +702,15 @@
           "amount": "Prijatá suma",
           "submit": "Zaznamenať hotovosť",
           "success": "Hotovosť bola zaznamenaná. Objednávka je zaplatená."
+        },
+        "lockout": {
+          "action": "Potvrdiť znemožnený vstup",
+          "context": "Použite, keď upratovač nahlásil, že sa nemôže dostať dnu. Pred potvrdením skontrolujte fotografiu vchodu a jeho pokusy o volanie.",
+          "confirm": "Rezervácia sa zruší ako vstup znemožnený zákazníkom za plnú cenu. Objednávka platená kartou si ponechá platbu aj uplatnený kredit; nezaplatená hotovostná rezervácia prihláseného zákazníka dlhuje plnú cenu ako pohľadávku; hosť nedostane nič späť a nič ďalšie sa mu neúčtuje. Tím dostane svoj podiel z poplatku, keď bude vybraný. Akciu nie je možné vrátiť.",
+          "submit": "Potvrdiť znemožnený vstup",
+          "success": "Objednávka bola zrušená ako znemožnený vstup za {{fee}}. {{receivable}}",
+          "receivable_opened": "Zákazník dlhuje {{amount}}, zaznamenané ako pohľadávka.",
+          "no_receivable": "Čo zákazník zaplatil, zostáva, a nič ďalšie sa neúčtuje."
         }
       },
       "messages": {
@@ -796,7 +825,16 @@
           "load_failed": "Zmluvu sa nepodarilo načítať. Skúste to prosím znova.",
           "retry": "Skúsiť znova"
         }
-      }
+      },
+      "lockout": {
+        "title": "Hlásenie znemožneného vstupu",
+        "reported_at": "Nahlásené",
+        "call_attempts": "Pokusy upratovača o volanie",
+        "photo": "Fotografia vchodu",
+        "photo_hint": "V časti Fotografie objednávky"
+      },
+      "entrance_photos": "Fotografie vchodu",
+      "entrance": "Vchod"
     },
     "invoice_management": {
       "title": "Správa faktúr",
@@ -2091,7 +2129,8 @@
         "bonus_pay": "Bonus",
         "deduction_pay": "Zrážka",
         "total_pay": "Celkom",
-        "created_on": "Vytvorené"
+        "created_on": "Vytvorené",
+        "line_type": "Položka"
       },
       "cancel_dialog": {
         "title": "Zrušiť faktúru",
@@ -2862,6 +2901,73 @@
         "orders_truncated": "Zobrazených {{shown}} najnovších z {{total}} objednávok.",
         "success": "Spis incidentu bol stiahnutý a zaznamenaný",
         "error": "Spis incidentu sa nepodarilo zostaviť"
+      }
+    },
+    "receivables": {
+      "title": "Pohľadávky",
+      "description": "Čo zákazníci dlhujú spoločnosti pri objednávke: poplatok za neskoré zrušenie alebo za znemožnený vstup pri hotovostnej rezervácii, prípadne nezaplatenú hotovosť. Kým zákazník nejakú dlhuje, jeho nové rezervácie s platbou v hotovosti sa odmietajú; platba kartou zostáva možná. Odpísanie zaznamená, prečo suma už nie je dlžná.",
+      "filters": {
+        "status": "Stav"
+      },
+      "load_error": "Pohľadávky sa nepodarilo načítať.",
+      "retry": "Skúsiť znova",
+      "empty": "Nikto nič nedlhuje.",
+      "columns": {
+        "order": "Objednávka",
+        "kind": "Druh",
+        "amount": "Suma",
+        "status": "Stav",
+        "attempts": "Pokusy o stiahnutie",
+        "created_on": "Vznikla",
+        "written_off_on": "Odpísaná",
+        "write_off_note": "Dôvod odpísania"
+      },
+      "actions": {
+        "view_order": "Otvoriť objednávku",
+        "write_off": "Odpísať"
+      },
+      "write_off": {
+        "title": "Odpísať pohľadávku",
+        "lede": "Zákazník už túto sumu dlhovať nebude, a keď nemá otvorenú žiadnu inú, môže znova rezervovať s platbou v hotovosti. Poznámka je jediným záznamom o dôvode.",
+        "note": "Prečo sa odpisuje",
+        "note_hint": "Napríklad: zákazník ju uhradil osobne",
+        "submit": "Odpísať"
+      },
+      "messages": {
+        "write_off_success": "Pohľadávka bola odpísaná"
+      }
+    },
+    "cash_held": {
+      "title": "Hotovosť u upratovačov",
+      "description": "Hotovosť spoločnosti, ktorú upratovači prevzali na mieste a stále ju majú pri sebe, podľa meny. Uzávierka výplatného obdobia ju započíta proti faktúre upratovača; zaznamenajte, čo upratovač odovzdal, alebo odpíšte, čo sa nevráti.",
+      "load_error": "Hotovosť u upratovačov sa nepodarilo načítať.",
+      "retry": "Skúsiť znova",
+      "empty": "Žiadny upratovač nemá pri sebe hotovosť.",
+      "amount": "Suma",
+      "columns": {
+        "cleaner": "Upratovač",
+        "currency": "Mena",
+        "amount": "Hotovosť pri sebe"
+      },
+      "actions": {
+        "record_remittance": "Zaznamenať odovzdanú hotovosť",
+        "write_off": "Odpísať"
+      },
+      "remittance": {
+        "title": "Zaznamenať odovzdanú hotovosť",
+        "lede": "Odpočíta sumu, ktorú upratovač odovzdal, od hotovosti, ktorú má pri sebe v tejto mene.",
+        "note": "Poznámka (nepovinná)",
+        "submit": "Zaznamenať"
+      },
+      "write_off": {
+        "title": "Odpísať hotovosť",
+        "lede": "Odpočíta hotovosť, ktorú upratovač neodovzdá, od toho, čo má pri sebe, bez toho, aby bola prijatá. Poznámka je jediným záznamom o dôvode.",
+        "note": "Prečo sa odpisuje",
+        "submit": "Odpísať"
+      },
+      "messages": {
+        "remittance_success": "Odovzdaná hotovosť bola zaznamenaná",
+        "write_off_success": "Hotovosť bola odpísaná"
       }
     }
   },

@@ -55,6 +55,23 @@
   }
 
   <div class="cl-quote__field">
+    <span class="cl-quote__label">{{ 'pages.home.quote.dirtiness_label' | translate }}</span>
+    <div class="cl-quote__chips">
+      @for (option of dirtinessLevels; track option.level) {
+      <button
+        type="button"
+        class="cl-chip cl-quote__chip"
+        [class.cl-chip--on]="facade.dirtinessLevel() === option.level"
+        [attr.aria-pressed]="facade.dirtinessLevel() === option.level"
+        (click)="facade.selectDirtinessLevel(option.level)"
+      >
+        {{ 'pages.order.dirtiness.' + option.key + '.name' | translate }}
+      </button>
+      }
+    </div>
+  </div>
+
+  <div class="cl-quote__field">
     <span class="cl-quote__label">{{ 'pages.home.quote.date_label' | translate }}</span>
     <div class="cl-quote__when">
       <p-datePicker
@@ -115,6 +132,11 @@
           (marketChange)="facade.chooseMarket($event)"
         />
       </span>
+      @if (facade.dirtinessSurcharge(); as surcharge) {
+      <span class="cl-muted cl-quote__surcharge">
+        {{ 'pages.home.quote.dirtiness_included' | translate: { line: (surcharge.lineKey | translate), amount: surcharge.amount } }}
+      </span>
+      }
       <!--
         "2 uklízeči · odhad 4 hodiny" — the artboard's subline. Both numbers come
         from the quote endpoint, computed by the same OrderDuration the order

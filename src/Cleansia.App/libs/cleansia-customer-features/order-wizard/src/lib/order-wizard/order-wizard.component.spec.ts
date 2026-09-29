@@ -8,6 +8,7 @@ import { CleansiaSelectComponent } from '@cleansia/components';
 import { lastBookableDay } from '@cleansia/models';
 import { SnackbarService } from '@cleansia/services';
 import {
+  DirtinessLevel,
   GetMembershipPlansResponse,
   GetMyMembershipResponse,
   PackageListItem,
@@ -89,6 +90,7 @@ class FakeOrderWizardFacade {
   tierDiscount = signal(0);
   effectivePromoDiscount = signal(0);
   expressSurcharge = signal(0);
+  dirtinessSurcharge = signal(0);
   expressSurchargeApplied = signal(false);
   expressSurchargeWaived = signal(false);
   expressUpgradesRemaining = signal(0);
@@ -261,7 +263,7 @@ describe('OrderWizardComponent (a11y)', () => {
 
     async function openWhenStep(): Promise<void> {
       await setup(() => jest.useFakeTimers().setSystemTime(now));
-      facade.activeStep.set(2);
+      facade.activeStep.set(3);
       fixture.detectChanges();
     }
 
@@ -372,7 +374,7 @@ describe('OrderWizardComponent (a11y)', () => {
   describe('contact step labels + errors (AC3, AC4)', () => {
     it('associates each contact label with its input via for/id', async () => {
       await setup();
-      facade.activeStep.set(1);
+      facade.activeStep.set(2);
       fixture.detectChanges();
 
       // `labels` covers both associations — a wrapping <label> and a for/id
@@ -385,7 +387,7 @@ describe('OrderWizardComponent (a11y)', () => {
 
     it('sets aria-invalid + aria-describedby when a contact field has a touched error', async () => {
       await setup();
-      facade.activeStep.set(1);
+      facade.activeStep.set(2);
       fixture.detectChanges();
 
       fixture.componentInstance.markTouched('customerFirstName');
@@ -400,7 +402,7 @@ describe('OrderWizardComponent (a11y)', () => {
 
     it('clears aria-invalid once the field becomes valid', async () => {
       await setup();
-      facade.activeStep.set(1);
+      facade.activeStep.set(2);
       facade.updateFormData({ customerFirstName: 'Jane' });
       fixture.detectChanges();
       fixture.componentInstance.markTouched('customerFirstName');
@@ -414,7 +416,7 @@ describe('OrderWizardComponent (a11y)', () => {
   describe('the address country picker', () => {
     it('offers the market directory and shows the country the booking is priced for', async () => {
       await setup();
-      facade.activeStep.set(1);
+      facade.activeStep.set(2);
       facade.countryOptions.set([
         { label: 'Czechia', value: 'cze-id' },
         { label: 'Slovakia', value: 'svk-id' },
@@ -441,7 +443,7 @@ describe('OrderWizardComponent (a11y)', () => {
 
     it('writes a pick made in the rendered select onto the address country', async () => {
       await setup();
-      facade.activeStep.set(1);
+      facade.activeStep.set(2);
       facade.countryOptions.set([
         { label: 'Czechia', value: 'cze-id' },
         { label: 'Slovakia', value: 'svk-id' },
@@ -485,7 +487,7 @@ describe('OrderWizardComponent (a11y)', () => {
         }),
       ]);
       facade.addressCountryId.set('cze-id');
-      facade.activeStep.set(4);
+      facade.activeStep.set(5);
       fixture.detectChanges();
 
       expect(facade.formData().address.countryId).toBe('');
@@ -494,12 +496,88 @@ describe('OrderWizardComponent (a11y)', () => {
       expect(query).toBeInstanceOf(QuotePlusSavingsQuery);
       expect(query.countryId).toBe('cze-id');
     });
+
+    it('is priced at the dirtiness level the customer picked', async () => {
+      await setup();
+      facade.plans.set([
+        GetMembershipPlansResponse.fromJS({
+          code: 'plus-monthly',
+          name: 'Plus',
+          price: 199,
+          billingInterval: 0,
+          discountPercentage: 12,
+          freeCancellationWindowHours: 24,
+          expressUpgradesPerMonth: 0,
+          trialPeriodDays: 0,
+          savingsPercentVsMonthly: 0,
+          currencyCode: 'CZK',
+        }),
+      ]);
+      facade.formData.update((data) => ({ ...data, dirtinessLevel: DirtinessLevel.Heavy }));
+      facade.activeStep.set(5);
+      fixture.detectChanges();
+
+      const query = facade.loadPlusSavings.mock.calls.at(-1)?.[0] as QuotePlusSavingsQuery;
+      expect(query.dirtinessLevel).toBe(DirtinessLevel.Heavy);
+    });
+  });
+
+  describe('the dirtiness level step', () => {
+    it('offers the three levels with none chosen, and records the one tapped', async () => {
+      await setup();
+      facade.activeStep.set(1);
+      fixture.detectChanges();
+
+      const levels = Array.from(el.querySelectorAll<HTMLButtonElement>('[data-spec-level]'));
+      expect(levels.length).toBe(3);
+      expect(levels.map((level) => level.getAttribute('aria-pressed'))).toEqual(['false', 'false', 'false']);
+
+      levels[2].click();
+      fixture.detectChanges();
+
+      expect(facade.updateFormData).toHaveBeenCalledWith({ dirtinessLevel: DirtinessLevel.Heavy });
+      expect(levels[2].getAttribute('aria-pressed')).toBe('true');
+    });
+  });
+
+  describe(`the summary rail's dirtiness line`, () => {
+    const priced = (dirtinessLevel: DirtinessLevel, dirtinessSurchargeAmount: number) => {
+      facade.quote.set(
+        QuoteOrderResponse.fromJS({
+          dirtinessLevel,
+          dirtinessSurchargeAmount,
+          lines: [{ kind: 'service', itemId: 's-1', baseAmount: 1000, unitAmount: 0, units: 0, amount: 1000 }],
+        }),
+      );
+      facade.dirtinessSurcharge.set(dirtinessSurchargeAmount);
+      fixture.detectChanges();
+    };
+
+    const rows = () =>
+      Array.from(el.querySelectorAll('.cl-wiz__summary-line')).map((row) =>
+        (row.textContent ?? '').replace(/\s+/g, ' ').trim(),
+      );
+
+    it('names the level the quote priced and the surcharge it stored', async () => {
+      await setup();
+      priced(DirtinessLevel.Increased, 300);
+
+      const line = rows().find((row) => row.includes('dirtiness.increased.surcharge_line'));
+      expect(line).toContain('300');
+    });
+
+    it('is absent when the level adds nothing', async () => {
+      await setup();
+      priced(DirtinessLevel.Normal, 0);
+
+      expect(rows().some((row) => row.includes('surcharge_line'))).toBe(false);
+    });
   });
 
   describe('saved address rows (AC1, AC2)', () => {
     it('renders saved address rows as focusable buttons with aria-pressed', async () => {
       await setup();
-      facade.activeStep.set(1);
+      facade.activeStep.set(2);
       facade.isAuthenticated.set(true);
       facade.savedAddresses.set([makeAddress('a-1', 'Home')]);
       facade.selectedSavedAddressId.set('a-1');
@@ -515,7 +593,7 @@ describe('OrderWizardComponent (a11y)', () => {
   describe('payment cards (AC1, AC2)', () => {
     it('renders payment cards as focusable buttons with aria-pressed reflecting the chosen method', async () => {
       await setup();
-      facade.activeStep.set(3);
+      facade.activeStep.set(4);
       facade.formData.update((d) => ({ ...d, paymentType: PaymentType.Card }));
       fixture.detectChanges();
 
@@ -530,7 +608,7 @@ describe('OrderWizardComponent (a11y)', () => {
 
     it('disables cash and says why when the booking needs more than one cleaner', async () => {
       await setup();
-      facade.activeStep.set(3);
+      facade.activeStep.set(4);
       facade.cashSelectable.set(false);
       facade.cashReason.set({ key: 'pages.order.cash_needs_card', params: { count: 2 } });
       fixture.detectChanges();
@@ -546,7 +624,7 @@ describe('OrderWizardComponent (a11y)', () => {
 
     it('disables cash for a guest and offers the way to sign in beside the reason', async () => {
       await setup();
-      facade.activeStep.set(3);
+      facade.activeStep.set(4);
       facade.cashSelectable.set(false);
       facade.cashReason.set({ key: 'pages.order.cash_needs_account', params: {} });
       facade.cashNeedsAccount.set(true);
@@ -560,7 +638,7 @@ describe('OrderWizardComponent (a11y)', () => {
 
     it('leaves both ways open, with no reason, when cash is allowed', async () => {
       await setup();
-      facade.activeStep.set(3);
+      facade.activeStep.set(4);
       fixture.detectChanges();
 
       expect(cashCard().disabled).toBe(false);
@@ -570,7 +648,7 @@ describe('OrderWizardComponent (a11y)', () => {
 
     it('says cash was taken away only while the facade says so', async () => {
       await setup();
-      facade.activeStep.set(3);
+      facade.activeStep.set(4);
       facade.cashClearedNotice.set(true);
       fixture.detectChanges();
       expect(el.textContent).toContain('pages.order.cash_cleared');
@@ -624,7 +702,7 @@ describe('OrderWizardComponent (a11y)', () => {
 
     it('marks the contact fields touched so their own errors show too', async () => {
       await setup();
-      facade.activeStep.set(1);
+      facade.activeStep.set(2);
       facade.missingReasonsValue.set(['pages.order.missing.first_name']);
       fixture.detectChanges();
 
@@ -732,7 +810,7 @@ describe('OrderWizardComponent (a11y)', () => {
   });
 
   describe('the contract for work on the confirm step', () => {
-    const CONFIRM_STEP = 5;
+    const CONFIRM_STEP = 6;
 
     function contractNote(): HTMLElement | null {
       return el.querySelector('.cl-wiz__contract-note');

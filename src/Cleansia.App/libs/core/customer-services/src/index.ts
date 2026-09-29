@@ -202,6 +202,7 @@ export {
   SortDefinition,
   CreateOrderResponse,
   Code,
+  DirtinessLevel,
   DisputeDetails,
   DisputeEvidenceDto,
   DisputeListItem,

@@ -1,4 +1,4 @@
-import { AddressDto, PackageListItem, PackageServiceSummary, PaymentType, ServiceListItem } from '@cleansia/customer-services';
+import { AddressDto, DirtinessLevel, PackageListItem, PackageServiceSummary, PaymentType, ServiceListItem } from '@cleansia/customer-services';
 import type { CashEligibility } from '@cleansia/models';
 import { TranslateService } from '@ngx-translate/core';
 
@@ -74,6 +74,8 @@ export interface OrderWizardFormData {
   selectedPackageIds: string[];
   rooms: number;
   bathrooms: number;
+  /** Null until the customer picks one: the level is an active choice, never a default. */
+  dirtinessLevel: DirtinessLevel | null;
   customerFirstName: string;
   customerLastName: string;
   customerEmail: string;
@@ -168,6 +170,7 @@ export const ORDER_WIZARD_INITIAL_DATA: OrderWizardFormData = {
   selectedPackageIds: [],
   rooms: 1,
   bathrooms: 1,
+  dirtinessLevel: null,
   customerFirstName: '',
   customerLastName: '',
   customerEmail: '',

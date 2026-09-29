@@ -574,6 +574,8 @@
         "no_registration": "Bez registrace",
         "service_label": "Co je potřeba uklidit",
         "size_label": "Velikost bytu",
+        "dirtiness_label": "Míra znečištění",
+        "dirtiness_included": "{{line}} je v ceně: {{amount}}",
         "date_label": "Kdy",
         "date_hint": "Nepovinné. Objednávka méně než 4 hodiny předem má expresní příplatek.",
         "price_label": "Pevná cena",
@@ -796,6 +798,7 @@
       "missing": {
         "heading": "Ještě chybí:",
         "services": "Vyberte alespoň jednu službu nebo balíček.",
+        "dirtiness": "Vyberte, jak moc je u vás uklizeno.",
         "address": "Vyberte adresu z našeptávače.",
         "first_name": "Vyplňte jméno.",
         "last_name": "Vyplňte příjmení.",
@@ -915,6 +918,7 @@
       "step_when_title": "Kdy máme přijít?",
       "steps": {
         "services": "Služby",
+        "dirtiness": "Znečištění",
         "address": "Adresa",
         "datetime": "Datum a čas",
         "payment": "Platba",
@@ -983,7 +987,40 @@
       "cash_pending": "Zda můžete platit hotově, potvrdíme, jakmile bude známa cena.",
       "cash_cleared": "Platba hotově už pro tuto objednávku není možná, a proto není vybrán žádný způsob platby. Zvolte, jak chcete platit.",
       "cash_sign_in": "Přihlásit se",
-      "plus_perk_grace": "60 minut po každé objednávce na bezplatné zrušení místo 15 minut"
+      "plus_perk_grace": "60 minut po každé objednávce na bezplatné zrušení místo 15 minut",
+      "dirtiness": {
+        "title": "Jak moc je u vás uklizeno?",
+        "lead": "Vyberte stav, který nejlépe odpovídá celé domácnosti.",
+        "hint": "Pokud váháte mezi dvěma stupni, zvolte vyšší. Uklízečka pak má dost času a výsledek bude odpovídat.",
+        "no_surcharge": "Bez příplatku",
+        "surcharge": "+{{rate}} %",
+        "normal": {
+          "name": "Běžné",
+          "lead": "Domácnost se uklízí pravidelně, naposledy zhruba před 1–2 týdny.",
+          "sign_1": "prach na nábytku a policích, drobečky a chlupy na podlaze",
+          "sign_2": "v koupelně běžné vodní skvrny, WC bez usazenin",
+          "sign_3": "kuchyň po běžném vaření: linka a sporák otřít, bez připečenin",
+          "sign_4": "nádobí umyté nebo v myčce"
+        },
+        "increased": {
+          "name": "Zvýšené",
+          "lead": "Poslední úklid před 3–6 týdny, nebo domácnost se zvířaty či malými dětmi.",
+          "sign_1": "viditelná vrstva prachu, skvrny a zašlá místa na podlaze",
+          "sign_2": "vodní kámen na bateriích, sprchovém koutě a vaně, zašlé spáry",
+          "sign_3": "mastnota na kuchyňské lince, obkladu a digestoři, znečištěná trouba nebo mikrovlnka zvenku",
+          "sign_4": "chlupy zvířat na sedačce, kobercích a v rozích",
+          "surcharge_line": "Příplatek za zvýšené znečištění"
+        },
+        "heavy": {
+          "name": "Silné",
+          "lead": "Déle než 2 měsíce bez úklidu, nebo dlouhodobě zanedbaná domácnost.",
+          "sign_1": "silný vodní kámen a usazeniny, které nejdou dolů jedním setřením",
+          "sign_2": "připečená mastnota na sporáku, digestoři a skříňkách",
+          "sign_3": "černé skvrny (plíseň) na silikonu nebo ve spárách",
+          "sign_4": "zaschlé nečistoty na podlaze, lepkavé povrchy, výrazný zápach",
+          "surcharge_line": "Příplatek za silné znečištění"
+        }
+      }
     },
     "orders": {
       "title": "Moje objednávky",

@@ -60,10 +60,12 @@ import {
   cashReasonCopy,
 } from './order-wizard.models';
 
-const WHEN_STEP = 2;
-const PAYMENT_STEP = 3;
+const DIRTINESS_STEP = 1;
+const ADDRESS_STEP = 2;
+const WHEN_STEP = 3;
+const PAYMENT_STEP = 4;
 /** The index of the Plus step in `steps`. */
-const PLUS_STEP = 4;
+const PLUS_STEP = 5;
 
 @Injectable()
 export class OrderWizardFacade extends UnsubscribeControlDirective {
@@ -169,6 +171,7 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
 
   steps = [
     'pages.order.steps.services',
+    'pages.order.steps.dirtiness',
     'pages.order.steps.address',
     'pages.order.steps.datetime',
     'pages.order.steps.payment',
@@ -178,6 +181,7 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
 
   stepIcons = [
     'pi pi-list',
+    'pi pi-sparkles',
     'pi pi-map-marker',
     'pi pi-calendar',
     'pi pi-credit-card',
@@ -227,6 +231,7 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   readonly expressSurchargeApplied = this.pricing.expressSurchargeApplied;
   readonly expressSurchargeWaived = this.pricing.expressSurchargeWaived;
   readonly expressSurcharge = this.pricing.expressSurcharge;
+  readonly dirtinessSurcharge = this.pricing.dirtinessSurcharge;
   readonly displayedTotalPrice = this.pricing.displayedTotalPrice;
   readonly tierDiscount = this.pricing.tierDiscount;
   readonly membershipDiscount = this.pricing.membershipDiscount;
@@ -745,7 +750,13 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
         }
         break;
 
-      case 1: {
+      case DIRTINESS_STEP:
+        if (data.dirtinessLevel === null) {
+          reasons.push('pages.order.missing.dirtiness');
+        }
+        break;
+
+      case ADDRESS_STEP: {
         // Saved address: the server already validated the record, so only
         // non-emptiness is checked. Custom address: it must have come from a
         // suggestion pick, which is the only thing that sets lat/lng — typing
@@ -959,6 +970,8 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
     command.selectedPackageIds = data.selectedPackageIds;
     command.rooms = data.rooms;
     command.bathrooms = data.bathrooms;
+    // The level the resubmitted total was priced at, echoed like the currency below.
+    command.dirtinessLevel = quoted.dirtinessLevel;
     command.extras = data.extras;
     command.cleaningDate = cleaningDate;
     command.paymentType = paymentType;

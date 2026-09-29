@@ -574,6 +574,8 @@
         "no_registration": "No sign-up",
         "service_label": "What needs cleaning",
         "size_label": "Property size",
+        "dirtiness_label": "Dirtiness level",
+        "dirtiness_included": "{{line}} included: {{amount}}",
         "date_label": "When",
         "date_hint": "Optional. Booking less than 4 hours ahead adds an express surcharge.",
         "price_label": "Fixed price",
@@ -796,6 +798,7 @@
       "missing": {
         "heading": "Still needed:",
         "services": "Choose at least one service or package.",
+        "dirtiness": "Choose how clean your home is.",
         "address": "Pick an address from the suggestions.",
         "first_name": "Enter your first name.",
         "last_name": "Enter your last name.",
@@ -915,6 +918,7 @@
       "step_when_title": "When should we come?",
       "steps": {
         "services": "Services",
+        "dirtiness": "Dirtiness",
         "address": "Address",
         "datetime": "Date & Time",
         "payment": "Payment",
@@ -983,7 +987,40 @@
       "cash_pending": "Whether you can pay in cash is confirmed once the price is ready.",
       "cash_cleared": "Cash is no longer available for this booking, so no payment method is selected. Choose how you want to pay.",
       "cash_sign_in": "Sign in",
-      "plus_perk_grace": "60 minutes after every booking to cancel free, instead of 15 minutes"
+      "plus_perk_grace": "60 minutes after every booking to cancel free, instead of 15 minutes",
+      "dirtiness": {
+        "title": "How clean is your home?",
+        "lead": "Choose the state that best describes your whole home.",
+        "hint": "If you are unsure between two levels, choose the higher one. Your cleaner then has enough time and the result will match.",
+        "no_surcharge": "No surcharge",
+        "surcharge": "+{{rate}}%",
+        "normal": {
+          "name": "Normal",
+          "lead": "The home is cleaned regularly, last time about 1–2 weeks ago.",
+          "sign_1": "dust on furniture and shelves, crumbs and hair on the floor",
+          "sign_2": "ordinary water spots in the bathroom, no deposits in the toilet",
+          "sign_3": "kitchen after everyday cooking: worktop and hob need a wipe, nothing burnt on",
+          "sign_4": "dishes washed or in the dishwasher"
+        },
+        "increased": {
+          "name": "Increased",
+          "lead": "Last cleaned 3–6 weeks ago, or a home with pets or small children.",
+          "sign_1": "a visible layer of dust, stains and grimy patches on the floor",
+          "sign_2": "limescale on taps, the shower and the bath, grimy grout",
+          "sign_3": "grease on the kitchen worktop, tiles and cooker hood, oven or microwave dirty on the outside",
+          "sign_4": "pet hair on the sofa, rugs and in corners",
+          "surcharge_line": "Increased dirtiness surcharge"
+        },
+        "heavy": {
+          "name": "Heavy",
+          "lead": "More than 2 months without cleaning, or a home neglected for a long time.",
+          "sign_1": "heavy limescale and deposits that do not come off with one wipe",
+          "sign_2": "baked-on grease on the hob, cooker hood and cupboards",
+          "sign_3": "black spots (mould) on sealant or in grout",
+          "sign_4": "dried-on dirt on the floor, sticky surfaces, a strong smell",
+          "surcharge_line": "Heavy dirtiness surcharge"
+        }
+      }
     },
     "orders": {
       "title": "My Orders",

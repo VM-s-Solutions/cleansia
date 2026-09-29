@@ -31,6 +31,15 @@ export const STANDARD_LEAD_TIME_HOURS = 4;
  */
 export const EXPRESS_SURCHARGE_RATE = 0.2;
 
+/**
+ * What the increased and heavy dirtiness levels add, as fractions. Mirror
+ * `BookingPolicy.IncreasedDirtinessSurchargeRate` and `HeavyDirtinessSurchargeRate`, and are
+ * displayed only, like the express rate: the surcharge itself arrives on the quote as
+ * `dirtinessSurchargeAmount`.
+ */
+export const INCREASED_DIRTINESS_SURCHARGE_RATE = 0.3;
+export const HEAVY_DIRTINESS_SURCHARGE_RATE = 0.6;
+
 export type SlotAvailability = 'available' | 'express' | 'unavailable';
 
 export interface TimeOption {

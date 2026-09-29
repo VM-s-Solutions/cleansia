@@ -3,6 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
+import { DirtinessLevel } from '@cleansia/customer-services';
 import { lastBookableDay } from '@cleansia/models';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { DatePicker } from 'primeng/datepicker';
@@ -89,6 +90,8 @@ describe('home calculator dates', () => {
                 cleaningTime: signal<string | null>(null),
                 selectedServiceId: signal<string | null>(null),
                 sizes: signal([]),
+                dirtinessLevel: signal(DirtinessLevel.Normal),
+                dirtinessSurcharge: signal(null),
                 isLoading: signal(false),
                 priceLabelKey: signal('pages.home.quote.pick_service'),
                 amountLabel: signal<string | null>(null),
@@ -99,6 +102,7 @@ describe('home calculator dates', () => {
                 selectService: jest.fn(),
                 selectDate: jest.fn(),
                 selectTime: jest.fn(),
+                selectDirtinessLevel: jest.fn(),
                 chooseMarket: jest.fn(),
               },
             },

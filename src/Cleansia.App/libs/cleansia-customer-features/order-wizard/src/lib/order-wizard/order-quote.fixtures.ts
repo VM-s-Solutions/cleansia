@@ -1,16 +1,17 @@
 import {
+  DirtinessLevel,
   IQuoteOrderResponse,
   QuoteOrderQuoteLine,
   QuoteOrderResponse,
 } from '@cleansia/customer-services';
 
 /**
- * `appliedDiscountSource` and `dirtinessLevel` are the two fields these fixtures leave off: the
- * customer barrel (`libs/core/customer-services/src/index.ts`) re-exports neither the
- * `AppliedDiscountSource` nor the `DirtinessLevel` enum, and no wizard surface reads them — the
- * discount chips and the surcharge key off the amounts. Every other key stays required.
+ * `appliedDiscountSource` is the one field these fixtures leave off: the customer barrel
+ * (`libs/core/customer-services/src/index.ts`) does not re-export the `AppliedDiscountSource` enum,
+ * and no wizard surface reads it — the discount chips key off the amounts. Every other key stays
+ * required.
  */
-type QuoteFields = Omit<IQuoteOrderResponse, 'appliedDiscountSource' | 'dirtinessLevel'>;
+type QuoteFields = Omit<IQuoteOrderResponse, 'appliedDiscountSource'>;
 
 /**
  * Quotes shaped and valued the way the backend composes them.
@@ -36,6 +37,7 @@ const QUOTE_1000_NO_DISCOUNT: QuoteFields = {
   expressSurchargeWaivedByMembership: false,
   expressUpgradesRemaining: undefined,
   dirtinessSurchargeAmount: 0,
+  dirtinessLevel: DirtinessLevel.Normal,
   creditBalance: 0,
   creditMaxShareOfOrder: 0.8,
   // The 1000 basket is one standard clean: OrderDuration estimates 240 minutes,

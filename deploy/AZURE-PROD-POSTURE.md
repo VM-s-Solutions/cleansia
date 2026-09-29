@@ -174,9 +174,15 @@ and its database is never public. Dev keeps `false` and is unchanged. What the f
    create — VNet injection would force replacing the server, a PE attaches to the existing one.
 4. Key Vault public network access → `Disabled`, default action `Deny` (the `AzureServices` bypass
    stays).
-5. Storage network ACL default → `Deny` (public endpoint stays on with the `AzureServices` bypass, so
-   trusted platform services and ARM control-plane operations — `listKeys` for `derivedSecrets`,
-   diagnostic settings, metric alerts — keep working).
+5. **Storage is not made private.** Its network ACL default stays `Allow` in every stage; the hosts
+   still reach it through the private endpoints of item 1. The order-photo, profile-photo and
+   dispute-evidence links are SAS URLs on the account's public blob endpoint, loaded straight by the
+   browsers and the mobile apps, and a `Deny` ACL refuses such a request (403 `AuthorizationFailure`)
+   before the SAS is checked — the `AzureServices` bypass admits trusted Azure services, not browsers.
+   What guards the public endpoint is authentication: no anonymous blob access, and in prod only an
+   Entra identity or a user-delegation SAS (§7). Storage can go `Deny` only once blob reads reach
+   clients through a path inside the network boundary, a proxy or a CDN; `main.bicep` passes `Allow`
+   until then.
 
 ### CI: a temporary public window per run
 
@@ -313,7 +319,8 @@ value under the dev defaults.
 §6 as E-3 built it was compile-verified the same way with Bicep CLI 0.47.16: the compiled dev
 parameters are byte-identical to before, the prod parameters differ only in
 `privateNetworkingEnabled`, and the vault's `allowPublicNetworkAccess` compiles to
-`not(privateNetworkingEnabled)`. The workflow's window steps were exercised locally against a stubbed
+`not(privateNetworkingEnabled)`; the storage account's `networkDefaultAction` compiles to the literal
+`Allow`, independent of the flag. The workflow's window steps were exercised locally against a stubbed
 `az`; nothing was deployed.
 
 §7 as E-4 built it was compile-verified with Bicep CLI 0.47.16: the compiled dev parameters are

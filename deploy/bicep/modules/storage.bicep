@@ -30,7 +30,7 @@ param stage string
 ])
 param skuName string = 'Standard_LRS'
 
-@description('Network ACL default action (the Q-INFRA-03 seam). Allow = the dev public posture. Deny locks the data plane to the private endpoints (modules/privateNetworking.bicep) plus trusted Azure services via the retained AzureServices bypass; ARM control-plane operations (listKeys for derivedSecrets, diagnostic settings, metric alerts) are unaffected.')
+@description('Network ACL default action. main.bicep passes Allow in every stage, because browsers and the apps load the SAS links on the public blob endpoint and Deny refuses them (deploy/AZURE-PROD-POSTURE.md §6). Deny locks the data plane to the private endpoints (modules/privateNetworking.bicep) plus trusted Azure services via the retained AzureServices bypass; ARM control-plane operations (listKeys for derivedSecrets, diagnostic settings, metric alerts) are unaffected.')
 @allowed([
   'Allow'
   'Deny'

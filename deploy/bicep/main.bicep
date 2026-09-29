@@ -205,8 +205,9 @@ param acrImageRetentionDays int = 30
 The Q-INFRA-03 hardening seam: VNet + private endpoints for Postgres, Storage and Key Vault. When
 true it deploys modules/privateNetworking.bicep, VNet-integrates every App Service/Functions host,
 flips Postgres publicNetworkAccess to Disabled (the dev-accepted 0.0.0.0 allow-Azure-services rule and
-the admin-IP rule are not created), flips Key Vault public network access to Disabled, and sets the
-Storage network ACL default to Deny.
+the admin-IP rule are not created) and flips Key Vault public network access to Disabled. Storage is
+not made private: the hosts reach it through its private endpoints, but its network ACL default stays
+Allow, because browsers and the apps load the photo and evidence SAS links on its public endpoint.
 
 The prod param file sets it true; dev keeps false. Nothing outside the VNet reaches the database or
 the vault, so deploy-azure.yml opens a temporary public window for the GitHub runner's IP around the
@@ -356,7 +357,10 @@ module storage 'modules/storage.bicep' = {
     region: region
     stage: env
     skuName: storageSku
-    networkDefaultAction: privateNetworkingEnabled ? 'Deny' : 'Allow'
+    // Allow in every stage: the photo and evidence links are SAS URLs on the public blob endpoint that
+    // browsers and the apps load directly, and a Deny ACL refuses them before the SAS is checked.
+    // deploy/AZURE-PROD-POSTURE.md §6.
+    networkDefaultAction: 'Allow'
     allowSharedKeyAccess: !storageManagedIdentityEnabled
     tags: commonTags
   }

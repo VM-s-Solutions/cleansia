@@ -62,8 +62,10 @@ param acrImageRetentionEnabled = true
 param acrImageRetentionDays = 30
 
 // Q-INFRA-03 (E-3): the database and the Key Vault are private from the first provision — VNet,
-// private endpoints for Postgres/Storage/Key Vault, public network access Disabled on both. CI opens
-// a temporary public window for the runner's IP around the secret push and the migration, and an
+// private endpoints for Postgres/Storage/Key Vault, public network access Disabled on the database
+// and the vault. Storage keeps its public endpoint open to any network, because browsers and the apps
+// load the photo and evidence SAS links from it; the hosts use its private endpoints. CI opens a
+// temporary public window for the runner's IP around the secret push and the migration, and an
 // admin's psql does the same by hand: deploy/AZURE-PROD-POSTURE.md §6.
 param privateNetworkingEnabled = true
 

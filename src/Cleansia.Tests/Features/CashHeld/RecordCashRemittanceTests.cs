@@ -96,7 +96,10 @@ public sealed class RecordCashRemittanceTests
     public async Task The_Remittance_Takes_The_Amount_Off_What_The_Cleaner_Holds()
     {
         CashLedgerEntry? entered = null;
-        _cashLedger.Setup(r => r.Add(It.IsAny<CashLedgerEntry>())).Callback<CashLedgerEntry>(e => entered = e);
+        _cashLedger
+            .Setup(r => r.TryDebitAsync(It.IsAny<CashLedgerEntry>(), It.IsAny<CancellationToken>()))
+            .Callback<CashLedgerEntry, CancellationToken>((e, _) => entered = e)
+            .ReturnsAsync(true);
 
         var result = await new RecordCashRemittance.Handler(_cashLedger.Object, new StubTimeProvider(Now))
             .Handle(Command(600m, note: "Deposited at the office"), CancellationToken.None);
@@ -107,6 +110,20 @@ public sealed class RecordCashRemittanceTests
         Assert.Equal(
             (CleanerId, (string?)null, Czk, CashLedgerEntryKind.Remittance, -600m, Now.UtcDateTime, (string?)"Deposited at the office"),
             (entered.EmployeeId, entered.OrderId, entered.CurrencyId, entered.Kind, entered.Amount, entered.OccurredAt, entered.Note));
+    }
+
+    [Fact]
+    public async Task Cash_Taken_Off_By_A_Debit_That_Landed_After_Validation_Refuses_The_Remittance()
+    {
+        _cashLedger
+            .Setup(r => r.TryDebitAsync(It.IsAny<CashLedgerEntry>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        var result = await new RecordCashRemittance.Handler(_cashLedger.Object, new StubTimeProvider(Now))
+            .Handle(Command(1500m), CancellationToken.None);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(BusinessErrorMessage.CashHeldAmountExceedsBalance, result.Error!.Message);
     }
 
     private sealed class StubTimeProvider(DateTimeOffset now) : TimeProvider

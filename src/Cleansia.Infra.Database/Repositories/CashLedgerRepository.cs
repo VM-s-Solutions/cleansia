@@ -50,6 +50,18 @@ public class CashLedgerRepository(CleansiaDbContext context)
             .Where(e => e.EmployeeId == employeeId && e.CurrencyId == currencyId)
             .SumAsync(e => e.Amount, cancellationToken);
 
+    public async Task<bool> TryDebitAsync(CashLedgerEntry debit, CancellationToken cancellationToken)
+    {
+        await context.LockCashHeldAsync(debit.EmployeeId, debit.CurrencyId, cancellationToken);
+        if (await GetHeldAsync(debit.EmployeeId, debit.CurrencyId, cancellationToken) + debit.Amount < 0m)
+        {
+            return false;
+        }
+
+        Add(debit);
+        return true;
+    }
+
     public async Task<IReadOnlyList<CashLedgerEntry>> GetForEmployeesAsync(
         IReadOnlyCollection<string> employeeIds, CancellationToken cancellationToken) =>
         await GetQueryable()

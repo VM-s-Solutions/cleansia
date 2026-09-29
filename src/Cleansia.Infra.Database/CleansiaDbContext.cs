@@ -41,7 +41,7 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
     private readonly IUserSessionProvider userSessionProvider;
     private readonly ITenantProvider tenantProvider;
     private readonly IArchiveWriteGate? archiveWriteGate;
-    private IDbContextTransaction? creditMutationTransaction;
+    private IDbContextTransaction? lockTransaction;
 
     // One Tenants read per company per context instance: a request scope or a job iteration asks
     // once and every later commit on the same context reuses the answer.
@@ -116,16 +116,16 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
         {
             await RefuseFrozenBooksAsync(cancellationToken);
             await SaveChangesAsync(cancellationToken);
-            if (creditMutationTransaction is not null)
+            if (lockTransaction is not null)
             {
-                await creditMutationTransaction.CommitAsync(cancellationToken);
-                await creditMutationTransaction.DisposeAsync();
-                creditMutationTransaction = null;
+                await lockTransaction.CommitAsync(cancellationToken);
+                await lockTransaction.DisposeAsync();
+                lockTransaction = null;
             }
         }
         catch
         {
-            RollbackCreditMutation();
+            RollbackLockTransaction();
             throw;
         }
     }
@@ -135,11 +135,24 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
         if (!Database.IsNpgsql())
             return;
         if (Database.CurrentTransaction is null && System.Transactions.Transaction.Current is null)
-            creditMutationTransaction = await Database.BeginTransactionAsync(cancellationToken);
+            lockTransaction = await Database.BeginTransactionAsync(cancellationToken);
 
         // Hold through the final commit: a grant/return must finish before erasure drains the balance.
         await Database.ExecuteSqlAsync(
             $"""SELECT "Id" FROM "Users" WHERE "Id" = {userId} FOR NO KEY UPDATE""", cancellationToken);
+    }
+
+    internal async Task LockCashHeldAsync(string employeeId, string currencyId, CancellationToken cancellationToken)
+    {
+        if (!Database.IsNpgsql())
+            return;
+        if (Database.CurrentTransaction is null && System.Transactions.Transaction.Current is null)
+            lockTransaction = await Database.BeginTransactionAsync(cancellationToken);
+
+        // Cash held is a sum over rows no second debit collides on, so the lock is the only arbiter; it
+        // is held through the final commit so the next debit reads a balance with this one's entry in it.
+        await Database.ExecuteSqlAsync(
+            $"SELECT pg_advisory_xact_lock(hashtext({employeeId + ":" + currencyId}))", cancellationToken);
     }
 
     /// <summary>
@@ -183,20 +196,20 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
 
     public void Rollback()
     {
-        RollbackCreditMutation();
+        RollbackLockTransaction();
         foreach (var entry in ChangeTracker.Entries())
         {
             entry.State = EntityState.Unchanged;
         }
     }
 
-    private void RollbackCreditMutation()
+    private void RollbackLockTransaction()
     {
-        var transaction = creditMutationTransaction;
+        var transaction = lockTransaction;
         if (transaction is null)
             return;
 
-        creditMutationTransaction = null;
+        lockTransaction = null;
         try
         {
             transaction.Rollback();

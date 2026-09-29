@@ -68,13 +68,17 @@ public class RecordCashRemittance
     public class Handler(ICashLedgerRepository cashLedgerRepository, TimeProvider timeProvider)
         : ICommandHandler<Command, Response>
     {
-        public Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
+        public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             var entry = CashLedgerEntry.ForRemittance(
                 command.EmployeeId, command.CurrencyId, command.Amount, command.Note, timeProvider.GetUtcNow().UtcDateTime);
-            cashLedgerRepository.Add(entry);
+            if (!await cashLedgerRepository.TryDebitAsync(entry, cancellationToken))
+            {
+                return BusinessResult.Failure<Response>(
+                    new Error(nameof(Command.Amount), BusinessErrorMessage.CashHeldAmountExceedsBalance));
+            }
 
-            return Task.FromResult(BusinessResult.Success(new Response(entry.Id)));
+            return BusinessResult.Success(new Response(entry.Id));
         }
     }
 }

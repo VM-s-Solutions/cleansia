@@ -22,12 +22,11 @@
       @for (document of facade.documents(); track document.type) {
       <li class="legal-documents__item">
         <h3 class="legal-documents__title">{{ document.title }}</h3>
-        <!-- The effective date is a calendar day, so it is read in UTC like the work contract. -->
         <p class="legal-documents__meta">
           {{
             'pages.profile.legal_documents_version'
               | translate
-                : { version: document.version, date: document.effectiveFrom | date: 'dd.MM.yyyy' : 'UTC' }
+                : { version: document.version, date: effectiveDate(document.effectiveFrom) }
           }}
         </p>
 
@@ -38,7 +37,7 @@
             {{
               'pages.profile.legal_documents_accepted_on'
                 | translate
-                  : { date: document.acceptedAt | date: 'dd.MM.yyyy', version: document.acceptedVersion }
+                  : { date: acceptedDate(document.acceptedAt), version: document.acceptedVersion }
             }}
           </span>
         </p>

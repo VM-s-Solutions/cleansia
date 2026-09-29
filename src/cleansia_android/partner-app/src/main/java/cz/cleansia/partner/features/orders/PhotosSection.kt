@@ -133,11 +133,13 @@ fun PhotosSection(
 }
 
 /**
- * The server's photo windows (`OrderPhoto.MayBeAddedAt`): before photos from Confirmed through
- * InProgress, after photos only while InProgress. Outside its window a rail is read-only.
+ * The server's photo windows (`OrderPhoto.MayBeAddedAt`): before and entrance photos from
+ * Confirmed through InProgress, after photos only while InProgress. Outside its window a rail is
+ * read-only.
  */
 internal fun photoWindowOpen(type: PhotoType, status: OrderStatus?): Boolean = when (type) {
-    PhotoType._1 -> status == OrderStatus._2 || status == OrderStatus._3 || status == OrderStatus._4
+    PhotoType._1, PhotoType._3 ->
+        status == OrderStatus._2 || status == OrderStatus._3 || status == OrderStatus._4
     PhotoType._2 -> status == OrderStatus._4
 }
 

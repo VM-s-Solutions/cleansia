@@ -185,11 +185,12 @@ extension OrderDetail {
         isAssignedToCurrentUser && (status == ._2 || status == ._3 || status == ._4)
     }
 
-    /// The server's photo windows (`OrderPhoto.MayBeAddedAt`): before photos from Confirmed through
-    /// InProgress, after photos only while InProgress. Outside its window a rail is read-only.
+    /// The server's photo windows (`OrderPhoto.MayBeAddedAt`): before and entrance photos from
+    /// Confirmed through InProgress, after photos only while InProgress. Outside its window a rail is
+    /// read-only.
     func photoWindowOpen(for type: PhotoType) -> Bool {
         switch type {
-        case ._1: status == ._2 || status == ._3 || status == ._4
+        case ._1, ._3: status == ._2 || status == ._3 || status == ._4
         case ._2: status == ._4
         }
     }

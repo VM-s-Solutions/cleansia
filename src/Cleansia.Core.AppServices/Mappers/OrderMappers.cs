@@ -88,7 +88,8 @@ public static class OrderMappers
             o.MaxEmployees,
             o.Reviews.Any(),
             o.CompletedAt,
-            o.DirtinessLevel));
+            o.DirtinessLevel,
+            o.DirtinessSurchargeAmount));
     }
 
     public static OrderListItem MapToDto(this OrderListRow row)
@@ -171,7 +172,9 @@ public static class OrderMappers
             CustomerAddressLatitude: row.Address?.Latitude,
             CustomerAddressLongitude: row.Address?.Longitude,
             HasReview: row.HasReview,
-            CountryId: row.Address?.CountryId);
+            CountryId: row.Address?.CountryId,
+            DirtinessLevel: row.DirtinessLevel,
+            DirtinessSurchargeAmount: row.DirtinessSurchargeAmount);
     }
 
     public static OrderListItem MapToDto(this Order order)
@@ -218,7 +221,9 @@ public static class OrderMappers
             CustomerAddressLatitude: order.CustomerAddress?.Latitude,
             CustomerAddressLongitude: order.CustomerAddress?.Longitude,
             HasReview: order.Reviews.Count > 0,
-            CountryId: order.CustomerAddress?.CountryId
+            CountryId: order.CustomerAddress?.CountryId,
+            DirtinessLevel: order.DirtinessLevel,
+            DirtinessSurchargeAmount: order.DirtinessSurchargeAmount
         );
     }
 
@@ -311,7 +316,9 @@ public static class OrderMappers
             PreferredOffer: preferredOffer,
             CustomerCompany: customerCompany,
             CountryId: order.CustomerAddress?.CountryId,
-            WorkContractAcceptances: workContractAcceptances ?? []
+            WorkContractAcceptances: workContractAcceptances ?? [],
+            DirtinessLevel: order.DirtinessLevel,
+            DirtinessSurchargeAmount: order.DirtinessSurchargeAmount
         );
     }
 

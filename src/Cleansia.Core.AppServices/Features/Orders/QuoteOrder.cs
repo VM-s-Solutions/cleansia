@@ -121,7 +121,8 @@ public class QuoteOrder
         /// The dirtiness level's surcharge on the lines' sum, in cents. Inside <see cref="TotalPrice"/>
         /// and inside the base the discounts come off; the express surcharge is measured on top of it.
         /// </summary>
-        decimal DirtinessSurchargeAmount = 0m);
+        decimal DirtinessSurchargeAmount = 0m,
+        DirtinessLevel DirtinessLevel = DirtinessLevel.Normal);
 
     /// <param name="Kind">"package", "service" or "extra".</param>
     /// <param name="ItemId">Package/Service id, or an Extra's slug. The client holds the
@@ -510,6 +511,7 @@ public class QuoteOrder
                 ExpressSurchargeApplied: result.ExpressSurchargeApplied,
                 ExpressSurchargeAmount: result.ExpressSurchargeAmount,
                 DirtinessSurchargeAmount: result.DirtinessSurchargeAmount,
+                DirtinessLevel: command.DirtinessLevel,
                 EstimatedDurationMinutes: estimatedMinutes,
                 RequiredEmployees: requiredEmployees,
                 Lines: (result.Lines ?? [])

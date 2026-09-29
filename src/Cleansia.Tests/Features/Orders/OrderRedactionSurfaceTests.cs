@@ -123,6 +123,9 @@ public class OrderRedactionSurfaceTests
         nameof(OrderItem.EstimatedCleanerPay),
         nameof(OrderItem.IsAssignedToCurrentUser),
         nameof(OrderItem.HasAfterPhotos),
+        // How dirty the home is and what that added to the price: a cleaner decides on the job with it.
+        nameof(OrderItem.DirtinessLevel),
+        nameof(OrderItem.DirtinessSurchargeAmount),
         // Kept, and safe to keep BECAUSE the mapper gates it. The column behind this field also
         // carries an admin's free-text cancellation note, which is written by staff for staff and
         // would be a leak here — so OrderMappers only surfaces it when CancelledBy is System, where
@@ -173,6 +176,8 @@ public class OrderRedactionSurfaceTests
         nameof(OrderListItem.AssignedEmployeesCount),
         nameof(OrderListItem.HasAvailableSpots),
         nameof(OrderListItem.EstimatedCleanerPay),
+        nameof(OrderListItem.DirtinessLevel),
+        nameof(OrderListItem.DirtinessSurchargeAmount),
         // Kept, not blanked: a bare bool saying the order carries a review. It names no author, no
         // rating and no text — a browsing cleaner learns only that someone reviewed a job, which the
         // public rating average already implies. The review CONTENT stays where it was, on the detail
@@ -425,7 +430,9 @@ public class OrderRedactionSurfaceTests
             NeedsConfirmation: true,
             CashCollectedAt: new DateTime(2026, 8, 20, 11, 55, 0, DateTimeKind.Utc),
             CashCollectedByName: "Petra Svobodova",
-            CashCollectedAmount: 1500m);
+            CashCollectedAmount: 1500m,
+            DirtinessLevel: DirtinessLevel.Heavy,
+            DirtinessSurchargeAmount: 540m);
 
     private static OrderListItem FullyPopulatedListItem() =>
         new(
@@ -465,5 +472,7 @@ public class OrderRedactionSurfaceTests
             EstimatedCleanerPay: 620m,
             CustomerAddressLatitude: 50.0755,
             CustomerAddressLongitude: 14.4378,
-            HasReview: true);
+            HasReview: true,
+            DirtinessLevel: DirtinessLevel.Heavy,
+            DirtinessSurchargeAmount: 540m);
 }

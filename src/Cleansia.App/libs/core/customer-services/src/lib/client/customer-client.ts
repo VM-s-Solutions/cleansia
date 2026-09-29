@@ -13246,6 +13246,8 @@ export class OrderItem implements IOrderItem {
     cashCollectedAt!: Date | undefined;
     cashCollectedByName!: string | undefined;
     cashCollectedAmount!: number | undefined;
+    dirtinessLevel!: DirtinessLevel;
+    dirtinessSurchargeAmount!: number;
 
     constructor(data?: IOrderItem) {
         if (data) {
@@ -13357,6 +13359,8 @@ export class OrderItem implements IOrderItem {
             this.cashCollectedAt = Data["cashCollectedAt"] ? new Date(Data["cashCollectedAt"].toString()) : undefined as any;
             this.cashCollectedByName = Data["cashCollectedByName"];
             this.cashCollectedAmount = Data["cashCollectedAmount"];
+            this.dirtinessLevel = Data["dirtinessLevel"];
+            this.dirtinessSurchargeAmount = Data["dirtinessSurchargeAmount"];
         }
     }
 
@@ -13468,6 +13472,8 @@ export class OrderItem implements IOrderItem {
         data["cashCollectedAt"] = this.cashCollectedAt ? this.cashCollectedAt.toISOString() : undefined as any;
         data["cashCollectedByName"] = this.cashCollectedByName;
         data["cashCollectedAmount"] = this.cashCollectedAmount;
+        data["dirtinessLevel"] = this.dirtinessLevel;
+        data["dirtinessSurchargeAmount"] = this.dirtinessSurchargeAmount;
         return data;
     }
 }
@@ -13538,6 +13544,8 @@ export interface IOrderItem {
     cashCollectedAt: Date | undefined;
     cashCollectedByName: string | undefined;
     cashCollectedAmount: number | undefined;
+    dirtinessLevel: DirtinessLevel;
+    dirtinessSurchargeAmount: number;
 }
 
 export class OrderListItem implements IOrderListItem {
@@ -13579,6 +13587,8 @@ export class OrderListItem implements IOrderListItem {
     customerAddressLongitude!: number | undefined;
     hasReview!: boolean;
     countryId!: string | undefined;
+    dirtinessLevel!: DirtinessLevel;
+    dirtinessSurchargeAmount!: number;
 
     constructor(data?: IOrderListItem) {
         if (data) {
@@ -13647,6 +13657,8 @@ export class OrderListItem implements IOrderListItem {
             this.customerAddressLongitude = Data["customerAddressLongitude"];
             this.hasReview = Data["hasReview"];
             this.countryId = Data["countryId"];
+            this.dirtinessLevel = Data["dirtinessLevel"];
+            this.dirtinessSurchargeAmount = Data["dirtinessSurchargeAmount"];
         }
     }
 
@@ -13715,6 +13727,8 @@ export class OrderListItem implements IOrderListItem {
         data["customerAddressLongitude"] = this.customerAddressLongitude;
         data["hasReview"] = this.hasReview;
         data["countryId"] = this.countryId;
+        data["dirtinessLevel"] = this.dirtinessLevel;
+        data["dirtinessSurchargeAmount"] = this.dirtinessSurchargeAmount;
         return data;
     }
 }
@@ -13758,6 +13772,8 @@ export interface IOrderListItem {
     customerAddressLongitude: number | undefined;
     hasReview: boolean;
     countryId: string | undefined;
+    dirtinessLevel: DirtinessLevel;
+    dirtinessSurchargeAmount: number;
 }
 
 export class OrderNoteDto implements IOrderNoteDto {
@@ -14814,6 +14830,7 @@ export class QuoteOrderResponse implements IQuoteOrderResponse {
     creditMaxShareOfOrder!: number;
     lines!: QuoteOrderQuoteLine[] | undefined;
     dirtinessSurchargeAmount!: number;
+    dirtinessLevel!: DirtinessLevel;
 
     constructor(data?: IQuoteOrderResponse) {
         if (data) {
@@ -14852,6 +14869,7 @@ export class QuoteOrderResponse implements IQuoteOrderResponse {
                     this.lines!.push(QuoteOrderQuoteLine.fromJS(item));
             }
             this.dirtinessSurchargeAmount = Data["dirtinessSurchargeAmount"];
+            this.dirtinessLevel = Data["dirtinessLevel"];
         }
     }
 
@@ -14890,6 +14908,7 @@ export class QuoteOrderResponse implements IQuoteOrderResponse {
                 data["lines"].push(item ? item.toJSON() : undefined as any);
         }
         data["dirtinessSurchargeAmount"] = this.dirtinessSurchargeAmount;
+        data["dirtinessLevel"] = this.dirtinessLevel;
         return data;
     }
 }
@@ -14917,6 +14936,7 @@ export interface IQuoteOrderResponse {
     creditMaxShareOfOrder: number;
     lines: QuoteOrderQuoteLine[] | undefined;
     dirtinessSurchargeAmount: number;
+    dirtinessLevel: DirtinessLevel;
 }
 
 export class QuotePlusSavingsQuery implements IQuotePlusSavingsQuery {

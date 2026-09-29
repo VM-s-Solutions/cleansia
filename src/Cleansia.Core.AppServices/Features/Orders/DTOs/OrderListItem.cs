@@ -2,6 +2,7 @@
 using Cleansia.Core.AppServices.Features.Packages.DTOs;
 using Cleansia.Core.AppServices.Features.Services.DTOs;
 using Cleansia.Core.AppServices.Shared.DTOs.Enums;
+using Cleansia.Core.Domain.Enums;
 
 namespace Cleansia.Core.AppServices.Features.Orders.DTOs;
 
@@ -72,4 +73,6 @@ public record OrderListItem(
     /// </summary>
     bool HasReview,
     /// <summary>Service-address country for the market label, paired with this order's currency.</summary>
-    string? CountryId = null);
+    string? CountryId = null,
+    DirtinessLevel DirtinessLevel = DirtinessLevel.Normal,
+    decimal DirtinessSurchargeAmount = 0m);

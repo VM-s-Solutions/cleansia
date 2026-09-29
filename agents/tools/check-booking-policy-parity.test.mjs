@@ -51,6 +51,9 @@ function buildFixture(overrides = {}) {
     partialRate: '0.25m',
     lastMinuteRate: '0.50m',
     expressRate: '0.20m',
+    /** `null` leaves the constant out of the fixture's BookingPolicy. */
+    increasedDirtinessRate: '0.30m',
+    heavyDirtinessRate: '0.60m',
     expressLead: '2',
     standardLead: '4',
     firstHour: '8',
@@ -136,6 +139,8 @@ public static class BookingPolicy
     public const int PartialCancellationHours = 4;
     public const int OopsWindowMinutesStandard = ${o.graceStandard};
     public const int OopsWindowMinutesPlus = ${o.gracePlus};
+${o.increasedDirtinessRate === null ? '' : `    public const decimal IncreasedDirtinessSurchargeRate = ${o.increasedDirtinessRate};`}
+${o.heavyDirtinessRate === null ? '' : `    public const decimal HeavyDirtinessSurchargeRate = ${o.heavyDirtinessRate};`}
 }
 `);
 
@@ -546,6 +551,30 @@ scenario(
   { expressLead: '3', tsExpressLead: '3' },
   { code: 1, mentions: ['the floor is 3 h'] },
 );
+
+// ─── 4b. The dirtiness rates are read from BookingPolicy ────────────────────
+// No client states them yet; until one does, the gate still has to fail when the constants it will
+// compare the copy against stop being readable, and report the rates the policy actually holds.
+scenario(
+  'states the dirtiness rates BookingPolicy holds',
+  {},
+  { code: 0, mentions: ['dirtiness +30%/+60%'] },
+);
+scenario(
+  'moving a dirtiness rate in C# moves the rate the gate reports',
+  { increasedDirtinessRate: '0.35m' },
+  { code: 0, mentions: ['dirtiness +35%/+60%'] },
+);
+for (const [name, override] of [
+  ['IncreasedDirtinessSurchargeRate', { increasedDirtinessRate: null }],
+  ['HeavyDirtinessSurchargeRate', { heavyDirtinessRate: null }],
+]) {
+  scenario(
+    `a BookingPolicy that no longer declares ${name} is a finding`,
+    override,
+    { code: 1, mentions: [`could not read \`${name}\``] },
+  );
+}
 
 // ─── 5. It does not cry wolf ────────────────────────────────────────────────
 scenario(

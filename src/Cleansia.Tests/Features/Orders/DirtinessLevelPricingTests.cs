@@ -134,6 +134,7 @@ public class DirtinessLevelPricingTests
             + (order.PromoDiscountAmount ?? 0m);
 
         Assert.Equal(level, order.DirtinessLevel);
+        Assert.Equal(level, quote.DirtinessLevel);
         Assert.Equal(LinesSubtotal, lines);
         Assert.Equal(
             Cents(order.TotalPrice),

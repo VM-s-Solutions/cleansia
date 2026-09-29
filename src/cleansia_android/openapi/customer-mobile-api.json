@@ -10740,6 +10740,13 @@
             "type": "number",
             "format": "double",
             "nullable": true
+          },
+          "dirtinessLevel": {
+            "$ref": "#/components/schemas/DirtinessLevel"
+          },
+          "dirtinessSurchargeAmount": {
+            "type": "number",
+            "format": "double"
           }
         },
         "additionalProperties": false
@@ -10909,6 +10916,13 @@
           "countryId": {
             "type": "string",
             "nullable": true
+          },
+          "dirtinessLevel": {
+            "$ref": "#/components/schemas/DirtinessLevel"
+          },
+          "dirtinessSurchargeAmount": {
+            "type": "number",
+            "format": "double"
           }
         },
         "additionalProperties": false
@@ -11607,6 +11621,9 @@
           "dirtinessSurchargeAmount": {
             "type": "number",
             "format": "double"
+          },
+          "dirtinessLevel": {
+            "$ref": "#/components/schemas/DirtinessLevel"
           }
         },
         "additionalProperties": false

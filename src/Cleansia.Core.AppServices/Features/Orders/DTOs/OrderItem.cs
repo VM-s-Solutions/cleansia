@@ -2,6 +2,7 @@
 using Cleansia.Core.AppServices.Features.Packages.DTOs;
 using Cleansia.Core.AppServices.Features.Services.DTOs;
 using Cleansia.Core.AppServices.Shared.DTOs.Enums;
+using Cleansia.Core.Domain.Enums;
 
 namespace Cleansia.Core.AppServices.Features.Orders.DTOs;
 
@@ -204,5 +205,8 @@ public record OrderItem(
     /// </summary>
     DateTime? CashCollectedAt = null,
     string? CashCollectedByName = null,
-    decimal? CashCollectedAmount = null
+    decimal? CashCollectedAmount = null,
+
+    DirtinessLevel DirtinessLevel = DirtinessLevel.Normal,
+    decimal DirtinessSurchargeAmount = 0m
 );

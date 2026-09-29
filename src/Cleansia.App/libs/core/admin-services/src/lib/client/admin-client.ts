@@ -23707,6 +23707,12 @@ export interface IDeleteServiceResponse {
     serviceId: string | undefined;
 }
 
+export enum DirtinessLevel {
+    Normal = 0,
+    Increased = 1,
+    Heavy = 2,
+}
+
 export class DisputeDetails implements IDisputeDetails {
     id!: string | undefined;
     orderId!: string | undefined;
@@ -29413,6 +29419,7 @@ export class OrderEmployeePayDto implements IOrderEmployeePayDto {
     createdOn!: Date;
     currencyCode!: string | undefined;
     deductionReason!: string | undefined;
+    dirtinessPay!: number;
 
     constructor(data?: IOrderEmployeePayDto) {
         if (data) {
@@ -29443,6 +29450,7 @@ export class OrderEmployeePayDto implements IOrderEmployeePayDto {
             this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
             this.currencyCode = Data["currencyCode"];
             this.deductionReason = Data["deductionReason"];
+            this.dirtinessPay = Data["dirtinessPay"];
         }
     }
 
@@ -29473,6 +29481,7 @@ export class OrderEmployeePayDto implements IOrderEmployeePayDto {
         data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
         data["currencyCode"] = this.currencyCode;
         data["deductionReason"] = this.deductionReason;
+        data["dirtinessPay"] = this.dirtinessPay;
         return data;
     }
 }
@@ -29496,6 +29505,7 @@ export interface IOrderEmployeePayDto {
     createdOn: Date;
     currencyCode: string | undefined;
     deductionReason: string | undefined;
+    dirtinessPay: number;
 }
 
 export class OrderIssueDto implements IOrderIssueDto {
@@ -29620,6 +29630,8 @@ export class OrderItem implements IOrderItem {
     cashCollectedAt!: Date | undefined;
     cashCollectedByName!: string | undefined;
     cashCollectedAmount!: number | undefined;
+    dirtinessLevel!: DirtinessLevel;
+    dirtinessSurchargeAmount!: number;
 
     constructor(data?: IOrderItem) {
         if (data) {
@@ -29731,6 +29743,8 @@ export class OrderItem implements IOrderItem {
             this.cashCollectedAt = Data["cashCollectedAt"] ? new Date(Data["cashCollectedAt"].toString()) : undefined as any;
             this.cashCollectedByName = Data["cashCollectedByName"];
             this.cashCollectedAmount = Data["cashCollectedAmount"];
+            this.dirtinessLevel = Data["dirtinessLevel"];
+            this.dirtinessSurchargeAmount = Data["dirtinessSurchargeAmount"];
         }
     }
 
@@ -29842,6 +29856,8 @@ export class OrderItem implements IOrderItem {
         data["cashCollectedAt"] = this.cashCollectedAt ? this.cashCollectedAt.toISOString() : undefined as any;
         data["cashCollectedByName"] = this.cashCollectedByName;
         data["cashCollectedAmount"] = this.cashCollectedAmount;
+        data["dirtinessLevel"] = this.dirtinessLevel;
+        data["dirtinessSurchargeAmount"] = this.dirtinessSurchargeAmount;
         return data;
     }
 }
@@ -29912,6 +29928,8 @@ export interface IOrderItem {
     cashCollectedAt: Date | undefined;
     cashCollectedByName: string | undefined;
     cashCollectedAmount: number | undefined;
+    dirtinessLevel: DirtinessLevel;
+    dirtinessSurchargeAmount: number;
 }
 
 export class OrderListItem implements IOrderListItem {
@@ -29953,6 +29971,8 @@ export class OrderListItem implements IOrderListItem {
     customerAddressLongitude!: number | undefined;
     hasReview!: boolean;
     countryId!: string | undefined;
+    dirtinessLevel!: DirtinessLevel;
+    dirtinessSurchargeAmount!: number;
 
     constructor(data?: IOrderListItem) {
         if (data) {
@@ -30021,6 +30041,8 @@ export class OrderListItem implements IOrderListItem {
             this.customerAddressLongitude = Data["customerAddressLongitude"];
             this.hasReview = Data["hasReview"];
             this.countryId = Data["countryId"];
+            this.dirtinessLevel = Data["dirtinessLevel"];
+            this.dirtinessSurchargeAmount = Data["dirtinessSurchargeAmount"];
         }
     }
 
@@ -30089,6 +30111,8 @@ export class OrderListItem implements IOrderListItem {
         data["customerAddressLongitude"] = this.customerAddressLongitude;
         data["hasReview"] = this.hasReview;
         data["countryId"] = this.countryId;
+        data["dirtinessLevel"] = this.dirtinessLevel;
+        data["dirtinessSurchargeAmount"] = this.dirtinessSurchargeAmount;
         return data;
     }
 }
@@ -30132,6 +30156,8 @@ export interface IOrderListItem {
     customerAddressLongitude: number | undefined;
     hasReview: boolean;
     countryId: string | undefined;
+    dirtinessLevel: DirtinessLevel;
+    dirtinessSurchargeAmount: number;
 }
 
 export class OrderNoteDto implements IOrderNoteDto {

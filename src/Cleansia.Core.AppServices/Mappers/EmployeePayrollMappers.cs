@@ -26,7 +26,8 @@ public static class EmployeePayrollMappers
             orderPay.IsApproved,
             orderPay.CreatedOn.DateTime,
             orderPay.Currency?.Code,
-            orderPay.DeductionReason
+            orderPay.DeductionReason,
+            orderPay.DirtinessPay
         );
 
     public static EmployeeInvoiceDto MapToDto(this EmployeeInvoice invoice) =>

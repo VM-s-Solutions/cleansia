@@ -127,7 +127,8 @@ public class GetPeriodPays
                 InvoiceId: invoice?.Id,
                 OrderPays: orderPays.Select(p => p.MapToDto()),
                 CurrencyCode: currencyCode,
-                AvailableCurrencies: availableCurrencies
+                AvailableCurrencies: availableCurrencies,
+                TotalDirtinessPay: orderPays.Sum(p => p.DirtinessPay)
             );
 
             return BusinessResult.Success(summary);

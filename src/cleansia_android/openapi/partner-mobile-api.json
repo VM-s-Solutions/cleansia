@@ -8149,6 +8149,20 @@
         },
         "additionalProperties": false
       },
+      "DirtinessLevel": {
+        "enum": [
+          0,
+          1,
+          2
+        ],
+        "type": "integer",
+        "format": "int32",
+        "x-enumNames": [
+          "Normal",
+          "Increased",
+          "Heavy"
+        ]
+      },
       "DocumentStatus": {
         "enum": [
           1,
@@ -10128,6 +10142,10 @@
           "deductionReason": {
             "type": "string",
             "nullable": true
+          },
+          "dirtinessPay": {
+            "type": "number",
+            "format": "double"
           }
         },
         "additionalProperties": false
@@ -10448,6 +10466,13 @@
             "type": "number",
             "format": "double",
             "nullable": true
+          },
+          "dirtinessLevel": {
+            "$ref": "#/components/schemas/DirtinessLevel"
+          },
+          "dirtinessSurchargeAmount": {
+            "type": "number",
+            "format": "double"
           }
         },
         "additionalProperties": false
@@ -10617,6 +10642,13 @@
           "countryId": {
             "type": "string",
             "nullable": true
+          },
+          "dirtinessLevel": {
+            "$ref": "#/components/schemas/DirtinessLevel"
+          },
+          "dirtinessSurchargeAmount": {
+            "type": "number",
+            "format": "double"
           }
         },
         "additionalProperties": false
@@ -11145,6 +11177,10 @@
               "$ref": "#/components/schemas/PeriodCurrencyDto"
             },
             "nullable": true
+          },
+          "totalDirtinessPay": {
+            "type": "number",
+            "format": "double"
           }
         },
         "additionalProperties": false

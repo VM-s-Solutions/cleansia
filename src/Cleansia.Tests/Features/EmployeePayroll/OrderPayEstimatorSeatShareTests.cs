@@ -109,7 +109,8 @@ public class OrderPayEstimatorSeatShareTests
             MaxEmployees: seats,
             HasReview: false,
             CompletedAt: null,
-            DirtinessLevel: level);
+            DirtinessLevel: level,
+            DirtinessSurchargeAmount: 0m);
 
         var estimate = (decimal?)EstimateFor(typeof(OrderListRow)).Invoke(null,
         [

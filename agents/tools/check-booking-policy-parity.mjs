@@ -135,6 +135,8 @@ const policy = {
   LastWindowHour: readCsConst(policySource, 'LastWindowHour'),
   OopsWindowMinutesStandard: readCsConst(policySource, 'OopsWindowMinutesStandard'),
   OopsWindowMinutesPlus: readCsConst(policySource, 'OopsWindowMinutesPlus'),
+  IncreasedDirtinessSurchargeRate: readCsConst(policySource, 'IncreasedDirtinessSurchargeRate'),
+  HeavyDirtinessSurchargeRate: readCsConst(policySource, 'HeavyDirtinessSurchargeRate'),
 };
 
 for (const [name, value] of Object.entries(policy)) {
@@ -144,6 +146,8 @@ for (const [name, value] of Object.entries(policy)) {
 const partialPct = Math.round(policy.PartialCancellationFeeRate * 100);
 const lastMinutePct = Math.round(policy.LastMinuteCancellationFeeRate * 100);
 const expressPct = Math.round(policy.ExpressSurchargeRate * 100);
+const increasedDirtinessPct = Math.round(policy.IncreasedDirtinessSurchargeRate * 100);
+const heavyDirtinessPct = Math.round(policy.HeavyDirtinessSurchargeRate * 100);
 
 // ─── 1. The web's shared mirror ─────────────────────────────────────────────
 // It carries a "Mirrors BookingPolicy" comment and, until this checker, nothing that held it to it.
@@ -481,6 +485,7 @@ if (findings.length) {
     `booking-policy-parity: ${LOCALES.length} locale(s) × web + android + ios agree with ` +
       `BookingPolicy — cancellation ${partialPct}%/${lastMinutePct}%, grace ${graceStandard}/${gracePlus} min, express +${expressPct}% ` +
       `from ${policy.ExpressLeadTimeHours} h, window ${policy.FirstWindowHour}:00–${policy.LastWindowHour}:00; ` +
+      `dirtiness +${increasedDirtinessPct}%/+${heavyDirtinessPct}% read from BookingPolicy; ` +
       `money figures in copy come from the market; legal seed ${seedVersions} carries the placeholders; ` +
       `${reasons.length - REASONS_NOT_YET_RENDERED.size} cancellation reason(s) render on every client`,
   );

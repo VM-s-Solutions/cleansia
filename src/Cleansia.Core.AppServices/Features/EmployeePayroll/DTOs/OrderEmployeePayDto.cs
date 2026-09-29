@@ -19,4 +19,5 @@ public record OrderEmployeePayDto(
     DateTime CreatedOn,
     string? CurrencyCode = null,
     /// <summary>Why the cleaner was charged when a dispute found them at fault; null otherwise.</summary>
-    string? DeductionReason = null);
+    string? DeductionReason = null,
+    decimal DirtinessPay = 0m);

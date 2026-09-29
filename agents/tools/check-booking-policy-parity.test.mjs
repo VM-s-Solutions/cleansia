@@ -389,13 +389,35 @@ scenario(
   { gracePlus: '90' },
   { code: 1, mentions: ['web/en', 'android/values', 'ios/en', 'does not state 90 minutes'] },
 );
-// The first booking gets 60 minutes since the 2026-09-28 ruling; the 2026-09-24 copy gave a
-// first-time customer the standard 15. The comparison row naming only those two figures is where
-// that copy would come back.
+// The first booking gets 60 minutes since the 2026-09-28 ruling; the copy before it gave a
+// first-time customer the standard 15 and named only Plus. The comparison row states just the two
+// figures, so there the old copy loses a figure.
 scenario(
   'a web comparison row that gives a first booking only 15 minutes again is caught',
   { webGraceWithout: '15 minutes' },
   { code: 1, mentions: ['pages.plus.row_grace_without', 'does not state 60 minutes'] },
+);
+// Everywhere else the old copy keeps every figure — its "60 with Cleansia Plus" is the first-booking
+// figure too while the two graces are equal — and loses only the first-booking clause. These are the
+// exact strings phase 1 replaced (P1-W01, P1-A02, P1-I01).
+for (const [where, override] of [
+  ['web/en — pages.home.rules.rethink_desc', { webRethinkDesc: 'Until someone accepts the job, cancelling costs nothing however close the clean is. Once someone has, you still have 15 minutes from when you booked — 60 minutes with Cleansia Plus.' }],
+  ['web/en — pages.order.cancel_policy_note', { webCancelPolicyNote: 'Free cancellation up to 24 hours ahead. Within 15 minutes of booking you pay nothing — within 60 minutes with Cleansia Plus.' }],
+  ['android/values — booking_cancel_grace_note', { androidGraceNote: 'Within 15 minutes of booking you pay nothing — within 60 minutes with Cleansia Plus.' }],
+  ['android/values — help_faq_a1', { androidFaqA1: 'Open your booking from the Orders tab and tap \\"Cancel\\". Cancellations free of charge up to 24 hours before the cleaning start time. Within 15 minutes of booking you pay nothing — within 60 minutes with Cleansia Plus.' }],
+  ['ios/en — booking_cancel_grace_note', { iosGraceNote: 'Within 15 minutes of booking you pay nothing — within 60 minutes with Cleansia Plus.' }],
+  ['ios/en — help_faq_a1', { iosFaqA1: 'Open your booking from the Orders tab and tap "Cancel". Cancellations are free up to 24 hours before the cleaning start time. Within 15 minutes of booking you pay nothing — within 60 minutes with Cleansia Plus.' }],
+]) {
+  scenario(
+    `${where} back at the copy before the 2026-09-28 ruling is caught`,
+    override,
+    { code: 1, mentions: [where, 'no longer names the first-booking grace'], silentAbout: ['does not state'] },
+  );
+}
+scenario(
+  'a grace sentence stating a first-booking figure the policy does not hold is caught',
+  { iosGraceNote: 'Within 15 minutes of booking you pay nothing — 30 on your first booking, 60 with Cleansia Plus.' },
+  { code: 1, mentions: ['ios/en — booking_cancel_grace_note', 'states 30'] },
 );
 scenario(
   'a policy change to the first-booking grace flags every sentence that names a first booking',
@@ -725,6 +747,18 @@ scenario(
     androidIncreasedPrice: '+30 %',
     iosSurchargeHeavy: 'Příplatek za silné znečištění (+60 %)',
     webDirtinessSurcharge: '+{{rate}} %',
+  },
+  { code: 0 },
+);
+// Each locale names a first booking with its own words and case ending; the shipped phrasing of
+// every one must read as a first-booking clause.
+scenario(
+  'the first-booking clause is recognised in every locale',
+  {
+    webRethinkDesc: 'Jakmile ji někdo přijme, máte pořád 15 minut od objednání — u první objednávky nebo s Cleansia Plus 60 minut.',
+    webGraceWithout: '15 minút (pri prvej objednávke 60)',
+    webCancelPolicyNote: 'Бесплатная отмена за 24 часа. В течение 15 минут после заказа вы не платите ничего — для первого заказа или с Cleansia Plus в течение 60 минут.',
+    androidGraceNote: 'Протягом 15 хвилин після замовлення ви не платите нічого — для першого замовлення або з Cleansia Plus протягом 60 хвилин.',
   },
   { code: 0 },
 );

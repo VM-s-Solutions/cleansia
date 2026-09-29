@@ -265,53 +265,75 @@ for (const locale of LOCALES) {
 
 // ─── 2b. The grace after booking the three clients state (owner ruling 2026-09-28) ─────────
 // Free cancellation for 15 minutes after booking, 60 on a customer's first booking and 60 for an
-// entitled Cleansia Plus member. Every key below states the grace as a literal, and each lists the
-// figures its sentence names — the SET of integers it states must contain them, so reordering by a
-// translator is fine. The keys that render the server's own per-order figure through a placeholder
-// (`{{minutes}}`, `%d`) state no figure of their own and are not read here.
+// entitled Cleansia Plus member. Every key below states the grace as a literal, and each names the
+// graces its sentence states. Strictly: the SET of integers it states must hold each of their
+// figures and nothing else but the free-cancellation hours beside them, so reordering by a translator
+// is fine and a figure the policy does not hold is not. The keys that render the server's own
+// per-order figure through a placeholder (`{{minutes}}`, `%d`) state no figure of their own and are
+// not read here.
 //
-// While the first-booking and Plus graces are the same number, one "60" satisfies both, so a
-// sentence that drops its first-booking clause but keeps the Plus one still passes. Two things still
-// bite: the comparison row that names ONLY the standard and first-booking figures, which is exactly
-// where the old "15 for a first-time customer" copy (ruling 2026-09-24) would come back, and any
-// policy move that separates the two figures.
+// While the first-booking and Plus graces are the same number, one "60" satisfies both figures —
+// which is exactly how the copy before this ruling ("… 60 minutes with Cleansia Plus") would pass.
+// So a sentence that names the first-booking grace must also NAME a first booking, in its locale's
+// words. What stays open: which figure the clause sits beside is not read, so "15 on your first
+// booking, 60 with Plus" states only held figures and passes.
 const graceStandard = policy.OopsWindowMinutesStandard;
 const graceFirstBooking = policy.OopsWindowMinutesFirstBooking;
 const gracePlus = policy.OopsWindowMinutesPlus;
-function checkGrace(where, key, value, expected) {
+const GRACE = { standard: graceStandard, firstBooking: graceFirstBooking, plus: gracePlus };
+/**
+ * How the five locales name a first booking — "first booking", "u první objednávky", "pri prvej
+ * objednávke", "для первого заказа", "для першого замовлення" — case endings left open, and
+ * locale-blind like `percentagesIn`.
+ */
+const FIRST_BOOKING = /\bfirst\s+(?:booking|order)|prv\p{L}*\s+objedn|перв\p{L}*\s+заказ|перш\p{L}*\s+замовлен/iu;
+function checkGrace(where, key, value, graces) {
   if (value === null || value === undefined) {
     note(where, `${key} is missing`);
     return;
   }
   const stated = amountsIn(value);
-  for (const figure of expected) {
+  const figures = graces.map((grace) => GRACE[grace]);
+  for (const figure of new Set(figures)) {
     if (!stated.includes(figure)) note(where, `${key} = "${value}" does not state ${figure} minutes`);
+  }
+  for (const figure of new Set(stated)) {
+    if (!figures.includes(figure) && figure !== policy.FreeCancellationHours) {
+      note(
+        where,
+        `${key} = "${value}" states ${figure}, which is none of its graces (${[...new Set(figures)].join(', ')} minutes) ` +
+          `nor the ${policy.FreeCancellationHours}-hour line`,
+      );
+    }
+  }
+  if (graces.includes('firstBooking') && !FIRST_BOOKING.test(value)) {
+    note(where, `${key} = "${value}" no longer names the first-booking grace (${graceFirstBooking} minutes)`);
   }
 }
 const WEB_GRACE_KEYS = [
-  ['pages.home.rules.rethink_desc', [graceStandard, graceFirstBooking, gracePlus]],
-  ['pages.home.plus.perk_grace', [graceStandard, gracePlus]],
-  ['pages.order.cancel_policy_note', [graceStandard, graceFirstBooking, gracePlus]],
-  ['pages.order.plus_perk_grace', [graceStandard, gracePlus]],
-  ['pages.membership.perk_grace', [graceStandard, gracePlus]],
-  ['pages.plus.perk_cancel_body', [graceStandard, gracePlus]],
-  ['pages.plus.row_grace_without', [graceStandard, graceFirstBooking]],
-  ['pages.plus.row_grace_with', [gracePlus]],
+  ['pages.home.rules.rethink_desc', ['standard', 'firstBooking', 'plus']],
+  ['pages.home.plus.perk_grace', ['standard', 'plus']],
+  ['pages.order.cancel_policy_note', ['standard', 'firstBooking', 'plus']],
+  ['pages.order.plus_perk_grace', ['standard', 'plus']],
+  ['pages.membership.perk_grace', ['standard', 'plus']],
+  ['pages.plus.perk_cancel_body', ['standard', 'plus']],
+  ['pages.plus.row_grace_without', ['standard', 'firstBooking']],
+  ['pages.plus.row_grace_with', ['plus']],
 ];
 /** The same key names on Android and iOS. */
 const MOBILE_GRACE_KEYS = [
-  ['booking_cancel_grace_note', [graceStandard, graceFirstBooking, gracePlus]],
-  ['help_faq_a1', [graceStandard, graceFirstBooking, gracePlus]],
-  ['membership_perk_grace_desc', [graceStandard, gracePlus]],
+  ['booking_cancel_grace_note', ['standard', 'firstBooking', 'plus']],
+  ['help_faq_a1', ['standard', 'firstBooking', 'plus']],
+  ['membership_perk_grace_desc', ['standard', 'plus']],
 ];
 for (const locale of LOCALES) {
   const web = JSON.parse(read(join(WEB_I18N, `${locale}.json`)));
-  for (const [key, expected] of WEB_GRACE_KEYS) {
-    checkGrace(`web/${locale}`, key, key.split('.').reduce((node, part) => node?.[part], web), expected);
+  for (const [key, graces] of WEB_GRACE_KEYS) {
+    checkGrace(`web/${locale}`, key, key.split('.').reduce((node, part) => node?.[part], web), graces);
   }
-  for (const [key, expected] of MOBILE_GRACE_KEYS) {
-    checkGrace(`android/${ANDROID_DIRS[locale]}`, key, androidString(ANDROID_DIRS[locale], key), expected);
-    checkGrace(`ios/${locale}`, key, iosString(iosCatalog, key, locale), expected);
+  for (const [key, graces] of MOBILE_GRACE_KEYS) {
+    checkGrace(`android/${ANDROID_DIRS[locale]}`, key, androidString(ANDROID_DIRS[locale], key), graces);
+    checkGrace(`ios/${locale}`, key, iosString(iosCatalog, key, locale), graces);
   }
 }
 

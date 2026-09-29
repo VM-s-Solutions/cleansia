@@ -296,4 +296,20 @@ public class OrderController(IMediator mediator) : CustomerApiController(mediato
         var result = await Mediator.Send(command, cancellationToken);
         return HandleResult<ChoosePreferredCleaner.Response>(result);
     }
+
+    // The contract for work binds the operating company and the cleaner, so every customer is answered
+    // order.not_found. The route stays only while the customer web and mobile apps still call it; it goes
+    // with their contract screens.
+    [HttpGet("GetWorkContract")]
+    [Permission(Policy.CanViewOrderDetail)]
+    [EnableRateLimiting("interactive")]
+    [ProducesResponseType(typeof(WorkContractDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetWorkContract([FromQuery] GetWorkContract.Query query, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(query, cancellationToken);
+        return HandleResult<WorkContractDto>(result);
+    }
 }

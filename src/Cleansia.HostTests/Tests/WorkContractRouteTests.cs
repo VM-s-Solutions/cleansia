@@ -15,7 +15,8 @@ namespace Cleansia.HostTests.Tests;
 /// reward rather than the order total, and, once placed on the crew, accepts it and reads it back; the
 /// read keyed on the acceptance answers an administrator on the Admin host and refuses another cleaner
 /// with the same not-found the order itself would give. The contract binds the operating company and
-/// the cleaner (decision 45), so the Customer host serves no read of it.
+/// the cleaner (decision 45), so the Customer host's read refuses the order's own customer with that
+/// not-found too.
 ///
 /// <para>Host coverage is Partner, Mobile.Partner, Customer and Admin — the four the harness boots;
 /// <c>Web.Mobile.Customer</c>'s controller is a byte-identical sibling of the Customer host's.</para>
@@ -98,6 +99,7 @@ public sealed class WorkContractRouteTests(HostTestPostgresFixture db) : AuthzHo
         HttpAssert.IsUnauthorized(await MobileClientAnonymous().GetAsync(PreviewRoute("any")));
         HttpAssert.IsUnauthorized(await MobileClientAnonymous().PostAsync(AcceptRoute, JsonContent.Create(new { OrderId = "any", AcceptedWorkContractTextId = "any" })));
         HttpAssert.IsUnauthorized(await MobileClientAnonymous().GetAsync(ReadRoute("any")));
+        HttpAssert.IsUnauthorized(await CustomerClientAnonymous().GetAsync(ReadRoute("any")));
         HttpAssert.IsUnauthorized(await AdminClientAnonymous().GetAsync(AdminReadRoute("any")));
     }
 
@@ -183,9 +185,10 @@ public sealed class WorkContractRouteTests(HostTestPostgresFixture db) : AuthzHo
         await HttpAssert.RejectedAsync(byOtherCleaner, BusinessErrorMessage.OrderNotFound);
         HttpAssert.ClearedTheGate(byOtherCleaner);
 
-        // The order's own customer has no route to it.
+        // The order's own customer is refused with the same not-found.
         var byCustomer = await CustomerClient(CustomerToken(CustomerAudience, a.CustomerUserId, CustomerEmail)).GetAsync(ReadRoute(acceptanceId));
-        HttpAssert.IsNotFound(byCustomer);
+        await HttpAssert.RejectedAsync(byCustomer, BusinessErrorMessage.OrderNotFound);
+        HttpAssert.ClearedTheGate(byCustomer);
     }
 
     [Fact]

@@ -14,10 +14,10 @@ namespace Cleansia.Tests.Features.Orders;
 /// ADR-0068 D4 (Verification #5) — the read is keyed on the acceptance: access is derived from the
 /// row's order (the company's) and, for a cleaner, from the row naming them — so the accepting cleaner
 /// (even after dropping) and an administrator read it, and another cleaner or a caller the order does
-/// not exist for answer not-found. The contract binds the company and the cleaner, so no customer host
-/// serves it. The facts are the STORED ones; the text is the requested language when the accepted
-/// document has it, else the accepted text, with the accepted language on the DTO either way, and the
-/// company that operates the order is named as the client.
+/// not exist for answer not-found. The contract binds the company and the cleaner, so a customer answers
+/// not-found even on their own order. The facts are the STORED ones; the text is the requested language
+/// when the accepted document has it, else the accepted text, with the accepted language on the DTO
+/// either way, and the company that operates the order is named as the client.
 /// </summary>
 public sealed class GetWorkContractHandlerTests
 {
@@ -69,6 +69,18 @@ public sealed class GetWorkContractHandlerTests
     public async Task A_Caller_The_Order_Does_Not_Exist_For_Is_Told_Nothing()
     {
         var acceptance = Arrange(orderExistsForCaller: false, callerEmployeeId: null);
+
+        var result = await CreateValidator().ValidateAsync(new GetWorkContract.Query(acceptance.Id));
+
+        Assert.False(result.IsValid);
+        Assert.Equal(BusinessErrorMessage.OrderNotFound, Assert.Single(result.Errors).ErrorMessage);
+    }
+
+    [Fact]
+    public async Task The_Orders_Own_Customer_Is_Told_Nothing()
+    {
+        var acceptance = Arrange(orderExistsForCaller: true, callerEmployeeId: null);
+        _accessService.Setup(s => s.IsCustomerCaller()).Returns(true);
 
         var result = await CreateValidator().ValidateAsync(new GetWorkContract.Query(acceptance.Id));
 

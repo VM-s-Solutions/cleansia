@@ -48,6 +48,11 @@ public class GetWorkContract
 
         private async Task<bool> ExistsForCallerAsync(Query query, CancellationToken cancellationToken)
         {
+            if (_orderAccessService.IsCustomerCaller())
+            {
+                return false;
+            }
+
             var acceptance = await _acceptanceRepository.GetByIdIgnoringTenantAsync(query.AcceptanceId, cancellationToken);
             if (acceptance is null)
             {

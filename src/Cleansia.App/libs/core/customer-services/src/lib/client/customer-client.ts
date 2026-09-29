@@ -3752,6 +3752,12 @@ export interface IOrderClient {
      * @return OK
      */
     choosePreferredCleaner(body?: ChoosePreferredCleanerCommand | undefined): Observable<ChoosePreferredCleanerResponse>;
+    /**
+     * @param acceptanceId (optional) 
+     * @param language (optional) 
+     * @return OK
+     */
+    getWorkContract(acceptanceId?: string | undefined, language?: string | undefined): Observable<WorkContractDto>;
 }
 
 @Injectable({
@@ -5462,6 +5468,88 @@ export class OrderClient implements IOrderClient {
             let result200: any = null;
             let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result200 = ChoosePreferredCleanerResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param acceptanceId (optional) 
+     * @param language (optional) 
+     * @return OK
+     */
+    getWorkContract(acceptanceId?: string | undefined, language?: string | undefined): Observable<WorkContractDto> {
+        let url = this.baseUrl + "/api/Order/GetWorkContract?";
+        if (acceptanceId === null)
+            throw new globalThis.Error("The parameter 'acceptanceId' cannot be null.");
+        else if (acceptanceId !== undefined)
+            url += "AcceptanceId=" + encodeURIComponent("" + acceptanceId) + "&";
+        if (language === null)
+            throw new globalThis.Error("The parameter 'language' cannot be null.");
+        else if (language !== undefined)
+            url += "Language=" + encodeURIComponent("" + language) + "&";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGetWorkContract(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processGetWorkContract(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<WorkContractDto>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<WorkContractDto>;
+        }));
+    }
+
+    protected processGetWorkContract(response: HttpResponseBase): Observable<WorkContractDto> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = WorkContractDto.fromJS(resultData200);
             return ObservableOf(result200);
             }));
         } else if (status === 400) {
@@ -17866,6 +17954,58 @@ export interface IWithdrawConsentCommand {
     consentType: ConsentType;
 }
 
+export class WorkContractAcceptanceDetails implements IWorkContractAcceptanceDetails {
+    acceptedOn!: Date;
+    documentVersion!: string | undefined;
+    acceptedLanguage!: string | undefined;
+    orderEmployeeId!: string | undefined;
+    employeeId!: string | undefined;
+
+    constructor(data?: IWorkContractAcceptanceDetails) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.acceptedOn = Data["acceptedOn"] ? new Date(Data["acceptedOn"].toString()) : undefined as any;
+            this.documentVersion = Data["documentVersion"];
+            this.acceptedLanguage = Data["acceptedLanguage"];
+            this.orderEmployeeId = Data["orderEmployeeId"];
+            this.employeeId = Data["employeeId"];
+        }
+    }
+
+    static fromJS(data: any): WorkContractAcceptanceDetails {
+        data = typeof data === 'object' ? data : {};
+        let result = new WorkContractAcceptanceDetails();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["acceptedOn"] = this.acceptedOn ? this.acceptedOn.toISOString() : undefined as any;
+        data["documentVersion"] = this.documentVersion;
+        data["acceptedLanguage"] = this.acceptedLanguage;
+        data["orderEmployeeId"] = this.orderEmployeeId;
+        data["employeeId"] = this.employeeId;
+        return data;
+    }
+}
+
+export interface IWorkContractAcceptanceDetails {
+    acceptedOn: Date;
+    documentVersion: string | undefined;
+    acceptedLanguage: string | undefined;
+    orderEmployeeId: string | undefined;
+    employeeId: string | undefined;
+}
+
 export class WorkContractAcceptanceDto implements IWorkContractAcceptanceDto {
     id!: string | undefined;
     orderEmployeeId!: string | undefined;
@@ -17920,6 +18060,218 @@ export interface IWorkContractAcceptanceDto {
     acceptedOn: Date;
     documentVersion: string | undefined;
     language: string | undefined;
+}
+
+export class WorkContractDto implements IWorkContractDto {
+    legalDocumentTextId!: string | undefined;
+    legalDocumentId!: string | undefined;
+    version!: string | undefined;
+    effectiveFrom!: Date;
+    language!: string | undefined;
+    title!: string | undefined;
+    contentHtml!: string | undefined;
+    facts!: WorkContractFacts;
+    acceptance!: WorkContractAcceptanceDetails;
+
+    constructor(data?: IWorkContractDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.legalDocumentTextId = Data["legalDocumentTextId"];
+            this.legalDocumentId = Data["legalDocumentId"];
+            this.version = Data["version"];
+            this.effectiveFrom = Data["effectiveFrom"] ? new Date(Data["effectiveFrom"].toString()) : undefined as any;
+            this.language = Data["language"];
+            this.title = Data["title"];
+            this.contentHtml = Data["contentHtml"];
+            this.facts = Data["facts"] ? WorkContractFacts.fromJS(Data["facts"]) : undefined as any;
+            this.acceptance = Data["acceptance"] ? WorkContractAcceptanceDetails.fromJS(Data["acceptance"]) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): WorkContractDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new WorkContractDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["legalDocumentTextId"] = this.legalDocumentTextId;
+        data["legalDocumentId"] = this.legalDocumentId;
+        data["version"] = this.version;
+        data["effectiveFrom"] = this.effectiveFrom ? formatDate(this.effectiveFrom) : undefined as any;
+        data["language"] = this.language;
+        data["title"] = this.title;
+        data["contentHtml"] = this.contentHtml;
+        data["facts"] = this.facts ? this.facts.toJSON() : undefined as any;
+        data["acceptance"] = this.acceptance ? this.acceptance.toJSON() : undefined as any;
+        return data;
+    }
+}
+
+export interface IWorkContractDto {
+    legalDocumentTextId: string | undefined;
+    legalDocumentId: string | undefined;
+    version: string | undefined;
+    effectiveFrom: Date;
+    language: string | undefined;
+    title: string | undefined;
+    contentHtml: string | undefined;
+    facts: WorkContractFacts;
+    acceptance: WorkContractAcceptanceDetails;
+}
+
+export class WorkContractFacts implements IWorkContractFacts {
+    orderNumber!: string | undefined;
+    cleaningDateTimeUtc!: Date;
+    estimatedMinutes!: number;
+    totalPrice!: number;
+    currencyCode!: string | undefined;
+    locationApproximate!: string | undefined;
+    countryId!: string | undefined;
+    rooms!: number;
+    bathrooms!: number;
+    services!: WorkContractFactsLine[] | undefined;
+    packages!: WorkContractFactsLine[] | undefined;
+    extraSlugs!: string[] | undefined;
+
+    constructor(data?: IWorkContractFacts) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.orderNumber = Data["orderNumber"];
+            this.cleaningDateTimeUtc = Data["cleaningDateTimeUtc"] ? new Date(Data["cleaningDateTimeUtc"].toString()) : undefined as any;
+            this.estimatedMinutes = Data["estimatedMinutes"];
+            this.totalPrice = Data["totalPrice"];
+            this.currencyCode = Data["currencyCode"];
+            this.locationApproximate = Data["locationApproximate"];
+            this.countryId = Data["countryId"];
+            this.rooms = Data["rooms"];
+            this.bathrooms = Data["bathrooms"];
+            if (Array.isArray(Data["services"])) {
+                this.services = [] as any;
+                for (let item of Data["services"])
+                    this.services!.push(WorkContractFactsLine.fromJS(item));
+            }
+            if (Array.isArray(Data["packages"])) {
+                this.packages = [] as any;
+                for (let item of Data["packages"])
+                    this.packages!.push(WorkContractFactsLine.fromJS(item));
+            }
+            if (Array.isArray(Data["extraSlugs"])) {
+                this.extraSlugs = [] as any;
+                for (let item of Data["extraSlugs"])
+                    this.extraSlugs!.push(item);
+            }
+        }
+    }
+
+    static fromJS(data: any): WorkContractFacts {
+        data = typeof data === 'object' ? data : {};
+        let result = new WorkContractFacts();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["orderNumber"] = this.orderNumber;
+        data["cleaningDateTimeUtc"] = this.cleaningDateTimeUtc ? this.cleaningDateTimeUtc.toISOString() : undefined as any;
+        data["estimatedMinutes"] = this.estimatedMinutes;
+        data["totalPrice"] = this.totalPrice;
+        data["currencyCode"] = this.currencyCode;
+        data["locationApproximate"] = this.locationApproximate;
+        data["countryId"] = this.countryId;
+        data["rooms"] = this.rooms;
+        data["bathrooms"] = this.bathrooms;
+        if (Array.isArray(this.services)) {
+            data["services"] = [];
+            for (let item of this.services)
+                data["services"].push(item ? item.toJSON() : undefined as any);
+        }
+        if (Array.isArray(this.packages)) {
+            data["packages"] = [];
+            for (let item of this.packages)
+                data["packages"].push(item ? item.toJSON() : undefined as any);
+        }
+        if (Array.isArray(this.extraSlugs)) {
+            data["extraSlugs"] = [];
+            for (let item of this.extraSlugs)
+                data["extraSlugs"].push(item);
+        }
+        return data;
+    }
+}
+
+export interface IWorkContractFacts {
+    orderNumber: string | undefined;
+    cleaningDateTimeUtc: Date;
+    estimatedMinutes: number;
+    totalPrice: number;
+    currencyCode: string | undefined;
+    locationApproximate: string | undefined;
+    countryId: string | undefined;
+    rooms: number;
+    bathrooms: number;
+    services: WorkContractFactsLine[] | undefined;
+    packages: WorkContractFactsLine[] | undefined;
+    extraSlugs: string[] | undefined;
+}
+
+export class WorkContractFactsLine implements IWorkContractFactsLine {
+    id!: string | undefined;
+    name!: string | undefined;
+
+    constructor(data?: IWorkContractFactsLine) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.name = Data["name"];
+        }
+    }
+
+    static fromJS(data: any): WorkContractFactsLine {
+        data = typeof data === 'object' ? data : {};
+        let result = new WorkContractFactsLine();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["name"] = this.name;
+        return data;
+    }
+}
+
+export interface IWorkContractFactsLine {
+    id: string | undefined;
+    name: string | undefined;
 }
 
 export class CustomerAddress extends AddressDto implements ICustomerAddress {

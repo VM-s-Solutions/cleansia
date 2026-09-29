@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Legal;
 using Cleansia.Core.AppServices.Features.Legal.DTOs;
+using Cleansia.Core.Domain.Company;
 using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Legal;
@@ -27,6 +28,7 @@ public sealed class LegalDocumentSeedAndReadTests(PostgresContainerFixture fixtu
 {
     private const string Czechia = "country-cze-legal";
     private const string Slovakia = "country-svk-legal";
+    private const string SlovakSeller = "Cleansia SK s.r.o.";
 
     private static Task Anonymous(IServiceCollection services)
     {
@@ -51,6 +53,10 @@ public sealed class LegalDocumentSeedAndReadTests(PostgresContainerFixture fixtu
         context.CountryConfigurations.AddRange(
             CountryConfiguration.Create(Czechia, "CZK", "cs", 0.21m).AssignOperator(TestTenants.Default).SetAsDefaultMarket(true),
             CountryConfiguration.Create(Slovakia, "EUR", "sk", 0.20m).AssignOperator(TestTenants.Default));
+        // The terms name the seller from the market operator's company record (decision 54).
+        context.CompanyInfo.Add(CompanyInfo.Create(
+            SlovakSeller, "Cleansia", "87654321", "Hlavná 1", "Bratislava", "81101", Slovakia,
+            vatNumber: "SK2020123456", phone: "+421 900 000 000", email: "info@seller.test"));
         StampUnstampedAdded(context, TestTenants.Default);
         await context.CommitAsync(CancellationToken.None);
     }
@@ -69,14 +75,14 @@ public sealed class LegalDocumentSeedAndReadTests(PostgresContainerFixture fixtu
                 Assert.False(second.Changed);
 
                 var documents = await context.LegalDocuments.Include(d => d.Texts).AsNoTracking().ToListAsync();
-                Assert.Equal(4, documents.Count);
+                Assert.Equal(5, documents.Count);
                 Assert.All(documents, d => Assert.Null(d.CountryId));
                 Assert.All(documents, d => Assert.Equal(LegalDocument.VersionFor(d.EffectiveFrom), d.Version));
                 Assert.All(documents, d => Assert.Equal(5, d.Texts.Count));
                 Assert.Equal(
-                    [LegalDocumentType.TermsOfService, LegalDocumentType.TermsOfService, LegalDocumentType.PrivacyPolicy, LegalDocumentType.WorkContract],
+                    [LegalDocumentType.TermsOfService, LegalDocumentType.TermsOfService, LegalDocumentType.TermsOfService, LegalDocumentType.PrivacyPolicy, LegalDocumentType.WorkContract],
                     documents.Select(d => d.Type).OrderBy(t => t));
-                Assert.Equal(20, await context.LegalDocumentTexts.CountAsync());
+                Assert.Equal(25, await context.LegalDocumentTexts.CountAsync());
             },
             transactional: false);
     }
@@ -129,6 +135,8 @@ public sealed class LegalDocumentSeedAndReadTests(PostgresContainerFixture fixtu
                 Assert.Equal(seeded.TextFor("sk")!.Title, dto.Title);
                 Assert.Equal(seeded.TextFor("sk")!.ContentHash, dto.ContentHash);
                 Assert.Contains(" EUR ", dto.ContentHtml);
+                Assert.Contains(SlovakSeller, dto.ContentHtml);
+                Assert.Contains("87654321", dto.ContentHtml);
                 Assert.DoesNotContain("{{", dto.ContentHtml);
                 Assert.Contains("<h2>", dto.ContentHtml);
                 Assert.Contains("<blockquote>", dto.ContentHtml);

@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using Cleansia.Core.AppServices.Features.Legal;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Legal;
@@ -29,6 +30,7 @@ public sealed class LegalDocumentSeederTests : IDisposable
     [
         (LegalDocumentType.TermsOfService, new DateOnly(2026, 9, 14)),
         (LegalDocumentType.TermsOfService, new DateOnly(2026, 9, 27)),
+        (LegalDocumentType.TermsOfService, new DateOnly(2026, 9, 29)),
         (LegalDocumentType.PrivacyPolicy, new DateOnly(2026, 9, 14)),
         (LegalDocumentType.WorkContract, new DateOnly(2026, 9, 20)),
     ];
@@ -145,21 +147,61 @@ public sealed class LegalDocumentSeederTests : IDisposable
     }
 
     /// <summary>
-    /// The terms a customer accepts state the cancellation grace the platform applies. Read off the
-    /// minute phrases alone, in order — the standard window, then the Plus one — so the hour figures
-    /// elsewhere in the text cannot stand in for them, and moving, swapping or equalising either
-    /// constant without publishing a new terms version fails here.
+    /// The terms a customer accepts state the minutes the platform applies. Read off the minute phrases
+    /// alone, in order — the Plus benefit, then the cancellation grace on a first booking before the
+    /// standard one (owner ruling 2026-09-28), then the cleaner's wait before a lockout — so the hour
+    /// figures elsewhere in the text cannot stand in for them, and moving, swapping or equalising any of
+    /// these constants without publishing a new terms version fails here.
     /// </summary>
     [Fact]
-    public void The_Newest_Terms_State_The_Cancellation_Grace_Minutes_In_Every_Language()
+    public void The_Newest_Terms_State_The_Cancellation_Grace_And_Lockout_Wait_Minutes_In_Every_Language()
     {
         var newest = NewestTerms();
 
         Assert.Equal(new[] { "cs", "en", "ru", "sk", "uk" }, newest.Select(r => r.Language).Order());
         Assert.All(newest, r => Assert.Equal(
-            new[] { BookingPolicy.OopsWindowMinutesStandard, BookingPolicy.OopsWindowMinutesPlus },
+            new[]
+            {
+                BookingPolicy.OopsWindowMinutesPlus,
+                BookingPolicy.OopsWindowMinutesFirstBooking,
+                BookingPolicy.OopsWindowMinutesStandard,
+                BookingPolicy.LockoutWaitMinutes,
+            },
             MinutePhrase.Matches(r.ContentMarkdown).Select(m => int.Parse(m.Groups[1].Value))));
     }
+
+    /// <summary>
+    /// The operating company sells in its own name (the 2026-09-27 ruling; decision 54): the newest terms
+    /// name the seller through the placeholders the read path fills from the market operator's company
+    /// record, in every language, and carry no identity of their own — the 2026-09-27 terms named nobody
+    /// and hard-coded an e-mail and a phone. A placeholder outside this set would reach the customer as
+    /// braces, because nothing fills it.
+    /// </summary>
+    [Fact]
+    public void The_Newest_Terms_Name_The_Seller_Only_Through_The_Company_Placeholders_In_Every_Language()
+    {
+        var newest = NewestTerms();
+
+        Assert.Equal(new[] { "cs", "en", "ru", "sk", "uk" }, newest.Select(r => r.Language).Order());
+        Assert.All(newest, r =>
+        {
+            Assert.Equal(TermsPlaceholders, LegalMarkdownRenderer.PlaceholdersIn(r.ContentMarkdown).Order(StringComparer.Ordinal));
+            Assert.DoesNotContain("@cleansia", r.ContentMarkdown);
+            Assert.DoesNotContain("+420", r.ContentMarkdown);
+            Assert.DoesNotContain("s.r.o.", r.ContentMarkdown);
+        });
+    }
+
+    private static readonly string[] TermsPlaceholders = new[]
+    {
+        LegalMarkdownRenderer.CurrencyPlaceholder,
+        LegalMarkdownRenderer.CompanyLegalNamePlaceholder,
+        LegalMarkdownRenderer.CompanyRegistrationNumberPlaceholder,
+        LegalMarkdownRenderer.CompanyVatNumberPlaceholder,
+        LegalMarkdownRenderer.CompanySeatPlaceholder,
+        LegalMarkdownRenderer.CompanyEmailPlaceholder,
+        LegalMarkdownRenderer.CompanyPhonePlaceholder,
+    }.Order(StringComparer.Ordinal).ToArray();
 
     /// <summary>
     /// The 2026-09-14 terms promised cash on delivery to everyone; the cash rule admits it only for a

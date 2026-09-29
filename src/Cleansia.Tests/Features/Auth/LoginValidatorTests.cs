@@ -72,11 +72,10 @@ public class LoginValidatorTests
         Assert.NotEmpty(emailErrors);
         // Assuming AddEmailRules includes EmailAddress() validation
         Assert.Contains(emailErrors, e => e.ErrorMessage.Contains("email"));
-        Assert.DoesNotContain(result.Errors, e => e.PropertyName == "Password");
     }
 
     [Fact]
-    public async Task When_Email_Does_Not_Exist_Then_Validation_Fails_With_NotExistingUser_Error()
+    public async Task When_Email_Does_Not_Exist_Then_Validation_Fails_With_InvalidPassword_On_The_Password()
     {
         // Arrange
         var email = "nonexistent@example.com";
@@ -89,16 +88,23 @@ public class LoginValidatorTests
 
         // Assert
         Assert.False(result.IsValid);
-        var emailErrors = result.Errors.Where(e => e.PropertyName == "Email").ToList();
-        Assert.Contains(emailErrors, e => e.ErrorMessage == BusinessErrorMessage.NotExistingUserWithEmail && e.ErrorCode == "Email");
-        Assert.DoesNotContain(result.Errors, e => e.PropertyName == "Password");
+        var error = Assert.Single(result.Errors);
+        Assert.Equal("Password", error.ErrorCode);
+        Assert.Equal(BusinessErrorMessage.InvalidPassword, error.ErrorMessage);
     }
 
-    [Fact]
-    public async Task When_Email_Exists_But_Is_Google_Auth_Then_Validation_Fails_With_GoogleAuthTypeError()
+    /// <summary>
+    /// A password sign-in on an account that signs in with a provider is refused like a wrong password,
+    /// naming no provider, and is not charged to the account's failed-login budget.
+    /// </summary>
+    [Theory]
+    [InlineData(AuthenticationType.Google)]
+    [InlineData(AuthenticationType.Apple)]
+    [InlineData((AuthenticationType)99)]
+    public async Task When_Email_Belongs_To_An_External_Account_Then_Validation_Fails_With_InvalidPassword_Naming_No_Provider(AuthenticationType authenticationType)
     {
         // Arrange
-        var user = UserMockFactory.Generate(new UserMockFactory.UserPartial { AuthenticationType = AuthenticationType.Google });
+        var user = UserMockFactory.Generate(new UserMockFactory.UserPartial { AuthenticationType = authenticationType });
         _mockRepo.Setup(r => r.ExistsWithEmailIgnoringTenantAsync(user.Email, It.IsAny<CancellationToken>())).ReturnsAsync(true);
         _mockRepo.Setup(r => r.GetByEmailIgnoringTenantAsync(user.Email, It.IsAny<CancellationToken>())).ReturnsAsync(user);
         var command = new Login.Command(user.Email, "password", true);
@@ -108,52 +114,31 @@ public class LoginValidatorTests
 
         // Assert
         Assert.False(result.IsValid);
-        var emailErrors = result.Errors.Where(e => e.PropertyName == "Email").ToList();
-        Assert.Contains(emailErrors, e => e.ErrorMessage == BusinessErrorMessage.GoogleAuthTypeError && e.ErrorCode == "Email");
-        Assert.DoesNotContain(result.Errors, e => e.PropertyName == "Password");
+        var error = Assert.Single(result.Errors);
+        Assert.Equal("Password", error.ErrorCode);
+        Assert.Equal(BusinessErrorMessage.InvalidPassword, error.ErrorMessage);
+        _mockRepo.Verify(r => r.RecordFailedLoginAsync(It.IsAny<string>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
-    public async Task When_Email_Exists_But_Is_Apple_Auth_Then_Validation_Fails_With_AppleAuthTypeError()
+    public async Task An_Unknown_Address_A_Social_Account_And_A_Wrong_Password_Are_Refused_Alike()
     {
-        // Arrange
-        var user = UserMockFactory.Generate(new UserMockFactory.UserPartial { AuthenticationType = AuthenticationType.Apple });
-        _mockRepo.Setup(r => r.ExistsWithEmailIgnoringTenantAsync(user.Email, It.IsAny<CancellationToken>())).ReturnsAsync(true);
-        _mockRepo.Setup(r => r.GetByEmailIgnoringTenantAsync(user.Email, It.IsAny<CancellationToken>())).ReturnsAsync(user);
-        var command = new Login.Command(user.Email, "password", true);
+        const string unknownEmail = "nonexistent@example.com";
+        var googleUser = UserMockFactory.Generate(new UserMockFactory.UserPartial { AuthenticationType = AuthenticationType.Google });
+        var passwordUser = UserMockFactory.Generate(new UserMockFactory.UserPartial { Password = TestUtilities.Constants.TestUserSession.TestUserPassword.HashAndSaltPassword() });
+        _mockRepo.Setup(r => r.GetByEmailIgnoringTenantAsync(unknownEmail, It.IsAny<CancellationToken>())).ReturnsAsync((User)null);
+        _mockRepo.Setup(r => r.GetByEmailIgnoringTenantAsync(googleUser.Email, It.IsAny<CancellationToken>())).ReturnsAsync(googleUser);
+        _mockRepo.Setup(r => r.GetByEmailIgnoringTenantAsync(passwordUser.Email, It.IsAny<CancellationToken>())).ReturnsAsync(passwordUser);
 
-        // Act
-        var result = await _validator.ValidateAsync(command);
+        async Task<string[]> RefusalFor(string email) =>
+            (await _validator.ValidateAsync(new Login.Command(email, TestUtilities.Constants.TestUserSession.TestUserPassword + "s", true)))
+            .Errors.Select(e => $"{e.PropertyName}|{e.ErrorCode}|{e.ErrorMessage}").ToArray();
 
-        // Assert
-        Assert.False(result.IsValid);
-        var emailErrors = result.Errors.Where(e => e.PropertyName == "Email").ToList();
-        Assert.Contains(emailErrors, e => e.ErrorMessage == BusinessErrorMessage.AppleAuthTypeError && e.ErrorCode == "Email");
-        // The bug this test guards: an Apple account used to be told it signed in with Google.
-        Assert.DoesNotContain(emailErrors, e => e.ErrorMessage == BusinessErrorMessage.GoogleAuthTypeError);
-        Assert.DoesNotContain(result.Errors, e => e.PropertyName == "Password");
-    }
+        var wrongPassword = await RefusalFor(passwordUser.Email);
 
-    [Fact]
-    public async Task When_Email_Exists_But_Auth_Type_Is_Unknown_Then_Validation_Fails_With_Neutral_ExternalAuthTypeError()
-    {
-        // Arrange — an AuthenticationType value the validator has no arm for stands in for a provider
-        // added after this test was written. It must be refused, and refused WITHOUT claiming Google or
-        // Apple: that silent inheritance is exactly what the hardcoded message used to do.
-        var user = UserMockFactory.Generate(new UserMockFactory.UserPartial { AuthenticationType = (AuthenticationType)99 });
-        _mockRepo.Setup(r => r.ExistsWithEmailIgnoringTenantAsync(user.Email, It.IsAny<CancellationToken>())).ReturnsAsync(true);
-        _mockRepo.Setup(r => r.GetByEmailIgnoringTenantAsync(user.Email, It.IsAny<CancellationToken>())).ReturnsAsync(user);
-        var command = new Login.Command(user.Email, "password", true);
-
-        // Act
-        var result = await _validator.ValidateAsync(command);
-
-        // Assert
-        Assert.False(result.IsValid);
-        var emailErrors = result.Errors.Where(e => e.PropertyName == "Email").ToList();
-        Assert.Contains(emailErrors, e => e.ErrorMessage == BusinessErrorMessage.ExternalAuthTypeError && e.ErrorCode == "Email");
-        Assert.DoesNotContain(emailErrors, e => e.ErrorMessage == BusinessErrorMessage.GoogleAuthTypeError || e.ErrorMessage == BusinessErrorMessage.AppleAuthTypeError);
-        Assert.DoesNotContain(result.Errors, e => e.PropertyName == "Password");
+        Assert.NotEmpty(wrongPassword);
+        Assert.Equal(wrongPassword, await RefusalFor(unknownEmail));
+        Assert.Equal(wrongPassword, await RefusalFor(googleUser.Email));
     }
 
     [Fact]

@@ -9818,6 +9818,9 @@
           "adminRole": {
             "type": "string",
             "nullable": true
+          },
+          "mustChangePassword": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false

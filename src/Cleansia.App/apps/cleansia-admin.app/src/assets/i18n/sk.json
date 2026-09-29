@@ -3111,6 +3111,7 @@
     },
     "auth": {
       "account_locked": "Príliš veľa neúspešných pokusov o prihlásenie. Účet je dočasne uzamknutý — skúste to znova o niekoľko minút.",
+      "admin_password_too_short": "Heslo administrátora musí mať aspoň 12 znakov.",
       "apple_type_error": "Tento účet používa prihlásenie cez Apple. Použite tlačidlo Apple.",
       "change_password_failed": "Zmena hesla sa nepodarila",
       "current_password_invalid": "Súčasné heslo nie je správne",

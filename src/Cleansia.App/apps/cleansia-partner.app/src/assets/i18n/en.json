@@ -877,6 +877,7 @@
       "invalid_apple_token": "Invalid Apple token",
       "social_account_not_found": "No account matches that sign-in. Please register first.",
       "invalid_password_format": "Invalid password format",
+      "admin_password_too_short": "Administrator passwords must be at least 12 characters long.",
       "invalid_reset_token": "Invalid password reset token",
       "same_reset_password": "New password matches the old password",
       "insufficient_privileges": "You do not have permission to access the partner app. Only partners and administrators can log in.",

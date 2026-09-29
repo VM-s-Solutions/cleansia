@@ -1048,6 +1048,7 @@ namespace Cleansia.Infra.Database.Migrations
                     ConfirmationCodeAttempts = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
                     ResetPasswordCodeAttempts = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
                     LastLoginAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    MustChangePassword = table.Column<bool>(type: "boolean", nullable: false),
                     PreferredLanguageCode = table.Column<string>(type: "citext", maxLength: 5, nullable: true),
                     StripeCustomerId = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),

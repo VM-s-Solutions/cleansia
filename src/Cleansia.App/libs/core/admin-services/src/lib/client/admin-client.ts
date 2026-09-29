@@ -28890,6 +28890,7 @@ export class JwtTokenResponse implements IJwtTokenResponse {
     csrfToken!: string | undefined;
     role!: string | undefined;
     adminRole!: string | undefined;
+    mustChangePassword!: boolean;
 
     constructor(data?: IJwtTokenResponse) {
         if (data) {
@@ -28912,6 +28913,7 @@ export class JwtTokenResponse implements IJwtTokenResponse {
             this.csrfToken = Data["csrfToken"];
             this.role = Data["role"];
             this.adminRole = Data["adminRole"];
+            this.mustChangePassword = Data["mustChangePassword"];
         }
     }
 
@@ -28934,6 +28936,7 @@ export class JwtTokenResponse implements IJwtTokenResponse {
         data["csrfToken"] = this.csrfToken;
         data["role"] = this.role;
         data["adminRole"] = this.adminRole;
+        data["mustChangePassword"] = this.mustChangePassword;
         return data;
     }
 }
@@ -28949,6 +28952,7 @@ export interface IJwtTokenResponse {
     csrfToken: string | undefined;
     role: string | undefined;
     adminRole: string | undefined;
+    mustChangePassword: boolean;
 }
 
 export class LanguageDetailDto implements ILanguageDetailDto {

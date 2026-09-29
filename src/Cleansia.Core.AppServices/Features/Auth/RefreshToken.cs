@@ -144,7 +144,8 @@ public class RefreshToken
                 RefreshToken: issued.RawToken,
                 RefreshTokenExpiresAt: issued.Record.ExpiresAt,
                 Role: user.Profile.ToString(),
-                AdminRole: user.AdminRole?.ToString()));
+                AdminRole: user.AdminRole?.ToString(),
+                MustChangePassword: user.MustChangePassword));
         }
 
         private static string GenerateAccessToken(User user, string? employeeId, string audience, string? deviceId, IJwtSettings jwtSettings, TimeProvider timeProvider)

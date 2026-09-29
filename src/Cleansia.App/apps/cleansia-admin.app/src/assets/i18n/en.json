@@ -3111,6 +3111,7 @@
     },
     "auth": {
       "account_locked": "Too many failed login attempts. The account is temporarily locked — try again in a few minutes.",
+      "admin_password_too_short": "Administrator passwords must be at least 12 characters long.",
       "apple_type_error": "This account uses Sign in with Apple. Use the Apple button.",
       "change_password_failed": "Failed to change the password",
       "current_password_invalid": "The current password is incorrect",

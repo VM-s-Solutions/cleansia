@@ -452,6 +452,8 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'admin_user.email_exists',
   'admin_user.not_found',
   'auth.account_locked',
+  // An administrator's password is 12+ characters: CreateAdminUser and ChangeOwnPassword.
+  'auth.admin_password_too_short',
   'auth.current_password_invalid',
   'auth.insufficient_privileges',
   'auth.invalid_refresh_token',

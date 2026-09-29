@@ -1282,7 +1282,11 @@
       "attach_photo": "Attach photo",
       "which_items": "Which parts went wrong?",
       "which_items_hint": "Optional. Tick the services that were not done properly — it helps us put it right faster. Leave it empty if the whole clean was the problem.",
-      "item_in_package": "in {{package}}"
+      "item_in_package": "in {{package}}",
+      "settlement_label": "If we agree you are owed money back",
+      "settlement_card_refund": "Refund to my card",
+      "settlement_credit": "Credit on my Cleansia account",
+      "settlement_hint": "A refund goes back to the card you paid with. Credit pays towards your next bookings instead: it cannot be paid out, and it expires after 12 months without use."
     },
     "rewards": {
       "title": "Rewards",

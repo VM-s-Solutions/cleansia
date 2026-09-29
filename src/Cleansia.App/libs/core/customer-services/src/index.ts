@@ -207,6 +207,7 @@ export {
   DisputeListItem,
   DisputeMessageDto,
   DisputeReason,
+  DisputeSettlementPreference,
   CreateDisputeCommand,
   CreateDisputeDisputeLineSelection,
   CreateDisputeResponse,

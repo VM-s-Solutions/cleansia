@@ -133,6 +133,17 @@
         />
       </div>
 
+      <div class="cl-dsp__field">
+        <cleansia-select
+          [floatVariant]="null"
+          [label]="'pages.disputes.settlement_label' | translate"
+          formControlName="settlementPreference"
+          [options]="settlementOptions"
+          [appendTo]="'body'"
+        />
+        <p class="cl-dsp__hint">{{ 'pages.disputes.settlement_hint' | translate }}</p>
+      </div>
+
       <div class="cl-dsp__form-actions">
         <cleansia-button
           [title]="'pages.disputes.submit' | translate"

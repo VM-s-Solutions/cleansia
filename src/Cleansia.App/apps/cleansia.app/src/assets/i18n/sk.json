@@ -1282,7 +1282,11 @@
       "attach_photo": "Priložiť fotku",
       "which_items": "Čo konkrétne nedopadlo?",
       "which_items_hint": "Nepovinné. Označte služby, ktoré neboli urobené poriadne — pomôže nám to rýchlejšie napraviť. Ak bol problém celý upratovanie, nechajte prázdne.",
-      "item_in_package": "v balíku {{package}}"
+      "item_in_package": "v balíku {{package}}",
+      "settlement_label": "Ak uznáme, že vám máme vrátiť peniaze",
+      "settlement_card_refund": "Vrátiť peniaze na kartu",
+      "settlement_credit": "Kredit na môj účet Cleansia",
+      "settlement_hint": "Vrátené peniaze prídu na kartu, ktorou ste platili. Kredit namiesto toho uplatníte na ďalšie objednávky: nedá sa vyplatiť a vyprší po 12 mesiacoch bez použitia."
     },
     "rewards": {
       "title": "Odmeny",

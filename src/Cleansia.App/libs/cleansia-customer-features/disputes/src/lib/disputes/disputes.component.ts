@@ -27,6 +27,7 @@ import {
   Code,
   DisputeListItem,
   DisputeReason,
+  DisputeSettlementPreference,
 } from '@cleansia/customer-services';
 import { FoamEdgeComponent } from '@cleansia-customer/home';
 import { CleansiaCustomerRoute } from '@cleansia/services';
@@ -127,6 +128,7 @@ export class DisputesComponent implements OnInit {
         Validators.maxLength(DISPUTE_DESCRIPTION_MAX_LENGTH),
       ],
     ],
+    settlementPreference: [DisputeSettlementPreference.CardRefund, Validators.required],
   });
 
   /**
@@ -200,6 +202,11 @@ export class DisputesComponent implements OnInit {
     { label: this.translate.instant('pages.disputes.reasons.unauthorized_charge'), value: DisputeReason.UnauthorizedCharge },
     { label: this.translate.instant('pages.disputes.reasons.incorrect_amount'), value: DisputeReason.IncorrectAmount },
     { label: this.translate.instant('pages.disputes.reasons.other'), value: DisputeReason.Other },
+  ];
+
+  readonly settlementOptions: ICleansiaSelectOption[] = [
+    { label: this.translate.instant('pages.disputes.settlement_card_refund'), value: DisputeSettlementPreference.CardRefund },
+    { label: this.translate.instant('pages.disputes.settlement_credit'), value: DisputeSettlementPreference.Credit },
   ];
 
   /**
@@ -276,6 +283,7 @@ export class DisputesComponent implements OnInit {
       orderId: '',
       reason: DisputeReason.QualityIssue,
       description: '',
+      settlementPreference: DisputeSettlementPreference.CardRefund,
     });
     this.pickedReason.set(DisputeReason.QualityIssue);
     this.pickedLineKeys.set(new Set());
@@ -329,7 +337,7 @@ export class DisputesComponent implements OnInit {
       return;
     }
 
-    const { orderId, reason, description } = this.createForm.getRawValue();
+    const { orderId, reason, description, settlementPreference } = this.createForm.getRawValue();
     // Only the rows still on the CURRENT order. Switching order after ticking something would
     // otherwise send an item the server would reject as not-on-this-order, and the customer would see
     // a validation error about a box they cannot see any more.
@@ -342,7 +350,7 @@ export class DisputesComponent implements OnInit {
     // form is the whole point — the reset empties the control.
     const evidence = [...this.evidenceControl.value];
 
-    this.facade.createDispute(orderId, reason, description, lines, (disputeId) => {
+    this.facade.createDispute(orderId, reason, description, lines, settlementPreference, (disputeId) => {
       this.cancelNew();
       // A brand-new dispute is the one to be looking at.
       this.selectedId.set(null);

@@ -392,7 +392,9 @@ The CI pipeline applies committed migrations via the EF bundle on every deploy (
 job), before the app deploys — no manual step needed. The runner's IP is **not** your admin IP and is
 **not** an Azure service, so the `migrate-database` job **opens a temporary, per-run Postgres firewall
 rule for the runner's own IP, applies the migration, then always removes the rule** (even on failure).
-You don't manage that — it's automatic.
+You don't manage that — it's automatic. In prod, where the database and Key Vault are private, the job
+also turns their public access on for the runner and off again —
+[`AZURE-PROD-POSTURE.md`](AZURE-PROD-POSTURE.md) §6, which also has the admin `psql` procedure.
 
 **You normally never run migrations by hand** — the CI deploy does it. The command below is only a
 fallback, and unlike steps 5–6 it needs the **.NET 10 SDK** (bare Cloud Shell does **not** have it — you'd
@@ -524,9 +526,10 @@ Prod is the **same pipeline** (`deploy-azure.yml`) pointed at the `*-weu-prod` f
 work the YAML cannot do. Do it **in this order**:
 
 > **Prod reliability posture (T-0359):** `weu.prod.bicepparam` now also flips deployment slots,
-> autoscale, Postgres HA/geo-backup, and ACR image retention — every knob, its chosen default, the
-> slot-swap workflow follow-up, and the deliberately-not-flipped Q-INFRA-03 private-networking flag
-> are documented in [`deploy/AZURE-PROD-POSTURE.md`](AZURE-PROD-POSTURE.md). Note especially:
+> autoscale, Postgres HA/geo-backup, ACR image retention and the private database and Key Vault
+> (Q-INFRA-03, E-3) — every knob, its chosen default, the slot-swap workflow follow-up, and how CI and
+> an admin's `psql` reach the private database through a temporary public window are documented in
+> [`deploy/AZURE-PROD-POSTURE.md`](AZURE-PROD-POSTURE.md). Note especially:
 > **geo-redundant backup only exists if it is on at the FIRST provision** (immutable after create).
 
 ### P0 console access checklist
@@ -592,7 +595,7 @@ any of this — it lives in each provider's console — so it is recorded here a
 | `AZURE_TENANT_ID` | tenant id | `azure/login` |
 | `AZURE_SUBSCRIPTION_ID` | subscription id | `azure/login` |
 | `POSTGRES_ADMIN_PASSWORD` | a **new** strong alphanumeric password (§1 rules; never dev's) | the Bicep `@secure()` param |
-| `ADMIN_IP_ADDRESS` | your laptop's public IP (§1 caveats apply) | the Postgres admin firewall rule |
+| `ADMIN_IP_ADDRESS` | your laptop's public IP (§1 caveats apply) | the Bicep `adminIpAddress` param — required, but no rule is created while the database is private (admin `psql`: [`AZURE-PROD-POSTURE.md`](AZURE-PROD-POSTURE.md) §6) |
 | `CI_PRINCIPAL_ID` | the OIDC SP object id — optional; empty skips the Bicep grant (the deploy self-grants Secrets Officer) | the Bicep `ciPrincipalId` param |
 | `ACR_NAME` | `acrcleansiaweuprod` (deterministic — same naming rule as §4's note) | the Functions `az acr build` step |
 | `AZURE_STATIC_WEB_APPS_API_TOKEN_PARTNER` | `swa-cleansia-partner-weu-prod` deploy token (fill after P5) | partner SPA deploy |

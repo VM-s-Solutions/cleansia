@@ -282,6 +282,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # Read from the param file Bicep deploys, so the workflow and the infrastructure cannot disagree:
+      # privateNetworkingEnabled = true (prod) closes the Key Vault to every network but its private
+      # endpoint, and the secret push below opens it to this runner's IP alone and closes it after.
+      - name: Resolve the stage's network posture
+        env:
+          PARAM_FILE: ${{ inputs.bicepparamFile }}
+        run: |
+          if grep -Eq '^[[:space:]]*param[[:space:]]+privateNetworkingEnabled[[:space:]]*=[[:space:]]*true([^[:alnum:]_]|$)' "$PARAM_FILE"; then
+            echo "PRIVATE_NETWORKING=true" >> "$GITHUB_ENV"
+          else
+            echo "PRIVATE_NETWORKING=false" >> "$GITHUB_ENV"
+          fi
+
       - name: Login to Azure
         uses: azure/login@v2
         with:
@@ -470,6 +483,25 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      # The rule goes in before public access comes on, and the default action stays Deny, so the window
+      # never admits anything but this runner. The push's own RBAC retries also ride out the rule's
+      # propagation. Every Bicep provision rewrites the vault's network ACLs without the rule.
+      - name: Open the Key Vault to the runner
+        id: open-kv
+        if: inputs.mode == 'deploy' && env.PRIVATE_NETWORKING == 'true'
+        env:
+          KV: kv-cleansia-${{ matrix.region }}-${{ inputs.env }}
+          RG: rg-cleansia-${{ matrix.region }}-${{ inputs.env }}
+        run: |
+          RUNNER_IP="$(curl -s https://api.ipify.org)"
+          if ! [[ "$RUNNER_IP" =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}$ ]]; then
+            echo "::error::could not resolve the runner's public IPv4 (got '$RUNNER_IP')"; exit 1
+          fi
+          echo "RUNNER_IP=$RUNNER_IP" >> "$GITHUB_ENV"
+          az keyvault network-rule add --name "$KV" --resource-group "$RG" --ip-address "$RUNNER_IP/32" --output none
+          az keyvault update --name "$KV" --resource-group "$RG" \
+            --public-network-access Enabled --default-action Deny --output none
+
       # Push the EXTERNAL secrets (the ones Bicep can't derive) from the stage's GitHub-Environment
       # secrets into Key Vault. The DERIVABLE ones (Storage/DB conn strings) are
       # written by the Bicep derivedSecrets module — not here. Set these GitHub secrets ONCE per
@@ -569,6 +601,29 @@ jobs:
           set_secret "Apns--TeamId"                           "$APNS_TEAM_ID"
           set_secret "Apns--PrivateKeyPem"                    "$APNS_PRIVATE_KEY_PEM"
 
+      # Runs even when the push failed or the run was cancelled: a private vault must not stay public.
+      - name: Close the Key Vault to the public
+        if: always() && steps.open-kv.outcome != 'skipped'
+        env:
+          KV: kv-cleansia-${{ matrix.region }}-${{ inputs.env }}
+          RG: rg-cleansia-${{ matrix.region }}-${{ inputs.env }}
+        run: |
+          closed=false
+          for attempt in 1 2 3; do
+            if az keyvault update --name "$KV" --resource-group "$RG" \
+                 --public-network-access Disabled --default-action Deny --output none; then
+              closed=true; break
+            fi
+            sleep 20
+          done
+          if [ -n "$RUNNER_IP" ]; then
+            az keyvault network-rule remove --name "$KV" --resource-group "$RG" --ip-address "$RUNNER_IP/32" --output none || true
+          fi
+          if [ "$closed" != "true" ]; then
+            echo "::error::$KV may still accept $RUNNER_IP over its public endpoint — set its public network access to Disabled by hand (deploy/AZURE-PROD-POSTURE.md §6)"
+            exit 1
+          fi
+
   # ===========================================================================================
   # Migrate — committed EF migrations applied BEFORE any deploy (ADR-0015 D5). Runs after provision
   # so the DB exists; gates every API/SSR deploy via the needs edge.
@@ -601,12 +656,50 @@ jobs:
           name: ef-bundle
           path: ./src
 
+      # The same read as the provision job's: privateNetworkingEnabled = true (prod) means the database
+      # and the Key Vault answer only their private endpoints, which this runner is not behind.
+      - name: Resolve the stage's network posture
+        env:
+          PARAM_FILE: ${{ inputs.bicepparamFile }}
+        run: |
+          if grep -Eq '^[[:space:]]*param[[:space:]]+privateNetworkingEnabled[[:space:]]*=[[:space:]]*true([^[:alnum:]_]|$)' "$PARAM_FILE"; then
+            echo "PRIVATE_NETWORKING=true" >> "$GITHUB_ENV"
+          else
+            echo "PRIVATE_NETWORKING=false" >> "$GITHUB_ENV"
+          fi
+
       - name: Login to Azure
         uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      # The temporary public window of a private stage: public access on for the length of the
+      # migration. A private server has no firewall rules, so with public access on it still admits only
+      # the runner's rule added next. The PATCH is sent only while the server is Ready — a write racing
+      # its own update is refused with ServerIsBusy — and the step waits for Enabled and Ready.
+      - name: Open the private database for the migration
+        id: open-pg
+        if: env.PRIVATE_NETWORKING == 'true'
+        env:
+          RG: rg-cleansia-${{ matrix.region }}-${{ inputs.env }}
+          PG: pg-cleansia-${{ matrix.region }}-${{ inputs.env }}
+        run: |
+          PG_URL="https://management.azure.com/subscriptions/$(az account show --query id -o tsv)/resourceGroups/${RG}/providers/Microsoft.DBforPostgreSQL/flexibleServers/${PG}?api-version=2024-08-01"
+          for attempt in $(seq 1 45); do
+            read -r access state <<< "$(az rest --method get --url "$PG_URL" \
+              --query "[properties.network.publicNetworkAccess, properties.state]" -o tsv | tr '\t\n' '  ')"
+            if [ "$access" = "Enabled" ] && [ "$state" = "Ready" ]; then echo "$PG public access Enabled"; exit 0; fi
+            if [ "$state" = "Ready" ]; then
+              az rest --method patch --url "$PG_URL" --output none \
+                --body '{"properties":{"network":{"publicNetworkAccess":"Enabled"}}}' || true
+            fi
+            echo "  $PG is ${state:-unreadable}, public access ${access:-unreadable} (attempt $attempt/45) — waiting 20s…"
+            sleep 20
+          done
+          echo "::error::$PG did not reach public access Enabled and Ready within 15 minutes"
+          exit 1
 
       # The GitHub-hosted runner has a dynamic public IP that neither firewall rule covers
       # (it is not an "Azure service", and it is not the static admin IP). Open a temporary,
@@ -626,18 +719,50 @@ jobs:
             --url "https://management.azure.com/subscriptions/${SUB_ID}/resourceGroups/rg-cleansia-${{ matrix.region }}-${{ inputs.env }}/providers/Microsoft.DBforPostgreSQL/flexibleServers/pg-cleansia-${{ matrix.region }}-${{ inputs.env }}/firewallRules/ci-migrate-${{ github.run_id }}?api-version=2024-08-01" \
             --body "{\"properties\":{\"startIpAddress\":\"${RUNNER_IP}\",\"endIpAddress\":\"${RUNNER_IP}\"}}"
 
+      # Same window as the provision job's secret push, for the connection-string read below.
+      - name: Open the Key Vault to the runner
+        id: open-kv
+        if: env.PRIVATE_NETWORKING == 'true'
+        env:
+          KV: kv-cleansia-${{ matrix.region }}-${{ inputs.env }}
+          RG: rg-cleansia-${{ matrix.region }}-${{ inputs.env }}
+        run: |
+          if ! [[ "$RUNNER_IP" =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}$ ]]; then
+            echo "::error::could not resolve the runner's public IPv4 (got '$RUNNER_IP')"; exit 1
+          fi
+          az keyvault network-rule add --name "$KV" --resource-group "$RG" --ip-address "$RUNNER_IP/32" --output none
+          az keyvault update --name "$KV" --resource-group "$RG" \
+            --public-network-access Enabled --default-action Deny --output none
+
+      # The database window can take minutes to open, past the ~5-minute life of the OIDC assertion the
+      # first login minted, and the vault read below is this job's first vault-scoped token exchange —
+      # the same AADSTS700024 the provision job re-logs in for.
+      - name: Re-login to Azure (fresh OIDC token before the Key Vault read)
+        if: env.PRIVATE_NETWORKING == 'true'
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
       # The connection string is read from Key Vault (ConnectionStrings--cleansia-db, written by the
       # Bicep derivedSecrets module) — the SAME source the runtime hosts resolve, so a password
       # rotation touches one place instead of also updating a duplicated DB_CONNECTION_STRING GitHub
       # secret. The OIDC principal this job logs in as can read it: the provision job (a `needs` of
       # this one) self-grants it Key Vault Secrets Officer on the vault before pushing secrets, and
       # the Bicep ciPrincipalId grant covers it too when CI_PRINCIPAL_ID is set. The value is masked
-      # before use so it can never surface in the job log.
+      # before use so it can never surface in the job log. The read retries for up to two minutes
+      # because a vault window opened seconds ago may not admit the runner yet.
       - name: Apply migrations
         run: |
-          DB_CONNECTION_STRING="$(az keyvault secret show \
-            --vault-name kv-cleansia-${{ matrix.region }}-${{ inputs.env }} \
-            --name ConnectionStrings--cleansia-db --query value -o tsv)"
+          for attempt in 1 2 3 4 5 6; do
+            DB_CONNECTION_STRING="$(az keyvault secret show \
+              --vault-name kv-cleansia-${{ matrix.region }}-${{ inputs.env }} \
+              --name ConnectionStrings--cleansia-db --query value -o tsv || true)"
+            if [ -n "$DB_CONNECTION_STRING" ] || [ "$attempt" = 6 ]; then break; fi
+            echo "  Key Vault not readable yet (attempt $attempt/6) — waiting 20s…"
+            sleep 20
+          done
           if [ -z "$DB_CONNECTION_STRING" ]; then
             echo "::error::Key Vault secret ConnectionStrings--cleansia-db is empty or unreadable — check the CI principal's Key Vault RBAC and that provision ran"
             exit 1
@@ -652,6 +777,51 @@ jobs:
           SUB_ID="$(az account show --query id -o tsv)"
           az rest --method delete \
             --url "https://management.azure.com/subscriptions/${SUB_ID}/resourceGroups/rg-cleansia-${{ matrix.region }}-${{ inputs.env }}/providers/Microsoft.DBforPostgreSQL/flexibleServers/pg-cleansia-${{ matrix.region }}-${{ inputs.env }}/firewallRules/ci-migrate-${{ github.run_id }}?api-version=2024-08-01" || true
+
+      # Runs even when the migration failed or the run was cancelled: a private stage must not be left
+      # public. The rule delete above leaves the server busy, so the same Ready-gated PATCH-and-wait as
+      # the open step drives it back to Disabled; a server that never reports Disabled fails the job.
+      - name: Close the private database and Key Vault to the public
+        if: always() && steps.open-pg.outcome != 'skipped'
+        env:
+          RG: rg-cleansia-${{ matrix.region }}-${{ inputs.env }}
+          PG: pg-cleansia-${{ matrix.region }}-${{ inputs.env }}
+          KV: kv-cleansia-${{ matrix.region }}-${{ inputs.env }}
+        run: |
+          failed=""
+          kv_closed=false
+          for attempt in 1 2 3; do
+            if az keyvault update --name "$KV" --resource-group "$RG" \
+                 --public-network-access Disabled --default-action Deny --output none; then
+              kv_closed=true; break
+            fi
+            sleep 20
+          done
+          if [ -n "$RUNNER_IP" ]; then
+            az keyvault network-rule remove --name "$KV" --resource-group "$RG" --ip-address "$RUNNER_IP/32" --output none || true
+          fi
+          [ "$kv_closed" = "true" ] || failed="$KV"
+
+          PG_URL="https://management.azure.com/subscriptions/$(az account show --query id -o tsv)/resourceGroups/${RG}/providers/Microsoft.DBforPostgreSQL/flexibleServers/${PG}?api-version=2024-08-01"
+          pg_closed=false
+          for attempt in $(seq 1 45); do
+            read -r access state <<< "$(az rest --method get --url "$PG_URL" \
+              --query "[properties.network.publicNetworkAccess, properties.state]" -o tsv | tr '\t\n' '  ')"
+            if [ "$access" = "Disabled" ] && [ "$state" = "Ready" ]; then pg_closed=true; break; fi
+            if [ "$state" = "Ready" ]; then
+              az rest --method patch --url "$PG_URL" --output none \
+                --body '{"properties":{"network":{"publicNetworkAccess":"Disabled"}}}' || true
+            fi
+            echo "  $PG is ${state:-unreadable}, public access ${access:-unreadable} (attempt $attempt/45) — waiting 20s…"
+            sleep 20
+          done
+          [ "$pg_closed" = "true" ] || failed="${failed:+$failed and }$PG"
+
+          if [ -n "$failed" ]; then
+            echo "::error::$failed may still accept public traffic — set public network access to Disabled by hand (deploy/AZURE-PROD-POSTURE.md §6)"
+            exit 1
+          fi
+          echo "$PG and $KV are closed to the public again"
 
   # ===========================================================================================
   # Deploy — the five API hosts. Parallel: each needs [provision, migrate-database] only (ADR-0015 D5,

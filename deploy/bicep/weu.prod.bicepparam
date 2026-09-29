@@ -15,8 +15,8 @@
 // (a CLI --parameters value satisfies a param this file leaves unset), sourced from the protected
 // `prod-weu` GitHub Environment secret. It never appears in source, the compiled template, or a log.
 //
-// adminIpAddress + ciPrincipalId are PROD PLACEHOLDERS the owner replaces at prod-provision time
-// (a real owner egress IP / the prod CI principal object id). They are config, not secrets.
+// ciPrincipalId is a PROD PLACEHOLDER the owner replaces at prod-provision time (the prod CI principal
+// object id); adminIpAddress is required but unused while private. They are config, not secrets.
 
 using './main.bicep'
 
@@ -61,11 +61,11 @@ param postgresBackupRetentionDays = 35
 param acrImageRetentionEnabled = true
 param acrImageRetentionDays = 30
 
-// Q-INFRA-03 (VNet + private endpoints for Postgres/Storage) is DELIBERATELY NOT flipped here — it
-// is the authored-but-owner-gated flag: enabling it cuts the CI migration path (the GitHub runner's
-// temporary firewall rule needs public access) and direct admin psql until the owner provides a
-// private path. Prerequisites + sequence: deploy/AZURE-PROD-POSTURE.md §6.
-// param privateNetworkingEnabled = true
+// Q-INFRA-03 (E-3): the database and the Key Vault are private from the first provision — VNet,
+// private endpoints for Postgres/Storage/Key Vault, public network access Disabled on both. CI opens
+// a temporary public window for the runner's IP around the secret push and the migration, and an
+// admin's psql does the same by hand: deploy/AZURE-PROD-POSTURE.md §6.
+param privateNetworkingEnabled = true
 
 // ---------------------------------------------------------------------------------------------------
 // The admin API is reachable only through the admin console's Microsoft sign-in (E-1): it is linked
@@ -86,8 +86,8 @@ param postgresAdministratorLogin = 'cleansia_admin'
 // Owner-supplied PROD placeholders — replaced at provision time (config, not secrets).
 // ---------------------------------------------------------------------------------------------------
 
-// REPLACE with the owner/admin egress public IP allowed through the Postgres firewall for the
-// EF-bundle apply + manual access at prod-provision time.
+// Required by main.bicep but unused here: with privateNetworkingEnabled the admin-IP firewall rule is
+// not created. An admin reaches the database through a temporary window (AZURE-PROD-POSTURE.md §6).
 param adminIpAddress = '0.0.0.0'
 
 // REPLACE with the prod CI/provisioning principal object id (granted Key Vault Secrets Officer).

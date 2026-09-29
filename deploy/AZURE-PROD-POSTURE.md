@@ -15,7 +15,7 @@
 | 3 | Postgres HA + geo-backup | `postgresHighAvailabilityMode`, `postgresGeoRedundantBackup`, `postgresBackupRetentionDays` | `Disabled`, `Disabled`, 7 | `ZoneRedundant`, `Enabled`, 35 | yes (geo-backup only at first provision) |
 | 4 | ACR image retention | `acrImageRetentionEnabled`, `acrImageRetentionDays` | `false`, 30 | `true`, 30 | yes |
 | 5 | App Insights sampling + ingestion cap | module-internal env switch (`modules/appInsights.bicep`: `samplingPercentage`, `dailyCapMb`) | 10%, 500 MB/day | 50%, 5000 MB/day | yes (module params) |
-| 6 | VNet + private endpoints (Q-INFRA-03) | `privateNetworkingEnabled` | `false` | **`false` — the documented flag** | yes, see §6 |
+| 6 | Private database + Key Vault (Q-INFRA-03, E-3) | `privateNetworkingEnabled` | `false` | `true` | yes, see §6 |
 
 **Always On is NOT env-switched** — `alwaysOn: true` on all six web hosts in every stage (it was
 `env == 'prod'`). Always On costs nothing on a plan already billed by the hour, and without it App
@@ -152,40 +152,90 @@ not the 90-day one — prod pays retention on days 32-90 of it. The fix, if it e
 per-table retention override (a `Microsoft.OperationalInsights/workspaces/tables` child resource), not
 a change to the workspace default.
 
-## 6. Q-INFRA-03 — VNet + private endpoints for Postgres + Storage (`privateNetworkingEnabled`)
+## 6. Q-INFRA-03 — private database and Key Vault (`privateNetworkingEnabled`)
 
-The full seam is **authored and compiling** (`modules/privateNetworking.bicep`) but the flag stays
-`false` even in the prod param file — this is the "full private networking may stay a documented
-flag" half of Q-INFRA-03. What flipping it to `true` does, atomically:
+`weu.prod.bicepparam` sets the flag `true` (E-3), so production is private from its first provision
+and its database is never public. Dev keeps `false` and is unchanged. What the flag does:
 
 1. Deploys `vnet-cleansia-<region>-<env>` with `snet-apps` (delegated to `Microsoft.Web/serverFarms`)
-   and `snet-privatelink`; private DNS zones + links for `privatelink.postgres.database.azure.com`
-   and `privatelink.{blob,queue,table}.core.windows.net`; private endpoints `pe-{pg,blob,queue,table}-…`.
-   (Table is included because the Functions runtime store can touch it — stranding it public-only
-   could brick the host mid-flip. Key Vault is NOT in scope: it keeps its own existing
-   `allowPublicNetworkAccess` module param.)
+   and `snet-privatelink`; private DNS zones + links for `privatelink.postgres.database.azure.com`,
+   `privatelink.{blob,queue,table}.core.windows.net` and `privatelink.vaultcore.azure.net`; private
+   endpoints `pe-{pg,blob,queue,table,kv}-…`. (Table is included because the Functions runtime store
+   can touch it — stranding it public-only could brick the host.)
 2. VNet-integrates all six web hosts, their staging slots, and the Functions host (`snet-apps`,
-   `vnetRouteAllEnabled`), so the existing FQDN-based connection strings resolve to private IPs — no
-   config change.
-3. Postgres `publicNetworkAccess` → `Disabled`; **the dev-accepted `0.0.0.0` allow-Azure-services rule
-   and the admin-IP firewall rule disappear with it** (they only exist while public access is on).
-   The private-endpoint model was chosen over VNet injection on purpose: a flexible server's network
-   model is immutable after create — VNet injection would force replacing the live server, a PE
-   attaches to the existing one.
-4. Storage network ACL default → `Deny` (public endpoint stays on with the `AzureServices` bypass, so
+   `vnetRouteAllEnabled`), so the existing FQDN-based connection strings and the
+   `@Microsoft.KeyVault(...)` app settings resolve to private IPs — no config change.
+3. Postgres `publicNetworkAccess` → `Disabled`; **the `0.0.0.0` allow-Azure-services rule and the
+   admin-IP rule are not created** (they only exist while public access is on). That `0.0.0.0` rule is
+   why dev's posture is dev-only: it admits every source address inside Azure, other customers'
+   subscriptions included, so from there the password is the only barrier. The private-endpoint model
+   was chosen over VNet injection on purpose: a flexible server's network model is immutable after
+   create — VNet injection would force replacing the server, a PE attaches to the existing one.
+4. Key Vault public network access → `Disabled`, default action `Deny` (the `AzureServices` bypass
+   stays).
+5. Storage network ACL default → `Deny` (public endpoint stays on with the `AzureServices` bypass, so
    trusted platform services and ARM control-plane operations — `listKeys` for `derivedSecrets`,
    diagnostic settings, metric alerts — keep working).
 
-**Hard prerequisites before the owner flips it** (why it is not defaulted on):
+### CI: a temporary public window per run
 
-- **CI migrations break**: `migrate-database` opens a temporary public firewall rule for the GitHub
-  runner — impossible with `publicNetworkAccess: Disabled`. The owner must first provide a private
-  path (a self-hosted runner in `snet-apps`'s VNet, or accept a temporary public-enable window per
-  migration).
-- **Direct admin `psql` breaks** the same way (VPN/Bastion/jumpbox into the VNet, or temporary
-  public-enable).
-- Postgres-**MI auth** (the other half of Q-INFRA-03) is NOT part of this seam — it needs Npgsql token
-  plumbing (an app code change) and stays an open owner question.
+A GitHub-hosted runner is outside the VNet, so `deploy-azure.yml` opens the database and the vault to
+the runner's own IP for as long as it needs them and closes them again. Both jobs read the posture from
+the param file Bicep deploys (step *Resolve the stage's network posture*), so the workflow cannot
+disagree with the infrastructure; on dev none of the window steps run.
+
+- **`provision`**, after Bicep: *Open the Key Vault to the runner* adds an IP rule for the runner, then
+  turns public access on with the default action still `Deny`; the secret push runs; *Close the Key
+  Vault to the public* (runs even on failure) turns public access off and removes the rule.
+- **`migrate-database`**: *Open the private database for the migration* turns Postgres public access on
+  and waits for `Enabled` + `Ready` (minutes); the per-run `ci-migrate-<run id>` firewall rule admits
+  the runner; the vault opens the same way for the connection-string read; the migration runs; the
+  rule is removed; *Close the private database and Key Vault to the public* (runs even on failure or
+  cancellation) turns both off and waits until Postgres reports `Disabled`.
+- While a window is open, the database takes TLS connections from the runner's IP alone and the vault
+  answers the runner's IP alone. A self-hosted runner or jumpbox inside the VNet removes the window
+  altogether; it is the step to take once deploys are frequent.
+- **If a close fails**, the job fails with `… may still accept public traffic`. Close it by hand, and
+  delete any `ci-migrate-*` firewall rule the run left:
+
+  ```bash
+  az postgres flexible-server update -g rg-cleansia-weu-prod -n pg-cleansia-weu-prod --public-access Disabled
+  az keyvault update -n kv-cleansia-weu-prod -g rg-cleansia-weu-prod --public-network-access Disabled --default-action Deny
+  ```
+
+  The next Bicep provision also sets both back to `Disabled` and drops the vault's IP rules.
+
+### Admin `psql`: the same window, by hand
+
+Never while a `Deploy to PRO` run is in flight — its close would cut your session, and yours would cut
+its migration. From your laptop (not Cloud Shell — its IP changes):
+
+```bash
+RG=rg-cleansia-weu-prod; PG=pg-cleansia-weu-prod
+MY_IP=<your laptop's public IPv4>
+az postgres flexible-server update -g $RG -n $PG --public-access Enabled     # waits; takes minutes
+az postgres flexible-server firewall-rule create -g $RG -s $PG -n admin-psql --start-ip-address $MY_IP --end-ip-address $MY_IP
+psql "host=$PG.postgres.database.azure.com port=5432 dbname=Cleansia user=cleansia_admin sslmode=require"
+
+# when done — always, even if the session failed
+az postgres flexible-server firewall-rule delete -g $RG -s $PG -n admin-psql --yes
+az postgres flexible-server update -g $RG -n $PG --public-access Disabled
+```
+
+The password is the prod `POSTGRES_ADMIN_PASSWORD`; the Key Vault is not needed for this. To read a
+vault secret by hand, open the vault the same way and close it after:
+
+```bash
+KV=kv-cleansia-weu-prod
+az keyvault network-rule add -n $KV -g $RG --ip-address $MY_IP/32
+az keyvault update -n $KV -g $RG --public-network-access Enabled --default-action Deny
+# ... az keyvault secret show ...
+az keyvault update -n $KV -g $RG --public-network-access Disabled --default-action Deny
+az keyvault network-rule remove -n $KV -g $RG --ip-address $MY_IP/32
+```
+
+Postgres-**MI auth** (the other half of Q-INFRA-03) is NOT part of this seam — it needs Npgsql token
+plumbing (an app code change) and stays an open owner question.
 
 ## Verification state
 
@@ -194,3 +244,9 @@ Authored and compile-verified with Bicep CLI 0.45.15 (`bicep build` on `main.bic
 invariance was checked on the compiled template: the dev parameter values are byte-identical, every
 new resource is condition-gated off by default, and every touched property evaluates to its previous
 value under the dev defaults.
+
+§6 as E-3 built it was compile-verified the same way with Bicep CLI 0.47.16: the compiled dev
+parameters are byte-identical to before, the prod parameters differ only in
+`privateNetworkingEnabled`, and the vault's `allowPublicNetworkAccess` compiles to
+`not(privateNetworkingEnabled)`. The workflow's window steps were exercised locally against a stubbed
+`az`; nothing was deployed.

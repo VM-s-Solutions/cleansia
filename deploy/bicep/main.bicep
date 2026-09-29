@@ -202,15 +202,16 @@ param acrImageRetentionEnabled bool = false
 param acrImageRetentionDays int = 30
 
 @description('''
-The Q-INFRA-03 hardening seam: VNet + private endpoints for Postgres and Storage. When true it
-deploys modules/privateNetworking.bicep, VNet-integrates every App Service/Functions host, flips
-Postgres publicNetworkAccess to Disabled (the dev-accepted 0.0.0.0 allow-Azure-services rule and the
-admin-IP rule disappear with it), and sets the Storage network ACL default to Deny.
+The Q-INFRA-03 hardening seam: VNet + private endpoints for Postgres, Storage and Key Vault. When
+true it deploys modules/privateNetworking.bicep, VNet-integrates every App Service/Functions host,
+flips Postgres publicNetworkAccess to Disabled (the dev-accepted 0.0.0.0 allow-Azure-services rule and
+the admin-IP rule are not created), flips Key Vault public network access to Disabled, and sets the
+Storage network ACL default to Deny.
 
-DELIBERATELY LEFT false EVEN IN THE PROD PARAM FILE — a documented flag, not a default: flipping it
-breaks the CI migration path (the GitHub runner's temporary firewall rule needs public access) and
-direct admin psql until the owner provides a private path. Prerequisites + sequence:
-deploy/AZURE-PROD-POSTURE.md.
+The prod param file sets it true; dev keeps false. Nothing outside the VNet reaches the database or
+the vault, so deploy-azure.yml opens a temporary public window for the GitHub runner's IP around the
+Key Vault secret push and the migration and closes it after, and an admin's psql does the same by
+hand. deploy/AZURE-PROD-POSTURE.md §6.
 ''')
 param privateNetworkingEnabled bool = false
 
@@ -325,7 +326,7 @@ module keyVault 'modules/keyVault.bicep' = {
     location: location
     region: region
     env: env
-    allowPublicNetworkAccess: true
+    allowPublicNetworkAccess: !privateNetworkingEnabled
     tags: commonTags
   }
 }
@@ -374,7 +375,7 @@ module postgres 'modules/postgres.bicep' = {
 }
 
 // The Q-INFRA-03 seam, materialized only when the flag is on: VNet + private endpoints + private DNS
-// for Postgres/Storage. The app subnet id it outputs is what VNet-integrates every host below.
+// for Postgres/Storage/Key Vault. The app subnet id it outputs is what VNet-integrates every host below.
 module privateNetworking 'modules/privateNetworking.bicep' = if (privateNetworkingEnabled) {
   name: 'privateNetworking'
   params: {
@@ -383,6 +384,7 @@ module privateNetworking 'modules/privateNetworking.bicep' = if (privateNetworki
     env: env
     postgresServerId: postgres.outputs.serverId
     storageAccountId: storage.outputs.storageAccountId
+    keyVaultId: keyVault.outputs.keyVaultId
     tags: commonTags
   }
 }

@@ -68,6 +68,15 @@ param acrImageRetentionDays = 30
 // param privateNetworkingEnabled = true
 
 // ---------------------------------------------------------------------------------------------------
+// The admin API is reachable only through the admin console's Microsoft sign-in (E-1): it is linked
+// as the backend of the Standard-tier admin Static Web App, and the admin SPA's production build calls
+// same-origin /api. Its App Service and staging slot answer 401 to anything else. Every admin needs
+// an Entra identity invited with admin_console and MFA — runbook §11, P0 checklist item 8.
+// ---------------------------------------------------------------------------------------------------
+
+param adminApiLinkedToAdminSpa = true
+
+// ---------------------------------------------------------------------------------------------------
 // Postgres admin LOGIN (non-secret). The PASSWORD is supplied on the CLI at deploy time (see header).
 // ---------------------------------------------------------------------------------------------------
 
@@ -91,7 +100,8 @@ param ciPrincipalId = ''
 // + environment.prod.ts apiBaseUrl): frontends + APIs same-site under cleansia.cz, SameSite=Strict
 // untouched. Uncomment ONLY AFTER the DNS records exist — subdomains need CNAME + asuid TXT; the apex
 // (cleansia.cz) needs an A record + asuid TXT: deploy/AZURE-DEV-RUNBOOK.md §12. The mobile API hosts
-// are body-token (no cookies/CORS) and need no custom domain.
+// are body-token (no cookies/CORS) and need no custom domain, and neither does the admin API: it is
+// reached as admin.cleansia.cz/api through the admin Static Web App (adminApiLinkedToAdminSpa above).
 // ---------------------------------------------------------------------------------------------------
 
 // param customDomains = {
@@ -100,7 +110,6 @@ param ciPrincipalId = ''
 //   'swa-partner': 'partner.cleansia.cz'
 //   'swa-admin': 'admin.cleansia.cz'
 //   'api-partner': 'api.cleansia.cz'
-//   'api-admin': 'api-admin.cleansia.cz'
 //   'api-customer': 'api-customer.cleansia.cz'
 // }
 

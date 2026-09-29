@@ -214,6 +214,16 @@ deploy/AZURE-PROD-POSTURE.md.
 ''')
 param privateNetworkingEnabled bool = false
 
+@description('''
+Put the admin API behind the admin console's Microsoft (Entra) sign-in: link the admin App Service as
+the backend of the admin Static Web App. The SWA route rule admits only the admin_console role, the
+SWA proxies /api/* to the host, and the host answers 401 to anything the SWA did not proxy — its
+*.azurewebsites.net hostname and its staging slot included. The admin SPA's production build calls
+same-origin /api to match. Needs the Standard SWA tier, so dev (Free) stays false and keeps calling
+its API host directly. deploy/AZURE-DEV-RUNBOOK.md §11.
+''')
+param adminApiLinkedToAdminSpa bool = false
+
 @description('Resource tags applied to every resource.')
 param tags object = {}
 
@@ -640,6 +650,7 @@ module apiAppServices 'modules/appService.bicep' = [
       alwaysOn: true
       stagingSlotEnabled: deploymentSlotsEnabled
       virtualNetworkSubnetId: privateNetworkingEnabled ? privateNetworking!.outputs.appSubnetId : ''
+      linkedStaticWebAppName: host.audience == 'admin' && adminApiLinkedToAdminSpa ? staticWebApps[1].outputs.name : ''
       tags: commonTags
     }
   }

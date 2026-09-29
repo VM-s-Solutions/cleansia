@@ -636,10 +636,66 @@ any of this — it lives in each provider's console — so it is recorded here a
 >
 > Paste into the two `AZURE_STATIC_WEB_APPS_API_TOKEN_*` secrets (P4), dispatch
 > **Deploy to PRO → mode = `deploy`** again, approve, and smoke-test the §9 checklist against the
-> `*-weu-prod` hostnames.
+> `*-weu-prod` hostnames — except the admin API, whose smoke is the one below: in prod it answers
+> **401** on its own hostname by design.
 
 Provision order recap: **P1 environment+reviewers → P2 OIDC federation → P3 resource group →
 P4 secrets → P5 what-if, then deploy → P6 SWA tokens + final deploy + smoke test.**
+
+### The admin API is reachable only through the admin console (E-1)
+
+[`weu.prod.bicepparam`](bicep/weu.prod.bicepparam) sets `adminApiLinkedToAdminSpa = true`, so the
+provision links `api-cleansia-admin-weu-prod` as the backend of `swa-cleansia-admin-weu-prod`. Linking
+needs the Standard tier, which DEV's Free SWA is not; DEV is unchanged and its admin SPA still calls
+`admin-api.dev.cleansia.cz` directly.
+
+- `https://admin.cleansia.cz/api/*` is proxied to the admin App Service **after** the SWA's own route
+  rule (`/*` → `admin_console`), so every API call first needs the Microsoft (Entra) sign-in and the
+  invitation. The Cleansia e-mail and password still apply behind it.
+- Azure gives the App Service the **Azure Static Web Apps (Linked)** identity provider: its production
+  slot answers **401** to anything the SWA did not proxy, `api-cleansia-admin-weu-prod.azurewebsites.net`
+  included.
+- The link guards the production slot only, and authentication settings stay with their slot across a
+  swap, so the Bicep closes the **staging slot** as well: 401 for everything except `/health`, which the
+  deploy warms before every swap.
+- The admin SPA's production build calls **same-origin `/api`** (`environment.prod.ts`,
+  `apiBaseUrl: ''`), so the admin API needs no custom domain and no CORS entry.
+- **Cookies and CSRF hold unchanged.** The auth cookies are host-only (`HttpOnly`, `Secure`,
+  `SameSite=Strict`, `Path=/`, no `Domain`), so the proxied login response sets them on
+  `admin.cleansia.cz` and every same-origin `/api` call sends them back. `X-CSRF-Token` is derived from
+  the access token's `jti` and checked without reference to `Origin` or `Host`; the proxy forwards the
+  header and the whole path, so the CSRF opt-out prefixes still match. The admin interceptor treats a
+  relative `/api/` URL as its own API and attaches both.
+
+What follows from it:
+
+- Every admin needs an Entra identity invited with `admin_console`, with MFA on it (P0 item 8) — that
+  sign-in is now the admin API's second factor.
+- The SWA proxy caps an API request at **45 seconds** and carries no WebSockets (the admin app uses
+  none). An admin request that runs longer fails at the proxy.
+- The SWA sign-in lasts about 8 hours. Once it lapses, the SPA's next API call is redirected to
+  Microsoft sign-in and surfaces as a network error until the page is reloaded.
+- The per-IP `auth` rate limit on anonymous admin calls (login, refresh: 10 a minute) may see the SWA's
+  address instead of the admin's, so all admins could share one bucket. Signed-in calls are limited
+  per account, and the per-account lockout is unchanged.
+- **Setting the flag back to `false` reopens nothing.** Azure keeps the link and both authentication
+  configurations. To open the host again: SWA → APIs → Unlink, then App Service → Authentication →
+  delete *Azure Static Web Apps (Linked)* → Remove authentication, and the same on the staging slot.
+
+Smoke, after the first prod deploy with the link (P6):
+
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' -X POST https://api-cleansia-admin-weu-prod.azurewebsites.net/api/AdminAuth/Login          # 401
+curl -s -o /dev/null -w '%{http_code}\n' -X POST https://api-cleansia-admin-weu-prod-staging.azurewebsites.net/api/AdminAuth/Login  # 401
+curl -s -o /dev/null -w '%{http_code}\n' https://api-cleansia-admin-weu-prod-staging.azurewebsites.net/health               # 200
+curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' -X POST https://admin.cleansia.cz/api/AdminAuth/Login              # 302 → /.auth/login/aad
+```
+
+- [ ] Signed in to the console in a stock browser: the login response's `Set-Cookie` lands on
+      `admin.cleansia.cz`, and a later save (a POST) sends the cookies and `X-CSRF-Token` and answers 200.
+- [ ] Idle past the 15-minute access token, then save again: the refresh runs and the save succeeds. A
+      302 to `/.auth/login/aad` where the API's 401 should be means the SWA's `401` response override is
+      rewriting the API's own answers — report it, the SPA's refresh depends on seeing that 401.
 
 ---
 
@@ -669,7 +725,7 @@ P4 secrets → P5 what-if, then deploy → P6 SWA tokens + final deploy + smoke 
 | `swa-partner` | `swa-cleansia-partner-weu-<env>` | `partner.dev.cleansia.cz` | `partner.cleansia.cz` |
 | `swa-admin` | `swa-cleansia-admin-weu-<env>` | `admin.dev.cleansia.cz` | `admin.cleansia.cz` |
 | `api-partner` | `api-cleansia-partner-weu-<env>` | `api.dev.cleansia.cz` | `api.cleansia.cz` |
-| `api-admin` | `api-cleansia-admin-weu-<env>` | `api-admin.dev.cleansia.cz` | `api-admin.cleansia.cz` |
+| `api-admin` | `api-cleansia-admin-weu-<env>` | `api-admin.dev.cleansia.cz` | **not needed** (reached as `admin.cleansia.cz/api` through the admin SWA, §11) |
 | `api-customer` | `api-cleansia-customer-weu-<env>` | `api-customer.dev.cleansia.cz` | `api-customer.cleansia.cz` |
 | `api-partner-mobile` / `api-customer-mobile` | the two mobile hosts | **not needed** | **not needed** (body-token — no cookies, no browser CORS) |
 
@@ -729,9 +785,8 @@ GSI fails with an "origin not allowed" 403. API hostnames are not needed there.
   a *deployed-dev* web build needs a build config pointing at the `*.dev.cleansia.cz` API origins
   (today's `environment.staging.ts` targets the raw `azurewebsites.net` hosts — correct for the local
   devremote proxy, cross-site if served deployed).
-- **Admin auth cross-host** — `environment.prod.ts` (admin) sends auth to `api.cleansia.cz` (the
-  partner API), whose committed prod `CorsOrigins` does **not** include `admin.cleansia.cz`; the
-  architect must ratify or fix that pairing in T-0400 AC1/AC3 before prod cut-over.
+- **Admin API (prod)** — no cross-host pairing to align: the admin SPA calls same-origin `/api`, which
+  the admin SWA proxies to its linked backend (§11).
 - **Cookies** — nothing to change: host-only (no `Domain` attribute), `HttpOnly`/`Secure`/`Strict`
   untouched; same-site is exactly what the subdomains provide.
 - **JWT issuer/audience** — nothing to align: they are code-side constants (the `JwtSettings:Issuer`

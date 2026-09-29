@@ -5,6 +5,7 @@ import {
   CreateRecurringBookingCommand,
   CustomerClient,
   DeleteRecurringBookingCommand,
+  DirtinessLevel,
   GetMyServingCleanersResponse,
   MembershipStatus,
   PackageListItem,
@@ -186,6 +187,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
         packageIds: d.selectedPackageIds,
         rooms: d.rooms,
         bathrooms: d.bathrooms,
+        dirtinessLevel: d.dirtinessLevel ?? DirtinessLevel.Normal,
         countryId: this.countryOf(d.savedAddressId),
       };
     },
@@ -398,6 +400,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
       template.selectedPackageIds ?? [],
       template.rooms,
       template.bathrooms,
+      template.dirtinessLevel ?? DirtinessLevel.Normal,
       this.countryOf(template.savedAddressId),
     );
     if (!quoted) return;
@@ -420,6 +423,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
       selection.packageIds,
       selection.rooms,
       selection.bathrooms,
+      selection.dirtinessLevel,
       selection.countryId,
     );
     if (sequence !== this.formQuoteSequence) return;
@@ -496,6 +500,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     packageIds: string[],
     rooms: number,
     bathrooms: number,
+    dirtinessLevel: DirtinessLevel,
     countryId: string | null,
   ): Promise<QuoteOrderResponse | null> {
     if (serviceIds.length === 0 && packageIds.length === 0) return null;
@@ -504,6 +509,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     command.selectedPackageIds = packageIds;
     command.rooms = rooms;
     command.bathrooms = bathrooms;
+    command.dirtinessLevel = dirtinessLevel;
     // The country, never a currency: the server prices in the address country's currency, and
     // on create derives it from the saved address itself. A schedule has no express surcharge to
     // date-shift.
@@ -591,6 +597,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
       timeOfDay: template.timeOfDay ?? '10:00',
       rooms: template.rooms,
       bathrooms: template.bathrooms,
+      dirtinessLevel: template.dirtinessLevel ?? DirtinessLevel.Normal,
       savedAddressId: template.savedAddressId ?? null,
       selectedServiceIds: [...(template.selectedServiceIds ?? [])],
       selectedPackageIds: [...(template.selectedPackageIds ?? [])],
@@ -759,7 +766,10 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     if (this.submitting() || !this.canSubmit()) return false;
     const d = this.formData();
     const paymentType = d.paymentType;
-    if (!d.savedAddressId || !d.startsOn || paymentType === null) return false;
+    const dirtinessLevel = d.dirtinessLevel;
+    if (!d.savedAddressId || !d.startsOn || paymentType === null || dirtinessLevel === null) {
+      return false;
+    }
     const editingId = this.editingId();
     const preferredEmployeeId = withoutPreferredCleaner
       ? undefined
@@ -770,8 +780,8 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     try {
       if (paymentType === PaymentType.Cash && !(await this.cashConfirmedForForm())) return false;
       const saved = editingId
-        ? await this.sendUpdate(editingId, d, paymentType, preferredEmployeeId)
-        : await this.sendCreate(d, paymentType, preferredEmployeeId);
+        ? await this.sendUpdate(editingId, d, paymentType, dirtinessLevel, preferredEmployeeId)
+        : await this.sendCreate(d, paymentType, dirtinessLevel, preferredEmployeeId);
       if (withoutPreferredCleaner) this.updateFormData({ preferredEmployeeId: null });
 
       if (saved) {
@@ -835,6 +845,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
   private sendCreate(
     d: RecurringWizardFormData,
     paymentType: PaymentType,
+    dirtinessLevel: DirtinessLevel,
     preferredEmployeeId: string | undefined,
   ): Promise<RecurringBookingTemplateDto> {
     const command = new CreateRecurringBookingCommand();
@@ -850,6 +861,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     command.startsOn = d.startsOn as Date;
     command.endsOn = undefined;
     command.preferredEmployeeId = preferredEmployeeId;
+    command.dirtinessLevel = dirtinessLevel;
     return firstValueFrom(this.client.create(command).pipe(takeUntil(this.destroyed$)));
   }
 
@@ -857,6 +869,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     templateId: string,
     d: RecurringWizardFormData,
     paymentType: PaymentType,
+    dirtinessLevel: DirtinessLevel,
     preferredEmployeeId: string | undefined,
   ): Promise<RecurringBookingTemplateDto> {
     const command = new UpdateRecurringBookingCommand();
@@ -873,6 +886,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     command.startsOn = d.startsOn as Date;
     command.endsOn = d.endsOn ?? undefined;
     command.preferredEmployeeId = preferredEmployeeId;
+    command.dirtinessLevel = dirtinessLevel;
     return firstValueFrom(this.client.update(command).pipe(takeUntil(this.destroyed$)));
   }
 

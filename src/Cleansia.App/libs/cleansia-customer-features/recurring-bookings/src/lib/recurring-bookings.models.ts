@@ -1,4 +1,4 @@
-import { PaymentType } from '@cleansia/customer-services';
+import { DirtinessLevel, PaymentType } from '@cleansia/customer-services';
 import { CashEligibility, EXPRESS_LEAD_TIME_HOURS } from '@cleansia/models';
 
 /**
@@ -43,6 +43,8 @@ export interface RecurringWizardFormData {
   timeOfDay: string;
   rooms: number;
   bathrooms: number;
+  /** Null on a new schedule until the customer picks one: the level is an active choice. */
+  dirtinessLevel: DirtinessLevel | null;
   savedAddressId: string | null;
   selectedServiceIds: string[];
   selectedPackageIds: string[];
@@ -64,6 +66,7 @@ export const RECURRING_WIZARD_INITIAL_DATA: RecurringWizardFormData = {
   timeOfDay: '10:00',
   rooms: 2,
   bathrooms: 1,
+  dirtinessLevel: null,
   savedAddressId: null,
   selectedServiceIds: [],
   selectedPackageIds: [],
@@ -310,7 +313,7 @@ function marketTimeToUtc(date: Date, hour: number, minute: number, timeZone: str
 }
 
 /** A required field the form is still missing, in the order the form asks. */
-export type MissingField = 'services' | 'time' | 'address' | 'startsOn' | 'payment';
+export type MissingField = 'services' | 'dirtiness' | 'time' | 'address' | 'startsOn' | 'payment';
 
 /**
  * What is stopping this schedule from being saved.
@@ -325,6 +328,7 @@ export function missingFields(data: RecurringWizardFormData): MissingField[] {
   if (data.selectedServiceIds.length === 0 && data.selectedPackageIds.length === 0) {
     missing.push('services');
   }
+  if (data.dirtinessLevel === null) missing.push('dirtiness');
   if (!data.timeOfDay) missing.push('time');
   if (!data.savedAddressId) missing.push('address');
   if (!data.startsOn) missing.push('startsOn');
@@ -338,6 +342,7 @@ export interface PricedSelection {
   packageIds: string[];
   rooms: number;
   bathrooms: number;
+  dirtinessLevel: DirtinessLevel;
   countryId: string | null;
 }
 
@@ -348,6 +353,7 @@ export function samePricedSelection(a: PricedSelection, b: PricedSelection): boo
     sameIds(a.packageIds, b.packageIds) &&
     a.rooms === b.rooms &&
     a.bathrooms === b.bathrooms &&
+    a.dirtinessLevel === b.dirtinessLevel &&
     a.countryId === b.countryId
   );
 }

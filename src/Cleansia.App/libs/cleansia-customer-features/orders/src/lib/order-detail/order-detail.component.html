@@ -297,6 +297,18 @@
           </div>
         </div>
 
+        @if (dirtinessLevelKey(); as levelKey) {
+        <div class="order-detail__fact" data-spec-dirtiness-level>
+          <i class="pi pi-sparkles"></i>
+          <div>
+            <span class="order-detail__fact-label">
+              {{ 'pages.order_detail.label_dirtiness' | translate }}
+            </span>
+            <div class="order-detail__fact-value">{{ levelKey | translate }}</div>
+          </div>
+        </div>
+        }
+
         <div class="order-detail__fact">
           <i class="pi pi-map-marker"></i>
           <div>

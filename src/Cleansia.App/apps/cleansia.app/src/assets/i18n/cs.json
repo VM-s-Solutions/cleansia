@@ -1177,6 +1177,7 @@
       },
       "estimated_hours": "odhadem {{hours}} h",
       "label_market": "Trh",
+      "label_dirtiness": "Míra znečištění",
       "cleaner_no_show": {
         "action": "Uklízeč nedorazil",
         "note": "Objednaný čas začátku už uplynul, takže rezervaci už nelze zrušit. Pokud uklízeč nedorazil, dejte nám vědět a náš tým se na to podívá."
@@ -2219,6 +2220,8 @@
     "price_pending": "Vyberte službu",
     "field_services": "Služby",
     "error_services": "Vyberte alespoň jednu službu nebo balíček.",
+    "dirtiness_label": "Míra znečištění",
+    "error_dirtiness": "Vyberte, jak moc je u vás uklizeno.",
     "error_time": "Vyberte čas.",
     "error_address": "Vyberte adresu, nebo níže přidejte novou.",
     "error_starts_on": "Vyberte datum začátku.",

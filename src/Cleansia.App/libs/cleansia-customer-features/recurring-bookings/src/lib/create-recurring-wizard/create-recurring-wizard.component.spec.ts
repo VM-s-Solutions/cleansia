@@ -4,6 +4,7 @@ import { By } from '@angular/platform-browser';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { ActivatedRoute, provideRouter, Router } from '@angular/router';
 import {
+  DirtinessLevel,
   PackageListItem,
   PaymentType,
   PreferredCleanerOption,
@@ -29,6 +30,7 @@ const NOTHING_PRICED: PricedSelection = {
   packageIds: [],
   rooms: 2,
   bathrooms: 1,
+  dirtinessLevel: DirtinessLevel.Normal,
   countryId: null,
 };
 
@@ -404,5 +406,81 @@ describe('CreateRecurringWizardComponent — home size', () => {
 
   it('offers one bathroom up to the server maximum', () => {
     expect(offered(1)).toEqual(oneTo(bookingPolicy('MaxBathrooms')));
+  });
+});
+
+// Decision 34: a schedule carries the level its customer picks, from the same three the booking
+// wizard offers, and a new one is asked rather than assumed.
+describe('CreateRecurringWizardComponent — how clean the home is', () => {
+  let fixture: ComponentFixture<CreateRecurringWizardComponent>;
+  let facade: FakeRecurringBookingsFacade;
+  let el: HTMLElement;
+
+  beforeEach(async () => {
+    facade = new FakeRecurringBookingsFacade();
+    await TestBed.configureTestingModule({
+      imports: [CreateRecurringWizardComponent, TranslateModule.forRoot()],
+      providers: [
+        provideRouter([]),
+        provideNoopAnimations(),
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: { paramMap: { get: () => null }, queryParamMap: { get: () => null } },
+          },
+        },
+      ],
+    })
+      .overrideComponent(CreateRecurringWizardComponent, {
+        set: {
+          providers: [
+            { provide: RecurringBookingsFacade, useValue: facade },
+            ConfirmationService,
+          ],
+        },
+      })
+      .compileComponents();
+    fixture = TestBed.createComponent(CreateRecurringWizardComponent);
+    el = fixture.nativeElement;
+    fixture.detectChanges();
+  });
+
+  const levels = () => Array.from(el.querySelectorAll<HTMLButtonElement>('[data-spec-level]'));
+  const pressed = () => levels().map((level) => level.getAttribute('aria-pressed'));
+
+  it('offers the three levels with the booking copy and none chosen on a new schedule', () => {
+    expect(levels().map((level) => level.querySelector('.cl-wiz__level-name')?.textContent?.trim())).toEqual([
+      'pages.order.dirtiness.normal.name',
+      'pages.order.dirtiness.increased.name',
+      'pages.order.dirtiness.heavy.name',
+    ]);
+    expect(pressed()).toEqual(['false', 'false', 'false']);
+  });
+
+  it('hands the level tapped to the facade', () => {
+    levels()[1].click();
+
+    expect(facade.updateFormData).toHaveBeenCalledWith({ dirtinessLevel: DirtinessLevel.Increased });
+  });
+
+  it('shows the level the schedule has as the chosen one', () => {
+    facade.formData.update((data) => ({ ...data, dirtinessLevel: DirtinessLevel.Heavy }));
+    fixture.detectChanges();
+
+    expect(pressed()).toEqual(['false', 'false', 'true']);
+  });
+
+  it('names a missing level only once save has been pressed', () => {
+    facade.missing.set(['dirtiness']);
+    fixture.detectChanges();
+    expect(el.querySelector('[data-spec-dirtiness-error]')).toBeNull();
+
+    facade.submitAttempted.set(true);
+    fixture.detectChanges();
+
+    expect(el.querySelector('[data-spec-dirtiness-error]')?.textContent).toContain(
+      'recurring_booking.error_dirtiness',
+    );
+    expect(fixture.componentInstance.missingLabels()).toBe('recurring_booking.dirtiness_label');
   });
 });

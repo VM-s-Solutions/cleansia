@@ -13,6 +13,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CleansiaButtonComponent, CleansiaTextareaComponent } from '@cleansia/components';
 import { OrderStatusLabelPipe } from '@cleansia/pipes';
 import {
+  dirtinessLevelOption,
   DisputeReason,
   MembershipStatus,
   OrderStatus,
@@ -327,10 +328,21 @@ export class OrderDetailComponent implements OnInit {
       lines.push({ label: pkg.name ?? '', amount: pkg.price ?? 0 });
     }
 
+    const level = dirtinessLevelOption(order.dirtinessLevel);
+    const dirtinessSurcharge =
+      level && order.dirtinessSurchargeAmount > 0 ? order.dirtinessSurchargeAmount : 0;
+
     const serviceNames = (order.selectedServices ?? []).map((s) => s.name).filter(Boolean);
-    const servicesTotal = (order.originalSubtotal ?? 0) - packagesTotal;
+    const servicesTotal = (order.originalSubtotal ?? 0) - packagesTotal - dirtinessSurcharge;
     if (serviceNames.length > 0) {
       lines.push({ label: serviceNames.join(', '), amount: servicesTotal });
+    }
+
+    if (level && dirtinessSurcharge > 0) {
+      lines.push({
+        labelKey: `pages.order.dirtiness.${level.key}.surcharge_line`,
+        amount: dirtinessSurcharge,
+      });
     }
 
     const discount = (amount: number | undefined, labelKey: string) => {
@@ -343,6 +355,11 @@ export class OrderDetailComponent implements OnInit {
     discount(order.promoDiscountAmount, 'pages.order_detail.discount_promo');
 
     return lines;
+  });
+
+  readonly dirtinessLevelKey = computed(() => {
+    const level = dirtinessLevelOption(this.order()?.dirtinessLevel);
+    return level ? `pages.order.dirtiness.${level.key}.name` : null;
   });
 
   /**

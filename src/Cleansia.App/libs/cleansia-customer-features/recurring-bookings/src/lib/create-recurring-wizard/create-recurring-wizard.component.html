@@ -135,6 +135,66 @@
           }
         </section>
 
+        <!-- ── How clean the home is ─────────────────────────────────── -->
+        <section class="cl-rec__section">
+          <h2 class="cl-rec__section-title">{{ 'pages.order.dirtiness.title' | translate }}</h2>
+          <p class="cl-rec__section-hint">{{ 'pages.order.dirtiness.lead' | translate }}</p>
+          <p class="cl-wiz__level-hint">
+            <i class="pi pi-info-circle" aria-hidden="true"></i>
+            <span>{{ 'pages.order.dirtiness.hint' | translate }}</span>
+          </p>
+
+          <div
+            class="cl-wiz__levels"
+            role="group"
+            [attr.aria-label]="'pages.order.dirtiness.title' | translate"
+          >
+            @for (option of dirtinessLevels; track option.level) {
+              <button
+                type="button"
+                class="cl-wiz__level"
+                data-spec-level
+                [class.cl-wiz__level--on]="facade.formData().dirtinessLevel === option.level"
+                [attr.aria-pressed]="facade.formData().dirtinessLevel === option.level"
+                (click)="selectDirtinessLevel(option.level)"
+              >
+                <span class="cl-wiz__level-head">
+                  <span class="cl-h3 cl-wiz__level-name">{{
+                    'pages.order.dirtiness.' + option.key + '.name' | translate
+                  }}</span>
+                  <span class="cl-wiz__level-rate">
+                    @if (option.ratePercent > 0) {
+                      {{ 'pages.order.dirtiness.surcharge' | translate: { rate: option.ratePercent } }}
+                    } @else {
+                      {{ 'pages.order.dirtiness.no_surcharge' | translate }}
+                    }
+                  </span>
+                </span>
+                <span class="cl-wiz__level-lead">{{
+                  'pages.order.dirtiness.' + option.key + '.lead' | translate
+                }}</span>
+                <span class="cl-wiz__level-signs">
+                  @for (sign of dirtinessSigns; track sign) {
+                    <span class="cl-wiz__level-sign">
+                      <i class="pi pi-check" aria-hidden="true"></i>
+                      <span>{{
+                        'pages.order.dirtiness.' + option.key + '.sign_' + sign | translate
+                      }}</span>
+                    </span>
+                  }
+                </span>
+              </button>
+            }
+          </div>
+
+          @if (showError('dirtiness')) {
+            <p class="cl-rec__error" data-spec-dirtiness-error>
+              <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
+              {{ 'recurring_booking.error_dirtiness' | translate }}
+            </p>
+          }
+        </section>
+
         <!-- ── How often ─────────────────────────────────────────────── -->
         <section class="cl-rec__section">
           <h2 class="cl-rec__section-title">{{ 'recurring_booking.step_when_title' | translate }}</h2>

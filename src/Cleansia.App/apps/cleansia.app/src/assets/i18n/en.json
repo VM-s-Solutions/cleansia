@@ -1177,6 +1177,7 @@
       },
       "estimated_hours": "about {{hours}} h",
       "label_market": "Market",
+      "label_dirtiness": "Dirtiness level",
       "cleaner_no_show": {
         "action": "The cleaner did not arrive",
         "note": "The booked start time has passed, so this booking can no longer be cancelled. If the cleaner did not arrive, let us know and our team will look into it."
@@ -2219,6 +2220,8 @@
     "price_pending": "Pick a service",
     "field_services": "Services",
     "error_services": "Pick at least one service or package.",
+    "dirtiness_label": "Dirtiness level",
+    "error_dirtiness": "Choose how clean your home is.",
     "error_time": "Pick a time.",
     "error_address": "Pick an address, or add a new one below.",
     "error_starts_on": "Pick a start date.",

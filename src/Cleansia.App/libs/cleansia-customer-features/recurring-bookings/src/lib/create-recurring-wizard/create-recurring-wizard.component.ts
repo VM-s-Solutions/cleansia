@@ -13,7 +13,7 @@ import {
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FoamEdgeComponent } from '@cleansia-customer/home';
-import { PaymentType } from '@cleansia/customer-services';
+import { DIRTINESS_LEVELS, DirtinessLevel, PaymentType } from '@cleansia/customer-services';
 import { CleansiaCustomerRoute } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import {
@@ -85,6 +85,9 @@ export class CreateRecurringWizardComponent implements OnInit {
   /** The booking wizard's own counts, and the server's cap: rooms run to eight, bathrooms to four. */
   protected readonly roomChoices = [1, 2, 3, 4, 5, 6, 7, 8];
   protected readonly bathroomChoices = [1, 2, 3, 4];
+  protected readonly dirtinessLevels = DIRTINESS_LEVELS;
+  /** Each level's copy lists four signs, `sign_1` to `sign_4`. */
+  protected readonly dirtinessSigns = [1, 2, 3, 4];
   protected readonly listRoute = ['/' + CleansiaCustomerRoute.MEMBERSHIP, 'recurring'];
 
   /** Flattened from the three period groups — the board draws one select. */
@@ -199,6 +202,7 @@ export class CreateRecurringWizardComponent implements OnInit {
   missingLabels(): string {
     const keys: Record<MissingField, string> = {
       services: 'recurring_booking.field_services',
+      dirtiness: 'recurring_booking.dirtiness_label',
       time: 'recurring_booking.time_label',
       address: 'recurring_booking.address_label',
       startsOn: 'recurring_booking.starts_on_label',
@@ -261,6 +265,10 @@ export class CreateRecurringWizardComponent implements OnInit {
 
   setBathrooms(value: number | null): void {
     this.facade.updateFormData({ bathrooms: value ?? 0 });
+  }
+
+  selectDirtinessLevel(dirtinessLevel: DirtinessLevel): void {
+    this.facade.updateFormData({ dirtinessLevel });
   }
 
   toggleService(id: string): void {

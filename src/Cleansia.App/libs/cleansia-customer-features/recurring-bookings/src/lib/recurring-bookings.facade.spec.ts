@@ -4,6 +4,7 @@ import {
   CreateRecurringBookingCommand,
   CustomerClient,
   DeleteRecurringBookingCommand,
+  DirtinessLevel,
   GetMyServingCleanersResponse,
   MembershipStatus,
   PackageListItem,
@@ -431,6 +432,7 @@ describe('RecurringBookingsFacade', () => {
         selectedServiceIds: ['s1'],
         savedAddressId: 'addr-sk',
         startsOn: new Date('2026-10-01T00:00:00Z'),
+        dirtinessLevel: DirtinessLevel.Normal,
       });
 
       await facade.submit();
@@ -439,6 +441,120 @@ describe('RecurringBookingsFacade', () => {
       const body = JSON.parse(JSON.stringify(client.create.mock.calls[0][0]));
       expect(body).not.toHaveProperty('currencyId');
       expect(body.savedAddressId).toBe('addr-sk');
+    });
+  });
+
+  // Decision 34: a schedule carries the level its customer picks, which prices every clean it books
+  // and, through the crew the quote gives, decides whether it can be paid in cash.
+  describe('the dirtiness level of a schedule', () => {
+    const quoted = () =>
+      of(QuoteOrderResponse.fromJS({ totalPrice: 1300, finalPriceAfterDiscount: 1300, currencyCode: 'CZK' }));
+    const createBody = () => JSON.parse(JSON.stringify(client.create.mock.calls[0][0]));
+    const updateBody = () => JSON.parse(JSON.stringify(client.update.mock.calls[0][0]));
+    const completeForm = () =>
+      facade.updateFormData({
+        selectedServiceIds: ['s1'],
+        savedAddressId: 'addr-1',
+        startsOn: new Date('2026-10-01T00:00:00Z'),
+      });
+    const stored = (dirtinessLevel?: DirtinessLevel) =>
+      template({
+        id: 't1',
+        timeOfDay: '10:00',
+        rooms: 2,
+        bathrooms: 1,
+        savedAddressId: 'addr-1',
+        selectedServiceIds: ['s1'],
+        paymentType: PaymentType.Card,
+        startsOn: new Date('2026-10-01T00:00:00Z'),
+        dirtinessLevel,
+      });
+
+    it('asks a new schedule for a level rather than assuming one', () => {
+      completeForm();
+
+      expect(facade.formData().dirtinessLevel).toBeNull();
+      expect(facade.missing()).toEqual(['dirtiness']);
+    });
+
+    it('does not create a schedule before a level is chosen', async () => {
+      completeForm();
+
+      const ok = await facade.submit();
+
+      expect(ok).toBe(false);
+      expect(client.create).not.toHaveBeenCalled();
+    });
+
+    it('quotes the form at normal until a level is chosen, then at the chosen one', async () => {
+      orderClient.quote.mockReturnValue(quoted());
+      facade.updateFormData({ selectedServiceIds: ['s1'] });
+      await facade.quoteForm();
+      const unchosen = facade.pricedSelection();
+
+      facade.updateFormData({ dirtinessLevel: DirtinessLevel.Normal });
+      expect(facade.pricedSelection()).toBe(unchosen);
+
+      facade.updateFormData({ dirtinessLevel: DirtinessLevel.Heavy });
+      expect(facade.pricedSelection()).not.toBe(unchosen);
+      await facade.quoteForm();
+
+      expect(orderClient.quote.mock.calls[0][0].dirtinessLevel).toBe(DirtinessLevel.Normal);
+      expect(orderClient.quote.mock.calls[1][0].dirtinessLevel).toBe(DirtinessLevel.Heavy);
+    });
+
+    it("prices a card at its schedule's own level", async () => {
+      orderClient.quote.mockReturnValue(quoted());
+
+      await facade.quoteTemplate(stored(DirtinessLevel.Increased));
+
+      expect(orderClient.quote.mock.calls[0][0].dirtinessLevel).toBe(DirtinessLevel.Increased);
+    });
+
+    it('creates the schedule at the level chosen', async () => {
+      client.create.mockReturnValue(of(template({ id: 't-new' })));
+      completeForm();
+      facade.updateFormData({ dirtinessLevel: DirtinessLevel.Heavy });
+
+      const ok = await facade.submit();
+
+      expect(ok).toBe(true);
+      expect(createBody().dirtinessLevel).toBe(DirtinessLevel.Heavy);
+    });
+
+    it('opens a schedule for edit at its own level and sends it back unchanged', async () => {
+      client.update.mockReturnValue(of(stored(DirtinessLevel.Increased)));
+      facade.loadForEdit(stored(DirtinessLevel.Increased));
+
+      expect(facade.formData().dirtinessLevel).toBe(DirtinessLevel.Increased);
+      await facade.submit();
+
+      expect(updateBody().dirtinessLevel).toBe(DirtinessLevel.Increased);
+    });
+
+    it('sends the level chosen on edit', async () => {
+      client.update.mockReturnValue(of(stored(DirtinessLevel.Heavy)));
+      facade.loadForEdit(stored(DirtinessLevel.Increased));
+      facade.updateFormData({ dirtinessLevel: DirtinessLevel.Heavy });
+
+      await facade.submit();
+
+      expect(updateBody().dirtinessLevel).toBe(DirtinessLevel.Heavy);
+    });
+
+    it('reads a schedule that names no level as normal, the level the server stored for it', () => {
+      facade.loadForEdit(stored(undefined));
+
+      expect(facade.formData().dirtinessLevel).toBe(DirtinessLevel.Normal);
+      expect(facade.missing()).toEqual([]);
+    });
+
+    it('asks again after the wizard is reset', () => {
+      facade.loadForEdit(stored(DirtinessLevel.Heavy));
+
+      facade.resetWizard();
+
+      expect(facade.formData().dirtinessLevel).toBeNull();
     });
   });
 
@@ -552,6 +668,7 @@ describe('RecurringBookingsFacade', () => {
         savedAddressId: 'addr-1',
         startsOn: new Date('2026-07-01T00:00:00Z'),
         selectedServiceIds: ['s1'],
+        dirtinessLevel: DirtinessLevel.Normal,
       });
     });
 
@@ -606,6 +723,7 @@ describe('RecurringBookingsFacade', () => {
         selectedServiceIds: ['s1'],
         savedAddressId: 'addr-1',
         startsOn: new Date('2026-10-01T00:00:00Z'),
+        dirtinessLevel: DirtinessLevel.Normal,
         paymentType,
       });
 
@@ -1006,6 +1124,7 @@ describe('RecurringBookingsFacade', () => {
         selectedServiceIds: ['s1'],
         savedAddressId: 'addr-1',
         startsOn: new Date('2026-10-01T00:00:00Z'),
+        dirtinessLevel: DirtinessLevel.Normal,
       });
 
       await facade.submit();
@@ -1041,6 +1160,7 @@ describe('RecurringBookingsFacade', () => {
         selectedServiceIds: ['s1'],
         savedAddressId: 'addr-1',
         startsOn: new Date('2026-10-01T00:00:00Z'),
+        dirtinessLevel: DirtinessLevel.Normal,
       });
     const storedWith = (preferredEmployeeId: string) =>
       template({

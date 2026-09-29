@@ -1,27 +1,19 @@
 import { PLATFORM_ID } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { of, Subject, throwError } from 'rxjs';
+import { CustomerClient } from '../client/customer-base-client';
 import {
   CreateSavedCardCheckoutSessionCommand,
   CreateSavedCardCheckoutSessionResponse,
-  CustomerClient,
-  PaymentType,
-} from '@cleansia/customer-services';
-import { of, Subject, throwError } from 'rxjs';
-import { OrderCardCaptureFacade } from './order-card-capture.facade';
-import { OrderDraftService } from './order-draft.service';
-import { ORDER_WIZARD_INITIAL_DATA, OrderWizardFormData } from './order-wizard.models';
+} from '../client/customer-client';
+import { CardCaptureFacade, takeCardSetupReturnUrl } from './card-capture.facade';
 
-describe('OrderCardCaptureFacade', () => {
-  let facade: OrderCardCaptureFacade;
+describe('CardCaptureFacade', () => {
+  let facade: CardCaptureFacade;
   let savedCardClient: { createCheckoutSession: jest.Mock };
-  let draft: { park: jest.Mock };
+  let park: jest.Mock;
   let countryId: string | null;
-  const REVIEW_STEP = 6;
-  const booking: OrderWizardFormData = {
-    ...ORDER_WIZARD_INITIAL_DATA,
-    selectedServiceIds: ['s1'],
-    paymentType: PaymentType.Cash,
-  };
+  const RETURN_URL = '/membership/recurring/create';
 
   function session(checkoutUrl: string): CreateSavedCardCheckoutSessionResponse {
     return CreateSavedCardCheckoutSessionResponse.fromJS({ savedCardId: 'card-1', checkoutUrl });
@@ -36,26 +28,25 @@ describe('OrderCardCaptureFacade', () => {
     savedCardClient = {
       createCheckoutSession: jest.fn().mockReturnValue(of(session(`${origin}${pathname}#card-setup`))),
     };
-    draft = { park: jest.fn() };
+    park = jest.fn();
     countryId = 'cz';
 
     TestBed.configureTestingModule({
       providers: [
-        OrderCardCaptureFacade,
+        CardCaptureFacade,
         { provide: PLATFORM_ID, useValue: platform },
         { provide: CustomerClient, useValue: { savedCardClient } },
-        { provide: OrderDraftService, useValue: draft },
       ],
     });
 
-    facade = TestBed.inject(OrderCardCaptureFacade);
-    facade.connect({
-      countryId: () => countryId,
-      snapshot: () => ({ step: REVIEW_STEP, data: booking }),
-    });
+    facade = TestBed.inject(CardCaptureFacade);
+    facade.connect({ countryId: () => countryId, park, returnUrl: () => RETURN_URL });
   }
 
-  beforeEach(() => configure());
+  beforeEach(() => {
+    sessionStorage.clear();
+    configure();
+  });
 
   it('opens with the consent unticked, even after an earlier tick', () => {
     facade.open();
@@ -77,7 +68,7 @@ describe('OrderCardCaptureFacade', () => {
     expect(facade.starting()).toBe(false);
   });
 
-  it('sends the consent and the booking country, parks the booking and hands the browser to Stripe', () => {
+  it('sends the consent and the booking country, parks the booking, remembers where it started and hands the browser to Stripe', () => {
     TestBed.resetTestingModule();
     configure('browser');
     facade.open();
@@ -87,9 +78,11 @@ describe('OrderCardCaptureFacade', () => {
 
     expect(sentCommand().consentAccepted).toBe(true);
     expect(sentCommand().countryId).toBe('cz');
-    expect(draft.park).toHaveBeenCalledWith(REVIEW_STEP, booking);
+    expect(park).toHaveBeenCalledTimes(1);
     expect(window.location.hash).toBe('#card-setup');
     expect(facade.starting()).toBe(true);
+    expect(takeCardSetupReturnUrl()).toBe(RETURN_URL);
+    expect(takeCardSetupReturnUrl()).toBeNull();
   });
 
   it('sends no country when the booking names none, so the server takes the default market', () => {
@@ -102,7 +95,9 @@ describe('OrderCardCaptureFacade', () => {
     expect(sentCommand().countryId).toBeUndefined();
   });
 
-  it('parks nothing and stays open when the server refuses the capture', () => {
+  it('parks and remembers nothing, and stays open, when the server refuses the capture', () => {
+    TestBed.resetTestingModule();
+    configure('browser');
     savedCardClient.createCheckoutSession.mockReturnValue(
       throwError(() => ({ errors: { ConsentAccepted: 'saved_card.consent_not_accepted' } })),
     );
@@ -111,7 +106,8 @@ describe('OrderCardCaptureFacade', () => {
 
     facade.start();
 
-    expect(draft.park).not.toHaveBeenCalled();
+    expect(park).not.toHaveBeenCalled();
+    expect(takeCardSetupReturnUrl()).toBeNull();
     expect(facade.starting()).toBe(false);
     expect(facade.visible()).toBe(true);
   });

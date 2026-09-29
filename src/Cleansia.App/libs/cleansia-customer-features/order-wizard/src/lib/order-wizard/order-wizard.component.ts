@@ -7,7 +7,7 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { WizardPreferredCleanerComponent } from './components/wizard-preferred-cleaner.component';
 import { AmountDueComponent } from '@cleansia-customer/orders';
 import { CleansiaAddressAutocompleteComponent, CleansiaButtonComponent, CleansiaScrollTopComponent, CleansiaSelectComponent, CleansiaTelephoneComponent } from '@cleansia/components';
-import { CategoryDto, CUSTOMER_API_BASE_URL, DIRTINESS_LEVELS, DirtinessLevel, dirtinessLevelOption, GetMembershipPlansResponse, MembershipStatus, PackageListItem, PackageServiceSummary, PaymentType, QuoteOrderQuoteLine, QuotePlusSavingsQuery, SavedAddressDto, ServiceListItem } from '@cleansia/customer-services';
+import { CardCaptureFacade, CategoryDto, CUSTOMER_API_BASE_URL, DIRTINESS_LEVELS, DirtinessLevel, dirtinessLevelOption, GetMembershipPlansResponse, MembershipStatus, PackageListItem, PackageServiceSummary, PaymentType, QuoteOrderQuoteLine, QuotePlusSavingsQuery, SavedAddressDto, ServiceListItem } from '@cleansia/customer-services';
 import type { MapboxAddressSuggestion } from '@cleansia/services';
 import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -18,7 +18,6 @@ import { SelectModule } from 'primeng/select';
 import { DialogModule } from 'primeng/dialog';
 import { CheckboxModule } from 'primeng/checkbox';
 import { OrderWizardFacade } from './order-wizard.facade';
-import { OrderCardCaptureFacade } from './order-card-capture.facade';
 import { OrderMembershipFacade } from './order-membership.facade';
 import { OrderDraftService } from './order-draft.service';
 import { OrderPreferredCleanerFacade } from './order-preferred-cleaner.facade';
@@ -84,7 +83,7 @@ function startOfMonth(date: Date): Date {
   ],
   templateUrl: './order-wizard.component.html',
   providers: [
-    OrderCardCaptureFacade,
+    CardCaptureFacade,
     OrderMembershipFacade,
     OrderPreferredCleanerFacade,
     OrderPricingFacade,

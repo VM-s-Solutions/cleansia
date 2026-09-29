@@ -1,7 +1,17 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { RecurringBookingTemplateDto } from '@cleansia/customer-services';
+import { CustomerClient, RecurringBookingTemplateDto } from '@cleansia/customer-services';
+import {
+  SavedAddressStore,
+  selectCustomerPackages,
+  selectCustomerPackagesCatalogue,
+  selectCustomerServices,
+  selectCustomerServicesCatalogue,
+  selectMarketCountryId,
+} from '@cleansia/customer-stores';
+import { SnackbarService } from '@cleansia/services';
+import { provideMockStore } from '@ngrx/store/testing';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { RecurringBookingsFacade } from '../recurring-bookings.facade';
 import { RecurringBookingsListComponent } from './recurring-bookings-list.component';
@@ -144,5 +154,32 @@ describe('RecurringBookingsListComponent — the next cleaning date', () => {
     const text = (fixture.nativeElement as HTMLElement).querySelector('.cl-rec__card')?.textContent;
     expect(text).toContain('next October 7');
     expect(text).not.toContain('October 6');
+  });
+});
+
+// The specs above hand the screen a fake facade, so only this one sees whether the providers the screen
+// declares can build the real one; a missing provider is an error the moment the list opens.
+describe('RecurringBookingsListComponent — its own facade', () => {
+  it('builds the facade from the providers the screen declares', async () => {
+    await TestBed.configureTestingModule({
+      imports: [RecurringBookingsListComponent, TranslateModule.forRoot()],
+      providers: [
+        provideRouter([]),
+        provideMockStore({
+          selectors: [
+            { selector: selectCustomerServices, value: [] },
+            { selector: selectCustomerPackages, value: [] },
+            { selector: selectCustomerServicesCatalogue, value: { services: [], countryId: null } },
+            { selector: selectCustomerPackagesCatalogue, value: { packages: [], countryId: null } },
+            { selector: selectMarketCountryId, value: null },
+          ],
+        }),
+        { provide: CustomerClient, useValue: {} },
+        { provide: SavedAddressStore, useValue: { addresses: signal([]), loaded: signal(true) } },
+        { provide: SnackbarService, useValue: {} },
+      ],
+    }).compileComponents();
+
+    expect(() => TestBed.createComponent(RecurringBookingsListComponent)).not.toThrow();
   });
 });

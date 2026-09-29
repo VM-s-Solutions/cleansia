@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
   AddressDto,
+  CardCaptureFacade,
   CategoryDto,
   CreateOrderCommand,
   CreateOrderResponse,
@@ -45,7 +46,7 @@ import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { catchError, finalize, map, of, takeUntil } from 'rxjs';
-import { OrderCardCaptureFacade } from './order-card-capture.facade';
+import { OrderDraftService } from './order-draft.service';
 import { OrderMembershipFacade } from './order-membership.facade';
 import { OrderPreferredCleanerFacade } from './order-preferred-cleaner.facade';
 import { OrderPricingFacade } from './order-pricing.facade';
@@ -87,7 +88,8 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   private readonly savedAddress = inject(OrderSavedAddressFacade);
   private readonly membership = inject(OrderMembershipFacade);
   private readonly preferredCleaner = inject(OrderPreferredCleanerFacade);
-  private readonly cardCapture = inject(OrderCardCaptureFacade);
+  private readonly cardCapture = inject(CardCaptureFacade);
+  private readonly draft = inject(OrderDraftService);
   private readonly injector = inject(Injector);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
@@ -336,7 +338,8 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
     });
     this.cardCapture.connect({
       countryId: () => this.addressCountryId(),
-      snapshot: () => ({ step: this.activeStep(), data: this.formData() }),
+      park: () => this.draft.park(this.activeStep(), this.formData()),
+      returnUrl: () => '/' + CleansiaCustomerRoute.ORDER,
     });
     effect(() => {
       if (this.formData().paymentType === PaymentType.Cash && cashIsRefused(this.cashEligibility())) {

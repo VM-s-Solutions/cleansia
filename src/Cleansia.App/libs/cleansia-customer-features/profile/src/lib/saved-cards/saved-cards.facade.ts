@@ -1,8 +1,8 @@
 import { inject, Injectable, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
-import { CustomerClient } from '@cleansia/customer-services';
-import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
+import { CustomerClient, takeCardSetupReturnUrl } from '@cleansia/customer-services';
+import { SnackbarService } from '@cleansia/services';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
 import { CARD_SETUP_CANCEL, CARD_SETUP_SUCCESS, SavedCardRow, toSavedCardRow } from './saved-cards.models';
 
@@ -18,18 +18,21 @@ export class SavedCardsFacade extends UnsubscribeControlDirective {
   readonly removingId = signal<string | null>(null);
 
   /**
-   * Stripe returns every card capture to the profile, and a capture is only ever started from a cash
-   * booking, so the customer is sent back to that booking, which the wizard parked before leaving.
+   * Stripe returns every card capture to the profile, so the customer is sent on to the booking or
+   * schedule the capture started from, which parked itself before leaving.
    */
   init(cardSetupOutcome: string | null): void {
     if (cardSetupOutcome === CARD_SETUP_SUCCESS) {
       this.snackbar.showSuccessTranslated('pages.profile.saved_cards.setup_success');
-      void this.router.navigate([CleansiaCustomerRoute.ORDER], { replaceUrl: true });
+    } else if (cardSetupOutcome === CARD_SETUP_CANCEL) {
+      this.snackbar.showInfoTranslated('pages.profile.saved_cards.setup_cancelled');
+    } else {
+      this.load();
       return;
     }
-    if (cardSetupOutcome === CARD_SETUP_CANCEL) {
-      this.snackbar.showInfoTranslated('pages.profile.saved_cards.setup_cancelled');
-      void this.router.navigate([CleansiaCustomerRoute.ORDER], { replaceUrl: true });
+    const returnUrl = takeCardSetupReturnUrl();
+    if (returnUrl) {
+      void this.router.navigateByUrl(returnUrl, { replaceUrl: true });
       return;
     }
     this.load();

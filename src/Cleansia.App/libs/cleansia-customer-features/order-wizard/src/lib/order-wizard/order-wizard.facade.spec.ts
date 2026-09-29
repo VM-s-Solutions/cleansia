@@ -2,6 +2,7 @@ import { PLATFORM_ID, signal, WritableSignal } from '@angular/core';
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import {
+  CardCaptureFacade,
   CustomerAuthService,
   CustomerClient,
   DirtinessLevel,
@@ -29,7 +30,6 @@ import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
 import { provideMockStore, MockStore } from '@ngrx/store/testing';
 import { TranslateService } from '@ngx-translate/core';
 import { of, Subject, throwError } from 'rxjs';
-import { OrderCardCaptureFacade } from './order-card-capture.facade';
 import { OrderDraftService } from './order-draft.service';
 import { OrderMembershipFacade } from './order-membership.facade';
 import { OrderPreferredCleanerFacade } from './order-preferred-cleaner.facade';
@@ -128,7 +128,7 @@ describe('OrderWizardFacade', () => {
 
     TestBed.configureTestingModule({
       providers: [
-        OrderCardCaptureFacade,
+        CardCaptureFacade,
         OrderMembershipFacade,
         OrderPreferredCleanerFacade,
         OrderPricingFacade,

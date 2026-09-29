@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { FoamEdgeComponent } from '@cleansia-customer/home';
-import { RecurringBookingTemplateDto } from '@cleansia/customer-services';
+import { CardCaptureFacade, RecurringBookingTemplateDto } from '@cleansia/customer-services';
 import { CleansiaCustomerRoute } from '@cleansia/services';
 import { formatMoney, localeFor } from '@cleansia/utils';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -32,7 +32,7 @@ import {
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [TranslatePipe, RouterLink, SkeletonModule, FoamEdgeComponent],
-  providers: [RecurringBookingsFacade],
+  providers: [RecurringBookingsFacade, CardCaptureFacade],
   templateUrl: './recurring-bookings-list.component.html',
 })
 export class RecurringBookingsListComponent implements OnInit {

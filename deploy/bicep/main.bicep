@@ -225,6 +225,24 @@ its API host directly. deploy/AZURE-DEV-RUNBOOK.md §11.
 ''')
 param adminApiLinkedToAdminSpa bool = false
 
+@description('''
+Storage on managed identity (E-4). Every host reaches blobs and queues with its own identity (the
+Storage Blob/Queue Data Contributor grants below), the SAS links it mints are user-delegation SAS, the
+Functions queue triggers bind identity-based, the account refuses shared-key requests, and no storage
+connection string is written to Key Vault. Dev keeps false and its connection string.
+deploy/AZURE-PROD-POSTURE.md §7.
+''')
+param storageManagedIdentityEnabled bool = false
+
+@description('''
+The hosts connect to Postgres as a least-privilege application login, data read/write only, and verify
+the server certificate (E-4). deploy-azure.yml writes that login's connection string to Key Vault from
+the POSTGRES_APP_PASSWORD secret and creates the login and its grants after every migration
+(deploy/db/grant-app-login.sql); the migration keeps the administrator login, which then never enters
+Key Vault. Dev keeps false. deploy/AZURE-PROD-POSTURE.md §7.
+''')
+param postgresAppLoginEnabled bool = false
+
 @description('Resource tags applied to every resource.')
 param tags object = {}
 
@@ -339,6 +357,7 @@ module storage 'modules/storage.bicep' = {
     stage: env
     skuName: storageSku
     networkDefaultAction: privateNetworkingEnabled ? 'Deny' : 'Allow'
+    allowSharedKeyAccess: !storageManagedIdentityEnabled
     tags: commonTags
   }
 }
@@ -514,10 +533,24 @@ var cronSettings = {
   ExpireStaleReferralsCron: '0 30 3 * * *'
 }
 
+// How every host (the five APIs and the Functions app) reaches blobs and queues. With the key: the
+// Storage--ConnectionString secret. With managed identity: BlobContainerConfiguration:AccountUrl (the
+// blob client factory's identity path) and the QueueStorageConnectionString identity-based connection
+// the Functions host binds its queue triggers from, which the queue client reads too. The key-based
+// settings must be ABSENT then, not empty: the Functions host prefers a ConnectionStrings__ entry.
+var storageSettings = storageManagedIdentityEnabled
+  ? {
+      BlobContainerConfiguration__AccountUrl: storage.outputs.blobEndpoint
+      QueueStorageConnectionString__queueServiceUri: storage.outputs.queueEndpoint
+      QueueStorageConnectionString__credential: 'managedidentity'
+    }
+  : {
+      ConnectionStrings__BlobContainerConfigurationConnectionString: kvRef(keyVaultUri, 'Storage--ConnectionString')
+      ConnectionStrings__QueueStorageConnectionString: kvRef(keyVaultUri, 'Storage--ConnectionString')
+    }
+
 var apiBaseSettings = union({
   ConnectionStrings__ConnectionString: kvRef(keyVaultUri, 'ConnectionStrings--cleansia-db')
-  ConnectionStrings__BlobContainerConfigurationConnectionString: kvRef(keyVaultUri, 'Storage--ConnectionString')
-  ConnectionStrings__QueueStorageConnectionString: kvRef(keyVaultUri, 'Storage--ConnectionString')
   JwtSettings__Secret: kvRef(keyVaultUri, 'Jwt--Key')
   // CSRF secret — a true secret pushed by CI (like the other externals). The app throws on an empty
   // secret only when Csrf:Enabled=true; dev runs disabled, but we still supply it so enabling CSRF is
@@ -551,7 +584,7 @@ var apiBaseSettings = union({
   // /architecture/request-logging documents that as load-bearing in both directions. Prod stays at
   // Warning regardless.
   Logging__LogLevel__Cleansia: env == 'prod' ? 'Warning' : 'Information'
-}, sendGridSettings)
+}, storageSettings, sendGridSettings)
 
 // FCM push dispatch — the Functions queue consumer is the ONLY dispatcher; FcmPushDispatcher is a
 // deliberate no-op while this is unset, so pushes are silently ACKed until the secret exists. Value:
@@ -853,6 +886,7 @@ module functionApp 'modules/functionApp.bicep' = {
     storageAccountId: storage.outputs.storageAccountId
     appInsightsConnectionString: appInsights.outputs.connectionString
     virtualNetworkSubnetId: privateNetworkingEnabled ? privateNetworking!.outputs.appSubnetId : ''
+    storageAppSettings: storageSettings
     // Sentry__Dsn IS read (ac2243d2): Program.cs calls ConfigureLogging(AddSentryMonitoring), so an
     // ILogger.LogError in this worker becomes a Sentry event — which is what PoisonHandlerBase step 2
     // and FunctionInvocationErrorMiddleware depend on. It is a SECOND, unsampled path alongside the
@@ -907,6 +941,8 @@ module derivedSecrets 'modules/derivedSecrets.bicep' = {
     postgresFqdn: postgres.outputs.fullyQualifiedDomainName
     postgresAdministratorLogin: postgresAdministratorLogin
     postgresAdministratorPassword: postgresAdministratorPassword
+    writeStorageConnectionString: !storageManagedIdentityEnabled
+    writeDbConnectionString: !postgresAppLoginEnabled
   }
 }
 

@@ -67,6 +67,12 @@ on:
         required: false
         default: false
 
+env:
+  # The least-privilege database login the hosts connect as on a stage whose param file sets
+  # postgresAppLoginEnabled (deploy/AZURE-PROD-POSTURE.md §7). The provision job writes its connection
+  # string to Key Vault and the migrate job creates it, so both read this one name.
+  POSTGRES_APP_LOGIN: cleansia_app
+
 jobs:
   # ===========================================================================================
   # Build — produce the deployable artifacts (no Azure access needed)
@@ -285,14 +291,28 @@ jobs:
       # Read from the param file Bicep deploys, so the workflow and the infrastructure cannot disagree:
       # privateNetworkingEnabled = true (prod) closes the Key Vault to every network but its private
       # endpoint, and the secret push below opens it to this runner's IP alone and closes it after.
-      - name: Resolve the stage's network posture
+      # postgresAppLoginEnabled = true (prod) makes the hosts' database secret the least-privilege
+      # login's, which the secret push writes from POSTGRES_APP_PASSWORD — refused here before
+      # anything is provisioned when that secret is missing or would break the connection string.
+      - name: Resolve the stage's network and database posture
         env:
           PARAM_FILE: ${{ inputs.bicepparamFile }}
+          MODE: ${{ inputs.mode }}
+          POSTGRES_APP_PASSWORD: ${{ secrets.POSTGRES_APP_PASSWORD }}
         run: |
           if grep -Eq '^[[:space:]]*param[[:space:]]+privateNetworkingEnabled[[:space:]]*=[[:space:]]*true([^[:alnum:]_]|$)' "$PARAM_FILE"; then
             echo "PRIVATE_NETWORKING=true" >> "$GITHUB_ENV"
           else
             echo "PRIVATE_NETWORKING=false" >> "$GITHUB_ENV"
+          fi
+          if grep -Eq '^[[:space:]]*param[[:space:]]+postgresAppLoginEnabled[[:space:]]*=[[:space:]]*true([^[:alnum:]_]|$)' "$PARAM_FILE"; then
+            echo "LEAST_PRIVILEGE_DB=true" >> "$GITHUB_ENV"
+            if [ "$MODE" = "deploy" ] && ! [[ "$POSTGRES_APP_PASSWORD" =~ ^[A-Za-z0-9]{24,}$ ]]; then
+              echo "::error::POSTGRES_APP_PASSWORD must be set in this GitHub Environment: at least 24 letters and digits, nothing else (deploy/AZURE-PROD-POSTURE.md §7)"
+              exit 1
+            fi
+          else
+            echo "LEAST_PRIVILEGE_DB=false" >> "$GITHUB_ENV"
           fi
 
       - name: Login to Azure
@@ -504,7 +524,8 @@ jobs:
 
       # Push the EXTERNAL secrets (the ones Bicep can't derive) from the stage's GitHub-Environment
       # secrets into Key Vault. The DERIVABLE ones (Storage/DB conn strings) are
-      # written by the Bicep derivedSecrets module — not here. Set these GitHub secrets ONCE per
+      # written by the Bicep derivedSecrets module — not here, except the DB one on a least-privilege
+      # stage, whose password is external (see the end of the step). Set these GitHub secrets ONCE per
       # Environment; every deploy syncs them, so they're never hand-set per-API. Each push is skipped
       # if its GitHub secret is empty (so a missing optional secret doesn't fail the deploy).
       #
@@ -541,6 +562,8 @@ jobs:
           APNS_KEY_ID: ${{ secrets.APNS_KEY_ID }}
           APNS_TEAM_ID: ${{ secrets.APNS_TEAM_ID }}
           APNS_PRIVATE_KEY_PEM: ${{ secrets.APNS_PRIVATE_KEY_PEM }}
+          POSTGRES_APP_PASSWORD: ${{ secrets.POSTGRES_APP_PASSWORD }}
+          PG: pg-cleansia-${{ matrix.region }}-${{ inputs.env }}
         run: |
           # Grant the CI principal (this OIDC app's service principal) Secrets Officer on the vault.
           CI_OID="$(az ad signed-in-user show --query id -o tsv 2>/dev/null || true)"
@@ -600,6 +623,17 @@ jobs:
           set_secret "Apns--KeyId"                            "$APNS_KEY_ID"
           set_secret "Apns--TeamId"                           "$APNS_TEAM_ID"
           set_secret "Apns--PrivateKeyPem"                    "$APNS_PRIVATE_KEY_PEM"
+          # The hosts' database secret on a least-privilege stage (E-4): the application login's, over
+          # verified TLS, from the same POSTGRES_APP_PASSWORD the migrate job sets the login's password
+          # from. Written on every deploy, never by Bicep, so both always carry the current secret.
+          if [ "$LEAST_PRIVILEGE_DB" = "true" ]; then
+            PG_FQDN="$(az rest --method get \
+              --url "https://management.azure.com/subscriptions/$(az account show --query id -o tsv)/resourceGroups/${RG}/providers/Microsoft.DBforPostgreSQL/flexibleServers/${PG}?api-version=2024-08-01" \
+              --query properties.fullyQualifiedDomainName -o tsv)"
+            if [ -z "$PG_FQDN" ]; then echo "::error::could not read the host name of $PG"; exit 1; fi
+            set_secret "ConnectionStrings--cleansia-db" \
+              "Host=$PG_FQDN;Database=Cleansia;Username=$POSTGRES_APP_LOGIN;Password=$POSTGRES_APP_PASSWORD;Ssl Mode=VerifyFull"
+          fi
 
       # Runs even when the push failed or the run was cancelled: a private vault must not stay public.
       - name: Close the Key Vault to the public
@@ -658,7 +692,9 @@ jobs:
 
       # The same read as the provision job's: privateNetworkingEnabled = true (prod) means the database
       # and the Key Vault answer only their private endpoints, which this runner is not behind.
-      - name: Resolve the stage's network posture
+      # postgresAppLoginEnabled = true (prod) means the vault's database secret is the least-privilege
+      # login's, so the migration connects as the administrator named in the param file instead.
+      - name: Resolve the stage's network and database posture
         env:
           PARAM_FILE: ${{ inputs.bicepparamFile }}
         run: |
@@ -666,6 +702,14 @@ jobs:
             echo "PRIVATE_NETWORKING=true" >> "$GITHUB_ENV"
           else
             echo "PRIVATE_NETWORKING=false" >> "$GITHUB_ENV"
+          fi
+          if grep -Eq '^[[:space:]]*param[[:space:]]+postgresAppLoginEnabled[[:space:]]*=[[:space:]]*true([^[:alnum:]_]|$)' "$PARAM_FILE"; then
+            echo "LEAST_PRIVILEGE_DB=true" >> "$GITHUB_ENV"
+            PG_ADMIN_LOGIN="$(sed -nE "s/^[[:space:]]*param[[:space:]]+postgresAdministratorLogin[[:space:]]*=[[:space:]]*'([A-Za-z0-9_]+)'.*/\1/p" "$PARAM_FILE")"
+            if [ -z "$PG_ADMIN_LOGIN" ]; then echo "::error::$PARAM_FILE sets no postgresAdministratorLogin"; exit 1; fi
+            echo "PG_ADMIN_LOGIN=$PG_ADMIN_LOGIN" >> "$GITHUB_ENV"
+          else
+            echo "LEAST_PRIVILEGE_DB=false" >> "$GITHUB_ENV"
           fi
 
       - name: Login to Azure
@@ -719,10 +763,11 @@ jobs:
             --url "https://management.azure.com/subscriptions/${SUB_ID}/resourceGroups/rg-cleansia-${{ matrix.region }}-${{ inputs.env }}/providers/Microsoft.DBforPostgreSQL/flexibleServers/pg-cleansia-${{ matrix.region }}-${{ inputs.env }}/firewallRules/ci-migrate-${{ github.run_id }}?api-version=2024-08-01" \
             --body "{\"properties\":{\"startIpAddress\":\"${RUNNER_IP}\",\"endIpAddress\":\"${RUNNER_IP}\"}}"
 
-      # Same window as the provision job's secret push, for the connection-string read below.
+      # Same window as the provision job's secret push, for the connection-string read below — which a
+      # least-privilege stage does not make.
       - name: Open the Key Vault to the runner
         id: open-kv
-        if: env.PRIVATE_NETWORKING == 'true'
+        if: env.PRIVATE_NETWORKING == 'true' && env.LEAST_PRIVILEGE_DB != 'true'
         env:
           KV: kv-cleansia-${{ matrix.region }}-${{ inputs.env }}
           RG: rg-cleansia-${{ matrix.region }}-${{ inputs.env }}
@@ -745,6 +790,18 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      - name: Resolve the database host
+        if: env.LEAST_PRIVILEGE_DB == 'true'
+        env:
+          RG: rg-cleansia-${{ matrix.region }}-${{ inputs.env }}
+          PG: pg-cleansia-${{ matrix.region }}-${{ inputs.env }}
+        run: |
+          PG_FQDN="$(az rest --method get \
+            --url "https://management.azure.com/subscriptions/$(az account show --query id -o tsv)/resourceGroups/${RG}/providers/Microsoft.DBforPostgreSQL/flexibleServers/${PG}?api-version=2024-08-01" \
+            --query properties.fullyQualifiedDomainName -o tsv)"
+          if [ -z "$PG_FQDN" ]; then echo "::error::could not read the host name of $PG"; exit 1; fi
+          echo "PG_FQDN=$PG_FQDN" >> "$GITHUB_ENV"
+
       # The connection string is read from Key Vault (ConnectionStrings--cleansia-db, written by the
       # Bicep derivedSecrets module) — the SAME source the runtime hosts resolve, so a password
       # rotation touches one place instead of also updating a duplicated DB_CONNECTION_STRING GitHub
@@ -753,23 +810,47 @@ jobs:
       # the Bicep ciPrincipalId grant covers it too when CI_PRINCIPAL_ID is set. The value is masked
       # before use so it can never surface in the job log. The read retries for up to two minutes
       # because a vault window opened seconds ago may not admit the runner yet.
+      #
+      # A least-privilege stage (E-4) is the exception: that secret is the application login's, which
+      # cannot create a table, so the migration connects as the administrator — from the same
+      # POSTGRES_ADMIN_PASSWORD secret Bicep set it with, over verified TLS, never through the vault.
       - name: Apply migrations
+        env:
+          POSTGRES_ADMIN_PASSWORD: ${{ secrets.POSTGRES_ADMIN_PASSWORD }}
         run: |
-          for attempt in 1 2 3 4 5 6; do
-            DB_CONNECTION_STRING="$(az keyvault secret show \
-              --vault-name kv-cleansia-${{ matrix.region }}-${{ inputs.env }} \
-              --name ConnectionStrings--cleansia-db --query value -o tsv || true)"
-            if [ -n "$DB_CONNECTION_STRING" ] || [ "$attempt" = 6 ]; then break; fi
-            echo "  Key Vault not readable yet (attempt $attempt/6) — waiting 20s…"
-            sleep 20
-          done
-          if [ -z "$DB_CONNECTION_STRING" ]; then
-            echo "::error::Key Vault secret ConnectionStrings--cleansia-db is empty or unreadable — check the CI principal's Key Vault RBAC and that provision ran"
-            exit 1
+          if [ "$LEAST_PRIVILEGE_DB" = "true" ]; then
+            DB_CONNECTION_STRING="Host=$PG_FQDN;Database=Cleansia;Username=$PG_ADMIN_LOGIN;Password=$POSTGRES_ADMIN_PASSWORD;Ssl Mode=VerifyFull"
+          else
+            for attempt in 1 2 3 4 5 6; do
+              DB_CONNECTION_STRING="$(az keyvault secret show \
+                --vault-name kv-cleansia-${{ matrix.region }}-${{ inputs.env }} \
+                --name ConnectionStrings--cleansia-db --query value -o tsv || true)"
+              if [ -n "$DB_CONNECTION_STRING" ] || [ "$attempt" = 6 ]; then break; fi
+              echo "  Key Vault not readable yet (attempt $attempt/6) — waiting 20s…"
+              sleep 20
+            done
+            if [ -z "$DB_CONNECTION_STRING" ]; then
+              echo "::error::Key Vault secret ConnectionStrings--cleansia-db is empty or unreadable — check the CI principal's Key Vault RBAC and that provision ran"
+              exit 1
+            fi
           fi
           echo "::add-mask::$DB_CONNECTION_STRING"
           chmod +x ./src/efbundle
           ./src/efbundle --connection "$DB_CONNECTION_STRING"
+
+      # E-4: the login the hosts connect as — created on the first run, and on every run given the
+      # POSTGRES_APP_PASSWORD password the provision job just wrote to Key Vault and data read/write on
+      # every table and sequence the migration left. Before the firewall rule goes: it is the same window.
+      - name: Grant the application login
+        if: env.LEAST_PRIVILEGE_DB == 'true'
+        env:
+          PGPASSWORD: ${{ secrets.POSTGRES_ADMIN_PASSWORD }}
+          POSTGRES_APP_PASSWORD: ${{ secrets.POSTGRES_APP_PASSWORD }}
+        run: |
+          command -v psql >/dev/null || { sudo apt-get update -q && sudo apt-get install -y -q postgresql-client; }
+          psql "host=$PG_FQDN port=5432 dbname=Cleansia user=$PG_ADMIN_LOGIN sslmode=verify-full sslrootcert=/etc/ssl/certs/ca-certificates.crt" \
+            -v ON_ERROR_STOP=1 -v app_login="$POSTGRES_APP_LOGIN" -v app_password="$POSTGRES_APP_PASSWORD" \
+            -f deploy/db/grant-app-login.sql
 
       - name: Remove the runner firewall rule
         if: always()

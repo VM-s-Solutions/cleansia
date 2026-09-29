@@ -77,6 +77,16 @@ param privateNetworkingEnabled = true
 param adminApiLinkedToAdminSpa = true
 
 // ---------------------------------------------------------------------------------------------------
+// E-4: no long-lived storage key and no database administrator at runtime. Blobs and queues are reached
+// with each host's managed identity and the account refuses shared keys; the hosts connect to Postgres
+// as the least-privilege application login over verified TLS, and the administrator login is used by
+// the migration alone. Needs the POSTGRES_APP_PASSWORD secret in prod-weu: AZURE-PROD-POSTURE.md §7.
+// ---------------------------------------------------------------------------------------------------
+
+param storageManagedIdentityEnabled = true
+param postgresAppLoginEnabled = true
+
+// ---------------------------------------------------------------------------------------------------
 // Postgres admin LOGIN (non-secret). The PASSWORD is supplied on the CLI at deploy time (see header).
 // ---------------------------------------------------------------------------------------------------
 

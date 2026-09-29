@@ -16,6 +16,7 @@
 | 4 | ACR image retention | `acrImageRetentionEnabled`, `acrImageRetentionDays` | `false`, 30 | `true`, 30 | yes |
 | 5 | App Insights sampling + ingestion cap | module-internal env switch (`modules/appInsights.bicep`: `samplingPercentage`, `dailyCapMb`) | 10%, 500 MB/day | 50%, 5000 MB/day | yes (module params) |
 | 6 | Private database + Key Vault (Q-INFRA-03, E-3) | `privateNetworkingEnabled` | `false` | `true` | yes, see §6 |
+| 7 | Storage on managed identity; least-privilege database login (E-4) | `storageManagedIdentityEnabled`, `postgresAppLoginEnabled` | `false`, `false` | `true`, `true` | yes, see §7 |
 
 **Always On is NOT env-switched** — `alwaysOn: true` on all six web hosts in every stage (it was
 `env == 'prod'`). Always On costs nothing on a plan already billed by the hour, and without it App
@@ -181,7 +182,7 @@ and its database is never public. Dev keeps `false` and is unchanged. What the f
 
 A GitHub-hosted runner is outside the VNet, so `deploy-azure.yml` opens the database and the vault to
 the runner's own IP for as long as it needs them and closes them again. Both jobs read the posture from
-the param file Bicep deploys (step *Resolve the stage's network posture*), so the workflow cannot
+the param file Bicep deploys (step *Resolve the stage's network and database posture*), so the workflow cannot
 disagree with the infrastructure; on dev none of the window steps run.
 
 - **`provision`**, after Bicep: *Open the Key Vault to the runner* adds an IP rule for the runner, then
@@ -189,7 +190,8 @@ disagree with the infrastructure; on dev none of the window steps run.
   Vault to the public* (runs even on failure) turns public access off and removes the rule.
 - **`migrate-database`**: *Open the private database for the migration* turns Postgres public access on
   and waits for `Enabled` + `Ready` (minutes); the per-run `ci-migrate-<run id>` firewall rule admits
-  the runner; the vault opens the same way for the connection-string read; the migration runs; the
+  the runner; the vault opens the same way for the connection-string read, unless the stage uses the
+  least-privilege login (§7), whose migration reads no vault secret; the migration runs; the
   rule is removed; *Close the private database and Key Vault to the public* (runs even on failure or
   cancellation) turns both off and waits until Postgres reports `Disabled`.
 - While a window is open, the database takes TLS connections from the runner's IP alone and the vault
@@ -235,7 +237,70 @@ az keyvault network-rule remove -n $KV -g $RG --ip-address $MY_IP/32
 ```
 
 Postgres-**MI auth** (the other half of Q-INFRA-03) is NOT part of this seam — it needs Npgsql token
-plumbing (an app code change) and stays an open owner question.
+plumbing (an app code change) and stays an open owner question. §7 takes the smaller step: the hosts
+no longer connect as the administrator.
+
+## 7. E-4 — storage on managed identity, least-privilege database login
+
+`weu.prod.bicepparam` sets both flags `true`, so production never has a long-lived storage key and its
+hosts never hold the database administrator. Dev keeps both `false` and is unchanged: its hosts still
+read `Storage--ConnectionString` and `ConnectionStrings--cleansia-db` as the admin, both written by
+`derivedSecrets`.
+
+### Storage (`storageManagedIdentityEnabled`)
+
+- Every API host and the Functions app reach blobs and queues with their system-assigned managed
+  identity — the Storage Blob/Queue Data Contributor grants `roleAssignments.bicep` already makes, the
+  staging slots included. The app settings carry no secret: `BlobContainerConfiguration__AccountUrl`
+  (the blob endpoint) and `QueueStorageConnectionString__queueServiceUri` +
+  `QueueStorageConnectionString__credential=managedidentity` (the queue endpoint).
+- The queue setting is the Functions **identity-based connection** named by every
+  `[QueueTrigger(Connection = "QueueStorageConnectionString")]`, so the triggers, the Functions worker's
+  sender and the API hosts' senders all move with one setting. The `ConnectionStrings__…` storage
+  settings are absent, not empty — the Functions host prefers them when they exist.
+- The order-photo, profile-photo and dispute-evidence links become **user-delegation SAS**: signed with
+  a key the host asks Storage for under its identity, valid for the link's own lifetime (15 min / 1 h),
+  never with the account key.
+- The account sets `allowSharedKeyAccess: false`: a request signed with an account key or an account or
+  service SAS is refused. `derivedSecrets` writes no `Storage--ConnectionString`; there is no storage
+  secret anywhere.
+- The Functions health probe lists queues instead of reading the queue service properties, which need a
+  management role the identities do not have.
+- **People need data roles too.** With shared keys off, the portal's storage browser and Storage
+  Explorer authenticate as you: give yourself *Storage Blob Data Reader* (or Contributor) on
+  `stcleansiaweuprod` and switch the portal blade's authentication method to *Microsoft Entra user
+  account*. `az storage … --auth-mode login` works the same way; `--account-key` and connection strings
+  do not.
+- Turning this on for an existing account (not the prod plan — prod starts with it): deploy, confirm
+  uploads, photo links and every queue drain, then delete the stale `Storage--ConnectionString` secret by
+  hand; Bicep does not delete a secret it stops writing.
+
+### Database (`postgresAppLoginEnabled`)
+
+- The hosts connect as **`cleansia_app`**, which may `SELECT`, `INSERT`, `UPDATE` and `DELETE` rows in
+  `public` and use its sequences — and nothing else: no `CREATE`, `ALTER`, `DROP`, `TRUNCATE`, no new
+  roles or schemas. A SQL injection or a leaked host secret cannot change or drop the schema. The server
+  administrator (`cleansia_admin`) is used by the migration alone.
+- **Every connection verifies the server certificate** (`Ssl Mode=VerifyFull`, in place of
+  `Require;Trust Server Certificate=true`), against the system trust store of the host and the runner.
+- `deploy/db/grant-app-login.sql` creates the login and its grants. `deploy-azure.yml` runs it in
+  `migrate-database` after every migration, inside the same temporary window (§6); it is idempotent, sets
+  the login's password on every run, and its default privileges extend the grants to tables a later
+  migration adds.
+- Key Vault's `ConnectionStrings--cleansia-db` holds the **application login's** connection string. The
+  provision job's secret push writes it on every deploy from the **`POSTGRES_APP_PASSWORD`** secret of
+  `prod-weu` — never Bicep, because the password is external and the Bicep step is skipped when nothing
+  in `deploy/bicep` changed. The migration builds the administrator's connection string from
+  `POSTGRES_ADMIN_PASSWORD` itself, so **the administrator credential never enters Key Vault**, and the
+  migrate job no longer opens the vault.
+- `POSTGRES_APP_PASSWORD`: at least 24 letters and digits, nothing else (a `;` or `=` breaks the
+  connection string). The provision job refuses a deploy without it before anything is provisioned.
+- **Rotation**: change `POSTGRES_APP_PASSWORD` in `prod-weu` and run a deploy. The push writes the new
+  secret, the migrate job sets the login's password, and every host restarts onto it in its deploy job.
+  Open connections survive; a host that opens a new one between the migrate job and its own restart is
+  refused, so rotate at a quiet hour.
+- An admin `psql` (§6) still signs in as `cleansia_admin`; to check what the application can do, sign in
+  as `cleansia_app` with the password from `POSTGRES_APP_PASSWORD`.
 
 ## Verification state
 
@@ -250,3 +315,12 @@ parameters are byte-identical to before, the prod parameters differ only in
 `privateNetworkingEnabled`, and the vault's `allowPublicNetworkAccess` compiles to
 `not(privateNetworkingEnabled)`. The workflow's window steps were exercised locally against a stubbed
 `az`; nothing was deployed.
+
+§7 as E-4 built it was compile-verified with Bicep CLI 0.47.16: the compiled dev parameters are
+byte-identical to before, and the prod parameters differ only in `storageManagedIdentityEnabled` and
+`postgresAppLoginEnabled`. `grant-app-login.sql` was run twice against a local `postgres:16` by a
+non-superuser administrator shaped like Azure's (`CREATEROLE`, a member of the database's owning role):
+the login reads, writes, locks rows, takes advisory locks and inserts through serial and identity
+columns, is refused `DROP`, `TRUNCATE`, `ALTER`, `CREATE TABLE`/`SCHEMA`/`INDEX`/`ROLE`/`DATABASE`,
+reaches a table created after the grant, and the second run moved it to the new password. Nothing was
+deployed and no Azure command was run.

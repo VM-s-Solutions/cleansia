@@ -527,7 +527,8 @@ work the YAML cannot do. Do it **in this order**:
 
 > **Prod reliability posture (T-0359):** `weu.prod.bicepparam` now also flips deployment slots,
 > autoscale, Postgres HA/geo-backup, ACR image retention and the private database and Key Vault
-> (Q-INFRA-03, E-3) — every knob, its chosen default, the slot-swap workflow follow-up, and how CI and
+> (Q-INFRA-03, E-3), storage on managed identity and the least-privilege database login (E-4) — every
+> knob, its chosen default, the slot-swap workflow follow-up, and how CI and
 > an admin's `psql` reach the private database through a temporary public window are documented in
 > [`deploy/AZURE-PROD-POSTURE.md`](AZURE-PROD-POSTURE.md). Note especially:
 > **geo-redundant backup only exists if it is on at the FIRST provision** (immutable after create).
@@ -594,7 +595,8 @@ any of this — it lives in each provider's console — so it is recorded here a
 | `AZURE_CLIENT_ID` | the OIDC app id (after P2 federation) | `azure/login` |
 | `AZURE_TENANT_ID` | tenant id | `azure/login` |
 | `AZURE_SUBSCRIPTION_ID` | subscription id | `azure/login` |
-| `POSTGRES_ADMIN_PASSWORD` | a **new** strong alphanumeric password (§1 rules; never dev's) | the Bicep `@secure()` param |
+| `POSTGRES_ADMIN_PASSWORD` | a **new** strong alphanumeric password (§1 rules; never dev's) | the Bicep `@secure()` param, and the migration's administrator connection |
+| `POSTGRES_APP_PASSWORD` | another **new** password, at least 24 letters and digits — **prod only**, the provision job refuses a prod deploy without it | the least-privilege `cleansia_app` login the hosts connect as: KV push → `ConnectionStrings--cleansia-db`, and the migrate job's grant ([`AZURE-PROD-POSTURE.md`](AZURE-PROD-POSTURE.md) §7) |
 | `ADMIN_IP_ADDRESS` | your laptop's public IP (§1 caveats apply) | the Bicep `adminIpAddress` param — required, but no rule is created while the database is private (admin `psql`: [`AZURE-PROD-POSTURE.md`](AZURE-PROD-POSTURE.md) §6) |
 | `CI_PRINCIPAL_ID` | the OIDC SP object id — optional; empty skips the Bicep grant (the deploy self-grants Secrets Officer) | the Bicep `ciPrincipalId` param |
 | `ACR_NAME` | `acrcleansiaweuprod` (deterministic — same naming rule as §4's note) | the Functions `az acr build` step |
@@ -616,11 +618,13 @@ any of this — it lives in each provider's console — so it is recorded here a
 | `SENTRY_DSN` | the **real** prod DSN — **mandatory**, not a nice-to-have. Prod App Insights samples at 50%, so it records every other exception; Sentry records all of them and is the only source of first-occurrence alerting, issue grouping and regression detection. Covers the five API hosts and the Functions worker; the SSR host remains uncovered | KV push → `Sentry--Dsn` |
 | `MAPBOX_TOKEN` | the prod Mapbox token | KV push → `Mapbox--GeocodingAccessToken` |
 
-> The 2 derivable Key Vault secrets (`Storage--ConnectionString`, `ConnectionStrings--cleansia-db`)
-> are written by the Bicep `derivedSecrets` module on the first provision, exactly as in dev (§6) —
-> nothing to set. The `migrate-database` job reads `ConnectionStrings--cleansia-db` from Key Vault at
-> run time (no `DB_CONNECTION_STRING` secret). JWT issuer/audience are code-side constants — no KV
-> secret (see `deploy/bicep/modules/derivedSecrets.bicep`).
+> Prod has **neither** of dev's 2 derived Key Vault secrets (E-4, [`AZURE-PROD-POSTURE.md`](AZURE-PROD-POSTURE.md)
+> §7): there is no `Storage--ConnectionString` — the hosts reach storage with their managed identity
+> and the account refuses shared keys — and `ConnectionStrings--cleansia-db` is the `cleansia_app`
+> login's, written by the CI push from `POSTGRES_APP_PASSWORD`. The `migrate-database` job connects as
+> the administrator from `POSTGRES_ADMIN_PASSWORD` (no `DB_CONNECTION_STRING` secret) and then grants
+> the application login. JWT issuer/audience are code-side constants — no KV secret (see
+> `deploy/bicep/modules/derivedSecrets.bicep`).
 
 > **MANUAL_STEP P5 — first provision.** Preferred: dispatch **Actions → "Deploy to PRO" → Run
 > workflow → mode = `what-if`**, review the preview, then re-dispatch with **mode = `deploy`** and

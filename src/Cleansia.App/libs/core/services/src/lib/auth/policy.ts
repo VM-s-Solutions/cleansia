@@ -44,6 +44,9 @@ export const Policy = {
   // Cleansia Plus membership (customer)
   CanManageMembership: 'CanManageMembership',
 
+  // Saved card (customer)
+  CanManageSavedCard: 'CanManageSavedCard',
+
   // Recurring bookings (customer)
   CanManageRecurringBookings: 'CanManageRecurringBookings',
 
@@ -314,6 +317,9 @@ export const POLICY_MAP: Record<PolicyName, PhysicalPolicy> = {
 
   // Cleansia Plus membership (customer)
   CanManageMembership: PhysicalPolicy.CustomerOnly,
+
+  // Saved card (customer)
+  CanManageSavedCard: PhysicalPolicy.CustomerOnly,
 
   // Recurring bookings (customer)
   CanManageRecurringBookings: PhysicalPolicy.CustomerOnly,

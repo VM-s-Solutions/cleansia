@@ -165,7 +165,7 @@ export class MembershipFacade extends UnsubscribeControlDirective {
   }
 
   /** A paid period runs to its end, a trial ends unpaid, a failed renewal ends now. */
-  cancel(): void {
+  cancel(onCancelled?: () => void): void {
     const successKey = this.paymentFailed()
       ? 'pages.membership.cancel_success_past_due'
       : this.trialEndsOn()
@@ -180,6 +180,7 @@ export class MembershipFacade extends UnsubscribeControlDirective {
           this.cancelling.set(false);
           this.snackbar.showSuccessTranslated(successKey);
           this.refresh();
+          onCancelled?.();
         },
         error: (err) => {
           this.cancelling.set(false);

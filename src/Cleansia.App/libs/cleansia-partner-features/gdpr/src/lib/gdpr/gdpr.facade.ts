@@ -1,85 +1,81 @@
 import { isPlatformBrowser } from '@angular/common';
-import { Injectable, PLATFORM_ID, inject, signal } from '@angular/core';
+import { Injectable, PLATFORM_ID, computed, inject, signal } from '@angular/core';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
   ConsentType,
-  ConsentsClient,
   GdprClient,
   GdprExportDto,
-  GrantConsentCommand,
   PartnerAuthService,
   UserConsentDto,
-  WithdrawConsentCommand,
 } from '@cleansia/partner-services';
 import { DialogService, SnackbarService } from '@cleansia/services';
+import { currentLanguage, formatDate } from '@cleansia/utils';
+import { TranslateService } from '@ngx-translate/core';
 import { catchError, filter, finalize, of, takeUntil } from 'rxjs';
+
+const LEGAL_CONSENTS = [
+  {
+    type: ConsentType.TermsOfService,
+    labelKey: 'pages.gdpr.consent_types.terms_of_service',
+  },
+  {
+    type: ConsentType.PrivacyPolicy,
+    labelKey: 'pages.gdpr.consent_types.privacy_policy',
+  },
+];
 
 @Injectable()
 export class PartnerGdprFacade extends UnsubscribeControlDirective {
   private readonly gdprClient = inject(GdprClient);
   private readonly dialog = inject(DialogService);
-  private readonly consentsClient = inject(ConsentsClient);
   private readonly authService = inject(PartnerAuthService);
   private readonly snackbar = inject(SnackbarService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  private readonly lang = currentLanguage(inject(TranslateService));
 
   readonly isAuthenticated = signal<boolean>(this.authService.isLoggedIn());
   readonly consents = signal<UserConsentDto[]>([]);
   readonly loadingConsents = signal<boolean>(false);
+  readonly consentsError = signal<boolean>(false);
   readonly exporting = signal<boolean>(false);
   readonly deleting = signal<boolean>(false);
+
+  readonly legalConsents = computed(() => {
+    const lang = this.lang();
+    return LEGAL_CONSENTS.map(({ type, labelKey }) => {
+      const consent = this.consents().find((c) => c.consentType === type);
+      const accepted = consent?.isGranted === true;
+      const version = accepted ? consent.documentVersion ?? '' : '';
+      return {
+        type,
+        labelKey,
+        detailKey: !accepted
+          ? 'pages.gdpr.legal.not_accepted'
+          : version
+            ? 'pages.gdpr.legal.accepted_version'
+            : 'pages.gdpr.legal.accepted',
+        detailParams: {
+          version,
+          date: accepted ? formatDate(consent.grantedAt, lang) : '',
+        },
+      };
+    });
+  });
 
   loadConsents(): void {
     if (!this.isAuthenticated()) return;
 
     this.loadingConsents.set(true);
+    this.consentsError.set(false);
     this.gdprClient
       .consentsGet()
       .pipe(
         takeUntil(this.destroyed$),
-        catchError(() => of(null)),
         finalize(() => this.loadingConsents.set(false))
       )
-      .subscribe((rows) => {
-        if (rows) {
-          this.consents.set(rows);
-        }
-      });
-  }
-
-  isConsentGranted(type: ConsentType): boolean {
-    const consent = this.consents().find((c) => c.consentType === type);
-    return consent?.isGranted ?? false;
-  }
-
-  toggleConsent(consentType: ConsentType, granted: boolean): void {
-    // IP + user-agent are captured server-side from the request, so the
-    // client sends only the consent type.
-    let request$;
-
-    if (granted) {
-      const command = new GrantConsentCommand();
-      command.consentType = consentType;
-      request$ = this.gdprClient.consentsPost(command);
-    } else {
-      const command = new WithdrawConsentCommand();
-      command.consentType = consentType;
-      request$ = this.consentsClient.withdraw(command);
-    }
-
-    request$
-      .pipe(
-        takeUntil(this.destroyed$),
-        catchError((error: unknown) => {
-          this.snackbar.showApiError(error, 'pages.gdpr.consent_error');
-          return of('error' as const);
-        }),
-        finalize(() => this.loadConsents())
-      )
-      .subscribe((result) => {
-        if (result !== 'error') {
-          this.snackbar.showSuccessTranslated('pages.gdpr.consent_updated');
-        }
+      .subscribe({
+        next: (rows) => this.consents.set(rows ?? []),
+        error: () => this.consentsError.set(true),
       });
   }
 

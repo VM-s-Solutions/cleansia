@@ -556,20 +556,19 @@
       "export_success": "Export vašich dat byl stažen.",
       "export_error": "Vaše data se nepodařilo exportovat. Zkuste to později.",
       "consents_title": "Správa souhlasů",
-      "consents_description": "Zkontrolujte a změňte souhlasy, které jste nám udělili.",
-      "consent_updated": "Souhlas byl aktualizován.",
-      "consent_error": "Souhlas se nepodařilo změnit. Přepínač zobrazuje uložený stav.",
+      "consents_description": "Verze obchodních podmínek a zásad ochrany osobních údajů, které jste přijali.",
+      "consents_load_error": "Souhlasy se nepodařilo načíst.",
       "consent_types": {
         "terms_of_service": "Obchodní podmínky",
-        "privacy_policy": "Zásady ochrany osobních údajů",
-        "marketing_emails": "Marketingové e-maily",
-        "data_processing": "Zpracování údajů",
-        "cleaner_framework_contract": "Rámcová smlouva o spolupráci (partneři)",
-        "self_billing_agreement": "Dohoda o samofakturaci",
-        "cleaner_data_processing_agreement": "Smlouva o zpracování osobních údajů (partneři)"
+        "privacy_policy": "Zásady ochrany osobních údajů"
+      },
+      "legal": {
+        "accepted_version": "Verze {{version}}, přijato {{date}}",
+        "accepted": "Přijato {{date}}",
+        "not_accepted": "Zatím nepřijato"
       },
       "delete_title": "Smazat můj účet",
-      "delete_description": "Trvale smaže váš účet a anonymizuje vaše osobní údaje. Tuto akci nelze vrátit.",
+      "delete_description": "Pošlete nám žádost o smazání účtu. Spolupráce se poté formálně ukončí osobně a teprve potom bude váš účet uzavřen a vaše osobní údaje anonymizovány. Faktury a záznamy o odměnách se uchovávají jako účetní doklady.",
       "delete_button": "Smazat můj účet",
       "delete_confirm_title": "Požádat o smazání účtu?",
       "delete_confirm_message": "Zahájíme proces ukončení spolupráce. Spolupráce musí být formálně ukončena osobně a je nutné podepsat zbývající dokumenty, teprve poté bude účet uzavřen. Faktury a záznamy o odměnách se uchovávají jako účetní doklady.",

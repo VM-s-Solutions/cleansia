@@ -1,27 +1,23 @@
 import { TestBed } from '@angular/core/testing';
 import {
   ConsentType,
-  ConsentsClient,
   GdprClient,
   GdprExportDto,
-  GrantConsentCommand,
   PartnerAuthService,
   UserConsentDto,
-  WithdrawConsentCommand,
 } from '@cleansia/partner-services';
 import { DialogService, SnackbarService } from '@cleansia/services';
+import { formatDate } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
-import { of, throwError } from 'rxjs';
+import { Subject, of, throwError } from 'rxjs';
 import { PartnerGdprFacade } from './gdpr.facade';
 
 describe('PartnerGdprFacade', () => {
   let gdprClient: {
     consentsGet: jest.Mock;
-    consentsPost: jest.Mock;
     export: jest.Mock;
     deleteAccount: jest.Mock;
   };
-  let consentsClient: { withdraw: jest.Mock };
   let authService: { isLoggedIn: jest.Mock; logout: jest.Mock };
   let confirmMock: jest.Mock;
   let snackbar: {
@@ -30,18 +26,22 @@ describe('PartnerGdprFacade', () => {
     showApiError: jest.Mock;
   };
 
-  const consentRows = [
+  const grantedAt = new Date('2026-09-01T10:00:00Z');
+
+  const consent = (
+    consentType: ConsentType,
+    overrides: Partial<UserConsentDto> = {}
+  ): UserConsentDto =>
     UserConsentDto.fromJS({
-      id: 'con-1',
-      consentType: ConsentType.MarketingEmails,
+      id: `c-${consentType}`,
+      consentType,
       isGranted: true,
-    }),
-    UserConsentDto.fromJS({
-      id: 'con-2',
-      consentType: ConsentType.DataProcessing,
-      isGranted: false,
-    }),
-  ];
+      grantedAt: grantedAt.toISOString(),
+      createdOn: grantedAt.toISOString(),
+      documentVersion: '2026-09',
+      coversCurrentVersion: true,
+      ...overrides,
+    });
 
   const createFacade = (loggedIn: boolean): PartnerGdprFacade => {
     authService.isLoggedIn.mockReturnValue(loggedIn);
@@ -50,11 +50,17 @@ describe('PartnerGdprFacade', () => {
       providers: [
         PartnerGdprFacade,
         { provide: GdprClient, useValue: gdprClient },
-        { provide: ConsentsClient, useValue: consentsClient },
         { provide: PartnerAuthService, useValue: authService },
         { provide: SnackbarService, useValue: snackbar },
         { provide: DialogService, useValue: { confirmTranslated: confirmMock } },
-        { provide: TranslateService, useValue: { instant: (k: string) => k } },
+        {
+          provide: TranslateService,
+          useValue: {
+            instant: (k: string) => k,
+            currentLang: 'en',
+            onLangChange: new Subject(),
+          },
+        },
       ],
     });
 
@@ -63,12 +69,10 @@ describe('PartnerGdprFacade', () => {
 
   beforeEach(() => {
     gdprClient = {
-      consentsGet: jest.fn(),
-      consentsPost: jest.fn(),
+      consentsGet: jest.fn().mockReturnValue(of([])),
       export: jest.fn(),
       deleteAccount: jest.fn(),
     };
-    consentsClient = { withdraw: jest.fn() };
     authService = { isLoggedIn: jest.fn(), logout: jest.fn() };
     confirmMock = jest.fn().mockReturnValue(of(true));
     snackbar = {
@@ -78,16 +82,19 @@ describe('PartnerGdprFacade', () => {
     };
   });
 
-  describe('consents', () => {
-    it('loads consents and clears the loading flag', () => {
+  describe('loading the consents', () => {
+    it('is loading while the read is in flight', () => {
       const facade = createFacade(true);
-      gdprClient.consentsGet.mockReturnValue(of(consentRows));
+      const consents$ = new Subject<UserConsentDto[]>();
+      gdprClient.consentsGet.mockReturnValue(consents$.asObservable());
 
       facade.loadConsents();
+      expect(facade.loadingConsents()).toBe(true);
 
-      expect(gdprClient.consentsGet).toHaveBeenCalledTimes(1);
-      expect(facade.consents().length).toBe(2);
+      consents$.next([]);
+      consents$.complete();
       expect(facade.loadingConsents()).toBe(false);
+      expect(facade.consentsError()).toBe(false);
     });
 
     it('never calls the consents endpoint while unauthenticated', () => {
@@ -99,79 +106,101 @@ describe('PartnerGdprFacade', () => {
       expect(facade.loadingConsents()).toBe(false);
     });
 
-    it('clears the loading flag on a failed load', () => {
+    it('turns to the error state when the read fails, rather than reading as not accepted', () => {
       const facade = createFacade(true);
-      gdprClient.consentsGet.mockReturnValue(
-        throwError(() => new Error('boom'))
-      );
+      gdprClient.consentsGet.mockReturnValue(throwError(() => new Error('boom')));
 
       facade.loadConsents();
 
+      expect(facade.consentsError()).toBe(true);
       expect(facade.loadingConsents()).toBe(false);
     });
 
-    it('reports granted state per consent type', () => {
+    it('clears a previous error when retried', () => {
       const facade = createFacade(true);
-      gdprClient.consentsGet.mockReturnValue(of(consentRows));
+      gdprClient.consentsGet.mockReturnValueOnce(throwError(() => new Error('boom')));
+      facade.loadConsents();
 
       facade.loadConsents();
 
-      expect(facade.isConsentGranted(ConsentType.MarketingEmails)).toBe(true);
-      expect(facade.isConsentGranted(ConsentType.DataProcessing)).toBe(false);
-      expect(facade.isConsentGranted(ConsentType.PrivacyPolicy)).toBe(false);
+      expect(facade.consentsError()).toBe(false);
     });
 
-    it('grants via the gdpr endpoint, shows success and re-fetches', () => {
+    it('holds an empty consent list when the read emits null', () => {
       const facade = createFacade(true);
-      gdprClient.consentsPost.mockReturnValue(of(undefined));
-      gdprClient.consentsGet.mockReturnValue(of(consentRows));
+      gdprClient.consentsGet.mockReturnValue(of(null));
 
-      facade.toggleConsent(ConsentType.MarketingEmails, true);
+      facade.loadConsents();
 
-      const command = gdprClient.consentsPost.mock
-        .calls[0][0] as GrantConsentCommand;
-      expect(command).toBeInstanceOf(GrantConsentCommand);
-      // IP and user agent are captured server-side — the body carries the type alone.
-      expect(command.toJSON()).toEqual({
-        consentType: ConsentType.MarketingEmails,
-      });
-      expect(consentsClient.withdraw).not.toHaveBeenCalled();
-      expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
-        'pages.gdpr.consent_updated'
+      expect(facade.consents()).toEqual([]);
+      expect(facade.legalConsents().map((row) => row.detailKey)).toEqual([
+        'pages.gdpr.legal.not_accepted',
+        'pages.gdpr.legal.not_accepted',
+      ]);
+    });
+  });
+
+  describe('terms and privacy, read-only', () => {
+    it('shows the terms and the privacy policy, and nothing else', () => {
+      const facade = createFacade(true);
+      gdprClient.consentsGet.mockReturnValue(
+        of([
+          consent(ConsentType.TermsOfService),
+          consent(ConsentType.PrivacyPolicy),
+          consent(ConsentType.MarketingEmails),
+          consent(ConsentType.DataProcessing),
+          consent(ConsentType.CleanerFrameworkContract),
+        ])
       );
-      expect(gdprClient.consentsGet).toHaveBeenCalledTimes(1);
+
+      facade.loadConsents();
+
+      expect(facade.legalConsents().map((row) => row.type)).toEqual([
+        ConsentType.TermsOfService,
+        ConsentType.PrivacyPolicy,
+      ]);
     });
 
-    it('withdraws via the consents endpoint and re-fetches', () => {
+    it('states the accepted version and the date it was accepted', () => {
       const facade = createFacade(true);
-      consentsClient.withdraw.mockReturnValue(of(undefined));
-      gdprClient.consentsGet.mockReturnValue(of(consentRows));
+      gdprClient.consentsGet.mockReturnValue(of([consent(ConsentType.TermsOfService)]));
 
-      facade.toggleConsent(ConsentType.MarketingEmails, false);
+      facade.loadConsents();
 
-      const command = consentsClient.withdraw.mock
-        .calls[0][0] as WithdrawConsentCommand;
-      expect(command).toBeInstanceOf(WithdrawConsentCommand);
-      expect(command.toJSON()).toEqual({
-        consentType: ConsentType.MarketingEmails,
+      const [terms] = facade.legalConsents();
+      expect(terms.labelKey).toBe('pages.gdpr.consent_types.terms_of_service');
+      expect(terms.detailKey).toBe('pages.gdpr.legal.accepted_version');
+      expect(terms.detailParams).toEqual({
+        version: '2026-09',
+        date: formatDate(grantedAt, 'en'),
       });
-      expect(gdprClient.consentsPost).not.toHaveBeenCalled();
-      expect(gdprClient.consentsGet).toHaveBeenCalledTimes(1);
     });
 
-    it('surfaces the API error and re-fetches so the toggle reflects server state', () => {
+    it('states the date alone for an acceptance recorded without a version', () => {
       const facade = createFacade(true);
-      const error = new Error('blocked');
-      gdprClient.consentsPost.mockReturnValue(throwError(() => error));
-      gdprClient.consentsGet.mockReturnValue(of(consentRows));
-
-      facade.toggleConsent(ConsentType.MarketingEmails, true);
-
-      expect(snackbar.showApiError).toHaveBeenCalledWith(
-        error,
-        'pages.gdpr.consent_error'
+      gdprClient.consentsGet.mockReturnValue(
+        of([consent(ConsentType.PrivacyPolicy, { documentVersion: undefined })])
       );
-      expect(gdprClient.consentsGet).toHaveBeenCalledTimes(1);
+
+      facade.loadConsents();
+
+      const privacy = facade.legalConsents()[1];
+      expect(privacy.labelKey).toBe('pages.gdpr.consent_types.privacy_policy');
+      expect(privacy.detailKey).toBe('pages.gdpr.legal.accepted');
+      expect(privacy.detailParams.date).toBe(formatDate(grantedAt, 'en'));
+    });
+
+    it('treats a withdrawn row as not accepted', () => {
+      const facade = createFacade(true);
+      gdprClient.consentsGet.mockReturnValue(
+        of([consent(ConsentType.TermsOfService, { isGranted: false })])
+      );
+
+      facade.loadConsents();
+
+      const [terms] = facade.legalConsents();
+      expect(terms.detailKey).toBe('pages.gdpr.legal.not_accepted');
+      expect(terms.detailParams).toEqual({ version: '', date: '' });
     });
   });
 

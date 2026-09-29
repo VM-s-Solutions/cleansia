@@ -556,20 +556,19 @@
       "export_success": "Your data export has been downloaded.",
       "export_error": "We couldn't export your data. Try again later.",
       "consents_title": "Consent management",
-      "consents_description": "Review and change the consents you've given us.",
-      "consent_updated": "Consent updated.",
-      "consent_error": "We couldn't update your consent. The switch shows the saved state.",
+      "consents_description": "The versions of the terms of service and the privacy policy you accepted.",
+      "consents_load_error": "Your consents could not be loaded.",
       "consent_types": {
         "terms_of_service": "Terms of service",
-        "privacy_policy": "Privacy policy",
-        "marketing_emails": "Marketing emails",
-        "data_processing": "Data processing",
-        "cleaner_framework_contract": "Framework cooperation agreement (partners)",
-        "self_billing_agreement": "Self-billing agreement",
-        "cleaner_data_processing_agreement": "Data processing agreement (partners)"
+        "privacy_policy": "Privacy policy"
+      },
+      "legal": {
+        "accepted_version": "Version {{version}}, accepted on {{date}}",
+        "accepted": "Accepted on {{date}}",
+        "not_accepted": "Not accepted yet"
       },
       "delete_title": "Delete my account",
-      "delete_description": "Permanently delete your account and anonymize your personal data. This cannot be undone.",
+      "delete_description": "Send us a request to delete your account. Your cooperation is then formally ended in person, and only after that is your account closed and your personal data anonymised. Invoices and pay records are kept as financial records.",
       "delete_button": "Delete my account",
       "delete_confirm_title": "Request account deletion?",
       "delete_confirm_message": "We will start the offboarding process. Your cooperation has to be formally ended in person and any outstanding paperwork signed before your account is closed. Invoices and pay records are kept as financial records.",

@@ -1830,7 +1830,7 @@
             "years": "Years after a data-protection request is completed before the processing administrator's identity is cleared from it"
           },
           "order_pii": {
-            "years": "Years after the cleaning before a completed order's customer data is anonymised"
+            "years": "Years after the cleaning date before the customer data of a completed or cancelled order is anonymised"
           },
           "withdrawn_consents": {
             "years": "Years a withdrawn consent record is kept"
@@ -1842,7 +1842,7 @@
             "days": "Days a notification stays in the in-app feed"
           },
           "order_photos": {
-            "days": "Days after completion that order photos are kept; unresolved disputes hold the photos until they close"
+            "days": "Days after an order is completed or cancelled that its photos are kept; unresolved disputes hold the photos until they close"
           },
           "admin_audit": {
             "years": "Years an administrator audit row is kept"
@@ -2497,7 +2497,7 @@
         "customer_email": "Email",
         "reason": "Reason",
         "status": "Status",
-        "refund_amount": "Refund",
+        "refund_amount": "Refund requested",
         "created_on": "Created"
       },
       "actions": {
@@ -3190,7 +3190,7 @@
         "positive": "Total price must be positive"
       },
       "reassign": {
-        "employee_not_approved": "This cleaner is not approved yet, so they cannot be placed on a job.",
+        "employee_not_approved": "This cleaner is not approved or is no longer active, so they cannot be placed on a job.",
         "employee_other_market": "This cleaner does not work in this order's country.",
         "employee_busy": "This cleaner already has another job at this time.",
         "removal_reason_required": "Write why this cleaner is being taken off the order. They are shown the reason."

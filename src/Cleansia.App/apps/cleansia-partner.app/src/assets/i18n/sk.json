@@ -556,20 +556,19 @@
       "export_success": "Export vašich údajov bol stiahnutý.",
       "export_error": "Vaše údaje sa nepodarilo exportovať. Skúste to neskôr.",
       "consents_title": "Správa súhlasov",
-      "consents_description": "Skontrolujte a zmeňte súhlasy, ktoré ste nám udelili.",
-      "consent_updated": "Súhlas bol aktualizovaný.",
-      "consent_error": "Súhlas sa nepodarilo zmeniť. Prepínač zobrazuje uložený stav.",
+      "consents_description": "Verzie obchodných podmienok a zásad ochrany osobných údajov, ktoré ste prijali.",
+      "consents_load_error": "Súhlasy sa nepodarilo načítať.",
       "consent_types": {
         "terms_of_service": "Obchodné podmienky",
-        "privacy_policy": "Zásady ochrany osobných údajov",
-        "marketing_emails": "Marketingové e-maily",
-        "data_processing": "Spracovanie údajov",
-        "cleaner_framework_contract": "Rámcová zmluva o spolupráci (partneri)",
-        "self_billing_agreement": "Dohoda o samofakturácii",
-        "cleaner_data_processing_agreement": "Zmluva o spracúvaní osobných údajov (partneri)"
+        "privacy_policy": "Zásady ochrany osobných údajov"
+      },
+      "legal": {
+        "accepted_version": "Verzia {{version}}, prijaté {{date}}",
+        "accepted": "Prijaté {{date}}",
+        "not_accepted": "Zatiaľ neprijaté"
       },
       "delete_title": "Vymazať môj účet",
-      "delete_description": "Natrvalo vymaže váš účet a anonymizuje vaše osobné údaje. Túto akciu nemožno vrátiť.",
+      "delete_description": "Pošlite nám žiadosť o zmazanie účtu. Spolupráca sa potom formálne ukončí osobne a až potom bude váš účet uzavretý a vaše osobné údaje anonymizované. Faktúry a záznamy o odmenách sa uchovávajú ako účtovné doklady.",
       "delete_button": "Vymazať môj účet",
       "delete_confirm_title": "Požiadať o zmazanie účtu?",
       "delete_confirm_message": "Začneme proces ukončenia spolupráce. Spolupráca musí byť formálne ukončená osobne a je potrebné podpísať zostávajúce dokumenty, až potom bude účet uzavretý. Faktúry a záznamy o odmenách sa uchovávajú ako účtovné doklady.",

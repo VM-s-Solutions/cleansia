@@ -1933,7 +1933,7 @@
             "years": "Počet let po dokončení žádosti o ochranu údajů, po kterých se z ní odstraní identita administrátora, který ji zpracoval"
           },
           "order_pii": {
-            "years": "Počet let po úklidu, po kterých se anonymizují zákaznické údaje dokončené objednávky"
+            "years": "Počet let od termínu úklidu, po kterých se anonymizují zákaznické údaje dokončené nebo zrušené objednávky"
           },
           "withdrawn_consents": {
             "years": "Počet let, po které se uchovává záznam o odvolaném souhlasu"
@@ -1945,7 +1945,7 @@
             "days": "Počet dní, po které notifikace zůstává v přehledu v aplikaci"
           },
           "order_photos": {
-            "days": "Počet dní od dokončení úklidu, po které se uchovávají fotografie zakázky; při nevyřešené reklamaci zůstávají až do jejího uzavření"
+            "days": "Počet dní od dokončení nebo zrušení zakázky, po které se uchovávají její fotografie; při nevyřešené reklamaci zůstávají až do jejího uzavření"
           },
           "admin_audit": {
             "years": "Počet let uchování záznamu o činnosti administrátora"
@@ -2497,7 +2497,7 @@
         "customer_email": "E-mail",
         "reason": "Důvod",
         "status": "Stav",
-        "refund_amount": "Vratka",
+        "refund_amount": "Požadovaná vratka",
         "created_on": "Vytvořeno"
       },
       "actions": {
@@ -3190,7 +3190,7 @@
         "positive": "Celková cena musí být kladná"
       },
       "reassign": {
-        "employee_not_approved": "Tento uklízeč zatím není schválen, proto ho nelze přiřadit k zakázce.",
+        "employee_not_approved": "Tento uklízeč není schválen nebo už není aktivní, proto ho nelze přiřadit k zakázce.",
         "employee_other_market": "Tento uklízeč nepracuje v zemi této objednávky.",
         "employee_busy": "Tento uklízeč má v tuto dobu jinou zakázku.",
         "removal_reason_required": "Napište, proč uklízeče z objednávky odebíráte. Důvod se mu zobrazí."

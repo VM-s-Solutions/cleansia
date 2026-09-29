@@ -160,6 +160,38 @@ public interface IStripeClient
         CancellationToken cancellationToken);
 
     /// <summary>
+    /// Charge a customer's saved card, with the customer absent, for what they owe on a receivable: a
+    /// PaymentIntent created with <c>off_session</c> and <c>confirm</c>, carrying <c>ReceivableId</c>
+    /// metadata so the <c>payment_intent.*</c> webhooks find it. Returns the intent's id. A decline, or a
+    /// bank that asks for the customer to authenticate, throws a <c>StripeException</c> of type
+    /// <c>card_error</c>, and Stripe then sends <c>payment_intent.payment_failed</c>.
+    /// <paramref name="attempt"/> is the receivable's attempt number, so a retry of one attempt replays it.
+    /// </summary>
+    Task<string> ChargeReceivableOffSessionAsync(
+        string receivableId,
+        decimal amount,
+        string currency,
+        string stripeCustomerId,
+        string paymentMethodId,
+        int attempt,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// The pay link for a receivable: a payment-mode Checkout Session for its amount, card only, returning
+    /// to the order's page. The <c>ReceivableId</c> metadata is on the session and deliberately not on its
+    /// PaymentIntent, so only <c>checkout.session.completed</c> settles it and a card the customer mistypes
+    /// on the page is not reported as a failed off-session charge. One session per receivable inside
+    /// Stripe's idempotency window, so a link e-mailed and a link opened in the app are the same one.
+    /// </summary>
+    Task<CheckoutSessionResult> CreateReceivableCheckoutSessionAsync(
+        string receivableId,
+        string orderId,
+        string displayOrderNumber,
+        decimal amount,
+        string currency,
+        CancellationToken cancellationToken);
+
+    /// <summary>
     /// Create a Stripe subscription against a price. Caller is expected to
     /// have already attached a payment method via SetupIntent — first invoice
     /// is charged immediately (or after the trial if <paramref name="trialPeriodDays"/>

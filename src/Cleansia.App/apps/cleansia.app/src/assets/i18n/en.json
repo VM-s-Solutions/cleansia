@@ -2061,6 +2061,10 @@
       "consent_not_accepted": "Please agree that fees and unpaid cash may be charged to your card before saving it.",
       "not_found": "We couldn't find that saved card."
     },
+    "receivable": {
+      "not_found": "We couldn't find that amount due.",
+      "not_open": "This amount has already been paid or waived."
+    },
     "recurring_booking": {
       "not_found": "That recurring booking no longer exists.",
       "not_owned_by_user": "You can't manage this recurring booking.",

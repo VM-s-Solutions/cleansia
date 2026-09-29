@@ -241,7 +241,14 @@ public class Order : TenantAuditable
     public User? User { get; private set; }
 
     public string? ReceiptId { get; private set; }
-    public OrderReceipt? Receipt { get; private set; }
+
+    private ICollection<OrderReceipt> _receipts = [];
+
+    /// <summary>The sale receipt and a fee receipt for each receivable paid on the order.</summary>
+    public IReadOnlyCollection<OrderReceipt> Receipts => _receipts.ToList().AsReadOnly();
+
+    /// <summary>The receipt of the booking's own sale; a fee receipt is never it.</summary>
+    public OrderReceipt? Receipt => _receipts.FirstOrDefault(r => !r.IsFee);
 
     /// <summary>
     /// When the customer cancelled this order. Null while active.

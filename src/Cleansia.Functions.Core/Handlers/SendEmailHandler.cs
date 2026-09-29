@@ -14,12 +14,12 @@ using Microsoft.Extensions.Logging;
 namespace Cleansia.Functions.Core.Handlers;
 
 /// <summary>
-/// Realizes every e-mail the send-email queue carries, off the request path. The queue holds four
+/// Realizes every e-mail the send-email queue carries, off the request path. The queue holds five
 /// payload shapes told apart by their <c>messageType</c> discriminator: the bare
 /// <see cref="SendEmailMessage"/> (no discriminator; confirmation, reset, promo and the two wind-down
 /// notices, resolved by <see cref="EmailType"/>), the guest order cancellation, the cash booking
-/// confirmation, and the admin notification. Each is sent via the existing <see cref="IEmailService"/> in the language the
-/// producer chose.
+/// confirmation, the admin notification and the receivable pay link. Each is sent via the existing
+/// <see cref="IEmailService"/> in the language the producer chose.
 ///
 /// Idempotent via <see cref="IIdempotencyGuard"/> in ACT-THEN-CLAIM mode (at-least-once): non-claiming
 /// check on the deterministic key → send → claim. A FAILED send leaves the key unclaimed so the queue
@@ -41,7 +41,8 @@ public class SendEmailHandler(
     IOrderRepository orderRepository,
     GuestOrderAccessTokenIssuer guestAccessTokenIssuer,
     IUnitOfWork unitOfWork,
-    ICancellationPolicyResolver cancellationPolicyResolver)
+    ICancellationPolicyResolver cancellationPolicyResolver,
+    IReceivableRepository receivableRepository)
 {
     private static readonly JsonSerializerOptions JsonOptions =
         new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
@@ -51,6 +52,7 @@ public class SendEmailHandler(
         SendGuestOrderCancellationEmailMessage? guestMessage;
         SendOrderBookedEmailMessage? bookedMessage;
         SendAdminNotificationEmailMessage? adminMessage;
+        SendReceivablePayLinkEmailMessage? payLinkMessage;
         string? discriminatedTenantId;
         try
         {
@@ -66,6 +68,8 @@ public class SendEmailHandler(
                 ? payload.Deserialize<SendOrderBookedEmailMessage>(JsonOptions) : null;
             adminMessage = messageType == SendAdminNotificationEmailMessage.Discriminator
                 ? payload.Deserialize<SendAdminNotificationEmailMessage>(JsonOptions) : null;
+            payLinkMessage = messageType == SendReceivablePayLinkEmailMessage.Discriminator
+                ? payload.Deserialize<SendReceivablePayLinkEmailMessage>(JsonOptions) : null;
             discriminatedTenantId = root.TryGetProperty("tenantId", out var tenant) && tenant.ValueKind == JsonValueKind.String ? tenant.GetString() : null;
         }
         catch (JsonException ex)
@@ -86,6 +90,11 @@ public class SendEmailHandler(
         if (adminMessage is not null)
         {
             await SendAdminNotificationAsync(adminMessage, discriminatedTenantId, ct);
+            return;
+        }
+        if (payLinkMessage is not null)
+        {
+            await SendReceivablePayLinkAsync(payLinkMessage, discriminatedTenantId, ct);
             return;
         }
 
@@ -269,6 +278,52 @@ public class SendEmailHandler(
         catch (Exception ex)
         {
             logger.LogWarning(ex, "Booking e-mail sent for order {OrderId}, but its delivery claim failed", order.Id);
+        }
+    }
+
+    // Act-then-claim like the shapes beside it. A receivable settled or written off before the send is not
+    // chased: the link would take money no longer owed.
+    private async Task SendReceivablePayLinkAsync(
+        SendReceivablePayLinkEmailMessage message, string? envelopeTenantId, CancellationToken ct)
+    {
+        var tenantId = envelopeTenantId ?? message.TenantId;
+        if (string.IsNullOrWhiteSpace(message.ReceivableId) || string.IsNullOrWhiteSpace(message.PayUrl)
+            || string.IsNullOrWhiteSpace(tenantId))
+        {
+            logger.LogWarning("Discarding pay-link e-mail with no receivable, link or operator");
+            return;
+        }
+        var key = MessageKeys.ReceivablePayLinkEmail(message.ReceivableId, message.Attempt);
+        if (await idempotencyGuard.HasProcessedAsync(key, ct)) return;
+
+        tenantProvider.SetTenantOverride(tenantId);
+        var receivable = await receivableRepository.GetByIdAsync(message.ReceivableId, ct);
+        if (receivable is not { IsOpen: true })
+        {
+            logger.LogInformation("Pay-link e-mail for receivable {ReceivableId} not sent: it is no longer open", message.ReceivableId);
+            return;
+        }
+
+        var order = await orderRepository.GetQueryable()
+            .Include(o => o.Currency).Include(o => o.CustomerAddress).Include(o => o.User)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(o => o.Id == receivable.OrderId, ct);
+        if (order is null || string.IsNullOrWhiteSpace(order.CustomerEmail)
+            || order.CustomerEmail == AnonymizationMarker.Value)
+        {
+            logger.LogWarning("Discarding pay-link e-mail: order {OrderId} has no eligible destination", receivable.OrderId);
+            return;
+        }
+
+        var languageCode = EmailLocale.Resolve(order.LanguageCode ?? order.User?.PreferredLanguageCode ?? Constants.Language.English);
+        await emailService.SendReceivablePayLinkEmailAsync(order.CustomerEmail, order, receivable, message.PayUrl, languageCode, ct);
+        try
+        {
+            await idempotencyGuard.MarkProcessedAsync(key, ct);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Pay-link e-mail sent for receivable {ReceivableId}, but its delivery claim failed", receivable.Id);
         }
     }
 

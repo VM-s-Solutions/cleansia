@@ -627,6 +627,9 @@ const CUSTOMER_SURFACE_ERROR_KEYS: readonly string[] = [
   // Saved card — the guarantee for cash bookings
   'saved_card.consent_not_accepted',
   'saved_card.not_found',
+  // What the customer owes on an order, read and paid through its pay link
+  'receivable.not_found',
+  'receivable.not_open',
   // Recurring booking — create / manage
   'recurring_booking.not_found',
   'recurring_booking.not_owned_by_user',

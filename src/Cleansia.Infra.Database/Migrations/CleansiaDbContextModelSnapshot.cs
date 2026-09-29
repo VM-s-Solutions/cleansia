@@ -5248,8 +5248,15 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
+                    b.Property<DateTimeOffset?>("PaidOn")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<int>("Status")
                         .HasColumnType("integer");
+
+                    b.Property<string>("StripePaymentIntentId")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
 
                     b.Property<string>("TenantId")
                         .IsRequired()
@@ -5554,6 +5561,10 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<string>("ReceivableId")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
                     b.Property<string>("TenantId")
                         .IsRequired()
                         .HasMaxLength(26)
@@ -5575,7 +5586,14 @@ namespace Cleansia.Infra.Database.Migrations
                     b.HasIndex("LanguageId");
 
                     b.HasIndex("OrderId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("IX_OrderReceipts_OrderId")
+                        .HasFilter("\"ReceivableId\" IS NULL");
+
+                    b.HasIndex("ReceivableId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_OrderReceipts_ReceivableId")
+                        .HasFilter("\"ReceivableId\" IS NOT NULL");
 
                     b.HasIndex("TenantId");
 
@@ -8108,10 +8126,15 @@ namespace Cleansia.Infra.Database.Migrations
                         .IsRequired();
 
                     b.HasOne("Cleansia.Core.Domain.Orders.Order", "Order")
-                        .WithOne("Receipt")
-                        .HasForeignKey("Cleansia.Core.Domain.Receipts.OrderReceipt", "OrderId")
+                        .WithMany("Receipts")
+                        .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("Cleansia.Core.Domain.Payments.Receivable", "Receivable")
+                        .WithMany()
+                        .HasForeignKey("ReceivableId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("Cleansia.Core.Domain.Tenancy.Tenant", null)
                         .WithMany()
@@ -8122,6 +8145,8 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Navigation("Language");
 
                     b.Navigation("Order");
+
+                    b.Navigation("Receivable");
                 });
 
             modelBuilder.Entity("Cleansia.Core.Domain.ServiceAreas.ServiceCity", b =>
@@ -8451,7 +8476,7 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.Navigation("Photos");
 
-                    b.Navigation("Receipt");
+                    b.Navigation("Receipts");
 
                     b.Navigation("Reviews");
 

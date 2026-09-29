@@ -64,6 +64,7 @@ public class LateSettlementAfterCancellationTests
         Mock.Of<IStripeClientFactory>(),
         Mock.Of<ITenantRepository>(),
         Mock.Of<ISavedCardRepository>(),
+        Mock.Of<IReceivableRepository>(),
         NullLogger<HandlePaymentNotification.Handler>.Instance);
 
     private Order ArrangeCancelledOrder(string? recurringTemplateId, string cancellationReason)

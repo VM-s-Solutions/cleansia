@@ -52,7 +52,7 @@ public class SendEmailHandlerTests
         _tenants.Object,
         _companyInfos.Object,
         NullLogger<SendEmailHandler>.Instance, Mock.Of<IOrderRepository>(),
-        TestGuestOrderAccessTokenIssuer.WithNoLiveTokens(), Mock.Of<IUnitOfWork>(), Mock.Of<ICancellationPolicyResolver>());
+        TestGuestOrderAccessTokenIssuer.WithNoLiveTokens(), Mock.Of<IUnitOfWork>(), Mock.Of<ICancellationPolicyResolver>(), Mock.Of<IReceivableRepository>());
 
     private static readonly JsonSerializerOptions JsonOptions =
         new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
@@ -324,7 +324,7 @@ public class SendEmailHandlerTests
         var handler = new SendEmailHandler(
             _emailService.Object, _guard, _tenantProvider.Object, _promoCodes.Object,
             new Mock<ITenantRepository>().Object, new Mock<ICompanyInfoRepository>().Object, logger, Mock.Of<IOrderRepository>(),
-            TestGuestOrderAccessTokenIssuer.WithNoLiveTokens(), Mock.Of<IUnitOfWork>(), Mock.Of<ICancellationPolicyResolver>());
+            TestGuestOrderAccessTokenIssuer.WithNoLiveTokens(), Mock.Of<IUnitOfWork>(), Mock.Of<ICancellationPolicyResolver>(), Mock.Of<IReceivableRepository>());
 
         var ex = await Record.ExceptionAsync(() => handler.HandleAsync(SerializeEnvelope(Confirmation()), CancellationToken.None));
 

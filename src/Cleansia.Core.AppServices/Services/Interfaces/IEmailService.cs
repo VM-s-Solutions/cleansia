@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Emails;
 using Cleansia.Core.Domain.Orders;
+using Cleansia.Core.Domain.Payments;
 
 namespace Cleansia.Core.AppServices.Services.Interfaces;
 
@@ -31,6 +32,12 @@ public interface IEmailService
     /// in cash, the slot in market time, the address and the free-cancellation window.
     /// </summary>
     Task<string> SendOrderBookedEmailAsync(string email, Order order, int freeCancellationHours, string languageCode = Constants.Language.English, CancellationToken ct = default, string? guestAccessToken = null);
+
+    /// <summary>
+    /// The pay link a customer is e-mailed when their saved card could not be charged for what they owe on
+    /// <paramref name="order"/>: what the amount is for, the amount, the order, and <paramref name="payUrl"/>.
+    /// </summary>
+    Task<string> SendReceivablePayLinkEmailAsync(string email, Order order, Receivable receivable, string payUrl, string languageCode = Constants.Language.English, CancellationToken ct = default);
 
     /// <summary>
     /// The wind-down notice to a customer of a closing company (ADR-0064 D2 step 1): the company

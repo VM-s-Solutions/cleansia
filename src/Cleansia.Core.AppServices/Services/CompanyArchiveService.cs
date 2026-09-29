@@ -96,7 +96,7 @@ public sealed class CompanyArchiveService(
         files.Add(await WriteAsync(archives, $"{folder}/books/orders.jsonl",
             orderRepository.GetQueryable().AsNoTracking()
                 .Include(o => o.CustomerAddress)
-                .Include(o => o.Receipt)
+                .Include(o => o.Receipts)
                 .Include(o => o.SelectedExtras),
             ToRow, cancellationToken));
         files.Add(await WriteAsync(archives, $"{folder}/books/order-status-history.jsonl",

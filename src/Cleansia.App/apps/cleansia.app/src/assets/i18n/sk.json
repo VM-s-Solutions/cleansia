@@ -2061,6 +2061,10 @@
       "consent_not_accepted": "Pred uložením karty prosím potvrďte súhlas, že na ňu môžu byť účtované poplatky a nezaplatená hotovosť.",
       "not_found": "Túto uloženú kartu sme nenašli."
     },
+    "receivable": {
+      "not_found": "Túto dlžnú sumu sme nenašli.",
+      "not_open": "Táto suma už bola uhradená alebo odpustená."
+    },
     "recurring_booking": {
       "not_found": "Táto opakovaná objednávka už neexistuje.",
       "not_owned_by_user": "Túto opakovanú objednávku nemôžete spravovať.",

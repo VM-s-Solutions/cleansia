@@ -238,7 +238,7 @@ public class CompleteOrder
                 .Include(o => o.SelectedPackages).ThenInclude(op => op.Package)
                 .Include(o => o.CustomerAddress).ThenInclude(a => a!.Country)
                 .Include(o => o.Currency)
-                .Include(o => o.Receipt)
+                .Include(o => o.Receipts)
                 .Include(o => o.User).ThenInclude(u => u!.PreferredLanguage)
                 .Include(o => o.AssignedEmployees)
                 .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);

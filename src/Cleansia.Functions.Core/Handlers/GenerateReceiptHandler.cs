@@ -26,6 +26,7 @@ public class GenerateReceiptHandler(
     IUnitOfWork unitOfWork,
     ITenantProvider tenantProvider,
     ArchivedCompanyDeadLetter archivedCompanyDeadLetter,
+    IReceivableRepository receivableRepository,
     ILogger<GenerateReceiptHandler> logger)
 {
     private static readonly JsonSerializerOptions JsonOptions =
@@ -80,6 +81,14 @@ public class GenerateReceiptHandler(
             if (!string.IsNullOrEmpty(order.TenantId))
             {
                 tenantProvider.SetTenantOverride(order.TenantId);
+            }
+
+            // Asked for before the sale's own gate: a fee is paid on an order whose sale may never have been,
+            // like a cash booking cancelled late.
+            if (!string.IsNullOrEmpty(message.ReceivableId))
+            {
+                await IssueFeeReceiptAsync(order, message.ReceivableId, message.LanguageCode, ct);
+                return;
             }
 
             // A receipt says money was received, for every tender: a cash sale earns one once the cleaner
@@ -204,6 +213,55 @@ public class GenerateReceiptHandler(
                 message?.OrderId ?? "unknown");
             throw; // Re-throw so Azure Functions retries via queue (D3.3: target-not-found stays transient)
         }
+    }
+
+    /// <summary>
+    /// The fee receipt of a paid receivable: the same claim-first reserve, commit and realize as the sale's,
+    /// on its own number, deduped by the fee receipt already on the order and, for two concurrent first
+    /// deliveries, by <c>IX_OrderReceipts_ReceivableId</c>. It is not e-mailed: the receipt e-mail states the
+    /// order's sale.
+    /// </summary>
+    private async Task IssueFeeReceiptAsync(
+        Cleansia.Core.Domain.Orders.Order order, string receivableId, string requestedLanguageCode, CancellationToken ct)
+    {
+        var receivable = await receivableRepository.GetByIdAsync(receivableId, ct);
+        if (receivable is null || receivable.OrderId != order.Id || !receivable.IsPaid)
+        {
+            logger.LogWarning(
+                "Discarding fee receipt message for receivable {ReceivableId} on order {OrderId}: not a paid receivable of the order",
+                receivableId, order.Id);
+            return;
+        }
+
+        if (order.Receipts.Any(r => r.ReceivableId == receivable.Id))
+        {
+            logger.LogInformation("Fee receipt already exists for receivable {ReceivableId}, skipping", receivable.Id);
+            return;
+        }
+
+        OrderReceipt receipt;
+        await using (var claimTransaction = await unitOfWork.BeginTransactionAsync(ct))
+        {
+            receipt = await receiptService.ReserveFeeReceiptAsync(order, receivable, DocumentLanguage(order, requestedLanguageCode), ct);
+
+            try
+            {
+                await unitOfWork.CommitAsync(ct);
+                await claimTransaction.CommitAsync(ct);
+            }
+            catch (DbUpdateException ex) when (IsUniqueViolation(ex))
+            {
+                logger.LogInformation(ex,
+                    "Concurrent fee receipt claim collapsed for receivable {ReceivableId} (unique-violation 23505) — already claimed, ack",
+                    receivable.Id);
+                return;
+            }
+        }
+
+        await receiptService.RealizeFiscalAndPdfAsync(order, receipt, ct);
+        await unitOfWork.CommitAsync(ct);
+
+        logger.LogInformation("Fee receipt {ReceiptNumber} issued for receivable {ReceivableId}", receipt.ReceiptNumber, receivable.Id);
     }
 
     /// <summary>

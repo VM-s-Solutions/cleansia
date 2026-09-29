@@ -210,7 +210,7 @@ public class S6LoggingHygieneCharacterizationTests
 
         var handler = new GenerateReceiptHandler(
             orders.Object, Mock.Of<IReceiptService>(), Mock.Of<IEmailService>(), TestGuestOrderAccessTokenIssuer.WithNoLiveTokens(),
-            Mock.Of<ICountryConfigurationRepository>(), uow.Object, Mock.Of<ITenantProvider>(), DeadLetterOfFrozenCompany(), logger);
+            Mock.Of<ICountryConfigurationRepository>(), uow.Object, Mock.Of<ITenantProvider>(), DeadLetterOfFrozenCompany(), Mock.Of<IReceivableRepository>(), logger);
 
         var body = JsonSerializer.Serialize(
             new QueueEnvelope<GenerateReceiptMessage>(
@@ -235,7 +235,7 @@ public class S6LoggingHygieneCharacterizationTests
 
         var handler = new GenerateReceiptHandler(
             Mock.Of<IOrderRepository>(), Mock.Of<IReceiptService>(), Mock.Of<IEmailService>(), TestGuestOrderAccessTokenIssuer.WithNoLiveTokens(),
-            Mock.Of<ICountryConfigurationRepository>(), uow.Object, Mock.Of<ITenantProvider>(), DeadLetterOfFrozenCompany(), logger);
+            Mock.Of<ICountryConfigurationRepository>(), uow.Object, Mock.Of<ITenantProvider>(), DeadLetterOfFrozenCompany(), Mock.Of<IReceivableRepository>(), logger);
 
         // Malformed body → both envelope and bare reads throw → ReadPayload returns null → the
         // deserialize-failure throw fires. The exception message (logged at Error in the outer catch)

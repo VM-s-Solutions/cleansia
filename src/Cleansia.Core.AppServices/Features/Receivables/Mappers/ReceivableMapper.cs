@@ -20,4 +20,14 @@ public static class ReceivableMapper
             CreatedOn: receivable.CreatedOn,
             WrittenOffOn: receivable.WrittenOffOn,
             WriteOffNote: receivable.WriteOffNote);
+
+    public static MyReceivableDto MapToMyDto(this Receivable receivable) =>
+        new(
+            Id: receivable.Id,
+            OrderId: receivable.OrderId,
+            DisplayOrderNumber: receivable.Order!.DisplayOrderNumber,
+            Kind: receivable.Kind.MapToCode(),
+            Amount: receivable.Amount,
+            CurrencyCode: receivable.Currency!.Code,
+            CreatedOn: receivable.CreatedOn);
 }

@@ -405,6 +405,76 @@ public class StripeClient : IStripeClient
         return new SavedCardDetails(paymentMethod.Id, card.Brand, card.Last4, (int)card.ExpMonth, (int)card.ExpYear);
     }
 
+    public async Task<string> ChargeReceivableOffSessionAsync(
+        string receivableId,
+        decimal amount,
+        string currency,
+        string stripeCustomerId,
+        string paymentMethodId,
+        int attempt,
+        CancellationToken cancellationToken)
+    {
+        var service = new PaymentIntentService(stripe);
+        var options = new PaymentIntentCreateOptions
+        {
+            Amount = ToMinorUnits(amount),
+            Currency = currency.ToLowerInvariant(),
+            Customer = stripeCustomerId,
+            PaymentMethod = paymentMethodId,
+            PaymentMethodTypes = ["card"],
+            OffSession = true,
+            Confirm = true,
+            Metadata = new Dictionary<string, string> { { ReceivableMetadataKey, receivableId } },
+        };
+        var requestOptions = new RequestOptions { IdempotencyKey = $"receivable-charge-{receivableId}-{attempt}" };
+        var intent = await ClassifyAsync(
+            nameof(ChargeReceivableOffSessionAsync),
+            () => service.CreateAsync(options, requestOptions, cancellationToken));
+        return intent.Id;
+    }
+
+    public async Task<CheckoutSessionResult> CreateReceivableCheckoutSessionAsync(
+        string receivableId,
+        string orderId,
+        string displayOrderNumber,
+        decimal amount,
+        string currency,
+        CancellationToken cancellationToken)
+    {
+        var orderPage = new Uri(config.SuccessUrlBase).GetLeftPart(UriPartial.Authority) + $"{OrdersPagePath}/{orderId}";
+        var options = new SessionCreateOptions
+        {
+            Mode = "payment",
+            PaymentMethodTypes = ["card"],
+            LineItems =
+            [
+                new SessionLineItemOptions
+                {
+                    PriceData = new SessionLineItemPriceDataOptions
+                    {
+                        Currency = currency.ToLowerInvariant(),
+                        ProductData = new SessionLineItemPriceDataProductDataOptions
+                        {
+                            Name = $"Amount due on order {displayOrderNumber}",
+                        },
+                        UnitAmount = ToMinorUnits(amount),
+                    },
+                    Quantity = 1,
+                },
+            ],
+            AdaptivePricing = new SessionAdaptivePricingOptions { Enabled = false },
+            SuccessUrl = orderPage,
+            CancelUrl = orderPage,
+            Metadata = new Dictionary<string, string> { { ReceivableMetadataKey, receivableId } },
+        };
+        var requestOptions = new RequestOptions { IdempotencyKey = $"receivable-checkout-{receivableId}" };
+        var service = new SessionService(stripe);
+        var session = await ClassifyAsync(
+            nameof(CreateReceivableCheckoutSessionAsync),
+            () => service.CreateAsync(options, requestOptions, cancellationToken));
+        return new CheckoutSessionResult(session.Id, session.Url);
+    }
+
     public async Task<SubscriptionResult> CreateSubscriptionAsync(
         string stripeCustomerId,
         string stripePriceId,
@@ -602,6 +672,8 @@ public class StripeClient : IStripeClient
     private const string ProfilePagePath = "/profile";
 
     private const string SavedCardMetadataKey = "SavedCardId";
+
+    private const string ReceivableMetadataKey = "ReceivableId";
 
     /// <summary>
     /// Where Stripe sends the browser back to after a membership checkout.

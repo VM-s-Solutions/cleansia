@@ -51,7 +51,8 @@ public sealed class SendEmailHandlerOrderBookedTests
         _orders.Object,
         TestGuestOrderAccessTokenIssuer.WithNoLiveTokens(),
         Mock.Of<IUnitOfWork>(),
-        _policies.Object);
+        _policies.Object,
+        Mock.Of<IReceivableRepository>());
 
     private Order ArrangeOrder(bool cancelled = false)
     {

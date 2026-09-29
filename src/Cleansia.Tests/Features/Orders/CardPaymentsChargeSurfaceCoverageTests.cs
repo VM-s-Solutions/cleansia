@@ -56,7 +56,8 @@ public class CardPaymentsChargeSurfaceCoverageTests
         ("Features/Payments/HandlePaymentNotification.cs",
             "The webhook asks Stripe which Checkout Session charged a disputed intent, to find the order a "
             + "bank chargeback is about, and which card a SetupIntent saved. Reads, and a chargeback or a "
-            + "saved card arrives whether card payments are on or off."),
+            + "saved card arrives whether card payments are on or off. The one surface it opens, the pay link "
+            + "for a declined off-session charge, it opens only while the switch is on."),
         ("Services/StripeCustomerResolver.cs",
             "Creates a Stripe Customer object, never a charge: for the two subscribe handlers, both of which "
             + "refuse on the switch before any Stripe object is created, and for the card capture."),

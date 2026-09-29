@@ -47,7 +47,8 @@ public class Policy
     // and "what's my Plus status?" reads. Same role gate as saved addresses.
     public const string CanManageMembership = nameof(CanManageMembership); // Customer
 
-    // The saved card, the guarantee for cash bookings (Customer) — capture, read own, remove own.
+    // The saved card, the guarantee for cash bookings (Customer) — capture, read own, remove own, and read
+    // and pay through a pay link what it guarantees: the customer's own receivables.
     public const string CanManageSavedCard = nameof(CanManageSavedCard); // Customer
 
     // Recurring booking templates (Customer) — Plus perk; same role gate.

@@ -120,7 +120,7 @@ public class AdminRecordCashReceived
             var order = await orderRepository
                 .GetQueryable()
                 .Include(o => o.OrderStatusHistory)
-                .Include(o => o.Receipt)
+                .Include(o => o.Receipts)
                 .AsSplitQuery()
                 .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);
 

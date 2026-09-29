@@ -5,9 +5,11 @@ using Cleansia.Core.Clients.Abstractions;
 using Cleansia.Core.Domain.Emails;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
+using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Exceptions;
+using Cleansia.Infra.Services.Pdf.Models;
 using Microsoft.Extensions.Logging;
 using SendGrid;
 using SendGrid.Helpers.Mail;
@@ -507,6 +509,129 @@ public sealed partial class EmailService : IEmailService
         CancellationToken ct = default,
         string? guestAccessToken = null) =>
         SendStatusEmailAsync(email, order, BookedStatus, languageCode, ct, refundedAmount: null, guestAccessToken, freeCancellationHours);
+
+    // In-code copy only: the status e-mail's translation rows are that e-mail's, and a Subject entered for
+    // it would retitle this one.
+    public async Task<string> SendReceivablePayLinkEmailAsync(
+        string email,
+        Order order,
+        Receivable receivable,
+        string payUrl,
+        string languageCode = Constants.Language.English,
+        CancellationToken ct = default)
+    {
+        var copy = PayLinkDefaults.GetValueOrDefault(languageCode) ?? PayLinkDefaults[Constants.Language.English];
+        var culture = CultureFor(languageCode);
+        var subject = string.Format(culture, copy["Subject"], order.DisplayOrderNumber);
+        var cleaningTime = TimeZoneInfo.ConvertTimeFromUtc(
+            DateTime.SpecifyKind(order.CleaningDateTime, DateTimeKind.Utc), await MarketZoneAsync(order, ct));
+
+        var values = new Dictionary<string, string?>(StringComparer.Ordinal);
+        foreach (var (key, value) in copy)
+        {
+            values[key] = value;
+        }
+
+        values["lang"] = languageCode;
+        values["Subject"] = subject;
+        values["StatusClass"] = "cancelled";
+        values["StatusLabel"] = ReceiptLabels.For(languageCode).ReceivableKinds[receivable.Kind];
+        values["OrderNumber"] = order.DisplayOrderNumber;
+        values["CleaningDate"] = cleaningTime.ToString("g", culture);
+        values["Address"] = order.CustomerAddress is { } address ? $"{address.Street}, {address.City}" : string.Empty;
+        values["Total"] = Money(receivable.Amount, order.Currency?.Symbol ?? string.Empty, languageCode);
+        values["OrderStatusLink"] = payUrl;
+        values["SupportEmail"] = sendGridConfig.AddressFrom;
+        values["FooterText"] = $"© {DateTime.UtcNow.Year} Cleansia";
+
+        return await SendRenderedAsync(
+            email,
+            templateRenderer.Render(TemplateFileFor(EmailType.OrderStatusUpdate), values),
+            subject,
+            $"Receivable pay link for receivable {receivable.Id}",
+            ct);
+    }
+
+    /// <summary>The pay-link e-mail's copy per locale; <c>{0}</c> in the subject is the order number.</summary>
+    private static readonly IReadOnlyDictionary<string, Dictionary<string, string>> PayLinkDefaults =
+        new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["en"] = new()
+            {
+                ["Subject"] = "Payment due for order {0}",
+                ["StatusMessage"] = "We could not charge the amount below to your saved card. Please pay it with the button below; the link is valid for 24 hours. Until it is paid, cash bookings are not available, and you can still book and pay by card.",
+                ["StatusSectionLabel"] = "Amount due for",
+                ["OrderNumberLabel"] = "Order #",
+                ["CleaningDateLabel"] = "Cleaning date",
+                ["AddressLabel"] = "Address",
+                ["TotalLabel"] = "Amount due",
+                ["ButtonText"] = "Pay now",
+                ["QuestionsText"] = "If you have questions about this payment, please contact us.",
+                ["SupportText"] = "Need help? Contact us at",
+                ["Closing"] = "Best regards,",
+                ["TeamName"] = "The Cleansia team",
+            },
+            ["cs"] = new()
+            {
+                ["Subject"] = "Platba k rezervaci {0}",
+                ["StatusMessage"] = "Níže uvedenou částku se nám nepodařilo strhnout z vaší uložené karty. Zaplaťte ji prosím tlačítkem níže; odkaz platí 24 hodin. Dokud nebude zaplacena, nelze objednávat s platbou v hotovosti, kartou můžete objednávat dál.",
+                ["StatusSectionLabel"] = "Dlužná částka za",
+                ["OrderNumberLabel"] = "Rezervace č.",
+                ["CleaningDateLabel"] = "Datum úklidu",
+                ["AddressLabel"] = "Adresa",
+                ["TotalLabel"] = "K úhradě",
+                ["ButtonText"] = "Zaplatit",
+                ["QuestionsText"] = "Pokud máte k této platbě dotazy, kontaktujte nás.",
+                ["SupportText"] = "Potřebujete pomoc? Kontaktujte nás na",
+                ["Closing"] = "S pozdravem",
+                ["TeamName"] = "Tým Cleansia",
+            },
+            ["sk"] = new()
+            {
+                ["Subject"] = "Platba k rezervácii {0}",
+                ["StatusMessage"] = "Uvedenú sumu sa nám nepodarilo stiahnuť z vašej uloženej karty. Zaplaťte ju, prosím, tlačidlom nižšie; odkaz platí 24 hodín. Kým nebude zaplatená, nie je možné objednávať s platbou v hotovosti, kartou môžete objednávať naďalej.",
+                ["StatusSectionLabel"] = "Dlžná suma za",
+                ["OrderNumberLabel"] = "Rezervácia č.",
+                ["CleaningDateLabel"] = "Dátum upratovania",
+                ["AddressLabel"] = "Adresa",
+                ["TotalLabel"] = "Na úhradu",
+                ["ButtonText"] = "Zaplatiť",
+                ["QuestionsText"] = "Ak máte k tejto platbe otázky, kontaktujte nás.",
+                ["SupportText"] = "Potrebujete pomoc? Kontaktujte nás na",
+                ["Closing"] = "S pozdravom",
+                ["TeamName"] = "Tím Cleansia",
+            },
+            ["uk"] = new()
+            {
+                ["Subject"] = "Оплата за бронювання {0}",
+                ["StatusMessage"] = "Нам не вдалося списати зазначену суму з вашої збереженої картки. Будь ласка, сплатіть її за допомогою кнопки нижче; посилання дійсне 24 години. Доки суму не сплачено, бронювання з оплатою готівкою недоступні, бронювати з оплатою карткою можна й далі.",
+                ["StatusSectionLabel"] = "Сума до сплати за",
+                ["OrderNumberLabel"] = "Бронювання №",
+                ["CleaningDateLabel"] = "Дата прибирання",
+                ["AddressLabel"] = "Адреса",
+                ["TotalLabel"] = "До сплати",
+                ["ButtonText"] = "Сплатити",
+                ["QuestionsText"] = "Якщо у вас є запитання щодо цієї оплати, зв’яжіться з нами.",
+                ["SupportText"] = "Потрібна допомога? Напишіть нам:",
+                ["Closing"] = "З повагою",
+                ["TeamName"] = "Команда Cleansia",
+            },
+            ["ru"] = new()
+            {
+                ["Subject"] = "Оплата по бронированию {0}",
+                ["StatusMessage"] = "Нам не удалось списать указанную сумму с вашей сохранённой карты. Пожалуйста, оплатите её с помощью кнопки ниже; ссылка действительна 24 часа. Пока сумма не оплачена, бронирования с оплатой наличными недоступны, бронировать с оплатой картой можно и дальше.",
+                ["StatusSectionLabel"] = "Сумма к оплате за",
+                ["OrderNumberLabel"] = "Бронирование №",
+                ["CleaningDateLabel"] = "Дата уборки",
+                ["AddressLabel"] = "Адрес",
+                ["TotalLabel"] = "К оплате",
+                ["ButtonText"] = "Оплатить",
+                ["QuestionsText"] = "Если у вас есть вопросы об этой оплате, свяжитесь с нами.",
+                ["SupportText"] = "Нужна помощь? Напишите нам:",
+                ["Closing"] = "С уважением",
+                ["TeamName"] = "Команда Cleansia",
+            },
+        };
 
     private const string BookedStatus = "booked";
 

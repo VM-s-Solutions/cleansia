@@ -11,7 +11,9 @@ namespace Cleansia.Core.Domain.Payments;
 /// Money a customer owes the company on one order beyond what the order collected (owner ruling
 /// 2026-09-28, decision 17): a late cancellation fee on a cash booking, a lockout fee, unpaid cash or an
 /// approved top-up. While one is open the customer books no cash (decision 18), and an administrator may
-/// write it off. <see cref="Attempts"/> counts the charges tried on the saved card.
+/// write it off. <see cref="Attempts"/> counts the charges tried on the saved card. It is paid through
+/// the customer's pay link or an off-session charge, and its payment earns a fee receipt of its own; the
+/// order's sale, its charge surface and its refunds are never touched by it.
 /// </summary>
 public class Receivable : TenantAuditable
 {
@@ -38,6 +40,12 @@ public class Receivable : TenantAuditable
 
     public int Attempts { get; private set; }
 
+    /// <summary>The Stripe PaymentIntent that paid it, through the pay link or an off-session charge.</summary>
+    [MaxLength(255)]
+    public string? StripePaymentIntentId { get; private set; }
+
+    public DateTimeOffset? PaidOn { get; private set; }
+
     public DateTimeOffset? WrittenOffOn { get; private set; }
 
     [MaxLength(26)]
@@ -52,6 +60,8 @@ public class Receivable : TenantAuditable
 
     public bool IsOpen => Status == ReceivableStatus.Open;
 
+    public bool IsPaid => Status == ReceivableStatus.Paid;
+
     public static Receivable ForCashCancellationFee(Order order, decimal fee) =>
         new()
         {
@@ -63,6 +73,19 @@ public class Receivable : TenantAuditable
             Amount = fee,
             Status = ReceivableStatus.Open,
         };
+
+    public void RecordChargeAttempt() => Attempts++;
+
+    /// <summary>
+    /// Money arrived for it. A receivable written off and then paid anyway is paid: the money is the
+    /// company's, and it earns a receipt like any other.
+    /// </summary>
+    public void MarkPaid(string? stripePaymentIntentId, DateTimeOffset paidOn)
+    {
+        Status = ReceivableStatus.Paid;
+        StripePaymentIntentId = stripePaymentIntentId;
+        PaidOn = paidOn;
+    }
 
     public void WriteOff(string actorUserId, string note, DateTimeOffset writtenOffOn)
     {

@@ -105,6 +105,16 @@ public record ReceiptLabels
             [PaymentType.Card] = "Card",
         };
 
+    /// <summary>The line a fee receipt carries: what the customer paid on the order after it.</summary>
+    public IReadOnlyDictionary<ReceivableKind, string> ReceivableKinds { get; init; } =
+        new Dictionary<ReceivableKind, string>
+        {
+            [ReceivableKind.CashCancellationFee] = "Late cancellation fee",
+            [ReceivableKind.Lockout] = "Fee for denied access",
+            [ReceivableKind.UnpaidCash] = "Unpaid cash payment",
+            [ReceivableKind.TopUp] = "Dirtiness top-up",
+        };
+
     /// <summary>
     /// The label set for a language code, English for anything else. The five are the locales
     /// <c>EmailLocale.Supported</c> names; a sixth stored on a user row is a preference nothing can
@@ -194,6 +204,13 @@ public record ReceiptLabels
             [PaymentType.Cash] = "Hotově",
             [PaymentType.Card] = "Kartou",
         },
+        ReceivableKinds = new Dictionary<ReceivableKind, string>
+        {
+            [ReceivableKind.CashCancellationFee] = "Poplatek za pozdní zrušení",
+            [ReceivableKind.Lockout] = "Poplatek za znemožněný přístup",
+            [ReceivableKind.UnpaidCash] = "Nezaplacená hotovost",
+            [ReceivableKind.TopUp] = "Doplatek za znečištění",
+        },
     };
 
     public static ReceiptLabels Slovak { get; } = new()
@@ -270,6 +287,13 @@ public record ReceiptLabels
         {
             [PaymentType.Cash] = "Hotovosťou",
             [PaymentType.Card] = "Kartou",
+        },
+        ReceivableKinds = new Dictionary<ReceivableKind, string>
+        {
+            [ReceivableKind.CashCancellationFee] = "Poplatok za neskoré zrušenie",
+            [ReceivableKind.Lockout] = "Poplatok za znemožnený prístup",
+            [ReceivableKind.UnpaidCash] = "Nezaplatená hotovosť",
+            [ReceivableKind.TopUp] = "Doplatok za znečistenie",
         },
     };
 
@@ -348,6 +372,13 @@ public record ReceiptLabels
             [PaymentType.Cash] = "Готівкою",
             [PaymentType.Card] = "Карткою",
         },
+        ReceivableKinds = new Dictionary<ReceivableKind, string>
+        {
+            [ReceivableKind.CashCancellationFee] = "Плата за пізнє скасування",
+            [ReceivableKind.Lockout] = "Плата за відсутність доступу",
+            [ReceivableKind.UnpaidCash] = "Неоплачена готівка",
+            [ReceivableKind.TopUp] = "Доплата за забруднення",
+        },
     };
 
     public static ReceiptLabels Russian { get; } = new()
@@ -424,6 +455,13 @@ public record ReceiptLabels
         {
             [PaymentType.Cash] = "Наличными",
             [PaymentType.Card] = "Картой",
+        },
+        ReceivableKinds = new Dictionary<ReceivableKind, string>
+        {
+            [ReceivableKind.CashCancellationFee] = "Плата за позднюю отмену",
+            [ReceivableKind.Lockout] = "Плата за отсутствие доступа",
+            [ReceivableKind.UnpaidCash] = "Неоплаченные наличные",
+            [ReceivableKind.TopUp] = "Доплата за загрязнение",
         },
     };
 

@@ -65,6 +65,7 @@ public class SavedCardWebhookTests
         _stripeFactory.Object,
         Mock.Of<ITenantRepository>(),
         _savedCards.Object,
+        Mock.Of<IReceivableRepository>(),
         NullLogger<HandlePaymentNotification.Handler>.Instance);
 
     private SavedCard PendingCard()

@@ -1,4 +1,5 @@
 using Cleansia.Core.Domain.Orders;
+using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Receipts;
 
 namespace Cleansia.Core.AppServices.Services.Interfaces;
@@ -14,6 +15,14 @@ public interface IReceiptService
     /// BEFORE the irreversible external effect performed by <see cref="RealizeFiscalAndPdfAsync"/>.
     /// </summary>
     Task<OrderReceipt> ReserveReceiptAsync(Order order, string languageCode, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The same reservation for the fee receipt of a paid receivable on <paramref name="order"/>: its own
+    /// number from the same counter, beside the order's sale receipt. Realized and retried by the same two
+    /// methods below, which read the fee from the receipt's receivable instead of the order's sale.
+    /// </summary>
+    Task<OrderReceipt> ReserveFeeReceiptAsync(
+        Order order, Receivable receivable, string languageCode, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// ADR-0004 D-F4.1 phase 2 — REALIZE the external effects for an already-claimed receipt:

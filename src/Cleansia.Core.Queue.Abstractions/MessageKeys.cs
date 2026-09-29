@@ -26,6 +26,17 @@ public static class MessageKeys
     /// <summary>generate-receipt → <c>receipt:{OrderId}</c> (one receipt per order).</summary>
     public static string Receipt(string orderId) => $"receipt:{orderId}";
 
+    /// <summary>generate-receipt → <c>receipt:fee:{ReceivableId}</c> (one fee receipt per paid receivable).</summary>
+    public static string FeeReceipt(string receivableId) => $"receipt:fee:{receivableId}";
+
+    /// <summary>
+    /// send-email → <c>email:receivable-pay-link:{ReceivableId}:{Attempt}</c> — one pay link per failed
+    /// off-session charge; the attempt is the receivable's own count, so a second failed charge is a second
+    /// e-mail while a redelivered failure is not.
+    /// </summary>
+    public static string ReceivablePayLinkEmail(string receivableId, int attempt) =>
+        $"email:receivable-pay-link:{receivableId}:{attempt}";
+
     /// <summary>
     /// notifications-dispatch → <c>push:{UserId}:{EventKey}:{OrderId?}</c> (one push per user per
     /// event per subject). The subject segment is optional — a null/empty subject keeps the trailing

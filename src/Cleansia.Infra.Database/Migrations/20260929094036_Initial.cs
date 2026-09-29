@@ -2633,64 +2633,6 @@ namespace Cleansia.Infra.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "OrderReceipts",
-                columns: table => new
-                {
-                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
-                    ReceiptNumber = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    OrderId = table.Column<string>(type: "character varying(26)", nullable: false),
-                    IssuedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    FileName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    BlobName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    LanguageId = table.Column<string>(type: "character varying(26)", nullable: false),
-                    BlobDeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    EmailSent = table.Column<bool>(type: "boolean", nullable: false),
-                    EmailSentAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    EmailMessageId = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    FiscalProviderKey = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
-                    FiscalCode = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    FiscalRegisteredAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    FiscalRegistrationFailed = table.Column<bool>(type: "boolean", nullable: false),
-                    FiscalError = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
-                    FiscalErrorKind = table.Column<int>(type: "integer", nullable: true),
-                    FiscalRetryCount = table.Column<int>(type: "integer", nullable: false),
-                    FiscalLastRetryAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    FiscalNextRetryAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    FiscalAcknowledged = table.Column<bool>(type: "boolean", nullable: false),
-                    FiscalAcknowledgedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
-                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_OrderReceipts", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_OrderReceipts_Languages_LanguageId",
-                        column: x => x.LanguageId,
-                        principalTable: "Languages",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_OrderReceipts_Orders_OrderId",
-                        column: x => x.OrderId,
-                        principalTable: "Orders",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_OrderReceipts_Tenants_TenantId",
-                        column: x => x.TenantId,
-                        principalTable: "Tenants",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "OrderReviews",
                 columns: table => new
                 {
@@ -2850,6 +2792,8 @@ namespace Cleansia.Infra.Database.Migrations
                     Amount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
                     Status = table.Column<int>(type: "integer", nullable: false),
                     Attempts = table.Column<int>(type: "integer", nullable: false),
+                    StripePaymentIntentId = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    PaidOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     WrittenOffOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     WrittenOffByUserId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
                     WriteOffNote = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
@@ -3281,6 +3225,111 @@ namespace Cleansia.Infra.Database.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "OrderReviewLines",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    OrderReviewId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    ServiceId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    PackageId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    Rating = table.Column<int>(type: "integer", nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_OrderReviewLines", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_OrderReviewLines_OrderReviews_OrderReviewId",
+                        column: x => x.OrderReviewId,
+                        principalTable: "OrderReviews",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_OrderReviewLines_Packages_PackageId",
+                        column: x => x.PackageId,
+                        principalTable: "Packages",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_OrderReviewLines_Services_ServiceId",
+                        column: x => x.ServiceId,
+                        principalTable: "Services",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "OrderReceipts",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
+                    ReceiptNumber = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    OrderId = table.Column<string>(type: "character varying(26)", nullable: false),
+                    ReceivableId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    IssuedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    FileName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    BlobName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    LanguageId = table.Column<string>(type: "character varying(26)", nullable: false),
+                    BlobDeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    EmailSent = table.Column<bool>(type: "boolean", nullable: false),
+                    EmailSentAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    EmailMessageId = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    FiscalProviderKey = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    FiscalCode = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    FiscalRegisteredAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    FiscalRegistrationFailed = table.Column<bool>(type: "boolean", nullable: false),
+                    FiscalError = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
+                    FiscalErrorKind = table.Column<int>(type: "integer", nullable: true),
+                    FiscalRetryCount = table.Column<int>(type: "integer", nullable: false),
+                    FiscalLastRetryAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    FiscalNextRetryAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    FiscalAcknowledged = table.Column<bool>(type: "boolean", nullable: false),
+                    FiscalAcknowledgedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    TenantId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_OrderReceipts", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_OrderReceipts_Languages_LanguageId",
+                        column: x => x.LanguageId,
+                        principalTable: "Languages",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_OrderReceipts_Orders_OrderId",
+                        column: x => x.OrderId,
+                        principalTable: "Orders",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_OrderReceipts_Receivables_ReceivableId",
+                        column: x => x.ReceivableId,
+                        principalTable: "Receivables",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_OrderReceipts_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Refunds",
                 columns: table => new
                 {
@@ -3331,46 +3380,6 @@ namespace Cleansia.Infra.Database.Migrations
                         name: "FK_Refunds_Tenants_TenantId",
                         column: x => x.TenantId,
                         principalTable: "Tenants",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "OrderReviewLines",
-                columns: table => new
-                {
-                    Id = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
-                    OrderReviewId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
-                    ServiceId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
-                    PackageId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
-                    Rating = table.Column<int>(type: "integer", nullable: false),
-                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
-                    CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    UpdatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    UpdatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    DeactivatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    DeactivatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_OrderReviewLines", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_OrderReviewLines_OrderReviews_OrderReviewId",
-                        column: x => x.OrderReviewId,
-                        principalTable: "OrderReviews",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_OrderReviewLines_Packages_PackageId",
-                        column: x => x.PackageId,
-                        principalTable: "Packages",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_OrderReviewLines_Services_ServiceId",
-                        column: x => x.ServiceId,
-                        principalTable: "Services",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -4254,7 +4263,15 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "IX_OrderReceipts_OrderId",
                 table: "OrderReceipts",
                 column: "OrderId",
-                unique: true);
+                unique: true,
+                filter: "\"ReceivableId\" IS NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OrderReceipts_ReceivableId",
+                table: "OrderReceipts",
+                column: "ReceivableId",
+                unique: true,
+                filter: "\"ReceivableId\" IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_OrderReceipts_TenantId",
@@ -5095,9 +5112,6 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "PropertySizePresets");
 
             migrationBuilder.DropTable(
-                name: "Receivables");
-
-            migrationBuilder.DropTable(
                 name: "RecurringBookingTemplates");
 
             migrationBuilder.DropTable(
@@ -5191,10 +5205,13 @@ namespace Cleansia.Infra.Database.Migrations
                 name: "Packages");
 
             migrationBuilder.DropTable(
-                name: "Orders");
+                name: "Receivables");
 
             migrationBuilder.DropTable(
                 name: "ServiceCategories");
+
+            migrationBuilder.DropTable(
+                name: "Orders");
 
             migrationBuilder.DropTable(
                 name: "Addresses");

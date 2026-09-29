@@ -43,7 +43,8 @@ public sealed class SendEmailHandlerAdminNotificationTests
         Mock.Of<IOrderRepository>(),
         TestGuestOrderAccessTokenIssuer.WithNoLiveTokens(),
         Mock.Of<IUnitOfWork>(),
-        Mock.Of<ICancellationPolicyResolver>());
+        Mock.Of<ICancellationPolicyResolver>(),
+        Mock.Of<IReceivableRepository>());
 
     private static SendAdminNotificationEmailMessage DisputeFiled(string subject = "dispute-1", string language = "cs") =>
         new(

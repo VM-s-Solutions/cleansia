@@ -53,6 +53,16 @@ public sealed class RecordingStripeClient : IStripeClient
 
     public Task<SavedCardDetails?> GetSetupIntentCardAsync(string setupIntentId, CancellationToken cancellationToken) => throw new NotSupportedException();
 
+    public List<(string ReceivableId, decimal Amount, string Currency)> ReceivableCheckouts { get; } = [];
+
+    public Task<CheckoutSessionResult> CreateReceivableCheckoutSessionAsync(string receivableId, string orderId, string displayOrderNumber, decimal amount, string currency, CancellationToken cancellationToken)
+    {
+        ReceivableCheckouts.Add((receivableId, amount, currency));
+        return Task.FromResult(new CheckoutSessionResult($"cs_receivable_{receivableId}", $"https://checkout.stripe.test/pay/{receivableId}"));
+    }
+
+    public Task<string> ChargeReceivableOffSessionAsync(string receivableId, decimal amount, string currency, string stripeCustomerId, string paymentMethodId, int attempt, CancellationToken cancellationToken) => throw new NotSupportedException();
+
     public Task<CheckoutSessionResult> CreateCheckoutSessionAsync(Order order, CancellationToken cancellationToken) => throw new NotSupportedException();
     public Task<CheckoutSessionResult> CreateCheckoutSessionAsync(Order order, DateTime expiresAtUtc, CancellationToken cancellationToken) => throw new NotSupportedException();
     public Task RefundCheckoutSessionAsync(string stripeSessionId, decimal amount, string idempotencyKey, CancellationToken cancellationToken) => throw new NotSupportedException();

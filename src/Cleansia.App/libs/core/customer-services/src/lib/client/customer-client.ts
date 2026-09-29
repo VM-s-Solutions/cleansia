@@ -6134,6 +6134,150 @@ export class PromoCodeClient implements IPromoCodeClient {
     }
 }
 
+export interface IReceivableClient {
+    /**
+     * @return OK
+     */
+    getMine(): Observable<MyReceivableDto[]>;
+    /**
+     * @return OK
+     */
+    createPayLink(id: string): Observable<CreateReceivablePayLinkResponse>;
+}
+
+@Injectable({
+    providedIn: 'root'
+})
+export class ReceivableClient implements IReceivableClient {
+    private http: HttpClient;
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(CUSTOMERAPIBASEURL) baseUrl?: string) {
+        this.http = http;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * @return OK
+     */
+    getMine(): Observable<MyReceivableDto[]> {
+        let url = this.baseUrl + "/api/Receivable/GetMine";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGetMine(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processGetMine(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<MyReceivableDto[]>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<MyReceivableDto[]>;
+        }));
+    }
+
+    protected processGetMine(response: HttpResponseBase): Observable<MyReceivableDto[]> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(MyReceivableDto.fromJS(item));
+            }
+            else {
+                result200 = null as any;
+            }
+            return ObservableOf(result200);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    createPayLink(id: string): Observable<CreateReceivablePayLinkResponse> {
+        let url = this.baseUrl + "/api/Receivable/CreatePayLink/{id}";
+        if (id === undefined || id === null)
+            throw new globalThis.Error("The parameter 'id' must be defined.");
+        url = url.replace("{id}", encodeURIComponent("" + id));
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processCreatePayLink(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processCreatePayLink(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<CreateReceivablePayLinkResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<CreateReceivablePayLinkResponse>;
+        }));
+    }
+
+    protected processCreatePayLink(response: HttpResponseBase): Observable<CreateReceivablePayLinkResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = CreateReceivablePayLinkResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+}
+
 export interface IRecurringBookingClient {
     /**
      * @return OK
@@ -9362,6 +9506,46 @@ export interface ICreatePaymentIntentResponse {
     paymentIntentId: string | undefined;
     stripeCustomerId: string | undefined;
     ephemeralKey: string | undefined;
+}
+
+export class CreateReceivablePayLinkResponse implements ICreateReceivablePayLinkResponse {
+    receivableId!: string | undefined;
+    checkoutUrl!: string | undefined;
+
+    constructor(data?: ICreateReceivablePayLinkResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.receivableId = Data["receivableId"];
+            this.checkoutUrl = Data["checkoutUrl"];
+        }
+    }
+
+    static fromJS(data: any): CreateReceivablePayLinkResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new CreateReceivablePayLinkResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["receivableId"] = this.receivableId;
+        data["checkoutUrl"] = this.checkoutUrl;
+        return data;
+    }
+}
+
+export interface ICreateReceivablePayLinkResponse {
+    receivableId: string | undefined;
+    checkoutUrl: string | undefined;
 }
 
 export class CreateRecurringBookingCommand implements ICreateRecurringBookingCommand {
@@ -13282,6 +13466,66 @@ export interface IMyProfileDto {
     totalBookings: number;
     totalSavings: number;
     savingsCurrencyCode: string | undefined;
+}
+
+export class MyReceivableDto implements IMyReceivableDto {
+    id!: string | undefined;
+    orderId!: string | undefined;
+    displayOrderNumber!: string | undefined;
+    kind!: Code;
+    amount!: number;
+    currencyCode!: string | undefined;
+    createdOn!: Date;
+
+    constructor(data?: IMyReceivableDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.orderId = Data["orderId"];
+            this.displayOrderNumber = Data["displayOrderNumber"];
+            this.kind = Data["kind"] ? Code.fromJS(Data["kind"]) : undefined as any;
+            this.amount = Data["amount"];
+            this.currencyCode = Data["currencyCode"];
+            this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): MyReceivableDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new MyReceivableDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["orderId"] = this.orderId;
+        data["displayOrderNumber"] = this.displayOrderNumber;
+        data["kind"] = this.kind ? this.kind.toJSON() : undefined as any;
+        data["amount"] = this.amount;
+        data["currencyCode"] = this.currencyCode;
+        data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IMyReceivableDto {
+    id: string | undefined;
+    orderId: string | undefined;
+    displayOrderNumber: string | undefined;
+    kind: Code;
+    amount: number;
+    currencyCode: string | undefined;
+    createdOn: Date;
 }
 
 export class NotificationPreferencesDto implements INotificationPreferencesDto {

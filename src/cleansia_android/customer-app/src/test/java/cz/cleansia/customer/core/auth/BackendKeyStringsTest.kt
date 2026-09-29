@@ -115,6 +115,11 @@ class BackendKeyStringsTest {
         "consent.terms_not_accepted",
     )
 
+    /** `CreateOrder` and `CreateRecurringBooking` refuse every booking without the request, a consented account included. */
+    private val earlyPerformanceKeys = listOf(
+        "consent.early_performance_not_requested",
+    )
+
     /**
      * The archived-company write guard (ADR-0064 D3): a review, a dispute or a cancellation against a
      * company frozen for archive is refused at the commit and answered 409 with this key on every
@@ -264,6 +269,11 @@ class BackendKeyStringsTest {
     @Test
     fun `the terms refusal Register and CreateOrder can answer resolves to a sentence in all five locales`() {
         assertAllResolve(termsTickKeys)
+    }
+
+    @Test
+    fun `the early-performance refusal a booking or schedule can answer resolves to a sentence in all five locales`() {
+        assertAllResolve(earlyPerformanceKeys)
     }
 
     @Test

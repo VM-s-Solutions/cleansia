@@ -299,9 +299,9 @@ class RecurringBookingWireTest {
         assertEquals("\"e-9\"", sent!!["preferredEmployeeId"].toString())
     }
 
-    /** The server refuses a new schedule without it while the consents on record cover an older text. */
+    /** The server refuses a new schedule without the request, and without the terms tick while the consents cover an older text. */
     @Test
-    fun theCreateSendsTheTermsTickOnTheWire() = runTest {
+    fun theCreateSendsTheTermsAndEarlyPerformanceTicksOnTheWire() = runTest {
         val template = Json.parseToJsonElement(CAPTURED_TEMPLATES).jsonArray.first().toString()
         var sent: JsonObject? = null
         serving(template, onRequest = { sent = Json.parseToJsonElement(it.body.readUtf8()).jsonObject }) {
@@ -319,11 +319,13 @@ class RecurringBookingWireTest {
                     startsOn = "2026-08-03T09:30:00Z",
                     termsAccepted = true,
                     dirtinessLevel = DirtinessLevel.Normal,
+                    earlyPerformanceRequested = true,
                 ),
             )
         }
 
         assertEquals("true", sent!!["termsAccepted"].toString())
+        assertEquals("true", sent!!["earlyPerformanceRequested"].toString())
     }
 
     @Test

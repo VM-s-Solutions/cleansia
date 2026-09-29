@@ -456,9 +456,15 @@ fun ConfirmStep(
             Spacer(Modifier.height(16.dp))
         }
 
-        // The contract for work the confirmation concludes, named at the offer whether or not the
-        // account already consented: an information line with the public text behind it, never a tick.
-        WorkContractNotice(modifier = Modifier.fillMaxWidth())
+        CleansiaConsentCheckbox(
+            checked = state.earlyPerformanceRequested,
+            onCheckedChange = { onUpdate(state.copy(earlyPerformanceRequested = it)) },
+            html = stringResource(R.string.consent_early_performance_draft_2026_09_29),
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(Modifier.height(16.dp))
+
+        ContractNotice(modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(16.dp))
 
         // ── Trust badges ──
@@ -529,8 +535,8 @@ private fun CardGuaranteeConsent(accepted: Boolean, onAcceptedChange: (Boolean) 
 }
 
 @Composable
-private fun WorkContractNotice(modifier: Modifier = Modifier) {
-    val html = stringResource(R.string.booking_work_contract_notice)
+private fun ContractNotice(modifier: Modifier = Modifier) {
+    val html = stringResource(R.string.booking_contract_notice)
     val linkColor = MaterialTheme.colorScheme.primary
     val sentence = remember(html, linkColor) {
         ConsentMarkup.annotated(

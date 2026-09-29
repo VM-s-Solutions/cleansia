@@ -286,6 +286,7 @@ class CreateRecurringViewModelTest {
         vm.toggleService("svc-1")
         vm.setDirtinessLevel(DirtinessLevel.Normal)
         vm.setStartsOn("2026-07-01T00:00:00Z")
+        vm.setEarlyPerformanceRequested(true)
     }
 
     private val plusRefusal = "Recurring cleanings are a Cleansia Plus benefit — subscribe to set one up."
@@ -1292,6 +1293,7 @@ class CreateRecurringViewModelTest {
     fun `step three advances only with an address and a start date`() = runTest {
         val vm = viewModel()
         advanceUntilIdle()
+        vm.setEarlyPerformanceRequested(true)
         vm.nextStep()
         vm.nextStep()
         runCurrent()
@@ -1592,6 +1594,29 @@ class CreateRecurringViewModelTest {
 
         assertEquals(true, vm.termsAsked.value)
         assertEquals(false, vm.canAdvance.value)
+    }
+
+    /** One tick covers the series: the server copies the schedule's request onto every occurrence. */
+    @Test
+    fun `a new schedule is held until the early-performance tick and then sends the request`() = runTest {
+        val vm = onStepThree()
+        vm.setEarlyPerformanceRequested(false)
+        runCurrent()
+
+        assertEquals(false, vm.canAdvance.value)
+        vm.submit()
+        advanceUntilIdle()
+        coVerify(exactly = 0) { recurringRepo.create(any()) }
+
+        vm.setEarlyPerformanceRequested(true)
+        runCurrent()
+        assertEquals(true, vm.canAdvance.value)
+        val sent = slot<CreateRecurringBookingRequest>()
+        coEvery { recurringRepo.create(capture(sent)) } returns ApiResult.Success(template)
+        vm.submit()
+        advanceUntilIdle()
+
+        assertEquals(true, sent.captured.earlyPerformanceRequested)
     }
 
     @Test

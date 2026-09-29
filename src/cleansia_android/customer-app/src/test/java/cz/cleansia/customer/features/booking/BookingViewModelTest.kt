@@ -1601,13 +1601,18 @@ class BookingViewModelTest {
             setOf(SignupConsentType.TermsOfService, SignupConsentType.PrivacyPolicy)
     }
 
-    private fun BookingViewModel.readyToPlace(termsAccepted: Boolean, paymentMethod: String = "cash") {
+    private fun BookingViewModel.readyToPlace(
+        termsAccepted: Boolean,
+        paymentMethod: String = "cash",
+        earlyPerformanceRequested: Boolean = true,
+    ) {
         update {
             it.copy(
                 selectedServiceIds = setOf("s-1"),
                 selectedInstant = futureCleaningInstant(),
                 paymentMethod = paymentMethod,
                 termsAccepted = termsAccepted,
+                earlyPerformanceRequested = earlyPerformanceRequested,
             )
         }
     }
@@ -1705,6 +1710,19 @@ class BookingViewModelTest {
         advanceUntilIdle()
 
         assertEquals(false, vm.state.value.termsAccepted)
+        assertEquals(false, vm.state.value.earlyPerformanceRequested)
+    }
+
+    /** CreateOrder refuses every booking without the request, a consented account included. */
+    @Test
+    fun canPlaceOrder_withoutTheEarlyPerformanceTick_isFalseEvenWhenConsented() = runTest {
+        bothConsentsOnRecord()
+
+        val vm = newViewModel()
+        vm.readyToPlace(termsAccepted = true, earlyPerformanceRequested = false)
+        advanceUntilIdle()
+
+        assertEquals(false, vm.canPlaceOrder.value)
     }
 
     private suspend fun kotlinx.coroutines.test.TestScope.createCommandSent(vm: BookingViewModel): CreateOrderCommand {
@@ -1748,6 +1766,15 @@ class BookingViewModelTest {
         vm.readyToPlace(termsAccepted = false)
 
         assertNull(createCommandSent(vm).termsAccepted)
+    }
+
+    @Test
+    fun submit_whenAlreadyConsented_stillSendsTheEarlyPerformanceRequest() = runTest {
+        bothConsentsOnRecord()
+        val vm = newViewModel()
+        vm.readyToPlace(termsAccepted = false)
+
+        assertEquals(true, createCommandSent(vm).earlyPerformanceRequested)
     }
 
     /** The receipt is rendered in the booking's language ahead of the account's, so it must be the app's. */
@@ -1985,7 +2012,13 @@ class BookingViewModelTest {
     private suspend fun kotlinx.coroutines.test.TestScope.cashReady(guaranteeAccepted: Boolean = false): BookingViewModel {
         currentUserFlow.value = completeUser()
         val vm = quotedFor(requiredEmployees = 1)
-        vm.update { it.copy(paymentMethod = BookingViewModel.PAYMENT_CASH, cardGuaranteeAccepted = guaranteeAccepted) }
+        vm.update {
+            it.copy(
+                paymentMethod = BookingViewModel.PAYMENT_CASH,
+                cardGuaranteeAccepted = guaranteeAccepted,
+                earlyPerformanceRequested = true,
+            )
+        }
         coEvery { savedCardRepository.startCapture(any(), any()) } returns ApiResult.Success(captureSetup)
         coEvery { bookingApi.create(any()) } returns Response.success(CreateOrderResponse(id = "o-1", confirmationCode = "ABC123"))
         advanceUntilIdle()

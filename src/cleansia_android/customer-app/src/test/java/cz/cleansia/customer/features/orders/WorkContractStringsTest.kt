@@ -6,10 +6,10 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * The copy of the customer's contract surfaces: the wizard sentence, the detail line, and the
- * contract screen. A key with no resource in a locale falls back to English without breaking the
- * build, and the roster is the only thing that reads all five files. The sentence's markup is
- * pinned by `ConsentCatalogTest` in `:core`, beside the consent sentences it is the twin of.
+ * The copy of the customer's contract at the review step: the sentence naming who the contract is
+ * with, and the request to start within the withdrawal period. A key with no resource in a locale
+ * falls back to English without breaking the build, and the roster is the only thing that reads all
+ * five files. The sentence's markup is pinned by `ConsentCatalogTest` in `:core`.
  */
 class WorkContractStringsTest {
 
@@ -28,19 +28,8 @@ class WorkContractStringsTest {
             .associate { it.groupValues[1] to it.groupValues[2] }
 
     private val copy = listOf(
-        "booking_work_contract_notice",
-        "work_contract_title",
-        "work_contract_accepted_line",
-        "work_contract_read",
-        "work_contract_version",
-        "work_contract_facts_title",
-        "work_contract_order_number",
-        "work_contract_window",
-        "work_contract_price",
-        "work_contract_location",
-        "work_contract_accepted_on",
-        "work_contract_accepted_in_language",
-        "work_contract_load_error",
+        "booking_contract_notice",
+        "consent_early_performance_draft_2026_09_29",
     )
 
     @Test
@@ -53,25 +42,6 @@ class WorkContractStringsTest {
                 assertTrue("$locale/strings.xml leaves $key empty", declared.getValue(key).isNotBlank())
                 if (locale != "values") {
                     assertFalse("$locale/strings.xml carries the English $key", declared[key] == english[key])
-                }
-            }
-        }
-    }
-
-    @Test
-    fun `every placeholder survives translation`() {
-        val expected = mapOf(
-            "work_contract_accepted_line" to listOf("%1\$s", "%2\$s", "%3\$s"),
-            "work_contract_version" to listOf("%1\$s"),
-            "work_contract_accepted_on" to listOf("%1\$s", "%2\$s"),
-            "work_contract_accepted_in_language" to listOf("%1\$s"),
-        )
-        locales.forEach { locale ->
-            val declared = strings(locale)
-            expected.forEach { (key, placeholders) ->
-                val value = declared.getValue(key)
-                placeholders.forEach { placeholder ->
-                    assertTrue("$locale/$key no longer carries $placeholder: \"$value\"", placeholder in value)
                 }
             }
         }
@@ -92,13 +62,22 @@ class WorkContractStringsTest {
         }
     }
 
-    /** The wizard sentence is an information line — a link, never a tick — and it names no figure. */
+    /** The customer contracts with the operating company under the terms; the contract for work is the cleaner's. */
     @Test
-    fun `the wizard sentence links the public page and carries no digit`() {
+    fun `the review sentence links the terms and no contract for work`() {
         locales.forEach { locale ->
-            val value = strings(locale).getValue("booking_work_contract_notice")
-            assertTrue("$locale/booking_work_contract_notice does not link the page: $value", "cleansia://work-contract" in value)
-            assertFalse("$locale/booking_work_contract_notice carries a figure: $value", value.any { it.isDigit() })
+            val value = strings(locale).getValue("booking_contract_notice")
+            assertTrue("$locale/booking_contract_notice does not link the terms: $value", "cleansia://terms" in value)
+            assertFalse("$locale/booking_contract_notice links the contract for work: $value", "cleansia://work-contract" in value)
+            assertFalse("$locale/booking_contract_notice carries a figure: $value", value.any { it.isDigit() })
+        }
+    }
+
+    @Test
+    fun `the early-performance request names the statutory 14-day period`() {
+        locales.forEach { locale ->
+            val value = strings(locale).getValue("consent_early_performance_draft_2026_09_29")
+            assertTrue("$locale/consent_early_performance_draft_2026_09_29 names no 14-day period: $value", "14" in value)
         }
     }
 }

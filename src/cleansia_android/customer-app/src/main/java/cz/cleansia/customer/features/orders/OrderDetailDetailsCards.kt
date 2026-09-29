@@ -19,7 +19,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Phone
-import androidx.compose.material.icons.outlined.Verified
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -36,7 +35,6 @@ import androidx.core.content.ContextCompat
 import cz.cleansia.customer.R
 import cz.cleansia.core.format.formatOrderDateTime
 import cz.cleansia.core.format.formatOrderPrice
-import cz.cleansia.core.ui.components.CleansiaTextLink
 import cz.cleansia.customer.core.orders.AssignedEmployeeDto
 import cz.cleansia.customer.core.orders.OrderDetailDto
 import cz.cleansia.customer.core.orders.OrderPackageDetailsDto
@@ -361,58 +359,6 @@ internal fun AssignedCleanersCard(employees: List<AssignedEmployeeDto>) {
                             modifier = Modifier.size(18.dp),
                         )
                     }
-                }
-            }
-        }
-    }
-}
-
-/* ── Contract for work ── */
-
-/**
- * One line per crew member who accepted the contract for work, each opening the accepted text.
- * Nothing before any acceptance: the crew card already says who is coming, and a "pending" line
- * would tell the customer about a state that is the platform's to chase.
- */
-@Composable
-internal fun WorkContractCard(
-    lines: List<WorkContractAcceptanceLine>,
-    onRead: (acceptanceId: String) -> Unit,
-) {
-    Card {
-        SectionHeader(title = stringResource(R.string.work_contract_title))
-        Spacer(Modifier.height(6.dp))
-        lines.forEachIndexed { idx, line ->
-            if (idx > 0) {
-                Spacer(Modifier.height(6.dp))
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                Spacer(Modifier.height(6.dp))
-            }
-            Row(verticalAlignment = Alignment.Top) {
-                Icon(
-                    Icons.Outlined.Verified,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier
-                        .padding(top = 2.dp)
-                        .size(18.dp),
-                )
-                Spacer(Modifier.width(10.dp))
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        text = stringResource(
-                            R.string.work_contract_accepted_line,
-                            line.cleanerName ?: stringResource(R.string.order_detail_cleaner_fallback),
-                            formatOrderDateTime(line.acceptedOn),
-                            line.documentVersion,
-                        ),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                    CleansiaTextLink(
-                        text = stringResource(R.string.work_contract_read),
-                        onClick = { onRead(line.id) },
-                    )
                 }
             }
         }

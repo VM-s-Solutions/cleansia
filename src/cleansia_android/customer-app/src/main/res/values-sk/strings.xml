@@ -368,20 +368,9 @@
     <string name="order_photos_metadata_by">Vyhotovil(a) %1$s</string>
     <string name="common_close">Zavrieť</string>
 
-    <!-- Contract for work: the wizard sentence at the offer, the detail line per accepting crew member, the contract screen -->
-    <string name="booking_work_contract_notice"><![CDATA[Potvrdením objednávky uzatvárate s upratovačkou či upratovačom zmluvu o dielo za <a href="cleansia://work-contract">týchto podmienok</a>.]]></string>
-    <string name="work_contract_title">Zmluva o dielo</string>
-    <string name="work_contract_accepted_line">Zmluvu o dielo prijal(a) %1$s dňa %2$s, verzia %3$s</string>
-    <string name="work_contract_read">Čítať zmluvu</string>
-    <string name="work_contract_version">Verzia %1$s</string>
-    <string name="work_contract_facts_title">Zákazka, ako bola prijatá</string>
-    <string name="work_contract_order_number">Číslo objednávky</string>
-    <string name="work_contract_window">Dátum a čas</string>
-    <string name="work_contract_price">Cena</string>
-    <string name="work_contract_location">Miesto</string>
-    <string name="work_contract_accepted_on">Prijaté upratovačkou či upratovačom dňa %1$s, verzia %2$s</string>
-    <string name="work_contract_accepted_in_language">Prijaté v jazyku: %1$s</string>
-    <string name="work_contract_load_error">Zmluvu sa nepodarilo načítať. Skúste to prosím znova.</string>
+    <!-- Booking review: the contract sentence and the request to start within the withdrawal period -->
+    <string name="booking_contract_notice"><![CDATA[Potvrdením objednávky uzatvárate zmluvu o upratovaní s prevádzkovou spoločnosťou trhu, na ktorom sa vaša domácnosť nachádza, za jej <a href="cleansia://terms">Podmienok služby</a>. Upratovanie vykoná upratovač ako subdodávateľ spoločnosti a stranou vašej zmluvy nie je.]]></string>
+    <string name="consent_early_performance_draft_2026_09_29">Žiadam, aby sa upratovanie začalo v 14-dňovej lehote na odstúpenie od zmluvy, a beriem na vedomie, že po úplnom vykonaní upratovania právo na odstúpenie strácam.</string>
 
     <!-- Profile tab -->
     <string name="profile_greeting">Ahoj!</string>
@@ -506,7 +495,7 @@
     <string name="help_call">Zavolať na podporu</string>
     <string name="help_call_desc">Po–Ne · 8:00–20:00</string>
     <string name="help_email">Napísať e-mail</string>
-    <string name="help_email_desc">support@cleansia.cz</string>
+    <string name="help_email_desc">info@cleansia.cz</string>
     <string name="help_faq_title">Často kladené otázky</string>
     <string name="help_faq_q1">Ako môžem zrušiť rezerváciu?</string>
     <string name="help_faq_a1">Otvorte rezerváciu v záložke Objednávky a klepnite na \"Zrušiť\". Zrušenie zdarma až 24 hodín pred začiatkom upratovania. Do 15 minút od objednania neplatíte nič — pri prvej objednávke alebo s Cleansia Plus do 60 minút.</string>
@@ -1363,6 +1352,7 @@
     <string name="error_auth_too_many_attempts">Príliš veľa pokusov s týmto kódom. Vyžiadajte si nový kód a skúste to znova.</string>
     <string name="error_company_not_found">Informácie o spoločnosti neboli nájdené</string>
     <string name="error_consent_terms_not_accepted">Pre pokračovanie prosím prijmite obchodné podmienky a zásady ochrany súkromia.</string>
+    <string name="error_consent_early_performance_not_requested">Pre pokračovanie prosím potvrďte, že žiadate o začatie poskytovania služby v 14-dňovej lehote na odstúpenie od zmluvy.</string>
     <string name="error_country_not_existing_id">Krajina nebola nájdená</string>
     <string name="error_currency_invalid">Neplatná mena</string>
     <string name="error_country_not_serviced">V tejto krajine zatiaľ nepôsobíme.</string>

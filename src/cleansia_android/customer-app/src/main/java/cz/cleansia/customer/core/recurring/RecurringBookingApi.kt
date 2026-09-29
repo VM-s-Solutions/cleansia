@@ -56,6 +56,7 @@ class RecurringBookingApi(
                 preferredEmployeeId = body.preferredEmployeeId,
                 termsAccepted = body.termsAccepted,
                 dirtinessLevel = body.dirtinessLevel.toWire(),
+                earlyPerformanceRequested = body.earlyPerformanceRequested,
             ),
         )
         return raw.mapWire { it.required("RecurringBookingTemplateDto").toAppDto() }

@@ -939,6 +939,8 @@
     <string name="recurring_plus_gate_cta">Оформить Cleansia Plus</string>
     <string name="recurring_lapsed_notice_title">Cleansia Plus больше не активна</string>
     <string name="recurring_lapsed_notice_body">Эти расписания продолжают работать, и уборки бронируются по полной цене без членства. Любое из них можно здесь в любой момент приостановить или удалить. Чтобы добавить или изменить расписание, возобновите подписку.</string>
+    <string name="recurring_paused_notice_title">Регулярные приостановлены — оплата Plus не прошла</string>
+    <string name="recurring_paused_notice_body">Нам не удалось списать оплату за продление Plus, поэтому ваши расписания не бронируют новых уборок, и ни одно нельзя добавить или изменить. Если повторная оплата пройдёт, они снова начнут бронировать.</string>
 
     <!-- Recurring booking create form -->
     <string name="recurring_create_title_blank">Новая регулярная уборка</string>

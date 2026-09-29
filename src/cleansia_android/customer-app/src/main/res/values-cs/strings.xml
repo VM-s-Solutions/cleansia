@@ -942,6 +942,8 @@
     <string name="recurring_plus_gate_cta">Získat Cleansia Plus</string>
     <string name="recurring_lapsed_notice_title">Cleansia Plus už není aktivní</string>
     <string name="recurring_lapsed_notice_body">Tyto rozvrhy běží dál a úklidy se objednávají za plnou cenu bez členství. Kterýkoli z nich tu můžete kdykoli pozastavit nebo smazat. Pro přidání nebo úpravu rozvrhu členství obnovte.</string>
+    <string name="recurring_paused_notice_title">Opakování pozastaveno — platba za Plus selhala</string>
+    <string name="recurring_paused_notice_body">Platbu za obnovení Plus se nepodařilo strhnout, a proto vaše rozvrhy neobjednávají žádné nové úklidy a žádný nelze přidat ani upravit. Pokud opakovaná platba projde, začnou se znovu objednávat.</string>
 
     <!-- Recurring booking create form -->
     <string name="recurring_create_title_blank">Nový opakovaný úklid</string>

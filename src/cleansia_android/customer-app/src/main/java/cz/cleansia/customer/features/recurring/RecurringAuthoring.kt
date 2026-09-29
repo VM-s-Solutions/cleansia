@@ -1,5 +1,7 @@
 package cz.cleansia.customer.features.recurring
 
+import cz.cleansia.customer.core.memberships.GetMyMembershipResponse
+import cz.cleansia.customer.core.memberships.benefitsPaused
 import cz.cleansia.customer.core.recurring.RecurringBookingTemplateDto
 
 /**
@@ -8,21 +10,30 @@ import cz.cleansia.customer.core.recurring.RecurringBookingTemplateDto
  * pausing, resuming and deleting one that already exists is deliberately
  * ungated so a lapsed subscriber can always stop what is still generating
  * billable cleanings.
+ *
+ * [Paused] is a live enrolment whose benefits are paused: the server refuses
+ * authoring and books none of its schedules, yet refuses a second subscription
+ * too, so it gets neither the create affordances nor the subscribe upsell.
  */
 enum class RecurringAuthoringGate {
     Allowed,
     Upsell,
+    Paused,
     ;
 
     companion object {
         /**
-         * A null [hasMembership] is the answer not having landed. It resolves
+         * A null [membership] is the answer not having landed. It resolves
          * permissively: the server refuses an unentitled create on its own, so
          * failing open costs a member nothing, while failing closed shows a
          * paid-up member the upsell every time the fetch is slow or fails.
          */
-        fun resolve(hasMembership: Boolean?): RecurringAuthoringGate =
-            if (hasMembership == false) Upsell else Allowed
+        fun resolve(membership: GetMyMembershipResponse?): RecurringAuthoringGate = when {
+            membership == null -> Allowed
+            !membership.hasMembership -> Upsell
+            membership.benefitsPaused -> Paused
+            else -> Allowed
+        }
     }
 }
 
@@ -30,6 +41,7 @@ data class RecurringListAffordances(
     val showCreateAction: Boolean,
     val showPlusUpsell: Boolean,
     val showLapsedNotice: Boolean,
+    val showPausedNotice: Boolean,
     val showEdit: Boolean,
 ) {
     companion object {
@@ -37,6 +49,7 @@ data class RecurringListAffordances(
             showCreateAction = gate == RecurringAuthoringGate.Allowed && hasTemplates,
             showPlusUpsell = gate == RecurringAuthoringGate.Upsell && !hasTemplates,
             showLapsedNotice = gate == RecurringAuthoringGate.Upsell && hasTemplates,
+            showPausedNotice = gate == RecurringAuthoringGate.Paused,
             showEdit = gate == RecurringAuthoringGate.Allowed,
         )
     }

@@ -12,6 +12,7 @@ import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.memberships.GetMyMembershipResponse
 import cz.cleansia.customer.core.memberships.MembershipRepository
+import cz.cleansia.customer.core.memberships.MembershipStatus
 import cz.cleansia.customer.core.notifications.OrderEvent
 import cz.cleansia.customer.core.notifications.OrderEventBus
 import cz.cleansia.customer.core.orders.OrderDetailDto
@@ -99,8 +100,8 @@ class OrderDetailViewModelTest {
     }
 
     /** Stands in for the repository writing its cache from a successful fetch. */
-    private fun membershipAnswer(hasMembership: Boolean): ApiResult<GetMyMembershipResponse> {
-        val body = GetMyMembershipResponse(hasMembership = hasMembership)
+    private fun membershipAnswer(hasMembership: Boolean, status: MembershipStatus? = null): ApiResult<GetMyMembershipResponse> {
+        val body = GetMyMembershipResponse(hasMembership = hasMembership, status = status?.code)
         membership.value = body
         membershipStaleness.markFresh()
         return ApiResult.Success(body)
@@ -351,6 +352,20 @@ class OrderDetailViewModelTest {
         advanceUntilIdle()
 
         assertEquals(RecurringAuthoringGate.Allowed, vm.recurringAuthoring.value)
+    }
+
+    /** A failed renewal keeps the enrolment alive, but the server refuses the schedule it would create. */
+    @Test
+    fun `a past-due member loses the make-recurring shortcut`() = runTest {
+        coEvery { repository.getById(orderId) } returns ApiResult.Success(order(5))
+        coEvery { membershipRepository.refresh() } coAnswers {
+            membershipAnswer(hasMembership = true, status = MembershipStatus.PastDue)
+        }
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        assertEquals(RecurringAuthoringGate.Paused, vm.recurringAuthoring.value)
     }
 
     @Test

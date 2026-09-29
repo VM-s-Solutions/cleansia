@@ -151,7 +151,7 @@ class OrderDetailViewModel @Inject constructor(
      * empty on a cold deep link, and a paid-up member lost the shortcut for it.
      */
     val recurringAuthoring: StateFlow<RecurringAuthoringGate> = membershipRepository.current
-        .map { RecurringAuthoringGate.resolve(it?.hasMembership) }
+        .map { RecurringAuthoringGate.resolve(it) }
         .stateIn(viewModelScope, SharingStarted.Eagerly, RecurringAuthoringGate.Allowed)
 
     /**

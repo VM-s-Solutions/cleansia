@@ -112,8 +112,8 @@ fun OrderDetailScreen(
     /**
      * PA14 Path B — "Make this recurring". Routes to the create form with
      * the order id pre-filling services/packages/rooms/bathrooms/payment/
-     * timeOfDay. Shown on a Completed order unless membership has resolved
-     * to "not a member" — see [RecurringAuthoringGate].
+     * timeOfDay. Shown on a Completed order only while [RecurringAuthoringGate]
+     * allows authoring.
      */
     onMakeRecurring: (orderId: String) -> Unit = {},
     @Suppress("UNUSED_PARAMETER") onDownloadReceipt: () -> Unit = {},

@@ -88,6 +88,7 @@ import cz.cleansia.core.ui.theme.Poppins
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.loyalty.LoyaltyAccountDto
 import cz.cleansia.customer.core.loyalty.LoyaltyTier
+import cz.cleansia.customer.core.memberships.benefitsPaused
 import cz.cleansia.customer.core.orders.OrderListItemDto
 import cz.cleansia.customer.features.booking.localizedName
 import cz.cleansia.customer.features.orders.OrderStatus
@@ -198,7 +199,7 @@ fun HomeTab(
             .take(3)
     }
     val showRecurringSection = activeRecurring.isNotEmpty()
-    val showSetupRecurringSlide = isPlus && recurringTemplates.isEmpty()
+    val showSetupRecurringSlide = isPlus && membership?.benefitsPaused != true && recurringTemplates.isEmpty()
 
     // Most recent Completed order — drives the "Order again" quick-action card.
     val mostRecentCompleted = androidx.compose.runtime.remember(recentOrders) {

@@ -36,7 +36,7 @@ class RecurringBookingsViewModel @Inject constructor(
     val loaded: StateFlow<Boolean> = repository.loaded
 
     val authoring: StateFlow<RecurringAuthoringGate> = membershipRepository.current
-        .map { RecurringAuthoringGate.resolve(it?.hasMembership) }
+        .map { RecurringAuthoringGate.resolve(it) }
         .stateIn(viewModelScope, SharingStarted.Eagerly, RecurringAuthoringGate.Allowed)
 
     private val _mutating = MutableStateFlow<String?>(null)

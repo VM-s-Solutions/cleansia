@@ -10,7 +10,7 @@ These terms govern the cleaning you order through the Cleansia mobile apps and t
 
 The cleaning is sold to you in its own name by the operating company of the market in which the home to be cleaned is located:
 
-{{companyLegalName}}, company ID (IČO) {{companyRegistrationNumber}}, tax ID (DIČ) {{companyVatNumber}}, registered office {{companySeat}}, e-mail {{companyEmail}}, phone {{companyPhone}} (the "company" or "we").
+{{companyLegalName}}, company ID (IČO) {{companyRegistrationNumber}}, registered office {{companySeat}}, e-mail {{companyEmail}}, phone {{companyPhone}} (the "company" or "we").
 
 Your contract for the cleaning is with the company. The company performs it through independent cleaners whom it engages as subcontractors. A cleaner is not a party to your contract, and the company is responsible to you for the cleaner's work as for its own.
 
@@ -70,7 +70,7 @@ If a charge to the card fails, we e-mail you a link to pay the amount owed. You 
 
 ## 9. Credit
 
-Credit is a balance in your account that the company grants, for example as an apology when a cleaner does not arrive, as a goodwill gesture, or as the settlement of a complaint for which you chose credit. Credit you spent on a booking that is cancelled or refunded returns to your balance.
+Credit is a balance in your account that the company grants, for example as an apology when a cleaner does not arrive, as a goodwill gesture, or as the settlement of a complaint for which you chose credit. If a booking you paid partly with credit is cancelled or refunded, the amount returned is split between your balance and your card in the same proportion as you paid the price: all the credit you spent returns when nothing is kept, and only a proportional part of it when a fee is kept or only part of the price is refunded.
 
 - Credit can pay at most 70 % of the price of a card booking; the rest is paid by card. Credit cannot be used on a cash booking.
 - Credit is kept separately in each currency and is never converted.
@@ -106,7 +106,7 @@ You cancel a booking in the app or on the website; as a guest, through the link 
 - Otherwise, once a cleaner has accepted: free until 24 hours before the start, 25 % between 24 and 4 hours before the start, and 50 % less than 4 hours before the start. With a paid Cleansia Plus membership: free until 4 hours before the start and 50 % after that.
 - Once the start time has passed with a cleaner assigned, you cannot cancel; if the cleaner has not arrived, report it (section 14). A cleaning in progress cannot be cancelled.
 
-On a card booking the company keeps the fee and refunds the rest to your card; credit you spent returns to your balance. On a cash booking the fee is owed and is paid as described in section 8.
+On a card booking the company keeps the fee from what you paid by card and in credit, in the same proportion as you paid the price, and returns the rest the same way: the card share to your card and the credit share to your balance. On a cash booking the fee is owed and is paid as described in section 8.
 
 There is no rescheduling. To change the date or time, cancel the booking under these rules and book again.
 
@@ -120,7 +120,7 @@ In both cases you pay nothing: a card payment is refunded in full within 5 worki
 
 ## 15. When the cleaner cannot get into your home
 
-Make sure the cleaner can get into the home at the booked time. If they cannot, the cleaner waits 15 minutes past the start, tries to reach you, and reports it with a photo of the entrance. When our staff confirm the report, the booking is cancelled as your cancellation at 100 % of the price: the company keeps a card payment, and on a cash booking the whole price is owed and paid as described in section 8. From a guest, the company keeps the payment and charges nothing more.
+Make sure the cleaner can get into the home at the booked time. If they cannot, the cleaner waits 15 minutes past the start, tries to reach you, and reports it with a photo of the entrance. When our staff confirm the report, the booking is cancelled as your cancellation at 100 % of the price: the company keeps a card payment and the credit applied to it, and on a cash booking the whole price is owed and paid as described in section 8. From a guest, the company keeps the payment and charges nothing more.
 
 ## 16. During the cleaning
 

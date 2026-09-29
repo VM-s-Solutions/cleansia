@@ -179,7 +179,9 @@ public sealed class LegalDocumentSeederTests : IDisposable
     /// name the seller through the placeholders the read path fills from the market operator's company
     /// record, in every language, and carry no identity of their own — the 2026-09-27 terms named nobody
     /// and hard-coded an e-mail and a phone. A placeholder outside this set would reach the customer as
-    /// braces, because nothing fills it.
+    /// braces, because nothing fills it — which is why the VAT number is not in it: a company that is not a
+    /// VAT payer, the launch state, holds none (its record clears it), and the price section states the VAT
+    /// position instead.
     /// </summary>
     [Fact]
     public void The_Newest_Terms_Name_The_Seller_Only_Through_The_Company_Placeholders_In_Every_Language()
@@ -201,7 +203,6 @@ public sealed class LegalDocumentSeederTests : IDisposable
         LegalMarkdownRenderer.CurrencyPlaceholder,
         LegalMarkdownRenderer.CompanyLegalNamePlaceholder,
         LegalMarkdownRenderer.CompanyRegistrationNumberPlaceholder,
-        LegalMarkdownRenderer.CompanyVatNumberPlaceholder,
         LegalMarkdownRenderer.CompanySeatPlaceholder,
         LegalMarkdownRenderer.CompanyEmailPlaceholder,
         LegalMarkdownRenderer.CompanyPhonePlaceholder,
@@ -234,8 +235,11 @@ public sealed class LegalDocumentSeederTests : IDisposable
         });
     }
 
-    private static readonly string[] CompanyPlaceholders =
-        TermsPlaceholders.Where(p => p != LegalMarkdownRenderer.CurrencyPlaceholder).ToArray();
+    private static readonly string[] CompanyPlaceholders = TermsPlaceholders
+        .Where(p => p != LegalMarkdownRenderer.CurrencyPlaceholder)
+        .Append(LegalMarkdownRenderer.CompanyVatNumberPlaceholder)
+        .Order(StringComparer.Ordinal)
+        .ToArray();
 
     /// <summary>
     /// The 2026-09-14 terms promised cash on delivery to everyone; the cash rule admits it only for a

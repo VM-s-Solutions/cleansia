@@ -10,7 +10,7 @@ Tyto obchodní podmínky upravují úklid, který si objednáváte v mobilních 
 
 Úklid vám svým jménem prodává provozní společnost trhu, na kterém se uklízená domácnost nachází:
 
-{{companyLegalName}}, IČO {{companyRegistrationNumber}}, DIČ {{companyVatNumber}}, se sídlem {{companySeat}}, e-mail {{companyEmail}}, telefon {{companyPhone}} (dále jen „společnost“ nebo „my“).
+{{companyLegalName}}, IČO {{companyRegistrationNumber}}, se sídlem {{companySeat}}, e-mail {{companyEmail}}, telefon {{companyPhone}} (dále jen „společnost“ nebo „my“).
 
 Smlouvu o úklidu uzavíráte se společností. Společnost ji plní prostřednictvím nezávislých uklízečů, které si najímá jako subdodavatele. Uklízeč není stranou vaší smlouvy a za jeho práci vám společnost odpovídá, jako by ji prováděla sama.
 
@@ -70,7 +70,7 @@ Pokud se stržení z karty nezdaří, pošleme vám e-mailem odkaz k zaplacení 
 
 ## 9. Kredit
 
-Kredit je zůstatek na vašem účtu, který společnost poskytuje například jako omluvu, když uklízeč nedorazí, jako projev dobré vůle nebo jako vyřízení reklamace, u které jste zvolili kredit. Kredit použitý na objednávku, která je zrušena nebo za kterou se vracejí peníze, se vrací na váš zůstatek.
+Kredit je zůstatek na vašem účtu, který společnost poskytuje například jako omluvu, když uklízeč nedorazí, jako projev dobré vůle nebo jako vyřízení reklamace, u které jste zvolili kredit. Je-li objednávka, kterou jste zčásti zaplatili kreditem, zrušena nebo se za ni vracejí peníze, vrácená částka se rozdělí mezi váš zůstatek a vaši kartu ve stejném poměru, v jakém jste cenu zaplatili: celý použitý kredit se vrátí, když si společnost nic neponechá, a jen jeho poměrná část, když si ponechá poplatek nebo se vrací jen část ceny.
 
 - Kreditem lze uhradit nejvýše 70 % ceny objednávky placené kartou; zbytek se platí kartou. Na objednávku placenou v hotovosti kredit použít nelze.
 - Kredit se vede zvlášť v každé měně a nikdy se nepřevádí.
@@ -106,7 +106,7 @@ Objednávku zrušíte v aplikaci nebo na webu; jako host přes odkaz v e-mailu k
 - Jinak, jakmile objednávku přijal uklízeč: zdarma do 24 hodin před začátkem, 25 % mezi 24 a 4 hodinami před začátkem a 50 % méně než 4 hodiny před začátkem. S placeným členstvím Cleansia Plus: zdarma do 4 hodin před začátkem a poté 50 %.
 - Jakmile čas začátku uplyne a na objednávce je přidělený uklízeč, zrušit ji nemůžete; pokud uklízeč nedorazil, nahlaste to (článek 14). Probíhající úklid zrušit nelze.
 
-U objednávky placené kartou si společnost poplatek ponechá a zbytek vrátí na vaši kartu; použitý kredit se vrátí na váš zůstatek. U objednávky placené v hotovosti je poplatek dlužný a hradí se podle článku 8.
+U objednávky placené kartou si společnost ponechá poplatek z toho, co jste zaplatili kartou a kreditem, ve stejném poměru, v jakém jste cenu zaplatili, a zbytek vrátí stejným způsobem: podíl zaplacený kartou na vaši kartu a podíl zaplacený kreditem na váš zůstatek. U objednávky placené v hotovosti je poplatek dlužný a hradí se podle článku 8.
 
 Přesunutí termínu není možné. Chcete-li změnit datum nebo čas, zrušte objednávku podle těchto pravidel a objednejte znovu.
 
@@ -120,7 +120,7 @@ V obou případech nic neplatíte: platba kartou se vám vrátí v plné výši 
 
 ## 15. Když se uklízeč nedostane do domácnosti
 
-Zajistěte, aby se uklízeč v objednaném čase dostal do domácnosti. Pokud se dovnitř nedostane, počká 15 minut po začátku, pokusí se vás zkontaktovat a nahlásí to s fotografií vchodu. Jakmile naši pracovníci hlášení potvrdí, objednávka se zruší jako vaše zrušení za 100 % ceny: platbu kartou si společnost ponechá a u hotovostní objednávky je dlužná celá cena, která se hradí podle článku 8. Hostovi společnost zaplacenou částku ponechá a nic dalšího neúčtuje.
+Zajistěte, aby se uklízeč v objednaném čase dostal do domácnosti. Pokud se dovnitř nedostane, počká 15 minut po začátku, pokusí se vás zkontaktovat a nahlásí to s fotografií vchodu. Jakmile naši pracovníci hlášení potvrdí, objednávka se zruší jako vaše zrušení za 100 % ceny: platbu kartou i kredit na ni použitý si společnost ponechá a u hotovostní objednávky je dlužná celá cena, která se hradí podle článku 8. Hostovi společnost zaplacenou částku ponechá a nic dalšího neúčtuje.
 
 ## 16. Během úklidu
 

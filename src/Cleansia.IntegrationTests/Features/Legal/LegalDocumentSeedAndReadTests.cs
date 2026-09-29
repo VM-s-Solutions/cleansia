@@ -53,10 +53,12 @@ public sealed class LegalDocumentSeedAndReadTests(PostgresContainerFixture fixtu
         context.CountryConfigurations.AddRange(
             CountryConfiguration.Create(Czechia, "CZK", "cs", 0.21m).AssignOperator(TestTenants.Default).SetAsDefaultMarket(true),
             CountryConfiguration.Create(Slovakia, "EUR", "sk", 0.20m).AssignOperator(TestTenants.Default));
-        // The terms name the seller from the market operator's company record (decision 54).
+        // The terms name the seller from the market operator's company record (decision 54). It is not a VAT
+        // payer, the launch state, saved as the admin console saves one: the VAT number typed in is cleared.
         context.CompanyInfo.Add(CompanyInfo.Create(
-            SlovakSeller, "Cleansia", "87654321", "Hlavná 1", "Bratislava", "81101", Slovakia,
-            vatNumber: "SK2020123456", phone: "+421 900 000 000", email: "info@seller.test"));
+                SlovakSeller, "Cleansia", "87654321", "Hlavná 1", "Bratislava", "81101", Slovakia,
+                vatNumber: "SK2020123456", phone: "+421 900 000 000", email: "info@seller.test")
+            .SetVatPayerStatus(false));
         StampUnstampedAdded(context, TestTenants.Default);
         await context.CommitAsync(CancellationToken.None);
     }

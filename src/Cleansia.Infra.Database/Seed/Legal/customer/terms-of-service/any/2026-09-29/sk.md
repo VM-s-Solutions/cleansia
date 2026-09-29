@@ -10,7 +10,7 @@ Tieto obchodné podmienky upravujú upratovanie, ktoré si objednávate v mobiln
 
 Upratovanie vám vo svojom mene predáva prevádzková spoločnosť trhu, na ktorom sa upratovaná domácnosť nachádza:
 
-{{companyLegalName}}, IČO {{companyRegistrationNumber}}, DIČ {{companyVatNumber}}, so sídlom {{companySeat}}, e-mail {{companyEmail}}, telefón {{companyPhone}} (ďalej len „spoločnosť“ alebo „my“).
+{{companyLegalName}}, IČO {{companyRegistrationNumber}}, so sídlom {{companySeat}}, e-mail {{companyEmail}}, telefón {{companyPhone}} (ďalej len „spoločnosť“ alebo „my“).
 
 Zmluvu o upratovaní uzatvárate so spoločnosťou. Spoločnosť ju plní prostredníctvom nezávislých upratovačov, ktorých si najíma ako subdodávateľov. Upratovač nie je stranou vašej zmluvy a za jeho prácu vám spoločnosť zodpovedá, akoby ju vykonávala sama.
 
@@ -70,7 +70,7 @@ Ak sa stiahnutie z karty nepodarí, pošleme vám e-mailom odkaz na zaplatenie d
 
 ## 9. Kredit
 
-Kredit je zostatok na vašom účte, ktorý spoločnosť poskytuje napríklad ako ospravedlnenie, keď upratovač nepríde, ako prejav dobrej vôle alebo ako vybavenie reklamácie, pri ktorej ste zvolili kredit. Kredit použitý na objednávku, ktorá je zrušená alebo za ktorú sa vracajú peniaze, sa vracia na váš zostatok.
+Kredit je zostatok na vašom účte, ktorý spoločnosť poskytuje napríklad ako ospravedlnenie, keď upratovač nepríde, ako prejav dobrej vôle alebo ako vybavenie reklamácie, pri ktorej ste zvolili kredit. Ak je objednávka, ktorú ste sčasti zaplatili kreditom, zrušená alebo sa za ňu vracajú peniaze, vrátená suma sa rozdelí medzi váš zostatok a vašu kartu v rovnakom pomere, v akom ste cenu zaplatili: celý použitý kredit sa vráti, keď si spoločnosť nič neponechá, a len jeho pomerná časť, keď si ponechá poplatok alebo sa vracia len časť ceny.
 
 - Kreditom možno uhradiť najviac 70 % ceny objednávky platenej kartou; zvyšok sa platí kartou. Na objednávku platenú v hotovosti kredit použiť nemožno.
 - Kredit sa vedie osobitne v každej mene a nikdy sa neprevádza.
@@ -106,7 +106,7 @@ Objednávku zrušíte v aplikácii alebo na webe; ako hosť cez odkaz v e-maile 
 - Inak, len čo objednávku prijal upratovač: zadarmo do 24 hodín pred začiatkom, 25 % medzi 24 a 4 hodinami pred začiatkom a 50 % menej ako 4 hodiny pred začiatkom. S plateným členstvom Cleansia Plus: zadarmo do 4 hodín pred začiatkom a potom 50 %.
 - Len čo čas začiatku uplynie a na objednávke je pridelený upratovač, zrušiť ju nemôžete; ak upratovač neprišiel, nahláste to (článok 14). Prebiehajúce upratovanie zrušiť nemožno.
 
-Pri objednávke platenej kartou si spoločnosť poplatok ponechá a zvyšok vráti na vašu kartu; použitý kredit sa vráti na váš zostatok. Pri objednávke platenej v hotovosti je poplatok dlžný a hradí sa podľa článku 8.
+Pri objednávke platenej kartou si spoločnosť ponechá poplatok z toho, čo ste zaplatili kartou a kreditom, v rovnakom pomere, v akom ste cenu zaplatili, a zvyšok vráti rovnakým spôsobom: podiel zaplatený kartou na vašu kartu a podiel zaplatený kreditom na váš zostatok. Pri objednávke platenej v hotovosti je poplatok dlžný a hradí sa podľa článku 8.
 
 Presunutie termínu nie je možné. Ak chcete zmeniť dátum alebo čas, zrušte objednávku podľa týchto pravidiel a objednajte znova.
 
@@ -120,7 +120,7 @@ V oboch prípadoch nič neplatíte: platba kartou sa vám vráti v plnej výške
 
 ## 15. Keď sa upratovač nedostane do domácnosti
 
-Zabezpečte, aby sa upratovač v objednanom čase dostal do domácnosti. Ak sa dnu nedostane, počká 15 minút po začiatku, pokúsi sa vás skontaktovať a nahlási to s fotografiou vchodu. Len čo naši pracovníci hlásenie potvrdia, objednávka sa zruší ako vaše zrušenie za 100 % ceny: platbu kartou si spoločnosť ponechá a pri hotovostnej objednávke je dlžná celá cena, ktorá sa hradí podľa článku 8. Hosťovi spoločnosť zaplatenú sumu ponechá a nič ďalšie neúčtuje.
+Zabezpečte, aby sa upratovač v objednanom čase dostal do domácnosti. Ak sa dnu nedostane, počká 15 minút po začiatku, pokúsi sa vás skontaktovať a nahlási to s fotografiou vchodu. Len čo naši pracovníci hlásenie potvrdia, objednávka sa zruší ako vaše zrušenie za 100 % ceny: platbu kartou aj kredit na ňu použitý si spoločnosť ponechá a pri hotovostnej objednávke je dlžná celá cena, ktorá sa hradí podľa článku 8. Hosťovi spoločnosť zaplatenú sumu ponechá a nič ďalšie neúčtuje.
 
 ## 16. Počas upratovania
 

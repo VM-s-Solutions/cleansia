@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Cleansia.Core.Domain.Company;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Legal;
 using Cleansia.HostTests.Infrastructure;
@@ -22,6 +23,7 @@ public sealed class LegalDocumentRouteTests(HostTestPostgresFixture db) : AuthzH
     private const string AdminEmail = "admin-legal@hosttests.local";
     private const string CustomerId = "u-customer-legal";
     private const string CustomerEmail = "customer-legal@hosttests.local";
+    private const string Seller = "Cleansia CZ s.r.o.";
 
     private static string AdminToken() =>
         TestJwtFactory.Mint(AdminAudience, AdminId, AdminEmail, UserProfile.Administrator);
@@ -43,8 +45,8 @@ public sealed class LegalDocumentRouteTests(HostTestPostgresFixture db) : AuthzH
 
         var documents = await QueryAsync(ctx => ctx.LegalDocuments.Include(d => d.Texts).AsNoTracking().ToListAsync());
 
-        Assert.Equal(4, documents.Count);
-        Assert.Equal(2, documents.Count(d => d.Type == LegalDocumentType.TermsOfService));
+        Assert.Equal(7, documents.Count);
+        Assert.Equal(3, documents.Count(d => d.Type == LegalDocumentType.TermsOfService));
         Assert.Contains(documents, d => d.Type == LegalDocumentType.WorkContract);
         Assert.All(documents, d => Assert.Equal(LegalDocumentAudience.Customer, d.Audience));
         Assert.All(documents, d => Assert.Null(d.CountryId));
@@ -55,7 +57,15 @@ public sealed class LegalDocumentRouteTests(HostTestPostgresFixture db) : AuthzH
     [Fact]
     public async Task Anonymous_read_on_the_customer_host_serves_the_version_in_force_with_the_markets_currency()
     {
-        await ArrangeMarketAsync();
+        await SeedAsync(async ctx =>
+        {
+            await DomainSeed.EnsureReferenceDataAsync(ctx);
+            // The terms name the seller from the market operator's company record (decision 54): a company
+            // that is not a VAT payer, the launch state.
+            ctx.CompanyInfo.Add(CompanyInfo.Create(
+                Seller, "Cleansia", "12345678", "Václavské náměstí 1", "Praha", "11000", DomainSeed.CountryId,
+                phone: "+420 800 000 000", email: "info@seller.test"));
+        });
 
         var resp = await CustomerClientAnonymous().GetAsync(CustomerRoute(DomainSeed.CountryId, "cs"));
 
@@ -73,6 +83,8 @@ public sealed class LegalDocumentRouteTests(HostTestPostgresFixture db) : AuthzH
         var html = body.GetProperty("contentHtml").GetString()!;
         Assert.Contains("<h2>", html);
         Assert.Contains("CZK", html);
+        Assert.Contains(Seller, html);
+        Assert.Contains("12345678", html);
         Assert.DoesNotContain("{{", html);
         Assert.Equal(64, body.GetProperty("contentHash").GetString()!.Length);
     }

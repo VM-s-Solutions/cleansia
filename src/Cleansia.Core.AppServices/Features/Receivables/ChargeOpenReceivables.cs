@@ -5,6 +5,7 @@ using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
 using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Validations;
+using FluentValidation;
 using Microsoft.Extensions.Logging;
 using BusinessResult = Cleansia.Infra.Common.Validations.BusinessResult;
 using StripeException = Stripe.StripeException;
@@ -23,6 +24,8 @@ namespace Cleansia.Core.AppServices.Features.Receivables;
 public class ChargeOpenReceivables
 {
     public record Command : ICommand<Response>;
+
+    public class Validator : AbstractValidator<Command>;
 
     public record Response(int Attempted, int Charged);
 

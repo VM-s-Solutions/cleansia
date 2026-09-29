@@ -1,5 +1,6 @@
 package cz.cleansia.customer.core.orders
 
+import cz.cleansia.customer.core.booking.DirtinessLevel
 import cz.cleansia.customer.core.catalog.TranslationDto
 import cz.cleansia.customer.core.user.CodeDto
 import kotlinx.serialization.Serializable
@@ -154,6 +155,9 @@ data class OrderDetailDto(
     val review: OrderReviewDto? = null,
     /** One per current seat whose cleaner accepted the contract for work; empty before any acceptance. */
     val workContractAcceptances: List<WorkContractAcceptanceDto>? = null,
+    val dirtinessLevel: DirtinessLevel = DirtinessLevel.Normal,
+    /** Stored in cents at booking, before express and discounts; inside [originalSubtotal]. */
+    val dirtinessSurchargeAmount: Double = 0.0,
 )
 
 /**

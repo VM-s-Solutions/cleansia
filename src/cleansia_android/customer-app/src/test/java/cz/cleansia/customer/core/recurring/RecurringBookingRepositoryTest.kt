@@ -2,6 +2,7 @@ package cz.cleansia.customer.core.recurring
 
 import android.content.Context
 import cz.cleansia.customer.R
+import cz.cleansia.customer.core.booking.DirtinessLevel
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
@@ -87,6 +88,7 @@ class RecurringBookingRepositoryTest {
         selectedPackageIds = emptyList(),
         paymentType = 1,
         startsOn = "2026-07-01T08:00:00Z",
+        dirtinessLevel = DirtinessLevel.Normal,
     )
 
     private fun updateRequest() = UpdateRecurringBookingRequest(
@@ -101,6 +103,7 @@ class RecurringBookingRepositoryTest {
         selectedPackageIds = emptyList(),
         paymentType = 1,
         startsOn = "2026-07-01T08:00:00Z",
+        dirtinessLevel = DirtinessLevel.Normal,
     )
 
     private fun errorBody() = "{}".toResponseBody("application/json".toMediaType())

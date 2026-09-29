@@ -8,6 +8,7 @@ import cz.cleansia.customer.core.booking.BookingApi
 import cz.cleansia.customer.core.booking.CashEligibility
 import cz.cleansia.customer.core.booking.CreateOrderCommand
 import cz.cleansia.customer.core.booking.CreateOrderResponse
+import cz.cleansia.customer.core.booking.DirtinessLevel
 import cz.cleansia.customer.core.booking.PropertySize
 import cz.cleansia.customer.core.booking.QuoteOrderCommand
 import cz.cleansia.customer.core.booking.QuoteOrderResponse
@@ -1958,6 +1959,66 @@ class BookingViewModelTest {
 
         assertEquals(BookingSubmitOutcome.Failed, outcome)
         coVerify(exactly = 0) { bookingApi.create(any()) }
+    }
+
+    // ── the dirtiness level — priced by the server, and the crew and cash follow it ──
+
+    @Test
+    fun quoteWatcher_pricesTheChosenDirtinessLevel() = runTest {
+        val sent = mutableListOf<QuoteOrderCommand>()
+        coEvery { bookingApi.quote(capture(sent)) } returns Response.success(quoteWith())
+        val vm = newViewModel()
+        vm.update { it.copy(selectedServiceIds = setOf("s-1")) }
+        advanceUntilIdle()
+        assertNull(sent.last().dirtinessLevel)
+
+        vm.update { it.copy(dirtinessLevel = DirtinessLevel.Heavy) }
+        advanceUntilIdle()
+
+        assertEquals(DirtinessLevel.Heavy, sent.last().dirtinessLevel)
+    }
+
+    @Test
+    fun submit_createsTheOrderAtTheChosenDirtinessLevel() = runTest {
+        val vm = newViewModel()
+        vm.readyToPlace(termsAccepted = true)
+        vm.update { it.copy(dirtinessLevel = DirtinessLevel.Increased) }
+
+        assertEquals(DirtinessLevel.Increased, createCommandSent(vm).dirtinessLevel)
+    }
+
+    /** A heavier level lengthens the job, so the crew the server quotes for it decides cash, not the old one. */
+    @Test
+    fun cash_followsTheCrewQuotedForTheChosenDirtinessLevel() = runTest {
+        coEvery { bookingApi.quote(any()) } coAnswers {
+            val crew = if (firstArg<QuoteOrderCommand>().dirtinessLevel == DirtinessLevel.Heavy) 2 else 1
+            Response.success(quoteWith(requiredEmployees = crew))
+        }
+        val vm = newViewModel()
+        vm.update {
+            it.copy(
+                selectedServiceIds = setOf("s-1"),
+                selectedInstant = futureCleaningInstant(),
+                dirtinessLevel = DirtinessLevel.Normal,
+            )
+        }
+        advanceUntilIdle()
+        assertEquals(CashEligibility.Available, vm.cashEligibility.value)
+
+        vm.update { it.copy(dirtinessLevel = DirtinessLevel.Heavy) }
+        advanceUntilIdle()
+
+        assertEquals(CashEligibility.NeedsCard(2), vm.cashEligibility.value)
+    }
+
+    @Test
+    fun reset_forgetsTheChosenDirtinessLevel() = runTest {
+        val vm = newViewModel()
+        vm.update { it.copy(dirtinessLevel = DirtinessLevel.Heavy) }
+
+        vm.reset()
+
+        assertNull(vm.state.value.dirtinessLevel)
     }
 
     private fun quoteWith(

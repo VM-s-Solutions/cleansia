@@ -411,17 +411,19 @@ private fun SheetContent(
 
     val stepTitle = when (currentStep) {
         1 -> stringResource(R.string.booking_step1_title)
-        2 -> stringResource(R.string.booking_step2_title)
-        3 -> stringResource(R.string.booking_step3_title)
+        2 -> stringResource(R.string.dirtiness_title)
+        3 -> stringResource(R.string.booking_step2_title)
+        4 -> stringResource(R.string.booking_step3_title)
         else -> ""
     }
 
     val canContinue = when (currentStep) {
         1 -> (state.selectedServiceIds.isNotEmpty() || state.selectedPackageIds.isNotEmpty()) && state.rooms >= 1
-        2 -> state.street.isNotBlank() &&
+        2 -> state.dirtinessLevel != null
+        3 -> state.street.isNotBlank() &&
             state.selectedLocalDate != null &&
             state.selectedTime.isNotBlank()
-        3 -> canPlaceOrder
+        4 -> canPlaceOrder
         else -> false
     }
 
@@ -533,13 +535,17 @@ private fun SheetContent(
                         onRoomsChange = bookingVm::setRooms,
                         onBathroomsChange = bookingVm::setBathrooms,
                     )
-                    2 -> WhenWhereStep(
+                    2 -> DirtinessStep(
+                        selected = state.dirtinessLevel,
+                        onSelect = { level -> bookingVm.update { it.copy(dirtinessLevel = level) } },
+                    )
+                    3 -> WhenWhereStep(
                         state = state,
                         onUpdate = { next -> bookingVm.update { next } },
                         onPickAddressOnMap = { showAddressManager = true },
                         expressWaiver = expressWaiver,
                     )
-                    3 -> ConfirmStep(state = state, onUpdate = { next -> bookingVm.update { next } })
+                    4 -> ConfirmStep(state = state, onUpdate = { next -> bookingVm.update { next } })
                 }
             }
         }

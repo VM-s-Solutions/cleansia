@@ -12,6 +12,7 @@ import cz.cleansia.core.network.networkCall
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.core.booking.BookingApi
 import cz.cleansia.customer.core.booking.CashEligibility
+import cz.cleansia.customer.core.booking.DirtinessLevel
 import cz.cleansia.customer.core.booking.PropertySize
 import cz.cleansia.customer.core.booking.QuoteOrderCommand
 import cz.cleansia.customer.core.catalog.CatalogRepository
@@ -122,7 +123,7 @@ class CreateRecurringViewModel @Inject constructor(
     val canAdvance: StateFlow<Boolean> = combine(_state, _step, _catalogState, _termsAsked) { s, step, catalog, asked ->
         when (step) {
             1 -> s.timeOfDay in START_TIMES
-            2 -> s.selectedServiceIds.isNotEmpty() || s.selectedPackageIds.isNotEmpty()
+            2 -> (s.selectedServiceIds.isNotEmpty() || s.selectedPackageIds.isNotEmpty()) && s.dirtinessLevel != null
             3 -> s.savedAddressId.isNotBlank() &&
                 s.startsOnIso.isNotBlank() &&
                 s.paymentType != null &&
@@ -220,6 +221,7 @@ class CreateRecurringViewModel @Inject constructor(
     fun setTimeOfDay(time: String) { _state.update { it.copy(timeOfDay = time) } }
     fun setRooms(n: Int) { _state.update { it.copy(rooms = n.coerceIn(0, PropertySize.MAX_ROOMS)) } }
     fun setBathrooms(n: Int) { _state.update { it.copy(bathrooms = n.coerceIn(0, PropertySize.MAX_BATHROOMS)) } }
+    fun setDirtinessLevel(level: DirtinessLevel) { _state.update { it.copy(dirtinessLevel = level) } }
     fun setSavedAddressId(id: String) { _state.update { it.copy(savedAddressId = id) } }
     fun toggleService(id: String) {
         _state.update {
@@ -263,10 +265,12 @@ class CreateRecurringViewModel @Inject constructor(
             (selectedServiceIds.isNotEmpty() || selectedPackageIds.isNotEmpty()) &&
             startsOnIso.isNotBlank() &&
             timeOfDay in START_TIMES &&
-            paymentType != null
+            paymentType != null &&
+            dirtinessLevel != null
 
     private fun CreateRecurringFormState.toCreateRequest(
         paymentType: Int,
+        dirtinessLevel: DirtinessLevel,
         withoutPreferredCleaner: Boolean,
     ) = CreateRecurringBookingRequest(
         frequency = frequency.code,
@@ -281,6 +285,7 @@ class CreateRecurringViewModel @Inject constructor(
         startsOn = startsOnIso,
         preferredEmployeeId = if (withoutPreferredCleaner) null else preferredEmployeeId,
         termsAccepted = if (_termsAsked.value && termsAccepted) true else null,
+        dirtinessLevel = dirtinessLevel,
     )
 
     /**
@@ -292,6 +297,7 @@ class CreateRecurringViewModel @Inject constructor(
     private fun CreateRecurringFormState.toUpdateRequest(
         templateId: String,
         paymentType: Int,
+        dirtinessLevel: DirtinessLevel,
         withoutPreferredCleaner: Boolean,
     ) = UpdateRecurringBookingRequest(
         templateId = templateId,
@@ -307,6 +313,7 @@ class CreateRecurringViewModel @Inject constructor(
         startsOn = startsOnIso,
         endsOn = endsOnIso,
         preferredEmployeeId = if (withoutPreferredCleaner) null else preferredEmployeeId,
+        dirtinessLevel = dirtinessLevel,
     )
 
     /**
@@ -330,14 +337,17 @@ class CreateRecurringViewModel @Inject constructor(
         if (!form.isSubmittable()) return
         if (_termsAsked.value && !form.termsAccepted) return
         val paymentType = form.paymentType ?: return
+        val dirtinessLevel = form.dirtinessLevel ?: return
         _preferredCleanerRefused.value = false
         _submitState.value = ActionState.Submitting
         viewModelScope.launch {
             if (paymentType == PAYMENT_CASH && !cashConfirmedFor(form)) return@launch
             val result = if (editingTemplateId != null) {
-                recurringRepo.update(form.toUpdateRequest(editingTemplateId, paymentType, withoutPreferredCleaner))
+                recurringRepo.update(
+                    form.toUpdateRequest(editingTemplateId, paymentType, dirtinessLevel, withoutPreferredCleaner),
+                )
             } else {
-                recurringRepo.create(form.toCreateRequest(paymentType, withoutPreferredCleaner))
+                recurringRepo.create(form.toCreateRequest(paymentType, dirtinessLevel, withoutPreferredCleaner))
             }
             when (result) {
                 is ApiResult.Success -> {
@@ -410,6 +420,7 @@ class CreateRecurringViewModel @Inject constructor(
                     rooms = selection.rooms,
                     bathrooms = selection.bathrooms,
                     countryId = resolveCountryId(selection.savedAddressId),
+                    dirtinessLevel = selection.dirtinessLevel,
                 ),
             )
         }
@@ -541,6 +552,7 @@ class CreateRecurringViewModel @Inject constructor(
                 startsOnIso = template.startsOn,
                 endsOnIso = template.endsOn,
                 preferredEmployeeId = template.preferredEmployeeId,
+                dirtinessLevel = template.dirtinessLevel,
             )
         }
     }
@@ -591,6 +603,7 @@ private data class PricedSelection(
     val rooms: Int,
     val bathrooms: Int,
     val savedAddressId: String,
+    val dirtinessLevel: DirtinessLevel?,
 )
 
 private data class QuotedCrew(val selection: PricedSelection, val requiredEmployees: Int)
@@ -601,6 +614,7 @@ private fun CreateRecurringFormState.pricedSelection() = PricedSelection(
     rooms = rooms,
     bathrooms = bathrooms,
     savedAddressId = savedAddressId,
+    dirtinessLevel = dirtinessLevel,
 )
 
 sealed interface RecurringCatalogState {
@@ -634,6 +648,8 @@ data class CreateRecurringFormState(
     val preferredEmployeeId: String? = null,
     /** Read only while [CreateRecurringViewModel.termsAsked] is true. */
     val termsAccepted: Boolean = false,
+    /** Chosen by the customer on a new schedule; an edit starts from the stored one. */
+    val dirtinessLevel: DirtinessLevel? = null,
 ) {
     /** The server refuses a start on or after [endsOnIso], and this form cannot move the end date. */
     fun latestStartDate(tz: TimeZone): LocalDate? = endsOnIso

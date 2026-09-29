@@ -278,6 +278,8 @@ class WorkContractWireTest {
               "totalPrice": 4380.00,
               "originalSubtotal": 3650.00,
               "appliedDiscountSource": 0,
+              "dirtinessLevel": 0,
+              "dirtinessSurchargeAmount": 0.00,
               "estimatedTime": 240,
               "orderStatus": { "type": "OrderStatus", "name": "Confirmed", "value": 2 },
               "assignedEmployees": [

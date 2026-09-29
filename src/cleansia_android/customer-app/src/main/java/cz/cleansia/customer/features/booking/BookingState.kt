@@ -1,5 +1,7 @@
 package cz.cleansia.customer.features.booking
 
+import cz.cleansia.customer.core.booking.DirtinessLevel
+
 data class BookingState(
     // Step 1 — What
     val selectedServiceIds: Set<String> = emptySet(),
@@ -14,7 +16,10 @@ data class BookingState(
     val rooms: Int = 1,
     val bathrooms: Int = 1,
 
-    // Step 2 — When & Where
+    // Step 2 — how dirty the home is. Null until the customer chooses; the step does not continue without it.
+    val dirtinessLevel: DirtinessLevel? = null,
+
+    // Step 3 — When & Where
     val street: String = "",
     val city: String = "",
     val zipCode: String = "",
@@ -47,7 +52,7 @@ data class BookingState(
     // what CreateOrder submits. Null until a slot is chosen.
     val selectedInstant: kotlinx.datetime.Instant? = null,
 
-    // Step 3 — Confirm
+    // Step 4 — Confirm
     val paymentMethod: String = "", // "card" or "cash"
     val specialInstructions: String = "",
     // How the cleaner gets in ("side gate, key box 4417"). Capped on input at

@@ -34,6 +34,7 @@ import cz.cleansia.customer.api.model.WorkContractFacts as GenWorkContractFacts
 import cz.cleansia.customer.api.model.WorkContractFactsLine as GenWorkContractFactsLine
 import cz.cleansia.core.network.mapWire
 import cz.cleansia.core.network.required
+import cz.cleansia.customer.core.booking.toApp
 import cz.cleansia.customer.core.user.toAppDto
 import okhttp3.ResponseBody
 import retrofit2.Response
@@ -244,6 +245,8 @@ private fun GenOrderItem?.toAppDto(): OrderDetailDto {
         orderIssues = order.orderIssues?.map { it.toAppDto() },
         review = order.review?.toAppDto(),
         workContractAcceptances = order.workContractAcceptances?.map { it.toAppDto() },
+        dirtinessLevel = order.dirtinessLevel.required("dirtinessLevel").toApp(),
+        dirtinessSurchargeAmount = order.dirtinessSurchargeAmount.required("dirtinessSurchargeAmount"),
     )
 }
 

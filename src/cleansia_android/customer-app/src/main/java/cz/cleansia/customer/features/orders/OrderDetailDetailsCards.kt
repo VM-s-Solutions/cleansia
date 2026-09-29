@@ -43,6 +43,7 @@ import cz.cleansia.customer.core.orders.OrderPackageDetailsDto
 import cz.cleansia.customer.core.orders.OrderServiceDetailsDto
 import cz.cleansia.customer.features.booking.localizedDescription
 import cz.cleansia.customer.features.booking.localizedName
+import cz.cleansia.customer.features.booking.titleRes
 
 /* ── Cleaning details ── */
 
@@ -60,6 +61,11 @@ internal fun CleaningDetailsCard(order: OrderDetailDto) {
             // Composed from the two resources the booking wizard already uses, which also keeps the
             // wizard and the order detail reading identically.
             value = roomsAndBathrooms(order.rooms, order.bathrooms),
+        )
+        Spacer(Modifier.height(6.dp))
+        InfoRow(
+            label = stringResource(R.string.dirtiness_level_label),
+            value = stringResource(order.dirtinessLevel.titleRes()),
         )
         Spacer(Modifier.height(6.dp))
         InfoRow(

@@ -687,6 +687,36 @@
     <string name="booking_summary_subtotal">Medzisúčet</string>
     <string name="booking_summary_express_surcharge">Expresný príplatok (+20%)</string>
     <string name="booking_summary_express_surcharge_waived">Expresný termín — odpustené s Plus</string>
+
+    <!-- Dirtiness level: booking step, recurring wizard, summaries -->
+    <string name="dirtiness_title">Ako veľmi je u vás upratané?</string>
+    <string name="dirtiness_intro">Vyberte stav, ktorý najlepšie zodpovedá celej domácnosti.</string>
+    <string name="dirtiness_hint">Ak váhate medzi dvoma stupňami, zvoľte vyšší. Upratovačka potom bude mať dosť času a výsledok bude zodpovedať.</string>
+    <string name="dirtiness_level_label">Miera znečistenia</string>
+    <string name="dirtiness_normal_title">Bežné</string>
+    <string name="dirtiness_normal_price">Bez príplatku</string>
+    <string name="dirtiness_normal_when">Domácnosť sa upratuje pravidelne, naposledy zhruba pred 1–2 týždňami.</string>
+    <string name="dirtiness_normal_detail_1">Prach na nábytku a policiach, omrvinky a chlpy na podlahe</string>
+    <string name="dirtiness_normal_detail_2">V kúpeľni bežné vodné škvrny, WC bez usadenín</string>
+    <string name="dirtiness_normal_detail_3">Kuchyňa po bežnom varení: linku a sporák poutierať, bez pripečenín</string>
+    <string name="dirtiness_normal_detail_4">Riad umytý alebo v umývačke</string>
+    <string name="dirtiness_increased_title">Zvýšené</string>
+    <string name="dirtiness_increased_price" formatted="false">+30 %</string>
+    <string name="dirtiness_increased_when">Posledné upratovanie pred 3–6 týždňami alebo domácnosť so zvieratami či malými deťmi.</string>
+    <string name="dirtiness_increased_detail_1">Viditeľná vrstva prachu, škvrny a zašlé miesta na podlahe</string>
+    <string name="dirtiness_increased_detail_2">Vodný kameň na batériách, v sprchovom kúte a na vani, zašlé škáry</string>
+    <string name="dirtiness_increased_detail_3">Mastnota na kuchynskej linke, obklade a digestore, znečistená rúra alebo mikrovlnka zvonku</string>
+    <string name="dirtiness_increased_detail_4">Chlpy zvierat na sedačke, kobercoch a v rohoch</string>
+    <string name="dirtiness_heavy_title">Silné</string>
+    <string name="dirtiness_heavy_price" formatted="false">+60 %</string>
+    <string name="dirtiness_heavy_when">Viac ako 2 mesiace bez upratovania alebo dlhodobo zanedbaná domácnosť.</string>
+    <string name="dirtiness_heavy_detail_1">Silný vodný kameň a usadeniny, ktoré nejdú dole jedným utretím</string>
+    <string name="dirtiness_heavy_detail_2">Pripečená mastnota na sporáku, digestore a skrinkách</string>
+    <string name="dirtiness_heavy_detail_3">Čierne škvrny (pleseň) na silikóne alebo v škárach</string>
+    <string name="dirtiness_heavy_detail_4">Zaschnuté nečistoty na podlahe, lepkavé povrchy, výrazný zápach</string>
+    <string name="dirtiness_surcharge_increased" formatted="false">Príplatok za zvýšené znečistenie (+30 %)</string>
+    <string name="dirtiness_surcharge_heavy" formatted="false">Príplatok za silné znečistenie (+60 %)</string>
+
     <string name="booking_summary_promo_discount">Zľavový kód (-%1$s)</string>
     <string name="booking_summary_membership_discount">Zľava Cleansia Plus</string>
     <string name="booking_summary_tier_discount">Vernostná zľava</string>

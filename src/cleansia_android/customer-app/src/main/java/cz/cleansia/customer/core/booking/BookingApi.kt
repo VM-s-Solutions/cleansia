@@ -4,6 +4,7 @@ import cz.cleansia.customer.api.client.OrderApi as GenOrderApi
 import cz.cleansia.customer.api.model.AddressDto as GenAddressDto
 import cz.cleansia.customer.api.model.CreateOrderCommand as GenCreateOrderCommand
 import cz.cleansia.customer.api.model.CreateOrderResponse as GenCreateOrderResponse
+import cz.cleansia.customer.api.model.DirtinessLevel as GenDirtinessLevel
 import cz.cleansia.customer.api.model.PaymentType as GenPaymentType
 import cz.cleansia.customer.api.model.QuoteOrderCommand as GenQuoteOrderCommand
 import cz.cleansia.customer.api.model.QuoteOrderResponse as GenQuoteOrderResponse
@@ -50,6 +51,7 @@ private fun QuoteOrderCommand.toWire(): GenQuoteOrderCommand = GenQuoteOrderComm
     selectedExtraSlugs = selectedExtraSlugs,
     cleaningDate = cleaningDate?.let { Instant.parse(it) },
     countryId = countryId,
+    dirtinessLevel = dirtinessLevel?.toWire(),
 )
 
 private fun CreateOrderCommand.toWire(): GenCreateOrderCommand = GenCreateOrderCommand(
@@ -74,6 +76,7 @@ private fun CreateOrderCommand.toWire(): GenCreateOrderCommand = GenCreateOrderC
     specialInstructions = specialInstructions,
     accessInstructions = accessInstructions,
     termsAccepted = termsAccepted,
+    dirtinessLevel = dirtinessLevel?.toWire(),
 )
 
 private fun CreateOrderAddressDto.toWire(): GenAddressDto = GenAddressDto(
@@ -83,6 +86,18 @@ private fun CreateOrderAddressDto.toWire(): GenAddressDto = GenAddressDto(
     countryId = countryId,
     state = state,
 )
+
+internal fun DirtinessLevel.toWire(): GenDirtinessLevel = when (this) {
+    DirtinessLevel.Normal -> GenDirtinessLevel._0
+    DirtinessLevel.Increased -> GenDirtinessLevel._1
+    DirtinessLevel.Heavy -> GenDirtinessLevel._2
+}
+
+internal fun GenDirtinessLevel.toApp(): DirtinessLevel = when (this) {
+    GenDirtinessLevel._0 -> DirtinessLevel.Normal
+    GenDirtinessLevel._1 -> DirtinessLevel.Increased
+    GenDirtinessLevel._2 -> DirtinessLevel.Heavy
+}
 
 private fun Int.toWirePaymentType(): GenPaymentType? = when (this) {
     1 -> GenPaymentType._1
@@ -114,6 +129,9 @@ private fun Int.toWirePaymentType(): GenPaymentType? = when (this) {
  *
  * `requiredEmployees` decides whether cash is offered, and a defaulted crew of one offers it on every
  * multi-cleaner booking.
+ *
+ * The dirtiness surcharge is a line of the summary and part of the total, so it follows the money rule;
+ * the level beside it names that line.
  */
 private fun GenQuoteOrderResponse.toAppDto(): QuoteOrderResponse? {
     return QuoteOrderResponse(
@@ -133,6 +151,8 @@ private fun GenQuoteOrderResponse.toAppDto(): QuoteOrderResponse? {
         expressSurchargeAmount = expressSurchargeAmount ?: return null,
         expressSurchargeWaivedByMembership = expressSurchargeWaivedByMembership ?: return null,
         requiredEmployees = requiredEmployees ?: return null,
+        dirtinessSurchargeAmount = dirtinessSurchargeAmount ?: return null,
+        dirtinessLevel = dirtinessLevel?.toApp() ?: return null,
     )
 }
 

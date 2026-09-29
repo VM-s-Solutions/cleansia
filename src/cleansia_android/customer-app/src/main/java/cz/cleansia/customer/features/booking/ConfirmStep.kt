@@ -23,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.AccessTime
 import androidx.compose.material.icons.outlined.CalendarToday
+import androidx.compose.material.icons.outlined.CleaningServices
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.ConfirmationNumber
 import androidx.compose.material.icons.outlined.CreditCard
@@ -210,6 +211,11 @@ fun ConfirmStep(
                 stringResource(R.string.booking_summary_property),
                 roomsAndBathrooms(state.rooms, state.bathrooms),
             )
+            LabeledInfoRow(
+                Icons.Outlined.CleaningServices,
+                stringResource(R.string.dirtiness_level_label),
+                state.dirtinessLevel?.let { stringResource(it.titleRes()) } ?: "—",
+            )
             LabeledInfoRow(Icons.Outlined.CalendarToday, stringResource(R.string.booking_summary_date), state.selectedDate.ifBlank { "—" })
             LabeledInfoRow(Icons.Outlined.AccessTime, stringResource(R.string.booking_summary_time), state.selectedTime.ifBlank { "—" })
 
@@ -228,6 +234,21 @@ fun ConfirmStep(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
+            }
+            val dirtinessLine = quote?.dirtinessLevel?.surchargeLineRes()?.takeIf { summary.dirtinessSurcharge > 0.0 }
+            if (dirtinessLine != null) {
+                Row(Modifier.fillMaxWidth().padding(vertical = 2.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text(
+                        stringResource(dirtinessLine),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        "+${formatOrderPrice(summary.dirtinessSurcharge, currencyCode)}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
             }
             if (showPromoLine) {
                 Row(Modifier.fillMaxWidth().padding(vertical = 2.dp), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -303,7 +324,8 @@ fun ConfirmStep(
             // the order falls below the per-tier minimum. Only show when no
             // discount is currently winning, otherwise it's misleading noise.
             val tierFloor = quote?.tierDiscountMinOrderAmount
-            if (effectiveDiscount == 0.0 && tierFloor != null && tierFloor > 0.0 && subtotal < tierFloor) {
+            val floorBase = quote?.preSurchargeSubtotal ?: subtotal
+            if (effectiveDiscount == 0.0 && tierFloor != null && tierFloor > 0.0 && floorBase < tierFloor) {
                 Text(
                     stringResource(
                         R.string.booking_summary_tier_discount_min_not_met,

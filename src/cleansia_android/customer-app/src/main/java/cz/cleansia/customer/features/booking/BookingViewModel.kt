@@ -11,6 +11,7 @@ import cz.cleansia.customer.core.booking.CashEligibility
 import cz.cleansia.customer.core.booking.CreateOrderAddressDto
 import cz.cleansia.customer.core.booking.CreateOrderCommand
 import cz.cleansia.customer.core.booking.CreateOrderResponse
+import cz.cleansia.customer.core.booking.DirtinessLevel
 import cz.cleansia.customer.core.booking.PropertySize
 import cz.cleansia.customer.core.booking.QuoteOrderCommand
 import cz.cleansia.customer.core.booking.QuoteOrderResponse
@@ -544,6 +545,7 @@ class BookingViewModel @Inject constructor(
                     selectedExtraSlugs = s.selectedExtraSlugs.toList(),
                     cleaningDate = instant.toString(),
                     countryId = resolvedCountryId,
+                    dirtinessLevel = s.dirtinessLevel,
                 )
                 val quoteResp = try {
                     bookingApi.quote(quoteCmd)
@@ -637,6 +639,7 @@ class BookingViewModel @Inject constructor(
                 // Asserted only when the box was shown and ticked; an account that already consented
                 // saw no box and asserts nothing new.
                 termsAccepted = if (!_alreadyConsented.value && s.termsAccepted) true else null,
+                dirtinessLevel = s.dirtinessLevel,
             )
 
             val createResp = try {
@@ -708,6 +711,7 @@ class BookingViewModel @Inject constructor(
                     selectedExtraSlugs = inputs.extraSlugs.toList(),
                     cleaningDate = inputs.cleaningInstant?.toString(),
                     countryId = inputs.countryId,
+                    dirtinessLevel = inputs.dirtinessLevel,
                 ),
             )
         } catch (t: Throwable) {
@@ -781,6 +785,7 @@ class BookingViewModel @Inject constructor(
         val bathrooms: Int,
         val cleaningInstant: kotlinx.datetime.Instant?,
         val countryId: String?,
+        val dirtinessLevel: DirtinessLevel?,
     )
 
     private fun BookingState.toQuoteInputs(countryId: String?) = QuoteInputs(
@@ -791,10 +796,11 @@ class BookingViewModel @Inject constructor(
         bathrooms = bathrooms,
         cleaningInstant = selectedInstant,
         countryId = countryId,
+        dirtinessLevel = dirtinessLevel,
     )
 
     companion object {
-        const val TOTAL_STEPS = 3
+        const val TOTAL_STEPS = 4
 
         /** Mirrors `CreateOrder`'s `RuleFor(x => x.AccessInstructions).MaximumLength(2000)`. */
         const val ACCESS_INSTRUCTIONS_MAX_LENGTH = 2000

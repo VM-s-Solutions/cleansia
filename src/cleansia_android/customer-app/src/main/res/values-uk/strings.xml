@@ -687,6 +687,36 @@
     <string name="booking_summary_subtotal">Проміжний підсумок</string>
     <string name="booking_summary_express_surcharge">Експрес-надбавка (+20%)</string>
     <string name="booking_summary_express_surcharge_waived">Експрес-слот — скасовано з Plus</string>
+
+    <!-- Dirtiness level: booking step, recurring wizard, summaries -->
+    <string name="dirtiness_title">Наскільки у вас прибрано?</string>
+    <string name="dirtiness_intro">Оберіть стан, який найкраще відповідає всьому помешканню.</string>
+    <string name="dirtiness_hint">Якщо вагаєтеся між двома рівнями, оберіть вищий. Тоді прибиральник матиме достатньо часу, і результат буде таким, як слід.</string>
+    <string name="dirtiness_level_label">Рівень забруднення</string>
+    <string name="dirtiness_normal_title">Звичайний</string>
+    <string name="dirtiness_normal_price">Без доплати</string>
+    <string name="dirtiness_normal_when">Помешкання прибирають регулярно, востаннє приблизно 1–2 тижні тому.</string>
+    <string name="dirtiness_normal_detail_1">Пил на меблях і полицях, крихти й волосся на підлозі</string>
+    <string name="dirtiness_normal_detail_2">У ванній звичайні плями від води, унітаз без нальоту</string>
+    <string name="dirtiness_normal_detail_3">Кухня після звичайного готування: протерти стільницю й плиту, без пригорілого</string>
+    <string name="dirtiness_normal_detail_4">Посуд помитий або в посудомийній машині</string>
+    <string name="dirtiness_increased_title">Підвищений</string>
+    <string name="dirtiness_increased_price" formatted="false">+30%</string>
+    <string name="dirtiness_increased_when">Останнє прибирання 3–6 тижнів тому або помешкання з тваринами чи маленькими дітьми.</string>
+    <string name="dirtiness_increased_detail_1">Помітний шар пилу, плями та затерті місця на підлозі</string>
+    <string name="dirtiness_increased_detail_2">Вапняний наліт на змішувачах, у душовій кабіні та на ванні, потемнілі шви</string>
+    <string name="dirtiness_increased_detail_3">Жир на кухонній стільниці, плитці та витяжці, забруднена духовка або мікрохвильовка ззовні</string>
+    <string name="dirtiness_increased_detail_4">Шерсть тварин на дивані, килимах і в кутах</string>
+    <string name="dirtiness_heavy_title">Сильний</string>
+    <string name="dirtiness_heavy_price" formatted="false">+60%</string>
+    <string name="dirtiness_heavy_when">Понад 2 місяці без прибирання або довго занедбане помешкання.</string>
+    <string name="dirtiness_heavy_detail_1">Сильний вапняний наліт і відкладення, які не зникають з одного протирання</string>
+    <string name="dirtiness_heavy_detail_2">Пригорілий жир на плиті, витяжці та шафках</string>
+    <string name="dirtiness_heavy_detail_3">Чорні плями (цвіль) на силіконі або у швах</string>
+    <string name="dirtiness_heavy_detail_4">Засохлий бруд на підлозі, липкі поверхні, сильний запах</string>
+    <string name="dirtiness_surcharge_increased" formatted="false">Доплата за підвищене забруднення (+30%)</string>
+    <string name="dirtiness_surcharge_heavy" formatted="false">Доплата за сильне забруднення (+60%)</string>
+
     <string name="booking_summary_promo_discount">Промокод (-%1$s)</string>
     <string name="booking_summary_membership_discount">Знижка Cleansia Plus</string>
     <string name="booking_summary_tier_discount">Знижка за лояльність</string>

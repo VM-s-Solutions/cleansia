@@ -261,7 +261,7 @@ public class MaterializeRecurringBookingTemplate
                 Array.Empty<string>(),
                 template.Rooms,
                 template.Bathrooms,
-                DirtinessLevel.Normal,
+                template.DirtinessLevel,
                 currency.Id,
                 cleaningDateUtc: null,
                 userId: null,
@@ -319,7 +319,8 @@ public class MaterializeRecurringBookingTemplate
                     // hold and the push, never the cleaning. Reject where someone can react;
                     // degrade where nobody can.
                     PreferredEmployeeId: template.PreferredEmployeeId,
-                    RecurringTemplateId: template.Id);
+                    RecurringTemplateId: template.Id,
+                    DirtinessLevel: template.DirtinessLevel);
 
                 await orderFactory.CreateAsync(input, cancellationToken);
                 ordersCreated++;

@@ -37,4 +37,5 @@ public record RecurringBookingTemplateDto(
     /// The zone <see cref="DayOfWeek"/> and <see cref="TimeOfDay"/> are read in — the saved address's
     /// market, the clock the materializer walks. Null when the address can no longer be read.
     /// </summary>
-    string? TimeZoneId = null);
+    string? TimeZoneId = null,
+    DirtinessLevel DirtinessLevel = DirtinessLevel.Normal);

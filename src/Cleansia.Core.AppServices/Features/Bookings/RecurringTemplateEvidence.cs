@@ -25,7 +25,8 @@ public record RecurringTemplateFacts(
     IReadOnlyList<string> PackageIds,
     IReadOnlyList<string> ServiceIds,
     string SavedAddressId,
-    bool IsActive)
+    bool IsActive,
+    DirtinessLevel DirtinessLevel)
 {
     public static RecurringTemplateFacts Of(RecurringBookingTemplate template) => new(
         Frequency: template.Frequency,
@@ -34,5 +35,6 @@ public record RecurringTemplateFacts(
         PackageIds: template.SelectedPackageIds.ToList(),
         ServiceIds: template.SelectedServiceIds.ToList(),
         SavedAddressId: template.SavedAddressId,
-        IsActive: template.IsActive);
+        IsActive: template.IsActive,
+        DirtinessLevel: template.DirtinessLevel);
 }

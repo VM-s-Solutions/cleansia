@@ -47,6 +47,9 @@ public class RecurringBookingTemplate : TenantAuditable
 
     public PaymentType PaymentType { get; private set; }
 
+    /// <summary>The level every occurrence is priced, timed and crewed at.</summary>
+    public DirtinessLevel DirtinessLevel { get; private set; }
+
     /// <summary>
     /// ADR-0036 D8 — the customer's preferred cleaner for every occurrence this template spawns. A
     /// recurring customer is precisely the customer who wants the same cleaner, and until this existed
@@ -97,7 +100,8 @@ public class RecurringBookingTemplate : TenantAuditable
         PaymentType paymentType,
         DateTime startsOn,
         DateTime? endsOn = null,
-        string? preferredEmployeeId = null)
+        string? preferredEmployeeId = null,
+        DirtinessLevel dirtinessLevel = DirtinessLevel.Normal)
         => new()
         {
             UserId = userId,
@@ -113,6 +117,7 @@ public class RecurringBookingTemplate : TenantAuditable
             StartsOn = startsOn,
             EndsOn = endsOn,
             PreferredEmployeeId = string.IsNullOrEmpty(preferredEmployeeId) ? null : preferredEmployeeId,
+            DirtinessLevel = dirtinessLevel,
         };
 
     /// <summary>
@@ -136,7 +141,8 @@ public class RecurringBookingTemplate : TenantAuditable
         PaymentType paymentType,
         DateTime startsOn,
         DateTime? endsOn,
-        string? preferredEmployeeId)
+        string? preferredEmployeeId,
+        DirtinessLevel dirtinessLevel)
     {
         Frequency = frequency;
         DayOfWeek = dayOfWeek;
@@ -151,6 +157,7 @@ public class RecurringBookingTemplate : TenantAuditable
         EndsOn = endsOn;
         // Empty and null mean the same thing here as they do at creation: no preference.
         PreferredEmployeeId = string.IsNullOrEmpty(preferredEmployeeId) ? null : preferredEmployeeId;
+        DirtinessLevel = dirtinessLevel;
         LastMaterializedFor = null;
         return this;
     }

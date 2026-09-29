@@ -8164,6 +8164,9 @@
           "termsAccepted": {
             "type": "boolean",
             "nullable": true
+          },
+          "dirtinessLevel": {
+            "$ref": "#/components/schemas/DirtinessLevel"
           }
         },
         "additionalProperties": false
@@ -11688,6 +11691,9 @@
           "timeZoneId": {
             "type": "string",
             "nullable": true
+          },
+          "dirtinessLevel": {
+            "$ref": "#/components/schemas/DirtinessLevel"
           }
         },
         "additionalProperties": false
@@ -12411,6 +12417,9 @@
           "preferredEmployeeId": {
             "type": "string",
             "nullable": true
+          },
+          "dirtinessLevel": {
+            "$ref": "#/components/schemas/DirtinessLevel"
           }
         },
         "additionalProperties": false

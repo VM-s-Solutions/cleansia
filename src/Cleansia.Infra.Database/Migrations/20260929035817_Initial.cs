@@ -1546,6 +1546,7 @@ namespace Cleansia.Infra.Database.Migrations
                     Bathrooms = table.Column<int>(type: "integer", nullable: false),
                     SavedAddressId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: false),
                     PaymentType = table.Column<int>(type: "integer", nullable: false),
+                    DirtinessLevel = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
                     PreferredEmployeeId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
                     StartsOn = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     EndsOn = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),

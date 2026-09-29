@@ -32,7 +32,8 @@ public class UpdateRecurringBooking
         DateTime? EndsOn = null,
         // Editable, not create-only. Without this the preferred cleaner could be chosen once and
         // never changed or cleared, which is a schedule the customer cannot correct.
-        string? PreferredEmployeeId = null) : ICommand<RecurringBookingTemplateDto>;
+        string? PreferredEmployeeId = null,
+        DirtinessLevel DirtinessLevel = DirtinessLevel.Normal) : ICommand<RecurringBookingTemplateDto>;
 
     public class Validator : AbstractValidator<Command>
     {
@@ -102,6 +103,10 @@ public class UpdateRecurringBooking
                 .InclusiveBetween(0, 6)
                 .WithMessage(BusinessErrorMessage.InvalidEnumValue);
 
+            RuleFor(x => x.DirtinessLevel)
+                .IsInEnum()
+                .WithMessage(BusinessErrorMessage.InvalidEnumValue);
+
             RuleFor(x => x.TimeOfDay)
                 .Cascade(CascadeMode.Stop)
                 .NotEmpty()
@@ -128,7 +133,8 @@ public class UpdateRecurringBooking
                 .Must(p => Enum.IsDefined(typeof(PaymentType), p))
                 .WithMessage(BusinessErrorMessage.InvalidEnumValue)
                 .MustAsync(CashIsAvailableForSelectionAsync)
-                .WithMessage(BusinessErrorMessage.OrderCashNotAvailable);
+                .WithMessage(BusinessErrorMessage.OrderCashNotAvailable)
+                .When(x => Enum.IsDefined(x.DirtinessLevel), ApplyConditionTo.CurrentValidator);
 
             RuleFor(x => x)
                 .Must(c => c.SelectedServiceIds.Count > 0 || c.SelectedPackageIds.Count > 0)
@@ -188,7 +194,7 @@ public class UpdateRecurringBooking
                        _serviceRepository, _packageRepository,
                        command.SelectedServiceIds, command.SelectedPackageIds, cancellationToken))
                    .Allows(command.SelectedServiceIds, command.SelectedPackageIds,
-                       command.Rooms, command.Bathrooms, DirtinessLevel.Normal);
+                       command.Rooms, command.Bathrooms, command.DirtinessLevel);
 
         private async Task<bool> BeOwnedByCallerAsync(string id, CancellationToken cancellationToken)
         {
@@ -265,7 +271,8 @@ public class UpdateRecurringBooking
                 paymentType: (PaymentType)command.PaymentType,
                 startsOn: command.StartsOn,
                 endsOn: command.EndsOn,
-                preferredEmployeeId: command.PreferredEmployeeId);
+                preferredEmployeeId: command.PreferredEmployeeId,
+                dirtinessLevel: command.DirtinessLevel);
             existing.TenantId = (await operatorTenantResolver.ResolveAsync(address.Address.CountryId, cancellationToken)).OperatorTenantId;
 
             auditContext.RecordEvidence("RecurringBookingTemplate", existing.Id,
@@ -292,7 +299,8 @@ public class UpdateRecurringBooking
                 LastMaterializedFor: existing.LastMaterializedFor,
                 IsActive: existing.IsActive,
                 PreferredEmployeeId: existing.PreferredEmployeeId,
-                TimeZoneId: marketZone.Id));
+                TimeZoneId: marketZone.Id,
+                DirtinessLevel: existing.DirtinessLevel));
         }
     }
 }

@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cleansia.Infra.Database.Migrations
 {
     [DbContext(typeof(CleansiaDbContext))]
-    [Migration("20260929031611_Initial")]
+    [Migration("20260929035817_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -287,6 +287,11 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.Property<DateTimeOffset?>("DeactivatedOn")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("DirtinessLevel")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
 
                     b.Property<DateTime?>("EndsOn")
                         .HasColumnType("timestamp with time zone");

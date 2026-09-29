@@ -72,6 +72,54 @@ public class RecurringCashEligibilityTests
         AssertCashVerdict(result, accepted);
     }
 
+    public static TheoryData<string, DirtinessLevel, bool> Levels => new()
+    {
+        { "svc-120", DirtinessLevel.Normal, true },
+        { "svc-120", DirtinessLevel.Increased, false },
+        { "svc-60", DirtinessLevel.Heavy, true },
+        { "svc-90-10", DirtinessLevel.Heavy, false },
+    };
+
+    /// <summary>
+    /// The level lengthens the booked time before the crew is counted, so a selection one cleaner covers
+    /// at Normal can need two at a higher level, and cash falls away with it.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(Levels))]
+    public async Task Creating_A_Template_Counts_The_Crew_At_Its_Level(string serviceId, DirtinessLevel level, bool accepted)
+    {
+        var result = await CreateValidator().ValidateAsync(
+            CreateCommand(PaymentType.Cash, [serviceId], []) with { DirtinessLevel = level });
+
+        AssertCashVerdict(result, accepted);
+    }
+
+    [Theory]
+    [MemberData(nameof(Levels))]
+    public async Task Updating_A_Template_Counts_The_Crew_At_Its_Level(string serviceId, DirtinessLevel level, bool accepted)
+    {
+        var result = await UpdateValidator().ValidateAsync(
+            UpdateCommand(PaymentType.Cash, [serviceId], []) with { DirtinessLevel = level });
+
+        AssertCashVerdict(result, accepted);
+    }
+
+    [Fact]
+    public async Task An_Unknown_Level_Is_Refused_As_Such_Rather_Than_Failing_The_Cash_Check()
+    {
+        var create = await CreateValidator().ValidateAsync(
+            CreateCommand(PaymentType.Cash, ["svc-120"], []) with { DirtinessLevel = (DirtinessLevel)7 });
+        var update = await UpdateValidator().ValidateAsync(
+            UpdateCommand(PaymentType.Cash, ["svc-120"], []) with { DirtinessLevel = (DirtinessLevel)7 });
+
+        foreach (var result in new[] { create, update })
+        {
+            var error = Assert.Single(result.Errors);
+            Assert.Equal(BusinessErrorMessage.InvalidEnumValue, error.ErrorMessage);
+            Assert.Equal(nameof(CreateRecurringBooking.Command.DirtinessLevel), error.PropertyName);
+        }
+    }
+
     [Theory]
     [MemberData(nameof(Selections))]
     public async Task Updating_A_Template_Refuses_Cash_Only_When_The_Selection_Needs_Two_Cleaners(
@@ -109,9 +157,10 @@ public class RecurringCashEligibilityTests
         var card = Template(PaymentType.Card, [TwoHoursAndAMinute.Id], [], "tpl-card-121");
         var paused = Template(PaymentType.Cash, [TwoHoursAndAMinute.Id], [], "tpl-paused").Pause();
         var roomsTipIt = Template(PaymentType.Cash, [OverTwoHoursWithTheRooms.Id], [], "tpl-cash-rooms");
+        var levelTipsIt = Template(PaymentType.Cash, [TwoHours.Id], [], "tpl-cash-120-increased", DirtinessLevel.Increased);
         _templateRepository
             .Setup(r => r.GetByUserAsync(UserId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync([needsChange, packaged, eligible, card, paused, roomsTipIt]);
+            .ReturnsAsync([needsChange, packaged, eligible, card, paused, roomsTipIt, levelTipsIt]);
 
         var result = await new GetMyRecurringBookings.Handler(
                 _templateRepository.Object, _savedAddressRepository.Object, _session.Object, Services(), Packages(), Mock.Of<ICountryConfigurationRepository>())
@@ -125,6 +174,7 @@ public class RecurringCashEligibilityTests
         Assert.False(flags["tpl-card-121"]);
         Assert.True(flags["tpl-paused"]);
         Assert.True(flags["tpl-cash-rooms"]);
+        Assert.True(flags["tpl-cash-120-increased"]);
     }
 
     [Fact]
@@ -217,7 +267,7 @@ public class RecurringCashEligibilityTests
 
     private static RecurringBookingTemplate Template(
         PaymentType paymentType, IReadOnlyList<string> serviceIds, IReadOnlyList<string> packageIds,
-        string id = TemplateId)
+        string id = TemplateId, DirtinessLevel dirtinessLevel = DirtinessLevel.Normal)
     {
         var template = RecurringBookingTemplate.Create(
             userId: UserId,
@@ -230,7 +280,8 @@ public class RecurringCashEligibilityTests
             selectedServiceIds: serviceIds,
             selectedPackageIds: packageIds,
             paymentType: paymentType,
-            startsOn: DateTime.UtcNow.AddDays(1));
+            startsOn: DateTime.UtcNow.AddDays(1),
+            dirtinessLevel: dirtinessLevel);
         template.Id = id;
         return template;
     }

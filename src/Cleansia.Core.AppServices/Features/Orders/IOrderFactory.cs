@@ -106,8 +106,5 @@ public record CreateOrderInput(
     /// no request of its own, so its documents fall back to the account's preference.
     /// </summary>
     string? LanguageCode = null,
-    /// <summary>
-    /// The level <see cref="RawSubtotal"/> was priced at. Normal for the recurring pipeline until a
-    /// template carries a level of its own.
-    /// </summary>
+    /// <summary>The level <see cref="RawSubtotal"/> was priced at.</summary>
     DirtinessLevel DirtinessLevel = DirtinessLevel.Normal);

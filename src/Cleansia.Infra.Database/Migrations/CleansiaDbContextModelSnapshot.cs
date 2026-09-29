@@ -285,6 +285,11 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<DateTimeOffset?>("DeactivatedOn")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int>("DirtinessLevel")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
                     b.Property<DateTime?>("EndsOn")
                         .HasColumnType("timestamp with time zone");
 

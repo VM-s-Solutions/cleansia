@@ -76,8 +76,9 @@ public class GetMyRecurringBookings
                     PreferredEmployeeId: t.PreferredEmployeeId,
                     RequiresPaymentMethodChange: t.PaymentType == PaymentType.Cash
                         && !cashEligibility!.Allows(
-                            t.SelectedServiceIds, t.SelectedPackageIds, t.Rooms, t.Bathrooms, DirtinessLevel.Normal),
-                    TimeZoneId: addr?.Address == null ? null : zoneByCountry[addr.Address.CountryId]);
+                            t.SelectedServiceIds, t.SelectedPackageIds, t.Rooms, t.Bathrooms, t.DirtinessLevel),
+                    TimeZoneId: addr?.Address == null ? null : zoneByCountry[addr.Address.CountryId],
+                    DirtinessLevel: t.DirtinessLevel);
             }).ToList();
 
             return BusinessResult.Success<IReadOnlyList<RecurringBookingTemplateDto>>(dtos);

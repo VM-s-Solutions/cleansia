@@ -240,7 +240,8 @@ public sealed class RecurringMaterializationDedupeTests : IDisposable
             paymentType: template.PaymentType,
             startsOn: template.StartsOn,
             endsOn: template.EndsOn,
-            preferredEmployeeId: template.PreferredEmployeeId);
+            preferredEmployeeId: template.PreferredEmployeeId,
+            dirtinessLevel: template.DirtinessLevel);
 
         await ctx.CommitAsync(CancellationToken.None);
     }

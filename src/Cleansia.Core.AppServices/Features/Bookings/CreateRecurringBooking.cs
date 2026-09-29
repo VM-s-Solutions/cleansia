@@ -33,7 +33,8 @@ public class CreateRecurringBooking
         string? PreferredEmployeeId = null,
         // The same tick a one-off booking asks for, and on the same terms: required while either legal
         // consent is not an acceptance of the text in force for the saved address's market.
-        bool? TermsAccepted = null) : ICommand<RecurringBookingTemplateDto>;
+        bool? TermsAccepted = null,
+        DirtinessLevel DirtinessLevel = DirtinessLevel.Normal) : ICommand<RecurringBookingTemplateDto>;
 
     public class Validator : AbstractValidator<Command>
     {
@@ -82,6 +83,10 @@ public class CreateRecurringBooking
                 .InclusiveBetween(0, 6)
                 .WithMessage(BusinessErrorMessage.InvalidEnumValue);
 
+            RuleFor(x => x.DirtinessLevel)
+                .IsInEnum()
+                .WithMessage(BusinessErrorMessage.InvalidEnumValue);
+
             RuleFor(x => x.TimeOfDay)
                 .Cascade(CascadeMode.Stop)
                 .NotEmpty()
@@ -108,7 +113,8 @@ public class CreateRecurringBooking
                 .Must(p => Enum.IsDefined(typeof(PaymentType), p))
                 .WithMessage(BusinessErrorMessage.InvalidEnumValue)
                 .MustAsync(CashIsAvailableForSelectionAsync)
-                .WithMessage(BusinessErrorMessage.OrderCashNotAvailable);
+                .WithMessage(BusinessErrorMessage.OrderCashNotAvailable)
+                .When(x => Enum.IsDefined(x.DirtinessLevel), ApplyConditionTo.CurrentValidator);
 
             RuleFor(x => x)
                 .Must(c => c.SelectedServiceIds.Count > 0 || c.SelectedPackageIds.Count > 0)
@@ -228,7 +234,7 @@ public class CreateRecurringBooking
                        _serviceRepository, _packageRepository,
                        command.SelectedServiceIds, command.SelectedPackageIds, cancellationToken))
                    .Allows(command.SelectedServiceIds, command.SelectedPackageIds,
-                       command.Rooms, command.Bathrooms, DirtinessLevel.Normal);
+                       command.Rooms, command.Bathrooms, command.DirtinessLevel);
 
         private async Task<Address?> FindSavedAddressAsync(string userId, string savedAddressId, CancellationToken cancellationToken)
         {
@@ -287,7 +293,8 @@ public class CreateRecurringBooking
                 paymentType: (PaymentType)command.PaymentType,
                 startsOn: command.StartsOn,
                 endsOn: command.EndsOn,
-                preferredEmployeeId: command.PreferredEmployeeId);
+                preferredEmployeeId: command.PreferredEmployeeId,
+                dirtinessLevel: command.DirtinessLevel);
 
             template.TenantId = (await operatorTenantResolver.ResolveAsync(address.Address.CountryId, cancellationToken)).OperatorTenantId;
             templateRepository.Add(template);
@@ -325,7 +332,8 @@ public class CreateRecurringBooking
                 LastMaterializedFor: template.LastMaterializedFor,
                 IsActive: template.IsActive,
                 PreferredEmployeeId: template.PreferredEmployeeId,
-                TimeZoneId: marketZone.Id));
+                TimeZoneId: marketZone.Id,
+                DirtinessLevel: template.DirtinessLevel));
         }
     }
 }

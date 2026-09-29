@@ -9166,6 +9166,7 @@ export class CreateRecurringBookingCommand implements ICreateRecurringBookingCom
     endsOn!: Date | undefined;
     preferredEmployeeId!: string | undefined;
     termsAccepted!: boolean | undefined;
+    dirtinessLevel!: DirtinessLevel;
 
     constructor(data?: ICreateRecurringBookingCommand) {
         if (data) {
@@ -9199,6 +9200,7 @@ export class CreateRecurringBookingCommand implements ICreateRecurringBookingCom
             this.endsOn = Data["endsOn"] ? new Date(Data["endsOn"].toString()) : undefined as any;
             this.preferredEmployeeId = Data["preferredEmployeeId"];
             this.termsAccepted = Data["termsAccepted"];
+            this.dirtinessLevel = Data["dirtinessLevel"];
         }
     }
 
@@ -9232,6 +9234,7 @@ export class CreateRecurringBookingCommand implements ICreateRecurringBookingCom
         data["endsOn"] = this.endsOn ? this.endsOn.toISOString() : undefined as any;
         data["preferredEmployeeId"] = this.preferredEmployeeId;
         data["termsAccepted"] = this.termsAccepted;
+        data["dirtinessLevel"] = this.dirtinessLevel;
         return data;
     }
 }
@@ -9250,6 +9253,7 @@ export interface ICreateRecurringBookingCommand {
     endsOn: Date | undefined;
     preferredEmployeeId: string | undefined;
     termsAccepted: boolean | undefined;
+    dirtinessLevel: DirtinessLevel;
 }
 
 export class CurrencyDetailDto implements ICurrencyDetailDto {
@@ -15082,6 +15086,7 @@ export class RecurringBookingTemplateDto implements IRecurringBookingTemplateDto
     preferredEmployeeId!: string | undefined;
     requiresPaymentMethodChange!: boolean;
     timeZoneId!: string | undefined;
+    dirtinessLevel!: DirtinessLevel;
 
     constructor(data?: IRecurringBookingTemplateDto) {
         if (data) {
@@ -15120,6 +15125,7 @@ export class RecurringBookingTemplateDto implements IRecurringBookingTemplateDto
             this.preferredEmployeeId = Data["preferredEmployeeId"];
             this.requiresPaymentMethodChange = Data["requiresPaymentMethodChange"];
             this.timeZoneId = Data["timeZoneId"];
+            this.dirtinessLevel = Data["dirtinessLevel"];
         }
     }
 
@@ -15158,6 +15164,7 @@ export class RecurringBookingTemplateDto implements IRecurringBookingTemplateDto
         data["preferredEmployeeId"] = this.preferredEmployeeId;
         data["requiresPaymentMethodChange"] = this.requiresPaymentMethodChange;
         data["timeZoneId"] = this.timeZoneId;
+        data["dirtinessLevel"] = this.dirtinessLevel;
         return data;
     }
 }
@@ -15181,6 +15188,7 @@ export interface IRecurringBookingTemplateDto {
     preferredEmployeeId: string | undefined;
     requiresPaymentMethodChange: boolean;
     timeZoneId: string | undefined;
+    dirtinessLevel: DirtinessLevel;
 }
 
 export enum ReferralStatus {
@@ -16847,6 +16855,7 @@ export class UpdateRecurringBookingCommand implements IUpdateRecurringBookingCom
     startsOn!: Date;
     endsOn!: Date | undefined;
     preferredEmployeeId!: string | undefined;
+    dirtinessLevel!: DirtinessLevel;
 
     constructor(data?: IUpdateRecurringBookingCommand) {
         if (data) {
@@ -16880,6 +16889,7 @@ export class UpdateRecurringBookingCommand implements IUpdateRecurringBookingCom
             this.startsOn = Data["startsOn"] ? new Date(Data["startsOn"].toString()) : undefined as any;
             this.endsOn = Data["endsOn"] ? new Date(Data["endsOn"].toString()) : undefined as any;
             this.preferredEmployeeId = Data["preferredEmployeeId"];
+            this.dirtinessLevel = Data["dirtinessLevel"];
         }
     }
 
@@ -16913,6 +16923,7 @@ export class UpdateRecurringBookingCommand implements IUpdateRecurringBookingCom
         data["startsOn"] = this.startsOn ? this.startsOn.toISOString() : undefined as any;
         data["endsOn"] = this.endsOn ? this.endsOn.toISOString() : undefined as any;
         data["preferredEmployeeId"] = this.preferredEmployeeId;
+        data["dirtinessLevel"] = this.dirtinessLevel;
         return data;
     }
 }
@@ -16931,6 +16942,7 @@ export interface IUpdateRecurringBookingCommand {
     startsOn: Date;
     endsOn: Date | undefined;
     preferredEmployeeId: string | undefined;
+    dirtinessLevel: DirtinessLevel;
 }
 
 export class UpdateSavedAddressCommand implements IUpdateSavedAddressCommand {

@@ -540,9 +540,10 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   }
 
   /**
-   * Reads the account's consents once. Both of the two must be granted and
-   * neither withdrawn — a withdrawn Privacy Policy consent is not a consent,
-   * and asking again is the correct response to one.
+   * Reads the account's consents once. Both of the two must be granted,
+   * neither withdrawn, and each must cover the version in force — an
+   * acceptance of an older text is not an acceptance of the current one, and
+   * the booking is refused without the tick in either case.
    *
    * A failure leaves the flag false, which shows the tick. The safe direction
    * for this switch is always "ask".
@@ -561,7 +562,11 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
         const onRecord = consents ?? [];
         const granted = (type: ConsentType) =>
           onRecord.some(
-            (c) => c.consentType === type && c.isGranted && !c.withdrawnAt,
+            (c) =>
+              c.consentType === type &&
+              c.isGranted &&
+              !c.withdrawnAt &&
+              c.coversCurrentVersion,
           );
         this.alreadyConsented.set(
           granted(ConsentType.TermsOfService) && granted(ConsentType.PrivacyPolicy),

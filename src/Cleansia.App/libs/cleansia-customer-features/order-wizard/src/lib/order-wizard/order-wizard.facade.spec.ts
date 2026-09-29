@@ -1622,13 +1622,20 @@ describe('OrderWizardFacade', () => {
   // asked to accept the same two documents on every order. The tick stays for
   // GUESTS, who have no account and so no consent on record.
   describe('the review step consent tick', () => {
-    const consent = (type: number, granted = true, withdrawnAt: Date | null = null) => ({
+    const consent = (
+      type: number,
+      granted = true,
+      withdrawnAt: Date | null = null,
+      coversCurrentVersion = true,
+    ) => ({
       id: 'c' + type,
       consentType: type,
       isGranted: granted,
       grantedAt: new Date(),
       withdrawnAt,
       createdOn: new Date(),
+      documentVersion: '2026-09-14',
+      coversCurrentVersion,
     });
     const TERMS = 0;
     const PRIVACY = 1;
@@ -1654,6 +1661,28 @@ describe('OrderWizardFacade', () => {
     it('is asked again when a consent was WITHDRAWN', () => {
       gdprClient.consentsGet.mockReturnValue(
         of([consent(TERMS), consent(PRIVACY, true, new Date())]),
+      );
+      authService.isLoggedIn.mockReturnValue(true);
+
+      facade.initialize();
+
+      expect(facade.alreadyConsented()).toBe(false);
+    });
+
+    it('is asked again when the terms accepted are older than the version in force', () => {
+      gdprClient.consentsGet.mockReturnValue(
+        of([consent(TERMS, true, null, false), consent(PRIVACY)]),
+      );
+      authService.isLoggedIn.mockReturnValue(true);
+
+      facade.initialize();
+
+      expect(facade.alreadyConsented()).toBe(false);
+    });
+
+    it('is asked again when the privacy policy accepted is older than the version in force', () => {
+      gdprClient.consentsGet.mockReturnValue(
+        of([consent(TERMS), consent(PRIVACY, true, null, false)]),
       );
       authService.isLoggedIn.mockReturnValue(true);
 

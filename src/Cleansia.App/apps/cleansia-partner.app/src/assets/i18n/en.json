@@ -582,7 +582,7 @@
       "radius_title": "New-job notifications",
       "radius_text": "We tell you about new jobs automatically. If you set a distance on your profile, we tell you only about jobs within it; if you do not, about every new job in your country. The distance changes only the notifications: the board still lists every job, and you can take any of them.",
       "automatic_title": "What happens automatically",
-      "automatic_text": "A few things happen on their own, without anyone deciding about you: a customer's request for you ends at its deadline and the job opens to everyone; a job nobody has taken by its start time is cancelled and the customer is refunded; and we remind you of the jobs you have taken. None of these steps looks at you or changes which jobs you can take.",
+      "automatic_text": "A few things happen on their own: a customer's request for you ends at its deadline and the job opens to everyone; a job with nobody on it shortly after its start time is cancelled and the customer is refunded; we remind you of the jobs you have taken; and if a job you have taken has not been started shortly after its start time, the company's administrators are told automatically. None of these steps decides anything about you or changes which jobs you can take: what happens to a job that was not started is always decided by a person.",
       "no_score_title": "No score decides your access",
       "no_score_text": "We do not score partners or put them in order. Ratings do not change which jobs you see or can take. The only limit on how many jobs you take is a weekly limit an administrator may set for you; if one is set, you see it and its reason on your profile.",
       "approval_title": "How approval works",

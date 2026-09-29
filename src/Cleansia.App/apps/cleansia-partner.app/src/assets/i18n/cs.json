@@ -582,7 +582,7 @@
       "radius_title": "Upozornění na nové zakázky",
       "radius_text": "Na nové zakázky vás upozorňujeme automaticky. Pokud si v profilu nastavíte vzdálenost, upozorníme vás jen na zakázky v jejím okruhu; jinak na každou novou zakázku ve vaší zemi. Vzdálenost mění jen upozornění: nabídka dál zobrazuje všechny zakázky a kteroukoli z nich si můžete vzít.",
       "automatic_title": "Co se děje automaticky",
-      "automatic_text": "Několik kroků proběhne samo, aniž by o vás kdokoli rozhodoval: vyžádání od zákazníka skončí ve stanovený čas a zakázka se otevře všem; zakázka, kterou si do začátku nikdo nevzal, se zruší a zákazník dostane peníze zpět; a připomínáme vám zakázky, které jste si vzali. Žádný z těchto kroků nehodnotí vás ani nemění, které zakázky si můžete vzít.",
+      "automatic_text": "Několik kroků proběhne samo: vyžádání od zákazníka skončí ve stanovený čas a zakázka se otevře všem; zakázka, na které krátce po plánovaném začátku nikdo není, se zruší a zákazník dostane peníze zpět; připomínáme vám zakázky, které jste si vzali; a pokud zakázka, kterou jste si vzali, není krátce po plánovaném začátku zahájena, administrátoři společnosti se to automaticky dozvědí. Žádný z těchto kroků o vás nerozhoduje ani nemění, které zakázky si můžete vzít: o tom, co se stane se zakázkou, která nebyla zahájena, rozhoduje vždy člověk.",
       "no_score_title": "O vašem přístupu nerozhoduje žádné skóre",
       "no_score_text": "Partnery nebodujeme ani je neřadíme do pořadí. Hodnocení nemění, které zakázky vidíte nebo si můžete vzít. Jediným omezením počtu zakázek je týdenní limit, který vám může nastavit administrátor; pokud je nastaven, uvidíte ho i s důvodem ve svém profilu.",
       "approval_title": "Jak probíhá schválení",

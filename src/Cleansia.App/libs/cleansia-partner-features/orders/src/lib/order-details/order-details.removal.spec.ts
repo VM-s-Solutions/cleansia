@@ -46,8 +46,9 @@ const flushAsyncErrorHandling = async (): Promise<void> => {
 };
 
 /**
- * A cleaner an administrator took off a job can no longer open it, so the order answers
- * `order.not_found`. The page then asks the server why; the reason is never carried anywhere else.
+ * A reassignment swaps the cleaner for another, so the job keeps whatever seats it had free. With none
+ * left the order answers `order.not_found`; with one still open the removed cleaner browses it like any
+ * other job. Either way the page asks the server why; the reason is never carried anywhere else.
  */
 describe('the order a cleaner was taken off', () => {
   let add: jest.Mock;
@@ -92,6 +93,14 @@ describe('the order a cleaner was taken off', () => {
     await flushAsyncErrorHandling();
   };
 
+  const orderOpened = async (order: object): Promise<void> => {
+    facade.loadOrderDetails(ORDER_ID);
+    httpMock
+      .expectOne((request) => request.url.startsWith('/api/Order/GetById'))
+      .flush(blob(order));
+    await flushAsyncErrorHandling();
+  };
+
   it("shows the administrator's reason, read for this order", async () => {
     await orderRefused('order.not_found');
 
@@ -127,6 +136,39 @@ describe('the order a cleaner was taken off', () => {
     expect(facade.removal()).toBeNull();
   });
 
+  it('shows the reason on a job that still has a seat open, over the job itself', async () => {
+    await orderOpened({ id: ORDER_ID, isAssignedToCurrentUser: false });
+
+    const request = httpMock.expectOne(isRemovalRead);
+    expect(request.request.urlWithParams).toContain(`OrderId=${ORDER_ID}`);
+    request.flush(
+      blob({ orderId: ORDER_ID, reason: REASON, removedOn: '2026-09-28T10:00:00Z' })
+    );
+    await flushAsyncErrorHandling();
+
+    expect(facade.removal()?.reason).toBe(REASON);
+    expect(facade.orderDetails()?.id).toBe(ORDER_ID);
+    expect(facade.error()).toBeNull();
+  });
+
+  it('shows no toast to a cleaner browsing a job nobody took them off', async () => {
+    await orderOpened({ id: ORDER_ID, isAssignedToCurrentUser: false });
+
+    refused(httpMock.expectOne(isRemovalRead), 'order.not_found');
+    await flushAsyncErrorHandling();
+
+    expect(add).not.toHaveBeenCalled();
+    expect(facade.removal()).toBeNull();
+    expect(facade.error()).toBeNull();
+  });
+
+  it('asks nothing about a job the cleaner is on', async () => {
+    await orderOpened({ id: ORDER_ID, isAssignedToCurrentUser: true });
+
+    httpMock.expectNone(isRemovalRead);
+    expect(facade.removal()).toBeNull();
+  });
+
   it('forgets an earlier removal when the order is loaded again', async () => {
     await orderRefused('order.not_found');
     httpMock
@@ -134,11 +176,7 @@ describe('the order a cleaner was taken off', () => {
       .flush(blob({ orderId: ORDER_ID, reason: REASON, removedOn: '2026-09-28T10:00:00Z' }));
     await flushAsyncErrorHandling();
 
-    facade.loadOrderDetails(ORDER_ID);
-    httpMock
-      .expectOne((request) => request.url.startsWith('/api/Order/GetById'))
-      .flush(blob({ id: ORDER_ID }));
-    await flushAsyncErrorHandling();
+    await orderOpened({ id: ORDER_ID, isAssignedToCurrentUser: true });
 
     expect(facade.removal()).toBeNull();
   });
@@ -157,11 +195,15 @@ describe('the removal copy', () => {
     expect(copy['removed_message']).toContain('{{reason}}');
   });
 
-  it('fills the reason from the removal the page read', () => {
+  it('fills the reason from the removal the page read, on the closed page and over an open job', () => {
     const template = readFileSync(TEMPLATE, 'utf8');
 
     expect(template).toContain(
       "'pages.order_details.removed_message' | translate: { reason: removalReason() }"
+    );
+    expect(template).toContain('@if (removalReason(); as reason)');
+    expect(template).toContain(
+      "'pages.order_details.removed_message' | translate: { reason: reason }"
     );
   });
 });

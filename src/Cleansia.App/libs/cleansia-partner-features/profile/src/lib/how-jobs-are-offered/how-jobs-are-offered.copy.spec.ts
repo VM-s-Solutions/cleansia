@@ -22,6 +22,15 @@ const SECTIONS = [
   'review',
 ] as const;
 
+/** The one automatic step that watches the cleaner: an unstarted job is reported to the administrators. */
+const NOT_STARTED_ALERT: Record<(typeof LOCALES)[number], readonly string[]> = {
+  en: ['not been started', 'administrators'],
+  cs: ['zahájena', 'administrátoři'],
+  sk: ['zahájená', 'administrátori'],
+  uk: ['не розпочато', 'адміністратори'],
+  ru: ['не начат', 'администраторы'],
+};
+
 const PAGE_KEYS = [
   'title',
   'description',
@@ -60,6 +69,17 @@ describe('how jobs are offered', () => {
   it.each(LOCALES)('%s names the human contact for a review', (locale) => {
     expect(pageCopy(locale)['review_text']).toContain(REVIEW_CONTACT);
   });
+
+  it.each(LOCALES)(
+    '%s discloses that the administrators are told when a taken job is not started',
+    (locale) => {
+      const automatic = pageCopy(locale)['automatic_text'];
+
+      for (const phrase of NOT_STARTED_ALERT[locale]) {
+        expect(automatic).toContain(phrase);
+      }
+    }
+  );
 
   it.each(LOCALES)(
     '%s states no policy figure, so the page cannot drift from the rules it describes',

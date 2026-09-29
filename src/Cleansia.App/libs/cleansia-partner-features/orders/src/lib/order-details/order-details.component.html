@@ -28,7 +28,8 @@
   <div class="cleansia-order-details__form-card page-wrapper page-wrapper--narrow">
     @if (loading() && !orderDetails()) {
     <cleansia-loader />
-    } @else if (removalReason()) {
+    } @else if (error()) {
+    @if (removalReason()) {
     <div class="not-found-state">
       <div class="not-found-state__icon">
         <i class="pi pi-user-minus"></i>
@@ -47,7 +48,7 @@
         />
       </div>
     </div>
-    } @else if (error()) {
+    } @else {
     <div class="not-found-state">
       <div class="not-found-state__icon">
         <i class="pi pi-search"></i>
@@ -69,6 +70,7 @@
         />
       </div>
     </div>
+    }
     } @else if (orderDetails()) {
     <form [formGroup]="formGroup" class="cleansia-order-details__form-content">
       <!-- Order Header with status banner, order number and action buttons -->
@@ -81,6 +83,15 @@
         (print)="printOrder()"
         (downloadInvoice)="downloadInvoice()"
       />
+
+      @if (removalReason(); as reason) {
+      <div class="cleansia-order-details__contract cleansia-order-details__contract--pending" role="status">
+        <i class="pi pi-user-minus"></i>
+        <span class="cleansia-order-details__contract-text">
+          {{ 'pages.order_details.removed_message' | translate: { reason: reason } }}
+        </span>
+      </div>
+      }
 
       <!-- Take Order Action -->
       @if (canTakeOrder()) {

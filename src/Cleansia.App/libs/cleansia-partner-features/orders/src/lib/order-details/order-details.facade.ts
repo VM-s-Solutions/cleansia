@@ -59,7 +59,7 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
   private readonly dialogService = inject(DialogService);
   private readonly store = inject(Store);
   private readonly actions$ = inject(Actions);
-  // Anyone who was not taken off the order answers order.not_found here, which the page already says.
+  // A cleaner who was never taken off the order answers order.not_found here, which is no error to them.
   private readonly removalClient = new OrderClient(
     errorToastSuppressingHttpClient(),
     inject(APIBASEURL, { optional: true }) ?? undefined
@@ -90,6 +90,9 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
         tap((orderDetails) => {
           if (orderDetails) {
             this.orderDetails.set(orderDetails);
+            if (orderDetails.isAssignedToCurrentUser === false) {
+              this.loadRemoval(orderId);
+            }
           } else {
             this.error.set(this.translateService.instant('pages.order_details.not_found_message'));
           }

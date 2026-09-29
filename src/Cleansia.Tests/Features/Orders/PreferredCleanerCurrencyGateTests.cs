@@ -278,7 +278,8 @@ public class PreferredCleanerCurrencyGateTests
             Mock.Of<IUserConsentRepository>(),
             CreateOrderTestData.Speaking(Constants.Language.English),
             Mock.Of<ICountryConfigurationRepository>(),
-            Mock.Of<ILegalDocumentResolver>());
+            Mock.Of<ILegalDocumentResolver>(),
+            SavedCards.SavedCardDoubles.Guaranteed());
 
     private ChoosePreferredCleaner.Validator ChooseValidator() =>
         new(_session.Object, _membershipRepository.Object, _orderRepository.Object, _markets);
@@ -287,7 +288,8 @@ public class PreferredCleanerCurrencyGateTests
         new(_orderRepository.Object, _session.Object, _savedAddressRepository.Object, _markets, OrderMarketDoubles.Servicing(Czechia),
             Bookings.CatalogueDoubles.Services(), Bookings.CatalogueDoubles.Packages(),
             Cleansia.Tests.Features.Legal.CustomerConsentDoubles.Consented(),
-            Mock.Of<Cleansia.Core.AppServices.Services.Interfaces.ILegalDocumentResolver>());
+            Mock.Of<Cleansia.Core.AppServices.Services.Interfaces.ILegalDocumentResolver>(),
+            SavedCards.SavedCardDoubles.Guaranteed());
 
     private UpdateRecurringBooking.Validator UpdateRecurringValidator() =>
         new(
@@ -297,7 +299,8 @@ public class PreferredCleanerCurrencyGateTests
             _orderRepository.Object,
             _savedAddressRepository.Object,
             _markets, OrderMarketDoubles.Servicing(Czechia),
-            Bookings.CatalogueDoubles.Services(), Bookings.CatalogueDoubles.Packages());
+            Bookings.CatalogueDoubles.Services(), Bookings.CatalogueDoubles.Packages(),
+            SavedCards.SavedCardDoubles.Guaranteed());
 
     private static CreateRecurringBooking.Command CreateRecurringCommand(string preferredEmployeeId) =>
         new(

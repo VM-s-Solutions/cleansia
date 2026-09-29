@@ -122,7 +122,8 @@ public sealed class CreateOrderTermsTickValidatorTests
             _consents.Object,
             CreateOrderTestData.Speaking(Constants.Language.English),
             Mock.Of<ICountryConfigurationRepository>(),
-            _legalDocuments.Object);
+            _legalDocuments.Object,
+            SavedCards.SavedCardDoubles.Guaranteed());
     }
 
     private static CreateOrder.Command Booking(bool? termsAccepted) =>

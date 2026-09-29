@@ -241,6 +241,8 @@ public class PreferredOfferDeferredAnnouncementTests
 
         return new ConfirmRecurringOrder.Handler(
             OrderAccessDoubles.Over(_orderRepository, session),
+            _orderRepository.Object,
+            SavedCards.SavedCardDoubles.Guaranteed(),
             new Mock<ICreditAccountRepository>().Object,
             new Mock<IUserRepository>().Object,
             session.Object,

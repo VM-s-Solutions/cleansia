@@ -1944,6 +1944,8 @@
       },
       "payment_gateway_unavailable": "Platby jsou dočasně nedostupné. Zkuste to prosím za chvíli.",
       "cash_not_available": "Platba hotově je možná jen po přihlášení a u objednávky, kterou zvládne jeden uklízeč.",
+      "cash_requires_saved_card": "Pro platbu v hotovosti si nejdřív uložte kartu jako záruku — nebo zaplaťte kartou.",
+      "cash_open_bookings_limit_reached": "Už máte nejvyšší povolený počet nezaplacených objednávek v hotovosti. Zvolte kartu, nebo hotovost znovu, až bude některá z nich zaplacena.",
       "country_operator_mismatch": "Tuto adresu obsluhuje jiná společnost Cleansia, proto ji zde nelze objednat.",
       "payment": {
         "already_paid": "Tato objednávka už byla zaplacena."

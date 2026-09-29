@@ -104,7 +104,8 @@ public class CreateOrderValidatorCharacterizationTests
             Mock.Of<IUserConsentRepository>(),
             CreateOrderTestData.Speaking(Constants.Language.English),
             Mock.Of<ICountryConfigurationRepository>(),
-            Mock.Of<ILegalDocumentResolver>());
+            Mock.Of<ILegalDocumentResolver>(),
+            SavedCards.SavedCardDoubles.Guaranteed());
 
     private static IServicePriceRepository PricedServices(params Currency[] currencies)
     {

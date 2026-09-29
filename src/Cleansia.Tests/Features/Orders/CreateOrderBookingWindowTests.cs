@@ -134,6 +134,7 @@ public sealed class CreateOrderBookingWindowTests
             Mock.Of<IUserConsentRepository>(),
             CreateOrderTestData.Speaking(Constants.Language.English),
             _countryConfigurations.Object,
-            Mock.Of<ILegalDocumentResolver>());
+            Mock.Of<ILegalDocumentResolver>(),
+            SavedCards.SavedCardDoubles.Guaranteed());
     }
 }

@@ -42,6 +42,8 @@ public sealed class ConfirmRecurringOrderAuditEvidenceTests
     private ConfirmRecurringOrder.Handler CreateHandler() =>
         new(
             OrderAccessDoubles.Over(_orderRepository, _session),
+            _orderRepository.Object,
+            SavedCards.SavedCardDoubles.Guaranteed(),
             new Mock<ICreditAccountRepository>().Object,
             new Mock<IUserRepository>().Object,
             _session.Object,

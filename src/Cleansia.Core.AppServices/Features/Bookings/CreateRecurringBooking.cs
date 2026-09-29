@@ -47,6 +47,7 @@ public class CreateRecurringBooking
         private readonly IPackageRepository _packageRepository;
         private readonly IUserConsentRepository _userConsentRepository;
         private readonly ILegalDocumentResolver _legalDocumentResolver;
+        private readonly ISavedCardRepository _savedCardRepository;
 
         public Validator(
             IOrderRepository orderRepository,
@@ -57,7 +58,8 @@ public class CreateRecurringBooking
             IServiceRepository serviceRepository,
             IPackageRepository packageRepository,
             IUserConsentRepository userConsentRepository,
-            ILegalDocumentResolver legalDocumentResolver)
+            ILegalDocumentResolver legalDocumentResolver,
+            ISavedCardRepository savedCardRepository)
         {
             _orderRepository = orderRepository;
             _userSessionProvider = userSessionProvider;
@@ -68,6 +70,7 @@ public class CreateRecurringBooking
             _packageRepository = packageRepository;
             _userConsentRepository = userConsentRepository;
             _legalDocumentResolver = legalDocumentResolver;
+            _savedCardRepository = savedCardRepository;
 
             RuleFor(x => x.TermsAccepted)
                 .MustAsync((command, termsAccepted, cancellationToken) =>
@@ -114,7 +117,11 @@ public class CreateRecurringBooking
                 .WithMessage(BusinessErrorMessage.InvalidEnumValue)
                 .MustAsync(CashIsAvailableForSelectionAsync)
                 .WithMessage(BusinessErrorMessage.OrderCashNotAvailable)
-                .When(x => Enum.IsDefined(x.DirtinessLevel), ApplyConditionTo.CurrentValidator);
+                .When(x => Enum.IsDefined(x.DirtinessLevel), ApplyConditionTo.CurrentValidator)
+                .MustAsync(CashLeavesRoomForAnotherOpenBookingAsync)
+                .WithMessage(BusinessErrorMessage.OrderCashOpenBookingsLimitReached)
+                .MustAsync(CashIsGuaranteedBySavedCardAsync)
+                .WithMessage(BusinessErrorMessage.OrderCashRequiresSavedCard);
 
             RuleFor(x => x)
                 .Must(c => c.SelectedServiceIds.Count > 0 || c.SelectedPackageIds.Count > 0)
@@ -235,6 +242,39 @@ public class CreateRecurringBooking
                        command.SelectedServiceIds, command.SelectedPackageIds, cancellationToken))
                    .Allows(command.SelectedServiceIds, command.SelectedPackageIds,
                        command.Rooms, command.Bathrooms, command.DirtinessLevel);
+
+        private async Task<bool> CashLeavesRoomForAnotherOpenBookingAsync(
+            Command command, int paymentType, CancellationToken cancellationToken)
+        {
+            var userId = _userSessionProvider.GetUserId();
+            return paymentType != (int)PaymentType.Cash
+                || string.IsNullOrEmpty(userId)
+                || await CustomerCashStanding.HasRoomForAnotherOpenCashBookingAsync(
+                    _orderRepository, userId, cancellationToken);
+        }
+
+        /// <summary>
+        /// The card is asked for in the currency every occurrence is priced in, the saved address's
+        /// country's. A saved address the handler will refuse passes so its own not-found answer is the
+        /// one given.
+        /// </summary>
+        private async Task<bool> CashIsGuaranteedBySavedCardAsync(
+            Command command, int paymentType, CancellationToken cancellationToken)
+        {
+            var userId = _userSessionProvider.GetUserId();
+            if (paymentType != (int)PaymentType.Cash || string.IsNullOrEmpty(userId))
+            {
+                return true;
+            }
+
+            var address = await FindSavedAddressAsync(userId, command.SavedAddressId, cancellationToken);
+            return address is null
+                || await CustomerCashStanding.HoldsUsableCardAsync(
+                    _savedCardRepository,
+                    userId,
+                    (await _currencyResolutionService.ResolveCurrencyForCountryAsync(address.CountryId, cancellationToken)).Id,
+                    cancellationToken);
+        }
 
         private async Task<Address?> FindSavedAddressAsync(string userId, string savedAddressId, CancellationToken cancellationToken)
         {

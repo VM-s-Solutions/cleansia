@@ -144,7 +144,8 @@ public sealed class CreateRecurringBookingTermsTickTests
             CatalogueDoubles.Services(),
             CatalogueDoubles.Packages(),
             _consents.Object,
-            _resolver.Object);
+            _resolver.Object,
+            SavedCards.SavedCardDoubles.Guaranteed());
 
     private CreateRecurringBooking.Handler Handler() =>
         new(

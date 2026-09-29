@@ -109,6 +109,10 @@ public static class BusinessErrorMessage
     public const string OrderCashNotCollected = "order.cash_not_collected";
     /// <summary>Cash is only for a signed-in customer whose booking needs one cleaner; anything else pays by card.</summary>
     public const string OrderCashNotAvailable = "order.cash_not_available";
+    /// <summary>Cash needs a usable card saved in the booking's currency, the guarantee fees and unpaid cash may be charged to.</summary>
+    public const string OrderCashRequiresSavedCard = "order.cash_requires_saved_card";
+    /// <summary>The customer already holds the most open unpaid cash bookings allowed; the next one pays by card.</summary>
+    public const string OrderCashOpenBookingsLimitReached = "order.cash_open_bookings_limit_reached";
     public const string OrderPaymentNotConfirmed = "order.payment_not_confirmed";
     // Reconciliation outcomes when the cleaner tries to take cash for an order booked on a card: the
     // handler asks Stripe what really happened before any second tender is recorded.

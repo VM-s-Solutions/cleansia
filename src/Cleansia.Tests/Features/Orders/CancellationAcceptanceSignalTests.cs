@@ -141,6 +141,8 @@ public class CancellationAcceptanceSignalTests
     private ConfirmRecurringOrder.Handler CreateRecurringConfirmHandler() =>
         new(
             Cleansia.Tests.Common.OrderAccessDoubles.Over(_orderRepository, _session),
+            _orderRepository.Object,
+            SavedCards.SavedCardDoubles.Guaranteed(),
             _creditAccountRepository.Object,
             _userRepository.Object,
             _session.Object,

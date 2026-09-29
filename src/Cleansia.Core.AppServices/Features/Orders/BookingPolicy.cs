@@ -212,6 +212,12 @@ public static class BookingPolicy
         => signedIn && requiredEmployees == 1;
 
     /// <summary>
+    /// Owner ruling 2026-09-28: a customer holds at most this many cash bookings that are open and not yet
+    /// paid; the next one pays by card. No amount ceiling; the saved card is the rest of the guarantee.
+    /// </summary>
+    public const int MaxOpenUnpaidCashBookings = 2;
+
+    /// <summary>
     /// Longest span a booking may be created with. <b>A DISCLOSURE bound, not a double-booking one</b>
     /// — an uncapped caller-chosen window pointed at the preferred-cleaner availability answer is a
     /// binary-search primitive over a cleaner's private schedule. Read it as a double-booking guard and

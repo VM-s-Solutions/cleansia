@@ -271,7 +271,8 @@ public class QuoteOrderSpanCapTests
             Mock.Of<IUserConsentRepository>(),
             CreateOrderTestData.Speaking(Constants.Language.English),
             Mock.Of<ICountryConfigurationRepository>(),
-            Mock.Of<ILegalDocumentResolver>());
+            Mock.Of<ILegalDocumentResolver>(),
+            SavedCards.SavedCardDoubles.Guaranteed());
 
     private static QuoteOrder.Command QuoteCommand() =>
         new([ServiceId], [PackageId], Rooms: 2, Bathrooms: 1, CurrencyId: CreateOrderTestData.CurrencyId);

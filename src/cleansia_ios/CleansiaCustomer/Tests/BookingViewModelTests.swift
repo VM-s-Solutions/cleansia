@@ -403,7 +403,7 @@ final class BookingViewModelTests: XCTestCase {
         scheduler.advance(by: .milliseconds(400))
         XCTAssertEqual(vm.quoteState, .quoting(previous: nil))
 
-        await drainQuote()
+        await eventually { vm.quoteState.quote != nil }
 
         XCTAssertEqual(vm.quoteState.quote?.totalPrice, 1200)
         XCTAssertEqual(quote.callCount, 1)
@@ -923,6 +923,15 @@ final class BookingViewModelTests: XCTestCase {
 
     private func drainQuote() async {
         for _ in 0 ..< 5 {
+            await Task.yield()
+        }
+    }
+
+    /// The fake quote runs off the main actor, so a fixed number of yields can finish before it answers
+    /// on a loaded runner; this waits for the answer itself.
+    private func eventually(_ condition: () -> Bool) async {
+        for _ in 0 ..< 500 {
+            if condition() { return }
             await Task.yield()
         }
     }

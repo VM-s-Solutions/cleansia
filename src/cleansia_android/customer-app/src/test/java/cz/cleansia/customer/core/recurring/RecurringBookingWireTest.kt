@@ -400,6 +400,7 @@ class RecurringBookingWireTest {
             "isActive",
             "preferredEmployeeId",
             "requiresPaymentMethodChange", "timeZoneId",
+            "dirtinessLevel",
         )
 
         val TEMPLATE_REQUIRED_FIELDS =

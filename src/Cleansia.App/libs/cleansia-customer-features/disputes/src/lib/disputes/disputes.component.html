@@ -138,10 +138,10 @@
           [floatVariant]="null"
           [label]="'pages.disputes.settlement_label' | translate"
           formControlName="settlementPreference"
-          [options]="settlementOptions"
+          [options]="settlementOptions()"
           [appendTo]="'body'"
         />
-        <p class="cl-dsp__hint">{{ 'pages.disputes.settlement_hint' | translate }}</p>
+        <p class="cl-dsp__hint">{{ settlementHintKey() | translate }}</p>
       </div>
 
       <div class="cl-dsp__form-actions">

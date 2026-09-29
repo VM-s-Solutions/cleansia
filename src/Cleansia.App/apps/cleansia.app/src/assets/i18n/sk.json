@@ -1286,7 +1286,9 @@
       "settlement_label": "Ak uznáme, že vám máme vrátiť peniaze",
       "settlement_card_refund": "Vrátiť peniaze na kartu",
       "settlement_credit": "Kredit na môj účet Cleansia",
-      "settlement_hint": "Vrátené peniaze prídu na kartu, ktorou ste platili. Kredit namiesto toho uplatníte na ďalšie objednávky: nedá sa vyplatiť a vyprší po 12 mesiacoch bez použitia."
+      "settlement_hint": "Vrátené peniaze prídu na kartu, ktorou ste platili. Kredit namiesto toho uplatníte na ďalšie objednávky: nedá sa vyplatiť a vyprší po 12 mesiacoch bez použitia.",
+      "settlement_cash_refund": "Vrátiť mi peniaze",
+      "settlement_hint_cash": "Platili ste v hotovosti, takže nie je karta, na ktorú peniaze vrátiť: ako vám ich vrátime, dohodneme s vami tu. Kredit namiesto toho uplatníte na ďalšie objednávky: nedá sa vyplatiť a vyprší po 12 mesiacoch bez použitia."
     },
     "rewards": {
       "title": "Odmeny",

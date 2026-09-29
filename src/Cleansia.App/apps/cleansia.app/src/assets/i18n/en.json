@@ -1286,7 +1286,9 @@
       "settlement_label": "If we agree you are owed money back",
       "settlement_card_refund": "Refund to my card",
       "settlement_credit": "Credit on my Cleansia account",
-      "settlement_hint": "A refund goes back to the card you paid with. Credit pays towards your next bookings instead: it cannot be paid out, and it expires after 12 months without use."
+      "settlement_hint": "A refund goes back to the card you paid with. Credit pays towards your next bookings instead: it cannot be paid out, and it expires after 12 months without use.",
+      "settlement_cash_refund": "Refund my money",
+      "settlement_hint_cash": "You paid in cash, so there is no card to refund to: we will agree with you here how the money is returned. Credit pays towards your next bookings instead: it cannot be paid out, and it expires after 12 months without use."
     },
     "rewards": {
       "title": "Rewards",

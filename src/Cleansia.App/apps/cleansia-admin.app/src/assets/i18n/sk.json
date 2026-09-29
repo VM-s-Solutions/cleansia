@@ -2764,6 +2764,10 @@
             "cleaner_not_started": {
               "title": "Upratovač nezačal objednávku",
               "body": "Objednávka {{orderNumber}} bola objednaná na {{cleaningDateTime}} a nikto ju nezačal. Ak upratovač neprišiel, zrušte ju ako nedostavenie sa."
+            },
+            "lockout_reported": {
+              "title": "Upratovač sa nemôže dostať dnu",
+              "body": "Upratovač pri objednávke {{orderNumber}}, objednanej na {{cleaningDateTime}}, hlási, že sa nemôže dostať dnu. Skontrolujte fotografiu vchodu a jeho pokusy o volanie; ak ho zákazník nepustil dnu, zrušte ju ako nesprístupnenie zákazníkom."
             }
           },
           "dispute": {
@@ -3162,6 +3166,9 @@
       }
     },
     "order": {
+      "lockout": {
+        "not_reported": "Upratovač nenahlásil, že sa nemôže dostať dnu, takže nie je čo potvrdiť."
+      },
       "after_photos": {
         "required": "Fotografie po dokončení sú povinné na dokončenie objednávky"
       },

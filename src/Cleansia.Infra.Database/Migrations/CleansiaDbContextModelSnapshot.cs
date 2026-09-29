@@ -4201,6 +4201,17 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasMaxLength(5)
                         .HasColumnType("character varying(5)");
 
+                    b.Property<string>("LockoutCallAttempts")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime?>("LockoutReportedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LockoutReportedByEmployeeId")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
                     b.Property<int>("MaxEmployees")
                         .HasColumnType("integer");
 

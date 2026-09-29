@@ -485,6 +485,11 @@ const PARTNER_SURFACE_ERROR_KEYS: readonly string[] = [
   'order.no_available_spots',
   'order.not_confirmed',
   'order.too_early_to_start',
+  // The assigned cleaner's "cannot get in" report (owner ruling 2026-09-28, decision 11).
+  'order.lockout.too_early',
+  'order.lockout.photo_required',
+  'order.lockout.already_reported',
+  'order.lockout.order_closed',
   'order.not_found',
   'order.not_in_progress',
   'order.not_takeable',

@@ -5,6 +5,7 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
 using Cleansia.Core.Queue.Abstractions;
@@ -14,11 +15,11 @@ using Microsoft.Extensions.Logging;
 namespace Cleansia.Functions.Core.Handlers;
 
 /// <summary>
-/// Realizes every e-mail the send-email queue carries, off the request path. The queue holds five
+/// Realizes every e-mail the send-email queue carries, off the request path. The queue holds six
 /// payload shapes told apart by their <c>messageType</c> discriminator: the bare
 /// <see cref="SendEmailMessage"/> (no discriminator; confirmation, reset, promo and the two wind-down
 /// notices, resolved by <see cref="EmailType"/>), the guest order cancellation, the cash booking
-/// confirmation, the admin notification and the receivable pay link. Each is sent via the existing
+/// confirmation, the admin notification, the receivable pay link and the lockout cancellation. Each is sent via the existing
 /// <see cref="IEmailService"/> in the language the producer chose.
 ///
 /// Idempotent via <see cref="IIdempotencyGuard"/> in ACT-THEN-CLAIM mode (at-least-once): non-claiming
@@ -53,6 +54,7 @@ public class SendEmailHandler(
         SendOrderBookedEmailMessage? bookedMessage;
         SendAdminNotificationEmailMessage? adminMessage;
         SendReceivablePayLinkEmailMessage? payLinkMessage;
+        SendOrderLockoutEmailMessage? lockoutMessage;
         string? discriminatedTenantId;
         try
         {
@@ -70,6 +72,8 @@ public class SendEmailHandler(
                 ? payload.Deserialize<SendAdminNotificationEmailMessage>(JsonOptions) : null;
             payLinkMessage = messageType == SendReceivablePayLinkEmailMessage.Discriminator
                 ? payload.Deserialize<SendReceivablePayLinkEmailMessage>(JsonOptions) : null;
+            lockoutMessage = messageType == SendOrderLockoutEmailMessage.Discriminator
+                ? payload.Deserialize<SendOrderLockoutEmailMessage>(JsonOptions) : null;
             discriminatedTenantId = root.TryGetProperty("tenantId", out var tenant) && tenant.ValueKind == JsonValueKind.String ? tenant.GetString() : null;
         }
         catch (JsonException ex)
@@ -95,6 +99,11 @@ public class SendEmailHandler(
         if (payLinkMessage is not null)
         {
             await SendReceivablePayLinkAsync(payLinkMessage, discriminatedTenantId, ct);
+            return;
+        }
+        if (lockoutMessage is not null)
+        {
+            await SendOrderLockoutAsync(lockoutMessage, discriminatedTenantId, ct);
             return;
         }
 
@@ -278,6 +287,46 @@ public class SendEmailHandler(
         catch (Exception ex)
         {
             logger.LogWarning(ex, "Booking e-mail sent for order {OrderId}, but its delivery claim failed", order.Id);
+        }
+    }
+
+    // Act-then-claim like the shapes beside it.
+    private async Task SendOrderLockoutAsync(
+        SendOrderLockoutEmailMessage message, string? envelopeTenantId, CancellationToken ct)
+    {
+        var tenantId = envelopeTenantId ?? message.TenantId;
+        if (string.IsNullOrWhiteSpace(message.OrderId) || string.IsNullOrWhiteSpace(tenantId))
+        {
+            logger.LogWarning("Discarding lockout e-mail with no order or operator");
+            return;
+        }
+        var key = MessageKeys.OrderLockoutEmail(message.OrderId);
+        if (await idempotencyGuard.HasProcessedAsync(key, ct)) return;
+
+        tenantProvider.SetTenantOverride(tenantId);
+        var order = await orderRepository.GetQueryable()
+            .Include(o => o.Currency).Include(o => o.CustomerAddress).Include(o => o.User)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(o => o.Id == message.OrderId
+                && o.CurrentStatus == OrderStatus.Cancelled
+                && o.CancellationReason == OrderCancellationReasons.CustomerLockout, ct);
+        if (order is null || string.IsNullOrWhiteSpace(order.CustomerEmail)
+            || order.CustomerEmail == AnonymizationMarker.Value)
+        {
+            logger.LogWarning("Discarding lockout e-mail: order {OrderId} has no eligible destination", message.OrderId);
+            return;
+        }
+
+        var languageCode = EmailLocale.Resolve(
+            order.LanguageCode ?? order.User?.PreferredLanguageCode ?? message.LanguageCode);
+        await emailService.SendOrderStatusUpdateEmailAsync(order.CustomerEmail, order, "Cancelled", languageCode, ct);
+        try
+        {
+            await idempotencyGuard.MarkProcessedAsync(key, ct);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Lockout e-mail sent for order {OrderId}, but its delivery claim failed", order.Id);
         }
     }
 

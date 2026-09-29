@@ -2764,6 +2764,10 @@
             "cleaner_not_started": {
               "title": "Uklízeč nezačal objednávku",
               "body": "Objednávka {{orderNumber}} byla objednána na {{cleaningDateTime}} a nikdo ji nezačal. Pokud uklízeč nedorazil, zrušte ji jako nedostavení."
+            },
+            "lockout_reported": {
+              "title": "Uklízeč se nemůže dostat dovnitř",
+              "body": "Uklízeč u objednávky {{orderNumber}}, objednané na {{cleaningDateTime}}, hlásí, že se nemůže dostat dovnitř. Zkontrolujte fotografii vchodu a jeho pokusy o volání; pokud ho zákazník nepustil dovnitř, zrušte ji jako nezpřístupnění zákazníkem."
             }
           },
           "dispute": {
@@ -3162,6 +3166,9 @@
       }
     },
     "order": {
+      "lockout": {
+        "not_reported": "Uklízeč nenahlásil, že se nemůže dostat dovnitř, takže není co potvrdit."
+      },
       "after_photos": {
         "required": "Pro dokončení objednávky jsou vyžadovány fotografie po úklidu"
       },

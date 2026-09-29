@@ -909,6 +909,12 @@
       "invalid_email": "Neplatná e-mailová adresa"
     },
     "order": {
+      "lockout": {
+        "too_early": "Že sa nemôžete dostať dnu, môžete nahlásiť až 15 minút po objednanom začiatku.",
+        "photo_required": "Najprv odfoťte dvere alebo vchod a potom nahláste, že sa nemôžete dostať dnu.",
+        "already_reported": "Už ste nahlásili, že sa nemôžete dostať dnu. Kancelária sa vám ozve.",
+        "order_closed": "Táto zákazka je už dokončená alebo zrušená, takže nie je čo hlásiť."
+      },
       "cleaning_date": {
         "future": "Dátum upratovania musí byť v budúcnosti"
       },

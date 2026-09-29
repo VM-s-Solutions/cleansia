@@ -371,6 +371,7 @@ public sealed partial class EmailService : IEmailService
                 ["CancelledReason_NoCleaner"] = "No cleaner was available for this booking, so it was cancelled.",
                 ["CancelledReason_PaymentNotCompleted"] = "The payment wasn't completed, so this booking was released.",
                 ["CancelledReason_ByUs"] = "We had to cancel this booking.",
+                ["CancelledReason_Lockout"] = "The cleaner could not get into your home at the booked time and could not reach you, so the booking was cancelled and the full price is charged as a cancellation fee.",
                 ["RefundPendingMessage"] = "Your refund is being processed.",
                 ["NothingChargedMessage"] = "Nothing was charged.",
                 ["StatusSectionLabel"] = "Current status",
@@ -396,6 +397,7 @@ public sealed partial class EmailService : IEmailService
                 ["CancelledReason_NoCleaner"] = "Pro tuto rezervaci nebyl k dispozici žádný uklízeč, a proto byla zrušena.",
                 ["CancelledReason_PaymentNotCompleted"] = "Platba nebyla dokončena, a proto byla tato rezervace uvolněna.",
                 ["CancelledReason_ByUs"] = "Tuto rezervaci jsme museli zrušit.",
+                ["CancelledReason_Lockout"] = "Uklízeč se v objednaný čas nedostal do vaší domácnosti a nepodařilo se mu vás zastihnout, proto byla rezervace zrušena a celá cena se účtuje jako storno poplatek.",
                 ["RefundPendingMessage"] = "Vrácení peněz zpracováváme.",
                 ["NothingChargedMessage"] = "Nic vám nebylo účtováno.",
                 ["StatusSectionLabel"] = "Aktuální stav",
@@ -421,6 +423,7 @@ public sealed partial class EmailService : IEmailService
                 ["CancelledReason_NoCleaner"] = "Pre túto rezerváciu nebol k dispozícii žiadny upratovač, a preto bola zrušená.",
                 ["CancelledReason_PaymentNotCompleted"] = "Platba nebola dokončená, a preto bola táto rezervácia uvoľnená.",
                 ["CancelledReason_ByUs"] = "Túto rezerváciu sme museli zrušiť.",
+                ["CancelledReason_Lockout"] = "Upratovač sa v objednanom čase nedostal do vašej domácnosti a nepodarilo sa mu vás zastihnúť, preto bola rezervácia zrušená a celá cena sa účtuje ako storno poplatok.",
                 ["RefundPendingMessage"] = "Vrátenie peňazí spracúvame.",
                 ["NothingChargedMessage"] = "Nič vám nebolo účtované.",
                 ["StatusSectionLabel"] = "Aktuálny stav",
@@ -446,6 +449,7 @@ public sealed partial class EmailService : IEmailService
                 ["CancelledReason_NoCleaner"] = "Для цього бронювання не знайшлося вільного прибиральника, тому його скасовано.",
                 ["CancelledReason_PaymentNotCompleted"] = "Оплату не було завершено, тому це бронювання було скасовано.",
                 ["CancelledReason_ByUs"] = "Нам довелося скасувати це бронювання.",
+                ["CancelledReason_Lockout"] = "Прибиральник не зміг потрапити до вашого помешкання в заброньований час і не зміг з вами зв’язатися, тому бронювання скасовано, а повна вартість стягується як плата за скасування.",
                 ["RefundPendingMessage"] = "Повернення коштів обробляється.",
                 ["NothingChargedMessage"] = "З вас нічого не стягнуто.",
                 ["StatusSectionLabel"] = "Поточний статус",
@@ -471,6 +475,7 @@ public sealed partial class EmailService : IEmailService
                 ["CancelledReason_NoCleaner"] = "Для этого бронирования не нашлось свободного уборщика, поэтому оно отменено.",
                 ["CancelledReason_PaymentNotCompleted"] = "Оплата не была завершена, поэтому это бронирование было отменено.",
                 ["CancelledReason_ByUs"] = "Нам пришлось отменить это бронирование.",
+                ["CancelledReason_Lockout"] = "Уборщик не смог попасть в ваш дом в забронированное время и не смог с вами связаться, поэтому бронирование отменено, а полная стоимость взимается как плата за отмену.",
                 ["RefundPendingMessage"] = "Возврат средств обрабатывается.",
                 ["NothingChargedMessage"] = "С вас ничего не списано.",
                 ["StatusSectionLabel"] = "Текущий статус",
@@ -729,6 +734,7 @@ public sealed partial class EmailService : IEmailService
             {
                 OrderCancellationReasons.NoCleanerAvailable => "CancelledReason_NoCleaner",
                 OrderCancellationReasons.PaymentNotCompleted => "CancelledReason_PaymentNotCompleted",
+                OrderCancellationReasons.CustomerLockout => "CancelledReason_Lockout",
                 _ => "CancelledReason_ByUs",
             });
             // "Being processed" only for the card charge a platform cancellation sends back — the one state in
@@ -738,7 +744,9 @@ public sealed partial class EmailService : IEmailService
                 && order.PaymentStatus == PaymentStatus.Paid
                 && order.TotalPrice > 0m
                 && order.HasRefundableChargeSurface;
-            refundLine ??= order.TookNoPayment ? translations.GetValueOrDefault("NothingChargedMessage")
+            // A lockout keeps or bills the whole price, which its reason already says.
+            refundLine ??= order.CancellationReason == OrderCancellationReasons.CustomerLockout ? null
+                : order.TookNoPayment ? translations.GetValueOrDefault("NothingChargedMessage")
                 : refundAttempted ? translations.GetValueOrDefault("RefundPendingMessage")
                 : null;
         }

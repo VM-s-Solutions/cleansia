@@ -70,6 +70,8 @@ public static class OrderPiiRedaction
             CashCollectedAt = null,
             CashCollectedByName = null,
             CashCollectedAmount = null,
+            LockoutReportedAt = null,
+            LockoutCallAttempts = null,
         };
 
     /// <summary>

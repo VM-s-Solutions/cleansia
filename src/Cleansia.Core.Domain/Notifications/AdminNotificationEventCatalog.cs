@@ -11,6 +11,7 @@ public static class AdminNotificationEventCatalog
     public const string OrderNew = "admin.order.new";
     public const string OrderCrewLost = "admin.order.crew_lost";
     public const string OrderCleanerNotStarted = "admin.order.cleaner_not_started";
+    public const string OrderLockoutReported = "admin.order.lockout_reported";
     public const string DisputeFiled = "admin.dispute.filed";
     public const string DisputeChargeback = "admin.dispute.chargeback";
     public const string DisputeChargebackUnmatched = "admin.dispute.chargeback_unmatched";
@@ -27,6 +28,7 @@ public static class AdminNotificationEventCatalog
         OrderNew,
         OrderCrewLost,
         OrderCleanerNotStarted,
+        OrderLockoutReported,
         DisputeFiled,
         DisputeChargeback,
         DisputeChargebackUnmatched,

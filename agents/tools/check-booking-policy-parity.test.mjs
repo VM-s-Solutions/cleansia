@@ -142,6 +142,8 @@ function buildFixture(overrides = {}) {
     // clients unless the scenario drops one surface.
     reasons: ['payment_not_completed', 'company_wind_down', 'no_cleaner_available'],
     reasonMissingOn: null,
+    // Declared by the server and rendered by no client yet: the checker's own not-yet-rendered list.
+    unrenderedReasons: ['customer_lockout'],
     ...overrides,
   };
 
@@ -184,7 +186,7 @@ ${o.heavyDirtinessRate === null ? '' : `    public const decimal HeavyDirtinessS
     }
   }
 
-  const reasonConsts = o.reasons
+  const reasonConsts = [...o.reasons, ...o.unrenderedReasons]
     .map((r) => `    public const string R_${r} = "order.cancelled.${r}";`)
     .join('\n');
   write(root, 'src/Cleansia.Core.Domain/Orders/OrderCancellationReasons.cs', `
@@ -475,6 +477,11 @@ for (const surface of ['web', 'android', 'ios', 'web-locale', 'android-locale', 
     { code: 1, mentions: ['company_wind_down'] },
   );
 }
+scenario(
+  'the not-yet-rendered list may not name a reason the server no longer declares',
+  { unrenderedReasons: [] },
+  { code: 1, mentions: ['order.cancelled.customer_lockout is on the not-yet-rendered list but no longer declared'] },
+);
 
 // ─── 2. The gate can still fail ─────────────────────────────────────────────
 {

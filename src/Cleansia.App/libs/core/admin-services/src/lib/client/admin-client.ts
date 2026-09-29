@@ -10603,6 +10603,11 @@ export interface IAdminOrderClient {
      * @param body (optional) 
      * @return OK
      */
+    cancelLockout(body?: AdminCancelOrderAsLockoutCommand | undefined): Observable<AdminCancelOrderAsLockoutResponse>;
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
     overrideStatus(body?: AdminOverrideOrderStatusCommand | undefined): Observable<AdminOverrideOrderStatusResponse>;
     /**
      * @param body (optional) 
@@ -11175,6 +11180,83 @@ export class AdminOrderClient implements IAdminOrderClient {
             let result200: any = null;
             let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result200 = AdminCancelOrderAsNoShowResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    cancelLockout(body?: AdminCancelOrderAsLockoutCommand | undefined): Observable<AdminCancelOrderAsLockoutResponse> {
+        let url = this.baseUrl + "/api/AdminOrder/cancel-lockout";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processCancelLockout(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processCancelLockout(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<AdminCancelOrderAsLockoutResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<AdminCancelOrderAsLockoutResponse>;
+        }));
+    }
+
+    protected processCancelLockout(response: HttpResponseBase): Observable<AdminCancelOrderAsLockoutResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = AdminCancelOrderAsLockoutResponse.fromJS(resultData200);
             return ObservableOf(result200);
             }));
         } else if (status === 400) {
@@ -18056,6 +18138,86 @@ export interface IAdminActionAuditDto {
     reason: string | undefined;
     correlationId: string | undefined;
     actorAdminRole: AdminRole;
+}
+
+export class AdminCancelOrderAsLockoutCommand implements IAdminCancelOrderAsLockoutCommand {
+    orderId!: string | undefined;
+
+    constructor(data?: IAdminCancelOrderAsLockoutCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.orderId = Data["orderId"];
+        }
+    }
+
+    static fromJS(data: any): AdminCancelOrderAsLockoutCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new AdminCancelOrderAsLockoutCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["orderId"] = this.orderId;
+        return data;
+    }
+}
+
+export interface IAdminCancelOrderAsLockoutCommand {
+    orderId: string | undefined;
+}
+
+export class AdminCancelOrderAsLockoutResponse implements IAdminCancelOrderAsLockoutResponse {
+    orderId!: string | undefined;
+    feeAmount!: number;
+    receivableAmount!: number | undefined;
+
+    constructor(data?: IAdminCancelOrderAsLockoutResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.orderId = Data["orderId"];
+            this.feeAmount = Data["feeAmount"];
+            this.receivableAmount = Data["receivableAmount"];
+        }
+    }
+
+    static fromJS(data: any): AdminCancelOrderAsLockoutResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new AdminCancelOrderAsLockoutResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["orderId"] = this.orderId;
+        data["feeAmount"] = this.feeAmount;
+        data["receivableAmount"] = this.receivableAmount;
+        return data;
+    }
+}
+
+export interface IAdminCancelOrderAsLockoutResponse {
+    orderId: string | undefined;
+    feeAmount: number;
+    receivableAmount: number | undefined;
 }
 
 export class AdminCancelOrderAsNoShowCommand implements IAdminCancelOrderAsNoShowCommand {
@@ -29854,6 +30016,8 @@ export class OrderItem implements IOrderItem {
     cashCollectedAmount!: number | undefined;
     dirtinessLevel!: DirtinessLevel;
     dirtinessSurchargeAmount!: number;
+    lockoutReportedAt!: Date | undefined;
+    lockoutCallAttempts!: string | undefined;
 
     constructor(data?: IOrderItem) {
         if (data) {
@@ -29967,6 +30131,8 @@ export class OrderItem implements IOrderItem {
             this.cashCollectedAmount = Data["cashCollectedAmount"];
             this.dirtinessLevel = Data["dirtinessLevel"];
             this.dirtinessSurchargeAmount = Data["dirtinessSurchargeAmount"];
+            this.lockoutReportedAt = Data["lockoutReportedAt"] ? new Date(Data["lockoutReportedAt"].toString()) : undefined as any;
+            this.lockoutCallAttempts = Data["lockoutCallAttempts"];
         }
     }
 
@@ -30080,6 +30246,8 @@ export class OrderItem implements IOrderItem {
         data["cashCollectedAmount"] = this.cashCollectedAmount;
         data["dirtinessLevel"] = this.dirtinessLevel;
         data["dirtinessSurchargeAmount"] = this.dirtinessSurchargeAmount;
+        data["lockoutReportedAt"] = this.lockoutReportedAt ? this.lockoutReportedAt.toISOString() : undefined as any;
+        data["lockoutCallAttempts"] = this.lockoutCallAttempts;
         return data;
     }
 }
@@ -30152,6 +30320,8 @@ export interface IOrderItem {
     cashCollectedAmount: number | undefined;
     dirtinessLevel: DirtinessLevel;
     dirtinessSurchargeAmount: number;
+    lockoutReportedAt: Date | undefined;
+    lockoutCallAttempts: string | undefined;
 }
 
 export class OrderListItem implements IOrderListItem {
@@ -32534,6 +32704,7 @@ export interface IPayrollReportDto {
 export enum PhotoType {
     Before = 1,
     After = 2,
+    Entrance = 3,
 }
 
 export class PreferredOfferDetails implements IPreferredOfferDetails {

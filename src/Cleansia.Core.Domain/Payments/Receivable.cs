@@ -63,14 +63,19 @@ public class Receivable : TenantAuditable
     public bool IsPaid => Status == ReceivableStatus.Paid;
 
     public static Receivable ForCashCancellationFee(Order order, decimal fee) =>
+        Open(order, ReceivableKind.CashCancellationFee, fee);
+
+    public static Receivable ForLockout(Order order, decimal fee) => Open(order, ReceivableKind.Lockout, fee);
+
+    private static Receivable Open(Order order, ReceivableKind kind, decimal amount) =>
         new()
         {
             OrderId = order.Id,
             UserId = order.UserId
-                ?? throw new InvalidOperationException($"Order {order.Id} has no customer account to owe a cancellation fee."),
+                ?? throw new InvalidOperationException($"Order {order.Id} has no customer account to owe a {kind} receivable."),
             CurrencyId = order.CurrencyId,
-            Kind = ReceivableKind.CashCancellationFee,
-            Amount = fee,
+            Kind = kind,
+            Amount = amount,
             Status = ReceivableStatus.Open,
         };
 

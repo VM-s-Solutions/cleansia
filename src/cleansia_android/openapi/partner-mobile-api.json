@@ -6067,6 +6067,115 @@
         }
       }
     },
+    "/api/Order/ReportLockout": {
+      "post": {
+        "tags": [
+          "Order"
+        ],
+        "operationId": "Order_ReportLockout",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportOrderLockout_Command"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportOrderLockout_Command"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportOrderLockout_Command"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportOrderLockout_Response"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportOrderLockout_Response"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportOrderLockout_Response"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/Order/UpdateNote": {
       "put": {
         "tags": [
@@ -10473,6 +10582,15 @@
           "dirtinessSurchargeAmount": {
             "type": "number",
             "format": "double"
+          },
+          "lockoutReportedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "lockoutCallAttempts": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -11218,13 +11336,15 @@
       "PhotoType": {
         "enum": [
           1,
-          2
+          2,
+          3
         ],
         "type": "integer",
         "format": "int32",
         "x-enumNames": [
           "Before",
-          "After"
+          "After",
+          "Entrance"
         ]
       },
       "PreferredOfferDetails": {
@@ -11467,6 +11587,34 @@
             "nullable": true
           },
           "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ReportOrderLockout_Command": {
+        "type": "object",
+        "properties": {
+          "orderId": {
+            "type": "string",
+            "nullable": true
+          },
+          "callAttempts": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ReportOrderLockout_Response": {
+        "type": "object",
+        "properties": {
+          "orderId": {
+            "type": "string",
+            "nullable": true
+          },
+          "reportedAt": {
             "type": "string",
             "format": "date-time"
           }

@@ -909,6 +909,12 @@
       "invalid_email": "Neplatná e-mailová adresa"
     },
     "order": {
+      "lockout": {
+        "too_early": "Že se nemůžete dostat dovnitř, můžete nahlásit až 15 minut po objednaném začátku.",
+        "photo_required": "Nejdřív vyfoťte dveře nebo vchod a pak nahlaste, že se nemůžete dostat dovnitř.",
+        "already_reported": "Už jste nahlásili, že se nemůžete dostat dovnitř. Kancelář se vám ozve.",
+        "order_closed": "Tato zakázka je už dokončená nebo zrušená, takže není co hlásit."
+      },
       "cleaning_date": {
         "future": "Datum úklidu musí být v budoucnosti"
       },

@@ -28,6 +28,18 @@ public sealed class OrderAnonymizeCustomerDataTests
     }
 
     [Fact]
+    public void The_Cleaners_Note_Of_The_Calls_To_The_Customer_Is_Cleared()
+    {
+        var order = NewOrder();
+        order.ReportLockout("employee-1", "Called Milada three times on +420777111222", DateTime.UtcNow);
+
+        order.AnonymizeCustomerData();
+
+        Assert.Null(order.LockoutCallAttempts);
+        Assert.NotNull(order.LockoutReportedAt);
+    }
+
+    [Fact]
     public void An_Admins_Free_Text_Reason_Is_Cleared()
     {
         var order = NewOrder();

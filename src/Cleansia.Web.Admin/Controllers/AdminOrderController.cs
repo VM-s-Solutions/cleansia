@@ -107,6 +107,20 @@ public class AdminOrderController(IMediator mediator) : ApiController(mediator)
         return HandleResult<AdminCancelOrderAsNoShow.Response>(result);
     }
 
+    [HttpPost("cancel-lockout")]
+    [Permission(Policy.CanAdminCancelOrder)]
+    [EnableRateLimiting("auth")]
+    [ProducesResponseType(typeof(AdminCancelOrderAsLockout.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> CancelOrderAsLockout(
+        [FromBody] AdminCancelOrderAsLockout.Command command, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<AdminCancelOrderAsLockout.Response>(result);
+    }
+
     [HttpPost("override-status")]
     [Permission(Policy.CanOverrideOrderStatus)]
     [EnableRateLimiting("auth")]

@@ -70,6 +70,10 @@ public class OrderRedactionSurfaceTests
         nameof(OrderItem.CashCollectedAt),
         nameof(OrderItem.CashCollectedByName),
         nameof(OrderItem.CashCollectedAmount),
+        // A crew member's report that they cannot get in, and the calls they made, are the crew's, the
+        // customer's and the company's.
+        nameof(OrderItem.LockoutReportedAt),
+        nameof(OrderItem.LockoutCallAttempts),
     ];
 
     private static readonly string[] DetailReshaped =
@@ -432,7 +436,9 @@ public class OrderRedactionSurfaceTests
             CashCollectedByName: "Petra Svobodova",
             CashCollectedAmount: 1500m,
             DirtinessLevel: DirtinessLevel.Heavy,
-            DirtinessSurchargeAmount: 540m);
+            DirtinessSurchargeAmount: 540m,
+            LockoutReportedAt: new DateTime(2026, 8, 20, 9, 20, 0, DateTimeKind.Utc),
+            LockoutCallAttempts: "Called 09:05, 09:10 and 09:15, no answer; rang the bell twice");
 
     private static OrderListItem FullyPopulatedListItem() =>
         new(

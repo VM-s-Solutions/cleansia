@@ -13784,6 +13784,8 @@ export class OrderItem implements IOrderItem {
     cashCollectedAmount!: number | undefined;
     dirtinessLevel!: DirtinessLevel;
     dirtinessSurchargeAmount!: number;
+    lockoutReportedAt!: Date | undefined;
+    lockoutCallAttempts!: string | undefined;
 
     constructor(data?: IOrderItem) {
         if (data) {
@@ -13897,6 +13899,8 @@ export class OrderItem implements IOrderItem {
             this.cashCollectedAmount = Data["cashCollectedAmount"];
             this.dirtinessLevel = Data["dirtinessLevel"];
             this.dirtinessSurchargeAmount = Data["dirtinessSurchargeAmount"];
+            this.lockoutReportedAt = Data["lockoutReportedAt"] ? new Date(Data["lockoutReportedAt"].toString()) : undefined as any;
+            this.lockoutCallAttempts = Data["lockoutCallAttempts"];
         }
     }
 
@@ -14010,6 +14014,8 @@ export class OrderItem implements IOrderItem {
         data["cashCollectedAmount"] = this.cashCollectedAmount;
         data["dirtinessLevel"] = this.dirtinessLevel;
         data["dirtinessSurchargeAmount"] = this.dirtinessSurchargeAmount;
+        data["lockoutReportedAt"] = this.lockoutReportedAt ? this.lockoutReportedAt.toISOString() : undefined as any;
+        data["lockoutCallAttempts"] = this.lockoutCallAttempts;
         return data;
     }
 }
@@ -14082,6 +14088,8 @@ export interface IOrderItem {
     cashCollectedAmount: number | undefined;
     dirtinessLevel: DirtinessLevel;
     dirtinessSurchargeAmount: number;
+    lockoutReportedAt: Date | undefined;
+    lockoutCallAttempts: string | undefined;
 }
 
 export class OrderListItem implements IOrderListItem {
@@ -15074,6 +15082,7 @@ export enum PayoutScheme {
 export enum PhotoType {
     Before = 1,
     After = 2,
+    Entrance = 3,
 }
 
 export class PreferredOfferDetails implements IPreferredOfferDetails {

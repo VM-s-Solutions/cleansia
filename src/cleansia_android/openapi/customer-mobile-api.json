@@ -11096,6 +11096,15 @@
           "dirtinessSurchargeAmount": {
             "type": "number",
             "format": "double"
+          },
+          "lockoutReportedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "lockoutCallAttempts": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -11722,13 +11731,15 @@
       "PhotoType": {
         "enum": [
           1,
-          2
+          2,
+          3
         ],
         "type": "integer",
         "format": "int32",
         "x-enumNames": [
           "Before",
-          "After"
+          "After",
+          "Entrance"
         ]
       },
       "PreferredOfferDetails": {

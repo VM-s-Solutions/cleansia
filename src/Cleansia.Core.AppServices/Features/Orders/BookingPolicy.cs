@@ -130,6 +130,15 @@ public static class BookingPolicy
     public const int PartialCancellationHours = 4;
 
     /// <summary>
+    /// How long past the booked start the assigned cleaner waits at the door before reporting that they
+    /// cannot get in (owner ruling 2026-09-28, decision 11) — the 15 minutes the customer FAQ promises.
+    /// </summary>
+    public const int LockoutWaitMinutes = 15;
+
+    /// <summary>A lockout an administrator confirmed is a customer cancellation at the whole price.</summary>
+    public const decimal LockoutFeeRate = 1.00m;
+
+    /// <summary>
     /// "Oops window" — free cancellation within N minutes of booking, even with a cleaner already on the
     /// job. Owner ruling 2026-09-28: this for every returning customer, guests included;
     /// <see cref="OopsWindowMinutesFirstBooking"/> on a customer's first booking and

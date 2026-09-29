@@ -199,6 +199,19 @@ public class OrderController(IMediator mediator) : MobileApiController(mediator)
         return HandleResult<ReportOrderIssue.Response>(result);
     }
 
+    [HttpPost("ReportLockout")]
+    [Permission(Policy.CanStartOrder)]
+    [EnableRateLimiting("auth")]
+    [ProducesResponseType(typeof(ReportOrderLockout.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> ReportLockout([FromBody] ReportOrderLockout.Command command, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<ReportOrderLockout.Response>(result);
+    }
+
     [HttpPut("UpdateNote")]
     [Permission(Policy.CanUpdateOrderNote)]
     [EnableRateLimiting("auth")]

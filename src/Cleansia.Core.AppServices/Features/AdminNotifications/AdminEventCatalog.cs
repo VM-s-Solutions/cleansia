@@ -24,6 +24,8 @@ public static class AdminEventCatalog
             ["orderNumber", "cause", "statusAtLoss", "cleaningDateTime", "orderId"]),
         new(AdminNotificationEventCatalog.OrderCleanerNotStarted, PhysicalPolicy.SupportOrAbove,
             ["orderNumber", "cleaningDateTime", "orderId"]),
+        new(AdminNotificationEventCatalog.OrderLockoutReported, PhysicalPolicy.SupportOrAbove,
+            ["orderNumber", "cleaningDateTime", "orderId"]),
         new(AdminNotificationEventCatalog.DisputeFiled, PhysicalPolicy.SupportOrAbove,
             ["orderNumber", "reason", "disputeId", "orderId"]),
         new(AdminNotificationEventCatalog.DisputeChargeback, PhysicalPolicy.AdminOnly,

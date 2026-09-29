@@ -58,6 +58,18 @@ public class Order : TenantAuditable
     public bool SettledInCash => CashCollectedAt is not null;
 
     /// <summary>
+    /// The assigned cleaner's report that they cannot get in (owner ruling 2026-09-28, decision 11): when,
+    /// who, and the calls they made. An administrator confirms it before the lockout fee applies.
+    /// </summary>
+    public DateTime? LockoutReportedAt { get; private set; }
+
+    [MaxLength(26)]
+    public string? LockoutReportedByEmployeeId { get; private set; }
+
+    [MaxLength(1000)]
+    public string? LockoutCallAttempts { get; private set; }
+
+    /// <summary>
     /// The tender the customer ACTUALLY paid with, as opposed to <see cref="PaymentType"/>, which stays
     /// the booking contract (a card booking whose Stripe webhook never arrived keeps
     /// <see cref="PaymentType.Card"/> so the refund path still finds its charge surface). A card booking
@@ -783,6 +795,14 @@ public class Order : TenantAuditable
         return this;
     }
 
+    public Order ReportLockout(string employeeId, string callAttempts, DateTime reportedAtUtc)
+    {
+        LockoutReportedAt = reportedAtUtc;
+        LockoutReportedByEmployeeId = employeeId;
+        LockoutCallAttempts = callAttempts;
+        return this;
+    }
+
     public Order AssignStripePaymentIntentId(string paymentIntentId)
     {
         StripePaymentIntentId = paymentIntentId;
@@ -1065,6 +1085,7 @@ public class Order : TenantAuditable
         CustomerApartment = null;
         AccessMode = null;
         CompletionNotes = null;
+        LockoutCallAttempts = null;
         // A platform reason is a code, not personal data, and the wind-down's refund re-drive selects its
         // cancelled orders by it; the customer's or an admin's free text goes.
         if (CancelledBy != Enums.CancelledBy.System)

@@ -595,6 +595,8 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'order.in_progress_cannot_cancel',
   'order.cleaner_already_started',
   'order.start_time_not_reached',
+  // The lockout confirmation refuses an order whose cleaner reported no lockout (decision 11).
+  'order.lockout.not_reported',
   'order.invalid_status_transition',
   'order.no_available_spots',
   'order.not_found',

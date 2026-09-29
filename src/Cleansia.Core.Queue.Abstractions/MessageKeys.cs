@@ -23,6 +23,9 @@ public static class MessageKeys
     /// <summary>One booking-confirmed email per cash order.</summary>
     public static string OrderBookedEmail(string orderId) => $"email:order-booked:{orderId}";
 
+    /// <summary>One lockout cancellation email per signed-in customer's order.</summary>
+    public static string OrderLockoutEmail(string orderId) => $"email:order-lockout:{orderId}";
+
     /// <summary>generate-receipt → <c>receipt:{OrderId}</c> (one receipt per order).</summary>
     public static string Receipt(string orderId) => $"receipt:{orderId}";
 

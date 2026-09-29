@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cleansia.Infra.Database.Migrations
 {
     [DbContext(typeof(CleansiaDbContext))]
-    [Migration("20260929094036_Initial")]
+    [Migration("20260929102644_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -4203,6 +4203,17 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<string>("LanguageCode")
                         .HasMaxLength(5)
                         .HasColumnType("character varying(5)");
+
+                    b.Property<string>("LockoutCallAttempts")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime?>("LockoutReportedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LockoutReportedByEmployeeId")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
 
                     b.Property<int>("MaxEmployees")
                         .HasColumnType("integer");

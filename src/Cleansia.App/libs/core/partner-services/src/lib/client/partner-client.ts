@@ -3633,6 +3633,11 @@ export interface IOrderClient {
      */
     reportIssue(body?: ReportOrderIssueCommand | undefined): Observable<ReportOrderIssueResponse>;
     /**
+     * @param body (optional) 
+     * @return OK
+     */
+    reportLockout(body?: ReportOrderLockoutCommand | undefined): Observable<ReportOrderLockoutResponse>;
+    /**
      * @return OK
      */
     myPendingOffers(): Observable<PendingOfferItem[]>;
@@ -4849,6 +4854,83 @@ export class OrderClient implements IOrderClient {
             let result200: any = null;
             let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result200 = ReportOrderIssueResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    reportLockout(body?: ReportOrderLockoutCommand | undefined): Observable<ReportOrderLockoutResponse> {
+        let url = this.baseUrl + "/api/Order/ReportLockout";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processReportLockout(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processReportLockout(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<ReportOrderLockoutResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<ReportOrderLockoutResponse>;
+        }));
+    }
+
+    protected processReportLockout(response: HttpResponseBase): Observable<ReportOrderLockoutResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = ReportOrderLockoutResponse.fromJS(resultData200);
             return ObservableOf(result200);
             }));
         } else if (status === 400) {
@@ -11018,6 +11100,8 @@ export class OrderItem implements IOrderItem {
     cashCollectedAmount!: number | undefined;
     dirtinessLevel!: DirtinessLevel;
     dirtinessSurchargeAmount!: number;
+    lockoutReportedAt!: Date | undefined;
+    lockoutCallAttempts!: string | undefined;
 
     constructor(data?: IOrderItem) {
         if (data) {
@@ -11131,6 +11215,8 @@ export class OrderItem implements IOrderItem {
             this.cashCollectedAmount = Data["cashCollectedAmount"];
             this.dirtinessLevel = Data["dirtinessLevel"];
             this.dirtinessSurchargeAmount = Data["dirtinessSurchargeAmount"];
+            this.lockoutReportedAt = Data["lockoutReportedAt"] ? new Date(Data["lockoutReportedAt"].toString()) : undefined as any;
+            this.lockoutCallAttempts = Data["lockoutCallAttempts"];
         }
     }
 
@@ -11244,6 +11330,8 @@ export class OrderItem implements IOrderItem {
         data["cashCollectedAmount"] = this.cashCollectedAmount;
         data["dirtinessLevel"] = this.dirtinessLevel;
         data["dirtinessSurchargeAmount"] = this.dirtinessSurchargeAmount;
+        data["lockoutReportedAt"] = this.lockoutReportedAt ? this.lockoutReportedAt.toISOString() : undefined as any;
+        data["lockoutCallAttempts"] = this.lockoutCallAttempts;
         return data;
     }
 }
@@ -11316,6 +11404,8 @@ export interface IOrderItem {
     cashCollectedAmount: number | undefined;
     dirtinessLevel: DirtinessLevel;
     dirtinessSurchargeAmount: number;
+    lockoutReportedAt: Date | undefined;
+    lockoutCallAttempts: string | undefined;
 }
 
 export class OrderListItem implements IOrderListItem {
@@ -12714,6 +12804,7 @@ export interface IPersonalBests {
 export enum PhotoType {
     Before = 1,
     After = 2,
+    Entrance = 3,
 }
 
 export class PreferredOfferDetails implements IPreferredOfferDetails {
@@ -13205,6 +13296,86 @@ export interface IReportOrderIssueResponse {
     issueId: string | undefined;
     description: string | undefined;
     createdAt: Date;
+}
+
+export class ReportOrderLockoutCommand implements IReportOrderLockoutCommand {
+    orderId!: string | undefined;
+    callAttempts!: string | undefined;
+
+    constructor(data?: IReportOrderLockoutCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.orderId = Data["orderId"];
+            this.callAttempts = Data["callAttempts"];
+        }
+    }
+
+    static fromJS(data: any): ReportOrderLockoutCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new ReportOrderLockoutCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["orderId"] = this.orderId;
+        data["callAttempts"] = this.callAttempts;
+        return data;
+    }
+}
+
+export interface IReportOrderLockoutCommand {
+    orderId: string | undefined;
+    callAttempts: string | undefined;
+}
+
+export class ReportOrderLockoutResponse implements IReportOrderLockoutResponse {
+    orderId!: string | undefined;
+    reportedAt!: Date;
+
+    constructor(data?: IReportOrderLockoutResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.orderId = Data["orderId"];
+            this.reportedAt = Data["reportedAt"] ? new Date(Data["reportedAt"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): ReportOrderLockoutResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new ReportOrderLockoutResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["orderId"] = this.orderId;
+        data["reportedAt"] = this.reportedAt ? this.reportedAt.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IReportOrderLockoutResponse {
+    orderId: string | undefined;
+    reportedAt: Date;
 }
 
 export class RequestCoverCommand implements IRequestCoverCommand {

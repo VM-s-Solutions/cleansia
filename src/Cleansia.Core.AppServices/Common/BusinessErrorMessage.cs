@@ -90,6 +90,13 @@ public static class BusinessErrorMessage
     public const string OrderCleanerAlreadyStarted = "order.cleaner_already_started";
     // A no-show report or an admin no-show cancellation before the booked start time.
     public const string OrderStartTimeNotReached = "order.start_time_not_reached";
+    // The assigned cleaner's "cannot get in" report (owner ruling 2026-09-28, decision 11), and the
+    // administrator's confirmation of it.
+    public const string LockoutTooEarly = "order.lockout.too_early";
+    public const string LockoutPhotoRequired = "order.lockout.photo_required";
+    public const string LockoutAlreadyReported = "order.lockout.already_reported";
+    public const string LockoutOrderClosed = "order.lockout.order_closed";
+    public const string LockoutNotReported = "order.lockout.not_reported";
     public const string InvalidOrderStatusTransition = "order.invalid_status_transition";
     /// <summary>
     /// The admin override may not write Confirmed onto an order with nobody assigned: Confirmed means a

@@ -2,7 +2,9 @@ package cz.cleansia.partner.data.payroll
 
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.partner.api.client.EmployeePayrollApi
+import cz.cleansia.partner.api.model.CashHeldDto
 import cz.cleansia.partner.api.model.OrderEmployeePayDto
+import cz.cleansia.partner.api.model.PayLineType
 import cz.cleansia.partner.api.model.PeriodPaySummaryDto
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -156,6 +158,19 @@ class PeriodPayWireTest {
         assertNull(lines.last().deductionReason)
     }
 
+    /** A fee-share row pays for a job that did not happen; the screen names which fee it shares. */
+    @Test
+    fun everyLineNamesWhatItPaysFor() = runTest {
+        val lines = loaded(payloadWithFirstLine { it + ("lineType" to JsonPrimitive(2)) }).orderPays
+
+        assertEquals(listOf(PayLineType._2, PayLineType._0), lines.map { it.lineType })
+    }
+
+    @Test
+    fun aMissingLineTypeFailsTheMappingRatherThanReadingAsAJob() = runTest {
+        assertMappingFails("lineType", payloadWithoutFirstLineKey("lineType"))
+    }
+
     // --- rule 1: money is never coerced -----------------------------------------
 
     @Test
@@ -289,6 +304,75 @@ class PeriodPayWireTest {
         assertEquals(4951.80, summary.grandTotal, 0.0)
     }
 
+    // --- the cash the cleaner holds -----------------------------------------------
+
+    private suspend fun fetchCash(body: String, onRequest: (RecordedRequest) -> Unit = {}): ApiResult<List<CashHeld>> {
+        val server = MockWebServer()
+        server.start()
+        return try {
+            server.enqueue(
+                MockResponse()
+                    .setResponseCode(200)
+                    .setHeader("Content-Type", "application/json")
+                    .setBody(body),
+            )
+            repo(server).getCashHeld().also { onRequest(server.takeRequest()) }
+        } finally {
+            server.shutdown()
+        }
+    }
+
+    @Test
+    fun cashHeldDtoSerialNamesAreExactlyTheSpecProperties() {
+        assertEquals(CASH_HELD_SPEC_PROPERTIES, serialNames(CashHeldDto.serializer().descriptor))
+    }
+
+    @Test
+    fun theCashHeldRequestAsksTheRouteTheServerServes() = runTest {
+        var path: String? = null
+        var method: String? = null
+        fetchCash(CAPTURED_CASH_HELD) { request ->
+            path = request.path
+            method = request.method
+        }
+
+        assertEquals("GET", method)
+        assertEquals("/api/EmployeePayroll/GetCashHeld", path)
+    }
+
+    @Test
+    fun everyCurrencyHeldArrivesWithItsAmountItsCapAndWhetherCashJobsAreHidden() = runTest {
+        val result = fetchCash(CAPTURED_CASH_HELD)
+
+        assertEquals(
+            ApiResult.Success(
+                listOf(
+                    CashHeld(currencyCode = "CZK", amount = 3250.50, floatCap = 3000.0, cashJobsHidden = true),
+                    CashHeld(currencyCode = "EUR", amount = 42.75, floatCap = null, cashJobsHidden = false),
+                ),
+            ),
+            result,
+        )
+    }
+
+    @Test
+    fun aCleanerWhoHoldsNoCashIsAnEmptyList() = runTest {
+        assertEquals(ApiResult.Success(emptyList<CashHeld>()), fetchCash("[]"))
+    }
+
+    @Test
+    fun aMissingCashAmountOrVerdictFailsTheMappingRatherThanReadingZeroOrVisible() = runTest {
+        listOf("amount", "cashJobsHidden").forEach { field ->
+            val rows = Json.parseToJsonElement(CAPTURED_CASH_HELD).jsonArray
+            val stripped = JsonArray(listOf<JsonElement>(rows.first().jsonObject - field) + rows.drop(1))
+            val result = fetchCash(stripped.toString())
+            assertTrue(
+                "a missing $field must fail the mapping rather than read as a default; got $result",
+                result is ApiResult.Error,
+            )
+        }
+    }
+
     // --- payload plumbing ---------------------------------------------------------
 
     private fun capturedObject(): JsonObject = Json.parseToJsonElement(CAPTURED_PAYLOAD).jsonObject
@@ -369,7 +453,8 @@ class PeriodPayWireTest {
                   "isApproved": true,
                   "createdOn": "2026-08-03T09:15:00Z",
                   "currencyCode": "CZK",
-                  "deductionReason": "Windows left streaked in two rooms"
+                  "deductionReason": "Windows left streaked in two rooms",
+                  "lineType": 0
                 },
                 {
                   "id": "line-2",
@@ -389,11 +474,21 @@ class PeriodPayWireTest {
                   "payBreakdown": "base 2800.40 + extras 207.05",
                   "isApproved": true,
                   "createdOn": "2026-08-07T14:40:00Z",
-                  "currencyCode": "CZK"
+                  "currencyCode": "CZK",
+                  "lineType": 0
                 }
               ]
             }
         """.trimIndent()
+
+        val CAPTURED_CASH_HELD = """
+            [
+              { "currencyId": "cur-czk", "currencyCode": "CZK", "amount": 3250.50, "floatCap": 3000, "cashJobsHidden": true },
+              { "currencyId": "cur-eur", "currencyCode": "EUR", "amount": 42.75, "floatCap": null, "cashJobsHidden": false }
+            ]
+        """.trimIndent()
+
+        val CASH_HELD_SPEC_PROPERTIES = setOf("currencyId", "currencyCode", "amount", "floatCap", "cashJobsHidden")
 
         val SUMMARY_SPEC_PROPERTIES = setOf(
             "payPeriodId",
@@ -434,6 +529,7 @@ class PeriodPayWireTest {
             "createdOn",
             "currencyCode", "deductionReason",
             "dirtinessPay",
+            "lineType",
         )
 
         val SUMMARY_REQUIRED_NUMBERS = listOf(

@@ -15,6 +15,7 @@ import cz.cleansia.partner.api.model.PagedDataOfOrderListItem
 import cz.cleansia.partner.api.model.PendingOfferItem
 import cz.cleansia.partner.api.model.PhotoType
 import cz.cleansia.partner.api.model.ReportOrderIssueCommand
+import cz.cleansia.partner.api.model.ReportOrderLockoutCommand
 import cz.cleansia.partner.api.model.SaveOrderPhotosCommand
 import cz.cleansia.partner.api.model.SaveOrderPhotosPhotoToSave
 import cz.cleansia.partner.api.model.SortDefinition
@@ -125,6 +126,9 @@ interface OrdersRepository {
     suspend fun reportIssue(orderId: String, content: String): ApiResult<Unit>
     suspend fun updateIssue(orderId: String, issueId: String, description: String): ApiResult<Unit>
     suspend fun deleteIssue(orderId: String, issueId: String): ApiResult<Unit>
+
+    /** "Cannot get in": needs an entrance photo already saved; an administrator confirms it. */
+    suspend fun reportLockout(orderId: String, callAttempts: String): ApiResult<Unit>
 
     /**
      * The orders reserved for this cleaner alone until their deadline (ADR-0045). Cached rather than
@@ -411,6 +415,11 @@ class OrdersRepositoryImpl @Inject constructor(
     override suspend fun reportIssue(orderId: String, content: String): ApiResult<Unit> =
         safeApiCall(json) {
             orderApi.orderReportIssue(ReportOrderIssueCommand(orderId = orderId, description = content))
+        }.map { }.also { if (it is ApiResult.Success) invalidateOrder(orderId) }
+
+    override suspend fun reportLockout(orderId: String, callAttempts: String): ApiResult<Unit> =
+        safeApiCall(json) {
+            orderApi.orderReportLockout(ReportOrderLockoutCommand(orderId = orderId, callAttempts = callAttempts))
         }.map { }.also { if (it is ApiResult.Success) invalidateOrder(orderId) }
 
     override suspend fun updateNote(orderId: String, noteId: String, content: String): ApiResult<Unit> =

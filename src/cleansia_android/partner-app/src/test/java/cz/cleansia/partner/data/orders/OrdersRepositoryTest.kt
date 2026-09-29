@@ -4,6 +4,9 @@ import cz.cleansia.core.auth.SessionScopedCache
 import cz.cleansia.partner.api.client.OrderApi
 import cz.cleansia.partner.api.model.OrderItem
 import cz.cleansia.partner.api.model.PagedDataOfOrderListItem
+import cz.cleansia.partner.api.model.ReportOrderLockoutCommand
+import cz.cleansia.partner.api.model.ReportOrderLockoutResponse
+import cz.cleansia.core.network.ApiResult
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
@@ -67,5 +70,20 @@ class OrdersRepositoryTest {
         (repo as SessionScopedCache).clear()
 
         assertTrue("order must be stale again after clear()", repo.isOrderStale("order-1"))
+    }
+
+    @Test
+    fun reportLockout_postsTheOrderAndTheCallsAndExpiresTheOrder() = runTest {
+        coEvery { orderApi.orderGetById("order-1") } returns Response.success(mockk<OrderItem>(relaxed = true))
+        coEvery {
+            orderApi.orderReportLockout(ReportOrderLockoutCommand(orderId = "order-1", callAttempts = "Called twice"))
+        } returns Response.success(ReportOrderLockoutResponse(orderId = "order-1", reportedAt = "2026-09-29T10:20:00Z"))
+        val repo = newRepo()
+        repo.getById("order-1")
+
+        val result = repo.reportLockout("order-1", "Called twice")
+
+        assertTrue("the report must succeed; got $result", result is ApiResult.Success)
+        assertTrue("the reported order must be refetched, not served warm", repo.isOrderStale("order-1"))
     }
 }

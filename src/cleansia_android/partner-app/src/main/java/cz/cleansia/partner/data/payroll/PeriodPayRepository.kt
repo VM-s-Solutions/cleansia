@@ -3,7 +3,9 @@ package cz.cleansia.partner.data.payroll
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.network.safeApiCall
 import cz.cleansia.partner.api.client.EmployeePayrollApi
+import cz.cleansia.partner.api.model.CashHeldDto
 import cz.cleansia.partner.api.model.OrderEmployeePayDto
+import cz.cleansia.partner.api.model.PayLineType
 import cz.cleansia.partner.api.model.PeriodCurrencyDto
 import cz.cleansia.partner.api.model.PeriodPaySummaryDto
 import cz.cleansia.core.network.mapWire
@@ -13,8 +15,8 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * The cleaner's own pay for one period. The backend scopes the result to the caller's own
- * EmployeeId server-side; a foreign employeeId comes back as employee.not_found.
+ * The cleaner's own pay for one period, and the company's cash they hold. The backend scopes both to
+ * the caller server-side; a foreign employeeId comes back as employee.not_found.
  */
 interface PeriodPayRepository {
     /**
@@ -27,6 +29,9 @@ interface PeriodPayRepository {
         payPeriodId: String,
         currencyId: String? = null,
     ): ApiResult<PeriodPaySummary>
+
+    /** One row per currency the cleaner holds company cash in; none when they hold none. */
+    suspend fun getCashHeld(): ApiResult<List<CashHeld>>
 }
 
 data class PeriodPaySummary(
@@ -76,6 +81,18 @@ data class OrderPayLine(
     /** The row's own currency; the summary's applies where the wire sends none. */
     val currencyCode: String?,
     val deductionReason: String?,
+    val lineType: PayLineType,
+)
+
+/**
+ * Cash the cleaner took at the door and has not yet handed over. [floatCap] is the company's limit, null
+ * when it sets none; above it [cashJobsHidden] and the server keeps cash jobs off their board.
+ */
+data class CashHeld(
+    val currencyCode: String?,
+    val amount: Double,
+    val floatCap: Double?,
+    val cashJobsHidden: Boolean,
 )
 
 // Stateless — nothing cached, so no SessionScopedCache
@@ -92,6 +109,10 @@ class PeriodPayRepositoryImpl @Inject constructor(
     ): ApiResult<PeriodPaySummary> =
         safeApiCall(json) { payrollApi.employeePayrollGetPeriodPays(employeeId, payPeriodId, currencyId) }
             .mapWire { it.toDomain() }
+
+    override suspend fun getCashHeld(): ApiResult<List<CashHeld>> =
+        safeApiCall(json) { payrollApi.employeePayrollGetCashHeld() }
+            .mapWire { rows -> rows.map { it.toDomain() } }
 }
 
 /**
@@ -123,6 +144,13 @@ internal fun PeriodPaySummaryDto.toDomain() = PeriodPaySummary(
 
 internal fun PeriodCurrencyDto.toDomain() = PeriodCurrency(id = id, code = code)
 
+internal fun CashHeldDto.toDomain() = CashHeld(
+    currencyCode = currencyCode,
+    amount = amount.required("amount"),
+    floatCap = floatCap,
+    cashJobsHidden = cashJobsHidden.required("cashJobsHidden"),
+)
+
 internal fun OrderEmployeePayDto.toDomainOrNull(): OrderPayLine? {
     val lineId = id ?: return null
     return OrderPayLine(
@@ -139,5 +167,6 @@ internal fun OrderEmployeePayDto.toDomainOrNull(): OrderPayLine? {
         createdOn = createdOn,
         currencyCode = currencyCode,
         deductionReason = deductionReason,
+        lineType = lineType.required("lineType"),
     )
 }

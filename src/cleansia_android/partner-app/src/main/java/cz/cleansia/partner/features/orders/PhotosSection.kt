@@ -144,7 +144,7 @@ internal fun photoWindowOpen(type: PhotoType, status: OrderStatus?): Boolean = w
 }
 
 @Composable
-private fun PhotoRail(
+internal fun PhotoRail(
     title: String,
     type: PhotoType,
     photos: List<GetOrderPhotosOrderPhotoDto>,

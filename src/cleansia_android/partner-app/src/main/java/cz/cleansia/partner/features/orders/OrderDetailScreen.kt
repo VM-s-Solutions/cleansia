@@ -170,6 +170,7 @@ fun OrderDetailScreen(
                     // invalidates its watermark on mutation success, so the
                     // gate always lets this through.
                     onPhotosChanged = viewModel::onContentMutated,
+                    onReportLockout = viewModel::reportLockout,
                     onNavigateBack = onNavigateBack,
                 )
 
@@ -297,6 +298,7 @@ private fun OrderDetailBottomSheetLayout(
     onCashConfirmRequested: () -> Unit,
     onDeclineOffer: () -> Unit,
     onPhotosChanged: () -> Unit,
+    onReportLockout: (String) -> Unit,
     onNavigateBack: () -> Unit,
 ) {
     val status = order.orderStatus.toOrderStatus()
@@ -363,6 +365,7 @@ private fun OrderDetailBottomSheetLayout(
                     onCashConfirmRequested = onCashConfirmRequested,
                     onDeclineOffer = onDeclineOffer,
                     onPhotosChanged = onPhotosChanged,
+                    onReportLockout = onReportLockout,
                 )
             },
         ) { _ ->
@@ -586,6 +589,7 @@ private fun OrderDetailSheetContent(
     onCashConfirmRequested: () -> Unit,
     onDeclineOffer: () -> Unit,
     onPhotosChanged: () -> Unit,
+    onReportLockout: (String) -> Unit,
 ) {
     val disclosure = order.orderDisclosure()
 
@@ -689,6 +693,13 @@ private fun OrderDetailSheetContent(
                 disclosure = disclosure,
                 location = location,
                 closedNote = customerDetailsClosedNote?.let { stringResource(it) },
+            )
+
+            LockoutCard(
+                order = order,
+                isReporting = inFlight == OrderAction.ReportLockout,
+                actionsEnabled = inFlight == null,
+                onReport = onReportLockout,
             )
 
             ScopeCard(order = order)

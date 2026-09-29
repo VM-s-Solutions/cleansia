@@ -6,7 +6,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { WizardPreferredCleanerComponent } from './components/wizard-preferred-cleaner.component';
 import { CleansiaAddressAutocompleteComponent, CleansiaButtonComponent, CleansiaScrollTopComponent, CleansiaSelectComponent, CleansiaTelephoneComponent } from '@cleansia/components';
-import { CategoryDto, CUSTOMER_API_BASE_URL, GetMembershipPlansResponse, PackageListItem, PackageServiceSummary, PaymentType, QuoteOrderQuoteLine, QuotePlusSavingsQuery, SavedAddressDto, ServiceListItem } from '@cleansia/customer-services';
+import { CategoryDto, CUSTOMER_API_BASE_URL, GetMembershipPlansResponse, MembershipStatus, PackageListItem, PackageServiceSummary, PaymentType, QuoteOrderQuoteLine, QuotePlusSavingsQuery, SavedAddressDto, ServiceListItem } from '@cleansia/customer-services';
 import type { MapboxAddressSuggestion } from '@cleansia/services';
 import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -884,7 +884,7 @@ export class OrderWizardComponent implements OnInit {
     // never from what the step offered: subscribing happens on Stripe's page and
     // can be abandoned there.
     const membership = this.facade.activeMembership();
-    if (membership?.hasMembership && membership.planName) {
+    if (membership?.status === MembershipStatus.Active && membership.planName) {
       pay.push(membership.planName);
     }
 

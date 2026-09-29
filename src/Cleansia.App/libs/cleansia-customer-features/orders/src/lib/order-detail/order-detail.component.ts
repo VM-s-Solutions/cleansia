@@ -12,7 +12,13 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CleansiaButtonComponent, CleansiaTextareaComponent } from '@cleansia/components';
 import { OrderStatusLabelPipe } from '@cleansia/pipes';
-import { DisputeReason, OrderStatus, PaymentStatus, PaymentType } from '@cleansia/customer-services';
+import {
+  DisputeReason,
+  MembershipStatus,
+  OrderStatus,
+  PaymentStatus,
+  PaymentType,
+} from '@cleansia/customer-services';
 import {
   RECURRING_PREFILL_STORAGE_KEY,
   RecurringPrefillParams,
@@ -414,7 +420,7 @@ export class OrderDetailComponent implements OnInit {
     const order = this.order();
     if (!order?.id) return;
 
-    const isPlus = this.membership()?.hasMembership === true;
+    const isPlus = this.membership()?.status === MembershipStatus.Active;
     if (!isPlus) {
       this.facade.showRecurringPlusRequired();
       this.router.navigate([CleansiaCustomerRoute.PLUS]);

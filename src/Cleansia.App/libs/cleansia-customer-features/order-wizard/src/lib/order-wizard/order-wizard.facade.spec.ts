@@ -5,6 +5,8 @@ import {
   CustomerAuthService,
   CustomerClient,
   ExtraListItem,
+  GetMyMembershipResponse,
+  MembershipStatus,
   PaymentType,
   ServiceListItem,
 } from '@cleansia/customer-services';
@@ -1738,6 +1740,40 @@ describe('OrderWizardFacade', () => {
       facade.initialize();
 
       expect(facade.formData().customerEmail).toBe('booking@example.com');
+    });
+  });
+
+  // A failed renewal keeps the enrolment alive, but a favourite needs an active membership.
+  describe('the favourite-cleaner picker', () => {
+    let myServingCleaners: jest.Mock;
+
+    beforeEach(() => {
+      TestBed.resetTestingModule();
+      configure('browser');
+      myServingCleaners = jest.fn().mockReturnValue(of([]));
+      Object.assign(orderClient, { myServingCleaners });
+      facade.isAuthenticated.set(true);
+    });
+
+    const withMembership = (status: MembershipStatus) =>
+      TestBed.inject(OrderMembershipFacade).membership.set(
+        GetMyMembershipResponse.fromJS({ hasMembership: true, status }),
+      );
+
+    it('loads for a member whose membership is active', () => {
+      withMembership(MembershipStatus.Active);
+
+      TestBed.inject(OrderPreferredCleanerFacade).refresh();
+
+      expect(myServingCleaners).toHaveBeenCalledTimes(1);
+    });
+
+    it('stays closed for a member whose renewal payment failed', () => {
+      withMembership(MembershipStatus.PastDue);
+
+      TestBed.inject(OrderPreferredCleanerFacade).refresh();
+
+      expect(myServingCleaners).not.toHaveBeenCalled();
     });
   });
 });

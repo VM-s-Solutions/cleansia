@@ -9,6 +9,7 @@ import {
   CustomerClient,
   GetCancellationFeePreviewResponse,
   GetMyMembershipResponse,
+  MembershipStatus,
   OrderItem,
   OrderStatus,
   PaymentStatus,
@@ -114,13 +115,15 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
 
   /**
    * How long free cancellation lasted. Plus shortens the window, but only for a paid month: the
-   * server reads the paid entitlement, which a running trial is not. -> /product/business-rules
+   * server reads the paid entitlement, which neither a running trial nor a failed renewal is.
+   * -> /product/business-rules
    */
   readonly freeCancellationHours = computed(() => {
     const membership = this.membership();
-    const trialEnd = membership?.trialEndsAtUtc;
+    if (membership?.status !== MembershipStatus.Active) return STANDARD_FREE_CANCELLATION_HOURS;
+    const trialEnd = membership.trialEndsAtUtc;
     if (trialEnd && trialEnd.getTime() > Date.now()) return STANDARD_FREE_CANCELLATION_HOURS;
-    return membership?.freeCancellationWindowHours ?? STANDARD_FREE_CANCELLATION_HOURS;
+    return membership.freeCancellationWindowHours ?? STANDARD_FREE_CANCELLATION_HOURS;
   });
 
   readonly canConfirmCancellation = computed(() =>

@@ -13,6 +13,7 @@ import {
   CustomerClient,
   UserConsentDto,
   ExtraListItem,
+  MembershipStatus,
   PackageListItem,
   PaymentType,
   QuoteOrderResponse,
@@ -313,7 +314,7 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
     });
     this.preferredCleaner.connect({
       isAuthenticated: () => this.isAuthenticated(),
-      hasMembership: () => this.membership.membership()?.hasMembership === true,
+      hasMembership: () => this.membership.membership()?.status === MembershipStatus.Active,
       currentFormData: () => this.formData(),
       patchFormData: (partial) => this.updateFormData(partial),
     });

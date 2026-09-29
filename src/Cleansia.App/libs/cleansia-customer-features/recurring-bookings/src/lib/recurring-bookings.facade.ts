@@ -6,6 +6,7 @@ import {
   CustomerClient,
   DeleteRecurringBookingCommand,
   GetMyServingCleanersResponse,
+  MembershipStatus,
   PackageListItem,
   PaymentType,
   PreferredCleanerOption,
@@ -373,7 +374,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
       const me = await firstValueFrom(
         this.membershipClient.getMine().pipe(takeUntil(this.destroyed$)),
       );
-      this.isMember.set(me?.hasMembership === true);
+      this.isMember.set(me?.status === MembershipStatus.Active);
     } catch {
       this.isMember.set(false);
     } finally {

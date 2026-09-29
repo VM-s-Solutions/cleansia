@@ -7,6 +7,7 @@ import {
   ExpressWaiverStatus,
   GetMembershipPlansResponse,
   GetMyMembershipResponse,
+  MembershipStatus,
   resolveExpressWaiverStatus,
   SwapMembershipPlanCommand,
 } from '@cleansia/customer-services';
@@ -91,12 +92,19 @@ export class MembershipFacade extends UnsubscribeControlDirective {
    */
   readonly trialEndsOn = signal<Date | null>(null);
 
+  /**
+   * A renewal payment failed. `hasMembership` still counts the enrolment so no second subscription
+   * starts, but every benefit is off, a plan switch is refused, and a cancel ends it now.
+   */
+  readonly paymentFailed = computed(() => this.membership()?.status === MembershipStatus.PastDue);
+
   /** A trialing member who cancels or switches has no running benefit to keep. */
-  readonly cancelDialogMessageKey = computed(() =>
-    this.trialEndsOn()
+  readonly cancelDialogMessageKey = computed(() => {
+    if (this.paymentFailed()) return 'pages.membership.cancel_dialog_message_past_due';
+    return this.trialEndsOn()
       ? 'pages.membership.cancel_dialog_message_trial'
-      : 'pages.membership.cancel_dialog_message',
-  );
+      : 'pages.membership.cancel_dialog_message';
+  });
   readonly switchDialogMessageKey = computed(() =>
     this.trialEndsOn()
       ? 'pages.membership.switch_dialog_message_trial'
@@ -156,11 +164,13 @@ export class MembershipFacade extends UnsubscribeControlDirective {
       });
   }
 
-  /** Cancel-at-period-end: a paid period runs to its end, a trial ends with no paid month after it. */
+  /** A paid period runs to its end, a trial ends unpaid, a failed renewal ends now. */
   cancel(): void {
-    const successKey = this.trialEndsOn()
-      ? 'pages.membership.cancel_success_trial'
-      : 'pages.membership.cancel_success';
+    const successKey = this.paymentFailed()
+      ? 'pages.membership.cancel_success_past_due'
+      : this.trialEndsOn()
+        ? 'pages.membership.cancel_success_trial'
+        : 'pages.membership.cancel_success';
     this.cancelling.set(true);
     this.client
       .cancel()

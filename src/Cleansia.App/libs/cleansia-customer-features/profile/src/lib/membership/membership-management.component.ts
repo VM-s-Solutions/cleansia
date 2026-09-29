@@ -64,6 +64,7 @@ export class MembershipManagementComponent implements OnInit {
   readonly expressWaiverExhausted = this.facade.expressWaiverExhausted;
   readonly expressWaiverPendingTrial = this.facade.expressWaiverPendingTrial;
   readonly trialEndsOn = this.facade.trialEndsOn;
+  readonly paymentFailed = this.facade.paymentFailed;
   readonly switchLeadKey = this.facade.switchLeadKey;
 
   /** Yearly plan (if any) — drives the "Switch to annual" CTA visibility. */

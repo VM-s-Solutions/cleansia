@@ -5,6 +5,7 @@ import {
   CustomerClient,
   DeleteRecurringBookingCommand,
   GetMyServingCleanersResponse,
+  MembershipStatus,
   PackageListItem,
   PaymentType,
   QuoteOrderResponse,
@@ -43,6 +44,7 @@ describe('RecurringBookingsFacade', () => {
     delete: jest.Mock;
   };
   let orderClient: { quote: jest.Mock; myServingCleaners: jest.Mock };
+  let membershipClient: { getMine: jest.Mock };
   let savedAddressStore: {
     addresses: ReturnType<typeof signal<SavedAddressDto[]>>;
     loaded: ReturnType<typeof signal<boolean>>;
@@ -70,6 +72,9 @@ describe('RecurringBookingsFacade', () => {
       delete: jest.fn().mockReturnValue(of(undefined)),
     };
     orderClient = { quote: jest.fn(), myServingCleaners: jest.fn().mockReturnValue(of([])) };
+    membershipClient = {
+      getMine: jest.fn().mockReturnValue(of({ hasMembership: true, status: MembershipStatus.Active })),
+    };
     savedAddressStore = {
       addresses: signal<SavedAddressDto[]>([]),
       loaded: signal(true),
@@ -90,7 +95,7 @@ describe('RecurringBookingsFacade', () => {
           useValue: {
             recurringBookingClient: client,
             orderClient,
-            membershipClient: { getMine: jest.fn().mockReturnValue(of({ hasMembership: true })) },
+            membershipClient,
           },
         },
         { provide: SavedAddressStore, useValue: savedAddressStore },
@@ -106,6 +111,18 @@ describe('RecurringBookingsFacade', () => {
     store.overrideSelector(selectCustomerPackagesCatalogue, { packages: [], countryId: null });
     store.overrideSelector(selectMarketCountryId, null);
     facade = TestBed.inject(RecurringBookingsFacade);
+  });
+
+  // A failed renewal keeps the enrolment alive, but the server refuses a schedule while it is unpaid.
+  it('shows a member whose renewal payment failed the paywall, not the list', async () => {
+    membershipClient.getMine.mockReturnValue(
+      of({ hasMembership: true, status: MembershipStatus.PastDue }),
+    );
+
+    await facade.initialize();
+
+    expect(facade.isMember()).toBe(false);
+    expect(client.getMine).not.toHaveBeenCalled();
   });
 
   // The catalogue is priced per market and the server withholds what has no price in the saved

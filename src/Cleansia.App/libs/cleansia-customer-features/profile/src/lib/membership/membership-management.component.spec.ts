@@ -4,6 +4,7 @@ import {
   CustomerClient,
   GetMembershipPlansResponse,
   GetMyMembershipResponse,
+  MembershipStatus,
 } from '@cleansia/customer-services';
 import { selectMarketCountryId } from '@cleansia/customer-stores';
 import { SnackbarService } from '@cleansia/services';
@@ -16,9 +17,13 @@ import { MembershipFacade } from './membership.facade';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-function membership(trialEndsAtUtc?: Date): GetMyMembershipResponse {
+function membership(
+  trialEndsAtUtc?: Date,
+  status = MembershipStatus.Active,
+): GetMyMembershipResponse {
   const response = new GetMyMembershipResponse();
   response.hasMembership = true;
+  response.status = status;
   response.planCode = 'PLUS_MONTHLY';
   response.currencyCode = 'CZK';
   response.trialEndsAtUtc = trialEndsAtUtc;
@@ -129,5 +134,15 @@ describe('MembershipManagementComponent — what cancelling or switching says', 
     component.switchTo('PLUS_YEARLY');
     expect(asked().message).toBe('pages.membership.switch_dialog_message');
     expect(asked().acceptLabel).toBe('pages.membership.switch_dialog_confirm');
+  });
+
+  it('tells a member whose renewal failed that the cancel ends it now, then toasts the same', () => {
+    const component = build(membership(undefined, MembershipStatus.PastDue));
+
+    component.confirmCancel();
+    expect(asked().message).toBe('pages.membership.cancel_dialog_message_past_due');
+
+    asked().accept?.();
+    expect(showSuccessTranslated).toHaveBeenCalledWith('pages.membership.cancel_success_past_due');
   });
 });

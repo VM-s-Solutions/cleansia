@@ -10,6 +10,7 @@ import {
   CustomerClient,
   GetCancellationFeePreviewResponse,
   GetMyMembershipResponse,
+  MembershipStatus,
   OrderItem,
   OrderStatus,
   PaymentStatus,
@@ -265,9 +266,10 @@ describe('OrderDetailFacade', () => {
   // trial too, and a trialing member cancels on the standard window.
   describe('the free-cancellation window the page states', () => {
     const DAY_MS = 24 * 60 * 60 * 1000;
-    const plus = (trialEndsAtUtc?: Date) =>
+    const plus = (trialEndsAtUtc?: Date, status = MembershipStatus.Active) =>
       GetMyMembershipResponse.fromJS({
         hasMembership: true,
+        status,
         freeCancellationWindowHours: 12,
         trialEndsAtUtc: trialEndsAtUtc?.toISOString(),
       });
@@ -285,6 +287,11 @@ describe('OrderDetailFacade', () => {
     it("is the plan's window once the trial has ended", () => {
       facade.membership.set(plus(new Date(Date.now() - DAY_MS)));
       expect(facade.freeCancellationHours()).toBe(12);
+    });
+
+    it('is the standard 24 hours while a renewal payment has failed', () => {
+      facade.membership.set(plus(undefined, MembershipStatus.PastDue));
+      expect(facade.freeCancellationHours()).toBe(24);
     });
 
     it('is the standard 24 hours without a membership', () => {

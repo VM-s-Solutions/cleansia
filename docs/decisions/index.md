@@ -2,7 +2,7 @@
 
 Every architecture and business decision on record, with the argument that settled it.
 
-**69 records.** A decision keeps a stable id — `ADR-0037` — and roughly six hundred source
+**70 records.** A decision keeps a stable id — `ADR-0037` — and roughly six hundred source
 files cite ids in that form. The id is the reference, not the file name or the title, so a record can
 be retitled without breaking a single citation.
 
@@ -77,6 +77,11 @@ the record describes what runs. **[ADR-0069](./adr-0069)** (the dirtiness level;
 by owner ruling, shipped as phase 2 of the 2026-09-27 meeting plan) supersedes nothing: it removes a
 premise of ADR-0037 D9 — pay had no crew-size term, and now a job's pay is split across its seats —
 while the no-spare-seat ruling D9 argued for stands, so there is no arrow.
+**[ADR-0070](./adr-0070)** (the card guarantee and receivables; `accepted` 2026-09-28 by owner ruling,
+shipped as phase 3 of the 2026-09-27 meeting plan) supersedes no record: it ends the cancellation rule
+that a cash booking's fee is owed and collected by nothing, which lived in the business rules rather
+than in an ADR, and builds on ADR-0057, ADR-0061, ADR-0064, ADR-0065, ADR-0066 and ADR-0069 D4, so there
+is no arrow.
 
 ## All records
 
@@ -151,6 +156,7 @@ while the no-spare-seat ruling D9 argued for stands, so there is no arrow.
 | **[ADR-0067](./adr-0067)** | Confirmed → New when the last cleaner leaves; the administrators are told (owner ruling D2, 2026-09-19; supersedes ADR-0057's open consequence; shipped as T-0770) | `accepted` |
 | **[ADR-0068](./adr-0068)** | A contract for work per job: the text the order is booked under, the cleaner's acceptance of it, what both parties can see (owner ruling 2026-09-20; amends ADR-0063 D9 by one sentence; shipped as T-0777–T-0784; amended 2026-09-27: the company sells in its own name, and the parties change when the lawyer confirms) | `accepted` |
 | **[ADR-0069](./adr-0069)** | The dirtiness level prices, times, crews and pays the job, and a job's pay is split across its seats (owner rulings 2026-09-28, meeting-plan decisions 28–40; changes a premise of ADR-0037 D9, whose no-spare-seat ruling stands) | `accepted` |
+| **[ADR-0070](./adr-0070)** | A saved card guarantees cash, and what a customer owes is a receivable — paid through a pay link, charged to the card only once the terms allow it; a lockout is the customer's cancellation at the whole price; the crew shares a fee once it is collected (owner rulings 2026-09-28, meeting-plan decisions 11–13, 16–18 and 24) | `accepted` |
 
 ⟲ = superseded in whole or in part by a later record.
 

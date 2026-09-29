@@ -62,13 +62,64 @@ dispute on the order. → [Business rules — when the cleaner no-shows](/produc
 but on an order that took no payment (`Order.TookNoPayment`: payment `Pending` or `Failed` — a cash
 booking not yet collected, a card never charged) it records a refund of **0**, for every writer: the
 customer, an administrator or the company wind-down, and the unfilled sweep. The fee on such an order is
-owed and nothing collects it yet; the admin order detail shows the rate and *Fee still owed*
+owed, not taken. **A signed-in customer's late cancellation of a cash booking opens a receivable for it**
+(`Receivable.ForCashCancellationFee`, owner ruling 2026-09-28): while it is open the customer books no
+more cash, and it is paid through the customer's pay link or written off by an administrator
+→ [Business rules — what a customer owes](/product/business-rules#receivables). A free cancellation, a
+card booking and a guest open none. The admin order detail shows the rate and *Fee still owed*
 (`CancellationAssessor.FeeOwed` — all of the fee on an unpaid order, zero where a card charge covered
 it), two figures only an administrator receives. The previews and the cancel's response report the
 same 0 refund, and the web, Android and iOS cancel sheets print no refund line on a cash or unpaid
 booking. There is no cash exception any more: a confirmed recurring cash occurrence stays `Pending`
 until the cleaner records the cash, so it is inside `TookNoPayment` like every other cash booking.
 → [Business rules — cancellation](/product/business-rules#cancellation)
+
+**A fee the company collects pays the crew half.** A late cancellation of an order that took a payment
+— the fee kept out of the refund — asks for every crew member's pay at the cancel, member or guest; a
+cash booking's fee pays when its receivable is paid. Each seat gets its share of 50 % of what the company
+still holds, never of a fee still owed → [Business rules — the crew's share](/product/business-rules#fee-share).
+
+## Lockout {#lockout}
+
+The customer's cancellation at the whole price, when the cleaner could not get in (owner rulings
+2026-09-28, decisions 11 and 13). A person confirms it, as with an assigned cleaner's no-show.
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant C as Cleaner (partner app)
+  participant API as Partner API
+  participant A as Administrator
+  participant AD as Admin API
+
+  C->>API: entrance photo (PhotoType.Entrance)
+  C->>API: ReportLockout(order, calls made) — from start + 15 min
+  API->>A: admin.order.lockout_reported (feed + e-mail)
+  Note over API: nothing cancelled, nothing charged
+  A->>AD: cancel-lockout (reads the report and the photo)
+  AD->>AD: Order.Cancel — by the administrator, fee 100 %, no refund,<br/>reason order.cancelled.customer_lockout
+  alt paid card booking (member or guest)
+    AD->>AD: payment and applied credit kept, crew pay asked for
+  else signed-in customer's unpaid cash booking
+    AD->>AD: credit returned, Lockout receivable for the whole price
+  end
+  AD->>C: the job is off
+```
+
+- **The report** (`ReportOrderLockout`, `POST api/Order/ReportLockout` on both partner hosts) is refused
+  before `BookingPolicy.LockoutWaitMinutes` (15) past the start (`order.lockout.too_early`), without an
+  entrance photo (`order.lockout.photo_required`), a second time (`order.lockout.already_reported`), on a
+  finished order (`order.lockout.order_closed`), and off the crew (`order.not_found`). The note of calls
+  is required, at most 1 000 characters, and cleared with the order's other customer data.
+- **The confirmation** (`AdminCancelOrderAsLockout`, `POST api/AdminOrder/cancel-lockout`, Support and
+  above, audited `order.cancel.lockout` with a before/after snapshot) needs a report
+  (`order.lockout.not_reported`) and an order that is not cancelled or completed; it is admitted on a job
+  in progress. The express waiver stays consumed, loyalty is revoked, the live activity ends. A signed-in
+  customer gets the `order.cancelled` push and the cancellation e-mail, a guest the guest cancellation
+  e-mail; both carry the lockout reason line with the whole price and no refund line. The customer apps
+  do not yet render the reason key; the e-mail states it.
+- **A guest keeps nothing back and is never charged more** — a guest always prepays (decision 13 (a)).
+  → [Business rules — the lockout](/product/business-rules#lockout)
 
 **The cancel is written down as the server priced it.** `CancelOrder` is marked
 `customer.order.cancel` ([ADR-0062](/decisions/adr-0062)): the row that rides its commit carries the
@@ -249,3 +300,9 @@ dispute or the order shows the three interleaved, newest first.
 | Chargeback on a web card booking, guest or account | Found by the intent `checkout.session.completed` stored, or through its Checkout Session when the order predates that; the dispute is written and the administrators are told. |
 | Chargeback that matches no order | No dispute is written; the webhook answers `200` and the administrators of every company are told (`admin.dispute.chargeback_unmatched`). |
 | Express waiver used, then the order cancelled | The consumed benefit slot is forfeited or released by rule, not silently kept. |
+| A signed-in customer cancels a cash booking late | No refund (nothing was taken); a cash-cancellation-fee receivable for the fee; no more cash bookings until it is paid through the pay link or written off. |
+| A card order is cancelled late and its fee kept | The crew's pay is asked for at the cancel: each seat's share of half the fee still held. |
+| The cleaner reports a lockout before start + 15 | `order.lockout.too_early`; the partner apps open the report at that moment. |
+| A lockout confirmed on a paid card order | Payment and applied credit kept, no refund; the crew is paid half of what the company still holds. |
+| A lockout confirmed on a signed-in customer's unpaid cash booking | Credit returned; a *Lockout* receivable for the whole price; the crew is paid when it is. |
+| A lockout confirmed on an order already refunded | The fee kept is nothing, so the crew is paid nothing (`payroll.no_collected_fee`). |

@@ -8,8 +8,10 @@ because it does not move the money.
 ```mermaid
 flowchart LR
   A[Order completed] --> B[OrderEmployeePay row]
+  X[Fee collected on a cancelled job] --> B
   B --> C[Pay period]
   C -->|close| D[EmployeeInvoice, one per currency]
+  L[Cash the cleaner holds] -->|set off| D
   D -->|approve| E[Approved]
   E -->|mark paid| F[Transfer recorded]
 
@@ -17,7 +19,8 @@ flowchart LR
   class C,D,E gate
 ```
 
-**There is no payout execution path.** The platform issues the document, an admin keys the transfer in
+**There is no payout execution path.** The platform issues the document, an admin keys the transfer —
+the invoice's `TransferAmount`, its total less the cash set off against it ([below](#cash-set-off)) — in
 a bank by hand, and `MarkInvoicePaid` records that it happened, with a transfer note. Nothing here talks
 to a bank, a PSP payout account or a SEPA file — which is why approval, not payment, is where the
 platform does its last checking (below).
@@ -36,6 +39,18 @@ and why nothing is paid for distance (`ExpensesPay` is 0 on every new row; older
 calculated with) are in [Business rules](/product/business-rules#cleaner-pay). A rate is an amount in a
 currency, and the pay writer reads only rates in the order's currency — so every pay row is in the
 currency of the order that earned it.
+
+**A job that did not happen can pay too** (owner ruling 2026-09-28, decision 12). When a late
+cancellation or a customer [lockout](/flows/cancellation-refund-dispute#lockout) brings the company a
+fee, `CalculateOrderPay` pays each crew member a seat's share of **half of what was collected** — kept
+from the card payment, or paid on the cash booking's receivable — and never of a fee still owed, nor more
+than the company still holds after refunds. The row is typed `CancellationFeeShare` or `LockoutFeeShare`
+(`OrderEmployeePay.LineType`; a completed job's row is `Job`), holds the share as an unclamped base with
+no rates read, and is invoiced like any other row, the invoice line saying it is a share of the fee. It
+is asked for at the cancel or the lockout confirmation of an order that took a payment, and when the
+webhook settles a cash-cancellation or lockout receivable; a cancelled order that collected nothing is
+refused with `payroll.no_collected_fee` and writes nothing.
+→ [Business rules — the crew's share of a collected fee](/product/business-rules#fee-share)
 
 **And the order is in the cleaner's currency, because the board is.** A cleaner is paid in the currency
 of the country they work in (owner ruling 2026-09-12), and `OrderVisibility.PayableTo` keeps every
@@ -70,6 +85,42 @@ The reconciliation sweep (ADR-0002 D3.4) matches pay rows against invoices on
 `(PayPeriodId, EmployeeId, CurrencyId)`, so a pair whose CZK pay is invoiced and whose EUR pay is not is
 still a candidate. The message key stays per pair — `invoice:{payPeriodId}:{employeeId}` — and one
 generation invoices every currency the pair still has open.
+
+## Cash a cleaner holds is set off against the invoice {#cash-set-off}
+
+A cleaner who took cash at the door holds the company's money, and the company owes them their pay, so
+the platform nets the two instead of moving both (owner ruling 2026-09-28, decision 23 (c)). The cash
+ledger — collections up; remittances, write-offs and set-offs down — is described in
+[Business rules — the company's cash in a cleaner's hands](/product/business-rules#cash-held).
+
+- **At every invoice.** The pay-period close and `GenerateInvoice` each read the cash the cleaner holds
+  in the invoice's currency **under a lock on that cleaner's cash in that currency**
+  (`ICashLedgerRepository.GetHeldUnderLockAsync`, a Postgres advisory lock held until the flush
+  commits — the same one a remittance and a write-off take), and set it off **up to the invoice's
+  total**: `EmployeeInvoice.CashSetOffAmount`, and a *Set-off* ledger entry dated at issue.
+- **The invoice's amounts do not change.** `SubTotal`, bonus, deduction and `TotalAmount` stay what the
+  pay rows make them; **`TransferAmount = TotalAmount − CashSetOffAmount`** is the bank transfer.
+  `EmployeeInvoiceDto` and `EmployeeInvoiceDetailDto` carry `cashSetOffAmount` and `transferAmount` on
+  every host.
+- **The PDF says so.** A payout invoice with a set-off prints a statement below its summary — the
+  invoice total, the cash set off, the transfer, and that the invoice amount is unchanged and cash still
+  held is carried forward — in the **cleaner's** language (en, cs, sk, uk, ru), while the invoice itself
+  stays in its jurisdiction's; a re-render reads the same language.
+- **What the invoice could not cover is carried forward** — it stays in the ledger, and after
+  `cash.remittance_request_days` (30 by default) past the first close that carried it, the cleaner is
+  e-mailed a request to hand it over.
+- **Given back when the invoice shrinks.** Cancelling an invoice enters its whole set-off back, since a
+  cancelled invoice transfers nothing; lowering an invoice's total below its set-off
+  (`UpdateInvoiceAmounts`) releases the difference and enters it back, so `TransferAmount` never goes
+  negative and the cleaner's balance, the remittance request, the float cap and the archive all read
+  the cash the cleaner really holds.
+- **The archive carries it.** The company bundle writes `books/cash-ledger-entries.jsonl` (without the
+  notes, which are free text) and the invoice row's `cashSetOffAmount`.
+
+The partner web, Android and iOS show *cash I hold* per currency beside the pay (with the company's
+float cap, and whether cash jobs are hidden above it). **No invoice screen shows the set-off or the
+transfer yet** — not the partner web, Android or iOS, and not the admin invoice the transfer is keyed
+from; the two figures are on the wire and on the PDF the cleaner is e-mailed.
 
 ## Periods are a state machine, and every transition is gated
 
@@ -226,4 +277,10 @@ already does.
 | A two-seat job worked by one cleaner | That cleaner is paid one seat — the divisor is the seats the job needs — plus the residue, since they hold the lowest seat on the crew. |
 | A *Heavy* job whose rates hit their maximum | The seat is capped, then the dirtiness term (60 % of the job's capped pay, split per seat) is added on top; the cap never swallows it. |
 | A dispute finds the cleaner at fault | The administrator's resolution may charge that cleaner's pay row on the order (`chargeToCleaner`): the deduction is linked to the dispute (`DeductionDisputeId`) and carries a reason (`DeductionReason`) that My Pay on the partner web, Android and iOS shows beside the deduction. Refused when the row is missing, already invoiced, already charged or smaller than the charge. A refund alone never touches pay. → [Business rules](/product/business-rules#dispute-cleaner-charge) |
+| A cleaner holds 1 200 in cash and their invoice totals 900 | 900 is set off, the transfer is 0, the invoice total stays 900, and 300 is carried forward in the ledger. |
+| A cleaner holds 300 in cash and their invoice totals 900 | 300 is set off and the transfer is 600. |
+| A remittance and an invoice's set-off take the same cash at once | The per-cleaner, per-currency lock serialises them; the second reads the balance the first left and is refused, or sets off only what is left. |
+| An invoice that set cash off is cancelled | The whole set-off goes back into the ledger. |
+| A late cancellation of a paid card order | Each crew member gets a `CancellationFeeShare` row: a seat's share of half the fee the company still holds. |
+| A lockout on a cash booking whose receivable is still open | No pay row; the crew is paid when the receivable is paid, and nothing if it is written off. |
 | An administrator writes a cleaner's rates from a template | Standard 0.5, experienced 0.6 or expert 0.7 of each list price — every template leaves a margin, and like every rate it describes the job, so each seat of a two-seat job earns half; the old junior/medior/senior ranks are refused. → [Business rules — per-employee rates](/product/business-rules#per-employee-rates) |

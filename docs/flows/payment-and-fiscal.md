@@ -2,7 +2,9 @@
 
 Money arrives and is recorded on the payment axis — the order stays `New` until a cleaner takes it —
 and a receipt is issued once money has been received: on settlement for card, at completion for cash,
-after the cleaner has recorded the handover. Almost all of the difficulty is
+after the cleaner has recorded the handover. The same webhook also lands a card a customer saves as the
+guarantee for cash, and settles what a customer owes after the booking, which earns a receipt of its
+own. Almost all of the difficulty is
 in making a webhook that can arrive twice, late, or out of order behave as though it arrived once.
 
 ## The path
@@ -58,6 +60,41 @@ sequenceDiagram
 | Card payment settles after the order was cancelled | The order is **not** marked `Paid`: the customer paid for a clean that will not happen, so the webhook escalates a dispute for a refund (the customer's open one, or a new one), as it does for a card payment that lands on an order already settled in cash. |
 | Checkout expired or payment cancelled (`checkout.session.expired`, `payment_intent.canceled`) | An order not yet cancelled is cancelled through `Order.Cancel` — by the system, `order.cancelled.payment_not_completed`, no fee, no refund — and a guest is e-mailed, with the old links revoked and a fresh one minted. |
 | A recurring occurrence's Checkout Session expires | Nothing is cancelled: the session is released and the occurrence stays confirmable until the stale-occurrence sweep's cut-off. |
+| A saved card's capture reported twice (setup intent and setup-mode session) | The first lands the card; the second changes nothing. |
+| A receivable paid through its pay link | Paid under the receivable's company; the fee receipt is asked for; the order is untouched. |
+| A receivable paid twice — the pay link and a charge, or two links | The second payment is refunded in full; a redelivery replays the same refund. |
+| A written-off receivable paid anyway | It is paid — the money is the company's — and earns its fee receipt. |
+
+## A saved card and a paid fee arrive by the same webhook {#saved-cards-and-receivables}
+
+Two kinds of money event are not an order's sale (owner rulings 2026-09-28, decisions 16–18). Both
+pass the same signature check and event-id stamp.
+
+| Event | What happens |
+|---|---|
+| `setup_intent.succeeded`, or `checkout.session.completed` of a setup-mode session | The saved card lands: brand, last four and expiry are read from Stripe onto the `SavedCards` row the capture started, and the customer's earlier card in that currency is retired. A second event for the same capture — a web capture raises both — changes nothing; one naming no saved card, or one already captured or removed, is ignored. → [Business rules — a saved card guarantees cash](/product/business-rules#card-guarantee) |
+| `checkout.session.completed` of a receivable's pay link | The receivable is paid, under its own company. The session names the receivable (`ReceivableId`) and **never an `OrderId`**, so the order path cannot mistake the fee for the booking's sale; the order's payment status, charge surface and refunds are untouched. |
+| `payment_intent.succeeded` of an off-session charge | The same, for a charge on the saved card. |
+| A payment for a receivable already paid by another PaymentIntent | Refunded in full on that PaymentIntent under `refund:receivable:{id}:{paymentIntent}`, so a redelivery replays the same refund. |
+| `payment_intent.payment_failed` of an off-session charge — a decline, or the bank's `authentication_required` | A pay link is opened, recorded on the receivable and e-mailed to the customer (five locales). None for a receivable no longer open, and none while card payments are switched off. |
+
+A paid receivable asks for its [fee receipt](#fee-receipt) and, when it is a cancellation or lockout
+fee, for the crew's share of it → [Business rules — what a customer owes](/product/business-rules#receivables).
+
+**The off-session charges stay switched off.** Only the customer's own pay link moves money on a
+receivable today: `ChargeOpenReceivables` (every 15 minutes) does nothing unless
+`Payments:OffSessionChargesEnabled` is true, and it stays false until the phase-4 terms carry the
+lawyer's consent wording. The failure branch above is dormant until then. When it is on, the charge is
+a PaymentIntent with `off_session` and `confirm` on the saved card, keyed on the receivable and its
+attempt; the sweep closes a pay link the customer holds before it charges, and does not charge one
+they have already paid through it.
+
+**The pay link is one per receivable at a time.** `CreateReceivablePayLink` hands back the session
+recorded on the receivable while Stripe reports it open and unexpired, and otherwise opens a new one
+keyed `receivable-checkout-{id}-after-{previous session}` — a key reused for a day would replay an
+expired session. It returns to the order's page on the customer web, from `Stripe:SuccessUrlBase` —
+the customer app's origin on each of the three hosts that mint one: Customer, Customer Mobile, and
+Partner, which serves the webhook and so mints the failed-charge e-mail's link.
 
 ## Amounts are never reconciled, and do not need to be
 
@@ -101,8 +138,9 @@ needs. The cleaner's invoice PDF applies the same rule on its side: no resolved
 
 ## What the receipt says {#what-the-receipt-says}
 
-An order gets one receipt, under a number from its operator's gapless counter, **once money has been
-received** — `GenerateReceiptHandler` requires `Paid` for every tender (owner ruling 2026-09-28). A card
+An order gets one sale receipt, under a number from its operator's gapless counter, **once money has
+been received** — `GenerateReceiptHandler` requires `Paid` for every tender (owner ruling 2026-09-28) —
+and a [fee receipt](#fee-receipt) for each receivable paid on it after the booking. A card
 sale's is issued when the payment settles. A cash sale's is issued **at completion**, after the cleaner
 has recorded the cash, by the completion fallback that issues one to any order still without it; an
 administrator's override to `Completed` and an administrator's *record cash received* on a completed
@@ -184,6 +222,21 @@ issue**:
 
 The receipt row records the choice, and every later render — a fiscal retry — reuses it.
 → [The order records its language](/flows/booking-and-pricing#booking-language)
+
+### A paid fee gets a receipt of its own {#fee-receipt}
+
+**A receivable's payment is a sale of its own, so it gets its own receipt** (since 2026-09-28).
+An order holds its sale receipt and one fee receipt per receivable paid on it (`Order.Receipts`;
+`Order.Receipt` is the sale's). A fee receipt names its receivable (`OrderReceipts.ReceivableId`, a
+unique index allows one per receivable), takes its own number from the operator's same counter, and
+states **the fee alone** — one line labelled by the receivable's kind in the receipt's language
+(*Late cancellation fee*, *Fee for denied access*, …) — on the PDF and on the fiscal request. It is
+issued when the webhook settles the receivable, and stored, fiscally registered and retried like the
+sale's; it is **not e-mailed**. So a cancelled cash booking, which never gets a sale receipt, gets a
+fee receipt once its fee is paid. Everything that asks about *the* receipt — the customer's download,
+the fiscal-reconciliation sweep, the archive's settlement facts — reads the sale receipt only; refunds
+and the refundable ceiling read the order's own sale, never a receivable's payment.
+→ [Business rules — what a customer owes](/product/business-rules#receivables)
 
 ### Nothing restates a receipt {#cash-receipt-restated}
 

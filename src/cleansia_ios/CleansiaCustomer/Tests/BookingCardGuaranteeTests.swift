@@ -95,7 +95,8 @@ final class BookingCardGuaranteeTests: XCTestCase {
         await vm.refreshQuoteForTest()
 
         vm.selectPayment(.cash)
-        for _ in 0 ..< 5 {
+        // The fake reads off the main actor, so wait for the read itself rather than a fixed number of yields.
+        for _ in 0 ..< 500 where vm.savedCards == nil {
             await Task.yield()
         }
 

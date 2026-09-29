@@ -30,7 +30,7 @@ PaymentStatus   [Pending] -> [Paid] | [Failed] | [Refunded] | [PartiallyRefunded
 |---|---|---|
 | `New` | `0` | Initial status. **Every** order starts here — cash and card alike |
 | `Pending` | `1` | **Dead. Nothing writes it** (ADR-0037 D5) — see below |
-| `Confirmed` | `2` | A cleaner took the order, or the Stripe webhook settled a card payment, or the customer confirmed a recurring cash occurrence, or an admin overrode the status |
+| `Confirmed` | `2` | A cleaner took the order or an admin placed one; an admin override may set it only on an order that has a crew ([ADR-0067](/decisions/adr-0067)). Paying moves the payment axis, never this one |
 | `OnTheWay` | `3` | Cleaner is en route to the address |
 | `InProgress` | `4` | Cleaner started work |
 | `Completed` | `5` | Cleaner finished and submitted completion |
@@ -608,8 +608,9 @@ The admin host's unredacted detail is `GET /api/AdminOrder/details/{orderId}` un
 Two members are **administrators' only** and `null` for every other caller and on an order that is
 not cancelled: `cancellationFeeRate` (the rate the cancellation applied) and `cancellationFeeOwed`
 (the whole fee on an order that took no payment — payment `Pending` or `Failed`, which nothing
-collects yet — and `0` on every other payment status: where a card charge covered it, and also on a
-confirmed recurring cash occurrence, which rests at `Paid` with nothing collected). The partner-facing
+collects yet — and `0` on every other payment status, where a card charge covered it. A confirmed
+recurring cash occurrence stays `Pending` until the cash is recorded, so it owes its whole fee like any
+cash booking). The partner-facing
 redaction blanks both as well. → [Business rules — cancellation](/product/business-rules#cancellation)
 
 ---
@@ -1124,7 +1125,7 @@ GET /api/Order/DownloadReceipt?orderId=order-id
 **Response:** Binary PDF file (`application/pdf`).
 
 ::: tip Receipt Generation
-Receipts are generated asynchronously via an Azure Queue message (`GenerateReceipt`) processed by Azure Functions, and only for a `Paid` order — a cash sale's at completion, after the cash was recorded. The PDF is stored in Azure Blob Storage, and this endpoint returns the stored copy; once the retention sweep has deleted it (`retention.receipts.years`, 10) the answer is `receipt.not_found`. An assigned cleaner is answered `order.not_found`, because the receipt names the customer. The number, the issue date and the language are fixed when the receipt is issued. → [What the receipt says](/flows/payment-and-fiscal#what-the-receipt-says)
+Receipts are generated asynchronously via an Azure Queue message (`GenerateReceipt`) processed by Azure Functions, and only for a `Paid` order — a cash sale's at completion, after the cash was recorded. The PDF is stored in Azure Blob Storage, and this endpoint returns the stored copy; once the retention sweep has deleted it (`retention.receipts.years`, 10) the answer is `receipt.not_found`. An assigned cleaner is answered `order.not_found` more than 24 hours after completion, or at once on a cancelled order, because the receipt names the customer → [Execution and completion](/flows/execution-and-completion#crew-access). The number, the issue date and the language are fixed when the receipt is issued. → [What the receipt says](/flows/payment-and-fiscal#what-the-receipt-says)
 :::
 
 ## Error Responses

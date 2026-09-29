@@ -15,15 +15,16 @@ event is in its display map — deterministically and without I/O.
 - `FcmPushDispatcher` — its only caller; hands the factory's `MulticastMessage` to
   `FirebaseMessaging.SendEachForMulticastAsync` and owns everything after the wire (init, failure
   classification, dead-token prune signaling).
-- The **APNs display map** it owns internally: the 23 displayable event keys (ADR-0025 D2 — union
+- The **APNs display map** it owns internally: the 30 displayable event keys (ADR-0025 D2 — union
   of what the two Android apps render *from fixed client-side templates*; `promo.new_sitewide`
   excluded **by nature**: it is a literal-text event with no fixed template anywhere — panel
   finding CH-1) → derived loc-keys (`push.<event_key>.title|body`) + ordered arg names.
 - The **loc-args allowlist** it enforces: `{orderNumber, count, amount}` only (ADR-0025 D3, widened by
-  one slot in Amendment A2 on owner ruling 2026-09-13; pinned by TC-PUSH-APNS-5). `amount` rides
-  **`order.no_cleaner_refunded` only** — `["orderNumber", "amount"]` — and is a server-formatted money
-  figure with its own currency's symbol (`CancelUnfilledOrders.FormatCreditAmount`: "250 Kč"), never a
-  name, an id or free text.
+  one slot in Amendment A2 on owner ruling 2026-09-13; pinned by TC-PUSH-APNS-5). `amount` rides the
+  **three no-show outcome keys only** — `order.no_cleaner_refunded`, `order.no_cleaner_refund_pending`
+  and `order.no_cleaner_nothing_charged`, each `["orderNumber", "amount"]` — and is a server-formatted
+  money figure with its own currency's symbol (`MoneyText.Format`: "250 Kč"), never a name, an id or
+  free text.
 
 ## Does NOT know
 - **Which platform a token belongs to** — `ApnsConfig` is attached platform-blind; FCM routes it.

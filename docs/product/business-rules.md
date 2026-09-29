@@ -1125,11 +1125,13 @@ never scaled from another currency's figure). It is not an activation gate: a ma
 an apology credit. **No locale string states the figure** ([ADR-0060](/decisions/adr-0060)): the home
 page's rules card carries `{{amount}}` and formats the market's `noShowCredit` in the market's
 currency, or renders the refund-only sentence when the market has none. **The push names the credit
-with its own currency** (owner ruling 2026-09-13): `order.no_cleaner_refunded` carries an `amount`
-argument formatted on the server from the credit's currency row — the number with no trailing zeros,
-a space, the symbol, "250 Kč" / "10 €" — because the credit's currency is the credit's own and the
-device cannot derive it from the order; the lock-screen allow-list is `{orderNumber, count, amount}`,
-with `amount` on that one key ([ADR-0025](/decisions/adr-0025) Amendment A2).
+with its own currency** (owner ruling 2026-09-13): the three no-show outcome keys
+(`order.no_cleaner_refunded`, `order.no_cleaner_refund_pending`, `order.no_cleaner_nothing_charged`)
+carry an `amount` argument formatted on the server from the credit's currency row — the number with no
+trailing zeros, a space, the symbol, "250 Kč" / "10 €" — because the credit's currency is the credit's
+own and the device cannot derive it from the order; the lock-screen allow-list is
+`{orderNumber, count, amount}`, with `amount` on those three keys ([ADR-0025](/decisions/adr-0025)
+Amendment A2).
 `check-booking-policy-parity.mjs` pins the *absence* of a figure and the presence of the placeholder
 in every locale.
 

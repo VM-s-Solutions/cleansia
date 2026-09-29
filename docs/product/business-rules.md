@@ -944,16 +944,24 @@ e-mail no longer tells a card customer to pay in cash.
 
 ### Every text is our draft until the lawyer delivers {#legal-drafts}
 
-Every text in the table above, and the two wordings the clients show beside them — the request to start
-within the withdrawal period (`early-performance-draft-2026-09-29`) and the card-guarantee consent
-(`card-guarantee-draft-2026-09-28`) — is **our own draft**, written to the owner's rulings and not yet
-reviewed by the lawyer. Each text opens with the draft banner (*Návrh —* in Czech and Slovak, *Draft —*,
-*Черновик —*, *Чернетка —*), and **the production deploy refuses to run** while any text in force, or
-still to come, carries it ([CI/CD — Deploy to PRO](/deployment/ci-cd)). The lawyer's wording arrives
-as a new dated version of each text, a seed folder plus a deploy — a version in force is never edited
-— and a customer accepts it before their next booking and a cleaner before their next take, while an
-order already booked keeps its contract for work. The off-session charge on a saved card stays switched
-off until the terms carry the lawyer's consent wording → [What a customer owes](#receivables).
+Every text in the table above is **our own draft**, written to the owner's rulings and not yet reviewed
+by the lawyer. Each opens with the draft banner (*Návrh —* in Czech and Slovak, *Draft —*, *Черновик —*,
+*Чернетка —*), and **the production deploy refuses to run** while any text in force, or still to come,
+carries it ([CI/CD — Deploy to PRO](/deployment/ci-cd)). The lawyer's wording arrives as a new dated
+version of each text, a seed folder plus a deploy — a version in force is never edited — and a customer
+accepts it before their next booking and a cleaner before their next take, while an order already booked
+keeps its contract for work.
+
+**Two more wordings are our draft, and the deploy gate does not see them.** The request to start within
+the withdrawal period (`early-performance-draft-2026-09-29`) and the card-guarantee consent
+(`card-guarantee-draft-2026-09-28`) are not seeded texts: they are translation strings on the web,
+Android and iOS clients, keyed by the version the server records
+(`Order.EarlyPerformanceConsentTextVersionInForce`, `SavedCard.ConsentTextVersionInForce`). They carry
+no banner, `check-legal-drafts.mjs` reads only the seed tree, and nothing else in the production deploy
+checks them — so **they have to be checked by hand before launch**. The lawyer's wording replaces each
+as a new wording key on all three clients plus a bump of that constant, not a seed folder. The
+off-session charge on a saved card stays switched off until the terms carry the lawyer's consent
+wording → [What a customer owes](#receivables).
 
 ## The contract for work {#work-contract}
 

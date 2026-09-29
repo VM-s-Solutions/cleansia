@@ -32,7 +32,9 @@ public sealed class LegalDocumentSeederTests : IDisposable
         (LegalDocumentType.TermsOfService, new DateOnly(2026, 9, 27)),
         (LegalDocumentType.TermsOfService, new DateOnly(2026, 9, 29)),
         (LegalDocumentType.PrivacyPolicy, new DateOnly(2026, 9, 14)),
+        (LegalDocumentType.PrivacyPolicy, new DateOnly(2026, 9, 29)),
         (LegalDocumentType.WorkContract, new DateOnly(2026, 9, 20)),
+        (LegalDocumentType.ComplaintsProcedure, new DateOnly(2026, 9, 29)),
     ];
 
     private readonly SqliteConnection _connection;
@@ -131,19 +133,21 @@ public sealed class LegalDocumentSeederTests : IDisposable
     }
 
     // The money figure in the terms comes from the market (ADR-0060): the seed carries the placeholder,
-    // never a currency word, so the API fills it the way the locale copy was filled before.
+    // never a currency word, so the API fills it the way the locale copy was filled before. The privacy
+    // policy states no price, so no version of it carries the currency.
     [Fact]
-    public async Task The_Embedded_Terms_Carry_The_Currency_Placeholder_In_Every_Language_And_The_Privacy_Policy_None()
+    public async Task The_Embedded_Terms_Carry_The_Currency_Placeholder_In_Every_Language_And_No_Privacy_Policy_Does()
     {
         await SeedAsync();
 
         var documents = await DocumentsAsync();
         var terms = documents.Where(d => d.Type == LegalDocumentType.TermsOfService).SelectMany(d => d.Texts).ToList();
-        var privacy = documents.Single(d => d.Type == LegalDocumentType.PrivacyPolicy);
+        var privacy = documents.Where(d => d.Type == LegalDocumentType.PrivacyPolicy).SelectMany(d => d.Texts).ToList();
 
         Assert.Equal(SeededVersions.Count(v => v.Type == LegalDocumentType.TermsOfService) * 5, terms.Count);
         Assert.All(terms, t => Assert.Contains("{{currency}}", t.ContentMarkdown));
-        Assert.All(privacy.Texts, t => Assert.DoesNotContain("{{", t.ContentMarkdown));
+        Assert.Equal(SeededVersions.Count(v => v.Type == LegalDocumentType.PrivacyPolicy) * 5, privacy.Count);
+        Assert.All(privacy, t => Assert.DoesNotContain("{{currency}}", t.ContentMarkdown));
     }
 
     /// <summary>
@@ -202,6 +206,36 @@ public sealed class LegalDocumentSeederTests : IDisposable
         LegalMarkdownRenderer.CompanyEmailPlaceholder,
         LegalMarkdownRenderer.CompanyPhonePlaceholder,
     }.Order(StringComparer.Ordinal).ToArray();
+
+    /// <summary>
+    /// The privacy policy names its controller and the complaints procedure the company that decides a
+    /// complaint — the market's operating company, as the terms name the seller (decision 54) — through
+    /// the placeholders the read path fills from its company record, in every language, and neither
+    /// carries an identity of its own: the 2026-09-14 privacy policy hard-coded an e-mail and a phone.
+    /// </summary>
+    [Theory]
+    [InlineData(LegalDocumentType.PrivacyPolicy)]
+    [InlineData(LegalDocumentType.ComplaintsProcedure)]
+    public void The_Newest_Privacy_Policy_And_Complaints_Procedure_Name_The_Company_Only_Through_Its_Placeholders(LegalDocumentType type)
+    {
+        var newest = LegalSeedResource.ReadAll()
+            .Where(r => r.Type == type)
+            .GroupBy(r => r.EffectiveFrom)
+            .MaxBy(g => g.Key)?
+            .ToList() ?? [];
+
+        Assert.Equal(new[] { "cs", "en", "ru", "sk", "uk" }, newest.Select(r => r.Language).Order());
+        Assert.All(newest, r =>
+        {
+            Assert.Equal(CompanyPlaceholders, LegalMarkdownRenderer.PlaceholdersIn(r.ContentMarkdown).Order(StringComparer.Ordinal));
+            Assert.DoesNotContain("@cleansia", r.ContentMarkdown);
+            Assert.DoesNotContain("+420", r.ContentMarkdown);
+            Assert.DoesNotContain("s.r.o.", r.ContentMarkdown);
+        });
+    }
+
+    private static readonly string[] CompanyPlaceholders =
+        TermsPlaceholders.Where(p => p != LegalMarkdownRenderer.CurrencyPlaceholder).ToArray();
 
     /// <summary>
     /// The 2026-09-14 terms promised cash on delivery to everyone; the cash rule admits it only for a

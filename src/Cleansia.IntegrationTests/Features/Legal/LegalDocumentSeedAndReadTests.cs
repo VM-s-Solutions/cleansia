@@ -75,14 +75,14 @@ public sealed class LegalDocumentSeedAndReadTests(PostgresContainerFixture fixtu
                 Assert.False(second.Changed);
 
                 var documents = await context.LegalDocuments.Include(d => d.Texts).AsNoTracking().ToListAsync();
-                Assert.Equal(5, documents.Count);
+                Assert.Equal(7, documents.Count);
                 Assert.All(documents, d => Assert.Null(d.CountryId));
                 Assert.All(documents, d => Assert.Equal(LegalDocument.VersionFor(d.EffectiveFrom), d.Version));
                 Assert.All(documents, d => Assert.Equal(5, d.Texts.Count));
                 Assert.Equal(
-                    [LegalDocumentType.TermsOfService, LegalDocumentType.TermsOfService, LegalDocumentType.TermsOfService, LegalDocumentType.PrivacyPolicy, LegalDocumentType.WorkContract],
+                    [LegalDocumentType.TermsOfService, LegalDocumentType.TermsOfService, LegalDocumentType.TermsOfService, LegalDocumentType.PrivacyPolicy, LegalDocumentType.PrivacyPolicy, LegalDocumentType.WorkContract, LegalDocumentType.ComplaintsProcedure],
                     documents.Select(d => d.Type).OrderBy(t => t));
-                Assert.Equal(25, await context.LegalDocumentTexts.CountAsync());
+                Assert.Equal(35, await context.LegalDocumentTexts.CountAsync());
             },
             transactional: false);
     }

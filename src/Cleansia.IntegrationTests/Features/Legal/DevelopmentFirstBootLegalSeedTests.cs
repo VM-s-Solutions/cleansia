@@ -80,7 +80,7 @@ public sealed class DevelopmentFirstBootLegalSeedTests(PostgresContainerFixture 
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         var documents = await context.LegalDocuments.Include(d => d.Texts).AsNoTracking().ToListAsync();
         Assert.Equal(
-            [LegalDocumentType.TermsOfService, LegalDocumentType.TermsOfService, LegalDocumentType.TermsOfService, LegalDocumentType.PrivacyPolicy, LegalDocumentType.WorkContract],
+            [LegalDocumentType.TermsOfService, LegalDocumentType.TermsOfService, LegalDocumentType.TermsOfService, LegalDocumentType.PrivacyPolicy, LegalDocumentType.PrivacyPolicy, LegalDocumentType.WorkContract, LegalDocumentType.ComplaintsProcedure],
             documents.Select(d => d.Type).Order());
         Assert.All(documents, d => Assert.Equal(LegalDocumentAudience.Customer, d.Audience));
         Assert.All(documents, d => Assert.True(d.IsInForceOn(today), $"{d.Type} {d.Version} is not in force"));

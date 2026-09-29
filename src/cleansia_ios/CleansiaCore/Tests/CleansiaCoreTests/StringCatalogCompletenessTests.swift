@@ -30,6 +30,18 @@ final class StringCatalogCompletenessTests: XCTestCase {
     /// stale check would still have passed because cs and sk kept echoing. Naming the locales is what
     /// makes the reason and the enforcement the same statement.
     private static let sameAsEnglishByDesign: [Exception] = [
+        Exception(
+            "Customer",
+            "booking_dirtiness_heavy_rate",
+            ["uk", "ru"],
+            "a rate only; uk/ru write it unspaced, as Android does"
+        ),
+        Exception(
+            "Customer",
+            "booking_dirtiness_increased_rate",
+            ["uk", "ru"],
+            "a rate only; uk/ru write it unspaced, as Android does"
+        ),
         Exception("Customer", "devices_platform_ios", allLocalized, "Apple product name"),
         Exception("Customer", "dispute_create_char_count", allLocalized, "format specifiers and a literal count only"),
         Exception("Customer", "home_upsell_plus_top", allLocalized, "Cleansia Plus is the product name"),

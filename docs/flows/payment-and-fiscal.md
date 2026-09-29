@@ -126,19 +126,23 @@ the calendar year it was issued in, keeps the receipt row stamped `BlobDeletedAt
 afterwards answers `receipt.not_found` → [Retention](/product/business-rules#customer-record).
 
 **Its lines add up to its total.** First the catalogue lines at their snapshot prices — each service,
-each package (marked *package*), each extra. Then the express surcharge as a line of its own. Then each
-discount that came off — loyalty tier, Cleansia Plus, promo code — as a negative line. Together they
-equal the total to the cent. The surcharge is stored on the order (`Order.ExpressSurchargeAmount`, zero
-when none applied) rather than derived from a gap, and every discount is stored in cents with the
-rounding residue on the largest source, so there is no gap to hide. How the figures are computed →
-[Business rules — the express-surcharge correction](/product/business-rules#discount-express-correction).
+each package (marked *package*), each extra. Then the dirtiness surcharge as a line of its own, labelled
+by the level in the receipt's language — *Increased dirtiness surcharge* or *Heavy dirtiness
+surcharge*. Then the express surcharge as a line of its own. Then each discount that came off — loyalty
+tier, Cleansia Plus, promo code — as a negative line. Together they equal the total to the cent. Both
+surcharges are stored on the order (`Order.DirtinessSurchargeAmount` and `Order.ExpressSurchargeAmount`,
+each zero when none applied, and a zero line is not printed) rather than derived from a gap, and every
+discount is stored in cents with the rounding residue on the largest source, so there is no gap to hide.
+How the figures are computed →
+[Business rules — what the dirtiness rate applies to](/product/business-rules#dirtiness-price),
+[the express-surcharge correction](/product/business-rules#discount-express-correction).
 
 **The fiscal registration declares the same lines.** `ReceiptService.BuildFiscalLineItems` builds what
 is sent to the fiscal authority from the same stored order fields the PDF prints: the service and
 package lines, one line per extra at its snapshot unit price (named by its catalogue name, else its
-slug), an *Express surcharge* line, and negative *Loyalty discount*, *Cleansia Plus discount* and
-*Promo code discount* lines. A line worth zero is left out. The declared lines sum to
-`Order.TotalPrice`.
+slug), a *Dirtiness surcharge* line, an *Express surcharge* line, and negative *Loyalty discount*,
+*Cleansia Plus discount* and *Promo code discount* lines. A line worth zero is left out. The declared
+lines sum to `Order.TotalPrice`. → [Business rules — what the dirtiness rate applies to](/product/business-rules#dirtiness-price)
 
 **Its VAT posture is the sale's.** The order froze it at creation (`AppliedVatRate`, null when no VAT
 applied), and the receipt reads the order, never the live company row. A sale that charged VAT prints

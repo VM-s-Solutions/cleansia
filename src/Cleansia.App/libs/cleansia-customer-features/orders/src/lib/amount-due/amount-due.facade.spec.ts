@@ -172,6 +172,24 @@ describe('AmountDueFacade', () => {
       expect(facade.rows().map((row) => row.id)).toEqual(['rcv-2']);
     });
 
+    it('can pay again when Back from the pay link restores the page, and re-reads what is owed', () => {
+      TestBed.resetTestingModule();
+      configure('browser');
+      facade.init(null);
+      facade.pay('rcv-1', jest.fn());
+      receivableClient.getMine.mockClear();
+      receivableClient.getMine.mockReturnValue(of([lockout]));
+
+      window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: false }));
+      expect(facade.payingId()).toBe('rcv-1');
+      expect(receivableClient.getMine).not.toHaveBeenCalled();
+
+      window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }));
+      expect(facade.payingId()).toBeNull();
+      expect(receivableClient.getMine).toHaveBeenCalledTimes(1);
+      expect(facade.rows().map((row) => row.id)).toEqual(['rcv-2']);
+    });
+
     it('opens one pay link while the first is still being made', () => {
       facade.init(null);
       receivableClient.createPayLink.mockReturnValue(new Subject<CreateReceivablePayLinkResponse>());

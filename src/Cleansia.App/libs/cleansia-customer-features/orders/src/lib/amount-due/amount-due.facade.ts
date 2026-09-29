@@ -2,7 +2,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { inject, Injectable, PLATFORM_ID, signal } from '@angular/core';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { CustomerClient } from '@cleansia/customer-services';
-import { catchError, finalize, of, takeUntil } from 'rxjs';
+import { catchError, filter, finalize, fromEvent, of, takeUntil } from 'rxjs';
 import { AmountDueRow, toAmountDueRow } from './amount-due.models';
 
 /**
@@ -20,6 +20,21 @@ export class AmountDueFacade extends UnsubscribeControlDirective {
   readonly loading = signal(true);
   readonly hasError = signal(false);
   readonly payingId = signal<string | null>(null);
+
+  constructor() {
+    super();
+    if (!this.isBrowser) return;
+    // Back from the pay link restores this page from the bfcache with payingId still set.
+    fromEvent<PageTransitionEvent>(window, 'pageshow')
+      .pipe(
+        filter((event) => event.persisted),
+        takeUntil(this.destroyed$),
+      )
+      .subscribe(() => {
+        this.payingId.set(null);
+        this.load();
+      });
+  }
 
   init(orderId: string | null): void {
     this.orderId = orderId;

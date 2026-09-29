@@ -83,7 +83,9 @@ public record GdprExportPayoutDetailsDto(
 /// there); a guest booking under another address is never listed, whoever asks. The trail section is
 /// narrower: the account's own rows only, never the guest rows the erasure blanks on these orders.
 /// The early-performance members are the customer's request to start within the withdrawal period, as
-/// recorded on the order; after an erasure its IP address and device label read null.
+/// recorded on the order; after an erasure its IP address and device label read null. On a guest row the
+/// IP address and device label are withheld, as the trail's are: they are the guest request's, whose
+/// sender may be a stranger.
 /// </summary>
 public record GdprExportOrderDto(
     string Id,

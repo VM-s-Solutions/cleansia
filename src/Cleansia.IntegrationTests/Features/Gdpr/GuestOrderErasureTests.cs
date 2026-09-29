@@ -228,6 +228,14 @@ public class GuestOrderErasureTests(PostgresContainerFixture fixture) : BaseInte
                 Assert.Equal(GuestIp, own.EarlyPerformanceConsentIpAddress);
                 Assert.Equal(GuestDevice, own.EarlyPerformanceConsentDeviceLabel);
 
+                foreach (var guestRow in result.Value.Orders.Where(o => o.Id is GuestOrderId or LiveGuestOrderId))
+                {
+                    Assert.Null(guestRow.EarlyPerformanceConsentIpAddress);
+                    Assert.Null(guestRow.EarlyPerformanceConsentDeviceLabel);
+                    Assert.Equal(EarlyPerformanceConsentedOn, guestRow.EarlyPerformanceConsentedOn);
+                    Assert.Equal(Order.EarlyPerformanceConsentTextVersionInForce, guestRow.EarlyPerformanceConsentTextVersion);
+                }
+
                 var audit = Assert.Single(await context.CustomerActionAudits.IgnoreQueryFilters().ToListAsync(), a => a.Action == "customer.gdpr.export");
                 Assert.Equal(3, JsonDocument.Parse(audit.PayloadJson!).RootElement.GetProperty("orderCount").GetInt32());
             },

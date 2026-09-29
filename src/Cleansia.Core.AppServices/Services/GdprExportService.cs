@@ -62,7 +62,8 @@ public class GdprExportService(
 
         // Past the tenant filter for the same reason the erasure walk reads them so: a guest booking under
         // the subject's e-mail is stamped with the market's operator, not the subject's, and the predicate
-        // is the pin (ADR-0051).
+        // is the pin (ADR-0051). A guest row's request context is whoever typed the e-mail, possibly a
+        // stranger, so only the account's own orders carry it (S6).
         var orders = await orderRepository.GetQueryableIgnoringTenant()
             .Where(SubjectOrders.Of(user.Id, user.Email))
             .AsNoTracking()
@@ -71,7 +72,8 @@ public class GdprExportService(
                 o.CurrentStatus,
                 o.TotalPrice, o.CleaningDateTime, o.CreatedOn,
                 o.EarlyPerformanceConsentTextVersion, o.EarlyPerformanceConsentedOn, o.EarlyPerformanceConsentClient,
-                o.EarlyPerformanceConsentIpAddress, o.EarlyPerformanceConsentDeviceLabel))
+                o.UserId == user.Id ? o.EarlyPerformanceConsentIpAddress : null,
+                o.UserId == user.Id ? o.EarlyPerformanceConsentDeviceLabel : null))
             .ToListAsync(cancellationToken);
 
         // Filed on the account, or on one of the orders above: the second term keeps the section in step

@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Legal;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Company;
 using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Legal;
 using Cleansia.Core.Domain.Repositories;
@@ -20,8 +21,11 @@ public sealed class GetLegalDocumentHandlerTests
     private const string Czechia = "country-cze";
     private const string Slovakia = "country-svk";
 
+    private const string Operator = "cleansia-cz";
+
     private readonly Mock<ICountryConfigurationRepository> _configurations = new();
     private readonly Mock<ILegalDocumentResolver> _resolver = new();
+    private readonly Mock<ICompanyInfoRepository> _companies = new();
     private readonly LegalDocument _terms;
 
     public GetLegalDocumentHandlerTests()
@@ -44,7 +48,65 @@ public sealed class GetLegalDocumentHandlerTests
             .ReturnsAsync(_terms);
     }
 
-    private GetLegalDocument.Handler Handler() => new(_configurations.Object, _resolver.Object);
+    private GetLegalDocument.Handler Handler() => new(_configurations.Object, _resolver.Object, _companies.Object);
+
+    private void ArrangeSellerText(string markdown)
+    {
+        var privacy = LegalDocument.Create(LegalDocumentAudience.Customer, LegalDocumentType.PrivacyPolicy, null, LegalDocumentFixtures.EffectiveFrom);
+        privacy.AddText("en", "Privacy policy", markdown);
+        _resolver
+            .Setup(r => r.ResolveInForceAsync(LegalDocumentType.PrivacyPolicy, It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(privacy);
+        _configurations
+            .Setup(r => r.GetByCountryIdAsync(Czechia, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CountryConfiguration.Create(Czechia, "CZK", "cs", 0.21m).AssignOperator(Operator));
+    }
+
+    private static CompanyInfo Company(string? vatNumber) =>
+        CompanyInfo.Create(
+            legalName: "Cleansia CZ s.r.o.",
+            tradingName: "Cleansia",
+            registrationNumber: "12345678",
+            street: "Václavské náměstí 1",
+            city: "Praha",
+            zipCode: "110 00",
+            countryId: Czechia,
+            vatNumber: vatNumber,
+            phone: "+420 739 788 108",
+            email: "info@cleansia.cz");
+
+    [Fact]
+    public async Task The_Seller_Is_Named_From_The_Company_Record_Of_The_Markets_Operator()
+    {
+        ArrangeSellerText(
+            "The seller is {{companyLegalName}}, IČO {{companyRegistrationNumber}}, DIČ {{companyVatNumber}}, " +
+            "seated at {{companySeat}}; write to {{companyEmail}} or call {{companyPhone}}.");
+        _companies
+            .Setup(r => r.GetActiveForOperatorAsync(Operator, Czechia, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Company(vatNumber: "CZ12345678"));
+
+        var result = await Handler().Handle(new GetLegalDocument.Query(LegalDocumentType.PrivacyPolicy, Czechia, "en"), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Contains(
+            "The seller is Cleansia CZ s.r.o., IČO 12345678, DIČ CZ12345678, seated at Václavské náměstí 1, Praha 110 00; " +
+            "write to info@cleansia.cz or call +420 739 788 108.",
+            result.Value.ContentHtml);
+    }
+
+    [Fact]
+    public async Task A_Value_The_Company_Record_Does_Not_Hold_Stays_Visible()
+    {
+        ArrangeSellerText("{{companyLegalName}}, DIČ {{companyVatNumber}}");
+        _companies
+            .Setup(r => r.GetActiveForOperatorAsync(Operator, Czechia, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Company(vatNumber: null));
+
+        var result = await Handler().Handle(new GetLegalDocument.Query(LegalDocumentType.PrivacyPolicy, Czechia, "en"), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Contains("Cleansia CZ s.r.o., DIČ {{companyVatNumber}}", result.Value.ContentHtml);
+    }
 
     [Fact]
     public async Task The_Named_Markets_Currency_Fills_The_Copy_And_Its_Document_Is_Resolved()

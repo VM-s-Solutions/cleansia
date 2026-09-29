@@ -32,7 +32,8 @@ public class GetMyLegalDocuments
         IEmployeeRepository employeeRepository,
         ICountryConfigurationRepository countryConfigurationRepository,
         ILegalDocumentResolver legalDocumentResolver,
-        IUserConsentRepository userConsentRepository)
+        IUserConsentRepository userConsentRepository,
+        ICompanyInfoRepository companyInfoRepository)
         : IQueryHandler<Query, IReadOnlyList<CleanerLegalDocumentDto>>
     {
         public async Task<BusinessResult<IReadOnlyList<CleanerLegalDocumentDto>>> Handle(Query query, CancellationToken cancellationToken)
@@ -49,11 +50,10 @@ public class GetMyLegalDocuments
             var market = countryId is null
                 ? await countryConfigurationRepository.GetDefaultMarketAsync(cancellationToken)
                 : await countryConfigurationRepository.GetByCountryIdAsync(countryId, cancellationToken);
-            var placeholders = new Dictionary<string, string>();
-            if (market is not null)
-            {
-                placeholders[LegalMarkdownRenderer.CurrencyPlaceholder] = market.DefaultCurrencyCode;
-            }
+            var company = market?.OperatorTenantId is { } operatorTenantId
+                ? await companyInfoRepository.GetActiveForOperatorAsync(operatorTenantId, market.CountryId, cancellationToken)
+                : null;
+            var placeholders = LegalMarkdownRenderer.MarketPlaceholders(market, company);
 
             IReadOnlyList<UserConsent> consents = await userConsentRepository.GetByUserIdNoTrackingAsync(userId, cancellationToken);
 

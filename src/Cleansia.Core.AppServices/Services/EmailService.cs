@@ -28,6 +28,7 @@ public sealed partial class EmailService : IEmailService
     private readonly IEmailTemplateTranslationRepository emailTemplateTranslationRepository;
     private readonly IEmailTemplateRenderer templateRenderer;
     private readonly ICountryConfigurationRepository countryConfigurationRepository;
+    private readonly ICompanyInfoRepository companyInfoRepository;
 
     public EmailService(
         ISendGridConfig cfg,
@@ -35,7 +36,8 @@ public sealed partial class EmailService : IEmailService
         IHttpClientFactory httpClientFactory,
         IEmailTemplateTranslationRepository emailTemplateTranslationRepository,
         IEmailTemplateRenderer templateRenderer,
-        ICountryConfigurationRepository countryConfigurationRepository)
+        ICountryConfigurationRepository countryConfigurationRepository,
+        ICompanyInfoRepository companyInfoRepository)
     {
         sendGridConfig = cfg;
         logger = log;
@@ -43,6 +45,7 @@ public sealed partial class EmailService : IEmailService
         this.emailTemplateTranslationRepository = emailTemplateTranslationRepository;
         this.templateRenderer = templateRenderer;
         this.countryConfigurationRepository = countryConfigurationRepository;
+        this.companyInfoRepository = companyInfoRepository;
     }
 
     public async Task<string> SendResetPasswordEmailAsync(
@@ -68,7 +71,8 @@ public sealed partial class EmailService : IEmailService
         {
             UserName = fullUserName,
             VerificationCode = code,
-            ResetPasswordLink = resetLink
+            ResetPasswordLink = resetLink,
+            FooterText = await FooterTextAsync(languageCode, countryId: null, ct)
         }, languageCode);
 
         return await SendRenderedAsync(
@@ -101,6 +105,28 @@ public sealed partial class EmailService : IEmailService
             ? TimeZoneInfo.Utc
             : TimeZoneResolution.Resolve(
                 (await countryConfigurationRepository.GetByCountryIdAsync(countryId, ct))?.TimeZoneId);
+
+    /// <summary>
+    /// The copyright line names the company the receipts name: the active company of the order's market
+    /// when there is an order, else the ambient company's; the brand only when no company record resolves.
+    /// </summary>
+    private async Task<string> FooterTextAsync(string? languageCode, string? countryId, CancellationToken ct)
+    {
+        var company = countryId is null ? null : await companyInfoRepository.GetActiveByCountryAsync(countryId, ct);
+        company ??= await companyInfoRepository.GetActiveCompanyInfoAsync(ct);
+        var holder = company?.LegalName.TrimEnd('.') ?? "Cleansia";
+        return $"© {DateTime.UtcNow.Year} {holder}. {RightsReserved[EmailLocale.Resolve(languageCode)]}";
+    }
+
+    private static readonly IReadOnlyDictionary<string, string> RightsReserved =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["en"] = "All rights reserved.",
+            ["cs"] = "Všechna práva vyhrazena.",
+            ["sk"] = "Všetky práva vyhradené.",
+            ["uk"] = "Усі права захищено.",
+            ["ru"] = "Все права защищены.",
+        };
 
     private static CultureInfo CultureFor(string languageCode) =>
         CultureInfo.GetCultureInfo(EmailLocale.Resolve(languageCode));
@@ -192,7 +218,8 @@ public sealed partial class EmailService : IEmailService
             OrderDate = TimeZoneInfo.ConvertTime(order.CreatedOn, marketZone).ToString("d", CultureFor(languageCode)),
             // An unloaded Currency navigation is a loader omission, not a CZK order: no unit rather than a guessed one. → /architecture/platform-expandability#_5-where-czk-kc-is-hardcoded-vs-configurable
             TotalAmount = Money(order.TotalPrice, order.Currency?.Symbol ?? string.Empty, languageCode),
-            OrderStatusLink = orderStatusLink
+            OrderStatusLink = orderStatusLink,
+            FooterText = await FooterTextAsync(languageCode, order.CustomerAddress?.CountryId, ct)
         }, languageCode);
 
         var subject = translations.GetValueOrDefault("Subject", "Your Order Receipt");
@@ -227,7 +254,8 @@ public sealed partial class EmailService : IEmailService
             OrderNumber = orderNumber,
             OrderDate = orderDate,
             TotalAmount = totalAmount,
-            OrderStatusLink = orderStatusLink
+            OrderStatusLink = orderStatusLink,
+            FooterText = await FooterTextAsync(languageCode, countryId: null, ct)
         }, languageCode);
 
         var subject = "[TEST] " + translations.GetValueOrDefault("Subject", "Your Order Receipt");
@@ -266,7 +294,8 @@ public sealed partial class EmailService : IEmailService
         var values = BuildTemplateValues(translations, new
         {
             UserName = userName,
-            VerificationCode = verificationCode
+            VerificationCode = verificationCode,
+            FooterText = await FooterTextAsync(languageCode, countryId: null, ct)
         }, languageCode);
 
         return await SendRenderedAsync(
@@ -298,7 +327,8 @@ public sealed partial class EmailService : IEmailService
             PeriodLabel = periodLabel,
             StartDate = startDate.ToString("yyyy-MM-dd"),
             EndDate = endDate.ToString("yyyy-MM-dd"),
-            ClosedAt = closedAt.ToString("yyyy-MM-dd HH:mm:ss UTC")
+            ClosedAt = closedAt.ToString("yyyy-MM-dd HH:mm:ss UTC"),
+            FooterText = await FooterTextAsync(languageCode, countryId: null, ct)
         }, languageCode);
 
         var subject = translations.GetValueOrDefault("Subject", "Pay Period Closed");
@@ -338,7 +368,8 @@ public sealed partial class EmailService : IEmailService
             PeriodLabel = periodLabel,
             StartDate = startDate.ToString("yyyy-MM-dd"),
             EndDate = endDate.ToString("yyyy-MM-dd"),
-            DaysRemaining = formattedDaysRemaining
+            DaysRemaining = formattedDaysRemaining,
+            FooterText = await FooterTextAsync(languageCode, countryId: null, ct)
         }, languageCode);
 
         var subject = translations.GetValueOrDefault("Subject", "Pay Period Ending Soon");
@@ -547,7 +578,7 @@ public sealed partial class EmailService : IEmailService
         values["Total"] = Money(receivable.Amount, order.Currency?.Symbol ?? string.Empty, languageCode);
         values["OrderStatusLink"] = payUrl;
         values["SupportEmail"] = sendGridConfig.AddressFrom;
-        values["FooterText"] = $"© {DateTime.UtcNow.Year} Cleansia";
+        values["FooterText"] = await FooterTextAsync(languageCode, order.CustomerAddress?.CountryId, ct);
 
         return await SendRenderedAsync(
             email,
@@ -664,6 +695,7 @@ public sealed partial class EmailService : IEmailService
         values["Body"] = string.Format(
             culture, copy["Body"], Money(amount, currencySymbol, locale), carriedSince.ToString("d", culture));
         values["SupportEmail"] = sendGridConfig.AddressFrom;
+        values["FooterText"] = await FooterTextAsync(locale, countryId: null, ct);
 
         return await SendRenderedAsync(
             email,
@@ -686,7 +718,6 @@ public sealed partial class EmailService : IEmailService
                 ["SupportText"] = "Questions? Write to us at",
                 ["Closing"] = "Kind regards,",
                 ["TeamName"] = "the Cleansia team",
-                ["FooterText"] = "© Cleansia s.r.o. All rights reserved.",
             },
             ["cs"] = new()
             {
@@ -697,7 +728,6 @@ public sealed partial class EmailService : IEmailService
                 ["SupportText"] = "Máte dotazy? Napište nám na",
                 ["Closing"] = "S pozdravem",
                 ["TeamName"] = "tým Cleansia",
-                ["FooterText"] = "© Cleansia s.r.o. Všechna práva vyhrazena.",
             },
             ["sk"] = new()
             {
@@ -708,7 +738,6 @@ public sealed partial class EmailService : IEmailService
                 ["SupportText"] = "Máte otázky? Napíšte nám na",
                 ["Closing"] = "S pozdravom",
                 ["TeamName"] = "tím Cleansia",
-                ["FooterText"] = "© Cleansia s.r.o. Všetky práva vyhradené.",
             },
             ["uk"] = new()
             {
@@ -719,7 +748,6 @@ public sealed partial class EmailService : IEmailService
                 ["SupportText"] = "Є запитання? Напишіть нам на",
                 ["Closing"] = "З повагою,",
                 ["TeamName"] = "команда Cleansia",
-                ["FooterText"] = "© Cleansia s.r.o. Усі права захищено.",
             },
             ["ru"] = new()
             {
@@ -730,7 +758,6 @@ public sealed partial class EmailService : IEmailService
                 ["SupportText"] = "Есть вопросы? Напишите нам на",
                 ["Closing"] = "С уважением,",
                 ["TeamName"] = "команда Cleansia",
-                ["FooterText"] = "© Cleansia s.r.o. Все права защищены.",
             },
         };
 
@@ -874,9 +901,7 @@ public sealed partial class EmailService : IEmailService
             SupportEmail = translations.GetValueOrDefault("SupportEmail", "info@cleansia.cz"),
             Closing = translations.GetValueOrDefault("Closing", "Best regards,"),
             TeamName = translations.GetValueOrDefault("TeamName", "The Cleansia Team"),
-            FooterText = translations.GetValueOrDefault("FooterText", isLocalised
-                ? $"© {DateTime.UtcNow.Year} Cleansia"
-                : $"© {DateTime.UtcNow.Year} Cleansia s.r.o. All rights reserved.")
+            FooterText = await FooterTextAsync(languageCode, order.CustomerAddress?.CountryId, ct)
         }, languageCode);
 
         return await SendRenderedAsync(
@@ -950,6 +975,7 @@ public sealed partial class EmailService : IEmailService
         values["ExpiryNotice"] = expiryNotice;
         values["OrderLink"] = sendGridConfig.ClientDomainUrl;
         values["SupportEmail"] = sendGridConfig.AddressFrom;
+        values["FooterText"] = await FooterTextAsync(languageCode, countryId: null, ct);
         values["Subject"] = subject;
 
         var html = templateRenderer.Render("promo-code.html", values);
@@ -1136,7 +1162,6 @@ public sealed partial class EmailService : IEmailService
                 ["SupportText"] = "Potřebujete pomoc? Napište nám na",
                 ["Closing"] = "S pozdravem,",
                 ["TeamName"] = "tým Cleansia",
-                ["FooterText"] = "© Cleansia s.r.o. Všechna práva vyhrazena.",
             },
             ["sk"] = new Dictionary<string, string>(StringComparer.Ordinal)
             {
@@ -1151,7 +1176,6 @@ public sealed partial class EmailService : IEmailService
                 ["SupportText"] = "Potrebujete pomoc? Napíšte nám na",
                 ["Closing"] = "S pozdravom,",
                 ["TeamName"] = "tím Cleansia",
-                ["FooterText"] = "© Cleansia s.r.o. Všetky práva vyhradené.",
             },
             ["en"] = new Dictionary<string, string>(StringComparer.Ordinal)
             {
@@ -1166,7 +1190,6 @@ public sealed partial class EmailService : IEmailService
                 ["SupportText"] = "Need a hand? Write to us at",
                 ["Closing"] = "Kind regards,",
                 ["TeamName"] = "the Cleansia team",
-                ["FooterText"] = "© Cleansia s.r.o. All rights reserved.",
             },
             ["ru"] = new Dictionary<string, string>(StringComparer.Ordinal)
             {
@@ -1181,7 +1204,6 @@ public sealed partial class EmailService : IEmailService
                 ["SupportText"] = "Нужна помощь? Напишите нам на",
                 ["Closing"] = "С уважением,",
                 ["TeamName"] = "команда Cleansia",
-                ["FooterText"] = "© Cleansia s.r.o. Все права защищены.",
             },
             ["uk"] = new Dictionary<string, string>(StringComparer.Ordinal)
             {
@@ -1196,7 +1218,6 @@ public sealed partial class EmailService : IEmailService
                 ["SupportText"] = "Потрібна допомога? Напишіть нам на",
                 ["Closing"] = "З повагою,",
                 ["TeamName"] = "команда Cleansia",
-                ["FooterText"] = "© Cleansia s.r.o. Усі права захищено.",
             },
         };
 
@@ -1261,6 +1282,7 @@ public sealed partial class EmailService : IEmailService
         values["WindDownDate"] = date;
         values["AppLink"] = sendGridConfig.ClientDomainUrl;
         values["SupportEmail"] = sendGridConfig.AddressFrom;
+        values["FooterText"] = await FooterTextAsync(languageCode, countryId: null, ct);
 
         var html = templateRenderer.Render(TemplateFileFor(emailType), values);
 
@@ -1291,7 +1313,6 @@ public sealed partial class EmailService : IEmailService
                 ["SupportText"] = "Questions? Write to us at",
                 ["Closing"] = "Kind regards,",
                 ["TeamName"] = "the Cleansia team",
-                ["FooterText"] = "© Cleansia s.r.o. All rights reserved.",
             },
             ["cs"] = new Dictionary<string, string>(StringComparer.Ordinal)
             {
@@ -1308,7 +1329,6 @@ public sealed partial class EmailService : IEmailService
                 ["SupportText"] = "Máte otázky? Napište nám na",
                 ["Closing"] = "S pozdravem,",
                 ["TeamName"] = "tým Cleansia",
-                ["FooterText"] = "© Cleansia s.r.o. Všechna práva vyhrazena.",
             },
             ["sk"] = new Dictionary<string, string>(StringComparer.Ordinal)
             {
@@ -1325,7 +1345,6 @@ public sealed partial class EmailService : IEmailService
                 ["SupportText"] = "Máte otázky? Napíšte nám na",
                 ["Closing"] = "S pozdravom,",
                 ["TeamName"] = "tím Cleansia",
-                ["FooterText"] = "© Cleansia s.r.o. Všetky práva vyhradené.",
             },
             ["uk"] = new Dictionary<string, string>(StringComparer.Ordinal)
             {
@@ -1342,7 +1361,6 @@ public sealed partial class EmailService : IEmailService
                 ["SupportText"] = "Є запитання? Напишіть нам на",
                 ["Closing"] = "З повагою,",
                 ["TeamName"] = "команда Cleansia",
-                ["FooterText"] = "© Cleansia s.r.o. Усі права захищено.",
             },
             ["ru"] = new Dictionary<string, string>(StringComparer.Ordinal)
             {
@@ -1359,7 +1377,6 @@ public sealed partial class EmailService : IEmailService
                 ["SupportText"] = "Есть вопросы? Напишите нам на",
                 ["Closing"] = "С уважением,",
                 ["TeamName"] = "команда Cleansia",
-                ["FooterText"] = "© Cleansia s.r.o. Все права защищены.",
             },
         };
 
@@ -1381,7 +1398,6 @@ public sealed partial class EmailService : IEmailService
                 ["SupportText"] = "Questions? Write to us at",
                 ["Closing"] = "Kind regards,",
                 ["TeamName"] = "the Cleansia team",
-                ["FooterText"] = "© Cleansia s.r.o. All rights reserved.",
             },
             ["cs"] = new Dictionary<string, string>(StringComparer.Ordinal)
             {
@@ -1397,7 +1413,6 @@ public sealed partial class EmailService : IEmailService
                 ["SupportText"] = "Máte otázky? Napište nám na",
                 ["Closing"] = "S pozdravem,",
                 ["TeamName"] = "tým Cleansia",
-                ["FooterText"] = "© Cleansia s.r.o. Všechna práva vyhrazena.",
             },
             ["sk"] = new Dictionary<string, string>(StringComparer.Ordinal)
             {
@@ -1413,7 +1428,6 @@ public sealed partial class EmailService : IEmailService
                 ["SupportText"] = "Máte otázky? Napíšte nám na",
                 ["Closing"] = "S pozdravom,",
                 ["TeamName"] = "tím Cleansia",
-                ["FooterText"] = "© Cleansia s.r.o. Všetky práva vyhradené.",
             },
             ["uk"] = new Dictionary<string, string>(StringComparer.Ordinal)
             {
@@ -1429,7 +1443,6 @@ public sealed partial class EmailService : IEmailService
                 ["SupportText"] = "Є запитання? Напишіть нам на",
                 ["Closing"] = "З повагою,",
                 ["TeamName"] = "команда Cleansia",
-                ["FooterText"] = "© Cleansia s.r.o. Усі права захищено.",
             },
             ["ru"] = new Dictionary<string, string>(StringComparer.Ordinal)
             {
@@ -1445,7 +1458,6 @@ public sealed partial class EmailService : IEmailService
                 ["SupportText"] = "Есть вопросы? Напишите нам на",
                 ["Closing"] = "С уважением,",
                 ["TeamName"] = "команда Cleansia",
-                ["FooterText"] = "© Cleansia s.r.o. Все права защищены.",
             },
         };
 

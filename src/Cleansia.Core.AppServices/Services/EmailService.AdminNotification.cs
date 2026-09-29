@@ -55,6 +55,7 @@ public sealed partial class EmailService
         values["Subject"] = subject;
         values["Body"] = body;
         values["SupportEmail"] = sendGridConfig.AddressFrom;
+        values["FooterText"] = await FooterTextAsync(locale, countryId: null, ct);
 
         return await SendRenderedAsync(
             email,
@@ -107,7 +108,6 @@ public sealed partial class EmailService
                 ["SupportText"] = "Questions? Write to us at",
                 ["Closing"] = "Kind regards,",
                 ["TeamName"] = "the Cleansia team",
-                ["FooterText"] = "© Cleansia s.r.o. All rights reserved.",
                 ["admin.order.new.Subject"] = "New order {0} to serve",
                 ["admin.order.new.Body"] = "Order {0} for {1} is ready for a cleaner.",
                 ["admin.order.crew_lost.Subject"] = "Order {0} lost its last cleaner",
@@ -147,7 +147,6 @@ public sealed partial class EmailService
                 ["SupportText"] = "Máte otázky? Napište nám na",
                 ["Closing"] = "S pozdravem,",
                 ["TeamName"] = "tým Cleansia",
-                ["FooterText"] = "© Cleansia s.r.o. Všechna práva vyhrazena.",
                 ["admin.order.new.Subject"] = "Nová objednávka {0} k obsloužení",
                 ["admin.order.new.Body"] = "Objednávka {0} za {1} čeká na uklízeče.",
                 ["admin.order.crew_lost.Subject"] = "Objednávka {0} přišla o posledního uklízeče",
@@ -187,7 +186,6 @@ public sealed partial class EmailService
                 ["SupportText"] = "Máte otázky? Napíšte nám na",
                 ["Closing"] = "S pozdravom,",
                 ["TeamName"] = "tím Cleansia",
-                ["FooterText"] = "© Cleansia s.r.o. Všetky práva vyhradené.",
                 ["admin.order.new.Subject"] = "Nová objednávka {0} na obslúženie",
                 ["admin.order.new.Body"] = "Objednávka {0} za {1} čaká na upratovača.",
                 ["admin.order.crew_lost.Subject"] = "Objednávka {0} prišla o posledného upratovača",
@@ -227,7 +225,6 @@ public sealed partial class EmailService
                 ["SupportText"] = "Є запитання? Напишіть нам на",
                 ["Closing"] = "З повагою,",
                 ["TeamName"] = "команда Cleansia",
-                ["FooterText"] = "© Cleansia s.r.o. Усі права захищено.",
                 ["admin.order.new.Subject"] = "Нове замовлення {0} до виконання",
                 ["admin.order.new.Body"] = "Замовлення {0} на {1} чекає на прибиральника.",
                 ["admin.order.crew_lost.Subject"] = "Замовлення {0} втратило останнього прибиральника",
@@ -267,7 +264,6 @@ public sealed partial class EmailService
                 ["SupportText"] = "Есть вопросы? Напишите нам на",
                 ["Closing"] = "С уважением,",
                 ["TeamName"] = "команда Cleansia",
-                ["FooterText"] = "© Cleansia s.r.o. Все права защищены.",
                 ["admin.order.new.Subject"] = "Новый заказ {0} к выполнению",
                 ["admin.order.new.Body"] = "Заказ {0} на {1} ждёт уборщика.",
                 ["admin.order.crew_lost.Subject"] = "Заказ {0} остался без последнего уборщика",

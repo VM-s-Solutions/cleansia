@@ -297,7 +297,8 @@ public class S6LoggingHygieneCharacterizationTests
             .Returns(() => new HttpClient(new StubHandler(status, responseBody), disposeHandler: false));
 
         return new EmailService(config.Object, logger, httpClientFactory.Object, translations.Object, new EmailTemplateRenderer(),
-            Mock.Of<ICountryConfigurationRepository>());
+            Mock.Of<ICountryConfigurationRepository>(),
+            Mock.Of<ICompanyInfoRepository>());
     }
 
     private sealed class StubHandler(HttpStatusCode status, string body) : HttpMessageHandler

@@ -51,7 +51,8 @@ struct ConfirmStep: View {
                 )
                 CancellationPolicyCard(policy: extras.cancellationPolicy)
                 termsRow
-                WorkContractNotice()
+                earlyPerformanceRow
+                ContractNotice()
                 TrustBadges(insurance: viewModel.insurance)
             }
             .padding(Spacing.l)
@@ -200,6 +201,27 @@ struct ConfirmStep: View {
             return next
         }
     }
+
+    /// Asked on every booking, whatever the account already consented to: the request belongs to this
+    /// contract, not to the account. Gates the slide-to-confirm and rides `earlyPerformanceRequested`.
+    private var earlyPerformanceRow: some View {
+        CleansiaConsentCheckbox(
+            checked: Binding(
+                get: { viewModel.state.earlyPerformanceRequested },
+                set: setEarlyPerformanceRequested
+            ),
+            markdown: L10n.Booking.earlyPerformanceRequest,
+            toggleAccessibilityLabel: L10n.Booking.earlyPerformanceRequestToggle
+        )
+    }
+
+    private func setEarlyPerformanceRequested(_ requested: Bool) {
+        viewModel.update { current in
+            var next = current
+            next.earlyPerformanceRequested = requested
+            return next
+        }
+    }
 }
 
 /// Cash is guaranteed by a saved card; the first cash booking asks for the consent before PaymentSheet
@@ -231,11 +253,11 @@ private struct CardGuaranteeConsent: View {
     }
 }
 
-/// The contract for work the confirmation concludes, named at the offer whether or not the account
-/// already consented: an information line with the public text behind it, never a tick.
-private struct WorkContractNotice: View {
+/// The contract the confirmation concludes with the operating company, named at the offer whether or not
+/// the account already consented: an information line with the terms behind it, never a tick.
+private struct ContractNotice: View {
     var body: some View {
-        Text(ConsentMarkdown.styled(L10n.Booking.workContractNotice))
+        Text(ConsentMarkdown.styled(L10n.Booking.contractNotice))
             .font(CleansiaTypography.bodyMedium)
             .foregroundColor(CleansiaColors.onSurfaceVariant)
             .tint(CleansiaColors.primary)

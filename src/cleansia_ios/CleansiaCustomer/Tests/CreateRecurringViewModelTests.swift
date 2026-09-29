@@ -38,6 +38,7 @@ final class CreateRecurringViewModelTests: XCTestCase {
         vm.toggleService("s-1")
         vm.setDirtiness(.normal)
         vm.setStartsOn(Date(timeIntervalSince1970: 1_780_000_000))
+        vm.setEarlyPerformanceRequested(true)
     }
 
     func testStartsIdleAndInvalid() {
@@ -56,6 +57,8 @@ final class CreateRecurringViewModelTests: XCTestCase {
         vm.setStartsOn(Date(timeIntervalSince1970: 1_780_000_000))
         XCTAssertFalse(vm.isValid, "a new schedule is submittable without a level")
         vm.setDirtiness(.normal)
+        XCTAssertFalse(vm.isValid, "a new schedule is submittable without the early-performance request")
+        vm.setEarlyPerformanceRequested(true)
         XCTAssertTrue(vm.isValid)
     }
 
@@ -90,6 +93,7 @@ final class CreateRecurringViewModelTests: XCTestCase {
         XCTAssertFalse(vm.canAdvance(step: 3), "an address without a start date does not advance")
         vm.setStartsOn(Date(timeIntervalSince1970: 1_780_000_000))
         XCTAssertTrue(vm.canAdvance(step: 3))
+        vm.setEarlyPerformanceRequested(true)
         XCTAssertTrue(vm.isValid)
     }
 
@@ -130,6 +134,45 @@ final class CreateRecurringViewModelTests: XCTestCase {
 
         XCTAssertFalse(ok)
         if case .error = vm.submitState {} else { XCTFail("expected submit error") }
+    }
+
+    // MARK: - The request to start within the withdrawal period
+
+    /// One tick covers every occurrence the schedule creates, and the server refuses a schedule without it.
+    func testANewScheduleWithoutTheEarlyPerformanceRequestIsNeitherSubmittableNorSent() async {
+        let (vm, client) = makeVM()
+        await vm.load()
+        fillValid(vm)
+        vm.setEarlyPerformanceRequested(false)
+
+        XCTAssertFalse(vm.isValid)
+        let saved = await vm.submit()
+
+        XCTAssertFalse(saved)
+        XCTAssertTrue(client.createInputs.isEmpty)
+    }
+
+    func testTheRequestRidesTheNewSchedule() async {
+        let (vm, client) = makeVM()
+        await vm.load()
+        fillValid(vm)
+
+        _ = await vm.submit()
+
+        XCTAssertEqual(client.createInputs.first?.earlyPerformanceRequested, true)
+    }
+
+    /// The schedule's act was recorded when it was created and survives the edit; the update carries none.
+    func testAnEditAsksForNoRequest() async {
+        let (vm, client) = makeVM(editing: RecurringFixtures.template())
+        await vm.load()
+
+        XCTAssertFalse(vm.formState.earlyPerformanceRequested)
+        XCTAssertTrue(vm.isValid)
+        let saved = await vm.submit()
+
+        XCTAssertTrue(saved)
+        XCTAssertEqual(client.updateInputs.count, 1)
     }
 
     func testIncompleteFormDoesNotSubmit() async {
@@ -184,6 +227,7 @@ final class CreateRecurringViewModelTests: XCTestCase {
         XCTAssertEqual(events, [.selectionPrunedForMarket])
         vm.setStartsOn(Date(timeIntervalSince1970: 1_780_000_000))
         vm.setDirtiness(.normal)
+        vm.setEarlyPerformanceRequested(true)
         XCTAssertTrue(vm.isValid)
     }
 

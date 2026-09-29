@@ -96,6 +96,7 @@ struct CreateRecurringInput: Equatable {
     let paymentType: Int
     let startsOn: Date
     let preferredEmployeeId: String?
+    let earlyPerformanceRequested: Bool
 }
 
 /// `UpdateRecurringBooking` replaces every field it is sent, `EndsOn` and `PreferredEmployeeId` included,

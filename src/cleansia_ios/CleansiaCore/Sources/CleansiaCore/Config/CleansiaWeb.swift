@@ -9,7 +9,8 @@ public enum CleansiaWeb {
 
     public static let origin = "https://\(domain)"
 
-    public static let supportEmail = "support@\(domain)"
+    /// The one public contact address customers and cleaners are shown.
+    public static let contactEmail = "info@\(domain)"
 
     /// Routed by the customer web app (`app.routes.ts`).
     public static var termsURL: URL {
@@ -18,11 +19,6 @@ public enum CleansiaWeb {
 
     public static var privacyURL: URL {
         url("/privacy")
-    }
-
-    /// The public contract-for-work template the booking wizards name at the offer.
-    public static var workContractURL: URL {
-        url("/work-contract")
     }
 
     public static let partnerOrigin = "https://partner.\(domain)"

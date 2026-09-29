@@ -44,6 +44,7 @@ final class BookingCardGuaranteeTests: XCTestCase {
             s.selectedInstant = Date(timeIntervalSinceNow: 3600 * 48)
             s.paymentMethod = payment
             s.cardGuaranteeAccepted = consent
+            s.earlyPerformanceRequested = true
             return s
         }
     }

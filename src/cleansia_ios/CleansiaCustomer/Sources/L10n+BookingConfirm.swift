@@ -179,9 +179,19 @@ extension L10n.Booking {
         L10n.localized("busy_booking")
     }
 
-    /// The contract-for-work line under the consent block; its link placeholder is pinned by the
-    /// Core consent catalog test beside the two consent sentences.
-    static var workContractNotice: String {
-        L10n.localized("booking_work_contract_notice")
+    /// The contract line under the consent block; its link placeholder is pinned by the Core consent
+    /// catalog test beside the two consent sentences.
+    static var contractNotice: String {
+        L10n.localized("booking_contract_notice")
+    }
+
+    /// The draft wording the server records as `Order.EarlyPerformanceConsentTextVersionInForce`; a new
+    /// wording gets a new key together with a new version on the server.
+    static var earlyPerformanceRequest: String {
+        L10n.localized("consent_early_performance_draft_2026_09_29")
+    }
+
+    static var earlyPerformanceRequestToggle: String {
+        L10n.localized("booking_early_performance_toggle")
     }
 }

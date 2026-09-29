@@ -59,6 +59,7 @@ final class BookingStepGateTests: XCTestCase {
 
     func testStepFourNeedsAPaymentMethod() {
         var state = BookingState()
+        state.earlyPerformanceRequested = true
         XCTAssertFalse(BookingStepGate.canContinue(step: 4, state: state, alreadyConsented: true))
 
         state.paymentMethod = .cash
@@ -70,6 +71,7 @@ final class BookingStepGateTests: XCTestCase {
     func testStepFourNeedsTheTermsTickWhenTheAccountHasNotConsentedYet() {
         var state = BookingState()
         state.paymentMethod = .cash
+        state.earlyPerformanceRequested = true
         XCTAssertFalse(BookingStepGate.canContinue(step: 4, state: state, alreadyConsented: false))
 
         state.termsAccepted = true
@@ -80,7 +82,21 @@ final class BookingStepGateTests: XCTestCase {
         var state = BookingState()
         state.paymentMethod = .cash
         state.termsAccepted = false
+        state.earlyPerformanceRequested = true
         XCTAssertTrue(BookingStepGate.canContinue(step: 4, state: state, alreadyConsented: true))
+    }
+
+    /// Asked on every booking: an account that already holds both consents is asked for it all the same.
+    func testStepFourNeedsTheEarlyPerformanceRequestOnEveryBooking() {
+        var state = BookingState()
+        state.paymentMethod = .cash
+        state.termsAccepted = true
+        XCTAssertFalse(BookingStepGate.canContinue(step: 4, state: state, alreadyConsented: true))
+        XCTAssertFalse(BookingStepGate.canContinue(step: 4, state: state, alreadyConsented: false))
+
+        state.earlyPerformanceRequested = true
+        XCTAssertTrue(BookingStepGate.canContinue(step: 4, state: state, alreadyConsented: true))
+        XCTAssertTrue(BookingStepGate.canContinue(step: 4, state: state, alreadyConsented: false))
     }
 
     func testATickAloneNeverStandsInForAPaymentMethod() {

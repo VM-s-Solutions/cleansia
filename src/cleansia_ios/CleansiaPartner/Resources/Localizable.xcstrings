@@ -10592,31 +10592,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tyto dokumenty upravují vaši spolupráci s Cleansia. Každý si přečtěte a přijměte jeho aktuální verzi — dokud to neuděláte, nemůžete být schváleni ani přijímat zakázky."
+            "value": "Tyto dokumenty upravují vaši práci pro provozní společnost trhu, na kterém pracujete. Každý si přečtěte a přijměte jeho aktuální verzi — dokud to neuděláte, nemůžete být schváleni ani přijímat zakázky."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "These documents govern your cooperation with Cleansia. Read each one and accept its current version — until you do, you can't be approved or take jobs."
+            "value": "These documents govern your work for the operating company of the market you work in. Read each one and accept its current version — until you do, you can't be approved or take jobs."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Эти документы регулируют ваше сотрудничество с Cleansia. Прочитайте каждый и примите его действующую версию — пока вы этого не сделаете, вас не смогут одобрить и вы не сможете брать заказы."
+            "value": "Эти документы регулируют вашу работу для операционной компании рынка, на котором вы работаете. Прочитайте каждый и примите его действующую версию — пока вы этого не сделаете, вас не смогут одобрить и вы не сможете брать заказы."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tieto dokumenty upravujú vašu spoluprácu s Cleansia. Každý si prečítajte a prijmite jeho aktuálnu verziu — kým to neurobíte, nemôžete byť schválení ani prijímať zákazky."
+            "value": "Tieto dokumenty upravujú vašu prácu pre prevádzkovú spoločnosť trhu, na ktorom pracujete. Každý si prečítajte a prijmite jeho aktuálnu verziu — kým to neurobíte, nemôžete byť schválení ani prijímať zákazky."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ці документи регулюють вашу співпрацю з Cleansia. Прочитайте кожен і прийміть його чинну версію — доки ви цього не зробите, вас не можуть схвалити і ви не можете брати замовлення."
+            "value": "Ці документи регулюють вашу роботу для операційної компанії ринку, на якому ви працюєте. Прочитайте кожен і прийміть його чинну версію — доки ви цього не зробите, вас не можуть схвалити і ви не можете брати замовлення."
           }
         }
       }
@@ -23855,6 +23855,41 @@
         }
       }
     },
+    "work_contract_parties": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mezi provozní společností, která tento úklid prodala (objednatel), a vámi (zhotovitel)"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Between the operating company that sold this cleaning (the client) and you (the contractor)"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Между операционной компанией, которая продала эту уборку (заказчик), и вами (подрядчик)"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Medzi prevádzkovou spoločnosťou, ktorá toto upratovanie predala (objednávateľ), a vami (zhotoviteľ)"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Між операційною компанією, яка продала це прибирання (замовник), і вами (підрядник)"
+          }
+        }
+      }
+    },
     "work_contract_pending_banner": {
       "extractionState": "manual",
       "localizations": {
@@ -23921,6 +23956,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "Прочитати договір"
+          }
+        }
+      }
+    },
+    "work_contract_reward": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaše odměna"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your reward"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваше вознаграждение"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaša odmena"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваша винагорода"
           }
         }
       }

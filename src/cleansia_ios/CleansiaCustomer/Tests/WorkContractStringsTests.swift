@@ -1,12 +1,11 @@
-import CleansiaCore
 import Foundation
 import XCTest
 @testable import CleansiaCustomer
 
-/// The copy of the customer's contract surfaces: the wizard sentence, the detail line, and the
-/// contract screen. A key with no row in a locale falls back to English without failing the build,
-/// and the roster is the only thing that reads all five tables. The sentence's link placeholder is
-/// pinned by the Core consent catalog test, beside the consent sentences it is the twin of.
+/// The contract for work binds the operating company and the cleaner, so the customer app carries none of
+/// its copy: the booking names the customer's own contract, with the company on its terms, and asks for the
+/// request to start within the withdrawal period. The sentence's link placeholder is pinned by the Core
+/// consent catalog test, beside the consent sentences it is the twin of.
 ///
 /// Read through the BUILT `.lproj` tables rather than the `.xcstrings` source, because a key present in
 /// the catalog but absent from a shipped language renders as its own name on screen.
@@ -15,22 +14,12 @@ final class WorkContractStringsTests: XCTestCase {
     private let languages = ["en", "cs", "sk", "uk", "ru"]
 
     private let required = [
-        "booking_work_contract_notice",
-        "work_contract_title",
-        "work_contract_accepted_line",
-        "work_contract_read",
-        "work_contract_version",
-        "work_contract_facts_title",
-        "work_contract_order_number",
-        "work_contract_window",
-        "work_contract_price",
-        "work_contract_location",
-        "work_contract_accepted_on",
-        "work_contract_accepted_in_language",
-        "work_contract_load_error"
+        "booking_contract_notice",
+        "consent_early_performance_draft_2026_09_29",
+        "booking_early_performance_toggle"
     ]
 
-    func testEveryContractStringIsWrittenInAllFiveLanguages() throws {
+    func testEveryBookingContractStringIsWrittenInAllFiveLanguages() throws {
         for language in languages {
             let table = try localizableTable(for: language)
             for key in required {
@@ -54,37 +43,27 @@ final class WorkContractStringsTests: XCTestCase {
         }
     }
 
-    /// A dropped positional argument renders as literal text in one language only; `%@`, never `%s`,
-    /// which prints garbage for a Swift `String`.
-    func testEveryPlaceholderSurvivesTranslation() throws {
-        let expected = [
-            "work_contract_accepted_line": ["%1$@", "%2$@", "%3$@"],
-            "work_contract_version": ["%1$@"],
-            "work_contract_accepted_on": ["%1$@", "%2$@"],
-            "work_contract_accepted_in_language": ["%1$@"]
-        ]
+    func testNoLanguageShipsContractForWorkCopyOrLinksItsText() throws {
         for language in languages {
             let table = try localizableTable(for: language)
-            for (key, placeholders) in expected {
-                let value = try XCTUnwrap(table[key], "\(key) in \(language)")
-                for placeholder in placeholders {
-                    XCTAssertTrue(value.contains(placeholder), "\(language)/\(key) lost \(placeholder): \"\(value)\"")
-                }
-                XCTAssertFalse(value.contains("$s"), "\(language)/\(key) carries an Android specifier: \"\(value)\"")
-            }
+            XCTAssertEqual(
+                table.keys.filter { $0.hasPrefix("work_contract_") }.sorted(),
+                [],
+                "\(language).lproj still ships the customer's contract-for-work screen"
+            )
+            let notice = try XCTUnwrap(table["booking_contract_notice"], "booking_contract_notice in \(language)")
+            XCTAssertFalse(notice.contains("cleansia://work-contract"), "\(language) links the contract for work")
         }
     }
 
-    /// The line names the cleaner the crew card names, in every language, through the real accessor.
-    func testTheAcceptedLineCarriesTheNameTheDateAndTheVersionInEveryLanguage() throws {
-        let restore = L10n.bundle
-        defer { L10n.bundle = restore }
+    /// The tick names the period it is about and links nothing: it is the wording the server records by
+    /// version, not a pointer to another text.
+    func testTheEarlyPerformanceRequestNamesTheFourteenDaysAndCarriesNoLink() throws {
         for language in languages {
-            L10n.bundle = try localeBundle(language)
-            let line = L10n.WorkContract.acceptedLine("NAME-SENTINEL", "DATE-SENTINEL", "VERSION-SENTINEL")
-            XCTAssertTrue(line.contains("NAME-SENTINEL"), "\(language) drops the cleaner's name")
-            XCTAssertTrue(line.contains("DATE-SENTINEL"), "\(language) drops the instant")
-            XCTAssertTrue(line.contains("VERSION-SENTINEL"), "\(language) drops the version")
+            let table = try localizableTable(for: language)
+            let request = try XCTUnwrap(table["consent_early_performance_draft_2026_09_29"], language)
+            XCTAssertTrue(request.contains("14"), "\(language) drops the 14-day period: \"\(request)\"")
+            XCTAssertFalse(request.contains("cleansia://"), "\(language) links a page from the tick: \"\(request)\"")
         }
     }
 

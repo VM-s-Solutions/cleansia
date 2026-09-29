@@ -13,6 +13,7 @@ final class CustomerErrorVoiceTests: XCTestCase {
     /// renders — either way the booking voice is the only voice they are read in.
     private static let customerOnly = [
         CustomerOnlyKey("membership.express_waiver.no_longer_available", emitters: "CreateOrder"),
+        CustomerOnlyKey("consent.early_performance_not_requested", emitters: "CreateOrder, CreateRecurringBooking"),
         CustomerOnlyKey(
             "order.already_cancelled",
             emitters: "CancelOrder, CancelGuestOrder, GetGuestCancellationFeePreview, AdminCancelOrder, "
@@ -135,6 +136,7 @@ final class CustomerErrorVoiceTests: XCTestCase {
         "common.required": "AddDisputeMessage, AddSavedAddress, AppleAuth, CancelGuestOrder, "
             + "GetGuestCancellationFeePreview +38 more",
         "company.not_found": "ReceiptService",
+        "consent.early_performance_not_requested": "CreateOrder, CreateRecurringBooking",
         "consent.terms_not_accepted": "CreateOrder, Register",
         "country.not_existing_id": "AddSavedAddress, UpdateSavedAddress",
         "country.not_serviced":

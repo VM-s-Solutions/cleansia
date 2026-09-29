@@ -44,6 +44,7 @@ final class CreateRecurringCashTests: XCTestCase {
         vm.toggleService("s-1")
         vm.setDirtiness(.normal)
         vm.setStartsOn(Date(timeIntervalSince1970: 1_780_000_000))
+        vm.setEarlyPerformanceRequested(true)
     }
 
     private func drain() async {

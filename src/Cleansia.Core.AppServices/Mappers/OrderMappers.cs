@@ -87,7 +87,8 @@ public static class OrderMappers
             o.RequiredEmployees,
             o.MaxEmployees,
             o.Reviews.Any(),
-            o.CompletedAt));
+            o.CompletedAt,
+            o.DirtinessLevel));
     }
 
     public static OrderListItem MapToDto(this OrderListRow row)

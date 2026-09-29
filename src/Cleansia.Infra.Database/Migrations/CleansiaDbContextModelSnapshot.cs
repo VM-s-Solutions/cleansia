@@ -2047,6 +2047,12 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
+                    b.Property<decimal>("DirtinessPay")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasDefaultValue(0m);
+
                     b.Property<string>("EmployeeId")
                         .IsRequired()
                         .HasMaxLength(26)

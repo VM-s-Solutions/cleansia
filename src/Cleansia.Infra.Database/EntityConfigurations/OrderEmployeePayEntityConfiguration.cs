@@ -39,6 +39,11 @@ public class OrderEmployeePayEntityConfiguration : TenantAuditableEntityConfigur
             .HasPrecision(18, 2)
             .HasDefaultValue(0);
 
+        builder.Property(e => e.DirtinessPay)
+            .IsRequired()
+            .HasPrecision(18, 2)
+            .HasDefaultValue(0);
+
         builder.Property(e => e.BonusPay)
             .IsRequired()
             .HasPrecision(18, 2)
@@ -100,7 +105,7 @@ public class OrderEmployeePayEntityConfiguration : TenantAuditableEntityConfigur
             .IsRequired(false)
             .OnDelete(DeleteBehavior.SetNull);
 
-        // THE UNIT OF THE EIGHT MONEY COLUMNS. Required, and FK-backed with Restrict for the same
+        // THE UNIT OF THE MONEY COLUMNS. Required, and FK-backed with Restrict for the same
         // reason EmployeePayConfigs and EmployeeInvoices restrict: deleting a currency that a cleaner's
         // recorded pay is denominated in would leave those amounts meaning nothing, and the row is an
         // input to a tax document. CurrencyRepository.IsInUseAsync is the friendly refusal in front of

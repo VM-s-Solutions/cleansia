@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cleansia.Infra.Database.Migrations
 {
     [DbContext(typeof(CleansiaDbContext))]
-    [Migration("20260929035817_Initial")]
+    [Migration("20260929042152_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -2049,6 +2049,12 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<string>("DeductionReason")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
+
+                    b.Property<decimal>("DirtinessPay")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasDefaultValue(0m);
 
                     b.Property<string>("EmployeeId")
                         .IsRequired()

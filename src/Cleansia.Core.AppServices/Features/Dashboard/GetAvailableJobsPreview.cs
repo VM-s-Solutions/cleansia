@@ -75,6 +75,8 @@ public class GetAvailableJobsPreview
                     // selected.
                     o.Rooms,
                     o.Bathrooms,
+                    o.RequiredEmployees,
+                    o.DirtinessLevel,
                     // Carried for the pay estimate too: a rate is denominated, so the estimate has to
                     // know which of the caller's rates applies to THIS job.
                     o.CurrencyId,
@@ -127,6 +129,8 @@ public class GetAvailableJobsPreview
                 o.PackageIds.ToHashSet(),
                 o.Rooms,
                 o.Bathrooms,
+                o.RequiredEmployees,
+                o.DirtinessLevel,
                 o.CurrencyId,
                 employeeId,
                 serviceConfigs,

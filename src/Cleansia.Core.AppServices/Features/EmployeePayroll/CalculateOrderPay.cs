@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Extensions;
 using Cleansia.Core.Domain.Repositories;
@@ -119,6 +120,7 @@ public class CalculateOrderPay
                 .GetAll()
                 .Include(o => o.SelectedServices)
                 .Include(o => o.SelectedPackages)
+                .Include(o => o.AssignedEmployees)
                 .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);
 
             // The validator proved the ORDER id exists with its own query; this one adds Includes and
@@ -154,11 +156,16 @@ public class CalculateOrderPay
             payConfigs.AddRange(SelectPreferredConfigs(packageConfigs, c => c.PackageId));
             payConfigs.AddRange(SelectPreferredConfigs(serviceConfigs, c => c.ServiceId));
 
-            var (basePay, extrasPay, expensesPay, totalPay, breakdown) = payConfigs.CalculateAggregatedPay(order);
+            var firstSeat = order.AssignedEmployees.MinBy(oe => oe.SeatOrdinal)?.EmployeeId == command.EmployeeId;
 
-            // Persist the same clamp bounds that produced totalPay so any later bonus/deduction
-            // adjustment re-clamps the core identically instead of silently dropping the clamp (T-0362).
-            var (minPay, maxPay) = payConfigs.AggregateBounds();
+            // The seat's bounds are persisted with its pay so a later bonus or deduction re-clamps the
+            // core exactly as it was clamped here.
+            var (basePay, extrasPay, dirtinessPay, totalPay, minPay, maxPay, breakdown) = payConfigs.CalculateSeatPay(
+                order.Rooms,
+                order.Bathrooms,
+                BookingPolicy.DirtinessSurchargeRate(order.DirtinessLevel),
+                order.RequiredEmployees,
+                firstSeat);
 
             var orderEmployeePay = OrderEmployeePay.Create(
                 orderId: command.OrderId,
@@ -170,7 +177,7 @@ public class CalculateOrderPay
                 currencyId: order.CurrencyId,
                 basePay: basePay,
                 extrasPay: extrasPay,
-                expensesPay: expensesPay,
+                dirtinessPay: dirtinessPay,
                 totalPay: totalPay,
                 minPay: minPay,
                 maxPay: maxPay,

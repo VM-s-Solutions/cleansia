@@ -57,6 +57,48 @@ public static class PayCalculatorExtensions
     }
 
     /// <summary>
+    /// One seat's pay on a job crewed by <paramref name="seats"/> cleaners (owner ruling 2026-09-28): the
+    /// rates describe the job, so its base, extras and clamp bounds are split equally across the seats,
+    /// the seat's share is clamped, and the dirtiness term - the job's clamped pay x
+    /// <paramref name="dirtinessRate"/>, split the same way - is added after the clamp so a cap cannot
+    /// swallow it. Every term leaves its cent residue on the first seat, so a full crew's rows add up to
+    /// the job. <paramref name="dirtinessRate"/> is <c>BookingPolicy.DirtinessSurchargeRate(level)</c>.
+    /// </summary>
+    public static (decimal basePay, decimal extrasPay, decimal dirtinessPay, decimal totalPay, decimal minPay, decimal maxPay, string breakdown) CalculateSeatPay(
+        this IEnumerable<EmployeePayConfig> configs,
+        int rooms,
+        int bathrooms,
+        decimal dirtinessRate,
+        int seats,
+        bool firstSeat)
+    {
+        var configList = configs.ToList();
+
+        var (jobBasePay, jobExtrasPay, _, jobPay, _) = configList.CalculateAggregatedPay(rooms, bathrooms);
+        var (jobMinPay, jobMaxPay) = configList.AggregateBounds();
+        var jobDirtinessPay = Math.Round(jobPay * dirtinessRate, 2, MidpointRounding.AwayFromZero);
+
+        var basePay = SeatShare(jobBasePay, seats, firstSeat);
+        var extrasPay = SeatShare(jobExtrasPay, seats, firstSeat);
+        var minPay = SeatShare(jobMinPay, seats, firstSeat);
+        var maxPay = SeatShare(jobMaxPay, seats, firstSeat);
+        var dirtinessPay = SeatShare(jobDirtinessPay, seats, firstSeat);
+
+        var totalPay = ApplyMinMaxClamp(basePay + extrasPay, minPay, maxPay) + dirtinessPay;
+
+        var breakdown = $"Base: {basePay:F2}, Extras: {extrasPay:F2}, Dirtiness: {dirtinessPay:F2}";
+
+        return (basePay, extrasPay, dirtinessPay, totalPay, minPay, maxPay, breakdown);
+    }
+
+    /// <summary>An equal share of <paramref name="amount"/> in whole cents; the first seat also takes the residue.</summary>
+    private static decimal SeatShare(decimal amount, int seats, bool firstSeat)
+    {
+        var share = Math.Floor(amount * 100m / seats) / 100m;
+        return firstSeat ? amount - (share * (seats - 1)) : share;
+    }
+
+    /// <summary>
     /// The aggregated clamp bounds for a set of pay configs: the floor is the highest positive
     /// MinimumPay (the strongest guarantee wins) and the ceiling is the lowest positive MaximumPay (the
     /// tightest cap wins); 0 on either edge means "no bound" and mirrors the <c>&gt; 0</c> guard in

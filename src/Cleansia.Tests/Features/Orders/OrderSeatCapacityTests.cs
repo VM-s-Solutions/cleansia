@@ -16,9 +16,9 @@ namespace Cleansia.Tests.Features.Orders;
 /// <summary>
 /// The seat rule, pinned at both moments it is evaluated: the computation that sets the cap, and the
 /// take gate that spends it. An order carries seats for exactly the crew the work needs — a seat
-/// filled beyond <c>RequiredEmployees</c> is a second full wage against the same customer price,
-/// because <c>CalculateOrderPay</c> writes one pay row per assigned employee and
-/// <c>CalculateAggregatedPay</c> has no crew-size term.
+/// filled beyond <c>RequiredEmployees</c> is one more share of the job against the same customer
+/// price, because <c>CalculateOrderPay</c> writes one pay row per assigned employee, each a
+/// 1 / <c>RequiredEmployees</c> share.
 /// </summary>
 public class OrderSeatCapacityTests
 {

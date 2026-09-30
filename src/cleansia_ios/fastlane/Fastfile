@@ -19,15 +19,21 @@ default_platform(:ios)
 
 IOS_ROOT = File.expand_path("..", __dir__)
 
+# Archived through the workspace, not the app's .xcodeproj: the workspace's committed
+# Package.resolved is what CI builds against. A bare .xcodeproj resolves its packages on its own,
+# which floated transitive Firebase dependencies past those pins and rewrote the committed
+# CleansiaCore/Package.resolved on every run.
+WORKSPACE = File.join(IOS_ROOT, "Cleansia.xcworkspace")
+
 APPS = {
   customer: {
     scheme: "CleansiaCustomer",
-    project: "CleansiaCustomer/CleansiaCustomer.xcodeproj",
+    dir: "CleansiaCustomer",
     bundle_id: "cz.cleansia.customer",
   },
   partner: {
     scheme: "CleansiaPartner",
-    project: "CleansiaPartner/CleansiaPartner.xcodeproj",
+    dir: "CleansiaPartner",
     bundle_id: "cz.cleansia.partner",
   },
 }.freeze
@@ -62,12 +68,15 @@ def ship(key)
   )
 
   # 1. Regenerate the two gitignored, build-required inputs from their source of
-  #    truth: the OpenAPI Swift client packages and the .xcodeproj. Safe to run
-  #    at will — the Stripe key and team id live in Config/Local.xcconfig, which
-  #    xcodegen does not write.
-  app_dir = File.join(IOS_ROOT, app[:project].split("/").first)
+  #    truth: the OpenAPI Swift client packages and the .xcodeproj files. Safe to
+  #    run at will — the Stripe key and team id live in Config/Local.xcconfig,
+  #    which xcodegen does not write. BOTH projects, because the workspace
+  #    resolves packages across every project in it: one missing or stale project
+  #    drops its dependencies from that resolution.
   sh("cd #{IOS_ROOT.shellescape} && ./scripts/generate-api-clients.sh")
-  sh("cd #{app_dir.shellescape} && xcodegen generate")
+  APPS.each_value do |project|
+    sh("cd #{File.join(IOS_ROOT, project[:dir]).shellescape} && xcodegen generate")
+  end
 
   # 2. Next build number = one past the highest already on TestFlight (0 → 1 for
   #    the very first upload). TestFlight rejects a duplicate build number.
@@ -83,7 +92,7 @@ def ship(key)
   #    survives the xcodegen regen above and applies to the app + its Live
   #    Activity extension together (they must share a version).
   build_app(
-    project: File.join(IOS_ROOT, app[:project]),
+    workspace: WORKSPACE,
     scheme: app[:scheme],
     configuration: "Release",
     export_method: "app-store",

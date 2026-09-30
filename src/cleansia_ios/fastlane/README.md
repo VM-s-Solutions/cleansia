@@ -34,9 +34,15 @@ bundle exec fastlane partner    # Partner app  → TestFlight
 bundle exec fastlane all        # both
 ```
 
-Each lane: regenerates the OpenAPI client + `.xcodeproj` → picks the next build
-number (one past TestFlight) → archives Release with automatic signing → uploads.
-Internal testers get it within minutes (no review).
+Each lane: regenerates the OpenAPI clients + both `.xcodeproj` → picks the next
+build number (one past TestFlight) → archives Release through
+`Cleansia.xcworkspace` with automatic signing → uploads. Internal testers get it
+within minutes (no review).
+
+> The archive goes through the **workspace**, so the packages are the versions
+> pinned in its committed `Package.resolved` — the ones CI builds. Archiving an
+> app's `.xcodeproj` on its own re-resolves them, floats transitive Firebase
+> dependencies past those pins and rewrites `CleansiaCore/Package.resolved`.
 
 > The build number is injected at archive time (`CURRENT_PROJECT_VERSION`), never
 > written into `project.yml`, so it survives xcodegen regeneration and keeps the

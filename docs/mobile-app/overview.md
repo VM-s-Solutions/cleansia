@@ -540,8 +540,10 @@ bundle exec fastlane partner    # Partner  → TestFlight
 bundle exec fastlane all
 ```
 
-Each lane regenerates the OpenAPI client and the `.xcodeproj`, picks the next build number from
-TestFlight, archives Release with automatic signing, and uploads. See
+Each lane regenerates the OpenAPI clients and both `.xcodeproj`, picks the next build number from
+TestFlight, archives Release through `Cleansia.xcworkspace` with automatic signing, and uploads.
+The workspace matters: it builds against the committed `Package.resolved` pins, the versions CI
+builds, where an app's `.xcodeproj` alone re-resolves its packages past them. See
 `src/cleansia_ios/fastlane/README.md`.
 
 An upload is a **production** build: Release calls `api-partner-mobile.cleansia.cz` or

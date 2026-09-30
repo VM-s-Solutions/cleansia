@@ -212,6 +212,33 @@ public sealed class IncidentFileServiceTests
     }
 
     [Fact]
+    public async Task An_Order_Prints_The_Customers_Request_To_Start_Within_The_Withdrawal_Period_And_One_Without_Prints_None()
+    {
+        var requested = NewOrder(OrderId, SubjectId);
+        requested.RecordEarlyPerformanceConsent(
+            Order.EarlyPerformanceConsentTextVersionInForce, T0, "cleansia.customer", "203.0.113.9", "iPhone 15");
+        SeedOrders(requested, NewOrder(OtherOrderId, SubjectId));
+
+        var data = await Service().BuildAsync(SubjectId, null, AdminEmail, CancellationToken.None);
+
+        var consent = data.Orders.Single(o => o.Id == OrderId).EarlyPerformanceConsent;
+        Assert.NotNull(consent);
+        Assert.Equal(T0, consent!.ConsentedOn);
+        Assert.Equal(Order.EarlyPerformanceConsentTextVersionInForce, consent.TextVersion);
+        Assert.Equal("cleansia.customer", consent.Client);
+        Assert.Equal("203.0.113.9", consent.IpAddress);
+        Assert.Equal("iPhone 15", consent.DeviceLabel);
+        Assert.Null(data.Orders.Single(o => o.Id == OtherOrderId).EarlyPerformanceConsent);
+
+        var text = IncidentFileDigest.CanonicalText(IncidentFileSections.Build(data));
+        Assert.Contains(
+            $"Early start requested: 2026-09-01 12:00:00 UTC, version {Order.EarlyPerformanceConsentTextVersionInForce}, "
+            + "client cleansia.customer, request 203.0.113.9 / iPhone 15\n",
+            text);
+        Assert.Contains("Early start requested: —\n", text);
+    }
+
+    [Fact]
     public async Task The_Identity_Names_The_Operating_Company_And_Every_Market_It_Serves_Never_The_Tenant_Id()
     {
         SeedMarkets(

@@ -1,7 +1,7 @@
 import { Route } from '@angular/router';
 import { TermsComponent } from './terms/terms.component';
 import { PrivacyComponent } from './privacy/privacy.component';
-import { WorkContractComponent } from './work-contract/work-contract.component';
+import { ComplaintsComponent } from './complaints/complaints.component';
 
 export const termsRoutes: Route[] = [
   {
@@ -19,10 +19,10 @@ export const privacyRoutes: Route[] = [
   },
 ];
 
-export const workContractRoutes: Route[] = [
+export const complaintsRoutes: Route[] = [
   {
     path: '',
-    component: WorkContractComponent,
-    data: { title: 'work_contract_page.title' },
+    component: ComplaintsComponent,
+    data: { title: 'complaints_page.title' },
   },
 ];

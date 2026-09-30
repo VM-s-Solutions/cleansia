@@ -1,4 +1,5 @@
 import {
+  DirtinessLevel,
   IQuoteOrderResponse,
   QuoteOrderQuoteLine,
   QuoteOrderResponse,
@@ -35,6 +36,8 @@ const QUOTE_1000_NO_DISCOUNT: QuoteFields = {
   expressSurchargeAmount: 0,
   expressSurchargeWaivedByMembership: false,
   expressUpgradesRemaining: undefined,
+  dirtinessSurchargeAmount: 0,
+  dirtinessLevel: DirtinessLevel.Normal,
   creditBalance: 0,
   creditMaxShareOfOrder: 0.8,
   // The 1000 basket is one standard clean: OrderDuration estimates 240 minutes,

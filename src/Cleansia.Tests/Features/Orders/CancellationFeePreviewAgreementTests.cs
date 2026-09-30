@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Auditing;
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -14,6 +15,8 @@ using Cleansia.Infra.Common.Validations;
 using Cleansia.Tests.Common;
 using MockQueryable;
 using Moq;
+using Microsoft.Extensions.Logging.Abstractions;
+using Cleansia.Core.Queue.Abstractions;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -61,7 +64,7 @@ public class CancellationFeePreviewAgreementTests
 
     // Both handlers share ONE resolver instance backed by ONE membership repository, which is what the
     // DI container gives them per request — a member's window reaches the quote and the charge alike.
-    private CancellationPolicyResolver Resolver => new(_membershipRepository.Object);
+    private CancellationPolicyResolver Resolver => new(_membershipRepository.Object, _orderRepository.Object);
 
     private CancelOrder.Handler CreateCancelHandler() =>
         new(
@@ -71,14 +74,17 @@ public class CancellationFeePreviewAgreementTests
                 Mock.Of<ITenantProvider>(),
                 _refundService.Object,
                 Mock.Of<IRefundRepository>(),
+                Mock.Of<IReceivableRepository>(),
                 _creditAccountRepository.Object,
                 _loyaltyService.Object,
                 Resolver,
                 _producer.Object,
                 _liveActivityProducer.Object,
                 _expressWaiverConsumer.Object,
+                Mock.Of<IPendingDispatch>(),
                 new AuditContext(),
-                TimeProvider.System));
+                TimeProvider.System,
+                NullLogger<CustomerOrderCancellation>.Instance));
 
     private GetCancellationFeePreview.Handler CreatePreviewHandler() =>
         new(
@@ -92,7 +98,9 @@ public class CancellationFeePreviewAgreementTests
         double cleaningInHours,
         bool assignCleaner = true,
         decimal totalPrice = 1000m,
-        int bookedMinutesAgo = 120)
+        int bookedMinutesAgo = 120,
+        PaymentType paymentType = PaymentType.Card,
+        PaymentStatus paymentStatus = PaymentStatus.Paid)
     {
         var currency = Currency.Create("CZK", "Kč", "Czech Koruna");
         var order = Order.Create(
@@ -103,15 +111,18 @@ public class CancellationFeePreviewAgreementTests
             rooms: 2,
             bathrooms: 1,
             cleaningDateTime: DateTime.UtcNow.AddHours(cleaningInHours),
-            paymentType: PaymentType.Card,
+            paymentType: paymentType,
             totalPrice: totalPrice,
             currencyId: currency.Id,
-            paymentStatus: PaymentStatus.Paid,
+            paymentStatus: paymentStatus,
             userId: UserId);
         order.Id = OrderId;
         order.Created("tester", DateTime.UtcNow.AddMinutes(-bookedMinutesAgo));
         order.SetCurrency(currency);
-        order.AssignStripeSessionId("cs_test_preview");
+        if (paymentType == PaymentType.Card)
+        {
+            order.AssignStripeSessionId("cs_test_preview");
+        }
 
         var track = OrderStatusTrack.Create(OrderStatus.Confirmed, order);
         track.Created("tester", DateTimeOffset.UtcNow.AddMinutes(-bookedMinutesAgo));
@@ -191,6 +202,40 @@ public class CancellationFeePreviewAgreementTests
         Assert.Equal(cancel.TotalPrice, preview.TotalPrice);
     }
 
+    // ── The oops window: 60 on a first booking, 15 for a returning customer (owner ruling 2026-09-28) ──
+
+    [Fact]
+    public async Task A_First_Booking_Quotes_And_Charges_Its_Sixty_Minute_Window()
+    {
+        ArrangeOrder(cleaningInHours: 3, bookedMinutesAgo: 30);
+        _orderRepository
+            .Setup(r => r.IsFirstBookingAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        await AssertQuoteMatchesChargeAsync(
+            CancellationFeeTier.FreeOopsWindow, expectedRate: 0m, expectedRefund: 1000m, expectedFee: 0m,
+            expectedOopsMinutes: BookingPolicy.OopsWindowMinutesFirstBooking);
+    }
+
+    // ── Past the start with a cleaner on it: the customer reports a no-show, never pays for one ──
+
+    [Fact]
+    public async Task Past_The_Start_With_A_Cleaner_On_It_Both_The_Quote_And_The_Cancel_Refuse()
+    {
+        var order = ArrangeOrder(cleaningInHours: -0.5);
+
+        var preview = await CreatePreviewHandler().Handle(
+            new GetCancellationFeePreview.Query(OrderId), CancellationToken.None);
+        var cancel = await CreateCancelHandler().Handle(
+            new CancelOrder.Command(OrderId, null), CancellationToken.None);
+
+        Assert.Equal(BusinessErrorMessage.OrderStartPassedCannotCancel, preview.Error!.Message);
+        Assert.Equal(BusinessErrorMessage.OrderStartPassedCannotCancel, cancel.Error!.Message);
+        Assert.NotEqual(OrderStatus.Cancelled, order.CurrentStatus);
+        _refundService.Verify(
+            s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
     // ── The tier ladder ──
 
     [Fact]
@@ -217,6 +262,16 @@ public class CancellationFeePreviewAgreementTests
         ArrangeOrder(cleaningInHours: 1);
 
         await AssertQuoteMatchesChargeAsync(CancellationFeeTier.LastMinute, 0.50m, 500m, 500m);
+    }
+
+    [Fact]
+    public async Task A_Cash_Booking_Not_Yet_Collected_Quotes_And_Reports_No_Refund()
+    {
+        // The 25% tier twelve hours out, but nothing was taken, so nothing goes back — on the quote as on
+        // the cancel.
+        ArrangeOrder(cleaningInHours: 12, paymentType: PaymentType.Cash, paymentStatus: PaymentStatus.Pending);
+
+        await AssertQuoteMatchesChargeAsync(CancellationFeeTier.Partial, 0.25m, expectedRefund: 0m, expectedFee: 250m);
     }
 
     // ── The oops window ──

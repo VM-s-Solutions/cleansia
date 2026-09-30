@@ -81,6 +81,5 @@ public static class PreferredOfferNotifier
         await NotifyIfOfferableAsync(order, resolved.Recipient, notificationProducer, cancellationToken);
     }
 
-    private static bool IsOfferable(Order order) => OrderAvailability.IsOfferable(
-        order.CurrentStatus, order.PaymentType, order.PaymentStatus, order.RecurringTemplateId);
+    private static bool IsOfferable(Order order) => OrderAvailability.IsOfferable(order);
 }

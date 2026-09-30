@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using MockQueryable;
@@ -15,9 +16,9 @@ namespace Cleansia.Tests.Features.Orders;
 /// <summary>
 /// The seat rule, pinned at both moments it is evaluated: the computation that sets the cap, and the
 /// take gate that spends it. An order carries seats for exactly the crew the work needs — a seat
-/// filled beyond <c>RequiredEmployees</c> is a second full wage against the same customer price,
-/// because <c>CalculateOrderPay</c> writes one pay row per assigned employee and
-/// <c>CalculateAggregatedPay</c> has no crew-size term.
+/// filled beyond <c>RequiredEmployees</c> is one more share of the job against the same customer
+/// price, because <c>CalculateOrderPay</c> writes one pay row per assigned employee, each a
+/// 1 / <c>RequiredEmployees</c> share.
 /// </summary>
 public class OrderSeatCapacityTests
 {
@@ -155,7 +156,9 @@ public class OrderSeatCapacityTests
             employeeRepository.Object,
             accessService.Object,
             ValidatorTestHelpers.CurrencyResolver(),
-            WorkContractTestData.LegalDocumentRepository().Object);
+            WorkContractTestData.LegalDocumentRepository().Object,
+            Mock.Of<ILegalDocumentResolver>(),
+            Mock.Of<IUserConsentRepository>());
 
         return await validator.ValidateAsync(new TakeOrder.Command(OrderId, WorkContractTestData.TextIdEn));
     }

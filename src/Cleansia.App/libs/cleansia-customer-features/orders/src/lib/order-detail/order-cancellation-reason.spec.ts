@@ -5,6 +5,7 @@ import {
   CustomerAuthService,
   CustomerClient,
   GetMyMembershipResponse,
+  MyReceivableDto,
   OrderItem,
   OrderStatus,
 } from '@cleansia/customer-services';
@@ -88,6 +89,7 @@ describe('order detail cancellation reason', () => {
               membershipClient: {
                 getMine: () => new Subject<GetMyMembershipResponse>().asObservable(),
               },
+              receivableClient: { getMine: () => new Subject<MyReceivableDto[]>().asObservable() },
             },
           },
           { provide: CustomerAuthService, useValue: { isLoggedIn: () => true } },

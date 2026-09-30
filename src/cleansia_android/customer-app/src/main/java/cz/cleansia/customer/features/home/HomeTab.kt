@@ -40,7 +40,6 @@ import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.Star
-import androidx.compose.material.icons.outlined.VerifiedUser
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -89,6 +88,7 @@ import cz.cleansia.core.ui.theme.Poppins
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.loyalty.LoyaltyAccountDto
 import cz.cleansia.customer.core.loyalty.LoyaltyTier
+import cz.cleansia.customer.core.memberships.benefitsPaused
 import cz.cleansia.customer.core.orders.OrderListItemDto
 import cz.cleansia.customer.features.booking.localizedName
 import cz.cleansia.customer.features.orders.OrderStatus
@@ -161,7 +161,6 @@ fun HomeTab(
         if (membership == null) membershipRepo.refresh()
     }
     val isPlus = membership?.hasMembership == true
-    val hasAnyOrders = recentOrders.isNotEmpty()
 
     // Catalog — used for the popular-packages quick-book strip. Home prices the chosen market
     // (ADR-0058 D5): refresh on first composition when nothing is loaded, whenever the market
@@ -200,7 +199,7 @@ fun HomeTab(
             .take(3)
     }
     val showRecurringSection = activeRecurring.isNotEmpty()
-    val showSetupRecurringSlide = isPlus && recurringTemplates.isEmpty()
+    val showSetupRecurringSlide = isPlus && membership?.benefitsPaused != true && recurringTemplates.isEmpty()
 
     // Most recent Completed order — drives the "Order again" quick-action card.
     val mostRecentCompleted = androidx.compose.runtime.remember(recentOrders) {
@@ -313,11 +312,10 @@ fun HomeTab(
                 )
             }
 
-            // 2. Smart upsell carousel — Plus / first-booking / referral / book /
-            // setup-recurring. Slides hide based on user state.
+            // 2. Smart upsell carousel — Plus / referral / book / setup-recurring.
+            // Slides hide based on user state.
             SmartUpsellCarousel(
                 isPlus = isPlus,
-                hasAnyOrders = hasAnyOrders,
                 showSetupRecurring = showSetupRecurringSlide,
                 onSubscribePlus = onSubscribePlus,
                 onBookCleaning = onBookCleaning,
@@ -501,11 +499,11 @@ private fun AddressTopBar(
 /* ── 2. Smart upsell carousel — state-driven swipeable cards ──
  *
  * The home upsell shelf. State drives both which slides appear and their order: Plus hides for
- * subscribers, Welcome hides once the customer has any past order, Referral and Book are always present.
+ * subscribers, Referral and Book are always present.
  * -> /product/features
  */
 
-private enum class UpsellKind { Plus, Welcome, Referral, Book, SetupRecurring }
+private enum class UpsellKind { Plus, Referral, Book, SetupRecurring }
 
 private data class UpsellSlide(
     val kind: UpsellKind,
@@ -520,7 +518,6 @@ private data class UpsellSlide(
 @Composable
 private fun SmartUpsellCarousel(
     isPlus: Boolean,
-    hasAnyOrders: Boolean,
     showSetupRecurring: Boolean,
     onSubscribePlus: () -> Unit,
     onBookCleaning: () -> Unit,
@@ -545,7 +542,7 @@ private fun SmartUpsellCarousel(
     // first so the slide on screen at t=0 is the one the user is most likely
     // to act on.
     val slides = androidx.compose.runtime.remember(
-        isPlus, hasAnyOrders, showSetupRecurring,
+        isPlus, showSetupRecurring,
         plusGradient, purpleGradient, cyanGradient, blueGradient,
     ) {
         buildList {
@@ -577,19 +574,6 @@ private fun SmartUpsellCarousel(
                         gradient = purpleGradient,
                         mascotRes = R.drawable.mascot_idea,
                         onClick = onSetupRecurring,
-                    ),
-                )
-            }
-            if (!hasAnyOrders) {
-                add(
-                    UpsellSlide(
-                        kind = UpsellKind.Welcome,
-                        topRes = R.string.home_upsell_welcome_top,
-                        titleRes = R.string.home_upsell_welcome_title,
-                        ctaRes = R.string.home_upsell_welcome_cta,
-                        gradient = purpleGradient,
-                        mascotRes = R.drawable.mascot_mopping,
-                        onClick = onBookCleaning,
                     ),
                 )
             }
@@ -757,8 +741,6 @@ private fun TrustStrip() {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         TrustItem(Icons.Outlined.Shield, stringResource(R.string.home_trust_insured), modifier = Modifier.weight(1f))
-        Box(Modifier.width(1.dp).height(28.dp).background(MaterialTheme.colorScheme.outlineVariant))
-        TrustItem(Icons.Outlined.VerifiedUser, stringResource(R.string.home_trust_vetted), modifier = Modifier.weight(1f))
         Box(Modifier.width(1.dp).height(28.dp).background(MaterialTheme.colorScheme.outlineVariant))
         TrustItem(Icons.Outlined.Bolt, stringResource(R.string.home_trust_same_day), modifier = Modifier.weight(1f))
     }

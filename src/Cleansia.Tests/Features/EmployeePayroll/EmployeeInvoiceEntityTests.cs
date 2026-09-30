@@ -341,6 +341,19 @@ public class EmployeeInvoiceEntityTests
         Assert.Equal(0m, invoice.TotalAmount);
     }
 
+    [Fact]
+    public void UpdateAmounts_Below_The_Cash_Set_Off_Of_A_Cancelled_Invoice_Gives_Nothing_More_Back()
+    {
+        var invoice = PayrollMockFactory.Invoice(subTotal: 100m);
+        invoice.SetOffCash(100m);
+        invoice.Cancel("Wrong period", "admin-1");
+
+        var released = invoice.UpdateAmounts(bonusAmount: 0m, deductionAmount: 40m);
+
+        Assert.Equal(0m, released);
+        Assert.Equal(60m, invoice.CashSetOffAmount);
+    }
+
     private static EmployeeInvoice PaidInvoice()
     {
         var invoice = PayrollMockFactory.Invoice();

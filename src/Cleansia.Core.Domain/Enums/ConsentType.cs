@@ -8,5 +8,8 @@ public enum ConsentType
     TermsOfService = 0,
     PrivacyPolicy = 1,
     MarketingEmails = 2,
-    DataProcessing = 3
+    DataProcessing = 3,
+    CleanerFrameworkContract = 4,
+    SelfBillingAgreement = 5,
+    CleanerDataProcessingAgreement = 6
 }

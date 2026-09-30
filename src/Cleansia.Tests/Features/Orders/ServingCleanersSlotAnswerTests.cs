@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Memberships;
@@ -34,6 +35,9 @@ public sealed class ServingCleanersSlotAnswerTests : IDisposable
     private const string WindowsId = "service-windows";
     private const string BundleId = "package-bundle";
     private const string BundledIroningId = "service-ironing";
+    private const int DeepCleanMinutesPerRoom = 10;
+    private const int WindowsMinutesPerRoom = 5;
+    private const int IroningMinutesPerRoom = 4;
 
     private static readonly DateTime CleaningUtc = new(2026, 8, 20, 9, 0, 0, DateTimeKind.Utc);
 
@@ -70,24 +74,48 @@ public sealed class ServingCleanersSlotAnswerTests : IDisposable
 
     public void Dispose() => _connection.Dispose();
 
-    [Fact]
-    public async Task The_Window_Length_Is_The_Sum_The_Write_Path_Would_Persist()
+    /// <summary>
+    /// The home's size and the dirtiness level lengthen the booking, so they lengthen the window too:
+    /// per-room minutes on a direct and on a packaged service, then the level's rate.
+    /// </summary>
+    [Theory]
+    [InlineData(0, 0, DirtinessLevel.Normal)]
+    [InlineData(2, 1, DirtinessLevel.Increased)]
+    [InlineData(8, 4, DirtinessLevel.Heavy)]
+    public async Task The_Window_Length_Is_The_Sum_The_Write_Path_Would_Persist(
+        int rooms, int bathrooms, DirtinessLevel level)
     {
         await SeedAsync();
 
         await HandleAsync(new GetMyServingCleaners.Query(
             CleaningDateTimeUtc: CleaningUtc,
             SelectedServiceIds: [DeepCleanId, WindowsId],
-            SelectedPackageIds: [BundleId]));
+            SelectedPackageIds: [BundleId],
+            Rooms: rooms,
+            Bathrooms: bathrooms,
+            DirtinessLevel: level));
 
         var expectedMinutes = OrderDuration.EstimateMinutes(
-            [NewService(DeepCleanId, 120), NewService(WindowsId, 45)],
-            [NewBundle()]);
+            [NewService(DeepCleanId, 120, DeepCleanMinutesPerRoom), NewService(WindowsId, 45, WindowsMinutesPerRoom)],
+            [NewBundle()],
+            rooms + bathrooms,
+            BookingPolicy.DirtinessSurchargeRate(level));
 
         var question = Assert.NotNull(_busyQuestion);
         Assert.Equal(CleaningUtc, question.Start);
         Assert.Equal(CleaningUtc.AddMinutes(expectedMinutes), question.End);
         Assert.Equal([CleanerId], question.EmployeeIds);
+    }
+
+    [Fact]
+    public async Task An_Undefined_Level_Is_Refused_Before_The_Handler_Can_Throw_On_It()
+    {
+        var result = await new GetMyServingCleaners.Validator().ValidateAsync(
+            new GetMyServingCleaners.Query(CleaningDateTimeUtc: CleaningUtc, DirtinessLevel: (DirtinessLevel)7));
+
+        var error = Assert.Single(result.Errors);
+        Assert.Equal(nameof(GetMyServingCleaners.Query.DirtinessLevel), error.PropertyName);
+        Assert.Equal(BusinessErrorMessage.InvalidEnumValue, error.ErrorMessage);
     }
 
     [Fact]
@@ -229,9 +257,9 @@ public sealed class ServingCleanersSlotAnswerTests : IDisposable
                 currentPeriodStart: DateTime.UtcNow.AddDays(-1),
                 currentPeriodEnd: DateTime.UtcNow.AddMonths(1)));
 
-    private static Service NewService(string id, int estimatedMinutes)
+    private static Service NewService(string id, int estimatedMinutes, int minutesPerRoom = 0)
     {
-        var service = Service.Create("category-1", id, id, estimatedMinutes);
+        var service = Service.Create("category-1", id, id, estimatedMinutes, minutesPerRoom);
         service.Id = id;
         return service;
     }
@@ -241,7 +269,7 @@ public sealed class ServingCleanersSlotAnswerTests : IDisposable
     {
         var bundle = Package.Create("Bundle", "Bundle");
         bundle.Id = BundleId;
-        bundle.AddService(NewService(BundledIroningId, 90));
+        bundle.AddService(NewService(BundledIroningId, 90, IroningMinutesPerRoom));
         return bundle;
     }
 
@@ -250,8 +278,8 @@ public sealed class ServingCleanersSlotAnswerTests : IDisposable
         await using var ctx = NewContext();
         await ctx.Database.EnsureCreatedAsync();
 
-        ctx.Add(NewService(DeepCleanId, deepCleanMinutes));
-        ctx.Add(NewService(WindowsId, 45));
+        ctx.Add(NewService(DeepCleanId, deepCleanMinutes, DeepCleanMinutesPerRoom));
+        ctx.Add(NewService(WindowsId, 45, WindowsMinutesPerRoom));
         ctx.Add(NewBundle());
 
         var user = Cleansia.Core.Domain.Users.User.CreateWithPassword(

@@ -9,7 +9,7 @@ namespace Cleansia.HostTests.Tests;
 /// <summary>
 /// UserMembership write-path isolation (testing.md must-cover #5, S8) on the Customer host. The
 /// membership write endpoints (<c>Cancel</c>/<c>SwapPlan</c>) resolve the caller's membership SOLELY
-/// from the authenticated subject via the tenant-filtered <c>GetActiveForUserAsync</c> — there is no
+/// from the authenticated subject via the tenant-filtered <c>GetLifecycleForUserAsync</c> — there is no
 /// request-supplied membership id, so the cross-USER boundary degenerates to "a different subject
 /// resolves a different (or no) membership". We assert both forms of "you cannot reach another party's
 /// membership":

@@ -118,6 +118,7 @@ export class ServiceFormComponent implements OnInit, OnDestroy {
     name: ['', [Validators.required, Validators.maxLength(100)]],
     description: ['', [Validators.maxLength(500)]],
     estimatedTime: [0, [Validators.required, Validators.min(0)]],
+    minutesPerRoom: [0, [Validators.required, Validators.min(0)]],
     categoryId: ['', [Validators.required]],
     translations: this.fb.nonNullable.group({}),
     prices: this.fb.nonNullable.group({}),
@@ -237,12 +238,14 @@ export class ServiceFormComponent implements OnInit, OnDestroy {
     description?: string;
     prices?: { [key: string]: { basePrice?: number; perRoomPrice?: number } };
     estimatedTime?: number;
+    minutesPerRoom?: number;
     translations?: { [key: string]: { name?: string; description?: string } };
   }): void {
     this.form.patchValue({
       name: service.name ?? '',
       description: service.description ?? '',
       estimatedTime: service.estimatedTime ?? 0,
+      minutesPerRoom: service.minutesPerRoom ?? 0,
     });
 
     this.patchPrices(service.prices);
@@ -307,6 +310,7 @@ export class ServiceFormComponent implements OnInit, OnDestroy {
       description: formValue.description,
       prices,
       estimatedTime: formValue.estimatedTime,
+      minutesPerRoom: formValue.minutesPerRoom,
       categoryId: formValue.categoryId,
       translations,
     };

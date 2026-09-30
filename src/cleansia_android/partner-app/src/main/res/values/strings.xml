@@ -55,6 +55,10 @@
     <string name="earnings_next_payout">Next payout</string>
     <string name="earnings_view_invoices">View all invoices</string>
     <string name="earnings_view_invoices_subtitle">See past payouts and invoice statuses</string>
+    <string name="earnings_cash_held_title">Cash I hold</string>
+    <string name="earnings_cash_held_subtitle">Cash you took at the door and have not handed over yet. It is set off against your next payout.</string>
+    <string name="earnings_cash_held_limit">Limit %1$s</string>
+    <string name="earnings_cash_held_jobs_hidden">You hold more than the limit, so cash jobs are hidden from you until you hand cash over.</string>
     <string name="email">Email</string>
     <string name="password">Password</string>
     <string name="confirm_password">Confirm Password</string>
@@ -202,7 +206,6 @@
     <string name="pending_orders">Pending</string>
     <string name="performance_score">Performance Score</string>
     <string name="customer_rating">Customer Rating</string>
-    <string name="on_time_rate">On-Time Rate</string>
     <string name="avg_response_time">Avg Response</string>
     <string name="minutes_short">%1$d min</string>
     <string name="monthly_earnings_trend">Monthly Earnings Trend</string>
@@ -215,11 +218,6 @@
     <string name="booked_hours_label">Booked</string>
     <string name="utilization_rate">Utilization</string>
     <string name="hours_short">%1$.1fh</string>
-    <string name="completion_efficiency">Completion Efficiency</string>
-    <string name="estimated_label">Estimated</string>
-    <string name="actual_label">Actual</string>
-    <string name="faster_than_estimate">%1$d%% faster</string>
-    <string name="slower_than_estimate">%1$d%% slower</string>
 
     <!-- Orders -->
     <string name="orders">Orders</string>
@@ -237,7 +235,7 @@
     <string name="swipe_to_complete">Swipe to Complete</string>
     <string name="swipe_to_notify_on_the_way">Swipe to mark on the way</string>
     <string name="customer_notified_on_the_way">Customer notified · on the way</string>
-    <string name="waiting_for_other_employees">You\'re assigned! Waiting for other employees to confirm before the order can start.</string>
+    <string name="waiting_for_other_employees">You\'re assigned! Waiting for other partners to confirm before the order can start.</string>
     <string name="order_started">Started!</string>
     <string name="complete_order">Complete Order</string>
     <string name="no_orders_available">No orders available</string>
@@ -285,7 +283,6 @@
     <string name="delete_photo_confirm">Are you sure you want to delete this photo?</string>
     <string name="photos_none_recorded">No photos recorded</string>
     <string name="estimated_time">Estimated Time</string>
-    <string name="actual_completion_time">Actual completion time (min)</string>
     <string name="completion_notes">Completion notes (optional)</string>
     <string name="rooms">Rooms</string>
     <string name="bathrooms">Bathrooms</string>
@@ -686,6 +683,19 @@
     <string name="call_customer">Call Customer</string>
     <string name="navigate_to_address">Navigate to Address</string>
     <string name="report_issue">Issue</string>
+    <string name="lockout_card_title">Cannot get in?</string>
+    <string name="lockout_card_not_yet">If nobody opens the door, you can report it from %1$s, %2$d minutes after the start.</string>
+    <string name="lockout_card_body">Take a photo of the entrance, note when you called the customer, and report it. An administrator confirms it before any fee applies.</string>
+    <string name="lockout_entrance_photo">Entrance photo</string>
+    <string name="lockout_photo_needed">Take a photo of the entrance first.</string>
+    <string name="lockout_report_action">I cannot get in</string>
+    <string name="lockout_sheet_title">Report that you cannot get in</string>
+    <string name="lockout_sheet_description">Note when you called or messaged the customer and what happened. The administrator reads it with your photo.</string>
+    <string name="lockout_call_attempts_label">Calls you made</string>
+    <string name="lockout_reported_toast">Reported. An administrator will confirm it.</string>
+    <string name="lockout_reported_title">You reported you cannot get in</string>
+    <string name="lockout_reported_body">Reported at %1$s. An administrator will confirm it; until then the job stays as it is.</string>
+    <string name="lockout_reported_calls">Calls: %1$s</string>
     <string name="report_issue_desc">Describe the issue you encountered during this cleaning session.</string>
     <string name="describe_issue">Describe the issue</string>
     <string name="submit">Submit</string>
@@ -717,7 +727,7 @@
     <string name="invoice_information">Invoice Information</string>
     <string name="amount_breakdown">Amount Breakdown</string>
     <string name="status_timeline">Status Timeline</string>
-    <string name="employee">Employee</string>
+    <string name="employee">Partner</string>
     <string name="variable_symbol">Variable Symbol</string>
     <string name="payment_reference">Payment Reference</string>
     <string name="total_orders">Total Orders</string>
@@ -843,7 +853,6 @@
     <string name="jobs">Jobs</string>
     <string name="rating">Rating</string>
     <string name="unscheduled">Unscheduled</string>
-    <string name="guest">Guest</string>
     <plurals name="scope_rooms">
         <item quantity="one">%1$d room</item>
         <item quantity="other">%1$d rooms</item>
@@ -881,6 +890,19 @@
     <string name="work_contract_pending_banner">Accept the contract for work before you start</string>
     <string name="work_contract_accept_cta">Accept the contract</string>
     <string name="work_contract_read">Read the contract</string>
+    <string name="work_contract_reward">Your reward</string>
+    <string name="work_contract_parties">Between the operating company that sold this cleaning (the client) and you (the contractor)</string>
+    <string name="legal_documents_title">Contract documents</string>
+    <string name="legal_documents_intro">These documents govern your work for the operating company of the market you work in. Read each one and accept its current version — until you do, you can\'t be approved or take jobs.</string>
+    <string name="legal_documents_empty">There are no documents for you to accept right now.</string>
+    <string name="legal_documents_version">Version %1$s</string>
+    <string name="legal_documents_accepted_on">Accepted on %1$s, version %2$s</string>
+    <string name="legal_documents_new_version">A new version is in force. You accepted version %1$s.</string>
+    <string name="legal_documents_awaiting">Awaiting your acceptance</string>
+    <string name="legal_documents_accept">Accept this document</string>
+    <string name="legal_documents_accepted_toast">Document accepted.</string>
+    <string name="legal_documents_text_updated">This document was updated — please read it again.</string>
+    <string name="legal_documents_review">Review documents</string>
     <string name="slide_to_start">Slide to start cleaning</string>
     <string name="starting_order">Starting the job…</string>
     <string name="slide_to_complete">Slide to complete</string>
@@ -909,6 +931,9 @@
     <string name="scope_section_title">Property &amp; scope</string>
     <string name="scope_services_label">Services &amp; packages</string>
     <string name="scope_extras_label">Extras</string>
+    <string name="dirtiness_level_normal">Normal dirtiness</string>
+    <string name="dirtiness_level_increased">Increased dirtiness</string>
+    <string name="dirtiness_level_heavy">Heavy dirtiness</string>
 
     <!-- Extra names, `extra_name_<slug with - as _>`. The wire carries the bare slug and
          nothing else, so the names live here; the values are the seed's own translations
@@ -921,6 +946,8 @@
 
     <!-- Shown instead of the map when the order has no street address to point at. -->
     <string name="map_approximate_area">Approximate area — the exact address appears once you take the order.</string>
+    <string name="order_customer_details_closed_completed">The customer\'s name, address and phone number were removed 24 hours after the job was completed.</string>
+    <string name="order_customer_details_closed_cancelled">The customer\'s name, address and phone number were removed when the order was cancelled.</string>
 
     <string name="from_customer_section_title">From customer</string>
     <string name="note_general_label">Notes</string>
@@ -1005,6 +1032,8 @@
     <string name="registration_lock_action_complete_profile">Complete profile</string>
     <string name="registration_lock_action_upload_documents">Upload documents</string>
     <string name="registration_lock_action_contact_support">Contact support</string>
+    <string name="registration_lock_category_legal_documents">Contract documents</string>
+    <string name="registration_lock_action_accept_documents">Read and accept</string>
     <string name="registration_lock_documents_required">Upload your identification documents.</string>
     <string name="registration_lock_approval_awaiting_review">Application under review by an administrator.</string>
     <string name="registration_lock_approval_complete_profile_first">Finish the steps above first — then admin can approve you.</string>
@@ -1078,13 +1107,13 @@
     <string name="error_user_not_found">User not found.</string>
 
     <!-- Employee -->
-    <string name="error_employee_not_found">Employee not found.</string>
-    <string name="error_employee_not_existing_email">No employee found with this email.</string>
-    <string name="error_employee_not_allowed_to_update">You can\'t edit this employee.</string>
+    <string name="error_employee_not_found">Partner not found.</string>
+    <string name="error_employee_not_existing_email">No partner found with this email.</string>
+    <string name="error_employee_not_allowed_to_update">You can\'t edit this partner.</string>
     <string name="error_employee_profile_incomplete">Please complete your profile before taking jobs.</string>
     <string name="error_employee_documents_missing">Required documents are missing. Please upload them in your profile.</string>
-    <string name="error_employee_already_approved">This employee is already approved.</string>
-    <string name="error_employee_already_rejected">This employee is already rejected.</string>
+    <string name="error_employee_already_approved">This partner is already approved.</string>
+    <string name="error_employee_already_rejected">This partner is already rejected.</string>
 
     <!-- Employee documents -->
     <string name="error_employee_document_not_found">Document not found.</string>
@@ -1115,6 +1144,8 @@
     <string name="error_contract_text_mismatch">The contract was updated \u2014 please read it again.</string>
     <string name="error_contract_acceptance_required">Accept the contract for work for this job before you continue.</string>
     <string name="error_legal_document_not_found">This job cannot be taken right now.</string>
+    <string name="error_employee_legal_documents_not_accepted">Accept the current version of your contract documents before taking jobs.</string>
+    <string name="error_legal_document_not_in_force">This document is no longer the version in force. Reload it and accept the current one.</string>
 
     <!-- Order — completion -->
     <string name="error_order_not_in_progress">This order isn\'t in progress.</string>
@@ -1125,13 +1156,23 @@
     <string name="error_order_completion_notes_required">Completion notes are required.</string>
     <string name="error_order_completion_notes_too_long">Completion notes are too long.</string>
     <string name="error_order_after_photos_required">Take at least one \"after\" photo before completing the order.</string>
+    <string name="error_order_photo_window_closed">This photo can\'t be added now: before photos from the moment you hold the job until it\'s finished, after photos while the work is in progress.</string>
+    <string name="error_order_photo_locked">Photos can\'t be deleted once the order is completed or cancelled.</string>
     <string name="error_order_cash_not_collected">Collect the cash and mark it as received before completing this order.</string>
     <string name="error_order_payment_not_confirmed">This order\'s payment hasn\'t been confirmed yet.</string>
     <string name="error_order_not_cash_payment">This isn\'t a cash order.</string>
     <string name="error_order_cash_already_collected">Cash has already been collected for this order.</string>
+    <string name="error_order_lockout_too_early">It is too early to report this. You can report that you cannot get in from 15 minutes after the start.</string>
+    <string name="error_order_lockout_photo_required">Take a photo of the entrance before you report that you cannot get in.</string>
+    <string name="error_order_lockout_already_reported">You have already reported that you cannot get in.</string>
+    <string name="error_order_lockout_order_closed">This job is already completed or cancelled.</string>
+    <string name="error_order_cash_float_cap_exceeded">You hold more company cash than your limit allows. Hand it over before you take another cash job.</string>
     <string name="error_order_card_payment_already_settled">This order was already paid by card. Don\'t collect cash — the payment status has been updated.</string>
     <string name="error_order_card_payment_in_progress">A card payment for this order is still processing. Wait a moment and try again.</string>
     <string name="error_order_card_payment_unverified">We couldn\'t check this order\'s card payment. Don\'t collect cash yet — try again in a moment.</string>
+    <string name="error_order_cash_not_allowed_on_card_order">This order is paid by card, so cash can\'t be recorded for it. Don\'t take cash — ask an office admin to settle it.</string>
+    <string name="error_order_payment_not_outstanding">This order has no payment left to collect — it is already settled or refunded. Don\'t take cash.</string>
+    <string name="error_credit_cash_not_collectable_on_credit_order">Part of this booking was already paid from the customer’s credit. Ask an office admin to settle it — do not collect the amount shown.</string>
 
     <!-- Order — notes / issues / review -->
     <string name="error_order_note_content_required">Note text is required.</string>
@@ -1290,6 +1331,7 @@
     <string name="error_employee_not_approved">Your account hasn\'t been approved yet.</string>
     <string name="error_gdpr_consent_already_granted">This consent has already been granted.</string>
     <string name="error_gdpr_consent_not_found">Consent not found.</string>
+    <string name="error_gdpr_consent_not_editable">This consent can\'t be changed here.</string>
     <string name="error_gdpr_deletion_already_pending">Account deletion is already in progress.</string>
     <string name="error_gdpr_deletion_blocked_by_invoice">Your account can\'t be deleted yet — there is an open invoice.</string>
     <string name="error_gdpr_deletion_blocked_by_order">Your account can\'t be deleted yet — there is an active order.</string>
@@ -1306,10 +1348,15 @@
     <string name="period_pay_breakdown_section">Pay breakdown</string>
     <string name="period_pay_base">Base pay</string>
     <string name="period_pay_extras">Extras</string>
+    <string name="period_pay_dirtiness">Dirtiness supplement</string>
     <string name="period_pay_expenses">Expenses</string>
     <string name="period_pay_jobs_section">Jobs in this period</string>
     <string name="period_pay_empty">No jobs in this period yet.</string>
     <string name="period_pay_error">We couldn\'t load this period\'s pay.</string>
+    <string name="period_pay_line_deduction">Deduction %1$s</string>
+    <string name="period_pay_line_deduction_reason">Deduction %1$s: %2$s</string>
+    <string name="period_pay_line_cancellation_fee_share">Your share of the late-cancellation fee</string>
+    <string name="period_pay_line_lockout_fee_share">Your share of the lockout fee</string>
     <string name="invoice_view_period_pay">View period pay</string>
     <string name="photo_encode_failed">We couldn\'t process that photo. Please try another one.</string>
     <string name="document_read_failed">We couldn\'t read that file. Please try another one.</string>
@@ -1339,6 +1386,8 @@
     <string name="offer_decline_body">It goes back to every cleaner straight away. Nothing about this is held against you, and you can still take it from the board while it is free.</string>
     <string name="offer_decline_cta">Release it</string>
     <string name="offer_declined_toast">Released \u2014 the job is open to every cleaner now.</string>
+    <string name="order_removal_title">You were taken off this job</string>
+    <string name="order_removal_message">An administrator took you off this job and gave this reason:\n\n%1$s</string>
     <string name="offer_empty">Nothing is waiting for your answer right now.</string>
     <string name="offer_blocked_title">We couldn\'t hand this job over</string>
     <string name="offer_blocked_body">%1$s\n\nThat one is on us \u2014 we put your name on this job without checking, so nothing here counts against you.</string>
@@ -1362,7 +1411,6 @@
     <string name="delete_account_kept_label">What we have to keep</string>
     <string name="delete_account_kept_invoices">Your invoices, as accounting records</string>
     <string name="delete_account_kept_pay">Your pay records for completed jobs</string>
-    <string name="delete_account_kept_agreement">The self-billing agreement behind those invoices</string>
     <string name="delete_account_cta">Request deletion</string>
     <string name="delete_account_confirm_title">Request account deletion?</string>
     <string name="delete_account_confirm_message">We\'ll contact you to end the cooperation formally. Nothing is deleted today.</string>
@@ -1377,6 +1425,11 @@
     <string name="profile_terms_summary">Opens in your browser</string>
     <string name="profile_privacy">Privacy policy</string>
     <string name="profile_privacy_summary">How we handle your data</string>
+    <string name="profile_weekly_limit">Weekly job limit: %1$d</string>
+    <string name="profile_weekly_limit_reason">Reason: %1$s</string>
+    <string name="profile_how_jobs_are_offered">How jobs are offered</string>
+    <string name="profile_how_jobs_are_offered_summary">The rules behind the job board</string>
+    <string name="profile_legal_documents_summary">Read and accept the documents you work under</string>
 
     <!-- Profile photo. Copy shared verbatim with the customer app. -->
     <string name="profile_avatar_change">Change photo</string>
@@ -1392,6 +1445,7 @@
     <string name="open_settings">Open Settings</string>
     <string name="photo_source_title">Add photo</string>
     <string name="camera_unavailable">This device has no camera.</string>
+    <string name="job_photos_camera_only">Job photos can only be taken with the camera, not chosen from the gallery. Use a phone with a camera to add them.</string>
     <string name="notification_recurring_paused_title">Recurring schedule paused</string>
     <string name="notification_recurring_paused_body">Your recurring schedule is paused because Plus is not active. Renew Plus to resume scheduling.</string>
 </resources>

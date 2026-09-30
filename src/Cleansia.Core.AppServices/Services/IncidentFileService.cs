@@ -334,7 +334,15 @@ public class IncidentFileService(
                 .Select(e => new IncidentFileCleaner(e.EmployeeId, e.Employee?.User?.FirstName ?? "—"))
                 .ToList(),
             order.CancelledBy?.ToString(),
-            order.CancellationReason);
+            order.CancellationReason,
+            order.EarlyPerformanceConsentedOn is { } consentedOn
+                ? new IncidentFileEarlyPerformanceConsent(
+                    consentedOn,
+                    order.EarlyPerformanceConsentTextVersion!,
+                    order.EarlyPerformanceConsentClient!,
+                    order.EarlyPerformanceConsentIpAddress,
+                    order.EarlyPerformanceConsentDeviceLabel)
+                : null);
     }
 
     private static IncidentFileDispute MapDispute(Dispute dispute, string orderNumber) =>

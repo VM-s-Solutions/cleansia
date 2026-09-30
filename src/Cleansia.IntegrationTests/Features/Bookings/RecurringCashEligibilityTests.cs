@@ -280,6 +280,7 @@ public class RecurringCashEligibilityTests(PostgresContainerFixture fixture) : B
         user.Id = CustomerUserId;
         user.ConfirmEmail();
         context.Add(user);
+        context.SavedCards.Add(TestSavedCards.Usable(CustomerUserId, Czk));
 
         var plan = MembershipPlan.Create("PLUS", "Plus", 0m, 4, true);
         context.MembershipPlans.Add(plan);
@@ -334,6 +335,9 @@ public class RecurringCashEligibilityTests(PostgresContainerFixture fixture) : B
 
     private sealed class NoRefunds : IRefundService
     {
+        public Task<BusinessResult<RefundResult>> RedriveAsync(string refundId, string actorId, CancellationToken cancellationToken)
+            => throw new NotSupportedException();
+
         public Task<BusinessResult<RefundResult>> IssueRefundAsync(RefundRequest request, CancellationToken cancellationToken)
             => throw new InvalidOperationException("An unpaid cash occurrence has nothing to refund.");
     }

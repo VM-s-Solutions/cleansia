@@ -26,11 +26,7 @@
             currentPhoto().photoType === PhotoType.After
           "
         >
-          {{
-            currentPhoto().photoType === PhotoType.Before
-              ? ('pages.order_detail.before' | translate)
-              : ('pages.order_detail.after' | translate)
-          }}
+          {{ photoTypeLabelKeys[currentPhoto().photoType!] | translate }}
         </span>
         }
       </div>

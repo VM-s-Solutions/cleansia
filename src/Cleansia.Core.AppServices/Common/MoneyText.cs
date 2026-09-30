@@ -12,10 +12,9 @@ namespace Cleansia.Core.AppServices.Common;
 /// </summary>
 public static class MoneyText
 {
-    public static string Format(decimal amount, Currency currency)
-    {
-        var number = amount.ToString("0.############################", CultureInfo.InvariantCulture);
-        var unit = string.IsNullOrWhiteSpace(currency.Symbol) ? currency.Code : currency.Symbol;
-        return $"{number} {unit}";
-    }
+    public static string Format(decimal amount, Currency currency) =>
+        Format(amount, string.IsNullOrWhiteSpace(currency.Symbol) ? currency.Code : currency.Symbol);
+
+    public static string Format(decimal amount, string unit) =>
+        $"{amount.ToString("0.############################", CultureInfo.InvariantCulture)} {unit}";
 }

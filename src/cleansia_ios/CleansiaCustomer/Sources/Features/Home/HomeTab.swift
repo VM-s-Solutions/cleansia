@@ -137,7 +137,6 @@ struct HomeTab: View {
 
                 UpsellCarousel(
                     isPlus: vm.isPlus,
-                    hasAnyOrders: vm.hasAnyOrders,
                     showSetupRecurring: vm.showSetupRecurringSlide,
                     onAction: handleUpsell
                 )

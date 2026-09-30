@@ -1,4 +1,5 @@
-﻿using Testcontainers.PostgreSql;
+﻿using DotNet.Testcontainers.Containers;
+using Testcontainers.PostgreSql;
 
 namespace Cleansia.IntegrationTests;
 
@@ -28,6 +29,16 @@ public class PostgresContainerFixture : IAsyncDisposable
     public string GetConnectionString()
     {
         return _container.GetConnectionString();
+    }
+
+    public Task CopyAsync(byte[] content, string path)
+    {
+        return _container.CopyAsync(content, path);
+    }
+
+    public Task<ExecResult> ExecAsync(IList<string> command)
+    {
+        return _container.ExecAsync(command);
     }
 
     public async ValueTask DisposeAsync()

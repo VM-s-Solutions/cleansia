@@ -6,6 +6,7 @@
         #beforeFileInput
         type="file"
         accept="image/jpeg,image/jpg,image/png,image/webp"
+        capture="environment"
         multiple
         (change)="onFilesSelected($event, 1)"
         hidden
@@ -23,6 +24,7 @@
         #afterFileInput
         type="file"
         accept="image/jpeg,image/jpg,image/png,image/webp"
+        capture="environment"
         multiple
         (change)="onFilesSelected($event, 2)"
         hidden

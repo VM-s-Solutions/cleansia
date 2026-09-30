@@ -60,6 +60,7 @@ public class AdminReassignOrderStatusSequenceTests(PostgresContainerFixture fixt
         var cleaner = Employee.CreateWithUser(cleanerUser);
         cleaner.Id = CleanerId;
         cleaner.UpdateContractStatus(ContractStatus.Approved);
+        cleaner.AssignWorkCountry(CountryId);
         context.Employees.Add(cleaner);
 
         var order = Order.Create(

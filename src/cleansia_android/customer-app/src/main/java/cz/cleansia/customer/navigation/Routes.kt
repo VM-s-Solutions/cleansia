@@ -70,6 +70,10 @@ object Routes {
     @Serializable
     data object Devices
 
+    /** What the customer owes, paid through a pay link, and the card that guarantees cash bookings. */
+    @Serializable
+    data object Payments
+
     @Serializable
     data object Notifications
 
@@ -121,10 +125,6 @@ object Routes {
     @Serializable
     data class OrderPhotos(val orderId: String)
 
-    /** The accepted contract for work behind one crew member's acceptance line on the order detail. */
-    @Serializable
-    data class WorkContract(val acceptanceId: String)
-
     // ── Loyalty ──
     @Serializable
     data object RewardsActivity
@@ -139,8 +139,8 @@ object Routes {
     /**
      * "Report issue" form. [orderId] is null when entered from the FAB on the
      * disputes list (no order context); the screen renders a graceful error
-     * state and bounces the user back.
+     * state and bounces the user back. [reason] arrives picked in the form.
      */
     @Serializable
-    data class CreateDispute(val orderId: String? = null)
+    data class CreateDispute(val orderId: String? = null, val reason: Int? = null)
 }

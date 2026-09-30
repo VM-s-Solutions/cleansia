@@ -28,6 +28,11 @@
         "assets": [
           "apps/cleansia.app/src/assets",
           {
+            "glob": "*.woff2",
+            "input": "libs/shared/assets/src/fonts",
+            "output": "assets/fonts"
+          },
+          {
             "glob": "**/*.svg",
             "input": "node_modules/flag-icons/flags",
             "output": "assets/flags"

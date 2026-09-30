@@ -18,11 +18,12 @@ namespace Cleansia.IntegrationTests.Features.DataRetention;
 
 /// <summary>
 /// Order photos are kept seven days after the job is completed (owner ruling 2026-09-22), then the blob and
-/// the row go — through the REAL sweep on real Postgres. An order whose dispute is still open keeps its
-/// photos because they are the dispute's evidence; a closed dispute does not hold them. An order that was
-/// never completed is outside the rule. The blob is deleted by its container-relative name, and a blob that
-/// will not delete keeps its row (the URL is the only name the blob has) without stalling the run. A
-/// backlog wider than one batch drains in one run.
+/// the row go — through the REAL sweep on real Postgres. A cancelled order's photos go on the same window
+/// from the cancellation (owner ruling 2026-09-28); an order still in progress keeps them. An order whose
+/// dispute is still open keeps its photos because they are the dispute's evidence; a closed dispute does
+/// not hold them. The blob is deleted by its container-relative name, and a blob that will not delete keeps
+/// its row (the URL is the only name the blob has) without stalling the run. A backlog wider than one batch
+/// drains in one run.
 /// </summary>
 [Collection("PostgresCollection")]
 public class OrderPhotoRetentionTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
@@ -34,7 +35,10 @@ public class OrderPhotoRetentionTests(PostgresContainerFixture fixture) : BaseIn
 
     private const string PastWindowOrderId = "order-photo-ret-past";
     private const string InsideWindowOrderId = "order-photo-ret-inside";
-    private const string NeverCompletedOrderId = "order-photo-ret-never";
+    private const string StuckInProgressOrderId = "order-photo-ret-stuck";
+    private const string CancelledPastWindowOrderId = "order-photo-ret-cxl-past";
+    private const string CancelledInsideWindowOrderId = "order-photo-ret-cxl-in";
+    private const string CancelledOpenDisputeOrderId = "order-photo-ret-cxl-open";
     private const string OpenDisputeOrderId = "order-photo-ret-open";
     private const string ClosedDisputeOrderId = "order-photo-ret-closed";
     private const string BlobFailsOrderId = "order-photo-ret-blob-fails";
@@ -64,7 +68,7 @@ public class OrderPhotoRetentionTests(PostgresContainerFixture fixture) : BaseIn
                 context.Orders.AddRange(
                     CompletedOrder(PastWindowOrderId, completedDaysAgo: 8),
                     CompletedOrder(InsideWindowOrderId, completedDaysAgo: 6),
-                    NeverCompletedOrder(NeverCompletedOrderId),
+                    StuckInProgressOrder(StuckInProgressOrderId),
                     CompletedOrder(OpenDisputeOrderId, completedDaysAgo: 30),
                     CompletedOrder(ClosedDisputeOrderId, completedDaysAgo: 30),
                     CompletedOrder(BlobFailsOrderId, completedDaysAgo: 8));
@@ -72,7 +76,7 @@ public class OrderPhotoRetentionTests(PostgresContainerFixture fixture) : BaseIn
                 context.AddRange(Enumerable.Range(0, backlog).Select(i => Photo(PastWindowOrderId, i)));
                 context.AddRange(
                     Photo(InsideWindowOrderId, 0),
-                    Photo(NeverCompletedOrderId, 0),
+                    Photo(StuckInProgressOrderId, 0),
                     Photo(OpenDisputeOrderId, 0),
                     Photo(ClosedDisputeOrderId, 0),
                     Photo(BlobFailsOrderId, 0));
@@ -100,7 +104,7 @@ public class OrderPhotoRetentionTests(PostgresContainerFixture fixture) : BaseIn
                 Assert.False(remaining.ContainsKey(PastWindowOrderId));
                 Assert.False(remaining.ContainsKey(ClosedDisputeOrderId));
                 Assert.Equal(1, remaining[InsideWindowOrderId]);
-                Assert.Equal(1, remaining[NeverCompletedOrderId]);
+                Assert.Equal(1, remaining[StuckInProgressOrderId]);
                 Assert.Equal(1, remaining[OpenDisputeOrderId]);
                 Assert.Equal(1, remaining[BlobFailsOrderId]);
 
@@ -109,6 +113,46 @@ public class OrderPhotoRetentionTests(PostgresContainerFixture fixture) : BaseIn
                 blobClient.Verify(c => c.DeleteAsync(It.Is<string>(name => name.Contains(InsideWindowOrderId)), It.IsAny<CancellationToken>()), Times.Never);
                 blobClient.Verify(c => c.DeleteAsync(It.Is<string>(name => name.Contains(OpenDisputeOrderId)), It.IsAny<CancellationToken>()), Times.Never);
                 blobClient.Verify(c => c.DeleteAsync(It.Is<string>(name => name.Contains(BlobFailsOrderId)), It.IsAny<CancellationToken>()), Times.Once);
+            });
+    }
+
+    [Fact]
+    public async Task A_Cancelled_Orders_Photos_Go_Seven_Days_After_The_Cancellation_Unless_A_Dispute_Is_Open()
+    {
+        var blobClient = new Mock<IBlobContainerClient>();
+
+        await TestMethod(
+            setup: services => WithSweep(services, blobClient),
+            arrange: async context =>
+            {
+                SeedCatalogueAndCleaner(context);
+                context.Orders.AddRange(
+                    CancelledOrder(CancelledPastWindowOrderId, cancelledDaysAgo: 8),
+                    CancelledOrder(CancelledInsideWindowOrderId, cancelledDaysAgo: 6),
+                    CancelledOrder(CancelledOpenDisputeOrderId, cancelledDaysAgo: 30));
+                context.AddRange(
+                    Photo(CancelledPastWindowOrderId, 0),
+                    Photo(CancelledInsideWindowOrderId, 0),
+                    Photo(CancelledOpenDisputeOrderId, 0));
+                context.Disputes.Add(new Dispute(
+                    CancelledOpenDisputeOrderId, null, DisputeReason.QualityIssue, "Damage before the cancel.", "seed"));
+                await context.CommitAsync(CancellationToken.None);
+            },
+            act: async provider =>
+            {
+                await provider.GetRequiredService<IDataRetentionBackgroundService>().RunAllRetentionTasksAsync(CancellationToken.None);
+                return true;
+            },
+            assert: async (CleansiaDbContext context, bool _) =>
+            {
+                var remaining = await context.Set<OrderPhoto>().IgnoreQueryFilters()
+                    .Select(p => p.OrderId).ToListAsync();
+                Assert.DoesNotContain(CancelledPastWindowOrderId, remaining);
+                Assert.Contains(CancelledInsideWindowOrderId, remaining);
+                Assert.Contains(CancelledOpenDisputeOrderId, remaining);
+                blobClient.Verify(c => c.DeleteAsync($"2026/{CancelledPastWindowOrderId}/0.jpg", It.IsAny<CancellationToken>()), Times.Once);
+                blobClient.Verify(c => c.DeleteAsync(It.Is<string>(name => name.Contains(CancelledInsideWindowOrderId)), It.IsAny<CancellationToken>()), Times.Never);
+                blobClient.Verify(c => c.DeleteAsync(It.Is<string>(name => name.Contains(CancelledOpenDisputeOrderId)), It.IsAny<CancellationToken>()), Times.Never);
             });
     }
 
@@ -246,9 +290,17 @@ public class OrderPhotoRetentionTests(PostgresContainerFixture fixture) : BaseIn
         return order;
     }
 
-    private static Order NeverCompletedOrder(string id)
+    private static Order StuckInProgressOrder(string id)
     {
         var order = NewOrder(id, DateTime.UtcNow.AddDays(-30));
+        order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.InProgress, order));
+        return order;
+    }
+
+    private static Order CancelledOrder(string id, int cancelledDaysAgo)
+    {
+        var order = NewOrder(id, DateTime.UtcNow.AddDays(-cancelledDaysAgo));
+        order.Cancel(DateTime.UtcNow.AddDays(-cancelledDaysAgo), CancelledBy.Customer, 0m, order.TotalPrice, null);
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Cancelled, order));
         return order;
     }

@@ -4,8 +4,8 @@ import XCTest
 @testable import CleansiaCustomer
 
 /// The consent read the review step gates on, over the app's REAL generated `CustomerGdprAPI`: what
-/// counts as "on record" is a row that is granted and not since withdrawn — a withdrawn row is an
-/// answer, but not the one that lets the box stay hidden.
+/// counts as "on record" is a row that is granted, not since withdrawn, and given to the version now in
+/// force — a withdrawn or outdated row is an answer, but not the one that lets the box stay hidden.
 @MainActor
 final class BookingConsentWireTests: XCTestCase {
     private static let consentsPath = "/api/v1/Gdpr/consents"
@@ -41,8 +41,10 @@ final class BookingConsentWireTests: XCTestCase {
 
     func testGrantedRowsAreOnRecordByTheirWireType() async throws {
         ConsentReadStub.response = (200, Data(#"""
-        [{"id":"c-1","consentType":0,"isGranted":true,"grantedAt":"2026-09-01T10:00:00Z"},
-         {"id":"c-2","consentType":1,"isGranted":true,"grantedAt":"2026-09-01T10:00:00Z"}]
+        [{"id":"c-1","consentType":0,"isGranted":true,"grantedAt":"2026-09-01T10:00:00Z",
+          "coversCurrentVersion":true},
+         {"id":"c-2","consentType":1,"isGranted":true,"grantedAt":"2026-09-01T10:00:00Z",
+          "coversCurrentVersion":true}]
         """#.utf8))
 
         let read = await LiveConsentStatusClient().grantedTypes()
@@ -55,9 +57,10 @@ final class BookingConsentWireTests: XCTestCase {
 
     func testAWithdrawnRowIsNotOnRecord() async throws {
         ConsentReadStub.response = (200, Data(#"""
-        [{"id":"c-1","consentType":0,"isGranted":true,"grantedAt":"2026-09-01T10:00:00Z"},
+        [{"id":"c-1","consentType":0,"isGranted":true,"grantedAt":"2026-09-01T10:00:00Z",
+          "coversCurrentVersion":true},
          {"id":"c-2","consentType":1,"isGranted":false,"grantedAt":"2026-09-01T10:00:00Z",
-          "withdrawnAt":"2026-09-02T10:00:00Z"}]
+          "withdrawnAt":"2026-09-02T10:00:00Z","coversCurrentVersion":true}]
         """#.utf8))
 
         let read = await LiveConsentStatusClient().grantedTypes()
@@ -70,7 +73,35 @@ final class BookingConsentWireTests: XCTestCase {
     /// as withdrawn is not on record either way.
     func testAGrantedRowWithAWithdrawalStampIsNotOnRecord() async throws {
         ConsentReadStub.response = (200, Data(#"""
-        [{"id":"c-1","consentType":0,"isGranted":true,"withdrawnAt":"2026-09-02T10:00:00Z"}]
+        [{"id":"c-1","consentType":0,"isGranted":true,"withdrawnAt":"2026-09-02T10:00:00Z",
+          "coversCurrentVersion":true}]
+        """#.utf8))
+
+        let read = await LiveConsentStatusClient().grantedTypes()
+        let granted = try XCTUnwrap(read)
+
+        XCTAssertTrue(granted.isEmpty)
+    }
+
+    /// Newer terms are in force than the ones accepted: the tick comes back until the customer accepts them.
+    func testAConsentToAnOlderVersionIsNotOnRecord() async throws {
+        ConsentReadStub.response = (200, Data(#"""
+        [{"id":"c-1","consentType":0,"isGranted":true,"grantedAt":"2026-09-01T10:00:00Z",
+          "documentVersion":"2026-09-14","coversCurrentVersion":false},
+         {"id":"c-2","consentType":1,"isGranted":true,"grantedAt":"2026-09-01T10:00:00Z",
+          "documentVersion":"2026-09-14","coversCurrentVersion":true}]
+        """#.utf8))
+
+        let read = await LiveConsentStatusClient().grantedTypes()
+        let granted = try XCTUnwrap(read)
+
+        XCTAssertEqual(granted, [.privacyPolicy])
+    }
+
+    /// A row that does not say it covers the current version is not taken to.
+    func testARowWithoutTheVersionVerdictIsNotOnRecord() async throws {
+        ConsentReadStub.response = (200, Data(#"""
+        [{"id":"c-1","consentType":0,"isGranted":true,"grantedAt":"2026-09-01T10:00:00Z"}]
         """#.utf8))
 
         let read = await LiveConsentStatusClient().grantedTypes()

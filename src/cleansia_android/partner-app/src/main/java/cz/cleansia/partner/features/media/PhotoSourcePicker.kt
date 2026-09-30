@@ -58,19 +58,25 @@ fun interface PhotoSourcePicker {
  * impossible to keep right twice: no camera hardware, permission not yet asked, permission
  * permanently denied, and a capture the user backed out of.
  *
+ * **Job photos are [cameraOnly].** A gallery photo is by definition a copy already on the device,
+ * and may be an old one, so the job rails get no sheet and no gallery; a device without a camera
+ * gets an explanation instead. The avatar keeps both sources.
+ *
  * **The camera writes to a file, not to the intent.** `TakePicture` hands back only a success
  * flag; the image arrives at the [FileProvider] URI passed in. The legacy `Bitmap` in the intent
  * extra is a thumbnail, which is why it is not used. The file lives in `cacheDir/camera/` and is
- * deliberately not deleted here — the avatar screen renders its preview from this same URI until
- * the cleaner saves. Android reclaims the cache dir under storage pressure.
+ * not deleted here — the avatar screen renders its preview from this same URI until the cleaner
+ * saves, and the job-photo upload deletes its own capture. Whatever is left is removed by
+ * [purgeCaptures] on the next start.
  *
  * **The device may have no camera.** `required="false"` on the manifest's `uses-feature` keeps the
- * app installable on such a device, so the sheet is skipped entirely and the gallery opens
+ * app installable on such a device, so for the avatar the sheet is skipped and the gallery opens
  * directly rather than offering an option that would fail.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun rememberPhotoSourcePicker(
+    cameraOnly: Boolean = false,
     onPickerUnavailable: () -> Unit = {},
     onPicked: (Uri) -> Unit,
 ): PhotoSourcePicker {
@@ -81,6 +87,7 @@ fun rememberPhotoSourcePicker(
 
     var showSheet by remember { mutableStateOf(false) }
     var showPermissionDialog by remember { mutableStateOf(false) }
+    var showNoCameraDialog by remember { mutableStateOf(false) }
     var pendingCaptureUri by remember { mutableStateOf<Uri?>(null) }
 
     val pickFromGallery = rememberLauncherForActivityResult(
@@ -103,9 +110,9 @@ fun rememberPhotoSourcePicker(
     ) { saved: Boolean ->
         val uri = pendingCaptureUri
         pendingCaptureUri = null
-        // false means the user backed out of the camera. The empty placeholder file stays behind
-        // in the cache dir, which Android clears on its own — deleting it here would race the
-        // system camera process, which may still hold the descriptor.
+        // false means the user backed out of the camera. The placeholder file stays behind until
+        // the next start's purge — deleting it here would race the system camera process, which
+        // may still hold the descriptor.
         if (saved && uri != null) onPicked(uri)
     }
 
@@ -179,8 +186,23 @@ fun rememberPhotoSourcePicker(
         )
     }
 
+    if (showNoCameraDialog) {
+        CleansiaDialog(
+            onDismiss = { showNoCameraDialog = false },
+            title = stringResource(R.string.camera_unavailable),
+            message = stringResource(R.string.job_photos_camera_only),
+            confirmLabel = stringResource(android.R.string.ok),
+            onConfirm = { showNoCameraDialog = false },
+        )
+    }
+
     return PhotoSourcePicker {
-        if (hasCamera) showSheet = true else openGallery()
+        when {
+            cameraOnly && hasCamera -> requestCamera.launch(android.Manifest.permission.CAMERA)
+            cameraOnly -> showNoCameraDialog = true
+            hasCamera -> showSheet = true
+            else -> openGallery()
+        }
     }
 }
 
@@ -190,10 +212,20 @@ fun rememberPhotoSourcePicker(
  * so `packageName`, not a literal, or debug builds break on their `.debug` suffix.
  */
 private fun newCaptureUri(context: android.content.Context): Uri {
-    val directory = File(context.cacheDir, "camera").apply { mkdirs() }
+    val directory = File(context.cacheDir, CAPTURE_DIRECTORY).apply { mkdirs() }
     val file = File(directory, "capture-${System.currentTimeMillis()}.jpg")
     return FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
 }
+
+/**
+ * Deletes every capture left in `cacheDir/camera/` — a cancelled shot, an avatar pick never saved,
+ * an upload the process died during. The directory itself stays, for the next capture.
+ */
+internal fun purgeCaptures(cacheDir: File) {
+    File(cacheDir, CAPTURE_DIRECTORY).listFiles()?.forEach { it.deleteRecursively() }
+}
+
+private const val CAPTURE_DIRECTORY = "camera"
 
 @Composable
 private fun SourceOption(

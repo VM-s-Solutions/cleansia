@@ -1,8 +1,11 @@
 using System.Data.Common;
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using BusinessResult = Cleansia.Infra.Common.Validations.BusinessResult;
@@ -15,15 +18,18 @@ public class GetMyServingCleaners
 
     /// <summary>
     /// ADR-0039 D5 — every slot field is optional, so a client that has not been rebuilt keeps working
-    /// and simply gets the unevaluated answer. The three together describe one booking: the instant, and
-    /// the selection the server derives its length from. There is deliberately NO date-range parameter —
-    /// a range turns a per-booking answer into a schedule feed about a worker, which is a different
-    /// decision with a different privacy analysis.
+    /// and simply gets the unevaluated answer. Together they describe one booking: the instant, and the
+    /// selection, home size and dirtiness level the server derives its length from. There is deliberately
+    /// NO date-range parameter — a range turns a per-booking answer into a schedule feed about a worker,
+    /// which is a different decision with a different privacy analysis.
     /// </summary>
     public record Query(
         DateTime? CleaningDateTimeUtc = null,
         IReadOnlyList<string>? SelectedServiceIds = null,
-        IReadOnlyList<string>? SelectedPackageIds = null) : IQuery<IReadOnlyList<Response>>;
+        IReadOnlyList<string>? SelectedPackageIds = null,
+        int Rooms = 0,
+        int Bathrooms = 0,
+        DirtinessLevel DirtinessLevel = DirtinessLevel.Normal) : IQuery<IReadOnlyList<Response>>;
 
     public record Response(
         string EmployeeId,
@@ -44,6 +50,23 @@ public class GetMyServingCleaners
     /// </summary>
     public static bool? ResolveSlotAvailability(bool hasActiveMembership, bool? evaluatedAvailability) =>
         hasActiveMembership ? evaluatedAvailability : null;
+
+    public class Validator : AbstractValidator<Query>
+    {
+        public Validator()
+        {
+            RuleFor(x => x.DirtinessLevel)
+                .IsInEnum()
+                .WithMessage(BusinessErrorMessage.InvalidEnumValue);
+
+            RuleFor(x => x.Rooms).GreaterThanOrEqualTo(0)
+                .LessThanOrEqualTo(BookingPolicy.MaxRooms)
+                .WithMessage(BusinessErrorMessage.OrderSizeExceedsMaximum);
+            RuleFor(x => x.Bathrooms).GreaterThanOrEqualTo(0)
+                .LessThanOrEqualTo(BookingPolicy.MaxBathrooms)
+                .WithMessage(BusinessErrorMessage.OrderSizeExceedsMaximum);
+        }
+    }
 
     public class Handler(
         IOrderRepository orderRepository,
@@ -147,25 +170,28 @@ public class GetMyServingCleaners
         /// <summary>
         /// The booking's length, summed in SQL over the same catalog rows <c>OrderDuration</c> sums in
         /// memory on the write path. Two implementations of one definition, held together by
-        /// <c>OrderDurationAgreementTests</c> — the picker must not answer about a different job than
+        /// <c>ServingCleanersSlotAnswerTests</c> — the picker must not answer about a different job than
         /// the one being booked.
         /// </summary>
         private async Task<int> EstimateMinutesAsync(Query query, CancellationToken cancellationToken)
         {
             var serviceIds = query.SelectedServiceIds ?? [];
             var packageIds = query.SelectedPackageIds ?? [];
+            var unitCount = query.Rooms + query.Bathrooms;
 
             var serviceMinutes = serviceIds.Count == 0
                 ? 0
-                : await serviceRepository.GetByIds(serviceIds).SumAsync(s => s.EstimatedTime, cancellationToken);
+                : await serviceRepository.GetByIds(serviceIds)
+                    .SumAsync(s => s.EstimatedTime + s.MinutesPerRoom * unitCount, cancellationToken);
 
             var packageMinutes = packageIds.Count == 0
                 ? 0
                 : await packageRepository.GetByIds(packageIds)
                     .SelectMany(p => p.IncludedServices)
-                    .SumAsync(ps => ps.Service!.EstimatedTime, cancellationToken);
+                    .SumAsync(ps => ps.Service!.EstimatedTime + ps.Service!.MinutesPerRoom * unitCount, cancellationToken);
 
-            return serviceMinutes + packageMinutes;
+            return OrderDuration.ScaleForDirtiness(
+                serviceMinutes + packageMinutes, BookingPolicy.DirtinessSurchargeRate(query.DirtinessLevel));
         }
     }
 }

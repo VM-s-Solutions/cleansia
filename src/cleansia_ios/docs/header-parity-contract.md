@@ -121,8 +121,9 @@ belt-and-braces: either alone keeps the Bearer off the refresh call, but keep bo
 The allow-list is **host-specific**. Match these by path (case-insensitive), mirroring the backend's
 `[AllowAnonymous]` attributes. The partner mobile host's anonymous surface is **auth plus the market
 directory** (the register form picks the market the cleaner is registered with); the customer mobile
-host additionally exposes the **pre-account booking flow** as anonymous (a guest can price and place
-an order before signing in), so its allow-list is larger.
+host additionally exposes the **pre-account booking flow** as anonymous (a guest can price a booking
+before signing in; placing the order needs a session, since guest booking is web-only), so its
+allow-list is larger.
 
 **Both hosts — `/api/Auth/*` (+ password reset on `/api/User/*`) and the market directory:**
 
@@ -151,10 +152,8 @@ an order before signing in), so its allow-list is larger.
 | `/api/Extra/GetOverview` | GET | extras catalogue |
 | `/api/Membership/GetPlans` | GET | membership/Plus plans |
 | `/api/Order/Quote` | POST | server-side price quote before account |
-| `/api/Order/CreateOrder` | POST | guest order creation |
 | `/api/Order/Lookup` | GET | look up a guest order |
 | `/api/Order/LookupBatch` | POST | batch guest-order lookup |
-| `/api/Payment/CreateOrder` | POST | guest payment-intent creation |
 | `/api/Referral/Validate` | POST | validate a referral code at signup |
 
 > `/api/Payment/webhook` is also `[AllowAnonymous]` (Stripe is unauthenticated; the signature is its auth)

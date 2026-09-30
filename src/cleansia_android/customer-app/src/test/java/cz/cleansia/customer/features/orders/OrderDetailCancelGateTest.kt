@@ -11,7 +11,9 @@ import cz.cleansia.customer.R
 import cz.cleansia.customer.core.market.MarketRepository
 import cz.cleansia.customer.core.market.MarketState
 import cz.cleansia.customer.core.memberships.MembershipRepository
+import cz.cleansia.customer.core.notifications.OrderEvent
 import cz.cleansia.customer.core.notifications.OrderEventBus
+import cz.cleansia.customer.core.orders.AssignedEmployeeDto
 import cz.cleansia.customer.core.orders.CancelOrderResponse
 import cz.cleansia.customer.core.orders.OrderCurrencyDetailDto
 import cz.cleansia.customer.core.orders.OrderDetailDto
@@ -29,12 +31,16 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * The signed-in cancel affordance follows the server's own set — the statuses
@@ -85,18 +91,31 @@ class OrderDetailCancelGateTest {
         orderEventBus = orderEventBus,
     )
 
-    /** Wire values: New=0, Pending=1, Confirmed=2, OnTheWay=3, InProgress=4, Completed=5, Cancelled=6. */
+    /**
+     * Wire values: New=0, Pending=1, Confirmed=2, OnTheWay=3, InProgress=4, Completed=5, Cancelled=6;
+     * PaymentType Cash=1, Card=2; PaymentStatus Pending=1, Paid=2, Failed=3.
+     */
+    private fun orderDto(
+        statusValue: Int,
+        staffed: Boolean = false,
+        startsAt: Instant? = null,
+        paymentType: Int? = null,
+        paymentStatus: Int? = null,
+    ) = OrderDetailDto(
+        id = orderId,
+        totalPrice = 1000.0,
+        originalSubtotal = 1000.0,
+        appliedDiscountSource = 0,
+        orderStatus = CodeDto(type = "OrderStatus", name = "status-$statusValue", value = statusValue),
+        currency = OrderCurrencyDetailDto(code = "CZK"),
+        cleaningDateTime = startsAt?.toString(),
+        assignedEmployees = if (staffed) listOf(AssignedEmployeeDto(id = "seat-1", employeeId = "emp-1")) else null,
+        paymentType = paymentType?.let { CodeDto(type = "PaymentType", name = "type-$it", value = it) },
+        paymentStatus = paymentStatus?.let { CodeDto(type = "PaymentStatus", name = "status-$it", value = it) },
+    )
+
     private fun stubOrder(statusValue: Int) {
-        coEvery { repository.getById(orderId) } returns ApiResult.Success(
-            OrderDetailDto(
-                id = orderId,
-                totalPrice = 1000.0,
-                originalSubtotal = 1000.0,
-                appliedDiscountSource = 0,
-                orderStatus = CodeDto(type = "OrderStatus", name = "status-$statusValue", value = statusValue),
-                currency = OrderCurrencyDetailDto(code = "CZK"),
-            ),
-        )
+        coEvery { repository.getById(orderId) } returns ApiResult.Success(orderDto(statusValue))
     }
 
     private fun receipt(refundInitiated: Boolean, actualRefundAmount: Double?) = CancelOrderResponse(
@@ -162,6 +181,92 @@ class OrderDetailCancelGateTest {
             "OrderDetailScreen must bind isCancellable to viewModel.canCancel",
             screenSource.contains("val isCancellable by viewModel.canCancel.collectAsStateWithLifecycle()"),
         )
+    }
+
+    // ── after the booked start ──
+
+    /** (Cancel offered, "the cleaner did not arrive" offered) for one loaded order. */
+    private fun TestScope.footerFor(order: OrderDetailDto): Pair<Boolean, Boolean> {
+        coEvery { repository.getById(orderId) } returns ApiResult.Success(order)
+        val vm = viewModel()
+        runCurrent()
+        return (vm.canCancel.value to vm.canReportCleanerNoShow.value).also { vm.viewModelScope.cancel() }
+    }
+
+    @Test
+    fun `past the start with a cleaner on the job and nobody started, Cancel gives way to the report`() = runTest {
+        val started = Clock.System.now() - 1.hours
+        assertEquals(false to true, footerFor(orderDto(2, staffed = true, startsAt = started)))
+        assertEquals(false to true, footerFor(orderDto(3, staffed = true, startsAt = started)))
+    }
+
+    @Test
+    fun `before the start a staffed order keeps Cancel and offers no report`() = runTest {
+        assertEquals(true to false, footerFor(orderDto(3, staffed = true, startsAt = Clock.System.now() + 2.hours)))
+    }
+
+    @Test
+    fun `past the start with nobody on the job Cancel stays, as the server allows it`() = runTest {
+        assertEquals(true to false, footerFor(orderDto(0, staffed = false, startsAt = Clock.System.now() - 1.hours)))
+    }
+
+    @Test
+    fun `once work has started neither is offered`() = runTest {
+        assertEquals(false to false, footerFor(orderDto(4, staffed = true, startsAt = Clock.System.now() - 1.hours)))
+    }
+
+    @Test
+    fun `a refetch of the unchanged order re-reads the clock, so the report appears once the start passes`() =
+        runTest {
+            var startsAt: Instant? = null
+            coEvery { repository.getById(orderId) } answers {
+                val start = startsAt ?: (Clock.System.now() + 1.seconds).also { startsAt = it }
+                ApiResult.Success(orderDto(2, staffed = true, startsAt = start))
+            }
+            val vm = viewModel()
+            runCurrent()
+            assertTrue(vm.canCancel.value)
+            assertFalse(vm.canReportCleanerNoShow.value)
+
+            Thread.sleep(1_100)
+            orderEventBus.emit(OrderEvent(orderId = orderId, eventKey = "order.status_changed"))
+            runCurrent()
+
+            assertFalse(vm.canCancel.value)
+            assertTrue(vm.canReportCleanerNoShow.value)
+            vm.viewModelScope.cancel()
+        }
+
+    @Test
+    fun `the report is offered from the booked start itself, where the server starts refusing`() {
+        val start = Instant.parse("2026-10-01T09:00:00Z")
+        assertTrue(customerAwaitsCleanerPastStart(2, hasCleaner = true, startsAt = start, now = start))
+        assertFalse(customerAwaitsCleanerPastStart(2, hasCleaner = true, startsAt = start, now = start - 1.seconds))
+        assertFalse(customerAwaitsCleanerPastStart(2, hasCleaner = true, startsAt = null, now = start))
+        assertFalse(customerAwaitsCleanerPastStart(2, hasCleaner = false, startsAt = start, now = start))
+        assertFalse(customerAwaitsCleanerPastStart(5, hasCleaner = true, startsAt = start, now = start))
+    }
+
+    // ── the refund the sheet may estimate ──
+
+    private fun TestScope.tookNoCardPaymentFor(order: OrderDetailDto): Boolean {
+        coEvery { repository.getById(orderId) } returns ApiResult.Success(order)
+        val vm = viewModel()
+        runCurrent()
+        return vm.tookNoCardPayment.value.also { vm.viewModelScope.cancel() }
+    }
+
+    @Test
+    fun `a cash booking or a card booking that took no payment has no card refund to estimate`() = runTest {
+        assertTrue(tookNoCardPaymentFor(orderDto(2, paymentType = 1, paymentStatus = 1)))
+        assertTrue(tookNoCardPaymentFor(orderDto(2, paymentType = 1, paymentStatus = 2)))
+        assertTrue(tookNoCardPaymentFor(orderDto(2, paymentType = 2, paymentStatus = 1)))
+        assertTrue(tookNoCardPaymentFor(orderDto(2, paymentType = 2, paymentStatus = 3)))
+    }
+
+    @Test
+    fun `a charged card booking keeps its refund estimate`() = runTest {
+        assertFalse(tookNoCardPaymentFor(orderDto(2, paymentType = 2, paymentStatus = 2)))
     }
 
     // ── the confirmed figure ──

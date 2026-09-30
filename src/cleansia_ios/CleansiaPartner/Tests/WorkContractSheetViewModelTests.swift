@@ -185,6 +185,25 @@ final class WorkContractSheetViewModelTests: XCTestCase {
         XCTAssertEqual(vm.actionState, .idle)
     }
 
+    /// Nothing about the job changed, so the host has nothing to reconcile: the sheet itself becomes the
+    /// way to the contract documents the take is waiting on.
+    func testATakeRefusedOnTheContractDocumentsTurnsTheSheetIntoTheWayToThem() async {
+        let vm = makeVM(.take(orderId: "order-1"))
+        await vm.load()
+        client.commandResult = .failure(
+            ApiError(code: WorkContractErrorKey.legalDocumentsNotAccepted, httpStatus: 400)
+        )
+
+        await vm.accept()
+
+        guard case .legalDocumentsNotAccepted = vm.state else {
+            return XCTFail("expected the contract-documents state")
+        }
+        XCTAssertTrue(outcomes.isEmpty)
+        XCTAssertEqual(client.previewRequests.count, 1)
+        XCTAssertEqual(vm.actionState, .idle)
+    }
+
     func testTheOutcomeCarriesTheRequestAndTheResultTheHostReconciles() {
         let refusal = ApiError(code: "order.weekly_limit_reached", httpStatus: 400)
 

@@ -95,9 +95,13 @@ const SURFACES: Surface[] = [
   {
     name: 'the page every Plus checkout lands on',
     template: join(FEATURES_DIR, 'profile/src/lib/membership/membership-welcome.component.html'),
-    gate: '@if (expressWaiverPendingTrial()) {',
-    mustBeGated: ['pages.membership.welcome_express_after_trial'],
-    mustBeUngated: ['pages.membership.welcome_title', 'pages.membership.welcome_perk_express'],
+    gate: '@if (trialEndsOn()) {',
+    mustBeGated: ['pages.membership.welcome_subtitle_trial', 'pages.membership.trial_perks_note'],
+    mustBeUngated: [
+      'pages.membership.welcome_title',
+      'pages.membership.welcome_subtitle',
+      'pages.membership.welcome_perk_express',
+    ],
     blocks: [],
   },
 ];

@@ -91,6 +91,19 @@ public class OrderEmployeePayClampTests
         Assert.Equal(0m, pay.TotalPay);
     }
 
+    [Fact]
+    public void AddDeduction_Keeps_The_Dirtiness_Term_Outside_The_Clamp()
+    {
+        // Core 1000 capped at 800, plus 480 dirtiness = 1280. A 100 deduction pays 1180, not 800 - 100.
+        var pay = OrderEmployeePay.Create(
+            orderId: OrderId, employeeId: EmployeeId, payPeriodId: PayPeriodId, currencyId: "czk",
+            basePay: 1000m, dirtinessPay: 480m, totalPay: 1280m, maxPay: 800m);
+
+        pay.AddDeduction(100m);
+
+        Assert.Equal(1180m, pay.TotalPay);
+    }
+
     // ── UpdatePay re-clamps the new components ──
 
     [Fact]

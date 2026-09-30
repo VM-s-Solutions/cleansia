@@ -1,7 +1,9 @@
 ﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Features.EmployeePayroll;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Core.Domain.Enums;
@@ -124,10 +126,15 @@ public class HandlePaymentNotification
         IStripeSubscriptionWebhookHandler subscriptionWebhookHandler,
         ITenantProvider tenantProvider,
         IPendingDispatch pending,
+        GuestOrderAccessTokenIssuer guestAccessTokenIssuer,
         INotificationProducer notificationProducer,
         IPreferredCleanerHoldResolver preferredCleanerHoldResolver,
         IAdminNotifier adminNotifier,
         IUserNotificationRepository userNotificationRepository,
+        IStripeClientFactory stripeClientFactory,
+        ITenantRepository tenantRepository,
+        ISavedCardRepository savedCardRepository,
+        IReceivableRepository receivableRepository,
         ILogger<Handler> logger) : ICommandHandler<Command>
     {
         public async Task<BusinessResult> Handle(Command command, CancellationToken cancellationToken)
@@ -181,8 +188,37 @@ public class HandlePaymentNotification
                 return BusinessResult.Success();
             }
 
+            // A saved card lands here from either channel. A web capture raises both events, and the second
+            // finds the card already captured.
+            switch (stripeEvent.Data.Object)
+            {
+                case SetupIntent intent when stripeEvent.Type == Constants.StripeEventType.SetupIntentSucceeded:
+                    return await CaptureSavedCard(
+                        intent.Metadata?.GetValueOrDefault(SavedCardMetadataKey), intent.Id, cancellationToken);
+                case Session { Mode: "setup" } session when stripeEvent.Type == Constants.StripeEventType.CompletedSession:
+                    return await CaptureSavedCard(
+                        session.Metadata?.GetValueOrDefault(SavedCardMetadataKey), session.SetupIntentId, cancellationToken);
+            }
+
+            // What a customer owes on an order is paid through its pay link or an off-session charge, and
+            // either payment is the receivable's alone: the order's sale, charge surface and refunds are
+            // not touched, so the order path below never sees these events.
+            switch (stripeEvent.Data.Object)
+            {
+                case Session { Mode: "payment" } session when stripeEvent.Type == Constants.StripeEventType.CompletedSession
+                    && session.Metadata?.GetValueOrDefault(ReceivableMetadataKey) is { Length: > 0 } paidByLink:
+                    return await SettleReceivable(paidByLink, session.PaymentIntentId, command.Language, cancellationToken);
+                case PaymentIntent intent when stripeEvent.Type == Constants.StripeEventType.PaymentIntentSucceeded
+                    && intent.Metadata?.GetValueOrDefault(ReceivableMetadataKey) is { Length: > 0 } paidOffSession:
+                    return await SettleReceivable(paidOffSession, intent.Id, command.Language, cancellationToken);
+                case PaymentIntent intent when stripeEvent.Type == Constants.StripeEventType.PaymentIntentPaymentFailed
+                    && intent.Metadata?.GetValueOrDefault(ReceivableMetadataKey) is { Length: > 0 } declined:
+                    return await OfferPayLink(declined, intent, cancellationToken);
+            }
+
             // Bank chargeback (ADR-0006 D4). No OrderId metadata — the event
-            // resolves to the Order by payment_intent. Branched here, after the
+            // resolves to the Order by its stored payment_intent, else through the
+            // Checkout Session that charged it. Branched here, after the
             // idempotency gate (S7) and before the OrderId-metadata path below
             // which cannot resolve these.
             if (Constants.StripeEventType.IsChargebackEvent(stripeEvent.Type))
@@ -218,11 +254,21 @@ public class HandlePaymentNotification
                 tenantProvider.SetTenantOverride(order.TenantId);
             }
 
+            // A chargeback names only the PaymentIntent, and a web order is paid through a Checkout
+            // Session, so the intent that moved the money is recorded here or the bank's claim finds no order.
+            if (stripeEvent.Type == Constants.StripeEventType.CompletedSession
+                && stripeEvent.Data.Object is Session { PaymentIntentId: { Length: > 0 } sessionPaymentIntentId })
+            {
+                order.AssignStripePaymentIntentId(sessionPaymentIntentId);
+            }
+
             // Dispatch by event type. Checkout Session events come from web's
             // Checkout flow; PaymentIntent events come from mobile's PaymentSheet
             // flow. Both end up driving the same Order state transitions.
             return stripeEvent.Type switch
             {
+                Constants.StripeEventType.ExpiredSession when order.RecurringTemplateId is not null
+                    => ReleaseRecurringCheckout(order, (stripeEvent.Data.Object as Session)?.Id),
                 Constants.StripeEventType.ExpiredSession
                     => await HandleExpiredSession(order, orderId, cancellationToken),
                 Constants.StripeEventType.CompletedSession
@@ -285,13 +331,28 @@ public class HandlePaymentNotification
             // the customer just paid a second time.
             if (order.SettledInCash)
             {
-                return await EscalateDoubleSettlement(order, orderId, cancellationToken);
+                logger.LogError(
+                    "Stripe settled order {OrderId} at {PaymentStatus} after employee {EmployeeId} collected it in cash on {CashCollectedAt}; escalating for manual reconciliation, no automatic refund",
+                    orderId, order.PaymentStatus, order.CollectedByEmployeeId, order.CashCollectedAt);
+                return await EscalateForReconciliation(order, orderId, DoubleSettlementDescription, cancellationToken);
             }
 
             if (order.PaymentStatus is PaymentStatus.Paid or PaymentStatus.Refunded)
             {
                 logger.LogInformation("Order {OrderId} already in terminal state {Status}, skipping webhook processing", orderId, order.PaymentStatus);
                 return BusinessResult.Success();
+            }
+
+            // A checkout still open when its order was cancelled — by the customer, the stale-order sweep
+            // or the recurring cutoff — can be paid afterwards. Recording Paid would issue a receipt and a
+            // "payment confirmed" push for a clean nobody will do, so the money is left where it is and an
+            // administrator refunds it.
+            if (order.CurrentStatus == OrderStatus.Cancelled && order.TookNoPayment)
+            {
+                logger.LogError(
+                    "Stripe settled order {OrderId} after it was cancelled ({CancellationReason}); escalating for a refund, the order is not marked paid",
+                    orderId, order.CancellationReason);
+                return await EscalateForReconciliation(order, orderId, PaidAfterCancellationDescription, cancellationToken);
             }
 
             // The MONEY axis only. This used to append OrderStatus.Confirmed too, which is what made
@@ -319,6 +380,9 @@ public class HandlePaymentNotification
                     order.TenantId,
                     new GenerateReceiptMessage(orderId, language)),
                 MessageKeys.Receipt(orderId));
+
+            // The payment is what concludes a card booking's contract, so its confirmation goes out now.
+            OrderBookedEmail.Enqueue(order, language, pending, DateTimeOffset.UtcNow);
 
             if (!string.IsNullOrEmpty(order.UserId))
             {
@@ -350,15 +414,24 @@ public class HandlePaymentNotification
 
         private async Task<BusinessResult> HandleExpiredSession(Order order, string orderId, CancellationToken cancellationToken)
         {
-            // Idempotency check - don't process if already cancelled or paid
-            if (order.PaymentStatus is PaymentStatus.Failed or PaymentStatus.Paid or PaymentStatus.Refunded)
+            // Idempotency check - don't process if already cancelled or paid. The stale-order sweep may
+            // have cancelled it first, and a second Cancelled track and notice would say it twice.
+            if (order.PaymentStatus is PaymentStatus.Failed or PaymentStatus.Paid or PaymentStatus.Refunded
+                || order.CurrentStatus == OrderStatus.Cancelled)
             {
                 logger.LogInformation("Order {OrderId} already has payment status {Status}, skipping expired session", orderId, order.PaymentStatus);
                 return BusinessResult.Success();
             }
 
+            // The same cancellation the stale-order sweep writes: who, when and why, fee- and refund-free.
             order.UpdatePaymentStatus(PaymentStatus.Failed);
             order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Cancelled, order));
+            order.Cancel(
+                DateTime.UtcNow,
+                CancelledBy.System,
+                feeRate: 0m,
+                refundAmount: 0m,
+                reason: OrderCancellationReasons.PaymentNotCompleted);
 
             // The session expired without a charge, but CreateOrder debits credit BEFORE the customer
             // ever reaches Stripe - so an abandoned checkout is the single most common way a customer
@@ -382,7 +455,193 @@ public class HandlePaymentNotification
                     cancellationToken);
             }
 
+            await GuestCancellationEmail.EnqueueAsync(order, languageCode: null,
+                successfulRefundAmount: null, guestAccessTokenIssuer, pending, cancellationToken);
+
             logger.LogInformation("Cancelled order {OrderId} due to expired Stripe checkout session", orderId);
+            return BusinessResult.Success();
+        }
+
+        /// <summary>
+        /// A recurring occurrence's web checkout closed unpaid. The checkout did not create the occurrence,
+        /// so it does not cancel it either: the occurrence stays for the customer to confirm again, on
+        /// either channel, until AutoCancelStaleRecurringOrders retracts it at its cutoff — as an abandoned
+        /// PaymentSheet leaves it. Only the session it records is forgotten; a session it no longer records
+        /// closing late changes nothing.
+        /// </summary>
+        private BusinessResult ReleaseRecurringCheckout(Order order, string? sessionId)
+        {
+            if (!string.IsNullOrEmpty(sessionId) && order.StripeSessionId == sessionId)
+            {
+                order.AssignStripeSessionId(string.Empty);
+            }
+
+            logger.LogInformation(
+                "Checkout session {SessionId} for recurring order {OrderId} expired; the occurrence stays confirmable",
+                sessionId, order.Id);
+            return BusinessResult.Success();
+        }
+
+        private const string SavedCardMetadataKey = "SavedCardId";
+
+        /// <summary>
+        /// The card a customer saved lands on the row their capture started. A SetupIntent with no saved
+        /// card behind it — the Plus subscribe flow's — is not this flow's and is ignored. The card is read
+        /// from Stripe, so an unreachable Stripe throws, the processed-event stamp rolls back and Stripe
+        /// retries. A new card replaces the customer's earlier one in the same currency.
+        /// </summary>
+        private async Task<BusinessResult> CaptureSavedCard(
+            string? savedCardId, string? setupIntentId, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrEmpty(savedCardId) || string.IsNullOrEmpty(setupIntentId))
+            {
+                logger.LogInformation("Setup event {SetupIntentId} carries no saved card; ignoring", setupIntentId);
+                return BusinessResult.Success();
+            }
+
+            var card = await savedCardRepository.GetByIdIgnoringTenantAsync(savedCardId, cancellationToken);
+            if (card is null || card.IsCaptured || !card.IsActive)
+            {
+                logger.LogInformation(
+                    "Saved card {SavedCardId} is unknown, already captured or removed; setup event {SetupIntentId} ignored",
+                    savedCardId, setupIntentId);
+                return BusinessResult.Success();
+            }
+
+            if (!string.IsNullOrEmpty(card.TenantId))
+            {
+                tenantProvider.SetTenantOverride(card.TenantId);
+            }
+
+            var details = await stripeClientFactory.CreateClient().GetSetupIntentCardAsync(setupIntentId, cancellationToken);
+            if (details is null)
+            {
+                logger.LogWarning(
+                    "Setup intent {SetupIntentId} for saved card {SavedCardId} saved no card; nothing captured",
+                    setupIntentId, card.Id);
+                return BusinessResult.Success();
+            }
+
+            foreach (var replaced in await savedCardRepository.GetCapturedForUserInCurrencyAsync(
+                         card.UserId, card.CurrencyId, cancellationToken))
+            {
+                savedCardRepository.Deactivate(replaced);
+            }
+
+            card.Capture(details.PaymentMethodId, details.Brand, details.Last4, details.ExpMonth, details.ExpYear);
+            logger.LogInformation("Captured saved card {SavedCardId} for user {UserId}", card.Id, card.UserId);
+            return BusinessResult.Success();
+        }
+
+        private const string ReceivableMetadataKey = "ReceivableId";
+
+        /// <summary>
+        /// The receivable is paid, and its fee receipt and, on a late-cancellation or lockout fee, the crew's
+        /// share of it are asked for. A second payment of one already paid is
+        /// money taken twice for one debt, and it is refunded in full, keyed on its own PaymentIntent so a
+        /// redelivery replays the same refund. The refund is made here, so an unreachable Stripe throws, the
+        /// processed-event stamp rolls back and Stripe redelivers.
+        /// </summary>
+        private async Task<BusinessResult> SettleReceivable(
+            string receivableId, string? paymentIntentId, string language, CancellationToken cancellationToken)
+        {
+            var receivable = await receivableRepository.GetByIdIgnoringTenantAsync(receivableId, cancellationToken);
+            if (receivable is null)
+            {
+                logger.LogWarning("Payment {PaymentIntentId} names unknown receivable {ReceivableId}; ignoring", paymentIntentId, receivableId);
+                return BusinessResult.Success();
+            }
+
+            if (!string.IsNullOrEmpty(receivable.TenantId))
+            {
+                tenantProvider.SetTenantOverride(receivable.TenantId);
+            }
+
+            if (receivable.IsPaid)
+            {
+                if (!string.IsNullOrEmpty(paymentIntentId) && receivable.StripePaymentIntentId != paymentIntentId)
+                {
+                    await stripeClientFactory.CreateClient().RefundPaymentIntentAsync(
+                        paymentIntentId,
+                        receivable.Amount,
+                        $"refund:receivable:{receivable.Id}:{paymentIntentId}",
+                        cancellationToken);
+                    logger.LogWarning(
+                        "Receivable {ReceivableId} paid by {PaymentIntentId} was paid again by {SecondPaymentIntentId}; the second payment was refunded in full",
+                        receivable.Id, receivable.StripePaymentIntentId, paymentIntentId);
+                }
+
+                return BusinessResult.Success();
+            }
+
+            receivable.MarkPaid(paymentIntentId, DateTimeOffset.UtcNow);
+            if (receivable.Kind is ReceivableKind.CashCancellationFee or ReceivableKind.Lockout)
+            {
+                CalculateOrderPay.EnqueueForCrew(receivable.Order!, pending);
+            }
+
+            var key = MessageKeys.FeeReceipt(receivable.Id);
+            pending.Enqueue(
+                QueueNames.GenerateReceipt,
+                new QueueEnvelope<GenerateReceiptMessage>(
+                    key, receivable.TenantId, new GenerateReceiptMessage(receivable.OrderId, language, receivable.Id)),
+                key);
+
+            logger.LogInformation("Receivable {ReceivableId} paid by {PaymentIntentId}", receivable.Id, paymentIntentId);
+            return BusinessResult.Success();
+        }
+
+        /// <summary>
+        /// An off-session charge was declined, or the bank asked for the customer to authenticate: the
+        /// customer is e-mailed a pay link for the amount (owner ruling 2026-09-28, decision 18). The link is
+        /// created here, so an unreachable Stripe throws, the processed-event stamp rolls back and Stripe
+        /// redelivers. With card payments switched off no link is made and the receivable stays open.
+        /// </summary>
+        private async Task<BusinessResult> OfferPayLink(string receivableId, PaymentIntent intent, CancellationToken cancellationToken)
+        {
+            var receivable = await receivableRepository.GetByIdIgnoringTenantAsync(receivableId, cancellationToken);
+            if (receivable is not { IsOpen: true })
+            {
+                logger.LogInformation(
+                    "Failed charge {PaymentIntentId} names receivable {ReceivableId}, which is not open; no pay link",
+                    intent.Id, receivableId);
+                return BusinessResult.Success();
+            }
+
+            if (!string.IsNullOrEmpty(receivable.TenantId))
+            {
+                tenantProvider.SetTenantOverride(receivable.TenantId);
+            }
+
+            logger.LogWarning(
+                "Off-session charge {PaymentIntentId} for receivable {ReceivableId} failed ({FailureCode})",
+                intent.Id, receivable.Id, intent.LastPaymentError?.Code);
+
+            if (!stripeConfig.Enabled)
+            {
+                logger.LogWarning("Card payments are switched off; receivable {ReceivableId} stays open with no pay link", receivable.Id);
+                return BusinessResult.Success();
+            }
+
+            var link = await stripeClientFactory.CreateClient().CreateReceivableCheckoutSessionAsync(
+                receivable.Id,
+                receivable.PayLinkSessionId,
+                receivable.OrderId,
+                receivable.Order!.DisplayOrderNumber,
+                receivable.Amount,
+                receivable.Currency!.Code,
+                cancellationToken);
+            receivable.RecordPayLink(link.Id);
+
+            var key = MessageKeys.ReceivablePayLinkEmail(receivable.Id, receivable.Attempts);
+            pending.Enqueue(
+                QueueNames.SendEmail,
+                new QueueEnvelope<SendReceivablePayLinkEmailMessage>(
+                    key,
+                    receivable.TenantId,
+                    new SendReceivablePayLinkEmailMessage(receivable.Id, receivable.Attempts, link.Url, receivable.TenantId)),
+                key);
+
             return BusinessResult.Success();
         }
 
@@ -392,26 +651,26 @@ public class HandlePaymentNotification
             "The card payment settled at Stripe after the cleaner had already collected this order in cash. " +
             "The customer may have paid twice — reconcile the two settlements and decide the refund.";
 
-        /// <summary>
-        /// A card charge settled AFTER the assigned cleaner recorded a cash collection for the same
-        /// order. Deliberately does not refund: which settlement to reverse (and whether the cash ever
-        /// reached us) is a human call, so this raises an escalated dispute for an administrator and
-        /// leaves the money exactly where it is.
-        /// </summary>
-        private async Task<BusinessResult> EscalateDoubleSettlement(
-            Order order, string orderId, CancellationToken cancellationToken)
-        {
-            logger.LogError(
-                "Stripe settled order {OrderId} at {PaymentStatus} after employee {EmployeeId} collected it in cash on {CashCollectedAt}; escalating for manual reconciliation, no automatic refund",
-                orderId, order.PaymentStatus, order.CollectedByEmployeeId, order.CashCollectedAt);
+        private const string PaidAfterCancellationDescription =
+            "The card payment settled at Stripe after this order was cancelled, so the customer paid for a " +
+            "clean that will not take place. Refund the payment.";
 
+        /// <summary>
+        /// A card charge settled that the order should not have taken: after the assigned cleaner
+        /// recorded a cash collection, or after the order was cancelled. Deliberately does not refund:
+        /// which settlement to reverse, and whether a cancellation fee stands, is a human call, so this
+        /// raises an escalated dispute for an administrator and leaves the money exactly where it is.
+        /// </summary>
+        private async Task<BusinessResult> EscalateForReconciliation(
+            Order order, string orderId, string description, CancellationToken cancellationToken)
+        {
             var existing = await disputeRepository.GetOpenDisputeForOrderAsync(order.Id, cancellationToken);
             if (existing is not null)
             {
                 if (!existing.UpdateStatus(DisputeStatus.Escalated, WebhookActor))
                 {
                     logger.LogWarning(
-                        "Double settlement on order {OrderId} could not escalate the open dispute (illegal {CurrentStatus} → Escalated)",
+                        "Late settlement on order {OrderId} could not escalate the open dispute (illegal {CurrentStatus} → Escalated)",
                         orderId, existing.Status);
                 }
                 return BusinessResult.Success();
@@ -421,13 +680,13 @@ public class HandlePaymentNotification
                 orderId: order.Id,
                 userId: order.UserId,
                 reason: DisputeReason.IncorrectAmount,
-                description: DoubleSettlementDescription,
+                description: description,
                 createdBy: WebhookActor);
 
             if (!dispute.UpdateStatus(DisputeStatus.Escalated, WebhookActor))
             {
                 logger.LogWarning(
-                    "Double settlement on order {OrderId} could not escalate a new dispute (illegal {CurrentStatus} → Escalated); not persisting",
+                    "Late settlement on order {OrderId} could not escalate a new dispute (illegal {CurrentStatus} → Escalated); not persisting",
                     orderId, dispute.Status);
                 return BusinessResult.Success();
             }
@@ -438,9 +697,12 @@ public class HandlePaymentNotification
 
         /// <summary>
         /// Inbound bank chargeback (ADR-0006 D4). Resolves the disputed charge to
-        /// our Order by payment_intent, then links a Dispute (created if absent) to
-        /// the Stripe dispute id and reflects Stripe's status. A charge that maps to
-        /// no local Order is a no-op success (S6 — never a retry-inducing failure).
+        /// our Order by its stored payment_intent, else through the Checkout Session
+        /// that charged it, then links a Dispute (created if absent) to the Stripe
+        /// dispute id and reflects Stripe's status. A Stripe outage during the
+        /// session lookup throws, so the processed-event stamp rolls back and Stripe
+        /// retries. A charge.dispute.created that still matches no Order alerts the
+        /// administrators of every company.
         /// </summary>
         private async Task<BusinessResult> HandleChargeback(Event stripeEvent, CancellationToken cancellationToken)
         {
@@ -460,10 +722,12 @@ public class HandlePaymentNotification
                 return await ReflectChargebackStatus(stripeDispute!, stripeDisputeId, stripeEvent, cancellationToken);
             }
 
-            var order = await orderRepository.GetByStripePaymentIntentIdIgnoringTenantAsync(paymentIntentId, cancellationToken);
+            var order = await orderRepository.GetByStripePaymentIntentIdIgnoringTenantAsync(paymentIntentId, cancellationToken)
+                ?? await FindByCheckoutSessionAsync(paymentIntentId, cancellationToken);
             if (order is null)
             {
-                logger.LogWarning("Chargeback {EventType} resolved to no local order; ignoring", stripeEvent.Type);
+                logger.LogWarning("Chargeback {EventType} resolved to no local order; telling every company", stripeEvent.Type);
+                await TellEveryCompanyOfUnmatchedChargeback(stripeDispute!, cancellationToken);
                 return BusinessResult.Success();
             }
 
@@ -509,6 +773,42 @@ public class HandlePaymentNotification
         }
 
         private const string ChargebackDescription = "Bank chargeback raised against this order's payment.";
+
+        // A web order paid before its intent was recorded carries only its Checkout Session.
+        private async Task<Order?> FindByCheckoutSessionAsync(string paymentIntentId, CancellationToken cancellationToken)
+        {
+            var orderId = await stripeClientFactory.CreateClient()
+                .FindCheckoutSessionOrderIdAsync(paymentIntentId, cancellationToken);
+            if (string.IsNullOrEmpty(orderId))
+            {
+                return null;
+            }
+
+            var order = await orderRepository.GetByIdIgnoringTenantAsync(orderId, cancellationToken);
+            order?.AssignStripePaymentIntentId(paymentIntentId);
+            return order;
+        }
+
+        // The Stripe account is shared by every operating company, so a claim no order carries could be
+        // any company's money, and each is told.
+        private async Task TellEveryCompanyOfUnmatchedChargeback(Stripe.Dispute stripeDispute, CancellationToken cancellationToken)
+        {
+            var amount = MoneyText.Format(stripeDispute.Amount / 100m, stripeDispute.Currency?.ToUpperInvariant() ?? string.Empty);
+            foreach (var tenantId in await tenantRepository.GetAllIdsAsync(cancellationToken))
+            {
+                await adminNotifier.NotifyAsync(
+                    new AdminEvent(
+                        AdminNotificationEventCatalog.DisputeChargebackUnmatched,
+                        tenantId,
+                        Subject: $"{stripeDispute.Id}:{tenantId}",
+                        Args: new Dictionary<string, string>
+                        {
+                            ["amount"] = amount,
+                            ["stripeDisputeId"] = stripeDispute.Id,
+                        }),
+                    cancellationToken);
+            }
+        }
 
         /// <summary>
         /// The dispute named is the one the money is now attached to — the customer's open one when

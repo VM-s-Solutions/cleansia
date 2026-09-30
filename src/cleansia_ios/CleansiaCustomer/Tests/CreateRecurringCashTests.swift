@@ -25,6 +25,7 @@ final class CreateRecurringCashTests: XCTestCase {
             addressClient: FakeRecurringSavedAddressClient(),
             orderClient: FakeOrderClient(),
             quoteClient: quoteClient ?? quote,
+            cleanersClient: FakeServingCleanersClient(),
             snackbar: snackbar ?? SnackbarController(),
             quoteDebounce: .milliseconds(400),
             scheduler: scheduler.eraseToAnyScheduler()
@@ -41,11 +42,22 @@ final class CreateRecurringCashTests: XCTestCase {
     private func fillValid(_ vm: CreateRecurringViewModel) {
         vm.setSavedAddressId("addr-1")
         vm.toggleService("s-1")
+        vm.setDirtiness(.normal)
         vm.setStartsOn(Date(timeIntervalSince1970: 1_780_000_000))
+        vm.setEarlyPerformanceRequested(true)
     }
 
     private func drain() async {
         for _ in 0 ..< 5 {
+            await Task.yield()
+        }
+    }
+
+    /// Yields until `condition` holds. A quote reaching the gate hops to another executor, so a fixed
+    /// number of yields races on a busy runner and can release the gate before the quote is held.
+    private func eventually(_ condition: () -> Bool) async {
+        for _ in 0 ..< 500 {
+            if condition() { return }
             await Task.yield()
         }
     }
@@ -125,6 +137,23 @@ final class CreateRecurringCashTests: XCTestCase {
         XCTAssertEqual(vm.cashEligibility, .pending, "a crew quoted for another selection decided the payment step")
         vm.setPaymentType(RecurringPaymentType.cash)
         XCTAssertEqual(vm.formState.paymentType, RecurringPaymentType.card)
+    }
+
+    /// The level lengthens every occurrence, so it is part of what is quoted: a changed level leaves
+    /// the crew unknown until the server answers for it.
+    func testTheLevelIsQuotedAndAChangedLevelIsPendingUntilItIs() async {
+        let (vm, quote) = makeVM(requiredEmployees: 1)
+        await vm.load()
+        fillValid(vm)
+        await settle()
+        XCTAssertEqual(vm.cashEligibility, .available)
+
+        vm.setDirtiness(.heavy)
+
+        XCTAssertEqual(vm.cashEligibility, .pending, "a crew quoted for another level decided the payment step")
+        await settle()
+        XCTAssertEqual(quote.requests.last?.dirtiness, .heavy)
+        XCTAssertEqual(vm.cashEligibility, .available)
     }
 
     /// The day, the time and the way to pay move no money, so they ask for no quote.
@@ -216,16 +245,16 @@ final class CreateRecurringCashTests: XCTestCase {
         )
         await vm.load()
         scheduler.advance(by: .milliseconds(400))
-        await drain()
+        await eventually { gate.heldCount >= 1 }
         gate.releaseAll()
-        await drain()
+        await eventually { vm.cashEligibility == .available }
         XCTAssertEqual(vm.cashEligibility, .available)
 
         vm.setRooms(3)
         let saving = Task { await vm.submit() }
-        await drain()
+        await eventually { gate.heldCount >= 1 }
         scheduler.advance(by: .milliseconds(400))
-        await drain()
+        await eventually { gate.heldCount >= 2 }
         gate.releaseAll()
         let saved = await saving.value
 

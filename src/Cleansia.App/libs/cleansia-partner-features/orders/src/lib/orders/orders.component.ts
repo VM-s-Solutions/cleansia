@@ -26,6 +26,7 @@ import { OrderListItem } from '@cleansia/partner-services';
 import { CleansiaPartnerRoute } from '@cleansia/services';
 import { TranslatePipe } from '@ngx-translate/core';
 import { DialogService } from 'primeng/dynamicdialog';
+import { dirtinessLevelLabelKey } from '../order-details/order-details.helpers';
 import { OrdersFacade } from './orders.facade';
 import {
   getAvailableOrdersTableDefinition,
@@ -63,6 +64,7 @@ export class OrdersComponent {
 
   private readonly statusTemplate = viewChild<TemplateRef<OrderListItem>>('statusTemplate');
   private readonly orderStatusTemplate = viewChild<TemplateRef<OrderListItem>>('orderStatusTemplate');
+  private readonly dirtinessTemplate = viewChild<TemplateRef<OrderListItem>>('dirtinessTemplate');
   private readonly ordersHelpCard = viewChild<CleansiaHelpCardComponent>('ordersHelpCard');
   private readonly paymentHelpCard = viewChild<CleansiaHelpCardComponent>('paymentHelpCard');
 
@@ -74,7 +76,8 @@ export class OrdersComponent {
       },
       this.facade.lang(),
       this.statusTemplate(),
-      this.orderStatusTemplate()
+      this.orderStatusTemplate(),
+      this.dirtinessTemplate()
     )
   );
 
@@ -86,9 +89,12 @@ export class OrdersComponent {
       },
       this.facade.lang(),
       this.statusTemplate(),
-      this.orderStatusTemplate()
+      this.orderStatusTemplate(),
+      this.dirtinessTemplate()
     )
   );
+
+  protected readonly dirtinessLevelLabelKey = dirtinessLevelLabelKey;
 
   ordersHelpSteps = ORDERS_HELP_STEPS;
   orderStatusFlow = ORDER_STATUS_FLOW;

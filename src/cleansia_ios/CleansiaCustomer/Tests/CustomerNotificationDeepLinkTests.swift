@@ -44,6 +44,8 @@ final class CustomerNotificationDeepLinkTests: XCTestCase {
             "order.cancelled",
             "order.refunded",
             "order.no_cleaner_refunded",
+            "order.no_cleaner_refund_pending",
+            "order.no_cleaner_nothing_charged",
             "order.starting_soon",
             "order.preferred_offer_closed",
             "recurring.scheduled"
@@ -88,11 +90,11 @@ final class CustomerNotificationDeepLinkTests: XCTestCase {
         ))
     }
 
-    /// Both membership events are addressed to someone who ALREADY has a subscription, so they resolve
+    /// Every membership event is addressed to someone who ALREADY has a subscription, so they resolve
     /// to the management surface. They used to resolve to the sales page, which answered a question the
     /// recipient had not asked and hid the one they had.
     func testMembershipEventsResolveToMembershipManagement() {
-        for key in ["membership.expiring_soon", "membership.cancellation_effective"] {
+        for key in ["membership.expiring_soon", "membership.cancellation_effective", "membership.payment_failed"] {
             XCTAssertEqual(
                 CustomerNotificationDeepLink.resolve(eventKey: key, orderId: nil, disputeId: nil),
                 .membershipManagement,
@@ -137,6 +139,16 @@ final class CustomerNotificationDeepLinkTests: XCTestCase {
                 CustomerNotificationDeepLink.resolve(eventKey: key, orderId: "ord-1", disputeId: nil),
                 key
             )
+        }
+    }
+
+    func testEveryNoCleanerOutcomeNeedsItsOrderId() {
+        for key in [
+            "order.no_cleaner_refunded",
+            "order.no_cleaner_refund_pending",
+            "order.no_cleaner_nothing_charged"
+        ] {
+            XCTAssertNil(CustomerNotificationDeepLink.resolve(eventKey: key, orderId: nil, disputeId: nil), key)
         }
     }
 

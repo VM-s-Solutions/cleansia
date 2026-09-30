@@ -1,4 +1,5 @@
 using System.Globalization;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Infra.Services.Pdf;
 using Cleansia.Infra.Services.Pdf.Layouts;
 using Cleansia.Infra.Services.Pdf.Models;
@@ -186,6 +187,26 @@ public class PayoutInvoiceLayoutTests
         Assert.Equal(("Celkem k úhradě", Czk(1000m), true), lines[^1]);
     }
 
+    // ── the line: a job, or the cleaner's share of a fee collected on a cancelled one ──
+
+    [Theory]
+    [InlineData(PayLineType.Job, "Cleaning services — order ORD-1001 (03.02.2026)")]
+    [InlineData(PayLineType.CancellationFeeShare, "Share of the late cancellation fee — order ORD-1001 (03.02.2026)")]
+    [InlineData(PayLineType.LockoutFeeShare, "Share of the fee for denied access — order ORD-1001 (03.02.2026)")]
+    public void Each_Line_Type_Is_Described_For_What_It_Pays(PayLineType lineType, string expected)
+    {
+        Assert.Equal(expected, Default.Line(Data().LineItems[0] with { LineType = lineType }));
+    }
+
+    [Theory]
+    [InlineData(PayLineType.Job, "Úklidové služby — objednávka ORD-1001 (03.02.2026)")]
+    [InlineData(PayLineType.CancellationFeeShare, "Podíl na poplatku za pozdní zrušení — objednávka ORD-1001 (03.02.2026)")]
+    [InlineData(PayLineType.LockoutFeeShare, "Podíl na poplatku za znemožněný přístup — objednávka ORD-1001 (03.02.2026)")]
+    public void The_Czech_Layout_Describes_Each_Line_Type_In_Czech(PayLineType lineType, string expected)
+    {
+        Assert.Equal(expected, Czech.Line(Data().LineItems[0] with { LineType = lineType }));
+    }
+
     private static string Czk(decimal amount) =>
         $"{amount.ToString("N2", CultureInfo.GetCultureInfo("cs-CZ"))} Kč";
 
@@ -356,6 +377,7 @@ public class PayoutInvoiceLayoutTests
         public IReadOnlyList<InvoiceField> Payment(InvoicePdfData data) => PaymentFields(data);
         public string? LegalNoticeText(InvoicePdfData data) => base.LegalNoticeText(data);
         public IReadOnlyList<(string Label, string Value, bool IsBold)> Summary(InvoicePdfData data) => SummaryLines(data);
+        public string Line(InvoiceLineItem line) => DescribeLine(line);
     }
 
     private sealed class CzechProbeLayout : CzechInvoiceLayoutBuilder
@@ -366,5 +388,6 @@ public class PayoutInvoiceLayoutTests
         public IReadOnlyList<InvoiceField> Payment(InvoicePdfData data) => PaymentFields(data);
         public string? LegalNoticeText(InvoicePdfData data) => base.LegalNoticeText(data);
         public IReadOnlyList<(string Label, string Value, bool IsBold)> Summary(InvoicePdfData data) => SummaryLines(data);
+        public string Line(InvoiceLineItem line) => DescribeLine(line);
     }
 }

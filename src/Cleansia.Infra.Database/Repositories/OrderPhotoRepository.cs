@@ -32,12 +32,14 @@ public class OrderPhotoRepository(CleansiaDbContext context): BaseRepository<Ord
         => GetQueryableIgnoringTenant().CountAsync(p => p.OrderId == orderId && p.Order.UserId == userId && p.PhotoType == photoType, cancellationToken);
 
     public async Task<IReadOnlyList<OrderPhoto>> GetPastRetentionAsync(
-        string operatorTenantId, DateTime completedBefore, string? afterId, int take, CancellationToken cancellationToken)
+        string operatorTenantId, DateTime endedBefore, string? afterId, int take, CancellationToken cancellationToken)
     {
         var query = GetQueryableIgnoringTenant()
             .Where(p => p.Order.TenantId == operatorTenantId
-                && p.Order.CompletedAt != null
-                && p.Order.CompletedAt < completedBefore
+                && ((p.Order.CompletedAt != null && p.Order.CompletedAt < endedBefore)
+                    || (p.Order.CurrentStatus == OrderStatus.Cancelled
+                        && p.Order.CancelledAt != null
+                        && p.Order.CancelledAt < endedBefore))
                 && !Context.Disputes.Any(d => d.OrderId == p.OrderId
                     && d.Status != DisputeStatus.Resolved
                     && d.Status != DisputeStatus.Closed));

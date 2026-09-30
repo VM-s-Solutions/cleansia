@@ -128,6 +128,16 @@ const DISPUTE_REASON_LABEL_KEYS: Record<number, string> = {
   8: 'pages.disputes.reasons.chargeback',
 };
 
+/**
+ * The reason the new-dispute form opens on. Only "the cleaner did not arrive" is ever sent in, and it
+ * has to arrive chosen: `CreateDispute` raises the admin no-show alert only for ServiceNotProvided.
+ */
+export function initialDisputeReason(reasonParam: string | null): DisputeReason {
+  return Number(reasonParam) === DisputeReason.ServiceNotProvided
+    ? DisputeReason.ServiceNotProvided
+    : DisputeReason.QualityIssue;
+}
+
 export function getDisputeReasonLabelKey(
   reasonValue: number | undefined
 ): string {

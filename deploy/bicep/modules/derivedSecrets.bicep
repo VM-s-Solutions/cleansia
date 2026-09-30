@@ -2,6 +2,12 @@
 //   - Storage--ConnectionString  : built from the storage account's access key (listKeys)
 //   - ConnectionStrings--cleansia-db : built from the Postgres FQDN + admin login + the @secure() password
 //
+// Each is written only while its E-4 flag is off, as in dev (deploy/AZURE-PROD-POSTURE.md §7). With
+// storage on managed identity there is no storage secret at all. With the least-privilege application
+// login the hosts' database secret is no longer derivable — its password is the external
+// POSTGRES_APP_PASSWORD, which the CI secret push writes on every deploy — and the administrator login
+// stays out of Key Vault.
+//
 // The remaining secrets (Jwt--Key, Stripe--*, SendGrid--ApiKey, Sentry--Dsn, Mapbox--*) are EXTERNAL —
 // Bicep cannot know them — so they are NOT written here; a CI step pushes those from GitHub-Environment
 // secrets. (ADR-0015 D4: no external secret value is ever in source; derivable values are computed, not
@@ -33,6 +39,12 @@ param postgresAdministratorPassword string
 @description('The application database name.')
 param databaseName string = 'Cleansia'
 
+@description('false when the hosts reach storage with their managed identity (storageManagedIdentityEnabled).')
+param writeStorageConnectionString bool = true
+
+@description('false when the hosts connect as the least-privilege application login (postgresAppLoginEnabled).')
+param writeDbConnectionString bool = true
+
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
   name: keyVaultName
 }
@@ -47,7 +59,7 @@ var storageConnectionString = 'DefaultEndpointsProtocol=https;AccountName=${stor
 // Npgsql connection string. The password is alphanumeric-only (runbook §1) so no escaping is needed.
 var dbConnectionString = 'Host=${postgresFqdn};Database=${databaseName};Username=${postgresAdministratorLogin};Password=${postgresAdministratorPassword};Ssl Mode=Require;Trust Server Certificate=true'
 
-resource storageConnSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
+resource storageConnSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = if (writeStorageConnectionString) {
   parent: keyVault
   name: 'Storage--ConnectionString'
   properties: {
@@ -55,7 +67,7 @@ resource storageConnSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
   }
 }
 
-resource dbConnSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
+resource dbConnSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = if (writeDbConnectionString) {
   parent: keyVault
   name: 'ConnectionStrings--cleansia-db'
   properties: {

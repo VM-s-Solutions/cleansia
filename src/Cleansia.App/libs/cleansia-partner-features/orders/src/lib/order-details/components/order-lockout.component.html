@@ -1,0 +1,80 @@
+@switch (standing()) {
+@case (LockoutStanding.NotYet) {
+<cleansia-section [title]="'pages.order_details.lockout.title' | translate">
+  <p class="order-lockout__text">
+    {{ 'pages.order_details.lockout.not_yet' | translate : { time: opensAtLabel(), minutes: lockoutWaitMinutes } }}
+  </p>
+</cleansia-section>
+}
+@case (LockoutStanding.Open) {
+<cleansia-section [title]="'pages.order_details.lockout.title' | translate">
+  <div class="order-lockout">
+    <p class="order-lockout__text">{{ 'pages.order_details.lockout.body' | translate }}</p>
+
+    <input
+      #entranceInput
+      type="file"
+      accept="image/jpeg,image/jpg,image/png,image/webp"
+      capture="environment"
+      (change)="onEntrancePhotoSelected($event)"
+      hidden
+    />
+    @if (hasEntrancePhoto()) {
+    <div class="order-photos__grid order-lockout__photos">
+      @for (photo of entrancePhotos(); track photo.id) {
+      <div class="order-photos__item">
+        <img
+          class="order-photos__image"
+          [src]="photo.blobUrl"
+          [alt]="'pages.order_details.lockout.entrance_photo' | translate"
+        />
+      </div>
+      }
+    </div>
+    } @else {
+    <p class="order-lockout__hint">{{ 'pages.order_details.lockout.photo_needed' | translate }}</p>
+    }
+    <cleansia-button
+      [label]="'pages.order_details.lockout.take_photo' | translate"
+      [icon]="'pi pi-camera'"
+      [outlined]="true"
+      [loading]="uploading()"
+      [disabled]="uploading()"
+      (onClick)="entranceInput.click()"
+    />
+
+    <cleansia-textarea
+      class="order-lockout__note"
+      [formControl]="callAttemptsControl"
+      [label]="'pages.order_details.lockout.call_attempts' | translate"
+      [placeholder]="'pages.order_details.lockout.call_attempts_placeholder' | translate"
+      [rows]="3"
+      [maxLength]="callAttemptsMaxLength"
+    />
+
+    <cleansia-button
+      [label]="'pages.order_details.lockout.report' | translate"
+      [icon]="'pi pi-lock'"
+      [severity]="'danger'"
+      [loading]="reporting()"
+      [disabled]="!canReport()"
+      (onClick)="report()"
+    />
+  </div>
+</cleansia-section>
+}
+@case (LockoutStanding.Reported) {
+<cleansia-section [title]="'pages.order_details.lockout.reported_title' | translate">
+  <div class="order-lockout">
+    <p class="order-lockout__text">
+      {{ 'pages.order_details.lockout.reported_body' | translate : { time: reportedAtLabel() } }}
+    </p>
+    @if (order().lockoutCallAttempts; as calls) {
+    <p class="order-lockout__hint">
+      {{ 'pages.order_details.lockout.reported_calls' | translate : { calls: calls } }}
+    </p>
+    }
+  </div>
+</cleansia-section>
+}
+}

@@ -17,6 +17,7 @@ import { OrderAdditionalServicesComponent } from './components/order-additional-
 import { OrderCustomerInfoComponent } from './components/order-customer-info.component';
 import { OrderExtrasComponent } from './components/order-extras.component';
 import { OrderHeaderComponent } from './components/order-header.component';
+import { OrderLockoutComponent } from './components/order-lockout.component';
 import { OrderPackagesComponent } from './components/order-packages.component';
 import { OrderPaymentInfoComponent } from './components/order-payment-info.component';
 import { OrderPhotosComponent } from './components/order-photos.component';
@@ -41,9 +42,11 @@ import {
   canAddNoteOrIssue,
   canMarkCashCollected,
   canAcceptWorkContract,
+  customerDetailsClosedNoticeKey,
   findCallerWorkContractAcceptance,
   computeElapsedTime,
   buildCurrencyOptions,
+  dirtinessLevelLabelKey,
   hasExtras,
   getExtrasEntries,
 } from './order-details.helpers';
@@ -67,6 +70,7 @@ import {
     OrderServiceDetailsComponent,
     OrderAdditionalServicesComponent,
     OrderPhotosComponent,
+    OrderLockoutComponent,
   ],
   templateUrl: './order-details.component.html',
   providers: [OrderDetailsFacade, DialogService],
@@ -84,6 +88,7 @@ export class OrderDetailsComponent implements OnInit {
   protected readonly orderDetails = this.facade.orderDetails;
   protected readonly loading = this.facade.loading;
   protected readonly error = this.facade.error;
+  protected readonly removalReason = computed(() => this.facade.removal()?.reason ?? null);
   protected readonly currentEmployeeId = this.facade.currentEmployeeId;
 
   private readonly currentLang = toSignal(
@@ -204,10 +209,16 @@ export class OrderDetailsComponent implements OnInit {
     return canUploadAfterPhotos(order.orderStatus.value, order.assignedEmployees, eid);
   });
 
-  // canDelete: only while staff can still mutate photos (Before during prep, After during InProgress).
-  // Photos remain visible once Completed but cannot be removed.
+  // Photos stay visible once the order is over but are locked (order.photo.locked).
   protected readonly canDeletePhotos = computed((): boolean => {
     return this.canUploadBeforePhotos() || this.canUploadAfterPhotos();
+  });
+
+  protected readonly customerDetailsClosedNoticeKey = computed((): string | null => {
+    const order = this.orderDetails();
+    const eid = this.currentEmployeeId();
+    if (!order || !eid) return null;
+    return customerDetailsClosedNoticeKey(order, eid);
   });
 
   protected readonly canAddNoteOrIssue = computed((): boolean => {
@@ -217,18 +228,11 @@ export class OrderDetailsComponent implements OnInit {
     return canAddNoteOrIssue(order.orderStatus.value, order.assignedEmployees, eid);
   });
 
-  // Mirrors MarkCashCollected.Validator: InProgress + not already Paid + assigned.
-  // Not gated on paymentType — the backend accepts a card booking whose webhook never arrived.
   protected readonly canMarkCashCollected = computed((): boolean => {
     const order = this.orderDetails();
     const eid = this.currentEmployeeId();
     if (!order || !eid) return false;
-    return canMarkCashCollected(
-      order.orderStatus.value,
-      order.paymentStatus.value,
-      order.assignedEmployees,
-      eid
-    );
+    return canMarkCashCollected(order, eid);
   });
 
   constructor() {
@@ -314,6 +318,10 @@ export class OrderDetailsComponent implements OnInit {
     this.facade.openMarkCashCollectedDialog();
   }
 
+  protected onLockoutReported(): void {
+    this.retryLoadOrder();
+  }
+
   protected openAcceptWorkContract(): void {
     this.facade.openAcceptWorkContractDialog();
   }
@@ -349,6 +357,7 @@ export class OrderDetailsComponent implements OnInit {
       rooms: [{ value: '', disabled: true }],
       bathrooms: [{ value: '', disabled: true }],
       estimatedTime: [{ value: '', disabled: true }],
+      dirtinessLevel: [{ value: '', disabled: true }],
       paymentType: [{ value: '', disabled: true }],
       totalPrice: [{ value: '', disabled: true }],
       currency: [{ value: '', disabled: true }],
@@ -370,12 +379,14 @@ export class OrderDetailsComponent implements OnInit {
       customerName: orderDetails.customerName,
       customerEmail: orderDetails.customerEmail,
       customerPhone: orderDetails.customerPhone,
-      address: formatAddress({
-        street: orderDetails.address.street ?? '',
-        city: orderDetails.address.city ?? '',
-        zipCode: orderDetails.address.zipCode ?? '',
-        country: orderDetails.address.country ?? '',
-      }),
+      address: orderDetails.address
+        ? formatAddress({
+            street: orderDetails.address.street ?? '',
+            city: orderDetails.address.city ?? '',
+            zipCode: orderDetails.address.zipCode ?? '',
+            country: orderDetails.address.country ?? '',
+          })
+        : '',
       cleaningDateTime: this.formatDateTime(orderDetails.cleaningDateTime),
       rooms: orderDetails.rooms?.toString(),
       bathrooms: orderDetails.bathrooms?.toString(),
@@ -383,6 +394,7 @@ export class OrderDetailsComponent implements OnInit {
         'pages.order_details.estimated_time_minutes',
         { minutes: orderDetails.estimatedTime }
       ),
+      dirtinessLevel: this.translateService.instant(dirtinessLevelLabelKey(orderDetails.dirtinessLevel)),
       paymentType: orderDetails.paymentType.name,
       totalPrice: this.formatCurrency(orderDetails.totalPrice, orderDetails.currency.code),
       currency: `${orderDetails.currency.name} (${orderDetails.currency.code})`,

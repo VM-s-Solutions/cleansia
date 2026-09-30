@@ -26,6 +26,20 @@ final class PushTapRoutingTests: XCTestCase {
         XCTAssertEqual(route, .detail(orderId: "ord-7"), "the tap drills to the specific order detail")
     }
 
+    func testTheRemovalTapDrillsToTheDetailAskingForTheReason() {
+        let plan = PushTapRouting.plan(for: .removedFromOrder(orderId: "ord-7"))
+        XCTAssertTrue(plan.selectOrdersTab)
+        XCTAssertTrue(plan.showRemovalReason)
+        XCTAssertEqual(
+            PushTapRouting.deepLinkRoute(plan.orderId, showRemovalReason: plan.showRemovalReason),
+            .detail(orderId: "ord-7", showRemovalReason: true)
+        )
+    }
+
+    func testAnOrdinaryOrderTapNeverAsksForAReason() {
+        XCTAssertFalse(PushTapRouting.plan(for: .order(orderId: "ord-7")).showRemovalReason)
+    }
+
     func testOrdersTabTapResolvesNoDetailRoute() {
         let plan = PushTapRouting.plan(for: .ordersTab)
         let route = PushTapRouting.deepLinkRoute(plan.orderId)

@@ -2,6 +2,8 @@ using Cleansia.Config.Abstractions;
 using Cleansia.Config.Authentication;
 using Cleansia.Web.Customer.Extensions;
 using Cleansia.Web.Customer.Middleware;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Cleansia.Web.Customer;
 
@@ -39,6 +41,25 @@ public class Startup(IConfiguration configuration, IWebHostEnvironment environme
 
     protected override void UseHostAuthMiddleware(IApplicationBuilder app)
     {
+        // A lapsed session would otherwise run as a guest on the routes that serve both, and book
+        // without the account, its consent or its member price. The 401 makes the client refresh and
+        // replay; the auth routes are exempt because the refresh arrives carrying the lapsed token.
+        // Reads are exempt too: nothing is written as a guest, and a browser <img> such as the
+        // booking map sends the cookie without passing through the client's refresh interceptor.
+        app.Use(async (context, next) =>
+        {
+            if (!HttpMethods.IsGet(context.Request.Method)
+                && !HttpMethods.IsHead(context.Request.Method)
+                && !HttpMethods.IsOptions(context.Request.Method)
+                && !context.Request.Path.StartsWithSegments("/api/Auth")
+                && (await context.AuthenticateAsync()).Failure is SecurityTokenExpiredException)
+            {
+                await context.ChallengeAsync();
+                return;
+            }
+
+            await next(context);
+        });
         app.UseCsrfValidation();
     }
 }

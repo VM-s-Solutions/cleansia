@@ -192,4 +192,58 @@ extension L10n.Orders {
     static var statusTimelineSectionTitle: String {
         L10n.localized("status_timeline_section_title")
     }
+
+    // Cannot get in
+
+    static var lockoutCardTitle: String {
+        L10n.localized("lockout_card_title")
+    }
+
+    static func lockoutCardNotYet(_ time: String, _ minutes: Int) -> String {
+        L10n.format("lockout_card_not_yet", time, minutes)
+    }
+
+    static var lockoutCardBody: String {
+        L10n.localized("lockout_card_body")
+    }
+
+    static var lockoutEntrancePhoto: String {
+        L10n.localized("lockout_entrance_photo")
+    }
+
+    static var lockoutPhotoNeeded: String {
+        L10n.localized("lockout_photo_needed")
+    }
+
+    static var lockoutReportAction: String {
+        L10n.localized("lockout_report_action")
+    }
+
+    static var lockoutSheetTitle: String {
+        L10n.localized("lockout_sheet_title")
+    }
+
+    static var lockoutSheetDescription: String {
+        L10n.localized("lockout_sheet_description")
+    }
+
+    static var lockoutCallAttemptsLabel: String {
+        L10n.localized("lockout_call_attempts_label")
+    }
+
+    static var lockoutReportedToast: String {
+        L10n.localized("lockout_reported_toast")
+    }
+
+    static var lockoutReportedTitle: String {
+        L10n.localized("lockout_reported_title")
+    }
+
+    static func lockoutReportedBody(_ time: String) -> String {
+        L10n.format("lockout_reported_body", time)
+    }
+
+    static func lockoutReportedCalls(_ calls: String) -> String {
+        L10n.format("lockout_reported_calls", calls)
+    }
 }

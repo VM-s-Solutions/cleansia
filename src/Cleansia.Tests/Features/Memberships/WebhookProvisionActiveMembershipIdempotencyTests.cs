@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
@@ -25,22 +26,22 @@ namespace Cleansia.Tests.Features.Memberships;
 /// row is created EXCLUSIVELY by the <c>customer.subscription.created</c> webhook in
 /// <see cref="StripeSubscriptionWebhookHandler"/>.<c>ProvisionFromCreatedEventAsync</c>. That path called
 /// <see cref="UserMembership.Create"/> WITHOUT ever calling
-/// <see cref="IUserMembershipRepository.GetActiveForUserAsync"/> — unlike the request path
+/// <see cref="IUserMembershipRepository.GetLifecycleForUserAsync"/> — unlike the request path
 /// (<c>CreateMembershipCheckoutSession</c>) which guards. So a user who already has an active membership and
 /// reaches Stripe again (stale tab / Dashboard / two near-simultaneous checkouts) gets a SECOND active row
 /// → double benefits, reconciliation drift.
 ///
 /// THE FIX (S7a — assert + DB backstop):
 ///  1. ASSERT: in <c>ProvisionFromCreatedEventAsync</c>, AFTER the tenant override is set (so
-///     <c>GetActiveForUserAsync</c> resolves in the right tenant scope) and BEFORE
-///     <see cref="UserMembership.Create"/>, call <c>GetActiveForUserAsync(userId)</c>. If non-null: log a
+///     <c>GetLifecycleForUserAsync</c> resolves in the right tenant scope) and BEFORE
+///     <see cref="UserMembership.Create"/>, call <c>GetLifecycleForUserAsync(userId)</c>. If non-null: log a
 ///     reconcile/skip WARNING and RETURN the existing row WITHOUT Create/Add. The event is still stamped
 ///     processed by the outer <c>HandlePaymentNotification</c> handler (a duplicate provision is a no-op
 ///     success, not an error — that's the idempotent-consumer contract).
-///  2. DB BACKSTOP: a FILTERED UNIQUE INDEX on (TenantId, UserId) WHERE Status = Active
-///     (UserMembershipEntityConfiguration), so a second active row is rejected by Postgres (23505) even if
-///     the app check is bypassed by a race. Filtered to Active so Cancelled/expired + a new Active is still
-///     permitted.
+///  2. DB BACKSTOP: a FILTERED UNIQUE INDEX on (TenantId, UserId) over the live statuses (Active, PastDue,
+///     Paused) (UserMembershipEntityConfiguration), so a second live row is rejected by Postgres (23505)
+///     even if the app check is bypassed by a race. Filtered to the live statuses so Cancelled/expired + a
+///     new Active is still permitted.
 ///  3. S7b: the webhook handler is the consumer. It does NOT own its own commit — the outer
 ///     <c>HandlePaymentNotification.Handle</c> runs inside the <c>UnitOfWorkPipelineBehavior</c>, whose
 ///     <c>CommitAsync</c> fires AFTER the handler returns. So to MAP a 23505 (race loser) into a clean
@@ -49,7 +50,7 @@ namespace Cleansia.Tests.Features.Memberships;
 ///     <c>catch (DbUpdateException) when (IsUniqueViolation)</c> and resolves to the existing active row.
 ///
 /// These are LOGIC-LEVEL handler unit tests (mocked repositories): the assert is modelled by the mocked
-/// <c>GetActiveForUserAsync</c>; the race-loser 23505 is modelled by the mocked <c>CommitAsync</c> throwing
+/// <c>GetLifecycleForUserAsync</c>; the race-loser 23505 is modelled by the mocked <c>CommitAsync</c> throwing
 /// a <see cref="DbUpdateException"/> whose inner exception duck-types <c>SqlState == "23505"</c>. The DB
 /// backstop itself is proven by <see cref="UserMembershipActiveUniqueIndexTests"/> against a
 /// real <see cref="CleansiaDbContext"/>. Written RED first (predates the handler change).
@@ -107,6 +108,7 @@ public class WebhookProvisionActiveMembershipIdempotencyTests
             _planRepository.Object,
             _currencyRepository.Object,
             _tenantProvider.Object,
+            Mock.Of<INotificationProducer>(),
             NullLogger<StripeSubscriptionWebhookHandler>.Instance);
 
     /// <summary>
@@ -164,7 +166,7 @@ public class WebhookProvisionActiveMembershipIdempotencyTests
         // The active-check assert finds the user's existing active membership BEFORE Create.
         var existing = ExistingActiveMembership();
         _membershipRepository
-            .Setup(r => r.GetActiveForUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetLifecycleForUserAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existing);
 
         await CreateHandler().HandleAsync(SubscriptionCreatedEvent(NewSubId), CancellationToken.None);
@@ -180,7 +182,7 @@ public class WebhookProvisionActiveMembershipIdempotencyTests
     {
         // No active membership for this user — the assert returns null and Create proceeds.
         _membershipRepository
-            .Setup(r => r.GetActiveForUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetLifecycleForUserAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
 
         var added = new List<UserMembership>();
@@ -201,7 +203,7 @@ public class WebhookProvisionActiveMembershipIdempotencyTests
     public async Task CleanUser_SubscriptionCreated_RecordsTheSubscriptionsCurrency()
     {
         _membershipRepository
-            .Setup(r => r.GetActiveForUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetLifecycleForUserAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
         var added = new List<UserMembership>();
         _membershipRepository.Setup(r => r.Add(It.IsAny<UserMembership>())).Callback<UserMembership>(added.Add);
@@ -215,7 +217,7 @@ public class WebhookProvisionActiveMembershipIdempotencyTests
     public async Task ASubscriptionInACurrencyThePlatformDoesNotKnow_ProvisionsNothing()
     {
         _membershipRepository
-            .Setup(r => r.GetActiveForUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetLifecycleForUserAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
 
         await CreateHandler().HandleAsync(SubscriptionCreatedEvent(NewSubId, currency: "xxx"), CancellationToken.None);
@@ -235,7 +237,7 @@ public class WebhookProvisionActiveMembershipIdempotencyTests
             .Callback(() => { /* tenant scope now resolves to TenantId */ });
 
         _membershipRepository
-            .Setup(r => r.GetActiveForUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetLifecycleForUserAsync(UserId, It.IsAny<CancellationToken>()))
             .Callback(() => overrideSetBeforeActiveCheck =
                 Mock.Get(_tenantProvider.Object).Invocations
                     .Any(i => i.Method.Name == nameof(ITenantProvider.SetTenantOverride)))
@@ -243,7 +245,7 @@ public class WebhookProvisionActiveMembershipIdempotencyTests
 
         await CreateHandler().HandleAsync(SubscriptionCreatedEvent(NewSubId), CancellationToken.None);
 
-        // The override (from owningUser.TenantId) must be applied BEFORE GetActiveForUserAsync so the
+        // The override (from owningUser.TenantId) must be applied BEFORE GetLifecycleForUserAsync so the
         // active-check resolves in the user's tenant scope (S8) rather than the ambient/null scope.
         Assert.True(overrideSetBeforeActiveCheck);
     }
@@ -258,14 +260,14 @@ public class WebhookProvisionActiveMembershipIdempotencyTests
         // The loser never sees an active membership at the assert (winner not yet committed) — the TOCTOU
         // window the read alone cannot close.
         _membershipRepository
-            .Setup(r => r.GetActiveForUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetLifecycleForUserAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
 
         var added = new List<UserMembership>();
         _membershipRepository.Setup(r => r.Add(It.IsAny<UserMembership>()))
             .Callback<UserMembership>(added.Add);
 
-        // The in-handler flush hits the filtered (TenantId, UserId) WHERE Status=Active unique index and
+        // The in-handler flush hits the filtered (TenantId, UserId) live-status unique index and
         // Postgres raises 23505 (wrapped in DbUpdateException).
         _membershipRepository
             .Setup(r => r.CommitAsync(It.IsAny<CancellationToken>()))
@@ -303,9 +305,9 @@ public class WebhookProvisionActiveMembershipIdempotencyTests
 
 /// <summary>
 /// DB-level proof of the FILTERED UNIQUE INDEX backstop on
-/// <c>UserMemberships (TenantId, UserId) WHERE Status = Active</c>, exercised against a REAL
+/// <c>UserMemberships (TenantId, UserId)</c> over the live statuses, exercised against a REAL
 /// <see cref="CleansiaDbContext"/> (so <c>OnModelCreating</c> + the entity config's <c>HasIndex(...)
-/// .IsUnique().HasFilter("\"Status\" = 1")</c> actually run) over SQLite in-memory. SQLite, like Postgres,
+/// .IsUnique().HasFilter("\"Status\" IN (1, 2, 4)")</c> actually run) over SQLite in-memory. SQLite, like Postgres,
 /// supports partial (filtered) unique indexes, so the filtered
 /// semantics are testable here without the Postgres Testcontainers harness.
 ///
@@ -326,7 +328,7 @@ public sealed class UserMembershipActiveUniqueIndexTests : IDisposable
         // FK enforcement OFF: this test isolates the FILTERED UNIQUE INDEX behaviour, not the User /
         // MembershipPlan Restrict FKs. Seeding a fully-valid User graph in SQLite drags in unrelated
         // required relations; turning FK enforcement off lets us insert UserMembership rows directly so
-        // the only constraint under test is the (TenantId, UserId) WHERE Status=Active unique index.
+        // the only constraint under test is the (TenantId, UserId) live-status unique index.
         _connection = new SqliteConnection("DataSource=:memory:;Foreign Keys=False");
         _connection.Open();
     }
@@ -386,6 +388,35 @@ public sealed class UserMembershipActiveUniqueIndexTests : IDisposable
         Assert.Contains("UNIQUE", ex.InnerException?.Message ?? ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
+    // ── a past-due or paused subscription is still LIVE: a second row beside it is DB-REJECTED ──
+
+    /// <summary>
+    /// A past-due subscription is alive in Stripe, and a late payment moves it back to Active. A second
+    /// subscription created beside it would collide then, with Stripe billing both until it did.
+    /// </summary>
+    [Theory]
+    [InlineData("past_due")]
+    [InlineData("paused")]
+    public async Task A_Live_But_Unpaid_Row_Blocks_A_Second_Subscription(string stripeStatus)
+    {
+        await EnsureSchemaAsync();
+
+        await using (var ctx = NewContext(TenantId))
+        {
+            var unpaid = ActiveMembership("sub_unpaid");
+            unpaid.UpdateFromStripeWebhook(stripeStatus, unpaid.CurrentPeriodStart, unpaid.CurrentPeriodEnd, trialEndsAtUtc: null);
+            ctx.Add(unpaid);
+            await ctx.CommitAsync(CancellationToken.None);
+        }
+
+        await using var ctx2 = NewContext(TenantId);
+        ctx2.Add(ActiveMembership("sub_second"));
+
+        var ex = await Assert.ThrowsAsync<DbUpdateException>(
+            () => ctx2.CommitAsync(CancellationToken.None));
+        Assert.Contains("UNIQUE", ex.InnerException?.Message ?? ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
     // ── the index is FILTERED: a Cancelled membership + a NEW Active subscription is PERMITTED ──
 
     [Fact]
@@ -402,7 +433,7 @@ public sealed class UserMembershipActiveUniqueIndexTests : IDisposable
         await using (var ctx = NewContext(TenantId))
         {
             var old = await ctx.Set<UserMembership>().FirstAsync(m => m.StripeSubscriptionId == "sub_old");
-            // "canceled" → MembershipStatus.Cancelled, which falls outside WHERE Status = Active.
+            // "canceled" → MembershipStatus.Cancelled, which falls outside the live-status filter.
             old.UpdateFromStripeWebhook("canceled", old.CurrentPeriodStart, old.CurrentPeriodEnd, trialEndsAtUtc: null);
             await ctx.CommitAsync(CancellationToken.None);
         }

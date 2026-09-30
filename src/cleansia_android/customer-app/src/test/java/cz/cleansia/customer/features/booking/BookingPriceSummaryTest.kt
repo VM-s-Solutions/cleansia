@@ -151,6 +151,40 @@ class BookingPriceSummaryTest {
         )
     }
 
+    /**
+     * 1000 of lines at the increased level: 300 surcharge inside the 1300 base, express 260 on top, and a
+     * 120 discount stated against the charged 1560. The subtotal row is the lines alone, so the four rows
+     * add up to what the order is created with.
+     */
+    @Test
+    fun `the dirtiness surcharge is its own row and the rows add up to the total`() {
+        val summary = BookingPriceSummary.resolve(
+            quote(totalPrice = 1560.0, surchargeApplied = true, surcharge = 260.0, dirtiness = 300.0),
+            discount = 120.0,
+        )
+
+        assertEquals(1000.0, summary.subtotal, 0.001)
+        assertEquals(300.0, summary.dirtinessSurcharge, 0.001)
+        assertEquals(260.0, summary.expressSurcharge, 0.001)
+        assertEquals(1440.0, summary.total, 0.001)
+        assertEquals(
+            summary.total,
+            summary.subtotal + summary.dirtinessSurcharge + summary.expressSurcharge - 120.0,
+            0.001,
+        )
+    }
+
+    /** The server resolves discounts and tier floors on this base, surcharge included, so it keeps it. */
+    @Test
+    fun `the pre-surcharge subtotal keeps the dirtiness surcharge inside it`() {
+        assertEquals(
+            1300.0,
+            quote(totalPrice = 1560.0, surchargeApplied = true, surcharge = 260.0, dirtiness = 300.0)
+                .preSurchargeSubtotal,
+            0.001,
+        )
+    }
+
     @Test
     fun `an empty base cannot scale anything and returns the discount unchanged`() {
         assertEquals(50.0, quote(totalPrice = 0.0).discountAsCharged(50.0), 0.001)
@@ -161,6 +195,7 @@ class BookingPriceSummaryTest {
         surchargeApplied: Boolean = false,
         surcharge: Double = 0.0,
         waived: Boolean = false,
+        dirtiness: Double = 0.0,
     ) = QuoteOrderResponse(
         requiredEmployees = 1,
         finalPriceAfterDiscount = 0.0,
@@ -175,5 +210,6 @@ class BookingPriceSummaryTest {
         expressSurchargeApplied = surchargeApplied,
         expressSurchargeAmount = surcharge,
         expressSurchargeWaivedByMembership = waived,
+        dirtinessSurchargeAmount = dirtiness,
     )
 }

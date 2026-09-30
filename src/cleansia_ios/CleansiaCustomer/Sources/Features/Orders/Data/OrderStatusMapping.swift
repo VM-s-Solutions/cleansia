@@ -27,14 +27,28 @@ enum OrderStatusGroup {
         return status != ._5 && status != ._6
     }
 
-    /// The statuses a customer may cancel from — everything the server's `CancellationAssessor` does
+    /// The statuses a customer may cancel from — every status the server's `CancellationAssessor` does
     /// not refuse, which is every status before a cleaner has started work. One function for the
-    /// signed-in and the guest surface: the two used to stop at different statuses.
+    /// signed-in and the guest surface: the two used to stop at different statuses. The assessor also
+    /// refuses a staffed order past its start; `isAwaitingCleanerPastStart` is that half.
     static func isCancellable(_ status: OrderStatus?) -> Bool {
         switch status {
         case ._0, ._1, ._2, ._3: true
         default: false
         }
+    }
+
+    /// Past the booked start with a cleaner on the job and nobody started: the server refuses a cancel
+    /// (`order.start_passed_cannot_cancel`) and the customer reports that the cleaner did not arrive.
+    /// → /product/business-rules#cancellation
+    static func isAwaitingCleanerPastStart(
+        _ status: OrderStatus?,
+        hasCleaner: Bool,
+        startsAt: Date?,
+        now: Date
+    ) -> Bool {
+        guard isCancellable(status), hasCleaner, let startsAt else { return false }
+        return now >= startsAt
     }
 
     /// Whether "Report issue" is offered for this order (`canReportIssue` in

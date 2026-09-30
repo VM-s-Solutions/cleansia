@@ -113,7 +113,7 @@ public class ReservationIsNotAcceptanceTests
         new(
             OrderAccessDoubles.Over(_orderRepository, _session),
             _session.Object,
-            new CancellationPolicyResolver(_membershipRepository.Object),
+            new CancellationPolicyResolver(_membershipRepository.Object, Mock.Of<IOrderRepository>()),
             _expressWaiverConsumer.Object,
             TimeProvider.System);
 

@@ -52,6 +52,28 @@ describe('OrderDetailFacade', () => {
     expect(facade.formatPrice(null)).toBe('-');
   });
 
+  // The server fills both on a cancelled order only: the rate applied and what of the fee is unpaid.
+  it('shows the fee a cancellation applied and what of it is still owed', () => {
+    facade.order.set(OrderItem.fromJS({ cancellationFeeRate: 0.25, cancellationFeeOwed: 300 }));
+    expect(facade.cancellationFee()).toEqual({ rate: 0.25, owed: 300 });
+
+    facade.order.set(OrderItem.fromJS({ cancellationFeeRate: 0, cancellationFeeOwed: 0 }));
+    expect(facade.cancellationFee()).toEqual({ rate: 0, owed: 0 });
+  });
+
+  it('writes a fee rate the way the session language does', () => {
+    expect(facade.formatRate(0.25)).toBe('25 %');
+    expect(facade.formatRate(0)).toBe('0 %');
+  });
+
+  it('shows no cancellation fee on an order that was not cancelled', () => {
+    facade.order.set(OrderItem.fromJS({ id: 'order-1' }));
+    expect(facade.cancellationFee()).toBeNull();
+
+    facade.order.set(null);
+    expect(facade.cancellationFee()).toBeNull();
+  });
+
   it('writes a stamp the way the session language does, to the minute', () => {
     expect(facade.formatDateTime(new Date(2026, 8, 21, 10, 30))).toBe('21. 9. 2026 10:30');
     expect(facade.formatDate(new Date(2026, 8, 21, 10, 30))).toBe('21. 9. 2026');

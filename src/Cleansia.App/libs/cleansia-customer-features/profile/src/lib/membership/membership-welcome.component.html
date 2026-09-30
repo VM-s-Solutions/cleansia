@@ -13,10 +13,26 @@
       aria-hidden="true"
     />
     <h1 class="cl-mbr__welcome-title">{{ 'pages.membership.welcome_title' | translate }}</h1>
-    <p class="cl-mbr__welcome-lead">{{ 'pages.membership.welcome_subtitle' | translate }}</p>
+    <!--
+      A running trial carries no Plus benefit, so a trialing member is told what a paid membership
+      includes rather than what has just unlocked. → /product/business-rules
+    -->
+    <p class="cl-mbr__welcome-lead">
+      @if (trialEndsOn()) {
+      {{ 'pages.membership.welcome_subtitle_trial' | translate }}
+      } @else {
+      {{ 'pages.membership.welcome_subtitle' | translate }}
+      }
+    </p>
 
     <section class="cl-mbr__card cl-mbr__welcome-card">
-      <span class="cl-mbr__welcome-label">{{ 'pages.membership.from_now' | translate }}</span>
+      <span class="cl-mbr__welcome-label">
+        @if (trialEndsOn()) {
+        {{ 'pages.membership.trial_perks_title' | translate }}
+        } @else {
+        {{ 'pages.membership.from_now' | translate }}
+        }
+      </span>
       <ul class="cl-mbr__perks">
         <li>
           <i class="pi pi-star"></i>
@@ -38,15 +54,10 @@
         </li>
       </ul>
 
-      <!--
-        Said out loud, because it is the one perk that is NOT on yet: a trialing
-        member has the discount and the shorter cancellation window, but the
-        express waiver starts when the trial ends. → /product/business-rules
-      -->
-      @if (expressWaiverPendingTrial()) {
+      @if (trialEndsOn()) {
       <p class="cl-mbr__note cl-mbr__note--warn">
-        <i class="pi pi-bolt"></i>
-        {{ 'pages.membership.welcome_express_after_trial' | translate }}
+        <i class="pi pi-info-circle"></i>
+        {{ 'pages.membership.trial_perks_note' | translate }}
       </p>
       }
     </section>
@@ -58,9 +69,12 @@
         [style]="'raised-button'"
         (clickFn)="goToBook()"
       />
+      <!-- A schedule needs a paid month: the server refuses one during a trial. -->
+      @if (!trialEndsOn()) {
       <a class="cl-mbr__link" [routerLink]="['/' + routes.MEMBERSHIP, 'recurring', 'create']">
         {{ 'pages.membership.welcome_cta_setup_recurring' | translate }}
       </a>
+      }
     </div>
   </div>
 </div>

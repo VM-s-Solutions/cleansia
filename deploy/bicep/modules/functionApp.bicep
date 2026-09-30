@@ -44,6 +44,9 @@ param storageAccountId string
 @description('Application Insights connection string (non-secret; instrumentation only).')
 param appInsightsConnectionString string
 
+@description('How the app reaches blobs and queues — the storageSettings object main.bicep shares with the API hosts: the Storage--ConnectionString Key Vault references, or the managed-identity AccountUrl and the identity-based QueueStorageConnectionString connection its queue triggers bind from.')
+param storageAppSettings object
+
 @description('Subnet id for regional VNet integration (the Q-INFRA-03 seam). Empty (default) = no VNet integration. MUST be set whenever Postgres/Storage go private — an unintegrated Functions host would lose the DB and every queue at once.')
 param virtualNetworkSubnetId string = ''
 
@@ -68,9 +71,15 @@ var linuxFxVersion = 'DOCKER|${acrLoginServer}/${imageRepository}:${imageTag}'
 
 // Key Vault references — secret NAMES only; values are owner/CI-populated in Key Vault (ADR-0015 D4).
 var dbConnSecretUri = '${keyVaultUri}/secrets/ConnectionStrings--cleansia-db'
-var storageSecretUri = '${keyVaultUri}/secrets/Storage--ConnectionString'
 
-// The orchestrator-supplied object → the {name, value} array shape App Service wants.
+// The orchestrator-supplied objects → the {name, value} array shape App Service wants.
+var storageAppSettingsArray = [
+  for setting in items(storageAppSettings): {
+    name: setting.key
+    value: setting.value
+  }
+]
+
 var extraAppSettingsArray = [
   for setting in items(extraAppSettings): {
     name: setting.key
@@ -78,8 +87,9 @@ var extraAppSettingsArray = [
   }
 ]
 
-// Functions-runtime + storage/db wiring owned by this module; application config (SendGrid/Sentry/
-// fiscal) arrives via extraAppSettings so it has ONE home in main.bicep shared with the API hosts.
+// Functions-runtime + db wiring owned by this module; the blob/queue wiring (storageAppSettings) and
+// application config (SendGrid/Sentry/fiscal, extraAppSettings) each have ONE home in main.bicep
+// shared with the API hosts.
 var baseAppSettings = [
   {
     name: 'FUNCTIONS_EXTENSION_VERSION'
@@ -116,14 +126,6 @@ var baseAppSettings = [
     name: 'ConnectionStrings__ConnectionString'
     value: '@Microsoft.KeyVault(SecretUri=${dbConnSecretUri})'
   }
-  {
-    name: 'ConnectionStrings__BlobContainerConfigurationConnectionString'
-    value: '@Microsoft.KeyVault(SecretUri=${storageSecretUri})'
-  }
-  {
-    name: 'ConnectionStrings__QueueStorageConnectionString'
-    value: '@Microsoft.KeyVault(SecretUri=${storageSecretUri})'
-  }
 ]
 
 resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
@@ -158,8 +160,25 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
       // Pull the image from ACR using the Function App's managed identity (AcrPull granted in
       // roleAssignments.bicep). No registry admin user, no registry password in config.
       acrUseManagedIdentityCreds: true
-      appSettings: concat(baseAppSettings, extraAppSettingsArray)
+      appSettings: concat(baseAppSettings, storageAppSettingsArray, extraAppSettingsArray)
     }
+  }
+}
+
+// The image is pulled from ACR and configured through ARM; nothing publishes over basic-auth FTP or SCM.
+resource ftpBasicAuth 'Microsoft.Web/sites/basicPublishingCredentialsPolicies@2023-12-01' = {
+  parent: functionApp
+  name: 'ftp'
+  properties: {
+    allow: false
+  }
+}
+
+resource scmBasicAuth 'Microsoft.Web/sites/basicPublishingCredentialsPolicies@2023-12-01' = {
+  parent: functionApp
+  name: 'scm'
+  properties: {
+    allow: false
   }
 }
 

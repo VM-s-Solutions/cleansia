@@ -44,6 +44,22 @@ class OrderDetailRecurringGateTest {
         )
     }
 
+    /**
+     * A confirmed cash occurrence stays payment-Pending until the cleaner collects, so a button keyed
+     * on Pending stayed up after the confirm and a second tap was refused.
+     */
+    @Test
+    fun `the recurring confirm keys on the server's needsConfirmation, not the payment status`() {
+        assertEquals(
+            "val showConfirmRecurringCta = order.needsConfirmation",
+            Regex("""val showConfirmRecurringCta = .*""").find(screen)?.value,
+        )
+        assertTrue(
+            "the derived flag no longer gates the confirm button",
+            screen.contains("if (showConfirmRecurringCta) {"),
+        )
+    }
+
     private val screen: String = sequenceOf(
         File("."),
         File("customer-app"),

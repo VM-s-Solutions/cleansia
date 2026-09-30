@@ -1,5 +1,9 @@
 package cz.cleansia.partner.features.profile
 
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -22,6 +26,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import cz.cleansia.core.config.CleansiaWeb
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.material.icons.outlined.PrivacyTip
 import androidx.compose.material.icons.outlined.DeleteForever
@@ -30,8 +35,11 @@ import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.material.icons.outlined.AccountBalance
 import androidx.compose.material.icons.outlined.Badge
 import androidx.compose.material.icons.outlined.DarkMode
+import androidx.compose.material.icons.outlined.DateRange
+import androidx.compose.material.icons.outlined.Gavel
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Devices
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.MyLocation
 import androidx.compose.material.icons.outlined.Person
@@ -71,6 +79,30 @@ import cz.cleansia.partner.core.settings.ThemePreference
 import cz.cleansia.partner.features.main.MainBottomNavInset
 import cz.cleansia.partner.features.settings.SettingsViewModel
 
+internal const val HOW_JOBS_ARE_OFFERED_URL = "https://partner.${CleansiaWeb.DOMAIN}/how-jobs-are-offered"
+
+/**
+ * The app claims its own partner host for App Links and reads no URL it is opened with, so a plain
+ * VIEW of a page on that host can land back in the app and open nothing. A page there goes to a
+ * browser by package: the default one when it is set, otherwise the first installed.
+ */
+internal fun browserPackage(defaultHandler: String?, browsers: List<String>, ownPackage: String): String? =
+    defaultHandler?.takeIf { it in browsers && it != ownPackage }
+        ?: browsers.firstOrNull { it != ownPackage }
+
+@Suppress("DEPRECATION")
+private fun openInBrowser(context: Context, url: String) {
+    val anyWebPage = Intent(Intent.ACTION_VIEW, Uri.parse("https://")).addCategory(Intent.CATEGORY_BROWSABLE)
+    val packageManager = context.packageManager
+    val browsers = packageManager.queryIntentActivities(anyWebPage, PackageManager.MATCH_DEFAULT_ONLY)
+        .map { it.activityInfo.packageName }
+    val defaultHandler = packageManager.resolveActivity(anyWebPage, PackageManager.MATCH_DEFAULT_ONLY)
+        ?.activityInfo?.packageName
+    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).addCategory(Intent.CATEGORY_BROWSABLE)
+    browserPackage(defaultHandler, browsers, context.packageName)?.let { intent.setPackage(it) }
+    runCatching { context.startActivity(intent) }
+}
+
 @Composable
 fun ProfileScreen(
     onNavigateBack: () -> Unit,
@@ -80,6 +112,7 @@ fun ProfileScreen(
     onNavigateToBank: () -> Unit,
     onNavigateToEmergency: () -> Unit,
     onNavigateToDocuments: () -> Unit,
+    onNavigateToLegalDocuments: () -> Unit,
     onNavigateToLanguage: () -> Unit,
     onNavigateToTheme: () -> Unit,
     onNavigateToJobRadius: () -> Unit,
@@ -105,6 +138,7 @@ fun ProfileScreen(
     // this dialog and route straight through `onSignedOut` above.
     var showLogoutDialog by remember { mutableStateOf(false) }
     val uriHandler = LocalUriHandler.current
+    val context = LocalContext.current
 
     val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
 
@@ -182,6 +216,20 @@ fun ProfileScreen(
                             summary = stringResource(R.string.documents_summary_view),
                             onClick = onNavigateToDocuments,
                         )
+                        RowDivider()
+                        ProfileSectionRow(
+                            icon = Icons.Outlined.Gavel,
+                            title = stringResource(R.string.legal_documents_title),
+                            summary = stringResource(R.string.profile_legal_documents_summary),
+                            onClick = onNavigateToLegalDocuments,
+                        )
+                        employee.weeklyOrderLimit?.let { limit ->
+                            RowDivider()
+                            WeeklyLimitRow(
+                                limit = limit,
+                                reason = employee.weeklyOrderLimitReason?.takeIf { it.isNotBlank() },
+                            )
+                        }
                     }
                 }
                 item {
@@ -241,6 +289,13 @@ fun ProfileScreen(
                             title = stringResource(R.string.profile_privacy),
                             summary = stringResource(R.string.profile_privacy_summary),
                             onClick = { uriHandler.openUri(CleansiaWeb.PRIVACY_URL) },
+                        )
+                        RowDivider()
+                        ProfileSectionRow(
+                            icon = Icons.Outlined.Info,
+                            title = stringResource(R.string.profile_how_jobs_are_offered),
+                            summary = stringResource(R.string.profile_how_jobs_are_offered_summary),
+                            onClick = { openInBrowser(context, HOW_JOBS_ARE_OFFERED_URL) },
                         )
                     }
                 }
@@ -485,20 +540,7 @@ private fun ProfileSectionRow(
             .padding(horizontal = Spacing.M, vertical = Spacing.S + 2.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            modifier = Modifier
-                .size(32.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(18.dp),
-            )
-        }
+        RowIcon(icon)
         Spacer(Modifier.width(Spacing.M))
         Column(modifier = Modifier.weight(1f)) {
             Text(
@@ -517,6 +559,51 @@ private fun ProfileSectionRow(
             imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun WeeklyLimitRow(limit: Int, reason: String?) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = Spacing.M, vertical = Spacing.S + 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        RowIcon(Icons.Outlined.DateRange)
+        Spacer(Modifier.width(Spacing.M))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = stringResource(R.string.profile_weekly_limit, limit),
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            reason?.let {
+                Text(
+                    text = stringResource(R.string.profile_weekly_limit_reason, it),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun RowIcon(icon: ImageVector) {
+    Box(
+        modifier = Modifier
+            .size(32.dp)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(18.dp),
         )
     }
 }

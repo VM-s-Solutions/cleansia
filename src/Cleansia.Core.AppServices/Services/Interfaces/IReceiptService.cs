@@ -1,4 +1,5 @@
 using Cleansia.Core.Domain.Orders;
+using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Receipts;
 
 namespace Cleansia.Core.AppServices.Services.Interfaces;
@@ -16,6 +17,14 @@ public interface IReceiptService
     Task<OrderReceipt> ReserveReceiptAsync(Order order, string languageCode, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// The same reservation for the fee receipt of a paid receivable on <paramref name="order"/>: its own
+    /// number from the same counter, beside the order's sale receipt. Realized and retried by the same two
+    /// methods below, which read the fee from the receipt's receivable instead of the order's sale.
+    /// </summary>
+    Task<OrderReceipt> ReserveFeeReceiptAsync(
+        Order order, Receivable receivable, string languageCode, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// ADR-0004 D-F4.1 phase 2 — REALIZE the external effects for an already-claimed receipt:
     /// register with the country's fiscal authority (stamping <c>SetFiscalData</c> on success — which
     /// clears the born-retry-eligibility — or <c>MarkFiscalRegistrationFailed</c> on failure), then
@@ -24,13 +33,6 @@ public interface IReceiptService
     /// </summary>
     /// <remarks>The document's language is the one <see cref="ReserveReceiptAsync"/> recorded on the row.</remarks>
     Task RealizeFiscalAndPdfAsync(Order order, OrderReceipt receipt, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Re-renders an already-issued receipt from the order as it stands now, over the same receipt
-    /// number and the same blob. For the cash sale whose money arrives after the document does.
-    /// Registers nothing with any fiscal authority. Does NOT commit.
-    /// </summary>
-    Task RegenerateReceiptPdfAsync(Order order, OrderReceipt receipt, CancellationToken cancellationToken = default);
 
     Task<byte[]> DownloadReceiptPdfAsync(OrderReceipt receipt, CancellationToken cancellationToken = default);
 

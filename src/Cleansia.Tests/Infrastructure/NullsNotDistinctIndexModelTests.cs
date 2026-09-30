@@ -81,7 +81,7 @@ public sealed class NullsNotDistinctIndexModelTests : IDisposable
 
     /// <summary>
     /// The control: <c>UserMemberships</c> is a backstop behind the authoritative
-    /// <c>GetActiveForUserAsync</c> assert, so it is deliberately left unset — PostgreSQL's default,
+    /// <c>GetLifecycleForUserAsync</c> assert, so it is deliberately left unset — PostgreSQL's default,
     /// nulls distinct. Without this the theory above could pass on a reader that answered <c>false</c>
     /// for every index.
     /// </summary>
@@ -151,7 +151,11 @@ public sealed class NullsNotDistinctIndexModelTests : IDisposable
     {
         // Filtered "RecurringTemplateId" IS NOT NULL — the nullable column cannot be null in an indexed row.
         "Order (RecurringTemplateId, CleaningDateTime)",
-        // The documented backstop behind GetActiveForUserAsync, deliberately left nulls-distinct.
+        // Filtered "ReceivableId" IS NOT NULL — one fee receipt per receivable; sale receipts are not in it.
+        "OrderReceipt (ReceivableId)",
+        // Filtered "OrderId" IS NOT NULL — one collection per order; remittances and write-offs name no order.
+        "CashLedgerEntry (OrderId)",
+        // The documented backstop behind GetLifecycleForUserAsync, deliberately left nulls-distinct.
         "UserMembership (TenantId, UserId)",
     };
 

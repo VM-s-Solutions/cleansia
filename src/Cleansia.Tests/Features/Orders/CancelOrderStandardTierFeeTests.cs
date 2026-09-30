@@ -13,6 +13,8 @@ using Cleansia.Infra.Common.Validations;
 using MockQueryable;
 using Cleansia.Tests.Common;
 using Moq;
+using Microsoft.Extensions.Logging.Abstractions;
+using Cleansia.Core.Queue.Abstractions;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -70,14 +72,17 @@ public class CancelOrderStandardTierFeeTests
                 Mock.Of<ITenantProvider>(),
                 _refundService.Object,
                 Mock.Of<IRefundRepository>(),
+                Mock.Of<IReceivableRepository>(),
                 _creditAccountRepository.Object,
                 _loyaltyService.Object,
-                new CancellationPolicyResolver(_membershipRepository.Object),
+                new CancellationPolicyResolver(_membershipRepository.Object, Mock.Of<IOrderRepository>()),
                 _producer.Object,
                 _liveActivityProducer.Object,
                 _expressWaiverConsumer.Object,
+                Mock.Of<IPendingDispatch>(),
                 new AuditContext(),
-                TimeProvider.System));
+                TimeProvider.System,
+                NullLogger<CustomerOrderCancellation>.Instance));
 
     private Order ArrangeAcceptedCardPaidOrder(DateTime cleaningUtc, decimal totalPrice)
     {

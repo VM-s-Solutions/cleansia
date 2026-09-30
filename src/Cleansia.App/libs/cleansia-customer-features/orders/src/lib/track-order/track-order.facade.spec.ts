@@ -4,7 +4,14 @@ import {
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { CUSTOMER_API_BASE_URL } from '@cleansia/customer-services';
+import {
+  Code,
+  CUSTOMER_API_BASE_URL,
+  LookupOrderResponse,
+  PaymentStatus,
+  PaymentType,
+} from '@cleansia/customer-services';
+import { OrderStatus } from '@cleansia/models';
 import { GuestOrderService } from './guest-order.service';
 import { TrackOrderFacade } from './track-order.facade';
 
@@ -32,6 +39,22 @@ describe('TrackOrderFacade', () => {
 
   afterEach(() => {
     httpMock.verify();
+  });
+
+  // A guest's card checkout that never completed took no money, so the cancel sheet estimates no refund.
+  it.each([
+    ['a card checkout never completed', PaymentStatus.Pending, true],
+    ['a failed card payment', PaymentStatus.Failed, true],
+    ['a paid card booking', PaymentStatus.Paid, false],
+  ])('%s: took no card payment = %s', (_label, paymentStatus, expected) => {
+    facade.selectedOrder.set(
+      LookupOrderResponse.fromJS({
+        paymentType: Code.fromJS({ value: PaymentType.Card }).toJSON(),
+        paymentStatus: Code.fromJS({ value: paymentStatus }).toJSON(),
+      }),
+    );
+
+    expect(facade.tookNoCardPayment()).toBe(expected);
   });
 
   // Every member of a generated query is optional, so a dropped assignment type-checks.
@@ -63,5 +86,23 @@ describe('TrackOrderFacade', () => {
     expect(JSON.parse(request.request.body)).toEqual({ accessTokens: [] });
 
     request.flush(new Blob([JSON.stringify({ orders: [] })]));
+  });
+
+  it('sends the no-show report with the access token in the body', () => {
+    facade.selectOrder(
+      LookupOrderResponse.fromJS({
+        id: 'ord-1',
+        orderStatus: { value: OrderStatus.Confirmed },
+        cleaningDateTime: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+      }),
+      'tok-123',
+    );
+
+    facade.reportCleanerNoShow();
+
+    const request = httpMock.expectOne(`${BASE_URL}/api/Order/ReportGuestNoShow`);
+    expect(request.request.method).toBe('POST');
+    expect(JSON.parse(request.request.body)).toEqual({ accessToken: 'tok-123' });
+    request.flush(new Blob([JSON.stringify({ orderId: 'ord-1' })]));
   });
 });

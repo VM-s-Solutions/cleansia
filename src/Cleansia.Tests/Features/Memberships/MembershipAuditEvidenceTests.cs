@@ -57,7 +57,7 @@ public sealed class MembershipAuditEvidenceTests
         _priceRepository.PriceIn(_plan.Id, MembershipPricingMockFactory.CzkCurrencyId, StripePriceId, price: 199m);
 
         _membershipRepository
-            .Setup(r => r.GetActiveForUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetLifecycleForUserAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
         _membershipRepository
             .Setup(r => r.HasEverStartedTrialAsync(UserId, It.IsAny<CancellationToken>()))
@@ -176,7 +176,7 @@ public sealed class MembershipAuditEvidenceTests
     public async Task A_Refused_Checkout_Records_No_Evidence()
     {
         _membershipRepository
-            .Setup(r => r.GetActiveForUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetLifecycleForUserAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(UserMembershipMockFactory.Paid(UserId));
 
         var result = await CheckoutHandler().Handle(new CreateMembershipCheckoutSession.Command(PlanCode), CancellationToken.None);
@@ -256,7 +256,7 @@ public sealed class MembershipAuditEvidenceTests
         typeof(UserMembership).GetProperty(nameof(UserMembership.MembershipPlan))!
             .GetSetMethod(nonPublic: true)!.Invoke(membership, [_plan]);
         _membershipRepository
-            .Setup(r => r.GetActiveForUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetLifecycleForUserAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(membership);
         var yearly = MembershipPlan.Create("PLUS_YEARLY", "Plus Yearly", 5m, 4, true, BillingInterval.Yearly);
         _planRepository.Setup(r => r.GetByCodeAsync("PLUS_YEARLY", It.IsAny<CancellationToken>())).ReturnsAsync(yearly);
@@ -287,7 +287,7 @@ public sealed class MembershipAuditEvidenceTests
     {
         var membership = UserMembershipMockFactory.Paid(UserId);
         _membershipRepository
-            .Setup(r => r.GetActiveForUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetLifecycleForUserAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(membership);
 
         var result = await CancelHandler().Handle(new CancelMembershipSubscription.Command(), CancellationToken.None);

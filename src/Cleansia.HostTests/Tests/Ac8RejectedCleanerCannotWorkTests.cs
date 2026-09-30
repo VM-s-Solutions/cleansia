@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.HostTests.Infrastructure;
@@ -16,13 +17,15 @@ namespace Cleansia.HostTests.Tests;
 ///   validator's EmployeeIsApprovedAsync check is the inner backstop the handler-level
 ///   tests cover.)</item>
 ///   <item>an Approved cleaner still succeeds (TakeOrder → 200, assignment recorded, status advanced).</item>
+///   <item>an Approved cleaner who has not accepted the cleaner documents the host's boot seeded is
+///   refused the take with <c>employee.legal_documents_not_accepted</c>, and the order is unchanged.</item>
 /// </list>
 /// </summary>
 public sealed class Ac8RejectedCleanerCannotWorkTests(HostTestPostgresFixture db) : AuthzHostTestBase(db)
 {
     private sealed record Arranged(string EmployeeId, string EmployeeEmail, string OrderId, string TextId);
 
-    private async Task<Arranged> ArrangeAsync(bool approved)
+    private async Task<Arranged> ArrangeAsync(bool approved, bool acceptedCleanerDocuments = true)
     {
         string empId = "", orderId = "", textId = "";
         const string empEmail = "cleaner@hosttests.local";
@@ -42,6 +45,10 @@ public sealed class Ac8RejectedCleanerCannotWorkTests(HostTestPostgresFixture db
                 : DomainSeed.RejectedEmployee(empUser);
             ctx.Employees.Add(employee);
             ctx.EmployeeDocuments.Add(DomainSeed.ActiveDocument(employee.Id));
+            if (acceptedCleanerDocuments)
+            {
+                await DomainSeed.AcceptCleanerDocumentsAsync(ctx, employee);
+            }
 
             var order = DomainSeed.NewOrder(customerUser.Id, "ordercust@hosttests.local", workContract: workContract);
             ctx.Orders.Add(order);
@@ -85,5 +92,21 @@ public sealed class Ac8RejectedCleanerCannotWorkTests(HostTestPostgresFixture db
         var assigned = await QueryAsync(ctx => ctx.Set<OrderEmployee>()
             .IgnoreQueryFilters().AnyAsync(oe => oe.OrderId == a.OrderId && oe.EmployeeId == a.EmployeeId));
         Assert.True(assigned);
+    }
+
+    [Fact]
+    public async Task Approved_cleaner_without_the_cleaner_documents_cannot_take_an_order()
+    {
+        var a = await ArrangeAsync(approved: true, acceptedCleanerDocuments: false);
+        var token = TestJwtFactory.Mint(PartnerAudience, "u-app", a.EmployeeEmail, UserProfile.Employee, employeeId: a.EmployeeId);
+
+        var resp = await PartnerClient(token).PostAsync("/api/Order/TakeOrder", JsonContent.Create(new { OrderId = a.OrderId, AcceptedWorkContractTextId = a.TextId }));
+
+        HttpAssert.ClearedTheGate(resp);
+        await HttpAssert.RejectedAsync(resp, BusinessErrorMessage.EmployeeLegalDocumentsNotAccepted);
+
+        var assigned = await QueryAsync(ctx => ctx.Set<OrderEmployee>()
+            .IgnoreQueryFilters().AnyAsync(oe => oe.OrderId == a.OrderId));
+        Assert.False(assigned);
     }
 }

@@ -36,11 +36,14 @@ public static class NotificationFeedEventKeys
         NotificationEventCatalog.OrderCancelled,
         NotificationEventCatalog.OrderRefunded,
         NotificationEventCatalog.OrderNoCleanerRefunded,
+        NotificationEventCatalog.OrderNoCleanerRefundPending,
+        NotificationEventCatalog.OrderNoCleanerNothingCharged,
         NotificationEventCatalog.DisputeReply,
         NotificationEventCatalog.RecurringScheduled,
         NotificationEventCatalog.RecurringPaused,
         NotificationEventCatalog.MembershipExpiringSoon,
         NotificationEventCatalog.MembershipCancellationEffective,
+        NotificationEventCatalog.MembershipPaymentFailed,
         NotificationEventCatalog.LoyaltyTierUpgrade,
     ];
 

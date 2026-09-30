@@ -26,24 +26,32 @@ final class RegistrationLockViewModelTests: XCTestCase {
 
     private var client: FakeRegistrationClient!
     private var authClient: FakeAuthClient!
+    private var profileClient: FakePartnerProfileClient!
     private var cancellables: Set<AnyCancellable>!
 
     override func setUp() {
         super.setUp()
         client = FakeRegistrationClient()
         authClient = FakeAuthClient()
+        profileClient = FakePartnerProfileClient()
         cancellables = []
     }
 
     override func tearDown() {
         client = nil
         authClient = nil
+        profileClient = nil
         cancellables = nil
         super.tearDown()
     }
 
     private func makeViewModel() -> RegistrationLockViewModel {
-        RegistrationLockViewModel(client: client, authClient: authClient)
+        RegistrationLockViewModel(
+            client: client,
+            authClient: authClient,
+            legalDocumentsClient: profileClient,
+            languageTag: { "uk" }
+        )
     }
 
     private func incompleteStatus() -> RegistrationCompletionStatus {
@@ -145,6 +153,36 @@ final class RegistrationLockViewModelTests: XCTestCase {
 
         XCTAssertEqual(authClient.logoutCount, 1)
         XCTAssertFalse(vm.action.isSubmitting)
+    }
+
+    // MARK: contract documents
+
+    func testTheLockReadsTheDocumentsInTheReadersLanguageAsAStepOfItsOwn() async {
+        client.result = .success(incompleteStatus())
+        profileClient.legalDocumentsResult = .success([.sample(type: ._3)])
+        let vm = makeViewModel()
+
+        await vm.load()
+
+        XCTAssertEqual(profileClient.legalDocumentLanguages, ["uk"])
+        guard let data = vm.state.loadedValue else { return XCTFail("expected loaded") }
+        XCTAssertEqual(data.steps.map(\.category), [.profile, .documents, .legalDocuments, .approval])
+        XCTAssertNil(data.errorMessage)
+    }
+
+    func testAFailedDocumentsReadShowsTheBannerWithoutLosingTheStatusOrTheLastDocuments() async {
+        client.result = .success(incompleteStatus())
+        profileClient.legalDocumentsResult = .success([.sample(type: ._3)])
+        let vm = makeViewModel()
+        await vm.load()
+
+        profileClient.legalDocumentsResult = .failure(ApiError(code: "network.unreachable"))
+        await vm.load()
+
+        guard let data = vm.state.loadedValue else { return XCTFail("expected loaded") }
+        XCTAssertEqual(data.steps.count, 4, "the documents step survives a failed re-read")
+        XCTAssertEqual(data.completedCount, 1)
+        XCTAssertNotNil(data.errorMessage)
     }
 
     func testMissingFieldsExposedForFixRouting() async {

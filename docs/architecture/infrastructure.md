@@ -57,12 +57,12 @@ Key Vault
 | Secret | Used By | Purpose |
 |--------|---------|---------|
 | `Jwt--Key` | All APIs | JWT signing key (issuer/audience are code-side constants, not KV secrets) |
-| `ConnectionStrings--cleansia-db` | All APIs, Functions, CI migrate job | PostgreSQL connection string |
+| `ConnectionStrings--cleansia-db` | All APIs, Functions; the CI migrate job on DEV | PostgreSQL connection string. On production it is the least-privilege `cleansia_app` login's, `Ssl Mode=VerifyFull`, and the migration signs in as the administrator without it — [Azure setup — production posture](/deployment/azure-setup#production-posture) |
 | `Stripe--SecretKey` | Customer API | Stripe payment processing |
 | `Stripe--WebhookSecret` | Customer API | Stripe webhook signature verification |
 | `SendGrid--ApiKey` | Functions, APIs | Email delivery |
 | `Sentry--Dsn` | The five APIs (not Functions) | Error tracking — **empty on DEV, so Sentry is off**. See [Observability](#observability) |
-| `Storage--ConnectionString` | All APIs, Functions | Azure Blob/Queue Storage |
+| `Storage--ConnectionString` | All APIs, Functions — **DEV only** | Azure Blob/Queue Storage. Production has no storage secret: the hosts use their managed identity and the account refuses shared keys |
 | `Fiscal--CzechEet2--ApiKey` | APIs, Functions (only once `fiscalSecretProvisioned` is true) | Czech EET fiscal API key |
 | `Fiscal--CzechEet2--CertificatePassword` | APIs, Functions (only once `fiscalSecretProvisioned` is true) | Czech EET certificate password |
 
@@ -130,7 +130,7 @@ Queues decouple the APIs from long-running operations (PDF generation). Each que
 
 | Queue | Poison Queue | Producer | Consumer |
 |-------|-------------|----------|----------|
-| `generate-receipt` | `generate-receipt-poison` | Every issue of an order's receipt, keyed `receipt:{orderId}`: the customer hosts' `CreateOrder` (a cash booking) and `ConfirmRecurringOrder` (a cash occurrence), the Stripe webhook on each host that runs it (a card payment settles), the partner hosts' `CompleteOrder` (an order with no receipt yet) and the `FiscalReconciliation` timer (one that never landed). The partner hosts' `MarkCashCollected` restates an issued receipt under `receipt-reissue:{orderId}` → [what the receipt says](/flows/payment-and-fiscal#what-the-receipt-says) | `GenerateReceipt` function |
+| `generate-receipt` | `generate-receipt-poison` | Every issue of an order's receipt, keyed `receipt:{orderId}`, only ever for a `Paid` order: the Stripe webhook on each host that runs it (a card payment settles), the partner hosts' `CompleteOrder` (an order with no receipt yet — a cash sale's first), the admin host's `AdminOverrideOrderStatus` to `Completed` and `AdminRecordCashReceived` on a completed order (a cash sale), and the `FiscalReconciliation` timer (one that never landed). A cash booking and a recurring cash confirm queue no receipt — they queue the `order-booked` e-mail on `send-email` — and nothing restates a receipt (since 2026-09-28) → [what the receipt says](/flows/payment-and-fiscal#what-the-receipt-says) | `GenerateReceipt` function |
 | `generate-invoice` | `generate-invoice-poison` | Admin API (period close) | `GenerateInvoice` function |
 | `company-wind-down` | `company-wind-down-poison` | Admin API (`WindDownCompany`, and `DeactivateCompany` when a date is set) — one message per act, keyed `wind-down:{tenantId}:{request instant}` | `CompanyWindDown` function — the idempotent sweep ([ADR-0064](/decisions/adr-0064) D2) |
 | `company-archive` | `company-archive-poison` | Admin API (`ArchiveCompany`) — keyed `archive:{tenantId}:{request instant}` | `CompanyArchive` function — builds the bundle into `company-archives` and stamps the manifest hash (ADR-0064 D3) |
@@ -148,8 +148,7 @@ in `storage.bicep`'s `queueBaseNames` and an alert in `queueAlerts.bicep`.
   "tenantId": "cleansia-cz",
   "payload": {
     "orderId": "01J9Z3K4M5N6P7Q8R9S0T1V2W3",
-    "languageCode": "cs",   // a fallback only: the order's own language wins
-    "reissue": false        // true = restate the issued receipt, key receipt-reissue:{orderId}
+    "languageCode": "cs"    // a fallback only: the order's own language wins
   }
 }
 
@@ -190,11 +189,11 @@ had never fired at all — see [the schedule tokens](#timer-schedules) below.
 | `RetryFailedFiscalRegistrations` | every 5 min | Retries registrations that failed transiently |
 | `NotifyLapsedPreferredOffers` | every 5 min | Closes a preferred-cleaner hold that expired and reopens the order |
 | `SendPreCleaningReminders` | `%Cron%` — every 5 min | Reminds a **customer** their cleaning is coming up |
-| `SendCleanerJobReminders` | `%Cron%` — every 5 min | Reminds a **cleaner** two hours out; nudges them close to the start if they have not set off |
+| `SendCleanerJobReminders` | `%Cron%` — every 5 min | Reminds a **cleaner** two hours out; nudges them close to the start if they have not set off; tells the company's administrators once when a staffed job is still not started 30 min after its start (`admin.order.cleaner_not_started`) |
 | `CleanupStalePendingOrders` | every 15 min | Releases orders stuck awaiting payment |
 | `SendNewJobsDigest` | `%Cron%` — hourly | Tells cleaners how many new offerable jobs are near them |
 | `SendTomorrowJobDigest` | `%Cron%` — hourly | Tells each cleaner how many jobs they have tomorrow, at 18:00 **local** — hourly because a UTC cron cannot be timezone-aware |
-| `AutoCancelStaleRecurringOrders` | hourly | Cancels recurring instances nobody took in time |
+| `AutoCancelStaleRecurringOrders` | hourly | Cancels recurring instances the customer did not confirm in time; the same tick re-drives pending card refunds of cancelled orders (`RedrivePendingRefunds`) and alerts the administrators after 24 h |
 | `CloseExpiredPayPeriods` | daily 02:00 UTC | Marks pay periods past their end date as closed and opens the successor — no successor for a deactivated company |
 | `MaterializeRecurringBookings` | `%Cron%` — daily 02:00 UTC | Turns recurring bookings into real orders — none for a deactivated company's templates |
 | `SendRecurringOrderReminders` | `%Cron%` — daily 02:30 UTC | Warns a customer about an upcoming recurring instance |
@@ -206,13 +205,13 @@ had never fired at all — see [the schedule tokens](#timer-schedules) below.
 | `PruneOutbox` | daily 04:00 UTC | Deletes drained outbox rows |
 | `RetryFailedUserDeletions` | daily 05:00 UTC | Re-runs every GDPR erasure left `Failed` (or `Processing` for over 30 min), once per row per day, in its own scope per row; logs a still-failed one at Error. Under `DataRetention__Enabled` |
 | `SendPeriodEndReminders` | daily 09:00 UTC | Emails employees whose pay period ends in 3 days |
-| `DataRetentionCleanup` | weekly, Sun 03:00 UTC | Fourteen tasks under thirteen retention settings: expired user data, old-order PII, customer/admin/cleaner audit rows (3 y per row by default), dispute text after erasure, contract-acceptance metadata, completed-order photos (7 d by default, held by unresolved disputes), and expired or revoked guest access tokens. Runs **once per operating company** under that company's own settings; token expiry/revocation needs no separate setting → [Retention](/flows/gdpr-and-audit#retention) |
+| `DataRetentionCleanup` | weekly, Sun 03:00 UTC | Fifteen tasks under fourteen retention settings: expired user data, old-order PII, customer/admin/cleaner audit rows (3 y per row by default), dispute text after erasure, contract- and cleaner-document-acceptance metadata, photos of completed or cancelled orders (7 d by default, held by unresolved disputes), receipt PDFs (10 y from the end of the year of issue), and expired or revoked guest access tokens. Runs **once per operating company** under that company's own settings; token expiry/revocation needs no separate setting → [Retention](/flows/gdpr-and-audit#retention) |
 
 #### Queue consumers
 
 | Function | Queue | Purpose |
 |---|---|---|
-| `GenerateReceipt` | `generate-receipt` | Issues the receipt: number, fiscal registration, PDF via QuestPDF → blob storage → SendGrid. A restate (`reissue`) re-renders the stored PDF and sends nothing |
+| `GenerateReceipt` | `generate-receipt` | Issues the receipt for a `Paid` order: number, fiscal registration, PDF via QuestPDF → blob storage → SendGrid |
 | `GenerateInvoice` | `generate-invoice` | Employee invoice PDF → blob storage |
 | `CalculateOrderPay` | `calculate-order-pay` | Computes a cleaner's pay for a finished order |
 | `SendEmail` | `send-email` | SendGrid delivery |
@@ -308,9 +307,9 @@ public class GenerateReceiptFunction(GenerateReceiptHandler handler)
 }
 ```
 
-The handler reads the envelope, or a bare message from an older deploy. A `reissue` message restates
-the stored PDF and stops. Any other message is discarded unless the order is a cash booking or paid,
-and is a no-op once the order has its receipt. Otherwise it claims the receipt number, registers it
+The handler reads the envelope, or a bare message from an older deploy. A message is discarded unless
+the order is `Paid` — whatever the tender, so a cash booking not yet collected and a cancelled cash
+order earn none — and is a no-op once the order has its receipt. Otherwise it claims the receipt number, registers it
 with the fiscal authority, renders the PDF and e-mails it. A failure rethrows so the queue retries; a
 write refused by a frozen company is dead-lettered instead.
 
@@ -318,7 +317,9 @@ write refused by a frozen company is dead-lettered instead.
 
 ### Stripe
 
-Used for customer payments via Checkout Sessions.
+Used for customer payments via Checkout Sessions. One account per environment: a sandbox on DEV, and
+on production the operating company's own account (decision 49) —
+[Environment configuration — Stripe](/deployment/environment-config#stripe).
 
 | Configuration | Purpose |
 |--------------|---------|
@@ -340,7 +341,8 @@ Used for all transactional emails via Dynamic Templates.
 | Template | Trigger |
 |----------|---------|
 | Order Confirmation | After order creation |
-| Receipt | When the receipt is issued (with PDF attachment): at booking for cash, on settlement for card. A restate sends nothing |
+| Receipt | When the receipt is issued (with PDF attachment): on settlement for card, at completion for cash; one sent after the clean has a post-service subject |
+| Cash booking | An informational e-mail when a cash booking is made or a recurring cash occurrence confirmed — the amount to pay in cash, the slot, the address, the free-cancellation window (`order-booked` on `send-email`) |
 | Pay Period Reminder | 3 days before period end |
 | Welcome Email | After registration |
 | Password Reset | On password reset request |

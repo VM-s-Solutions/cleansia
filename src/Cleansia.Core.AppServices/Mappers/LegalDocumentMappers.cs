@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Features.Legal;
 using Cleansia.Core.AppServices.Features.Legal.DTOs;
 using Cleansia.Core.Domain.Legal;
+using Cleansia.Core.Domain.Users;
 
 namespace Cleansia.Core.AppServices.Mappers;
 
@@ -19,7 +20,28 @@ public static class LegalDocumentMappers
             ContentHash: text.ContentHash);
     }
 
-    public static LegalDocumentVersionDto MapToVersionDto(this LegalDocument document, DateOnly today)
+    public static CleanerLegalDocumentDto MapToCleanerDto(
+        this LegalDocument document,
+        LegalDocumentText text,
+        IReadOnlyDictionary<string, string> placeholders,
+        UserConsent? acceptance)
+    {
+        return new CleanerLegalDocumentDto(
+            Type: document.Type,
+            LegalDocumentId: document.Id,
+            LegalDocumentTextId: text.Id,
+            Version: document.Version,
+            EffectiveFrom: document.EffectiveFrom,
+            Language: text.Language,
+            Title: text.Title,
+            ContentHtml: LegalMarkdownRenderer.Render(text.ContentMarkdown, placeholders),
+            ContentHash: text.ContentHash,
+            IsAccepted: acceptance?.Covers(document) == true,
+            AcceptedVersion: acceptance is { IsGranted: true } ? acceptance.DocumentVersion : null,
+            AcceptedAt: acceptance is { IsGranted: true } ? acceptance.GrantedAt : null);
+    }
+
+    public static LegalDocumentVersionDto MapToVersionDto(this LegalDocument document, bool isInForce)
     {
         return new LegalDocumentVersionDto(
             Id: document.Id,
@@ -29,7 +51,7 @@ public static class LegalDocumentMappers
             CountryIsoCode: document.Country?.IsoCode,
             EffectiveFrom: document.EffectiveFrom,
             Version: document.Version,
-            IsInForce: document.IsInForceOn(today),
+            IsInForce: isInForce,
             Notes: document.Notes,
             Texts: document.Texts
                 .OrderBy(t => t.Language, StringComparer.Ordinal)
@@ -37,7 +59,7 @@ public static class LegalDocumentMappers
                 .ToList());
     }
 
-    public static AdminLegalDocumentDto MapToAdminDto(this LegalDocument document, LegalDocumentText text, DateOnly today)
+    public static AdminLegalDocumentDto MapToAdminDto(this LegalDocument document, LegalDocumentText text, bool isInForce)
     {
         return new AdminLegalDocumentDto(
             Id: document.Id,
@@ -47,7 +69,7 @@ public static class LegalDocumentMappers
             CountryIsoCode: document.Country?.IsoCode,
             EffectiveFrom: document.EffectiveFrom,
             Version: document.Version,
-            IsInForce: document.IsInForceOn(today),
+            IsInForce: isInForce,
             Notes: document.Notes,
             Language: text.Language,
             Title: text.Title,

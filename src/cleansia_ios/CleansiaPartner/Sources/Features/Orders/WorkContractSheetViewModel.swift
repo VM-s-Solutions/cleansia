@@ -22,6 +22,8 @@ enum WorkContractSheetState {
     case error(ApiError)
     /// The order has no contract text in force, so it cannot be taken now; nothing to accept.
     case unavailable(ApiError)
+    /// The take was refused until the cleaner accepts the current version of their contract documents.
+    case legalDocumentsNotAccepted
     case loaded(WorkContract)
 
     var loadedContract: WorkContract? {
@@ -44,7 +46,8 @@ enum WorkContractNotice: Equatable {
 
 /// How the sheet ended for its host. The host — the board, the detail or the offers list — reacts to
 /// the take exactly as it did when the take was its own one tap: a success refreshes its panes, a
-/// refusal is framed and reconciled in its own words. The two contract keys never leave the sheet.
+/// refusal is framed and reconciled in its own words. The contract and documents keys never leave the
+/// sheet.
 enum WorkContractOutcome: Equatable {
     case taken(orderId: String)
     case accepted(orderId: String)
@@ -71,16 +74,18 @@ enum WorkContractErrorKey {
     static let textMismatch = "contract.text_mismatch"
     static let acceptanceRequired = "contract.acceptance_required"
     static let documentNotFound = "legal.document_not_found"
+    static let legalDocumentsNotAccepted = "employee.legal_documents_not_accepted"
 }
 
 /// The contract sheet: loads the preview (or the accepted contract), and on the swipe echoes the
 /// previewed text row to the take or the standalone acceptance. Built per presentation, so every open
 /// loads afresh — the preview is the server's word at that moment, never a cached one.
 ///
-/// `contract.text_mismatch` is the one refusal handled here: the echoed text is not this order's, so
-/// the preview is re-run, the gesture reset and the cleaner told to read again. `legal.document_not_found`
-/// can only come from the preview and means the job cannot be taken now. Every other refusal is the
-/// host's to frame.
+/// `contract.text_mismatch` is handled here: the echoed text is not this order's, so the preview is
+/// re-run, the gesture reset and the cleaner told to read again. So is
+/// `employee.legal_documents_not_accepted`: the sheet turns into the way to the documents, since nothing
+/// about the job changed. `legal.document_not_found` can only come from the preview and means the job
+/// cannot be taken now. Every other refusal is the host's to frame.
 @MainActor
 final class WorkContractSheetViewModel: ViewModel {
     @Published private(set) var state: WorkContractSheetState = .loading
@@ -148,6 +153,10 @@ final class WorkContractSheetViewModel: ViewModel {
         if case let .refused(_, error) = submitted, error.code == WorkContractErrorKey.textMismatch {
             notice = .textUpdated
             await load()
+            return
+        }
+        if case let .refused(_, error) = submitted, error.code == WorkContractErrorKey.legalDocumentsNotAccepted {
+            state = .legalDocumentsNotAccepted
             return
         }
         outcome.send(submitted)

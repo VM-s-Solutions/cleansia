@@ -47,6 +47,8 @@ class WorkContractStringsTest {
         "work_contract_pending_banner",
         "work_contract_accept_cta",
         "work_contract_read",
+        "work_contract_reward",
+        "work_contract_parties",
     )
 
     @Test

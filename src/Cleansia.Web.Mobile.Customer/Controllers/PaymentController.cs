@@ -13,17 +13,6 @@ namespace Cleansia.Web.Mobile.Customer.Controllers;
 [ApiController]
 public class PaymentController(IMediator mediator) : CustomerMobileApiController(mediator)
 {
-    [AllowAnonymous]
-    [EnableRateLimiting("auth")]
-    [HttpPost("CreateOrder")]
-    [ProducesResponseType(typeof(CreateOrder.Response), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> CreateOrder([FromBody] CreateOrder.Command command)
-    {
-        var result = await Mediator.Send(command);
-        return HandleResult<CreateOrder.Response>(result);
-    }
-
     /// <summary>
     /// Mobile PaymentSheet flow: convert an existing card-payable order into
     /// a Stripe PaymentIntent + ephemeral key. Authenticated only — guest

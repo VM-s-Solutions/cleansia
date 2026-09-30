@@ -46,18 +46,6 @@ extension L10n {
             localized("home_upsell_setup_recurring_cta")
         }
 
-        static var upsellWelcomeTop: String {
-            localized("home_upsell_welcome_top")
-        }
-
-        static var upsellWelcomeTitle: String {
-            localized("home_upsell_welcome_title")
-        }
-
-        static var upsellWelcomeCta: String {
-            localized("home_upsell_welcome_cta")
-        }
-
         static var upsellReferralTop: String {
             localized("home_upsell_referral_top")
         }
@@ -72,10 +60,6 @@ extension L10n {
 
         static var trustInsured: String {
             localized("home_trust_insured")
-        }
-
-        static var trustVetted: String {
-            localized("home_trust_vetted")
         }
 
         static var trustSameDay: String {

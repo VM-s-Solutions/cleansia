@@ -41,7 +41,9 @@ public sealed class TakeOrderWorkContractTests
             _employeeRepository.Object,
             _accessService.Object,
             ValidatorTestHelpers.CurrencyResolver(),
-            WorkContractTestData.LegalDocumentRepository().Object);
+            WorkContractTestData.LegalDocumentRepository().Object,
+            Mock.Of<ILegalDocumentResolver>(),
+            Mock.Of<IUserConsentRepository>());
 
     private TakeOrder.Handler CreateHandler() =>
         new(

@@ -88,8 +88,11 @@ booking** appears only while the status is `New`, `Confirmed` or `OnTheWay` and 
 opens a dialog that first fetches `POST /api/Order/GuestCancellationPreview` with the same token and
 shows the tier, the fee (amount and rate) and the refund estimate before anything is submitted — with
 the preview's `oopsWindowMinutes` stated as *Cancelling within {minutes} minutes of booking is free,
-even after a cleaner has accepted* (15 for a guest; the signed-in order detail prints the same line,
-60 for an entitled Plus member); confirming sends `POST /api/Order/CancelGuest`.
+even after a cleaner has accepted* (60 on the guest's first booking, 15 otherwise; the signed-in order
+detail prints the same line, 60 for an entitled Plus member too); confirming sends
+`POST /api/Order/CancelGuest`. Once the booked start has passed with a cleaner on the job, the cancel is
+refused (`order.start_passed_cannot_cancel`) and the page offers *the cleaner did not arrive* instead,
+which sends `POST /api/Order/ReportGuestNoShow` with the same token and moves no money.
 
 Both calls go through `errorToastSuppressingHttpClient()` — they answer **inline**, so they opt out of
 the shared error snackbar. A red *"An error occurred"* toast over an amber panel that already explains

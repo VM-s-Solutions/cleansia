@@ -69,7 +69,7 @@ public sealed class AnonymousWriterLandsInMarketOperatorTests(PostgresContainerF
             setup: Anonymous,
             arrange: SeedAndCommitAsync,
             act: async provider => await provider.GetRequiredService<IMediator>()
-                .Send(new RegisterEmployee.Command("cleaner@cleansia.test", Password, "Clea", "Ner", "en", CountryId: Slovakia)),
+                .Send(new RegisterEmployee.Command("cleaner@cleansia.test", Password, "Clea", "Ner", "en", CountryId: Slovakia, TermsAccepted: true)),
             assert: async (context, result) =>
             {
                 Assert.True(result.IsSuccess, Describe(result));
@@ -77,6 +77,10 @@ public sealed class AnonymousWriterLandsInMarketOperatorTests(PostgresContainerF
                 Assert.Equal(TestTenants.Second, user.TenantId);
                 Assert.Equal(TestTenants.Second, (await context.Employees.IgnoreQueryFilters().SingleAsync(e => e.UserId == user.Id)).TenantId);
                 Assert.Empty(await context.Users.IgnoreQueryFilters().Where(u => u.TenantId == TestTenants.Default).ToListAsync());
+
+                // Owner ruling 2026-09-28: the customer terms and privacy policy are not a cleaner's texts,
+                // ticked box or not; a cleaner accepts their own documents in the app.
+                Assert.Empty(await context.UserConsents.IgnoreQueryFilters().Where(c => c.UserId == user.Id).ToListAsync());
             },
             transactional: false);
     }

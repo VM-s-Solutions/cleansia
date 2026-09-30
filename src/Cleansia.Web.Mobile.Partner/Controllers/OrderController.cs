@@ -199,6 +199,19 @@ public class OrderController(IMediator mediator) : MobileApiController(mediator)
         return HandleResult<ReportOrderIssue.Response>(result);
     }
 
+    [HttpPost("ReportLockout")]
+    [Permission(Policy.CanStartOrder)]
+    [EnableRateLimiting("auth")]
+    [ProducesResponseType(typeof(ReportOrderLockout.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> ReportLockout([FromBody] ReportOrderLockout.Command command, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<ReportOrderLockout.Response>(result);
+    }
+
     [HttpPut("UpdateNote")]
     [Permission(Policy.CanUpdateOrderNote)]
     [EnableRateLimiting("auth")]
@@ -346,8 +359,8 @@ public class OrderController(IMediator mediator) : MobileApiController(mediator)
         return HandleResult<AcceptWorkContract.Response>(result);
     }
 
-    // The accepted contract for work, keyed on the acceptance (ADR-0068 D4): the order's customer, the
-    // cleaner who accepted it and an administrator read it; anyone else answers order.not_found.
+    // The accepted contract for work, keyed on the acceptance (ADR-0068 D4): the cleaner who accepted it
+    // and an administrator read it; anyone else answers order.not_found.
     [HttpGet("GetWorkContract")]
     [Permission(Policy.CanViewOrderDetail)]
     [EnableRateLimiting("interactive")]
@@ -359,5 +372,20 @@ public class OrderController(IMediator mediator) : MobileApiController(mediator)
     {
         var result = await Mediator.Send(query, cancellationToken);
         return HandleResult<WorkContractDto>(result);
+    }
+
+    // Why an administrator took the caller off this job (owner ruling 2026-09-28): the reason stays on the
+    // server and is read here, never carried in the notice. Anyone not removed answers order.not_found.
+    [HttpGet("GetMyAssignmentRemoval")]
+    [Permission(Policy.CanTakeOrder)]
+    [EnableRateLimiting("interactive")]
+    [ProducesResponseType(typeof(GetMyAssignmentRemoval.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetMyAssignmentRemoval([FromQuery] GetMyAssignmentRemoval.Query query, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(query, cancellationToken);
+        return HandleResult<GetMyAssignmentRemoval.Response>(result);
     }
 }

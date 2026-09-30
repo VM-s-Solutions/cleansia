@@ -2,6 +2,7 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.EmployeePayroll;
+using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.TestUtilities.MockDataFactories.EmployeePayroll;
 using Moq;
@@ -20,6 +21,7 @@ public class AdminInvoiceAdjustmentHandlerTests
     private const string InvoiceId = "invoice-1";
 
     private readonly Mock<IEmployeeInvoiceRepository> _invoiceRepository = new();
+    private readonly Mock<ICashLedgerRepository> _cashLedger = new();
 
     private static EmployeeInvoice PendingInvoice()
     {
@@ -55,7 +57,7 @@ public class AdminInvoiceAdjustmentHandlerTests
     {
         var invoice = PendingInvoice();
         Arrange(invoice);
-        var handler = new UpdateInvoiceAmounts.Handler(_invoiceRepository.Object);
+        var handler = new UpdateInvoiceAmounts.Handler(_invoiceRepository.Object, _cashLedger.Object);
 
         var result = await handler.Handle(
             new UpdateInvoiceAmounts.Command(InvoiceId, BonusAmount: 50m, DeductionAmount: 30m, AdminNotes: "correction"),
@@ -73,7 +75,7 @@ public class AdminInvoiceAdjustmentHandlerTests
     {
         var invoice = PendingInvoice();
         Arrange(invoice);
-        var handler = new UpdateInvoiceAmounts.Handler(_invoiceRepository.Object);
+        var handler = new UpdateInvoiceAmounts.Handler(_invoiceRepository.Object, _cashLedger.Object);
 
         var result = await handler.Handle(
             new UpdateInvoiceAmounts.Command(InvoiceId, BonusAmount: 0m, DeductionAmount: 500m, AdminNotes: null),
@@ -84,13 +86,38 @@ public class AdminInvoiceAdjustmentHandlerTests
     }
 
     [Fact]
+    public async Task UpdateInvoiceAmounts_Lowering_The_Total_Below_The_Cash_Set_Off_Gives_The_Difference_Back_To_The_Cleaner()
+    {
+        var invoice = PendingInvoice();
+        invoice.SetOffCash(200m);
+        Arrange(invoice);
+        CashLedgerEntry? entry = null;
+        _cashLedger.Setup(r => r.Add(It.IsAny<CashLedgerEntry>())).Callback<CashLedgerEntry>(e => entry = e);
+
+        var result = await new UpdateInvoiceAmounts.Handler(_invoiceRepository.Object, _cashLedger.Object).Handle(
+            new UpdateInvoiceAmounts.Command(InvoiceId, BonusAmount: 0m, DeductionAmount: 50m, AdminNotes: null),
+            CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(150m, invoice.TotalAmount);
+        Assert.Equal(150m, invoice.CashSetOffAmount);
+        Assert.Equal(0m, invoice.TransferAmount);
+        Assert.NotNull(entry);
+        Assert.Equal(CashLedgerEntryKind.SetOff, entry!.Kind);
+        Assert.Equal("emp-1", entry.EmployeeId);
+        Assert.Equal("currency-1", entry.CurrencyId);
+        Assert.Equal(50m, entry.Amount);
+        Assert.Equal(invoice.InvoiceNumber, entry.Note);
+    }
+
+    [Fact]
     public async Task UpdateInvoiceAmounts_On_Paid_Invoice_Returns_Error_And_Does_Not_Mutate()
     {
         var invoice = PaidInvoice();
         var bonusBefore = invoice.BonusAmount;
         var totalBefore = invoice.TotalAmount;
         Arrange(invoice);
-        var handler = new UpdateInvoiceAmounts.Handler(_invoiceRepository.Object);
+        var handler = new UpdateInvoiceAmounts.Handler(_invoiceRepository.Object, _cashLedger.Object);
 
         var result = await handler.Handle(
             new UpdateInvoiceAmounts.Command(InvoiceId, BonusAmount: 99m, DeductionAmount: 0m, AdminNotes: "x"),

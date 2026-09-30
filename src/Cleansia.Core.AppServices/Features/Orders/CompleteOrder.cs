@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Features.EmployeePayroll;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Core.Queue.Abstractions.Messages;
@@ -68,10 +69,12 @@ public class CompleteOrder
                 .WithMessage(BusinessErrorMessage.AfterPhotosRequired)
                 // Payment must be settled before an order can be completed. A cash order is settled only
                 // once the cleaner marks the cash collected (MarkCashCollected → Paid); a card order once
-                // Stripe confirms (webhook → Paid) or, when that webhook never arrives, once the cleaner
-                // settles it in cash through the same MarkCashCollected reconciliation. Two rules so each
-                // surfaces the right, actionable message: cash-not-collected tells the cleaner to collect +
-                // mark it; payment-not-confirmed says the card charge hasn't cleared yet.
+                // Stripe confirms (webhook → Paid) or, when that webhook never arrives and
+                // BookingPolicy.AllowsCash admits cash, once the cleaner settles it in cash through the
+                // same MarkCashCollected reconciliation — otherwise an admin override closes it. Two
+                // rules so each surfaces the right, actionable message: cash-not-collected tells the
+                // cleaner to collect + mark it; payment-not-confirmed says the card charge hasn't
+                // cleared yet.
                 .MustAsync(CashIsCollectedIfCashPaymentAsync)
                 .WithMessage(BusinessErrorMessage.OrderCashNotCollected)
                 .MustAsync(CardPaymentIsConfirmedIfCardPaymentAsync)
@@ -236,7 +239,7 @@ public class CompleteOrder
                 .Include(o => o.SelectedPackages).ThenInclude(op => op.Package)
                 .Include(o => o.CustomerAddress).ThenInclude(a => a!.Country)
                 .Include(o => o.Currency)
-                .Include(o => o.Receipt)
+                .Include(o => o.Receipts)
                 .Include(o => o.User).ThenInclude(u => u!.PreferredLanguage)
                 .Include(o => o.AssignedEmployees)
                 .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);
@@ -343,16 +346,7 @@ public class CompleteOrder
             // queue retries handle it. The loop is NOT forward-compat: an order's crew is
             // ceil(EstimatedTime / 120), and the catalogue carries single 180- and 240-minute
             // services, so a two-seat job is an ordinary booking and pays two cleaners today.
-            foreach (var assignment in order.AssignedEmployees)
-            {
-                pending.Enqueue(
-                    QueueNames.CalculateOrderPay,
-                    new QueueEnvelope<CalculateOrderPayMessage>(
-                        MessageKeys.Pay(order.Id, assignment.EmployeeId),
-                        order.TenantId,
-                        new CalculateOrderPayMessage(order.Id, assignment.EmployeeId)),
-                    MessageKeys.Pay(order.Id, assignment.EmployeeId));
-            }
+            CalculateOrderPay.EnqueueForCrew(order, pending);
 
             return BusinessResult.Success(new Response(
                 OrderId: order.Id,

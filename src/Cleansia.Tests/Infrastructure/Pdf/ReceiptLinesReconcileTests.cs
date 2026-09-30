@@ -163,8 +163,30 @@ public class ReceiptLinesReconcileTests
         var lines = Layout.Items(data);
 
         Assert.DoesNotContain(lines, l => l.Description == "Express surcharge");
+        Assert.DoesNotContain(lines, l => l.Description.Contains("dirtiness", StringComparison.Ordinal));
         Assert.DoesNotContain(lines, l => l.Description.Contains("discount", StringComparison.Ordinal));
         Assert.Equal(data.Total, lines.Sum(line => line.Amount));
+    }
+
+    /// <summary>
+    /// A DIRTINESS LEVEL, EXPRESS AND A PROMO, IN EURO CENTS. The level's rate on the 60.33 of lines is
+    /// 36.198 heavy or 18.099 increased, stored as 36.20 or 18.10 and inside the raw subtotal; express
+    /// and the promo then compound on that. The level's own line sits between the catalogue lines and
+    /// the express line, labelled with the level, and every stored term still sums to the stored total.
+    /// </summary>
+    [Theory]
+    [InlineData(DirtinessLevel.Heavy, "Heavy dirtiness surcharge", 36.20)]
+    [InlineData(DirtinessLevel.Increased, "Increased dirtiness surcharge", 18.10)]
+    public async Task A_Dirtiness_Express_Promo_Booking_In_Cents_Has_Its_Level_Line_And_Adds_Up(
+        DirtinessLevel level, string label, double surcharge)
+    {
+        var data = await RenderBooking(new Booking(
+            Currency: Eur, ServiceBase: 58.33m, PerRoom: 0m, Package: null, Extra: 2.00m, Promo: 12.07m,
+            Dirtiness: level));
+
+        var lines = Layout.Items(data);
+        Assert.Equal((decimal)surcharge, Assert.Single(lines, l => l.Description == label).Amount);
+        Assert.Equal(Column(data.Total), lines.Sum(line => Column(line.Amount)));
     }
 
     /// <summary>
@@ -295,7 +317,8 @@ public class ReceiptLinesReconcileTests
         DateTime? CleaningDate = null,
         decimal Promo = PromoDiscount,
         decimal PlusPercentage = 0m,
-        decimal Tier = 0m);
+        decimal Tier = 0m,
+        DirtinessLevel Dirtiness = DirtinessLevel.Normal);
 
     private async Task<ReceiptPdfData> RenderBooking(Booking booking)
     {
@@ -341,7 +364,8 @@ public class ReceiptLinesReconcileTests
             .Setup(r => r.GetEntitledForUserAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(booking.PlusPercentage > 0m ? Membership(booking.PlusPercentage, currency) : null);
 
-        var rawSubtotal = booking.ServiceBase + booking.PerRoom * 3 + (booking.Package ?? 0m) + booking.Extra;
+        var linesSubtotal = booking.ServiceBase + booking.PerRoom * 3 + (booking.Package ?? 0m) + booking.Extra;
+        var rawSubtotal = linesSubtotal + BookingPolicy.DirtinessSurchargeFor(linesSubtotal, booking.Dirtiness);
 
         var factory = new OrderFactory(
             _orderRepository.Object,
@@ -385,7 +409,8 @@ public class ReceiptLinesReconcileTests
                 ReservedExpressWaiver: null,
                 OperatorTenantId: null,
                 PromoDiscountAmount: booking.Promo,
-                PromoCodeId: booking.Promo > 0m ? "promo-1" : null),
+                PromoCodeId: booking.Promo > 0m ? "promo-1" : null,
+                DirtinessLevel: booking.Dirtiness),
             CancellationToken.None);
     }
 

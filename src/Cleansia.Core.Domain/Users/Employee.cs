@@ -148,13 +148,20 @@ public class Employee : TenantAuditable
     public int? WeeklyOrderLimit { get; private set; }
 
     /// <summary>
-    /// Sets or clears the weekly cap. Null clears it back to unlimited; the floor is the validator's
-    /// business error first, so reaching the throw means a non-HTTP caller bypassed it.
+    /// Why the admin set <see cref="WeeklyOrderLimit"/>, shown to the cleaner (owner ruling 2026-09-28):
+    /// a limit on how much someone may work comes with its reason. Null whenever the cap is.
+    /// </summary>
+    [MaxLength(500)]
+    public string? WeeklyOrderLimitReason { get; private set; }
+
+    /// <summary>
+    /// Sets or clears the weekly cap and its reason. Null clears both back to unlimited; the floor is the
+    /// validator's business error first, so reaching the throw means a non-HTTP caller bypassed it.
     ///
     /// <para>One is the floor, not zero: a zero cap is a cleaner who may take nothing, which is
     /// <see cref="ContractStatus"/>'s job and should not be expressible as a quiet number.</para>
     /// </summary>
-    public Employee SetWeeklyOrderLimit(int? weeklyOrderLimit)
+    public Employee SetWeeklyOrderLimit(int? weeklyOrderLimit, string? reason = null)
     {
         if (weeklyOrderLimit is { } value && value < 1)
         {
@@ -163,6 +170,7 @@ public class Employee : TenantAuditable
         }
 
         WeeklyOrderLimit = weeklyOrderLimit;
+        WeeklyOrderLimitReason = weeklyOrderLimit is null ? null : reason;
         return this;
     }
 
@@ -357,6 +365,7 @@ public class Employee : TenantAuditable
         PassportId = AnonymizationMarker.Value;
         EmergencyContactName = null;
         EmergencyContactPhone = null;
+        WeeklyOrderLimitReason = null;
         // The child payout record is deleted by GdprDeletionService with an id-keyed write, because a
         // navigation-walking clear here would be a silent no-op whenever the caller did not Include it
         // (ADR-0034 D1.1.2). This only drops the gate scalar, which lives on the row already loaded.

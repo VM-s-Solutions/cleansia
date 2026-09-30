@@ -29,7 +29,10 @@ struct LiveRecurringBookingClient: RecurringBookingClient {
             selectedPackageIds: input.selectedPackageIds,
             paymentType: input.paymentType,
             startsOn: input.startsOn,
-            endsOn: nil
+            endsOn: nil,
+            preferredEmployeeId: input.preferredEmployeeId,
+            dirtinessLevel: input.dirtiness.wire,
+            earlyPerformanceRequested: input.earlyPerformanceRequested ? true : nil
         )
         return await apiResult(mapError: ApiError.fromGenerated) {
             try await CustomerRecurringBookingAPI
@@ -51,7 +54,9 @@ struct LiveRecurringBookingClient: RecurringBookingClient {
             selectedPackageIds: input.selectedPackageIds,
             paymentType: input.paymentType,
             startsOn: input.startsOn,
-            endsOn: input.endsOn
+            endsOn: input.endsOn,
+            preferredEmployeeId: input.preferredEmployeeId,
+            dirtinessLevel: input.dirtiness.wire
         )
         return await apiResult(mapError: ApiError.fromGenerated) {
             try await CustomerRecurringBookingAPI
@@ -88,6 +93,7 @@ extension RecurringBookingTemplateDto {
             timeOfDay: timeOfDay.requireNonBlank("timeOfDay"),
             rooms: rooms.require("rooms"),
             bathrooms: bathrooms.require("bathrooms"),
+            dirtiness: Dirtiness(wire: dirtinessLevel.require("dirtinessLevel")),
             savedAddressId: savedAddressId.requireNonBlank("savedAddressId"),
             addressLine: addressLine,
             selectedServiceIds: selectedServiceIds ?? [],
@@ -95,6 +101,7 @@ extension RecurringBookingTemplateDto {
             paymentType: paymentType.require("paymentType"),
             startsOn: startsOn.require("startsOn"),
             endsOn: endsOn,
+            preferredEmployeeId: preferredEmployeeId,
             isActive: isActive.require("isActive"),
             requiresPaymentMethodChange: requiresPaymentMethodChange.require("requiresPaymentMethodChange")
         )

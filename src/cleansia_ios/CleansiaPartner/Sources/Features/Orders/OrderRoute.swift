@@ -4,7 +4,9 @@ import Foundation
 /// intra-audience push, ADR-0020). The real `OrderDetailView` replaces the
 /// placeholder detail behind `.detail`.
 enum OrderRoute: Hashable {
-    case detail(orderId: String)
+    /// `showRemovalReason` is set by the removal notice alone: only that entry asks the server why.
+    case detail(orderId: String, showRemovalReason: Bool = false)
+    case legalDocuments
 }
 
 /// The dashboard tab's own stack. Jobs a customer asked for this cleaner by name are pushed rather
@@ -13,4 +15,5 @@ enum OrderRoute: Hashable {
 enum DashboardRoute: Hashable {
     case pendingOffers
     case orderDetail(orderId: String)
+    case legalDocuments
 }

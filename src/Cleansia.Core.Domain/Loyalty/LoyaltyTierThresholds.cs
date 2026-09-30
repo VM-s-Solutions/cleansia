@@ -8,6 +8,18 @@ namespace Cleansia.Core.Domain.Loyalty;
 /// </summary>
 public sealed record LoyaltyTierThresholds(int Silver, int Gold, int Platinum)
 {
+    public static LoyaltyTierThresholds From(IEnumerable<LoyaltyTierConfig> configs)
+    {
+        var byTier = configs.ToList();
+        return new LoyaltyTierThresholds(
+            Silver: ThresholdOf(LoyaltyTier.SilverMopper),
+            Gold: ThresholdOf(LoyaltyTier.GoldPolisher),
+            Platinum: ThresholdOf(LoyaltyTier.PlatinumSparkler));
+
+        int ThresholdOf(LoyaltyTier tier) =>
+            byTier.FirstOrDefault(c => c.Tier == tier)?.LifetimePointsThreshold ?? int.MaxValue;
+    }
+
     public LoyaltyTier ResolveTier(int lifetimePoints)
     {
         if (lifetimePoints >= Platinum)

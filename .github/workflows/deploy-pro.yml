@@ -42,8 +42,33 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Production never launches on unreviewed legal texts: every host start seeds the texts in the repo,
+  # so a draft in force here would be what customers accept, and a future-dated draft would come into
+  # force on its date with no deploy in between. Runs in both modes, before any provisioning.
+  legal-texts:
+    name: No legal text in force or upcoming is a draft
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Self-test the legal draft gate
+        run: node agents/tools/check-legal-drafts.test.mjs
+
+      - name: Every legal text in force or upcoming is reviewed
+        run: node agents/tools/check-legal-drafts.mjs
+
   deploy:
     name: Prod pipeline
+    needs: legal-texts
     uses: ./.github/workflows/deploy-azure.yml
     permissions:
       id-token: write

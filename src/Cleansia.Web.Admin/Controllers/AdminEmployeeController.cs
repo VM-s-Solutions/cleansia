@@ -111,7 +111,7 @@ public class AdminEmployeeController(IMediator mediator) : ApiController(mediato
         [FromBody] AdminSetEmployeeWeeklyOrderLimit.Request request,
         CancellationToken cancellationToken)
     {
-        var command = new AdminSetEmployeeWeeklyOrderLimit.Command(employeeId, request.WeeklyOrderLimit);
+        var command = new AdminSetEmployeeWeeklyOrderLimit.Command(employeeId, request.WeeklyOrderLimit, request.Reason);
         var result = await Mediator.Send(command, cancellationToken);
         return HandleResult<AdminSetEmployeeWeeklyOrderLimit.Response>(result);
     }

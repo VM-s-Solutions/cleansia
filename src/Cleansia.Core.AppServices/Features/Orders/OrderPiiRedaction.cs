@@ -64,6 +64,29 @@ public static class OrderPiiRedaction
             PreferredOffer = null,
             CustomerCompany = null,
             WorkContractAcceptances = [],
+            CancellationFeeRate = null,
+            CancellationFeeOwed = null,
+            NeedsConfirmation = null,
+            CashCollectedAt = null,
+            CashCollectedByName = null,
+            CashCollectedAmount = null,
+            LockoutReportedAt = null,
+            LockoutCallAttempts = null,
+        };
+
+    /// <summary>
+    /// A job the cleaner worked, once their access to the customer has ended (24 hours after completion,
+    /// at once on cancellation — owner ruling 2026-09-28): the browsing shape, keeping what is the
+    /// cleaner's own — the completion notes, their notes and their contract acceptance.
+    /// </summary>
+    public static OrderItem RedactForPastJob(this OrderItem item, string employeeId) =>
+        item.RedactForBrowsingCleaner() with
+        {
+            CompletionNotes = item.CompletionNotes,
+            OrderNotes = item.OrderNotes.Where(note => note.EmployeeId == employeeId).ToList(),
+            WorkContractAcceptances = (item.WorkContractAcceptances ?? [])
+                .Where(acceptance => acceptance.EmployeeId == employeeId)
+                .ToList(),
         };
 
     /// <summary>

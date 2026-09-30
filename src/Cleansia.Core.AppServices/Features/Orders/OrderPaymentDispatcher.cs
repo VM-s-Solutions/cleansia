@@ -4,7 +4,6 @@ using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Queue.Abstractions;
-using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Validations;
 using Microsoft.Extensions.Logging;
@@ -14,7 +13,7 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 
 /// <summary>
 /// Default <see cref="IOrderPaymentDispatcher"/>. Wraps the Card/Stripe checkout-session creation and
-/// the Cash receipt enqueue with the same narrow <c>StripeException</c> mapping and the same
+/// the Cash booking e-mail with the same narrow <c>StripeException</c> mapping and the same
 /// post-commit dispatch seam the handler had inline.
 ///
 /// One charge surface per card order: the Card branch mints a Checkout Session ONLY on the Web
@@ -80,15 +79,10 @@ public sealed class OrderPaymentDispatcher(
                 }
 
             case PaymentType.Cash:
-                // ADR-0002 D1/D5 — record intent; PostCommitDispatchBehavior puts it on the wire
-                // only after the order row is durably committed (was a before-commit dual-write).
-                pending.Enqueue(
-                    QueueNames.GenerateReceipt,
-                    new QueueEnvelope<GenerateReceiptMessage>(
-                        MessageKeys.Receipt(order.Id),
-                        order.TenantId,
-                        new GenerateReceiptMessage(order.Id, languageCode)),
-                    MessageKeys.Receipt(order.Id));
+                // No money has moved, so there is nothing to receipt yet: the receipt is issued at
+                // completion, after the cleaner records the cash (owner ruling 2026-09-28). ADR-0002
+                // D1/D5 — recorded as intent and put on the wire only after the order commits.
+                OrderBookedEmail.Enqueue(order, languageCode, pending, DateTimeOffset.UtcNow);
                 return OrderPaymentDispatchResult.Ok(null);
 
             default:

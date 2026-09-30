@@ -14,8 +14,9 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 
 /// <summary>
 /// The contract for work a cleaner reads before taking a job: the ORDER's document (stamped at booking),
-/// its text in the requested language or the fallback, rendered with the order's currency, and the job
-/// facts the acceptance will freeze. The order must be readable by the caller as the board's floor and
+/// its text in the requested language or the fallback, rendered with the order's currency and the identity
+/// of the company that operates the order, and the job facts the acceptance will freeze — the price being
+/// the caller's reward for a seat. The order must be readable by the caller as the board's floor and
 /// the browse gate define it — on the crew, or offerable with a takeable seat, and open to the caller —
 /// so a held order is a missing order to everyone but its beneficiary, and a cancelled, finished, full
 /// or unpaid-card job the caller is not on says nothing.
@@ -77,19 +78,21 @@ public class GetWorkContractPreview
     public class Handler(
         IOrderRepository orderRepository,
         ILegalDocumentRepository legalDocumentRepository,
-        IWorkContractFactsBuilder factsBuilder) : IQueryHandler<Query, WorkContractDto>
+        IWorkContractFactsBuilder factsBuilder,
+        IOrderAccessService orderAccessService,
+        ICompanyInfoRepository companyInfoRepository) : IQueryHandler<Query, WorkContractDto>
     {
         public async Task<BusinessResult<WorkContractDto>> Handle(Query query, CancellationToken cancellationToken)
         {
-            var documentId = await orderRepository
+            var order = await orderRepository
                 .GetQueryable()
                 .Where(o => o.Id == query.OrderId)
-                .Select(o => o.WorkContractDocumentId)
+                .Select(o => new { o.WorkContractDocumentId, o.TenantId })
                 .FirstOrDefaultAsync(cancellationToken);
 
-            var document = documentId is null
+            var document = order?.WorkContractDocumentId is null
                 ? null
-                : await legalDocumentRepository.GetWithTextsAsync(documentId, cancellationToken);
+                : await legalDocumentRepository.GetWithTextsAsync(order.WorkContractDocumentId, cancellationToken);
             var text = document?.TextForOrFallback(query.Language);
             if (document is null || text is null)
             {
@@ -97,14 +100,19 @@ public class GetWorkContractPreview
                     new Error(nameof(query.OrderId), BusinessErrorMessage.LegalDocumentNotFound));
             }
 
-            var facts = await factsBuilder.BuildAsync(query.OrderId, cancellationToken);
+            var employeeId = (await orderAccessService.GetCallerEmployeeIdAsync(cancellationToken))!;
+            var facts = await factsBuilder.BuildAsync(query.OrderId, employeeId, cancellationToken);
             if (facts is null)
             {
                 return BusinessResult.Failure<WorkContractDto>(
                     new Error(nameof(query.OrderId), BusinessErrorMessage.OrderNotFound));
             }
 
-            return BusinessResult.Success(document.MapToWorkContractDto(text, facts, acceptance: null));
+            var company = order!.TenantId is { } operatorTenantId
+                ? await companyInfoRepository.GetActiveForOperatorAsync(operatorTenantId, facts.CountryId, cancellationToken)
+                : null;
+
+            return BusinessResult.Success(document.MapToWorkContractDto(text, facts, acceptance: null, company));
         }
     }
 }

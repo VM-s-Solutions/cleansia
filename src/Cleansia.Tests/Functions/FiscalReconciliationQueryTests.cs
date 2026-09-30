@@ -20,8 +20,8 @@ namespace Cleansia.Tests.Functions;
 /// (so the model + global tenant query filter materialize; the cross-tenant read uses
 /// <c>IgnoreQueryFilters</c> like <c>GetDueForRetryAsync</c>). No Postgres/Docker.
 ///
-/// <para><b>Receipt predicate (C-B):</b> <c>Paid</c>/<c>Cash</c>-eligible orders OLDER than the
-/// threshold AND (<c>Receipt is null</c> OR <c>Receipt.FiscalCode == null</c>) — the C-B widening
+/// <para><b>Receipt predicate (C-B):</b> <c>Paid</c> orders — a cash sale only once completed — OLDER
+/// than the threshold AND (<c>Receipt is null</c> OR <c>Receipt.FiscalCode == null</c>) — the C-B widening
 /// beyond the original D3.4 "no Receipt" to also catch the claimed-but-unregistered rows.
 /// An order WITHIN the threshold (recently committed) is NOT swept.</para>
 ///
@@ -196,7 +196,7 @@ public sealed class FiscalReconciliationQueryTests : IDisposable
         Assert.Empty(due);
     }
 
-    // ── Eligibility — a stale order that is NEITHER Cash NOR Paid (e.g. Card+Pending) is NOT swept ──
+    // ── Eligibility — a stale order that is not Paid (e.g. Card+Pending) is NOT swept ──
 
     [Fact]
     public async Task Receipt_Recon_Skips_Ineligible_Card_Pending_Order()
@@ -230,8 +230,8 @@ public sealed class FiscalReconciliationQueryTests : IDisposable
             cancelledCash.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Cancelled, cancelledCash));
             var cancelledPaidCard = NewOrder("01HZX9N6M7Q8R9S0T1V2W3X41B", PaymentType.Card, PaymentStatus.Paid, stale);
             cancelledPaidCard.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Cancelled, cancelledPaidCard));
-            var staleCash = NewOrder("01HZX9N6M7Q8R9S0T1V2W3X41C", PaymentType.Cash, PaymentStatus.Pending, stale);
-            seed.AddRange(cancelledCash, cancelledPaidCard, staleCash);
+            var stalePaidCard = NewOrder("01HZX9N6M7Q8R9S0T1V2W3X41C", PaymentType.Card, PaymentStatus.Paid, stale);
+            seed.AddRange(cancelledCash, cancelledPaidCard, stalePaidCard);
             await seed.CommitAsync(CancellationToken.None);
         }
 
@@ -244,18 +244,26 @@ public sealed class FiscalReconciliationQueryTests : IDisposable
         Assert.Equal("01HZX9N6M7Q8R9S0T1V2W3X41C", swept.Id);
     }
 
-    // ── OR-shape regression — the sweep is now a UNION of a Cash arm and a Paid arm; an order that
-    // is BOTH Cash and Paid must appear exactly once ──
+    // ── Owner ruling 2026-09-28 — a cash sale earns its receipt at completion, after the cash was
+    // recorded, so neither an uncollected cash booking nor a collected one still in progress is owed
+    // one; the completed collection is ──
 
     [Fact]
-    public async Task Receipt_Recon_Returns_DualEligible_Cash_And_Paid_Order_Once()
+    public async Task Receipt_Recon_Sweeps_A_Cash_Sale_Only_Once_Collected_And_Completed()
     {
         await EnsureSchemaAsync();
         var stale = DateTimeOffset.UtcNow.AddMinutes(-60);
 
         await using (var seed = NewContext())
         {
-            seed.Add(NewOrder("01HZX9N6M7Q8R9S0T1V2W3X415", PaymentType.Cash, PaymentStatus.Paid, stale));
+            var uncollected = NewOrder("01HZX9N6M7Q8R9S0T1V2W3X415", PaymentType.Cash, PaymentStatus.Pending, stale);
+            var collectedInProgress = NewOrder("01HZX9N6M7Q8R9S0T1V2W3X419", PaymentType.Cash, PaymentStatus.Pending, stale);
+            collectedInProgress.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.InProgress, collectedInProgress));
+            collectedInProgress.MarkCashCollected("employee-1");
+            var collectedCompleted = NewOrder("01HZX9N6M7Q8R9S0T1V2W3X41D", PaymentType.Cash, PaymentStatus.Pending, stale);
+            collectedCompleted.MarkCashCollected("employee-1");
+            collectedCompleted.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Completed, collectedCompleted));
+            seed.AddRange(uncollected, collectedInProgress, collectedCompleted);
             await seed.CommitAsync(CancellationToken.None);
         }
 
@@ -264,15 +272,14 @@ public sealed class FiscalReconciliationQueryTests : IDisposable
         var cutoff = DateTime.UtcNow.AddMinutes(-15);
         var due = await repo.GetReceiptReconciliationCandidatesAsync(cutoff, take: 50, CancellationToken.None);
 
-        Assert.Single(due);
-        Assert.Equal("01HZX9N6M7Q8R9S0T1V2W3X415", due[0].Id);
+        var swept = Assert.Single(due);
+        Assert.Equal("01HZX9N6M7Q8R9S0T1V2W3X41D", swept.Id);
     }
 
-    // ── OR-shape regression — `take` still selects the GLOBALLY oldest candidates across both
-    // arms (oldest-first), not per-arm quotas ──
+    // ── `take` selects the oldest candidates first ──
 
     [Fact]
-    public async Task Receipt_Recon_Take_Selects_Globally_Oldest_Across_Both_Arms()
+    public async Task Receipt_Recon_Take_Selects_The_Oldest_Candidates()
     {
         await EnsureSchemaAsync();
         var oldest = DateTimeOffset.UtcNow.AddMinutes(-90);
@@ -281,9 +288,9 @@ public sealed class FiscalReconciliationQueryTests : IDisposable
 
         await using (var seed = NewContext())
         {
-            seed.Add(NewOrder("01HZX9N6M7Q8R9S0T1V2W3X416", PaymentType.Cash, PaymentStatus.Pending, oldest));
-            seed.Add(NewOrder("01HZX9N6M7Q8R9S0T1V2W3X417", PaymentType.Card, PaymentStatus.Paid, middle));
-            seed.Add(NewOrder("01HZX9N6M7Q8R9S0T1V2W3X418", PaymentType.Cash, PaymentStatus.Pending, newest));
+            seed.Add(NewOrder("01HZX9N6M7Q8R9S0T1V2W3X416", PaymentType.Card, PaymentStatus.Paid, newest));
+            seed.Add(NewOrder("01HZX9N6M7Q8R9S0T1V2W3X417", PaymentType.Card, PaymentStatus.Paid, oldest));
+            seed.Add(NewOrder("01HZX9N6M7Q8R9S0T1V2W3X418", PaymentType.Card, PaymentStatus.Paid, middle));
             await seed.CommitAsync(CancellationToken.None);
         }
 
@@ -293,8 +300,8 @@ public sealed class FiscalReconciliationQueryTests : IDisposable
         var due = await repo.GetReceiptReconciliationCandidatesAsync(cutoff, take: 2, CancellationToken.None);
 
         Assert.Equal(2, due.Count);
-        Assert.Equal("01HZX9N6M7Q8R9S0T1V2W3X416", due[0].Id);
-        Assert.Equal("01HZX9N6M7Q8R9S0T1V2W3X417", due[1].Id);
+        Assert.Equal("01HZX9N6M7Q8R9S0T1V2W3X417", due[0].Id);
+        Assert.Equal("01HZX9N6M7Q8R9S0T1V2W3X418", due[1].Id);
     }
 
     // ── A stale PayPeriod with an employee lacking an EmployeeInvoice is swept ──

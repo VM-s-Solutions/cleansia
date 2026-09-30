@@ -156,7 +156,7 @@ fun AddressPickerScreen(
                 }
             }
         } else {
-            locationPermission.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+            locationPermission.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
         }
     }
 
@@ -286,7 +286,7 @@ fun AddressPickerScreen(
                         }
                     }
                 } else {
-                    locationPermission.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                    locationPermission.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
                 }
             },
             modifier = Modifier

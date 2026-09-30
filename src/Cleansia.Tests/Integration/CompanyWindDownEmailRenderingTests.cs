@@ -122,7 +122,9 @@ public class CompanyWindDownEmailRenderingTests
             NullLogger<EmailService>.Instance,
             httpClientFactory.Object,
             translationRepository.Object,
-            new EmailTemplateRenderer());
+            new EmailTemplateRenderer(),
+            Mock.Of<ICountryConfigurationRepository>(),
+            Mock.Of<ICompanyInfoRepository>());
 
         return (service, capture);
     }

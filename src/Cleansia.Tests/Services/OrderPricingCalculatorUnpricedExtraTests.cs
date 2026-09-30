@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Packages;
@@ -79,6 +80,7 @@ public class OrderPricingCalculatorUnpricedExtraTests
     {
         var result = await CreateCalculator().CalculateAsync(
             [ServiceId], [], [PricedExtraSlug, UnpricedExtraSlug], rooms: 0, bathrooms: 0,
+            DirtinessLevel.Normal,
             currencyId: CurrencyId, cleaningDateUtc: null, userId: null, nowUtc: DateTime.UtcNow,
             CancellationToken.None);
 

@@ -19,9 +19,8 @@ namespace Cleansia.HostTests.Tests;
 /// </summary>
 public sealed class PreferredCleanerSlotQueryBindingTests(HostTestPostgresFixture db) : AuthzHostTestBase(db)
 {
-    private const string CustomerEmail = "slot-binding-cust@hosttests.local";
-    private const string CleanerEmail = "slot-binding-cleaner@hosttests.local";
     private const string ServiceId = "svc-slot-binding";
+    private const string SizedServiceId = "svc-slot-binding-sized";
     private const int ServiceMinutes = 180;
 
     private static readonly DateTime CleaningUtc = DateTime.UtcNow.AddDays(6).Date.AddHours(10);
@@ -29,9 +28,11 @@ public sealed class PreferredCleanerSlotQueryBindingTests(HostTestPostgresFixtur
     [Fact]
     public async Task The_Slot_Is_Answered_Only_When_The_Selection_Reaches_The_Server()
     {
-        var arranged = await ArrangeBusyFavouriteAsync();
+        const string customerEmail = "slot-binding-cust@hosttests.local";
+        var arranged = await ArrangeBusyFavouriteAsync(
+            "slot-binding", ServiceId, minutesPerRoom: 0, commitmentOffsetMinutes: 60);
         var client = CustomerClient(TestJwtFactory.Mint(
-            CustomerAudience, arranged.CustomerId, CustomerEmail, UserProfile.Customer));
+            CustomerAudience, arranged.CustomerId, customerEmail, UserProfile.Customer));
 
         var withoutSlot = await GetServingCleanersAsync(client, "/api/Order/MyServingCleaners");
         var withSlot = await GetServingCleanersAsync(
@@ -47,6 +48,32 @@ public sealed class PreferredCleanerSlotQueryBindingTests(HostTestPostgresFixtur
         Assert.False(answered.IsAvailableForRequestedSlot);
     }
 
+    /// <summary>
+    /// The home's size and the dirtiness level lengthen the window, so they must bind too: the
+    /// commitment starts 200 minutes in, clear of the 180-minute selection alone and inside it once two
+    /// rooms and a bathroom at ten minutes each, or the increased level's 234 minutes, reach the server.
+    /// </summary>
+    [Fact]
+    public async Task The_Home_Size_And_The_Level_Reach_The_Server()
+    {
+        const string customerEmail = "slot-binding-sized-cust@hosttests.local";
+        var arranged = await ArrangeBusyFavouriteAsync(
+            "slot-binding-sized", SizedServiceId, minutesPerRoom: 10, commitmentOffsetMinutes: 200);
+        var client = CustomerClient(TestJwtFactory.Mint(
+            CustomerAudience, arranged.CustomerId, customerEmail, UserProfile.Customer));
+        var slot = "/api/Order/MyServingCleaners"
+            + $"?CleaningDateTimeUtc={Uri.EscapeDataString(CleaningUtc.ToString("O"))}"
+            + $"&SelectedServiceIds={SizedServiceId}";
+
+        var selectionAlone = Assert.Single(await GetServingCleanersAsync(client, slot));
+        var withRooms = Assert.Single(await GetServingCleanersAsync(client, slot + "&Rooms=2&Bathrooms=1"));
+        var withLevel = Assert.Single(await GetServingCleanersAsync(client, slot + "&DirtinessLevel=1"));
+
+        Assert.True(selectionAlone.IsAvailableForRequestedSlot);
+        Assert.False(withRooms.IsAvailableForRequestedSlot);
+        Assert.False(withLevel.IsAvailableForRequestedSlot);
+    }
+
     private static async Task<IReadOnlyList<ServingCleaner>> GetServingCleanersAsync(HttpClient client, string url)
     {
         var response = await client.GetAsync(url);
@@ -55,45 +82,48 @@ public sealed class PreferredCleanerSlotQueryBindingTests(HostTestPostgresFixtur
         return (await response.Content.ReadFromJsonAsync<List<ServingCleaner>>())!;
     }
 
-    private async Task<(string CustomerId, string EmployeeId)> ArrangeBusyFavouriteAsync()
+    private async Task<(string CustomerId, string EmployeeId)> ArrangeBusyFavouriteAsync(
+        string prefix, string serviceId, int minutesPerRoom, int commitmentOffsetMinutes)
     {
         string customerId = "", employeeId = "";
+        var customerEmail = $"{prefix}-cust@hosttests.local";
+        var planCode = prefix.ToUpperInvariant();
 
         await SeedAsync(async ctx =>
         {
             await DomainSeed.EnsureReferenceDataAsync(ctx);
 
-            var category = ServiceCategory.Create("home-binding", "Home", "Home cleaning");
+            var category = ServiceCategory.Create(prefix, "Home", "Home cleaning");
             ctx.Add(category);
-            var service = Service.Create(category.Id, "Deep clean", "Deep clean", ServiceMinutes);
-            service.Id = ServiceId;
+            var service = Service.Create(category.Id, "Deep clean", "Deep clean", ServiceMinutes, minutesPerRoom);
+            service.Id = serviceId;
             ctx.Add(service);
 
-            var customer = DomainSeed.Customer(CustomerEmail);
+            var customer = DomainSeed.Customer(customerEmail);
             ctx.Users.Add(customer);
 
-            var plan = DomainSeed.MembershipPlan("SLOT-BINDING");
-            ctx.Add(DomainSeed.MembershipPlanPrice(plan.Id, "SLOT-BINDING"));
+            var plan = DomainSeed.MembershipPlan(planCode);
+            ctx.Add(DomainSeed.MembershipPlanPrice(plan.Id, planCode));
             ctx.Add(plan);
             ctx.Add(DomainSeed.ActiveMembership(customer.Id, plan.Id));
 
-            var cleanerUser = DomainSeed.EmployeeUser(CleanerEmail);
+            var cleanerUser = DomainSeed.EmployeeUser($"{prefix}-cleaner@hosttests.local");
             ctx.Users.Add(cleanerUser);
             var cleaner = DomainSeed.ApprovedEmployee(cleanerUser);
             ctx.Employees.Add(cleaner);
 
             // The completed job is what puts this cleaner in the customer's picker at all.
-            var history = DomainSeed.NewOrder(customer.Id, CustomerEmail);
+            var history = DomainSeed.NewOrder(customer.Id, customerEmail);
             history.AddAssignedEmployee(OrderEmployee.Create(history, cleaner));
             history.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Completed, history));
             ctx.Orders.Add(history);
 
             // And this is the commitment that makes them unavailable for the slot being asked about.
-            var commitment = DomainSeed.NewOrder(customer.Id, CustomerEmail);
+            var commitment = DomainSeed.NewOrder(customer.Id, customerEmail);
             commitment.UpdateEstimatedTime(120);
             commitment.AddAssignedEmployee(OrderEmployee.Create(commitment, cleaner));
             commitment.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Confirmed, commitment));
-            SetCleaningTime(commitment, CleaningUtc.AddMinutes(60));
+            SetCleaningTime(commitment, CleaningUtc.AddMinutes(commitmentOffsetMinutes));
             ctx.Orders.Add(commitment);
 
             customerId = customer.Id;

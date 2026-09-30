@@ -22,4 +22,12 @@ public interface IOrderReceiptRepository : IRepository<OrderReceipt, string>
     /// Ordered by most-recent-failure first.
     /// </summary>
     Task<List<OrderReceipt>> GetRecentFiscalFailuresAsync(int take, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// A page of the company's receipts issued before <paramref name="issuedBefore"/> whose PDF is still
+    /// stored, ordered by id and starting after <paramref name="afterId"/>. Through the tenant filter:
+    /// the retention job runs under each company's override.
+    /// </summary>
+    Task<IReadOnlyList<OrderReceipt>> GetStoredBlobsIssuedBeforeAsync(
+        DateTime issuedBefore, string? afterId, int take, CancellationToken cancellationToken);
 }

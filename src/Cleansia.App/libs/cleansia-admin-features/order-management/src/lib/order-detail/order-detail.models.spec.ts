@@ -1,5 +1,10 @@
-import { OrderItem, TimelineEntryDto, TimelineSource } from '@cleansia/admin-services';
-import { buildCrewEntries, resolveIncidentSubject } from './order-detail.models';
+import { readFileSync } from 'fs';
+import { join } from 'path';
+import { DirtinessLevel, OrderItem, TimelineEntryDto, TimelineSource } from '@cleansia/admin-services';
+import { buildCrewEntries, dirtinessLevelLabelKey, resolveIncidentSubject } from './order-detail.models';
+
+const ADMIN_LOCALES = ['en', 'cs', 'sk', 'uk', 'ru'] as const;
+const I18N_DIR = join(__dirname, '../../../../../../apps/cleansia-admin.app/src/assets/i18n');
 
 function entry(
   source: TimelineSource,
@@ -90,5 +95,38 @@ describe('buildCrewEntries', () => {
   it('lists nobody without an order or a crew', () => {
     expect(buildCrewEntries(null)).toEqual([]);
     expect(buildCrewEntries(OrderItem.fromJS({ workContractAcceptances: [{ id: 'acc-1' }] }))).toEqual([]);
+  });
+});
+
+describe('dirtinessLevelLabelKey', () => {
+  it('names each level the customer can book', () => {
+    expect(dirtinessLevelLabelKey(DirtinessLevel.Normal)).toBe('enums.dirtiness_level.normal');
+    expect(dirtinessLevelLabelKey(DirtinessLevel.Increased)).toBe('enums.dirtiness_level.increased');
+    expect(dirtinessLevelLabelKey(DirtinessLevel.Heavy)).toBe('enums.dirtiness_level.heavy');
+  });
+
+  // The server stores Normal for a client that sent no level, so an absent one reads the same way.
+  it('reads an absent level as normal', () => {
+    expect(dirtinessLevelLabelKey(undefined)).toBe('enums.dirtiness_level.normal');
+  });
+
+  it.each(ADMIN_LOCALES)('has every level and both order detail labels in %s', (locale) => {
+    const bundle = JSON.parse(readFileSync(join(I18N_DIR, `${locale}.json`), 'utf8')) as unknown;
+    const keys = [
+      ...[DirtinessLevel.Normal, DirtinessLevel.Increased, DirtinessLevel.Heavy].map(dirtinessLevelLabelKey),
+      'pages.order_detail.dirtiness_level',
+      'pages.order_detail.dirtiness_surcharge',
+    ];
+    const missing = keys.filter((key) => {
+      const value = key
+        .split('.')
+        .reduce<unknown>(
+          (node, segment) => (node && typeof node === 'object' ? (node as Record<string, unknown>)[segment] : undefined),
+          bundle
+        );
+      return typeof value !== 'string' || !value.trim();
+    });
+
+    expect(missing).toEqual([]);
   });
 });

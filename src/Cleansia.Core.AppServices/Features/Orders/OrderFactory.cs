@@ -81,7 +81,7 @@ public sealed class OrderFactory(
         // and the recurring materializer reaches this factory without CreateOrder's validator. Nothing
         // is in force only when a deploy carries a future-dated folder alone; the seed test is the guard.
         var workContract = await legalDocumentResolver.ResolveInForceAsync(
-            LegalDocumentType.WorkContract, input.Address.CountryId, cancellationToken)
+            LegalDocumentAudience.Employee, LegalDocumentType.WorkContract, input.Address.CountryId, cancellationToken)
             ?? throw new InvalidOperationException(
                 $"No work-contract text is in force for market '{input.Address.CountryId}'. An order booked without one could not be accepted by any cleaner.");
 
@@ -262,14 +262,25 @@ public sealed class OrderFactory(
         order.AddSelectedPackages(selectedPackages);
         var extraPrices = await CataloguePriceLookup.ForExtrasAsync(
             extraPriceRepository, selectedExtras.Select(e => e.Id).ToList(), input.Currency.Id, cancellationToken);
-        order.AddSelectedExtras(selectedExtras
+        var selectedExtraLines = selectedExtras
             .Where(e => extraPrices.ContainsKey(e.Id))
             .Select(e => OrderExtra.Create(order, e, unitPrice: extraPrices[e.Id]))
-            .ToList());
+            .ToList();
+        order.AddSelectedExtras(selectedExtraLines);
+
+        // From the lines this order stores, so lines + dirtiness + express - discounts = TotalPrice holds
+        // on the order's own figures; RawSubtotal carries the same surcharge, priced from the same rows.
+        var linesSubtotal = selectedServices.Sum(s => s.LineTotal)
+            + selectedPackages.Sum(p => p.LineTotal)
+            + selectedExtraLines.Sum(e => e.UnitPrice);
+        order.SetDirtinessSurcharge(
+            input.DirtinessLevel, BookingPolicy.DirtinessSurchargeFor(linesSubtotal, input.DirtinessLevel));
 
         var estimatedTime = OrderDuration.EstimateMinutes(
             selectedServices.Select(s => s.Service!),
-            selectedPackages.Select(p => p.Package!));
+            selectedPackages.Select(p => p.Package!),
+            unitCount,
+            BookingPolicy.DirtinessSurchargeRate(input.DirtinessLevel));
 
         // Ahead of CalculateRequiredEmployees, so an over-cap span cannot mint a crew on its way out.
         // CreateOrder.Validator turns this into a business error for the customer; this is the backstop

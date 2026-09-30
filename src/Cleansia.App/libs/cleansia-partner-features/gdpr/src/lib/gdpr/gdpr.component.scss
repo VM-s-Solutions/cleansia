@@ -26,6 +26,10 @@
       font-weight: 500;
     }
   }
+  &__consent-detail {
+    color: var(--cleansia-text-secondary);
+    text-align: right;
+  }
   &__actions {
     display: flex;
     justify-content: flex-end;

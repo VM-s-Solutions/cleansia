@@ -68,15 +68,57 @@ public static class DomainSeed
 
     /// <summary>
     /// The contract-for-work document the host's boot seeded from the embedded files (the hosted
-    /// seeder runs before the host serves), with its texts — what a booked order is stamped with and
-    /// what a take echoes. The host must have booted before this is asked.
+    /// seeder runs before the host serves), with its texts — the cleaner's text in force today, which is
+    /// what a booked order is stamped with and what a take echoes. The host must have booted before this
+    /// is asked.
     /// </summary>
     public static async Task<(LegalDocument Document, string TextEnId)> WorkContractInForceAsync(CleansiaDbContext ctx)
     {
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
         var document = await ctx.LegalDocuments
             .Include(d => d.Texts)
-            .SingleAsync(d => d.Type == LegalDocumentType.WorkContract && d.CountryId == null);
+            .Where(d => d.Audience == LegalDocumentAudience.Employee && d.Type == LegalDocumentType.WorkContract
+                && d.CountryId == null && d.EffectiveFrom <= today)
+            .OrderByDescending(d => d.EffectiveFrom)
+            .FirstAsync();
         return (document, document.TextFor("en")!.Id);
+    }
+
+    /// <summary>
+    /// The cleaner's acceptance of the documents the host's boot seeded for them — the framework
+    /// contract, the self-billing agreement and the data-processing agreement in force today — as
+    /// <c>AcceptLegalDocument</c> writes it: the consent row of each type pointing at the document, which
+    /// is what the take gate reads, and the acceptance row that keeps the act. With those texts in force a
+    /// cleaner without them is refused work, so a take fixture that expects a 200 calls this. The rows take
+    /// the employee's company when the builder named one, else they are stamped at commit.
+    /// </summary>
+    public static async Task AcceptCleanerDocumentsAsync(CleansiaDbContext ctx, Employee employee)
+    {
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        foreach (var type in LegalDocument.CleanerAcceptedTypes)
+        {
+            var document = await ctx.LegalDocuments
+                .Include(d => d.Texts)
+                .Where(d => d.Audience == LegalDocumentAudience.Employee && d.Type == type
+                    && d.CountryId == null && d.EffectiveFrom <= today)
+                .OrderByDescending(d => d.EffectiveFrom)
+                .FirstAsync();
+
+            var consent = UserConsent.Grant(
+                employee.UserId, LegalDocument.CleanerConsentTypeFor(type)!.Value,
+                ipAddress: null, userAgent: null, documentVersion: document.Version, legalDocumentId: document.Id);
+            var acceptance = CleanerLegalDocumentAcceptance.Create(
+                employee.Id, document.TextFor(LanguageCode)!, document.Version, clientAudience: "cleansia.partner",
+                ipAddress: null, deviceLabel: null, deviceId: null);
+            if (employee.TenantId is not null)
+            {
+                consent.TenantId = employee.TenantId;
+                acceptance.TenantId = employee.TenantId;
+            }
+
+            ctx.UserConsents.Add(consent);
+            ctx.CleanerLegalDocumentAcceptances.Add(acceptance);
+        }
     }
 
     public static User Customer(string email, string? tenantId = null)
@@ -339,7 +381,7 @@ public static class DomainSeed
         => Cleansia.Core.Domain.Memberships.MembershipPlanPrice.Create(planId, CurrencyId, price, $"price_hosttest_{code}");
 
     /// <summary>An ACTIVE <see cref="UserMembership"/> for <paramref name="ownerUserId"/> with a period
-    /// that ends in the future (so <c>IsActive</c> and <c>GetActiveForUserAsync</c> resolve it). The
+    /// that ends in the future (so <c>IsActive</c> and <c>GetLifecycleForUserAsync</c> resolve it). The
     /// resolve is tenant-filtered, so a foreign-tenant caller resolves null → MembershipNotFound.</summary>
     public static UserMembership ActiveMembership(string ownerUserId, string membershipPlanId, string? tenantId = null)
     {

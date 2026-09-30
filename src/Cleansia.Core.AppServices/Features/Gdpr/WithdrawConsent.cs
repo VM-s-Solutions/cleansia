@@ -2,6 +2,7 @@ using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Legal;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
@@ -17,7 +18,13 @@ public static class WithdrawConsent
     {
         public Validator()
         {
-            RuleFor(c => c.ConsentType).IsInEnum().WithMessage(BusinessErrorMessage.InvalidEnumValue);
+            // An accepted document is a contract term, not a consent: it is shown read-only and never
+            // withdrawn here. A consent row that has no document can always be withdrawn.
+            RuleFor(c => c.ConsentType)
+                .Cascade(CascadeMode.Stop)
+                .IsInEnum().WithMessage(BusinessErrorMessage.InvalidEnumValue)
+                .Must(type => LegalDocument.TypeFor(type) is null)
+                .WithMessage(BusinessErrorMessage.ConsentNotEditable);
         }
     }
 

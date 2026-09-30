@@ -39,6 +39,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import cz.cleansia.customer.R
+import cz.cleansia.customer.core.memberships.benefitsPaused
 import cz.cleansia.customer.core.orders.ServingCleanerDto
 import cz.cleansia.core.ui.components.CleansiaDialog
 
@@ -67,7 +68,7 @@ fun PreferredCleanerPicker(
     val orders = viewModel.orderRepository
 
     val membershipState by membership.current.collectAsState()
-    val isPlus = membershipState?.hasMembership == true
+    val isPlus = membershipState?.let { it.hasMembership && !it.benefitsPaused } == true
 
     var cleaners by remember { mutableStateOf<List<ServingCleanerDto>>(emptyList()) }
     var loaded by remember { mutableStateOf(false) }

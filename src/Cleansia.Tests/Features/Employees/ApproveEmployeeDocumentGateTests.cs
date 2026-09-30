@@ -5,6 +5,7 @@ using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Internationalization;
+using Cleansia.Core.Domain.Legal;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Packages;
 using Cleansia.Core.Domain.Services;
@@ -115,6 +116,15 @@ public class ApproveEmployeeDocumentGateTests
 
     private async Task<bool> ApprovalIsAllowed()
     {
+        var result = await ValidateAsync(Mock.Of<ILegalDocumentResolver>(), Mock.Of<IUserConsentRepository>());
+
+        return !result.Errors.Any(
+            e => e.ErrorMessage == BusinessErrorMessage.EmployeeDocumentsNotApproved);
+    }
+
+    private async Task<FluentValidation.Results.ValidationResult> ValidateAsync(
+        ILegalDocumentResolver legalDocumentResolver, IUserConsentRepository userConsentRepository)
+    {
         // Any currency: this suite is about the documents gate, and the pay gate's answer on an
         // empty catalogue does not depend on which currency it is asked in.
         var currencyResolution = new Mock<ICurrencyResolutionService>();
@@ -125,13 +135,61 @@ public class ApproveEmployeeDocumentGateTests
         var validator = new ApproveEmployee.Validator(
             _employees.Object, _countries.Object, _services.Object, _packages.Object,
             _payConfigs.Object, _requirements.Object, currencyResolution.Object,
-            Mock.Of<IOperatorTenantResolver>(), Mock.Of<ITenantProvider>());
+            Mock.Of<IOperatorTenantResolver>(), Mock.Of<ITenantProvider>(),
+            legalDocumentResolver, userConsentRepository);
 
-        var result = await validator.ValidateAsync(
+        return await validator.ValidateAsync(
             new ApproveEmployee.Command(EmployeeId, CountryId), CancellationToken.None);
+    }
 
-        return !result.Errors.Any(
-            e => e.ErrorMessage == BusinessErrorMessage.EmployeeDocumentsNotApproved);
+    private static readonly LegalDocument SelfBillingAgreement = CreateSelfBillingAgreement();
+
+    private static LegalDocument CreateSelfBillingAgreement()
+    {
+        var document = LegalDocument.Create(
+            LegalDocumentAudience.Employee, LegalDocumentType.SelfBillingAgreement, null, new DateOnly(2026, 12, 1));
+        document.AddText("cs", "Dohoda o samofakturaci", "## Dohoda");
+        return document;
+    }
+
+    private static Mock<ILegalDocumentResolver> SelfBillingAgreementInForce()
+    {
+        var resolver = new Mock<ILegalDocumentResolver>();
+        resolver
+            .Setup(r => r.ResolveInForceAsync(
+                LegalDocumentAudience.Employee, LegalDocumentType.SelfBillingAgreement, CountryId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(SelfBillingAgreement);
+        return resolver;
+    }
+
+    /// <summary>Owner ruling 2026-09-28: a cleaner document in force for the work market is accepted before approval.</summary>
+    [Fact]
+    public async Task Approval_Is_Refused_While_A_Document_In_Force_Is_Not_Accepted()
+    {
+        RequireNothing();
+        var consents = new Mock<IUserConsentRepository>();
+        consents
+            .Setup(r => r.GetByUserIdNoTrackingAsync(_employee.UserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+
+        var result = await ValidateAsync(SelfBillingAgreementInForce().Object, consents.Object);
+
+        Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.EmployeeLegalDocumentsNotAccepted);
+    }
+
+    [Fact]
+    public async Task Approval_Is_Not_Refused_On_Documents_Once_The_Current_Version_Is_Accepted()
+    {
+        RequireNothing();
+        var consents = new Mock<IUserConsentRepository>();
+        consents
+            .Setup(r => r.GetByUserIdNoTrackingAsync(_employee.UserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([UserConsent.Grant(
+                _employee.UserId, ConsentType.SelfBillingAgreement, "203.0.113.9", "Chrome", SelfBillingAgreement.Version, SelfBillingAgreement.Id)]);
+
+        var result = await ValidateAsync(SelfBillingAgreementInForce().Object, consents.Object);
+
+        Assert.DoesNotContain(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.EmployeeLegalDocumentsNotAccepted);
     }
 
     [Fact]

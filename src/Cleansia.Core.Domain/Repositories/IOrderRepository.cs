@@ -1,4 +1,5 @@
 ﻿using System.Linq.Expressions;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Sorting.Common;
 
@@ -6,6 +7,16 @@ namespace Cleansia.Core.Domain.Repositories;
 
 public interface IOrderRepository : IRepository<Order, string>
 {
+    /// <summary>
+    /// Whether <paramref name="order"/> is its customer's first booking ever: no order created before it
+    /// on the same account, with the same e-mail or with the same phone, guest and account bookings
+    /// counting against each other, in any operating company. A card checkout not paid for is not a
+    /// booking, whether the stale sweep has cancelled it yet or not. Asked of orders created BEFORE this
+    /// one, so a later booking never changes the answer; an earlier checkout that is paid afterwards does.
+    /// → /product/business-rules#oops-window
+    /// </summary>
+    Task<bool> IsFirstBookingAsync(Order order, CancellationToken cancellationToken);
+
     /// <summary>
     /// The user's own orders that carry the given phone number, for UpdateCurrentUser to back-fill a phone
     /// change onto. Keyed on the owner too: another customer or a guest who gave the same number, or none,
@@ -93,6 +104,9 @@ public interface IOrderRepository : IRepository<Order, string>
     /// constant for what the floor assumes.</para>
     /// </summary>
     Task<bool> HasOverlappingOrderAsync(string employeeId, DateTime cleaningDateTime, int estimatedTimeMinutes, CancellationToken ct);
+
+    /// <summary>The order's current status through the tenant filter; null when there is no such order.</summary>
+    Task<OrderStatus?> GetCurrentStatusAsync(string orderId, CancellationToken cancellationToken);
 
     /// <summary>
     /// Same predicate as <see cref="HasOverlappingOrderAsync"/> with the tenant filter bypassed. For

@@ -1,5 +1,6 @@
 package cz.cleansia.customer.core.recurring
 
+import cz.cleansia.customer.core.booking.DirtinessLevel
 import kotlinx.serialization.Serializable
 
 /**
@@ -47,8 +48,10 @@ data class RecurringBookingTemplateDto(
     val endsOn: String? = null,
     val lastMaterializedFor: String? = null,
     val isActive: Boolean,
+    val preferredEmployeeId: String? = null,
     /** A cash schedule the server now skips: it books nothing until the customer changes it. */
     val requiresPaymentMethodChange: Boolean,
+    val dirtinessLevel: DirtinessLevel = DirtinessLevel.Normal,
 )
 
 @Serializable
@@ -65,6 +68,10 @@ data class CreateRecurringBookingRequest(
     /** ISO-8601 instant; backend Validator requires today or later. */
     val startsOn: String,
     val endsOn: String? = null,
+    val preferredEmployeeId: String? = null,
+    val termsAccepted: Boolean? = null,
+    val dirtinessLevel: DirtinessLevel,
+    val earlyPerformanceRequested: Boolean? = null,
 )
 
 @Serializable
@@ -81,6 +88,9 @@ data class UpdateRecurringBookingRequest(
     val paymentType: Int,
     val startsOn: String,
     val endsOn: String? = null,
+    val preferredEmployeeId: String? = null,
+    /** The update rewrites every schedule column, so the level always rides along. */
+    val dirtinessLevel: DirtinessLevel,
 )
 
 @Serializable

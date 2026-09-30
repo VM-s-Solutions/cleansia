@@ -22,6 +22,8 @@ protocol PartnerOrderClient: AnyObject {
 
     func getPaged(_ query: OrderPageQuery) async -> ApiResult<[OrderListItem]>
     func getById(orderId: String) async -> ApiResult<OrderDetail>
+    /// The written reason an administrator gave for taking this cleaner off `orderId`.
+    func getMyAssignmentRemovalReason(orderId: String) async -> ApiResult<String>
 
     /// The orders reserved for this cleaner alone until their deadline (ADR-0045).
     func myPendingOffers() async -> ApiResult<[PendingOfferItem]>
@@ -51,6 +53,9 @@ protocol PartnerOrderClient: AnyObject {
     func reportIssue(orderId: String, description: String) async -> ApiResult<Void>
     func updateIssue(orderId: String, issueId: String, description: String) async -> ApiResult<Void>
     func deleteIssue(orderId: String, issueId: String) async -> ApiResult<Void>
+
+    /// "Cannot get in": needs an entrance photo already saved; an administrator confirms it.
+    func reportLockout(orderId: String, callAttempts: String) async -> ApiResult<Void>
 
     func getPhotos(orderId: String) async -> ApiResult<[OrderPhoto]>
     func savePhoto(
@@ -118,6 +123,12 @@ final class LivePartnerOrderClient: PartnerOrderClient {
     func getById(orderId: String) async -> ApiResult<OrderDetail> {
         await apiResult(mapError: ApiError.fromGenerated) {
             try await OrderDetail(PartnerOrderAPI.orderGetById(orderId: orderId))
+        }
+    }
+
+    func getMyAssignmentRemovalReason(orderId: String) async -> ApiResult<String> {
+        await apiResult(mapError: ApiError.fromGenerated) {
+            try await PartnerOrderAPI.orderGetMyAssignmentRemoval(orderId: orderId).reason.require("reason")
         }
     }
 
@@ -248,6 +259,14 @@ final class LivePartnerOrderClient: PartnerOrderClient {
     func deleteIssue(orderId: String, issueId: String) async -> ApiResult<Void> {
         await apiResult(mapError: ApiError.fromGenerated) {
             _ = try await PartnerOrderAPI.orderDeleteIssue(orderId: orderId, issueId: issueId)
+        }
+    }
+
+    func reportLockout(orderId: String, callAttempts: String) async -> ApiResult<Void> {
+        await apiResult(mapError: ApiError.fromGenerated) {
+            _ = try await PartnerOrderAPI.orderReportLockout(
+                reportOrderLockoutCommand: ReportOrderLockoutCommand(orderId: orderId, callAttempts: callAttempts)
+            )
         }
     }
 

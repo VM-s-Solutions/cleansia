@@ -12,6 +12,8 @@ public static class ValidationExtensions
     // second copy of this regex on the backend, and the frontend constant mirrors it exactly.
     private const string PasswordPattern = @"^(?=.*[a-zA-Z])(?=.*\d).{8,}$";
 
+    public const int AdminPasswordMinLength = 12;
+
     public static bool BeAValidDate(DateOnly date)
     {
         return date != default;

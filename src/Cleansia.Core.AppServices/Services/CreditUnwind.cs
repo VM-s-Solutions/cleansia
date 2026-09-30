@@ -55,10 +55,19 @@ public static class CreditUnwind
             orderId: order.Id);
     }
 
+    /// <summary>What the credit leg of the refund keyed <paramref name="refundKey"/> put back.</summary>
+    public static Task<decimal> GetReturnedForRefundAsync(
+        this ICreditAccountRepository creditAccountRepository,
+        string refundKey,
+        CancellationToken cancellationToken) =>
+        creditAccountRepository.GetReturnedAmountAsync(KeyPrefix + refundKey, cancellationToken);
+
     /// <summary>
-    /// Give back ALL of an order's credit, because the order ended without the card ever being
-    /// charged — the stale-order sweep, the recurring auto-cancel, an expired Stripe session, or a
-    /// customer cancelling before they paid.
+    /// Give back ALL of an order's credit that has not already come back, because the order ended
+    /// without the card being charged — the stale-order sweep, the recurring auto-cancel, an expired
+    /// Stripe session, or a customer cancelling before they paid — or ended with no card refund of its
+    /// own here: a no-show cancellation whose refund is left to the re-drive, or a platform cancellation
+    /// of an order already partly refunded. A partial refund's credit leg is not returned twice.
     ///
     /// <para><b>All of it, with no cancellation fee taken out.</b> On an unpaid order the platform
     /// collects nothing: there is no charge surface, so the fee the assessor computed is unrecoverable
@@ -69,15 +78,23 @@ public static class CreditUnwind
     /// <para>Keyed on the order id alone. An order can only end once, so a re-run of a sweep, a
     /// re-delivered webhook and a double-cancel all collapse onto the one ledger row.</para>
     /// </summary>
-    public static Task<bool> ReturnUnpaidOrderCreditAsync(
+    public static async Task<bool> ReturnUnpaidOrderCreditAsync(
         this ICreditAccountRepository creditAccountRepository,
         Order order,
         string actorId,
-        CancellationToken cancellationToken) =>
-        creditAccountRepository.ReturnCreditAsync(
+        CancellationToken cancellationToken)
+    {
+        if (order.CreditAppliedAmount <= 0m)
+        {
+            return false;
+        }
+
+        var alreadyReturned = await creditAccountRepository.GetReturnedTotalForOrderAsync(order.Id, cancellationToken);
+        return await creditAccountRepository.ReturnCreditAsync(
             order,
-            order.CreditAppliedAmount,
+            order.CreditAppliedAmount - alreadyReturned,
             $"order-ended-unpaid:{order.Id}",
             actorId,
             cancellationToken);
+    }
 }

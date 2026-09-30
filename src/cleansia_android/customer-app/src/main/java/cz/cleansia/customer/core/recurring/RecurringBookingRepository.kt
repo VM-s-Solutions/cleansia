@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import okhttp3.ResponseBody.Companion.toResponseBody
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -121,10 +122,11 @@ class RecurringBookingRepository @Inject constructor(
         ApiResult.Error(ApiError.Unknown(appContext.getString(R.string.error_generic_unknown)))
 
     private fun httpError(errorBody: okhttp3.ResponseBody?, httpCode: Int): ApiResult<Nothing> {
-        val message = ApiErrorParser.parseToUserMessage(appContext, errorBody, httpCode)
+        val raw = runCatching { errorBody?.string() }.getOrNull()
+        val message = ApiErrorParser.parseToUserMessage(appContext, raw?.toResponseBody(), httpCode)
         val error = when (httpCode) {
             404 -> ApiError.NotFound(message)
-            400 -> ApiError.BadRequest(message)
+            400 -> ApiError.BadRequest(message, errorKey = ApiErrorParser.firstErrorKey(raw))
             in 500..599 -> ApiError.Server(statusCode = httpCode, message = message)
             else -> ApiError.Unknown(message)
         }

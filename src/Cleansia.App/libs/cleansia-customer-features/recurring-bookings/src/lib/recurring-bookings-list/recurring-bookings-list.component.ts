@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { FoamEdgeComponent } from '@cleansia-customer/home';
-import { RecurringBookingTemplateDto } from '@cleansia/customer-services';
+import { CardCaptureFacade, RecurringBookingTemplateDto } from '@cleansia/customer-services';
 import { CleansiaCustomerRoute } from '@cleansia/services';
 import { formatMoney, localeFor } from '@cleansia/utils';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -32,7 +32,7 @@ import {
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [TranslatePipe, RouterLink, SkeletonModule, FoamEdgeComponent],
-  providers: [RecurringBookingsFacade],
+  providers: [RecurringBookingsFacade, CardCaptureFacade],
   templateUrl: './recurring-bookings-list.component.html',
 })
 export class RecurringBookingsListComponent implements OnInit {
@@ -108,7 +108,10 @@ export class RecurringBookingsListComponent implements OnInit {
       : translated;
   }
 
-  /** "Wednesday 10:00 · next 3 Sep" — the second half only once we have one. */
+  /**
+   * "Wednesday 10:00 · next 3 Sep" — the second half only once we have one. The date is read in
+   * the market's zone, like the day and time beside it; the reader's zone would put it a day off.
+   */
   whenLine(template: RecurringBookingTemplateDto): string {
     const base = `${this.dayName(template.dayOfWeek)} ${template.timeOfDay ?? ''}`.trim();
     const next = this.facade.nextRun(template);
@@ -118,6 +121,7 @@ export class RecurringBookingsListComponent implements OnInit {
       date: next.toLocaleDateString(localeFor(this.translate.currentLang), {
         day: 'numeric',
         month: 'long',
+        timeZone: template.timeZoneId || undefined,
       }),
     })}`;
   }

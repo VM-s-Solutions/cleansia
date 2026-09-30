@@ -125,7 +125,8 @@ public class GuestCancellationRouteTests(HostTestPostgresFixture fixture) : Auth
         HttpAssert.IsOk(preview);
         using (var quote = System.Text.Json.JsonDocument.Parse(await preview.Content.ReadAsStringAsync()))
         {
-            Assert.Equal(15, quote.RootElement.GetProperty("oopsWindowMinutes").GetInt32());
+            // The guest's only booking is their first: 60 minutes (owner ruling 2026-09-28).
+            Assert.Equal(60, quote.RootElement.GetProperty("oopsWindowMinutes").GetInt32());
         }
         Assert.Equal(OrderStatus.New, await QueryAsync(db => db.Orders.IgnoreQueryFilters().Select(x => x.CurrentStatus).SingleAsync()));
         Assert.Equal(0, await QueryAsync(db => db.OutboxMessages.IgnoreQueryFilters().CountAsync()));
@@ -253,12 +254,34 @@ public class GuestCancellationRouteTests(HostTestPostgresFixture fixture) : Auth
     public void Both_customer_route_pairs_explicitly_allow_anonymous_and_use_auth_policy()
     {
         foreach (var controller in new[] { typeof(Cleansia.Web.Customer.Controllers.OrderController), typeof(Cleansia.Web.Mobile.Customer.Controllers.OrderController) })
-        foreach (var name in new[] { "CancelGuest", "GuestCancellationPreview" })
+        foreach (var name in new[] { "CancelGuest", "GuestCancellationPreview", "ReportGuestNoShow" })
         {
             var method = controller.GetMethod(name)!;
             Assert.NotNull(method.GetCustomAttribute<AllowAnonymousAttribute>());
             Assert.Equal("auth", method.GetCustomAttribute<EnableRateLimitingAttribute>()?.PolicyName);
         }
+    }
+
+    /// <summary>
+    /// "The cleaner did not arrive" is served anonymously on both customer hosts to the holder of the
+    /// booking's link, resolved in the order's operator — before the start it is refused by name.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Both_customer_hosts_serve_the_no_show_report_to_the_link_holder(bool mobile)
+    {
+        var seeded = await SeedGuest(status: OrderStatus.Confirmed);
+        using var mobileHost = new HostTestApplicationFactory<Cleansia.Web.Mobile.Customer.Program>(Db.ConnectionString);
+        using var client = mobile ? mobileHost.CreateClient() : CustomerClientAnonymous();
+
+        var report = await client.PostAsJsonAsync("/api/Order/ReportGuestNoShow",
+            new ReportGuestCleanerNoShow.Command(seeded.Command.AccessToken));
+
+        await HttpAssert.AssertBusinessErrorAsync(report, BusinessErrorMessage.OrderStartTimeNotReached);
+        var stranger = await client.PostAsJsonAsync("/api/Order/ReportGuestNoShow",
+            new ReportGuestCleanerNoShow.Command(SecurityTokens.Generate(SecurityTokens.DurableTokenByteLength)));
+        await HttpAssert.AssertBusinessErrorAsync(stranger, BusinessErrorMessage.OrderNotFound);
     }
 
     [Theory]

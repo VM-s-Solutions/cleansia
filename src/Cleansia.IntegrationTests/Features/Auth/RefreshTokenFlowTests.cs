@@ -301,7 +301,7 @@ public class RefreshTokenFlowTests(PostgresContainerFixture fixture) : BaseInteg
                 currentSession = (await Login(mediator)).Value.RefreshToken!;
 
                 var change = await mediator.Send(new ChangeOwnPassword.Command(
-                    TestConstants.TestUserSession.TestUserPassword, "BrandNew123", currentSession));
+                    TestConstants.TestUserSession.TestUserPassword, "BrandNew1234", currentSession));
                 Assert.True(change.IsSuccess);
 
                 var other = await Refresh(mediator, otherSession!);
@@ -325,6 +325,50 @@ public class RefreshTokenFlowTests(PostgresContainerFixture fixture) : BaseInteg
                 Assert.NotNull(revoked.RevokedAt);
                 Assert.Equal("rotated", spared.RevokedReason);
                 Assert.Single(tokens, t => t.IsAlive);
+            });
+    }
+
+    [Fact]
+    public async Task A_Password_Change_Owed_At_First_Sign_In_Rides_The_Sign_In_And_Every_Refresh_Until_It_Is_Made()
+    {
+        await TestMethod(
+            arrange: async context =>
+            {
+                context.Languages.Add(Language.Create("en", "English"));
+                await context.SaveChangesAsync();
+
+                var user = User.CreateWithPassword(
+                    email: TestConstants.TestUserSession.TestUserEmail,
+                    password: TestConstants.TestUserSession.TestUserPassword,
+                    firstName: TestConstants.TestUserSession.TestFirstName,
+                    lastName: TestConstants.TestUserSession.TestLastName);
+                user.Id = TestConstants.TestUserSession.TestUserId;
+                user.ConfirmEmail();
+                user.RequirePasswordChange();
+                context.Users.Add(user);
+                await context.CommitAsync(CancellationToken.None);
+            },
+            act: async provider =>
+            {
+                var mediator = provider.GetRequiredService<IMediator>();
+                var signIn = await Login(mediator);
+                var refreshed = await Refresh(mediator, signIn.Value.RefreshToken!);
+
+                var change = await mediator.Send(new ChangeOwnPassword.Command(
+                    TestConstants.TestUserSession.TestUserPassword, "BrandNew1234", refreshed.Value.RefreshToken!));
+                Assert.True(change.IsSuccess);
+
+                var afterChange = await Refresh(mediator, refreshed.Value.RefreshToken!);
+                return (SignIn: signIn, Refreshed: refreshed, AfterChange: afterChange);
+            },
+            assert: async (CleansiaDbContext context,
+                (BusinessResult<JwtTokenResponse> SignIn, BusinessResult<JwtTokenResponse> Refreshed, BusinessResult<JwtTokenResponse> AfterChange) result) =>
+            {
+                Assert.True(result.SignIn.Value.MustChangePassword);
+                Assert.True(result.Refreshed.Value.MustChangePassword);
+                Assert.True(result.AfterChange.IsSuccess);
+                Assert.False(result.AfterChange.Value.MustChangePassword);
+                Assert.False(await context.Users.IgnoreQueryFilters().Select(u => u.MustChangePassword).SingleAsync());
             });
     }
 

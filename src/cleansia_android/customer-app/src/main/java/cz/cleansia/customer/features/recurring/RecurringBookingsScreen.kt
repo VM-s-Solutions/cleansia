@@ -134,6 +134,11 @@ fun RecurringBookingsScreen(
                     modifier = Modifier.align(Alignment.Center),
                     onSubscribe = onSubscribePlus,
                 )
+                affordances.showPausedNotice && templates.isEmpty() -> BenefitsPausedNotice(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .padding(24.dp),
+                )
                 templates.isEmpty() -> EmptyState(
                     modifier = Modifier.align(Alignment.Center),
                     onCreateNew = onCreateNew,
@@ -161,6 +166,7 @@ fun RecurringBookingsScreen(
                         templates = templates,
                         mutating = mutating,
                         showLapsedNotice = affordances.showLapsedNotice,
+                        showPausedNotice = affordances.showPausedNotice,
                         showEdit = affordances.showEdit,
                         onToggleActive = { viewModel.toggleActive(it.id, it.isActive) },
                         onEdit = onEdit,
@@ -192,6 +198,7 @@ private fun TemplateList(
     templates: List<RecurringBookingTemplateDto>,
     mutating: String?,
     showLapsedNotice: Boolean,
+    showPausedNotice: Boolean,
     showEdit: Boolean,
     onToggleActive: (RecurringBookingTemplateDto) -> Unit,
     onEdit: (templateId: String) -> Unit,
@@ -205,6 +212,9 @@ private fun TemplateList(
     ) {
         if (showLapsedNotice) {
             item(key = "lapsed-notice") { LapsedPlusNotice(onSubscribe = onSubscribe) }
+        }
+        if (showPausedNotice) {
+            item(key = "paused-notice") { BenefitsPausedNotice() }
         }
         items(templates, key = { it.id }) { template ->
             TemplateCard(
@@ -323,6 +333,33 @@ private fun LapsedPlusNotice(onSubscribe: () -> Unit) {
         ) {
             Text(stringResource(R.string.recurring_plus_gate_cta))
         }
+    }
+}
+
+/**
+ * For a live enrolment whose renewal failed. It carries no subscribe action: the server refuses a second
+ * subscription while this one lives, and the subscribe screen sends such a member straight back.
+ */
+@Composable
+private fun BenefitsPausedNotice(modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+            .padding(14.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.recurring_paused_notice_title),
+            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            text = stringResource(R.string.recurring_paused_notice_body),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 

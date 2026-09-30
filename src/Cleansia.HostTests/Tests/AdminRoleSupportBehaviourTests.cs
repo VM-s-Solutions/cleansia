@@ -6,7 +6,8 @@ namespace Cleansia.HostTests.Tests;
 /// <summary>
 /// ADR-0066 D9.3, the Support token on the real admin host: it reads the customer trail, the admin
 /// log, the order detail, the customer's export and incident file, and it is admitted on the order
-/// operations the ruling gives Support (an override, a refund — the D3 table, not the first draft);
+/// operations the ruling gives Support (an override, recording a cash handover, a refund — the D3
+/// table, not the first draft);
 /// it is refused an erasure and a service update (the Manager's), the invoice list and the pay
 /// periods (the Accountant's), and the company lifecycle, the legal documents and an administrator
 /// account (the Administrator's).
@@ -63,6 +64,7 @@ public sealed class AdminRoleSupportBehaviourTests(HostTestPostgresFixture db) :
 
         // Bodiless posts: the gate answers 403 before binding; anything else means the gate was cleared.
         HttpAssert.ClearedTheGate(await client.PostAsync("/api/AdminOrder/override-status", content: null));
+        HttpAssert.ClearedTheGate(await client.PostAsync("/api/AdminOrder/record-cash", content: null));
         HttpAssert.ClearedTheGate(await client.PostAsync("/api/AdminOrder/refund", content: null));
         HttpAssert.ClearedTheGate(await client.PostAsync("/api/AdminRefund/partial", content: null));
         HttpAssert.ClearedTheGate(await client.PostAsync("/api/AdminOrder/cancel", content: null));

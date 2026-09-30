@@ -1,3 +1,3 @@
 "NSCameraUsageDescription" = "Cleansia uses the camera to capture before and after photos of your cleaning jobs.";
 "NSPhotoLibraryUsageDescription" = "Cleansia needs access to your photos so you can attach before and after photos to your jobs.";
-"NSLocationWhenInUseUsageDescription" = "Cleansia uses your location to center the map when you set your address and to show how far each available job is from you.";
+"NSLocationWhenInUseUsageDescription" = "Cleansia uses your location to center the map when you set your address and to show on your job list how far each job is from you. The distance is calculated on your device only.";

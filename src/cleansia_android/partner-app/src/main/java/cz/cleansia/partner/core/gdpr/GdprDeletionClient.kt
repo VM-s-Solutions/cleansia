@@ -12,8 +12,8 @@ import kotlinx.serialization.json.Json
  * The route is shared with the customer app and the name is the customer's, but for a caller who has
  * an `Employee` the server does something different: it FILES a Pending deletion request and changes
  * nothing else. Ending a working relationship needs signed paperwork and an in-person step, and the
- * records that survive it — invoices, pay rows, the self-billing agreement — are financial rather
- * than the subject's to delete. → /decisions/adr-0052
+ * records that survive it — invoices and pay rows — are financial rather than the subject's to
+ * delete. → /decisions/adr-0052
  *
  * Two consequences the caller must honour, and neither is visible in the response:
  *

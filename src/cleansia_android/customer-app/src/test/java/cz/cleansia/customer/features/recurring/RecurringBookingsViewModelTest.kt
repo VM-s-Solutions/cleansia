@@ -4,6 +4,7 @@ import cz.cleansia.core.freshness.Staleness
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.customer.core.memberships.GetMyMembershipResponse
 import cz.cleansia.customer.core.memberships.MembershipRepository
+import cz.cleansia.customer.core.memberships.MembershipStatus
 import cz.cleansia.customer.core.recurring.RecurringBookingRepository
 import cz.cleansia.customer.core.recurring.RecurringBookingTemplateDto
 import cz.cleansia.customer.testing.MainDispatcherRule
@@ -158,5 +159,16 @@ class RecurringBookingsViewModelTest {
         advanceUntilIdle()
 
         assertEquals(RecurringAuthoringGate.Allowed, viewModel.authoring.value)
+    }
+
+    /** The server refuses a past-due member's create and edit and books none of their schedules. */
+    @Test
+    fun `a past-due member keeps their schedules but may not author them`() = runTest {
+        membership.value = GetMyMembershipResponse(hasMembership = true, status = MembershipStatus.PastDue.code)
+        val viewModel = newViewModel()
+        advanceUntilIdle()
+
+        assertEquals(listOf(template), viewModel.templates.value)
+        assertEquals(RecurringAuthoringGate.Paused, viewModel.authoring.value)
     }
 }

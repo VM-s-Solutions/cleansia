@@ -2,18 +2,21 @@ import { Component, input, PLATFORM_ID } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
-import { ActivatedRoute, provideRouter } from '@angular/router';
+import { ActivatedRoute, provideRouter, Router } from '@angular/router';
 import { CleansiaTextareaComponent } from '@cleansia/components';
 import {
   CancelOrderResponse,
   CancellationFeeTier,
   CustomerAuthService,
   CustomerClient,
+  DisputeReason,
   GetCancellationFeePreviewResponse,
   OrderItem,
   OrderStatus,
+  PaymentStatus,
+  PaymentType,
 } from '@cleansia/customer-services';
-import { SnackbarService } from '@cleansia/services';
+import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
 import { TranslateLoader, TranslateModule, TranslateService } from '@ngx-translate/core';
 import { of, Subject } from 'rxjs';
 import { OrderPreferredOfferComponent } from './components/order-preferred-offer.component';
@@ -41,11 +44,17 @@ class PreferredOfferStub {
   locale = input<string>();
 }
 
-function order(status: OrderStatus): OrderItem {
+function order(
+  status: OrderStatus,
+  paymentType = PaymentType.Card,
+  paymentStatus = PaymentStatus.Paid,
+): OrderItem {
   return OrderItem.fromJS({
     id: ORDER_ID,
     displayOrderNumber: 'ORD-1',
     orderStatus: { value: status, name: OrderStatus[status] },
+    paymentType: { value: paymentType, name: PaymentType[paymentType] },
+    paymentStatus: { value: paymentStatus, name: PaymentStatus[paymentStatus] },
     cleaningDateTime: '2026-09-25T08:00:00Z',
     totalPrice: 1200,
     currency: { code: 'CZK' },
@@ -73,9 +82,13 @@ describe('OrderDetailComponent — cancelling a booking', () => {
   let fixture: ComponentFixture<OrderDetailComponent>;
   let orderClient: { getById: jest.Mock; cancellationPreview: jest.Mock; cancel: jest.Mock };
 
-  async function setup(status: OrderStatus): Promise<void> {
+  async function setup(
+    status: OrderStatus,
+    paymentType = PaymentType.Card,
+    paymentStatus = PaymentStatus.Paid,
+  ): Promise<void> {
     orderClient = {
-      getById: jest.fn().mockReturnValue(of(order(status))),
+      getById: jest.fn().mockReturnValue(of(order(status, paymentType, paymentStatus))),
       cancellationPreview: jest.fn().mockReturnValue(of(preview)),
       cancel: jest.fn(),
     };
@@ -93,7 +106,11 @@ describe('OrderDetailComponent — cancelling a booking', () => {
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => ORDER_ID } } } },
         {
           provide: CustomerClient,
-          useValue: { orderClient, membershipClient: { getMine: () => of(null) } },
+          useValue: {
+            orderClient,
+            membershipClient: { getMine: () => of(null) },
+            receivableClient: { getMine: () => of([]) },
+          },
         },
         { provide: CustomerAuthService, useValue: { isLoggedIn: () => true } },
         {
@@ -157,6 +174,25 @@ describe('OrderDetailComponent — cancelling a booking', () => {
     expect((fixture.nativeElement as HTMLElement).textContent).toContain(
       `Free within ${minutes} minutes of booking.`,
     );
+  });
+
+  // With no card charge behind the booking the sheet names the fee and estimates no card refund.
+  it.each([
+    { booking: 'charged card', paymentType: PaymentType.Card, paymentStatus: PaymentStatus.Paid, shown: true },
+    { booking: 'uncharged card', paymentType: PaymentType.Card, paymentStatus: PaymentStatus.Pending, shown: false },
+    { booking: 'cash', paymentType: PaymentType.Cash, paymentStatus: PaymentStatus.Pending, shown: false },
+  ])('on a $booking booking, estimates a card refund: $shown', async ({ paymentType, paymentStatus, shown }) => {
+    await setup(OrderStatus.Confirmed, paymentType, paymentStatus);
+
+    fixture.componentInstance.openCancellation();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const sheet = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(sheet).toContain('pages.order_detail.cancellation.fee');
+    expect(sheet.includes('pages.order_detail.cancellation.refund_estimate')).toBe(shown);
+    expect(sheet.includes('pages.order_detail.cancellation.refund_note')).toBe(shown);
   });
 
   it('caps the reason at the length the server accepts', async () => {
@@ -227,5 +263,53 @@ describe('OrderDetailComponent — cancelling a booking', () => {
     expect(result?.textContent).toContain('Your booking is cancelled.');
     expect(result?.textContent).not.toContain('refund');
     expect(result?.textContent).not.toMatch(/\d/);
+  });
+
+  it('says the card refund is still pending when the server could not issue it', async () => {
+    await setup(OrderStatus.Confirmed);
+    orderClient.cancel.mockReturnValue(
+      of(
+        CancelOrderResponse.fromJS({
+          orderId: ORDER_ID,
+          feeRate: 0.25,
+          refundAmount: 900,
+          totalPrice: 1200,
+          refundInitiated: false,
+          refundPending: true,
+        }),
+      ),
+    );
+    orderClient.getById.mockReturnValue(of(order(OrderStatus.Cancelled)));
+
+    fixture.componentInstance.openCancellation();
+    fixture.componentInstance.confirmCancellation();
+    fixture.detectChanges();
+
+    const result = (fixture.nativeElement as HTMLElement).querySelector('.order-detail__cancellation-result');
+    expect(result?.textContent).toContain('pages.order_detail.cancellation.refund_pending');
+    expect(result?.textContent).not.toContain('A refund of');
+  });
+
+  it('offers the no-show report in place of Cancel once a staffed booking is past its start', async () => {
+    await setup(OrderStatus.Confirmed);
+    const navigate = jest.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    fixture.componentInstance.order.set(
+      OrderItem.fromJS({
+        ...order(OrderStatus.Confirmed).toJSON(),
+        assignedEmployees: [{ employeeId: 'emp-1', fullName: 'Petra S.' }],
+      }),
+    );
+    fixture.detectChanges();
+
+    expect(cancelButton()).toBeNull();
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+      'pages.order_detail.cleaner_no_show.note',
+    );
+
+    fixture.componentInstance.reportCleanerNoShow();
+
+    expect(navigate).toHaveBeenCalledWith([CleansiaCustomerRoute.DISPUTES], {
+      queryParams: { orderId: ORDER_ID, reason: DisputeReason.ServiceNotProvided },
+    });
   });
 });

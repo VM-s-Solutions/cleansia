@@ -157,13 +157,6 @@
     }
   }
 
-  &__registration {
-    margin-left: 28px;
-    font-size: 14px;
-    color: rgba(186, 230, 253, 0.75);
-    margin: 8px 0 0;
-  }
-
   &__bottom {
     border-top: 1px solid rgba(186, 230, 253, 0.18);
     margin-top: 40px;
@@ -286,36 +279,11 @@
   }
 }
 
-// A footer row that is a button, styled as the links beside it: it opens the
-// cookie panel rather than navigating, and it must not look different for that.
-.cl-footer__linkbtn {
-  display: block;
-  background: none;
-  border: 0;
-  padding: 5px 0;
-  font: inherit;
-  font-size: 15px;
-  color: #bae6fd;
-  text-align: left;
-  cursor: pointer;
-  transition: color 0.16s ease;
-
-  &:hover {
-    color: #ffffff;
-  }
-
-  &:focus-visible {
-    outline: 2px solid #38bdf8;
-    outline-offset: 2px;
-  }
-}
-
 // Footer links are 30px tall, which is fine to click and not to tap. They get
 // the touch floor on the form factor that needs it rather than everywhere,
 // because on desktop the extra height would loosen the column rhythm.
 @media (max-width: 900px) {
   .cl-footer__col ul li a,
-  .cl-footer__linkbtn,
   .cl-footer__contact a,
   .cl-footer__theme-toggle {
     display: inline-flex;

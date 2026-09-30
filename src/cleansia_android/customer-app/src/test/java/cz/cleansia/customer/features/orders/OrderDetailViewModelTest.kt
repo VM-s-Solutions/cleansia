@@ -9,21 +9,24 @@ import cz.cleansia.customer.core.market.MarketState
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
+import cz.cleansia.customer.R
 import cz.cleansia.customer.core.memberships.GetMyMembershipResponse
 import cz.cleansia.customer.core.memberships.MembershipRepository
+import cz.cleansia.customer.core.memberships.MembershipStatus
 import cz.cleansia.customer.core.notifications.OrderEvent
 import cz.cleansia.customer.core.notifications.OrderEventBus
 import cz.cleansia.customer.core.orders.OrderDetailDto
-import cz.cleansia.customer.core.orders.AssignedEmployeeDto
+import cz.cleansia.customer.core.orders.ConfirmRecurringOrderResponse
 import cz.cleansia.customer.core.orders.OrderRepository
-import cz.cleansia.customer.core.orders.WorkContractAcceptanceDto
 import cz.cleansia.customer.core.user.CodeDto
 import cz.cleansia.customer.features.recurring.RecurringAuthoringGate
 import cz.cleansia.customer.testing.MainDispatcherRule
+import cz.cleansia.customer.ui.state.ActionState
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
@@ -95,8 +98,8 @@ class OrderDetailViewModelTest {
     }
 
     /** Stands in for the repository writing its cache from a successful fetch. */
-    private fun membershipAnswer(hasMembership: Boolean): ApiResult<GetMyMembershipResponse> {
-        val body = GetMyMembershipResponse(hasMembership = hasMembership)
+    private fun membershipAnswer(hasMembership: Boolean, status: MembershipStatus? = null): ApiResult<GetMyMembershipResponse> {
+        val body = GetMyMembershipResponse(hasMembership = hasMembership, status = status?.code)
         membership.value = body
         membershipStaleness.markFresh()
         return ApiResult.Success(body)
@@ -349,6 +352,20 @@ class OrderDetailViewModelTest {
         assertEquals(RecurringAuthoringGate.Allowed, vm.recurringAuthoring.value)
     }
 
+    /** A failed renewal keeps the enrolment alive, but the server refuses the schedule it would create. */
+    @Test
+    fun `a past-due member loses the make-recurring shortcut`() = runTest {
+        coEvery { repository.getById(orderId) } returns ApiResult.Success(order(5))
+        coEvery { membershipRepository.refresh() } coAnswers {
+            membershipAnswer(hasMembership = true, status = MembershipStatus.PastDue)
+        }
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        assertEquals(RecurringAuthoringGate.Paused, vm.recurringAuthoring.value)
+    }
+
     @Test
     fun `the screen fetches membership itself rather than trusting another screen's cache`() = runTest {
         coEvery { repository.getById(orderId) } returns ApiResult.Success(order(5))
@@ -370,45 +387,38 @@ class OrderDetailViewModelTest {
         coVerify(exactly = 0) { membershipRepository.refresh() }
     }
 
-    // ── the contract for work ──
+    // ── recurring confirm ──
+
+    /** Wire values: OrderStatus New = 1; PaymentType Cash = 1; PaymentStatus Pending = 1. */
+    private fun recurringCashOccurrence(needsConfirmation: Boolean) = order(1).copy(
+        recurringTemplateId = "tpl-1",
+        paymentType = CodeDto(type = "PaymentType", name = "Cash", value = 1),
+        paymentStatus = CodeDto(type = "PaymentStatus", name = "Pending", value = 1),
+        needsConfirmation = needsConfirmation,
+    )
 
     @Test
-    fun `the acceptance lines follow the loaded order, paired with the crew by seat`() = runTest {
-        val crew = listOf(
-            AssignedEmployeeDto(id = "seat-1", employeeId = "emp-1", fullName = "Jana"),
-            AssignedEmployeeDto(id = "seat-2", employeeId = "emp-2", fullName = "Petr"),
+    fun `a cash confirm re-reads the occurrence, which no longer asks to be confirmed and is still unpaid`() = runTest {
+        coEvery { repository.getById(orderId) } returnsMany listOf(
+            ApiResult.Success(recurringCashOccurrence(needsConfirmation = true)),
+            ApiResult.Success(recurringCashOccurrence(needsConfirmation = false)),
         )
-        val row = WorkContractAcceptanceDto(
-            id = "acc-1",
-            orderEmployeeId = "seat-1",
-            employeeId = "emp-1",
-            acceptedOn = "2026-08-10T18:40:00Z",
-            documentVersion = "2026-09-20",
-            language = "cs",
-        )
-        coEvery { repository.getById(orderId) } returns ApiResult.Success(
-            order(5).copy(assignedEmployees = crew, workContractAcceptances = listOf(row)),
-        )
-
-        val vm = viewModel()
-        assertEquals(emptyList<WorkContractAcceptanceLine>(), vm.workContractAcceptances.value)
-        advanceUntilIdle()
-
-        assertEquals(
-            listOf(WorkContractAcceptanceLine("acc-1", "Jana", "2026-08-10T18:40:00Z", "2026-09-20")),
-            vm.workContractAcceptances.value,
-        )
-    }
-
-    @Test
-    fun `an order with a crew and no acceptance yields no line`() = runTest {
-        coEvery { repository.getById(orderId) } returns ApiResult.Success(
-            order(5).copy(assignedEmployees = listOf(AssignedEmployeeDto(id = "seat-1", employeeId = "emp-1", fullName = "Jana"))),
-        )
+        coEvery { repository.refresh() } returns ApiResult.Success(Unit)
+        coEvery { repository.confirmRecurring(orderId) } returns
+            ApiResult.Success(ConfirmRecurringOrderResponse(orderId = orderId))
+        every { appContext.getString(R.string.recurring_confirm_success) } returns "Booking confirmed"
 
         val vm = viewModel()
         advanceUntilIdle()
+        assertTrue(loadedOrder(vm).needsConfirmation)
 
-        assertEquals(emptyList<WorkContractAcceptanceLine>(), vm.workContractAcceptances.value)
+        vm.confirmRecurring()
+        advanceUntilIdle()
+
+        assertEquals(false, loadedOrder(vm).needsConfirmation)
+        assertEquals(1, loadedOrder(vm).paymentStatus?.value)
+        assertEquals(ActionState.Idle, vm.confirmRecurringState.value)
+        verify(exactly = 1) { snackbar.showSuccess("Booking confirmed") }
+        coVerify(exactly = 2) { repository.getById(orderId) }
     }
 }

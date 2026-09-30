@@ -346,12 +346,13 @@ public partial class CreateOrderCallerCurrencyTests(PostgresContainerFixture fix
         Rooms: 2,
         Bathrooms: 1,
         Extras: new Dictionary<string, bool>(),
-        CleaningDate: DateTime.UtcNow.AddDays(3),
+        CleaningDate: DateTime.UtcNow.Date.AddDays(3).AddHours(9),
         PaymentType: PaymentType.Card,
         CurrencyId: currencyId,
         TotalPrice: totalPrice,
         PromoCode: null,
-        TermsAccepted: true);
+        TermsAccepted: true,
+        EarlyPerformanceRequested: true);
 
     private static Task ConfigureCustomerSession(IServiceCollection services)
     {
@@ -442,6 +443,8 @@ public partial class CreateOrderCallerCurrencyTests(PostgresContainerFixture fix
         user.Id = CustomerUserId;
         user.ConfirmEmail();
         context.Add(user);
+        // The cash bookings of this family book in both priced markets, each against a card in its currency.
+        context.SavedCards.AddRange(TestSavedCards.Usable(CustomerUserId, Czk), TestSavedCards.Usable(CustomerUserId, Eur));
 
         // The guest case seeds where the provider answers null; every other case is a no-op here.
         StampUnstampedAdded(context, TestTenants.Default);

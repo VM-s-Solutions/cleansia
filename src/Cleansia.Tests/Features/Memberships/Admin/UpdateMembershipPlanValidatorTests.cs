@@ -121,4 +121,25 @@ public class UpdateMembershipPlanValidatorTests
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.CurrencyNotFound);
     }
+
+    [Theory]
+    [InlineData(25)]
+    [InlineData(72)]
+    public async Task ACancellationWindowLongerThanTheStandardOne_Fails_TooLong(int hours)
+    {
+        var result = await Validator().ValidateAsync(Valid(null) with { FreeCancellationWindowHours = hours });
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e =>
+            e.PropertyName == nameof(UpdateMembershipPlan.Command.FreeCancellationWindowHours)
+            && e.ErrorMessage == BusinessErrorMessage.MembershipPlanFreeCancellationWindowTooLong);
+    }
+
+    [Fact]
+    public async Task ACancellationWindowOfExactlyTheStandardOne_Passes()
+    {
+        var result = await Validator().ValidateAsync(Valid(null) with { FreeCancellationWindowHours = 24 });
+
+        Assert.True(result.IsValid);
+    }
 }

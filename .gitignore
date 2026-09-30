@@ -528,6 +528,9 @@ firebase_options.dart
 src/cleansia_customer_android/gradle.properties
 src/Cleansia.App/apps/cleansia.app/src/environments/environment.ts
 
+# Azure Functions local settings hold machine secrets; copy local.settings.example.json instead.
+local.settings.json
+
 # dotnet-ef on macOS emits a literal-backslash build-host dir (not bin/Debug)
 **/*bin\\Debug*/
 graphify-out/

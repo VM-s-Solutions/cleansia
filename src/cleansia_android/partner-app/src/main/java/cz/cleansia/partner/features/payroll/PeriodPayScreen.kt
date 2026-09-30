@@ -1,5 +1,6 @@
 package cz.cleansia.partner.features.payroll
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -44,6 +45,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.partner.R
+import cz.cleansia.partner.api.model.PayLineType
 import cz.cleansia.partner.data.payroll.OrderPayLine
 import cz.cleansia.partner.data.payroll.PeriodPaySummary
 import java.time.LocalDate
@@ -206,6 +208,9 @@ private fun BreakdownCard(summary: PeriodPaySummary, symbol: String) {
         if (summary.totalExtrasPay != 0.0) {
             MoneyRow(stringResource(R.string.period_pay_extras), summary.totalExtrasPay, symbol)
         }
+        if (summary.totalDirtinessPay != 0.0) {
+            MoneyRow(stringResource(R.string.period_pay_dirtiness), summary.totalDirtinessPay, symbol)
+        }
         if (summary.totalExpensesPay != 0.0) {
             MoneyRow(stringResource(R.string.period_pay_expenses), summary.totalExpensesPay, symbol)
         }
@@ -281,11 +286,28 @@ private fun JobRow(line: OrderPayLine, symbol: String) {
                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
                 color = MaterialTheme.colorScheme.onSurface,
             )
+            payLineCaptionRes(line.lineType)?.let { caption ->
+                Text(
+                    text = stringResource(caption),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
             formatDate(line.createdOn)?.let { date ->
                 Text(
                     text = date,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            if (line.deductionPay != 0.0) {
+                val amount = formatMoney(-line.deductionPay, symbol)
+                Text(
+                    text = line.deductionReason?.takeIf { it.isNotBlank() }
+                        ?.let { stringResource(R.string.period_pay_line_deduction_reason, amount, it) }
+                        ?: stringResource(R.string.period_pay_line_deduction, amount),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
                 )
             }
         }
@@ -295,6 +317,14 @@ private fun JobRow(line: OrderPayLine, symbol: String) {
             color = MaterialTheme.colorScheme.onSurface,
         )
     }
+}
+
+/** A fee-share row pays for a job that did not happen, so it says which fee it is a share of. */
+@StringRes
+internal fun payLineCaptionRes(type: PayLineType): Int? = when (type) {
+    PayLineType._0 -> null
+    PayLineType._1 -> R.string.period_pay_line_cancellation_fee_share
+    PayLineType._2 -> R.string.period_pay_line_lockout_fee_share
 }
 
 @Composable

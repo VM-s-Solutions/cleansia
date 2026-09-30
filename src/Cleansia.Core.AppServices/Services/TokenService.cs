@@ -83,7 +83,8 @@ public class TokenService(
             RefreshToken: refresh.RawToken,
             RefreshTokenExpiresAt: refresh.Record.ExpiresAt,
             Role: user.Profile.ToString(),
-            AdminRole: user.AdminRole?.ToString());
+            AdminRole: user.AdminRole?.ToString(),
+            MustChangePassword: user.MustChangePassword);
     }
 
     // The customer hosts serve every profile (a cleaner may book as a customer — Login has no gate);

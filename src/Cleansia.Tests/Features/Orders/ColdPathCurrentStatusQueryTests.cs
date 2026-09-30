@@ -290,7 +290,8 @@ public sealed class ColdPathCurrentStatusQueryTests : IDisposable
             consentRepository.Object,
             new CustomerActionAuditRepository(ctx),
             new WorkContractAcceptanceRepository(ctx),
-            new LegalDocumentRepository(ctx));
+            new LegalDocumentRepository(ctx),
+            new CleanerLegalDocumentAcceptanceRepository(ctx));
 
         var export = await service.BuildAsync(userId, exportedBy: "admin-cold", CancellationToken.None);
 

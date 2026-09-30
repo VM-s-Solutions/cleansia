@@ -32,8 +32,9 @@ SET "Profile" = 100,
     "UpdatedBy" = 'admin-script'
 WHERE "Email" = :'target_email';
 
--- Check if any rows were updated
-\if :ROW_COUNT = 0
+-- Check if any rows were updated. \if takes a boolean, not an expression, so compute it first.
+SELECT (:ROW_COUNT = 0) AS user_missing \gset
+\if :user_missing
 \echo 'ERROR: User not found. Register the user first via the Customer app, then run this script.'
 \quit
 \endif

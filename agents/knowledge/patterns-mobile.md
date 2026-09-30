@@ -517,7 +517,7 @@ raw components one-off; never duplicate a `:core` component.
 > all three clients.** The express-upgrade waiver is live and metered per calendar month (ADR-0035):
 > `ExpressWaiverResolver` feeds the pricing calculator, the quote carries
 > `expressSurchargeWaivedByMembership` / `expressUpgradesRemaining`, and iOS renders it
-> (`MembershipPerks.swift:125-130` — `.express(...)` off `ExpressWaiverStatus.resolve`;
+> (`MembershipPerks.swift:116-121` — `.express(...)` off `ExpressWaiverStatus.resolve`;
 > `SubscribePlusScreen.swift:45`; `CustomerShellView` → `showExpressPerk`), as do Android and web.
 > **Do not "restore parity" by deleting the iOS express perk** —
 > that undoes shipped work, which is precisely what a stale worked example instructs the next reader to do.

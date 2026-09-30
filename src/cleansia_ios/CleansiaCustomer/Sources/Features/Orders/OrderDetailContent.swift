@@ -7,12 +7,10 @@ struct OrderDetailContent: View {
     let order: CustomerOrderDetail
     let markets: MarketState
     let photos: PhotosUiState
-    let workContractAcceptances: [WorkContractAcceptanceLine]
     let isDownloadingReceipt: Bool
     let onLeaveReview: () -> Void
     let onDownloadReceipt: () -> Void
     let onViewPhotos: () -> Void
-    let onReadWorkContract: (String) -> Void
 
     private var status: OrderStatus? {
         order.status
@@ -82,10 +80,6 @@ struct OrderDetailContent: View {
 
                     if !order.assignedEmployees.isEmpty {
                         AssignedCleanersCard(employees: order.assignedEmployees)
-                    }
-
-                    if !workContractAcceptances.isEmpty {
-                        WorkContractCard(lines: workContractAcceptances, onRead: onReadWorkContract)
                     }
 
                     OrderPriceBreakdownCard(order: order)

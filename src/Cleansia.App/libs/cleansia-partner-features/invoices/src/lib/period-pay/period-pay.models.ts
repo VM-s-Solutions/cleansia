@@ -1,6 +1,25 @@
 import { TableColumn } from '@cleansia/components';
-import { OrderEmployeePayDto, PeriodPaySummaryDto } from '@cleansia/partner-services';
+import {
+  CashHeldDto,
+  OrderEmployeePayDto,
+  PayLineType,
+  PeriodPaySummaryDto,
+} from '@cleansia/partner-services';
 import { formatMoney, localeFor } from '@cleansia/utils';
+import { TranslateService } from '@ngx-translate/core';
+
+export const PAY_LINE_TYPE_LABEL_KEYS: Readonly<Record<PayLineType, string>> = {
+  [PayLineType.Job]: 'enums.pay_line_type.job',
+  [PayLineType.CancellationFeeShare]: 'enums.pay_line_type.cancellation_fee_share',
+  [PayLineType.LockoutFeeShare]: 'enums.pay_line_type.lockout_fee_share',
+};
+
+export interface CashHeldRow {
+  currencyId: string | undefined;
+  amount: string;
+  limit: string | null;
+  cashJobsHidden: boolean;
+}
 
 export interface PeriodCurrency {
   id: string;
@@ -43,7 +62,8 @@ export function formatPayAmount(
  */
 export function getPeriodPayTableDefinition(
   currencyCode: string | undefined,
-  lang: string | undefined
+  lang: string | undefined,
+  translate: TranslateService
 ): {
   columns: TableColumn<OrderEmployeePayDto>[];
 } {
@@ -56,6 +76,16 @@ export function getPeriodPayTableDefinition(
         field: 'orderNumber',
         header: 'pages.period_pay.order_number',
         sortable: false,
+      },
+      {
+        id: 'lineType',
+        field: 'lineType',
+        header: 'pages.period_pay.line_type',
+        sortable: false,
+        getValue: (pay?: OrderEmployeePayDto) => {
+          const key = pay ? PAY_LINE_TYPE_LABEL_KEYS[pay.lineType] : undefined;
+          return key ? translate.instant(key) : '-';
+        },
       },
       {
         id: 'basePay',
@@ -72,6 +102,14 @@ export function getPeriodPayTableDefinition(
         sortable: false,
         numeric: true,
         getValue: (pay?: OrderEmployeePayDto) => format(pay, pay?.extrasPay),
+      },
+      {
+        id: 'dirtinessPay',
+        field: 'dirtinessPay',
+        header: 'pages.period_pay.dirtiness_pay',
+        sortable: false,
+        numeric: true,
+        getValue: (pay?: OrderEmployeePayDto) => format(pay, pay?.dirtinessPay),
       },
       {
         id: 'expensesPay',
@@ -114,4 +152,16 @@ export function getPeriodPayTableDefinition(
       },
     ],
   };
+}
+
+export function buildCashHeldRows(held: CashHeldDto[], lang: string | undefined): CashHeldRow[] {
+  return held.map((balance) => ({
+    currencyId: balance.currencyId,
+    amount: formatPayAmount(balance.amount, balance.currencyCode, lang),
+    limit:
+      balance.floatCap === undefined || balance.floatCap === null
+        ? null
+        : formatPayAmount(balance.floatCap, balance.currencyCode, lang),
+    cashJobsHidden: balance.cashJobsHidden,
+  }));
 }

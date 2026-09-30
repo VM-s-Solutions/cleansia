@@ -334,8 +334,8 @@ refused sign-in is that account's row.
   and promo code belongs to the company under the holding that serves its market — Cleansia CZ s.r.o.
   today — the database holds it to a company it knows, and a second company is a seed row and a
   country assignment, not code. Each company numbers its own payout invoices and keeps its own
-  retention windows; one email is one identity across the holding; the holding runs one Stripe account
-  for now. A company has a lifecycle its own administrators drive — wind down, deactivate, archive — and
+  retention windows; one email is one identity across the holding; card payments are taken on the
+  operating company's own Stripe account. A company has a lifecycle its own administrators drive — wind down, deactivate, archive — and
   a closed company's customers keep their accounts, their history, their receipts and their right to
   export or erase. → [Business rules — the market](/product/business-rules#market),
   [Business rules — a company's lifecycle](/product/business-rules#company-lifecycle),

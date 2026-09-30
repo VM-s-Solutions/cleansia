@@ -2,6 +2,7 @@
 using Cleansia.Core.AppServices.Features.Packages.DTOs;
 using Cleansia.Core.AppServices.Features.Services.DTOs;
 using Cleansia.Core.AppServices.Shared.DTOs.Enums;
+using Cleansia.Core.Domain.Enums;
 
 namespace Cleansia.Core.AppServices.Features.Orders.DTOs;
 
@@ -204,5 +205,15 @@ public record OrderItem(
     /// </summary>
     DateTime? CashCollectedAt = null,
     string? CashCollectedByName = null,
-    decimal? CashCollectedAmount = null
+    decimal? CashCollectedAmount = null,
+
+    DirtinessLevel DirtinessLevel = DirtinessLevel.Normal,
+    decimal DirtinessSurchargeAmount = 0m,
+
+    /// <summary>
+    /// When the assigned cleaner reported that they cannot get in, and the calls they made; null until
+    /// they do. An administrator reads them to confirm the lockout, the crew to see it was reported.
+    /// </summary>
+    DateTime? LockoutReportedAt = null,
+    string? LockoutCallAttempts = null
 );

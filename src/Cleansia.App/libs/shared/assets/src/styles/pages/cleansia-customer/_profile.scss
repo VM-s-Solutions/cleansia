@@ -821,13 +821,15 @@
   margin-top: calc(1.25 * var(--cl-u));
 }
 
-.customer-notification-prefs__skeleton {
+.customer-notification-prefs__skeleton,
+.customer-saved-cards__skeleton {
   display: flex;
   flex-direction: column;
   gap: calc(0.75 * var(--cl-u));
 }
 
-.customer-notification-prefs__error {
+.customer-notification-prefs__error,
+.customer-saved-cards__error {
   display: flex;
   flex-direction: column;
   align-items: flex-start;

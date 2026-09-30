@@ -1,5 +1,6 @@
 ﻿using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Features.EmployeePayroll;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Clients.Abstractions.Stripe;
@@ -132,6 +133,8 @@ public class HandlePaymentNotification
         IUserNotificationRepository userNotificationRepository,
         IStripeClientFactory stripeClientFactory,
         ITenantRepository tenantRepository,
+        ISavedCardRepository savedCardRepository,
+        IReceivableRepository receivableRepository,
         ILogger<Handler> logger) : ICommandHandler<Command>
     {
         public async Task<BusinessResult> Handle(Command command, CancellationToken cancellationToken)
@@ -183,6 +186,34 @@ public class HandlePaymentNotification
             {
                 var subscriptionId = await subscriptionWebhookHandler.HandleAsync(stripeEvent, cancellationToken);
                 return BusinessResult.Success();
+            }
+
+            // A saved card lands here from either channel. A web capture raises both events, and the second
+            // finds the card already captured.
+            switch (stripeEvent.Data.Object)
+            {
+                case SetupIntent intent when stripeEvent.Type == Constants.StripeEventType.SetupIntentSucceeded:
+                    return await CaptureSavedCard(
+                        intent.Metadata?.GetValueOrDefault(SavedCardMetadataKey), intent.Id, cancellationToken);
+                case Session { Mode: "setup" } session when stripeEvent.Type == Constants.StripeEventType.CompletedSession:
+                    return await CaptureSavedCard(
+                        session.Metadata?.GetValueOrDefault(SavedCardMetadataKey), session.SetupIntentId, cancellationToken);
+            }
+
+            // What a customer owes on an order is paid through its pay link or an off-session charge, and
+            // either payment is the receivable's alone: the order's sale, charge surface and refunds are
+            // not touched, so the order path below never sees these events.
+            switch (stripeEvent.Data.Object)
+            {
+                case Session { Mode: "payment" } session when stripeEvent.Type == Constants.StripeEventType.CompletedSession
+                    && session.Metadata?.GetValueOrDefault(ReceivableMetadataKey) is { Length: > 0 } paidByLink:
+                    return await SettleReceivable(paidByLink, session.PaymentIntentId, command.Language, cancellationToken);
+                case PaymentIntent intent when stripeEvent.Type == Constants.StripeEventType.PaymentIntentSucceeded
+                    && intent.Metadata?.GetValueOrDefault(ReceivableMetadataKey) is { Length: > 0 } paidOffSession:
+                    return await SettleReceivable(paidOffSession, intent.Id, command.Language, cancellationToken);
+                case PaymentIntent intent when stripeEvent.Type == Constants.StripeEventType.PaymentIntentPaymentFailed
+                    && intent.Metadata?.GetValueOrDefault(ReceivableMetadataKey) is { Length: > 0 } declined:
+                    return await OfferPayLink(declined, intent, cancellationToken);
             }
 
             // Bank chargeback (ADR-0006 D4). No OrderId metadata — the event
@@ -350,6 +381,9 @@ public class HandlePaymentNotification
                     new GenerateReceiptMessage(orderId, language)),
                 MessageKeys.Receipt(orderId));
 
+            // The payment is what concludes a card booking's contract, so its confirmation goes out now.
+            OrderBookedEmail.Enqueue(order, language, pending, DateTimeOffset.UtcNow);
+
             if (!string.IsNullOrEmpty(order.UserId))
             {
                 await notificationProducer.NotifyAsync(
@@ -445,6 +479,169 @@ public class HandlePaymentNotification
             logger.LogInformation(
                 "Checkout session {SessionId} for recurring order {OrderId} expired; the occurrence stays confirmable",
                 sessionId, order.Id);
+            return BusinessResult.Success();
+        }
+
+        private const string SavedCardMetadataKey = "SavedCardId";
+
+        /// <summary>
+        /// The card a customer saved lands on the row their capture started. A SetupIntent with no saved
+        /// card behind it — the Plus subscribe flow's — is not this flow's and is ignored. The card is read
+        /// from Stripe, so an unreachable Stripe throws, the processed-event stamp rolls back and Stripe
+        /// retries. A new card replaces the customer's earlier one in the same currency.
+        /// </summary>
+        private async Task<BusinessResult> CaptureSavedCard(
+            string? savedCardId, string? setupIntentId, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrEmpty(savedCardId) || string.IsNullOrEmpty(setupIntentId))
+            {
+                logger.LogInformation("Setup event {SetupIntentId} carries no saved card; ignoring", setupIntentId);
+                return BusinessResult.Success();
+            }
+
+            var card = await savedCardRepository.GetByIdIgnoringTenantAsync(savedCardId, cancellationToken);
+            if (card is null || card.IsCaptured || !card.IsActive)
+            {
+                logger.LogInformation(
+                    "Saved card {SavedCardId} is unknown, already captured or removed; setup event {SetupIntentId} ignored",
+                    savedCardId, setupIntentId);
+                return BusinessResult.Success();
+            }
+
+            if (!string.IsNullOrEmpty(card.TenantId))
+            {
+                tenantProvider.SetTenantOverride(card.TenantId);
+            }
+
+            var details = await stripeClientFactory.CreateClient().GetSetupIntentCardAsync(setupIntentId, cancellationToken);
+            if (details is null)
+            {
+                logger.LogWarning(
+                    "Setup intent {SetupIntentId} for saved card {SavedCardId} saved no card; nothing captured",
+                    setupIntentId, card.Id);
+                return BusinessResult.Success();
+            }
+
+            foreach (var replaced in await savedCardRepository.GetCapturedForUserInCurrencyAsync(
+                         card.UserId, card.CurrencyId, cancellationToken))
+            {
+                savedCardRepository.Deactivate(replaced);
+            }
+
+            card.Capture(details.PaymentMethodId, details.Brand, details.Last4, details.ExpMonth, details.ExpYear);
+            logger.LogInformation("Captured saved card {SavedCardId} for user {UserId}", card.Id, card.UserId);
+            return BusinessResult.Success();
+        }
+
+        private const string ReceivableMetadataKey = "ReceivableId";
+
+        /// <summary>
+        /// The receivable is paid, and its fee receipt and, on a late-cancellation or lockout fee, the crew's
+        /// share of it are asked for. A second payment of one already paid is
+        /// money taken twice for one debt, and it is refunded in full, keyed on its own PaymentIntent so a
+        /// redelivery replays the same refund. The refund is made here, so an unreachable Stripe throws, the
+        /// processed-event stamp rolls back and Stripe redelivers.
+        /// </summary>
+        private async Task<BusinessResult> SettleReceivable(
+            string receivableId, string? paymentIntentId, string language, CancellationToken cancellationToken)
+        {
+            var receivable = await receivableRepository.GetByIdIgnoringTenantAsync(receivableId, cancellationToken);
+            if (receivable is null)
+            {
+                logger.LogWarning("Payment {PaymentIntentId} names unknown receivable {ReceivableId}; ignoring", paymentIntentId, receivableId);
+                return BusinessResult.Success();
+            }
+
+            if (!string.IsNullOrEmpty(receivable.TenantId))
+            {
+                tenantProvider.SetTenantOverride(receivable.TenantId);
+            }
+
+            if (receivable.IsPaid)
+            {
+                if (!string.IsNullOrEmpty(paymentIntentId) && receivable.StripePaymentIntentId != paymentIntentId)
+                {
+                    await stripeClientFactory.CreateClient().RefundPaymentIntentAsync(
+                        paymentIntentId,
+                        receivable.Amount,
+                        $"refund:receivable:{receivable.Id}:{paymentIntentId}",
+                        cancellationToken);
+                    logger.LogWarning(
+                        "Receivable {ReceivableId} paid by {PaymentIntentId} was paid again by {SecondPaymentIntentId}; the second payment was refunded in full",
+                        receivable.Id, receivable.StripePaymentIntentId, paymentIntentId);
+                }
+
+                return BusinessResult.Success();
+            }
+
+            receivable.MarkPaid(paymentIntentId, DateTimeOffset.UtcNow);
+            if (receivable.Kind is ReceivableKind.CashCancellationFee or ReceivableKind.Lockout)
+            {
+                CalculateOrderPay.EnqueueForCrew(receivable.Order!, pending);
+            }
+
+            var key = MessageKeys.FeeReceipt(receivable.Id);
+            pending.Enqueue(
+                QueueNames.GenerateReceipt,
+                new QueueEnvelope<GenerateReceiptMessage>(
+                    key, receivable.TenantId, new GenerateReceiptMessage(receivable.OrderId, language, receivable.Id)),
+                key);
+
+            logger.LogInformation("Receivable {ReceivableId} paid by {PaymentIntentId}", receivable.Id, paymentIntentId);
+            return BusinessResult.Success();
+        }
+
+        /// <summary>
+        /// An off-session charge was declined, or the bank asked for the customer to authenticate: the
+        /// customer is e-mailed a pay link for the amount (owner ruling 2026-09-28, decision 18). The link is
+        /// created here, so an unreachable Stripe throws, the processed-event stamp rolls back and Stripe
+        /// redelivers. With card payments switched off no link is made and the receivable stays open.
+        /// </summary>
+        private async Task<BusinessResult> OfferPayLink(string receivableId, PaymentIntent intent, CancellationToken cancellationToken)
+        {
+            var receivable = await receivableRepository.GetByIdIgnoringTenantAsync(receivableId, cancellationToken);
+            if (receivable is not { IsOpen: true })
+            {
+                logger.LogInformation(
+                    "Failed charge {PaymentIntentId} names receivable {ReceivableId}, which is not open; no pay link",
+                    intent.Id, receivableId);
+                return BusinessResult.Success();
+            }
+
+            if (!string.IsNullOrEmpty(receivable.TenantId))
+            {
+                tenantProvider.SetTenantOverride(receivable.TenantId);
+            }
+
+            logger.LogWarning(
+                "Off-session charge {PaymentIntentId} for receivable {ReceivableId} failed ({FailureCode})",
+                intent.Id, receivable.Id, intent.LastPaymentError?.Code);
+
+            if (!stripeConfig.Enabled)
+            {
+                logger.LogWarning("Card payments are switched off; receivable {ReceivableId} stays open with no pay link", receivable.Id);
+                return BusinessResult.Success();
+            }
+
+            var link = await stripeClientFactory.CreateClient().CreateReceivableCheckoutSessionAsync(
+                receivable.Id,
+                receivable.PayLinkSessionId,
+                receivable.OrderId,
+                receivable.Order!.DisplayOrderNumber,
+                receivable.Amount,
+                receivable.Currency!.Code,
+                cancellationToken);
+            receivable.RecordPayLink(link.Id);
+
+            var key = MessageKeys.ReceivablePayLinkEmail(receivable.Id, receivable.Attempts);
+            pending.Enqueue(
+                QueueNames.SendEmail,
+                new QueueEnvelope<SendReceivablePayLinkEmailMessage>(
+                    key,
+                    receivable.TenantId,
+                    new SendReceivablePayLinkEmailMessage(receivable.Id, receivable.Attempts, link.Url, receivable.TenantId)),
+                key);
+
             return BusinessResult.Success();
         }
 

@@ -1,5 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import {
+  AdminCancelOrderAsLockoutCommand,
+  AdminCancelOrderAsLockoutResponse,
   AdminCancelOrderAsNoShowCommand,
   AdminCancelOrderAsNoShowResponse,
   AdminCancelOrderCommand,
@@ -213,6 +215,23 @@ export class AdminOrderOpsFacade extends UnsubscribeControlDirective {
     );
   }
 
+  cancelAsLockout(
+    orderId: string,
+    currencyCode: string | undefined,
+    onSuccess: () => void
+  ): void {
+    if (!orderId) {
+      return;
+    }
+    const command = new AdminCancelOrderAsLockoutCommand();
+    command.orderId = orderId;
+    this.run(
+      this.adminClient.adminOrderClient.cancelLockout(command),
+      (outcome) => this.announceLockout(outcome, currencyCode),
+      onSuccess
+    );
+  }
+
   recordCashReceived(orderId: string, onSuccess: () => void): void {
     const employeeId = this.cashEmployeeId();
     const receivedAt = this.cashReceivedAt();
@@ -235,14 +254,34 @@ export class AdminOrderOpsFacade extends UnsubscribeControlDirective {
     );
   }
 
+  private announceLockout(
+    outcome: AdminCancelOrderAsLockoutResponse,
+    currencyCode: string | undefined
+  ): void {
+    const receivable =
+      typeof outcome.receivableAmount === 'number'
+        ? this.translate.instant('pages.order_management.ops.lockout.receivable_opened', {
+            amount: this.money(outcome.receivableAmount, currencyCode),
+          })
+        : this.translate.instant('pages.order_management.ops.lockout.no_receivable');
+    this.snackbar.showSuccessTranslated(
+      'pages.order_management.ops.lockout.success',
+      { fee: this.money(outcome.feeAmount, currencyCode), receivable },
+      NO_SHOW_OUTCOME_TOAST_MS
+    );
+  }
+
+  private money(amount: number, currencyCode: string | undefined): string {
+    return formatMoney(amount, currencyCode, localeFor(this.translate.currentLang), {
+      fractionDigits: 2,
+    });
+  }
+
   private announceNoShow(
     outcome: AdminCancelOrderAsNoShowResponse,
     currencyCode: string | undefined
   ): void {
-    const money = (amount: number) =>
-      formatMoney(amount, currencyCode, localeFor(this.translate.currentLang), {
-        fractionDigits: 2,
-      });
+    const money = (amount: number) => this.money(amount, currencyCode);
     const refund =
       typeof outcome.refundedAmount === 'number'
         ? this.translate.instant('pages.order_management.ops.no_show.refunded', {

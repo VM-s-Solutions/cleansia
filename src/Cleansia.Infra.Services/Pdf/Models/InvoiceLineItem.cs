@@ -1,3 +1,5 @@
+using Cleansia.Core.Domain.Enums;
+
 namespace Cleansia.Infra.Services.Pdf.Models;
 
 public record InvoiceLineItem
@@ -7,4 +9,5 @@ public record InvoiceLineItem
     public required decimal Quantity { get; init; }
     public required decimal UnitPrice { get; init; }
     public required decimal LineTotal { get; init; }
+    public PayLineType LineType { get; init; } = PayLineType.Job;
 }

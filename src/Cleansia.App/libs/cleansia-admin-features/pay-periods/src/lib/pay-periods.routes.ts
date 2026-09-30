@@ -1,4 +1,6 @@
 import { Route } from '@angular/router';
+import { permissionGuard } from '@cleansia/admin-services';
+import { Policy } from '@cleansia/services';
 
 export const payPeriodsRoutes: Route[] = [
   {
@@ -8,6 +10,13 @@ export const payPeriodsRoutes: Route[] = [
         (m) => m.PayPeriodManagementComponent
       ),
     data: { title: 'page_titles.admin.pay_periods' },
+  },
+  {
+    path: 'cash-held',
+    loadComponent: () =>
+      import('./cash-held/cash-held.component').then((m) => m.CashHeldComponent),
+    canActivate: [permissionGuard],
+    data: { title: 'page_titles.admin.cash_held', permission: Policy.CanViewCashHeld },
   },
   {
     path: ':id',

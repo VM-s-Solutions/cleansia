@@ -34,6 +34,8 @@ public static class CompanyArchiveRecords
         decimal? AppliedVatRate,
         string CurrencyId,
         decimal CreditAppliedAmount,
+        DirtinessLevel DirtinessLevel,
+        decimal DirtinessSurchargeAmount,
         decimal ExpressSurchargeAmount,
         decimal? TierDiscountAmount,
         LoyaltyTier? TierAtPurchase,
@@ -88,6 +90,7 @@ public static class CompanyArchiveRecords
         decimal BasePay,
         decimal ExtrasPay,
         decimal ExpensesPay,
+        decimal DirtinessPay,
         decimal BonusPay,
         decimal DeductionPay,
         decimal MinPay,
@@ -170,6 +173,7 @@ public static class CompanyArchiveRecords
         decimal BonusAmount,
         decimal DeductionAmount,
         decimal TotalAmount,
+        decimal CashSetOffAmount,
         string CurrencyId,
         EmployeeInvoiceStatus Status,
         string? CountryId,
@@ -185,6 +189,17 @@ public static class CompanyArchiveRecords
         string? CancellationReason,
         DateTime? CancelledAt,
         string? CancelledBy,
+        DateTimeOffset CreatedOn);
+
+    /// <summary>The company's cash in a cleaner's hands (decision 23); a write-off's note is free text and stays out.</summary>
+    public sealed record CashLedgerEntry(
+        string Id,
+        string EmployeeId,
+        string? OrderId,
+        string CurrencyId,
+        CashLedgerEntryKind Kind,
+        decimal Amount,
+        DateTime OccurredAt,
         DateTimeOffset CreatedOn);
 
     public sealed record Employee(

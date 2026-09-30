@@ -57,6 +57,7 @@ struct RecurringTemplate: Equatable, Identifiable {
     let timeOfDay: String
     let rooms: Int
     let bathrooms: Int
+    let dirtiness: Dirtiness
     let savedAddressId: String
     let addressLine: String?
     let selectedServiceIds: [String]
@@ -88,12 +89,14 @@ struct CreateRecurringInput: Equatable {
     let timeOfDay: String
     let rooms: Int
     let bathrooms: Int
+    let dirtiness: Dirtiness
     let savedAddressId: String
     let selectedServiceIds: [String]
     let selectedPackageIds: [String]
     let paymentType: Int
     let startsOn: Date
     let preferredEmployeeId: String?
+    let earlyPerformanceRequested: Bool
 }
 
 /// `UpdateRecurringBooking` replaces every field it is sent, `EndsOn` and `PreferredEmployeeId` included,
@@ -106,6 +109,7 @@ struct UpdateRecurringInput: Equatable {
     let timeOfDay: String
     let rooms: Int
     let bathrooms: Int
+    let dirtiness: Dirtiness
     let savedAddressId: String
     let selectedServiceIds: [String]
     let selectedPackageIds: [String]

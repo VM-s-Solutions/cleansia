@@ -28,7 +28,8 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 ///
 /// <para>Refuses orders that are not awaiting confirmation, not owned by the caller, or not linked to a
 /// template — those belong on the standard booking flow — a cash occurrence whose job needs more
-/// than one cleaner, and an occurrence closer than the minimum lead time a one-off booking gets.
+/// than one cleaner or that <see cref="CustomerCashStanding"/> does not admit, and an occurrence closer
+/// than the minimum lead time a one-off booking gets.
 /// → /flows/booking-and-pricing#recurring-bookings</para>
 /// </summary>
 [AuditAction("customer.order.recurring.confirm", Audience = AuditAudience.Customer, ResourceType = "Order")]
@@ -46,6 +47,7 @@ public class ConfirmRecurringOrder
         decimal TotalPrice,
         string? CurrencyCode,
         PaymentType PaymentType,
+        DirtinessLevel DirtinessLevel,
         DateTimeOffset CleaningDateTime,
         decimal LeadTimeHours) : ICustomerAuditPayload;
 
@@ -74,6 +76,9 @@ public class ConfirmRecurringOrder
 
     public class Handler(
         IOrderAccessService orderAccessService,
+        IOrderRepository orderRepository,
+        ISavedCardRepository savedCardRepository,
+        IReceivableRepository receivableRepository,
         ICreditAccountRepository creditAccountRepository,
         IUserRepository userRepository,
         IUserSessionProvider userSessionProvider,
@@ -144,6 +149,30 @@ public class ConfirmRecurringOrder
                     nameof(order.PaymentType), BusinessErrorMessage.OrderCashNotAvailable));
             }
 
+            if (order.PaymentType == PaymentType.Cash
+                && !await CustomerCashStanding.OwesNothingAsync(
+                    receivableRepository, sessionUserId, cancellationToken))
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(order.PaymentType), BusinessErrorMessage.OrderCashUnpaidReceivable));
+            }
+
+            if (order.PaymentType == PaymentType.Cash
+                && !await CustomerCashStanding.HasRoomForAnotherOpenCashBookingAsync(
+                    orderRepository, sessionUserId, cancellationToken))
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(order.PaymentType), BusinessErrorMessage.OrderCashOpenBookingsLimitReached));
+            }
+
+            if (order.PaymentType == PaymentType.Cash
+                && !await CustomerCashStanding.HoldsUsableCardAsync(
+                    savedCardRepository, sessionUserId, order.CurrencyId, cancellationToken))
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(order.PaymentType), BusinessErrorMessage.OrderCashRequiresSavedCard));
+            }
+
             var result = order.PaymentType switch
             {
                 PaymentType.Cash => await HandleCashAsync(order, cancellationToken),
@@ -167,6 +196,7 @@ public class ConfirmRecurringOrder
                     TotalPrice: order.TotalPrice,
                     CurrencyCode: order.Currency?.Code,
                     PaymentType: order.PaymentType,
+                    DirtinessLevel: order.DirtinessLevel,
                     CleaningDateTime: new DateTimeOffset(DateTime.SpecifyKind(order.CleaningDateTime, DateTimeKind.Utc)),
                     LeadTimeHours: Math.Round((decimal)(order.CleaningDateTime - nowUtc).TotalHours, 2)));
             }
@@ -183,9 +213,10 @@ public class ConfirmRecurringOrder
             // occurrence is not a cleaner taking it (owner ruling 2026-09-08). The stamp is what
             // OrderAvailability admits a recurring cash occurrence on; the cleaner records the cash at
             // the door and the receipt follows at completion (owner ruling 2026-09-28).
-            order.ConfirmByCustomer(DateTime.UtcNow);
+            var confirmedAt = DateTime.UtcNow;
+            order.ConfirmByCustomer(confirmedAt);
 
-            OrderBookedEmail.Enqueue(order, Constants.Language.English, pending);
+            OrderBookedEmail.Enqueue(order, Constants.Language.English, pending, new DateTimeOffset(confirmedAt, TimeSpan.Zero));
 
             // Q-BROWSE-01 (b): an unconfirmed recurring cash occurrence is not offerable, because
             // AutoCancelStaleRecurringOrders retracts it. The stamp above is that transition, so this is

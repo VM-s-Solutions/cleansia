@@ -48,7 +48,6 @@
       "order": "Objednat úklid",
       "orders": "Moje objednávky",
       "order_detail": "Detail objednávky",
-      "order_contract": "Smlouva o dílo",
       "profile": "Můj profil",
       "disputes": "Moje reklamace",
       "rewards": "Moje odměny",
@@ -514,13 +513,12 @@
         "help_center": "Centrum nápovědy",
         "gdpr_link": "Ochrana údajů a GDPR",
         "terms_link": "Obchodní podmínky",
-        "work_contract_link": "Smlouva o dílo",
+        "complaints_procedure_link": "Reklamační řád",
         "description": "Profesionální mobilní úklidové služby. Nábytek, koberce, matrace — přijedeme k vám.",
         "address": "Praha, Česká republika",
         "services_col": "Služby",
         "hours_label": "Otevřeno denně",
         "hours_value": "08:00–20:00",
-        "registration": "IČO [IČO] · DIČ [DIČ]",
         "apps": "Stáhnout aplikaci",
         "apps_coming_soon": "Již brzy",
         "svc_home": "Úklid domácnosti",
@@ -574,6 +572,8 @@
         "no_registration": "Bez registrace",
         "service_label": "Co je potřeba uklidit",
         "size_label": "Velikost bytu",
+        "dirtiness_label": "Míra znečištění",
+        "dirtiness_included": "{{line}} je v ceně: {{amount}}",
         "date_label": "Kdy",
         "date_hint": "Nepovinné. Objednávka méně než 4 hodiny předem má expresní příplatek.",
         "price_label": "Pevná cena",
@@ -682,6 +682,18 @@
       "credit": {
         "auto_applied": "Kredit — automaticky se použije na vaši nejbližší objednávku.",
         "expires_on": "Vyprší {{date}} — každá objednávka lhůtu prodlouží."
+      },
+      "saved_cards": {
+        "title": "Uložené karty",
+        "desc": "Karta, která zaručuje vaše rezervace s platbou v hotovosti. Strhávají se z ní jen poplatky a nezaplacená hotovost, se kterými jste při uložení souhlasili.",
+        "empty": "Nemáte uloženou kartu. Až budete příště platit v hotovosti, požádáme vás o její uložení.",
+        "load_error": "Uložené karty se nepodařilo načíst.",
+        "card_label": "{{brand}} končící {{last4}}",
+        "expires": "Platnost do {{expiry}} · pro rezervace v {{currency}}",
+        "remove_confirm": "Odebrat kartu končící {{last4}}? Při příští rezervaci s platbou v hotovosti vás znovu požádáme o uložení karty.",
+        "remove_success": "Karta byla odebrána.",
+        "setup_success": "Karta je uložená. Teď můžete dokončit rezervaci s platbou v hotovosti.",
+        "setup_cancelled": "Žádná karta nebyla uložena. Chcete-li platit v hotovosti, uložte si kartu — nebo zaplaťte kartou."
       }
     },
     "services": {
@@ -796,6 +808,7 @@
       "missing": {
         "heading": "Ještě chybí:",
         "services": "Vyberte alespoň jednu službu nebo balíček.",
+        "dirtiness": "Vyberte, jak moc je u vás uklizeno.",
         "address": "Vyberte adresu z našeptávače.",
         "first_name": "Vyplňte jméno.",
         "last_name": "Vyplňte příjmení.",
@@ -805,6 +818,7 @@
         "time": "Vyberte čas, který je ještě volný.",
         "address_fields": "Doplňte ulici, město a PSČ.",
         "terms": "Potvrďte souhlas s podmínkami.",
+        "early_performance": "Potvrďte, že chcete, aby úklid začal ve lhůtě pro odstoupení.",
         "payment": "Zvolte, jak chcete platit."
       },
       "new_address": "Zadat novou adresu",
@@ -915,6 +929,7 @@
       "step_when_title": "Kdy máme přijít?",
       "steps": {
         "services": "Služby",
+        "dirtiness": "Znečištění",
         "address": "Adresa",
         "datetime": "Datum a čas",
         "payment": "Platba",
@@ -968,7 +983,10 @@
       "summary_services": "Služby",
       "summary_with_plus": "S Plus byste platili",
       "terms_already_accepted": "Podmínky služby a zásady ochrany osobních údajů jste odsouhlasili se svým účtem.",
-      "work_contract_notice": "Potvrzením objednávky uzavíráte s uklízečkou či uklízečem smlouvu o dílo za <a href='/work-contract' target='_blank' rel='noopener'>těchto podmínek</a>.",
+      "contract_notice": "Potvrzením objednávky uzavíráte smlouvu o úklidu s provozní společností trhu, na kterém se vaše domácnost nachází, za jejích <a href='/terms' target='_blank' rel='noopener'>obchodních podmínek</a>. Úklid provede uklízeč jako subdodavatel společnosti a stranou vaší smlouvy není.",
+      "early_performance": {
+        "early-performance-draft-2026-09-29": "Žádám, aby úklid začal ve 14denní lhůtě pro odstoupení od smlouvy, a beru na vědomí, že po úplném provedení úklidu právo na odstoupení ztrácím."
+      },
       "time_label": "Vyberte čas",
       "time_note": "Šedé časy jsou dnes už mimo dojezd. Denní okna {{first}}:00–{{last}}:00.",
       "title": "Objednat úklid",
@@ -982,8 +1000,51 @@
       "cash_needs_card": "Počet uklízečů potřebných pro tuto objednávku: {{count}}. Hotově lze platit jen objednávky, které zvládne jeden uklízeč, tuto proto zaplatíte kartou.",
       "cash_pending": "Zda můžete platit hotově, potvrdíme, jakmile bude známa cena.",
       "cash_cleared": "Platba hotově už pro tuto objednávku není možná, a proto není vybrán žádný způsob platby. Zvolte, jak chcete platit.",
+      "cash_owed": "Platba v hotovosti není možná, dokud není uhrazena částka z dřívější rezervace. Zaplaťte ji níže a tato rezervace na vás počká, až se k objednávce vrátíte — nebo tuto rezervaci zaplaťte hned kartou.",
       "cash_sign_in": "Přihlásit se",
-      "plus_perk_grace": "60 minut po každé objednávce na bezplatné zrušení místo 15 minut"
+      "plus_perk_grace": "60 minut po každé objednávce na bezplatné zrušení místo 15 minut",
+      "dirtiness": {
+        "title": "Jak moc je u vás uklizeno?",
+        "lead": "Vyberte stav, který nejlépe odpovídá celé domácnosti.",
+        "hint": "Pokud váháte mezi dvěma stupni, zvolte vyšší. Uklízečka pak má dost času a výsledek bude odpovídat.",
+        "no_surcharge": "Bez příplatku",
+        "surcharge": "+{{rate}} %",
+        "normal": {
+          "name": "Běžné",
+          "lead": "Domácnost se uklízí pravidelně, naposledy zhruba před 1–2 týdny.",
+          "sign_1": "prach na nábytku a policích, drobečky a chlupy na podlaze",
+          "sign_2": "v koupelně běžné vodní skvrny, WC bez usazenin",
+          "sign_3": "kuchyň po běžném vaření: linka a sporák otřít, bez připečenin",
+          "sign_4": "nádobí umyté nebo v myčce"
+        },
+        "increased": {
+          "name": "Zvýšené",
+          "lead": "Poslední úklid před 3–6 týdny, nebo domácnost se zvířaty či malými dětmi.",
+          "sign_1": "viditelná vrstva prachu, skvrny a zašlá místa na podlaze",
+          "sign_2": "vodní kámen na bateriích, sprchovém koutě a vaně, zašlé spáry",
+          "sign_3": "mastnota na kuchyňské lince, obkladu a digestoři, znečištěná trouba nebo mikrovlnka zvenku",
+          "sign_4": "chlupy zvířat na sedačce, kobercích a v rozích",
+          "surcharge_line": "Příplatek za zvýšené znečištění"
+        },
+        "heavy": {
+          "name": "Silné",
+          "lead": "Déle než 2 měsíce bez úklidu, nebo dlouhodobě zanedbaná domácnost.",
+          "sign_1": "silný vodní kámen a usazeniny, které nejdou dolů jedním setřením",
+          "sign_2": "připečená mastnota na sporáku, digestoři a skříňkách",
+          "sign_3": "černé skvrny (plíseň) na silikonu nebo ve spárách",
+          "sign_4": "zaschlé nečistoty na podlaze, lepkavé povrchy, výrazný zápach",
+          "surcharge_line": "Příplatek za silné znečištění"
+        }
+      },
+      "card_capture": {
+        "title": "Uložte si kartu pro platbu v hotovosti",
+        "intro": "Rezervace s platbou v hotovosti je zaručena kartou uloženou ve vašem účtu. Uložení karty nic nestojí a uklízeči dál platíte v hotovosti.",
+        "consent": {
+          "card-guarantee-draft-2026-09-28": "Souhlasím, že Cleansia může z této karty, aniž by se mě pokaždé ptala, strhnout poplatek za pozdní zrušení, poplatek, když se uklízeč nedostane do mé domácnosti, hotovost, kterou jsem za rezervaci nezaplatil(a), a doplatek, který jsem schválil(a)."
+        },
+        "continue": "Uložit kartu",
+        "cancel": "Teď ne"
+      }
     },
     "orders": {
       "title": "Moje objednávky",
@@ -1097,10 +1158,6 @@
       "step_refunded": "Vráceno",
       "step_not_assigned_yet": "Zatím nepřidělen",
       "crew_others": "a další {{count}}",
-      "work_contract": {
-        "accepted_line": "Smlouvu o dílo přijal(a) {{name}} dne {{date}}, verze {{version}}",
-        "read": "Číst smlouvu"
-      },
       "the_booking": "Objednávka",
       "label_when": "Termín",
       "label_address": "Adresa",
@@ -1140,6 +1197,7 @@
       },
       "estimated_hours": "odhadem {{hours}} h",
       "label_market": "Trh",
+      "label_dirtiness": "Míra znečištění",
       "cleaner_no_show": {
         "action": "Uklízeč nedorazil",
         "note": "Objednaný čas začátku už uplynul, takže rezervaci už nelze zrušit. Pokud uklízeč nedorazil, dejte nám vědět a náš tým se na to podívá."
@@ -1153,24 +1211,19 @@
         "begun_in_app": "Platbu za tento úklid jste začali v mobilní aplikaci. Dokončete ji prosím tam."
       }
     },
-    "order_contract": {
-      "eyebrow": "Smlouva k vaší objednávce",
-      "title": "Smlouva o dílo",
-      "back": "Zpět na objednávku",
-      "facts": {
-        "title": "Zakázka, jak byla přijata",
-        "order_number": "Číslo objednávky",
-        "window": "Datum a čas",
-        "price": "Cena",
-        "location": "Místo",
-        "rooms_bathrooms": "Pokoje / koupelny",
-        "services": "Služby",
-        "packages": "Balíčky",
-        "extras": "Doplňky"
-      },
-      "accepted_on": "Přijato uklízečkou či uklízečem dne {{date}}, verze {{version}}",
-      "accepted_in_language": "Přijato v jazyce: {{language}}",
-      "load_error": "Smlouvu se nepodařilo načíst. Zkuste to prosím znovu."
+    "amount_due": {
+      "title": "Dlužná částka",
+      "intro": "Dokud nebude uhrazena, nelze objednávat s platbou v hotovosti. Rezervací placených kartou se to netýká.",
+      "after_payment": "Právě jste zaplatili? Může chvíli trvat, než odsud zmizí.",
+      "pay": "Zaplatit",
+      "load_error": "Nepodařilo se ověřit, zda nám něco dlužíte.",
+      "none": "Nic už nedlužíte.",
+      "kind": {
+        "cash_cancellation_fee": "Poplatek za pozdní zrušení",
+        "lockout": "Poplatek: uklízeč se nedostal dovnitř",
+        "unpaid_cash": "Nezaplacená hotovost za úklid",
+        "top_up": "Doplatek, který jste schválili"
+      }
     },
     "checkout": {
       "success": {
@@ -1827,8 +1880,8 @@
   "privacy_page": {
     "title": "Ochrana osobních údajů"
   },
-  "work_contract_page": {
-    "title": "Smlouva o dílo"
+  "complaints_page": {
+    "title": "Reklamační řád"
   },
   "api": {
     "auth": {
@@ -1843,6 +1896,7 @@
       "invalid_apple_token": "Přihlášení přes Apple se nezdařilo. Zkuste to znovu.",
       "social_account_not_found": "K tomuto přihlášení jsme nenašli žádný účet. Nejprve se zaregistrujte.",
       "invalid_password_format": "Vaše heslo nesplňuje požadavky.",
+      "admin_password_too_short": "Heslo administrátora musí mít alespoň 12 znaků.",
       "invalid_reset_token": "Tento kód pro obnovení hesla je neplatný nebo vypršel.",
       "same_reset_password": "Vaše nové heslo se musí lišit od stávajícího.",
       "current_password_invalid": "Vaše stávající heslo není správné.",
@@ -1874,7 +1928,8 @@
       "document_not_found": "Tento právní dokument zatím není k dispozici."
     },
     "consent": {
-      "terms_not_accepted": "Pro pokračování prosím přijměte obchodní podmínky a zásady ochrany osobních údajů."
+      "terms_not_accepted": "Pro pokračování prosím přijměte obchodní podmínky a zásady ochrany osobních údajů.",
+      "early_performance_not_requested": "Pro pokračování prosím potvrďte, že žádáte o zahájení služby ve 14denní lhůtě pro odstoupení od smlouvy."
     },
     "order": {
       "cleaning_date": {
@@ -1906,6 +1961,9 @@
       },
       "payment_gateway_unavailable": "Platby jsou dočasně nedostupné. Zkuste to prosím za chvíli.",
       "cash_not_available": "Platba hotově je možná jen po přihlášení a u objednávky, kterou zvládne jeden uklízeč.",
+      "cash_requires_saved_card": "Pro platbu v hotovosti si nejdřív uložte kartu jako záruku — nebo zaplaťte kartou.",
+      "cash_open_bookings_limit_reached": "Už máte nejvyšší povolený počet nezaplacených objednávek v hotovosti. Zvolte kartu, nebo hotovost znovu, až bude některá z nich zaplacena.",
+      "cash_unpaid_receivable": "Máte u nás nezaplacenou částku, například storno poplatek. Zatím zaplaťte kartou; v hotovosti budete moci platit znovu, až bude uhrazena.",
       "country_operator_mismatch": "Tuto adresu obsluhuje jiná společnost Cleansia, proto ji zde nelze objednat.",
       "payment": {
         "already_paid": "Tato objednávka už byla zaplacena."
@@ -2015,6 +2073,14 @@
       "express_waiver": {
         "no_longer_available": "Vaše bezplatné expresní vylepšení už pro tuto objednávku není k dispozici — expresní objednávky zahrnuté v tomto měsíci byly právě vyčerpány. Objednat můžete i za běžnou expresní cenu."
       }
+    },
+    "saved_card": {
+      "consent_not_accepted": "Před uložením karty prosím potvrďte souhlas, že na ni mohou být účtovány poplatky a nezaplacená hotovost.",
+      "not_found": "Tuto uloženou kartu jsme nenašli."
+    },
+    "receivable": {
+      "not_found": "Tuto dlužnou částku jsme nenašli.",
+      "not_open": "Tato částka už byla uhrazena nebo prominuta."
     },
     "recurring_booking": {
       "not_found": "Tato opakovaná objednávka už neexistuje.",
@@ -2182,6 +2248,8 @@
     "price_pending": "Vyberte službu",
     "field_services": "Služby",
     "error_services": "Vyberte alespoň jednu službu nebo balíček.",
+    "dirtiness_label": "Míra znečištění",
+    "error_dirtiness": "Vyberte, jak moc je u vás uklizeno.",
     "error_time": "Vyberte čas.",
     "error_address": "Vyberte adresu, nebo níže přidejte novou.",
     "error_starts_on": "Vyberte datum začátku.",
@@ -2197,6 +2265,8 @@
     "cash_unchecked": "Nepodařilo se ověřit, zda lze tento rozvrh platit hotově. Uložte ho za chvíli znovu, nebo zvolte kartu.",
     "payment_placeholder": "Zvolte způsob platby",
     "error_payment": "Zvolte, jak se bude rozvrh platit.",
+    "early_performance_label": "Žádost o zahájení ve lhůtě pro odstoupení",
+    "error_early_performance": "Potvrďte, že chcete, aby úklidy začínaly ve lhůtě pro odstoupení.",
     "cash_change_title": "Tento rozvrh už nelze platit hotově",
     "cash_change_body": "Každý úklid potřebuje více než jednoho uklízeče a hotově lze platit jen úklidy, které zvládne jeden uklízeč, proto se z něj neobjednávají žádné nové úklidy, dokud ho nezměníte. Přepněte ho na platbu kartou nebo vyberte služby či balíčky, které zvládne jeden uklízeč. Úklid, který už je z něj objednaný, můžete v Objednávkách zrušit zdarma, dokud ho nepřijme žádný uklízeč.",
     "cash_change_action": "Upravit rozvrh"

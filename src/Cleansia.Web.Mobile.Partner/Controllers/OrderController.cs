@@ -199,6 +199,19 @@ public class OrderController(IMediator mediator) : MobileApiController(mediator)
         return HandleResult<ReportOrderIssue.Response>(result);
     }
 
+    [HttpPost("ReportLockout")]
+    [Permission(Policy.CanStartOrder)]
+    [EnableRateLimiting("auth")]
+    [ProducesResponseType(typeof(ReportOrderLockout.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> ReportLockout([FromBody] ReportOrderLockout.Command command, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<ReportOrderLockout.Response>(result);
+    }
+
     [HttpPut("UpdateNote")]
     [Permission(Policy.CanUpdateOrderNote)]
     [EnableRateLimiting("auth")]
@@ -346,8 +359,8 @@ public class OrderController(IMediator mediator) : MobileApiController(mediator)
         return HandleResult<AcceptWorkContract.Response>(result);
     }
 
-    // The accepted contract for work, keyed on the acceptance (ADR-0068 D4): the order's customer, the
-    // cleaner who accepted it and an administrator read it; anyone else answers order.not_found.
+    // The accepted contract for work, keyed on the acceptance (ADR-0068 D4): the cleaner who accepted it
+    // and an administrator read it; anyone else answers order.not_found.
     [HttpGet("GetWorkContract")]
     [Permission(Policy.CanViewOrderDetail)]
     [EnableRateLimiting("interactive")]

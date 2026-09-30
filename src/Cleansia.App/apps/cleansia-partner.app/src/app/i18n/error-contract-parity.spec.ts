@@ -450,6 +450,9 @@ const PARTNER_SURFACE_ERROR_KEYS: readonly string[] = [
   'auth.invalid_reset_token',
   'auth.refresh_token_reused',
   'auth.same_reset_password',
+  // The reset refuses an administrator a password under 12 characters once the code checks out;
+  // an administrator may reset through this host, which admits the profile.
+  'auth.admin_password_too_short',
   // Same GoogleAuth endpoint as the customer host: an identity matching no account is refused rather
   // than provisioned, so the partner surface can return it too.
   'auth.social_account_not_found',
@@ -485,6 +488,11 @@ const PARTNER_SURFACE_ERROR_KEYS: readonly string[] = [
   'order.no_available_spots',
   'order.not_confirmed',
   'order.too_early_to_start',
+  // The assigned cleaner's "cannot get in" report (owner ruling 2026-09-28, decision 11).
+  'order.lockout.too_early',
+  'order.lockout.photo_required',
+  'order.lockout.already_reported',
+  'order.lockout.order_closed',
   'order.not_found',
   'order.not_in_progress',
   'order.not_takeable',
@@ -495,6 +503,8 @@ const PARTNER_SURFACE_ERROR_KEYS: readonly string[] = [
   'order.take.already_completed',
   'order.time_conflict',
   'order.weekly_limit_reached',
+  // A cash job refused to a cleaner holding more of the company's cash than its float cap (decision 25).
+  'order.cash_float_cap_exceeded',
   // The contract for work (ADR-0068): the take and the standalone accept refuse a missing or a
   // foreign text, Start and Complete refuse a seat with no acceptance, and the preview answers the
   // legal key for an order booked under no document.

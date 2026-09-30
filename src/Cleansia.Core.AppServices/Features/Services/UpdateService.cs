@@ -18,7 +18,8 @@ public class UpdateService
         string Description,
         int EstimatedTime,
         Dictionary<string, CreateService.ServicePriceInput>? Prices,
-        Dictionary<string, CreateService.TranslationInput>? Translations) : ICommand<Response>;
+        Dictionary<string, CreateService.TranslationInput>? Translations,
+        int MinutesPerRoom = 0) : ICommand<Response>;
 
     public record Response(string ServiceId);
 
@@ -67,6 +68,10 @@ public class UpdateService
                 .GreaterThanOrEqualTo(0)
                 .WithMessage(BusinessErrorMessage.MustBePositive);
 
+            RuleFor(x => x.MinutesPerRoom)
+                .GreaterThanOrEqualTo(0)
+                .WithMessage(BusinessErrorMessage.MustBePositive);
+
             RuleFor(x => x.Translations)
                 .MustCoverAllActiveLanguages(languageRepository);
 
@@ -106,7 +111,8 @@ public class UpdateService
                 command.CategoryId,
                 command.Name,
                 command.Description,
-                command.EstimatedTime);
+                command.EstimatedTime,
+                command.MinutesPerRoom);
 
 
             // ONE ROW PER CURRENCY THE FORM SENT, upserted, and rows for a currency the payload does

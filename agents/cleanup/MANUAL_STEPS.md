@@ -178,15 +178,16 @@ tables that already exist — failing the `migrate-database` job every other dep
 **Action:** drop the DEV database, deploy, then **run the seed yourself** — a deployed host runs as
 `Production` (no `ASPNETCORE_ENVIRONMENT` is set anywhere; `deploy/bicep/main.bicep`), the seeder runs only
 under `IsDevelopment`, and the deploy applies the migration bundle only. Run
-`gh workflow run execute-sql.yml -f environment=DEV -f script_path=insert_seed_data.sql` (DEV only — the
-workflow refuses the fixture against PRO). Pre-production, so there is no data to preserve; the seed
-repopulates it (`sql-scripts/insert_seed_data.sql` — which now inserts the `Tenants` row first and
+`gh workflow run execute-sql.yml -f environment=DEV -f script_path=prod-bootstrap.sql`, then the same with
+`script_path=insert_seed_data.sql` (DEV only — the workflow refuses the fixture against PRO; the fixture
+needs the bootstrap first). Pre-production, so there is no data to preserve; the seed repopulates it
+(`sql-scripts/prod-bootstrap.sql` inserts the `Tenants` row first, and `insert_seed_data.sql`
 stamps every seeded business row `cleansia-cz`; a database seeded by any earlier script has `NULL`
 tenants that the NOT NULL columns would refuse, which is one more reason the drop is not optional).
 
 **One script to run by hand alongside it:** `sql-scripts/seed/insert_email_template_translations_promo_code.sql`.
 Nothing under `seed/` is run by a workflow — the auto-seed reads only the root
-`insert_seed_data.sql` (`CleansiaStartupBase.cs:284`). Skip it and the promo e-mail still sends, but
+`prod-bootstrap.sql` and `insert_seed_data.sql` (`CleansiaStartupBase.DevelopmentSeedScripts`). Skip it and the promo e-mail still sends, but
 with every copy slot blank: the renderer strips placeholders it has no value for, so the failure is a
 near-empty e-mail rather than an error anyone sees. The six older e-mails have the same shape via
 `seed/insert_email_translations.sql`, so this is the existing convention, not a new one.

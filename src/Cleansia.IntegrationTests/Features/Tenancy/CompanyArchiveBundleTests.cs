@@ -57,6 +57,7 @@ public sealed class CompanyArchiveBundleTests(PostgresContainerFixture fixture) 
     [
         "audit/admin-action-audits.jsonl",
         "audit/employee-action-audits.jsonl",
+        "books/cash-ledger-entries.jsonl",
         "books/company-info.jsonl",
         "books/credit-accounts.jsonl",
         "books/credit-transactions.jsonl",
@@ -150,6 +151,8 @@ public sealed class CompanyArchiveBundleTests(PostgresContainerFixture fixture) 
                 Assert.Equal("Bratislava", receipted.GetProperty("city").GetString());
                 Assert.Equal("Completed", receipted.GetProperty("currentStatus").GetString());
                 Assert.Single(receipted.GetProperty("extras").EnumerateArray());
+                Assert.Equal("Increased", receipted.GetProperty("dirtinessLevel").GetString());
+                Assert.Equal(3.60m, receipted.GetProperty("dirtinessSurchargeAmount").GetDecimal());
                 // The cash handed over sits beside the price: an administrator may record less than it.
                 Assert.Equal(100m, receipted.GetProperty("cashCollectedAmount").GetDecimal());
                 var anonymised = Assert.Single(orders, o => o.GetProperty("id").GetString() == seeded.AnonymisedOrderId);
@@ -208,9 +211,23 @@ public sealed class CompanyArchiveBundleTests(PostgresContainerFixture fixture) 
                 var invoice = Assert.Single(Lines(Archived("books/employee-invoices.jsonl")));
                 Assert.Equal("INV-2026-000001", invoice.GetProperty("invoiceNumber").GetString());
                 Assert.False(invoice.TryGetProperty("adminNotes", out _));
+                Assert.Equal(50m, invoice.GetProperty("cashSetOffAmount").GetDecimal());
+
+                // The cash the company's cleaners held (decision 23): every movement, and never a note's free text.
+                var ledger = Lines(Archived("books/cash-ledger-entries.jsonl"));
+                Assert.Equal(
+                    new[] { "Collection", "SetOff", "WriteOff" },
+                    ledger.Select(l => l.GetProperty("kind").GetString()).Order(StringComparer.Ordinal));
+                Assert.All(ledger, l => Assert.Equal(seeded.EmployeeBId, l.GetProperty("employeeId").GetString()));
+                Assert.Equal(-50m, ledger.Single(l => l.GetProperty("kind").GetString() == "SetOff").GetProperty("amount").GetDecimal());
+                Assert.All(ledger, l => Assert.Equal(
+                    new[] { "amount", "createdOn", "currencyId", "employeeId", "id", "kind", "occurredAt", "orderId" },
+                    l.EnumerateObject().Select(p => p.Name).Order(StringComparer.Ordinal)));
 
                 Assert.Single(Lines(Archived("books/pay-periods.jsonl")));
-                Assert.Single(Lines(Archived("books/order-employee-pays.jsonl")));
+                var payRow = Assert.Single(Lines(Archived("books/order-employee-pays.jsonl")));
+                Assert.Equal(18m, payRow.GetProperty("dirtinessPay").GetDecimal());
+                Assert.Equal(78m, payRow.GetProperty("totalPay").GetDecimal());
                 // Both receipt rows are the books; only the one whose PDF still exists has a file in the
                 // layout below.
                 Assert.Equal(2, Lines(Archived("books/order-receipts.jsonl")).Count);
@@ -492,6 +509,7 @@ public sealed class CompanyArchiveBundleTests(PostgresContainerFixture fixture) 
         var receiptedOrder = NewOrder("bundle-b-receipted", SvkId, EurId, customerB.Id, DateTime.UtcNow.AddDays(-40), B);
         receiptedOrder.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Completed, receiptedOrder));
         receiptedOrder.AddSelectedExtras([OrderExtra.Create(receiptedOrder, extra, 12m)]);
+        receiptedOrder.SetDirtinessSurcharge(DirtinessLevel.Increased, 3.60m);
         receiptedOrder.SetWorkContractDocument(contractDocument);
         var seatB = OrderEmployee.Create(receiptedOrder, cleanerB);
         receiptedOrder.AddAssignedEmployee(seatB);
@@ -534,13 +552,19 @@ public sealed class CompanyArchiveBundleTests(PostgresContainerFixture fixture) 
 
         var period = Stamped(PayPeriod.Create(new DateOnly(2026, 9, 1), new DateOnly(2026, 9, 15)).Close(AdminBId, "last period").MarkAsPaid(), B);
         ctx.PayPeriods.Add(period);
-        var invoice = Stamped(EmployeeInvoice.Create(cleanerB.Id, period.Id, 1, 60m, EurId, "2026000001", "INV-2026-000001"), B);
+        var invoice = Stamped(EmployeeInvoice.Create(cleanerB.Id, period.Id, 1, 78m, EurId, "2026000001", "INV-2026-000001"), B);
+        invoice.SetOffCash(50m);
         invoice.SetPdfBlobUrl(_blobs.Container(AppConstants.BlobContainers.GeneratedInvoices).Put("2026-09/emp-b/INV-2026-000001.pdf", InvoicePdf).ToString());
         invoice.Approve(AdminBId, adminNotes: "checked by hand").MarkAsPaid();
         ctx.EmployeeInvoices.Add(invoice);
-        var pay = Stamped(OrderEmployeePay.Create(receiptedOrder.Id, cleanerB.Id, period.Id, EurId, basePay: 60m, totalPay: 60m), B);
+        var pay = Stamped(OrderEmployeePay.Create(receiptedOrder.Id, cleanerB.Id, period.Id, EurId, basePay: 60m, dirtinessPay: 18m, totalPay: 78m), B);
         pay.AssignToInvoice(invoice.Id);
         ctx.OrderEmployeePays.Add(pay);
+        ctx.CashLedgerEntries.AddRange(
+            Stamped(Core.Domain.Payments.CashLedgerEntry.ForCollection(receiptedOrder), B),
+            Stamped(Core.Domain.Payments.CashLedgerEntry.ForSetOff(invoice), B),
+            Stamped(Core.Domain.Payments.CashLedgerEntry.ForWriteOff(
+                cleanerB.Id, EurId, 1m, "dropped a coin in the lift shaft", FrozenOn.AddDays(-20).UtcDateTime), B));
 
         ctx.AdminActionAudits.Add(new AdminActionAudit
         {

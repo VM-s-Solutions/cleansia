@@ -9,10 +9,11 @@ import {
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { CleansiaButtonComponent, CleansiaTextareaComponent } from '@cleansia/components';
 import { OrderStatusLabelPipe } from '@cleansia/pipes';
 import {
+  dirtinessLevelOption,
   DisputeReason,
   MembershipStatus,
   OrderStatus,
@@ -28,6 +29,7 @@ import { clearOnBackForwardRestore, formatMoney, localeFor } from '@cleansia/uti
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { DialogModule } from 'primeng/dialog';
 import { SkeletonModule } from 'primeng/skeleton';
+import { AmountDueComponent } from '../amount-due/amount-due.component';
 import { OrderPreferredOfferComponent } from './components/order-preferred-offer.component';
 import { OrderDetailFacade } from './order-detail.facade';
 import { OrderMarketFacade } from '../order-market.facade';
@@ -80,7 +82,6 @@ interface EntryDetail {
   imports: [
     CommonModule,
     FormsModule,
-    RouterLink,
     TranslatePipe,
     SkeletonModule,
     DialogModule,
@@ -88,6 +89,7 @@ interface EntryDetail {
     CleansiaTextareaComponent,
     OrderStatusLabelPipe,
     OrderPreferredOfferComponent,
+    AmountDueComponent,
   ],
   providers: [OrderDetailFacade, OrderPreferredOfferFacade, OrderMarketFacade],
   templateUrl: './order-detail.component.html',
@@ -110,7 +112,6 @@ export class OrderDetailComponent implements OnInit {
   readonly freeCancellationHours = this.facade.freeCancellationHours;
   readonly reviewSubmitting = this.facade.reviewSubmitting;
   readonly downloading = this.facade.downloading;
-  readonly workContractAcceptances = this.facade.workContractAcceptances;
 
   readonly canCancel = this.facade.canCancel;
   readonly canReportCleanerNoShow = this.facade.canReportCleanerNoShow;
@@ -327,10 +328,21 @@ export class OrderDetailComponent implements OnInit {
       lines.push({ label: pkg.name ?? '', amount: pkg.price ?? 0 });
     }
 
+    const level = dirtinessLevelOption(order.dirtinessLevel);
+    const dirtinessSurcharge =
+      level && order.dirtinessSurchargeAmount > 0 ? order.dirtinessSurchargeAmount : 0;
+
     const serviceNames = (order.selectedServices ?? []).map((s) => s.name).filter(Boolean);
-    const servicesTotal = (order.originalSubtotal ?? 0) - packagesTotal;
+    const servicesTotal = (order.originalSubtotal ?? 0) - packagesTotal - dirtinessSurcharge;
     if (serviceNames.length > 0) {
       lines.push({ label: serviceNames.join(', '), amount: servicesTotal });
+    }
+
+    if (level && dirtinessSurcharge > 0) {
+      lines.push({
+        labelKey: `pages.order.dirtiness.${level.key}.surcharge_line`,
+        amount: dirtinessSurcharge,
+      });
     }
 
     const discount = (amount: number | undefined, labelKey: string) => {
@@ -343,6 +355,11 @@ export class OrderDetailComponent implements OnInit {
     discount(order.promoDiscountAmount, 'pages.order_detail.discount_promo');
 
     return lines;
+  });
+
+  readonly dirtinessLevelKey = computed(() => {
+    const level = dirtinessLevelOption(this.order()?.dirtinessLevel);
+    return level ? `pages.order.dirtiness.${level.key}.name` : null;
   });
 
   /**
@@ -468,10 +485,6 @@ export class OrderDetailComponent implements OnInit {
 
   goBack(): void {
     this.router.navigate([CleansiaCustomerRoute.ORDERS]);
-  }
-
-  contractLink(acceptanceId: string): string[] {
-    return ['/', CleansiaCustomerRoute.ORDERS, this.order()?.id ?? '', 'contract', acceptanceId];
   }
 
   downloadReceipt(): void {

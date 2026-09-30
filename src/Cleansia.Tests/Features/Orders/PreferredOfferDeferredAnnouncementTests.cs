@@ -241,6 +241,8 @@ public class PreferredOfferDeferredAnnouncementTests
 
         return new ConfirmRecurringOrder.Handler(
             OrderAccessDoubles.Over(_orderRepository, session),
+            _orderRepository.Object,
+            SavedCards.SavedCardDoubles.Guaranteed(), Mock.Of<IReceivableRepository>(),
             new Mock<ICreditAccountRepository>().Object,
             new Mock<IUserRepository>().Object,
             session.Object,
@@ -287,6 +289,8 @@ public class PreferredOfferDeferredAnnouncementTests
             Mock.Of<IUserNotificationRepository>(),
             Mock.Of<IStripeClientFactory>(),
             Mock.Of<ITenantRepository>(),
+            Mock.Of<ISavedCardRepository>(),
+            Mock.Of<IReceivableRepository>(),
             NullLogger<HandlePaymentNotification.Handler>.Instance);
     }
 

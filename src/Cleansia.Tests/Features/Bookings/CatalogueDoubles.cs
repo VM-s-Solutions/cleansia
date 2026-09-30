@@ -25,9 +25,9 @@ internal static class CatalogueDoubles
         return mock.Object;
     }
 
-    public static Service Service(string id, int minutes)
+    public static Service Service(string id, int minutes, int minutesPerRoom = 0)
     {
-        var service = Core.Domain.Services.Service.Create("category-1", id, "Under test", minutes);
+        var service = Core.Domain.Services.Service.Create("category-1", id, "Under test", minutes, minutesPerRoom);
         service.Id = id;
         return service;
     }

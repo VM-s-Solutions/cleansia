@@ -69,6 +69,9 @@ struct CustomerOrderDetail: Equatable {
     let bathrooms: Int
     let estimatedMinutes: Int
     let extras: [String: Bool]
+    let dirtiness: Dirtiness
+    /// Inside ``total``: the stored surcharge the level added, itemised on the receipt.
+    let dirtinessSurchargeAmount: Double
 
     let services: [CustomerOrderService]
     let packages: [CustomerOrderPackage]
@@ -99,8 +102,6 @@ struct CustomerOrderDetail: Equatable {
     let statusHistory: [OrderStatusTrackDto]
     let review: CustomerOrderReview?
     let preferredOffer: PreferredOfferDetails?
-    /// One per current seat whose cleaner accepted the contract for work; empty before any acceptance.
-    let workContractAcceptances: [WorkContractAcceptance]
 
     var status: OrderStatus? {
         statusCode?.toOrderStatus()
@@ -130,6 +131,8 @@ extension CustomerOrderDetail {
         bathrooms = try item.bathrooms.require("bathrooms")
         estimatedMinutes = try item.estimatedTime.require("estimatedTime")
         extras = item.extras ?? [:]
+        dirtiness = try Dirtiness(wire: item.dirtinessLevel.require("dirtinessLevel"))
+        dirtinessSurchargeAmount = try item.dirtinessSurchargeAmount.require("dirtinessSurchargeAmount")
 
         services = try (item.selectedServices ?? []).map(CustomerOrderService.init)
         packages = try (item.selectedPackages ?? []).map(CustomerOrderPackage.init)
@@ -153,37 +156,6 @@ extension CustomerOrderDetail {
         statusHistory = item.statusHistory ?? []
         review = try item.review.map(CustomerOrderReview.init)
         preferredOffer = item.preferredOffer
-        workContractAcceptances = item.workContractAcceptances?.compactMap(WorkContractAcceptance.init) ?? []
-    }
-}
-
-/// One crew member's acceptance of the contract for work, keyed on the seat. Carries no name: the
-/// crew entry whose `id` equals `orderEmployeeId` does, already masked for the customer's eyes.
-///
-/// A row with no id or no instant is dropped rather than rendered unreadable — a line that cannot say
-/// who or when says nothing the crew card does not — while a missing version reads as absent.
-struct WorkContractAcceptance: Equatable {
-    let id: String
-    let orderEmployeeId: String
-    let acceptedOn: Date
-    let documentVersion: String
-
-    init(id: String, orderEmployeeId: String, acceptedOn: Date, documentVersion: String) {
-        self.id = id
-        self.orderEmployeeId = orderEmployeeId
-        self.acceptedOn = acceptedOn
-        self.documentVersion = documentVersion
-    }
-
-    init?(_ dto: WorkContractAcceptanceDto) {
-        guard let id = dto.id, !id.isBlank,
-              let orderEmployeeId = dto.orderEmployeeId, !orderEmployeeId.isBlank,
-              let acceptedOn = dto.acceptedOn
-        else { return nil }
-        self.id = id
-        self.orderEmployeeId = orderEmployeeId
-        self.acceptedOn = acceptedOn
-        documentVersion = dto.documentVersion ?? ""
     }
 }
 

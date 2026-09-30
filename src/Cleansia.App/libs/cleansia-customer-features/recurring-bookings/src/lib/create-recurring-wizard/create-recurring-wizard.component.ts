@@ -13,19 +13,27 @@ import {
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FoamEdgeComponent } from '@cleansia-customer/home';
-import { PaymentType } from '@cleansia/customer-services';
+import {
+  CardCaptureFacade,
+  DIRTINESS_LEVELS,
+  DirtinessLevel,
+  PaymentType,
+} from '@cleansia/customer-services';
 import { CleansiaCustomerRoute } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import {
   CleansiaAddressAutocompleteComponent,
+  CleansiaButtonComponent,
   CleansiaSelectComponent,
   CleansiaTextInputComponent,
 } from '@cleansia/components';
 import { MapboxAddressSuggestion } from '@cleansia/services';
 import { formatMoney, localeFor } from '@cleansia/utils';
 import { ConfirmationService } from 'primeng/api';
+import { CheckboxModule } from 'primeng/checkbox';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DatePickerModule } from 'primeng/datepicker';
+import { DialogModule } from 'primeng/dialog';
 import { RecurringBookingsFacade } from '../recurring-bookings.facade';
 import {
   DAY_OF_WEEK_CHIPS,
@@ -61,11 +69,14 @@ import {
     FoamEdgeComponent,
     DatePickerModule,
     ConfirmDialogModule,
+    DialogModule,
+    CheckboxModule,
+    CleansiaButtonComponent,
     CleansiaSelectComponent,
     CleansiaTextInputComponent,
     CleansiaAddressAutocompleteComponent,
   ],
-  providers: [RecurringBookingsFacade, ConfirmationService],
+  providers: [RecurringBookingsFacade, CardCaptureFacade, ConfirmationService],
   templateUrl: './create-recurring-wizard.component.html',
 })
 export class CreateRecurringWizardComponent implements OnInit {
@@ -85,6 +96,9 @@ export class CreateRecurringWizardComponent implements OnInit {
   /** The booking wizard's own counts, and the server's cap: rooms run to eight, bathrooms to four. */
   protected readonly roomChoices = [1, 2, 3, 4, 5, 6, 7, 8];
   protected readonly bathroomChoices = [1, 2, 3, 4];
+  protected readonly dirtinessLevels = DIRTINESS_LEVELS;
+  /** Each level's copy lists four signs, `sign_1` to `sign_4`. */
+  protected readonly dirtinessSigns = [1, 2, 3, 4];
   protected readonly listRoute = ['/' + CleansiaCustomerRoute.MEMBERSHIP, 'recurring'];
 
   /** Flattened from the three period groups — the board draws one select. */
@@ -169,6 +183,7 @@ export class CreateRecurringWizardComponent implements OnInit {
         }
       }
     }
+    this.facade.restoreParkedForm(this.route.snapshot.paramMap.get('id'));
   }
 
   // ─── The price ─────────────────────────────────────────────────────
@@ -199,10 +214,12 @@ export class CreateRecurringWizardComponent implements OnInit {
   missingLabels(): string {
     const keys: Record<MissingField, string> = {
       services: 'recurring_booking.field_services',
+      dirtiness: 'recurring_booking.dirtiness_label',
       time: 'recurring_booking.time_label',
       address: 'recurring_booking.address_label',
       startsOn: 'recurring_booking.starts_on_label',
       payment: 'recurring_booking.payment_label',
+      earlyPerformance: 'recurring_booking.early_performance_label',
     };
     return this.facade
       .missing()
@@ -261,6 +278,10 @@ export class CreateRecurringWizardComponent implements OnInit {
 
   setBathrooms(value: number | null): void {
     this.facade.updateFormData({ bathrooms: value ?? 0 });
+  }
+
+  selectDirtinessLevel(dirtinessLevel: DirtinessLevel): void {
+    this.facade.updateFormData({ dirtinessLevel });
   }
 
   toggleService(id: string): void {

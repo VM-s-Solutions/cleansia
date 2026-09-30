@@ -392,7 +392,9 @@ The CI pipeline applies committed migrations via the EF bundle on every deploy (
 job), before the app deploys — no manual step needed. The runner's IP is **not** your admin IP and is
 **not** an Azure service, so the `migrate-database` job **opens a temporary, per-run Postgres firewall
 rule for the runner's own IP, applies the migration, then always removes the rule** (even on failure).
-You don't manage that — it's automatic.
+You don't manage that — it's automatic. In prod, where the database and Key Vault are private, the job
+also turns their public access on for the runner and off again —
+[`AZURE-PROD-POSTURE.md`](AZURE-PROD-POSTURE.md) §6, which also has the admin `psql` procedure.
 
 **You normally never run migrations by hand** — the CI deploy does it. The command below is only a
 fallback, and unlike steps 5–6 it needs the **.NET 10 SDK** (bare Cloud Shell does **not** have it — you'd
@@ -524,9 +526,11 @@ Prod is the **same pipeline** (`deploy-azure.yml`) pointed at the `*-weu-prod` f
 work the YAML cannot do. Do it **in this order**:
 
 > **Prod reliability posture (T-0359):** `weu.prod.bicepparam` now also flips deployment slots,
-> autoscale, Postgres HA/geo-backup, and ACR image retention — every knob, its chosen default, the
-> slot-swap workflow follow-up, and the deliberately-not-flipped Q-INFRA-03 private-networking flag
-> are documented in [`deploy/AZURE-PROD-POSTURE.md`](AZURE-PROD-POSTURE.md). Note especially:
+> autoscale, Postgres HA/geo-backup, ACR image retention and the private database and Key Vault
+> (Q-INFRA-03, E-3), storage on managed identity and the least-privilege database login (E-4) — every
+> knob, its chosen default, the slot-swap workflow follow-up, and how CI and
+> an admin's `psql` reach the private database through a temporary public window are documented in
+> [`deploy/AZURE-PROD-POSTURE.md`](AZURE-PROD-POSTURE.md). Note especially:
 > **geo-redundant backup only exists if it is on at the FIRST provision** (immutable after create).
 
 ### P0 console access checklist
@@ -591,8 +595,9 @@ any of this — it lives in each provider's console — so it is recorded here a
 | `AZURE_CLIENT_ID` | the OIDC app id (after P2 federation) | `azure/login` |
 | `AZURE_TENANT_ID` | tenant id | `azure/login` |
 | `AZURE_SUBSCRIPTION_ID` | subscription id | `azure/login` |
-| `POSTGRES_ADMIN_PASSWORD` | a **new** strong alphanumeric password (§1 rules; never dev's) | the Bicep `@secure()` param |
-| `ADMIN_IP_ADDRESS` | your laptop's public IP (§1 caveats apply) | the Postgres admin firewall rule |
+| `POSTGRES_ADMIN_PASSWORD` | a **new** strong alphanumeric password (§1 rules; never dev's) | the Bicep `@secure()` param, and the migration's administrator connection |
+| `POSTGRES_APP_PASSWORD` | another **new** password, at least 24 letters and digits — **prod only**, the provision job refuses a prod deploy without it | the least-privilege `cleansia_app` login the hosts connect as: KV push → `ConnectionStrings--cleansia-db`, and the migrate job's grant ([`AZURE-PROD-POSTURE.md`](AZURE-PROD-POSTURE.md) §7) |
+| `ADMIN_IP_ADDRESS` | your laptop's public IP (§1 caveats apply) | the Bicep `adminIpAddress` param — required, but no rule is created while the database is private (admin `psql`: [`AZURE-PROD-POSTURE.md`](AZURE-PROD-POSTURE.md) §6) |
 | `CI_PRINCIPAL_ID` | the OIDC SP object id — optional; empty skips the Bicep grant (the deploy self-grants Secrets Officer) | the Bicep `ciPrincipalId` param |
 | `ACR_NAME` | `acrcleansiaweuprod` (deterministic — same naming rule as §4's note) | the Functions `az acr build` step |
 | `AZURE_STATIC_WEB_APPS_API_TOKEN_PARTNER` | `swa-cleansia-partner-weu-prod` deploy token (fill after P5) | partner SPA deploy |
@@ -613,11 +618,13 @@ any of this — it lives in each provider's console — so it is recorded here a
 | `SENTRY_DSN` | the **real** prod DSN — **mandatory**, not a nice-to-have. Prod App Insights samples at 50%, so it records every other exception; Sentry records all of them and is the only source of first-occurrence alerting, issue grouping and regression detection. Covers the five API hosts and the Functions worker; the SSR host remains uncovered | KV push → `Sentry--Dsn` |
 | `MAPBOX_TOKEN` | the prod Mapbox token | KV push → `Mapbox--GeocodingAccessToken` |
 
-> The 2 derivable Key Vault secrets (`Storage--ConnectionString`, `ConnectionStrings--cleansia-db`)
-> are written by the Bicep `derivedSecrets` module on the first provision, exactly as in dev (§6) —
-> nothing to set. The `migrate-database` job reads `ConnectionStrings--cleansia-db` from Key Vault at
-> run time (no `DB_CONNECTION_STRING` secret). JWT issuer/audience are code-side constants — no KV
-> secret (see `deploy/bicep/modules/derivedSecrets.bicep`).
+> Prod has **neither** of dev's 2 derived Key Vault secrets (E-4, [`AZURE-PROD-POSTURE.md`](AZURE-PROD-POSTURE.md)
+> §7): there is no `Storage--ConnectionString` — the hosts reach storage with their managed identity
+> and the account refuses shared keys — and `ConnectionStrings--cleansia-db` is the `cleansia_app`
+> login's, written by the CI push from `POSTGRES_APP_PASSWORD`. The `migrate-database` job connects as
+> the administrator from `POSTGRES_ADMIN_PASSWORD` (no `DB_CONNECTION_STRING` secret) and then grants
+> the application login. JWT issuer/audience are code-side constants — no KV secret (see
+> `deploy/bicep/modules/derivedSecrets.bicep`).
 
 > **MANUAL_STEP P5 — first provision.** Preferred: dispatch **Actions → "Deploy to PRO" → Run
 > workflow → mode = `what-if`**, review the preview, then re-dispatch with **mode = `deploy`** and
@@ -636,10 +643,97 @@ any of this — it lives in each provider's console — so it is recorded here a
 >
 > Paste into the two `AZURE_STATIC_WEB_APPS_API_TOKEN_*` secrets (P4), dispatch
 > **Deploy to PRO → mode = `deploy`** again, approve, and smoke-test the §9 checklist against the
-> `*-weu-prod` hostnames.
+> `*-weu-prod` hostnames — except the admin API, whose smoke is the one below: in prod it answers
+> **401** on its own hostname by design.
+
+> **MANUAL_STEP P7 — reference data and the first administrator.** The owner runs this; an agent never
+> runs anything against PRO. The migration creates the schema and seeds nothing but the legal texts, so
+> until this step nobody can register or book: an anonymous request names a market, and no market has
+> an operating company yet. Never while a `Deploy to PRO` run is in flight.
+>
+> 1. Open the database window as in [`AZURE-PROD-POSTURE.md`](AZURE-PROD-POSTURE.md) §6 and run the
+>    bootstrap as the administrator, from the repository root:
+>
+>    ```bash
+>    psql "host=$PG.postgres.database.azure.com port=5432 dbname=Cleansia user=cleansia_admin sslmode=require" \
+>      -v ON_ERROR_STOP=1 -f sql-scripts/prod-bootstrap.sql
+>    ```
+>
+>    It creates the operating company `cleansia-cz`, the five languages, every country with Czechia
+>    serviced, the Czech service cities, CZK, the Czech market and its operator, the Czech invoice
+>    configuration, the cleaner document requirements (the insurance certificate among them), the e-mail
+>    texts, the four loyalty tiers and the Czech size ladder. One transaction; a second run changes
+>    nothing. It writes no users, orders, promo codes, catalogue, prices, Plus plans or company record.
+>    `execute-sql.yml` cannot run it: the database is private and that workflow opens no window.
+> 2. The first administrator: register on the customer site with the address that will administer,
+>    with a password of at least 12 characters, and confirm the e-mail. In the same window set
+>    `target_email` in `sql-scripts/set-admin-role.sql` and run it the same way. Invite that person to
+>    the admin console with `admin_console` (P0 item 8). Every later administrator comes from the console.
+> 3. Close the window (§6), even if a step failed.
+> 4. In the admin console, from the launch values sheet (decision 77): the company record, the catalogue
+>    with its CZK prices and service durations, the cleaner pay rates, the Cleansia Plus plans with their
+>    **live** Stripe Price ids, and the insurance figure on the Czech market. The CZK loyalty divisor and
+>    apology credit (currency form) and the tier thresholds and discounts (loyalty tiers) start at the
+>    documented defaults; change them there where the sheet differs.
 
 Provision order recap: **P1 environment+reviewers → P2 OIDC federation → P3 resource group →
-P4 secrets → P5 what-if, then deploy → P6 SWA tokens + final deploy + smoke test.**
+P4 secrets → P5 what-if, then deploy → P6 SWA tokens + final deploy + smoke test → P7 reference data +
+first administrator.**
+
+### The admin API is reachable only through the admin console (E-1)
+
+[`weu.prod.bicepparam`](bicep/weu.prod.bicepparam) sets `adminApiLinkedToAdminSpa = true`, so the
+provision links `api-cleansia-admin-weu-prod` as the backend of `swa-cleansia-admin-weu-prod`. Linking
+needs the Standard tier, which DEV's Free SWA is not; DEV is unchanged and its admin SPA still calls
+`admin-api.dev.cleansia.cz` directly.
+
+- `https://admin.cleansia.cz/api/*` is proxied to the admin App Service **after** the SWA's own route
+  rule (`/*` → `admin_console`), so every API call first needs the Microsoft (Entra) sign-in and the
+  invitation. The Cleansia e-mail and password still apply behind it.
+- Azure gives the App Service the **Azure Static Web Apps (Linked)** identity provider: its production
+  slot answers **401** to anything the SWA did not proxy, `api-cleansia-admin-weu-prod.azurewebsites.net`
+  included.
+- The link guards the production slot only, and authentication settings stay with their slot across a
+  swap, so the Bicep closes the **staging slot** as well: 401 for everything except `/health`, which the
+  deploy warms before every swap.
+- The admin SPA's production build calls **same-origin `/api`** (`environment.prod.ts`,
+  `apiBaseUrl: ''`), so the admin API needs no custom domain and no CORS entry.
+- **Cookies and CSRF hold unchanged.** The auth cookies are host-only (`HttpOnly`, `Secure`,
+  `SameSite=Strict`, `Path=/`, no `Domain`), so the proxied login response sets them on
+  `admin.cleansia.cz` and every same-origin `/api` call sends them back. `X-CSRF-Token` is derived from
+  the access token's `jti` and checked without reference to `Origin` or `Host`; the proxy forwards the
+  header and the whole path, so the CSRF opt-out prefixes still match. The admin interceptor treats a
+  relative `/api/` URL as its own API and attaches both.
+
+What follows from it:
+
+- Every admin needs an Entra identity invited with `admin_console`, with MFA on it (P0 item 8) — that
+  sign-in is now the admin API's second factor.
+- The SWA proxy caps an API request at **45 seconds** and carries no WebSockets (the admin app uses
+  none). An admin request that runs longer fails at the proxy.
+- The SWA sign-in lasts about 8 hours. Once it lapses, the SPA's next API call is redirected to
+  Microsoft sign-in and surfaces as a network error until the page is reloaded.
+- The per-IP `auth` rate limit on anonymous admin calls (login, refresh: 10 a minute) may see the SWA's
+  address instead of the admin's, so all admins could share one bucket. Signed-in calls are limited
+  per account, and the per-account lockout is unchanged.
+- **Setting the flag back to `false` reopens nothing.** Azure keeps the link and both authentication
+  configurations. To open the host again: SWA → APIs → Unlink, then App Service → Authentication →
+  delete *Azure Static Web Apps (Linked)* → Remove authentication, and the same on the staging slot.
+
+Smoke, after the first prod deploy with the link (P6):
+
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' -X POST https://api-cleansia-admin-weu-prod.azurewebsites.net/api/AdminAuth/Login          # 401
+curl -s -o /dev/null -w '%{http_code}\n' -X POST https://api-cleansia-admin-weu-prod-staging.azurewebsites.net/api/AdminAuth/Login  # 401
+curl -s -o /dev/null -w '%{http_code}\n' https://api-cleansia-admin-weu-prod-staging.azurewebsites.net/health               # 200
+curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' -X POST https://admin.cleansia.cz/api/AdminAuth/Login              # 302 → /.auth/login/aad
+```
+
+- [ ] Signed in to the console in a stock browser: the login response's `Set-Cookie` lands on
+      `admin.cleansia.cz`, and a later save (a POST) sends the cookies and `X-CSRF-Token` and answers 200.
+- [ ] Idle past the 15-minute access token, then save again: the refresh runs and the save succeeds. A
+      302 to `/.auth/login/aad` where the API's 401 should be means the SWA's `401` response override is
+      rewriting the API's own answers — report it, the SPA's refresh depends on seeing that 401.
 
 ---
 
@@ -669,7 +763,7 @@ P4 secrets → P5 what-if, then deploy → P6 SWA tokens + final deploy + smoke 
 | `swa-partner` | `swa-cleansia-partner-weu-<env>` | `partner.dev.cleansia.cz` | `partner.cleansia.cz` |
 | `swa-admin` | `swa-cleansia-admin-weu-<env>` | `admin.dev.cleansia.cz` | `admin.cleansia.cz` |
 | `api-partner` | `api-cleansia-partner-weu-<env>` | `api.dev.cleansia.cz` | `api.cleansia.cz` |
-| `api-admin` | `api-cleansia-admin-weu-<env>` | `api-admin.dev.cleansia.cz` | `api-admin.cleansia.cz` |
+| `api-admin` | `api-cleansia-admin-weu-<env>` | `api-admin.dev.cleansia.cz` | **not needed** (reached as `admin.cleansia.cz/api` through the admin SWA, §11) |
 | `api-customer` | `api-cleansia-customer-weu-<env>` | `api-customer.dev.cleansia.cz` | `api-customer.cleansia.cz` |
 | `api-partner-mobile` / `api-customer-mobile` | the two mobile hosts | **not needed** | **not needed** (body-token — no cookies, no browser CORS) |
 
@@ -729,9 +823,8 @@ GSI fails with an "origin not allowed" 403. API hostnames are not needed there.
   a *deployed-dev* web build needs a build config pointing at the `*.dev.cleansia.cz` API origins
   (today's `environment.staging.ts` targets the raw `azurewebsites.net` hosts — correct for the local
   devremote proxy, cross-site if served deployed).
-- **Admin auth cross-host** — `environment.prod.ts` (admin) sends auth to `api.cleansia.cz` (the
-  partner API), whose committed prod `CorsOrigins` does **not** include `admin.cleansia.cz`; the
-  architect must ratify or fix that pairing in T-0400 AC1/AC3 before prod cut-over.
+- **Admin API (prod)** — no cross-host pairing to align: the admin SPA calls same-origin `/api`, which
+  the admin SWA proxies to its linked backend (§11).
 - **Cookies** — nothing to change: host-only (no `Domain` attribute), `HttpOnly`/`Secure`/`Strict`
   untouched; same-site is exactly what the subdomains provide.
 - **JWT issuer/audience** — nothing to align: they are code-side constants (the `JwtSettings:Issuer`

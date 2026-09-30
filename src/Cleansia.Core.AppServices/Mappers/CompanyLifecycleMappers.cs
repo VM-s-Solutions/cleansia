@@ -41,5 +41,6 @@ public static class CompanyLifecycleMappers
             UnpaidInvoices: facts.UnpaidInvoices,
             UninvoicedPayRows: facts.UninvoicedPayRows,
             OpenDisputes: facts.OpenDisputes,
+            CleanersHoldingCash: facts.CleanersHoldingCash,
             ChargebackHorizonEndsOn: chargebackHorizonEndsOn);
 }

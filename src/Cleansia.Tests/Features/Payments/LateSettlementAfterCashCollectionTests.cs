@@ -69,6 +69,8 @@ public class LateSettlementAfterCashCollectionTests
         Mock.Of<IUserNotificationRepository>(),
         Mock.Of<IStripeClientFactory>(),
         Mock.Of<ITenantRepository>(),
+        Mock.Of<ISavedCardRepository>(),
+        Mock.Of<IReceivableRepository>(),
         NullLogger<HandlePaymentNotification.Handler>.Instance);
 
     private Order ArrangeOrder(bool collectedInCash)

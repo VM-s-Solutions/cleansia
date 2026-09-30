@@ -17,6 +17,7 @@ import { OrderAdditionalServicesComponent } from './components/order-additional-
 import { OrderCustomerInfoComponent } from './components/order-customer-info.component';
 import { OrderExtrasComponent } from './components/order-extras.component';
 import { OrderHeaderComponent } from './components/order-header.component';
+import { OrderLockoutComponent } from './components/order-lockout.component';
 import { OrderPackagesComponent } from './components/order-packages.component';
 import { OrderPaymentInfoComponent } from './components/order-payment-info.component';
 import { OrderPhotosComponent } from './components/order-photos.component';
@@ -45,6 +46,7 @@ import {
   findCallerWorkContractAcceptance,
   computeElapsedTime,
   buildCurrencyOptions,
+  dirtinessLevelLabelKey,
   hasExtras,
   getExtrasEntries,
 } from './order-details.helpers';
@@ -68,6 +70,7 @@ import {
     OrderServiceDetailsComponent,
     OrderAdditionalServicesComponent,
     OrderPhotosComponent,
+    OrderLockoutComponent,
   ],
   templateUrl: './order-details.component.html',
   providers: [OrderDetailsFacade, DialogService],
@@ -315,6 +318,10 @@ export class OrderDetailsComponent implements OnInit {
     this.facade.openMarkCashCollectedDialog();
   }
 
+  protected onLockoutReported(): void {
+    this.retryLoadOrder();
+  }
+
   protected openAcceptWorkContract(): void {
     this.facade.openAcceptWorkContractDialog();
   }
@@ -350,6 +357,7 @@ export class OrderDetailsComponent implements OnInit {
       rooms: [{ value: '', disabled: true }],
       bathrooms: [{ value: '', disabled: true }],
       estimatedTime: [{ value: '', disabled: true }],
+      dirtinessLevel: [{ value: '', disabled: true }],
       paymentType: [{ value: '', disabled: true }],
       totalPrice: [{ value: '', disabled: true }],
       currency: [{ value: '', disabled: true }],
@@ -386,6 +394,7 @@ export class OrderDetailsComponent implements OnInit {
         'pages.order_details.estimated_time_minutes',
         { minutes: orderDetails.estimatedTime }
       ),
+      dirtinessLevel: this.translateService.instant(dirtinessLevelLabelKey(orderDetails.dirtinessLevel)),
       paymentType: orderDetails.paymentType.name,
       totalPrice: this.formatCurrency(orderDetails.totalPrice, orderDetails.currency.code),
       currency: `${orderDetails.currency.name} (${orderDetails.currency.code})`,

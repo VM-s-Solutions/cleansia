@@ -179,10 +179,16 @@ final class OrderPhotosGateTests: XCTestCase {
         XCTAssertEqual(open, [4])
     }
 
+    func testEntrancePhotosAreOpenFromConfirmedThroughInProgress() throws {
+        let open = try (0 ... 6).filter { try OrderDetail(item(status: $0, isMine: true)).photoWindowOpen(for: ._3) }
+        XCTAssertEqual(open, [2, 3, 4])
+    }
+
     func testAStatusThisBuildDoesNotKnowOpensNeitherRail() throws {
         let unknown = try OrderDetail(item(status: 99, isMine: true))
         XCTAssertFalse(unknown.photoWindowOpen(for: ._1))
         XCTAssertFalse(unknown.photoWindowOpen(for: ._2))
+        XCTAssertFalse(unknown.photoWindowOpen(for: ._3))
     }
 
     private func makePhotosVM() -> OrderPhotosViewModel {

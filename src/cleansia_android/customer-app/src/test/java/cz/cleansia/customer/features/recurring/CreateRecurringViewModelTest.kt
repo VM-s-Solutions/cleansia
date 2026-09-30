@@ -11,6 +11,7 @@ import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.booking.BookingApi
 import cz.cleansia.customer.core.booking.CashEligibility
+import cz.cleansia.customer.core.booking.DirtinessLevel
 import cz.cleansia.customer.core.booking.PropertySize
 import cz.cleansia.customer.core.booking.QuoteOrderCommand
 import cz.cleansia.customer.core.booking.QuoteOrderResponse
@@ -283,7 +284,9 @@ class CreateRecurringViewModelTest {
     private fun fillValidForm(vm: CreateRecurringViewModel) {
         vm.setSavedAddressId("addr-1")
         vm.toggleService("svc-1")
+        vm.setDirtinessLevel(DirtinessLevel.Normal)
         vm.setStartsOn("2026-07-01T00:00:00Z")
+        vm.setEarlyPerformanceRequested(true)
     }
 
     private val plusRefusal = "Recurring cleanings are a Cleansia Plus benefit — subscribe to set one up."
@@ -334,6 +337,7 @@ class CreateRecurringViewModelTest {
         rooms: Int = 3,
         bathrooms: Int = 2,
         cleaningDateTime: String? = null,
+        dirtinessLevel: DirtinessLevel = DirtinessLevel.Normal,
     ) {
         coEvery { orderRepo.getById("ord-7") } returns ApiResult.Success(
             OrderDetailDto(
@@ -341,6 +345,7 @@ class CreateRecurringViewModelTest {
                 rooms = rooms,
                 bathrooms = bathrooms,
                 cleaningDateTime = cleaningDateTime,
+                dirtinessLevel = dirtinessLevel,
                 totalPrice = 100.0,
                 originalSubtotal = 100.0,
                 appliedDiscountSource = 0,
@@ -449,6 +454,7 @@ class CreateRecurringViewModelTest {
         selectedPackageIds = listOf("pkg-3"),
         paymentType = 2,
         startsOn = "2026-09-15T00:00:00Z",
+        dirtinessLevel = DirtinessLevel.Heavy,
     )
 
     @Test
@@ -470,6 +476,7 @@ class CreateRecurringViewModelTest {
         assertEquals(setOf("pkg-3"), state.selectedPackageIds)
         assertEquals(2, state.paymentType)
         assertEquals("2026-09-15T00:00:00Z", state.startsOnIso)
+        assertEquals(DirtinessLevel.Heavy, state.dirtinessLevel)
     }
 
     @Test
@@ -510,6 +517,7 @@ class CreateRecurringViewModelTest {
         assertEquals(listOf("svc-7"), request.captured.selectedServiceIds)
         assertEquals(listOf("pkg-3"), request.captured.selectedPackageIds)
         assertEquals("2026-09-15T00:00:00Z", request.captured.startsOn)
+        assertEquals(DirtinessLevel.Heavy, request.captured.dirtinessLevel)
         assertEquals(ActionState.Idle, vm.submitState.value)
     }
 
@@ -1203,6 +1211,7 @@ class CreateRecurringViewModelTest {
     fun `step two advances only with a service or a package picked`() = runTest {
         val vm = viewModel()
         advanceUntilIdle()
+        vm.setDirtinessLevel(DirtinessLevel.Normal)
         vm.nextStep()
         runCurrent()
         assertEquals(false, vm.canAdvance.value)
@@ -1222,9 +1231,69 @@ class CreateRecurringViewModelTest {
     }
 
     @Test
+    fun `step two advances only once the customer has chosen a dirtiness level`() = runTest {
+        val vm = viewModel()
+        advanceUntilIdle()
+        vm.nextStep()
+        vm.toggleService("svc-1")
+        runCurrent()
+        assertEquals(false, vm.canAdvance.value)
+
+        vm.setDirtinessLevel(DirtinessLevel.Increased)
+        runCurrent()
+
+        assertEquals(true, vm.canAdvance.value)
+    }
+
+    @Test
+    fun `a new schedule without a chosen dirtiness level is never created`() = runTest {
+        coEvery { recurringRepo.create(any()) } returns ApiResult.Success(template)
+        val vm = viewModel()
+        advanceUntilIdle()
+        vm.setSavedAddressId("addr-1")
+        vm.toggleService("svc-1")
+        vm.setStartsOn("2026-07-01T00:00:00Z")
+        advanceUntilIdle()
+
+        vm.submit()
+        advanceUntilIdle()
+
+        assertEquals(false, vm.isValid.value)
+        coVerify(exactly = 0) { recurringRepo.create(any()) }
+    }
+
+    @Test
+    fun `a new schedule is created at the dirtiness level the customer chose`() = runTest {
+        coEvery { recurringRepo.create(any()) } returns ApiResult.Success(template)
+        val vm = viewModel()
+        advanceUntilIdle()
+        fillValidForm(vm)
+        vm.setDirtinessLevel(DirtinessLevel.Heavy)
+
+        vm.submit()
+        advanceUntilIdle()
+
+        val request = slot<CreateRecurringBookingRequest>()
+        coVerify(exactly = 1) { recurringRepo.create(capture(request)) }
+        assertEquals(DirtinessLevel.Heavy, request.captured.dirtinessLevel)
+    }
+
+    /** A one-off clean says little about how a home looks between visits, so a schedule asks again. */
+    @Test
+    fun `a schedule made from a past order still asks for the dirtiness level`() = runTest {
+        sourceOrder(services = listOf("svc-1"), dirtinessLevel = DirtinessLevel.Heavy)
+
+        val vm = viewModel(orderId = "ord-7")
+        advanceUntilIdle()
+
+        assertNull(vm.state.value.dirtinessLevel)
+    }
+
+    @Test
     fun `step three advances only with an address and a start date`() = runTest {
         val vm = viewModel()
         advanceUntilIdle()
+        vm.setEarlyPerformanceRequested(true)
         vm.nextStep()
         vm.nextStep()
         runCurrent()
@@ -1335,6 +1404,27 @@ class CreateRecurringViewModelTest {
         assertEquals(4, last.rooms)
         assertEquals("svk-id", last.countryId)
         assertEquals(null, last.cleaningDate)
+    }
+
+    /** A heavier level lengthens each clean, so the crew quoted for it decides cash. */
+    @Test
+    fun `the crew quote prices the chosen dirtiness level and cash follows it`() = runTest {
+        val sent = mutableListOf<QuoteOrderCommand>()
+        coEvery { bookingApi.quote(capture(sent)) } coAnswers {
+            val crew = if (sent.last().dirtinessLevel == DirtinessLevel.Heavy) 2 else 1
+            Response.success(crewQuote(crew))
+        }
+        val vm = viewModel()
+        advanceUntilIdle()
+        fillValidForm(vm)
+        advanceUntilIdle()
+        assertEquals(CashEligibility.Available, vm.cashEligibility.value)
+
+        vm.setDirtinessLevel(DirtinessLevel.Heavy)
+        advanceUntilIdle()
+
+        assertEquals(DirtinessLevel.Heavy, sent.last().dirtinessLevel)
+        assertEquals(CashEligibility.NeedsCard(2), vm.cashEligibility.value)
     }
 
     @Test
@@ -1504,6 +1594,29 @@ class CreateRecurringViewModelTest {
 
         assertEquals(true, vm.termsAsked.value)
         assertEquals(false, vm.canAdvance.value)
+    }
+
+    /** One tick covers the series: the server copies the schedule's request onto every occurrence. */
+    @Test
+    fun `a new schedule is held until the early-performance tick and then sends the request`() = runTest {
+        val vm = onStepThree()
+        vm.setEarlyPerformanceRequested(false)
+        runCurrent()
+
+        assertEquals(false, vm.canAdvance.value)
+        vm.submit()
+        advanceUntilIdle()
+        coVerify(exactly = 0) { recurringRepo.create(any()) }
+
+        vm.setEarlyPerformanceRequested(true)
+        runCurrent()
+        assertEquals(true, vm.canAdvance.value)
+        val sent = slot<CreateRecurringBookingRequest>()
+        coEvery { recurringRepo.create(capture(sent)) } returns ApiResult.Success(template)
+        vm.submit()
+        advanceUntilIdle()
+
+        assertEquals(true, sent.captured.earlyPerformanceRequested)
     }
 
     @Test

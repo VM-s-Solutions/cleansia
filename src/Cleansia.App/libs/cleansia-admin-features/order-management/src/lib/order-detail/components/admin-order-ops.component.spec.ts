@@ -7,7 +7,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NG_VALUE_ACCESSOR } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { Subject } from 'rxjs';
-import { CurrencyDetailDto, OrderItem, OrderStatus } from '@cleansia/admin-services';
+import { Code, CurrencyDetailDto, OrderItem, OrderStatus } from '@cleansia/admin-services';
 import {
   CleansiaButtonComponent,
   CleansiaSectionComponent,
@@ -138,6 +138,7 @@ class FacadeStub {
   reassignOrder = jest.fn();
   refundOrder = jest.fn();
   cancelAsNoShow = jest.fn();
+  cancelAsLockout = jest.fn();
   recordCashReceived = jest.fn();
 }
 
@@ -244,6 +245,57 @@ describe('AdminOrderOpsComponent', () => {
       'CZK',
       expect.any(Function)
     );
+  });
+
+  describe('the lockout confirmation', () => {
+    const LOCKOUT_ACTION = 'pages.order_management.ops.lockout.action';
+    const reportedAt = new Date('2026-09-28T09:20:00Z');
+
+    function buttonLabels(): string[] {
+      return fixture.debugElement
+        .queryAll(By.directive(ButtonStub))
+        .map((b) => (b.componentInstance as ButtonStub).label());
+    }
+
+    it('is not offered on an order no cleaner reported as a lockout', () => {
+      setOrder(makeOrder({}));
+
+      expect(buttonLabels()).not.toContain(LOCKOUT_ACTION);
+    });
+
+    it.each([OrderStatus.Confirmed, OrderStatus.OnTheWay, OrderStatus.InProgress])(
+      'is offered once a lockout is reported on an order still at status %s',
+      (status) => {
+        setOrder(makeOrder({ orderStatus: Code.fromJS({ value: status }), lockoutReportedAt: reportedAt }));
+
+        expect(buttonLabels()).toContain(LOCKOUT_ACTION);
+      }
+    );
+
+    it.each([OrderStatus.Cancelled, OrderStatus.Completed])(
+      'is not offered on a reported order that is already finished (status %s)',
+      (status) => {
+        setOrder(makeOrder({ orderStatus: Code.fromJS({ value: status }), lockoutReportedAt: reportedAt }));
+
+        expect(buttonLabels()).not.toContain(LOCKOUT_ACTION);
+      }
+    );
+
+    it('opens its panel and delegates the confirmation with the order id and its currency', () => {
+      setOrder(
+        makeOrder({
+          lockoutReportedAt: reportedAt,
+          currency: CurrencyDetailDto.fromJS({ code: 'CZK' }),
+        })
+      );
+      component.togglePanel('lockout');
+      expect(facade.openPanel).toHaveBeenCalledWith('lockout');
+      fixture.detectChanges();
+
+      expect(buttonLabels()).toContain('pages.order_management.ops.lockout.submit');
+      component.submitLockout();
+      expect(facade.cancelAsLockout).toHaveBeenCalledWith('order-1', 'CZK', expect.any(Function));
+    });
   });
 
   it('opens the record-cash panel, offers the assigned cleaners and delegates submit', () => {

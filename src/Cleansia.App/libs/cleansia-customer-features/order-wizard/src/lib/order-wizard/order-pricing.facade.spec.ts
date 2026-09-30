@@ -1,6 +1,6 @@
 import { PLATFORM_ID, signal } from '@angular/core';
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
-import { CustomerClient, QuoteOrderResponse } from '@cleansia/customer-services';
+import { CustomerClient, DirtinessLevel, QuoteOrderResponse } from '@cleansia/customer-services';
 import { of, Subject, throwError } from 'rxjs';
 import { OrderPricingFacade } from './order-pricing.facade';
 import {
@@ -8,6 +8,7 @@ import {
   EXPRESS_DISCOUNTED_QUOTE,
   EXPRESS_QUOTE,
   PLAIN_QUOTE,
+  quoteFixture,
   WAIVED_EXPRESS_QUOTE,
 } from './order-quote.fixtures';
 import {
@@ -521,6 +522,49 @@ describe('OrderPricingFacade', () => {
 
       expect(orderClient.quote.mock.calls[0][0].currencyId).toBeUndefined();
     }));
+  });
+
+  describe('the dirtiness level', () => {
+    beforeEach(() => build('server'));
+
+    const quotedLevels = () =>
+      orderClient.quote.mock.calls.map(([command]) => command.dirtinessLevel);
+
+    it('is quoted as Normal until the customer picks one, then as the level picked', async () => {
+      formData.update((d) => ({ ...d, selectedServiceIds: ['s1'] }));
+      await facade.refreshQuoteNow();
+
+      formData.update((d) => ({ ...d, dirtinessLevel: DirtinessLevel.Increased }));
+      expect(facade.cachedQuoteMatchesCurrentState()).toBe(false);
+      await facade.refreshQuoteNow();
+
+      expect(quotedLevels()).toEqual([DirtinessLevel.Normal, DirtinessLevel.Increased]);
+    });
+
+    it('keeps the quote in hand when Normal is picked, since that is what it was priced at', async () => {
+      formData.update((d) => ({ ...d, selectedServiceIds: ['s1'] }));
+      await facade.refreshQuoteNow();
+
+      formData.update((d) => ({ ...d, dirtinessLevel: DirtinessLevel.Normal }));
+
+      expect(facade.cachedQuoteMatchesCurrentState()).toBe(true);
+    });
+
+    it('shows the surcharge the quote stored, and none before a quote', async () => {
+      expect(facade.dirtinessSurcharge()).toBe(0);
+
+      await quoteWith(
+        quoteFixture({
+          totalPrice: 1300,
+          finalPriceAfterDiscount: 1300,
+          originalSubtotal: 1300,
+          dirtinessSurchargeAmount: 300,
+          dirtinessLevel: DirtinessLevel.Increased,
+        }),
+      );
+
+      expect(facade.dirtinessSurcharge()).toBe(300);
+    });
   });
 
   describe('cachedQuoteMatchesCurrentState', () => {

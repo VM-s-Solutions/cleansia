@@ -29,6 +29,7 @@ public sealed class AdminOrderAndDisputeTraceabilityTests
     {
         { new AdminCancelOrder.Command(OrderId, "reason"), "order.cancel", "Order", OrderId },
         { new AdminCancelOrderAsNoShow.Command(OrderId), "order.cancel.no_show", "Order", OrderId },
+        { new AdminCancelOrderAsLockout.Command(OrderId), "order.cancel.lockout", "Order", OrderId },
         { new AdminReassignOrder.Command(OrderId, "employee-from", "employee-to"), "order.reassign", "Order", OrderId },
         { new AdminOverrideOrderStatus.Command(OrderId, OrderStatus.Completed), "order.status.override", "Order", OrderId },
         { new AdminRecordCashReceived.Command(OrderId, "employee-1", DateTime.UtcNow, 100m), "order.cash.record", "Order", OrderId },

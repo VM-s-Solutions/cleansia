@@ -41,6 +41,12 @@ public sealed class OrderPhotoWindowTests
     [InlineData(PhotoType.After, OrderStatus.InProgress, true)]
     [InlineData(PhotoType.After, OrderStatus.Completed, false)]
     [InlineData(PhotoType.After, OrderStatus.Cancelled, false)]
+    [InlineData(PhotoType.Entrance, OrderStatus.New, false)]
+    [InlineData(PhotoType.Entrance, OrderStatus.Confirmed, true)]
+    [InlineData(PhotoType.Entrance, OrderStatus.OnTheWay, true)]
+    [InlineData(PhotoType.Entrance, OrderStatus.InProgress, true)]
+    [InlineData(PhotoType.Entrance, OrderStatus.Completed, false)]
+    [InlineData(PhotoType.Entrance, OrderStatus.Cancelled, false)]
     public void Each_Photo_Type_Has_One_Window(PhotoType type, OrderStatus status, bool open)
     {
         Assert.Equal(open, OrderPhoto.MayBeAddedAt(type, status));

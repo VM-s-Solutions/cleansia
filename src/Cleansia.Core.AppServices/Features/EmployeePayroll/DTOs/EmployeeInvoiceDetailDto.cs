@@ -17,6 +17,8 @@ public record EmployeeInvoiceDetailDto(
     decimal BonusAmount,
     decimal DeductionAmount,
     decimal TotalAmount,
+    decimal CashSetOffAmount,
+    decimal TransferAmount,
     string CurrencyCode,
     string CurrencyId,
     EmployeeInvoiceStatus Status,

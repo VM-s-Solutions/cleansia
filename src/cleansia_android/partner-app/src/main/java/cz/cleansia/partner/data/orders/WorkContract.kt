@@ -25,7 +25,7 @@ data class WorkContractJobFacts(
     val orderNumber: String?,
     val cleaningDateTimeUtc: String,
     val estimatedMinutes: Int,
-    val totalPrice: Double,
+    val reward: Double,
     val currencyCode: String?,
     val locationApproximate: String?,
     val rooms: Int,
@@ -43,7 +43,7 @@ data class WorkContractAcceptanceFacts(
 
 /**
  * Refuses rather than defaults: the text id is what the take echoes, the HTML is what is accepted,
- * and the price, window and scope are what the acceptance binds — a null in any of them is a broken
+ * and the reward, window and scope are what the acceptance binds — a null in any of them is a broken
  * wire, and a sheet that showed "0 Kč" over an empty text would record an acceptance of nothing.
  * The labels (number, currency code, location) stay nullable and render as absent.
  */
@@ -61,7 +61,7 @@ private fun WorkContractFacts.toDomain(): WorkContractJobFacts = WorkContractJob
     orderNumber = orderNumber,
     cleaningDateTimeUtc = cleaningDateTimeUtc.required("facts.cleaningDateTimeUtc"),
     estimatedMinutes = estimatedMinutes.required("facts.estimatedMinutes"),
-    totalPrice = totalPrice.required("facts.totalPrice"),
+    reward = totalPrice.required("facts.totalPrice"),
     currencyCode = currencyCode,
     locationApproximate = locationApproximate,
     rooms = rooms.required("facts.rooms"),

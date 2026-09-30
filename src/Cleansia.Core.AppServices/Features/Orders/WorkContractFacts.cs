@@ -15,6 +15,9 @@ public interface IWorkContractFacts;
 /// window, price, coarse location, scope — never the street or the customer's name, which the cleaner
 /// has not been shown at that instant either. Built by one projection for the preview and the row so
 /// the screen and the record cannot differ.
+///
+/// <para><see cref="TotalPrice"/> is the price of the work under this contract, which binds the operating
+/// company and one cleaner: that seat's reward as the board quotes it, never what the customer pays.</para>
 /// </summary>
 public sealed record WorkContractFacts(
     string OrderNumber,

@@ -95,7 +95,8 @@ public sealed class RecurringOccurrenceCadenceTests
             paymentType: PaymentType.Card,
             startsOn: template.StartsOn,
             endsOn: null,
-            preferredEmployeeId: null);
+            preferredEmployeeId: null,
+            dirtinessLevel: DirtinessLevel.Normal);
 
         var occurrences = Compute(template, now: Utc(2026, 10, 20, 0, 0), horizon: Utc(2026, 11, 20, 0, 0));
 

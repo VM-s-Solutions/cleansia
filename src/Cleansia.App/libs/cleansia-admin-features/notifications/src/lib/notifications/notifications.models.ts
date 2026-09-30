@@ -16,6 +16,7 @@ export const ADMIN_NOTIFICATION_EVENT_KEYS = [
   'admin.order.new',
   'admin.order.crew_lost',
   'admin.order.cleaner_not_started',
+  'admin.order.lockout_reported',
   'admin.dispute.filed',
   'admin.dispute.chargeback',
   'admin.dispute.chargeback_unmatched',

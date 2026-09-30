@@ -261,6 +261,7 @@ public class MaterializeRecurringBookingTemplate
                 Array.Empty<string>(),
                 template.Rooms,
                 template.Bathrooms,
+                template.DirtinessLevel,
                 currency.Id,
                 cleaningDateUtc: null,
                 userId: null,
@@ -318,9 +319,20 @@ public class MaterializeRecurringBookingTemplate
                     // hold and the push, never the cleaning. Reject where someone can react;
                     // degrade where nobody can.
                     PreferredEmployeeId: template.PreferredEmployeeId,
-                    RecurringTemplateId: template.Id);
+                    RecurringTemplateId: template.Id,
+                    DirtinessLevel: template.DirtinessLevel);
 
-                await orderFactory.CreateAsync(input, cancellationToken);
+                var order = await orderFactory.CreateAsync(input, cancellationToken);
+                if (template.EarlyPerformanceConsentedOn is { } consentedOn)
+                {
+                    order.RecordEarlyPerformanceConsent(
+                        template.EarlyPerformanceConsentTextVersion!,
+                        consentedOn,
+                        template.EarlyPerformanceConsentClient!,
+                        template.EarlyPerformanceConsentIpAddress,
+                        template.EarlyPerformanceConsentDeviceLabel);
+                }
+
                 ordersCreated++;
             }
 

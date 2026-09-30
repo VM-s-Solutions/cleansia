@@ -231,7 +231,7 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
             .Include(o => o.AssignedEmployees)
                 .ThenInclude(ae => ae.Employee)
                     .ThenInclude(e => e.User)
-            .Include(o => o.Receipt)
+            .Include(o => o.Receipts)
             .Include(o => o.CustomerAddress)
                 .ThenInclude(ca => ca.Country)
             .Include(o => o.OrderNotes)
@@ -257,7 +257,7 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
             .Include(o => o.AssignedEmployees)
                 .ThenInclude(ae => ae.Employee)
                     .ThenInclude(e => e.User)
-            .Include(o => o.Receipt)
+            .Include(o => o.Receipts)
             .Include(o => o.CustomerAddress)
                 .ThenInclude(ca => ca.Country)
             .Include(o => o.User)
@@ -520,7 +520,7 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
         // -> /flows/cross-cutting#dead-letters
         var cutoff = new DateTimeOffset(olderThanUtc, TimeSpan.Zero);
 
-        // Do NOT filter on the Include'd one-to-one nav — EF emits an untranslatable join next to the
+        // Do NOT filter on the Include'd receipts nav — EF emits an untranslatable join next to the
         // cardinality-altering Include+Take. Express "not fully realized" as an ANTI-JOIN instead, which
         // covers both "no receipt" and "receipt with no fiscal code" in one translatable predicate.
         //
@@ -544,7 +544,7 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
                 && o.CurrentStatus != OrderStatus.Cancelled
                 && (o.CashCollectedAt == null || o.CurrentStatus == OrderStatus.Completed)
                 && o.CreatedOn <= cutoff
-                && !registeredReceipts.Any(r => r.OrderId == o.Id && r.FiscalCode != null))
+                && !registeredReceipts.Any(r => r.OrderId == o.Id && r.ReceivableId == null && r.FiscalCode != null))
             .OrderBy(o => o.CreatedOn)
             .Take(take)
             .Select(o => o.Id)
@@ -557,8 +557,8 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
 
         return await GetDbSet()
             .IgnoreQueryFilters()
-            .Include(o => o.Receipt)
-                .ThenInclude(r => r!.Language)
+            .Include(o => o.Receipts)
+                .ThenInclude(r => r.Language)
             .Include(o => o.CustomerAddress)
             .Where(o => candidateIds.Contains(o.Id))
             .OrderBy(o => o.CreatedOn)

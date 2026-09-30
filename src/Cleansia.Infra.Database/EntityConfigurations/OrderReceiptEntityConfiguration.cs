@@ -48,6 +48,32 @@ public class OrderReceiptEntityConfiguration : TenantAuditableEntityConfiguratio
         builder.HasIndex(r => new { r.OrderId, r.LanguageId })
             .HasDatabaseName("IX_OrderReceipts_Order_Language");
 
+        // Order.Receipts is a read-only projection, so the inverse is named by string, as OrderService names
+        // Service.IncludedInOrders: an unnamed WithMany() would invent a second, shadow OrderId.
+        builder.HasOne(r => r.Order)
+            .WithMany(nameof(Order.Receipts))
+            .HasForeignKey(r => r.OrderId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // One sale receipt per order and one fee receipt per receivable: each index is the arbiter
+        // between two concurrent claims of the same receipt, which GenerateReceiptHandler acks on 23505.
+        builder.HasIndex(r => r.OrderId)
+            .IsUnique()
+            .HasFilter("\"ReceivableId\" IS NULL")
+            .HasDatabaseName("IX_OrderReceipts_OrderId");
+
+        builder.Property(r => r.ReceivableId).HasMaxLength(26);
+
+        builder.HasOne(r => r.Receivable)
+            .WithMany()
+            .HasForeignKey(r => r.ReceivableId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(r => r.ReceivableId)
+            .IsUnique()
+            .HasFilter("\"ReceivableId\" IS NOT NULL")
+            .HasDatabaseName("IX_OrderReceipts_ReceivableId");
+
         builder.Property(r => r.FiscalProviderKey).HasMaxLength(50);
         builder.Property(r => r.FiscalCode).HasMaxLength(255);
         builder.Property(r => r.FiscalError).HasMaxLength(1000);

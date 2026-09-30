@@ -133,8 +133,11 @@ public class GetOrderDetails
             var isAdminCaller = role == UserProfile.Administrator.ToString();
 
             // One per CURRENT seat with a row; a dropped seat's row is history and is read by its own id.
-            var acceptances = await workContractAcceptanceRepository.GetForSeatsAsync(
-                order.AssignedEmployees.Select(ae => ae.Id).ToList(), cancellationToken);
+            // The contract binds the company and the cleaner, so the customer reads none.
+            var acceptances = isCustomerCaller
+                ? []
+                : await workContractAcceptanceRepository.GetForSeatsAsync(
+                    order.AssignedEmployees.Select(ae => ae.Id).ToList(), cancellationToken);
 
             var detail = order.MapToDetail(
                 estimatedCleanerPay,

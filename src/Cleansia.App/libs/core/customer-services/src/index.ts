@@ -70,6 +70,30 @@ export {
   SetDefaultSavedAddressCommand,
 } from './lib/client/customer-client';
 export {
+  SavedCardClient,
+  SavedCardDto,
+  CreateSavedCardCheckoutSessionCommand,
+  CreateSavedCardCheckoutSessionResponse,
+  RemoveSavedCardResponse,
+} from './lib/client/customer-client';
+export type {
+  ISavedCardClient,
+  ISavedCardDto,
+  ICreateSavedCardCheckoutSessionCommand,
+  ICreateSavedCardCheckoutSessionResponse,
+  IRemoveSavedCardResponse,
+} from './lib/client/customer-client';
+export {
+  ReceivableClient,
+  MyReceivableDto,
+  CreateReceivablePayLinkResponse,
+} from './lib/client/customer-client';
+export type {
+  IReceivableClient,
+  IMyReceivableDto,
+  ICreateReceivablePayLinkResponse,
+} from './lib/client/customer-client';
+export {
   CreateOrderCommand,
   AddressDto,
   CustomerAddress,
@@ -202,6 +226,7 @@ export {
   SortDefinition,
   CreateOrderResponse,
   Code,
+  DirtinessLevel,
   DisputeDetails,
   DisputeEvidenceDto,
   DisputeListItem,

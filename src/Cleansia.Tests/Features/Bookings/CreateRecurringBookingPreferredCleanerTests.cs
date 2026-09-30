@@ -189,7 +189,8 @@ public class CreateRecurringBookingPreferredCleanerTests
             CatalogueDoubles.Services(),
             CatalogueDoubles.Packages(),
             Cleansia.Tests.Features.Legal.CustomerConsentDoubles.Consented(),
-            Mock.Of<Cleansia.Core.AppServices.Services.Interfaces.ILegalDocumentResolver>());
+            Mock.Of<Cleansia.Core.AppServices.Services.Interfaces.ILegalDocumentResolver>(),
+            SavedCards.SavedCardDoubles.Guaranteed(), Mock.Of<IReceivableRepository>());
 
     private CreateRecurringBooking.Handler CreateHandler() =>
         new(
@@ -202,7 +203,9 @@ public class CreateRecurringBookingPreferredCleanerTests
             Mock.Of<Cleansia.Core.AppServices.Services.Interfaces.IConsentService>(),
             Cleansia.Tests.Features.Legal.CustomerConsentDoubles.Consented(),
             Mock.Of<Cleansia.Core.AppServices.Services.Interfaces.ILegalDocumentResolver>(),
-            new AuditContext());
+            new AuditContext(),
+            new Cleansia.Core.AppServices.Authentication.HostAudienceProvider("cleansia.customer"),
+            new Cleansia.TestUtilities.TestRequestMetadataProvider());
 
     private static CreateRecurringBooking.Command CommandWith(string? preferredEmployeeId) =>
         new(
@@ -217,7 +220,8 @@ public class CreateRecurringBookingPreferredCleanerTests
             PaymentType: (int)PaymentType.Card,
             StartsOn: DateTime.UtcNow.AddDays(3),
             EndsOn: null,
-            PreferredEmployeeId: preferredEmployeeId);
+            PreferredEmployeeId: preferredEmployeeId,
+            EarlyPerformanceRequested: true);
 
     private static SavedAddress ArrangeSavedAddress()
     {

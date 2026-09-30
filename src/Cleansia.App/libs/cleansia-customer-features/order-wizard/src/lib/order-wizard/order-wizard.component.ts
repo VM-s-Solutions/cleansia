@@ -5,8 +5,9 @@ import { isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { WizardPreferredCleanerComponent } from './components/wizard-preferred-cleaner.component';
+import { AmountDueComponent } from '@cleansia-customer/orders';
 import { CleansiaAddressAutocompleteComponent, CleansiaButtonComponent, CleansiaScrollTopComponent, CleansiaSelectComponent, CleansiaTelephoneComponent } from '@cleansia/components';
-import { CategoryDto, CUSTOMER_API_BASE_URL, GetMembershipPlansResponse, MembershipStatus, PackageListItem, PackageServiceSummary, PaymentType, QuoteOrderQuoteLine, QuotePlusSavingsQuery, SavedAddressDto, ServiceListItem } from '@cleansia/customer-services';
+import { CardCaptureFacade, CategoryDto, CUSTOMER_API_BASE_URL, DIRTINESS_LEVELS, DirtinessLevel, dirtinessLevelOption, GetMembershipPlansResponse, MembershipStatus, PackageListItem, PackageServiceSummary, PaymentType, QuoteOrderQuoteLine, QuotePlusSavingsQuery, SavedAddressDto, ServiceListItem } from '@cleansia/customer-services';
 import type { MapboxAddressSuggestion } from '@cleansia/services';
 import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -77,10 +78,12 @@ function startOfMonth(date: Date): Date {
     CleansiaSelectComponent,
     CleansiaTelephoneComponent,
     WizardPreferredCleanerComponent,
+    AmountDueComponent,
     RouterModule,
   ],
   templateUrl: './order-wizard.component.html',
   providers: [
+    CardCaptureFacade,
     OrderMembershipFacade,
     OrderPreferredCleanerFacade,
     OrderPricingFacade,
@@ -524,7 +527,7 @@ export class OrderWizardComponent implements OnInit {
 
   /** Every field this step validates, whether or not it has been visited. */
   private markStepFieldsTouched(): void {
-    if (this.facade.activeStep() !== 1) return;
+    if (this.facade.activeStep() !== 2) return;
     for (const field of [
       'customerFirstName',
       'customerLastName',
@@ -539,6 +542,14 @@ export class OrderWizardComponent implements OnInit {
   onPrevStep(): void {
     this.triedToAdvance.set(false);
     this.facade.prevStep();
+  }
+
+  readonly dirtinessLevels = DIRTINESS_LEVELS;
+  /** Each level's copy lists four signs, `sign_1` to `sign_4`. */
+  readonly dirtinessSigns = [1, 2, 3, 4];
+
+  selectDirtinessLevel(dirtinessLevel: DirtinessLevel): void {
+    this.facade.updateFormData({ dirtinessLevel });
   }
 
   isDateSelected = computed(() => !!this.facade.formData().cleaningDate);
@@ -724,13 +735,14 @@ export class OrderWizardComponent implements OnInit {
    */
   private readonly plusSavingsSync = effect(() => {
     const data = this.facade.formData();
-    const onPlusStep = this.facade.activeStep() === 4;
+    const onPlusStep = this.facade.activeStep() === 5;
     const havePlans = this.facade.plans().length > 0;
     // Read so the effect re-runs on a change to any of them.
     void data.selectedServiceIds;
     void data.selectedPackageIds;
     void data.rooms;
     void data.bathrooms;
+    void data.dirtinessLevel;
     void this.facade.addressCountryId();
     if (onPlusStep && havePlans) {
       this.refreshPlusSavings();
@@ -747,6 +759,7 @@ export class OrderWizardComponent implements OnInit {
     query.selectedPackageIds = data.selectedPackageIds;
     query.rooms = data.rooms;
     query.bathrooms = data.bathrooms;
+    query.dirtinessLevel = data.dirtinessLevel ?? DirtinessLevel.Normal;
     query.planCode = plan.code;
     // The address's country decides the currency the saving is priced in — the
     // same country the price and the catalogue are asked for, market fallback
@@ -793,7 +806,7 @@ export class OrderWizardComponent implements OnInit {
     ]);
   }
 
-  private parkDraft(): void {
+  protected parkDraft(): void {
     this.draft.park(this.facade.activeStep(), this.facade.formData());
   }
 
@@ -824,6 +837,9 @@ export class OrderWizardComponent implements OnInit {
   /** Ticked before the order can be placed. Not a default — it is a consent. */
   readonly acceptedTerms = signal(false);
 
+  /** The customer's request to start within the withdrawal period, asked on every booking. */
+  readonly requestedEarlyStart = signal(false);
+
   /**
    * What was chosen, restated per step, each with a way back to the step that
    * owns it. Built from the form so it cannot describe a choice that is not
@@ -841,6 +857,13 @@ export class OrderWizardComponent implements OnInit {
       `${this.translate.instant(this.roomsKey(), { count: data.rooms })} · ` +
         `${this.translate.instant(this.bathroomsKey(), { count: data.bathrooms })}`
     );
+
+    const level = dirtinessLevelOption(data.dirtinessLevel);
+    const dirtiness = [
+      this.translate.instant(
+        level ? `pages.order.dirtiness.${level.key}.name` : 'pages.order.missing.dirtiness'
+      ),
+    ];
 
     const unit = [data.customerFloor, data.customerApartment].filter(Boolean).join(', ');
     const address = [
@@ -890,9 +913,10 @@ export class OrderWizardComponent implements OnInit {
 
     return [
       { step: 0, icon: 'pi pi-list', titleKey: 'pages.order.steps.services', lines: services },
-      { step: 1, icon: 'pi pi-map-marker', titleKey: 'pages.order.steps.address', lines: address },
-      { step: 2, icon: 'pi pi-calendar', titleKey: 'pages.order.steps.datetime', lines: when },
-      { step: 3, icon: 'pi pi-credit-card', titleKey: 'pages.order.review_payment_card', lines: pay },
+      { step: 1, icon: 'pi pi-sparkles', titleKey: 'pages.order.steps.dirtiness', lines: dirtiness },
+      { step: 2, icon: 'pi pi-map-marker', titleKey: 'pages.order.steps.address', lines: address },
+      { step: 3, icon: 'pi pi-calendar', titleKey: 'pages.order.steps.datetime', lines: when },
+      { step: 4, icon: 'pi pi-credit-card', titleKey: 'pages.order.review_payment_card', lines: pay },
     ];
   });
 
@@ -1072,7 +1096,7 @@ export class OrderWizardComponent implements OnInit {
    */
   readonly blockingReasons = computed(() => {
     const reasons = [...this.facade.missingReasons()];
-    if (this.facade.activeStep() === 2 && !this.hasValidTime()) {
+    if (this.facade.activeStep() === 3 && !this.hasValidTime()) {
       reasons.push('pages.order.missing.time');
     }
     // The consent is the review step's own condition, and the place-order
@@ -1080,11 +1104,14 @@ export class OrderWizardComponent implements OnInit {
     // silently either. An account that already granted both is not asked, so
     // there is nothing for it to block on.
     if (
-      this.facade.activeStep() === 5 &&
+      this.facade.activeStep() === 6 &&
       !this.facade.alreadyConsented() &&
       !this.acceptedTerms()
     ) {
       reasons.push('pages.order.missing.terms');
+    }
+    if (this.facade.activeStep() === 6 && !this.requestedEarlyStart()) {
+      reasons.push('pages.order.missing.early_performance');
     }
     return reasons;
   });
@@ -1094,6 +1121,18 @@ export class OrderWizardComponent implements OnInit {
    * also when there is nothing selected to price.
    */
   readonly priceLines = computed(() => this.facade.quote()?.lines ?? []);
+
+  /** The surcharge row, labelled with the level the quote priced rather than the one on screen. */
+  readonly dirtinessLine = computed(() => {
+    const amount = this.facade.dirtinessSurcharge();
+    const level = dirtinessLevelOption(this.facade.quote()?.dirtinessLevel);
+    if (amount <= 0 || !level) return null;
+    return {
+      labelKey: `pages.order.dirtiness.${level.key}.surcharge_line`,
+      rate: level.ratePercent,
+      amount: this.formatPrice(amount),
+    };
+  });
 
   /**
    * A row's display name, resolved from the catalogue this app already holds so
@@ -1234,9 +1273,9 @@ export class OrderWizardComponent implements OnInit {
         return;
       }
       this.labelError.set(null);
-      await this.facade.submitOrder({ label }, this.acceptedTerms());
+      await this.facade.submitOrder({ label }, this.acceptedTerms(), this.requestedEarlyStart());
       return;
     }
-    await this.facade.submitOrder(null, this.acceptedTerms());
+    await this.facade.submitOrder(null, this.acceptedTerms(), this.requestedEarlyStart());
   }
 }

@@ -41,8 +41,9 @@ public class CustomerOrderCancellationSequencingTests
         var notices = new Mock<INotificationProducer>();
         var waiver = ExpressWaiverMocks.NoConsumer();
         var service = new CustomerOrderCancellation(Mock.Of<ITenantProvider>(), refunds.Object, Mock.Of<IRefundRepository>(),
-            Mock.Of<ICreditAccountRepository>(), Mock.Of<ILoyaltyService>(), policy.Object, notices.Object,
-            Mock.Of<ILiveActivityProducer>(), waiver.Object, new AuditContext(), TimeProvider.System,
+            Mock.Of<IReceivableRepository>(), Mock.Of<ICreditAccountRepository>(), Mock.Of<ILoyaltyService>(), policy.Object,
+            notices.Object,
+            Mock.Of<ILiveActivityProducer>(), waiver.Object, Mock.Of<IPendingDispatch>(), new AuditContext(), TimeProvider.System,
                 NullLogger<CustomerOrderCancellation>.Instance);
 
         var result = await service.ExecuteAsync(order, null, guest ? "System" : "account", CancellationToken.None);

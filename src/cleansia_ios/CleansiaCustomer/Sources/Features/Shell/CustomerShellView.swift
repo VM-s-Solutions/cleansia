@@ -286,8 +286,6 @@ extension CustomerShellView {
         switch route {
         case let .orderDetail(orderId):
             orderDetail(orderId)
-        case let .workContract(acceptanceId):
-            WorkContractView(acceptanceId: acceptanceId, client: container.orderClient, snackbar: snackbar)
         case .subscribePlus:
             subscribePlus
         case .membershipSuccess:
@@ -360,6 +358,14 @@ extension CustomerShellView {
     @ViewBuilder
     private func settingsDestination(_ route: ShellRoute) -> some View {
         switch route {
+        case .payments:
+            PaymentsView(
+                savedCardClient: LiveSavedCardClient(),
+                receivableClient: LiveReceivableClient(),
+                snackbar: snackbar,
+                paymentSheet: StripePaymentController(),
+                market: container.marketStore.selected
+            )
         case .devices:
             CustomerDevicesView(
                 client: container.devicesClient,
@@ -443,8 +449,7 @@ extension CustomerShellView {
                     ShellRoute.recurringList,
                     ShellRoute.createRecurring(orderId: orderId)
                 ])
-            },
-            onReadWorkContract: { model.path.append(ShellRoute.workContract(acceptanceId: $0)) }
+            }
         )
     }
 

@@ -1,6 +1,7 @@
 package cz.cleansia.customer.core.orders
 
 import cz.cleansia.core.network.WireContractViolation
+import cz.cleansia.customer.core.booking.DirtinessLevel
 import cz.cleansia.customer.core.network.IntEnumSerializersModule
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -168,6 +169,18 @@ class OrderWireTest {
         assertEquals(3650.00, order.originalSubtotal, 0.0)
         assertEquals(2, order.appliedDiscountSource)
         assertEquals(450.00, order.selectedPackages?.first()?.price)
+        assertEquals(1095.00, order.dirtinessSurchargeAmount, 0.0)
+    }
+
+    @Test
+    fun theDetailCarriesTheDirtinessLevelItWasBookedAt() = runTest {
+        assertEquals(DirtinessLevel.Heavy, detailed(CAPTURED_ORDER).dirtinessLevel)
+    }
+
+    /** The level labels the surcharge row and the details card; a defaulted Normal would unlabel a charge. */
+    @Test
+    fun aMissingDirtinessLevelRefusesTheOrderRatherThanReadingNormal() = runTest {
+        refuses("dirtinessLevel") { detailed(withoutKey(CAPTURED_ORDER, "dirtinessLevel")) }
     }
 
     @Test
@@ -622,7 +635,9 @@ class OrderWireTest {
               "assignedEmployeesCount": 1,
               "hasAvailableSpots": true,
               "isAssignedToCurrentUser": true,
-              "hasAfterPhotos": true
+              "hasAfterPhotos": true,
+              "dirtinessLevel": 2,
+              "dirtinessSurchargeAmount": 1095.00
             }
         """.trimIndent()
 
@@ -689,6 +704,8 @@ class OrderWireTest {
             "hasReview",
             "creditAppliedAmount",
             "amountDueOnCard",
+            "dirtinessLevel",
+            "dirtinessSurchargeAmount",
         )
 
         val CURRENCY_SPEC_PROPERTIES = setOf("id", "code", "symbol", "name", "isDefault")
@@ -710,7 +727,8 @@ class OrderWireTest {
 
         val LIST_ROW_REQUIRED_MONEY = listOf("totalPrice", "originalSubtotal", "appliedDiscountSource")
 
-        val DETAIL_REQUIRED_MONEY = listOf("totalPrice", "originalSubtotal", "appliedDiscountSource")
+        val DETAIL_REQUIRED_MONEY =
+            listOf("totalPrice", "originalSubtotal", "appliedDiscountSource", "dirtinessSurchargeAmount")
 
         val CANCEL_REQUIRED_MONEY = listOf("feeRate", "refundAmount", "totalPrice")
 

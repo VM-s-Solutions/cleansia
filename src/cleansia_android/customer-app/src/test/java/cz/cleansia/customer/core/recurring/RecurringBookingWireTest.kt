@@ -1,5 +1,6 @@
 package cz.cleansia.customer.core.recurring
 
+import cz.cleansia.customer.core.booking.DirtinessLevel
 import cz.cleansia.customer.core.network.IntEnumSerializersModule
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -259,11 +260,17 @@ class RecurringBookingWireTest {
                     paymentType = 2,
                     startsOn = "2026-08-03T09:30:00Z",
                     preferredEmployeeId = "e-9",
+                    dirtinessLevel = DirtinessLevel.Heavy,
                 ),
             )
         }
 
         assertEquals("\"e-9\"", sent!!["preferredEmployeeId"].toString())
+        assertEquals(
+            "the update rewrites the level, so it is sent as the integer the server binds",
+            "2",
+            sent!!["dirtinessLevel"].toString(),
+        )
     }
 
     @Test
@@ -284,6 +291,7 @@ class RecurringBookingWireTest {
                     paymentType = 2,
                     startsOn = "2026-08-03T09:30:00Z",
                     preferredEmployeeId = "e-9",
+                    dirtinessLevel = DirtinessLevel.Heavy,
                 ),
             )
         }
@@ -291,9 +299,9 @@ class RecurringBookingWireTest {
         assertEquals("\"e-9\"", sent!!["preferredEmployeeId"].toString())
     }
 
-    /** The server refuses a new schedule without it while the consents on record cover an older text. */
+    /** The server refuses a new schedule without the request, and without the terms tick while the consents cover an older text. */
     @Test
-    fun theCreateSendsTheTermsTickOnTheWire() = runTest {
+    fun theCreateSendsTheTermsAndEarlyPerformanceTicksOnTheWire() = runTest {
         val template = Json.parseToJsonElement(CAPTURED_TEMPLATES).jsonArray.first().toString()
         var sent: JsonObject? = null
         serving(template, onRequest = { sent = Json.parseToJsonElement(it.body.readUtf8()).jsonObject }) {
@@ -310,11 +318,48 @@ class RecurringBookingWireTest {
                     paymentType = 2,
                     startsOn = "2026-08-03T09:30:00Z",
                     termsAccepted = true,
+                    dirtinessLevel = DirtinessLevel.Normal,
+                    earlyPerformanceRequested = true,
                 ),
             )
         }
 
         assertEquals("true", sent!!["termsAccepted"].toString())
+        assertEquals("true", sent!!["earlyPerformanceRequested"].toString())
+    }
+
+    @Test
+    fun theCreateSendsTheChosenDirtinessLevelOnTheWire() = runTest {
+        val template = Json.parseToJsonElement(CAPTURED_TEMPLATES).jsonArray.first().toString()
+        var sent: JsonObject? = null
+        serving(template, onRequest = { sent = Json.parseToJsonElement(it.body.readUtf8()).jsonObject }) {
+            it.create(
+                CreateRecurringBookingRequest(
+                    frequency = 3,
+                    dayOfWeek = 3,
+                    timeOfDay = "09:30",
+                    rooms = 4,
+                    bathrooms = 2,
+                    savedAddressId = "a-1",
+                    selectedServiceIds = listOf("s-1"),
+                    selectedPackageIds = emptyList(),
+                    paymentType = 2,
+                    startsOn = "2026-08-03T09:30:00Z",
+                    dirtinessLevel = DirtinessLevel.Increased,
+                ),
+            )
+        }
+
+        assertEquals("1", sent!!["dirtinessLevel"].toString())
+    }
+
+    /** The edit form starts from the stored level, so each template keeps the one the server sent. */
+    @Test
+    fun theDirtinessLevelArrivesOnTheTemplate() = runTest {
+        val list = loadedTemplates(CAPTURED_TEMPLATES)
+
+        assertEquals(DirtinessLevel.Heavy, list.first().dirtinessLevel)
+        assertEquals(DirtinessLevel.Increased, list.last().dirtinessLevel)
     }
 
     // --- payload plumbing ---------------------------------------------------------
@@ -358,7 +403,8 @@ class RecurringBookingWireTest {
                 "lastMaterializedFor": "2026-08-17T09:30:00Z",
                 "isActive": true,
                 "preferredEmployeeId": "e-9",
-                "requiresPaymentMethodChange": true
+                "requiresPaymentMethodChange": true,
+                "dirtinessLevel": 2
               },
               {
                 "id": "t-2",
@@ -377,7 +423,8 @@ class RecurringBookingWireTest {
                 "lastMaterializedFor": "2026-08-14T14:00:00Z",
                 "isActive": false,
                 "preferredEmployeeId": "e-4",
-                "requiresPaymentMethodChange": false
+                "requiresPaymentMethodChange": false,
+                "dirtinessLevel": 1
               }
             ]
         """.trimIndent()
@@ -400,9 +447,11 @@ class RecurringBookingWireTest {
             "isActive",
             "preferredEmployeeId",
             "requiresPaymentMethodChange", "timeZoneId",
+            "dirtinessLevel",
         )
 
-        val TEMPLATE_REQUIRED_FIELDS =
-            listOf("frequency", "dayOfWeek", "timeOfDay", "savedAddressId", "paymentType", "startsOn")
+        val TEMPLATE_REQUIRED_FIELDS = listOf(
+            "frequency", "dayOfWeek", "timeOfDay", "savedAddressId", "paymentType", "startsOn", "dirtinessLevel",
+        )
     }
 }

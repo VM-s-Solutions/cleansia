@@ -51,6 +51,7 @@ export interface ServiceFormData {
    */
   prices: { [key: string]: ServicePriceInput };
   estimatedTime: number;
+  minutesPerRoom: number;
   /** Category id from the picker — required by the backend validator. */
   categoryId: string;
   translations: { [key: string]: { name: string; description: string } };
@@ -188,6 +189,7 @@ export class ServiceFormFacade extends UnsubscribeControlDirective {
     command.description = data.description;
     command.prices = this.toPriceInputs(data.prices);
     command.estimatedTime = data.estimatedTime;
+    command.minutesPerRoom = data.minutesPerRoom;
     command.translations = translations;
     command.categoryId = data.categoryId;
 
@@ -225,6 +227,7 @@ export class ServiceFormFacade extends UnsubscribeControlDirective {
     command.description = data.description;
     command.prices = this.toPriceInputs(data.prices);
     command.estimatedTime = data.estimatedTime;
+    command.minutesPerRoom = data.minutesPerRoom;
     command.translations = translations;
     command.categoryId = data.categoryId;
 

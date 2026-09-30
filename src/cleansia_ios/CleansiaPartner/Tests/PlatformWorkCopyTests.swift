@@ -3,7 +3,7 @@ import XCTest
 
 /// What a cleaner is told about the controls over their work: why they were taken off a job, why their
 /// week is capped, what was deducted from their pay and why, where the rules of the board are written
-/// down, and the contract documents they accept.
+/// down, the contract documents they accept, and who each job's contract binds at what reward.
 final class PlatformWorkCopyTests: XCTestCase {
     private static let locales = ["en", "cs", "sk", "uk", "ru"]
 
@@ -29,7 +29,9 @@ final class PlatformWorkCopyTests: XCTestCase {
         "legal_documents_accept": [],
         "legal_documents_accepted_toast": [],
         "legal_documents_text_updated": [],
-        "legal_documents_review": []
+        "legal_documents_review": [],
+        "work_contract_reward": [],
+        "work_contract_parties": []
     ]
 
     private func catalog() throws -> [String: Any] {
@@ -66,6 +68,15 @@ final class PlatformWorkCopyTests: XCTestCase {
                 )
                 XCTAssertEqual(try formatSlots(resolved), expected, "\(key) [\(locale)]")
             }
+        }
+    }
+
+    /// The documents bind the operating company of the cleaner's market, not the brand.
+    func testTheDocumentsIntroNamesTheOperatingCompanyAsTheOtherParty() throws {
+        let strings = try catalog()
+        for locale in Self.locales {
+            let intro = try XCTUnwrap(value(of: "legal_documents_intro", in: strings, locale: locale), locale)
+            XCTAssertFalse(intro.contains("Cleansia"), "legal_documents_intro [\(locale)] names Cleansia as the party")
         }
     }
 

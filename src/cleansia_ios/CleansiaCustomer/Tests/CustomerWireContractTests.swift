@@ -28,7 +28,9 @@ final class CustomerWireContractTests: XCTestCase {
             expressSurchargeApplied: true,
             expressSurchargeAmount: 400,
             requiredEmployees: 2,
-            expressSurchargeWaivedByMembership: false
+            expressSurchargeWaivedByMembership: false,
+            dirtinessSurchargeAmount: 300,
+            dirtinessLevel: ._1
         )
     }
 
@@ -38,6 +40,8 @@ final class CustomerWireContractTests: XCTestCase {
         XCTAssertEqual(quote.preSurchargeSubtotal, 2000)
         XCTAssertEqual(quote.currencyId, "cur-1")
         XCTAssertEqual(quote.requiredEmployees, 2)
+        XCTAssertEqual(quote.dirtiness, .increased)
+        XCTAssertEqual(quote.dirtinessSurchargeAmount, 300)
     }
 
     func testABrokenQuoteIsRefusedRatherThanPricedAtZero() {
@@ -52,7 +56,9 @@ final class CustomerWireContractTests: XCTestCase {
             ("expressSurchargeWaivedByMembership", { dto in dto.expressSurchargeWaivedByMembership = nil }),
             ("currencyId", { dto in dto.currencyId = "" }),
             ("currencyCode", { dto in dto.currencyCode = nil }),
-            ("requiredEmployees", { dto in dto.requiredEmployees = nil })
+            ("requiredEmployees", { dto in dto.requiredEmployees = nil }),
+            ("dirtinessSurchargeAmount", { dto in dto.dirtinessSurchargeAmount = nil }),
+            ("dirtinessLevel", { dto in dto.dirtinessLevel = nil })
         ] {
             var payload = quotePayload()
             break_(&payload)
@@ -123,6 +129,8 @@ final class CustomerWireContractTests: XCTestCase {
         payload.selectedServices = [ServiceDetails(name: "Deep clean", estimatedTime: 120)]
         payload.selectedPackages = [PackageDetails(name: "Move-out", price: 800, estimatedTime: 60)]
         payload.review = OrderReviewDto(rating: 4, comment: "Spotless.")
+        payload.dirtinessLevel = ._2
+        payload.dirtinessSurchargeAmount = 540
 
         let detail = try CustomerOrderDetail(payload)
 
@@ -133,6 +141,8 @@ final class CustomerWireContractTests: XCTestCase {
         XCTAssertEqual(detail.packages.first?.price, 800)
         XCTAssertEqual(detail.review?.rating, 4)
         XCTAssertEqual(detail.currencyCode, "CZK")
+        XCTAssertEqual(detail.dirtiness, .heavy)
+        XCTAssertEqual(detail.dirtinessSurchargeAmount, 540)
     }
 
     func testABrokenOrderDetailIsRefusedRatherThanPricedAtZero() {
@@ -141,7 +151,9 @@ final class CustomerWireContractTests: XCTestCase {
             ("originalSubtotal", { dto in dto.originalSubtotal = nil }),
             ("rooms", { dto in dto.rooms = nil }),
             ("bathrooms", { dto in dto.bathrooms = nil }),
-            ("estimatedTime", { dto in dto.estimatedTime = nil })
+            ("estimatedTime", { dto in dto.estimatedTime = nil }),
+            ("dirtinessLevel", { dto in dto.dirtinessLevel = nil }),
+            ("dirtinessSurchargeAmount", { dto in dto.dirtinessSurchargeAmount = nil })
         ] {
             var payload = OrderItem.wireComplete()
             break_(&payload)
@@ -299,7 +311,8 @@ final class CustomerWireContractTests: XCTestCase {
             paymentType: 1,
             startsOn: Date(timeIntervalSince1970: 1_780_000_000),
             isActive: true,
-            requiresPaymentMethodChange: true
+            requiresPaymentMethodChange: true,
+            dirtinessLevel: ._2
         )
     }
 
@@ -311,6 +324,15 @@ final class CustomerWireContractTests: XCTestCase {
         var payload = templatePayload()
         payload.requiresPaymentMethodChange = nil
         assertRefused("requiresPaymentMethodChange") { try payload.toDomain() }
+    }
+
+    /// Every occurrence is priced at the schedule's level and an edit sends the form back whole, so a
+    /// level coerced to Normal would quietly reprice the schedule on the next save.
+    func testATemplateCarriesItsLevelAndRefusesWithoutIt() throws {
+        XCTAssertEqual(try templatePayload().toDomain().dirtiness, .heavy)
+        var payload = templatePayload()
+        payload.dirtinessLevel = nil
+        assertRefused("dirtinessLevel") { try payload.toDomain() }
     }
 
     // MARK: the photo counts — a figure the server computes beside the rail, not from it

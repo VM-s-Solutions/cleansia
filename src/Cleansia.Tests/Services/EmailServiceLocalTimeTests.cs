@@ -142,7 +142,8 @@ public sealed class EmailServiceLocalTimeTests
             httpClientFactory.Object,
             translationRepository.Object,
             renderer.Object,
-            countries.Object);
+            countries.Object,
+            Mock.Of<ICompanyInfoRepository>());
 
         return (service, captured);
     }

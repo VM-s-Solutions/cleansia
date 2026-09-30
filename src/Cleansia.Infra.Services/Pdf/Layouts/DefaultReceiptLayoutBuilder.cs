@@ -1,3 +1,4 @@
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Infra.Services.Pdf.Components;
 using Cleansia.Infra.Services.Pdf.Models;
 using Cleansia.Infra.Services.Pdf.Theme;
@@ -279,8 +280,8 @@ public class DefaultReceiptLayoutBuilder : IReceiptLayoutBuilder
 
     /// <summary>
     /// Every priced line of the sale, in the order the price was actually built: the catalogue lines at
-    /// what they cost, then the express surcharge that was applied to their sum, then each discount
-    /// that came off it.
+    /// what they cost, then the dirtiness surcharge on their sum, then the express surcharge on lines and
+    /// dirtiness together, then each discount that came off it.
     ///
     /// <para><b>These sum to <see cref="ReceiptPdfData.Total"/>, and that is the point</b> — to the cent,
     /// because the order stores each term at the precision its column keeps.</para>
@@ -308,6 +309,14 @@ public class DefaultReceiptLayoutBuilder : IReceiptLayoutBuilder
         foreach (var extra in data.Extras)
         {
             lines.Add((extra.Name, extra.Price));
+        }
+
+        if (data.DirtinessSurcharge != 0m)
+        {
+            var label = data.DirtinessLevel == DirtinessLevel.Heavy
+                ? labels.HeavyDirtinessSurcharge
+                : labels.IncreasedDirtinessSurcharge;
+            lines.Add((label, data.DirtinessSurcharge));
         }
 
         if (data.ExpressSurcharge != 0m)

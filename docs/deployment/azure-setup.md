@@ -64,7 +64,12 @@ Images are tagged with the git commit SHA:
 | Engine | PostgreSQL |
 | Migrations | EF Core (migration bundle applied via CI/CD) |
 
-Connection strings are stored as GitHub secrets (`DB_CONNECTION_STRING_DEV`, `DB_CONNECTION_STRING_PRO`) and Azure Key Vault references in app settings.
+The hosts read the database through the Key Vault secret `ConnectionStrings--cleansia-db`. On DEV it
+holds the server administrator's connection string, and the migration reads the same secret. On
+production it holds the least-privilege `cleansia_app` login's, and the migration signs in as the
+administrator from the `POSTGRES_ADMIN_PASSWORD` Environment secret without reading the vault — see
+[Production posture](#production-posture). Only `execute-sql.yml` still reads the
+`DB_CONNECTION_STRING_DEV` / `DB_CONNECTION_STRING_PRO` GitHub secrets.
 
 ### Storage
 
@@ -74,6 +79,8 @@ Connection strings are stored as GitHub secrets (`DB_CONNECTION_STRING_DEV`, `DB
 | Azure Queue Storage | Background job messages (receipt generation, email sending) |
 
 Storage is accessed via the `Cleansia.Infra.Azure.Storage.Blobs` and `Cleansia.Infra.Azure.Storage.Queues` infrastructure projects.
+On DEV they use the connection string in `Storage--ConnectionString`; on production each host uses its
+managed identity and the account refuses shared keys — see [Production posture](#production-posture).
 
 ### Key Vault
 
@@ -113,6 +120,46 @@ landing page's micro-cache hit all carry them:
 | `X-Content-Type-Options` | `nosniff` |
 | `Referrer-Policy` | `strict-origin-when-cross-origin` |
 | `Strict-Transport-Security` | `max-age=31536000` — without `includeSubDomains` or `preload` |
+
+## Production posture {#production-posture}
+
+Production is DEV's module set with stricter flags in `deploy/bicep/weu.prod.bicepparam`, from
+engineering defaults E-1, E-3 and E-4 of the 2026-09-27 meeting plan (owner ruling 2026-09-28). It is
+**authored, not deployed**: nothing here exists in Azure yet, and applying it is the owner's step.
+Every flag defaults to the DEV value, so DEV is unchanged.
+
+| | DEV | Production | Flag |
+|---|---|---|---|
+| Admin API | public at its own hostname | reachable only as `admin.cleansia.cz/api`, through the admin Static Web App's Microsoft (Entra) sign-in | `adminApiLinkedToAdminSpa` |
+| Database | public endpoint, firewall with the allow-Azure-services rule and the admin IP | private endpoint only; public network access off | `privateNetworkingEnabled` |
+| Key Vault | public | private endpoint only; public network access off | `privateNetworkingEnabled` |
+| Storage | account key (`Storage--ConnectionString`) | each host's managed identity; shared keys refused; links are user-delegation SAS; the public blob endpoint stays open for those links | `storageManagedIdentityEnabled` |
+| Database login of the hosts | the server administrator | `cleansia_app` — row reads and writes only, `Ssl Mode=VerifyFull`; the administrator is the migration's alone | `postgresAppLoginEnabled` |
+
+- **The admin API.** The admin App Service is linked as the backend of the Standard-tier admin Static
+  Web App, so every `/api` call first passes the SWA's `admin_console` route rule; the App Service
+  answers 401 to anything the SWA did not proxy, and its staging slot answers 401 to everything but
+  `/health`. The admin SPA's production build calls same-origin `/api`, so the admin API needs no
+  custom domain and no CORS entry, and the host-only cookies and the CSRF header hold unchanged through
+  the proxy. The Free-tier DEV SWA cannot link a backend.
+- **The private database and vault.** The hosts, their staging slots and the Functions app are
+  VNet-integrated and resolve the database, the vault and storage to private endpoints, with no
+  configuration change. The deploy opens a temporary window for the runner's IP around the secret push
+  and the migration and closes it even on failure — [CI/CD — the private database and vault](/deployment/ci-cd#production-window).
+  An administrator's `psql` opens the same window by hand, as `deploy/AZURE-PROD-POSTURE.md` §6 shows.
+- **The least-privilege login.** `deploy/db/grant-app-login.sql` creates `cleansia_app` and grants it
+  after every migration; its password is the `POSTGRES_APP_PASSWORD` secret of `prod-weu`, which the
+  deploy writes into `ConnectionStrings--cleansia-db`. The administrator credential never enters Key
+  Vault.
+- **Storage.** Blob and queue clients, the Functions queue triggers included, connect by identity
+  (`BlobContainerConfiguration__AccountUrl`, and `QueueStorageConnectionString__queueServiceUri` with
+  `__credential=managedidentity`); there is no storage secret. A person browsing the account needs a
+  Storage Blob data role of their own.
+
+What this means for code — where production refuses what DEV allows — is
+[Security rules — the production perimeter](/architecture/security-rules#production-perimeter). The
+knobs, the CI window and the rotations are `deploy/AZURE-PROD-POSTURE.md` §6–§7; the owner's steps are
+`deploy/AZURE-DEV-RUNBOOK.md` §11.
 
 ## Estimated Monthly Costs
 
@@ -167,22 +214,25 @@ disabled in every deployed environment because the DSN is empty. See
 
 ## Architecture Diagram
 
+Production as authored. Every hostname is planned: none resolves until the owner creates its DNS
+records (`deploy/AZURE-DEV-RUNBOOK.md` §12).
+
 ```
 Internet
     |
     ├── partner.cleansia.cz ──> Static Web App (Partner SPA)
-    ├── admin.cleansia.cz   ──> Static Web App (Admin SPA)
+    ├── admin.cleansia.cz   ──> Static Web App (Admin SPA) ── Entra sign-in ──> /api ──> App Service (Admin API)
     ├── cleansia.cz         ──> App Service (Customer SSR)
     |
-    ├── api.cleansia.cz          ──> App Service (Partner API)
-    ├── api-admin.cleansia.cz    ──> App Service (Admin API)
-    ├── api-customer.cleansia.cz ──> App Service (Customer API)
-    └── api-mobile.cleansia.cz   ──> App Service (Mobile API)
-                                        |
-                                        ├──> PostgreSQL
-                                        ├──> Blob Storage
+    ├── api.cleansia.cz                 ──> App Service (Partner API)
+    ├── api-customer.cleansia.cz        ──> App Service (Customer API)
+    ├── api-partner-mobile.cleansia.cz  ──> App Service (Partner Mobile API)
+    └── api-customer-mobile.cleansia.cz ──> App Service (Customer Mobile API)
+                                        |   VNet integration → private endpoints
+                                        ├──> PostgreSQL (private)
+                                        ├──> Blob Storage (its public endpoint also serves the SAS links)
                                         ├──> Queue Storage ──> Azure Functions
-                                        └──> Key Vault (secrets)
+                                        └──> Key Vault (private)
 ```
 
 ## Managed Identity Flow
@@ -200,3 +250,8 @@ Azure Functions
     ├── Blob Storage (write receipts)
     └── Queue Storage (receive messages)
 ```
+
+The Key Vault arrows are the identity in every stage. The storage arrows are the identity in
+production only: DEV reaches storage with the connection string in `Storage--ConnectionString`.
+PostgreSQL is never reached by identity — the hosts sign in with a password login, `cleansia_app` in
+production.

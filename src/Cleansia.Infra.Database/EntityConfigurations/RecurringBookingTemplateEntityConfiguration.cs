@@ -1,4 +1,5 @@
 using Cleansia.Core.Domain.Bookings;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Infra.Database.Converters;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -33,6 +34,9 @@ public class RecurringBookingTemplateEntityConfiguration : TenantAuditableEntity
         builder.Property(t => t.Rooms);
         builder.Property(t => t.Bathrooms);
         builder.Property(t => t.PaymentType).IsRequired();
+        builder.Property(t => t.DirtinessLevel)
+            .IsRequired()
+            .HasDefaultValue(DirtinessLevel.Normal);
 
         // Plain id, no FK — mirrors Order.PreferredEmployeeId: a hard FK would break if the employee
         // row is removed, and the materializer treats it as a hint it may drop.

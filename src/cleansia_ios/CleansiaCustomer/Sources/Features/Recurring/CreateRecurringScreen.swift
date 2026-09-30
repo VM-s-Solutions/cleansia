@@ -73,6 +73,10 @@ struct CreateRecurringScreen: View {
                     onRoomsChange: vm.setRooms,
                     onBathroomsChange: vm.setBathrooms
                 )
+                VStack(alignment: .leading, spacing: Spacing.s) {
+                    SectionLabel(text: L10n.Booking.dirtinessQuestion)
+                    DirtinessPicker(selected: vm.formState.dirtiness, onSelect: vm.setDirtiness)
+                }
                 PaymentSection(
                     selected: vm.formState.paymentType,
                     cash: vm.cashEligibility,
@@ -89,6 +93,10 @@ struct CreateRecurringScreen: View {
                     selectedId: vm.formState.preferredEmployeeId,
                     onSelect: vm.setPreferredEmployeeId
                 )
+
+                if !vm.isEditing {
+                    earlyPerformanceRow
+                }
 
                 if let appliesNotice = vm.appliesNotice {
                     AppliesNotice(text: appliesNotice)
@@ -134,6 +142,18 @@ struct CreateRecurringScreen: View {
             isPresented: $showAddressManager,
             onDismiss: { Task { await vm.reloadAddresses() } },
             content: { addressManager }
+        )
+    }
+
+    /// One tick covers every occurrence the schedule creates; an edit asks nothing, the schedule's act stands.
+    private var earlyPerformanceRow: some View {
+        CleansiaConsentCheckbox(
+            checked: Binding(
+                get: { vm.formState.earlyPerformanceRequested },
+                set: vm.setEarlyPerformanceRequested
+            ),
+            markdown: L10n.Booking.earlyPerformanceRequest,
+            toggleAccessibilityLabel: L10n.Booking.earlyPerformanceRequestToggle
         )
     }
 

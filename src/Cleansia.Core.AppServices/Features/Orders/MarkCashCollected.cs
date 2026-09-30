@@ -4,6 +4,7 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
+using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
@@ -17,8 +18,9 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 /// The assigned cleaner records that they collected the cash owed for an order that is not yet settled.
 /// This flips the order to <see cref="PaymentStatus.Paid"/> (the same terminal payment state a
 /// Stripe-charged card order reaches) and stamps who, when and the amount due, which the cleaner
-/// confirms rather than types (owner ruling 2026-09-28). It is the gate that lets an unsettled order
-/// pass the CompleteOrder payment check, where the cash receipt is then issued.
+/// confirms rather than types (owner ruling 2026-09-28); the amount then counts as cash the cleaner holds
+/// for the company. It is the gate that lets an unsettled order pass the CompleteOrder payment check, where
+/// the cash receipt is then issued.
 /// <para>
 /// It accepts a CARD booking too — a card order whose Stripe webhook never arrived is otherwise
 /// impossible to complete in the field. For those, the handler reconciles against live Stripe first so
@@ -132,6 +134,7 @@ public class MarkCashCollected
         IOrderRepository orderRepository,
         IOrderAccessService orderAccessService,
         IStripeClient stripeClient,
+        ICashLedgerRepository cashLedgerRepository,
         ILogger<Handler> logger)
         : ICommandHandler<Command, Response>
     {
@@ -199,6 +202,7 @@ public class MarkCashCollected
             // The validator guarantees an Approved, assigned caller, so the employee id is present.
             var employeeId = await orderAccessService.GetCallerEmployeeIdAsync(cancellationToken);
             order.MarkCashCollected(employeeId!);
+            cashLedgerRepository.Add(CashLedgerEntry.ForCollection(order));
 
             return BusinessResult.Success(new Response(order.Id, order.PaymentStatus));
         }

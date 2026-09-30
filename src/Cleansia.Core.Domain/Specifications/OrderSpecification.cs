@@ -55,6 +55,10 @@ public class OrderSpecification : BaseSpecification<string?>, ISpecification<Ord
     // priced in. Unlike CleanerCurrencyId it carries no "already on it" arm.
     public string? CurrencyId { get; set; }
 
+    // Set for a cleaner above the company's cash float cap (owner ruling 2026-09-28, decision 25): cash
+    // jobs are off their board, except one they are already on.
+    public string? HideCashFromEmployeeId { get; set; }
+
     public Expression<Func<Order, bool>> SatisfiedBy()
     {
         Specification<Order> specification = new TrueSpecification<Order>();
@@ -195,6 +199,13 @@ public class OrderSpecification : BaseSpecification<string?>, ISpecification<Ord
             specification &= new DirectSpecification<Order>(x => x.CurrencyId == CurrencyId);
         }
 
+        if (!string.IsNullOrEmpty(HideCashFromEmployeeId))
+        {
+            specification &= new DirectSpecification<Order>(x =>
+                x.PaymentType != PaymentType.Cash
+                || x.AssignedEmployees.Any(ae => ae.EmployeeId == HideCashFromEmployeeId));
+        }
+
         return specification.SatisfiedBy();
     }
 
@@ -206,7 +217,7 @@ public class OrderSpecification : BaseSpecification<string?>, ISpecification<Ord
         bool? hasAvailableSpots = null, bool? isUnassigned = null, string? excludeEmployeeId = null,
         string? userId = null, string? restrictToEmployeeId = null, bool? offerableOnly = null,
         string? notHeldFromEmployeeId = null, DateTime? nowUtc = null, string? cleanerCurrencyId = null,
-        string? currencyId = null) =>
+        string? currencyId = null, string? hideCashFromEmployeeId = null) =>
         new()
         {
             Id = id,
@@ -232,6 +243,7 @@ public class OrderSpecification : BaseSpecification<string?>, ISpecification<Ord
             NotHeldFromEmployeeId = notHeldFromEmployeeId,
             NowUtc = nowUtc,
             CleanerCurrencyId = cleanerCurrencyId,
-            CurrencyId = currencyId
+            CurrencyId = currencyId,
+            HideCashFromEmployeeId = hideCashFromEmployeeId
         };
 }

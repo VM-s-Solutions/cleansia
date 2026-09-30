@@ -82,6 +82,7 @@ private struct PeriodPayErrorView: View {
                 totalOrders: 3,
                 totalBasePay: 3600,
                 totalExtrasPay: 300,
+                totalDirtinessPay: 180,
                 totalExpensesPay: 200,
                 totalBonusPay: 150,
                 totalDeductionPay: 50,
@@ -94,7 +95,8 @@ private struct PeriodPayErrorView: View {
                         totalPay: 1400,
                         createdOn: Date(),
                         deductionPay: index == 1 ? 50 : 0,
-                        deductionReason: index == 1 ? "Windows left streaked in two rooms" : nil
+                        deductionReason: index == 1 ? "Windows left streaked in two rooms" : nil,
+                        lineType: index == 3 ? ._2 : ._0
                     )
                 }
             )
@@ -106,6 +108,7 @@ private struct PeriodPayErrorView: View {
                 totalOrders: 0,
                 totalBasePay: 0,
                 totalExtrasPay: 0,
+                totalDirtinessPay: 0,
                 totalExpensesPay: 0,
                 totalBonusPay: 0,
                 totalDeductionPay: 0,

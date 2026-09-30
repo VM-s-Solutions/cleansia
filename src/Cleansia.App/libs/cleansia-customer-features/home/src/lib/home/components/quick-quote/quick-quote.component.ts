@@ -3,6 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { DIRTINESS_LEVELS } from '@cleansia/customer-services';
 import { EXPRESS_LEAD_TIME_HOURS, generateTimeOptions, lastBookableDay } from '@cleansia/models';
 import { localeFor } from '@cleansia/utils';
 import { DatePickerModule } from 'primeng/datepicker';
@@ -71,6 +72,8 @@ export class QuickQuoteComponent {
    * loading content rather than as a control someone forgot to fill.
    */
   readonly placeholderChipWidths = [104, 132, 88, 116, 76];
+
+  readonly dirtinessLevels = DIRTINESS_LEVELS;
 
   /**
    * No cleaning can be booked for yesterday.

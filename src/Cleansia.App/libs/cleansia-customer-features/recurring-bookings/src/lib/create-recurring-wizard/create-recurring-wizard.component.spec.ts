@@ -4,6 +4,7 @@ import { By } from '@angular/platform-browser';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { ActivatedRoute, provideRouter, Router } from '@angular/router';
 import {
+  DirtinessLevel,
   PackageListItem,
   PaymentType,
   PreferredCleanerOption,
@@ -29,6 +30,7 @@ const NOTHING_PRICED: PricedSelection = {
   packageIds: [],
   rooms: 2,
   bathrooms: 1,
+  dirtinessLevel: DirtinessLevel.Normal,
   countryId: null,
 };
 
@@ -54,6 +56,13 @@ class FakeRecurringBookingsFacade {
   submitting = signal(false);
   missing = signal<MissingField[]>([]);
   formPrice = signal(null);
+  cardCaptureVisible = signal(false);
+  cardCaptureConsent = signal(false);
+  cardCaptureStarting = signal(false);
+  setCardCaptureConsent = jest.fn();
+  closeCardCapture = jest.fn();
+  startCardCapture = jest.fn();
+  restoreParkedForm = jest.fn();
   initialize = jest.fn();
   ensureAddresses = jest.fn();
   loadServingCleaners = jest.fn();
@@ -117,6 +126,10 @@ describe('CreateRecurringWizardComponent — paying in cash', () => {
     fixture.componentInstance.paymentOptions().find((option) => option.value === PaymentType.Cash);
   const cardOption = () =>
     fixture.componentInstance.paymentOptions().find((option) => option.value === PaymentType.Card);
+
+  it('picks up a new schedule the customer left to save a card', () => {
+    expect(facade.restoreParkedForm).toHaveBeenCalledWith(null);
+  });
 
   it('disables the cash option whenever the facade says cash cannot be chosen', () => {
     facade.cashSelectable.set(false);
@@ -404,5 +417,154 @@ describe('CreateRecurringWizardComponent — home size', () => {
 
   it('offers one bathroom up to the server maximum', () => {
     expect(offered(1)).toEqual(oneTo(bookingPolicy('MaxBathrooms')));
+  });
+});
+
+// Decision 34: a schedule carries the level its customer picks, from the same three the booking
+// wizard offers, and a new one is asked rather than assumed.
+describe('CreateRecurringWizardComponent — how clean the home is', () => {
+  let fixture: ComponentFixture<CreateRecurringWizardComponent>;
+  let facade: FakeRecurringBookingsFacade;
+  let el: HTMLElement;
+
+  beforeEach(async () => {
+    facade = new FakeRecurringBookingsFacade();
+    await TestBed.configureTestingModule({
+      imports: [CreateRecurringWizardComponent, TranslateModule.forRoot()],
+      providers: [
+        provideRouter([]),
+        provideNoopAnimations(),
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: { paramMap: { get: () => null }, queryParamMap: { get: () => null } },
+          },
+        },
+      ],
+    })
+      .overrideComponent(CreateRecurringWizardComponent, {
+        set: {
+          providers: [
+            { provide: RecurringBookingsFacade, useValue: facade },
+            ConfirmationService,
+          ],
+        },
+      })
+      .compileComponents();
+    fixture = TestBed.createComponent(CreateRecurringWizardComponent);
+    el = fixture.nativeElement;
+    fixture.detectChanges();
+  });
+
+  const levels = () => Array.from(el.querySelectorAll<HTMLButtonElement>('[data-spec-level]'));
+  const pressed = () => levels().map((level) => level.getAttribute('aria-pressed'));
+
+  it('offers the three levels with the booking copy and none chosen on a new schedule', () => {
+    expect(levels().map((level) => level.querySelector('.cl-wiz__level-name')?.textContent?.trim())).toEqual([
+      'pages.order.dirtiness.normal.name',
+      'pages.order.dirtiness.increased.name',
+      'pages.order.dirtiness.heavy.name',
+    ]);
+    expect(pressed()).toEqual(['false', 'false', 'false']);
+  });
+
+  it('hands the level tapped to the facade', () => {
+    levels()[1].click();
+
+    expect(facade.updateFormData).toHaveBeenCalledWith({ dirtinessLevel: DirtinessLevel.Increased });
+  });
+
+  it('shows the level the schedule has as the chosen one', () => {
+    facade.formData.update((data) => ({ ...data, dirtinessLevel: DirtinessLevel.Heavy }));
+    fixture.detectChanges();
+
+    expect(pressed()).toEqual(['false', 'false', 'true']);
+  });
+
+  it('names a missing level only once save has been pressed', () => {
+    facade.missing.set(['dirtiness']);
+    fixture.detectChanges();
+    expect(el.querySelector('[data-spec-dirtiness-error]')).toBeNull();
+
+    facade.submitAttempted.set(true);
+    fixture.detectChanges();
+
+    expect(el.querySelector('[data-spec-dirtiness-error]')?.textContent).toContain(
+      'recurring_booking.error_dirtiness',
+    );
+    expect(fixture.componentInstance.missingLabels()).toBe('recurring_booking.dirtiness_label');
+  });
+});
+
+describe('CreateRecurringWizardComponent — the request to start within the withdrawal period', () => {
+  let fixture: ComponentFixture<CreateRecurringWizardComponent>;
+  let facade: FakeRecurringBookingsFacade;
+  let el: HTMLElement;
+
+  beforeEach(async () => {
+    facade = new FakeRecurringBookingsFacade();
+    await TestBed.configureTestingModule({
+      imports: [CreateRecurringWizardComponent, TranslateModule.forRoot()],
+      providers: [
+        provideRouter([]),
+        provideNoopAnimations(),
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: { paramMap: { get: () => null }, queryParamMap: { get: () => null } },
+          },
+        },
+      ],
+    })
+      .overrideComponent(CreateRecurringWizardComponent, {
+        set: {
+          providers: [
+            { provide: RecurringBookingsFacade, useValue: facade },
+            ConfirmationService,
+          ],
+        },
+      })
+      .compileComponents();
+    fixture = TestBed.createComponent(CreateRecurringWizardComponent);
+    el = fixture.nativeElement;
+    fixture.detectChanges();
+  });
+
+  const tick = () => el.querySelector<HTMLElement>('[data-spec-early-performance]');
+
+  it('is asked once, on a new schedule, in the wording the server records', () => {
+    expect(tick()?.textContent).toContain(
+      'pages.order.early_performance.early-performance-draft-2026-09-29',
+    );
+  });
+
+  it('is not asked when a schedule is edited', () => {
+    facade.editingId.set('t1');
+    fixture.detectChanges();
+
+    expect(tick()).toBeNull();
+  });
+
+  it('hands the answer to the facade', () => {
+    const checkbox = fixture.debugElement.query(By.css('[data-spec-early-performance] p-checkbox'));
+    checkbox.triggerEventHandler('ngModelChange', true);
+
+    expect(facade.updateFormData).toHaveBeenCalledWith({ earlyPerformanceRequested: true });
+  });
+
+  it('names the missing request only once save has been pressed', () => {
+    facade.missing.set(['earlyPerformance']);
+    fixture.detectChanges();
+    expect(el.querySelector('[data-spec-early-performance-error]')).toBeNull();
+
+    facade.submitAttempted.set(true);
+    fixture.detectChanges();
+
+    expect(el.querySelector('[data-spec-early-performance-error]')?.textContent).toContain(
+      'recurring_booking.error_early_performance',
+    );
+    expect(fixture.componentInstance.missingLabels()).toBe(
+      'recurring_booking.early_performance_label',
+    );
   });
 });

@@ -18,7 +18,6 @@ import {
   SubmitOrderReviewReviewLineScore,
 } from '@cleansia/customer-services';
 import { ReviewLineScore } from './order-review-lines.models';
-import { buildWorkContractAcceptanceLines } from './order-work-contract.models';
 import { extractApiErrorCode, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
@@ -109,9 +108,6 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
     return order.paymentType?.value === PaymentType.Cash ||
       status === PaymentStatus.Pending || status === PaymentStatus.Failed;
   });
-
-  /** One per crew member who accepted the contract for work; nothing before any acceptance. */
-  readonly workContractAcceptances = computed(() => buildWorkContractAcceptanceLines(this.order()));
 
   /**
    * How long free cancellation lasted. Plus shortens the window, but only for a paid month: the

@@ -37,6 +37,15 @@
   [outlined]="facade.activePanel() !== 'recordCash'"
   (onClick)="togglePanel('recordCash')"
 />
+@if (canConfirmLockout()) {
+<cleansia-button
+  [label]="'pages.order_management.ops.lockout.action' | translate"
+  icon="pi pi-lock"
+  severity="danger"
+  [outlined]="facade.activePanel() !== 'lockout'"
+  (onClick)="togglePanel('lockout')"
+/>
+}
 
 @if (facade.activePanel() === 'cancel') {
 <div class="detail-actions__panel">
@@ -179,6 +188,27 @@
     severity="danger"
     [loading]="facade.submitting()"
     (onClick)="submitNoShow()"
+  />
+</div>
+}
+
+@if (facade.activePanel() === 'lockout' && canConfirmLockout()) {
+<div class="detail-actions__panel">
+  <p class="detail-actions__hint">
+    {{ 'pages.order_management.ops.lockout.context' | translate }}
+  </p>
+  <p class="detail-actions__hint">
+    {{ 'pages.order_management.ops.lockout.confirm' | translate }}
+  </p>
+  @if (facade.errorKey()) {
+  <p class="detail-actions__error">{{ facade.errorKey()! | translate }}</p>
+  }
+  <cleansia-button
+    [label]="'pages.order_management.ops.lockout.submit' | translate"
+    icon="pi pi-lock"
+    severity="danger"
+    [loading]="facade.submitting()"
+    (onClick)="submitLockout()"
   />
 </div>
 }

@@ -342,6 +342,177 @@ public class StripeClient : IStripeClient
         return new SetupIntentResult(intent.Id, intent.ClientSecret);
     }
 
+    public async Task<SetupIntentResult> CreateCardSetupIntentAsync(
+        string stripeCustomerId,
+        string savedCardId,
+        CancellationToken cancellationToken)
+    {
+        var service = new SetupIntentService(stripe);
+        var options = new SetupIntentCreateOptions
+        {
+            Customer = stripeCustomerId,
+            Usage = "off_session",
+            PaymentMethodTypes = ["card"],
+            Metadata = new Dictionary<string, string> { { SavedCardMetadataKey, savedCardId } },
+        };
+        var requestOptions = new RequestOptions { IdempotencyKey = $"saved-card-setup-{savedCardId}" };
+        var intent = await ClassifyAsync(
+            nameof(CreateCardSetupIntentAsync),
+            () => service.CreateAsync(options, requestOptions, cancellationToken));
+        return new SetupIntentResult(intent.Id, intent.ClientSecret);
+    }
+
+    public async Task<string> CreateCardSetupCheckoutSessionAsync(
+        string stripeCustomerId,
+        string savedCardId,
+        CancellationToken cancellationToken)
+    {
+        var metadata = new Dictionary<string, string> { { SavedCardMetadataKey, savedCardId } };
+        var profileUrl = new Uri(config.SuccessUrlBase).GetLeftPart(UriPartial.Authority) + ProfilePagePath;
+        var options = new SessionCreateOptions
+        {
+            Mode = "setup",
+            Customer = stripeCustomerId,
+            PaymentMethodTypes = ["card"],
+            SetupIntentData = new SessionSetupIntentDataOptions { Metadata = metadata },
+            Metadata = metadata,
+            SuccessUrl = $"{profileUrl}?cardSetup=success",
+            CancelUrl = $"{profileUrl}?cardSetup=cancel",
+        };
+        var requestOptions = new RequestOptions { IdempotencyKey = $"saved-card-checkout-{savedCardId}" };
+        var service = new SessionService(stripe);
+        var session = await ClassifyAsync(
+            nameof(CreateCardSetupCheckoutSessionAsync),
+            () => service.CreateAsync(options, requestOptions, cancellationToken));
+        return session.Url;
+    }
+
+    public async Task<SavedCardDetails?> GetSetupIntentCardAsync(
+        string setupIntentId,
+        CancellationToken cancellationToken)
+    {
+        var service = new SetupIntentService(stripe);
+        var options = new SetupIntentGetOptions { Expand = ["payment_method"] };
+        var intent = await ClassifyAsync(
+            nameof(GetSetupIntentCardAsync),
+            () => service.GetAsync(setupIntentId, options, cancellationToken: cancellationToken));
+
+        if (intent.Status != "succeeded" || intent.PaymentMethod is not { Card: { } card } paymentMethod)
+        {
+            return null;
+        }
+
+        return new SavedCardDetails(paymentMethod.Id, card.Brand, card.Last4, (int)card.ExpMonth, (int)card.ExpYear);
+    }
+
+    public async Task<string> ChargeReceivableOffSessionAsync(
+        string receivableId,
+        decimal amount,
+        string currency,
+        string stripeCustomerId,
+        string paymentMethodId,
+        int attempt,
+        CancellationToken cancellationToken)
+    {
+        var service = new PaymentIntentService(stripe);
+        var options = new PaymentIntentCreateOptions
+        {
+            Amount = ToMinorUnits(amount),
+            Currency = currency.ToLowerInvariant(),
+            Customer = stripeCustomerId,
+            PaymentMethod = paymentMethodId,
+            PaymentMethodTypes = ["card"],
+            OffSession = true,
+            Confirm = true,
+            Metadata = new Dictionary<string, string> { { ReceivableMetadataKey, receivableId } },
+        };
+        var requestOptions = new RequestOptions { IdempotencyKey = $"receivable-charge-{receivableId}-{attempt}" };
+        var intent = await ClassifyAsync(
+            nameof(ChargeReceivableOffSessionAsync),
+            () => service.CreateAsync(options, requestOptions, cancellationToken));
+        return intent.Id;
+    }
+
+    public async Task<CheckoutSessionResult> CreateReceivableCheckoutSessionAsync(
+        string receivableId,
+        string? currentSessionId,
+        string orderId,
+        string displayOrderNumber,
+        decimal amount,
+        string currency,
+        CancellationToken cancellationToken)
+    {
+        var service = new SessionService(stripe);
+        if (!string.IsNullOrEmpty(currentSessionId))
+        {
+            var current = await ClassifyAsync(
+                nameof(CreateReceivableCheckoutSessionAsync),
+                () => service.GetAsync(currentSessionId, cancellationToken: cancellationToken));
+            if (current.Status == "open" && current.ExpiresAt > DateTime.UtcNow)
+            {
+                return new CheckoutSessionResult(current.Id, current.Url);
+            }
+        }
+
+        var orderPage = new Uri(config.SuccessUrlBase).GetLeftPart(UriPartial.Authority) + $"{OrdersPagePath}/{orderId}";
+        var options = new SessionCreateOptions
+        {
+            Mode = "payment",
+            PaymentMethodTypes = ["card"],
+            LineItems =
+            [
+                new SessionLineItemOptions
+                {
+                    PriceData = new SessionLineItemPriceDataOptions
+                    {
+                        Currency = currency.ToLowerInvariant(),
+                        ProductData = new SessionLineItemPriceDataProductDataOptions
+                        {
+                            Name = $"Amount due on order {displayOrderNumber}",
+                        },
+                        UnitAmount = ToMinorUnits(amount),
+                    },
+                    Quantity = 1,
+                },
+            ],
+            AdaptivePricing = new SessionAdaptivePricingOptions { Enabled = false },
+            SuccessUrl = orderPage,
+            CancelUrl = orderPage,
+            Metadata = new Dictionary<string, string> { { ReceivableMetadataKey, receivableId } },
+        };
+        var requestOptions = new RequestOptions
+        {
+            IdempotencyKey = string.IsNullOrEmpty(currentSessionId)
+                ? $"receivable-checkout-{receivableId}"
+                : $"receivable-checkout-{receivableId}-after-{currentSessionId}",
+        };
+        var session = await ClassifyAsync(
+            nameof(CreateReceivableCheckoutSessionAsync),
+            () => service.CreateAsync(options, requestOptions, cancellationToken));
+        return new CheckoutSessionResult(session.Id, session.Url);
+    }
+
+    public async Task<bool> ExpireReceivableCheckoutSessionAsync(string sessionId, CancellationToken cancellationToken)
+    {
+        var service = new SessionService(stripe);
+        var session = await ClassifyAsync(
+            nameof(ExpireReceivableCheckoutSessionAsync),
+            () => service.GetAsync(sessionId, cancellationToken: cancellationToken));
+        if (session.Status == "complete")
+        {
+            return false;
+        }
+
+        if (session.Status == "open")
+        {
+            await ClassifyAsync(
+                nameof(ExpireReceivableCheckoutSessionAsync),
+                () => service.ExpireAsync(sessionId, cancellationToken: cancellationToken));
+        }
+
+        return true;
+    }
+
     public async Task<SubscriptionResult> CreateSubscriptionAsync(
         string stripeCustomerId,
         string stripePriceId,
@@ -527,8 +698,8 @@ public class StripeClient : IStripeClient
         return session.Url;
     }
 
-    // The customer-app routes a checkout returns to: the two of a membership checkout, and the orders
-    // mount an expiring order checkout cancels back to. Pinned by
+    // The customer-app routes a checkout returns to: the two of a membership checkout, the orders
+    // mount an expiring order checkout cancels back to, and the profile a card setup returns to. Pinned by
     // MembershipReturnPathTests, which reads them back out of the Angular route table — because a
     // frontend path living in a backend assembly is invisible to `nx affected`, to every Angular
     // test, and to the compiler, which is precisely how SuccessUrlBase came to point at the partner
@@ -536,6 +707,11 @@ public class StripeClient : IStripeClient
     private const string MembershipWelcomePath = "/membership/welcome";
     private const string PlusPagePath = "/plus";
     private const string OrdersPagePath = "/orders";
+    private const string ProfilePagePath = "/profile";
+
+    private const string SavedCardMetadataKey = "SavedCardId";
+
+    private const string ReceivableMetadataKey = "ReceivableId";
 
     /// <summary>
     /// Where Stripe sends the browser back to after a membership checkout.

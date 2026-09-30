@@ -27,6 +27,7 @@ public class GdprDeletionService(
     IEmployeePayoutDetailsRepository employeePayoutDetailsRepository,
     IUserMembershipRepository userMembershipRepository,
     IUserStripeCustomerRepository userStripeCustomerRepository,
+    ISavedCardRepository savedCardRepository,
     IOrderPhotoRepository orderPhotoRepository,
     IDeviceRepository deviceRepository,
     ILiveActivityTokenRepository liveActivityTokenRepository,
@@ -543,8 +544,10 @@ public class GdprDeletionService(
         // A reference created after the census makes the FK refuse deletion instead of losing its address.
         addressRepository.RemoveRange(sourceAddresses.Where(a => !sharedAddressIds.Contains(a.Id)));
 
-        // The per-currency Stripe Customer ids go with the legacy one Anonymize() clears.
+        // The per-currency Stripe Customer ids go with the legacy one Anonymize() clears, and the cards
+        // saved on them with them.
         await userStripeCustomerRepository.RemoveForUserAsync(user.Id, ct);
+        await savedCardRepository.RemoveForUserAsync(user.Id, ct);
 
         // The customer's own conduct record stays for defence of claims (ADR-0062 D5) — the subject id is
         // pseudonymous once the User row below is anonymized — but the IP address, device label and

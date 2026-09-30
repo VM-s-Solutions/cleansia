@@ -202,23 +202,27 @@ final class PartnerWireContractTests: XCTestCase {
                     deductionPay: 50,
                     totalPay: 2100,
                     createdOn: Date(),
-                    deductionReason: "Windows left streaked in two rooms"
+                    deductionReason: "Windows left streaked in two rooms",
+                    lineType: ._0
                 ),
                 OrderEmployeePayDto(
                     id: "line-2",
                     orderNumber: "ORD-2",
                     deductionPay: 0,
                     totalPay: 2100,
-                    createdOn: Date()
+                    createdOn: Date(),
+                    lineType: ._2
                 )
             ],
-            currencyCode: "EUR"
+            currencyCode: "EUR",
+            totalDirtinessPay: 187.35
         )
     }
 
     func testAFullyPopulatedSummaryMaps() throws {
         let summary = try PeriodPaySummary(summaryPayload())
         XCTAssertEqual(summary.grandTotal, 4200)
+        XCTAssertEqual(summary.totalDirtinessPay, 187.35)
         XCTAssertEqual(summary.orderPays.count, 2)
         XCTAssertEqual(summary.currencyCode, "EUR")
     }
@@ -256,6 +260,7 @@ final class PartnerWireContractTests: XCTestCase {
             ("grandTotal", { (dto: inout PeriodPaySummaryDto) in dto.grandTotal = nil }),
             ("totalBasePay", { dto in dto.totalBasePay = nil }),
             ("totalExtrasPay", { dto in dto.totalExtrasPay = nil }),
+            ("totalDirtinessPay", { dto in dto.totalDirtinessPay = nil }),
             ("totalExpensesPay", { dto in dto.totalExpensesPay = nil }),
             ("totalBonusPay", { dto in dto.totalBonusPay = nil }),
             ("totalDeductionPay", { dto in dto.totalDeductionPay = nil }),
@@ -287,6 +292,21 @@ final class PartnerWireContractTests: XCTestCase {
         var noDeduction = summaryPayload()
         noDeduction.orderPays?[1].deductionPay = nil
         assertRefused("deductionPay") { try PeriodPaySummary(noDeduction) }
+
+        var noType = summaryPayload()
+        noType.orderPays?[1].lineType = nil
+        assertRefused("lineType") { try PeriodPaySummary(noType) }
+    }
+
+    /// A fee-share line pays for a job that did not happen, so it says which fee it is a share of.
+    func testEachFeeShareLineNamesTheFeeItShares() throws {
+        let lines = try PeriodPaySummary(summaryPayload()).orderPays
+        var cancellation = try XCTUnwrap(summaryPayload().orderPays?[0])
+        cancellation.lineType = ._1
+
+        XCTAssertNil(lines.first?.feeShareCaption)
+        XCTAssertEqual(lines.last?.feeShareCaption, L10n.PeriodPay.lineLockoutFeeShare)
+        XCTAssertEqual(try OrderPayLine(cancellation)?.feeShareCaption, L10n.PeriodPay.lineCancellationFeeShare)
     }
 
     func testADisputeChargeReachesTheLineWithTheReasonThePartnerIsShown() throws {
@@ -296,6 +316,37 @@ final class PartnerWireContractTests: XCTestCase {
         XCTAssertEqual(lines.first?.deductionReason, "Windows left streaked in two rooms")
         XCTAssertEqual(lines.last?.deductionPay, 0)
         XCTAssertNil(lines.last?.deductionReason)
+    }
+
+    // MARK: CashHeldDto — refuse the list
+
+    private func cashPayload() -> CashHeldDto {
+        CashHeldDto(currencyId: "cur-czk", currencyCode: "CZK", amount: 3250.5, floatCap: 3000, cashJobsHidden: true)
+    }
+
+    func testAFullyPopulatedCashRowMaps() throws {
+        XCTAssertEqual(
+            try CashHeld(cashPayload()),
+            CashHeld(currencyCode: "CZK", amount: 3250.5, floatCap: 3000, cashJobsHidden: true)
+        )
+    }
+
+    /// A company that sets no cap sends none, and that is no cap rather than a cap of nothing.
+    func testACashRowWithNoCapMapsWithoutOne() throws {
+        var payload = cashPayload()
+        payload.floatCap = nil
+        XCTAssertNil(try CashHeld(payload).floatCap)
+    }
+
+    func testEveryNonNullableCashFieldIsRefused() {
+        for (field, break_) in [
+            ("amount", { (dto: inout CashHeldDto) in dto.amount = nil }),
+            ("cashJobsHidden", { dto in dto.cashJobsHidden = nil })
+        ] {
+            var payload = cashPayload()
+            break_(&payload)
+            assertRefused(field) { try [payload].map(CashHeld.init) }
+        }
     }
 
     // MARK: OrderItem — the detail

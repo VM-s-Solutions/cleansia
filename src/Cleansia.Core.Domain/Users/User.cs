@@ -100,6 +100,12 @@ public class User : TenantAuditable
 
     public DateTimeOffset? LastLoginAt { get; private set; }
 
+    /// <summary>
+    /// Set on an administrator account another administrator created, whose password the creator
+    /// typed and therefore knows; any later password write by the account's holder clears it.
+    /// </summary>
+    public bool MustChangePassword { get; private set; }
+
     [MaxLength(5)]
     public string? PreferredLanguageCode { get; private set; }
 
@@ -202,6 +208,13 @@ public class User : TenantAuditable
     public User UpdatePassword(string password)
     {
         Password = password;
+        MustChangePassword = false;
+        return this;
+    }
+
+    public User RequirePasswordChange()
+    {
+        MustChangePassword = true;
         return this;
     }
 

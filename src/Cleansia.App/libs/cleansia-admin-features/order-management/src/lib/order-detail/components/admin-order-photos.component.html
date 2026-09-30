@@ -12,6 +12,12 @@
       <span class="detail-grid__label">{{ 'pages.order_detail.after_photos' | translate }}</span>
       <span class="detail-grid__value">{{ afterPhotos().length }}</span>
     </div>
+    @if (entrancePhotos().length > 0) {
+    <div class="detail-grid__item">
+      <span class="detail-grid__label">{{ 'pages.order_detail.entrance_photos' | translate }}</span>
+      <span class="detail-grid__value">{{ entrancePhotos().length }}</span>
+    </div>
+    }
   </div>
   }
 
@@ -90,8 +96,43 @@
         }
       </div>
     </div>
-    } @if (beforePhotos().length === 0 && afterPhotos().length === 0 &&
-    !loading()) {
+    } @if (entrancePhotos().length > 0) {
+    <div class="order-photos__section">
+      <h4 class="order-photos__section-title">
+        {{ 'pages.order_detail.entrance_photos' | translate }}
+      </h4>
+      <div class="order-photos__grid">
+        @for (photo of entrancePhotos(); track photo.id) {
+        <div
+          class="order-photos__item"
+          role="button"
+          tabindex="0"
+          (click)="openGallery(beforePhotos().length + afterPhotos().length + $index)"
+          (keydown.enter)="openGallery(beforePhotos().length + afterPhotos().length + $index)"
+        >
+          <img
+            [src]="photo.blobUrl"
+            [alt]="photo.originalFileName || photo.fileName"
+            class="order-photos__image"
+          />
+          <div class="order-photos__item-info">
+            <span class="order-photos__item-name">{{
+              photo.originalFileName || photo.fileName
+            }}</span>
+            <span class="order-photos__item-date">{{
+              formatDate(photo.capturedAt)
+            }}</span>
+            @if (photo.capturedByEmployeeName) {
+            <span class="order-photos__item-employee">{{
+              photo.capturedByEmployeeName
+            }}</span>
+            }
+          </div>
+        </div>
+        }
+      </div>
+    </div>
+    } @if (galleryPhotos().length === 0 && !loading()) {
     <div class="empty-state">
       <i class="pi pi-images"></i>
       <p>{{ 'pages.order_detail.no_photos' | translate }}</p>

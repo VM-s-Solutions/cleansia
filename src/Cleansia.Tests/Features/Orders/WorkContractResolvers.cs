@@ -12,7 +12,8 @@ internal static class WorkContractResolvers
     {
         var resolver = new Mock<ILegalDocumentResolver>();
         resolver
-            .Setup(r => r.ResolveInForceAsync(LegalDocumentType.WorkContract, It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.ResolveInForceAsync(
+                LegalDocumentAudience.Employee, LegalDocumentType.WorkContract, It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(inForce ? WorkContractTestData.Document() : null);
         return resolver;
     }

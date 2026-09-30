@@ -7,10 +7,11 @@
 // globally unique, lowercase, alphanumeric, and <=24 chars, so the dashed convention used by the
 // other resources is collapsed to `stcleansia<region><stage>` (e.g. `stcleansiaweudev`).
 //
-// No secret value is committed: the access keys are read at deploy time only to write the
-// `Storage--ConnectionString` Key Vault secret (done by the orchestrator/keyVault module, not
-// here), and the preferred runtime path is managed identity (Blob/Queue Data Contributor) granted
-// by the roleAssignments module. This module emits structure only.
+// No secret value is committed. With shared-key access allowed (dev), the access keys are read at
+// deploy time only to write the `Storage--ConnectionString` Key Vault secret (modules/derivedSecrets,
+// not here). With it refused (prod, E-4), every host reaches the account with its managed identity
+// (Blob/Queue Data Contributor, granted by the roleAssignments module) and there is no storage secret
+// at all. This module emits structure only.
 
 @description('Short region token threaded through the name (ADR-0017). Default West Europe.')
 param region string = 'weu'
@@ -29,12 +30,15 @@ param stage string
 ])
 param skuName string = 'Standard_LRS'
 
-@description('Network ACL default action (the Q-INFRA-03 seam). Allow = the dev public posture. Deny locks the data plane to the private endpoints (modules/privateNetworking.bicep) plus trusted Azure services via the retained AzureServices bypass; ARM control-plane operations (listKeys for derivedSecrets, diagnostic settings, metric alerts) are unaffected.')
+@description('Network ACL default action. main.bicep passes Allow in every stage, because browsers and the apps load the SAS links on the public blob endpoint and Deny refuses them (deploy/AZURE-PROD-POSTURE.md §6). Deny locks the data plane to the private endpoints (modules/privateNetworking.bicep) plus trusted Azure services via the retained AzureServices bypass; ARM control-plane operations (listKeys for derivedSecrets, diagnostic settings, metric alerts) are unaffected.')
 @allowed([
   'Allow'
   'Deny'
 ])
 param networkDefaultAction string = 'Allow'
+
+@description('false = the account refuses every request signed with an account key and every account or service SAS, so only Microsoft Entra requests (managed identity, user-delegation SAS) are served. main.bicep sets it from storageManagedIdentityEnabled.')
+param allowSharedKeyAccess bool = true
 
 @description('Resource tags applied to the account.')
 param tags object = {}
@@ -83,7 +87,7 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2024-01-01' = {
     supportsHttpsTrafficOnly: true
     minimumTlsVersion: 'TLS1_2'
     allowBlobPublicAccess: false
-    allowSharedKeyAccess: true
+    allowSharedKeyAccess: allowSharedKeyAccess
     publicNetworkAccess: 'Enabled'
     networkAcls: {
       defaultAction: networkDefaultAction

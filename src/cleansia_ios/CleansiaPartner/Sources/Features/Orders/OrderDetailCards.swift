@@ -190,6 +190,12 @@ struct ScopeCard: View {
                         .font(CleansiaTypography.bodyLarge)
                         .foregroundColor(CleansiaColors.onSurface)
 
+                    if let dirtiness = L10n.Orders.dirtinessLevel(order.dirtinessLevel) {
+                        Text(dirtiness)
+                            .font(CleansiaTypography.bodyMedium)
+                            .foregroundColor(CleansiaColors.onSurfaceVariant)
+                    }
+
                     if let crew = order.crew {
                         Text(OrdersFormat.crewLine(crew))
                             .font(CleansiaTypography.bodyMedium)

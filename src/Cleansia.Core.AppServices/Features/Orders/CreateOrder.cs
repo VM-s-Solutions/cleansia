@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Auditing;
+using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Legal;
 using Cleansia.Core.AppServices.Common.Validators;
@@ -48,6 +49,8 @@ public class CreateOrder
         private readonly IUserConsentRepository _userConsentRepository;
         private readonly ICountryConfigurationRepository _countryConfigurationRepository;
         private readonly ILegalDocumentResolver _legalDocumentResolver;
+        private readonly ISavedCardRepository _savedCardRepository;
+        private readonly IReceivableRepository _receivableRepository;
 
         public Validator(
             IPackageRepository packageRepository,
@@ -68,10 +71,14 @@ public class CreateOrder
             IUserConsentRepository userConsentRepository,
             ILanguageRepository languageRepository,
             ICountryConfigurationRepository countryConfigurationRepository,
-            ILegalDocumentResolver legalDocumentResolver)
+            ILegalDocumentResolver legalDocumentResolver,
+            ISavedCardRepository savedCardRepository,
+            IReceivableRepository receivableRepository)
         {
             _countryConfigurationRepository = countryConfigurationRepository;
             _legalDocumentResolver = legalDocumentResolver;
+            _savedCardRepository = savedCardRepository;
+            _receivableRepository = receivableRepository;
             _operatorTenantResolver = operatorTenantResolver;
             _tenantProvider = tenantProvider;
             _userConsentRepository = userConsentRepository;
@@ -99,9 +106,15 @@ public class CreateOrder
             RuleFor(x => x.PaymentType)
                 .IsInEnum().WithMessage(BusinessErrorMessage.InvalidEnumValue);
 
-            RuleFor(x => x.Rooms).LessThanOrEqualTo(BookingPolicy.MaxRooms)
+            RuleFor(x => x.Rooms)
+                .GreaterThanOrEqualTo(0)
+                .WithMessage(BusinessErrorMessage.MustBePositive)
+                .LessThanOrEqualTo(BookingPolicy.MaxRooms)
                 .WithMessage(BusinessErrorMessage.OrderSizeExceedsMaximum);
-            RuleFor(x => x.Bathrooms).LessThanOrEqualTo(BookingPolicy.MaxBathrooms)
+            RuleFor(x => x.Bathrooms)
+                .GreaterThanOrEqualTo(0)
+                .WithMessage(BusinessErrorMessage.MustBePositive)
+                .LessThanOrEqualTo(BookingPolicy.MaxBathrooms)
                 .WithMessage(BusinessErrorMessage.OrderSizeExceedsMaximum);
 
             // Ahead of the price chain on purpose: the failure row records the FIRST refusal, and a
@@ -111,6 +124,11 @@ public class CreateOrder
                     AssertedOrAlreadyConsentedAsync(command, termsAccepted, context, cancellationToken))
                 .WithMessage(BusinessErrorMessage.TermsNotAccepted)
                 .WithErrorCode(nameof(Command.TermsAccepted));
+
+            RuleFor(x => x.EarlyPerformanceRequested)
+                .Equal(true)
+                .WithMessage(BusinessErrorMessage.EarlyPerformanceNotRequested)
+                .WithErrorCode(nameof(Command.EarlyPerformanceRequested));
 
             RuleFor(x => x.CustomerName)
                 .Cascade(CascadeMode.Stop)
@@ -258,6 +276,9 @@ public class CreateOrder
                 .WithErrorCode(nameof(Command.CurrencyId))
                 .Must(OrderMustNotBeEmpty)
                 .WithMessage(BusinessErrorMessage.EmptyOrder)
+                .Must(command => Enum.IsDefined(command.DirtinessLevel))
+                .WithMessage(BusinessErrorMessage.InvalidEnumValue)
+                .WithErrorCode(nameof(Command.DirtinessLevel))
                 .MustAsync(SpanWithinCapAsync)
                 .WithMessage(BusinessErrorMessage.OrderSpanExceedsMaximum)
                 .MustAsync(ExpressWaiverStillAvailableAsync)
@@ -266,6 +287,15 @@ public class CreateOrder
                 .WithMessage(BusinessErrorMessage.TotalPriceNotMatch)
                 .Must(CashIsAvailable)
                 .WithMessage(BusinessErrorMessage.OrderCashNotAvailable)
+                .WithErrorCode(nameof(Command.PaymentType))
+                .MustAsync(CashOwesNothingAsync)
+                .WithMessage(BusinessErrorMessage.OrderCashUnpaidReceivable)
+                .WithErrorCode(nameof(Command.PaymentType))
+                .MustAsync(CashLeavesRoomForAnotherOpenBookingAsync)
+                .WithMessage(BusinessErrorMessage.OrderCashOpenBookingsLimitReached)
+                .WithErrorCode(nameof(Command.PaymentType))
+                .MustAsync(CashIsGuaranteedBySavedCardAsync)
+                .WithMessage(BusinessErrorMessage.OrderCashRequiresSavedCard)
                 .WithErrorCode(nameof(Command.PaymentType))
                 .Must(PromoNamesASignedInCustomer)
                 .WithMessage(BusinessErrorMessage.PromoRequiresAccount)
@@ -618,16 +648,19 @@ public class CreateOrder
         /// </remarks>
         private async Task<bool> SpanWithinCapAsync(Command command, CancellationToken cancellationToken)
         {
+            var unitCount = command.Rooms + command.Bathrooms;
+
             var serviceMinutes = await _serviceRepository
                 .GetByIds(command.SelectedServiceIds)
-                .SumAsync(s => s.EstimatedTime, cancellationToken);
+                .SumAsync(s => s.EstimatedTime + s.MinutesPerRoom * unitCount, cancellationToken);
 
             var packagedServiceMinutes = await _packageRepository
                 .GetByIds(command.SelectedPackageIds)
                 .SelectMany(p => p.IncludedServices)
-                .SumAsync(ps => ps.Service!.EstimatedTime, cancellationToken);
+                .SumAsync(ps => ps.Service!.EstimatedTime + ps.Service!.MinutesPerRoom * unitCount, cancellationToken);
 
-            return !BookingPolicy.ExceedsMaxBookableSpan(serviceMinutes + packagedServiceMinutes);
+            return !BookingPolicy.ExceedsMaxBookableSpan(OrderDuration.ScaleForDirtiness(
+                serviceMinutes + packagedServiceMinutes, BookingPolicy.DirtinessSurchargeRate(command.DirtinessLevel)));
         }
 
         private const string PricingResultKey = "createOrder.pricingResult";
@@ -656,6 +689,7 @@ public class CreateOrder
                 selectedExtraSlugs,
                 command.Rooms,
                 command.Bathrooms,
+                command.DirtinessLevel,
                 // The address country's currency -- already offerable, because this chain stops on the
                 // currency rules before it reaches here. A quote taken with the same country priced from
                 // the same rows, so the price being compared was computed the same way.
@@ -691,6 +725,31 @@ public class CreateOrder
                || BookingPolicy.AllowsCash(
                    signedIn: !IsGuest(),
                    OrderDuration.RequiredEmployees(CachedPricing(context).EstimatedDurationMinutes));
+
+        /// <summary>
+        /// Past <see cref="CashIsAvailable"/> only a signed-in customer's cash booking remains. The debt and
+        /// the limit are asked before the card, so a customer who could not book cash even with a card is
+        /// not sent to save one first.
+        /// </summary>
+        private async Task<bool> CashOwesNothingAsync(Command command, CancellationToken cancellationToken)
+            => command.PaymentType != PaymentType.Cash
+               || await CustomerCashStanding.OwesNothingAsync(
+                   _receivableRepository, _userSessionProvider.GetUserId()!, cancellationToken);
+
+        private async Task<bool> CashLeavesRoomForAnotherOpenBookingAsync(
+            Command command, CancellationToken cancellationToken)
+            => command.PaymentType != PaymentType.Cash
+               || await CustomerCashStanding.HasRoomForAnotherOpenCashBookingAsync(
+                   _orderRepository, _userSessionProvider.GetUserId()!, cancellationToken);
+
+        private async Task<bool> CashIsGuaranteedBySavedCardAsync(
+            Command command, Command _, ValidationContext<Command> context, CancellationToken cancellationToken)
+            => command.PaymentType != PaymentType.Cash
+               || await CustomerCashStanding.HoldsUsableCardAsync(
+                   _savedCardRepository,
+                   _userSessionProvider.GetUserId()!,
+                   await ResolveOrderCurrencyIdAsync(command, context, cancellationToken),
+                   cancellationToken);
 
         // The promo rule cannot pick its message up front: which refusal applies is only known after
         // the preview inside the predicate. So the predicate hands the resolved message key to the rule
@@ -813,7 +872,11 @@ public class CreateOrder
         // or the signed-in account already holds both legal consents (ADR-0062 D4 as amended
         // 2026-09-14). Nullable so the wire contract every client was built against is unchanged — a
         // guest's null is refused, not unbindable.
-        bool? TermsAccepted = null) : ICommand<Response>, IOperatorScopedRequest
+        bool? TermsAccepted = null,
+        DirtinessLevel DirtinessLevel = DirtinessLevel.Normal,
+        // The early-performance tick, asked on every booking, signed-in or guest; nullable for the same
+        // reason as the terms tick, so an absent member is refused rather than unbindable.
+        bool? EarlyPerformanceRequested = null) : ICommand<Response>, IOperatorScopedRequest
     {
         // A guest's market is the inline address's country; a guest cannot name a saved address, and a
         // request with no country lands in the default market (ADR-0061 D3). The validator's operator
@@ -859,6 +922,8 @@ public class CreateOrder
         decimal? PromoDiscountAmount,
         string? MembershipPlanIdAtPurchase,
         decimal? MembershipDiscountAmount,
+        DirtinessLevel DirtinessLevel,
+        decimal DirtinessSurchargeAmount,
         decimal ExpressSurchargeAmount,
         bool ExpressWaivedByMembership,
         decimal CreditAppliedAmount,
@@ -904,6 +969,8 @@ public class CreateOrder
             PromoDiscountAmount: order.PromoDiscountAmount,
             MembershipPlanIdAtPurchase: order.MembershipPlanIdAtPurchase,
             MembershipDiscountAmount: order.MembershipDiscountAmount,
+            DirtinessLevel: order.DirtinessLevel,
+            DirtinessSurchargeAmount: order.DirtinessSurchargeAmount,
             ExpressSurchargeAmount: pricing.ExpressSurchargeAmount,
             ExpressWaivedByMembership: expressWaiverReserved,
             CreditAppliedAmount: order.CreditAppliedAmount,
@@ -970,6 +1037,8 @@ public class CreateOrder
         IOperatorTenantResolver operatorTenantResolver,
         ITenantProvider tenantProvider,
         IAuditContext auditContext,
+        IHostAudienceProvider hostAudienceProvider,
+        IRequestMetadataProvider requestMetadataProvider,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -1016,6 +1085,7 @@ public class CreateOrder
                 selectedExtraSlugs,
                 command.Rooms,
                 command.Bathrooms,
+                command.DirtinessLevel,
                 currency.Id,
                 command.CleaningDate,
                 userId,
@@ -1095,7 +1165,15 @@ public class CreateOrder
                 CustomerFloor: command.CustomerFloor,
                 CustomerApartment: command.CustomerApartment,
                 AccessMode: command.AccessMode,
-                LanguageCode: command.Language), cancellationToken);
+                LanguageCode: command.Language,
+                DirtinessLevel: command.DirtinessLevel), cancellationToken);
+
+            order.RecordEarlyPerformanceConsent(
+                Order.EarlyPerformanceConsentTextVersionInForce,
+                new DateTimeOffset(nowUtc, TimeSpan.Zero),
+                hostAudienceProvider.Audience,
+                requestMetadataProvider.IpAddress,
+                requestMetadataProvider.DeviceLabel);
 
             if (reservation != null)
             {

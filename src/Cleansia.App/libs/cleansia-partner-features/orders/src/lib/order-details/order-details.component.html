@@ -208,6 +208,14 @@
       </div>
       }
 
+      @if (currentEmployeeId(); as employeeId) {
+      <cleansia-partner-order-lockout
+        [order]="orderDetails()!"
+        [employeeId]="employeeId"
+        (reported)="onLockoutReported()"
+      />
+      }
+
       <!-- Order Status Section -->
       <cleansia-partner-order-status
         [formGroup]="formGroup"

@@ -29,8 +29,17 @@ class PhotoWindowTest {
     }
 
     @Test
+    fun `entrance photos are open from Confirmed through InProgress`() {
+        assertEquals(
+            listOf(OrderStatus._2, OrderStatus._3, OrderStatus._4),
+            OrderStatus.entries.filter { photoWindowOpen(PhotoType._3, it) },
+        )
+    }
+
+    @Test
     fun `a status this build does not know opens neither rail`() {
         assertFalse(photoWindowOpen(PhotoType._1, null))
         assertFalse(photoWindowOpen(PhotoType._2, null))
+        assertFalse(photoWindowOpen(PhotoType._3, null))
     }
 }

@@ -81,7 +81,8 @@ enum RecurringFixtures {
         preferredEmployeeId: String? = nil,
         selectedServiceIds: [String] = ["s-1"],
         paymentType: Int = RecurringPaymentType.cash,
-        requiresPaymentMethodChange: Bool = false
+        requiresPaymentMethodChange: Bool = false,
+        dirtiness: Dirtiness = .normal
     ) -> RecurringTemplate {
         RecurringTemplate(
             id: id,
@@ -90,6 +91,7 @@ enum RecurringFixtures {
             timeOfDay: timeOfDay,
             rooms: 2,
             bathrooms: 1,
+            dirtiness: dirtiness,
             savedAddressId: "addr-1",
             addressLine: "Zenklova 6, Praha",
             selectedServiceIds: selectedServiceIds,

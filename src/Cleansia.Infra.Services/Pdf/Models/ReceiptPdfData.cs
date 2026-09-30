@@ -19,6 +19,13 @@ public record ReceiptPdfData
     /// <summary>Extras, each at the price it was bought at.</summary>
     public List<ReceiptLineItem> Extras { get; init; } = [];
 
+    /// <summary>
+    /// The dirtiness level the customer booked at and its surcharge on the lines' sum, zero at Normal.
+    /// The level picks the line's label.
+    /// </summary>
+    public DirtinessLevel DirtinessLevel { get; init; }
+    public decimal DirtinessSurcharge { get; init; }
+
     /// <summary>The express surcharge charged on this booking, zero when none was.</summary>
     public decimal ExpressSurcharge { get; init; }
 

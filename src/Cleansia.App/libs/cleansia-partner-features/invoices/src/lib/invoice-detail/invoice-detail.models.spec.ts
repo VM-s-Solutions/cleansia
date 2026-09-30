@@ -39,6 +39,18 @@ describe('getOrderPaysTableDefinition', () => {
   });
 });
 
+describe('the dirtiness term on an invoice line', () => {
+  it('sits beside the extras and prints in the invoice currency', () => {
+    const { columns } = getOrderPaysTableDefinition('CZK', 'cs');
+    const ids = columns.map((column) => column.id);
+    expect(ids.indexOf('dirtinessPay')).toBe(ids.indexOf('extrasPay') + 1);
+
+    const dirtiness = columns.find((column) => column.id === 'dirtinessPay');
+    if (!dirtiness?.getValue) throw new Error('dirtinessPay column missing or static');
+    expect(dirtiness.getValue(OrderEmployeePayDto.fromJS({ dirtinessPay: 195 }))).toBe('195,00 Kč');
+  });
+});
+
 describe('formatInvoiceAmount', () => {
   it('prints nothing for a missing amount', () => {
     expect(formatInvoiceAmount(undefined, 'CZK', 'cs')).toBe('');

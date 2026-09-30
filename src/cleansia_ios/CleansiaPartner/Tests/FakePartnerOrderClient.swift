@@ -212,6 +212,13 @@ final class FakePartnerOrderClient: PartnerOrderClient {
         await recordNote("deleteIssue", id: issueId, content: nil)
     }
 
+    private(set) var lockoutReports: [(orderId: String, callAttempts: String)] = []
+
+    func reportLockout(orderId: String, callAttempts: String) async -> ApiResult<Void> {
+        lockoutReports.append((orderId: orderId, callAttempts: callAttempts))
+        return await record("reportLockout", orderId)
+    }
+
     func getPhotos(orderId _: String) async -> ApiResult<[OrderPhoto]> {
         getPhotosCallCount += 1
         return getPhotosResult
@@ -263,7 +270,7 @@ extension WorkContract {
                 orderNumber: "CL-2026-0042",
                 cleaningDateTimeUtc: Date(timeIntervalSince1970: 1_786_200_000),
                 estimatedMinutes: 180,
-                totalPrice: 1850,
+                reward: 1850,
                 currencyCode: "CZK",
                 locationApproximate: "Praha 4 · 14000",
                 rooms: 3,

@@ -62,39 +62,19 @@ public class GdprExportService(
 
         // Past the tenant filter for the same reason the erasure walk reads them so: a guest booking under
         // the subject's e-mail is stamped with the market's operator, not the subject's, and the predicate
-        // is the pin (ADR-0051).
-        var orderRows = await orderRepository.GetQueryableIgnoringTenant()
+        // is the pin (ADR-0051). A guest row's request context is whoever typed the e-mail, possibly a
+        // stranger, so only the account's own orders carry it (S6).
+        var orders = await orderRepository.GetQueryableIgnoringTenant()
             .Where(SubjectOrders.Of(user.Id, user.Email))
             .AsNoTracking()
-            .Select(o => new
-            {
-                o.Id, o.DisplayOrderNumber, o.CustomerName, o.CustomerEmail,
-                o.CurrentStatus, o.TotalPrice, o.CleaningDateTime, o.CreatedOn, o.WorkContractDocumentId,
-            })
-            .ToListAsync(cancellationToken);
-
-        // The customer's half of each contract for work: the version the order was booked under, and
-        // the crew's acceptances of it with no cleaner id — the live detail shows the given name.
-        var orderDocumentIds = orderRows.Where(o => o.WorkContractDocumentId != null).Select(o => o.WorkContractDocumentId!).Distinct().ToList();
-        var documentVersions = orderDocumentIds.Count == 0
-            ? new Dictionary<string, string>()
-            : await legalDocumentRepository.GetQueryable()
-                .AsNoTracking()
-                .Where(d => orderDocumentIds.Contains(d.Id))
-                .ToDictionaryAsync(d => d.Id, d => d.Version, cancellationToken);
-        var orderAcceptances = (await workContractAcceptanceRepository.GetForOrdersAsync(
-                orderRows.Select(o => o.Id).ToList(), cancellationToken))
-            .ToLookup(a => a.OrderId);
-        var orders = orderRows
             .Select(o => new GdprExportOrderDto(
                 o.Id, o.DisplayOrderNumber, o.CustomerName, o.CustomerEmail,
                 o.CurrentStatus,
                 o.TotalPrice, o.CleaningDateTime, o.CreatedOn,
-                o.WorkContractDocumentId is null ? null : documentVersions.GetValueOrDefault(o.WorkContractDocumentId),
-                orderAcceptances[o.Id]
-                    .Select(a => new GdprExportOrderWorkContractAcceptanceDto(a.AcceptedOn, a.DocumentVersion, a.Language))
-                    .ToList()))
-            .ToList();
+                o.EarlyPerformanceConsentTextVersion, o.EarlyPerformanceConsentedOn, o.EarlyPerformanceConsentClient,
+                o.UserId == user.Id ? o.EarlyPerformanceConsentIpAddress : null,
+                o.UserId == user.Id ? o.EarlyPerformanceConsentDeviceLabel : null))
+            .ToListAsync(cancellationToken);
 
         // Filed on the account, or on one of the orders above: the second term keeps the section in step
         // with the orders section, the first is what still finds the disputes after an erasure has taken

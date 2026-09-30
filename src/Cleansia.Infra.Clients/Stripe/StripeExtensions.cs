@@ -1,4 +1,5 @@
 using Cleansia.Core.Clients.Abstractions.Stripe;
+using Cleansia.Infra.Common.Configuration;
 using Cleansia.Infra.Common.Configuration.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -34,6 +35,8 @@ public static class StripeExtensions
         // factory indirection. Same StripeClient instance type as the factory
         // produces, just registered directly so MediatR handlers can request it.
         services.AddTransient<IStripeClient, StripeClient>();
+
+        services.AddSingleton<IPaymentsConfig, PaymentsConfig>();
 
         return services;
     }

@@ -452,10 +452,14 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'admin_user.email_exists',
   'admin_user.not_found',
   'auth.account_locked',
+  // An administrator's password is 12+ characters: CreateAdminUser and ChangeOwnPassword.
+  'auth.admin_password_too_short',
   'auth.current_password_invalid',
   'auth.insufficient_privileges',
   'auth.invalid_refresh_token',
   'auth.refresh_token_reused',
+  // ChangeOwnPassword refuses a new password equal to the current one.
+  'auth.same_reset_password',
   // The admin sign-in is IOperatorScopedRequest (its refusal audit row needs a tenant), so
   // OperatorTenantScopeBehavior's refusals reach this host through AdminAuthController.Login:
   // `country.not_serviced` is on the contract under country below, this one is only reachable here.
@@ -503,6 +507,7 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'company.has_open_pay_period',
   'company.has_unpaid_invoices',
   'company.has_uninvoiced_pay',
+  'company.has_cash_held',
   'company.has_open_disputes',
   'company.within_chargeback_horizon',
   // A write against a company frozen for archive is refused at the commit and answered 409 by
@@ -595,6 +600,8 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'order.in_progress_cannot_cancel',
   'order.cleaner_already_started',
   'order.start_time_not_reached',
+  // The lockout confirmation refuses an order whose cleaner reported no lockout (decision 11).
+  'order.lockout.not_reported',
   'order.invalid_status_transition',
   'order.no_available_spots',
   'order.not_found',
@@ -619,6 +626,12 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'order.cash_received_at_in_future',
   'order.cash_received_at_before_clean',
   'receipt.not_found',
+  // What customers owe the company: AdminReceivableController.WriteOff (owner ruling 2026-09-28).
+  'receivable.not_found',
+  'receivable.not_open',
+  // The company's cash in its cleaners' hands: AdminCashHeldController.RecordRemittance and WriteOff.
+  'cash_held.amount_invalid',
+  'cash_held.amount_exceeds_balance',
   'refund.line_invalid',
   'refund.lines_required',
   'refund.nothing_refundable',

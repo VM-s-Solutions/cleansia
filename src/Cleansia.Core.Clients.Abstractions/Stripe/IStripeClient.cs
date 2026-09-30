@@ -130,6 +130,82 @@ public interface IStripeClient
         CancellationToken cancellationToken);
 
     /// <summary>
+    /// A card-only SetupIntent that saves a card on <paramref name="stripeCustomerId"/> for later
+    /// off-session use, confirmed by the mobile PaymentSheet in setup mode. It charges nothing. The
+    /// intent carries <paramref name="savedCardId"/> as <c>SavedCardId</c> metadata, which is how the
+    /// <c>setup_intent.succeeded</c> webhook finds the row the card lands on.
+    /// </summary>
+    Task<SetupIntentResult> CreateCardSetupIntentAsync(
+        string stripeCustomerId,
+        string savedCardId,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// The web twin of <see cref="CreateCardSetupIntentAsync"/>: a Checkout Session in setup mode,
+    /// card only, on <paramref name="stripeCustomerId"/>. It charges nothing. The session and the
+    /// SetupIntent it creates both carry <c>SavedCardId</c> metadata. Returns the URL the browser is
+    /// sent to; the return URLs are derived from <c>Stripe:SuccessUrlBase</c>, never taken from a caller.
+    /// </summary>
+    Task<string> CreateCardSetupCheckoutSessionAsync(
+        string stripeCustomerId,
+        string savedCardId,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// The card a SetupIntent saved, or null when the intent has not succeeded or saved no card.
+    /// Read-only; an unreachable Stripe throws.
+    /// </summary>
+    Task<SavedCardDetails?> GetSetupIntentCardAsync(
+        string setupIntentId,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Charge a customer's saved card, with the customer absent, for what they owe on a receivable: a
+    /// PaymentIntent created with <c>off_session</c> and <c>confirm</c>, carrying <c>ReceivableId</c>
+    /// metadata so the <c>payment_intent.*</c> webhooks find it. Returns the intent's id. A decline, or a
+    /// bank that asks for the customer to authenticate, throws a <c>StripeException</c> of type
+    /// <c>card_error</c>, and Stripe then sends <c>payment_intent.payment_failed</c>.
+    /// <paramref name="attempt"/> is the receivable's attempt number, so a retry of one attempt replays it.
+    /// </summary>
+    Task<string> ChargeReceivableOffSessionAsync(
+        string receivableId,
+        decimal amount,
+        string currency,
+        string stripeCustomerId,
+        string paymentMethodId,
+        int attempt,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// The pay link for a receivable: a payment-mode Checkout Session for its amount, card only, returning
+    /// to the order's page. The <c>ReceivableId</c> metadata is on the session and deliberately not on its
+    /// PaymentIntent, so only <c>checkout.session.completed</c> settles it and a card the customer mistypes
+    /// on the page is not reported as a failed off-session charge. <paramref name="currentSessionId"/> is
+    /// the receivable's latest link: it is handed back while Stripe still has it open, so a link e-mailed
+    /// and a link opened in the app are the same one, and otherwise a new session is opened, keyed on the
+    /// one it replaces. It is never keyed on the receivable alone, because Stripe replays a key's first
+    /// answer for a day or more, and that answer is by then an expired session.
+    /// </summary>
+    Task<CheckoutSessionResult> CreateReceivableCheckoutSessionAsync(
+        string receivableId,
+        string? currentSessionId,
+        string orderId,
+        string displayOrderNumber,
+        decimal amount,
+        string currency,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Closes a receivable's pay link before its off-session charge, so the customer cannot pay it twice.
+    /// Returns false when the customer has already paid through the link, and the charge must not be
+    /// taken; a link that expired on its own is closed already. An unreachable Stripe, or a customer who
+    /// pays in the instant between the read and the close, throws.
+    /// </summary>
+    Task<bool> ExpireReceivableCheckoutSessionAsync(
+        string sessionId,
+        CancellationToken cancellationToken);
+
+    /// <summary>
     /// Create a Stripe subscription against a price. Caller is expected to
     /// have already attached a payment method via SetupIntent — first invoice
     /// is charged immediately (or after the trial if <paramref name="trialPeriodDays"/>
@@ -232,6 +308,9 @@ public record StripePaymentSnapshot(StripePaymentState State, string? Outstandin
 /// payment method; the Id is opaque to us.
 /// </summary>
 public record SetupIntentResult(string Id, string ClientSecret);
+
+/// <summary>Result of <see cref="IStripeClient.GetSetupIntentCardAsync"/>: the saved card, as Stripe describes it.</summary>
+public record SavedCardDetails(string PaymentMethodId, string Brand, string Last4, int ExpMonth, int ExpYear);
 
 /// <summary>
 /// Snapshot of a freshly-created subscription. Period bounds are mirrored

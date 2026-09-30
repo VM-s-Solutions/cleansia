@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
   AddressDto,
+  CardCaptureFacade,
   CategoryDto,
   CreateOrderCommand,
   CreateOrderResponse,
@@ -45,6 +46,7 @@ import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { catchError, finalize, map, of, takeUntil } from 'rxjs';
+import { OrderDraftService } from './order-draft.service';
 import { OrderMembershipFacade } from './order-membership.facade';
 import { OrderPreferredCleanerFacade } from './order-preferred-cleaner.facade';
 import { OrderPricingFacade } from './order-pricing.facade';
@@ -52,6 +54,9 @@ import { OrderPromoFacade } from './order-promo.facade';
 import { OrderSavedAddressFacade } from './order-saved-address.facade';
 import { OrderServiceAreaFacade } from './order-service-area.facade';
 import {
+  CASH_REFUSALS,
+  CASH_REQUIRES_SAVED_CARD,
+  CASH_UNPAID_RECEIVABLE,
   ORDER_WIZARD_INITIAL_DATA,
   OrderWizardFormData,
   OUTSIDE_BOOKING_WINDOW,
@@ -60,10 +65,12 @@ import {
   cashReasonCopy,
 } from './order-wizard.models';
 
-const WHEN_STEP = 2;
-const PAYMENT_STEP = 3;
+const DIRTINESS_STEP = 1;
+const ADDRESS_STEP = 2;
+const WHEN_STEP = 3;
+const PAYMENT_STEP = 4;
 /** The index of the Plus step in `steps`. */
-const PLUS_STEP = 4;
+const PLUS_STEP = 5;
 
 @Injectable()
 export class OrderWizardFacade extends UnsubscribeControlDirective {
@@ -81,6 +88,8 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   private readonly savedAddress = inject(OrderSavedAddressFacade);
   private readonly membership = inject(OrderMembershipFacade);
   private readonly preferredCleaner = inject(OrderPreferredCleanerFacade);
+  private readonly cardCapture = inject(CardCaptureFacade);
+  private readonly draft = inject(OrderDraftService);
   private readonly injector = inject(Injector);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
@@ -169,6 +178,7 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
 
   steps = [
     'pages.order.steps.services',
+    'pages.order.steps.dirtiness',
     'pages.order.steps.address',
     'pages.order.steps.datetime',
     'pages.order.steps.payment',
@@ -178,6 +188,7 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
 
   stepIcons = [
     'pi pi-list',
+    'pi pi-sparkles',
     'pi pi-map-marker',
     'pi pi-calendar',
     'pi pi-credit-card',
@@ -227,6 +238,7 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   readonly expressSurchargeApplied = this.pricing.expressSurchargeApplied;
   readonly expressSurchargeWaived = this.pricing.expressSurchargeWaived;
   readonly expressSurcharge = this.pricing.expressSurcharge;
+  readonly dirtinessSurcharge = this.pricing.dirtinessSurcharge;
   readonly displayedTotalPrice = this.pricing.displayedTotalPrice;
   readonly tierDiscount = this.pricing.tierDiscount;
   readonly membershipDiscount = this.pricing.membershipDiscount;
@@ -251,6 +263,8 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   readonly cashCleared = signal(false);
   /** Said only while cash is still not available; a booking that allows it again needs no warning. */
   readonly cashClearedNotice = computed(() => this.cashCleared() && !this.cashSelectable());
+  /** The server refused cash because an amount from an earlier booking is unpaid. */
+  readonly cashOwed = signal(false);
   // Credit: the balance, the slice this booking takes, and what the card is left to pay.
   // Owner ruling 2026-09-05 — applied automatically, and never the whole booking.
   readonly creditBalance = this.pricing.creditBalance;
@@ -277,6 +291,10 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   readonly preferredCleanerVisible = this.preferredCleaner.visible;
   readonly preferredCleanerLoading = this.preferredCleaner.loading;
   readonly preferredCleanerOptions = this.preferredCleaner.options;
+
+  readonly cardCaptureVisible = this.cardCapture.visible;
+  readonly cardCaptureConsent = this.cardCapture.consentAccepted;
+  readonly cardCaptureStarting = this.cardCapture.starting;
 
   // ─── Service-area (city-serviced) check ─────────────────────────
   //
@@ -318,6 +336,11 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
       currentFormData: () => this.formData(),
       patchFormData: (partial) => this.updateFormData(partial),
     });
+    this.cardCapture.connect({
+      countryId: () => this.addressCountryId(),
+      park: () => this.draft.park(this.activeStep(), this.formData()),
+      returnUrl: () => '/' + CleansiaCustomerRoute.ORDER,
+    });
     effect(() => {
       if (this.formData().paymentType === PaymentType.Cash && cashIsRefused(this.cashEligibility())) {
         untracked(() => this.dropCash(true));
@@ -329,6 +352,18 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
     if (type === PaymentType.Cash && !this.cashSelectable()) return;
     this.cashCleared.set(false);
     this.updateFormData({ paymentType: type });
+  }
+
+  setCardCaptureConsent(accepted: boolean): void {
+    this.cardCapture.setConsent(accepted);
+  }
+
+  closeCardCapture(): void {
+    this.cardCapture.close();
+  }
+
+  startCardCapture(): void {
+    this.cardCapture.start();
   }
 
   /** Never replaced by card: the customer is told and chooses again. */
@@ -745,7 +780,13 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
         }
         break;
 
-      case 1: {
+      case DIRTINESS_STEP:
+        if (data.dirtinessLevel === null) {
+          reasons.push('pages.order.missing.dirtiness');
+        }
+        break;
+
+      case ADDRESS_STEP: {
         // Saved address: the server already validated the record, so only
         // non-emptiness is checked. Custom address: it must have come from a
         // suggestion pick, which is the only thing that sets lat/lng — typing
@@ -860,11 +901,13 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
    * `termsAccepted` is the ONE client-asserted member on the create command: the server cannot
    * observe a tick, so it records the customer's own assertion against themselves (ADR-0062 D4).
    * It is sent only when the box was shown AND ticked; an account that already consented sees no
-   * box and asserts nothing new.
+   * box and asserts nothing new. `earlyPerformanceRequested` is the other one, asked on every
+   * booking whatever the account holds.
    */
   async submitOrder(
     saveAddress?: { label: string } | null,
     termsAccepted = false,
+    earlyPerformanceRequested = false,
   ): Promise<void> {
     const data = this.formData();
     if (!data.cleaningDate) return;
@@ -959,6 +1002,8 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
     command.selectedPackageIds = data.selectedPackageIds;
     command.rooms = data.rooms;
     command.bathrooms = data.bathrooms;
+    // The level the resubmitted total was priced at, echoed like the currency below.
+    command.dirtinessLevel = quoted.dirtinessLevel;
     command.extras = data.extras;
     command.cleaningDate = cleaningDate;
     command.paymentType = paymentType;
@@ -975,6 +1020,7 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
       this.translate.currentLang || this.translate.getDefaultLang();
     command.promoCode = promoCodeToSend;
     command.termsAccepted = termsAccepted ? true : undefined;
+    command.earlyPerformanceRequested = earlyPerformanceRequested ? true : undefined;
     // Empty becomes undefined rather than '': the backend treats null and empty
     // alike, and undefined keeps the property out of the JSON entirely. Trimmed
     // because a whitespace-only note is not a note.
@@ -1053,8 +1099,9 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
    * price. The interceptor has already toasted which promo rule refused it, and a second, generic
    * toast would replace that sentence — so this one only takes the code off the order, which is
    * what lets the customer submit again. Refused cash is handled the same way: taken off, and the
-   * customer sent back to choose how to pay; a start outside the booking window sends them back to
-   * the time.
+   * customer sent back to choose how to pay, where cash refused for an unpaid amount lists what is
+   * owed; cash refused for want of a saved card opens the step that saves one; a start outside the
+   * booking window sends them back to the time.
    */
   private onCreateRefused(error: unknown): void {
     const code = extractApiErrorCode(error);
@@ -1062,7 +1109,12 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
       this.promo.clearPromoCode();
       return;
     }
-    if (code === 'order.cash_not_available') {
+    if (code === CASH_REQUIRES_SAVED_CARD) {
+      this.cardCapture.open();
+      return;
+    }
+    if (code && CASH_REFUSALS.includes(code)) {
+      if (code === CASH_UNPAID_RECEIVABLE) this.cashOwed.set(true);
       this.dropCash(false);
       this.goToPaymentStep();
       return;

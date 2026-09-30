@@ -1,4 +1,5 @@
 using Cleansia.Core.Domain.EmployeePayroll;
+using Cleansia.Core.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -25,6 +26,10 @@ public class OrderEmployeePayEntityConfiguration : TenantAuditableEntityConfigur
         builder.Property(e => e.EmployeeInvoiceId)
             .HasMaxLength(26);
 
+        builder.Property(e => e.LineType)
+            .IsRequired()
+            .HasDefaultValue(PayLineType.Job);
+
         builder.Property(e => e.BasePay)
             .IsRequired()
             .HasPrecision(18, 2);
@@ -35,6 +40,11 @@ public class OrderEmployeePayEntityConfiguration : TenantAuditableEntityConfigur
             .HasDefaultValue(0);
 
         builder.Property(e => e.ExpensesPay)
+            .IsRequired()
+            .HasPrecision(18, 2)
+            .HasDefaultValue(0);
+
+        builder.Property(e => e.DirtinessPay)
             .IsRequired()
             .HasPrecision(18, 2)
             .HasDefaultValue(0);
@@ -100,7 +110,7 @@ public class OrderEmployeePayEntityConfiguration : TenantAuditableEntityConfigur
             .IsRequired(false)
             .OnDelete(DeleteBehavior.SetNull);
 
-        // THE UNIT OF THE EIGHT MONEY COLUMNS. Required, and FK-backed with Restrict for the same
+        // THE UNIT OF THE MONEY COLUMNS. Required, and FK-backed with Restrict for the same
         // reason EmployeePayConfigs and EmployeeInvoices restrict: deleting a currency that a cleaner's
         // recorded pay is denominated in would leave those amounts meaning nothing, and the row is an
         // input to a tax document. CurrencyRepository.IsInUseAsync is the friendly refusal in front of

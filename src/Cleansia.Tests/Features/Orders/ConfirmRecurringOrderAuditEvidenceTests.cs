@@ -42,6 +42,8 @@ public sealed class ConfirmRecurringOrderAuditEvidenceTests
     private ConfirmRecurringOrder.Handler CreateHandler() =>
         new(
             OrderAccessDoubles.Over(_orderRepository, _session),
+            _orderRepository.Object,
+            SavedCards.SavedCardDoubles.Guaranteed(), Mock.Of<IReceivableRepository>(),
             new Mock<ICreditAccountRepository>().Object,
             new Mock<IUserRepository>().Object,
             _session.Object,
@@ -98,7 +100,7 @@ public sealed class ConfirmRecurringOrderAuditEvidenceTests
     [Fact]
     public async Task A_Cash_Confirmation_Records_The_Occurrence_Its_Template_Price_And_Lead_Time()
     {
-        ArrangeOrder();
+        ArrangeOrder().SetDirtinessSurcharge(DirtinessLevel.Increased, 207.69m);
 
         var result = await CreateHandler().Handle(new ConfirmRecurringOrder.Command(OrderId), CancellationToken.None);
 
@@ -114,8 +116,9 @@ public sealed class ConfirmRecurringOrderAuditEvidenceTests
         Assert.Equal(900m, payload.GetProperty("totalPrice").GetDecimal());
         Assert.Equal("CZK", payload.GetProperty("currencyCode").GetString());
         Assert.Equal("cash", payload.GetProperty("paymentType").GetString());
+        Assert.Equal("increased", payload.GetProperty("dirtinessLevel").GetString());
         Assert.InRange(payload.GetProperty("leadTimeHours").GetDecimal(), 47.9m, 48.0m);
-        Assert.Equal(7, payload.EnumerateObject().Count());
+        Assert.Equal(8, payload.EnumerateObject().Count());
     }
 
     [Fact]

@@ -40,6 +40,18 @@ public class MessageKeyTests
     }
 
     [Fact]
+    public void WorkContractEmail_Key_Follows_Frozen_Formula()
+    {
+        Assert.Equal("email:work-contract:ACCEPTANCE-1", MessageKeys.WorkContractEmail("ACCEPTANCE-1"));
+    }
+
+    [Fact]
+    public void OrderLockoutEmail_Key_Follows_Frozen_Formula()
+    {
+        Assert.Equal("email:order-lockout:ORDER-1", MessageKeys.OrderLockoutEmail("ORDER-1"));
+    }
+
+    [Fact]
     public void Push_Key_Follows_Frozen_Formula_With_Subject()
     {
         Assert.Equal(

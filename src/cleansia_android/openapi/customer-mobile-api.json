@@ -5413,6 +5413,29 @@
                 "type": "string"
               }
             }
+          },
+          {
+            "name": "Rooms",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "Bathrooms",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "DirtinessLevel",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/DirtinessLevel"
+            }
           }
         ],
         "responses": {
@@ -5981,6 +6004,105 @@
           },
           "403": {
             "description": "Forbidden",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Receivable/GetMine": {
+      "get": {
+        "tags": [
+          "Receivable"
+        ],
+        "operationId": "Receivable_GetMine",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MyReceivableDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MyReceivableDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MyReceivableDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Receivable/CreatePayLink/{id}": {
+      "post": {
+        "tags": [
+          "Receivable"
+        ],
+        "operationId": "Receivable_CreatePayLink",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateReceivablePayLink_Response"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateReceivablePayLink_Response"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateReceivablePayLink_Response"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
             "content": {
               "text/plain": {
                 "schema": {
@@ -6920,6 +7042,174 @@
           },
           "401": {
             "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/SavedCard/CreateSetupIntent": {
+      "post": {
+        "tags": [
+          "SavedCard"
+        ],
+        "operationId": "SavedCard_CreateSetupIntent",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSavedCardSetupIntent_Command"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSavedCardSetupIntent_Command"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSavedCardSetupIntent_Command"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateSavedCardSetupIntent_Response"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateSavedCardSetupIntent_Response"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateSavedCardSetupIntent_Response"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/SavedCard/GetMine": {
+      "get": {
+        "tags": [
+          "SavedCard"
+        ],
+        "operationId": "SavedCard_GetMine",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SavedCardDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SavedCardDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SavedCardDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/SavedCard/Remove/{id}": {
+      "delete": {
+        "tags": [
+          "SavedCard"
+        ],
+        "operationId": "SavedCard_Remove",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RemoveSavedCard_Response"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RemoveSavedCard_Response"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RemoveSavedCard_Response"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
             "content": {
               "text/plain": {
                 "schema": {
@@ -8019,6 +8309,13 @@
           "termsAccepted": {
             "type": "boolean",
             "nullable": true
+          },
+          "dirtinessLevel": {
+            "$ref": "#/components/schemas/DirtinessLevel"
+          },
+          "earlyPerformanceRequested": {
+            "type": "boolean",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -8071,6 +8368,20 @@
             "nullable": true
           },
           "ephemeralKey": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateReceivablePayLink_Response": {
+        "type": "object",
+        "properties": {
+          "receivableId": {
+            "type": "string",
+            "nullable": true
+          },
+          "checkoutUrl": {
             "type": "string",
             "nullable": true
           }
@@ -8137,6 +8448,48 @@
           },
           "termsAccepted": {
             "type": "boolean",
+            "nullable": true
+          },
+          "dirtinessLevel": {
+            "$ref": "#/components/schemas/DirtinessLevel"
+          },
+          "earlyPerformanceRequested": {
+            "type": "boolean",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateSavedCardSetupIntent_Command": {
+        "type": "object",
+        "properties": {
+          "consentAccepted": {
+            "type": "boolean"
+          },
+          "countryId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateSavedCardSetupIntent_Response": {
+        "type": "object",
+        "properties": {
+          "savedCardId": {
+            "type": "string",
+            "nullable": true
+          },
+          "setupIntentClientSecret": {
+            "type": "string",
+            "nullable": true
+          },
+          "stripeCustomerId": {
+            "type": "string",
+            "nullable": true
+          },
+          "ephemeralKey": {
+            "type": "string",
             "nullable": true
           }
         },
@@ -8236,6 +8589,20 @@
           }
         },
         "additionalProperties": false
+      },
+      "DirtinessLevel": {
+        "enum": [
+          0,
+          1,
+          2
+        ],
+        "type": "integer",
+        "format": "int32",
+        "x-enumNames": [
+          "Normal",
+          "Increased",
+          "Heavy"
+        ]
       },
       "DisputeDetails": {
         "type": "object",
@@ -9035,32 +9402,24 @@
             "type": "string",
             "format": "date-time"
           },
-          "workContractDocumentVersion": {
+          "earlyPerformanceConsentTextVersion": {
             "type": "string",
             "nullable": true
           },
-          "workContractAcceptances": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/GdprExportOrderWorkContractAcceptanceDto"
-            },
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "GdprExportOrderWorkContractAcceptanceDto": {
-        "type": "object",
-        "properties": {
-          "acceptedOn": {
+          "earlyPerformanceConsentedOn": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "nullable": true
           },
-          "documentVersion": {
+          "earlyPerformanceConsentClient": {
             "type": "string",
             "nullable": true
           },
-          "language": {
+          "earlyPerformanceConsentIpAddress": {
+            "type": "string",
+            "nullable": true
+          },
+          "earlyPerformanceConsentDeviceLabel": {
             "type": "string",
             "nullable": true
           }
@@ -9845,6 +10204,9 @@
           "adminRole": {
             "type": "string",
             "nullable": true
+          },
+          "mustChangePassword": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -10296,6 +10658,39 @@
         },
         "additionalProperties": false
       },
+      "MyReceivableDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "nullable": true
+          },
+          "orderId": {
+            "type": "string",
+            "nullable": true
+          },
+          "displayOrderNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "kind": {
+            "$ref": "#/components/schemas/Code"
+          },
+          "amount": {
+            "type": "number",
+            "format": "double"
+          },
+          "currencyCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdOn": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
       "NotificationFeedAudience": {
         "enum": [
           0,
@@ -10697,6 +11092,22 @@
             "type": "number",
             "format": "double",
             "nullable": true
+          },
+          "dirtinessLevel": {
+            "$ref": "#/components/schemas/DirtinessLevel"
+          },
+          "dirtinessSurchargeAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "lockoutReportedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "lockoutCallAttempts": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -10866,6 +11277,13 @@
           "countryId": {
             "type": "string",
             "nullable": true
+          },
+          "dirtinessLevel": {
+            "$ref": "#/components/schemas/DirtinessLevel"
+          },
+          "dirtinessSurchargeAmount": {
+            "type": "number",
+            "format": "double"
           }
         },
         "additionalProperties": false
@@ -11316,13 +11734,15 @@
       "PhotoType": {
         "enum": [
           1,
-          2
+          2,
+          3
         ],
         "type": "integer",
         "format": "int32",
         "x-enumNames": [
           "Before",
-          "After"
+          "After",
+          "Entrance"
         ]
       },
       "PreferredOfferDetails": {
@@ -11433,6 +11853,9 @@
           "countryId": {
             "type": "string",
             "nullable": true
+          },
+          "dirtinessLevel": {
+            "$ref": "#/components/schemas/DirtinessLevel"
           }
         },
         "additionalProperties": false
@@ -11557,6 +11980,13 @@
               "$ref": "#/components/schemas/QuoteOrder_QuoteLine"
             },
             "nullable": true
+          },
+          "dirtinessSurchargeAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "dirtinessLevel": {
+            "$ref": "#/components/schemas/DirtinessLevel"
           }
         },
         "additionalProperties": false
@@ -11641,6 +12071,9 @@
           "timeZoneId": {
             "type": "string",
             "nullable": true
+          },
+          "dirtinessLevel": {
+            "$ref": "#/components/schemas/DirtinessLevel"
           }
         },
         "additionalProperties": false
@@ -11760,6 +12193,16 @@
           },
           "termsAccepted": {
             "type": "boolean",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "RemoveSavedCard_Response": {
+        "type": "object",
+        "properties": {
+          "savedCardId": {
+            "type": "string",
             "nullable": true
           }
         },
@@ -11939,6 +12382,36 @@
           },
           "isDefault": {
             "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SavedCardDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "nullable": true
+          },
+          "brand": {
+            "type": "string",
+            "nullable": true
+          },
+          "last4": {
+            "type": "string",
+            "nullable": true
+          },
+          "expMonth": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "expYear": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "currencyCode": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -12364,6 +12837,9 @@
           "preferredEmployeeId": {
             "type": "string",
             "nullable": true
+          },
+          "dirtinessLevel": {
+            "$ref": "#/components/schemas/DirtinessLevel"
           }
         },
         "additionalProperties": false
@@ -12808,6 +13284,9 @@
       "name": "PromoCode"
     },
     {
+      "name": "Receivable"
+    },
+    {
       "name": "RecurringBooking"
     },
     {
@@ -12815,6 +13294,9 @@
     },
     {
       "name": "SavedAddress"
+    },
+    {
+      "name": "SavedCard"
     },
     {
       "name": "Service"

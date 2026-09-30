@@ -162,14 +162,59 @@
       </div>
       }
 
-      <!-- Step 1: Contact & Address -->
+      <!-- Step 1: Dirtiness level -->
+      @if (facade.activeStep() === 1) {
+      <div class="cl-wiz__step-body">
+        <h1 class="cl-d2 cl-wiz__title">{{ 'pages.order.dirtiness.title' | translate }}</h1>
+        <p class="cl-body cl-wiz__lead">{{ 'pages.order.dirtiness.lead' | translate }}</p>
+        <p class="cl-wiz__level-hint">
+          <i class="pi pi-info-circle" aria-hidden="true"></i>
+          <span>{{ 'pages.order.dirtiness.hint' | translate }}</span>
+        </p>
+
+        <div class="cl-wiz__levels" role="group" [attr.aria-label]="'pages.order.dirtiness.title' | translate">
+          @for (option of dirtinessLevels; track option.level) {
+          <button
+            type="button"
+            class="cl-wiz__level"
+            data-spec-level
+            [class.cl-wiz__level--on]="facade.formData().dirtinessLevel === option.level"
+            [attr.aria-pressed]="facade.formData().dirtinessLevel === option.level"
+            (click)="selectDirtinessLevel(option.level)"
+          >
+            <span class="cl-wiz__level-head">
+              <span class="cl-h3 cl-wiz__level-name">{{ 'pages.order.dirtiness.' + option.key + '.name' | translate }}</span>
+              <span class="cl-wiz__level-rate">
+                @if (option.ratePercent > 0) {
+                {{ 'pages.order.dirtiness.surcharge' | translate: { rate: option.ratePercent } }}
+                } @else {
+                {{ 'pages.order.dirtiness.no_surcharge' | translate }}
+                }
+              </span>
+            </span>
+            <span class="cl-wiz__level-lead">{{ 'pages.order.dirtiness.' + option.key + '.lead' | translate }}</span>
+            <span class="cl-wiz__level-signs">
+              @for (sign of dirtinessSigns; track sign) {
+              <span class="cl-wiz__level-sign">
+                <i class="pi pi-check" aria-hidden="true"></i>
+                <span>{{ 'pages.order.dirtiness.' + option.key + '.sign_' + sign | translate }}</span>
+              </span>
+              }
+            </span>
+          </button>
+          }
+        </div>
+      </div>
+      }
+
+      <!-- Step 2: Contact & Address -->
       <!--
         Step 2, to the approved artboard: the address and what we can confirm
         about it side by side, then the property type that decides whether a
         floor and flat number are even a question, then the protected entry
         note, then who to call.
       -->
-      @if (facade.activeStep() === 1) {
+      @if (facade.activeStep() === 2) {
       <div class="cl-wiz__step-body">
         <h1 class="cl-d2 cl-wiz__title">{{ 'pages.order.step_address_title' | translate }}</h1>
         <p class="cl-body cl-wiz__lead">{{ 'pages.order.step_address_lead' | translate }}</p>
@@ -526,12 +571,12 @@
       </div>
       }
 
-      <!-- Step 2: Date & Time -->
+      <!-- Step 3: Date & Time -->
       <!--
         Step 3, to the approved artboard: a month you can see at a glance next to
         the hours that are actually left in the day, then how we get in.
       -->
-      @if (facade.activeStep() === 2) {
+      @if (facade.activeStep() === 3) {
       <div class="cl-wiz__step-body">
         <h1 class="cl-d2 cl-wiz__title">{{ 'pages.order.step_when_title' | translate }}</h1>
         <p class="cl-body cl-wiz__lead">
@@ -683,7 +728,7 @@
         The note for the cleaner moved to the review step, where the artboard
         puts it.
       -->
-      @if (facade.activeStep() === 3) {
+      @if (facade.activeStep() === 4) {
       <div class="cl-wiz__step-body">
         <h1 class="cl-d2 cl-wiz__title">{{ 'pages.order.payment_section_title' | translate }}</h1>
         <p class="cl-body cl-wiz__lead">{{ 'pages.order.step_pay_lead' | translate }}</p>
@@ -730,6 +775,15 @@
             (onClick)="goToAuth('login')"
           />
           }
+        </div>
+        }
+        @if (facade.cashOwed()) {
+        <div class="cl-wiz__pay-owed">
+          <p class="cl-wiz__pay-note cl-wiz__pay-note--warn" role="status">
+            <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
+            <span class="cl-wiz__pay-note-text">{{ 'pages.order.cash_owed' | translate }}</span>
+          </p>
+          <cleansia-customer-amount-due (leaving)="parkDraft()" />
         </div>
         }
 
@@ -823,7 +877,7 @@
         server's — the plans come from the catalogue and the saving from a query
         that applies the same 12% cap and express rules the order would.
       -->
-      @if (facade.activeStep() === 4) {
+      @if (facade.activeStep() === 5) {
       <div class="cl-wiz__step-body">
         <h1 class="cl-d2 cl-wiz__title">{{ 'pages.order.step_plus_title' | translate }}</h1>
         <!--
@@ -1005,7 +1059,7 @@
       </div>
       }
 
-      @if (facade.activeStep() === 5) {
+      @if (facade.activeStep() === 6) {
       <div class="cl-wiz__step-body">
         <h1 class="cl-d2 cl-wiz__title">{{ 'pages.order.step_review_title' | translate }}</h1>
         <p class="cl-body cl-wiz__lead">{{ 'pages.order.step_review_lead' | translate }}</p>
@@ -1089,11 +1143,20 @@
         }
 
         <!--
-          The customer's half of the contract for work, stated at the offer. Not a tick and not
-          gated on the consent above: the contract is concluded when a cleaner accepts the job, on
-          the text published at /work-contract, whether or not this account has consented before.
+          Asked on every booking, an account that consented to the terms included: the request is
+          tied to this contract, and the server refuses a booking without it.
         -->
-        <p class="cl-wiz__contract-note" [innerHTML]="'pages.order.work_contract_notice' | translate"></p>
+        <label class="cl-wiz__consent" data-spec-early-performance>
+          <p-checkbox
+            [ngModel]="requestedEarlyStart()"
+            (ngModelChange)="requestedEarlyStart.set($event)"
+            [binary]="true"
+            inputId="wizard-early-performance"
+          />
+          <span>{{ 'pages.order.early_performance.early-performance-draft-2026-09-29' | translate }}</span>
+        </label>
+
+        <p class="cl-wiz__contract-note" [innerHTML]="'pages.order.contract_notice' | translate"></p>
       </div>
       }
 
@@ -1156,6 +1219,15 @@
             >
               <i class="pi pi-times" aria-hidden="true"></i>
             </button>
+          </div>
+          }
+          @if (dirtinessLine(); as dirtiness) {
+          <div class="cl-wiz__summary-line">
+            <span class="cl-wiz__summary-line-label">
+              {{ dirtiness.labelKey | translate }}
+              <small class="cl-wiz__summary-calc">{{ 'pages.order.dirtiness.surcharge' | translate: { rate: dirtiness.rate } }}</small>
+            </span>
+            <strong>{{ dirtiness.amount }}</strong>
           </div>
           }
         </div>
@@ -1240,7 +1312,7 @@
           is — and only on the step that offers it, so the rest of the wizard is
           not carrying an advert.
         -->
-        @if (facade.activeStep() === 4 && plusSavings(); as savings) {
+        @if (facade.activeStep() === 5 && plusSavings(); as savings) {
         @if (savings.wouldSaveAmount > 0) {
         <div class="cl-wiz__summary-plus">
           <span>{{ 'pages.order.summary_with_plus' | translate }}</span>
@@ -1405,6 +1477,47 @@
       [title]="'pages.order.rebook_warning.continue' | translate"
       [severity]="'primary'"
       (clickFn)="showRebookWarning.set(false)"
+    />
+  </ng-template>
+</p-dialog>
+
+<p-dialog
+  [header]="'pages.order.card_capture.title' | translate"
+  [visible]="facade.cardCaptureVisible()"
+  (visibleChange)="!$event && facade.closeCardCapture()"
+  [modal]="true"
+  [closable]="true"
+  [style]="{ width: '480px' }"
+  [breakpoints]="{ '500px': '95vw' }"
+  styleClass="cleansia-dialog"
+>
+  <div class="cleansia-dialog__body">
+    <div class="cleansia-dialog__icon cleansia-dialog__icon--info">
+      <i class="pi pi-credit-card"></i>
+    </div>
+    <p class="cleansia-dialog__text">{{ 'pages.order.card_capture.intro' | translate }}</p>
+    <label class="cl-wiz__consent">
+      <p-checkbox
+        [ngModel]="facade.cardCaptureConsent()"
+        (ngModelChange)="facade.setCardCaptureConsent($event)"
+        [binary]="true"
+        inputId="wizard-card-consent"
+      />
+      <span>{{ 'pages.order.card_capture.consent.card-guarantee-draft-2026-09-28' | translate }}</span>
+    </label>
+  </div>
+  <ng-template #footer>
+    <cleansia-button
+      [title]="'pages.order.card_capture.cancel' | translate"
+      [severity]="'secondary'"
+      (clickFn)="facade.closeCardCapture()"
+    />
+    <cleansia-button
+      [title]="'pages.order.card_capture.continue' | translate"
+      [severity]="'primary'"
+      [loading]="facade.cardCaptureStarting()"
+      [disabled]="!facade.cardCaptureConsent()"
+      (clickFn)="facade.startCardCapture()"
     />
   </ng-template>
 </p-dialog>

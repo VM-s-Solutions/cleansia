@@ -53,6 +53,10 @@
     <string name="earnings_next_payout">Další výplata</string>
     <string name="earnings_view_invoices">Zobrazit faktury</string>
     <string name="earnings_view_invoices_subtitle">Historie výplat a stavy faktur</string>
+    <string name="earnings_cash_held_title">Hotovost u mě</string>
+    <string name="earnings_cash_held_subtitle">Hotovost, kterou jste převzali u dveří a ještě neodevzdali. Započte se proti vaší další výplatě.</string>
+    <string name="earnings_cash_held_limit">Limit %1$s</string>
+    <string name="earnings_cash_held_jobs_hidden">Držíte více, než je limit, proto se vám zakázky za hotové nezobrazují, dokud hotovost neodevzdáte.</string>
     <string name="email">E-mail</string>
     <string name="password">Heslo</string>
     <string name="confirm_password">Potvrdit heslo</string>
@@ -608,6 +612,19 @@
     <string name="call_customer">Zavolat zákazníkovi</string>
     <string name="navigate_to_address">Navigovat na adresu</string>
     <string name="report_issue">Problém</string>
+    <string name="lockout_card_title">Nemůžete se dostat dovnitř?</string>
+    <string name="lockout_card_not_yet">Pokud vám nikdo neotevře, můžete to nahlásit od %1$s, %2$d minut po začátku.</string>
+    <string name="lockout_card_body">Vyfoťte vchod, poznamenejte si, kdy jste zákazníkovi volali, a nahlaste to. Než se uplatní jakýkoli poplatek, potvrdí to administrátor.</string>
+    <string name="lockout_entrance_photo">Fotka vchodu</string>
+    <string name="lockout_photo_needed">Nejdřív vyfoťte vchod.</string>
+    <string name="lockout_report_action">Nemohu se dostat dovnitř</string>
+    <string name="lockout_sheet_title">Nahlásit, že se nemůžete dostat dovnitř</string>
+    <string name="lockout_sheet_description">Poznamenejte si, kdy jste zákazníkovi volali nebo psali a co se stalo. Administrátor si to přečte spolu s vaší fotkou.</string>
+    <string name="lockout_call_attempts_label">Vaše hovory</string>
+    <string name="lockout_reported_toast">Nahlášeno. Administrátor to potvrdí.</string>
+    <string name="lockout_reported_title">Nahlásili jste, že se nemůžete dostat dovnitř</string>
+    <string name="lockout_reported_body">Nahlášeno v %1$s. Administrátor to potvrdí; do té doby zakázka zůstává beze změny.</string>
+    <string name="lockout_reported_calls">Hovory: %1$s</string>
     <string name="add_note">Poznámka</string>
     <string name="call">Volat</string>
     <string name="message">Zpráva</string>
@@ -899,8 +916,10 @@
     <string name="work_contract_pending_banner">Než začnete, přijměte smlouvu o dílo</string>
     <string name="work_contract_accept_cta">Přijmout smlouvu</string>
     <string name="work_contract_read">Přečíst smlouvu</string>
+    <string name="work_contract_reward">Vaše odměna</string>
+    <string name="work_contract_parties">Mezi provozní společností, která tento úklid prodala (objednatel), a vámi (zhotovitel)</string>
     <string name="legal_documents_title">Smluvní dokumenty</string>
-    <string name="legal_documents_intro">Tyto dokumenty upravují vaši spolupráci s Cleansia. Každý si přečtěte a přijměte jeho aktuální verzi — dokud to neuděláte, nemůžete být schváleni ani přijímat zakázky.</string>
+    <string name="legal_documents_intro">Tyto dokumenty upravují vaši práci pro provozní společnost trhu, na kterém pracujete. Každý si přečtěte a přijměte jeho aktuální verzi — dokud to neuděláte, nemůžete být schváleni ani přijímat zakázky.</string>
     <string name="legal_documents_empty">Momentálně nemáte žádné dokumenty k přijetí.</string>
     <string name="legal_documents_version">Verze %1$s</string>
     <string name="legal_documents_accepted_on">Přijato %1$s, verze %2$s</string>
@@ -931,6 +950,9 @@
     <string name="scope_section_title">Objekt &amp; rozsah</string>
     <string name="scope_services_label">Služby a balíčky</string>
     <string name="scope_extras_label">Doplňky</string>
+    <string name="dirtiness_level_normal">Běžné znečištění</string>
+    <string name="dirtiness_level_increased">Zvýšené znečištění</string>
+    <string name="dirtiness_level_heavy">Silné znečištění</string>
 
     <!-- Extra names — the seed's own translations (insert_seed_data.sql §7b), copied verbatim. -->
     <string name="extra_name_inside_oven">Čištění vnitřku trouby</string>
@@ -1135,6 +1157,11 @@
     <string name="error_order_payment_not_confirmed">Platba za tuto zakázku ještě nebyla potvrzena.</string>
     <string name="error_order_not_cash_payment">Toto není zakázka placená hotově.</string>
     <string name="error_order_cash_already_collected">Hotovost za tuto zakázku již byla přijata.</string>
+    <string name="error_order_lockout_too_early">Na nahlášení je příliš brzy. Že se nemůžete dostat dovnitř, můžete nahlásit od 15 minut po začátku.</string>
+    <string name="error_order_lockout_photo_required">Než nahlásíte, že se nemůžete dostat dovnitř, vyfoťte vchod.</string>
+    <string name="error_order_lockout_already_reported">Už jste nahlásili, že se nemůžete dostat dovnitř.</string>
+    <string name="error_order_lockout_order_closed">Tato zakázka je už dokončená nebo zrušená.</string>
+    <string name="error_order_cash_float_cap_exceeded">Držíte více hotovosti firmy, než dovoluje váš limit. Než vezmete další zakázku za hotové, odevzdejte ji.</string>
     <string name="error_order_card_payment_already_settled">Tato zakázka již byla zaplacena kartou. Nevybírejte hotovost — stav platby byl aktualizován.</string>
     <string name="error_order_card_payment_in_progress">Platba kartou za tuto zakázku se stále zpracovává. Chvíli počkejte a zkuste to znovu.</string>
     <string name="error_order_card_payment_unverified">Nepodařilo se ověřit platbu kartou za tuto zakázku. Zatím nevybírejte hotovost — zkuste to za chvíli znovu.</string>
@@ -1307,12 +1334,15 @@
     <string name="period_pay_breakdown_section">Rozpis výplaty</string>
     <string name="period_pay_base">Základní odměna</string>
     <string name="period_pay_extras">Příplatky</string>
+    <string name="period_pay_dirtiness">Příplatek za znečištění</string>
     <string name="period_pay_expenses">Náhrady výdajů</string>
     <string name="period_pay_jobs_section">Zakázky v tomto období</string>
     <string name="period_pay_empty">V tomto období zatím nejsou žádné zakázky.</string>
     <string name="period_pay_error">Výplatu za toto období se nepodařilo načíst.</string>
     <string name="period_pay_line_deduction">Srážka %1$s</string>
     <string name="period_pay_line_deduction_reason">Srážka %1$s: %2$s</string>
+    <string name="period_pay_line_cancellation_fee_share">Váš podíl z poplatku za pozdní zrušení</string>
+    <string name="period_pay_line_lockout_fee_share">Váš podíl z poplatku za neumožněný přístup</string>
     <string name="invoice_view_period_pay">Zobrazit výplatu za období</string>
     <string name="photo_encode_failed">Tuto fotku se nepodařilo zpracovat. Zkuste prosím jinou.</string>
     <string name="document_read_failed">Tento soubor se nepodařilo načíst. Zkuste prosím jiný.</string>

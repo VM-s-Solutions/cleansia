@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
@@ -61,7 +62,8 @@ public class CancelInvoice
 
     public class Handler(
         IEmployeeInvoiceRepository invoiceRepository,
-        IUserSessionProvider userSessionProvider)
+        IUserSessionProvider userSessionProvider,
+        ICashLedgerRepository cashLedgerRepository)
         : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -87,6 +89,12 @@ public class CancelInvoice
                     invoice.IsCancelled
                         ? BusinessErrorMessage.InvoiceAlreadyCancelled
                         : BusinessErrorMessage.CannotCancelPaidInvoice));
+            }
+
+            if (invoice.CashSetOffAmount > 0m)
+            {
+                cashLedgerRepository.Add(
+                    CashLedgerEntry.ForSetOffReversal(invoice, invoice.CashSetOffAmount, invoice.CancelledAt!.Value));
             }
 
             return BusinessResult.Success(new Response(invoice.Id));

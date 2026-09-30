@@ -1,5 +1,6 @@
 package cz.cleansia.partner.core
 
+import cz.cleansia.partner.features.orders.LOCKOUT_WAIT_MINUTES
 import cz.cleansia.partner.features.orders.ProfileSection
 import cz.cleansia.partner.features.profile.JobRadius
 import java.io.File
@@ -139,6 +140,41 @@ class BackendKeyStringsTest {
                 .map { (key, resName) -> "$locale/$resName ($key)" }
         }
         assertTrue("these refusals render raw: $raw", raw.isEmpty())
+    }
+
+    /**
+     * `ReportOrderLockout` refuses a report too early, without an entrance photo, a second time or on a
+     * finished job; `TakeOrder` refuses a cash job to a cleaner above the company's cash float cap.
+     */
+    @Test
+    fun `every lockout and cash float cap refusal resolves to a sentence in all five locales`() {
+        val keys = listOf(
+            "order.lockout.too_early",
+            "order.lockout.photo_required",
+            "order.lockout.already_reported",
+            "order.lockout.order_closed",
+            "order.cash_float_cap_exceeded",
+        )
+        val raw = locales.flatMap { locale ->
+            val declared = declared(locale)
+            keys
+                .map { it to "error_" + it.replace('.', '_').lowercase() }
+                .filterNot { (_, resName) -> resName in declared }
+                .map { (key, resName) -> "$locale/$resName ($key)" }
+        }
+        assertTrue("these refusals render raw: $raw", raw.isEmpty())
+    }
+
+    @Test
+    fun `the too-early lockout refusal states the wait in all five locales`() {
+        val silent = locales.filterNot { locale ->
+            Regex("<string name=\"error_order_lockout_too_early\">(.*?)</string>")
+                .find(File(resDir, "$locale/strings.xml").readText())
+                ?.groupValues
+                ?.get(1)
+                ?.contains(LOCKOUT_WAIT_MINUTES.toString()) == true
+        }
+        assertTrue("error_order_lockout_too_early does not state $LOCKOUT_WAIT_MINUTES minutes in $silent", silent.isEmpty())
     }
 
     @Test

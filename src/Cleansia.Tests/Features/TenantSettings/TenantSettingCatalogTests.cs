@@ -73,13 +73,41 @@ public sealed class TenantSettingCatalogTests
     }
 
     [Fact]
-    public void The_Catalogue_Holds_Exactly_The_Fourteen_Retention_Keys_The_Lifecycle_Horizon_The_Admin_Mailbox_And_No_Duplicate()
+    public void The_Catalogue_Holds_Exactly_The_Fourteen_Retention_Keys_The_Lifecycle_Horizon_The_Admin_Mailbox_The_Two_Cash_Keys_And_No_Duplicate()
     {
-        Assert.Equal(16, TenantSettingCatalog.All.Count);
+        Assert.Equal(18, TenantSettingCatalog.All.Count);
         Assert.Equal(TenantSettingCatalog.All.Count, TenantSettingCatalog.All.Select(d => d.Key).Distinct(StringComparer.Ordinal).Count());
         Assert.Equal(14, TenantSettingCatalog.All.Count(d => d.Category == TenantSettingCatalog.RetentionCategory));
         Assert.Equal(1, TenantSettingCatalog.All.Count(d => d.Category == TenantSettingCatalog.LifecycleCategory));
         Assert.Equal(1, TenantSettingCatalog.All.Count(d => d.Category == TenantSettingCatalog.NotificationsCategory));
+        Assert.Equal(2, TenantSettingCatalog.All.Count(d => d.Category == TenantSettingCatalog.CashCategory));
+    }
+
+    [Fact]
+    public void The_Cash_Float_Cap_Is_Catalogued_Unset_By_Default_And_Zero_Means_No_Cap()
+    {
+        var cap = TenantSettingCatalog.Find("cash.float_cap");
+
+        Assert.Same(TenantSettingCatalog.CashFloatCap, cap);
+        Assert.Equal(TenantSettingCatalog.CashCategory, cap!.Category);
+        Assert.Equal(TenantSettingValueType.Int, cap.ValueType);
+        Assert.Equal("0", cap.DefaultValue);
+        Assert.Equal(0, cap.Min);
+        Assert.False(cap.IsValid("-1"));
+        Assert.Equal(0, TenantSettingCatalog.CashFloatCap.Resolve(null));
+    }
+
+    [Fact]
+    public void The_Remittance_Request_Waits_Thirty_Days_By_Default_And_At_Least_One()
+    {
+        var days = TenantSettingCatalog.Find("cash.remittance_request_days");
+
+        Assert.Same(TenantSettingCatalog.CashRemittanceRequestDays, days);
+        Assert.Equal(TenantSettingCatalog.CashCategory, days!.Category);
+        Assert.Equal("30", days.DefaultValue);
+        Assert.Equal(1, days.Min);
+        Assert.False(days.IsValid("0"));
+        Assert.Equal(30, TenantSettingCatalog.CashRemittanceRequestDays.Resolve(null));
     }
 
     [Fact]

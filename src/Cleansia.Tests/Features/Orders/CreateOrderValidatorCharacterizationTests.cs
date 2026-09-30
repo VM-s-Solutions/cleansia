@@ -68,6 +68,7 @@ public class CreateOrderValidatorCharacterizationTests
                 It.IsAny<IEnumerable<string>>(),
                 It.IsAny<int>(),
                 It.IsAny<int>(),
+                It.IsAny<DirtinessLevel>(),
                 It.IsAny<string?>(),
                 It.IsAny<DateTime?>(),
                 It.IsAny<string?>(),
@@ -103,7 +104,8 @@ public class CreateOrderValidatorCharacterizationTests
             Mock.Of<IUserConsentRepository>(),
             CreateOrderTestData.Speaking(Constants.Language.English),
             Mock.Of<ICountryConfigurationRepository>(),
-            Mock.Of<ILegalDocumentResolver>());
+            Mock.Of<ILegalDocumentResolver>(),
+            SavedCards.SavedCardDoubles.Guaranteed(), Mock.Of<IReceivableRepository>());
 
     private static IServicePriceRepository PricedServices(params Currency[] currencies)
     {
@@ -132,6 +134,7 @@ public class CreateOrderValidatorCharacterizationTests
             It.IsAny<IEnumerable<string>>(),
             It.IsAny<int>(),
             It.IsAny<int>(),
+            It.IsAny<DirtinessLevel>(),
             currencyId,
             It.IsAny<DateTime?>(),
             It.IsAny<string?>(),
@@ -235,6 +238,7 @@ public class CreateOrderValidatorCharacterizationTests
                 It.IsAny<IEnumerable<string>>(),
                 It.IsAny<int>(),
                 It.IsAny<int>(),
+                It.IsAny<DirtinessLevel>(),
                 It.IsAny<string?>(),
                 It.IsAny<DateTime?>(),
                 It.IsAny<string?>(),
@@ -251,6 +255,54 @@ public class CreateOrderValidatorCharacterizationTests
     }
 
     [Fact]
+    public async Task The_Price_Is_Checked_At_The_Commands_Dirtiness_Level()
+    {
+        var command = CreateOrderTestData.ValidCommand() with { DirtinessLevel = DirtinessLevel.Heavy };
+
+        await CreateValidator().ValidateAsync(command);
+
+        _pricingCalculator.Verify(c => c.CalculateAsync(
+            It.IsAny<IEnumerable<string>>(),
+            It.IsAny<IEnumerable<string>>(),
+            It.IsAny<IEnumerable<string>>(),
+            It.IsAny<int>(),
+            It.IsAny<int>(),
+            DirtinessLevel.Heavy,
+            It.IsAny<string?>(),
+            It.IsAny<DateTime?>(),
+            It.IsAny<string?>(),
+            It.IsAny<DateTime>(),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>
+    /// The host's enum converter passes an unknown integer through to the validator, and the calculator
+    /// throws on it; the price chain refuses it first, so the caller gets a 400 rather than a 500.
+    /// </summary>
+    [Fact]
+    public async Task An_Undefined_Dirtiness_Level_Is_Refused_Before_The_Calculator_Runs()
+    {
+        var command = CreateOrderTestData.ValidCommand() with { DirtinessLevel = (DirtinessLevel)7 };
+
+        var result = await CreateValidator().ValidateAsync(command);
+
+        var error = Assert.Single(result.Errors, e => e.ErrorCode == nameof(CreateOrder.Command.DirtinessLevel));
+        Assert.Equal(BusinessErrorMessage.InvalidEnumValue, error.ErrorMessage);
+        _pricingCalculator.Verify(c => c.CalculateAsync(
+            It.IsAny<IEnumerable<string>>(),
+            It.IsAny<IEnumerable<string>>(),
+            It.IsAny<IEnumerable<string>>(),
+            It.IsAny<int>(),
+            It.IsAny<int>(),
+            It.IsAny<DirtinessLevel>(),
+            It.IsAny<string?>(),
+            It.IsAny<DateTime?>(),
+            It.IsAny<string?>(),
+            It.IsAny<DateTime>(),
+            It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
     public async Task AC4_PriceMatch_PassesPriceCheck_WithCleaningDatePassedToCalculator()
     {
         var command = CreateOrderTestData.ValidCommand();
@@ -264,6 +316,7 @@ public class CreateOrderValidatorCharacterizationTests
             It.IsAny<IEnumerable<string>>(),
             It.IsAny<int>(),
             It.IsAny<int>(),
+            It.IsAny<DirtinessLevel>(),
             // The caller's currency — the same field the quote priced with.
             command.CurrencyId,
             command.CleaningDate,
@@ -366,6 +419,7 @@ public class CreateOrderValidatorCharacterizationTests
                 It.IsAny<IEnumerable<string>>(),
                 It.IsAny<int>(),
                 It.IsAny<int>(),
+                It.IsAny<DirtinessLevel>(),
                 Eur.Id,
                 It.IsAny<DateTime?>(),
                 It.IsAny<string?>(),
@@ -518,6 +572,7 @@ public class CreateOrderValidatorCharacterizationTests
             .Setup(c => c.CalculateAsync(
                 It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(),
                 It.IsAny<IEnumerable<string>>(), It.IsAny<int>(), It.IsAny<int>(),
+                It.IsAny<DirtinessLevel>(),
                 It.IsAny<string?>(), It.IsAny<DateTime?>(), It.IsAny<string?>(),
                 It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(CreateOrderTestData.MatchingPricing(totalPrice: 1800m) with
@@ -899,6 +954,7 @@ public class CreateOrderValidatorCharacterizationTests
                 It.IsAny<IEnumerable<string>>(),
                 It.IsAny<int>(),
                 It.IsAny<int>(),
+                It.IsAny<DirtinessLevel>(),
                 It.IsAny<string?>(),
                 It.IsAny<DateTime?>(),
                 It.IsAny<string?>(),

@@ -58,6 +58,18 @@ public class Order : TenantAuditable
     public bool SettledInCash => CashCollectedAt is not null;
 
     /// <summary>
+    /// The assigned cleaner's report that they cannot get in (owner ruling 2026-09-28, decision 11): when,
+    /// who, and the calls they made. An administrator confirms it before the lockout fee applies.
+    /// </summary>
+    public DateTime? LockoutReportedAt { get; private set; }
+
+    [MaxLength(26)]
+    public string? LockoutReportedByEmployeeId { get; private set; }
+
+    [MaxLength(1000)]
+    public string? LockoutCallAttempts { get; private set; }
+
+    /// <summary>
     /// The tender the customer ACTUALLY paid with, as opposed to <see cref="PaymentType"/>, which stays
     /// the booking contract (a card booking whose Stripe webhook never arrived keeps
     /// <see cref="PaymentType.Card"/> so the refund path still finds its charge surface). A card booking
@@ -237,11 +249,44 @@ public class Order : TenantAuditable
     [MaxLength(26)]
     public string? WorkContractDocumentId { get; private set; }
 
+    /// <summary>
+    /// The wording of the early-performance tick the clients show. A draft until the lawyer's wording
+    /// arrives; bump it with every change to that wording, so each booking records the text it was made under.
+    /// </summary>
+    public const string EarlyPerformanceConsentTextVersionInForce = "early-performance-draft-2026-09-29";
+
+    /// <summary>
+    /// The customer's express request that performance start within the 14-day withdrawal period, with
+    /// the acknowledgement that the right is lost once the service is fully performed (decision 61): the
+    /// wording's version, when, and the client and request it came from. A recurring occurrence carries the
+    /// act of the schedule that created it. Null on an order booked before the act existed.
+    /// </summary>
+    [MaxLength(64)]
+    public string? EarlyPerformanceConsentTextVersion { get; private set; }
+
+    public DateTimeOffset? EarlyPerformanceConsentedOn { get; private set; }
+
+    [MaxLength(40)]
+    public string? EarlyPerformanceConsentClient { get; private set; }
+
+    [MaxLength(45)]
+    public string? EarlyPerformanceConsentIpAddress { get; private set; }
+
+    [MaxLength(120)]
+    public string? EarlyPerformanceConsentDeviceLabel { get; private set; }
+
     public string? UserId { get; private set; }
     public User? User { get; private set; }
 
     public string? ReceiptId { get; private set; }
-    public OrderReceipt? Receipt { get; private set; }
+
+    private ICollection<OrderReceipt> _receipts = [];
+
+    /// <summary>The sale receipt and a fee receipt for each receivable paid on the order.</summary>
+    public IReadOnlyCollection<OrderReceipt> Receipts => _receipts.ToList().AsReadOnly();
+
+    /// <summary>The receipt of the booking's own sale; a fee receipt is never it.</summary>
+    public OrderReceipt? Receipt => _receipts.FirstOrDefault(r => !r.IsFee);
 
     /// <summary>
     /// When the customer cancelled this order. Null while active.
@@ -327,6 +372,14 @@ public class Order : TenantAuditable
     /// express surcharge the customer was never charged.</para>
     /// </summary>
     public decimal ExpressSurchargeAmount { get; private set; }
+
+    public DirtinessLevel DirtinessLevel { get; private set; }
+
+    /// <summary>
+    /// The dirtiness surcharge this booking was charged, in the order's currency: the level's rate on the
+    /// lines' sum, in cents. Stored for the same reason as <see cref="ExpressSurchargeAmount"/>.
+    /// </summary>
+    public decimal DirtinessSurchargeAmount { get; private set; }
 
     /// <summary>
     /// The language the customer booked in, as the booking request stated it. Null where no customer
@@ -768,6 +821,14 @@ public class Order : TenantAuditable
         return this;
     }
 
+    public Order ReportLockout(string employeeId, string callAttempts, DateTime reportedAtUtc)
+    {
+        LockoutReportedAt = reportedAtUtc;
+        LockoutReportedByEmployeeId = employeeId;
+        LockoutCallAttempts = callAttempts;
+        return this;
+    }
+
     public Order AssignStripePaymentIntentId(string paymentIntentId)
     {
         StripePaymentIntentId = paymentIntentId;
@@ -807,6 +868,17 @@ public class Order : TenantAuditable
         return this;
     }
 
+    public Order RecordEarlyPerformanceConsent(
+        string textVersion, DateTimeOffset consentedOn, string client, string? ipAddress, string? deviceLabel)
+    {
+        EarlyPerformanceConsentTextVersion = textVersion;
+        EarlyPerformanceConsentedOn = consentedOn;
+        EarlyPerformanceConsentClient = client;
+        EarlyPerformanceConsentIpAddress = ipAddress;
+        EarlyPerformanceConsentDeviceLabel = deviceLabel;
+        return this;
+    }
+
     public Order MarkEmployeePayCalculated()
     {
         EmployeePayCalculated = true;
@@ -836,6 +908,15 @@ public class Order : TenantAuditable
         ArgumentOutOfRangeException.ThrowIfLessThan(amount, 0m);
 
         ExpressSurchargeAmount = amount;
+        return this;
+    }
+
+    public Order SetDirtinessSurcharge(DirtinessLevel level, decimal amount)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(amount, 0m);
+
+        DirtinessLevel = level;
+        DirtinessSurchargeAmount = amount;
         return this;
     }
 
@@ -1041,6 +1122,9 @@ public class Order : TenantAuditable
         CustomerApartment = null;
         AccessMode = null;
         CompletionNotes = null;
+        LockoutCallAttempts = null;
+        EarlyPerformanceConsentIpAddress = null;
+        EarlyPerformanceConsentDeviceLabel = null;
         // A platform reason is a code, not personal data, and the wind-down's refund re-drive selects its
         // cancelled orders by it; the customer's or an admin's free text goes.
         if (CancelledBy != Enums.CancelledBy.System)

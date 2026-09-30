@@ -1,4 +1,5 @@
 using System.Globalization;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Infra.Services.Pdf.Components;
 using Cleansia.Infra.Services.Pdf.Models;
 using Cleansia.Infra.Services.Pdf.Theme;
@@ -218,8 +219,16 @@ public class DefaultInvoiceLayoutBuilder : IInvoiceLayoutBuilder
             });
     }
 
-    protected virtual string DescribeLine(InvoiceLineItem line) =>
-        $"{Labels.LineDescription} {line.OrderNumber} ({FormatDate(line.PerformedOn)})";
+    protected virtual string DescribeLine(InvoiceLineItem line)
+    {
+        var description = line.LineType switch
+        {
+            PayLineType.CancellationFeeShare => Labels.CancellationFeeShareLineDescription,
+            PayLineType.LockoutFeeShare => Labels.LockoutFeeShareLineDescription,
+            _ => Labels.LineDescription,
+        };
+        return $"{description} {line.OrderNumber} ({FormatDate(line.PerformedOn)})";
+    }
 
     /// <summary>
     /// The document's one legal notice: the jurisdiction's own reviewed text where it has one, otherwise
@@ -272,6 +281,38 @@ public class DefaultInvoiceLayoutBuilder : IInvoiceLayoutBuilder
                     .FontColor(CleansiaPdfTheme.TextSecondary)
                     .Italic();
             }
+
+            if (data.CashSetOffAmount > 0m)
+            {
+                col.Item().PaddingTop(CleansiaPdfTheme.InnerPadding).Element(c => BuildCashSetOffStatement(c, data));
+            }
+        });
+    }
+
+    protected virtual IReadOnlyList<(string Label, string Value, bool IsBold)> CashSetOffStatementLines(InvoicePdfData data)
+    {
+        var statement = CashSetOffStatementLabels.For(data.StatementLanguageCode);
+
+        return
+        [
+            (statement.InvoiceTotal, FormatMoney(data.TotalAmount, data), false),
+            (statement.CashSetOff, $"-{FormatMoney(data.CashSetOffAmount, data)}", false),
+            (statement.Transfer, FormatMoney(data.TotalAmount - data.CashSetOffAmount, data), true),
+        ];
+    }
+
+    protected virtual void BuildCashSetOffStatement(IContainer container, InvoicePdfData data)
+    {
+        var statement = CashSetOffStatementLabels.For(data.StatementLanguageCode);
+
+        container.Column(col =>
+        {
+            col.Item().BlockTitle(statement.Title);
+            col.Item().SummaryBox(CashSetOffStatementLines(data));
+            col.Item().PaddingTop(6)
+                .Text(statement.Note)
+                .FontSize(CleansiaPdfTheme.FontSizeLabel)
+                .FontColor(CleansiaPdfTheme.TextSecondary);
         });
     }
 

@@ -18,6 +18,7 @@ public record AdminServiceDetailDto(
     // so the edit form can tell "not priced in this currency" from "priced at nothing".
     Dictionary<string, AdminServicePriceDto> Prices,
     int EstimatedTime,
+    int MinutesPerRoom,
     Dictionary<string, Translation> Translations,
     DateTimeOffset CreatedOn,
     DateTimeOffset? UpdatedOn);

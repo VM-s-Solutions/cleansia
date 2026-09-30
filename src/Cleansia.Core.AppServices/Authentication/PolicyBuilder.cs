@@ -49,6 +49,9 @@ public static class PolicyBuilder
         // Cleansia Plus membership — subscribe / cancel / read own status
         [Policy.CanManageMembership] = PhysicalPolicy.CustomerOnly,
 
+        // The saved card — capture, read own, remove own
+        [Policy.CanManageSavedCard] = PhysicalPolicy.CustomerOnly,
+
         // Recurring booking templates — Plus perk, customer-only
         [Policy.CanManageRecurringBookings] = PhysicalPolicy.CustomerOnly,
         //[Policy.CanCreateOrder] = PhysicalPolicy.Anonymous,
@@ -282,6 +285,15 @@ public static class PolicyBuilder
         [Policy.CanIssueCustomerCredit] = PhysicalPolicy.SupportOrAbove,
         [Policy.CanViewUserCredit] = PhysicalPolicy.AdminOnly,
         [Policy.CanExpireCustomerCredit] = PhysicalPolicy.ManagerOrAbove,
+
+        // Receivables (what customers owe the company)
+        [Policy.CanViewReceivables] = PhysicalPolicy.AdminOnly,
+        [Policy.CanWriteOffReceivable] = PhysicalPolicy.ManagerOrAbove,
+
+        // Cash held by cleaners: the Accountant reads it and records what is handed back, a Manager writes it off
+        [Policy.CanViewCashHeld] = PhysicalPolicy.AccountantOrAbove,
+        [Policy.CanRecordCashRemittance] = PhysicalPolicy.AccountantOrAbove,
+        [Policy.CanWriteOffCashHeld] = PhysicalPolicy.ManagerOrAbove,
 
         // Admin Action Audit Log (read surface — ADR-0012 D7)
         [Policy.CanViewAuditLog] = PhysicalPolicy.SupportOrAbove,

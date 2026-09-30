@@ -74,7 +74,8 @@ public class CreateRecurringBookingClosedMarketTests
             CatalogueDoubles.Services(),
             CatalogueDoubles.Packages(),
             Cleansia.Tests.Features.Legal.CustomerConsentDoubles.Consented(),
-            Mock.Of<Cleansia.Core.AppServices.Services.Interfaces.ILegalDocumentResolver>());
+            Mock.Of<Cleansia.Core.AppServices.Services.Interfaces.ILegalDocumentResolver>(),
+            SavedCards.SavedCardDoubles.Guaranteed(), Mock.Of<IReceivableRepository>());
 
     private static CreateRecurringBooking.Command CommandAt(string savedAddressId) =>
         new(
@@ -87,7 +88,8 @@ public class CreateRecurringBookingClosedMarketTests
             SelectedServiceIds: ["service-1"],
             SelectedPackageIds: [],
             PaymentType: (int)PaymentType.Card,
-            StartsOn: DateTime.UtcNow.AddDays(3));
+            StartsOn: DateTime.UtcNow.AddDays(3),
+            EarlyPerformanceRequested: true);
 
     private static SavedAddress SavedAddressIn(string savedAddressId, string countryId)
     {

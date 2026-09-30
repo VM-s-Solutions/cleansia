@@ -2,7 +2,6 @@ using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Legal;
 using Cleansia.Core.Domain.Loyalty;
 using Cleansia.Core.Domain.Orders;
-using Cleansia.Core.Domain.Receipts;
 using Cleansia.Infra.Database.Converters;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -129,6 +128,15 @@ public class OrderEntityConfiguration : TenantAuditableEntityConfiguration<Order
         // reason as CreditAppliedAmount above: "no surcharge" is zero, not unknown, and the raw-SQL
         // inserts in the integration suite name their columns explicitly.
         builder.Property(o => o.ExpressSurchargeAmount)
+            .IsRequired()
+            .HasPrecision(18, 2)
+            .HasDefaultValue(0m);
+
+        builder.Property(o => o.DirtinessLevel)
+            .IsRequired()
+            .HasDefaultValue(DirtinessLevel.Normal);
+
+        builder.Property(o => o.DirtinessSurchargeAmount)
             .IsRequired()
             .HasPrecision(18, 2)
             .HasDefaultValue(0m);
@@ -299,10 +307,8 @@ public class OrderEntityConfiguration : TenantAuditableEntityConfiguration<Order
             .HasField("_issues")
             .UsePropertyAccessMode(PropertyAccessMode.Field);
 
-        builder.HasOne(o => o.Receipt)
-            .WithOne(r => r.Order)
-            .HasForeignKey<OrderReceipt>(r => r.OrderId)
-            .OnDelete(DeleteBehavior.Restrict);
+        // The sale receipt is read out of Receipts; OrderReceiptEntityConfiguration maps the relationship.
+        builder.Ignore(o => o.Receipt);
 
         // The contract-for-work text the job was offered under. Restrict: a document an order was
         // booked under is never deleted out from under it (a legal text in force is immutable anyway).

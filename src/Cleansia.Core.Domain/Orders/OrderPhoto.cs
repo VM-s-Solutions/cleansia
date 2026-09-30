@@ -89,11 +89,13 @@ public class OrderPhoto : TenantAuditable
 
     /// <summary>
     /// When a photo may be taken, the same on every client: a before photo from the moment a
-    /// cleaner holds the job until it is finished, an after photo while the work is under way.
+    /// cleaner holds the job until it is finished, an after photo while the work is under way, and an
+    /// entrance photo — the evidence of a cleaner who cannot get in — whenever they could be at the door.
     /// </summary>
     public static bool MayBeAddedAt(PhotoType photoType, OrderStatus status) => photoType switch
     {
-        PhotoType.Before => status is OrderStatus.Confirmed or OrderStatus.OnTheWay or OrderStatus.InProgress,
+        PhotoType.Before or PhotoType.Entrance
+            => status is OrderStatus.Confirmed or OrderStatus.OnTheWay or OrderStatus.InProgress,
         PhotoType.After => status is OrderStatus.InProgress,
         _ => false
     };

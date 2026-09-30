@@ -88,7 +88,9 @@
       "profile": "My Profile",
       "customer_detail": "Customer",
       "audit_log_customers": "Customer actions",
-      "audit_log_customer_entry": "Customer action"
+      "audit_log_customer_entry": "Customer action",
+      "receivables": "Receivables",
+      "cash_held": "Cash held by cleaners"
     }
   },
   "components": {
@@ -252,6 +254,27 @@
       "active": "Active",
       "inactive": "Inactive",
       "expired": "Expired"
+    },
+    "dirtiness_level": {
+      "normal": "Normal",
+      "increased": "Increased",
+      "heavy": "Heavy"
+    },
+    "receivable_status": {
+      "open": "Open",
+      "paid": "Paid",
+      "written_off": "Written off"
+    },
+    "receivable_kind": {
+      "cash_cancellation_fee": "Late-cancellation fee",
+      "lockout": "Lockout fee",
+      "unpaid_cash": "Unpaid cash",
+      "top_up": "Top-up"
+    },
+    "pay_line_type": {
+      "job": "Job",
+      "cancellation_fee_share": "Share of a cancellation fee",
+      "lockout_fee_share": "Share of a lockout fee"
     }
   },
   "sidebar": {
@@ -290,7 +313,9 @@
     "data_protection": "Data Protection",
     "audit_log": "Audit Log",
     "notifications": "Notifications",
-    "profile": "My Profile"
+    "profile": "My Profile",
+    "receivables": "Receivables",
+    "cash_held": "Cash held"
   },
   "pages": {
     "unauthorized": {
@@ -677,6 +702,15 @@
           "amount": "Amount received",
           "submit": "Record cash",
           "success": "Cash recorded. The order is paid."
+        },
+        "lockout": {
+          "action": "Confirm customer lockout",
+          "context": "Use this when the cleaner reported that they could not get in. Check the entrance photo and the calls they made before you confirm.",
+          "confirm": "This cancels the booking as a customer lockout at the whole price. A card order keeps its payment and any credit applied to it; a signed-in customer's unpaid cash booking owes the whole price as a receivable; a guest keeps nothing back and is never charged more. The crew is paid its share of the fee once it is collected. It cannot be undone.",
+          "submit": "Confirm lockout",
+          "success": "Order cancelled as a customer lockout at {{fee}}. {{receivable}}",
+          "receivable_opened": "The customer owes {{amount}}, recorded as a receivable.",
+          "no_receivable": "What the customer paid is kept and nothing more is charged."
         }
       },
       "messages": {
@@ -703,6 +737,7 @@
       "cleaning_time": "Cleaning Time",
       "rooms": "Rooms",
       "bathrooms": "Bathrooms",
+      "dirtiness_level": "Dirtiness",
       "estimated_time": "Estimated Time",
       "actual_time": "Actual Time",
       "completed_at": "Completed at",
@@ -712,6 +747,7 @@
       "payment_info": "Payment Information",
       "payment_type": "Payment Type",
       "payment_status": "Payment Status",
+      "dirtiness_surcharge": "Dirtiness surcharge",
       "total_price": "Total Price",
       "receipt_number": "Receipt Number",
       "cash_collected_by": "Cash taken by",
@@ -789,7 +825,16 @@
           "load_failed": "The contract could not be loaded. Please try again.",
           "retry": "Try again"
         }
-      }
+      },
+      "lockout": {
+        "title": "Lockout report",
+        "reported_at": "Reported at",
+        "call_attempts": "Calls the cleaner made",
+        "photo": "Entrance photo",
+        "photo_hint": "Under Order Photos"
+      },
+      "entrance_photos": "Entrance photos",
+      "entrance": "Entrance"
     },
     "invoice_management": {
       "title": "Invoice Management",
@@ -1107,6 +1152,7 @@
       "price_required": "Required",
       "price_optional": "Optional",
       "estimated_time": "Estimated Time (minutes)",
+      "minutes_per_room": "Minutes per room or bathroom",
       "messages": {
         "load_error": "Failed to load service",
         "create_success": "Service created successfully",
@@ -1816,7 +1862,8 @@
       "categories": {
         "retention": "Data retention",
         "lifecycle": "Company lifecycle",
-        "notifications": "Notifications"
+        "notifications": "Notifications",
+        "cash": "Cash held by cleaners"
       },
       "descriptions": {
         "retention": {
@@ -1868,6 +1915,10 @@
         },
         "notifications": {
           "admin_email": "Mailbox that receives one e-mail in English per admin event instead of every administrator; at its default, each administrator is e-mailed in their own language"
+        },
+        "cash": {
+          "float_cap": "The most cash a cleaner may hold in one currency; above it, cash jobs are hidden from them with the reason shown. 0 means no cap",
+          "remittance_request_days": "Days a cleaner may keep cash still held after a pay-period close before they are asked to hand it over (1–365)"
         }
       }
     },
@@ -1933,6 +1984,7 @@
         "unpaidInvoices": "Unpaid cleaner invoices",
         "uninvoicedPayRows": "Uninvoiced pay rows in closed periods",
         "openDisputes": "Open disputes",
+        "cleanersHoldingCash": "Cleaner cash balances not settled",
         "chargebackHorizonEndsOn": "Chargeback horizon",
         "windDownLastRunOn": "Last wind-down run",
         "windDownRunStartedOn": "Wind-down run in progress since"
@@ -2077,7 +2129,8 @@
         "bonus_pay": "Bonus",
         "deduction_pay": "Deduction",
         "total_pay": "Total",
-        "created_on": "Created"
+        "created_on": "Created",
+        "line_type": "Line"
       },
       "cancel_dialog": {
         "title": "Cancel Invoice",
@@ -2756,6 +2809,10 @@
             "cleaner_not_started": {
               "title": "The cleaner has not started an order",
               "body": "Order {{orderNumber}} was booked for {{cleaningDateTime}} and nobody has started it. If the cleaner did not arrive, cancel it as a no-show."
+            },
+            "lockout_reported": {
+              "title": "The cleaner cannot get in",
+              "body": "The cleaner on order {{orderNumber}}, booked for {{cleaningDateTime}}, reports that they cannot get in. Check the entrance photo and the calls they made; if the customer did not let them in, cancel it as a customer lockout."
             }
           },
           "dispute": {
@@ -2816,11 +2873,16 @@
         "current_password": "Current Password",
         "new_password": "New Password",
         "confirm_password": "Confirm New Password",
-        "password_hint": "At least 8 characters, including at least one letter and one digit",
+        "password_hint": "At least 12 characters, including at least one letter and one digit",
         "submit": "Change Password"
       },
       "messages": {
         "change_password_success": "Password changed successfully"
+      },
+      "password_change_required": {
+        "title": "Set your own password",
+        "description": "Someone else chose this account's password. Before you continue, replace it with one only you know; your current password is the one you just signed in with.",
+        "sign_out": "Sign out"
       }
     },
     "customer_detail": {
@@ -2844,6 +2906,73 @@
         "orders_truncated": "Showing the newest {{shown}} of {{total}} orders.",
         "success": "The incident file was downloaded and recorded",
         "error": "The incident file could not be built"
+      }
+    },
+    "receivables": {
+      "title": "Receivables",
+      "description": "What customers owe the company on an order: a late-cancellation or lockout fee on a cash booking, or unpaid cash. While a customer owes any, their new cash bookings are refused; card bookings stay open. Writing one off records why it is no longer owed.",
+      "filters": {
+        "status": "Status"
+      },
+      "load_error": "Could not load the receivables.",
+      "retry": "Try again",
+      "empty": "Nothing is owed.",
+      "columns": {
+        "order": "Order",
+        "kind": "Kind",
+        "amount": "Amount",
+        "status": "Status",
+        "attempts": "Charge attempts",
+        "created_on": "Opened",
+        "written_off_on": "Written off",
+        "write_off_note": "Write-off note"
+      },
+      "actions": {
+        "view_order": "Open the order",
+        "write_off": "Write off"
+      },
+      "write_off": {
+        "title": "Write off a receivable",
+        "lede": "The customer will no longer owe this amount, and once nothing else is open they can book cash again. The note is the only record of why.",
+        "note": "Why it is written off",
+        "note_hint": "For example: the customer settled it in person",
+        "submit": "Write off"
+      },
+      "messages": {
+        "write_off_success": "Receivable written off"
+      }
+    },
+    "cash_held": {
+      "title": "Cash held by cleaners",
+      "description": "The company's cash each cleaner took at the door and still holds, per currency. A pay-period close sets it off against the cleaner's invoice; record what a cleaner hands back, or write off what will not come back.",
+      "load_error": "Could not load the cash cleaners hold.",
+      "retry": "Try again",
+      "empty": "No cleaner holds any cash.",
+      "amount": "Amount",
+      "columns": {
+        "cleaner": "Cleaner",
+        "currency": "Currency",
+        "amount": "Cash held"
+      },
+      "actions": {
+        "record_remittance": "Record cash handed back",
+        "write_off": "Write off"
+      },
+      "remittance": {
+        "title": "Record cash handed back",
+        "lede": "Takes the amount the cleaner handed back off the cash they hold in this currency.",
+        "note": "Note (optional)",
+        "submit": "Record"
+      },
+      "write_off": {
+        "title": "Write off cash held",
+        "lede": "Takes cash the cleaner will not hand back off what they hold, without it being received. The note is the only record of why.",
+        "note": "Why it is written off",
+        "submit": "Write off"
+      },
+      "messages": {
+        "remittance_success": "Cash handed back recorded",
+        "write_off_success": "Cash written off"
       }
     }
   },
@@ -2987,6 +3116,7 @@
     },
     "auth": {
       "account_locked": "Too many failed login attempts. The account is temporarily locked — try again in a few minutes.",
+      "admin_password_too_short": "Administrator passwords must be at least 12 characters long.",
       "apple_type_error": "This account uses Sign in with Apple. Use the Apple button.",
       "change_password_failed": "Failed to change the password",
       "current_password_invalid": "The current password is incorrect",
@@ -3033,6 +3163,7 @@
       "has_open_pay_period": "A pay period is still open; close it first.",
       "has_unpaid_invoices": "A cleaner's invoice is not yet paid; the archive waits until every invoice is paid or cancelled.",
       "has_uninvoiced_pay": "A closed pay period holds pay that was never invoiced; the archive waits for it.",
+      "has_cash_held": "A cleaner still holds the company's cash; record its remittance or write it off first.",
       "has_open_disputes": "A dispute is still open; resolve it first.",
       "within_chargeback_horizon": "A cardholder can still dispute the company's latest card payment; the archive becomes admissible once the chargeback horizon has passed."
     },
@@ -3154,6 +3285,9 @@
       }
     },
     "order": {
+      "lockout": {
+        "not_reported": "The cleaner has not reported that they cannot get in, so there is no lockout to confirm."
+      },
       "after_photos": {
         "required": "After photos are required to complete the order"
       },
@@ -3284,6 +3418,14 @@
     },
     "receipt": {
       "not_found": "Receipt not found"
+    },
+    "receivable": {
+      "not_found": "This receivable no longer exists.",
+      "not_open": "Only an open receivable can be written off."
+    },
+    "cash_held": {
+      "amount_invalid": "Enter an amount above zero, to the cent",
+      "amount_exceeds_balance": "That is more cash than the partner holds in this currency"
     },
     "referral": {
       "action_failed": "The referral action failed. Try again.",

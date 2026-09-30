@@ -75,7 +75,7 @@ public class DownloadOrderReceipt
         {
             return _orderAccessService
                 .OrdersForCaller()
-                .AnyAsync(o => o.Id == orderId && o.Receipt != null && o.Receipt.BlobDeletedAt == null, cancellationToken);
+                .AnyAsync(o => o.Id == orderId && o.Receipts.Any(r => r.ReceivableId == null && r.BlobDeletedAt == null), cancellationToken);
         }
     }
 
@@ -87,7 +87,7 @@ public class DownloadOrderReceipt
         {
             var order = await orderAccessService
                 .OrdersForCaller()
-                .Include(o => o.Receipt)
+                .Include(o => o.Receipts)
                 .Include(o => o.AssignedEmployees)
                 .FirstOrDefaultAsync(o => o.Id == query.OrderId, cancellationToken);
 

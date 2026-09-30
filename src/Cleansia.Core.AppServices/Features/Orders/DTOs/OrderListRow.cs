@@ -41,7 +41,9 @@ public sealed record OrderListRow(
     int RequiredEmployees,
     int MaxEmployees,
     bool HasReview,
-    DateTime? CompletedAt);
+    DateTime? CompletedAt,
+    DirtinessLevel DirtinessLevel,
+    decimal DirtinessSurchargeAmount);
 
 public sealed record OrderListAddressRow(
     string Id,

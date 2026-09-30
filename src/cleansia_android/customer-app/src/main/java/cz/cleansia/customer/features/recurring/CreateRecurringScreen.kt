@@ -79,6 +79,7 @@ import cz.cleansia.customer.core.catalog.ServiceListItem
 import cz.cleansia.customer.core.data.UserAddress
 import cz.cleansia.customer.core.recurring.RecurrenceFrequency
 import cz.cleansia.customer.features.addresses.AddressManagerSheet
+import cz.cleansia.customer.features.booking.DirtinessLevelPicker
 import cz.cleansia.customer.features.booking.PreferredCleanerPicker
 import cz.cleansia.customer.features.booking.localizedDescription
 import cz.cleansia.customer.features.booking.localizedName
@@ -563,6 +564,12 @@ private fun WhatStep(
             Stepper(value = state.bathrooms, max = PropertySize.MAX_BATHROOMS, onChange = viewModel::setBathrooms)
         }
     }
+
+    Spacer(Modifier.height(24.dp))
+
+    SectionLabel(stringResource(R.string.dirtiness_title))
+    Spacer(Modifier.height(8.dp))
+    DirtinessLevelPicker(selected = state.dirtinessLevel, onSelect = viewModel::setDirtinessLevel)
 }
 
 /* ─────────────── Step 3 — Where & Pay ─────────────── */
@@ -646,6 +653,16 @@ private fun WhereAndPayStep(
             checked = state.termsAccepted,
             onCheckedChange = viewModel::setTermsAccepted,
             html = stringResource(R.string.register_terms_and_conditions),
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+
+    if (!isEditing) {
+        Spacer(Modifier.height(if (termsAsked) 12.dp else 24.dp))
+        CleansiaConsentCheckbox(
+            checked = state.earlyPerformanceRequested,
+            onCheckedChange = viewModel::setEarlyPerformanceRequested,
+            html = stringResource(R.string.consent_early_performance_draft_2026_09_29),
             modifier = Modifier.fillMaxWidth(),
         )
     }

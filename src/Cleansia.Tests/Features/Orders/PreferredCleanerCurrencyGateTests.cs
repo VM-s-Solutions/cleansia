@@ -99,6 +99,7 @@ public class PreferredCleanerCurrencyGateTests
             .Setup(c => c.CalculateAsync(
                 It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(),
                 It.IsAny<IEnumerable<string>>(), It.IsAny<int>(), It.IsAny<int>(),
+                It.IsAny<DirtinessLevel>(),
                 It.IsAny<string?>(), It.IsAny<DateTime?>(), It.IsAny<string?>(),
                 It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(CreateOrderTestData.MatchingPricing());
@@ -277,7 +278,8 @@ public class PreferredCleanerCurrencyGateTests
             Mock.Of<IUserConsentRepository>(),
             CreateOrderTestData.Speaking(Constants.Language.English),
             Mock.Of<ICountryConfigurationRepository>(),
-            Mock.Of<ILegalDocumentResolver>());
+            Mock.Of<ILegalDocumentResolver>(),
+            SavedCards.SavedCardDoubles.Guaranteed(), Mock.Of<IReceivableRepository>());
 
     private ChoosePreferredCleaner.Validator ChooseValidator() =>
         new(_session.Object, _membershipRepository.Object, _orderRepository.Object, _markets);
@@ -286,7 +288,8 @@ public class PreferredCleanerCurrencyGateTests
         new(_orderRepository.Object, _session.Object, _savedAddressRepository.Object, _markets, OrderMarketDoubles.Servicing(Czechia),
             Bookings.CatalogueDoubles.Services(), Bookings.CatalogueDoubles.Packages(),
             Cleansia.Tests.Features.Legal.CustomerConsentDoubles.Consented(),
-            Mock.Of<Cleansia.Core.AppServices.Services.Interfaces.ILegalDocumentResolver>());
+            Mock.Of<Cleansia.Core.AppServices.Services.Interfaces.ILegalDocumentResolver>(),
+            SavedCards.SavedCardDoubles.Guaranteed(), Mock.Of<IReceivableRepository>());
 
     private UpdateRecurringBooking.Validator UpdateRecurringValidator() =>
         new(
@@ -296,7 +299,8 @@ public class PreferredCleanerCurrencyGateTests
             _orderRepository.Object,
             _savedAddressRepository.Object,
             _markets, OrderMarketDoubles.Servicing(Czechia),
-            Bookings.CatalogueDoubles.Services(), Bookings.CatalogueDoubles.Packages());
+            Bookings.CatalogueDoubles.Services(), Bookings.CatalogueDoubles.Packages(),
+            SavedCards.SavedCardDoubles.Guaranteed(), Mock.Of<IReceivableRepository>());
 
     private static CreateRecurringBooking.Command CreateRecurringCommand(string preferredEmployeeId) =>
         new(
@@ -311,7 +315,8 @@ public class PreferredCleanerCurrencyGateTests
             PaymentType: (int)PaymentType.Card,
             StartsOn: DateTime.UtcNow.AddDays(3),
             EndsOn: null,
-            PreferredEmployeeId: preferredEmployeeId);
+            PreferredEmployeeId: preferredEmployeeId,
+            EarlyPerformanceRequested: true);
 
     private static UpdateRecurringBooking.Command UpdateRecurringCommand(string preferredEmployeeId) =>
         new(

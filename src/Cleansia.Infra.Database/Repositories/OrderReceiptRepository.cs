@@ -59,6 +59,7 @@ public class OrderReceiptRepository(CleansiaDbContext context)
         return await GetDbSet()
             .IgnoreQueryFilters()
             .Include(r => r.Language)
+            .Include(r => r.Receivable)
             .Where(r => r.FiscalCode == null
                 && r.FiscalNextRetryAt != null
                 && r.FiscalNextRetryAt <= utcNow)

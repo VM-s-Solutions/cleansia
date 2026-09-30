@@ -106,6 +106,7 @@ public sealed class OrderListProjectionEquivalenceTests : IAsyncLifetime, IDispo
         });
         full.AddSelectedPackages(new[] { OrderLineMockFactory.PackageLine(full, package) });
         full.SetMaxEmployees(2);
+        full.SetDirtinessSurcharge(DirtinessLevel.Heavy, 540.30m);
         full.AddAssignedEmployee(OrderEmployee.Create(full, employee));
         AppendTrack(full, OrderStatus.New, stamp);
         AppendTrack(full, OrderStatus.Confirmed, stamp.AddHours(1));

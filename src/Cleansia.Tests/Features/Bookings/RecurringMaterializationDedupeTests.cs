@@ -240,7 +240,8 @@ public sealed class RecurringMaterializationDedupeTests : IDisposable
             paymentType: template.PaymentType,
             startsOn: template.StartsOn,
             endsOn: template.EndsOn,
-            preferredEmployeeId: template.PreferredEmployeeId);
+            preferredEmployeeId: template.PreferredEmployeeId,
+            dirtinessLevel: template.DirtinessLevel);
 
         await ctx.CommitAsync(CancellationToken.None);
     }
@@ -403,6 +404,7 @@ public sealed class RecurringMaterializationDedupeTests : IDisposable
         calculator.Setup(c => c.CalculateAsync(
                 It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(),
                 It.IsAny<IEnumerable<string>>(), It.IsAny<int>(), It.IsAny<int>(),
+                It.IsAny<DirtinessLevel>(),
                 It.IsAny<string?>(), It.IsAny<DateTime?>(), It.IsAny<string?>(),
                 It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(CreateOrderTestData.MatchingPricing());

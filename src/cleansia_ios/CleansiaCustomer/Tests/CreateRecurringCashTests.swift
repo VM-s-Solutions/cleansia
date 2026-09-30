@@ -42,7 +42,9 @@ final class CreateRecurringCashTests: XCTestCase {
     private func fillValid(_ vm: CreateRecurringViewModel) {
         vm.setSavedAddressId("addr-1")
         vm.toggleService("s-1")
+        vm.setDirtiness(.normal)
         vm.setStartsOn(Date(timeIntervalSince1970: 1_780_000_000))
+        vm.setEarlyPerformanceRequested(true)
     }
 
     private func drain() async {
@@ -135,6 +137,23 @@ final class CreateRecurringCashTests: XCTestCase {
         XCTAssertEqual(vm.cashEligibility, .pending, "a crew quoted for another selection decided the payment step")
         vm.setPaymentType(RecurringPaymentType.cash)
         XCTAssertEqual(vm.formState.paymentType, RecurringPaymentType.card)
+    }
+
+    /// The level lengthens every occurrence, so it is part of what is quoted: a changed level leaves
+    /// the crew unknown until the server answers for it.
+    func testTheLevelIsQuotedAndAChangedLevelIsPendingUntilItIs() async {
+        let (vm, quote) = makeVM(requiredEmployees: 1)
+        await vm.load()
+        fillValid(vm)
+        await settle()
+        XCTAssertEqual(vm.cashEligibility, .available)
+
+        vm.setDirtiness(.heavy)
+
+        XCTAssertEqual(vm.cashEligibility, .pending, "a crew quoted for another level decided the payment step")
+        await settle()
+        XCTAssertEqual(quote.requests.last?.dirtiness, .heavy)
+        XCTAssertEqual(vm.cashEligibility, .available)
     }
 
     /// The day, the time and the way to pay move no money, so they ask for no quote.

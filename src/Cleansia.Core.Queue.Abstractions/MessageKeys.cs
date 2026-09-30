@@ -20,11 +20,28 @@ public static class MessageKeys
     /// <summary>One guest cancellation email per order.</summary>
     public static string GuestOrderCancelledEmail(string orderId) => $"email:guest-order-cancelled:{orderId}";
 
-    /// <summary>One booking-confirmed email per cash order.</summary>
+    /// <summary>One booking-confirmed email per order.</summary>
     public static string OrderBookedEmail(string orderId) => $"email:order-booked:{orderId}";
+
+    /// <summary>One copy of the contract for work per acceptance.</summary>
+    public static string WorkContractEmail(string acceptanceId) => $"email:work-contract:{acceptanceId}";
+
+    /// <summary>One lockout cancellation email per signed-in customer's order.</summary>
+    public static string OrderLockoutEmail(string orderId) => $"email:order-lockout:{orderId}";
 
     /// <summary>generate-receipt → <c>receipt:{OrderId}</c> (one receipt per order).</summary>
     public static string Receipt(string orderId) => $"receipt:{orderId}";
+
+    /// <summary>generate-receipt → <c>receipt:fee:{ReceivableId}</c> (one fee receipt per paid receivable).</summary>
+    public static string FeeReceipt(string receivableId) => $"receipt:fee:{receivableId}";
+
+    /// <summary>
+    /// send-email → <c>email:receivable-pay-link:{ReceivableId}:{Attempt}</c> — one pay link per failed
+    /// off-session charge; the attempt is the receivable's own count, so a second failed charge is a second
+    /// e-mail while a redelivered failure is not.
+    /// </summary>
+    public static string ReceivablePayLinkEmail(string receivableId, int attempt) =>
+        $"email:receivable-pay-link:{receivableId}:{attempt}";
 
     /// <summary>
     /// notifications-dispatch → <c>push:{UserId}:{EventKey}:{OrderId?}</c> (one push per user per

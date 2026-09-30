@@ -74,7 +74,7 @@ private struct PhotoRailsContent: View {
     }
 }
 
-private struct PhotoRail: View {
+struct PhotoRail: View {
     let title: String
     let type: PhotoType
     let photos: [OrderPhoto]

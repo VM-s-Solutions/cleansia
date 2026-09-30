@@ -157,7 +157,7 @@
       "deletion_reason": "Proč má být odstraněn?",
       "replace_document": "Nahradit",
       "legal_documents": "Smluvní dokumenty",
-      "legal_documents_intro": "Přečtěte si a přijměte každý z dokumentů níže. Dokud nepřijmete platnou verzi, nelze vaši registraci schválit a nemůžete přijímat zakázky.",
+      "legal_documents_intro": "Tyto dokumenty upravují vaši práci pro provozní společnost trhu, na kterém pracujete. Přečtěte si a přijměte každý z dokumentů níže. Dokud nepřijmete platnou verzi, nelze vaši registraci schválit a nemůžete přijímat zakázky.",
       "legal_documents_version": "Verze {{version}}, účinná od {{date}}",
       "legal_documents_accepted_on": "Přijato {{date}}, verze {{version}}",
       "legal_documents_new_version": "Platí nová verze. Přijali jste verzi {{version}}.",
@@ -266,7 +266,8 @@
       "address": "Adresa",
       "cleaning_date": "Datum úklidu",
       "total_price": "Celková cena",
-      "your_pay": "Vaše odměna",
+      "your_pay": "Vaše odměna (za místo)",
+      "dirtiness_level": "Znečištění",
       "payment_status": "Stav platby",
       "order_status": "Stav objednávky",
       "order_id": "ID objednávky",
@@ -333,11 +334,12 @@
       "work_contract": {
         "title": "Smlouva o dílo",
         "version_line": "Verze {{version}}, účinná od {{date}}",
+        "parties": "Mezi provozní společností, která tento úklid prodala (objednatel), a vámi (zhotovitel)",
         "facts": {
           "title": "Zakázka",
           "order_number": "Číslo objednávky",
           "window": "Datum a čas",
-          "price": "Cena",
+          "reward": "Vaše odměna za místo",
           "location": "Místo",
           "rooms_bathrooms": "Pokoje / koupelny",
           "services": "Služby",
@@ -370,6 +372,7 @@
       "cleaning_date": "Datum úklidu",
       "rooms": "Pokoje",
       "bathrooms": "Koupelny",
+      "dirtiness_level": "Znečištění",
       "estimated_time": "Odhadovaný čas",
       "estimated_time_minutes": "{{minutes}} minut",
       "selected_package": "Vybraný balíček",
@@ -451,6 +454,20 @@
         "pending_banner": "Před zahájením práce přijměte smlouvu o dílo",
         "accept": "Přijmout smlouvu",
         "accepted_success": "Smlouva o dílo byla přijata."
+      },
+      "lockout": {
+        "title": "Nemůžete se dostat dovnitř?",
+        "not_yet": "Pokud vám nikdo neotevře, můžete to nahlásit od {{time}}, {{minutes}} minut po začátku.",
+        "body": "Vyfoťte vchod, poznamenejte si, kdy jste zákazníkovi volali, a nahlaste to. Než se uplatní jakýkoli poplatek, potvrdí to administrátor.",
+        "entrance_photo": "Fotka vchodu",
+        "take_photo": "Vyfotit vchod",
+        "photo_needed": "Nejdřív vyfoťte vchod.",
+        "call_attempts": "Vaše hovory",
+        "call_attempts_placeholder": "Kdy jste zákazníkovi volali nebo psali a co se stalo",
+        "report": "Nemohu se dostat dovnitř",
+        "reported_title": "Nahlášeno: nelze se dostat dovnitř",
+        "reported_body": "Nahlášeno v {{time}}. Administrátor to potvrdí; do té doby zakázka zůstává beze změny.",
+        "reported_calls": "Hovory: {{calls}}"
       }
     },
     "invoices": {
@@ -500,6 +517,7 @@
       "order_number": "Číslo objednávky",
       "base_pay": "Základní odměna",
       "extras_pay": "Odměna za příplatky",
+      "dirtiness_pay": "Odměna za znečištění",
       "expenses_pay": "Náhrada nákladů",
       "bonus_pay": "Bonus",
       "deduction_pay": "Srážky",
@@ -524,6 +542,7 @@
       "total_orders": "Celkem objednávek",
       "base_pay": "Základní odměna",
       "extras_pay": "Odměna za příplatky",
+      "dirtiness_pay": "Odměna za znečištění",
       "expenses_pay": "Náhrada nákladů",
       "bonus_pay": "Bonus",
       "deduction_pay": "Srážky",
@@ -532,10 +551,20 @@
       "grand_total": "Celkem za období",
       "order_lines": "Výplata podle objednávek",
       "order_number": "Číslo objednávky",
+      "line_type": "Položka",
       "no_order_pays": "Pro toto období nejsou žádné výplatní položky",
       "no_periods": "Zatím nejsou k dispozici žádná platební období",
       "load_error": "Nepodařilo se načíst výplatu za období",
-      "view_invoice": "Zobrazit fakturu"
+      "view_invoice": "Zobrazit fakturu",
+      "cash_held": {
+        "title": "Hotovost u mě",
+        "description": "Hotovost, kterou jste převzali u dveří a ještě neodevzdali. Započte se proti vaší další výplatě.",
+        "none": "Nedržíte žádnou hotovost společnosti.",
+        "load_error": "Hotovost, kterou držíte, se nepodařilo načíst.",
+        "held": "Držíte",
+        "limit": "Limit",
+        "jobs_hidden": "Držíte více, než je limit, proto se vám zakázky za hotové nezobrazují, dokud hotovost neodevzdáte."
+      }
     },
     "gdpr": {
       "title": "Zásady ochrany osobních údajů & GDPR",
@@ -697,7 +726,8 @@
         "photo_upload_failed": "Nepodařilo se nahrát fotografii. Zkuste to prosím znovu.",
         "photo_read_failed": "Nepodařilo se přečíst soubor fotografie. Zkuste to prosím znovu.",
         "photo_deleted": "Fotografie byla úspěšně smazána.",
-        "photo_delete_failed": "Nepodařilo se smazat fotografii. Zkuste to prosím znovu."
+        "photo_delete_failed": "Nepodařilo se smazat fotografii. Zkuste to prosím znovu.",
+        "lockout_reported": "Nahlášeno. Administrátor to potvrdí."
       },
       "invoices": {
         "invoice_generated": "Faktura byla vygenerována z časových záznamů.",
@@ -847,6 +877,7 @@
       "invalid_apple_token": "Neplatný Apple token",
       "social_account_not_found": "Tomuto přihlášení neodpovídá žádný účet. Nejprve se zaregistrujte.",
       "invalid_password_format": "Neplatný formát hesla",
+      "admin_password_too_short": "Heslo administrátora musí mít alespoň 12 znaků.",
       "invalid_reset_token": "Neplatný token pro obnovení hesla",
       "same_reset_password": "Nové heslo se shoduje se starým heslem",
       "insufficient_privileges": "Nemáte oprávnění přistupovat k partnerské aplikaci. Přihlásit se mohou pouze partneři a administrátoři.",
@@ -905,6 +936,12 @@
       "invalid_email": "Neplatná e-mailová adresa"
     },
     "order": {
+      "lockout": {
+        "too_early": "Že se nemůžete dostat dovnitř, můžete nahlásit až 15 minut po objednaném začátku.",
+        "photo_required": "Nejdřív vyfoťte dveře nebo vchod a pak nahlaste, že se nemůžete dostat dovnitř.",
+        "already_reported": "Už jste nahlásili, že se nemůžete dostat dovnitř. Kancelář se vám ozve.",
+        "order_closed": "Tato zakázka je už dokončená nebo zrušená, takže není co hlásit."
+      },
       "cleaning_date": {
         "future": "Datum úklidu musí být v budoucnosti"
       },
@@ -948,6 +985,7 @@
       "payment_gateway_unavailable": "Platební brána není k dispozici",
       "time_conflict": "Tento termín se překrývá s jinou objednávkou ve vašem rozvrhu",
       "weekly_limit_reached": "Dosáhli jste týdenního limitu zakázek.",
+      "cash_float_cap_exceeded": "Máte u sebe více hotovosti společnosti, než je povoleno, proto pro vás zakázky za hotovost nejsou dostupné, dokud část neodevzdáte.",
       "employee_already_has_order_in_progress": "Již máte jinou zakázku v průběhu. Před zahájením nové ji prosím dokončete.",
       "photo": {
         "window_closed": "Tuto fotografii teď nelze přidat: fotografie před úklidem od převzetí zakázky do jejího dokončení, fotografie po úklidu během práce.",
@@ -1169,6 +1207,16 @@
       "open": "Otevřené",
       "closed": "Uzavřené",
       "paid": "Vyplacené"
+    },
+    "dirtiness_level": {
+      "normal": "Běžné",
+      "increased": "Zvýšené",
+      "heavy": "Silné"
+    },
+    "pay_line_type": {
+      "job": "Zakázka",
+      "cancellation_fee_share": "Váš podíl z poplatku za pozdní zrušení",
+      "lockout_fee_share": "Váš podíl z poplatku za neumožněný přístup"
     }
   },
   "help": {

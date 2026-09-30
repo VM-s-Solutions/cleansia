@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Tests.Common;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
@@ -111,14 +112,14 @@ public class OrderPricingCalculatorNoConversionTests
     }
     private Task<Cleansia.Core.AppServices.Services.Interfaces.OrderPricingResult> PriceMixedBasketAsync()
         => CreateMixedBasketCalculator().CalculateAsync(
-            [ServiceId], [PackageId], [ExtraSlug], rooms: 0, bathrooms: 0, currencyId: CurrencyId,
+            [ServiceId], [PackageId], [ExtraSlug], rooms: 0, bathrooms: 0, dirtinessLevel: DirtinessLevel.Normal, currencyId: CurrencyId,
             cleaningDateUtc: DateTime.UtcNow.AddHours(3),
             userId: null,
             nowUtc: DateTime.UtcNow,
             CancellationToken.None);
     private Task<Cleansia.Core.AppServices.Services.Interfaces.OrderPricingResult> PriceExpressSlotAsync()
         => CreateCalculator().CalculateAsync(
-            [ServiceId], [], [], rooms: 0, bathrooms: 0, currencyId: CurrencyId,
+            [ServiceId], [], [], rooms: 0, bathrooms: 0, dirtinessLevel: DirtinessLevel.Normal, currencyId: CurrencyId,
             cleaningDateUtc: DateTime.UtcNow.AddHours(3),
             userId: null,
             nowUtc: DateTime.UtcNow,
@@ -206,7 +207,7 @@ public class OrderPricingCalculatorNoConversionTests
     public async Task NoExpressSlot_ChargesTheAuthoredSubtotal_AndReportsRateOne()
     {
         var result = await CreateCalculator().CalculateAsync(
-            [ServiceId], [], [], rooms: 0, bathrooms: 0, currencyId: CurrencyId,
+            [ServiceId], [], [], rooms: 0, bathrooms: 0, dirtinessLevel: DirtinessLevel.Normal, currencyId: CurrencyId,
             cleaningDateUtc: DateTime.UtcNow.AddDays(3),
             userId: null,
             nowUtc: DateTime.UtcNow,

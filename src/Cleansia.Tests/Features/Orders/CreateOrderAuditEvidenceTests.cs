@@ -75,7 +75,7 @@ public sealed class CreateOrderAuditEvidenceTests
         _pricingCalculator
             .Setup(c => c.CalculateAsync(
                 It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(),
-                It.IsAny<int>(), It.IsAny<int>(), It.IsAny<string?>(), It.IsAny<DateTime?>(), It.IsAny<string?>(),
+                It.IsAny<int>(), It.IsAny<int>(), It.IsAny<DirtinessLevel>(), It.IsAny<string?>(), It.IsAny<DateTime?>(), It.IsAny<string?>(),
                 It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(CreateOrderTestData.MatchingPricing());
         _stripeClientFactory.Setup(f => f.CreateClient()).Returns(_stripeClient.Object);
@@ -126,6 +126,8 @@ public sealed class CreateOrderAuditEvidenceTests
             OrderMarketDoubles.OperatedBy("tenant-1"),
             Mock.Of<ITenantProvider>(),
             _auditContext,
+            new Cleansia.Core.AppServices.Authentication.HostAudienceProvider("cleansia.customer"),
+            new Cleansia.TestUtilities.TestRequestMetadataProvider(),
             NullLogger<CreateOrder.Handler>.Instance);
 
     private static JsonElement Payload(AuditSnapshot? snapshot) => JsonDocument.Parse(snapshot!.AfterJson!).RootElement;
@@ -214,6 +216,34 @@ public sealed class CreateOrderAuditEvidenceTests
         Assert.DoesNotContain(members, m => m.Contains("instructions", StringComparison.OrdinalIgnoreCase));
         Assert.DoesNotContain(command.CustomerEmail, snapshot.AfterJson!);
         Assert.DoesNotContain(command.CustomerAddress!.Street, snapshot.AfterJson!);
+    }
+
+    [Fact]
+    public async Task A_Booking_Records_The_Dirtiness_Level_And_The_Surcharge_The_Order_Stores()
+    {
+        _session.Setup(s => s.GetUserId()).Returns((string?)null);
+        _orderFactory
+            .Setup(f => f.CreateAsync(It.IsAny<CreateOrderInput>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((CreateOrderInput input, CancellationToken _) =>
+                OrderMockFactory.Generate(new OrderMockFactory.OrderPartial
+                {
+                    Id = CreatedOrderId,
+                    PaymentType = input.PaymentType,
+                    TotalPrice = input.RawSubtotal,
+                    CustomerAddress = input.Address,
+                    CleaningDateTime = input.CleaningDate,
+                    TenantId = "tenant-1",
+                }, currency: Czk).SetDirtinessSurcharge(input.DirtinessLevel, 360m));
+
+        var result = await CreateHandler().Handle(
+            CreateOrderTestData.ValidCommand(paymentType: PaymentType.Cash)
+                with { TermsAccepted = true, DirtinessLevel = DirtinessLevel.Heavy },
+            CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        var payload = Payload(_auditContext.DrainSnapshot());
+        Assert.Equal("heavy", payload.GetProperty("dirtinessLevel").GetString());
+        Assert.Equal(360m, payload.GetProperty("dirtinessSurchargeAmount").GetDecimal());
     }
 
     // A consented customer sends nothing (the validator lets that through); the handler records the

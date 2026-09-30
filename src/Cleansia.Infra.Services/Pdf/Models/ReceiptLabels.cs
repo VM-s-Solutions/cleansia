@@ -61,6 +61,8 @@ public record ReceiptLabels
     public string Amount { get; init; } = "Amount";
     public string NoItems { get; init; } = "No items";
     public string PackageSuffix { get; init; } = "package";
+    public string IncreasedDirtinessSurcharge { get; init; } = "Increased dirtiness surcharge";
+    public string HeavyDirtinessSurcharge { get; init; } = "Heavy dirtiness surcharge";
     public string ExpressSurcharge { get; init; } = "Express surcharge";
     public string TierDiscount { get; init; } = "Loyalty discount";
     public string MembershipDiscount { get; init; } = "Cleansia Plus discount";
@@ -101,6 +103,16 @@ public record ReceiptLabels
         {
             [PaymentType.Cash] = "Cash",
             [PaymentType.Card] = "Card",
+        };
+
+    /// <summary>The line a fee receipt carries: what the customer paid on the order after it.</summary>
+    public IReadOnlyDictionary<ReceivableKind, string> ReceivableKinds { get; init; } =
+        new Dictionary<ReceivableKind, string>
+        {
+            [ReceivableKind.CashCancellationFee] = "Late cancellation fee",
+            [ReceivableKind.Lockout] = "Fee for denied access",
+            [ReceivableKind.UnpaidCash] = "Unpaid cash payment",
+            [ReceivableKind.TopUp] = "Dirtiness top-up",
         };
 
     /// <summary>
@@ -152,6 +164,8 @@ public record ReceiptLabels
         Amount = "Částka",
         NoItems = "Žádné položky",
         PackageSuffix = "balíček",
+        IncreasedDirtinessSurcharge = "Příplatek za zvýšené znečištění",
+        HeavyDirtinessSurcharge = "Příplatek za silné znečištění",
         ExpressSurcharge = "Expresní příplatek",
         TierDiscount = "Věrnostní sleva",
         MembershipDiscount = "Sleva Cleansia Plus",
@@ -190,6 +204,13 @@ public record ReceiptLabels
             [PaymentType.Cash] = "Hotově",
             [PaymentType.Card] = "Kartou",
         },
+        ReceivableKinds = new Dictionary<ReceivableKind, string>
+        {
+            [ReceivableKind.CashCancellationFee] = "Poplatek za pozdní zrušení",
+            [ReceivableKind.Lockout] = "Poplatek za znemožněný přístup",
+            [ReceivableKind.UnpaidCash] = "Nezaplacená hotovost",
+            [ReceivableKind.TopUp] = "Doplatek za znečištění",
+        },
     };
 
     public static ReceiptLabels Slovak { get; } = new()
@@ -227,6 +248,8 @@ public record ReceiptLabels
         Amount = "Suma",
         NoItems = "Žiadne položky",
         PackageSuffix = "balík",
+        IncreasedDirtinessSurcharge = "Príplatok za zvýšené znečistenie",
+        HeavyDirtinessSurcharge = "Príplatok za silné znečistenie",
         ExpressSurcharge = "Expresný príplatok",
         TierDiscount = "Vernostná zľava",
         MembershipDiscount = "Zľava Cleansia Plus",
@@ -265,6 +288,13 @@ public record ReceiptLabels
             [PaymentType.Cash] = "Hotovosťou",
             [PaymentType.Card] = "Kartou",
         },
+        ReceivableKinds = new Dictionary<ReceivableKind, string>
+        {
+            [ReceivableKind.CashCancellationFee] = "Poplatok za neskoré zrušenie",
+            [ReceivableKind.Lockout] = "Poplatok za znemožnený prístup",
+            [ReceivableKind.UnpaidCash] = "Nezaplatená hotovosť",
+            [ReceivableKind.TopUp] = "Doplatok za znečistenie",
+        },
     };
 
     public static ReceiptLabels Ukrainian { get; } = new()
@@ -302,6 +332,8 @@ public record ReceiptLabels
         Amount = "Сума",
         NoItems = "Немає позицій",
         PackageSuffix = "пакет",
+        IncreasedDirtinessSurcharge = "Доплата за підвищене забруднення",
+        HeavyDirtinessSurcharge = "Доплата за сильне забруднення",
         ExpressSurcharge = "Доплата за терміновість",
         TierDiscount = "Знижка за лояльність",
         MembershipDiscount = "Знижка Cleansia Plus",
@@ -340,6 +372,13 @@ public record ReceiptLabels
             [PaymentType.Cash] = "Готівкою",
             [PaymentType.Card] = "Карткою",
         },
+        ReceivableKinds = new Dictionary<ReceivableKind, string>
+        {
+            [ReceivableKind.CashCancellationFee] = "Плата за пізнє скасування",
+            [ReceivableKind.Lockout] = "Плата за відсутність доступу",
+            [ReceivableKind.UnpaidCash] = "Неоплачена готівка",
+            [ReceivableKind.TopUp] = "Доплата за забруднення",
+        },
     };
 
     public static ReceiptLabels Russian { get; } = new()
@@ -377,6 +416,8 @@ public record ReceiptLabels
         Amount = "Сумма",
         NoItems = "Нет позиций",
         PackageSuffix = "пакет",
+        IncreasedDirtinessSurcharge = "Доплата за повышенное загрязнение",
+        HeavyDirtinessSurcharge = "Доплата за сильное загрязнение",
         ExpressSurcharge = "Доплата за срочность",
         TierDiscount = "Скидка за лояльность",
         MembershipDiscount = "Скидка Cleansia Plus",
@@ -414,6 +455,13 @@ public record ReceiptLabels
         {
             [PaymentType.Cash] = "Наличными",
             [PaymentType.Card] = "Картой",
+        },
+        ReceivableKinds = new Dictionary<ReceivableKind, string>
+        {
+            [ReceivableKind.CashCancellationFee] = "Плата за позднюю отмену",
+            [ReceivableKind.Lockout] = "Плата за отсутствие доступа",
+            [ReceivableKind.UnpaidCash] = "Неоплаченные наличные",
+            [ReceivableKind.TopUp] = "Доплата за загрязнение",
         },
     };
 

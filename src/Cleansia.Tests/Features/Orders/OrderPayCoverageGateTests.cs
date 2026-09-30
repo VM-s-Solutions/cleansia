@@ -222,7 +222,7 @@ public class CreateOrderPayCoverageValidatorTests
         _pricingCalculator
             .Setup(c => c.CalculateAsync(
                 It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(),
-                It.IsAny<int>(), It.IsAny<int>(), It.IsAny<string?>(), It.IsAny<DateTime?>(),
+                It.IsAny<int>(), It.IsAny<int>(), It.IsAny<DirtinessLevel>(), It.IsAny<string?>(), It.IsAny<DateTime?>(),
                 It.IsAny<string?>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(CreateOrderTestData.MatchingPricing());
 
@@ -253,7 +253,8 @@ public class CreateOrderPayCoverageValidatorTests
         Mock.Of<IUserConsentRepository>(),
         CreateOrderTestData.Speaking(Constants.Language.English),
         Mock.Of<ICountryConfigurationRepository>(),
-        Mock.Of<ILegalDocumentResolver>());
+        Mock.Of<ILegalDocumentResolver>(),
+        SavedCards.SavedCardDoubles.Guaranteed(), Mock.Of<IReceivableRepository>());
 
     [Fact]
     public async Task An_Unconfigured_Service_Fails_InvalidSelectedServices()

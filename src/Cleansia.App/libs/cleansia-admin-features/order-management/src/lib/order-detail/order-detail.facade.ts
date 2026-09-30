@@ -38,6 +38,7 @@ import { AdminWorkContractDialogComponent, AdminWorkContractDialogData } from '.
 import {
   INCIDENT_SUBJECT_LOOKUP_LIMIT,
   buildCrewEntries,
+  dirtinessLevelLabelKey,
   resolveIncidentSubject,
 } from './order-detail.models';
 
@@ -67,6 +68,7 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
   readonly loading = signal<boolean>(false);
   readonly incidentFileExporting = signal<boolean>(false);
   readonly crew = computed(() => buildCrewEntries(this.order()));
+  readonly dirtinessLevelKey = computed(() => dirtinessLevelLabelKey(this.order()?.dirtinessLevel));
 
   readonly cancellationFee = computed(() => {
     const order = this.order();

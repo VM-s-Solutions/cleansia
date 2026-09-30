@@ -368,20 +368,9 @@
     <string name="order_photos_metadata_by">Від %1$s</string>
     <string name="common_close">Закрити</string>
 
-    <!-- Contract for work: the wizard sentence at the offer, the detail line per accepting crew member, the contract screen -->
-    <string name="booking_work_contract_notice"><![CDATA[Підтверджуючи замовлення, ви укладаєте з прибиральником чи прибиральницею договір підряду на <a href="cleansia://work-contract">цих умовах</a>.]]></string>
-    <string name="work_contract_title">Договір підряду</string>
-    <string name="work_contract_accepted_line">Договір підряду прийняв(ла) %1$s %2$s, версія %3$s</string>
-    <string name="work_contract_read">Читати договір</string>
-    <string name="work_contract_version">Версія %1$s</string>
-    <string name="work_contract_facts_title">Замовлення, як його було прийнято</string>
-    <string name="work_contract_order_number">Номер замовлення</string>
-    <string name="work_contract_window">Дата й час</string>
-    <string name="work_contract_price">Ціна</string>
-    <string name="work_contract_location">Місце</string>
-    <string name="work_contract_accepted_on">Прийнято прибиральником чи прибиральницею %1$s, версія %2$s</string>
-    <string name="work_contract_accepted_in_language">Прийнято мовою: %1$s</string>
-    <string name="work_contract_load_error">Не вдалося завантажити договір. Спробуйте ще раз.</string>
+    <!-- Booking review: the contract sentence and the request to start within the withdrawal period -->
+    <string name="booking_contract_notice"><![CDATA[Підтверджуючи замовлення, ви укладаєте договір про прибирання з операційною компанією ринку, на якому розташоване ваше житло, відповідно до її <a href="cleansia://terms">Умов використання</a>. Прибирання виконує прибиральник як субпідрядник компанії, і він не є стороною вашого договору.]]></string>
+    <string name="consent_early_performance_draft_2026_09_29">Я прошу розпочати прибирання протягом 14-денного строку для відмови від договору та визнаю, що після повного виконання прибирання втрачаю право на відмову.</string>
 
     <!-- Profile tab -->
     <string name="profile_greeting">Привіт!</string>
@@ -506,12 +495,12 @@
     <string name="help_call">Зателефонувати в підтримку</string>
     <string name="help_call_desc">Пн–Нд · 8:00–20:00</string>
     <string name="help_email">Написати email</string>
-    <string name="help_email_desc">support@cleansia.cz</string>
+    <string name="help_email_desc">info@cleansia.cz</string>
     <string name="help_faq_title">Поширені запитання</string>
     <string name="help_faq_q1">Як скасувати бронювання?</string>
     <string name="help_faq_a1">Відкрийте бронювання у вкладці Замовлення та натисніть \"Скасувати\". Безкоштовне скасування за 24 години до початку прибирання. Протягом 15 хвилин після замовлення ви не платите нічого — для першого замовлення або з Cleansia Plus протягом 60 хвилин.</string>
     <string name="help_faq_q2">Що робити, якщо мене не буде вдома, коли прийде клінер?</string>
-    <string name="help_faq_a2">Додайте інструкції щодо доступу при бронюванні (напр. код від дверей, місце ключа). Клінери чекають до 15 хвилин; якщо ми не можемо зв’язатися з вами, бронювання може бути скасовано.</string>
+    <string name="help_faq_a2">Додайте інструкції щодо доступу при бронюванні (напр. код від дверей, місце ключа). Клінер чекає 15 хвилин після початку прибирання і намагається вам зателефонувати. Якщо й тоді не вдасться потрапити всередину, бронювання скасовується і стягується повна вартість.</string>
     <string name="help_faq_q3">Чи застраховані клінери?</string>
     <string name="help_faq_a3">Так. Усі клінери Cleansia застраховані до %1$s на бронювання.</string>
     <string name="help_faq_a3_no_figure">Так. Усі клінери Cleansia застраховані.</string>
@@ -687,6 +676,36 @@
     <string name="booking_summary_subtotal">Проміжний підсумок</string>
     <string name="booking_summary_express_surcharge">Експрес-надбавка (+20%)</string>
     <string name="booking_summary_express_surcharge_waived">Експрес-слот — скасовано з Plus</string>
+
+    <!-- Dirtiness level: booking step, recurring wizard, summaries -->
+    <string name="dirtiness_title">Наскільки у вас прибрано?</string>
+    <string name="dirtiness_intro">Оберіть стан, який найкраще відповідає всьому помешканню.</string>
+    <string name="dirtiness_hint">Якщо вагаєтеся між двома рівнями, оберіть вищий. Тоді прибиральник матиме достатньо часу, і результат буде таким, як слід.</string>
+    <string name="dirtiness_level_label">Рівень забруднення</string>
+    <string name="dirtiness_normal_title">Звичайний</string>
+    <string name="dirtiness_normal_price">Без доплати</string>
+    <string name="dirtiness_normal_when">Помешкання прибирають регулярно, востаннє приблизно 1–2 тижні тому.</string>
+    <string name="dirtiness_normal_detail_1">Пил на меблях і полицях, крихти й волосся на підлозі</string>
+    <string name="dirtiness_normal_detail_2">У ванній звичайні плями від води, унітаз без нальоту</string>
+    <string name="dirtiness_normal_detail_3">Кухня після звичайного готування: протерти стільницю й плиту, без пригорілого</string>
+    <string name="dirtiness_normal_detail_4">Посуд помитий або в посудомийній машині</string>
+    <string name="dirtiness_increased_title">Підвищений</string>
+    <string name="dirtiness_increased_price" formatted="false">+30%</string>
+    <string name="dirtiness_increased_when">Останнє прибирання 3–6 тижнів тому або помешкання з тваринами чи маленькими дітьми.</string>
+    <string name="dirtiness_increased_detail_1">Помітний шар пилу, плями та затерті місця на підлозі</string>
+    <string name="dirtiness_increased_detail_2">Вапняний наліт на змішувачах, у душовій кабіні та на ванні, потемнілі шви</string>
+    <string name="dirtiness_increased_detail_3">Жир на кухонній стільниці, плитці та витяжці, забруднена духовка або мікрохвильовка ззовні</string>
+    <string name="dirtiness_increased_detail_4">Шерсть тварин на дивані, килимах і в кутах</string>
+    <string name="dirtiness_heavy_title">Сильний</string>
+    <string name="dirtiness_heavy_price" formatted="false">+60%</string>
+    <string name="dirtiness_heavy_when">Понад 2 місяці без прибирання або довго занедбане помешкання.</string>
+    <string name="dirtiness_heavy_detail_1">Сильний вапняний наліт і відкладення, які не зникають з одного протирання</string>
+    <string name="dirtiness_heavy_detail_2">Пригорілий жир на плиті, витяжці та шафках</string>
+    <string name="dirtiness_heavy_detail_3">Чорні плями (цвіль) на силіконі або у швах</string>
+    <string name="dirtiness_heavy_detail_4">Засохлий бруд на підлозі, липкі поверхні, сильний запах</string>
+    <string name="dirtiness_surcharge_increased" formatted="false">Доплата за підвищене забруднення (+30%)</string>
+    <string name="dirtiness_surcharge_heavy" formatted="false">Доплата за сильне забруднення (+60%)</string>
+
     <string name="booking_summary_promo_discount">Промокод (-%1$s)</string>
     <string name="booking_summary_membership_discount">Знижка Cleansia Plus</string>
     <string name="booking_summary_tier_discount">Знижка за лояльність</string>
@@ -746,6 +765,12 @@
     <string name="booking_cash_needs_card">Кількість прибиральників для цього замовлення: %1$d. Готівкою можна платити лише за замовлення, з якими впорається один прибиральник, тож це замовлення сплачується карткою.</string>
     <string name="booking_cash_pending">Чи можна платити готівкою, ми підтвердимо, щойно буде відома ціна.</string>
     <string name="booking_cash_cleared">Оплата готівкою для цього замовлення більше недоступна, тому спосіб оплати не обрано. Оберіть, як ви хочете платити.</string>
+    <string name="booking_card_guarantee_title">Картка як гарантія для оплати готівкою</string>
+    <string name="booking_card_guarantee_body">Під час першого замовлення з оплатою готівкою ви зберігаєте картку. Зараз нічого не списується: за прибирання ви платите готівкою, як завжди.</string>
+    <string name="consent_card_guarantee_draft_2026_09_28">Я погоджуюся, що за моїми замовленнями з оплатою готівкою Cleansia може списати з цієї картки плату за скасування, плату за ненадання доступу, неоплачену готівку та схвалену мною доплату.</string>
+    <string name="booking_card_guarantee_consent_required">Щоб платити готівкою, погодьтеся на гарантію карткою або оберіть оплату карткою.</string>
+    <string name="booking_card_guarantee_pending">Ми ще підтверджуємо вашу картку. За мить підтвердьте замовлення ще раз.</string>
+    <string name="booking_card_guarantee_cancelled">Картку не збережено, тому нічого не заброньовано. Збережіть картку, щоб платити готівкою, або оберіть оплату карткою.</string>
     <string name="booking_special_instructions_hint">Особливі побажання? (необов’язково)</string>
     <string name="booking_access_instructions_hint">Як увійти? (необов’язково)</string>
 
@@ -1079,6 +1104,13 @@
     <string name="error_order_recurring_already_confirmed">Ви вже підтвердили це прибирання. Сплатіть прибиральнику готівкою в день прибирання.</string>
     <string name="error_order_creation_failed">Не вдалося створити бронювання. Спробуйте знову.</string>
     <string name="error_order_cash_not_available">Оплата готівкою можлива лише після входу в акаунт і для замовлення, з яким впорається один прибиральник.</string>
+    <string name="error_order_cash_requires_saved_card">Щоб платити готівкою, спершу збережіть картку як гарантію — або оплатіть карткою.</string>
+    <string name="error_order_cash_open_bookings_limit_reached">У вас уже максимально дозволена кількість неоплачених замовлень готівкою. Оберіть картку або знову готівку, коли одне з них буде оплачено.</string>
+    <string name="error_order_cash_unpaid_receivable">У вас є неоплачена сума, наприклад плата за скасування. Поки що оплатіть карткою; готівкою можна буде платити знову, коли ви сплатите її в профілі в розділі Платежі.</string>
+    <string name="error_saved_card_consent_not_accepted">Перш ніж зберегти картку, погодьтеся, що з неї можуть стягуватися збори та неоплачена готівка.</string>
+    <string name="error_saved_card_not_found">Ми не знайшли цю збережену картку.</string>
+    <string name="error_receivable_not_found">Ми не знайшли цю суму до сплати.</string>
+    <string name="error_receivable_not_open">Цю суму вже сплачено або списано.</string>
     <string name="error_order_review_already_exists">Ви вже залишили відгук про це бронювання.</string>
     <string name="error_order_review_rating_invalid">Оцінка має бути від 1 до 5.</string>
     <string name="error_order_not_owned_by_user">Ви не маєте доступу до цього бронювання.</string>
@@ -1265,6 +1297,31 @@
     <string name="notification_order_assignment_cancelled_body">Замовлення, яке ви прийняли, скасовано: #%1$s. Торкніться, щоб переглянути деталі.</string>
     <string name="notification_payroll_invoice_paid_title">Вам виплачено</string>
     <string name="notification_payroll_invoice_paid_body">Ваш рахунок за останній розрахунковий період оплачено. Торкніться, щоб переглянути.</string>
+    <!-- ── Payments ── -->
+    <string name="profile_row_payments">Платежі</string>
+    <string name="payments_title">Платежі</string>
+    <string name="payments_due_title">До сплати</string>
+    <string name="payments_due_intro">Сплатіть заборгованість, щоб знову платити готівкою. Замовлень з оплатою карткою це не стосується.</string>
+    <string name="payments_due_order">Замовлення %1$s</string>
+    <string name="payments_pay_action">Сплатити</string>
+    <string name="receivable_kind_cancellation_fee">Плата за скасування</string>
+    <string name="receivable_kind_lockout">Плата за ненадання доступу</string>
+    <string name="receivable_kind_unpaid_cash">Неоплачена готівка</string>
+    <string name="receivable_kind_top_up">Схвалена доплата</string>
+    <string name="receivable_kind_other">Сума до сплати</string>
+    <string name="payments_card_title">Збережена картка</string>
+    <string name="payments_card_intro">Картка, яка гарантує ваші замовлення з оплатою готівкою. З неї можуть бути списані плата за скасування, плата за ненадання доступу, неоплачена готівка або схвалена вами доплата.</string>
+    <string name="payments_card_label">%1$s •••• %2$s</string>
+    <string name="payments_card_expires">Дійсна до %1$02d/%2$02d · %3$s</string>
+    <string name="payments_card_empty">Картку не збережено. Ми попросимо її під час першого замовлення з оплатою готівкою.</string>
+    <string name="payments_card_remove_action">Видалити картку</string>
+    <string name="payments_card_remove_title">Видалити цю картку?</string>
+    <string name="payments_card_remove_message">Під час наступного замовлення з оплатою готівкою ми знову попросимо картку.</string>
+    <string name="payments_card_remove_confirm">Видалити</string>
+    <string name="payments_card_removed">Картку видалено</string>
+    <string name="payments_card_remove_retry_hint">Не вдалося видалити картку. Спробуйте ще раз.</string>
+    <string name="payments_error_message">Не вдалося завантажити платежі. Перевірте з’єднання та спробуйте ще раз.</string>
+    <string name="payments_error_retry">Спробувати ще раз</string>
     <!-- ── Ваші пристрої ── -->
     <string name="profile_row_devices">Ваші пристрої</string>
     <string name="devices_title">Ваші пристрої</string>
@@ -1295,6 +1352,7 @@
     <string name="error_auth_too_many_attempts">Забагато спроб із цим кодом. Запросіть новий код і спробуйте ще раз.</string>
     <string name="error_company_not_found">Інформацію про компанію не знайдено</string>
     <string name="error_consent_terms_not_accepted">Щоб продовжити, прийміть Умови надання послуг та Політику конфіденційності.</string>
+    <string name="error_consent_early_performance_not_requested">Щоб продовжити, підтвердьте, що ви просите розпочати надання послуги протягом 14-денного строку для відмови від договору.</string>
     <string name="error_country_not_existing_id">Країну не знайдено</string>
     <string name="error_currency_invalid">Недійсна валюта</string>
     <string name="error_country_not_serviced">У цій країні ми поки що не працюємо.</string>

@@ -268,7 +268,14 @@ test('customer can drive the booking wizard to the checkout handoff', async ({ p
   await expect(addService).toHaveAttribute('aria-pressed', 'true');
   await continueButton.click();
 
-  // ── Step 1 — address + contact ──
+  // ── Step 1 — dirtiness level (no level is preselected, so Continue waits for a pick) ──
+  await expect(page.getByRole('heading', { name: 'How clean is your home?' })).toBeVisible();
+  const normalLevel = page.locator('[data-spec-level]').first();
+  await normalLevel.click();
+  await expect(normalLevel).toHaveAttribute('aria-pressed', 'true');
+  await continueButton.click();
+
+  // ── Step 2 — address + contact ──
   await expect(page.getByRole('heading', { name: 'Where should we come?' })).toBeVisible();
   await page.locator('#wizard-first-name').fill('Jana');
   await page.locator('#wizard-last-name').fill('Novakova');
@@ -294,7 +301,7 @@ test('customer can drive the booking wizard to the checkout handoff', async ({ p
 
   await continueButton.click();
 
-  // ── Step 2 — date & time ──
+  // ── Step 3 — date & time ──
   await expect(page.getByRole('heading', { name: 'When should we come?' })).toBeVisible();
   // The calendar is the wizard's own grid, not PrimeNG's: month nav by its
   // aria-label, then the first cell the component left enabled. Advancing a
@@ -312,7 +319,7 @@ test('customer can drive the booking wizard to the checkout handoff', async ({ p
   await expect(quarterHourTime).toHaveAttribute('aria-pressed', 'true');
   await continueButton.click();
 
-  // ── Step 3 — payment (Card is the default selection) ──
+  // ── Step 4 — payment (Card is the default selection) ──
   await expect(page.getByRole('heading', { name: 'How Would You Like to Pay?' })).toBeVisible();
   // Card is what the wizard defaults to and what routes the submit through
   // `Payment/CreateOrder` — the Stripe handoff asserted at the end only exists
@@ -323,18 +330,21 @@ test('customer can drive the booking wizard to the checkout handoff', async ({ p
   );
   await continueButton.click();
 
-  // ── Step 4 — Cleansia Plus (declined, which is the smoke's path) ──
+  // ── Step 5 — Cleansia Plus (declined, which is the smoke's path) ──
   await expect(page.getByRole('heading', { name: 'Add Cleansia Plus?' })).toBeVisible();
   // The step's real way past. Not the shared Continue: the decline card is the
   // only exit that leaves the basket without a subscription, and a smoke that
   // took the other one would be booking a membership.
   await page.getByRole('button', { name: 'Continue without Plus' }).click();
 
-  // ── Step 5 — review + place order ──
+  // ── Step 6 — review + place order ──
   await expect(page.getByRole('heading', { name: 'Check your order' })).toBeVisible();
   // A guest has no consent on record, so the tick is asked for and the
   // place-order button refuses without it.
   await page.getByRole('checkbox', { name: /I agree to the terms/ }).check();
+  // Every booking, a guest's included, asks for the request to start inside the
+  // withdrawal period, and the place-order button refuses without it.
+  await page.getByRole('checkbox', { name: /start within the 14-day withdrawal period/ }).check();
 
   const placeOrder = page.getByRole('button', { name: 'Place Order' });
   await expect(placeOrder).toBeVisible();

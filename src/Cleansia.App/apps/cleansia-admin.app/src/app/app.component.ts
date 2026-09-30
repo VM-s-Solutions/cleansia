@@ -78,6 +78,12 @@ export class AppComponent implements OnInit {
 
   readonly isLoggedIn = toSignal(this.authService.isLoggedIn$, { initialValue: false });
 
+  // An administrator held on the password change has nowhere else to go, so the shell offers no
+  // navigation: the held page carries its own sign-out.
+  readonly showNavigation = computed(
+    () => this.isLoggedIn() && !this.authService.passwordChangeRequired()
+  );
+
   @HostListener('window:resize')
   onResize(): void {
     if (this.isBrowser) {

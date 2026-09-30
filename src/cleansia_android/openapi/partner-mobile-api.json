@@ -3757,6 +3757,85 @@
         }
       }
     },
+    "/api/EmployeePayroll/GetCashHeld": {
+      "get": {
+        "tags": [
+          "EmployeePayroll"
+        ],
+        "operationId": "EmployeePayroll_GetCashHeld",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CashHeldDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CashHeldDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CashHeldDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/EmployeePayroll/DownloadInvoice/{invoiceId}": {
       "get": {
         "tags": [
@@ -6067,6 +6146,115 @@
         }
       }
     },
+    "/api/Order/ReportLockout": {
+      "post": {
+        "tags": [
+          "Order"
+        ],
+        "operationId": "Order_ReportLockout",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportOrderLockout_Command"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportOrderLockout_Command"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportOrderLockout_Command"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportOrderLockout_Response"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportOrderLockout_Response"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportOrderLockout_Response"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/Order/UpdateNote": {
       "put": {
         "tags": [
@@ -7693,6 +7881,32 @@
         },
         "additionalProperties": false
       },
+      "CashHeldDto": {
+        "type": "object",
+        "properties": {
+          "currencyId": {
+            "type": "string",
+            "nullable": true
+          },
+          "currencyCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "amount": {
+            "type": "number",
+            "format": "double"
+          },
+          "floatCap": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "cashJobsHidden": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
       "CategoryDto": {
         "type": "object",
         "properties": {
@@ -8149,6 +8363,20 @@
         },
         "additionalProperties": false
       },
+      "DirtinessLevel": {
+        "enum": [
+          0,
+          1,
+          2
+        ],
+        "type": "integer",
+        "format": "int32",
+        "x-enumNames": [
+          "Normal",
+          "Increased",
+          "Heavy"
+        ]
+      },
       "DocumentStatus": {
         "enum": [
           1,
@@ -8350,6 +8578,14 @@
             "type": "number",
             "format": "double"
           },
+          "cashSetOffAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "transferAmount": {
+            "type": "number",
+            "format": "double"
+          },
           "currencyCode": {
             "type": "string",
             "nullable": true
@@ -8460,6 +8696,14 @@
             "format": "double"
           },
           "totalAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "cashSetOffAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "transferAmount": {
             "type": "number",
             "format": "double"
           },
@@ -9097,32 +9341,24 @@
             "type": "string",
             "format": "date-time"
           },
-          "workContractDocumentVersion": {
+          "earlyPerformanceConsentTextVersion": {
             "type": "string",
             "nullable": true
           },
-          "workContractAcceptances": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/GdprExportOrderWorkContractAcceptanceDto"
-            },
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "GdprExportOrderWorkContractAcceptanceDto": {
-        "type": "object",
-        "properties": {
-          "acceptedOn": {
+          "earlyPerformanceConsentedOn": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "nullable": true
           },
-          "documentVersion": {
+          "earlyPerformanceConsentClient": {
             "type": "string",
             "nullable": true
           },
-          "language": {
+          "earlyPerformanceConsentIpAddress": {
+            "type": "string",
+            "nullable": true
+          },
+          "earlyPerformanceConsentDeviceLabel": {
             "type": "string",
             "nullable": true
           }
@@ -9582,6 +9818,9 @@
           "adminRole": {
             "type": "string",
             "nullable": true
+          },
+          "mustChangePassword": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -10128,6 +10367,13 @@
           "deductionReason": {
             "type": "string",
             "nullable": true
+          },
+          "dirtinessPay": {
+            "type": "number",
+            "format": "double"
+          },
+          "lineType": {
+            "$ref": "#/components/schemas/PayLineType"
           }
         },
         "additionalProperties": false
@@ -10448,6 +10694,22 @@
             "type": "number",
             "format": "double",
             "nullable": true
+          },
+          "dirtinessLevel": {
+            "$ref": "#/components/schemas/DirtinessLevel"
+          },
+          "dirtinessSurchargeAmount": {
+            "type": "number",
+            "format": "double"
+          },
+          "lockoutReportedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "lockoutCallAttempts": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -10617,6 +10879,13 @@
           "countryId": {
             "type": "string",
             "nullable": true
+          },
+          "dirtinessLevel": {
+            "$ref": "#/components/schemas/DirtinessLevel"
+          },
+          "dirtinessSurchargeAmount": {
+            "type": "number",
+            "format": "double"
           }
         },
         "additionalProperties": false
@@ -10956,6 +11225,20 @@
         },
         "additionalProperties": false
       },
+      "PayLineType": {
+        "enum": [
+          0,
+          1,
+          2
+        ],
+        "type": "integer",
+        "format": "int32",
+        "x-enumNames": [
+          "Job",
+          "CancellationFeeShare",
+          "LockoutFeeShare"
+        ]
+      },
       "PaymentStatus": {
         "enum": [
           1,
@@ -11145,6 +11428,10 @@
               "$ref": "#/components/schemas/PeriodCurrencyDto"
             },
             "nullable": true
+          },
+          "totalDirtinessPay": {
+            "type": "number",
+            "format": "double"
           }
         },
         "additionalProperties": false
@@ -11182,13 +11469,15 @@
       "PhotoType": {
         "enum": [
           1,
-          2
+          2,
+          3
         ],
         "type": "integer",
         "format": "int32",
         "x-enumNames": [
           "Before",
-          "After"
+          "After",
+          "Entrance"
         ]
       },
       "PreferredOfferDetails": {
@@ -11431,6 +11720,34 @@
             "nullable": true
           },
           "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ReportOrderLockout_Command": {
+        "type": "object",
+        "properties": {
+          "orderId": {
+            "type": "string",
+            "nullable": true
+          },
+          "callAttempts": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ReportOrderLockout_Response": {
+        "type": "object",
+        "properties": {
+          "orderId": {
+            "type": "string",
+            "nullable": true
+          },
+          "reportedAt": {
             "type": "string",
             "format": "date-time"
           }

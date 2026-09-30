@@ -120,6 +120,7 @@ struct OrderDetailView: View {
                 onOpenContract: vm.openContract,
                 onDeclineOffer: { Task { await vm.declinePreferredOffer() } },
                 onDismissRefusal: vm.dismissActionError,
+                onReportLockout: { note in Task { await vm.reportLockout(note) } },
                 checklistVM: checklistVM,
                 notesVM: notesVM,
                 photosVM: photosVM

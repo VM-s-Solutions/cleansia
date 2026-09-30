@@ -43,6 +43,7 @@ public class GenerateReceiptHandlerSmokeTests
         _unitOfWork.Object,
         _tenantProvider.Object,
         new ArchivedCompanyDeadLetter(Mock.Of<IServiceScopeFactory>(), NullLogger<ArchivedCompanyDeadLetter>.Instance),
+        Mock.Of<IReceivableRepository>(),
         NullLogger<GenerateReceiptHandler>.Instance);
 
     [Fact]

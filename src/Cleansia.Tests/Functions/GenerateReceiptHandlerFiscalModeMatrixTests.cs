@@ -60,6 +60,7 @@ public class GenerateReceiptHandlerFiscalModeMatrixTests
         _unitOfWork.Object,
         _tenantProvider.Object,
         new ArchivedCompanyDeadLetter(Mock.Of<IServiceScopeFactory>(), NullLogger<ArchivedCompanyDeadLetter>.Instance),
+        Mock.Of<IReceivableRepository>(),
         NullLogger<GenerateReceiptHandler>.Instance);
 
     private static Order BuildOrder(string? countryId)
@@ -85,7 +86,7 @@ public class GenerateReceiptHandlerFiscalModeMatrixTests
         OrderReceipt.Create(OrderId, "2026-000001", "receipt.pdf", "2026/ORD/receipt.pdf", LanguageCode);
 
     private static void AttachReceipt(Order order, OrderReceipt receipt) =>
-        typeof(Order).GetProperty(nameof(Order.Receipt))!.SetValue(order, receipt);
+        OrderReceiptAttachment.Attach(order, receipt);
 
     private static string Body() =>
         JsonSerializer.Serialize(

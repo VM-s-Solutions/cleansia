@@ -19,9 +19,9 @@ using Moq;
 namespace Cleansia.Tests.Fiscal;
 
 /// <summary>
-/// The lines declared to a fiscal authority sum to the total declared beside them. Extras, the express
-/// surcharge and the tier, membership and promo discounts are on the customer's receipt, so they are
-/// lines of the fiscal request too — a request listing only the services and packages states a total
+/// The lines declared to a fiscal authority sum to the total declared beside them. Extras, the dirtiness
+/// and express surcharges and the tier, membership and promo discounts are on the customer's receipt, so
+/// they are lines of the fiscal request too — a request listing only the services and packages states a total
 /// its own lines contradict.
 /// </summary>
 public class FiscalLineItemsReconcileToTotalTests
@@ -114,6 +114,24 @@ public class FiscalLineItemsReconcileToTotalTests
         Assert.Equal(-100m, lines["Loyalty discount"]);
         Assert.Equal(-170m, lines["Cleansia Plus discount"]);
         Assert.DoesNotContain("Promo code discount", lines.Keys);
+        Assert.DoesNotContain("Dirtiness surcharge", lines.Keys);
+    }
+
+    // Heavy: 60 % of the 2250 lines = 1350, raw 3600; express at 20 % of the raw = 720; a 300 promo
+    // charged against the surcharged price = 360, so 2250 + 1350 + 720 - 360 = 3960.
+    [Fact]
+    public async Task The_Dirtiness_Surcharge_Is_Its_Own_Line_And_The_Lines_Still_Sum_To_The_Total()
+    {
+        var order = BuildOrder(
+            tierDiscount: 0, membershipDiscount: 0, promoDiscount: 360, totalPrice: 3960,
+            dirtinessSurcharge: 1350m, expressSurcharge: 720m);
+
+        await CreateService().RealizeFiscalAndPdfAsync(order, BuildReceipt(), CancellationToken.None);
+
+        var request = _provider.LastRequest!;
+        Assert.Equal(1350m, Assert.Single(request.LineItems, l => l.Description == "Dirtiness surcharge").UnitPrice);
+        Assert.Equal(order.TotalPrice, request.TotalAmount);
+        Assert.Equal(order.TotalPrice, request.LineItems.Sum(l => l.Quantity * l.UnitPrice));
     }
 
     private ReceiptService CreateService() => new(
@@ -128,7 +146,13 @@ public class FiscalLineItemsReconcileToTotalTests
         _fiscalServiceResolver.Object,
         NullLogger<ReceiptService>.Instance);
 
-    private static Order BuildOrder(int tierDiscount, int membershipDiscount, int promoDiscount, int totalPrice)
+    private static Order BuildOrder(
+        int tierDiscount,
+        int membershipDiscount,
+        int promoDiscount,
+        int totalPrice,
+        decimal dirtinessSurcharge = 0m,
+        decimal expressSurcharge = 450m)
     {
         var order = Order.Create(
             customerName: "Test Customer",
@@ -160,7 +184,9 @@ public class FiscalLineItemsReconcileToTotalTests
             OrderExtra.Create(order, Extra.Create("oven", "Deep oven clean", null), 150m),
             OrderExtra.Create(order, Extra.Create("fridge", "Inside the fridge", null), 100m),
         ]);
-        order.SetExpressSurcharge(450m);
+        order.SetDirtinessSurcharge(
+            dirtinessSurcharge > 0m ? DirtinessLevel.Heavy : DirtinessLevel.Normal, dirtinessSurcharge);
+        order.SetExpressSurcharge(expressSurcharge);
 
         return order;
     }

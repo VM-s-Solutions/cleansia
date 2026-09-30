@@ -15,11 +15,11 @@ sequenceDiagram
   participant F as OrderFactory
   participant S as Stripe
 
-  C->>API: POST /Order/Quote
+  C->>API: POST /Order/Quote (selection, size, dirtiness level)
   API->>P: price the selection
-  P-->>C: total, express surcharge, waiver state
+  P-->>C: total, dirtiness and express surcharges, waiver state, duration and crew
 
-  C->>API: POST /Order/CreateOrder (incl. the quoted total)
+  C->>API: POST /Order/CreateOrder (incl. the level and the quoted total)
   API->>V: validate
   V->>P: RE-price, server-side
   V-->>API: refuse if the totals disagree
@@ -52,8 +52,8 @@ A signed-in customer may book in any serviced market with an active operator, in
 served by a different company from the account’s. The server resolves the operator from the address
 before creating the order and its children; a saved address from the account’s company is copied
 into the order’s address snapshot. Receipts, refunds and disputes belong to that operator. Loyalty,
-credit and membership usage stay with the account; card payments still use one holding Stripe
-account. Owner-pinned reads keep the booking and its receipt visible in the customer’s order history
+credit and membership usage stay with the account; card payments use the one Stripe account the
+platform configures, the operating company's own (decision 49). Owner-pinned reads keep the booking and its receipt visible in the customer’s order history
 regardless of the browsing market. → [ADR-0061 D6](/decisions/adr-0061#d6-tenant-country-and-currency-agree-by-construction-and-two-validators-refuse-the-cases-that-could-break-it)
 
 ## The price is never taken from the client
@@ -63,40 +63,77 @@ re-prices the whole selection server-side and refuses on disagreement. The amoun
 is `ToMinorUnits(order.TotalPrice)` read from the persisted, server-computed value — the client cannot
 influence it at any point, which is why the payment webhook does not need to reconcile the amount.
 
+## The customer says how dirty the home is {#dirtiness-level}
+
+Owner rulings 2026-09-28. Right after the services, every booking flow — the customer web wizard, and
+Android and iOS — asks **how clean the home is**, as a required step of its own: *Normal*,
+*Increased +30 %* or *Heavy +60 %*, each with the owner's description of the home it fits (when it was
+last cleaned, and what the cleaner will find on the floor, in the bathroom and in the kitchen), and the
+hint to pick the higher level when unsure, so the cleaner has enough time. Nothing is preselected, and
+on the web the step comes before the address. The web's home calculator offers the same three levels
+and states the surcharge inside its price. Copy is in five locales; the rates in it are pinned to
+`BookingPolicy` by the parity checker.
+
+The level rides every request that describes the job, and the server answers from it:
+
+| At the chosen level the server… | |
+|---|---|
+| prices | the whole basket plus the level's rate, before the discounts and under express → [the price](/product/business-rules#dirtiness-price) |
+| times | the service minutes, plus minutes per room, × (1 + rate), rounded up |
+| crews | one cleaner per started 120 minutes of that — so `requiredEmployees` can grow, and cash can fall away |
+| pays | each seat its share of the job's pay, raised by the rate after the clamp → [cleaner pay](/product/business-rules#cleaner-pay) |
+
+The quote and the Plus preview carry it and the quote echoes it with the surcharge
+(`dirtinessLevel`, `dirtinessSurchargeAmount`), so the clients re-read cash from the crew the new quote
+gives: picking *Increased* on a 120-minute job makes it a two-cleaner job, and a cash choice is taken
+away with its reason. The web's booking sends the level its resubmitted total was quoted at, so the
+price match compares like with like; the summary rail itemises the stored surcharge under the level and
+the review restates it. The web's Plus preferred-cleaner roster is asked about the job being composed —
+rooms, bathrooms and the picked level (Normal until one is picked) — so a cleaner free only for a
+Normal-length job is not offered and then refused by the hold. After booking, the customer's order
+detail on every client names the level and itemises its surcharge.
+
+A request with no level books at **Normal** — the server's default for old clients and API callers;
+no shipped client books without one. An unknown value is `common.invalid_enum_value`. The level is stored on
+the order and fixed there: the on-site top-up that would change it is approved in principle and not
+built. → [Business rules — the dirtiness level](/product/business-rules#dirtiness),
+[ADR-0069](/decisions/adr-0069)
+
 ## Cash is for a signed-in customer's one-cleaner job {#cash-eligibility}
 
 A booking may be paid in cash only when the caller is signed in **and** the server's crew for the
 selection is exactly one (`BookingPolicy.AllowsCash`, owner ruling 2026-09-24); a guest, or a booking
 whose duration needs two cleaners or more, pays by card. The crew is not something the command carries:
 the validator reads it off the same calculator run that re-priced the order
-(`OrderDuration.RequiredEmployees`, one cleaner per started 120 minutes), so a forged request cannot
-make a two-cleaner job cash-eligible. The rule sits in the price chain after the price match and ahead
+(`OrderDuration.RequiredEmployees`, one cleaner per started 120 minutes of a duration that already
+includes the [dirtiness level](#dirtiness-level) and the home's size), so a forged request cannot make
+a two-cleaner job cash-eligible. The rule sits in the price chain after the price match and ahead
 of the promo rules, and a refusal is `order.cash_not_available` before any side effect — no express
 waiver reserved, no credit debited, no referral accepted, nothing dispatched. `OrderFactory` refuses
 the same combination as a backstop for callers that never run the validator.
 
-**What the clients do.** The quote already returns `requiredEmployees` for the selection on screen.
-The customer web wizard and the Android and iOS booking flows combine it with the live sign-in state:
-cash is offered only when both allow it; otherwise it is disabled with the reason — cash needs a
-signed-in customer, this booking needs N cleaners, or (while no quote describes the current selection)
-it is confirmed once the price is ready. The mobile booking flows run inside a signed-in session, so
-only the web ever shows the first reason. A cash choice that stops being allowed — a sign-out, a bigger
-selection — is **taken away, not switched to card**: the payment choice is cleared and the customer is
-told to choose again. Both mobile apps re-check cash against the quote the booking is submitted with
-and clear it there rather than send it. If the server still refuses, the web and iOS clear the choice
-(the web wizard returns to the payment step); Android shows the refusal and leaves the choice for the
-customer to change.
-→ [Business rules — paying in cash](/product/business-rules#cash)
+**What the clients do.** The quote already returns `requiredEmployees` for the selection on screen. The
+customer web wizard and the Android and iOS booking flows combine it with the live sign-in state: cash is
+offered only when both allow it; otherwise it is disabled with the reason — cash needs a signed-in
+customer, this booking needs N cleaners, or (while no quote describes the current selection) it is
+confirmed once the price is ready. The mobile booking flows run inside a signed-in session, so only the
+web ever shows the first reason. A cash choice that stops being allowed — a sign-out, a bigger selection,
+a higher dirtiness level — is **taken away, not switched to card**: the payment choice is cleared and the
+customer is told to choose again. Both mobile apps re-check cash against the quote the booking is
+submitted with and clear it there rather than send it. If the server still refuses, the web and iOS clear
+the choice (the web wizard returns to the payment step); Android shows the refusal and leaves the choice
+for the customer to change. → [Business rules — paying in cash](/product/business-rules#cash)
 
 ## The booking leaves a row, and so does a refused one
 
 `CreateOrder` is marked `customer.order.create` ([ADR-0062](/decisions/adr-0062)), so the same commit
-that creates the order writes a `CustomerActionAudit` row carrying what the server priced and showed:
-the price breakdown, the discounts and the express state, the line items by id, the cleaning time and
-lead time, the cancellation policy figures as shown (with this customer's free window and oops
-window), the terms tick and the terms version in force, the client it came from, the IP and device — never the name,
-the address text or the instructions. A guest booking writes the same row with no user; it is the
-case the row exists for, and it is reachable later only by the order, never by a person.
+that creates the order writes a `CustomerActionAudit` row carrying what the server priced and showed: the
+price breakdown, the dirtiness level and its surcharge, the discounts and the express state, the line
+items by id, the cleaning time and lead time, the cancellation policy figures as shown (with this
+customer's free window and oops window), the terms tick and the terms version in force, the client it
+came from, the IP and device — never the name, the address text or the instructions. A guest booking
+writes the same row with no user; it is the case the row exists for, and it is reachable later only by
+the order, never by a person.
 
 A refused booking is a row too, written outside the transaction that was rolled back: a missing
 terms tick is `consent.terms_not_accepted` (judged first, ahead of the price chain), the wrong quoted
@@ -172,9 +209,9 @@ is shared with checkout rather than requested again. The previous price stays vi
 updated quote loads, and checkout uses a quote matching the current selection.
 
 `OrderPricingCalculator` returns the estimated duration with its pricing snapshot, using the same
-selected services and package contents. `QuoteOrder` reuses that duration instead of loading the
-catalogue a second time. Pricing, discounts and create-time validation retain their existing rules;
-nothing converts between currencies.
+selected services and package contents, the same room and bathroom count and the same dirtiness
+level. `QuoteOrder` reuses that duration instead of loading the catalogue a second time. Pricing,
+discounts and create-time validation retain their existing rules; nothing converts between currencies.
 
 ## Room selection and start times
 
@@ -184,7 +221,14 @@ without scrolling through the catalogue. Both layouts edit the same selection.
 
 The server accepts at most **eight rooms and four bathrooms**. The same upper bounds apply to
 booking, quote, Plus-savings quote and recurring-template creation or update, with
-`order.size_exceeds_maximum` when either is exceeded. Existing lower-bound rules are unchanged.
+`order.size_exceeds_maximum` when either is exceeded. A booking with a negative count is refused
+with `validation.must_be_positive`, the quote's key.
+
+**The size lengthens the job as well as pricing it.** Every room and bathroom adds each service's
+minutes per room to the booked time, the same count the per-room price multiplies — and so, through
+the crew, it can decide cash. Those minutes are **0 on every service** until the real durations are
+typed into the admin catalogue, so for now the size moves the price and not the time.
+→ [Business rules — crew size](/product/business-rules#crew-size)
 
 **No client offers a size the server refuses.** Every picker stops at 8 rooms and 4 bathrooms, and on
 Android and iOS the plus button is disabled at the cap:
@@ -222,12 +266,16 @@ time and the express window still apply to the exact selected instant, including
 | Under 2 h lead time | Refused outright. Not priced higher — refused. |
 | A start off the 15-minute grid, before 08:00 or after 19:45 in the market's zone, or more than 60 days ahead | Refused on the quote and the booking alike, `order.cleaning_date.outside_booking_window`. |
 | 2–4 h lead time | Accepted with a **+20 %** express surcharge, unless a Plus waiver applies. |
-| Booked span over 24 h | Refused. See [why that bound exists](/product/business-rules#maximum-booked-duration-24-h-and-it-is-not-about-calendars). |
+| A *Heavy* home on an express slot | Both surcharges: +60 % on the basket, then +20 % on that — × 1.92 before discounts. |
+| A request that carries no dirtiness level | Priced, timed and booked at *Normal*. No shipped client books without one. |
+| An unknown dirtiness level | Refused, `common.invalid_enum_value`, on the quote, the Plus preview, the booking and both recurring commands. |
+| A 120-minute selection at *Increased* or *Heavy* | 156 or 192 booked minutes: two cleaners, so card only. |
+| Booked span over 24 h | Refused, judged on the booked time with the level and the size in it. See [why that bound exists](/product/business-rules#maximum-booked-duration-24-h-and-it-is-not-about-calendars). |
 | A package **and** a service the package includes | Charged twice, performed twice, takes twice as long. Owner ruling — not a bug, and not to be de-duplicated. |
 | Guest, no account | Allowed **on the web**, by card. The order is keyed on the email address, and the customer later finds it via order lookup. The audit row has no user; an admin reaches it from the order's history. The customer mobile host's create route requires a session, so an anonymous call there is `401` and creates nothing → [CreateOrder](/api/orders#createorder). |
 | Cash from a guest, or on a booking that needs two cleaners or more | Refused, `order.cash_not_available`, before anything is reserved, debited or dispatched. 120 booked minutes is one cleaner; 121 is two. |
 | An unknown language code on the booking | Refused (`CreateOrder.Validator` carries the `LanguageValidator`, the `Register` idiom) — the audit row records `language`, and an unrecognised code is not evidence of anything. No shipped client sends one outside the five seeded codes. |
-| A recurring occurrence confirmed | One `customer.order.recurring.confirm` row: the order, the template, the price and currency, the payment type, the cleaning time and lead time. A schedule created, edited, paused/resumed or deleted writes a `customer.recurring.*` row with the schedule facts before and after. |
+| A recurring occurrence confirmed | One `customer.order.recurring.confirm` row: the order, the template, the price and currency, the dirtiness level, the payment type, the cleaning time and lead time. A schedule created, edited, paused/resumed or deleted writes a `customer.recurring.*` row with the schedule facts — its level among them — before and after. |
 
 ## Recurring bookings
 
@@ -300,8 +348,9 @@ market. → [Business rules — order currency](/product/business-rules#price-st
 **A cash schedule must stay a one-cleaner job** ([the cash rule](/product/business-rules#cash)). A
 template always belongs to an account, so only the crew can fail it: `CreateRecurringBooking` and
 `UpdateRecurringBooking` refuse cash (`order.cash_not_available`) when the selection, judged on the live
-catalogue by the same duration sum the factory staffs occurrences with, needs more than one cleaner.
-A cash template that needs more — authored before the rule, or grown by a catalogue change — is
+catalogue by the same duration sum the factory staffs occurrences with — at the template's size and
+dirtiness level — needs more than one cleaner. A cash template that needs more — authored before the
+rule, or grown by a catalogue change such as longer service minutes or minutes per room — is
 **never switched to card and never charged**:
 
 - **The materialiser skips it.** It creates no occurrence and logs a warning; the template stays active,
@@ -327,10 +376,22 @@ edits: cash is offered only when the quote for the selection says one cleaner, a
 stops being allowed is cleared rather than switched. Every recurring wizard starts a new schedule on
 card.
 
-The materialiser calculates a raw subtotal without a cleaning date; `OrderFactory` then applies
-the express surcharge once, from that occurrence's date and lead time. Recurring templates carry no
-extras, and this path reserves no monthly express waiver. The undated pricing call does not mean
-that a short-notice occurrence is exempt from the surcharge.
+**A schedule has its own dirtiness level** (owner ruling 2026-09-28) — by the descriptions the customer
+reads, a home cleaned once a month is *Increased*. `CreateRecurringBooking` and `UpdateRecurringBooking`
+carry `dirtinessLevel`: Normal when a client sends none, editable, refused as an unknown value
+(`common.invalid_enum_value`); the template DTO returns it. Every occurrence is priced, timed, crewed and
+paid at it — the materialiser hands it to `OrderFactory`, which stores it on the occurrence — and the
+cash check above, the list's `requiresPaymentMethodChange` flag and the schedule's audit facts read it.
+The web, Android and iOS schedule forms ask for it on a new schedule with the booking wizard's three
+levels and copy (on the web none is chosen and a save without one names it as missing) and keep the
+schedule's own level on an edit. The web form's quote prices at the chosen level (Normal until one is
+picked), so the price and the cash crew follow it, and each schedule card is quoted at its own level. →
+[Business rules — a schedule carries its level](/product/business-rules#dirtiness-recurring)
+
+The materialiser calculates a raw subtotal — at the template's dirtiness level — without a cleaning date;
+`OrderFactory` then applies the express surcharge once, from that occurrence's date and lead time.
+Recurring templates carry no extras, and this path reserves no monthly express waiver. The undated
+pricing call does not mean that a short-notice occurrence is exempt from the surcharge.
 
 **`Monthly` is the nth weekday** (owner ruling 2026-09-28): the ordinal is read off the first chosen
 weekday on or after `StartsOn`, in the market's calendar — the 2nd Thursday stays the 2nd Thursday — and a

@@ -2,8 +2,10 @@ import { PLATFORM_ID, signal, WritableSignal } from '@angular/core';
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import {
+  CardCaptureFacade,
   CustomerAuthService,
   CustomerClient,
+  DirtinessLevel,
   ExtraListItem,
   GetMyMembershipResponse,
   MembershipStatus,
@@ -28,6 +30,7 @@ import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
 import { provideMockStore, MockStore } from '@ngrx/store/testing';
 import { TranslateService } from '@ngx-translate/core';
 import { of, Subject, throwError } from 'rxjs';
+import { OrderDraftService } from './order-draft.service';
 import { OrderMembershipFacade } from './order-membership.facade';
 import { OrderPreferredCleanerFacade } from './order-preferred-cleaner.facade';
 import { OrderPricingFacade } from './order-pricing.facade';
@@ -55,6 +58,8 @@ describe('OrderWizardFacade', () => {
   let userClient: { getCurrent: jest.Mock };
   let apiClient: { serviceCity: jest.Mock };
   let membershipClient: { getMine: jest.Mock; getPlans: jest.Mock };
+  let savedCardClient: { createCheckoutSession: jest.Mock };
+  let draft: { park: jest.Mock };
   let authService: { isLoggedIn: jest.Mock };
   let signedIn: WritableSignal<boolean>;
   let snackbar: { showError: jest.Mock; showInfoTranslated: jest.Mock };
@@ -101,6 +106,10 @@ describe('OrderWizardFacade', () => {
       getMine: jest.fn().mockReturnValue(of({ hasMembership: false })),
       getPlans: jest.fn().mockReturnValue(of([])),
     };
+    savedCardClient = {
+      createCheckoutSession: jest.fn().mockReturnValue(of({ savedCardId: 'card-1', checkoutUrl: 'https://checkout.stripe.test/setup' })),
+    };
+    draft = { park: jest.fn() };
     // Backed by a signal, as the real service is: a computed that reads a bare jest.fn has no
     // dependency to re-run on, so sign-in and sign-out would be invisible to it.
     signedIn = signal(false);
@@ -119,6 +128,7 @@ describe('OrderWizardFacade', () => {
 
     TestBed.configureTestingModule({
       providers: [
+        CardCaptureFacade,
         OrderMembershipFacade,
         OrderPreferredCleanerFacade,
         OrderPricingFacade,
@@ -139,8 +149,10 @@ describe('OrderWizardFacade', () => {
             userClient,
             apiClient,
             membershipClient,
+            savedCardClient,
           },
         },
+        { provide: OrderDraftService, useValue: draft },
         { provide: CustomerAuthService, useValue: authService },
         { provide: GuestOrderService, useValue: guestOrderService },
         { provide: SnackbarService, useValue: snackbar },
@@ -326,25 +338,25 @@ describe('OrderWizardFacade', () => {
 
     it('is walked past in both directions', () => {
       facade.loadPlans();
-      facade.goToStep(3);
+      facade.goToStep(4);
 
       facade.nextStep();
-      expect(facade.activeStep()).toBe(5);
+      expect(facade.activeStep()).toBe(6);
 
       facade.prevStep();
-      expect(facade.activeStep()).toBe(3);
+      expect(facade.activeStep()).toBe(4);
     });
 
     it('is stopped on while a plan is on sale', () => {
       membershipClient.getPlans.mockReturnValue(of([{ code: 'PLUS_MONTHLY' }]));
       facade.loadPlans();
-      facade.goToStep(3);
-
-      facade.nextStep();
-      expect(facade.activeStep()).toBe(4);
+      facade.goToStep(4);
 
       facade.nextStep();
       expect(facade.activeStep()).toBe(5);
+
+      facade.nextStep();
+      expect(facade.activeStep()).toBe(6);
     });
   });
 
@@ -621,16 +633,24 @@ describe('OrderWizardFacade', () => {
       expect(facade.canProceed()).toBe(true);
     });
 
-    it('step 1 requires valid contact, address and phone', () => {
+    it('step 1 has no default level and names the gap until one is picked', () => {
       facade.goToStep(1);
+      expect(facade.missingReasons()).toEqual(['pages.order.missing.dirtiness']);
+
+      facade.updateFormData({ dirtinessLevel: DirtinessLevel.Normal });
+      expect(facade.canProceed()).toBe(true);
+    });
+
+    it('step 2 requires valid contact, address and phone', () => {
+      facade.goToStep(2);
       expect(facade.canProceed()).toBe(false);
 
       fillValidContactAndAddress();
       expect(facade.canProceed()).toBe(true);
     });
 
-    it('step 1 rejects a custom address without coordinates', () => {
-      facade.goToStep(1);
+    it('step 2 rejects a custom address without coordinates', () => {
+      facade.goToStep(2);
       facade.updateFormData({
         address: createAddressDto({
           street: 'Wenceslas Square',
@@ -650,11 +670,11 @@ describe('OrderWizardFacade', () => {
       expect(facade.canProceed()).toBe(false);
     });
 
-    it('step 1 accepts a TYPED address without coordinates', () => {
+    it('step 2 accepts a TYPED address without coordinates', () => {
       // The failure message has always told the customer they could enter the
       // address by hand. The server geocodes what they type on submit, so the
       // only thing that ever refused it was this gate.
-      facade.goToStep(1);
+      facade.goToStep(2);
       facade.updateFormData({
         address: createAddressDto({
           street: 'Wenceslas Square',
@@ -675,8 +695,8 @@ describe('OrderWizardFacade', () => {
       expect(facade.canProceed()).toBe(true);
     });
 
-    it('step 1 still requires the fields themselves of a typed address', () => {
-      facade.goToStep(1);
+    it('step 2 still requires the fields themselves of a typed address', () => {
+      facade.goToStep(2);
       facade.updateFormData({
         address: createAddressDto({ street: 'W', city: '', zipCode: '', countryId: 'cz' }),
         addressEnteredManually: true,
@@ -694,7 +714,7 @@ describe('OrderWizardFacade', () => {
     it('names every reason the step cannot be left', () => {
       // The advance button reads this same list, so a reason missing here is a
       // button that refuses without saying why.
-      facade.goToStep(1);
+      facade.goToStep(2);
 
       expect(facade.missingReasons()).toEqual([
         'pages.order.missing.address',
@@ -709,35 +729,35 @@ describe('OrderWizardFacade', () => {
       expect(facade.canProceed()).toBe(true);
     });
 
-    it('step 1 rejects an invalid email', () => {
-      facade.goToStep(1);
+    it('step 2 rejects an invalid email', () => {
+      facade.goToStep(2);
       fillValidContactAndAddress();
       facade.updateFormData({ customerEmail: 'not-an-email' });
 
       expect(facade.canProceed()).toBe(false);
     });
 
-    it('step 1 is blocked when the city-serviced check rejected', () => {
+    it('step 2 is blocked when the city-serviced check rejected', () => {
       TestBed.resetTestingModule();
       configure('browser');
       apiClient.serviceCity.mockReturnValue(of([{ name: 'Brno' }]));
-      facade.goToStep(1);
+      facade.goToStep(2);
       fillValidContactAndAddress();
 
       expect(facade.cityServiced()).toBe('rejected');
       expect(facade.canProceed()).toBe(false);
     });
 
-    it('step 2 requires a cleaning date', () => {
-      facade.goToStep(2);
+    it('step 3 requires a cleaning date', () => {
+      facade.goToStep(3);
       expect(facade.canProceed()).toBe(false);
 
       facade.updateFormData({ cleaningDate: new Date('2026-07-01T00:00:00Z') });
       expect(facade.canProceed()).toBe(true);
     });
 
-    it('step 3 passes once a way to pay is chosen, and names the gap until then', () => {
-      facade.goToStep(3);
+    it('step 4 passes once a way to pay is chosen, and names the gap until then', () => {
+      facade.goToStep(4);
       expect(facade.canProceed()).toBe(true);
 
       facade.updateFormData({ paymentType: null });
@@ -895,6 +915,7 @@ describe('OrderWizardFacade', () => {
       orderClient.quote.mockReturnValue(of(ONE_CLEANER_QUOTE));
       facade.updateFormData({
         selectedServiceIds: ['s1'],
+        dirtinessLevel: DirtinessLevel.Normal,
         cleaningDate: new Date('2026-07-01T00:00:00Z'),
         cleaningTime: '10:00',
         address: createAddressDto({
@@ -924,7 +945,38 @@ describe('OrderWizardFacade', () => {
       expect(paymentClient.createOrder).not.toHaveBeenCalled();
       expect(orderClient.createOrder).not.toHaveBeenCalled();
       // …and it puts them on the step that holds the field.
+      expect(facade.activeStep()).toBe(2);
+    });
+
+    it('refuses an order with no dirtiness level and opens the step that asks for it', async () => {
+      facade.updateFormData({ dirtinessLevel: null, paymentType: PaymentType.Card });
+
+      await facade.submitOrder();
+
+      expect(paymentClient.createOrder).not.toHaveBeenCalled();
       expect(facade.activeStep()).toBe(1);
+    });
+
+    it('sends the level the resubmitted total was quoted at', async () => {
+      orderClient.quote.mockReturnValue(
+        of(
+          quoteFixture({
+            totalPrice: 1600,
+            finalPriceAfterDiscount: 1600,
+            originalSubtotal: 1600,
+            dirtinessSurchargeAmount: 600,
+            dirtinessLevel: DirtinessLevel.Heavy,
+            requiredEmployees: 1,
+          }),
+        ),
+      );
+      facade.updateFormData({ dirtinessLevel: DirtinessLevel.Heavy, paymentType: PaymentType.Card });
+
+      await facade.submitOrder();
+
+      const command = paymentClient.createOrder.mock.calls[0][0];
+      expect(command.dirtinessLevel).toBe(DirtinessLevel.Heavy);
+      expect(command.totalPrice).toBe(1600);
     });
 
     it('does nothing without a cleaning date', async () => {
@@ -958,7 +1010,7 @@ describe('OrderWizardFacade', () => {
 
         await facade.refreshQuoteNow();
 
-        expect(facade.missingReasons(2)).toEqual([
+        expect(facade.missingReasons(3)).toEqual([
           'api.order.cleaning_date.outside_booking_window',
         ]);
       });
@@ -971,7 +1023,7 @@ describe('OrderWizardFacade', () => {
 
         expect(snackbar.showError).not.toHaveBeenCalled();
         expect(paymentClient.createOrder).not.toHaveBeenCalled();
-        expect(facade.activeStep()).toBe(2);
+        expect(facade.activeStep()).toBe(3);
         expect(facade.submitting()).toBe(false);
       });
 
@@ -982,7 +1034,7 @@ describe('OrderWizardFacade', () => {
         await facade.submitOrder();
 
         expect(snackbar.showError).not.toHaveBeenCalled();
-        expect(facade.activeStep()).toBe(2);
+        expect(facade.activeStep()).toBe(3);
         expect(facade.submitting()).toBe(false);
       });
     });
@@ -1069,6 +1121,20 @@ describe('OrderWizardFacade', () => {
 
       await facade.submitOrder();
       expect(orderClient.createOrder.mock.calls[2][0].termsAccepted).toBeUndefined();
+    });
+
+    it('asserts the request to start within the withdrawal period only when it was ticked', async () => {
+      facade.updateFormData({ paymentType: PaymentType.Cash });
+
+      await facade.submitOrder(null, false, true);
+      expect(orderClient.createOrder.mock.calls[0][0].earlyPerformanceRequested).toBe(true);
+      expect(orderClient.createOrder.mock.calls[0][0].termsAccepted).toBeUndefined();
+
+      await facade.submitOrder(null, true, false);
+      expect(orderClient.createOrder.mock.calls[1][0].earlyPerformanceRequested).toBeUndefined();
+
+      await facade.submitOrder();
+      expect(orderClient.createOrder.mock.calls[2][0].earlyPerformanceRequested).toBeUndefined();
     });
 
     it('omits special instructions entirely when the customer typed none', async () => {
@@ -1240,6 +1306,7 @@ describe('OrderWizardFacade', () => {
 
     function completeOrder(): void {
       facade.updateFormData({
+        dirtinessLevel: DirtinessLevel.Normal,
         cleaningDate: new Date('2026-07-01T00:00:00Z'),
         cleaningTime: '10:00',
         address: createAddressDto({
@@ -1318,6 +1385,23 @@ describe('OrderWizardFacade', () => {
       expect(facade.formData().paymentType).toBeNull();
       expect(facade.cashCleared()).toBe(true);
       expect(snackbar.showInfoTranslated).toHaveBeenCalledWith('pages.order.cash_cleared');
+    });
+
+    it('is taken away when a heavier level makes the booking a job for two', async () => {
+      signedIn.set(true);
+      await quoted();
+      facade.selectPaymentType(PaymentType.Cash);
+
+      orderClient.quote.mockReturnValue(of(TWO_CLEANER_QUOTE));
+      facade.updateFormData({ dirtinessLevel: DirtinessLevel.Heavy });
+      expect(facade.cashEligibility()).toEqual({ kind: 'pending' });
+      await facade.refreshQuoteNow();
+      TestBed.flushEffects();
+
+      const calls = orderClient.quote.mock.calls;
+      expect(calls[calls.length - 1][0].dirtinessLevel).toBe(DirtinessLevel.Heavy);
+      expect(facade.cashEligibility()).toEqual({ kind: 'needs_card', requiredCleaners: 2 });
+      expect(facade.formData().paymentType).toBeNull();
     });
 
     it('is taken away when the customer signs out', async () => {
@@ -1407,7 +1491,7 @@ describe('OrderWizardFacade', () => {
       expect(orderClient.createOrder).not.toHaveBeenCalled();
       expect(paymentClient.createOrder).not.toHaveBeenCalled();
       expect(facade.formData().paymentType).toBeNull();
-      expect(facade.activeStep()).toBe(3);
+      expect(facade.activeStep()).toBe(4);
       expect(facade.submitting()).toBe(false);
     });
 
@@ -1436,7 +1520,78 @@ describe('OrderWizardFacade', () => {
 
       expect(snackbar.showError).not.toHaveBeenCalled();
       expect(facade.formData().paymentType).toBeNull();
-      expect(facade.activeStep()).toBe(3);
+      expect(facade.activeStep()).toBe(4);
+    });
+
+    it.each(['order.cash_unpaid_receivable', 'order.cash_open_bookings_limit_reached'])(
+      'is taken off the order when the server refuses it with %s, leaving the interceptor toast alone',
+      async (code) => {
+        signedIn.set(true);
+        completeOrder();
+        await quoted();
+        facade.selectPaymentType(PaymentType.Cash);
+        orderClient.createOrder.mockReturnValue(throwError(() => ({ errors: { PaymentType: code } })));
+
+        await facade.submitOrder();
+
+        expect(snackbar.showError).not.toHaveBeenCalled();
+        expect(facade.formData().paymentType).toBeNull();
+        expect(facade.activeStep()).toBe(4);
+        expect(facade.cardCaptureVisible()).toBe(false);
+      },
+    );
+
+    it.each([
+      ['order.cash_unpaid_receivable', true],
+      ['order.cash_open_bookings_limit_reached', false],
+      ['order.cash_not_available', false],
+    ])('lists what is owed on the payment step only when %s refuses cash for an unpaid amount', async (code, owed) => {
+      signedIn.set(true);
+      completeOrder();
+      await quoted();
+      facade.selectPaymentType(PaymentType.Cash);
+      orderClient.createOrder.mockReturnValue(throwError(() => ({ errors: { PaymentType: code } })));
+
+      expect(facade.cashOwed()).toBe(false);
+      await facade.submitOrder();
+
+      expect(facade.cashOwed()).toBe(owed);
+    });
+
+    describe('without a saved card', () => {
+      async function refusedForWantOfACard(): Promise<void> {
+        signedIn.set(true);
+        completeOrder();
+        await quoted();
+        facade.selectPaymentType(PaymentType.Cash);
+        facade.activeStep.set(6);
+        orderClient.createOrder.mockReturnValue(
+          throwError(() => ({ errors: { PaymentType: 'order.cash_requires_saved_card' } })),
+        );
+        await facade.submitOrder();
+      }
+
+      it('opens the card-capture step and keeps cash on the booking', async () => {
+        await refusedForWantOfACard();
+
+        expect(facade.cardCaptureVisible()).toBe(true);
+        expect(facade.cardCaptureConsent()).toBe(false);
+        expect(facade.formData().paymentType).toBe(PaymentType.Cash);
+        expect(snackbar.showError).not.toHaveBeenCalled();
+      });
+
+      it('saves the card for the booking country and parks the booking where it was refused', async () => {
+        await refusedForWantOfACard();
+
+        facade.setCardCaptureConsent(true);
+        facade.startCardCapture();
+
+        const command = savedCardClient.createCheckoutSession.mock.calls[0][0];
+        expect(command.consentAccepted).toBe(true);
+        expect(command.countryId).toBe('cz');
+        expect(draft.park).toHaveBeenCalledWith(6, facade.formData());
+        expect(draft.park.mock.calls[0][1].paymentType).toBe(PaymentType.Cash);
+      });
     });
   });
 
@@ -1481,6 +1636,7 @@ describe('OrderWizardFacade', () => {
     const completeInlineOrder = (countryId: string) =>
       facade.updateFormData({
         selectedServiceIds: ['s1'],
+        dirtinessLevel: DirtinessLevel.Normal,
         cleaningDate: new Date('2026-07-01T00:00:00Z'),
         cleaningTime: '10:00',
         address: createAddressDto({ street: 'Hlavna 2', city: 'Bratislava', zipCode: '81101', countryId }),

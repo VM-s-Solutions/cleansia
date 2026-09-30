@@ -14,8 +14,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
@@ -23,6 +25,7 @@ import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.EventAvailable
+import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -47,6 +50,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.partner.R
 import cz.cleansia.partner.data.dashboard.DashboardStats
+import cz.cleansia.partner.data.payroll.CashHeld
 import java.time.LocalDate
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
@@ -72,6 +76,7 @@ fun EarningsSummaryScreen(
     viewModel: EarningsSummaryViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val cashHeld by viewModel.cashHeld.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {
@@ -116,6 +121,7 @@ fun EarningsSummaryScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = Spacing.M)
                 .padding(bottom = Spacing.L),
             verticalArrangement = Arrangement.spacedBy(Spacing.M),
@@ -124,6 +130,7 @@ fun EarningsSummaryScreen(
             HeadlineEarningsCard(stats = stats)
             BreakdownGrid(stats = stats)
             stats?.let { PayPeriodCard(it) }
+            if (cashHeld.isNotEmpty()) CashHeldCard(cashHeld)
             InvoicesEntryCard(onClick = onOpenInvoices)
         }
     }
@@ -324,6 +331,72 @@ private fun PayPeriodCard(stats: DashboardStats) {
 }
 
 /**
+ * The company cash the cleaner took at the door and has not handed over, per currency. Above the
+ * company's cap the server keeps cash jobs off their board, and this card is where they read why.
+ */
+@Composable
+private fun CashHeldCard(cashHeld: List<CashHeld>) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .border(
+                1.dp,
+                MaterialTheme.colorScheme.outlineVariant,
+                RoundedCornerShape(16.dp),
+            )
+            .padding(Spacing.L),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconHalo(icon = Icons.Outlined.Payments)
+            Spacer(Modifier.width(Spacing.M))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.earnings_cash_held_title),
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                Text(
+                    text = stringResource(R.string.earnings_cash_held_subtitle),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        cashHeld.forEach { held ->
+            val symbol = currencySymbol(held.currencyCode)
+            Spacer(Modifier.height(Spacing.M))
+            Divider()
+            Spacer(Modifier.height(Spacing.M))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = formatCash(held.amount, symbol),
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f),
+                )
+                held.floatCap?.let { cap ->
+                    Text(
+                        text = stringResource(R.string.earnings_cash_held_limit, formatCash(cap, symbol)),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+            if (held.cashJobsHidden) {
+                Spacer(Modifier.height(Spacing.XS))
+                Text(
+                    text = stringResource(R.string.earnings_cash_held_jobs_hidden),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
+        }
+    }
+}
+
+/**
  * Entry-point row to InvoicesListScreen. Renders as a regular flat
  * card row so it sits in family with the earnings cards above; tap
  * navigates to the dedicated invoice list.
@@ -414,6 +487,12 @@ private fun currencySymbol(code: String?): String {
     return runCatching { Currency.getInstance(code).getSymbol(Locale.getDefault()) }
         .getOrNull()
         ?: code
+}
+
+/** Cash is owed to the cent, so unlike the earnings figures it is not rounded to a whole unit. */
+private fun formatCash(amount: Double, symbol: String): String {
+    val formatted = String.format(Locale.getDefault(), "%,.2f", amount)
+    return if (symbol.isBlank()) formatted else "$formatted $symbol"
 }
 
 /**

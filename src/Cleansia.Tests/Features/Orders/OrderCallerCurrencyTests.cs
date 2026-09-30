@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Loyalty;
@@ -86,6 +87,7 @@ public class OrderCallerCurrencyTests
             .Setup(c => c.CalculateAsync(
                 It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(),
                 It.IsAny<IEnumerable<string>>(), It.IsAny<int>(), It.IsAny<int>(),
+                It.IsAny<DirtinessLevel>(),
                 It.IsAny<string?>(), It.IsAny<DateTime?>(), It.IsAny<string?>(),
                 It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(CreateOrderTestData.MatchingPricing());
@@ -127,6 +129,7 @@ public class OrderCallerCurrencyTests
         _pricingCalculator.Verify(c => c.CalculateAsync(
             It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(),
             It.IsAny<IEnumerable<string>>(), It.IsAny<int>(), It.IsAny<int>(),
+            It.IsAny<DirtinessLevel>(),
             currencyId, It.IsAny<DateTime?>(), It.IsAny<string?>(),
             It.IsAny<DateTime>(), It.IsAny<CancellationToken>()), times);
 

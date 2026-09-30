@@ -195,7 +195,8 @@ public class EmailServiceCurrencySymbolTests
             httpClientFactory.Object,
             translationRepository.Object,
             renderer.Object,
-            Mock.Of<ICountryConfigurationRepository>());
+            Mock.Of<ICountryConfigurationRepository>(),
+            Mock.Of<ICompanyInfoRepository>());
 
         return (service, captured);
     }

@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Shared.DTOs.Enums;
+using Cleansia.Core.Domain.Enums;
 
 namespace Cleansia.Core.AppServices.Features.Orders;
 
@@ -30,6 +31,30 @@ public static class BookingPolicy
     /// 0.20 = +20%.
     /// </summary>
     public const decimal ExpressSurchargeRate = 0.20m;
+
+    /// <summary>
+    /// The dirtiness surcharge rates, on the whole basket, extras included (owner ruling 2026-09-28).
+    /// Normal adds nothing.
+    /// </summary>
+    public const decimal IncreasedDirtinessSurchargeRate = 0.30m;
+    public const decimal HeavyDirtinessSurchargeRate = 0.60m;
+
+    public static decimal DirtinessSurchargeRate(DirtinessLevel level) => level switch
+    {
+        DirtinessLevel.Normal => 0m,
+        DirtinessLevel.Increased => IncreasedDirtinessSurchargeRate,
+        DirtinessLevel.Heavy => HeavyDirtinessSurchargeRate,
+        _ => throw new ArgumentOutOfRangeException(nameof(level), level, null),
+    };
+
+    /// <summary>
+    /// The dirtiness surcharge on a sum of lines, in cents. It sits inside the raw subtotal: discounts
+    /// come off lines + surcharge and express compounds on top, so heavy + express is x1.92. Rounded
+    /// here, once, so the raw subtotal stays whole cents and lines + dirtiness + express - discounts
+    /// reconciles to the stored total. Shared by the calculator and <c>OrderFactory</c>.
+    /// </summary>
+    public static decimal DirtinessSurchargeFor(decimal linesSubtotal, DirtinessLevel level)
+        => Math.Round(linesSubtotal * DirtinessSurchargeRate(level), 2, MidpointRounding.AwayFromZero);
 
     /// <summary>
     /// Largest home supported by the booking picker and every basket validator.
@@ -103,6 +128,21 @@ public static class BookingPolicy
 
     /// <summary>Cancellations between this threshold and <see cref="FreeCancellationHours"/> incur partial fee; below this, last-minute fee.</summary>
     public const int PartialCancellationHours = 4;
+
+    /// <summary>
+    /// How long past the booked start the assigned cleaner waits at the door before reporting that they
+    /// cannot get in (owner ruling 2026-09-28, decision 11) — the 15 minutes the customer FAQ promises.
+    /// </summary>
+    public const int LockoutWaitMinutes = 15;
+
+    /// <summary>A lockout an administrator confirmed is a customer cancellation at the whole price.</summary>
+    public const decimal LockoutFeeRate = 1.00m;
+
+    /// <summary>
+    /// The assigned crew's share of a late-cancellation or lockout fee, paid once the fee is collected and
+    /// split across the seats as job pay is (owner ruling 2026-09-28, decision 12).
+    /// </summary>
+    public const decimal CleanerFeeShareRate = 0.50m;
 
     /// <summary>
     /// "Oops window" — free cancellation within N minutes of booking, even with a cleaner already on the
@@ -185,6 +225,12 @@ public static class BookingPolicy
     /// </summary>
     public static bool AllowsCash(bool signedIn, int requiredEmployees)
         => signedIn && requiredEmployees == 1;
+
+    /// <summary>
+    /// Owner ruling 2026-09-28: a customer holds at most this many cash bookings that are open and not yet
+    /// paid; the next one pays by card. No amount ceiling; the saved card is the rest of the guarantee.
+    /// </summary>
+    public const int MaxOpenUnpaidCashBookings = 2;
 
     /// <summary>
     /// Longest span a booking may be created with. <b>A DISCLOSURE bound, not a double-booking one</b>

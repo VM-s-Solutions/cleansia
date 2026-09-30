@@ -901,19 +901,21 @@
         <p class="cl-body cl-wiz__lead">
           {{ 'pages.order.plus_lead_before' | translate }}
           <strong class="cl-wiz__plus-amount">{{ formatPrice(savings.wouldSaveAmount, savings.currencyCode) }}</strong>
-          @if (trialDays() > 0) {
-            {{ 'pages.order.plus_lead_after' | translate: { days: trialDays() } }}
-          } @else {
+          @if (trialDaysOnEveryPlan() > 0) {
+            {{ 'pages.order.plus_lead_after' | translate: { days: trialDaysOnEveryPlan() } }}
+          } @else if (trialOnNoPlan()) {
             {{ 'pages.order.plus_lead_after_no_trial' | translate }}
+          } @else {
+            {{ 'pages.order.plus_lead_after_plans_differ' | translate }}
           }
         </p>
-        } @else {
+        } @else if (trialDaysOnEveryPlan() > 0) {
         <p class="cl-body cl-wiz__lead">
-          @if (trialDays() > 0) {
-            {{ 'pages.order.plus_lead_plain' | translate: { days: trialDays() } }}
-          } @else {
-            {{ 'pages.order.plus_lead_plain_no_trial' | translate }}
-          }
+          {{ 'pages.order.plus_lead_plain' | translate: { days: trialDaysOnEveryPlan() } }}
+        </p>
+        } @else if (trialOnNoPlan()) {
+        <p class="cl-body cl-wiz__lead">
+          {{ 'pages.order.plus_lead_plain_no_trial' | translate }}
         </p>
         }
 

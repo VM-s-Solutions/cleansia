@@ -707,7 +707,8 @@ export class OrderWizardComponent implements OnInit {
    */
   readonly declineMascot = 'assets/images/mascot/mascot-ready.webp';
 
-  readonly trialDays = this.facade.trialDays;
+  readonly trialDaysOnEveryPlan = this.facade.trialDaysOnEveryPlan;
+  readonly trialOnNoPlan = this.facade.trialOnNoPlan;
 
   /**
    * Services not already in the basket, three at most.

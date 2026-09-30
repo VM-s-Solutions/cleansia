@@ -170,7 +170,7 @@ describe('OrderMembershipFacade', () => {
     });
 
     it("is the plan's own trial for a customer the server has not answered for", () => {
-      expect(facade.trialDays()).toBe(14);
+      expect(facade.trialDaysOnEveryPlan()).toBe(14);
       expect(facade.trialDaysOf(plus(30))).toBe(30);
     });
 
@@ -181,8 +181,49 @@ describe('OrderMembershipFacade', () => {
 
       facade.load(true);
 
-      expect(facade.trialDays()).toBe(0);
+      expect(facade.trialDaysOnEveryPlan()).toBe(0);
       expect(facade.trialDaysOf(plus(30))).toBe(0);
+    });
+  });
+
+  // The step's lead speaks for every plan card at once, and each plan carries its own trial.
+  describe('the billing terms the Plus step lead states', () => {
+    const plansOffering = (...trials: number[]) =>
+      trials.map((trialPeriodDays, index) =>
+        GetMembershipPlansResponse.fromJS({ code: `PLUS_${index}`, trialPeriodDays }),
+      );
+    const lead = () => ({
+      trialDaysOnEveryPlan: facade.trialDaysOnEveryPlan(),
+      trialOnNoPlan: facade.trialOnNoPlan(),
+    });
+
+    beforeEach(() => build('browser'));
+
+    it.each([
+      [[14, 14], { trialDaysOnEveryPlan: 14, trialOnNoPlan: false }],
+      [[0, 0], { trialDaysOnEveryPlan: 0, trialOnNoPlan: true }],
+      [[14, 0], { trialDaysOnEveryPlan: 0, trialOnNoPlan: false }],
+      [[0, 14], { trialDaysOnEveryPlan: 0, trialOnNoPlan: false }],
+      [[14, 30], { trialDaysOnEveryPlan: 0, trialOnNoPlan: false }],
+      [[], { trialDaysOnEveryPlan: 0, trialOnNoPlan: false }],
+    ])('for plans offering %j free days is %j', (trials, expected) => {
+      membershipClient.getPlans.mockReturnValue(of(plansOffering(...trials)));
+
+      facade.loadPlans();
+
+      expect(lead()).toEqual(expected);
+    });
+
+    it('says billing starts today to a customer who has had their trial', () => {
+      membershipClient.getPlans.mockReturnValue(of(plansOffering(14, 14)));
+      membershipClient.getMine.mockReturnValue(
+        of(GetMyMembershipResponse.fromJS({ hasMembership: false, trialEligible: false })),
+      );
+
+      facade.loadPlans();
+      facade.load(true);
+
+      expect(lead()).toEqual({ trialDaysOnEveryPlan: 0, trialOnNoPlan: true });
     });
   });
 

@@ -66,8 +66,10 @@ const SURFACES: Surface[] = [
       '@if (facade.trialDays() > 0) {',
       '@if (facade.monthlyTrialDays() > 0) {',
       '@if (facade.yearlyTrialDays() > 0) {',
+      '@if (facade.trialOnEveryPlan()) {',
     ],
     mustBeGated: [
+      'pages.plus.plans_footnote',
       'pages.plus.cta_trial',
       'pages.plus.cta_try_free',
       'pages.plus.closing_title',
@@ -239,5 +241,32 @@ describe('the booking and Plus pages offer the trial this customer can still hav
     'order-wizard/src/lib/order-wizard/order-wizard.component.html',
   ])('%s never reads the plan trial column', (template) => {
     expect(readFileSync(join(FEATURES_DIR, template), 'utf8')).not.toContain('trialPeriodDays');
+  });
+});
+
+// A sentence under all the plan cards at once speaks for each of them, and each plan carries its
+// own trial — so it states billing terms only when every card shares them, never one card's.
+describe('a sentence speaking for every plan card states only the terms they share', () => {
+  const PLUS = 'plus/src/lib/plus/plus-page.component.html';
+  const WIZARD = 'order-wizard/src/lib/order-wizard/order-wizard.component.html';
+
+  it.each([
+    [PLUS, '@if (facade.trialOnEveryPlan()) {', 'pages.plus.plans_footnote'],
+    [PLUS, '@else if (facade.trialOnNoPlan()) {', 'pages.plus.plans_footnote_no_trial'],
+    [WIZARD, '@if (trialDaysOnEveryPlan() > 0) {', 'pages.order.plus_lead_after'],
+    [WIZARD, '@else if (trialDaysOnEveryPlan() > 0) {', 'pages.order.plus_lead_plain'],
+    [WIZARD, '@else if (trialOnNoPlan()) {', 'pages.order.plus_lead_after_no_trial'],
+    [WIZARD, '@else if (trialOnNoPlan()) {', 'pages.order.plus_lead_plain_no_trial'],
+  ])('%s renders behind %s the key %s', (template, gate, key) => {
+    const { gated } = renderedKeys({
+      name: template,
+      template: join(FEATURES_DIR, template),
+      gates: [gate],
+      mustBeGated: [],
+      mustBeUngated: [],
+      blocks: [],
+    });
+
+    expect([...gated]).toContain(key);
   });
 });

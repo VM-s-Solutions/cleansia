@@ -78,6 +78,22 @@ export class PlusPageFacade extends UnsubscribeControlDirective {
     offeredTrialDays(this.yearlyPlan(), this.membership()),
   );
 
+  /**
+   * The footnote under the plan cards speaks for every card at once, and the trial length is per
+   * plan — so it may only state billing terms the cards share. When they differ it says nothing,
+   * and each card states its own.
+   */
+  private readonly cardTrialDays = computed(() => [
+    ...(this.monthlyPlan() ? [this.monthlyTrialDays()] : []),
+    ...(this.yearlyPlan() ? [this.yearlyTrialDays()] : []),
+  ]);
+  readonly trialOnEveryPlan = computed(
+    () => this.cardTrialDays().length > 0 && this.cardTrialDays().every((days) => days > 0),
+  );
+  readonly trialOnNoPlan = computed(
+    () => this.cardTrialDays().length > 0 && this.cardTrialDays().every((days) => days === 0),
+  );
+
   load(): void {
     this.store
       .select(selectMarketCountryId)

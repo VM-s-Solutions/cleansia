@@ -367,13 +367,11 @@
         }
       </div>
 
-      <p class="cl-muted cl-plusp__note">
-        @if (facade.trialDays() > 0) {
-          {{ 'pages.plus.plans_footnote' | translate }}
-        } @else {
-          {{ 'pages.plus.plans_footnote_no_trial' | translate }}
-        }
-      </p>
+      @if (facade.trialOnEveryPlan()) {
+        <p class="cl-muted cl-plusp__note">{{ 'pages.plus.plans_footnote' | translate }}</p>
+      } @else if (facade.trialOnNoPlan()) {
+        <p class="cl-muted cl-plusp__note">{{ 'pages.plus.plans_footnote_no_trial' | translate }}</p>
+      }
     }
 
     <h2 class="cl-d2 cl-plusp__h2">{{ 'pages.plus.faq_title' | translate }}</h2>

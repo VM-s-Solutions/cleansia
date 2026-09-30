@@ -283,7 +283,8 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   readonly plusSavings = this.membership.plusSavings;
   readonly expressWaiverAvailable = this.membership.expressWaiverAvailable;
   readonly expressWaiverExhausted = this.membership.expressWaiverExhausted;
-  readonly trialDays = this.membership.trialDays;
+  readonly trialDaysOnEveryPlan = this.membership.trialDaysOnEveryPlan;
+  readonly trialOnNoPlan = this.membership.trialOnNoPlan;
 
   // ─── Preferred cleaner (Plus) ───────────────────────────────────
   //

@@ -117,7 +117,8 @@ class FakeOrderWizardFacade {
   plans = signal<GetMembershipPlansResponse[]>([]);
   plusSavings = signal<QuotePlusSavingsResponse | null>(null);
   plusUnavailable = signal(false);
-  trialDays = signal(0);
+  trialDaysOnEveryPlan = signal(0);
+  trialOnNoPlan = signal(false);
   trialDaysOf = jest.fn(() => 0);
   activeMembership = signal<GetMyMembershipResponse | null>(null);
   loadPlans = jest.fn();

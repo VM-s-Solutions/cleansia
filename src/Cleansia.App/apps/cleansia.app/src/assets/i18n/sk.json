@@ -848,6 +848,7 @@
       },
       "plus_lead_after": ". Prvých {{days}} dní je členstvo zdarma, takže dnes neplatíte nič navyše.",
       "plus_lead_after_no_trial": ". Účtovanie začína dnes a kedykoľvek môžete zrušiť.",
+      "plus_lead_after_plans_differ": ".",
       "plus_lead_before": "Na dnešnej objednávke by ste ušetrili",
       "plus_lead_plain": "Prvých {{days}} dní je členstvo zdarma, takže dnes neplatíte nič navyše.",
       "plus_lead_plain_no_trial": "Účtovanie začína dnes a kedykoľvek môžete zrušiť.",

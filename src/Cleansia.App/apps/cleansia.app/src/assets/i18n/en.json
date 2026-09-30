@@ -848,6 +848,7 @@
       },
       "plus_lead_after": ". The first {{days}} days are free, so you pay nothing extra today.",
       "plus_lead_after_no_trial": ". Billing starts today and you can cancel any time.",
+      "plus_lead_after_plans_differ": ".",
       "plus_lead_before": "On this order you would save",
       "plus_lead_plain": "The first {{days}} days are free, so you pay nothing extra today.",
       "plus_lead_plain_no_trial": "Billing starts today and you can cancel any time.",

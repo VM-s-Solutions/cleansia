@@ -1896,6 +1896,7 @@
       "invalid_apple_token": "Apple sign-in failed. Please try again.",
       "social_account_not_found": "We couldn't find an account for that sign-in. Please sign up first.",
       "invalid_password_format": "Your password doesn't meet the requirements.",
+      "admin_password_too_short": "Administrator passwords must be at least 12 characters long.",
       "invalid_reset_token": "That reset code is invalid or has expired.",
       "same_reset_password": "Your new password must be different from your current one.",
       "current_password_invalid": "Your current password is incorrect.",

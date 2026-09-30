@@ -55,8 +55,9 @@ enum AppConfig {
 
 :::
 
-Both platforms default to the Azure DEV host so a fresh clone of either one hits the same backend
-with no local setup. Full table of defaults per build type: [Overview](/mobile-app/overview#android).
+Both platforms' debug builds default to the Azure DEV host, so a fresh clone of either one hits the
+same backend with no local setup; release builds call the production domains. Full table of defaults
+per build type: [Overview](/mobile-app/overview#build-types-and-where-the-base-url-comes-from).
 
 ## The generated clients
 

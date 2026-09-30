@@ -877,6 +877,7 @@
       "invalid_apple_token": "Neplatný Apple token",
       "social_account_not_found": "Tomuto přihlášení neodpovídá žádný účet. Nejprve se zaregistrujte.",
       "invalid_password_format": "Neplatný formát hesla",
+      "admin_password_too_short": "Heslo administrátora musí mít alespoň 12 znaků.",
       "invalid_reset_token": "Neplatný token pro obnovení hesla",
       "same_reset_password": "Nové heslo se shoduje se starým heslem",
       "insufficient_privileges": "Nemáte oprávnění přistupovat k partnerské aplikaci. Přihlásit se mohou pouze partneři a administrátoři.",

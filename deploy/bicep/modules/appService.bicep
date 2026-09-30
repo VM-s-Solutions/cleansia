@@ -42,6 +42,15 @@ param stagingSlotEnabled bool = false
 @description('Subnet id for regional VNet integration (the Q-INFRA-03 private-networking seam). Empty (default) = no VNet integration — the dev public-endpoint posture unchanged.')
 param virtualNetworkSubnetId string = ''
 
+@description('''Name of a Static Web App (same resource group, Standard tier) to link this host to as its backend.
+Empty (default) = no link. When set, the SWA proxies its /api/* to this host and Azure configures the
+host's authentication with the "Azure Static Web Apps (Linked)" provider, so the production slot
+answers 401 to anything the SWA did not proxy. The link guards the production slot only, and App
+Service authentication settings stay with their slot across a swap, so the staging slot is closed
+too: it answers 401 to everything except /health, which CI warms before every swap. Unlinking does
+not remove the provider — see deploy/AZURE-DEV-RUNBOOK.md §11.''')
+param linkedStaticWebAppName string = ''
+
 @description('Resource tags applied to the host.')
 param tags object = {}
 
@@ -153,6 +162,36 @@ resource stagingSlotScmBasicAuth 'Microsoft.Web/sites/slots/basicPublishingCrede
   name: 'scm'
   properties: {
     allow: false
+  }
+}
+
+resource linkedStaticWebApp 'Microsoft.Web/staticSites@2023-12-01' existing = if (!empty(linkedStaticWebAppName)) {
+  name: linkedStaticWebAppName
+}
+
+resource staticWebAppBackendLink 'Microsoft.Web/staticSites/linkedBackends@2023-12-01' = if (!empty(linkedStaticWebAppName)) {
+  parent: linkedStaticWebApp
+  name: 'backend'
+  properties: {
+    backendResourceId: appService.id
+    region: location
+  }
+}
+
+resource stagingSlotAuth 'Microsoft.Web/sites/slots/config@2023-12-01' = if (stagingSlotEnabled && !empty(linkedStaticWebAppName)) {
+  parent: stagingSlot
+  name: 'authsettingsV2'
+  properties: {
+    platform: {
+      enabled: true
+    }
+    globalValidation: {
+      requireAuthentication: true
+      unauthenticatedClientAction: 'Return401'
+      excludedPaths: [
+        '/health'
+      ]
+    }
   }
 }
 

@@ -2,7 +2,17 @@
   <div class="cleansia-admin-profile__container page-wrapper page-wrapper--narrow">
     <div class="cleansia-page-header">
       <div class="cleansia-page-header__heading">
+        @if (facade.passwordChangeRequired) {
+        <cleansia-title
+          [title]="'pages.admin_profile.password_change_required.title' | translate"
+          [level]="1"
+        />
+        <p class="cleansia-page-header__description">
+          {{ 'pages.admin_profile.password_change_required.description' | translate }}
+        </p>
+        } @else {
         <cleansia-title [title]="'pages.admin_profile.title' | translate" [level]="1" />
+        }
       </div>
     </div>
 
@@ -56,6 +66,14 @@
       </cleansia-section>
 
       <div class="form-actions">
+        @if (facade.passwordChangeRequired) {
+        <cleansia-button
+          [label]="'pages.admin_profile.password_change_required.sign_out' | translate"
+          icon="pi pi-sign-out"
+          [outlined]="true"
+          (onClick)="facade.signOut()"
+        />
+        }
         <cleansia-button
           [label]="'pages.admin_profile.change_password.submit' | translate"
           type="submit"

@@ -6845,6 +6845,9 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<DateTimeOffset?>("LockoutEndsAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<bool>("MustChangePassword")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Password")
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");

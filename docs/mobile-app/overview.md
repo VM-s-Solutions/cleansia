@@ -95,30 +95,32 @@ Neither app has product flavors. Each build type bakes `API_BASE_URL` into `Buil
 |---|---|---|---|
 | `debug` | no | `.debug` | `https://api-cleansia-partner-mobile-weu-dev.azurewebsites.net/` |
 | `staging` | yes | `.staging` | `https://api-cleansia-partner-mobile-weu-dev.azurewebsites.net/` |
-| `release` | yes + shrink | — | `https://api-cleansia-partner-mobile-weu-dev.azurewebsites.net/` |
+| `release` | yes + shrink | — | `https://api-partner-mobile.cleansia.cz/` |
 
 **`:customer-app`** (`debug` and `release` only — there is no staging type)
 
 | Build type | Minify | `applicationId` suffix | Default `API_BASE_URL` |
 |---|---|---|---|
 | `debug` | no | `.debug` | `https://api-cleansia-customer-mobile-weu-dev.azurewebsites.net/` |
-| `release` | yes + shrink | — | `https://api-cleansia-customer-mobile-weu-dev.azurewebsites.net/` |
+| `release` | yes + shrink | — | `https://api-customer-mobile.cleansia.cz/` |
 
-**Every build type of both apps points at the Azure DEV host**, deliberately matching what iOS
-ships in its `project.yml`, so a fresh clone of either platform hits the same backend with no local
-setup — and so a release build and a TestFlight build are talking to the same place.
+**A release build calls production; every other build calls the Azure DEV host** (E-7 of the
+2026-09-27 meeting plan). iOS matches it: both `project.yml` files give the Debug configuration the
+DEV host and the Release configuration the same production domain, and the TestFlight lanes archive
+Release, so a TestFlight upload calls production too. A fresh clone of either platform still reaches
+DEV with no local setup.
 
-> Partner's `release` and `staging` types used to default to `api.cleansia.cz` and
-> `staging-api.cleansia.cz`. Neither hostname has ever resolved: there is no prod resource group,
-> no binding and no certificate, and the only other mention of the first in the tree is a
-> commented-out line in a bicepparam whose own header reads *"AUTHORED, NOT DEPLOYED"*. A partner
-> release build shipped against them failed every request at DNS. When a real production host
-> exists, set it — do not restore those names on the assumption they mean something.
+> **Neither production domain resolves yet — an owner step before the first release upload.**
+> `api-partner-mobile.cleansia.cz` and `api-customer-mobile.cleansia.cz` need their CNAME and
+> `asuid` TXT records (`deploy/AZURE-DEV-RUNBOOK.md` §12.1), then an `api-partner-mobile` and an
+> `api-customer-mobile` key in the `customDomains` of `weu.prod.bicepparam`, which `main.bicep`
+> binds to the two production mobile hosts. Until then an Android release build that must reach DEV
+> passes the DEV host with `-PAPI_BASE_URL`. No iOS lane forwards an override, so a TestFlight build
+> made before the domains exist calls a host that does not answer.
 
-> The partner app resolves its URL **per build type**; the customer app resolves it **once in
-> `defaultConfig`**, so its `release` build inherits the same default. Either way a production
-> build must be given a real `API_BASE_URL` explicitly — neither picks up a production host on its
-> own.
+> The partner app's `staging` type is a minified build of the DEV backend: `staging-api.cleansia.cz`
+> never existed, and no staging host is provisioned. Nor is the partner release host
+> `api.cleansia.cz`: that name is planned for the partner **web** API.
 
 Point either app somewhere else **without editing a build file** — the override wins for every build
 type:
@@ -151,7 +153,12 @@ fall back to an empty string so an unconfigured clone still builds:
 
 `google-services.json` is gitignored per app. If it is missing, the build copies the committed
 `google-services.sample.json` placeholder so `assembleDebug` still produces a working APK — push
-then silently no-ops at runtime. Replace it with the real Firebase config before any release build.
+then silently no-ops at runtime. **A release packaging task refuses the placeholder** (E-7): an
+`assemble`, `bundle`, `install`, `publish` or `package` task ending in `Release` fails unless the
+config the release variant reads is real — `<app>/src/release/google-services.json`, which a release
+build reads ahead of `<app>/google-services.json`. The owner puts the production Firebase project's
+config for `cz.cleansia.partner` and `cz.cleansia.customer` there (gitignored); debug builds keep
+reading the module-root file.
 
 ### Permissions
 
@@ -536,6 +543,11 @@ bundle exec fastlane all
 Each lane regenerates the OpenAPI client and the `.xcodeproj`, picks the next build number from
 TestFlight, archives Release with automatic signing, and uploads. See
 `src/cleansia_ios/fastlane/README.md`.
+
+An upload is a **production** build: Release calls `api-partner-mobile.cleansia.cz` or
+`api-customer-mobile.cleansia.cz` ([Build types](#build-types-and-where-the-base-url-comes-from)), so the
+`GoogleService-Info.plist` on the Mac must be the production Firebase project's. iOS has no gate like
+Android's: an app built without the plist runs, without push (`GoogleServicePlist.isPresent`).
 
 ---
 

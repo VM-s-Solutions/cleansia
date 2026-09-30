@@ -434,6 +434,9 @@ const CUSTOMER_SURFACE_ERROR_KEYS: readonly string[] = [
   // arms of the ChangePassword validator are reachable from the customer app.
   'auth.invalid_reset_token',
   'auth.same_reset_password',
+  // The reset is keyed on the address, so an administrator can complete one here too and is
+  // refused a password under 12 characters once the code checks out.
+  'auth.admin_password_too_short',
   // Refresh: RefreshToken splits its failures in two — the reuse/theft signal
   // gets its own key, and expiry, an unknown token or an audience mismatch all
   // land on invalid_refresh_token.

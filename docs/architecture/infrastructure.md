@@ -57,12 +57,12 @@ Key Vault
 | Secret | Used By | Purpose |
 |--------|---------|---------|
 | `Jwt--Key` | All APIs | JWT signing key (issuer/audience are code-side constants, not KV secrets) |
-| `ConnectionStrings--cleansia-db` | All APIs, Functions, CI migrate job | PostgreSQL connection string |
+| `ConnectionStrings--cleansia-db` | All APIs, Functions; the CI migrate job on DEV | PostgreSQL connection string. On production it is the least-privilege `cleansia_app` login's, `Ssl Mode=VerifyFull`, and the migration signs in as the administrator without it — [Azure setup — production posture](/deployment/azure-setup#production-posture) |
 | `Stripe--SecretKey` | Customer API | Stripe payment processing |
 | `Stripe--WebhookSecret` | Customer API | Stripe webhook signature verification |
 | `SendGrid--ApiKey` | Functions, APIs | Email delivery |
 | `Sentry--Dsn` | The five APIs (not Functions) | Error tracking — **empty on DEV, so Sentry is off**. See [Observability](#observability) |
-| `Storage--ConnectionString` | All APIs, Functions | Azure Blob/Queue Storage |
+| `Storage--ConnectionString` | All APIs, Functions — **DEV only** | Azure Blob/Queue Storage. Production has no storage secret: the hosts use their managed identity and the account refuses shared keys |
 | `Fiscal--CzechEet2--ApiKey` | APIs, Functions (only once `fiscalSecretProvisioned` is true) | Czech EET fiscal API key |
 | `Fiscal--CzechEet2--CertificatePassword` | APIs, Functions (only once `fiscalSecretProvisioned` is true) | Czech EET certificate password |
 
@@ -317,7 +317,9 @@ write refused by a frozen company is dead-lettered instead.
 
 ### Stripe
 
-Used for customer payments via Checkout Sessions.
+Used for customer payments via Checkout Sessions. One account per environment: a sandbox on DEV, and
+on production the operating company's own account (decision 49) —
+[Environment configuration — Stripe](/deployment/environment-config#stripe).
 
 | Configuration | Purpose |
 |--------------|---------|

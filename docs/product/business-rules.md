@@ -1833,8 +1833,12 @@ company, from the first write:
   created in. Login, password reset and social sign-in find the one account wherever it lives.
 - **Each company keeps its own books:** receipts and refunds belong to the order’s operator, receipt
   numbers come from that operator’s counter, its pay rates and promo codes are its own, and a site-wide
-  campaign reaches its own customers only. Card payments use **one holding Stripe account**, with
-  revenue settled intercompany (Q-TENANCY-01/05); there is no per-company Stripe account today.
+  campaign reaches its own customers only. **Card payments are taken on the operating company's own
+  Stripe account**, so the payee a customer sees is the company that issues the receipt (decision 49,
+  owner ruling 2026-09-28; it replaces the holding account with intercompany settlement of
+  Q-TENANCY-01/05). The platform configures one Stripe account per environment, so this holds while
+  there is one operating company: a second company that takes card payments needs its own account
+  first → [Environment configuration — Stripe](/deployment/environment-config#stripe)
 
 **Opening a market is data, gated twice** — three times when a *new* company will serve it: the
 currency needs a loyalty divisor before `ActivateCurrency` accepts it

@@ -48,7 +48,6 @@
       "order": "Book a Cleaning",
       "orders": "My Orders",
       "order_detail": "Order Detail",
-      "order_contract": "Contract for work",
       "profile": "My Profile",
       "disputes": "My Disputes",
       "rewards": "My Rewards",
@@ -514,13 +513,12 @@
         "help_center": "Help Center",
         "gdpr_link": "Privacy & GDPR",
         "terms_link": "Terms of Service",
-        "work_contract_link": "Contract for work",
+        "complaints_procedure_link": "Complaints procedure",
         "description": "Professional mobile cleaning services. Furniture, carpets, mattresses — we come to you.",
         "address": "Prague, Czech Republic",
         "services_col": "Services",
         "hours_label": "Open daily",
         "hours_value": "08:00-20:00",
-        "registration": "Reg. no. [ICO] · VAT [DIC]",
         "apps": "Get the app",
         "apps_coming_soon": "Coming soon",
         "svc_home": "Home cleaning",
@@ -684,6 +682,18 @@
       "credit": {
         "auto_applied": "Credit — applied to your next booking automatically.",
         "expires_on": "It expires on {{date}} — every booking pushes that back."
+      },
+      "saved_cards": {
+        "title": "Saved cards",
+        "desc": "The card that guarantees your cash bookings. It is charged only for the fees and unpaid cash you agreed to when you saved it.",
+        "empty": "No card saved. You will be asked to save one the next time you pay in cash.",
+        "load_error": "We couldn't load your saved cards.",
+        "card_label": "{{brand}} ending in {{last4}}",
+        "expires": "Expires {{expiry}} · for bookings in {{currency}}",
+        "remove_confirm": "Remove the card ending in {{last4}}? Your next cash booking will ask you to save a card again.",
+        "remove_success": "Card removed.",
+        "setup_success": "Your card is saved. You can finish your cash booking now.",
+        "setup_cancelled": "No card was saved. To pay in cash, save a card — or pay by card."
       }
     },
     "services": {
@@ -808,6 +818,7 @@
         "time": "Pick a time that is still available.",
         "address_fields": "Fill in the street, city and postcode.",
         "terms": "Accept the terms to continue.",
+        "early_performance": "Confirm that you want the cleaning to start within the withdrawal period.",
         "payment": "Choose how you want to pay."
       },
       "new_address": "Enter a new address",
@@ -972,7 +983,10 @@
       "summary_services": "Services",
       "summary_with_plus": "With Plus you would pay",
       "terms_already_accepted": "You accepted our Terms of Service and Privacy Policy with your account.",
-      "work_contract_notice": "By confirming the order you conclude a contract for work with the cleaner on <a href='/work-contract' target='_blank' rel='noopener'>these terms</a>.",
+      "contract_notice": "By confirming the order you conclude a contract for the cleaning with the operating company of the market where your home is, under its <a href='/terms' target='_blank' rel='noopener'>terms of service</a>. The cleaner carries it out as a subcontractor of the company and is not a party to your contract.",
+      "early_performance": {
+        "early-performance-draft-2026-09-29": "I ask for the cleaning to start within the 14-day withdrawal period, and I acknowledge that I lose the right to withdraw once the cleaning has been fully performed."
+      },
       "time_label": "Select Time",
       "time_note": "Greyed times are already inside today’s lead time. Daily windows {{first}}:00–{{last}}:00.",
       "title": "Book a Cleaning",
@@ -986,6 +1000,7 @@
       "cash_needs_card": "Cleaners needed for this booking: {{count}}. Cash is only for bookings one cleaner handles alone, so this one is paid by card.",
       "cash_pending": "Whether you can pay in cash is confirmed once the price is ready.",
       "cash_cleared": "Cash is no longer available for this booking, so no payment method is selected. Choose how you want to pay.",
+      "cash_owed": "Cash is not available while an amount from an earlier booking is unpaid. Pay it below and this booking will be waiting when you come back to book — or pay this booking by card now.",
       "cash_sign_in": "Sign in",
       "plus_perk_grace": "60 minutes after every booking to cancel free, instead of 15 minutes",
       "dirtiness": {
@@ -1020,6 +1035,15 @@
           "sign_4": "dried-on dirt on the floor, sticky surfaces, a strong smell",
           "surcharge_line": "Heavy dirtiness surcharge"
         }
+      },
+      "card_capture": {
+        "title": "Save a card to pay in cash",
+        "intro": "A cash booking is guaranteed by a card saved to your account. Saving it charges nothing, and you still pay the cleaner in cash.",
+        "consent": {
+          "card-guarantee-draft-2026-09-28": "I agree that Cleansia may charge this card, without asking me each time, for a late-cancellation fee, a fee when the cleaner cannot get into my home, cash I did not pay for a booking, and an extra charge I approved."
+        },
+        "continue": "Save card",
+        "cancel": "Not now"
       }
     },
     "orders": {
@@ -1134,10 +1158,6 @@
       "step_refunded": "Refunded",
       "step_not_assigned_yet": "Not assigned yet",
       "crew_others": "and {{count}} more",
-      "work_contract": {
-        "accepted_line": "Contract for work accepted by {{name}} on {{date}}, version {{version}}",
-        "read": "Read the contract"
-      },
       "the_booking": "The booking",
       "label_when": "When",
       "label_address": "Address",
@@ -1191,24 +1211,19 @@
         "begun_in_app": "You started paying for this cleaning in the mobile app. Please finish the payment there."
       }
     },
-    "order_contract": {
-      "eyebrow": "Your booking's contract",
-      "title": "Contract for work",
-      "back": "Back to the order",
-      "facts": {
-        "title": "The job as accepted",
-        "order_number": "Order number",
-        "window": "Date and time",
-        "price": "Price",
-        "location": "Location",
-        "rooms_bathrooms": "Rooms / bathrooms",
-        "services": "Services",
-        "packages": "Packages",
-        "extras": "Extras"
-      },
-      "accepted_on": "Accepted by the cleaner on {{date}}, version {{version}}",
-      "accepted_in_language": "Accepted in {{language}}",
-      "load_error": "We couldn't load this contract. Please try again."
+    "amount_due": {
+      "title": "Amount due",
+      "intro": "Until it is paid, you cannot book with cash. Bookings paid by card are not affected.",
+      "after_payment": "Just paid? It can take a minute before it disappears from here.",
+      "pay": "Pay now",
+      "load_error": "We couldn't check whether you owe anything.",
+      "none": "Nothing is owed any more.",
+      "kind": {
+        "cash_cancellation_fee": "Late-cancellation fee",
+        "lockout": "Fee: the cleaner could not get in",
+        "unpaid_cash": "Cash not paid for the cleaning",
+        "top_up": "Extra charge you approved"
+      }
     },
     "checkout": {
       "success": {
@@ -1865,8 +1880,8 @@
   "privacy_page": {
     "title": "Privacy Policy"
   },
-  "work_contract_page": {
-    "title": "Contract for Work"
+  "complaints_page": {
+    "title": "Complaints Procedure"
   },
   "api": {
     "auth": {
@@ -1881,6 +1896,7 @@
       "invalid_apple_token": "Apple sign-in failed. Please try again.",
       "social_account_not_found": "We couldn't find an account for that sign-in. Please sign up first.",
       "invalid_password_format": "Your password doesn't meet the requirements.",
+      "admin_password_too_short": "Administrator passwords must be at least 12 characters long.",
       "invalid_reset_token": "That reset code is invalid or has expired.",
       "same_reset_password": "Your new password must be different from your current one.",
       "current_password_invalid": "Your current password is incorrect.",
@@ -1912,7 +1928,8 @@
       "document_not_found": "This legal text is not available yet."
     },
     "consent": {
-      "terms_not_accepted": "Please accept the Terms of Service and Privacy Policy to continue."
+      "terms_not_accepted": "Please accept the Terms of Service and Privacy Policy to continue.",
+      "early_performance_not_requested": "To continue, please confirm that you want the service to start within the 14-day withdrawal period."
     },
     "order": {
       "cleaning_date": {
@@ -1944,6 +1961,9 @@
       },
       "payment_gateway_unavailable": "Payments are temporarily unavailable. Please try again shortly.",
       "cash_not_available": "Cash is only available when you're signed in and the booking needs a single cleaner.",
+      "cash_requires_saved_card": "To pay in cash, first save a card as a guarantee — or pay by card.",
+      "cash_open_bookings_limit_reached": "You already have as many unpaid cash bookings as allowed. Choose card, or pay in cash again once one of them is paid.",
+      "cash_unpaid_receivable": "You have an unpaid amount with us, such as a cancellation fee. Pay by card for now; cash is available again once it is settled.",
       "country_operator_mismatch": "This address is served by another Cleansia company, so it can't be booked here.",
       "payment": {
         "already_paid": "This order has already been paid."
@@ -2053,6 +2073,14 @@
       "express_waiver": {
         "no_longer_available": "Your free express upgrade is no longer available for this booking — this month's included express bookings have just been used up. You can still book at the standard express price."
       }
+    },
+    "saved_card": {
+      "consent_not_accepted": "Please agree that fees and unpaid cash may be charged to your card before saving it.",
+      "not_found": "We couldn't find that saved card."
+    },
+    "receivable": {
+      "not_found": "We couldn't find that amount due.",
+      "not_open": "This amount has already been paid or waived."
     },
     "recurring_booking": {
       "not_found": "That recurring booking no longer exists.",
@@ -2237,6 +2265,8 @@
     "cash_unchecked": "We couldn't confirm whether this schedule can be paid in cash. Save it again in a moment, or choose card.",
     "payment_placeholder": "Choose how to pay",
     "error_payment": "Choose how the schedule is paid.",
+    "early_performance_label": "Request to start within the withdrawal period",
+    "error_early_performance": "Confirm that you want the cleanings to start within the withdrawal period.",
     "cash_change_title": "This schedule can no longer be paid in cash",
     "cash_change_body": "Each clean needs more than one cleaner, and cash is only for cleans one cleaner handles alone, so no new cleanings are booked from it until you change it. Switch it to card, or pick services or packages one cleaner can do. A cleaning already booked from it can be cancelled free of charge in Orders while no cleaner has taken it.",
     "cash_change_action": "Change the schedule"

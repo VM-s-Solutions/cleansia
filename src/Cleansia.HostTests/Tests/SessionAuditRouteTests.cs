@@ -4,6 +4,7 @@ using System.Text.Json;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Users;
 using Cleansia.HostTests.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 
@@ -27,6 +28,7 @@ public sealed class SessionAuditRouteTests(HostTestPostgresFixture db) : AuthzHo
     private const string CustomerId = "session-audit-customer";
     private const string CustomerEmail = "session-audit@hosttests.local";
     private const string UnknownEmail = "nobody-session-audit@hosttests.local";
+    private const string GoogleEmail = "session-audit-google@hosttests.local";
     private const string Password = "12345678Test!";
     private const string AdminId = "session-audit-admin";
     private const string AdminEmail = "session-audit-admin@hosttests.local";
@@ -74,6 +76,34 @@ public sealed class SessionAuditRouteTests(HostTestPostgresFixture db) : AuthzHo
         });
 
     [Fact]
+    public async Task A_Refused_SignIn_Reads_The_Same_For_An_Unknown_Address_A_Google_Account_And_A_Wrong_Password()
+    {
+        await SeedAsync(async ctx =>
+        {
+            await DomainSeed.EnsureReferenceDataAsync(ctx);
+            var customer = DomainSeed.Customer(CustomerEmail);
+            customer.Id = CustomerId;
+            ctx.Users.Add(customer);
+            ctx.Users.Add(User.CreateWithGoogle(GoogleEmail, "Goo", "Gle", "google-sub-session-audit"));
+        });
+
+        async Task<string> RefusalFor(string email, string password)
+        {
+            var response = await CustomerClientAnonymous().PostAsJsonAsync("/api/Auth/Login",
+                new { email, password, rememberMe = true });
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync()).RootElement;
+            return $"{body.GetProperty("detail").GetString()}|{body.GetProperty("errors").GetRawText()}";
+        }
+
+        var wrongPassword = await RefusalFor(CustomerEmail, "Wrong-Password-999!");
+
+        Assert.Contains(BusinessErrorMessage.InvalidPassword, wrongPassword);
+        Assert.Equal(wrongPassword, await RefusalFor(UnknownEmail, Password));
+        Assert.Equal(wrongPassword, await RefusalFor(GoogleEmail, Password));
+    }
+
+    [Fact]
     public async Task A_Customer_SignIn_On_The_Customer_Host_Leaves_One_Success_Row_Keyed_On_The_Account()
     {
         await SeedCustomerAsync();
@@ -110,7 +140,7 @@ public sealed class SessionAuditRouteTests(HostTestPostgresFixture db) : AuthzHo
         var row = Assert.Single(await CustomerRowsAsync());
         Assert.Equal("customer.session.login", row.Action);
         Assert.False(row.Success);
-        Assert.Equal(BusinessErrorMessage.NotExistingUserWithEmail, row.ErrorCode);
+        Assert.Equal(BusinessErrorMessage.InvalidPassword, row.ErrorCode);
         Assert.Null(row.UserId);
         Assert.Null(row.ResourceId);
         Assert.Null(row.PayloadJson);
@@ -228,7 +258,7 @@ public sealed class SessionAuditRouteTests(HostTestPostgresFixture db) : AuthzHo
         var row = Assert.Single(await AdminRowsAsync());
         Assert.Equal("admin.session.login", row.Action);
         Assert.False(row.Success);
-        Assert.Equal(BusinessErrorMessage.NotExistingUserWithEmail, row.ErrorCode);
+        Assert.Equal(BusinessErrorMessage.InvalidPassword, row.ErrorCode);
         Assert.Equal("System", row.ActorId);
         Assert.Null(row.ActorEmail);
         Assert.Null(row.ResourceId);

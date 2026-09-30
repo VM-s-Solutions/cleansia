@@ -35,11 +35,11 @@ import cz.cleansia.customer.features.disputes.DisputesListScreen
 import cz.cleansia.customer.features.main.MainShell
 import cz.cleansia.customer.features.orders.GuestOrderScreen
 import cz.cleansia.customer.features.orders.OrderDetailScreen
-import cz.cleansia.customer.features.orders.WorkContractScreen
 import cz.cleansia.customer.features.orders.photos.OrderPhotosScreen
 import cz.cleansia.customer.core.settings.AppSettingsRepository
 import cz.cleansia.customer.features.addresses.AddressManagerScreen
 import cz.cleansia.customer.features.profile.AppearanceScreen
+import cz.cleansia.customer.features.payments.PaymentsScreen
 import cz.cleansia.customer.features.profile.DevicesScreen
 import cz.cleansia.customer.features.profile.EditProfileScreen
 import cz.cleansia.customer.features.profile.HelpSupportScreen
@@ -345,6 +345,7 @@ fun CleansiaNavHost(
                         "notifications" -> navController.navigate(Routes.Notifications)
                         "security" -> navController.navigate(Routes.Security)
                         "devices" -> navController.navigate(Routes.Devices)
+                        "payments" -> navController.navigate(Routes.Payments)
                         "appearance" -> navController.navigate(Routes.Appearance)
                         "language" -> navController.navigate(Routes.Language)
                         "market" -> navController.navigate(Routes.Market)
@@ -501,6 +502,14 @@ fun CleansiaNavHost(
             popExitTransition = popExit,
         ) {
             DevicesScreen(onBack = { navController.popBackStack() })
+        }
+        composable<Routes.Payments>(
+            enterTransition = pushEnter,
+            exitTransition = pushExit,
+            popEnterTransition = popEnter,
+            popExitTransition = popExit,
+        ) {
+            PaymentsScreen(onBack = { navController.popBackStack() })
         }
         composable<Routes.DeleteAccount>(
             enterTransition = pushEnter,
@@ -674,7 +683,6 @@ fun CleansiaNavHost(
                 },
                 onDownloadReceipt = { /* Phase 4 handles this internally via the VM */ },
                 onViewPhotos = { navController.navigate(Routes.OrderPhotos(args.orderId)) },
-                onReadWorkContract = { acceptanceId -> navController.navigate(Routes.WorkContract(acceptanceId)) },
                 openReviewOnLoad = args.openReview,
             )
         }
@@ -685,14 +693,6 @@ fun CleansiaNavHost(
             popExitTransition = popExit,
         ) {
             OrderPhotosScreen(onBack = { navController.popBackStack() })
-        }
-        composable<Routes.WorkContract>(
-            enterTransition = pushEnter,
-            exitTransition = pushExit,
-            popEnterTransition = popEnter,
-            popExitTransition = popExit,
-        ) {
-            WorkContractScreen(onBack = { navController.popBackStack() })
         }
 
         // ── Rewards activity (Loyalty Phase A — M2) ──

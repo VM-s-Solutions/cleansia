@@ -371,20 +371,9 @@
     <string name="order_photos_metadata_by">Pořídil(a) %1$s</string>
     <string name="common_close">Zavřít</string>
 
-    <!-- Contract for work: the wizard sentence at the offer, the detail line per accepting crew member, the contract screen -->
-    <string name="booking_work_contract_notice"><![CDATA[Potvrzením objednávky uzavíráte s uklízečkou či uklízečem smlouvu o dílo za <a href="cleansia://work-contract">těchto podmínek</a>.]]></string>
-    <string name="work_contract_title">Smlouva o dílo</string>
-    <string name="work_contract_accepted_line">Smlouvu o dílo přijal(a) %1$s dne %2$s, verze %3$s</string>
-    <string name="work_contract_read">Číst smlouvu</string>
-    <string name="work_contract_version">Verze %1$s</string>
-    <string name="work_contract_facts_title">Zakázka, jak byla přijata</string>
-    <string name="work_contract_order_number">Číslo objednávky</string>
-    <string name="work_contract_window">Datum a čas</string>
-    <string name="work_contract_price">Cena</string>
-    <string name="work_contract_location">Místo</string>
-    <string name="work_contract_accepted_on">Přijato uklízečkou či uklízečem dne %1$s, verze %2$s</string>
-    <string name="work_contract_accepted_in_language">Přijato v jazyce: %1$s</string>
-    <string name="work_contract_load_error">Smlouvu se nepodařilo načíst. Zkuste to prosím znovu.</string>
+    <!-- Booking review: the contract sentence and the request to start within the withdrawal period -->
+    <string name="booking_contract_notice"><![CDATA[Potvrzením objednávky uzavíráte smlouvu o úklidu s provozní společností trhu, na kterém se vaše domácnost nachází, za jejích <a href="cleansia://terms">Podmínek služby</a>. Úklid provede uklízeč jako subdodavatel společnosti a stranou vaší smlouvy není.]]></string>
+    <string name="consent_early_performance_draft_2026_09_29">Žádám, aby úklid začal ve 14denní lhůtě pro odstoupení od smlouvy, a beru na vědomí, že po úplném provedení úklidu právo na odstoupení ztrácím.</string>
 
     <!-- Profile tab -->
     <string name="profile_greeting">Ahoj!</string>
@@ -509,12 +498,12 @@
     <string name="help_call">Zavolat na podporu</string>
     <string name="help_call_desc">Po–Ne · 8:00–20:00</string>
     <string name="help_email">Napsat e-mail</string>
-    <string name="help_email_desc">support@cleansia.cz</string>
+    <string name="help_email_desc">info@cleansia.cz</string>
     <string name="help_faq_title">Často kladené otázky</string>
     <string name="help_faq_q1">Jak mohu zrušit rezervaci?</string>
     <string name="help_faq_a1">Otevřete rezervaci v záložce Objednávky a klepněte na \"Zrušit\". Zrušení zdarma až 24 hodin před začátkem úklidu. Do 15 minut od objednání neplatíte nic — u první objednávky nebo s Cleansia Plus do 60 minut.</string>
     <string name="help_faq_q2">Co když nebudu doma, když uklízeč přijde?</string>
-    <string name="help_faq_a2">Při rezervaci přidejte pokyny ke vstupu (např. kód u dveří, místo klíče). Uklízeči čekají až 15 minut; pokud vás nemůžeme zastihnout, rezervace může být zrušena.</string>
+    <string name="help_faq_a2">Při rezervaci přidejte pokyny ke vstupu (např. kód u dveří, místo klíče). Uklízeč čeká 15 minut po začátku úklidu a zkusí vám zavolat. Pokud se ani pak nedostane dovnitř, rezervace se zruší a účtuje se plná cena.</string>
     <string name="help_faq_q3">Jsou uklízeči pojištěni?</string>
     <string name="help_faq_a3">Ano. Všichni uklízeči Cleansia jsou pojištěni do výše %1$s na rezervaci.</string>
     <string name="help_faq_a3_no_figure">Ano. Všichni uklízeči Cleansia jsou pojištěni.</string>
@@ -779,6 +768,12 @@
     <string name="booking_cash_needs_card">Počet uklízečů potřebných pro tuto objednávku: %1$d. Hotově lze platit jen objednávky, které zvládne jeden uklízeč, tuto proto zaplatíte kartou.</string>
     <string name="booking_cash_pending">Zda můžete platit hotově, potvrdíme, jakmile bude známa cena.</string>
     <string name="booking_cash_cleared">Platba hotově už pro tuto objednávku není možná, a proto není vybrán žádný způsob platby. Zvolte, jak chcete platit.</string>
+    <string name="booking_card_guarantee_title">Karta jako záruka plateb v hotovosti</string>
+    <string name="booking_card_guarantee_body">Při první objednávce v hotovosti si uložíte kartu. Nic se teď nestrhává: za úklid zaplatíte v hotovosti jako obvykle.</string>
+    <string name="consent_card_guarantee_draft_2026_09_28">Souhlasím, že Cleansia může u mých objednávek v hotovosti strhnout z této karty storno poplatek, poplatek za neumožnění vstupu, nezaplacenou hotovost a doplatek, který jsem schválil(a).</string>
+    <string name="booking_card_guarantee_consent_required">Pro platbu v hotovosti potvrďte souhlas se zárukou kartou, nebo zvolte platbu kartou.</string>
+    <string name="booking_card_guarantee_pending">Kartu ještě ověřujeme. Za chvíli objednávku potvrďte znovu.</string>
+    <string name="booking_card_guarantee_cancelled">Karta se neuložila, takže se nic neobjednalo. Pro platbu v hotovosti si uložte kartu, nebo zvolte platbu kartou.</string>
     <string name="booking_special_instructions_hint">Speciální požadavky? (nepovinné)</string>
     <string name="booking_access_instructions_hint">Pokyny ke vstupu? (nepovinné)</string>
 
@@ -1112,6 +1107,13 @@
     <string name="error_order_recurring_already_confirmed">Tento úklid už máte potvrzený. Uklízeči zaplatíte v hotovosti v den úklidu.</string>
     <string name="error_order_creation_failed">Nelze vytvořit rezervaci. Zkuste to znovu.</string>
     <string name="error_order_cash_not_available">Platba hotově je možná jen po přihlášení a u objednávky, kterou zvládne jeden uklízeč.</string>
+    <string name="error_order_cash_requires_saved_card">Pro platbu v hotovosti si nejdřív uložte kartu jako záruku — nebo zaplaťte kartou.</string>
+    <string name="error_order_cash_open_bookings_limit_reached">Už máte nejvyšší povolený počet nezaplacených objednávek v hotovosti. Zvolte kartu, nebo hotovost znovu, až bude některá z nich zaplacena.</string>
+    <string name="error_order_cash_unpaid_receivable">Máte u nás nezaplacenou částku, například storno poplatek. Zatím zaplaťte kartou; v hotovosti budete moci platit znovu, až ji uhradíte v profilu v sekci Platby.</string>
+    <string name="error_saved_card_consent_not_accepted">Před uložením karty prosím potvrďte souhlas, že na ni mohou být účtovány poplatky a nezaplacená hotovost.</string>
+    <string name="error_saved_card_not_found">Tuto uloženou kartu jsme nenašli.</string>
+    <string name="error_receivable_not_found">Tuto dlužnou částku jsme nenašli.</string>
+    <string name="error_receivable_not_open">Tato částka už byla uhrazena nebo prominuta.</string>
     <string name="error_order_review_already_exists">Tuto rezervaci jste již hodnotili.</string>
     <string name="error_order_review_rating_invalid">Hodnocení musí být mezi 1 a 5.</string>
     <string name="error_order_not_owned_by_user">K této rezervaci nemáte přístup.</string>
@@ -1298,6 +1300,31 @@
     <string name="notification_order_assignment_cancelled_body">Zakázka, kterou jste přijali, byla zrušena: #%1$s. Klepnutím zobrazíte detaily.</string>
     <string name="notification_payroll_invoice_paid_title">Byli jste vyplaceni</string>
     <string name="notification_payroll_invoice_paid_body">Vaše faktura za poslední výplatní období byla proplacena. Klepnutím zobrazíte.</string>
+    <!-- ── Payments ── -->
+    <string name="profile_row_payments">Platby</string>
+    <string name="payments_title">Platby</string>
+    <string name="payments_due_title">K úhradě</string>
+    <string name="payments_due_intro">Uhraďte dlužnou částku a budete moci znovu platit v hotovosti. Objednávek placených kartou se to netýká.</string>
+    <string name="payments_due_order">Objednávka %1$s</string>
+    <string name="payments_pay_action">Zaplatit</string>
+    <string name="receivable_kind_cancellation_fee">Storno poplatek</string>
+    <string name="receivable_kind_lockout">Poplatek za neumožnění vstupu</string>
+    <string name="receivable_kind_unpaid_cash">Nezaplacená hotovost</string>
+    <string name="receivable_kind_top_up">Schválený doplatek</string>
+    <string name="receivable_kind_other">Částka k úhradě</string>
+    <string name="payments_card_title">Uložená karta</string>
+    <string name="payments_card_intro">Karta, která zaručuje vaše objednávky v hotovosti. Může z ní být stržen storno poplatek, poplatek za neumožnění vstupu, nezaplacená hotovost nebo schválený doplatek.</string>
+    <string name="payments_card_label">%1$s •••• %2$s</string>
+    <string name="payments_card_expires">Platnost do %1$02d/%2$02d · %3$s</string>
+    <string name="payments_card_empty">Nemáte uloženou kartu. Požádáme o ni při první objednávce v hotovosti.</string>
+    <string name="payments_card_remove_action">Odebrat kartu</string>
+    <string name="payments_card_remove_title">Odebrat tuto kartu?</string>
+    <string name="payments_card_remove_message">Při další objednávce v hotovosti vás o kartu požádáme znovu.</string>
+    <string name="payments_card_remove_confirm">Odebrat</string>
+    <string name="payments_card_removed">Karta odebrána</string>
+    <string name="payments_card_remove_retry_hint">Kartu se nepodařilo odebrat. Zkuste to prosím znovu.</string>
+    <string name="payments_error_message">Platby se nepodařilo načíst. Zkontrolujte připojení a zkuste to znovu.</string>
+    <string name="payments_error_retry">Zkusit znovu</string>
     <!-- ── Vaše zařízení ── -->
     <string name="profile_row_devices">Vaše zařízení</string>
     <string name="devices_title">Vaše zařízení</string>
@@ -1328,6 +1355,7 @@
     <string name="error_auth_too_many_attempts">Příliš mnoho pokusů s tímto kódem. Vyžádejte si nový kód a zkuste to znovu.</string>
     <string name="error_company_not_found">Informace o společnosti nenalezeny</string>
     <string name="error_consent_terms_not_accepted">Pro pokračování prosím přijměte obchodní podmínky a zásady ochrany osobních údajů.</string>
+    <string name="error_consent_early_performance_not_requested">Pro pokračování prosím potvrďte, že žádáte o zahájení služby ve 14denní lhůtě pro odstoupení od smlouvy.</string>
     <string name="error_country_not_existing_id">Země nenalezena</string>
     <string name="error_currency_invalid">Neplatná měna</string>
     <string name="error_country_not_serviced">V této zemi zatím nepůsobíme.</string>

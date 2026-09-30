@@ -2,36 +2,104 @@ using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Domain.EmployeePayroll;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Extensions;
+using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Queue.Abstractions;
+using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.Core.AppServices.Features.EmployeePayroll;
 
+/// <summary>
+/// A cleaner's pay on one order: the job on an order they completed, and on a cancelled one their share of
+/// the late-cancellation or lockout fee the company collected, never of a fee still owed (owner ruling
+/// 2026-09-28, decision 12).
+/// </summary>
 public class CalculateOrderPay
 {
     public record Command(string OrderId, string EmployeeId) : ICommand<Response>;
 
     public record Response(string EmployeePayrollId);
 
+    /// <summary>Asks for the pay of every cleaner on the order, off the caller's path.</summary>
+    public static void EnqueueForCrew(Order order, IPendingDispatch pending)
+    {
+        foreach (var assignment in order.AssignedEmployees)
+        {
+            var key = MessageKeys.Pay(order.Id, assignment.EmployeeId);
+            pending.Enqueue(
+                QueueNames.CalculateOrderPay,
+                new QueueEnvelope<CalculateOrderPayMessage>(
+                    key, order.TenantId, new CalculateOrderPayMessage(order.Id, assignment.EmployeeId)),
+                key);
+        }
+    }
+
+    /// <summary>
+    /// The fee a cancelled order has actually brought in: what its payment kept at cancellation, or, on one
+    /// that took no payment, the fee receivables paid since. Zero on a cancellation that charged no fee.
+    /// </summary>
+    private static async Task<decimal> CollectedFeeAsync(
+        Order order,
+        IReceivableRepository receivableRepository,
+        IRefundRepository refundRepository,
+        ICreditAccountRepository creditAccountRepository,
+        CancellationToken cancellationToken)
+    {
+        if (order.CancellationFeeRate is not > 0m)
+        {
+            return 0m;
+        }
+
+        if (!order.TookNoPayment)
+        {
+            // Never more than the company still holds. An order refunded before it was cancelled or locked
+            // out is no longer Paid, so the cancellation refunds nothing and the price less the recorded
+            // refund would count money already given back. A cancellation refund still waiting for its
+            // re-drive is not among the succeeded refunds yet, so the first term keeps the fee to its size.
+            var stillHeld = order.TotalPrice
+                - await refundRepository.GetSucceededRefundTotalForOrderAsync(order.Id, cancellationToken)
+                - await creditAccountRepository.GetReturnedTotalForOrderAsync(order.Id, cancellationToken);
+            return Math.Max(0m, Math.Min(order.TotalPrice - (order.CancellationRefundAmount ?? 0m), stillHeld));
+        }
+
+        return await receivableRepository
+            .GetAll()
+            .Where(r => r.OrderId == order.Id
+                && r.Status == ReceivableStatus.Paid
+                && (r.Kind == ReceivableKind.CashCancellationFee || r.Kind == ReceivableKind.Lockout))
+            .SumAsync(r => r.Amount, cancellationToken);
+    }
+
     public class Validator : AbstractValidator<Command>
     {
         private readonly IOrderRepository _orderRepository;
         private readonly IEmployeePayConfigRepository _payConfigRepository;
         private readonly IOrderEmployeePayRepository _orderEmployeePayRepository;
+        private readonly IReceivableRepository _receivableRepository;
+        private readonly IRefundRepository _refundRepository;
+        private readonly ICreditAccountRepository _creditAccountRepository;
 
         public Validator(
             IOrderRepository orderRepository,
             IEmployeeRepository employeeRepository,
             IPayPeriodRepository payPeriodRepository,
             IEmployeePayConfigRepository payConfigRepository,
-            IOrderEmployeePayRepository orderEmployeePayRepository)
+            IOrderEmployeePayRepository orderEmployeePayRepository,
+            IReceivableRepository receivableRepository,
+            IRefundRepository refundRepository,
+            ICreditAccountRepository creditAccountRepository)
         {
             _orderRepository = orderRepository;
             _payConfigRepository = payConfigRepository;
             _orderEmployeePayRepository = orderEmployeePayRepository;
+            _receivableRepository = receivableRepository;
+            _refundRepository = refundRepository;
+            _creditAccountRepository = creditAccountRepository;
 
             RuleFor(x => x.OrderId)
                 .Cascade(CascadeMode.Stop)
@@ -68,6 +136,21 @@ public class CalculateOrderPay
             RuleFor(x => x)
                 .MustAsync(ConfigsExistAsync)
                 .WithMessage(BusinessErrorMessage.NoPayConfiguration);
+
+            RuleFor(x => x)
+                .MustAsync(FeeCollectedIfCancelledAsync)
+                .WithMessage(BusinessErrorMessage.NoCollectedFee);
+        }
+
+        private async Task<bool> FeeCollectedIfCancelledAsync(Command command, CancellationToken cancellationToken)
+        {
+            var order = await _orderRepository
+                .GetAll()
+                .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);
+
+            return order?.CancelledAt is null
+                || await CollectedFeeAsync(
+                    order, _receivableRepository, _refundRepository, _creditAccountRepository, cancellationToken) > 0m;
         }
 
         private async Task<bool> EmployeeIsAssignedToOrderAsync(Command command, CancellationToken cancellationToken)
@@ -96,6 +179,11 @@ public class CalculateOrderPay
                 return false;
             }
 
+            if (order.CancelledAt is not null)
+            {
+                return true;
+            }
+
             var serviceIds = order.SelectedServices.Select(os => os.ServiceId).ToList();
             var packageIds = order.SelectedPackages.Select(os => os.PackageId).ToList();
 
@@ -111,7 +199,10 @@ public class CalculateOrderPay
         IOrderRepository orderRepository,
         IPayPeriodRepository payPeriodRepository,
         IEmployeePayConfigRepository payConfigRepository,
-        IOrderEmployeePayRepository orderEmployeePayRepository)
+        IOrderEmployeePayRepository orderEmployeePayRepository,
+        IReceivableRepository receivableRepository,
+        IRefundRepository refundRepository,
+        ICreditAccountRepository creditAccountRepository)
         : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -140,6 +231,30 @@ public class CalculateOrderPay
                     nameof(command.OrderId), BusinessErrorMessage.NoActivePeriod));
             }
 
+            var firstSeat = order.AssignedEmployees.MinBy(oe => oe.SeatOrdinal)?.EmployeeId == command.EmployeeId;
+
+            if (order.CancelledAt is not null)
+            {
+                var collectedFee = await CollectedFeeAsync(
+                    order, receivableRepository, refundRepository, creditAccountRepository, cancellationToken);
+                var share = PayCalculatorExtensions.CalculateSeatFeeShare(
+                    collectedFee, BookingPolicy.CleanerFeeShareRate, order.RequiredEmployees, firstSeat);
+                var feeShare = OrderEmployeePay.CreateFeeShare(
+                    orderId: command.OrderId,
+                    employeeId: command.EmployeeId,
+                    payPeriodId: payPeriod.Id,
+                    currencyId: order.CurrencyId,
+                    lineType: order.CancellationReason == OrderCancellationReasons.CustomerLockout
+                        ? PayLineType.LockoutFeeShare
+                        : PayLineType.CancellationFeeShare,
+                    share: share,
+                    payBreakdown: $"Collected fee: {collectedFee:F2}, Share: {share:F2}");
+
+                orderEmployeePayRepository.Add(feeShare);
+
+                return BusinessResult.Success(new Response(feeShare.Id));
+            }
+
             var serviceIds = order.SelectedServices.Select(os => os.ServiceId).ToList();
             var packageIds = order.SelectedPackages.Select(os => os.PackageId).ToList();
 
@@ -155,8 +270,6 @@ public class CalculateOrderPay
 
             payConfigs.AddRange(SelectPreferredConfigs(packageConfigs, c => c.PackageId));
             payConfigs.AddRange(SelectPreferredConfigs(serviceConfigs, c => c.ServiceId));
-
-            var firstSeat = order.AssignedEmployees.MinBy(oe => oe.SeatOrdinal)?.EmployeeId == command.EmployeeId;
 
             // The seat's bounds are persisted with its pay so a later bonus or deduction re-clamps the
             // core exactly as it was clamped here.

@@ -3,8 +3,10 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Domain.Company;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
+using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Receipts;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Fiscal.Abstractions;
@@ -31,7 +33,35 @@ public sealed class ReceiptService(
     // mark it born-retry-eligible for any enforcement mode != None. Does NOT register with the
     // authority, does NOT generate the PDF, and does NOT commit — the handler owns the claim commit,
     // which MUST land BEFORE the irreversible external effects in RealizeFiscalAndPdfAsync.
-    public async Task<OrderReceipt> ReserveReceiptAsync(Order order, string languageCode, CancellationToken cancellationToken = default)
+    public Task<OrderReceipt> ReserveReceiptAsync(Order order, string languageCode, CancellationToken cancellationToken = default) =>
+        ReserveAsync(
+            order,
+            languageCode,
+            (receiptNumber, year, languageId) =>
+            {
+                var fileName = $"receipt_{order.DisplayOrderNumber}_{DateTime.UtcNow:yyyyMMdd}.pdf";
+                return OrderReceipt.Create(order.Id, receiptNumber, fileName, $"{year}/{order.DisplayOrderNumber}/{fileName}", languageId);
+            },
+            cancellationToken);
+
+    // Named by its own number, so it never shares a blob with the sale receipt issued the same day.
+    public Task<OrderReceipt> ReserveFeeReceiptAsync(
+        Order order, Receivable receivable, string languageCode, CancellationToken cancellationToken = default) =>
+        ReserveAsync(
+            order,
+            languageCode,
+            (receiptNumber, year, languageId) =>
+            {
+                var fileName = $"fee_receipt_{order.DisplayOrderNumber}_{receiptNumber}.pdf";
+                return OrderReceipt.CreateFee(receivable, receiptNumber, fileName, $"{year}/{order.DisplayOrderNumber}/{fileName}", languageId);
+            },
+            cancellationToken);
+
+    private async Task<OrderReceipt> ReserveAsync(
+        Order order,
+        string languageCode,
+        Func<string, int, string, OrderReceipt> create,
+        CancellationToken cancellationToken)
     {
         var language = await languageRepository.GetByCodeAsync(languageCode, cancellationToken);
         if (language == null)
@@ -65,10 +95,7 @@ public sealed class ReceiptService(
         var sequence = await fiscalCounterRepository.AllocateNextAsync(counterYear, issuerScope, cancellationToken);
         var receiptNumber = string.Format(Constants.ReceiptNumberFormat.Pattern, currentYear, sequence);
 
-        var fileName = $"receipt_{order.DisplayOrderNumber}_{DateTime.UtcNow:yyyyMMdd}.pdf";
-        var blobName = $"{currentYear}/{order.DisplayOrderNumber}/{fileName}";
-
-        var receipt = OrderReceipt.Create(order.Id, receiptNumber, fileName, blobName, language.Id);
+        var receipt = create(receiptNumber, currentYear, language.Id);
 
         // C-A — the claim is BORN RETRY-ELIGIBLE for any fiscal mode != None. A crash between the claim
         // commit and the register call leaves FiscalRegistrationFailed == false, FiscalCode == null;
@@ -288,6 +315,38 @@ public sealed class ReceiptService(
     private static bool VatApplied(Order order) => order.AppliedVatRate is not null;
 
     private static FiscalReceiptRequest BuildFiscalRequest(Order order, OrderReceipt receipt, CompanyInfo companyInfo, string isoCode) =>
+        receipt.IsFee
+            ? BuildFeeFiscalRequest(order, receipt, companyInfo, isoCode)
+            : BuildSaleFiscalRequest(order, receipt, companyInfo, isoCode);
+
+    private static FiscalReceiptRequest BuildFeeFiscalRequest(Order order, OrderReceipt receipt, CompanyInfo companyInfo, string isoCode)
+    {
+        var fee = FeeOf(receipt);
+        var vatAmount = FeeVatAmount(order, fee.Amount);
+        return FiscalReceiptRequest.Create(
+            receiptNumber: receipt.ReceiptNumber,
+            issuedAt: receipt.IssuedAt,
+            totalAmount: fee.Amount,
+            vatAmount: vatAmount > 0m ? vatAmount : null,
+            currencyCode: FiscalCurrencyCodeOf(order),
+            companyLegalName: companyInfo.LegalName,
+            companyRegistrationNumber: companyInfo.RegistrationNumber,
+            companyVatNumber: companyInfo.VatNumber,
+            customerName: order.CustomerName,
+            customerEmail: order.CustomerEmail,
+            lineItems:
+            [
+                new FiscalLineItem(
+                    Description: ReceiptLabels.English.ReceivableKinds[fee.Kind],
+                    Quantity: 1,
+                    UnitPrice: fee.Amount,
+                    VatRate: order.AppliedVatRate),
+            ],
+            paymentMethod: PaymentType.Card.ToString(),
+            countryCode: isoCode);
+    }
+
+    private static FiscalReceiptRequest BuildSaleFiscalRequest(Order order, OrderReceipt receipt, CompanyInfo companyInfo, string isoCode) =>
         FiscalReceiptRequest.Create(
             receiptNumber: receipt.ReceiptNumber,
             issuedAt: receipt.IssuedAt,
@@ -480,6 +539,11 @@ public sealed class ReceiptService(
     private static ReceiptPdfData CreateReceiptData(
         Order order, OrderReceipt receipt, CompanyInfo companyInfo, string languageCode, TimeZoneInfo marketZone)
     {
+        if (receipt.IsFee)
+        {
+            return CreateFeeReceiptData(order, receipt, companyInfo, languageCode, marketZone);
+        }
+
         return new ReceiptPdfData
         {
             LanguageCode = languageCode,
@@ -538,26 +602,74 @@ public sealed class ReceiptService(
             NetAmount = VatApplied(order) ? order.NetAmount : null,
             VatAmount = VatApplied(order) ? order.VatAmount : null,
             VatRate = order.AppliedVatRate,
-            Company = new CompanyInfoData
-            {
-                LegalName = companyInfo.LegalName,
-                TradingName = companyInfo.TradingName,
-                Tagline = companyInfo.Tagline,
-                RegistrationNumber = companyInfo.RegistrationNumber,
-                VatNumber = companyInfo.VatNumber,
-                Street = companyInfo.Street,
-                City = companyInfo.City,
-                ZipCode = companyInfo.ZipCode,
-                Address = companyInfo.GetFullAddress(),
-                Phone = companyInfo.Phone,
-                Email = companyInfo.Email,
-                Website = companyInfo.Website,
-                BankName = companyInfo.BankName,
-                BankAccountNumber = companyInfo.BankAccountNumber,
-                Iban = companyInfo.Iban,
-                Swift = companyInfo.Swift,
-                ContactInfo = companyInfo.GetFormattedContactInfo()
-            }
+            Company = CompanyDataOf(companyInfo),
         };
     }
+
+    /// <summary>
+    /// A fee receipt states the one amount the customer paid after the booking, on its receivable, paid by
+    /// card through the pay link or an off-session charge. It is stated at the VAT posture of the order the
+    /// fee arose on, since the fee is paid for that booking.
+    /// </summary>
+    private static ReceiptPdfData CreateFeeReceiptData(
+        Order order, OrderReceipt receipt, CompanyInfo companyInfo, string languageCode, TimeZoneInfo marketZone)
+    {
+        var fee = FeeOf(receipt);
+        var vatAmount = FeeVatAmount(order, fee.Amount);
+        return new ReceiptPdfData
+        {
+            LanguageCode = languageCode,
+            ReceiptNumber = receipt.ReceiptNumber,
+            OrderNumber = order.DisplayOrderNumber,
+            IssuedDate = TimeZoneInfo.ConvertTimeFromUtc(receipt.IssuedAt, marketZone)
+                .ToString("dd.MM.yyyy", CultureInfo.InvariantCulture),
+            CustomerName = order.CustomerName,
+            CustomerAddress = $"{order.CustomerAddress?.Street}, {order.CustomerAddress?.City}, {order.CustomerAddress?.ZipCode}",
+            Services = [new ReceiptLineItem(ReceiptLabels.For(languageCode).ReceivableKinds[fee.Kind], fee.Amount)],
+            Packages = [],
+            Total = fee.Amount,
+            Currency = order.Currency?.Symbol ?? string.Empty,
+            PaymentStatus = PaymentStatus.Paid,
+            PaymentType = PaymentType.Card,
+            CleaningDate = MarketTime(order.CleaningDateTime, marketZone),
+            IsVatPayer = VatApplied(order),
+            NetAmount = vatAmount is { } vat ? fee.Amount - vat : null,
+            VatAmount = vatAmount,
+            VatRate = order.AppliedVatRate,
+            Company = CompanyDataOf(companyInfo),
+        };
+    }
+
+    // A fee receipt rendered or registered without its receivable would be the order's sale under the fee's
+    // number, so its absence is refused rather than defaulted.
+    private static Receivable FeeOf(OrderReceipt receipt) =>
+        receipt.Receivable
+        ?? throw new InvalidOperationException(
+            $"Fee receipt {receipt.ReceiptNumber} was loaded without its receivable; refusing to state the order's sale under its number");
+
+    private static decimal? FeeVatAmount(Order order, decimal amount) =>
+        order.AppliedVatRate is { } rate
+            ? Math.Round(amount * rate / (1m + rate), 2, MidpointRounding.AwayFromZero)
+            : null;
+
+    private static CompanyInfoData CompanyDataOf(CompanyInfo companyInfo) => new()
+    {
+        LegalName = companyInfo.LegalName,
+        TradingName = companyInfo.TradingName,
+        Tagline = companyInfo.Tagline,
+        RegistrationNumber = companyInfo.RegistrationNumber,
+        VatNumber = companyInfo.VatNumber,
+        Street = companyInfo.Street,
+        City = companyInfo.City,
+        ZipCode = companyInfo.ZipCode,
+        Address = companyInfo.GetFullAddress(),
+        Phone = companyInfo.Phone,
+        Email = companyInfo.Email,
+        Website = companyInfo.Website,
+        BankName = companyInfo.BankName,
+        BankAccountNumber = companyInfo.BankAccountNumber,
+        Iban = companyInfo.Iban,
+        Swift = companyInfo.Swift,
+        ContactInfo = companyInfo.GetFormattedContactInfo()
+    };
 }

@@ -218,6 +218,7 @@ public sealed class EmployeeDeletionRequestTests : IDisposable
             new EmployeePayoutDetailsRepository(ctx),
             new UserMembershipRepository(ctx),
             new UserStripeCustomerRepository(ctx),
+            new SavedCardRepository(ctx),
             new OrderPhotoRepository(ctx),
             new DeviceRepository(ctx, session),
             new LiveActivityTokenRepository(ctx),

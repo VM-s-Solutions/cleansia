@@ -300,6 +300,25 @@
       </div>
     </cleansia-section>
 
+    @if (facade.order()?.lockoutReportedAt) {
+    <cleansia-section [title]="'pages.order_detail.lockout.title' | translate">
+      <div class="detail-grid">
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.order_detail.lockout.reported_at' | translate }}</span>
+          <span class="detail-grid__value">{{ facade.formatDateTime(facade.order()?.lockoutReportedAt) }}</span>
+        </div>
+        <div class="detail-grid__item detail-grid__item--wide">
+          <span class="detail-grid__label">{{ 'pages.order_detail.lockout.call_attempts' | translate }}</span>
+          <span class="detail-grid__value">{{ facade.order()?.lockoutCallAttempts || '-' }}</span>
+        </div>
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.order_detail.lockout.photo' | translate }}</span>
+          <span class="detail-grid__value">{{ 'pages.order_detail.lockout.photo_hint' | translate }}</span>
+        </div>
+      </div>
+    </cleansia-section>
+    }
+
     @if (facade.order()) {
     <cleansia-section [title]="'pages.order_management.ops.title' | translate">
       <div class="detail-actions">

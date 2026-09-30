@@ -128,7 +128,8 @@ class CreateRecurringViewModel @Inject constructor(
                 s.startsOnIso.isNotBlank() &&
                 s.paymentType != null &&
                 catalog is RecurringCatalogState.Loaded &&
-                (!asked || s.termsAccepted)
+                (!asked || s.termsAccepted) &&
+                (isEditing || s.earlyPerformanceRequested)
             else -> false
         }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
@@ -248,6 +249,7 @@ class CreateRecurringViewModel @Inject constructor(
         _state.update { it.copy(preferredEmployeeId = id) }
     }
     fun setTermsAccepted(accepted: Boolean) { _state.update { it.copy(termsAccepted = accepted) } }
+    fun setEarlyPerformanceRequested(requested: Boolean) { _state.update { it.copy(earlyPerformanceRequested = requested) } }
 
     fun nextStep() { _step.update { (it + 1).coerceAtMost(TOTAL_STEPS) } }
     fun previousStep() { _step.update { (it - 1).coerceAtLeast(1) } }
@@ -286,6 +288,7 @@ class CreateRecurringViewModel @Inject constructor(
         preferredEmployeeId = if (withoutPreferredCleaner) null else preferredEmployeeId,
         termsAccepted = if (_termsAsked.value && termsAccepted) true else null,
         dirtinessLevel = dirtinessLevel,
+        earlyPerformanceRequested = if (earlyPerformanceRequested) true else null,
     )
 
     /**
@@ -336,6 +339,7 @@ class CreateRecurringViewModel @Inject constructor(
         val form = _state.value
         if (!form.isSubmittable()) return
         if (_termsAsked.value && !form.termsAccepted) return
+        if (!isEditing && !form.earlyPerformanceRequested) return
         val paymentType = form.paymentType ?: return
         val dirtinessLevel = form.dirtinessLevel ?: return
         _preferredCleanerRefused.value = false
@@ -648,6 +652,8 @@ data class CreateRecurringFormState(
     val preferredEmployeeId: String? = null,
     /** Read only while [CreateRecurringViewModel.termsAsked] is true. */
     val termsAccepted: Boolean = false,
+    /** Asked on a new schedule only; the server copies it onto every occurrence. */
+    val earlyPerformanceRequested: Boolean = false,
     /** Chosen by the customer on a new schedule; an edit starts from the stored one. */
     val dirtinessLevel: DirtinessLevel? = null,
 ) {

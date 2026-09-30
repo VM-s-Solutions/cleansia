@@ -2,6 +2,7 @@ using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Legal;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Company;
 using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Legal;
@@ -35,6 +36,7 @@ public sealed class CleanerLegalDocumentAcceptanceTests
     private readonly Mock<IConsentService> _consentService = new();
     private readonly Mock<ICleanerLegalDocumentAcceptanceRepository> _acceptances = new();
     private readonly Mock<IRequestMetadataProvider> _requestMetadata = new();
+    private readonly Mock<ICompanyInfoRepository> _companies = new();
 
     private readonly LegalDocument _current = FrameworkContract(new DateOnly(2027, 1, 1));
     private readonly LegalDocument _previous = FrameworkContract(new DateOnly(2026, 12, 1));
@@ -108,7 +110,7 @@ public sealed class CleanerLegalDocumentAcceptanceTests
             _acceptances.Object, _requestMetadata.Object, new HostAudienceProvider("cleansia.partner"));
 
     private GetMyLegalDocuments.Handler ReadHandler(ILegalDocumentResolver? resolver = null) =>
-        new(_session.Object, _employees.Object, _configurations.Object, resolver ?? _resolver.Object, _consents.Object);
+        new(_session.Object, _employees.Object, _configurations.Object, resolver ?? _resolver.Object, _consents.Object, _companies.Object);
 
     private static string TextOf(LegalDocument document, string language) => document.TextFor(language)!.Id;
 
@@ -234,6 +236,29 @@ public sealed class CleanerLegalDocumentAcceptanceTests
         Assert.Equal(_slovakContract.Id, document.LegalDocumentId);
         Assert.Contains("EUR", document.ContentHtml);
         Assert.True(accept.IsValid, string.Join("; ", accept.Errors.Select(e => e.ErrorMessage)));
+    }
+
+    [Fact]
+    public async Task The_Contract_Names_The_Company_Operating_The_Cleaners_Market()
+    {
+        var contract = LegalDocument.Create(
+            LegalDocumentAudience.Employee, LegalDocumentType.CleanerFrameworkContract, null, new DateOnly(2027, 1, 1));
+        contract.AddText("en", "Framework contract", "Concluded with {{companyLegalName}}, IČO {{companyRegistrationNumber}}.");
+        _resolver
+            .Setup(r => r.ResolveInForceAsync(
+                LegalDocumentAudience.Employee, LegalDocumentType.CleanerFrameworkContract, Czechia, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(contract);
+        _configurations
+            .Setup(r => r.GetByCountryIdAsync(Czechia, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CountryConfiguration.Create(Czechia, "CZK", "cs", 0.21m).AssignOperator("cleansia-cz"));
+        _companies
+            .Setup(r => r.GetActiveForOperatorAsync("cleansia-cz", Czechia, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CompanyInfo.Create("Cleansia CZ s.r.o.", "Cleansia", "12345678", "Václavské náměstí 1", "Praha", "110 00", Czechia));
+        _consents.Setup(r => r.GetByUserIdNoTrackingAsync(UserId, It.IsAny<CancellationToken>())).ReturnsAsync([]);
+
+        var result = await ReadHandler().Handle(new GetMyLegalDocuments.Query("en"), CancellationToken.None);
+
+        Assert.Contains("Concluded with Cleansia CZ s.r.o., IČO 12345678.", Assert.Single(result.Value).ContentHtml);
     }
 
     [Fact]

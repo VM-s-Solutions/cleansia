@@ -113,6 +113,37 @@ public class TakeOrderValidatorTests
         Assert.True(result.IsValid, string.Join("; ", result.Errors.Select(e => e.ErrorMessage)));
     }
 
+    /// <summary>
+    /// Owner ruling 2026-09-28, decision 25: a cleaner holding more of the company's cash than its float cap
+    /// is refused a cash job with that reason; a card job is theirs to take.
+    /// </summary>
+    [Fact]
+    public async Task A_Cleaner_Above_The_Cash_Float_Cap_Is_Refused_A_Cash_Job_With_That_Reason()
+    {
+        ArrangeTakeableOrder(employeeStatus: ContractStatus.Approved);
+        _accessService
+            .Setup(s => s.CashJobsHiddenFromAsync(EmployeeId, "czk", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        var result = await _validator.ValidateAsync(new TakeOrder.Command(OrderId, WorkContractTestData.TextIdEn));
+
+        var error = Assert.Single(result.Errors);
+        Assert.Equal(BusinessErrorMessage.OrderCashFloatCapExceeded, error.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task A_Cleaner_Above_The_Cash_Float_Cap_Still_Takes_A_Card_Job()
+    {
+        ArrangeTakeableOrder(ContractStatus.Approved, PaymentType.Card, PaymentStatus.Paid);
+        _accessService
+            .Setup(s => s.CashJobsHiddenFromAsync(EmployeeId, It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        var result = await _validator.ValidateAsync(new TakeOrder.Command(OrderId, WorkContractTestData.TextIdEn));
+
+        Assert.True(result.IsValid, string.Join("; ", result.Errors.Select(e => e.ErrorMessage)));
+    }
+
     private readonly Dictionary<DateOnly, LegalDocument> _frameworkContracts = new();
 
     // One document per date, so an acceptance and the text in force name the same row exactly when the
@@ -144,10 +175,14 @@ public class TakeOrderValidatorTests
             .ReturnsAsync([UserConsent.Grant(EmployeeId + "-user", ConsentType.CleanerFrameworkContract, "203.0.113.9", "Android", document.Version, document.Id)]);
     }
 
-    private void ArrangeTakeableOrder(ContractStatus employeeStatus)
+    private void ArrangeTakeableOrder(
+        ContractStatus employeeStatus,
+        PaymentType paymentType = PaymentType.Cash,
+        PaymentStatus paymentStatus = PaymentStatus.Pending)
     {
         // Confirmed order with an open spot, NOT yet assigned to this cleaner.
-        var order = ValidatorTestHelpers.BuildEmptyOrder(OrderId, OrderStatus.New, maxEmployees: 2);
+        var order = ValidatorTestHelpers.BuildEmptyOrder(
+            OrderId, OrderStatus.New, maxEmployees: 2, paymentType: paymentType, paymentStatus: paymentStatus);
         var employee = ValidatorTestHelpers.BuildEmployee(EmployeeId, employeeStatus, withAddress: true);
 
         _orderRepository.Setup(r => r.ExistsAsync(OrderId, It.IsAny<CancellationToken>())).ReturnsAsync(true);

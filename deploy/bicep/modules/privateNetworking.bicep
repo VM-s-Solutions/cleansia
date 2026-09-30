@@ -1,17 +1,18 @@
-// The Q-INFRA-03 prod hardening seam: VNet + private endpoints for Postgres and Storage, deployed
-// ONLY when main.bicep's privateNetworkingEnabled flag is true (default false — dev keeps the
+// The Q-INFRA-03 prod hardening seam: VNet + private endpoints for Postgres, Storage and Key Vault,
+// deployed ONLY when main.bicep's privateNetworkingEnabled flag is true (default false — dev keeps the
 // public-endpoint + firewall posture, byte-unchanged). One VNet, two subnets: `snet-apps` (delegated
 // to Microsoft.Web/serverFarms — the regional VNet-integration subnet every App Service/Functions
 // host joins) and `snet-privatelink` (the private endpoints). Private DNS zones make the existing
-// FQDNs (pg-cleansia-*.postgres.database.azure.com, stcleansia*.blob/queue/table.core.windows.net)
-// resolve to the private IPs from inside the VNet, so no connection string changes.
+// FQDNs (pg-cleansia-*.postgres.database.azure.com, stcleansia*.blob/queue/table.core.windows.net,
+// kv-cleansia-*.vault.azure.net) resolve to the private IPs from inside the VNet, so no connection
+// string or Key Vault reference changes.
 //
 // The Postgres side uses the PRIVATE ENDPOINT model, not VNet injection, on purpose: a flexible
 // server's network model is immutable after create — VNet injection would force replacing the live
 // server, while a private endpoint attaches to the existing one and only publicNetworkAccess flips.
 //
-// Flipping this on has operational prerequisites (CI migration path, admin psql access) — the
-// owner's decision record and sequence live in deploy/AZURE-PROD-POSTURE.md.
+// CI and admin access from outside the VNet go through a temporary public window per run —
+// deploy/AZURE-PROD-POSTURE.md §6.
 
 @description('Expansion-seam region token threaded into every resource name (ADR-0017). Default West Europe.')
 param region string = 'weu'
@@ -40,6 +41,9 @@ param postgresServerId string
 
 @description('Resource id of the Storage Account the blob/queue/table private endpoints target.')
 param storageAccountId string
+
+@description('Resource id of the Key Vault the vault private endpoint targets.')
+param keyVaultId string
 
 @description('Resource tags applied to every network resource.')
 param tags object = {}
@@ -90,6 +94,7 @@ var privateDnsZoneNames = [
   'privatelink.blob.${environment().suffixes.storage}'
   'privatelink.queue.${environment().suffixes.storage}'
   'privatelink.table.${environment().suffixes.storage}'
+  'privatelink.vaultcore.azure.net'
 ]
 
 resource privateDnsZones 'Microsoft.Network/privateDnsZones@2020-06-01' = [
@@ -140,6 +145,12 @@ var privateEndpointDefinitions = [
     targetId: storageAccountId
     groupId: 'table'
     zoneIndex: 3
+  }
+  {
+    name: 'pe-kv-cleansia-${region}-${env}'
+    targetId: keyVaultId
+    groupId: 'vault'
+    zoneIndex: 4
   }
 ]
 

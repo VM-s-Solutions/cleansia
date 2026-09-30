@@ -14,6 +14,7 @@ const KEYS = {
   csrfToken: 'csrf',
   adminRole: 'admin_role',
   userId: 'user_id',
+  mustChangePassword: 'must_change',
 };
 
 function tokenResponse(fields: Partial<JwtTokenResponse>): JwtTokenResponse {
@@ -85,6 +86,43 @@ describe('AdminAuthService session', () => {
     expect(service.getUserId()).toBeNull();
     expect(localStorage.getItem(KEYS.role)).toBeNull();
     expect(localStorage.getItem(KEYS.csrfToken)).toBeNull();
+  });
+
+  it('holds the password change from a sign-in that reports it, and keeps it across a reload', () => {
+    service.setSession(tokenResponse({ mustChangePassword: true }));
+
+    expect(service.passwordChangeRequired()).toBe(true);
+    expect(TestBed.runInInjectionContext(() => new AdminAuthService()).passwordChangeRequired()).toBe(
+      true
+    );
+  });
+
+  it('releases the hold when a refresh reports the password already changed', () => {
+    service.setSession(tokenResponse({ mustChangePassword: true }));
+    refreshToken.mockReturnValue(of(tokenResponse({ mustChangePassword: false })));
+
+    service.refreshSession().subscribe();
+
+    expect(service.passwordChangeRequired()).toBe(false);
+    expect(localStorage.getItem(KEYS.mustChangePassword)).toBeNull();
+  });
+
+  it('releases the hold once the change succeeds, without waiting for a refresh', () => {
+    service.setSession(tokenResponse({ mustChangePassword: true }));
+
+    service.clearPasswordChangeRequired();
+
+    expect(service.passwordChangeRequired()).toBe(false);
+    expect(localStorage.getItem(KEYS.mustChangePassword)).toBeNull();
+  });
+
+  it('drops the hold with the rest of the session', () => {
+    service.setSession(tokenResponse({ mustChangePassword: true }));
+
+    service.removeSession();
+
+    expect(service.passwordChangeRequired()).toBe(false);
+    expect(localStorage.getItem(KEYS.mustChangePassword)).toBeNull();
   });
 
   it('is an administrator only for a live session whose profile is Administrator', () => {

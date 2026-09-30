@@ -79,6 +79,20 @@ public class SystemCancellationReasonTests
             order.MapToDetail(isCustomerCaller: true).SystemCancellationReason);
     }
 
+    /// <summary>
+    /// An administrator's lockout confirmation writes the lockout KEY, so the customer reads why the whole
+    /// price was kept or billed.
+    /// </summary>
+    [Fact]
+    public void An_Admins_Lockout_Confirmation_Tells_The_Customer_Why()
+    {
+        var order = CancelledBy(Core.Domain.Enums.CancelledBy.Admin, OrderCancellationReasons.CustomerLockout);
+
+        Assert.Equal(
+            OrderCancellationReasons.CustomerLockout,
+            order.MapToDetail(isCustomerCaller: true).SystemCancellationReason);
+    }
+
     [Theory]
     [InlineData(Core.Domain.Enums.CancelledBy.Customer)]
     [InlineData(Core.Domain.Enums.CancelledBy.Cleaner)]

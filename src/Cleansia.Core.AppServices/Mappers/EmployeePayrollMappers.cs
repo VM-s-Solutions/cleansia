@@ -27,7 +27,8 @@ public static class EmployeePayrollMappers
             orderPay.CreatedOn.DateTime,
             orderPay.Currency?.Code,
             orderPay.DeductionReason,
-            orderPay.DirtinessPay
+            orderPay.DirtinessPay,
+            orderPay.LineType
         );
 
     public static EmployeeInvoiceDto MapToDto(this EmployeeInvoice invoice) =>
@@ -45,6 +46,8 @@ public static class EmployeePayrollMappers
             invoice.BonusAmount,
             invoice.DeductionAmount,
             invoice.TotalAmount,
+            invoice.CashSetOffAmount,
+            invoice.TransferAmount,
             invoice.Currency?.Code ?? "",
             invoice.CurrencyId,
             invoice.Status,
@@ -109,6 +112,8 @@ public static class EmployeePayrollMappers
             invoice.BonusAmount,
             invoice.DeductionAmount,
             invoice.TotalAmount,
+            invoice.CashSetOffAmount,
+            invoice.TransferAmount,
             invoice.Currency?.Code ?? "",
             invoice.CurrencyId,
             invoice.Status,

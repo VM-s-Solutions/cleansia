@@ -6,6 +6,7 @@ using Cleansia.Core.Domain.Company;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
+using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
 using Cleansia.Core.Domain.Users;
@@ -53,11 +54,14 @@ public class PayPeriodMixedCurrencyInvoicingTests
     private readonly Mock<IBlobContainerClient> _blobContainerClient = new();
     private readonly Mock<ITenantProvider> _tenantProvider = new();
     private readonly Mock<IPayoutReferenceAllocator> _payoutReferenceAllocator = new();
+    private readonly Mock<ICashLedgerRepository> _cashLedger = new();
 
     private readonly PayPeriod _expiredPeriod = PayrollMockFactory.OpenPeriod();
 
     private readonly List<EmployeeInvoice> _addedInvoices = [];
     private readonly List<(byte[]? PdfBytes, string? FileName)> _emailsSent = [];
+    private readonly List<CashLedgerEntry> _ledgerEntries = [];
+    private readonly List<InvoicePdfData> _renderedPdfs = [];
     private List<EmployeeInvoice> _existingInvoices = [];
     private List<OrderEmployeePay> _unassignedPays = [];
 
@@ -129,7 +133,12 @@ public class PayPeriodMixedCurrencyInvoicingTests
         _pdfService
             .Setup(s => s.GenerateInvoicePdf(
                 It.IsAny<InvoicePdfData>(), It.IsAny<CountryInvoiceContext?>(), It.IsAny<string?>()))
+            .Callback<InvoicePdfData, CountryInvoiceContext?, string?>((data, _, _) => _renderedPdfs.Add(data))
             .Returns([1, 2, 3]);
+
+        _cashLedger
+            .Setup(r => r.Add(It.IsAny<CashLedgerEntry>()))
+            .Callback<CashLedgerEntry>(_ledgerEntries.Add);
 
         _blobContainerClientFactory
             .Setup(f => f.GetBlobContainerClient(It.IsAny<string>()))
@@ -302,7 +311,80 @@ public class PayPeriodMixedCurrencyInvoicingTests
         Assert.Equal($"{written.InvoiceNumber}.pdf", sent.FileName);
     }
 
+    /// <summary>
+    /// Owner ruling 2026-09-28, decision 23: the close sets the cash a cleaner holds in a currency off
+    /// against that currency's invoice, up to its total, and records it in the ledger. The invoice's own
+    /// amounts are unchanged; the transfer is what remains, and the document states the set-off.
+    /// </summary>
+    [Fact]
+    public async Task Cash_Held_In_A_Currency_Is_Set_Off_Against_That_Currencys_Invoice_Up_To_Its_Total()
+    {
+        HoldsCash(PayrollMockFactory.CurrencyId, 1500m);
+        _unassignedPays =
+        [
+            PayrollMockFactory.OrderPay(basePay: 600m),
+            PayrollMockFactory.OrderPay(basePay: 400m),
+            PayrollMockFactory.OrderPay(basePay: 30m, currencyId: EurId),
+        ];
+
+        await Run();
+
+        var czkInvoice = Assert.Single(_addedInvoices, i => i.CurrencyId == PayrollMockFactory.CurrencyId);
+        Assert.Equal(1000m, czkInvoice.TotalAmount);
+        Assert.Equal(1000m, czkInvoice.CashSetOffAmount);
+        Assert.Equal(0m, czkInvoice.TransferAmount);
+
+        var eurInvoice = Assert.Single(_addedInvoices, i => i.CurrencyId == EurId);
+        Assert.Equal(0m, eurInvoice.CashSetOffAmount);
+        Assert.Equal(30m, eurInvoice.TransferAmount);
+
+        var entry = Assert.Single(_ledgerEntries);
+        Assert.Equal(CashLedgerEntryKind.SetOff, entry.Kind);
+        Assert.Equal(PayrollMockFactory.EmployeeId, entry.EmployeeId);
+        Assert.Equal(PayrollMockFactory.CurrencyId, entry.CurrencyId);
+        Assert.Equal(-1000m, entry.Amount);
+        Assert.Equal(czkInvoice.InvoiceNumber, entry.Note);
+
+        var czkDocument = Assert.Single(_renderedPdfs, d => d.CurrencyCode == "CZK");
+        Assert.Equal(1000m, czkDocument.TotalAmount);
+        Assert.Equal(1000m, czkDocument.CashSetOffAmount);
+    }
+
+    [Fact]
+    public async Task Cash_Below_The_Invoice_Total_Is_Set_Off_Whole_And_The_Rest_Is_Transferred()
+    {
+        HoldsCash(PayrollMockFactory.CurrencyId, 300m);
+        _unassignedPays = [PayrollMockFactory.OrderPay(basePay: 1000m)];
+
+        await Run();
+
+        var invoice = Assert.Single(_addedInvoices);
+        Assert.Equal(1000m, invoice.TotalAmount);
+        Assert.Equal(300m, invoice.CashSetOffAmount);
+        Assert.Equal(700m, invoice.TransferAmount);
+        Assert.Equal(-300m, Assert.Single(_ledgerEntries).Amount);
+    }
+
+    [Fact]
+    public async Task A_Cleaner_Who_Holds_No_Cash_Has_Nothing_Set_Off_And_No_Ledger_Entry()
+    {
+        _unassignedPays = [PayrollMockFactory.OrderPay(basePay: 1000m)];
+
+        await Run();
+
+        var invoice = Assert.Single(_addedInvoices);
+        Assert.Equal(0m, invoice.CashSetOffAmount);
+        Assert.Equal(1000m, invoice.TransferAmount);
+        Assert.Empty(_ledgerEntries);
+        Assert.Equal(0m, Assert.Single(_renderedPdfs).CashSetOffAmount);
+    }
+
     // ── arrangement ──────────────────────────────────────────────────
+
+    private void HoldsCash(string currencyId, decimal amount) =>
+        _cashLedger
+            .Setup(r => r.GetHeldUnderLockAsync(PayrollMockFactory.EmployeeId, currencyId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(amount);
 
     private Task Run() => new PayPeriodBackgroundService(
         _payPeriodRepository.Object,
@@ -322,7 +404,8 @@ public class PayPeriodMixedCurrencyInvoicingTests
         _blobContainerClientFactory.Object,
         _tenantProvider.Object,
         _payoutReferenceAllocator.Object,
-        new Mock<ITenantRepository>().Object)
+        new Mock<ITenantRepository>().Object,
+        _cashLedger.Object)
         .CloseExpiredPeriodsAndOpenNewAsync(CancellationToken.None);
 
     private static Employee Cleaner()

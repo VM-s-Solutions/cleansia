@@ -9,7 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { CleansiaButtonComponent, CleansiaTextareaComponent } from '@cleansia/components';
 import { OrderStatusLabelPipe } from '@cleansia/pipes';
 import {
@@ -29,6 +29,7 @@ import { clearOnBackForwardRestore, formatMoney, localeFor } from '@cleansia/uti
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { DialogModule } from 'primeng/dialog';
 import { SkeletonModule } from 'primeng/skeleton';
+import { AmountDueComponent } from '../amount-due/amount-due.component';
 import { OrderPreferredOfferComponent } from './components/order-preferred-offer.component';
 import { OrderDetailFacade } from './order-detail.facade';
 import { OrderMarketFacade } from '../order-market.facade';
@@ -81,7 +82,6 @@ interface EntryDetail {
   imports: [
     CommonModule,
     FormsModule,
-    RouterLink,
     TranslatePipe,
     SkeletonModule,
     DialogModule,
@@ -89,6 +89,7 @@ interface EntryDetail {
     CleansiaTextareaComponent,
     OrderStatusLabelPipe,
     OrderPreferredOfferComponent,
+    AmountDueComponent,
   ],
   providers: [OrderDetailFacade, OrderPreferredOfferFacade, OrderMarketFacade],
   templateUrl: './order-detail.component.html',
@@ -111,7 +112,6 @@ export class OrderDetailComponent implements OnInit {
   readonly freeCancellationHours = this.facade.freeCancellationHours;
   readonly reviewSubmitting = this.facade.reviewSubmitting;
   readonly downloading = this.facade.downloading;
-  readonly workContractAcceptances = this.facade.workContractAcceptances;
 
   readonly canCancel = this.facade.canCancel;
   readonly canReportCleanerNoShow = this.facade.canReportCleanerNoShow;
@@ -485,10 +485,6 @@ export class OrderDetailComponent implements OnInit {
 
   goBack(): void {
     this.router.navigate([CleansiaCustomerRoute.ORDERS]);
-  }
-
-  contractLink(acceptanceId: string): string[] {
-    return ['/', CleansiaCustomerRoute.ORDERS, this.order()?.id ?? '', 'contract', acceptanceId];
   }
 
   downloadReceipt(): void {

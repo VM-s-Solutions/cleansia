@@ -208,5 +208,12 @@ public record OrderItem(
     decimal? CashCollectedAmount = null,
 
     DirtinessLevel DirtinessLevel = DirtinessLevel.Normal,
-    decimal DirtinessSurchargeAmount = 0m
+    decimal DirtinessSurchargeAmount = 0m,
+
+    /// <summary>
+    /// When the assigned cleaner reported that they cannot get in, and the calls they made; null until
+    /// they do. An administrator reads them to confirm the lockout, the crew to see it was reported.
+    /// </summary>
+    DateTime? LockoutReportedAt = null,
+    string? LockoutCallAttempts = null
 );

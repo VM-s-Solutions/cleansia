@@ -186,6 +186,7 @@ final class CreateRecurringPreferredCleanerTests: XCTestCase {
         vm.toggleService("s-1")
         vm.setDirtiness(.normal)
         vm.setStartsOn(Date(timeIntervalSince1970: 1_780_000_000))
+        vm.setEarlyPerformanceRequested(true)
     }
 
     /// A schedule has no single instant, so the list is who served this customer, not who is free.

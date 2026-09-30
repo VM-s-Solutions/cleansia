@@ -88,7 +88,9 @@
       "profile": "Můj profil",
       "customer_detail": "Zákazník",
       "audit_log_customers": "Akce zákazníků",
-      "audit_log_customer_entry": "Akce zákazníka"
+      "audit_log_customer_entry": "Akce zákazníka",
+      "receivables": "Pohledávky",
+      "cash_held": "Hotovost u uklízečů"
     }
   },
   "components": {
@@ -257,6 +259,22 @@
       "normal": "Běžné",
       "increased": "Zvýšené",
       "heavy": "Silné"
+    },
+    "receivable_status": {
+      "open": "Otevřená",
+      "paid": "Zaplacená",
+      "written_off": "Odepsaná"
+    },
+    "receivable_kind": {
+      "cash_cancellation_fee": "Poplatek za pozdní zrušení",
+      "lockout": "Poplatek za znemožněný vstup",
+      "unpaid_cash": "Nezaplacená hotovost",
+      "top_up": "Doplatek"
+    },
+    "pay_line_type": {
+      "job": "Zakázka",
+      "cancellation_fee_share": "Podíl z poplatku za zrušení",
+      "lockout_fee_share": "Podíl z poplatku za znemožněný vstup"
     }
   },
   "sidebar": {
@@ -295,7 +313,9 @@
     "data_protection": "Ochrana údajů",
     "audit_log": "Protokol akcí",
     "notifications": "Upozornění",
-    "profile": "Můj profil"
+    "profile": "Můj profil",
+    "receivables": "Pohledávky",
+    "cash_held": "Hotovost u uklízečů"
   },
   "pages": {
     "unauthorized": {
@@ -682,6 +702,15 @@
           "amount": "Přijatá částka",
           "submit": "Zaznamenat hotovost",
           "success": "Hotovost byla zaznamenána. Objednávka je zaplacená."
+        },
+        "lockout": {
+          "action": "Potvrdit znemožněný vstup",
+          "context": "Použijte, když uklízeč nahlásil, že se nemůže dostat dovnitř. Před potvrzením zkontrolujte fotografii vchodu a jeho pokusy o volání.",
+          "confirm": "Rezervace se zruší jako vstup znemožněný zákazníkem za plnou cenu. Objednávka placená kartou si ponechá platbu i uplatněný kredit; nezaplacená hotovostní rezervace přihlášeného zákazníka dluží plnou cenu jako pohledávku; host nedostane nic zpět a nic dalšího se mu neúčtuje. Tým dostane svůj podíl z poplatku, jakmile bude vybrán. Akci nelze vrátit zpět.",
+          "submit": "Potvrdit znemožněný vstup",
+          "success": "Objednávka byla zrušena jako znemožněný vstup za {{fee}}. {{receivable}}",
+          "receivable_opened": "Zákazník dluží {{amount}}, zaznamenáno jako pohledávka.",
+          "no_receivable": "Co zákazník zaplatil, zůstává, a nic dalšího se neúčtuje."
         }
       },
       "messages": {
@@ -796,7 +825,16 @@
           "load_failed": "Smlouvu se nepodařilo načíst. Zkuste to prosím znovu.",
           "retry": "Zkusit znovu"
         }
-      }
+      },
+      "lockout": {
+        "title": "Hlášení znemožněného vstupu",
+        "reported_at": "Nahlášeno",
+        "call_attempts": "Pokusy uklízeče o volání",
+        "photo": "Fotografie vchodu",
+        "photo_hint": "V části Fotografie objednávky"
+      },
+      "entrance_photos": "Fotografie vchodu",
+      "entrance": "Vchod"
     },
     "invoice_management": {
       "title": "Správa faktur",
@@ -1054,7 +1092,8 @@
         "bonus_pay": "Bonus",
         "deduction_pay": "Srážka",
         "total_pay": "Celkem",
-        "created_on": "Vytvořeno"
+        "created_on": "Vytvořeno",
+        "line_type": "Položka"
       },
       "cancel_dialog": {
         "title": "Zrušit fakturu",
@@ -1927,7 +1966,8 @@
       "categories": {
         "retention": "Uchovávání dat",
         "lifecycle": "Životní cyklus společnosti",
-        "notifications": "Notifikace"
+        "notifications": "Notifikace",
+        "cash": "Hotovost u uklízečů"
       },
       "descriptions": {
         "retention": {
@@ -1979,6 +2019,10 @@
         },
         "notifications": {
           "admin_email": "Schránka, která dostává jeden e-mail v angličtině za každou administrátorskou událost místo všech administrátorů; ve výchozím stavu dostane e-mail každý administrátor ve svém jazyce"
+        },
+        "cash": {
+          "float_cap": "Nejvyšší částka hotovosti, kterou smí uklízeč držet v jedné měně; nad ní se mu hotovostní zakázky skryjí a uvidí proč. 0 znamená bez limitu",
+          "remittance_request_days": "Počet dní, po které smí uklízeč držet hotovost, jež mu zůstala po uzávěrce platebního období, než bude požádán o její odevzdání (1–365)"
         }
       }
     },
@@ -2044,6 +2088,7 @@
         "unpaidInvoices": "Neuhrazené faktury uklízečů",
         "uninvoicedPayRows": "Nefakturované odměny v uzavřených obdobích",
         "openDisputes": "Otevřené reklamace",
+        "cleanersHoldingCash": "Nevyrovnané zůstatky hotovosti u uklízečů",
         "chargebackHorizonEndsOn": "Lhůta pro chargeback",
         "windDownLastRunOn": "Poslední běh ukončování",
         "windDownRunStartedOn": "Běh ukončování probíhá od"
@@ -2764,6 +2809,10 @@
             "cleaner_not_started": {
               "title": "Uklízeč nezačal objednávku",
               "body": "Objednávka {{orderNumber}} byla objednána na {{cleaningDateTime}} a nikdo ji nezačal. Pokud uklízeč nedorazil, zrušte ji jako nedostavení."
+            },
+            "lockout_reported": {
+              "title": "Uklízeč se nemůže dostat dovnitř",
+              "body": "Uklízeč u objednávky {{orderNumber}}, objednané na {{cleaningDateTime}}, hlásí, že se nemůže dostat dovnitř. Zkontrolujte fotografii vchodu a jeho pokusy o volání; pokud ho zákazník nepustil dovnitř, zrušte ji jako nezpřístupnění zákazníkem."
             }
           },
           "dispute": {
@@ -2824,11 +2873,16 @@
         "current_password": "Současné heslo",
         "new_password": "Nové heslo",
         "confirm_password": "Potvrzení nového hesla",
-        "password_hint": "Alespoň 8 znaků, z toho alespoň jedno písmeno a jedna číslice",
+        "password_hint": "Alespoň 12 znaků, z toho alespoň jedno písmeno a jedna číslice",
         "submit": "Změnit heslo"
       },
       "messages": {
         "change_password_success": "Heslo bylo úspěšně změněno"
+      },
+      "password_change_required": {
+        "title": "Nastavte si vlastní heslo",
+        "description": "Heslo tohoto účtu zvolil někdo jiný. Než budete pokračovat, nahraďte ho heslem, které znáte jen vy; současné heslo je to, kterým jste se právě přihlásili.",
+        "sign_out": "Odhlásit se"
       }
     },
     "customer_detail": {
@@ -2852,6 +2906,73 @@
         "orders_truncated": "Zobrazeno {{shown}} nejnovějších z {{total}} objednávek.",
         "success": "Spis incidentu byl stažen a zaznamenán",
         "error": "Spis incidentu se nepodařilo sestavit"
+      }
+    },
+    "receivables": {
+      "title": "Pohledávky",
+      "description": "Co zákazníci dluží společnosti u objednávky: poplatek za pozdní zrušení nebo za znemožněný vstup u hotovostní rezervace, případně nezaplacenou hotovost. Dokud zákazník nějakou dluží, jeho nové rezervace s platbou v hotovosti se odmítají; platba kartou zůstává možná. Odepsání zaznamená, proč už částka dlužná není.",
+      "filters": {
+        "status": "Stav"
+      },
+      "load_error": "Pohledávky se nepodařilo načíst.",
+      "retry": "Zkusit znovu",
+      "empty": "Nikdo nic nedluží.",
+      "columns": {
+        "order": "Objednávka",
+        "kind": "Druh",
+        "amount": "Částka",
+        "status": "Stav",
+        "attempts": "Pokusy o stržení",
+        "created_on": "Vznikla",
+        "written_off_on": "Odepsána",
+        "write_off_note": "Důvod odepsání"
+      },
+      "actions": {
+        "view_order": "Otevřít objednávku",
+        "write_off": "Odepsat"
+      },
+      "write_off": {
+        "title": "Odepsat pohledávku",
+        "lede": "Zákazník už tuto částku dlužit nebude, a jakmile nemá otevřenou žádnou jinou, může znovu rezervovat s platbou v hotovosti. Poznámka je jediným záznamem o důvodu.",
+        "note": "Proč se odepisuje",
+        "note_hint": "Například: zákazník ji uhradil osobně",
+        "submit": "Odepsat"
+      },
+      "messages": {
+        "write_off_success": "Pohledávka byla odepsána"
+      }
+    },
+    "cash_held": {
+      "title": "Hotovost u uklízečů",
+      "description": "Hotovost společnosti, kterou uklízeči převzali na místě a stále ji mají u sebe, podle měny. Uzávěrka platebního období ji započte proti faktuře uklízeče; zaznamenejte, co uklízeč odevzdal, nebo odepište, co se nevrátí.",
+      "load_error": "Hotovost u uklízečů se nepodařilo načíst.",
+      "retry": "Zkusit znovu",
+      "empty": "Žádný uklízeč nemá u sebe hotovost.",
+      "amount": "Částka",
+      "columns": {
+        "cleaner": "Uklízeč",
+        "currency": "Měna",
+        "amount": "Hotovost u sebe"
+      },
+      "actions": {
+        "record_remittance": "Zaznamenat odevzdanou hotovost",
+        "write_off": "Odepsat"
+      },
+      "remittance": {
+        "title": "Zaznamenat odevzdanou hotovost",
+        "lede": "Odečte částku, kterou uklízeč odevzdal, od hotovosti, kterou má u sebe v této měně.",
+        "note": "Poznámka (nepovinná)",
+        "submit": "Zaznamenat"
+      },
+      "write_off": {
+        "title": "Odepsat hotovost",
+        "lede": "Odečte hotovost, kterou uklízeč neodevzdá, od toho, co má u sebe, aniž by byla přijata. Poznámka je jediným záznamem o důvodu.",
+        "note": "Proč se odepisuje",
+        "submit": "Odepsat"
+      },
+      "messages": {
+        "remittance_success": "Odevzdaná hotovost byla zaznamenána",
+        "write_off_success": "Hotovost byla odepsána"
       }
     }
   },
@@ -2995,6 +3116,7 @@
     },
     "auth": {
       "account_locked": "Příliš mnoho neúspěšných pokusů o přihlášení. Účet je dočasně uzamčen — zkuste to znovu za několik minut.",
+      "admin_password_too_short": "Heslo administrátora musí mít alespoň 12 znaků.",
       "apple_type_error": "Tento účet používá přihlášení přes Apple. Použijte tlačítko Apple.",
       "change_password_failed": "Změna hesla se nezdařila",
       "current_password_invalid": "Současné heslo není správné",
@@ -3041,6 +3163,7 @@
       "has_open_pay_period": "Výplatní období je stále otevřené; nejprve ho uzavřete.",
       "has_unpaid_invoices": "Faktura uklízeče ještě není zaplacena; archivace čeká, dokud nebude každá faktura zaplacena nebo stornována.",
       "has_uninvoiced_pay": "Uzavřené výplatní období obsahuje odměnu, která nebyla nikdy vyfakturována; archivace na ni čeká.",
+      "has_cash_held": "Uklízeč má stále u sebe hotovost společnosti; nejprve zaznamenejte její odevzdání nebo ji odepište.",
       "has_open_disputes": "Reklamace je stále otevřená; nejprve ji vyřešte.",
       "within_chargeback_horizon": "Držitel karty může poslední kartovou platbu společnosti stále rozporovat; archivace bude možná, jakmile uplyne lhůta pro chargeback."
     },
@@ -3162,6 +3285,9 @@
       }
     },
     "order": {
+      "lockout": {
+        "not_reported": "Uklízeč nenahlásil, že se nemůže dostat dovnitř, takže není co potvrdit."
+      },
       "after_photos": {
         "required": "Pro dokončení objednávky jsou vyžadovány fotografie po úklidu"
       },
@@ -3292,6 +3418,14 @@
     },
     "receipt": {
       "not_found": "Potvrzení nenalezeno"
+    },
+    "receivable": {
+      "not_found": "Tato pohledávka už neexistuje.",
+      "not_open": "Odepsat lze jen otevřenou pohledávku."
+    },
+    "cash_held": {
+      "amount_invalid": "Zadejte částku větší než nula, nejvýše na haléře",
+      "amount_exceeds_balance": "To je víc hotovosti, než má partner v této měně u sebe"
     },
     "referral": {
       "action_failed": "Akce s doporučením se nezdařila. Zkuste to znovu.",

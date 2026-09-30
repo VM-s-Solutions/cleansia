@@ -24,7 +24,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /** Per-action discriminator so individual buttons can show their own spinners. */
-enum class OrderAction { Take, AcceptContract, Start, NotifyOnTheWay, MarkCashCollected, Complete, DeclineOffer }
+enum class OrderAction { Take, AcceptContract, Start, NotifyOnTheWay, MarkCashCollected, Complete, DeclineOffer, ReportLockout }
 
 sealed interface OrderDetailUiState {
     data object Loading : OrderDetailUiState
@@ -196,6 +196,12 @@ class OrderDetailViewModel @Inject constructor(
         ordersRepository.completeOrder(orderId, actualMinutes, notes)
     }
 
+    fun reportLockout(callAttempts: String) {
+        val note = callAttempts.trim()
+        if (note.isEmpty()) return
+        runAction(OrderAction.ReportLockout) { ordersRepository.reportLockout(orderId, note) }
+    }
+
     fun onContentMutated() = ensureFreshOrCachedAsync()
 
     private fun runAction(action: OrderAction, block: suspend () -> ApiResult<Unit>) {
@@ -210,6 +216,9 @@ class OrderDetailViewModel @Inject constructor(
                     }
                     if (action == OrderAction.DeclineOffer) {
                         snackbar.showSuccessKey(R.string.offer_declined_toast)
+                    }
+                    if (action == OrderAction.ReportLockout) {
+                        snackbar.showSuccessKey(R.string.lockout_reported_toast)
                     }
                     _actionState.value = ActionState.Idle
                     _inFlightAction.value = null

@@ -166,6 +166,7 @@ export default withMermaid(
               { text: "ADR-0067 — Confirmed → New when the last cleaner leaves; the administrators…", link: '/decisions/adr-0067' },
               { text: "ADR-0068 — A contract for work per job: the text, the acceptance, the record", link: '/decisions/adr-0068' },
               { text: "ADR-0069 — The dirtiness level prices, times, crews and pays the job", link: '/decisions/adr-0069' },
+              { text: "ADR-0070 — A saved card guarantees cash, and what a customer owes is a receivable", link: '/decisions/adr-0070' },
             ],
           },
         ],

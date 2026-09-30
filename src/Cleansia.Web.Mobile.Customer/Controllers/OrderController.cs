@@ -279,8 +279,9 @@ public class OrderController(IMediator mediator) : CustomerMobileApiController(m
         return HandleResult<ChoosePreferredCleaner.Response>(result);
     }
 
-    // The accepted contract for work, keyed on the acceptance (ADR-0068 D4): the order's customer, the
-    // cleaner who accepted it and an administrator read it; anyone else answers order.not_found.
+    // The contract for work binds the operating company and the cleaner, so every customer is answered
+    // order.not_found. The route stays only while the customer web and mobile apps still call it; it goes
+    // with their contract screens.
     [HttpGet("GetWorkContract")]
     [Permission(Policy.CanViewOrderDetail)]
     [EnableRateLimiting("interactive")]

@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
+using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Core.Queue.Abstractions.Messages;
@@ -112,7 +113,7 @@ public class AdminRecordCashReceived
         }
     }
 
-    public class Handler(IOrderRepository orderRepository, IPendingDispatch pending)
+    public class Handler(IOrderRepository orderRepository, ICashLedgerRepository cashLedgerRepository, IPendingDispatch pending)
         : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -120,7 +121,7 @@ public class AdminRecordCashReceived
             var order = await orderRepository
                 .GetQueryable()
                 .Include(o => o.OrderStatusHistory)
-                .Include(o => o.Receipt)
+                .Include(o => o.Receipts)
                 .AsSplitQuery()
                 .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);
 
@@ -131,6 +132,7 @@ public class AdminRecordCashReceived
             }
 
             order.MarkCashCollected(command.EmployeeId, command.ReceivedAt.ToUniversalTime(), command.Amount);
+            cashLedgerRepository.Add(CashLedgerEntry.ForCollection(order));
 
             if (order.CurrentStatus == OrderStatus.Completed && order.Receipt is null)
             {

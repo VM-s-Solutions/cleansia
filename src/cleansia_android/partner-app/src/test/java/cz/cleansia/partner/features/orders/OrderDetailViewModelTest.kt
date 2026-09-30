@@ -3,6 +3,7 @@ package cz.cleansia.partner.features.orders
 import androidx.lifecycle.SavedStateHandle
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.core.ui.state.ActionState
+import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.AssignedEmployeeDto
 import cz.cleansia.partner.api.model.Code
 import cz.cleansia.partner.api.model.OrderItem
@@ -338,6 +339,59 @@ class OrderDetailViewModelTest {
 
         io.mockk.coVerify { ordersRepository.markCashCollected(orderId) }
         assertEquals(ActionState.Idle, vm.actionState.value)
+        assertNull(vm.inFlightAction.value)
+    }
+
+    @Test
+    fun `a lockout report sends the trimmed note, confirms it and refetches the order`() = runTest {
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returns ApiResult.Success(order)
+        coEvery { ordersRepository.reportLockout(orderId, any()) } returns ApiResult.Success(Unit)
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.reportLockout("  Called at 10:05 and 10:15, no answer \n")
+        advanceUntilIdle()
+
+        io.mockk.coVerify { ordersRepository.reportLockout(orderId, "Called at 10:05 and 10:15, no answer") }
+        verify { snackbar.showSuccessKey(R.string.lockout_reported_toast) }
+        io.mockk.coVerify(exactly = 2) { ordersRepository.getById(orderId) }
+        assertEquals(ActionState.Idle, vm.actionState.value)
+        assertNull(vm.inFlightAction.value)
+    }
+
+    @Test
+    fun `a lockout report with no note of the calls sends nothing`() = runTest {
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returns ApiResult.Success(order)
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.reportLockout("   ")
+        advanceUntilIdle()
+
+        io.mockk.coVerify(exactly = 0) { ordersRepository.reportLockout(any(), any()) }
+        assertEquals(ActionState.Idle, vm.actionState.value)
+    }
+
+    @Test
+    fun `a refused lockout report snackbars the reason and confirms nothing`() = runTest {
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returns ApiResult.Success(order)
+        coEvery { ordersRepository.reportLockout(orderId, any()) } returns
+            ApiResult.Error(refusal("order.lockout.photo_required"))
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.reportLockout("Called twice")
+        advanceUntilIdle()
+
+        verify { snackbar.showError("translated error") }
+        verify(exactly = 0) { snackbar.showSuccessKey(R.string.lockout_reported_toast) }
+        assertTrue(vm.actionState.value is ActionState.Error)
         assertNull(vm.inFlightAction.value)
     }
 

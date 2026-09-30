@@ -92,6 +92,8 @@ public class TakeOrder
                 .WithMessage(BusinessErrorMessage.EmployeeAlreadyAssignedToOrder)
                 .MustAsync(NotExceedWeeklyOrderLimitAsync)
                 .WithMessage(BusinessErrorMessage.WeeklyOrderLimitReached)
+                .MustAsync(NotACashJobAboveTheFloatCapAsync)
+                .WithMessage(BusinessErrorMessage.OrderCashFloatCapExceeded)
                 .MustAsync(NotHaveTimeConflictAsync)
                 .WithMessage(BusinessErrorMessage.TimeConflict)
                 .MustAsync(TextBelongsToOrderContractAsync)
@@ -263,6 +265,27 @@ public class TakeOrder
             var weeklyCount = await _orderRepository.GetEmployeeOrderCountThisWeekAsync(employeeId, cancellationToken);
 
             return weeklyCount < limit;
+        }
+
+        /// <summary>
+        /// A cleaner who holds more of the company's cash than its float cap does not see cash jobs on the
+        /// board (owner ruling 2026-09-28, decision 25); one reached another way is refused with that reason.
+        /// </summary>
+        private async Task<bool> NotACashJobAboveTheFloatCapAsync(Command command, CancellationToken cancellationToken)
+        {
+            var order = await _orderRepository
+                .GetQueryable()
+                .Where(o => o.Id == command.OrderId)
+                .Select(o => new { o.PaymentType, o.CurrencyId })
+                .FirstOrDefaultAsync(cancellationToken);
+            if (order is not { PaymentType: PaymentType.Cash })
+            {
+                return true;
+            }
+
+            var employeeId = await _orderAccessService.GetCallerEmployeeIdAsync(cancellationToken);
+            return string.IsNullOrEmpty(employeeId)
+                || !await _orderAccessService.CashJobsHiddenFromAsync(employeeId, order.CurrencyId, cancellationToken);
         }
 
         /// <summary>

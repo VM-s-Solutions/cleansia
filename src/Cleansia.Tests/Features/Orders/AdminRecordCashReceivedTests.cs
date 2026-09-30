@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
+using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Core.Queue.Abstractions;
@@ -25,8 +26,9 @@ public class AdminRecordCashReceivedTests
 
     private readonly Mock<IOrderRepository> _orderRepository = new();
     private readonly Mock<IPendingDispatch> _pending = new();
+    private readonly Mock<ICashLedgerRepository> _cashLedger = new();
 
-    private AdminRecordCashReceived.Handler Handler() => new(_orderRepository.Object, _pending.Object);
+    private AdminRecordCashReceived.Handler Handler() => new(_orderRepository.Object, _cashLedger.Object, _pending.Object);
 
     private AdminRecordCashReceived.Validator Validator()
     {
@@ -85,6 +87,27 @@ public class AdminRecordCashReceivedTests
         Assert.Equal(950m, order.CashCollectedAmount);
         // Still in progress: the cleaner's completion issues the receipt.
         _pending.VerifyNoOtherCalls();
+    }
+
+    /// <summary>
+    /// Owner ruling 2026-09-28 (decision 23): the handover an administrator records is cash the named
+    /// cleaner holds, at the amount and the moment stated.
+    /// </summary>
+    [Fact]
+    public async Task The_Recorded_Handover_Is_Entered_As_Cash_The_Named_Cleaner_Holds()
+    {
+        var order = ArrangeOrder();
+        var receivedAt = Now.AddMinutes(-45);
+        CashLedgerEntry? entered = null;
+        _cashLedger.Setup(r => r.Add(It.IsAny<CashLedgerEntry>())).Callback<CashLedgerEntry>(e => entered = e);
+
+        var result = await Handler().Handle(Command(amount: 950m, receivedAt: receivedAt), CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.NotNull(entered);
+        Assert.Equal(
+            (CleanerId, (string?)OrderId, order.CurrencyId, CashLedgerEntryKind.Collection, 950m, receivedAt),
+            (entered!.EmployeeId, entered.OrderId, entered.CurrencyId, entered.Kind, entered.Amount, entered.OccurredAt));
     }
 
     [Fact]

@@ -75,7 +75,8 @@ public class CreateOrderConsentedCustomerTests(PostgresContainerFixture fixture)
         PaymentType: PaymentType.Cash,
         CurrencyId: null,
         TotalPrice: CzkServicePrice,
-        TermsAccepted: null);
+        TermsAccepted: null,
+        EarlyPerformanceRequested: true);
 
     private static async Task<List<CustomerActionAudit>> CustomerRows(CleansiaDbContext context) =>
         await context.CustomerActionAudits.IgnoreQueryFilters().ToListAsync();
@@ -165,6 +166,7 @@ public class CreateOrderConsentedCustomerTests(PostgresContainerFixture fixture)
         customer.Id = CustomerUserId;
         customer.ConfirmEmail();
         context.Users.Add(customer);
+        context.SavedCards.Add(TestSavedCards.Usable(CustomerUserId, Czk));
 
         var terms = await LegalSeed.PlatformWideAsync(context, LegalDocumentType.TermsOfService);
         var privacy = await LegalSeed.PlatformWideAsync(context, LegalDocumentType.PrivacyPolicy);

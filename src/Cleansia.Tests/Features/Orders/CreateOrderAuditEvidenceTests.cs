@@ -126,6 +126,8 @@ public sealed class CreateOrderAuditEvidenceTests
             OrderMarketDoubles.OperatedBy("tenant-1"),
             Mock.Of<ITenantProvider>(),
             _auditContext,
+            new Cleansia.Core.AppServices.Authentication.HostAudienceProvider("cleansia.customer"),
+            new Cleansia.TestUtilities.TestRequestMetadataProvider(),
             NullLogger<CreateOrder.Handler>.Instance);
 
     private static JsonElement Payload(AuditSnapshot? snapshot) => JsonDocument.Parse(snapshot!.AfterJson!).RootElement;

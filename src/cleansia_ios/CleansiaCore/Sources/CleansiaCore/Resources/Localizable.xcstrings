@@ -1016,6 +1016,41 @@
         }
       }
     },
+    "error.consent.early_performance_not_requested": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro pokračování prosím potvrďte, že žádáte o zahájení služby ve 14denní lhůtě pro odstoupení od smlouvy."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To continue, please confirm that you want the service to start within the 14-day withdrawal period."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Чтобы продолжить, подтвердите, что вы просите начать оказание услуги в течение 14-дневного срока для отказа от договора."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pre pokračovanie prosím potvrďte, že žiadate o začatie poskytovania služby v 14-dňovej lehote na odstúpenie od zmluvy."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Щоб продовжити, підтвердьте, що ви просите розпочати надання послуги протягом 14-денного строку для відмови від договору."
+          }
+        }
+      }
+    },
     "error.consent.terms_not_accepted": {
       "extractionState": "manual",
       "localizations": {
@@ -3674,6 +3709,41 @@
         }
       }
     },
+    "error.order.cash_float_cap_exceeded": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Držíte více hotovosti firmy, než dovoluje váš limit. Než vezmete další zakázku za hotové, odevzdejte ji."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You hold more company cash than your limit allows. Hand it over before you take another cash job."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "У вас больше наличных компании, чем позволяет ваш лимит. Сдайте их, прежде чем брать следующий заказ с оплатой наличными."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Držíte viac hotovosti firmy, než dovoľuje váš limit. Skôr než vezmete ďalšiu zákazku za hotovosť, odovzdajte ju."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "У вас більше готівки компанії, ніж дозволяє ваш ліміт. Передайте її, перш ніж брати наступне замовлення з оплатою готівкою."
+          }
+        }
+      }
+    },
     "error.order.cash_not_allowed_on_card_order": {
       "extractionState": "manual",
       "localizations": {
@@ -3814,6 +3884,146 @@
         }
       }
     },
+    "error.order.lockout.already_reported": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Už jste nahlásili, že se nemůžete dostat dovnitř."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You have already reported that you cannot get in."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вы уже сообщили, что не можете попасть внутрь."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Už ste nahlásili, že sa nemôžete dostať dnu."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ви вже повідомили, що не можете потрапити всередину."
+          }
+        }
+      }
+    },
+    "error.order.lockout.order_closed": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tato zakázka je už dokončená nebo zrušená."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This job is already completed or cancelled."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Этот заказ уже выполнен или отменён."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Táto zákazka je už dokončená alebo zrušená."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Це замовлення вже виконане або скасоване."
+          }
+        }
+      }
+    },
+    "error.order.lockout.photo_required": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Než nahlásíte, že se nemůžete dostat dovnitř, vyfoťte vchod."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Take a photo of the entrance before you report that you cannot get in."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Прежде чем сообщить, что вы не можете попасть внутрь, сфотографируйте вход."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skôr než nahlásite, že sa nemôžete dostať dnu, odfoťte vchod."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перш ніж повідомити, що ви не можете потрапити всередину, сфотографуйте вхід."
+          }
+        }
+      }
+    },
+    "error.order.lockout.too_early": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na nahlášení je příliš brzy. Že se nemůžete dostat dovnitř, můžete nahlásit od 15 minut po začátku."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It is too early to report this. You can report that you cannot get in from 15 minutes after the start."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сообщать ещё рано. Сообщить, что вы не можете попасть внутрь, можно через 15 минут после начала."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na nahlásenie je príliš skoro. Že sa nemôžete dostať dnu, môžete nahlásiť od 15 minút po začiatku."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ще зарано повідомляти. Повідомити, що ви не можете потрапити всередину, можна через 15 хвилин після початку."
+          }
+        }
+      }
+    },
     "error.order.payment_not_outstanding": {
       "extractionState": "manual",
       "localizations": {
@@ -3880,6 +4090,251 @@
           "stringUnit": {
             "state": "translated",
             "value": "Оплата готівкою можлива лише після входу в акаунт і для замовлення, з яким впорається один прибиральник."
+          }
+        }
+      }
+    },
+    "error.order.cash_requires_saved_card": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro platbu v hotovosti si nejdřív uložte kartu jako záruku — nebo zaplaťte kartou."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To pay in cash, first save a card as a guarantee — or pay by card."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Чтобы платить наличными, сначала сохраните карту как гарантию — или оплатите картой."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na platbu v hotovosti si najprv uložte kartu ako záruku — alebo zaplaťte kartou."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Щоб платити готівкою, спершу збережіть картку як гарантію — або оплатіть карткою."
+          }
+        }
+      }
+    },
+    "error.order.cash_open_bookings_limit_reached": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Už máte nejvyšší povolený počet nezaplacených objednávek v hotovosti. Zvolte kartu, nebo hotovost znovu, až bude některá z nich zaplacena."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You already have as many unpaid cash bookings as allowed. Choose card, or pay in cash again once one of them is paid."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "У вас уже максимально допустимое количество неоплаченных заказов наличными. Выберите карту или снова наличные, когда один из них будет оплачен."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Už máte najvyšší povolený počet nezaplatených objednávok v hotovosti. Zvoľte kartu alebo hotovosť znova, keď bude niektorá z nich zaplatená."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "У вас уже максимально дозволена кількість неоплачених замовлень готівкою. Оберіть картку або знову готівку, коли одне з них буде оплачено."
+          }
+        }
+      }
+    },
+    "error.order.cash_unpaid_receivable": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Máte u nás nezaplacenou částku, například storno poplatek. Zatím zaplaťte kartou; v hotovosti budete moci platit znovu, až ji uhradíte v profilu v sekci Platby."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You have an unpaid amount with us, such as a cancellation fee. Pay by card for now; cash is available again once you settle it under Payments in your profile."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "У вас есть неоплаченная сумма, например плата за отмену. Пока оплатите картой; наличными можно будет платить снова, когда вы погасите её в профиле в разделе Платежи."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Máte u nás nezaplatenú sumu, napríklad stornovací poplatok. Zatiaľ zaplaťte kartou; v hotovosti budete môcť platiť znova, keď ju uhradíte v profile v sekcii Platby."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "У вас є неоплачена сума, наприклад плата за скасування. Поки що оплатіть карткою; готівкою можна буде платити знову, коли ви сплатите її в профілі в розділі Платежі."
+          }
+        }
+      }
+    },
+    "error.saved_card.consent_not_accepted": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Před uložením karty prosím potvrďte souhlas, že na ni mohou být účtovány poplatky a nezaplacená hotovost."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Please agree that fees and unpaid cash may be charged to your card before saving it."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Прежде чем сохранить карту, согласитесь, что с неё могут списываться сборы и неоплаченные наличные."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pred uložením karty prosím potvrďte súhlas, že na ňu môžu byť účtované poplatky a nezaplatená hotovosť."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перш ніж зберегти картку, погодьтеся, що з неї можуть стягуватися збори та неоплачена готівка."
+          }
+        }
+      }
+    },
+    "error.saved_card.not_found": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tuto uloženou kartu jsme nenašli."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We couldn't find that saved card."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Мы не нашли эту сохранённую карту."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Túto uloženú kartu sme nenašli."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ми не знайшли цю збережену картку."
+          }
+        }
+      }
+    },
+    "error.receivable.not_found": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tuto dlužnou částku jsme nenašli."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We couldn't find that amount due."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Мы не нашли эту сумму к оплате."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Túto dlžnú sumu sme nenašli."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ми не знайшли цю суму до сплати."
+          }
+        }
+      }
+    },
+    "error.receivable.not_open": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tato částka už byla uhrazena nebo prominuta."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This amount has already been paid or waived."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Эта сумма уже оплачена или списана."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Táto suma už bola uhradená alebo odpustená."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Цю суму вже сплачено або списано."
           }
         }
       }

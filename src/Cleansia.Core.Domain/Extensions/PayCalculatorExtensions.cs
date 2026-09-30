@@ -91,6 +91,13 @@ public static class PayCalculatorExtensions
         return (basePay, extrasPay, dirtinessPay, totalPay, minPay, maxPay, breakdown);
     }
 
+    /// <summary>
+    /// One seat's share of a fee the company collected on a cancelled job: <paramref name="collectedFee"/> x
+    /// <paramref name="shareRate"/>, split across the job's <paramref name="seats"/> as job pay is.
+    /// </summary>
+    public static decimal CalculateSeatFeeShare(decimal collectedFee, decimal shareRate, int seats, bool firstSeat) =>
+        SeatShare(Math.Round(collectedFee * shareRate, 2, MidpointRounding.AwayFromZero), seats, firstSeat);
+
     /// <summary>An equal share of <paramref name="amount"/> in whole cents; the first seat also takes the residue.</summary>
     private static decimal SeatShare(decimal amount, int seats, bool firstSeat)
     {

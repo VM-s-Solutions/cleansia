@@ -5,9 +5,11 @@ using Cleansia.Core.Clients.Abstractions;
 using Cleansia.Core.Domain.Emails;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
+using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Exceptions;
+using Cleansia.Infra.Services.Pdf.Models;
 using Microsoft.Extensions.Logging;
 using SendGrid;
 using SendGrid.Helpers.Mail;
@@ -26,6 +28,7 @@ public sealed partial class EmailService : IEmailService
     private readonly IEmailTemplateTranslationRepository emailTemplateTranslationRepository;
     private readonly IEmailTemplateRenderer templateRenderer;
     private readonly ICountryConfigurationRepository countryConfigurationRepository;
+    private readonly ICompanyInfoRepository companyInfoRepository;
 
     public EmailService(
         ISendGridConfig cfg,
@@ -33,7 +36,8 @@ public sealed partial class EmailService : IEmailService
         IHttpClientFactory httpClientFactory,
         IEmailTemplateTranslationRepository emailTemplateTranslationRepository,
         IEmailTemplateRenderer templateRenderer,
-        ICountryConfigurationRepository countryConfigurationRepository)
+        ICountryConfigurationRepository countryConfigurationRepository,
+        ICompanyInfoRepository companyInfoRepository)
     {
         sendGridConfig = cfg;
         logger = log;
@@ -41,6 +45,7 @@ public sealed partial class EmailService : IEmailService
         this.emailTemplateTranslationRepository = emailTemplateTranslationRepository;
         this.templateRenderer = templateRenderer;
         this.countryConfigurationRepository = countryConfigurationRepository;
+        this.companyInfoRepository = companyInfoRepository;
     }
 
     public async Task<string> SendResetPasswordEmailAsync(
@@ -66,7 +71,8 @@ public sealed partial class EmailService : IEmailService
         {
             UserName = fullUserName,
             VerificationCode = code,
-            ResetPasswordLink = resetLink
+            ResetPasswordLink = resetLink,
+            FooterText = await FooterTextAsync(languageCode, countryId: null, ct)
         }, languageCode);
 
         return await SendRenderedAsync(
@@ -99,6 +105,28 @@ public sealed partial class EmailService : IEmailService
             ? TimeZoneInfo.Utc
             : TimeZoneResolution.Resolve(
                 (await countryConfigurationRepository.GetByCountryIdAsync(countryId, ct))?.TimeZoneId);
+
+    /// <summary>
+    /// The copyright line names the company the receipts name: the active company of the order's market
+    /// when there is an order, else the ambient company's; the brand only when no company record resolves.
+    /// </summary>
+    private async Task<string> FooterTextAsync(string? languageCode, string? countryId, CancellationToken ct)
+    {
+        var company = countryId is null ? null : await companyInfoRepository.GetActiveByCountryAsync(countryId, ct);
+        company ??= await companyInfoRepository.GetActiveCompanyInfoAsync(ct);
+        var holder = company?.LegalName.TrimEnd('.') ?? "Cleansia";
+        return $"© {DateTime.UtcNow.Year} {holder}. {RightsReserved[EmailLocale.Resolve(languageCode)]}";
+    }
+
+    private static readonly IReadOnlyDictionary<string, string> RightsReserved =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["en"] = "All rights reserved.",
+            ["cs"] = "Všechna práva vyhrazena.",
+            ["sk"] = "Všetky práva vyhradené.",
+            ["uk"] = "Усі права захищено.",
+            ["ru"] = "Все права защищены.",
+        };
 
     private static CultureInfo CultureFor(string languageCode) =>
         CultureInfo.GetCultureInfo(EmailLocale.Resolve(languageCode));
@@ -190,7 +218,8 @@ public sealed partial class EmailService : IEmailService
             OrderDate = TimeZoneInfo.ConvertTime(order.CreatedOn, marketZone).ToString("d", CultureFor(languageCode)),
             // An unloaded Currency navigation is a loader omission, not a CZK order: no unit rather than a guessed one. → /architecture/platform-expandability#_5-where-czk-kc-is-hardcoded-vs-configurable
             TotalAmount = Money(order.TotalPrice, order.Currency?.Symbol ?? string.Empty, languageCode),
-            OrderStatusLink = orderStatusLink
+            OrderStatusLink = orderStatusLink,
+            FooterText = await FooterTextAsync(languageCode, order.CustomerAddress?.CountryId, ct)
         }, languageCode);
 
         var subject = translations.GetValueOrDefault("Subject", "Your Order Receipt");
@@ -225,7 +254,8 @@ public sealed partial class EmailService : IEmailService
             OrderNumber = orderNumber,
             OrderDate = orderDate,
             TotalAmount = totalAmount,
-            OrderStatusLink = orderStatusLink
+            OrderStatusLink = orderStatusLink,
+            FooterText = await FooterTextAsync(languageCode, countryId: null, ct)
         }, languageCode);
 
         var subject = "[TEST] " + translations.GetValueOrDefault("Subject", "Your Order Receipt");
@@ -264,7 +294,8 @@ public sealed partial class EmailService : IEmailService
         var values = BuildTemplateValues(translations, new
         {
             UserName = userName,
-            VerificationCode = verificationCode
+            VerificationCode = verificationCode,
+            FooterText = await FooterTextAsync(languageCode, countryId: null, ct)
         }, languageCode);
 
         return await SendRenderedAsync(
@@ -296,7 +327,8 @@ public sealed partial class EmailService : IEmailService
             PeriodLabel = periodLabel,
             StartDate = startDate.ToString("yyyy-MM-dd"),
             EndDate = endDate.ToString("yyyy-MM-dd"),
-            ClosedAt = closedAt.ToString("yyyy-MM-dd HH:mm:ss UTC")
+            ClosedAt = closedAt.ToString("yyyy-MM-dd HH:mm:ss UTC"),
+            FooterText = await FooterTextAsync(languageCode, countryId: null, ct)
         }, languageCode);
 
         var subject = translations.GetValueOrDefault("Subject", "Pay Period Closed");
@@ -336,7 +368,8 @@ public sealed partial class EmailService : IEmailService
             PeriodLabel = periodLabel,
             StartDate = startDate.ToString("yyyy-MM-dd"),
             EndDate = endDate.ToString("yyyy-MM-dd"),
-            DaysRemaining = formattedDaysRemaining
+            DaysRemaining = formattedDaysRemaining,
+            FooterText = await FooterTextAsync(languageCode, countryId: null, ct)
         }, languageCode);
 
         var subject = translations.GetValueOrDefault("Subject", "Pay Period Ending Soon");
@@ -364,11 +397,13 @@ public sealed partial class EmailService : IEmailService
                 ["StatusMessage_Booked"] = "Your cleaning is booked.",
                 ["CashDueMessage"] = "Please pay {0} in cash to the cleaner on the day.",
                 ["FreeCancellationMessage"] = "You can cancel free of charge up to {0} h before the cleaning; a later cancellation may be charged a fee.",
+                ["ConfirmationAttachedMessage"] = "Your booking confirmation is attached as a PDF.",
                 ["StatusMessage_Cancelled"] = "Your order has been cancelled.",
                 ["RefundMessage"] = "Refund issued:",
                 ["CancelledReason_NoCleaner"] = "No cleaner was available for this booking, so it was cancelled.",
                 ["CancelledReason_PaymentNotCompleted"] = "The payment wasn't completed, so this booking was released.",
                 ["CancelledReason_ByUs"] = "We had to cancel this booking.",
+                ["CancelledReason_Lockout"] = "The cleaner could not get into your home at the booked time and could not reach you, so the booking was cancelled and the full price is charged as a cancellation fee.",
                 ["RefundPendingMessage"] = "Your refund is being processed.",
                 ["NothingChargedMessage"] = "Nothing was charged.",
                 ["StatusSectionLabel"] = "Current status",
@@ -389,11 +424,13 @@ public sealed partial class EmailService : IEmailService
                 ["StatusMessage_Booked"] = "Váš úklid je zarezervován.",
                 ["CashDueMessage"] = "Částku {0} zaplaťte v hotovosti uklízeči v den úklidu.",
                 ["FreeCancellationMessage"] = "Zdarma můžete zrušit nejpozději {0} h před úklidem; pozdější zrušení může být zpoplatněno.",
+                ["ConfirmationAttachedMessage"] = "Potvrzení rezervace najdete v příloze jako PDF.",
                 ["StatusMessage_Cancelled"] = "Vaše rezervace byla zrušena.",
                 ["RefundMessage"] = "Vrácená částka:",
                 ["CancelledReason_NoCleaner"] = "Pro tuto rezervaci nebyl k dispozici žádný uklízeč, a proto byla zrušena.",
                 ["CancelledReason_PaymentNotCompleted"] = "Platba nebyla dokončena, a proto byla tato rezervace uvolněna.",
                 ["CancelledReason_ByUs"] = "Tuto rezervaci jsme museli zrušit.",
+                ["CancelledReason_Lockout"] = "Uklízeč se v objednaný čas nedostal do vaší domácnosti a nepodařilo se mu vás zastihnout, proto byla rezervace zrušena a celá cena se účtuje jako storno poplatek.",
                 ["RefundPendingMessage"] = "Vrácení peněz zpracováváme.",
                 ["NothingChargedMessage"] = "Nic vám nebylo účtováno.",
                 ["StatusSectionLabel"] = "Aktuální stav",
@@ -414,11 +451,13 @@ public sealed partial class EmailService : IEmailService
                 ["StatusMessage_Booked"] = "Vaše upratovanie je zarezervované.",
                 ["CashDueMessage"] = "Sumu {0} zaplaťte v hotovosti upratovačovi v deň upratovania.",
                 ["FreeCancellationMessage"] = "Bezplatne môžete zrušiť najneskôr {0} h pred upratovaním; neskoršie zrušenie môže byť spoplatnené.",
+                ["ConfirmationAttachedMessage"] = "Potvrdenie rezervácie nájdete v prílohe ako PDF.",
                 ["StatusMessage_Cancelled"] = "Vaša rezervácia bola zrušená.",
                 ["RefundMessage"] = "Vrátená suma:",
                 ["CancelledReason_NoCleaner"] = "Pre túto rezerváciu nebol k dispozícii žiadny upratovač, a preto bola zrušená.",
                 ["CancelledReason_PaymentNotCompleted"] = "Platba nebola dokončená, a preto bola táto rezervácia uvoľnená.",
                 ["CancelledReason_ByUs"] = "Túto rezerváciu sme museli zrušiť.",
+                ["CancelledReason_Lockout"] = "Upratovač sa v objednanom čase nedostal do vašej domácnosti a nepodarilo sa mu vás zastihnúť, preto bola rezervácia zrušená a celá cena sa účtuje ako storno poplatok.",
                 ["RefundPendingMessage"] = "Vrátenie peňazí spracúvame.",
                 ["NothingChargedMessage"] = "Nič vám nebolo účtované.",
                 ["StatusSectionLabel"] = "Aktuálny stav",
@@ -439,11 +478,13 @@ public sealed partial class EmailService : IEmailService
                 ["StatusMessage_Booked"] = "Ваше прибирання заброньовано.",
                 ["CashDueMessage"] = "Будь ласка, сплатіть {0} готівкою прибиральнику в день прибирання.",
                 ["FreeCancellationMessage"] = "Безкоштовно скасувати можна не пізніше ніж за {0} год до прибирання; за пізніше скасування може стягуватися плата.",
+                ["ConfirmationAttachedMessage"] = "Підтвердження бронювання додано до листа у форматі PDF.",
                 ["StatusMessage_Cancelled"] = "Ваше бронювання скасовано.",
                 ["RefundMessage"] = "Сума повернення:",
                 ["CancelledReason_NoCleaner"] = "Для цього бронювання не знайшлося вільного прибиральника, тому його скасовано.",
                 ["CancelledReason_PaymentNotCompleted"] = "Оплату не було завершено, тому це бронювання було скасовано.",
                 ["CancelledReason_ByUs"] = "Нам довелося скасувати це бронювання.",
+                ["CancelledReason_Lockout"] = "Прибиральник не зміг потрапити до вашого помешкання в заброньований час і не зміг з вами зв’язатися, тому бронювання скасовано, а повна вартість стягується як плата за скасування.",
                 ["RefundPendingMessage"] = "Повернення коштів обробляється.",
                 ["NothingChargedMessage"] = "З вас нічого не стягнуто.",
                 ["StatusSectionLabel"] = "Поточний статус",
@@ -464,11 +505,13 @@ public sealed partial class EmailService : IEmailService
                 ["StatusMessage_Booked"] = "Ваша уборка забронирована.",
                 ["CashDueMessage"] = "Пожалуйста, оплатите {0} наличными уборщику в день уборки.",
                 ["FreeCancellationMessage"] = "Бесплатно отменить можно не позднее чем за {0} ч до уборки; за более позднюю отмену может взиматься плата.",
+                ["ConfirmationAttachedMessage"] = "Подтверждение бронирования приложено к письму в формате PDF.",
                 ["StatusMessage_Cancelled"] = "Ваше бронирование отменено.",
                 ["RefundMessage"] = "Сумма возврата:",
                 ["CancelledReason_NoCleaner"] = "Для этого бронирования не нашлось свободного уборщика, поэтому оно отменено.",
                 ["CancelledReason_PaymentNotCompleted"] = "Оплата не была завершена, поэтому это бронирование было отменено.",
                 ["CancelledReason_ByUs"] = "Нам пришлось отменить это бронирование.",
+                ["CancelledReason_Lockout"] = "Уборщик не смог попасть в ваш дом в забронированное время и не смог с вами связаться, поэтому бронирование отменено, а полная стоимость взимается как плата за отмену.",
                 ["RefundPendingMessage"] = "Возврат средств обрабатывается.",
                 ["NothingChargedMessage"] = "С вас ничего не списано.",
                 ["StatusSectionLabel"] = "Текущий статус",
@@ -492,12 +535,13 @@ public sealed partial class EmailService : IEmailService
         CancellationToken ct = default,
         decimal? refundedAmount = null,
         string? guestAccessToken = null) =>
-        SendStatusEmailAsync(email, order, newStatus, languageCode, ct, refundedAmount, guestAccessToken, freeCancellationHours: null);
+        SendStatusEmailAsync(email, order, newStatus, languageCode, ct, refundedAmount, guestAccessToken, freeCancellationHours: null,
+            attachmentBytes: null, attachmentFileName: null);
 
     /// <summary>
-    /// The status e-mail's booked arm: what a cash booking gets instead of a receipt, which follows at
-    /// completion (owner ruling 2026-09-28) — the amount to pay the cleaner in cash, the slot in market
-    /// time, the address and the free-cancellation window.
+    /// The status e-mail's booked arm, sent when the contract is concluded with its confirmation attached:
+    /// the slot in market time, the address, the free-cancellation window and, for a cash booking, the
+    /// amount to pay the cleaner in cash — its receipt follows at completion (owner ruling 2026-09-28).
     /// </summary>
     public Task<string> SendOrderBookedEmailAsync(
         string email,
@@ -505,8 +549,320 @@ public sealed partial class EmailService : IEmailService
         int freeCancellationHours,
         string languageCode = Constants.Language.English,
         CancellationToken ct = default,
-        string? guestAccessToken = null) =>
-        SendStatusEmailAsync(email, order, BookedStatus, languageCode, ct, refundedAmount: null, guestAccessToken, freeCancellationHours);
+        string? guestAccessToken = null,
+        byte[]? confirmationPdf = null,
+        string? confirmationFileName = null) =>
+        SendStatusEmailAsync(email, order, BookedStatus, languageCode, ct, refundedAmount: null, guestAccessToken, freeCancellationHours,
+            confirmationPdf, confirmationFileName);
+
+    // In-code copy only: the status e-mail's translation rows are that e-mail's, and a Subject entered for
+    // it would retitle this one.
+    public async Task<string> SendReceivablePayLinkEmailAsync(
+        string email,
+        Order order,
+        Receivable receivable,
+        string payUrl,
+        string languageCode = Constants.Language.English,
+        CancellationToken ct = default)
+    {
+        var copy = PayLinkDefaults.GetValueOrDefault(languageCode) ?? PayLinkDefaults[Constants.Language.English];
+        var culture = CultureFor(languageCode);
+        var subject = string.Format(culture, copy["Subject"], order.DisplayOrderNumber);
+        var cleaningTime = TimeZoneInfo.ConvertTimeFromUtc(
+            DateTime.SpecifyKind(order.CleaningDateTime, DateTimeKind.Utc), await MarketZoneAsync(order, ct));
+
+        var values = new Dictionary<string, string?>(StringComparer.Ordinal);
+        foreach (var (key, value) in copy)
+        {
+            values[key] = value;
+        }
+
+        values["lang"] = languageCode;
+        values["Subject"] = subject;
+        values["StatusClass"] = "cancelled";
+        values["StatusLabel"] = ReceiptLabels.For(languageCode).ReceivableKinds[receivable.Kind];
+        values["OrderNumber"] = order.DisplayOrderNumber;
+        values["CleaningDate"] = cleaningTime.ToString("g", culture);
+        values["Address"] = order.CustomerAddress is { } address ? $"{address.Street}, {address.City}" : string.Empty;
+        values["Total"] = Money(receivable.Amount, order.Currency?.Symbol ?? string.Empty, languageCode);
+        values["OrderStatusLink"] = payUrl;
+        values["SupportEmail"] = sendGridConfig.AddressFrom;
+        values["FooterText"] = await FooterTextAsync(languageCode, order.CustomerAddress?.CountryId, ct);
+
+        return await SendRenderedAsync(
+            email,
+            templateRenderer.Render(TemplateFileFor(EmailType.OrderStatusUpdate), values),
+            subject,
+            $"Receivable pay link for receivable {receivable.Id}",
+            ct);
+    }
+
+    /// <summary>The pay-link e-mail's copy per locale; <c>{0}</c> in the subject is the order number.</summary>
+    private static readonly IReadOnlyDictionary<string, Dictionary<string, string>> PayLinkDefaults =
+        new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["en"] = new()
+            {
+                ["Subject"] = "Payment due for order {0}",
+                ["StatusMessage"] = "We could not charge the amount below to your saved card. Please pay it with the button below; the link is valid for 24 hours. Until it is paid, cash bookings are not available, and you can still book and pay by card.",
+                ["StatusSectionLabel"] = "Amount due for",
+                ["OrderNumberLabel"] = "Order #",
+                ["CleaningDateLabel"] = "Cleaning date",
+                ["AddressLabel"] = "Address",
+                ["TotalLabel"] = "Amount due",
+                ["ButtonText"] = "Pay now",
+                ["QuestionsText"] = "If you have questions about this payment, please contact us.",
+                ["SupportText"] = "Need help? Contact us at",
+                ["Closing"] = "Best regards,",
+                ["TeamName"] = "The Cleansia team",
+            },
+            ["cs"] = new()
+            {
+                ["Subject"] = "Platba k rezervaci {0}",
+                ["StatusMessage"] = "Níže uvedenou částku se nám nepodařilo strhnout z vaší uložené karty. Zaplaťte ji prosím tlačítkem níže; odkaz platí 24 hodin. Dokud nebude zaplacena, nelze objednávat s platbou v hotovosti, kartou můžete objednávat dál.",
+                ["StatusSectionLabel"] = "Dlužná částka za",
+                ["OrderNumberLabel"] = "Rezervace č.",
+                ["CleaningDateLabel"] = "Datum úklidu",
+                ["AddressLabel"] = "Adresa",
+                ["TotalLabel"] = "K úhradě",
+                ["ButtonText"] = "Zaplatit",
+                ["QuestionsText"] = "Pokud máte k této platbě dotazy, kontaktujte nás.",
+                ["SupportText"] = "Potřebujete pomoc? Kontaktujte nás na",
+                ["Closing"] = "S pozdravem",
+                ["TeamName"] = "Tým Cleansia",
+            },
+            ["sk"] = new()
+            {
+                ["Subject"] = "Platba k rezervácii {0}",
+                ["StatusMessage"] = "Uvedenú sumu sa nám nepodarilo stiahnuť z vašej uloženej karty. Zaplaťte ju, prosím, tlačidlom nižšie; odkaz platí 24 hodín. Kým nebude zaplatená, nie je možné objednávať s platbou v hotovosti, kartou môžete objednávať naďalej.",
+                ["StatusSectionLabel"] = "Dlžná suma za",
+                ["OrderNumberLabel"] = "Rezervácia č.",
+                ["CleaningDateLabel"] = "Dátum upratovania",
+                ["AddressLabel"] = "Adresa",
+                ["TotalLabel"] = "Na úhradu",
+                ["ButtonText"] = "Zaplatiť",
+                ["QuestionsText"] = "Ak máte k tejto platbe otázky, kontaktujte nás.",
+                ["SupportText"] = "Potrebujete pomoc? Kontaktujte nás na",
+                ["Closing"] = "S pozdravom",
+                ["TeamName"] = "Tím Cleansia",
+            },
+            ["uk"] = new()
+            {
+                ["Subject"] = "Оплата за бронювання {0}",
+                ["StatusMessage"] = "Нам не вдалося списати зазначену суму з вашої збереженої картки. Будь ласка, сплатіть її за допомогою кнопки нижче; посилання дійсне 24 години. Доки суму не сплачено, бронювання з оплатою готівкою недоступні, бронювати з оплатою карткою можна й далі.",
+                ["StatusSectionLabel"] = "Сума до сплати за",
+                ["OrderNumberLabel"] = "Бронювання №",
+                ["CleaningDateLabel"] = "Дата прибирання",
+                ["AddressLabel"] = "Адреса",
+                ["TotalLabel"] = "До сплати",
+                ["ButtonText"] = "Сплатити",
+                ["QuestionsText"] = "Якщо у вас є запитання щодо цієї оплати, зв’яжіться з нами.",
+                ["SupportText"] = "Потрібна допомога? Напишіть нам:",
+                ["Closing"] = "З повагою",
+                ["TeamName"] = "Команда Cleansia",
+            },
+            ["ru"] = new()
+            {
+                ["Subject"] = "Оплата по бронированию {0}",
+                ["StatusMessage"] = "Нам не удалось списать указанную сумму с вашей сохранённой карты. Пожалуйста, оплатите её с помощью кнопки ниже; ссылка действительна 24 часа. Пока сумма не оплачена, бронирования с оплатой наличными недоступны, бронировать с оплатой картой можно и дальше.",
+                ["StatusSectionLabel"] = "Сумма к оплате за",
+                ["OrderNumberLabel"] = "Бронирование №",
+                ["CleaningDateLabel"] = "Дата уборки",
+                ["AddressLabel"] = "Адрес",
+                ["TotalLabel"] = "К оплате",
+                ["ButtonText"] = "Оплатить",
+                ["QuestionsText"] = "Если у вас есть вопросы об этой оплате, свяжитесь с нами.",
+                ["SupportText"] = "Нужна помощь? Напишите нам:",
+                ["Closing"] = "С уважением",
+                ["TeamName"] = "Команда Cleansia",
+            },
+        };
+
+    // In-code copy on the admin-notification template, whose chrome is a subject, a greeting, one body
+    // paragraph and a hint; its translation rows are the admin events' and are not read here.
+    public async Task<string> SendCashRemittanceRequestEmailAsync(
+        string email,
+        string employeeName,
+        decimal amount,
+        string currencySymbol,
+        DateTime carriedSince,
+        string languageCode = Constants.Language.English,
+        CancellationToken ct = default)
+    {
+        var locale = EmailLocale.Resolve(languageCode);
+        var copy = CashRemittanceRequestDefaults[locale];
+        var culture = CultureFor(locale);
+
+        var values = new Dictionary<string, string?>(StringComparer.Ordinal);
+        foreach (var (key, value) in copy)
+        {
+            values[key] = value;
+        }
+
+        values["lang"] = locale;
+        values["Greeting"] = string.Format(culture, copy["Greeting"], employeeName);
+        values["Body"] = string.Format(
+            culture, copy["Body"], Money(amount, currencySymbol, locale), carriedSince.ToString("d", culture));
+        values["SupportEmail"] = sendGridConfig.AddressFrom;
+        values["FooterText"] = await FooterTextAsync(locale, countryId: null, ct);
+
+        return await SendRenderedAsync(
+            email,
+            templateRenderer.Render(TemplateFileFor(EmailType.AdminNotification), values),
+            copy["Subject"],
+            "Cash remittance request",
+            ct);
+    }
+
+    /// <summary>The remittance request's copy per locale; in the body <c>{0}</c> is the cash held and <c>{1}</c> the close it dates from.</summary>
+    private static readonly IReadOnlyDictionary<string, Dictionary<string, string>> CashRemittanceRequestDefaults =
+        new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["en"] = new()
+            {
+                ["Subject"] = "Please hand over the cash you hold",
+                ["Greeting"] = "Hello {0}",
+                ["Body"] = "You still hold {0} of customer cash that belongs to the company. Your pay could not cover it when the pay period closed on {1}, and it has been carried forward since. Please hand it over to the company as soon as you can; an administrator records it when it arrives.",
+                ["HintText"] = "Cash you hand over, or that is set off against your next invoice, is taken off what you hold.",
+                ["SupportText"] = "Questions? Write to us at",
+                ["Closing"] = "Kind regards,",
+                ["TeamName"] = "the Cleansia team",
+            },
+            ["cs"] = new()
+            {
+                ["Subject"] = "Odevzdejte prosím hotovost, kterou máte u sebe",
+                ["Greeting"] = "Dobrý den, {0}",
+                ["Body"] = "Stále máte u sebe {0} hotovosti od zákazníků, která patří společnosti. Při uzavření výplatního období {1} ji nebylo možné započíst proti vaší odměně, a od té doby se proto převádí dál. Odevzdejte ji prosím společnosti co nejdříve; administrátor její převzetí zaznamená.",
+                ["HintText"] = "Hotovost, kterou odevzdáte nebo která se započte proti vaší další faktuře, se odečte od částky, kterou máte u sebe.",
+                ["SupportText"] = "Máte dotazy? Napište nám na",
+                ["Closing"] = "S pozdravem",
+                ["TeamName"] = "tým Cleansia",
+            },
+            ["sk"] = new()
+            {
+                ["Subject"] = "Odovzdajte, prosím, hotovosť, ktorú máte pri sebe",
+                ["Greeting"] = "Dobrý deň, {0}",
+                ["Body"] = "Stále máte pri sebe {0} hotovosti od zákazníkov, ktorá patrí spoločnosti. Pri uzavretí výplatného obdobia {1} ju nebolo možné započítať proti vašej odmene, a odvtedy sa preto prenáša ďalej. Odovzdajte ju, prosím, spoločnosti čo najskôr; administrátor jej prevzatie zaznamená.",
+                ["HintText"] = "Hotovosť, ktorú odovzdáte alebo ktorá sa započíta proti vašej ďalšej faktúre, sa odpočíta od sumy, ktorú máte pri sebe.",
+                ["SupportText"] = "Máte otázky? Napíšte nám na",
+                ["Closing"] = "S pozdravom",
+                ["TeamName"] = "tím Cleansia",
+            },
+            ["uk"] = new()
+            {
+                ["Subject"] = "Будь ласка, передайте готівку, яка є у вас",
+                ["Greeting"] = "Вітаємо, {0}",
+                ["Body"] = "У вас досі є {0} готівки від клієнтів, яка належить компанії. Під час закриття розрахункового періоду {1} її не вдалося зарахувати проти вашої винагороди, тож відтоді вона переноситься далі. Будь ласка, передайте її компанії якнайшвидше; адміністратор зафіксує її отримання.",
+                ["HintText"] = "Готівка, яку ви передасте або яку буде зараховано проти вашого наступного рахунку, віднімається від суми, що є у вас.",
+                ["SupportText"] = "Є запитання? Напишіть нам на",
+                ["Closing"] = "З повагою,",
+                ["TeamName"] = "команда Cleansia",
+            },
+            ["ru"] = new()
+            {
+                ["Subject"] = "Пожалуйста, передайте наличные, которые у вас",
+                ["Greeting"] = "Здравствуйте, {0}",
+                ["Body"] = "У вас всё ещё есть {0} наличных от клиентов, которые принадлежат компании. При закрытии расчётного периода {1} их не удалось зачесть против вашего вознаграждения, поэтому с тех пор они переносятся дальше. Пожалуйста, передайте их компании как можно скорее; администратор зафиксирует их получение.",
+                ["HintText"] = "Наличные, которые вы передадите или которые будут зачтены против вашего следующего счёта, вычитаются из суммы, которая у вас.",
+                ["SupportText"] = "Есть вопросы? Напишите нам на",
+                ["Closing"] = "С уважением,",
+                ["TeamName"] = "команда Cleansia",
+            },
+        };
+
+    // In-code copy on the admin-notification template, as the remittance request above.
+    public async Task<string> SendWorkContractEmailAsync(
+        string email,
+        string cleanerName,
+        string jobNumber,
+        byte[] contractPdf,
+        string contractFileName,
+        string languageCode = Constants.Language.English,
+        CancellationToken ct = default)
+    {
+        var locale = EmailLocale.Resolve(languageCode);
+        var copy = WorkContractDefaults[locale];
+        var culture = CultureFor(locale);
+        var subject = string.Format(culture, copy["Subject"], jobNumber);
+
+        var values = new Dictionary<string, string?>(StringComparer.Ordinal);
+        foreach (var (key, value) in copy)
+        {
+            values[key] = value;
+        }
+
+        values["lang"] = locale;
+        values["Subject"] = subject;
+        values["Greeting"] = string.Format(culture, copy["Greeting"], cleanerName);
+        values["Body"] = string.Format(culture, copy["Body"], jobNumber);
+        values["SupportEmail"] = sendGridConfig.AddressFrom;
+        values["FooterText"] = await FooterTextAsync(locale, countryId: null, ct);
+
+        return await SendRenderedAsync(
+            email,
+            templateRenderer.Render(TemplateFileFor(EmailType.AdminNotification), values),
+            subject,
+            "Contract for work copy",
+            ct,
+            contractPdf,
+            contractFileName);
+    }
+
+    /// <summary>The contract copy's e-mail per locale; <c>{0}</c> is the job number in the subject and the body, the cleaner's name in the greeting.</summary>
+    private static readonly IReadOnlyDictionary<string, Dictionary<string, string>> WorkContractDefaults =
+        new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["en"] = new()
+            {
+                ["Subject"] = "Your contract for work for job {0}",
+                ["Greeting"] = "Hello {0}",
+                ["Body"] = "You accepted the contract for work for job {0}. Your copy is attached as a PDF: the parties, the job, your reward for your place on it, when you accepted it and the version of the contract.",
+                ["HintText"] = "Keep it for your records. The contract is also in the partner app with the job.",
+                ["SupportText"] = "Questions? Write to us at",
+                ["Closing"] = "Kind regards,",
+                ["TeamName"] = "the Cleansia team",
+            },
+            ["cs"] = new()
+            {
+                ["Subject"] = "Vaše smlouva o dílo k zakázce {0}",
+                ["Greeting"] = "Dobrý den, {0}",
+                ["Body"] = "Přijali jste smlouvu o dílo k zakázce {0}. Její kopii najdete v příloze jako PDF: smluvní strany, zakázku, vaši odměnu za místo na ní, okamžik přijetí a verzi smlouvy.",
+                ["HintText"] = "Uschovejte si ji. Smlouvu najdete také v partnerské aplikaci u zakázky.",
+                ["SupportText"] = "Máte dotazy? Napište nám na",
+                ["Closing"] = "S pozdravem",
+                ["TeamName"] = "tým Cleansia",
+            },
+            ["sk"] = new()
+            {
+                ["Subject"] = "Vaša zmluva o dielo k zákazke {0}",
+                ["Greeting"] = "Dobrý deň, {0}",
+                ["Body"] = "Prijali ste zmluvu o dielo k zákazke {0}. Jej kópiu nájdete v prílohe ako PDF: zmluvné strany, zákazku, vašu odmenu za miesto na nej, okamih prijatia a verziu zmluvy.",
+                ["HintText"] = "Uschovajte si ju. Zmluvu nájdete aj v partnerskej aplikácii pri zákazke.",
+                ["SupportText"] = "Máte otázky? Napíšte nám na",
+                ["Closing"] = "S pozdravom",
+                ["TeamName"] = "tím Cleansia",
+            },
+            ["uk"] = new()
+            {
+                ["Subject"] = "Ваш договір підряду на замовлення {0}",
+                ["Greeting"] = "Вітаємо, {0}",
+                ["Body"] = "Ви прийняли договір підряду на замовлення {0}. Його копію додано до листа у форматі PDF: сторони, замовлення, ваша винагорода за місце на ньому, момент прийняття та версія договору.",
+                ["HintText"] = "Збережіть її. Договір також є в партнерському застосунку разом із замовленням.",
+                ["SupportText"] = "Є запитання? Напишіть нам на",
+                ["Closing"] = "З повагою,",
+                ["TeamName"] = "команда Cleansia",
+            },
+            ["ru"] = new()
+            {
+                ["Subject"] = "Ваш договор подряда на заказ {0}",
+                ["Greeting"] = "Здравствуйте, {0}",
+                ["Body"] = "Вы приняли договор подряда на заказ {0}. Его копия приложена к письму в формате PDF: стороны, заказ, ваше вознаграждение за место в нём, момент принятия и версия договора.",
+                ["HintText"] = "Сохраните её. Договор также есть в партнёрском приложении вместе с заказом.",
+                ["SupportText"] = "Есть вопросы? Напишите нам на",
+                ["Closing"] = "С уважением,",
+                ["TeamName"] = "команда Cleansia",
+            },
+        };
 
     private const string BookedStatus = "booked";
 
@@ -518,7 +874,9 @@ public sealed partial class EmailService : IEmailService
         CancellationToken ct,
         decimal? refundedAmount,
         string? guestAccessToken,
-        int? freeCancellationHours)
+        int? freeCancellationHours,
+        byte[]? attachmentBytes,
+        string? attachmentFileName)
     {
         var translations = await emailTemplateTranslationRepository
             .GetTranslationsByTypeAndLanguageAsync(EmailType.OrderStatusUpdate, languageCode, ct);
@@ -584,15 +942,20 @@ public sealed partial class EmailService : IEmailService
         string?[] bookedLines = isBooked
             ?
             [
-                string.Format(
-                    CultureFor(languageCode),
-                    translations.GetValueOrDefault("CashDueMessage", "Please pay {0} in cash to the cleaner on the day."),
-                    Money(order.TotalPrice - order.CreditAppliedAmount, currencySymbol, languageCode)),
+                order.PaymentType == PaymentType.Cash
+                    ? string.Format(
+                        CultureFor(languageCode),
+                        translations.GetValueOrDefault("CashDueMessage", "Please pay {0} in cash to the cleaner on the day."),
+                        Money(order.TotalPrice - order.CreditAppliedAmount, currencySymbol, languageCode))
+                    : null,
                 freeCancellationHours is { } hours
                     ? string.Format(
                         CultureFor(languageCode),
                         translations.GetValueOrDefault("FreeCancellationMessage", "You can cancel free of charge up to {0} h before the cleaning; a later cancellation may be charged a fee."),
                         hours)
+                    : null,
+                attachmentBytes is { Length: > 0 }
+                    ? translations.GetValueOrDefault("ConfirmationAttachedMessage", "Your booking confirmation is attached as a PDF.")
                     : null,
             ]
             : [];
@@ -604,6 +967,7 @@ public sealed partial class EmailService : IEmailService
             {
                 OrderCancellationReasons.NoCleanerAvailable => "CancelledReason_NoCleaner",
                 OrderCancellationReasons.PaymentNotCompleted => "CancelledReason_PaymentNotCompleted",
+                OrderCancellationReasons.CustomerLockout => "CancelledReason_Lockout",
                 _ => "CancelledReason_ByUs",
             });
             // "Being processed" only for the card charge a platform cancellation sends back — the one state in
@@ -613,7 +977,9 @@ public sealed partial class EmailService : IEmailService
                 && order.PaymentStatus == PaymentStatus.Paid
                 && order.TotalPrice > 0m
                 && order.HasRefundableChargeSurface;
-            refundLine ??= order.TookNoPayment ? translations.GetValueOrDefault("NothingChargedMessage")
+            // A lockout keeps or bills the whole price, which its reason already says.
+            refundLine ??= order.CancellationReason == OrderCancellationReasons.CustomerLockout ? null
+                : order.TookNoPayment ? translations.GetValueOrDefault("NothingChargedMessage")
                 : refundAttempted ? translations.GetValueOrDefault("RefundPendingMessage")
                 : null;
         }
@@ -645,9 +1011,7 @@ public sealed partial class EmailService : IEmailService
             SupportEmail = translations.GetValueOrDefault("SupportEmail", "info@cleansia.cz"),
             Closing = translations.GetValueOrDefault("Closing", "Best regards,"),
             TeamName = translations.GetValueOrDefault("TeamName", "The Cleansia Team"),
-            FooterText = translations.GetValueOrDefault("FooterText", isLocalised
-                ? $"© {DateTime.UtcNow.Year} Cleansia"
-                : $"© {DateTime.UtcNow.Year} Cleansia s.r.o. All rights reserved.")
+            FooterText = await FooterTextAsync(languageCode, order.CustomerAddress?.CountryId, ct)
         }, languageCode);
 
         return await SendRenderedAsync(
@@ -655,7 +1019,9 @@ public sealed partial class EmailService : IEmailService
             templateRenderer.Render(TemplateFileFor(EmailType.OrderStatusUpdate), values),
             subject,
             $"Order status update ({newStatus}) to {email}",
-            ct);
+            ct,
+            attachmentBytes,
+            attachmentFileName);
     }
 
 
@@ -721,6 +1087,7 @@ public sealed partial class EmailService : IEmailService
         values["ExpiryNotice"] = expiryNotice;
         values["OrderLink"] = sendGridConfig.ClientDomainUrl;
         values["SupportEmail"] = sendGridConfig.AddressFrom;
+        values["FooterText"] = await FooterTextAsync(languageCode, countryId: null, ct);
         values["Subject"] = subject;
 
         var html = templateRenderer.Render("promo-code.html", values);
@@ -907,7 +1274,6 @@ public sealed partial class EmailService : IEmailService
                 ["SupportText"] = "Potřebujete pomoc? Napište nám na",
                 ["Closing"] = "S pozdravem,",
                 ["TeamName"] = "tým Cleansia",
-                ["FooterText"] = "© Cleansia s.r.o. Všechna práva vyhrazena.",
             },
             ["sk"] = new Dictionary<string, string>(StringComparer.Ordinal)
             {
@@ -922,7 +1288,6 @@ public sealed partial class EmailService : IEmailService
                 ["SupportText"] = "Potrebujete pomoc? Napíšte nám na",
                 ["Closing"] = "S pozdravom,",
                 ["TeamName"] = "tím Cleansia",
-                ["FooterText"] = "© Cleansia s.r.o. Všetky práva vyhradené.",
             },
             ["en"] = new Dictionary<string, string>(StringComparer.Ordinal)
             {
@@ -937,7 +1302,6 @@ public sealed partial class EmailService : IEmailService
                 ["SupportText"] = "Need a hand? Write to us at",
                 ["Closing"] = "Kind regards,",
                 ["TeamName"] = "the Cleansia team",
-                ["FooterText"] = "© Cleansia s.r.o. All rights reserved.",
             },
             ["ru"] = new Dictionary<string, string>(StringComparer.Ordinal)
             {
@@ -952,7 +1316,6 @@ public sealed partial class EmailService : IEmailService
                 ["SupportText"] = "Нужна помощь? Напишите нам на",
                 ["Closing"] = "С уважением,",
                 ["TeamName"] = "команда Cleansia",
-                ["FooterText"] = "© Cleansia s.r.o. Все права защищены.",
             },
             ["uk"] = new Dictionary<string, string>(StringComparer.Ordinal)
             {
@@ -967,7 +1330,6 @@ public sealed partial class EmailService : IEmailService
                 ["SupportText"] = "Потрібна допомога? Напишіть нам на",
                 ["Closing"] = "З повагою,",
                 ["TeamName"] = "команда Cleansia",
-                ["FooterText"] = "© Cleansia s.r.o. Усі права захищено.",
             },
         };
 
@@ -1032,6 +1394,7 @@ public sealed partial class EmailService : IEmailService
         values["WindDownDate"] = date;
         values["AppLink"] = sendGridConfig.ClientDomainUrl;
         values["SupportEmail"] = sendGridConfig.AddressFrom;
+        values["FooterText"] = await FooterTextAsync(languageCode, countryId: null, ct);
 
         var html = templateRenderer.Render(TemplateFileFor(emailType), values);
 
@@ -1062,7 +1425,6 @@ public sealed partial class EmailService : IEmailService
                 ["SupportText"] = "Questions? Write to us at",
                 ["Closing"] = "Kind regards,",
                 ["TeamName"] = "the Cleansia team",
-                ["FooterText"] = "© Cleansia s.r.o. All rights reserved.",
             },
             ["cs"] = new Dictionary<string, string>(StringComparer.Ordinal)
             {
@@ -1079,7 +1441,6 @@ public sealed partial class EmailService : IEmailService
                 ["SupportText"] = "Máte otázky? Napište nám na",
                 ["Closing"] = "S pozdravem,",
                 ["TeamName"] = "tým Cleansia",
-                ["FooterText"] = "© Cleansia s.r.o. Všechna práva vyhrazena.",
             },
             ["sk"] = new Dictionary<string, string>(StringComparer.Ordinal)
             {
@@ -1096,7 +1457,6 @@ public sealed partial class EmailService : IEmailService
                 ["SupportText"] = "Máte otázky? Napíšte nám na",
                 ["Closing"] = "S pozdravom,",
                 ["TeamName"] = "tím Cleansia",
-                ["FooterText"] = "© Cleansia s.r.o. Všetky práva vyhradené.",
             },
             ["uk"] = new Dictionary<string, string>(StringComparer.Ordinal)
             {
@@ -1113,7 +1473,6 @@ public sealed partial class EmailService : IEmailService
                 ["SupportText"] = "Є запитання? Напишіть нам на",
                 ["Closing"] = "З повагою,",
                 ["TeamName"] = "команда Cleansia",
-                ["FooterText"] = "© Cleansia s.r.o. Усі права захищено.",
             },
             ["ru"] = new Dictionary<string, string>(StringComparer.Ordinal)
             {
@@ -1130,7 +1489,6 @@ public sealed partial class EmailService : IEmailService
                 ["SupportText"] = "Есть вопросы? Напишите нам на",
                 ["Closing"] = "С уважением,",
                 ["TeamName"] = "команда Cleansia",
-                ["FooterText"] = "© Cleansia s.r.o. Все права защищены.",
             },
         };
 
@@ -1152,7 +1510,6 @@ public sealed partial class EmailService : IEmailService
                 ["SupportText"] = "Questions? Write to us at",
                 ["Closing"] = "Kind regards,",
                 ["TeamName"] = "the Cleansia team",
-                ["FooterText"] = "© Cleansia s.r.o. All rights reserved.",
             },
             ["cs"] = new Dictionary<string, string>(StringComparer.Ordinal)
             {
@@ -1168,7 +1525,6 @@ public sealed partial class EmailService : IEmailService
                 ["SupportText"] = "Máte otázky? Napište nám na",
                 ["Closing"] = "S pozdravem,",
                 ["TeamName"] = "tým Cleansia",
-                ["FooterText"] = "© Cleansia s.r.o. Všechna práva vyhrazena.",
             },
             ["sk"] = new Dictionary<string, string>(StringComparer.Ordinal)
             {
@@ -1184,7 +1540,6 @@ public sealed partial class EmailService : IEmailService
                 ["SupportText"] = "Máte otázky? Napíšte nám na",
                 ["Closing"] = "S pozdravom,",
                 ["TeamName"] = "tím Cleansia",
-                ["FooterText"] = "© Cleansia s.r.o. Všetky práva vyhradené.",
             },
             ["uk"] = new Dictionary<string, string>(StringComparer.Ordinal)
             {
@@ -1200,7 +1555,6 @@ public sealed partial class EmailService : IEmailService
                 ["SupportText"] = "Є запитання? Напишіть нам на",
                 ["Closing"] = "З повагою,",
                 ["TeamName"] = "команда Cleansia",
-                ["FooterText"] = "© Cleansia s.r.o. Усі права захищено.",
             },
             ["ru"] = new Dictionary<string, string>(StringComparer.Ordinal)
             {
@@ -1216,7 +1570,6 @@ public sealed partial class EmailService : IEmailService
                 ["SupportText"] = "Есть вопросы? Напишите нам на",
                 ["Closing"] = "С уважением,",
                 ["TeamName"] = "команда Cleansia",
-                ["FooterText"] = "© Cleansia s.r.o. Все права защищены.",
             },
         };
 

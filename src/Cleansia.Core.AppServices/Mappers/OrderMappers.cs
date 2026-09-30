@@ -285,9 +285,10 @@ public static class OrderMappers
             // System cancellations only. The same column holds an admin's free-text note when a human
             // cancels, and that is written by staff for staff — gating on CancelledBy is what keeps an
             // internal note from reaching the customer through a field meant for a localisable key. An
-            // administrator's no-show confirmation writes the no-cleaner KEY, never a note.
+            // administrator's no-show and lockout confirmations write a KEY, never a note.
             SystemCancellationReason: order.CancelledBy == CancelledBy.System
-                || order.CancellationReason == OrderCancellationReasons.NoCleanerAvailable
+                || order.CancellationReason is OrderCancellationReasons.NoCleanerAvailable
+                    or OrderCancellationReasons.CustomerLockout
                 ? order.CancellationReason
                 : null,
             RecurringTemplateId: order.RecurringTemplateId,
@@ -318,7 +319,9 @@ public static class OrderMappers
             CountryId: order.CustomerAddress?.CountryId,
             WorkContractAcceptances: workContractAcceptances ?? [],
             DirtinessLevel: order.DirtinessLevel,
-            DirtinessSurchargeAmount: order.DirtinessSurchargeAmount
+            DirtinessSurchargeAmount: order.DirtinessSurchargeAmount,
+            LockoutReportedAt: order.LockoutReportedAt,
+            LockoutCallAttempts: order.LockoutCallAttempts
         );
     }
 

@@ -46,6 +46,8 @@ public class UpdateRecurringBooking
         private readonly ICountryRepository _countryRepository;
         private readonly IServiceRepository _serviceRepository;
         private readonly IPackageRepository _packageRepository;
+        private readonly ISavedCardRepository _savedCardRepository;
+        private readonly IReceivableRepository _receivableRepository;
 
         public Validator(
             IRecurringBookingTemplateRepository templateRepository,
@@ -56,7 +58,9 @@ public class UpdateRecurringBooking
             ICurrencyResolutionService currencyResolutionService,
             ICountryRepository countryRepository,
             IServiceRepository serviceRepository,
-            IPackageRepository packageRepository)
+            IPackageRepository packageRepository,
+            ISavedCardRepository savedCardRepository,
+            IReceivableRepository receivableRepository)
         {
             _templateRepository = templateRepository;
             _userMembershipRepository = userMembershipRepository;
@@ -67,6 +71,8 @@ public class UpdateRecurringBooking
             _countryRepository = countryRepository;
             _serviceRepository = serviceRepository;
             _packageRepository = packageRepository;
+            _savedCardRepository = savedCardRepository;
+            _receivableRepository = receivableRepository;
 
             // The entitlement link is the LAST link of THIS chain, never a second RuleFor: the
             // class-level default is Continue, so a parallel chain would answer "you need Plus" for a
@@ -134,7 +140,13 @@ public class UpdateRecurringBooking
                 .WithMessage(BusinessErrorMessage.InvalidEnumValue)
                 .MustAsync(CashIsAvailableForSelectionAsync)
                 .WithMessage(BusinessErrorMessage.OrderCashNotAvailable)
-                .When(x => Enum.IsDefined(x.DirtinessLevel), ApplyConditionTo.CurrentValidator);
+                .When(x => Enum.IsDefined(x.DirtinessLevel), ApplyConditionTo.CurrentValidator)
+                .MustAsync(CashOwesNothingAsync)
+                .WithMessage(BusinessErrorMessage.OrderCashUnpaidReceivable)
+                .MustAsync(CashLeavesRoomForAnotherOpenBookingAsync)
+                .WithMessage(BusinessErrorMessage.OrderCashOpenBookingsLimitReached)
+                .MustAsync(CashIsGuaranteedBySavedCardAsync)
+                .WithMessage(BusinessErrorMessage.OrderCashRequiresSavedCard);
 
             RuleFor(x => x)
                 .Must(c => c.SelectedServiceIds.Count > 0 || c.SelectedPackageIds.Count > 0)
@@ -195,6 +207,48 @@ public class UpdateRecurringBooking
                        command.SelectedServiceIds, command.SelectedPackageIds, cancellationToken))
                    .Allows(command.SelectedServiceIds, command.SelectedPackageIds,
                        command.Rooms, command.Bathrooms, command.DirtinessLevel);
+
+        private async Task<bool> CashOwesNothingAsync(
+            Command command, int paymentType, CancellationToken cancellationToken)
+        {
+            var userId = _userSessionProvider.GetUserId();
+            return paymentType != (int)PaymentType.Cash
+                || string.IsNullOrEmpty(userId)
+                || await CustomerCashStanding.OwesNothingAsync(_receivableRepository, userId, cancellationToken);
+        }
+
+        private async Task<bool> CashLeavesRoomForAnotherOpenBookingAsync(
+            Command command, int paymentType, CancellationToken cancellationToken)
+        {
+            var userId = _userSessionProvider.GetUserId();
+            return paymentType != (int)PaymentType.Cash
+                || string.IsNullOrEmpty(userId)
+                || await CustomerCashStanding.HasRoomForAnotherOpenCashBookingAsync(
+                    _orderRepository, userId, cancellationToken);
+        }
+
+        /// <summary>
+        /// In the currency of the saved address the update writes. A saved address the handler will
+        /// refuse passes so its own not-found answer is the one given.
+        /// </summary>
+        private async Task<bool> CashIsGuaranteedBySavedCardAsync(
+            Command command, int paymentType, CancellationToken cancellationToken)
+        {
+            var userId = _userSessionProvider.GetUserId();
+            if (paymentType != (int)PaymentType.Cash || string.IsNullOrEmpty(userId))
+            {
+                return true;
+            }
+
+            var address = (await _savedAddressRepository.GetByUserAsync(userId, cancellationToken))
+                .FirstOrDefault(a => a.Id == command.SavedAddressId)?.Address;
+            return address is null
+                || await CustomerCashStanding.HoldsUsableCardAsync(
+                    _savedCardRepository,
+                    userId,
+                    (await _currencyResolutionService.ResolveCurrencyForCountryAsync(address.CountryId, cancellationToken)).Id,
+                    cancellationToken);
+        }
 
         private async Task<bool> BeOwnedByCallerAsync(string id, CancellationToken cancellationToken)
         {

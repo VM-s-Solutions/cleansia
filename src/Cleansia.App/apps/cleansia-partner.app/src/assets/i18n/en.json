@@ -157,7 +157,7 @@
       "deletion_reason": "Why should it be removed?",
       "replace_document": "Replace",
       "legal_documents": "Contract documents",
-      "legal_documents_intro": "Read and accept each document below. Until you accept the version in force, your registration cannot be approved and you cannot take jobs.",
+      "legal_documents_intro": "These documents govern your work for the operating company of the market you work in. Read and accept each one below. Until you accept the version in force, your registration cannot be approved and you cannot take jobs.",
       "legal_documents_version": "Version {{version}}, effective from {{date}}",
       "legal_documents_accepted_on": "Accepted on {{date}}, version {{version}}",
       "legal_documents_new_version": "A new version is in force. You accepted version {{version}}.",
@@ -334,11 +334,12 @@
       "work_contract": {
         "title": "Contract for work",
         "version_line": "Version {{version}}, effective from {{date}}",
+        "parties": "Between the operating company that sold this cleaning (the client) and you (the contractor)",
         "facts": {
           "title": "The job",
           "order_number": "Order number",
           "window": "Date and time",
-          "price": "Price",
+          "reward": "Your reward for your spot",
           "location": "Location",
           "rooms_bathrooms": "Rooms / bathrooms",
           "services": "Services",
@@ -453,6 +454,20 @@
         "pending_banner": "Accept the contract for work before you start",
         "accept": "Accept the contract",
         "accepted_success": "Contract for work accepted."
+      },
+      "lockout": {
+        "title": "Cannot get in?",
+        "not_yet": "If nobody opens the door, you can report it from {{time}}, {{minutes}} minutes after the start.",
+        "body": "Take a photo of the entrance, note when you called the customer, and report it. An administrator confirms it before any fee applies.",
+        "entrance_photo": "Entrance photo",
+        "take_photo": "Take entrance photo",
+        "photo_needed": "Take a photo of the entrance first.",
+        "call_attempts": "Calls you made",
+        "call_attempts_placeholder": "When you called or messaged the customer and what happened",
+        "report": "I cannot get in",
+        "reported_title": "Reported: cannot get in",
+        "reported_body": "Reported at {{time}}. An administrator will confirm it; until then the job stays as it is.",
+        "reported_calls": "Calls: {{calls}}"
       }
     },
     "invoices": {
@@ -536,10 +551,20 @@
       "grand_total": "Grand Total",
       "order_lines": "Per-Order Pay",
       "order_number": "Order Number",
+      "line_type": "Line",
       "no_order_pays": "No pay lines for this period",
       "no_periods": "No pay periods are available yet",
       "load_error": "Failed to load your period pay",
-      "view_invoice": "View Invoice"
+      "view_invoice": "View Invoice",
+      "cash_held": {
+        "title": "Cash I hold",
+        "description": "Cash you took at the door and have not handed over yet. It is set off against your next payout.",
+        "none": "You hold no company cash.",
+        "load_error": "We couldn't load the cash you hold.",
+        "held": "You hold",
+        "limit": "Limit",
+        "jobs_hidden": "You hold more than the limit, so cash jobs are hidden from you until you hand cash over."
+      }
     },
     "gdpr": {
       "title": "Privacy Policy & GDPR",
@@ -701,7 +726,8 @@
         "photo_upload_failed": "Failed to upload photo. Please try again.",
         "photo_read_failed": "Failed to read photo file. Please try again.",
         "photo_deleted": "Photo deleted successfully.",
-        "photo_delete_failed": "Failed to delete photo. Please try again."
+        "photo_delete_failed": "Failed to delete photo. Please try again.",
+        "lockout_reported": "Reported. An administrator will confirm it."
       },
       "invoices": {
         "invoice_generated": "Invoice generated from time logs.",
@@ -851,6 +877,7 @@
       "invalid_apple_token": "Invalid Apple token",
       "social_account_not_found": "No account matches that sign-in. Please register first.",
       "invalid_password_format": "Invalid password format",
+      "admin_password_too_short": "Administrator passwords must be at least 12 characters long.",
       "invalid_reset_token": "Invalid password reset token",
       "same_reset_password": "New password matches the old password",
       "insufficient_privileges": "You do not have permission to access the partner app. Only partners and administrators can log in.",
@@ -909,6 +936,12 @@
       "invalid_email": "Invalid email address"
     },
     "order": {
+      "lockout": {
+        "too_early": "You can report that you cannot get in once 15 minutes have passed since the booked start.",
+        "photo_required": "Take a photo of the door or the entrance first, then report that you cannot get in.",
+        "already_reported": "You have already reported that you cannot get in. The office will get back to you.",
+        "order_closed": "This job is already finished or cancelled, so there is nothing to report."
+      },
       "cleaning_date": {
         "future": "Cleaning date must be in the future"
       },
@@ -952,6 +985,7 @@
       "payment_gateway_unavailable": "Payment gateway is unavailable",
       "time_conflict": "This time conflicts with another booking on your schedule",
       "weekly_limit_reached": "You've reached your weekly order limit.",
+      "cash_float_cap_exceeded": "You hold more of the company's cash than it allows, so cash jobs are not available to you until you hand some over.",
       "employee_already_has_order_in_progress": "You already have another order in progress. Finish it before starting a new one.",
       "photo": {
         "window_closed": "This photo cannot be added now: before photos from the moment you hold the job until it is finished, after photos while the work is in progress.",
@@ -1178,6 +1212,11 @@
       "normal": "Normal",
       "increased": "Increased",
       "heavy": "Heavy"
+    },
+    "pay_line_type": {
+      "job": "Job",
+      "cancellation_fee_share": "Your share of the late-cancellation fee",
+      "lockout_fee_share": "Your share of the lockout fee"
     }
   },
   "help": {

@@ -53,5 +53,13 @@ extension L10n {
         static var read: String {
             localized("work_contract_read")
         }
+
+        static var reward: String {
+            localized("work_contract_reward")
+        }
+
+        static var parties: String {
+            localized("work_contract_parties")
+        }
     }
 }

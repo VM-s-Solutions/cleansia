@@ -58,7 +58,35 @@ public class CreateOrderHandlerCharacterizationTests
 
     private const string UserId = "user-1";
     private const string CreatedOrderId = "order-created-1";
+    private const string RequestIp = "203.0.113.9";
+    private const string RequestDevice = "iPhone 15";
     private const string ConfirmationCode = "ABC123";
+
+    [Fact]
+    public async Task The_Order_Records_The_Request_To_Start_Within_The_Withdrawal_Period_With_The_Wording_Client_And_Request()
+    {
+        Cleansia.Core.Domain.Orders.Order? created = null;
+        _orderFactory
+            .Setup(f => f.CreateAsync(It.IsAny<CreateOrderInput>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((CreateOrderInput input, CancellationToken _) => created = OrderMockFactory.Generate(
+                new OrderMockFactory.OrderPartial
+                {
+                    Id = CreatedOrderId, UserId = input.UserId, PaymentType = PaymentType.Cash,
+                    TotalPrice = input.RawSubtotal, CustomerAddress = input.Address, TenantId = "tenant-1",
+                }));
+        var before = DateTimeOffset.UtcNow;
+
+        var result = await CreateHandler().Handle(
+            CreateOrderTestData.ValidCommand(paymentType: PaymentType.Cash), CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.NotNull(created);
+        Assert.Equal(Cleansia.Core.Domain.Orders.Order.EarlyPerformanceConsentTextVersionInForce, created!.EarlyPerformanceConsentTextVersion);
+        Assert.InRange(created.EarlyPerformanceConsentedOn!.Value, before, DateTimeOffset.UtcNow);
+        Assert.Equal("cleansia.customer", created.EarlyPerformanceConsentClient);
+        Assert.Equal(RequestIp, created.EarlyPerformanceConsentIpAddress);
+        Assert.Equal(RequestDevice, created.EarlyPerformanceConsentDeviceLabel);
+    }
 
     private readonly Mock<IAddressRepository> _addressRepository = new();
     private readonly Mock<ISavedAddressRepository> _savedAddressRepository = new();
@@ -179,6 +207,8 @@ public class CreateOrderHandlerCharacterizationTests
             OrderMarketDoubles.OperatedBy("tenant-1"),
             _tenantProvider.Object,
             new AuditContext(),
+            new HostAudienceProvider("cleansia.customer"),
+            new Cleansia.TestUtilities.TestRequestMetadataProvider(RequestIp, RequestDevice),
             NullLogger<CreateOrder.Handler>.Instance);
 
     private void ArrangeSavedAddress(string savedAddressId, string ownerUserId, Address? resolved = null)

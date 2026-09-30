@@ -66,8 +66,9 @@ public sealed class FiscalRetryService(
                 await unitOfWork.CommitAsync(cancellationToken);
 
                 // For BlockingOnline countries the confirmation email is held until the fiscal
-                // authority signs the receipt. Once signed, release it now.
-                if (succeeded && !receipt.EmailSent)
+                // authority signs the receipt. Once signed, release it now. That e-mail states the
+                // order's sale, so a fee receipt has none to release.
+                if (succeeded && !receipt.EmailSent && !receipt.IsFee)
                 {
                     var enforcementMode = await ResolveEnforcementModeAsync(order, cancellationToken);
                     if (enforcementMode is FiscalEnforcementMode.BlockingOnline or FiscalEnforcementMode.BlockingWithOfflineCache)

@@ -253,7 +253,8 @@ public class CreateOrderPayCoverageValidatorTests
         Mock.Of<IUserConsentRepository>(),
         CreateOrderTestData.Speaking(Constants.Language.English),
         Mock.Of<ICountryConfigurationRepository>(),
-        Mock.Of<ILegalDocumentResolver>());
+        Mock.Of<ILegalDocumentResolver>(),
+        SavedCards.SavedCardDoubles.Guaranteed(), Mock.Of<IReceivableRepository>());
 
     [Fact]
     public async Task An_Unconfigured_Service_Fails_InvalidSelectedServices()

@@ -19,7 +19,9 @@ struct WorkContractJobFacts: Equatable {
     let orderNumber: String?
     let cleaningDateTimeUtc: Date
     let estimatedMinutes: Int
-    let totalPrice: Double
+    /// The accepting cleaner's reward for one seat, which the contract prices the work at; the wire
+    /// still names it `totalPrice`.
+    let reward: Double
     let currencyCode: String?
     let locationApproximate: String?
     let rooms: Int
@@ -36,7 +38,7 @@ struct WorkContractAcceptanceFacts: Equatable {
 }
 
 extension WorkContract {
-    /// **Refuse.** The text id is what the take echoes, the HTML is what is accepted, and the price,
+    /// **Refuse.** The text id is what the take echoes, the HTML is what is accepted, and the reward,
     /// window and scope are what the acceptance binds — a null in any of them is a broken wire, and a
     /// sheet that showed "0 Kč" over an empty text would record an acceptance of nothing. The labels
     /// (number, currency code, location) stay nullable and render as absent.
@@ -56,7 +58,7 @@ extension WorkContractJobFacts {
         orderNumber = dto.orderNumber
         cleaningDateTimeUtc = try dto.cleaningDateTimeUtc.require("facts.cleaningDateTimeUtc")
         estimatedMinutes = try dto.estimatedMinutes.require("facts.estimatedMinutes")
-        totalPrice = try dto.totalPrice.require("facts.totalPrice")
+        reward = try dto.totalPrice.require("facts.totalPrice")
         currencyCode = dto.currencyCode
         locationApproximate = dto.locationApproximate
         rooms = try dto.rooms.require("facts.rooms")

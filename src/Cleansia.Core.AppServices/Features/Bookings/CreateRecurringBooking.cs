@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Auditing;
+using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Bookings.DTOs;
 using Cleansia.Core.AppServices.Features.Legal;
@@ -8,6 +9,7 @@ using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.Domain.Bookings;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Validations;
@@ -34,7 +36,9 @@ public class CreateRecurringBooking
         // The same tick a one-off booking asks for, and on the same terms: required while either legal
         // consent is not an acceptance of the text in force for the saved address's market.
         bool? TermsAccepted = null,
-        DirtinessLevel DirtinessLevel = DirtinessLevel.Normal) : ICommand<RecurringBookingTemplateDto>;
+        DirtinessLevel DirtinessLevel = DirtinessLevel.Normal,
+        // One early-performance tick covers every occurrence the schedule creates.
+        bool? EarlyPerformanceRequested = null) : ICommand<RecurringBookingTemplateDto>;
 
     public class Validator : AbstractValidator<Command>
     {
@@ -47,6 +51,8 @@ public class CreateRecurringBooking
         private readonly IPackageRepository _packageRepository;
         private readonly IUserConsentRepository _userConsentRepository;
         private readonly ILegalDocumentResolver _legalDocumentResolver;
+        private readonly ISavedCardRepository _savedCardRepository;
+        private readonly IReceivableRepository _receivableRepository;
 
         public Validator(
             IOrderRepository orderRepository,
@@ -57,7 +63,9 @@ public class CreateRecurringBooking
             IServiceRepository serviceRepository,
             IPackageRepository packageRepository,
             IUserConsentRepository userConsentRepository,
-            ILegalDocumentResolver legalDocumentResolver)
+            ILegalDocumentResolver legalDocumentResolver,
+            ISavedCardRepository savedCardRepository,
+            IReceivableRepository receivableRepository)
         {
             _orderRepository = orderRepository;
             _userSessionProvider = userSessionProvider;
@@ -68,12 +76,19 @@ public class CreateRecurringBooking
             _packageRepository = packageRepository;
             _userConsentRepository = userConsentRepository;
             _legalDocumentResolver = legalDocumentResolver;
+            _savedCardRepository = savedCardRepository;
+            _receivableRepository = receivableRepository;
 
             RuleFor(x => x.TermsAccepted)
                 .MustAsync((command, termsAccepted, cancellationToken) =>
                     AssertedOrAlreadyConsentedAsync(command, termsAccepted, cancellationToken))
                 .WithMessage(BusinessErrorMessage.TermsNotAccepted)
                 .WithErrorCode(nameof(Command.TermsAccepted));
+
+            RuleFor(x => x.EarlyPerformanceRequested)
+                .Equal(true)
+                .WithMessage(BusinessErrorMessage.EarlyPerformanceNotRequested)
+                .WithErrorCode(nameof(Command.EarlyPerformanceRequested));
 
             RuleFor(x => x.Frequency)
                 .Must(f => Enum.IsDefined(typeof(RecurrenceFrequency), f))
@@ -114,7 +129,13 @@ public class CreateRecurringBooking
                 .WithMessage(BusinessErrorMessage.InvalidEnumValue)
                 .MustAsync(CashIsAvailableForSelectionAsync)
                 .WithMessage(BusinessErrorMessage.OrderCashNotAvailable)
-                .When(x => Enum.IsDefined(x.DirtinessLevel), ApplyConditionTo.CurrentValidator);
+                .When(x => Enum.IsDefined(x.DirtinessLevel), ApplyConditionTo.CurrentValidator)
+                .MustAsync(CashOwesNothingAsync)
+                .WithMessage(BusinessErrorMessage.OrderCashUnpaidReceivable)
+                .MustAsync(CashLeavesRoomForAnotherOpenBookingAsync)
+                .WithMessage(BusinessErrorMessage.OrderCashOpenBookingsLimitReached)
+                .MustAsync(CashIsGuaranteedBySavedCardAsync)
+                .WithMessage(BusinessErrorMessage.OrderCashRequiresSavedCard);
 
             RuleFor(x => x)
                 .Must(c => c.SelectedServiceIds.Count > 0 || c.SelectedPackageIds.Count > 0)
@@ -236,6 +257,48 @@ public class CreateRecurringBooking
                    .Allows(command.SelectedServiceIds, command.SelectedPackageIds,
                        command.Rooms, command.Bathrooms, command.DirtinessLevel);
 
+        private async Task<bool> CashOwesNothingAsync(
+            Command command, int paymentType, CancellationToken cancellationToken)
+        {
+            var userId = _userSessionProvider.GetUserId();
+            return paymentType != (int)PaymentType.Cash
+                || string.IsNullOrEmpty(userId)
+                || await CustomerCashStanding.OwesNothingAsync(_receivableRepository, userId, cancellationToken);
+        }
+
+        private async Task<bool> CashLeavesRoomForAnotherOpenBookingAsync(
+            Command command, int paymentType, CancellationToken cancellationToken)
+        {
+            var userId = _userSessionProvider.GetUserId();
+            return paymentType != (int)PaymentType.Cash
+                || string.IsNullOrEmpty(userId)
+                || await CustomerCashStanding.HasRoomForAnotherOpenCashBookingAsync(
+                    _orderRepository, userId, cancellationToken);
+        }
+
+        /// <summary>
+        /// The card is asked for in the currency every occurrence is priced in, the saved address's
+        /// country's. A saved address the handler will refuse passes so its own not-found answer is the
+        /// one given.
+        /// </summary>
+        private async Task<bool> CashIsGuaranteedBySavedCardAsync(
+            Command command, int paymentType, CancellationToken cancellationToken)
+        {
+            var userId = _userSessionProvider.GetUserId();
+            if (paymentType != (int)PaymentType.Cash || string.IsNullOrEmpty(userId))
+            {
+                return true;
+            }
+
+            var address = await FindSavedAddressAsync(userId, command.SavedAddressId, cancellationToken);
+            return address is null
+                || await CustomerCashStanding.HoldsUsableCardAsync(
+                    _savedCardRepository,
+                    userId,
+                    (await _currencyResolutionService.ResolveCurrencyForCountryAsync(address.CountryId, cancellationToken)).Id,
+                    cancellationToken);
+        }
+
         private async Task<Address?> FindSavedAddressAsync(string userId, string savedAddressId, CancellationToken cancellationToken)
         {
             var addresses = await _savedAddressRepository.GetByUserAsync(userId, cancellationToken);
@@ -253,7 +316,9 @@ public class CreateRecurringBooking
         IConsentService consentService,
         IUserConsentRepository userConsentRepository,
         ILegalDocumentResolver legalDocumentResolver,
-        IAuditContext auditContext) : ICommandHandler<Command, RecurringBookingTemplateDto>
+        IAuditContext auditContext,
+        IHostAudienceProvider hostAudienceProvider,
+        IRequestMetadataProvider requestMetadataProvider) : ICommandHandler<Command, RecurringBookingTemplateDto>
     {
         public async Task<BusinessResult<RecurringBookingTemplateDto>> Handle(Command command, CancellationToken cancellationToken)
         {
@@ -295,6 +360,12 @@ public class CreateRecurringBooking
                 endsOn: command.EndsOn,
                 preferredEmployeeId: command.PreferredEmployeeId,
                 dirtinessLevel: command.DirtinessLevel);
+            template.RecordEarlyPerformanceConsent(
+                Order.EarlyPerformanceConsentTextVersionInForce,
+                DateTimeOffset.UtcNow,
+                hostAudienceProvider.Audience,
+                requestMetadataProvider.IpAddress,
+                requestMetadataProvider.DeviceLabel);
 
             template.TenantId = (await operatorTenantResolver.ResolveAsync(address.Address.CountryId, cancellationToken)).OperatorTenantId;
             templateRepository.Add(template);

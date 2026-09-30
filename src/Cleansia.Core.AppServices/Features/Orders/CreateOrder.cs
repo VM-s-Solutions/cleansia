@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Auditing;
+using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Legal;
 using Cleansia.Core.AppServices.Common.Validators;
@@ -48,6 +49,8 @@ public class CreateOrder
         private readonly IUserConsentRepository _userConsentRepository;
         private readonly ICountryConfigurationRepository _countryConfigurationRepository;
         private readonly ILegalDocumentResolver _legalDocumentResolver;
+        private readonly ISavedCardRepository _savedCardRepository;
+        private readonly IReceivableRepository _receivableRepository;
 
         public Validator(
             IPackageRepository packageRepository,
@@ -68,10 +71,14 @@ public class CreateOrder
             IUserConsentRepository userConsentRepository,
             ILanguageRepository languageRepository,
             ICountryConfigurationRepository countryConfigurationRepository,
-            ILegalDocumentResolver legalDocumentResolver)
+            ILegalDocumentResolver legalDocumentResolver,
+            ISavedCardRepository savedCardRepository,
+            IReceivableRepository receivableRepository)
         {
             _countryConfigurationRepository = countryConfigurationRepository;
             _legalDocumentResolver = legalDocumentResolver;
+            _savedCardRepository = savedCardRepository;
+            _receivableRepository = receivableRepository;
             _operatorTenantResolver = operatorTenantResolver;
             _tenantProvider = tenantProvider;
             _userConsentRepository = userConsentRepository;
@@ -117,6 +124,11 @@ public class CreateOrder
                     AssertedOrAlreadyConsentedAsync(command, termsAccepted, context, cancellationToken))
                 .WithMessage(BusinessErrorMessage.TermsNotAccepted)
                 .WithErrorCode(nameof(Command.TermsAccepted));
+
+            RuleFor(x => x.EarlyPerformanceRequested)
+                .Equal(true)
+                .WithMessage(BusinessErrorMessage.EarlyPerformanceNotRequested)
+                .WithErrorCode(nameof(Command.EarlyPerformanceRequested));
 
             RuleFor(x => x.CustomerName)
                 .Cascade(CascadeMode.Stop)
@@ -275,6 +287,15 @@ public class CreateOrder
                 .WithMessage(BusinessErrorMessage.TotalPriceNotMatch)
                 .Must(CashIsAvailable)
                 .WithMessage(BusinessErrorMessage.OrderCashNotAvailable)
+                .WithErrorCode(nameof(Command.PaymentType))
+                .MustAsync(CashOwesNothingAsync)
+                .WithMessage(BusinessErrorMessage.OrderCashUnpaidReceivable)
+                .WithErrorCode(nameof(Command.PaymentType))
+                .MustAsync(CashLeavesRoomForAnotherOpenBookingAsync)
+                .WithMessage(BusinessErrorMessage.OrderCashOpenBookingsLimitReached)
+                .WithErrorCode(nameof(Command.PaymentType))
+                .MustAsync(CashIsGuaranteedBySavedCardAsync)
+                .WithMessage(BusinessErrorMessage.OrderCashRequiresSavedCard)
                 .WithErrorCode(nameof(Command.PaymentType))
                 .Must(PromoNamesASignedInCustomer)
                 .WithMessage(BusinessErrorMessage.PromoRequiresAccount)
@@ -705,6 +726,31 @@ public class CreateOrder
                    signedIn: !IsGuest(),
                    OrderDuration.RequiredEmployees(CachedPricing(context).EstimatedDurationMinutes));
 
+        /// <summary>
+        /// Past <see cref="CashIsAvailable"/> only a signed-in customer's cash booking remains. The debt and
+        /// the limit are asked before the card, so a customer who could not book cash even with a card is
+        /// not sent to save one first.
+        /// </summary>
+        private async Task<bool> CashOwesNothingAsync(Command command, CancellationToken cancellationToken)
+            => command.PaymentType != PaymentType.Cash
+               || await CustomerCashStanding.OwesNothingAsync(
+                   _receivableRepository, _userSessionProvider.GetUserId()!, cancellationToken);
+
+        private async Task<bool> CashLeavesRoomForAnotherOpenBookingAsync(
+            Command command, CancellationToken cancellationToken)
+            => command.PaymentType != PaymentType.Cash
+               || await CustomerCashStanding.HasRoomForAnotherOpenCashBookingAsync(
+                   _orderRepository, _userSessionProvider.GetUserId()!, cancellationToken);
+
+        private async Task<bool> CashIsGuaranteedBySavedCardAsync(
+            Command command, Command _, ValidationContext<Command> context, CancellationToken cancellationToken)
+            => command.PaymentType != PaymentType.Cash
+               || await CustomerCashStanding.HoldsUsableCardAsync(
+                   _savedCardRepository,
+                   _userSessionProvider.GetUserId()!,
+                   await ResolveOrderCurrencyIdAsync(command, context, cancellationToken),
+                   cancellationToken);
+
         // The promo rule cannot pick its message up front: which refusal applies is only known after
         // the preview inside the predicate. So the predicate hands the resolved message key to the rule
         // through the MessageFormatter, and the rule's template is nothing but this placeholder.
@@ -827,7 +873,10 @@ public class CreateOrder
         // 2026-09-14). Nullable so the wire contract every client was built against is unchanged — a
         // guest's null is refused, not unbindable.
         bool? TermsAccepted = null,
-        DirtinessLevel DirtinessLevel = DirtinessLevel.Normal) : ICommand<Response>, IOperatorScopedRequest
+        DirtinessLevel DirtinessLevel = DirtinessLevel.Normal,
+        // The early-performance tick, asked on every booking, signed-in or guest; nullable for the same
+        // reason as the terms tick, so an absent member is refused rather than unbindable.
+        bool? EarlyPerformanceRequested = null) : ICommand<Response>, IOperatorScopedRequest
     {
         // A guest's market is the inline address's country; a guest cannot name a saved address, and a
         // request with no country lands in the default market (ADR-0061 D3). The validator's operator
@@ -988,6 +1037,8 @@ public class CreateOrder
         IOperatorTenantResolver operatorTenantResolver,
         ITenantProvider tenantProvider,
         IAuditContext auditContext,
+        IHostAudienceProvider hostAudienceProvider,
+        IRequestMetadataProvider requestMetadataProvider,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -1116,6 +1167,13 @@ public class CreateOrder
                 AccessMode: command.AccessMode,
                 LanguageCode: command.Language,
                 DirtinessLevel: command.DirtinessLevel), cancellationToken);
+
+            order.RecordEarlyPerformanceConsent(
+                Order.EarlyPerformanceConsentTextVersionInForce,
+                new DateTimeOffset(nowUtc, TimeSpan.Zero),
+                hostAudienceProvider.Audience,
+                requestMetadataProvider.IpAddress,
+                requestMetadataProvider.DeviceLabel);
 
             if (reservation != null)
             {

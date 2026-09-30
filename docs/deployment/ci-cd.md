@@ -54,7 +54,7 @@ failing, it does not make the secret safe.
 | `secret-scan` | PR to any branch, push to `master` | gitleaks — no new secret in the history |
 | `deploy-dev` | **Manual (`workflow_dispatch`)** | Deploy everything to DEV |
 | `deploy-pro` | Manual (`workflow_dispatch`) | Deploy everything to PRO |
-| `execute-sql` | Manual | Run ad-hoc SQL scripts. Refuses `insert_seed_data.sql` on PRO and `insert_local_dev_admin.sql` on DEV and PRO (compared by file name, so a relative path cannot walk around it) |
+| `execute-sql` | Manual | Run ad-hoc SQL scripts. Refuses `insert_seed_data.sql` on PRO and `insert_local_dev_admin.sql` on DEV and PRO (compared by file name, so a relative path cannot walk around it). It opens no network window, so it cannot reach the production database once that is private ([below](#production-window)) |
 
 ## Branch Strategy
 
@@ -288,6 +288,64 @@ the dispatch mode defaults to `what-if`, so a run started without thinking previ
 mutates.
 :::
 
+### The private database and vault, and the migration's login {#production-window}
+
+Production's database and Key Vault take no public traffic
+([Azure setup — production posture](/deployment/azure-setup#production-posture)), and a GitHub-hosted
+runner is outside their VNet. Both jobs read the stage's posture from the param file Bicep deploys, so
+on DEV none of these steps runs.
+
+- **`provision`** opens the vault to the runner's IP alone for the secret push, then closes it.
+- **`migrate-database`** turns the database's public access on, admits the runner's IP with a per-run
+  firewall rule, migrates, removes the rule and turns public access off again.
+- **Both closes run even on failure or cancellation**, and the job fails if the database or the vault
+  does not report `Disabled` afterwards. The manual close is in `deploy/AZURE-PROD-POSTURE.md` §6.
+- **The migration signs in as the administrator; the hosts do not (E-4).** On production the migrate
+  job builds the administrator's connection string from `POSTGRES_ADMIN_PASSWORD`, over
+  `Ssl Mode=VerifyFull`, and never reads the vault; after the migration it runs
+  `deploy/db/grant-app-login.sql`, which gives the `cleansia_app` login row reads and writes and
+  nothing else and sets its password from `POSTGRES_APP_PASSWORD`. The provision job writes that
+  login's connection string to `ConnectionStrings--cleansia-db`, and refuses a deploy before anything
+  is provisioned when `POSTGRES_APP_PASSWORD` is missing or is not at least 24 letters and digits. DEV
+  still migrates with the vault's connection string, as *3. Database Migration* above shows.
+
+`execute-sql.yml` opens no window, so an administrator's `psql` against production goes through the
+same window by hand (`deploy/AZURE-PROD-POSTURE.md` §6), never while a `Deploy to PRO` run is in
+flight.
+
+### The first production deploy {#first-production-deploy}
+
+The owner's steps, in order, are `deploy/AZURE-DEV-RUNBOOK.md` §11: the P0 console-access checklist,
+the `prod-weu` Environment with required reviewers, the OIDC federation, the resource group, the
+secrets, a `what-if` and then a `deploy`, and the two Static Web App tokens with a second deploy and
+the smoke test. Every production value is the owner's, and an agent never runs anything against
+production. The Stripe secrets are the **live** keys of the operating company's own Stripe account
+(decision 49) — [Environment configuration — Stripe](/deployment/environment-config#stripe).
+
+Two steps follow the deploy, both runbook step P7.
+
+**The reference-data bootstrap (E-9).** A migrated production database holds no reference data at
+all — no operating company, language, country, currency or market — so nobody can register or book
+until `sql-scripts/prod-bootstrap.sql` has run. The owner runs it once, as the administrator, through
+the database window. It is one transaction and idempotent, so a second run changes nothing: the
+operating company, the languages, every country with Czechia serviced, the Czech service cities, CZK,
+the Czech market and its operator, its invoice configuration, the cleaner document requirements (the
+insurance certificate among them), the e-mail texts, the four loyalty tiers and the Czech size ladder.
+No users, orders, promo codes, catalogue, prices, pay rates, Plus plans or company record: those come
+from the launch values sheet (decision 77), typed into the admin console. A Development boot runs the
+same file before the DEV fixtures in `insert_seed_data.sql`, and `ProductionBootstrapScriptTests`
+runs it twice on an emptied migrated database and then books on it.
+
+**The first administrator** comes after the bootstrap. Register on the customer site with the address
+that will administer, confirm the e-mail, then run `sql-scripts/set-admin-role.sql` with that address,
+as the administrator, through the database window. The script sets the profile and the role and
+nothing else: it neither checks the administrators' 12-character minimum nor sets
+`MustChangePassword`, so **register with a password of at least 12 characters**. Then invite that
+person's Microsoft identity to the admin console with `admin_console`, MFA on
+([Admin app — access to the deployed console](/admin-app/overview#access-to-the-deployed-console)).
+Every later administrator is created in the console →
+[Security rules — the production perimeter](/architecture/security-rules#production-perimeter)
+
 ## Authentication
 
 All workflows use Azure federated identity (OIDC):
@@ -312,8 +370,10 @@ permissions:
 | `AZURE_TENANT_ID` | Azure AD tenant ID |
 | `AZURE_SUBSCRIPTION_ID` | Azure subscription |
 | `ACR_NAME` | Azure Container Registry name |
-| `DB_CONNECTION_STRING_DEV` | DEV database connection string |
-| `DB_CONNECTION_STRING_PRO` | PRO database connection string |
+| `DB_CONNECTION_STRING_DEV` | DEV database connection string — read by `execute-sql.yml` |
+| `DB_CONNECTION_STRING_PRO` | PRO database connection string — read by `execute-sql.yml` only, which cannot reach the private production database |
+| `POSTGRES_ADMIN_PASSWORD` | the database administrator's password: the Bicep parameter, and on production the migration's sign-in |
+| `POSTGRES_APP_PASSWORD` | **production only** — the `cleansia_app` login's password, at least 24 letters and digits ([above](#production-window)) |
 | `AZURE_STATIC_WEB_APPS_API_TOKEN_PARTNER_DEV` | Partner SPA deploy token (DEV) |
 | `AZURE_STATIC_WEB_APPS_API_TOKEN_ADMIN_DEV` | Admin SPA deploy token (DEV) |
 | `AZURE_STATIC_WEB_APPS_API_TOKEN_PARTNER_PRO` | Partner SPA deploy token (PRO) |

@@ -37,4 +37,11 @@ struct BookingState: Equatable {
     /// The review step's terms tick. Per booking, never remembered: `reset()` starts the next one
     /// unticked. Read only when the box is shown — see `BookingViewModel.alreadyConsented`.
     var termsAccepted = false
+
+    /// The card-guarantee consent, asked only while the booking needs a card captured — see
+    /// `BookingViewModel.needsCardGuarantee`. Per booking, like the terms tick.
+    var cardGuaranteeAccepted = false
+
+    /// The request to start within the 14-day withdrawal period. Asked on every booking, consented or not.
+    var earlyPerformanceRequested = false
 }

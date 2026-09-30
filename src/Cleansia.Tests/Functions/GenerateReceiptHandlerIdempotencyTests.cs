@@ -71,6 +71,7 @@ public class GenerateReceiptHandlerIdempotencyTests
         _unitOfWork.Object,
         _tenantProvider.Object,
         new ArchivedCompanyDeadLetter(Mock.Of<IServiceScopeFactory>(), NullLogger<ArchivedCompanyDeadLetter>.Instance),
+        Mock.Of<IReceivableRepository>(),
         NullLogger<GenerateReceiptHandler>.Instance);
 
     private static Order BuildEligibleCashOrder()
@@ -95,12 +96,11 @@ public class GenerateReceiptHandlerIdempotencyTests
     private static OrderReceipt BuildReceipt() =>
         OrderReceipt.Create(OrderId, "2026-000001", "receipt.pdf", "2026/ORD/receipt.pdf", LanguageCode);
 
-    // The Order.Receipt navigation has a private setter; on a real redelivery EF rehydrates it from
+    // The order's receipts have no public writer; on a real redelivery EF rehydrates them from
     // the committed row. The test simulates that committed state by attaching the receipt to the
     // SAME order instance the repository hands back on the second lookup.
     private static void AttachReceipt(Order order, OrderReceipt receipt) =>
-        typeof(Order).GetProperty(nameof(Order.Receipt))!
-            .SetValue(order, receipt);
+        OrderReceiptAttachment.Attach(order, receipt);
 
     private static string SerializeEnvelope(QueueEnvelope<GenerateReceiptMessage> envelope) =>
         JsonSerializer.Serialize(envelope,

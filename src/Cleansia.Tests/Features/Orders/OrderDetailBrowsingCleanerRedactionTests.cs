@@ -15,6 +15,7 @@ using Cleansia.Core.Domain.Users;
 using Cleansia.Tests.Common;
 using Moq;
 using Cleansia.TestUtilities;
+using Cleansia.Tests.Infrastructure;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -594,7 +595,7 @@ public class OrderDetailBrowsingCleanerRedactionTests
         // Notes and Receipt have no domain writer on this path — EF materializes both. Reflection is
         // the only way to arrange a non-empty value, and a blank one would make its test vacuous.
         typeof(Order).GetProperty(nameof(Order.Notes))!.SetValue(order, CustomerNotes);
-        typeof(Order).GetProperty(nameof(Order.Receipt))!.SetValue(
+        OrderReceiptAttachment.Attach(
             order, OrderReceipt.Create(OrderId, ReceiptNumber, "receipt.pdf", "blob", "en"));
 
         return order;

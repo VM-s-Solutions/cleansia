@@ -413,6 +413,26 @@
           </section>
         }
 
+        @if (!isEditing()) {
+          <section class="cl-rec__section">
+            <label class="cl-wiz__consent" data-spec-early-performance>
+              <p-checkbox
+                [ngModel]="facade.formData().earlyPerformanceRequested"
+                (ngModelChange)="facade.updateFormData({ earlyPerformanceRequested: $event })"
+                [binary]="true"
+                inputId="recurring-early-performance"
+              />
+              <span>{{ 'pages.order.early_performance.early-performance-draft-2026-09-29' | translate }}</span>
+            </label>
+            @if (showError('earlyPerformance')) {
+              <p class="cl-rec__error" data-spec-early-performance-error>
+                <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
+                {{ 'recurring_booking.error_early_performance' | translate }}
+              </p>
+            }
+          </section>
+        }
+
         <!-- ── What it costs, and the two ways out ───────────────────── -->
         <div class="cl-rec__summary">
           <div class="cl-rec__summary-main">
@@ -512,3 +532,44 @@
 </div>
 
 <p-confirmDialog />
+
+<p-dialog
+  [header]="'pages.order.card_capture.title' | translate"
+  [visible]="facade.cardCaptureVisible()"
+  (visibleChange)="!$event && facade.closeCardCapture()"
+  [modal]="true"
+  [closable]="true"
+  [style]="{ width: '480px' }"
+  [breakpoints]="{ '500px': '95vw' }"
+  styleClass="cleansia-dialog"
+>
+  <div class="cleansia-dialog__body">
+    <div class="cleansia-dialog__icon cleansia-dialog__icon--info">
+      <i class="pi pi-credit-card"></i>
+    </div>
+    <p class="cleansia-dialog__text">{{ 'pages.order.card_capture.intro' | translate }}</p>
+    <label class="cl-wiz__consent">
+      <p-checkbox
+        [ngModel]="facade.cardCaptureConsent()"
+        (ngModelChange)="facade.setCardCaptureConsent($event)"
+        [binary]="true"
+        inputId="recurring-card-consent"
+      />
+      <span>{{ 'pages.order.card_capture.consent.card-guarantee-draft-2026-09-28' | translate }}</span>
+    </label>
+  </div>
+  <ng-template #footer>
+    <cleansia-button
+      [title]="'pages.order.card_capture.cancel' | translate"
+      [severity]="'secondary'"
+      (clickFn)="facade.closeCardCapture()"
+    />
+    <cleansia-button
+      [title]="'pages.order.card_capture.continue' | translate"
+      [severity]="'primary'"
+      [loading]="facade.cardCaptureStarting()"
+      [disabled]="!facade.cardCaptureConsent()"
+      (clickFn)="facade.startCardCapture()"
+    />
+  </ng-template>
+</p-dialog>

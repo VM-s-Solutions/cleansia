@@ -28,6 +28,35 @@ public sealed class OrderAnonymizeCustomerDataTests
     }
 
     [Fact]
+    public void The_Cleaners_Note_Of_The_Calls_To_The_Customer_Is_Cleared()
+    {
+        var order = NewOrder();
+        order.ReportLockout("employee-1", "Called Milada three times on +420777111222", DateTime.UtcNow);
+
+        order.AnonymizeCustomerData();
+
+        Assert.Null(order.LockoutCallAttempts);
+        Assert.NotNull(order.LockoutReportedAt);
+    }
+
+    [Fact]
+    public void The_Early_Performance_Request_Loses_Its_Request_Context_And_Keeps_The_Act()
+    {
+        var order = NewOrder();
+        var consentedOn = DateTimeOffset.UtcNow.AddDays(-2);
+        order.RecordEarlyPerformanceConsent(
+            Order.EarlyPerformanceConsentTextVersionInForce, consentedOn, "cleansia.customer", "203.0.113.9", "iPhone 15");
+
+        order.AnonymizeCustomerData();
+
+        Assert.Null(order.EarlyPerformanceConsentIpAddress);
+        Assert.Null(order.EarlyPerformanceConsentDeviceLabel);
+        Assert.Equal(Order.EarlyPerformanceConsentTextVersionInForce, order.EarlyPerformanceConsentTextVersion);
+        Assert.Equal(consentedOn, order.EarlyPerformanceConsentedOn);
+        Assert.Equal("cleansia.customer", order.EarlyPerformanceConsentClient);
+    }
+
+    [Fact]
     public void An_Admins_Free_Text_Reason_Is_Cleared()
     {
         var order = NewOrder();

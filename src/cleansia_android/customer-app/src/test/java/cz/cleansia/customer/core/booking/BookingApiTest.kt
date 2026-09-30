@@ -36,6 +36,7 @@ class BookingApiTest {
         termsAccepted: Boolean? = null,
         language: String = "en",
         dirtinessLevel: DirtinessLevel? = null,
+        earlyPerformanceRequested: Boolean? = null,
     ) = CreateOrderCommand(
         customerName = "Ada Lovelace",
         customerEmail = "user@example.com",
@@ -52,6 +53,7 @@ class BookingApiTest {
         termsAccepted = termsAccepted,
         language = language,
         dirtinessLevel = dirtinessLevel,
+        earlyPerformanceRequested = earlyPerformanceRequested,
     )
 
     private suspend fun sentFor(command: CreateOrderCommand): GenCreateOrderCommand {
@@ -75,6 +77,11 @@ class BookingApiTest {
     @Test
     fun create_leavesTheTickOffWhenTheBoxWasNotShown() = runTest {
         assertEquals(null, sentFor(command(termsAccepted = null)).termsAccepted)
+    }
+
+    @Test
+    fun create_carriesTheEarlyPerformanceRequestOntoTheGeneratedCommand() = runTest {
+        assertEquals(true, sentFor(command(earlyPerformanceRequested = true)).earlyPerformanceRequested)
     }
 
     @Test

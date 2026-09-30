@@ -90,7 +90,7 @@ public class AdminOverrideOrderStatus
                 .GetQueryable()
                 .Include(o => o.OrderStatusHistory)
                 .Include(o => o.AssignedEmployees)
-                .Include(o => o.Receipt)
+                .Include(o => o.Receipts)
                 .AsSplitQuery()
                 .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);
 

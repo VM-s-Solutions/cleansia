@@ -27,6 +27,11 @@ class CashCopyStringsTest {
         "recurring_cash_change_title",
         "recurring_cash_change_body",
         "recurring_cash_change_action",
+        "booking_card_guarantee_title",
+        "booking_card_guarantee_body",
+        "booking_card_guarantee_consent_required",
+        "booking_card_guarantee_pending",
+        "booking_card_guarantee_cancelled",
     )
 
     private val crewCounts = listOf("booking_cash_needs_card", "recurring_cash_needs_card")
@@ -37,6 +42,10 @@ class CashCopyStringsTest {
         File("src/cleansia_android/customer-app"),
     ).firstOrNull { File(it, "src/main/res").isDirectory }
         ?: error("customer-app not found from working dir ${File(".").absolutePath}")
+
+    private val solutionDir: File = generateSequence(moduleDir.absoluteFile) { it.parentFile }
+        .firstOrNull { File(it, "Cleansia.Api.sln").isFile }
+        ?: error("Cleansia.Api.sln not found above ${moduleDir.absolutePath}")
 
     @Test
     fun `every cash string is written in all five locales`() {
@@ -95,6 +104,43 @@ class CashCopyStringsTest {
         assertTrue(
             "the recurring cash card is no longer gated on the verdict",
             recurring.contains("cashEnabled = cashEligibility == CashEligibility.Available"),
+        )
+    }
+
+    /**
+     * The server stamps every saved card with the version of the consent wording in force, so the text
+     * the review step shows is the resource named for that version: bumping the version on the server
+     * fails here until the new wording exists in all five locales and is the one rendered.
+     */
+    @Test
+    fun `the card-guarantee consent shown is the wording of the version the server records`() {
+        val savedCard = File(solutionDir, "Cleansia.Core.Domain/Users/SavedCard.cs").readText()
+        val version = Regex("ConsentTextVersionInForce\\s*=\\s*\"([^\"]+)\"").find(savedCard)?.groupValues?.get(1)
+            ?: error("SavedCard.ConsentTextVersionInForce not found — the parser needs updating")
+        val key = "consent_" + version.replace('-', '_')
+
+        locales.forEach { locale ->
+            assertTrue("$locale/$key is missing or blank", valueOf(stringsXml(locale), key)?.isNotBlank() == true)
+        }
+        listOf("values-uk", "values-ru").forEach { locale ->
+            assertTrue("$locale/$key is still English", valueOf(stringsXml(locale), key) != valueOf(stringsXml("values"), key))
+        }
+        assertTrue("the review step no longer shows $key", source("features/booking/ConfirmStep.kt").contains("R.string.$key"))
+    }
+
+    @Test
+    fun `the first cash booking saves the card in PaymentSheet's setup mode and books once it lands`() {
+        val sheet = source("features/booking/BookingBottomSheet.kt")
+        assertTrue("the guarantee no longer opens PaymentSheet in setup mode", sheet.contains("cardGuaranteeSheet.presentWithSetupIntent("))
+        assertTrue("a saved card no longer books the cash order", sheet.contains("bookingVm.submitAfterCardGuarantee()"))
+        assertEquals(
+            "a cancelled or failed setup sheet no longer lets the next swipe capture afresh",
+            2,
+            Regex("bookingVm\\.abandonCardGuarantee\\(\\)").findAll(sheet).count(),
+        )
+        assertTrue(
+            "the consent is no longer shown when a card is needed",
+            source("features/booking/ConfirmStep.kt").contains("if (needsCardGuarantee)"),
         )
     }
 

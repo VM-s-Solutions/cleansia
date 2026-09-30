@@ -50,9 +50,12 @@ const REASONS_CS = 'src/Cleansia.Core.Domain/Orders/OrderCancellationReasons.cs'
 const WEB_REASON_MAP = 'src/Cleansia.App/libs/cleansia-customer-features/orders/src/lib/order-detail/order-detail.component.ts';
 const ANDROID_REASON_MAP = 'src/cleansia_android/customer-app/src/main/java/cz/cleansia/customer/features/orders/OrderDetailScreen.kt';
 const IOS_REASON_MAP = 'src/cleansia_ios/CleansiaCustomer/Sources/Features/Orders/CancellationReasonCopy.swift';
-/** The customer legal texts, one dated folder per version, one markdown file per language. */
-const LEGAL_SEED = 'src/Cleansia.Infra.Database/Seed/Legal/customer';
-const LEGAL_SEED_TYPES = ['terms-of-service', 'privacy-policy', 'work-contract'];
+/**
+ * The legal texts under their audience, one dated folder per version, one markdown file per language.
+ * The contract for work binds the operating company and the cleaner, so it is an employee text.
+ */
+const LEGAL_SEED = 'src/Cleansia.Infra.Database/Seed/Legal';
+const LEGAL_SEED_TYPES = ['customer/terms-of-service', 'customer/privacy-policy', 'employee/work-contract'];
 const WEB_MODEL = 'src/Cleansia.App/libs/shared/models/src/lib/models/booking-window.models.ts';
 const WEB_I18N = 'src/Cleansia.App/apps/cleansia.app/src/assets/i18n';
 const ANDROID_RES = 'src/cleansia_android/customer-app/src/main/res';
@@ -469,7 +472,7 @@ function pinSeedText(where, markdown, { placeholder } = {}) {
 for (const type of LEGAL_SEED_TYPES) {
   const version = newestSeedVersion(REPO, type);
   if (version === null) {
-    note(`${LEGAL_SEED}/${type}/any`, 'has no dated version folder — the customer legal text has no seed');
+    note(`${LEGAL_SEED}/${type}/any`, 'has no dated version folder — the legal text has no seed');
     continue;
   }
   for (const locale of LOCALES) {
@@ -478,7 +481,7 @@ for (const type of LEGAL_SEED_TYPES) {
       note(rel, 'is missing');
       continue;
     }
-    pinSeedText(rel, read(rel), type === 'terms-of-service' ? { placeholder: '{{currency}}' } : {});
+    pinSeedText(rel, read(rel), type === 'customer/terms-of-service' ? { placeholder: '{{currency}}' } : {});
   }
 }
 
@@ -522,9 +525,10 @@ export function readCancellationReasons(source) {
 /**
  * Keys the server writes that no client renders yet. A gap named here is a finding for the owner,
  * not a pass: the list exists so the gate fails on the NEXT key while a known one is reported.
- * Empty today — every declared reason renders on all three clients.
+ * The confirmed lockout (owner ruling 2026-09-28, decision 11) reached the server first; the three
+ * customer clients render it in their own slices, and each one drops its line from here.
  */
-const REASONS_NOT_YET_RENDERED = new Set();
+const REASONS_NOT_YET_RENDERED = new Set(['order.cancelled.customer_lockout']);
 
 const reasons = existsSync(join(REPO, REASONS_CS)) ? readCancellationReasons(read(REASONS_CS)) : [];
 if (reasons.length === 0) note(REASONS_CS, 'declares no cancellation reason — the parser needs updating');

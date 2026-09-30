@@ -157,7 +157,7 @@
       "deletion_reason": "Prečo má byť odstránený?",
       "replace_document": "Nahradiť",
       "legal_documents": "Zmluvné dokumenty",
-      "legal_documents_intro": "Prečítajte si a prijmite každý z dokumentov nižšie. Kým neprijmete platnú verziu, vašu registráciu nemožno schváliť a nemôžete prijímať zákazky.",
+      "legal_documents_intro": "Tieto dokumenty upravujú vašu prácu pre prevádzkovú spoločnosť trhu, na ktorom pracujete. Prečítajte si a prijmite každý z dokumentov nižšie. Kým neprijmete platnú verziu, vašu registráciu nemožno schváliť a nemôžete prijímať zákazky.",
       "legal_documents_version": "Verzia {{version}}, účinná od {{date}}",
       "legal_documents_accepted_on": "Prijaté {{date}}, verzia {{version}}",
       "legal_documents_new_version": "Platí nová verzia. Prijali ste verziu {{version}}.",
@@ -334,11 +334,12 @@
       "work_contract": {
         "title": "Zmluva o dielo",
         "version_line": "Verzia {{version}}, účinná od {{date}}",
+        "parties": "Medzi prevádzkovou spoločnosťou, ktorá toto upratovanie predala (objednávateľ), a vami (zhotoviteľ)",
         "facts": {
           "title": "Zákazka",
           "order_number": "Číslo objednávky",
           "window": "Dátum a čas",
-          "price": "Cena",
+          "reward": "Vaša odmena za miesto",
           "location": "Miesto",
           "rooms_bathrooms": "Izby / kúpeľne",
           "services": "Služby",
@@ -453,6 +454,20 @@
         "pending_banner": "Pred začatím práce prijmite zmluvu o dielo",
         "accept": "Prijať zmluvu",
         "accepted_success": "Zmluva o dielo bola prijatá."
+      },
+      "lockout": {
+        "title": "Nemôžete sa dostať dnu?",
+        "not_yet": "Ak vám nikto neotvorí, môžete to nahlásiť od {{time}}, {{minutes}} minút po začiatku.",
+        "body": "Odfoťte vchod, poznačte si, kedy ste zákazníkovi volali, a nahláste to. Skôr než sa uplatní akýkoľvek poplatok, potvrdí to administrátor.",
+        "entrance_photo": "Fotka vchodu",
+        "take_photo": "Odfotiť vchod",
+        "photo_needed": "Najprv odfoťte vchod.",
+        "call_attempts": "Vaše hovory",
+        "call_attempts_placeholder": "Kedy ste zákazníkovi volali alebo písali a čo sa stalo",
+        "report": "Nemôžem sa dostať dnu",
+        "reported_title": "Nahlásené: nedá sa dostať dnu",
+        "reported_body": "Nahlásené o {{time}}. Administrátor to potvrdí; dovtedy zákazka zostáva bez zmeny.",
+        "reported_calls": "Hovory: {{calls}}"
       }
     },
     "invoices": {
@@ -536,10 +551,20 @@
       "grand_total": "Celkom za obdobie",
       "order_lines": "Výplata podľa objednávok",
       "order_number": "Číslo objednávky",
+      "line_type": "Položka",
       "no_order_pays": "Pre toto obdobie nie sú žiadne výplatné položky",
       "no_periods": "Zatiaľ nie sú k dispozícii žiadne platobné obdobia",
       "load_error": "Nepodarilo sa načítať výplatu za obdobie",
-      "view_invoice": "Zobraziť faktúru"
+      "view_invoice": "Zobraziť faktúru",
+      "cash_held": {
+        "title": "Hotovosť u mňa",
+        "description": "Hotovosť, ktorú ste prevzali pri dverách a ešte ste ju neodovzdali. Započíta sa proti vašej ďalšej výplate.",
+        "none": "Nedržíte žiadnu hotovosť spoločnosti.",
+        "load_error": "Hotovosť, ktorú držíte, sa nepodarilo načítať.",
+        "held": "Držíte",
+        "limit": "Limit",
+        "jobs_hidden": "Držíte viac, než je limit, preto sa vám zákazky za hotovosť nezobrazujú, kým hotovosť neodovzdáte."
+      }
     },
     "gdpr": {
       "title": "Zásady ochrany osobných údajov & GDPR",
@@ -701,7 +726,8 @@
         "photo_upload_failed": "Nepodarilo sa nahrať fotografiu. Skúste to prosím znova.",
         "photo_read_failed": "Nepodarilo sa prečítať súbor fotografie. Skúste to prosím znova.",
         "photo_deleted": "Fotografia bola úspešne vymazaná.",
-        "photo_delete_failed": "Nepodarilo sa vymazať fotografiu. Skúste to prosím znova."
+        "photo_delete_failed": "Nepodarilo sa vymazať fotografiu. Skúste to prosím znova.",
+        "lockout_reported": "Nahlásené. Administrátor to potvrdí."
       },
       "invoices": {
         "invoice_generated": "Faktúra bola vygenerovaná z časových záznamov.",
@@ -851,6 +877,7 @@
       "invalid_apple_token": "Neplatný Apple token",
       "social_account_not_found": "Tomuto prihláseniu nezodpovedá žiadny účet. Najprv sa zaregistrujte.",
       "invalid_password_format": "Neplatný formát hesla",
+      "admin_password_too_short": "Heslo administrátora musí mať aspoň 12 znakov.",
       "invalid_reset_token": "Neplatný token na obnovenie hesla",
       "same_reset_password": "Nové heslo sa zhoduje so starým heslom",
       "insufficient_privileges": "Nemáte oprávnenie na prístup do partnerskej aplikácie. Prihlásiť sa môžu iba partneri a administrátori.",
@@ -909,6 +936,12 @@
       "invalid_email": "Neplatná e-mailová adresa"
     },
     "order": {
+      "lockout": {
+        "too_early": "Že sa nemôžete dostať dnu, môžete nahlásiť až 15 minút po objednanom začiatku.",
+        "photo_required": "Najprv odfoťte dvere alebo vchod a potom nahláste, že sa nemôžete dostať dnu.",
+        "already_reported": "Už ste nahlásili, že sa nemôžete dostať dnu. Kancelária sa vám ozve.",
+        "order_closed": "Táto zákazka je už dokončená alebo zrušená, takže nie je čo hlásiť."
+      },
       "cleaning_date": {
         "future": "Dátum upratovania musí byť v budúcnosti"
       },
@@ -952,6 +985,7 @@
       "payment_gateway_unavailable": "Platobná brána nie je k dispozícii",
       "time_conflict": "Tento termín sa prekrýva s inou objednávkou vo vašom rozvrhu",
       "weekly_limit_reached": "Dosiahli ste týždenný limit zákaziek.",
+      "cash_float_cap_exceeded": "Máte pri sebe viac hotovosti spoločnosti, než je povolené, preto pre vás zákazky za hotovosť nie sú dostupné, kým časť neodovzdáte.",
       "employee_already_has_order_in_progress": "Už máte inú zákazku v priebehu. Pred začatím novej ju prosím dokončite.",
       "photo": {
         "window_closed": "Túto fotografiu teraz nemožno pridať: fotografie pred upratovaním od prevzatia zákazky do jej dokončenia, fotografie po upratovaní počas práce.",
@@ -1178,6 +1212,11 @@
       "normal": "Bežné",
       "increased": "Zvýšené",
       "heavy": "Silné"
+    },
+    "pay_line_type": {
+      "job": "Zákazka",
+      "cancellation_fee_share": "Váš podiel z poplatku za neskoré zrušenie",
+      "lockout_fee_share": "Váš podiel z poplatku za neumožnený prístup"
     }
   },
   "help": {

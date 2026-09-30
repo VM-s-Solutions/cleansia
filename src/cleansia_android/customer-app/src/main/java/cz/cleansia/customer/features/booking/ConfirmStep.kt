@@ -111,6 +111,7 @@ fun ConfirmStep(
     val alreadyConsented by bookingVm.alreadyConsented.collectAsStateWithLifecycle()
     val cashEligibility by bookingVm.cashEligibility.collectAsStateWithLifecycle()
     val cashClearedNotice by bookingVm.cashClearedNotice.collectAsStateWithLifecycle()
+    val needsCardGuarantee by bookingVm.needsCardGuarantee.collectAsStateWithLifecycle()
     // Every money row comes from the one resolver, so this card and the sticky bar below it cannot
     // disagree with each other or with the total the order is created with.
     val summary = BookingPriceSummary.resolve(quote, effectiveDiscount)
@@ -409,6 +410,13 @@ fun ConfirmStep(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+        if (needsCardGuarantee) {
+            Spacer(Modifier.height(12.dp))
+            CardGuaranteeConsent(
+                accepted = state.cardGuaranteeAccepted,
+                onAcceptedChange = { onUpdate(state.copy(cardGuaranteeAccepted = it)) },
+            )
+        }
 
         Spacer(Modifier.height(16.dp))
 
@@ -448,9 +456,15 @@ fun ConfirmStep(
             Spacer(Modifier.height(16.dp))
         }
 
-        // The contract for work the confirmation concludes, named at the offer whether or not the
-        // account already consented: an information line with the public text behind it, never a tick.
-        WorkContractNotice(modifier = Modifier.fillMaxWidth())
+        CleansiaConsentCheckbox(
+            checked = state.earlyPerformanceRequested,
+            onCheckedChange = { onUpdate(state.copy(earlyPerformanceRequested = it)) },
+            html = stringResource(R.string.consent_early_performance_draft_2026_09_29),
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(Modifier.height(16.dp))
+
+        ContractNotice(modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(16.dp))
 
         // ── Trust badges ──
@@ -491,8 +505,38 @@ fun ConfirmStep(
 }
 
 @Composable
-private fun WorkContractNotice(modifier: Modifier = Modifier) {
-    val html = stringResource(R.string.booking_work_contract_notice)
+private fun CardGuaranteeConsent(accepted: Boolean, onAcceptedChange: (Boolean) -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(14.dp))
+            .padding(14.dp),
+    ) {
+        Text(
+            stringResource(R.string.booking_card_guarantee_title),
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            stringResource(R.string.booking_card_guarantee_body),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(8.dp))
+        CleansiaConsentCheckbox(
+            checked = accepted,
+            onCheckedChange = onAcceptedChange,
+            html = stringResource(R.string.consent_card_guarantee_draft_2026_09_28),
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+@Composable
+private fun ContractNotice(modifier: Modifier = Modifier) {
+    val html = stringResource(R.string.booking_contract_notice)
     val linkColor = MaterialTheme.colorScheme.primary
     val sentence = remember(html, linkColor) {
         ConsentMarkup.annotated(

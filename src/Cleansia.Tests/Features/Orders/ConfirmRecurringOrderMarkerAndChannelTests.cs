@@ -67,6 +67,8 @@ public sealed class ConfirmRecurringOrderMarkerAndChannelTests
 
     private ConfirmRecurringOrder.Handler Handler(OrderChannel channel) => new(
         OrderAccessDoubles.Over(_orderRepository, _session),
+        _orderRepository.Object,
+        SavedCards.SavedCardDoubles.Guaranteed(), Mock.Of<IReceivableRepository>(),
         _credits.Object,
         _users.Object,
         _session.Object,
@@ -359,6 +361,8 @@ public sealed class ConfirmRecurringOrderMarkerAndChannelTests
             Mock.Of<IUserNotificationRepository>(),
             Mock.Of<IStripeClientFactory>(),
             Mock.Of<ITenantRepository>(),
+            Mock.Of<ISavedCardRepository>(),
+            Mock.Of<IReceivableRepository>(),
             NullLogger<HandlePaymentNotification.Handler>.Instance);
     }
 

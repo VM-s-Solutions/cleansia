@@ -27,7 +27,7 @@ public static class WorkContractTestData
 
     public static LegalDocument Document()
     {
-        var document = LegalDocument.Create(LegalDocumentAudience.Customer, LegalDocumentType.WorkContract, null, EffectiveFrom);
+        var document = LegalDocument.Create(LegalDocumentAudience.Employee, LegalDocumentType.WorkContract, null, EffectiveFrom);
         document.Id = DocumentId;
         document.AddText("en", "Contract for Work", "## Price\n\nThe price is stated in {{currency}}.").Id = TextIdEn;
         document.AddText("cs", "Smlouva o dílo", "## Cena\n\nCena je uvedena v {{currency}}.").Id = TextIdCs;
@@ -36,7 +36,7 @@ public static class WorkContractTestData
 
     public static LegalDocument OtherDocument()
     {
-        var document = LegalDocument.Create(LegalDocumentAudience.Customer, LegalDocumentType.WorkContract, null, EffectiveFrom.AddMonths(-7));
+        var document = LegalDocument.Create(LegalDocumentAudience.Employee, LegalDocumentType.WorkContract, null, EffectiveFrom.AddMonths(-7));
         document.Id = OtherDocumentId;
         document.AddText("en", "Contract for Work", "## Old\n\nAn older wording.").Id = OtherTextId;
         return document;

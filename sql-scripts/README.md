@@ -15,12 +15,30 @@ Operational SQL scripts for the Cleansia database. These are executed via the **
 - `fix-*.sql` — data fixes wrapped in transactions
 - `migrate-*.sql` — schema or data migrations wrapped in transactions
 
+## The seed: `prod-bootstrap.sql`, then `insert_seed_data.sql`
+
+- **`prod-bootstrap.sql`** — the reference data a freshly migrated database needs before anyone can
+  register or book: the operating company, languages, countries, the Czech service cities, CZK, the
+  Czech market with its operator, its invoice configuration and cleaner document requirements, the
+  e-mail template copy, the loyalty tiers and the Czech size ladder. No users, orders, promo codes,
+  catalogue, prices, Plus plans or company record: in production those are typed into the admin
+  console. One transaction, idempotent. **Production runs it once, by the owner, as runbook step P7
+  (`deploy/AZURE-DEV-RUNBOOK.md`); an agent never runs anything against PRO.**
+- **`insert_seed_data.sql`** — the DEV fixtures on top of it: the sample catalogue with prices and pay
+  rates, Plus plans, promo codes, the company record and the markets DEV configures but does not
+  operate. It needs the bootstrap first and never runs on its own; `execute-sql.yml` refuses it
+  against PRO.
+
+A Development boot runs both, then `insert_local_dev_admin.sql`
+(`CleansiaStartupBase.DevelopmentSeedScripts`). To re-seed the shared DEV database, run
+`prod-bootstrap.sql` and then `insert_seed_data.sql` through **Execute SQL Script** with **DEV**.
+
 ## `seed/` — dev fixture data
 
 > ### ⚠️ This is NOT the seed the DEV database uses.
 >
-> The live one is **`sql-scripts/insert_seed_data.sql`** in the directory above, executed by the host
-> at startup in Development. Every seeded-data test reads that file and only that file. Nothing in
+> The live one is **`prod-bootstrap.sql` followed by `insert_seed_data.sql`** in the directory above,
+> executed by the host at startup in Development. Every seeded-data test reads those files. Nothing in
 > `seed/` is run by any workflow, any host or any test.
 
 Seven scripts that populate an empty database with plausible catalogue and translation data. They

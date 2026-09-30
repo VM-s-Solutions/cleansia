@@ -13,6 +13,7 @@ final class CustomerErrorVoiceTests: XCTestCase {
     /// renders — either way the booking voice is the only voice they are read in.
     private static let customerOnly = [
         CustomerOnlyKey("membership.express_waiver.no_longer_available", emitters: "CreateOrder"),
+        CustomerOnlyKey("consent.early_performance_not_requested", emitters: "CreateOrder, CreateRecurringBooking"),
         CustomerOnlyKey(
             "order.already_cancelled",
             emitters: "CancelOrder, CancelGuestOrder, GetGuestCancellationFeePreview, AdminCancelOrder, "
@@ -43,6 +44,18 @@ final class CustomerErrorVoiceTests: XCTestCase {
         CustomerOnlyKey("order.total_price.not_match", emitters: "CreateOrder"),
         CustomerOnlyKey(
             "order.cash_not_available",
+            emitters: "CreateOrder, CreateRecurringBooking, UpdateRecurringBooking, ConfirmRecurringOrder"
+        ),
+        CustomerOnlyKey(
+            "order.cash_unpaid_receivable",
+            emitters: "CreateOrder, CreateRecurringBooking, UpdateRecurringBooking, ConfirmRecurringOrder"
+        ),
+        CustomerOnlyKey(
+            "order.cash_open_bookings_limit_reached",
+            emitters: "CreateOrder, CreateRecurringBooking, UpdateRecurringBooking, ConfirmRecurringOrder"
+        ),
+        CustomerOnlyKey(
+            "order.cash_requires_saved_card",
             emitters: "CreateOrder, CreateRecurringBooking, UpdateRecurringBooking, ConfirmRecurringOrder"
         ),
         CustomerOnlyKey(
@@ -123,6 +136,7 @@ final class CustomerErrorVoiceTests: XCTestCase {
         "common.required": "AddDisputeMessage, AddSavedAddress, AppleAuth, CancelGuestOrder, "
             + "GetGuestCancellationFeePreview +38 more",
         "company.not_found": "ReceiptService",
+        "consent.early_performance_not_requested": "CreateOrder, CreateRecurringBooking",
         "consent.terms_not_accepted": "CreateOrder, Register",
         "country.not_existing_id": "AddSavedAddress, UpdateSavedAddress",
         "country.not_serviced":
@@ -164,6 +178,12 @@ final class CustomerErrorVoiceTests: XCTestCase {
         "order.already_completed": "CancellationAssessor",
         "order.cash_not_available":
             "CreateOrder, CreateRecurringBooking, UpdateRecurringBooking, ConfirmRecurringOrder",
+        "order.cash_open_bookings_limit_reached":
+            "CreateOrder, CreateRecurringBooking, UpdateRecurringBooking, ConfirmRecurringOrder",
+        "order.cash_requires_saved_card":
+            "CreateOrder, CreateRecurringBooking, UpdateRecurringBooking, ConfirmRecurringOrder",
+        "order.cash_unpaid_receivable":
+            "CreateOrder, CreateRecurringBooking, UpdateRecurringBooking, ConfirmRecurringOrder",
         "order.cleaner_already_started": "ReportGuestCleanerNoShow",
         "order.cleaning_date.below_lead_time": "CreateOrder",
         "order.cleaning_date.future": "CreateOrder",
@@ -202,6 +222,8 @@ final class CustomerErrorVoiceTests: XCTestCase {
         "promo.per_user_limit_reached": "CreateOrder",
         "promo.requires_account": "CreateOrder",
         "receipt.not_found": "DownloadOrderReceipt",
+        "receivable.not_found": "CreateReceivablePayLink",
+        "receivable.not_open": "CreateReceivablePayLink",
         "recurring_booking.ends_on_before_start": "CreateRecurringBooking, UpdateRecurringBooking",
         "recurring_booking.membership_required": "CreateRecurringBooking, UpdateRecurringBooking",
         "recurring_booking.no_services_or_packages": "CreateRecurringBooking, UpdateRecurringBooking",
@@ -213,6 +235,8 @@ final class CustomerErrorVoiceTests: XCTestCase {
         "refund.failed": "RefundService",
         "refund.nothing_refundable": "RefundService",
         "refund.order_not_refundable": "RefundService",
+        "saved_card.consent_not_accepted": "CreateSavedCardSetupIntent",
+        "saved_card.not_found": "RemoveSavedCard",
         "tenant.archived": "CleansiaDbContext.CommitAsync via RequestValidationExceptionFilterAttribute (409)",
         "tenant.not_found": "OperatorTenantScopeBehavior",
         "user.email_confirmed": "ResendConfirmationEmail",

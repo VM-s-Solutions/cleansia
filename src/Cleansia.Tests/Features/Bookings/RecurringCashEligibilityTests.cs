@@ -222,7 +222,8 @@ public class RecurringCashEligibilityTests
             Services(),
             Packages(),
             Cleansia.Tests.Features.Legal.CustomerConsentDoubles.Consented(),
-            Mock.Of<Cleansia.Core.AppServices.Services.Interfaces.ILegalDocumentResolver>());
+            Mock.Of<Cleansia.Core.AppServices.Services.Interfaces.ILegalDocumentResolver>(),
+            SavedCards.SavedCardDoubles.Guaranteed(), Mock.Of<IReceivableRepository>());
 
     private UpdateRecurringBooking.Validator UpdateValidator() =>
         new(
@@ -234,7 +235,8 @@ public class RecurringCashEligibilityTests
             OrderMarketDoubles.Trading(CreateOrderTestData.DefaultCurrency()),
             OrderMarketDoubles.Servicing("country-cz"),
             Services(),
-            Packages());
+            Packages(),
+            SavedCards.SavedCardDoubles.Guaranteed(), Mock.Of<IReceivableRepository>());
 
     private static CreateRecurringBooking.Command CreateCommand(
         PaymentType paymentType, IReadOnlyList<string> serviceIds, IReadOnlyList<string> packageIds) =>
@@ -248,7 +250,8 @@ public class RecurringCashEligibilityTests
             SelectedServiceIds: serviceIds,
             SelectedPackageIds: packageIds,
             PaymentType: (int)paymentType,
-            StartsOn: DateTime.UtcNow.AddDays(3));
+            StartsOn: DateTime.UtcNow.AddDays(3),
+            EarlyPerformanceRequested: true);
 
     private static UpdateRecurringBooking.Command UpdateCommand(
         PaymentType paymentType, IReadOnlyList<string> serviceIds, IReadOnlyList<string> packageIds) =>

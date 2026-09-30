@@ -22,6 +22,7 @@ public static class BusinessErrorMessage
     // returning user to re-accept on every sign-in is both odd and evidentially worthless.
     public const string SocialAccountNotFound = "auth.social_account_not_found";
     public const string InvalidPasswordFormat = "auth.invalid_password_format";
+    public const string AdminPasswordTooShort = "auth.admin_password_too_short";
     public const string NotValidResetPasswordToken = "auth.invalid_reset_token";
     public const string SameResetPassword = "auth.same_reset_password";
     public const string InsufficientPrivileges = "auth.insufficient_privileges";
@@ -90,6 +91,13 @@ public static class BusinessErrorMessage
     public const string OrderCleanerAlreadyStarted = "order.cleaner_already_started";
     // A no-show report or an admin no-show cancellation before the booked start time.
     public const string OrderStartTimeNotReached = "order.start_time_not_reached";
+    // The assigned cleaner's "cannot get in" report (owner ruling 2026-09-28, decision 11), and the
+    // administrator's confirmation of it.
+    public const string LockoutTooEarly = "order.lockout.too_early";
+    public const string LockoutPhotoRequired = "order.lockout.photo_required";
+    public const string LockoutAlreadyReported = "order.lockout.already_reported";
+    public const string LockoutOrderClosed = "order.lockout.order_closed";
+    public const string LockoutNotReported = "order.lockout.not_reported";
     public const string InvalidOrderStatusTransition = "order.invalid_status_transition";
     /// <summary>
     /// The admin override may not write Confirmed onto an order with nobody assigned: Confirmed means a
@@ -109,6 +117,12 @@ public static class BusinessErrorMessage
     public const string OrderCashNotCollected = "order.cash_not_collected";
     /// <summary>Cash is only for a signed-in customer whose booking needs one cleaner; anything else pays by card.</summary>
     public const string OrderCashNotAvailable = "order.cash_not_available";
+    /// <summary>Cash needs a usable card saved in the booking's currency, the guarantee fees and unpaid cash may be charged to.</summary>
+    public const string OrderCashRequiresSavedCard = "order.cash_requires_saved_card";
+    /// <summary>The customer already holds the most open unpaid cash bookings allowed; the next one pays by card.</summary>
+    public const string OrderCashOpenBookingsLimitReached = "order.cash_open_bookings_limit_reached";
+    /// <summary>The customer owes the company an open receivable (an unpaid fee or unpaid cash); cash waits until it is settled, card stays open.</summary>
+    public const string OrderCashUnpaidReceivable = "order.cash_unpaid_receivable";
     public const string OrderPaymentNotConfirmed = "order.payment_not_confirmed";
     // Reconciliation outcomes when the cleaner tries to take cash for an order booked on a card: the
     // handler asks Stripe what really happened before any second tender is recorded.
@@ -143,6 +157,8 @@ public static class BusinessErrorMessage
     public const string OrderNotTakeable = "order.not_takeable";
     public const string NoAvailableSpots = "order.no_available_spots";
     public const string WeeklyOrderLimitReached = "order.weekly_limit_reached";
+    /// <summary>A cash job taken by a cleaner who holds more of the company's cash than its float cap allows.</summary>
+    public const string OrderCashFloatCapExceeded = "order.cash_float_cap_exceeded";
     public const string WeeklyOrderLimitInvalid = "employee.weekly_limit_invalid";
     /// <summary>A weekly cap is set with a reason the cleaner is shown.</summary>
     public const string WeeklyOrderLimitReasonRequired = "employee.weekly_limit_reason_required";
@@ -218,6 +234,23 @@ public static class BusinessErrorMessage
     /// setting a new one is refused.
     /// </summary>
     public const string MembershipPlanTrialNotPermitted = "membership.plan.trial_not_permitted";
+
+    // Saved card, the guarantee for cash bookings
+    /// <summary>A card capture started without the customer's consent that fees and unpaid cash may be charged to the card.</summary>
+    public const string SavedCardConsentNotAccepted = "saved_card.consent_not_accepted";
+    /// <summary>No active card of the caller's has this id; another customer's card answers the same, so its existence is not revealed.</summary>
+    public const string SavedCardNotFound = "saved_card.not_found";
+
+    // Receivables, the money a customer owes the company on an order
+    public const string ReceivableNotFound = "receivable.not_found";
+    /// <summary>Only an open receivable can be written off; one already paid or written off stays as it is.</summary>
+    public const string ReceivableNotOpen = "receivable.not_open";
+
+    // The company's cash a cleaner holds
+    /// <summary>A remittance or write-off is a positive amount of money, in whole cents.</summary>
+    public const string CashHeldAmountInvalid = "cash_held.amount_invalid";
+    /// <summary>More than the cleaner holds in that currency; the cash they hold never turns into money the company owes them.</summary>
+    public const string CashHeldAmountExceedsBalance = "cash_held.amount_exceeds_balance";
 
     // Recurring booking template errors. Backend rejects with these keys; the
     // customer UI maps to localized strings. NotOwnedByUser is the per-user
@@ -326,6 +359,7 @@ public static class BusinessErrorMessage
     public const string NoUnpaidOrderPays = "payroll.no_unpaid_order_pays";
     public const string NoActivePeriod = "payroll.no_active_period";
     public const string NoPayConfiguration = "payroll.no_pay_configuration";
+    public const string NoCollectedFee = "payroll.no_collected_fee";
     public const string EmployeeNotAssigned = "payroll.employee_not_assigned";
     public const string PdfGenerationFailed = "payroll.invoice.pdf_generation_failed";
     public const string CannotCancelPaidInvoice = "payroll.invoice.cannot_cancel_paid";
@@ -576,6 +610,8 @@ public static class BusinessErrorMessage
     public const string CompanyHasOpenPayPeriod = "company.has_open_pay_period";
     public const string CompanyHasUnpaidInvoices = "company.has_unpaid_invoices";
     public const string CompanyHasUninvoicedPay = "company.has_uninvoiced_pay";
+    /// <summary>A cleaner still holds the company's cash; it is remitted or written off before the books are sealed.</summary>
+    public const string CompanyHasCashHeld = "company.has_cash_held";
     public const string CompanyHasOpenDisputes = "company.has_open_disputes";
     /// <summary>A cardholder can still dispute the company's latest card charge; the archive waits for the horizon to pass.</summary>
     public const string CompanyWithinChargebackHorizon = "company.within_chargeback_horizon";
@@ -640,6 +676,11 @@ public static class BusinessErrorMessage
     /// sees no box and is not asked again; a guest always asserts it.
     /// </summary>
     public const string TermsNotAccepted = "consent.terms_not_accepted";
+    /// <summary>
+    /// A booking or a recurring schedule that does not assert the request to start within the 14-day
+    /// withdrawal period is refused (decision 61). Unlike the terms, it is asked on every booking.
+    /// </summary>
+    public const string EarlyPerformanceNotRequested = "consent.early_performance_not_requested";
 
     // Contract for work (ADR-0068)
     /// <summary>The client sent no text id with the take or the standalone accept: a broken or stale client, shown as an error.</summary>

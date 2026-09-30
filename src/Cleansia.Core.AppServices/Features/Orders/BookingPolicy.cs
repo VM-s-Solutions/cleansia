@@ -130,6 +130,21 @@ public static class BookingPolicy
     public const int PartialCancellationHours = 4;
 
     /// <summary>
+    /// How long past the booked start the assigned cleaner waits at the door before reporting that they
+    /// cannot get in (owner ruling 2026-09-28, decision 11) — the 15 minutes the customer FAQ promises.
+    /// </summary>
+    public const int LockoutWaitMinutes = 15;
+
+    /// <summary>A lockout an administrator confirmed is a customer cancellation at the whole price.</summary>
+    public const decimal LockoutFeeRate = 1.00m;
+
+    /// <summary>
+    /// The assigned crew's share of a late-cancellation or lockout fee, paid once the fee is collected and
+    /// split across the seats as job pay is (owner ruling 2026-09-28, decision 12).
+    /// </summary>
+    public const decimal CleanerFeeShareRate = 0.50m;
+
+    /// <summary>
     /// "Oops window" — free cancellation within N minutes of booking, even with a cleaner already on the
     /// job. Owner ruling 2026-09-28: this for every returning customer, guests included;
     /// <see cref="OopsWindowMinutesFirstBooking"/> on a customer's first booking and
@@ -210,6 +225,12 @@ public static class BookingPolicy
     /// </summary>
     public static bool AllowsCash(bool signedIn, int requiredEmployees)
         => signedIn && requiredEmployees == 1;
+
+    /// <summary>
+    /// Owner ruling 2026-09-28: a customer holds at most this many cash bookings that are open and not yet
+    /// paid; the next one pays by card. No amount ceiling; the saved card is the rest of the guarantee.
+    /// </summary>
+    public const int MaxOpenUnpaidCashBookings = 2;
 
     /// <summary>
     /// Longest span a booking may be created with. <b>A DISCLOSURE bound, not a double-booking one</b>

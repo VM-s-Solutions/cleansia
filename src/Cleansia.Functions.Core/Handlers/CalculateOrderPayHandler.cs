@@ -13,7 +13,7 @@ using Microsoft.Extensions.Logging;
 namespace Cleansia.Functions.Core.Handlers;
 
 /// <summary>
-/// Consumes the per-cleaner fan-out from <c>CompleteOrder</c> and runs
+/// Consumes the per-cleaner fan-out of <c>CalculateOrderPay.EnqueueForCrew</c> and runs
 /// <c>CalculateOrderPay.Command</c> so the order's <c>OrderEmployeePay</c>
 /// row exists before the next nightly invoice rollup.
 ///
@@ -22,7 +22,7 @@ namespace Cleansia.Functions.Core.Handlers;
 /// and the pay row is stamped from the ambient tenant at commit. An envelope with no tenant is logged
 /// and acked — every stamped table is NOT NULL, so under no tenant the open-period bootstrap would fail
 /// the insert on every redelivery and poison the queue for nothing. A body that is not an envelope
-/// with a payload throws instead: CompleteOrder is the only producer and always envelopes, so there
+/// with a payload throws instead: EnqueueForCrew is the only producer and always envelopes, so there
 /// is no bare shape to fall back to, and the poison consumer's stored, alerted dead-letter is the
 /// right place for a pay row that will never be created — quieter than that is a lost row.</para>
 ///

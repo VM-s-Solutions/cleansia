@@ -80,7 +80,8 @@ public sealed class CreateOrderOperatorAgreementTests
             Mock.Of<IUserConsentRepository>(),
             CreateOrderTestData.Speaking(Constants.Language.English),
             Mock.Of<ICountryConfigurationRepository>(),
-            Mock.Of<ILegalDocumentResolver>());
+            Mock.Of<ILegalDocumentResolver>(),
+            SavedCards.SavedCardDoubles.Guaranteed(), Mock.Of<IReceivableRepository>());
     }
 
     private static CreateOrder.Command AddressIn(string countryId) =>

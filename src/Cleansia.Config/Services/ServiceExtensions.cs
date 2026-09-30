@@ -301,6 +301,7 @@ public static class ServiceExtensions
         // the one writer of the acceptance row and its audit index (ADR-0068).
         services.AddScoped<IWorkContractFactsBuilder, WorkContractFactsBuilder>();
         services.AddScoped<IWorkContractAcceptor, WorkContractAcceptor>();
+        services.AddScoped<IContractConfirmationService, ContractConfirmationService>();
         services.AddInfrastructureServices();
 
         return services;

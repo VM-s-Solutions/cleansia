@@ -17,6 +17,7 @@ import { OrderAdditionalServicesComponent } from './components/order-additional-
 import { OrderCustomerInfoComponent } from './components/order-customer-info.component';
 import { OrderExtrasComponent } from './components/order-extras.component';
 import { OrderHeaderComponent } from './components/order-header.component';
+import { OrderLockoutComponent } from './components/order-lockout.component';
 import { OrderPackagesComponent } from './components/order-packages.component';
 import { OrderPaymentInfoComponent } from './components/order-payment-info.component';
 import { OrderPhotosComponent } from './components/order-photos.component';
@@ -69,6 +70,7 @@ import {
     OrderServiceDetailsComponent,
     OrderAdditionalServicesComponent,
     OrderPhotosComponent,
+    OrderLockoutComponent,
   ],
   templateUrl: './order-details.component.html',
   providers: [OrderDetailsFacade, DialogService],
@@ -314,6 +316,10 @@ export class OrderDetailsComponent implements OnInit {
 
   protected openMarkCashCollected(): void {
     this.facade.openMarkCashCollectedDialog();
+  }
+
+  protected onLockoutReported(): void {
+    this.retryLoadOrder();
   }
 
   protected openAcceptWorkContract(): void {

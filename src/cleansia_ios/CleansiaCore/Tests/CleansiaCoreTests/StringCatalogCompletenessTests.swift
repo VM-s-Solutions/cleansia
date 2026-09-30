@@ -56,6 +56,7 @@ final class StringCatalogCompletenessTests: XCTestCase {
         ),
         Exception("Customer", "order_market_label", allLocalized, "two specifiers and a middle dot only"),
         Exception("Customer", "orders_filter_count", allLocalized, "format specifiers only"),
+        Exception("Customer", "payments_card_label", allLocalized, "the brand and the last four digits behind a mask"),
         Exception("Customer", "profile_tier_plus", allLocalized, "Cleansia Plus is the product name"),
         Exception("Partner", "action_sms", allLocalized, "SMS is the same initialism everywhere"),
         Exception("Partner", "bonus", ["cs", "sk"], "\"Bonus\" is the Czech and Slovak word"),
@@ -64,6 +65,7 @@ final class StringCatalogCompletenessTests: XCTestCase {
         Exception("Partner", "devices_platform_web", allLocalized, "platform name"),
         Exception("Partner", "duration_hours_minutes", ["cs", "sk"], "\"h\"/\"m\" are the same abbreviations in cs/sk"),
         Exception("Partner", "duration_minutes_only", ["cs", "sk"], "\"m\" is the same abbreviation in cs/sk"),
+        Exception("Partner", "earnings_cash_held_limit", ["cs", "sk"], "\"Limit\" is the Czech and Slovak word"),
         Exception("Partner", "job_radius_value", ["cs", "sk"], "a specifier and the \"km\" symbol, Latin in cs/sk"),
         Exception("Partner", "profile_iban", allLocalized, "IBAN is an international standard")
     ]

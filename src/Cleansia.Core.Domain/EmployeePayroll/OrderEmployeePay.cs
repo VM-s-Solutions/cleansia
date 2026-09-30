@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Cleansia.Core.Domain.Common;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Extensions;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
@@ -34,6 +35,8 @@ public class OrderEmployeePay : TenantAuditable
     /// </summary>
     public string CurrencyId { get; private set; }
     public Currency? Currency { get; private set; }
+
+    public PayLineType LineType { get; private set; } = PayLineType.Job;
 
     public decimal BasePay { get; private set; }
 
@@ -149,6 +152,24 @@ public class OrderEmployeePay : TenantAuditable
             Notes = notes,
             PayBreakdown = payBreakdown
         };
+    }
+
+    /// <summary>
+    /// The seat's share of a fee the company collected on a cancelled job. The share is the whole line,
+    /// held as its base and unbounded, so a later bonus or deduction moves it like any other row's.
+    /// </summary>
+    public static OrderEmployeePay CreateFeeShare(
+        string orderId,
+        string employeeId,
+        string payPeriodId,
+        string currencyId,
+        PayLineType lineType,
+        decimal share,
+        string payBreakdown)
+    {
+        var pay = Create(orderId, employeeId, payPeriodId, currencyId, share, totalPay: share, payBreakdown: payBreakdown);
+        pay.LineType = lineType;
+        return pay;
     }
 
     public OrderEmployeePay UpdatePay(

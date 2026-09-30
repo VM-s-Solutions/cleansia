@@ -77,6 +77,7 @@ describe('OrderDetailComponent — the dirtiness level', () => {
           useValue: {
             orderClient: { getById: jest.fn().mockReturnValue(of(booked)) },
             membershipClient: { getMine: () => of(null) },
+            receivableClient: { getMine: () => of([]) },
           },
         },
         { provide: CustomerAuthService, useValue: { isLoggedIn: () => true } },

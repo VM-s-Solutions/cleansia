@@ -5,8 +5,9 @@ import { isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { WizardPreferredCleanerComponent } from './components/wizard-preferred-cleaner.component';
+import { AmountDueComponent } from '@cleansia-customer/orders';
 import { CleansiaAddressAutocompleteComponent, CleansiaButtonComponent, CleansiaScrollTopComponent, CleansiaSelectComponent, CleansiaTelephoneComponent } from '@cleansia/components';
-import { CategoryDto, CUSTOMER_API_BASE_URL, DIRTINESS_LEVELS, DirtinessLevel, dirtinessLevelOption, GetMembershipPlansResponse, MembershipStatus, PackageListItem, PackageServiceSummary, PaymentType, QuoteOrderQuoteLine, QuotePlusSavingsQuery, SavedAddressDto, ServiceListItem } from '@cleansia/customer-services';
+import { CardCaptureFacade, CategoryDto, CUSTOMER_API_BASE_URL, DIRTINESS_LEVELS, DirtinessLevel, dirtinessLevelOption, GetMembershipPlansResponse, MembershipStatus, PackageListItem, PackageServiceSummary, PaymentType, QuoteOrderQuoteLine, QuotePlusSavingsQuery, SavedAddressDto, ServiceListItem } from '@cleansia/customer-services';
 import type { MapboxAddressSuggestion } from '@cleansia/services';
 import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -77,10 +78,12 @@ function startOfMonth(date: Date): Date {
     CleansiaSelectComponent,
     CleansiaTelephoneComponent,
     WizardPreferredCleanerComponent,
+    AmountDueComponent,
     RouterModule,
   ],
   templateUrl: './order-wizard.component.html',
   providers: [
+    CardCaptureFacade,
     OrderMembershipFacade,
     OrderPreferredCleanerFacade,
     OrderPricingFacade,
@@ -803,7 +806,7 @@ export class OrderWizardComponent implements OnInit {
     ]);
   }
 
-  private parkDraft(): void {
+  protected parkDraft(): void {
     this.draft.park(this.facade.activeStep(), this.facade.formData());
   }
 
@@ -833,6 +836,9 @@ export class OrderWizardComponent implements OnInit {
 
   /** Ticked before the order can be placed. Not a default — it is a consent. */
   readonly acceptedTerms = signal(false);
+
+  /** The customer's request to start within the withdrawal period, asked on every booking. */
+  readonly requestedEarlyStart = signal(false);
 
   /**
    * What was chosen, restated per step, each with a way back to the step that
@@ -1104,6 +1110,9 @@ export class OrderWizardComponent implements OnInit {
     ) {
       reasons.push('pages.order.missing.terms');
     }
+    if (this.facade.activeStep() === 6 && !this.requestedEarlyStart()) {
+      reasons.push('pages.order.missing.early_performance');
+    }
     return reasons;
   });
 
@@ -1264,9 +1273,9 @@ export class OrderWizardComponent implements OnInit {
         return;
       }
       this.labelError.set(null);
-      await this.facade.submitOrder({ label }, this.acceptedTerms());
+      await this.facade.submitOrder({ label }, this.acceptedTerms(), this.requestedEarlyStart());
       return;
     }
-    await this.facade.submitOrder(null, this.acceptedTerms());
+    await this.facade.submitOrder(null, this.acceptedTerms(), this.requestedEarlyStart());
   }
 }

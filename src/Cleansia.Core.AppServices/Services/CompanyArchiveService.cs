@@ -29,6 +29,7 @@ public sealed class CompanyArchiveService(
     IPayPeriodRepository payPeriodRepository,
     IEmployeeInvoiceRepository employeeInvoiceRepository,
     IEmployeeRepository employeeRepository,
+    ICashLedgerRepository cashLedgerRepository,
     ICreditAccountRepository creditAccountRepository,
     IPromoCodeRepository promoCodeRepository,
     IPromoCodeRedemptionRepository promoCodeRedemptionRepository,
@@ -96,7 +97,7 @@ public sealed class CompanyArchiveService(
         files.Add(await WriteAsync(archives, $"{folder}/books/orders.jsonl",
             orderRepository.GetQueryable().AsNoTracking()
                 .Include(o => o.CustomerAddress)
-                .Include(o => o.Receipt)
+                .Include(o => o.Receipts)
                 .Include(o => o.SelectedExtras),
             ToRow, cancellationToken));
         files.Add(await WriteAsync(archives, $"{folder}/books/order-status-history.jsonl",
@@ -117,6 +118,10 @@ public sealed class CompanyArchiveService(
             cancellationToken));
         files.Add(await WriteAsync(archives, $"{folder}/books/employee-invoices.jsonl",
             employeeInvoiceRepository.GetQueryable().AsNoTracking(), ToRow, cancellationToken));
+        files.Add(await WriteAsync(archives, $"{folder}/books/cash-ledger-entries.jsonl",
+            cashLedgerRepository.GetQueryable().AsNoTracking(),
+            e => new CompanyArchiveRecords.CashLedgerEntry(e.Id, e.EmployeeId, e.OrderId, e.CurrencyId, e.Kind, e.Amount, e.OccurredAt, e.CreatedOn),
+            cancellationToken));
         files.Add(await WriteAsync(archives, $"{folder}/books/employees.jsonl",
             employeeRepository.GetQueryable().AsNoTracking(),
             e => new CompanyArchiveRecords.Employee(e.Id, e.LegalEntityName, e.RegistrationNumber, e.WorkCountryId, e.ContractStatus),
@@ -405,7 +410,7 @@ public sealed class CompanyArchiveService(
 
     private static CompanyArchiveRecords.EmployeeInvoice ToRow(Domain.EmployeePayroll.EmployeeInvoice i) => new(
         i.Id, i.EmployeeId, i.PayPeriodId, i.InvoiceNumber, i.TotalOrders, i.SubTotal, i.BonusAmount, i.DeductionAmount, i.TotalAmount,
-        i.CurrencyId, i.Status, i.CountryId, i.LanguageId, i.GeneratedAt, i.ApprovedAt, i.ApprovedBy, i.PaidAt,
+        i.CashSetOffAmount, i.CurrencyId, i.Status, i.CountryId, i.LanguageId, i.GeneratedAt, i.ApprovedAt, i.ApprovedBy, i.PaidAt,
         i.VariableSymbol, i.SpecificSymbol, i.PaymentReference, i.IsCancelled, i.CancellationReason, i.CancelledAt, i.CancelledBy, i.CreatedOn);
 
     private static CompanyArchiveRecords.PromoCode ToRow(Domain.Loyalty.PromoCode p) => new(

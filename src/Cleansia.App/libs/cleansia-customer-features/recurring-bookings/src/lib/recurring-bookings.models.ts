@@ -58,6 +58,8 @@ export interface RecurringWizardFormData {
    */
   endsOn: Date | null;
   preferredEmployeeId: string | null;
+  /** One request covers every cleaning the schedule books; asked only when it is set up. */
+  earlyPerformanceRequested: boolean;
 }
 
 export const RECURRING_WIZARD_INITIAL_DATA: RecurringWizardFormData = {
@@ -74,6 +76,7 @@ export const RECURRING_WIZARD_INITIAL_DATA: RecurringWizardFormData = {
   startsOn: null,
   endsOn: null,
   preferredEmployeeId: null,
+  earlyPerformanceRequested: false,
 };
 
 /**
@@ -313,7 +316,14 @@ function marketTimeToUtc(date: Date, hour: number, minute: number, timeZone: str
 }
 
 /** A required field the form is still missing, in the order the form asks. */
-export type MissingField = 'services' | 'dirtiness' | 'time' | 'address' | 'startsOn' | 'payment';
+export type MissingField =
+  | 'services'
+  | 'dirtiness'
+  | 'time'
+  | 'address'
+  | 'startsOn'
+  | 'payment'
+  | 'earlyPerformance';
 
 /**
  * What is stopping this schedule from being saved.
@@ -323,7 +333,7 @@ export type MissingField = 'services' | 'dirtiness' | 'time' | 'address' | 'star
  * which field to look at — the previous behaviour was a dead button and a page
  * that appeared to ignore the click.
  */
-export function missingFields(data: RecurringWizardFormData): MissingField[] {
+export function missingFields(data: RecurringWizardFormData, newSchedule = false): MissingField[] {
   const missing: MissingField[] = [];
   if (data.selectedServiceIds.length === 0 && data.selectedPackageIds.length === 0) {
     missing.push('services');
@@ -333,6 +343,7 @@ export function missingFields(data: RecurringWizardFormData): MissingField[] {
   if (!data.savedAddressId) missing.push('address');
   if (!data.startsOn) missing.push('startsOn');
   if (data.paymentType === null) missing.push('payment');
+  if (newSchedule && !data.earlyPerformanceRequested) missing.push('earlyPerformance');
   return missing;
 }
 

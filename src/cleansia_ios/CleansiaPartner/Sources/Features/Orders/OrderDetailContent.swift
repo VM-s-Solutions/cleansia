@@ -14,6 +14,7 @@ struct OrderDetailContent: View {
     var onOpenContract: (WorkContractRequest) -> Void = { _ in }
     var onDeclineOffer: () -> Void = {}
     var onDismissRefusal: () -> Void = {}
+    var onReportLockout: (String) -> Void = { _ in }
     @ObservedObject var checklistVM: CleaningChecklistViewModel
     @ObservedObject var notesVM: OrderNotesViewModel
     @ObservedObject var photosVM: OrderPhotosViewModel
@@ -94,6 +95,13 @@ struct OrderDetailContent: View {
                         standing: contractStanding,
                         onAccept: { onOpenContract(.accept(orderId: order.id)) },
                         onRead: { onOpenContract(.read(acceptanceId: $0)) }
+                    )
+                    LockoutCard(
+                        order: order,
+                        isReporting: inFlightAction == .reportLockout,
+                        actionsEnabled: inFlightAction == nil,
+                        photosVM: photosVM,
+                        onReport: onReportLockout
                     )
                     ScopeCard(order: order)
                     if showFromCustomerCard {
@@ -326,6 +334,8 @@ private struct OrderMetadataRow: View {
             ),
             isAssignedToCurrentUser: true,
             hasAfterPhotos: false,
+            lockoutReportedAt: nil,
+            lockoutCallAttempts: nil,
             orderNotes: [],
             orderIssues: [],
             // An hour-old InProgress stamp so the preview renders the live clock.

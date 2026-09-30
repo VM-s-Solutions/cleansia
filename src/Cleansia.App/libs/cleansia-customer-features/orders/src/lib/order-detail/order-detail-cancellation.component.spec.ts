@@ -106,7 +106,11 @@ describe('OrderDetailComponent — cancelling a booking', () => {
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => ORDER_ID } } } },
         {
           provide: CustomerClient,
-          useValue: { orderClient, membershipClient: { getMine: () => of(null) } },
+          useValue: {
+            orderClient,
+            membershipClient: { getMine: () => of(null) },
+            receivableClient: { getMine: () => of([]) },
+          },
         },
         { provide: CustomerAuthService, useValue: { isLoggedIn: () => true } },
         {

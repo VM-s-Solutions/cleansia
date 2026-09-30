@@ -1,4 +1,11 @@
-import { nextOccurrenceUtc, RecurrenceFrequency } from './recurring-bookings.models';
+import { DirtinessLevel } from '@cleansia/customer-services';
+import {
+  missingFields,
+  nextOccurrenceUtc,
+  RECURRING_WIZARD_INITIAL_DATA,
+  RecurrenceFrequency,
+  RecurringWizardFormData,
+} from './recurring-bookings.models';
 
 /**
  * The web's copy of `ComputeOccurrences`. A schedule's "Wednesday 10:00" is
@@ -158,5 +165,25 @@ describe('nextOccurrenceUtc', () => {
 
       expect(next?.toISOString()).toBe('2026-12-10T09:00:00.000Z');
     });
+  });
+});
+
+describe('missingFields', () => {
+  const complete: RecurringWizardFormData = {
+    ...RECURRING_WIZARD_INITIAL_DATA,
+    selectedServiceIds: ['s1'],
+    dirtinessLevel: DirtinessLevel.Normal,
+    savedAddressId: 'addr-1',
+    startsOn: new Date('2026-10-01T00:00:00Z'),
+  };
+
+  it('asks a new schedule for the request to start within the withdrawal period until it is made', () => {
+    expect(RECURRING_WIZARD_INITIAL_DATA.earlyPerformanceRequested).toBe(false);
+    expect(missingFields(complete, true)).toEqual(['earlyPerformance']);
+    expect(missingFields({ ...complete, earlyPerformanceRequested: true }, true)).toEqual([]);
+  });
+
+  it('does not ask an edit, whose schedule recorded the request when it was set up', () => {
+    expect(missingFields(complete, false)).toEqual([]);
   });
 });

@@ -25,8 +25,8 @@ extension BookingViewModel {
             return .failed(quoteResult.apiErrorOrNil)
         }
 
-        if takeCashAwayIfRefused(paymentMethod, by: quote) {
-            return .paymentMethodCleared
+        if let stopped = await cashStep(paymentMethod, quote: quote, current: current) {
+            return stopped
         }
 
         let countryId = current.savedAddressId == nil

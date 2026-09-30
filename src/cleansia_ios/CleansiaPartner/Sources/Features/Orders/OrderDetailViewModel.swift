@@ -13,6 +13,7 @@ enum OrderAction: Equatable {
     case markCashCollected
     case complete
     case declineOffer
+    case reportLockout
 
     /// Only the two reservation actions earn platform-owned framing; every other refusal on the detail
     /// reaches the snackbar exactly as it always did.
@@ -20,7 +21,7 @@ enum OrderAction: Equatable {
         switch self {
         case .take: .confirm
         case .declineOffer: .release
-        case .acceptContract, .notifyOnTheWay, .start, .markCashCollected, .complete: nil
+        case .acceptContract, .notifyOnTheWay, .start, .markCashCollected, .complete, .reportLockout: nil
         }
     }
 
@@ -33,6 +34,7 @@ enum OrderAction: Equatable {
         case .markCashCollected: .markCashCollected
         case .complete: .completeOrder
         case .declineOffer: .declinePreferredOffer
+        case .reportLockout: .reportLockout
         }
     }
 
@@ -46,6 +48,7 @@ enum OrderAction: Equatable {
         case .markCashCollected: L10n.Orders.cashCollectedToast
         case .complete: L10n.Orders.orderCompletedToast
         case .declineOffer: L10n.Offers.declinedToast
+        case .reportLockout: L10n.Orders.lockoutReportedToast
         case .take, .acceptContract: nil
         }
     }
@@ -238,6 +241,12 @@ final class OrderDetailViewModel: ViewModel {
         await run(.complete) {
             await self.client.completeOrder(orderId: self.orderId, actualMinutes: nil, notes: nil)
         }
+    }
+
+    func reportLockout(_ callAttempts: String) async {
+        let note = callAttempts.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !note.isEmpty else { return }
+        await run(.reportLockout) { await self.client.reportLockout(orderId: self.orderId, callAttempts: note) }
     }
 
     private func fetch() async {

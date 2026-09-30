@@ -1,10 +1,12 @@
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Features.EmployeePayroll;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
+using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Infra.Common.Validations;
@@ -17,12 +19,14 @@ public sealed class CustomerOrderCancellation(
     ITenantProvider tenantProvider,
     IRefundService refundService,
     IRefundRepository refundRepository,
+    IReceivableRepository receivableRepository,
     ICreditAccountRepository creditAccountRepository,
     ILoyaltyService loyaltyService,
     ICancellationPolicyResolver cancellationPolicyResolver,
     INotificationProducer notificationProducer,
     ILiveActivityProducer liveActivityProducer,
     IExpressWaiverConsumer expressWaiverConsumer,
+    IPendingDispatch pending,
     IAuditContext auditContext,
     TimeProvider timeProvider,
     ILogger<CustomerOrderCancellation> logger)
@@ -61,6 +65,11 @@ public sealed class CustomerOrderCancellation(
         await liveActivityProducer.NotifyOrderTransitionAsync(
             order, LiveActivityEventKeys.End, transition, cancellationToken);
 
+        if (!guest && order.PaymentType == PaymentType.Cash && order.TookNoPayment && assessment.FeeAmount > 0m)
+        {
+            receivableRepository.Add(Receivable.ForCashCancellationFee(order, assessment.FeeAmount));
+        }
+
         if (!guest)
         {
             await RefundAsync(recoverGuestAttempt: false);
@@ -69,6 +78,11 @@ public sealed class CustomerOrderCancellation(
         if (paymentStatusAtCancel != PaymentStatus.Paid && !refundInitiated)
         {
             await creditAccountRepository.ReturnUnpaidOrderCreditAsync(order, actorId, cancellationToken);
+        }
+
+        if (!order.TookNoPayment && assessment.FeeAmount > 0m)
+        {
+            CalculateOrderPay.EnqueueForCrew(order, pending);
         }
 
         var waiverReleased = !assessment.HasBeenAccepted

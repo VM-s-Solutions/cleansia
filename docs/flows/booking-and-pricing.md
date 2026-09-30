@@ -52,8 +52,8 @@ A signed-in customer may book in any serviced market with an active operator, in
 served by a different company from the account’s. The server resolves the operator from the address
 before creating the order and its children; a saved address from the account’s company is copied
 into the order’s address snapshot. Receipts, refunds and disputes belong to that operator. Loyalty,
-credit and membership usage stay with the account; card payments still use one holding Stripe
-account. Owner-pinned reads keep the booking and its receipt visible in the customer’s order history
+credit and membership usage stay with the account; card payments use the one Stripe account the
+platform configures, the operating company's own (decision 49). Owner-pinned reads keep the booking and its receipt visible in the customer’s order history
 regardless of the browsing market. → [ADR-0061 D6](/decisions/adr-0061#d6-tenant-country-and-currency-agree-by-construction-and-two-validators-refuse-the-cases-that-could-break-it)
 
 ## The price is never taken from the client

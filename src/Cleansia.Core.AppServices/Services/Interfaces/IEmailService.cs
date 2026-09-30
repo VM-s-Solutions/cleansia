@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Emails;
 using Cleansia.Core.Domain.Orders;
+using Cleansia.Core.Domain.Payments;
 
 namespace Cleansia.Core.AppServices.Services.Interfaces;
 
@@ -27,10 +28,29 @@ public interface IEmailService
     Task<string> SendOrderStatusUpdateEmailAsync(string email, Order order, string newStatus, string languageCode = Constants.Language.English, CancellationToken ct = default, decimal? refundedAmount = null, string? guestAccessToken = null);
 
     /// <summary>
-    /// The informational e-mail a cash booking gets instead of a receipt: the amount to pay the cleaner
-    /// in cash, the slot in market time, the address and the free-cancellation window.
+    /// The booking e-mail sent when the contract is concluded, with <paramref name="confirmationPdf"/>
+    /// attached: the slot in market time, the address, the free-cancellation window and, for a cash
+    /// booking, the amount to pay the cleaner in cash.
     /// </summary>
-    Task<string> SendOrderBookedEmailAsync(string email, Order order, int freeCancellationHours, string languageCode = Constants.Language.English, CancellationToken ct = default, string? guestAccessToken = null);
+    Task<string> SendOrderBookedEmailAsync(string email, Order order, int freeCancellationHours, string languageCode = Constants.Language.English, CancellationToken ct = default, string? guestAccessToken = null, byte[]? confirmationPdf = null, string? confirmationFileName = null);
+
+    /// <summary>
+    /// The cleaner's copy of a contract for work they accepted for job <paramref name="jobNumber"/>, the
+    /// contract attached as a PDF.
+    /// </summary>
+    Task<string> SendWorkContractEmailAsync(string email, string cleanerName, string jobNumber, byte[] contractPdf, string contractFileName, string languageCode = Constants.Language.English, CancellationToken ct = default);
+
+    /// <summary>
+    /// The pay link a customer is e-mailed when their saved card could not be charged for what they owe on
+    /// <paramref name="order"/>: what the amount is for, the amount, the order, and <paramref name="payUrl"/>.
+    /// </summary>
+    Task<string> SendReceivablePayLinkEmailAsync(string email, Order order, Receivable receivable, string payUrl, string languageCode = Constants.Language.English, CancellationToken ct = default);
+
+    /// <summary>
+    /// Asks a cleaner to hand over the company's cash they have held since a pay-period close could not set it
+    /// off against their pay (owner ruling 2026-09-28, decision 23): the amount and the close it dates from.
+    /// </summary>
+    Task<string> SendCashRemittanceRequestEmailAsync(string email, string employeeName, decimal amount, string currencySymbol, DateTime carriedSince, string languageCode = Constants.Language.English, CancellationToken ct = default);
 
     /// <summary>
     /// The wind-down notice to a customer of a closing company (ADR-0064 D2 step 1): the company

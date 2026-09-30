@@ -331,6 +331,25 @@ public class SubjectDataErasureRosterTests
                 + "Anonymize() clears; two tables recording one fact are treated the same way.",
             InErasure("userStripeCustomerRepository.RemoveForUserAsync(user.Id, ct)")),
 
+        [typeof(SavedCard)] = new(
+            Verdict.Deleted,
+            "A card saved on one of those Stripe Customers, with the IP address and device it was saved "
+                + "from. The Customer ids go at erasure, so the card can no longer be charged, and the row "
+                + "goes with them.",
+            InErasure("savedCardRepository.RemoveForUserAsync(user.Id, ct)")),
+
+        [typeof(Core.Domain.Payments.Receivable)] = new(
+            Verdict.RetainedPseudonymous,
+            "What a customer owed the company on a retained order: the order, customer and administrator ids, "
+                + "an amount and a status. The customer id no longer resolves to a person once the account is "
+                + "anonymized, and the debt is the company's books."),
+
+        [typeof(Core.Domain.Payments.CashLedgerEntry)] = new(
+            Verdict.RetainedPseudonymous,
+            "The company's cash a cleaner collected, handed back or had written off: employee, order and "
+                + "administrator ids, an amount, a currency and an administrator's note. The employee id no "
+                + "longer resolves to a person once the account is anonymized, and the cash is the company's books."),
+
         [typeof(Core.Domain.EmployeePayroll.EmployeePayConfig)] = new(
             Verdict.RetainedPseudonymous,
             "Pay rates keyed to an employee id that no longer resolves to a person; no name, contact or "

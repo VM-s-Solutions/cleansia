@@ -9,6 +9,7 @@ using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using MockQueryable;
 using Moq;
+using Cleansia.Tests.Infrastructure;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -176,7 +177,7 @@ public sealed class CrewAccessWindowSurfaceTests
     // arrange one, and without it the receipt rule would refuse every case for the wrong reason.
     private static Order WithReceipt(Order order)
     {
-        typeof(Order).GetProperty(nameof(Order.Receipt))!.SetValue(
+        OrderReceiptAttachment.Attach(
             order, OrderReceipt.Create(OrderId, "CZ-2026-000321", "receipt.pdf", "blob", "en"));
         return order;
     }

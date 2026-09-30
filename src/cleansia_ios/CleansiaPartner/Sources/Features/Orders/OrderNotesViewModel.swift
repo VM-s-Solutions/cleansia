@@ -200,6 +200,10 @@ final class OrderNotesViewModel: ViewModel {
             .success(())
         }
 
+        func reportLockout(orderId _: String, callAttempts _: String) async -> ApiResult<Void> {
+            .success(())
+        }
+
         func getPhotos(orderId _: String) async -> ApiResult<[OrderPhoto]> {
             .success([])
         }

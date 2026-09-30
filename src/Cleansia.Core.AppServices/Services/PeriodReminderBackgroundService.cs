@@ -12,17 +12,20 @@ public class PeriodReminderBackgroundService : IPeriodReminderBackgroundService
     private readonly IPayPeriodRepository _payPeriodRepository;
     private readonly IEmployeeRepository _employeeRepository;
     private readonly IEmailService _emailService;
+    private readonly ITenantProvider _tenantProvider;
     private readonly ILogger<PeriodReminderBackgroundService> _logger;
 
     public PeriodReminderBackgroundService(
         IPayPeriodRepository payPeriodRepository,
         IEmployeeRepository employeeRepository,
         IEmailService emailService,
+        ITenantProvider tenantProvider,
         ILogger<PeriodReminderBackgroundService> logger)
     {
         _payPeriodRepository = payPeriodRepository;
         _employeeRepository = employeeRepository;
         _emailService = emailService;
+        _tenantProvider = tenantProvider;
         _logger = logger;
     }
 
@@ -90,6 +93,14 @@ public class PeriodReminderBackgroundService : IPeriodReminderBackgroundService
             period.EndDate,
             activeEmployees.Count);
 
+        // The footer names the company that owns the period, and that read is tenant-filtered: a timer has
+        // no claim, so without the override every reminder would name the brand instead.
+        _tenantProvider.ClearTenantOverride();
+        if (!string.IsNullOrEmpty(tenantId))
+        {
+            _tenantProvider.SetTenantOverride(tenantId);
+        }
+
         foreach (var employee in activeEmployees)
         {
             try
@@ -127,5 +138,7 @@ public class PeriodReminderBackgroundService : IPeriodReminderBackgroundService
                     employee.Id);
             }
         }
+
+        _tenantProvider.ClearTenantOverride();
     }
 }

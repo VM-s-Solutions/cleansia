@@ -44,6 +44,9 @@ export const Policy = {
   // Cleansia Plus membership (customer)
   CanManageMembership: 'CanManageMembership',
 
+  // Saved card (customer)
+  CanManageSavedCard: 'CanManageSavedCard',
+
   // Recurring bookings (customer)
   CanManageRecurringBookings: 'CanManageRecurringBookings',
 
@@ -258,6 +261,15 @@ export const Policy = {
   CanViewUserCredit: 'CanViewUserCredit',
   CanExpireCustomerCredit: 'CanExpireCustomerCredit',
 
+  // Receivables
+  CanViewReceivables: 'CanViewReceivables',
+  CanWriteOffReceivable: 'CanWriteOffReceivable',
+
+  // Cash held by cleaners
+  CanViewCashHeld: 'CanViewCashHeld',
+  CanRecordCashRemittance: 'CanRecordCashRemittance',
+  CanWriteOffCashHeld: 'CanWriteOffCashHeld',
+
   // Admin Action Audit Log
   CanViewAuditLog: 'CanViewAuditLog',
 
@@ -305,6 +317,9 @@ export const POLICY_MAP: Record<PolicyName, PhysicalPolicy> = {
 
   // Cleansia Plus membership (customer)
   CanManageMembership: PhysicalPolicy.CustomerOnly,
+
+  // Saved card (customer)
+  CanManageSavedCard: PhysicalPolicy.CustomerOnly,
 
   // Recurring bookings (customer)
   CanManageRecurringBookings: PhysicalPolicy.CustomerOnly,
@@ -519,6 +534,15 @@ export const POLICY_MAP: Record<PolicyName, PhysicalPolicy> = {
   CanIssueCustomerCredit: PhysicalPolicy.SupportOrAbove,
   CanViewUserCredit: PhysicalPolicy.AdminOnly,
   CanExpireCustomerCredit: PhysicalPolicy.ManagerOrAbove,
+
+  // Receivables
+  CanViewReceivables: PhysicalPolicy.AdminOnly,
+  CanWriteOffReceivable: PhysicalPolicy.ManagerOrAbove,
+
+  // Cash held by cleaners
+  CanViewCashHeld: PhysicalPolicy.AccountantOrAbove,
+  CanRecordCashRemittance: PhysicalPolicy.AccountantOrAbove,
+  CanWriteOffCashHeld: PhysicalPolicy.ManagerOrAbove,
 
   // Admin Action Audit Log
   CanViewAuditLog: PhysicalPolicy.SupportOrAbove,

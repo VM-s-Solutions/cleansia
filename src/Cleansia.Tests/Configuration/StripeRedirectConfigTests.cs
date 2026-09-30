@@ -18,28 +18,50 @@ namespace Cleansia.Tests.Configuration;
 /// a literal here would simply be a second place to get it wrong. Reading both sides is what makes
 /// this a drift check instead of a copy of the bug.
 ///
-/// Only the Customer host is covered, and deliberately: it is the only host that mints an order
-/// Checkout Session (its <c>ServiceExtensions</c> registers <c>OrderChannel.Web</c>, and
-/// <c>OrderPaymentDispatcher</c> returns without a session on the Mobile channel), so it is the only
-/// host where these keys are ever read.
+/// The Customer host mints the order Checkout Session. A receivable's pay link returns to the customer
+/// app's order page too, and it is minted on three hosts: the Customer and Customer Mobile hosts, where
+/// the customer asks for it, and every host the Stripe webhook lands on — Customer, Customer Mobile and
+/// Partner — which e-mails one after a declined off-session charge. Those three must therefore return
+/// to the customer app, and to the same place: the first pay link of a receivable is keyed on the
+/// receivable, and Stripe refuses a reused key whose request differs.
 /// </summary>
 public class StripeRedirectConfigTests
 {
-    private const string CustomerHost = "Cleansia.Web.Customer";
+    private static readonly string[] Hosts =
+        ["Cleansia.Web.Customer", "Cleansia.Web.Mobile.Customer", "Cleansia.Web.Partner"];
+
+    public static TheoryData<string> CheckoutHosts => new(Hosts);
+
+    public static TheoryData<string, string> Environments
+    {
+        get
+        {
+            var data = new TheoryData<string, string>();
+            foreach (var host in Hosts)
+            {
+                data.Add(host, "Development");
+                data.Add(host, "Production");
+            }
+
+            return data;
+        }
+    }
 
     [Theory]
-    [InlineData("SuccessUrlBase", "checkout/success")]
-    [InlineData("CancelUrlBase", "checkout/cancel")]
-    public void Development_Redirects_Land_On_The_Customer_App(string key, string expectedPath)
+    [MemberData(nameof(CheckoutHosts))]
+    public void Development_Redirects_Land_On_The_Customer_App(string host)
     {
-        var url = new Uri(LoadStripeValue(CustomerHost, "Development", key));
         var customerAppPort = CustomerAppServePort();
+        foreach (var (key, expectedPath) in new[] { ("SuccessUrlBase", "checkout/success"), ("CancelUrlBase", "checkout/cancel") })
+        {
+            var url = new Uri(LoadStripeValue(host, "Development", key));
 
-        // THE DEFECT, as an assertion: 4200 is the partner app, 4201 is admin, 4202 is the customer
-        // app — and only the customer app has a `checkout` route.
-        Assert.Equal(customerAppPort, url.Port);
-        Assert.Equal("localhost", url.Host);
-        Assert.Equal($"/{expectedPath}", url.AbsolutePath);
+            // THE DEFECT, as an assertion: 4200 is the partner app, 4201 is admin, 4202 is the customer
+            // app — and only the customer app has a `checkout` route.
+            Assert.Equal(customerAppPort, url.Port);
+            Assert.Equal("localhost", url.Host);
+            Assert.Equal($"/{expectedPath}", url.AbsolutePath);
+        }
     }
 
     /// <summary>
@@ -47,25 +69,39 @@ public class StripeRedirectConfigTests
     /// fixed and the other is forgotten — which is exactly the state this file was written in.
     /// </summary>
     [Theory]
-    [InlineData("Development")]
-    [InlineData("Production")]
-    public void Both_Redirects_Share_One_Origin(string environment)
+    [MemberData(nameof(Environments))]
+    public void Both_Redirects_Share_One_Origin(string host, string environment)
     {
-        var success = new Uri(LoadStripeValue(CustomerHost, environment, "SuccessUrlBase"));
-        var cancel = new Uri(LoadStripeValue(CustomerHost, environment, "CancelUrlBase"));
+        var success = new Uri(LoadStripeValue(host, environment, "SuccessUrlBase"));
+        var cancel = new Uri(LoadStripeValue(host, environment, "CancelUrlBase"));
 
         Assert.Equal(success.GetLeftPart(UriPartial.Authority), cancel.GetLeftPart(UriPartial.Authority));
     }
 
     [Theory]
-    [InlineData("SuccessUrlBase")]
-    [InlineData("CancelUrlBase")]
-    public void Production_Redirects_Are_Public_Https(string key)
+    [MemberData(nameof(CheckoutHosts))]
+    public void Production_Redirects_Are_Public_Https(string host)
     {
-        var url = new Uri(LoadStripeValue(CustomerHost, "Production", key));
+        foreach (var key in new[] { "SuccessUrlBase", "CancelUrlBase" })
+        {
+            var url = new Uri(LoadStripeValue(host, "Production", key));
 
-        Assert.Equal(Uri.UriSchemeHttps, url.Scheme);
-        Assert.DoesNotContain("localhost", url.Host);
+            Assert.Equal(Uri.UriSchemeHttps, url.Scheme);
+            Assert.DoesNotContain("localhost", url.Host);
+        }
+    }
+
+    [Theory]
+    [InlineData("Development")]
+    [InlineData("Production")]
+    public void Every_Host_That_Mints_A_Pay_Link_Returns_To_The_Same_Place(string environment)
+    {
+        foreach (var key in new[] { "SuccessUrlBase", "CancelUrlBase" })
+        {
+            var values = Hosts.Select(host => LoadStripeValue(host, environment, key)).Distinct().ToList();
+
+            Assert.True(values.Count == 1, $"Stripe:{key} differs across the pay-link hosts in {environment}: {string.Join(", ", values)}");
+        }
     }
 
     /// <summary>
@@ -74,16 +110,15 @@ public class StripeRedirectConfigTests
     /// app does not serve produces the same not-found page as the wrong port did.
     /// </summary>
     [Theory]
-    [InlineData("Development")]
-    [InlineData("Production")]
-    public void Redirect_Paths_Match_The_Customer_Routes(string environment)
+    [MemberData(nameof(Environments))]
+    public void Redirect_Paths_Match_The_Customer_Routes(string host, string environment)
     {
         Assert.Equal(
             "/checkout/success",
-            new Uri(LoadStripeValue(CustomerHost, environment, "SuccessUrlBase")).AbsolutePath);
+            new Uri(LoadStripeValue(host, environment, "SuccessUrlBase")).AbsolutePath);
         Assert.Equal(
             "/checkout/cancel",
-            new Uri(LoadStripeValue(CustomerHost, environment, "CancelUrlBase")).AbsolutePath);
+            new Uri(LoadStripeValue(host, environment, "CancelUrlBase")).AbsolutePath);
     }
 
     // Composed the way the host composes it: base file, then the environment file.

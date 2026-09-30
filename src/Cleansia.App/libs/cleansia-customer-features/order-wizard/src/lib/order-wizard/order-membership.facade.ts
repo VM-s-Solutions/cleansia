@@ -8,6 +8,7 @@ import {
   ExpressWaiverStatus,
   GetMembershipPlansResponse,
   GetMyMembershipResponse,
+  offeredTrialDays,
   QuotePlusSavingsQuery,
   QuotePlusSavingsResponse,
   resolveExpressWaiverStatus,
@@ -48,9 +49,6 @@ export class OrderMembershipFacade extends UnsubscribeControlDirective {
   readonly expressWaiverExhausted = computed(
     () => this.expressWaiverStatus() === 'exhausted',
   );
-  readonly expressWaiverPendingTrial = computed(
-    () => this.expressWaiverStatus() === 'trial',
-  );
 
   /**
    * The plans on offer, for the wizard's Plus step. Anonymous-readable, because
@@ -62,6 +60,9 @@ export class OrderMembershipFacade extends UnsubscribeControlDirective {
    * edits a plan edits the copy with it.
    */
   readonly plans = signal<GetMembershipPlansResponse[]>([]);
+
+  /** The trial the step's lead sentence promises: the first plan's, for this customer. */
+  readonly trialDays = computed(() => offeredTrialDays(this.plans()[0], this.membership()));
 
   /**
    * The market listed no plan: Plus is not on sale there, and the step has
@@ -127,6 +128,10 @@ export class OrderMembershipFacade extends UnsubscribeControlDirective {
       .subscribe((savings) => this.plusSavings.set(savings));
   }
 
+  trialDaysOf(plan: GetMembershipPlansResponse): number {
+    return offeredTrialDays(plan, this.membership());
+  }
+
   load(isAuthenticated: boolean): void {
     if (!this.isBrowser || !isAuthenticated) return;
 
@@ -145,7 +150,7 @@ export class OrderMembershipFacade extends UnsubscribeControlDirective {
           return;
         }
         this.membership.set(response);
-        this.expressWaiverStatus.set(resolveExpressWaiverStatus(response, new Date()));
+        this.expressWaiverStatus.set(resolveExpressWaiverStatus(response));
       });
   }
 }

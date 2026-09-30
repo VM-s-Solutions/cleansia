@@ -14,6 +14,7 @@ import {
   CustomerClient,
   UserConsentDto,
   ExtraListItem,
+  GetMembershipPlansResponse,
   MembershipStatus,
   PackageListItem,
   PaymentType,
@@ -282,7 +283,7 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   readonly plusSavings = this.membership.plusSavings;
   readonly expressWaiverAvailable = this.membership.expressWaiverAvailable;
   readonly expressWaiverExhausted = this.membership.expressWaiverExhausted;
-  readonly expressWaiverPendingTrial = this.membership.expressWaiverPendingTrial;
+  readonly trialDays = this.membership.trialDays;
 
   // ─── Preferred cleaner (Plus) ───────────────────────────────────
   //
@@ -309,6 +310,10 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
 
   loadPlusSavings(query: QuotePlusSavingsQuery): void {
     this.membership.loadPlusSavings(query);
+  }
+
+  trialDaysOf(plan: GetMembershipPlansResponse): number {
+    return this.membership.trialDaysOf(plan);
   }
 
   constructor() {

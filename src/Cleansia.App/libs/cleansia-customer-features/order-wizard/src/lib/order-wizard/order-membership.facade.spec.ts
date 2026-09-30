@@ -85,7 +85,6 @@ describe('OrderMembershipFacade', () => {
       expect(facade.expressWaiverStatus()).toBe('available');
       expect(facade.expressWaiverAvailable()).toBe(true);
       expect(facade.expressWaiverExhausted()).toBe(false);
-      expect(facade.expressWaiverPendingTrial()).toBe(false);
     });
 
     it('reports an exhausted member so the wizard can disclose the surcharge', () => {
@@ -99,12 +98,12 @@ describe('OrderMembershipFacade', () => {
       expect(facade.expressUpgradesRemaining()).toBe(0);
     });
 
-    it('reports a trialing member as pending, never as exhausted', () => {
+    it('counts the waivers of a member inside the free trial', () => {
       membershipClient.getMine.mockReturnValue(
         of(
           buildMembership({
             expressUpgradesPerMonth: 2,
-            expressUpgradesRemaining: 0,
+            expressUpgradesRemaining: 1,
             trialEndsAtUtc: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
           }),
         ),
@@ -112,8 +111,8 @@ describe('OrderMembershipFacade', () => {
 
       facade.load(true);
 
-      expect(facade.expressWaiverPendingTrial()).toBe(true);
-      expect(facade.expressWaiverExhausted()).toBe(false);
+      expect(facade.expressWaiverAvailable()).toBe(true);
+      expect(facade.expressUpgradesRemaining()).toBe(1);
     });
 
     it('says nothing about express for a member on a plan without the perk', () => {
@@ -156,6 +155,34 @@ describe('OrderMembershipFacade', () => {
 
       expect(membershipClient.getMine).not.toHaveBeenCalled();
       expect(facade.expressWaiverStatus()).toBe('none');
+    });
+  });
+
+  // One trial per account — the server's `trialEligible` — and each plan carries its own length.
+  describe('the free trial the Plus step offers', () => {
+    const plus = (trialPeriodDays: number) =>
+      GetMembershipPlansResponse.fromJS({ code: 'PLUS_MONTHLY', trialPeriodDays });
+
+    beforeEach(() => {
+      build('browser');
+      membershipClient.getPlans.mockReturnValue(of([plus(14)]));
+      facade.loadPlans();
+    });
+
+    it("is the plan's own trial for a customer the server has not answered for", () => {
+      expect(facade.trialDays()).toBe(14);
+      expect(facade.trialDaysOf(plus(30))).toBe(30);
+    });
+
+    it('is none once the customer has had their trial', () => {
+      membershipClient.getMine.mockReturnValue(
+        of(GetMyMembershipResponse.fromJS({ hasMembership: false, trialEligible: false })),
+      );
+
+      facade.load(true);
+
+      expect(facade.trialDays()).toBe(0);
+      expect(facade.trialDaysOf(plus(30))).toBe(0);
     });
   });
 

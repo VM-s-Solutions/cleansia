@@ -40,8 +40,8 @@ function yearlyPlan(): GetMembershipPlansResponse {
 
 /**
  * The cancel dialog, its success toast and the switch dialog are built in code, where the template
- * claim spec cannot see them. A trialing member has no running benefit, so none of the three may
- * say one keeps going. Rendered without its template; the facade is the real one.
+ * claim spec cannot see them. Nothing is charged during a trial, so none of the three may say a
+ * payment is taken now. Rendered without its template; the facade is the real one.
  */
 describe('MembershipManagementComponent — what cancelling or switching says', () => {
   let confirm: jest.Mock;
@@ -93,7 +93,7 @@ describe('MembershipManagementComponent — what cancelling or switching says', 
 
   afterEach(() => TestBed.resetTestingModule());
 
-  it('tells a trialing member who cancels that no paid month follows, then toasts the same', () => {
+  it('tells a trialing member who cancels that nothing is charged, then toasts the same', () => {
     const trialEnd = new Date(Date.now() + 7 * DAY_MS);
     const component = build(membership(trialEnd));
 
@@ -109,7 +109,7 @@ describe('MembershipManagementComponent — what cancelling or switching says', 
     expect(showSuccessTranslated).toHaveBeenCalledWith('pages.membership.cancel_success_trial');
   });
 
-  it('tells a trialing member who switches when the trial ends, not that benefits keep going', () => {
+  it('tells a trialing member who switches that the new plan is charged when the trial ends', () => {
     const trialEnd = new Date(Date.now() + 7 * DAY_MS);
     const component = build(membership(trialEnd));
 

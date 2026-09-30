@@ -105,7 +105,6 @@ const MEMBERSHIP_PERK_KEYS = [
   // count to `express_remaining`. The guard follows the claim, not the name.
   'perk_express_monthly',
   'perk_express_used',
-  'perk_express_trial',
   'welcome_perk_express',
 ];
 
@@ -114,7 +113,6 @@ const BOOKING_FLOW_KEYS = [
   'express_surcharge_waived_label',
   'express_waiver_available',
   'express_waiver_used',
-  'express_waiver_trial',
 ];
 
 function readLocale(locale: Locale): Record<string, unknown> {

@@ -69,7 +69,6 @@ export class MembershipManagementComponent implements OnInit {
   readonly expressUpgradesRemaining = this.facade.expressUpgradesRemaining;
   readonly expressWaiverAvailable = this.facade.expressWaiverAvailable;
   readonly expressWaiverExhausted = this.facade.expressWaiverExhausted;
-  readonly expressWaiverPendingTrial = this.facade.expressWaiverPendingTrial;
   readonly trialEndsOn = this.facade.trialEndsOn;
   readonly paymentFailed = this.facade.paymentFailed;
   readonly switchLeadKey = this.facade.switchLeadKey;

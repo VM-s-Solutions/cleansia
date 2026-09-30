@@ -110,15 +110,12 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
   });
 
   /**
-   * How long free cancellation lasted. Plus shortens the window, but only for a paid month: the
-   * server reads the paid entitlement, which neither a running trial nor a failed renewal is.
-   * -> /product/business-rules
+   * How long free cancellation lasted. Plus shortens the window, trial included; a failed renewal
+   * does not. -> /product/business-rules
    */
   readonly freeCancellationHours = computed(() => {
     const membership = this.membership();
     if (membership?.status !== MembershipStatus.Active) return STANDARD_FREE_CANCELLATION_HOURS;
-    const trialEnd = membership.trialEndsAtUtc;
-    if (trialEnd && trialEnd.getTime() > Date.now()) return STANDARD_FREE_CANCELLATION_HOURS;
     return membership.freeCancellationWindowHours ?? STANDARD_FREE_CANCELLATION_HOURS;
   });
 

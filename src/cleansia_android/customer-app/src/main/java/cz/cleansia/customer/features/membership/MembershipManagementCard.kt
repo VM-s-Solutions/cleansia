@@ -76,6 +76,7 @@ fun MembershipManagementCard(
     val plans by viewModel.plans.collectAsStateWithLifecycle()
     val submitState by viewModel.submitState.collectAsStateWithLifecycle()
     val trialEndsAt by viewModel.trialEndsAt.collectAsStateWithLifecycle()
+    val offeredTrialDays by viewModel.offeredTrialDays.collectAsStateWithLifecycle()
     val submitting = submitState is cz.cleansia.customer.ui.state.ActionState.Submitting
     val trialEndText = trialEndsAt?.let { formatPeriodEnd(it.toString()) }
 
@@ -98,7 +99,11 @@ fun MembershipManagementCard(
 
     when {
         membership == null -> Unit  // first load — render nothing rather than flash
-        !membership.hasMembership -> InactiveCard(modifier = modifier, onClick = onSubscribeClick)
+        !membership.hasMembership -> InactiveCard(
+            modifier = modifier,
+            trialDays = offeredTrialDays,
+            onClick = onSubscribeClick,
+        )
         membership.benefitsPaused -> PastDueCard(
             modifier = modifier,
             planName = membership.planName,
@@ -112,7 +117,7 @@ fun MembershipManagementCard(
             cancelEnabled = !submitting && !membership.cancelRequested,
             onSwitchToAnnualClick = if (showSwitchCta) ({ showSwitchDialog = true }) else null,
             yearlyPlan = yearlyPlan,
-            inTrial = trialEndText != null,
+            trialEndText = trialEndText,
         )
     }
 
@@ -162,11 +167,12 @@ fun MembershipManagementCard(
 }
 
 /**
- * The not-subscribed Plus card: badge and mascot, the value line, then the subscribe CTA.
+ * The not-subscribed Plus card: badge and mascot, the value line, then the subscribe CTA, which offers
+ * the free trial only while [trialDays] says this customer can still get one.
  * -> /product/features
  */
 @Composable
-private fun InactiveCard(modifier: Modifier, onClick: () -> Unit) {
+private fun InactiveCard(modifier: Modifier, trialDays: Int, onClick: () -> Unit) {
     val cardShape = RoundedCornerShape(20.dp)
     Column(
         modifier = modifier
@@ -250,7 +256,11 @@ private fun InactiveCard(modifier: Modifier, onClick: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = stringResource(R.string.membership_inactive_cta),
+                text = if (trialDays > 0) {
+                    stringResource(R.string.membership_inactive_cta_trial, trialDays)
+                } else {
+                    stringResource(R.string.membership_inactive_cta)
+                },
                 style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                 color = androidx.compose.ui.graphics.Color.White,
                 modifier = Modifier.weight(1f),
@@ -283,7 +293,7 @@ private fun ActiveCard(
     cancelEnabled: Boolean,
     onSwitchToAnnualClick: (() -> Unit)?,
     yearlyPlan: cz.cleansia.customer.core.memberships.MembershipPlanDto?,
-    inTrial: Boolean,
+    trialEndText: String?,
 ) {
     val cardShape = RoundedCornerShape(20.dp)
     val isCancelling = response.cancelRequested
@@ -293,7 +303,8 @@ private fun ActiveCard(
     // looking like an upgrade. The active treatment SHOULD feel richer
     // than the ending one (otherwise cancelling looks like a perk).
     val accent = if (isCancelling) EndingAccent else PremiumGold
-    val periodEndText = response.currentPeriodEnd?.let { formatPeriodEnd(it) }
+    val periodEndText = trialEndText ?: response.currentPeriodEnd?.let { formatPeriodEnd(it) }
+    val inTrial = trialEndText != null
 
     Column(
         modifier = modifier
@@ -357,18 +368,8 @@ private fun ActiveCard(
         }
 
         // ── Perk pill row — quick visual reminder of what's unlocked ──
-        // A running trial unlocks none of them, so for a trialing member the row is what a paid
-        // membership includes. -> /product/business-rules
         val perks = remember(response) { MembershipPerks.resolve(response) }
         if (perks.isNotEmpty()) {
-            if (inTrial) {
-                Text(
-                    text = stringResource(R.string.membership_trial_perks_title),
-                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp),
-                )
-            }
             androidx.compose.foundation.layout.FlowRow(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -377,14 +378,6 @@ private fun ActiveCard(
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 perks.forEach { perk -> PerkPill(perk = perk, accent = accent) }
-            }
-            if (inTrial) {
-                Text(
-                    text = stringResource(R.string.membership_trial_perks_note),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp),
-                )
             }
         }
 
@@ -408,8 +401,11 @@ private fun ActiveCard(
                     Column {
                         Text(
                             text = stringResource(
-                                if (isCancelling) R.string.membership_active_until
-                                else R.string.membership_renews_on,
+                                when {
+                                    isCancelling -> R.string.membership_active_until
+                                    inTrial -> R.string.membership_trial_until
+                                    else -> R.string.membership_renews_on
+                                },
                                 periodEndText,
                             ),
                             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
@@ -420,6 +416,7 @@ private fun ActiveCard(
                                 when {
                                     isCancelling && inTrial -> R.string.membership_trial_cancelled_lead
                                     isCancelling -> R.string.membership_then_ends_hint
+                                    inTrial -> R.string.membership_trial_first_charge_hint
                                     else -> R.string.membership_auto_renew_hint
                                 },
                             ),
@@ -578,8 +575,6 @@ private fun PerkPill(perk: MembershipPerk, accent: androidx.compose.ui.graphics.
                 is MembershipPerk.Express -> when (perk.waiver.status) {
                     ExpressWaiverStatus.Available ->
                         stringResource(R.string.membership_perk_pill_express, perk.waiver.remaining)
-                    ExpressWaiverStatus.Trial ->
-                        stringResource(R.string.membership_perk_pill_express_trial)
                     else -> stringResource(R.string.membership_perk_pill_express_used)
                 }
             },

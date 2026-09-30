@@ -111,6 +111,8 @@
     <string name="home_upsell_plus_top">Cleansia Plus</string>
     <string name="home_upsell_plus_title">Šetrite na každom upratovaní.</string>
     <string name="home_upsell_plus_cta">Získať Plus</string>
+    <string name="home_upsell_plus_title_trial">Prvých %1$d dní zadarmo.</string>
+    <string name="home_upsell_plus_cta_trial">Vyskúšať zadarmo</string>
     <string name="home_upsell_referral_top">Pozvite kamaráta</string>
     <string name="home_upsell_referral_title">150 bodov pre oboch po dokončení jeho prvého upratovania</string>
     <string name="home_upsell_referral_cta">Zdieľať môj kód</string>
@@ -566,7 +568,6 @@
     <string name="booking_slot_express_waived">Expres · bez príplatku</string>
     <string name="booking_express_waiver_available">Plus pokrýva 20%% expresný príplatok — %1$d zostáva tento kalendárny mesiac.</string>
     <string name="booking_express_waiver_used" formatted="false">Tento mesiac už nezostáva žiadne odpustenie expresného príplatku — expresné termíny sa účtujú s +20 % až do budúceho mesiaca.</string>
-    <string name="booking_express_waiver_trial" formatted="false">Počas skúšobného obdobia sa expresné termíny účtujú s +20 % — odpustenie začína prvým plateným mesiacom.</string>
     <string name="booking_slot_select">Vybrať</string>
     <string name="booking_all_slots_booked">Pre tento deň sú všetky termíny obsadené — vyberte iný deň.</string>
 
@@ -871,7 +872,7 @@
     <string name="membership_switch_to_annual_cta">Prejsť na ročné — ušetríte %1$d%%</string>
     <string name="membership_switch_dialog_title">Prejsť na ročné?</string>
     <string name="membership_switch_dialog_message">Dnes zaplatíte pomerný rozdiel, potom %1$s za rok. Vaše výhody pokračujú.</string>
-    <string name="membership_switch_dialog_message_trial">Skúšobné obdobie pokračuje do %1$s. Nový plán (%2$s) sa uplatní od prvého plateného obdobia a až s ním začnú platiť výhody Plus.</string>
+    <string name="membership_switch_dialog_message_trial">Skúšobné obdobie aj všetky výhody Plus pokračujú do %1$s. Nový plán (%2$s) sa začne účtovať až potom, dnes neplatíte nič.</string>
     <string name="membership_switch_dialog_confirm">Prejsť</string>
     <string name="membership_switch_success">Vitajte v ročnom predplatnom!</string>
     <string name="membership_perk_favorite_cleaner_title">Vaša obľúbená upratovačka</string>
@@ -885,7 +886,7 @@
     <string name="membership_perk_discount_title">%1$d%% členská zľava</string>
     <string name="membership_perk_discount_desc" formatted="false">Z každého upratovania. V kombinácii s vernostným programom je obmedzená na 12%.</string>
     <string name="membership_perk_express_title">Expresné termíny bez príplatku</string>
-    <string name="membership_perk_express_desc">Odpúšťame 20%% príplatok za expresné objednávky — upratovania, ktoré začínajú 2 až 4 hodiny po objednaní. Až %1$d každý kalendárny mesiac počas aktívneho plateného členstva; nevyužité sa neprenášajú.</string>
+    <string name="membership_perk_express_desc">Odpúšťame 20%% príplatok za expresné objednávky — upratovania, ktoré začínajú 2 až 4 hodiny po objednaní. Až %1$d každý kalendárny mesiac počas aktívneho členstva; nevyužité sa neprenášajú.</string>
 
     <!-- Perk pills on the active management card. -->
     <string name="membership_perk_pill_discount">zľava %1$d %%</string>
@@ -893,41 +894,41 @@
     <string name="membership_perk_pill_recurring">Pravidelne</string>
     <string name="membership_perk_pill_express">Expres odpustený · zostáva %1$d</string>
     <string name="membership_perk_pill_express_used">Expres odpustený · nič nezostáva</string>
-    <string name="membership_perk_pill_express_trial">Expres odpustený · po skúšobnej dobe</string>
 
     <!-- Membership management card on Profile -->
     <string name="membership_inactive_title">Cleansia Plus</string>
     <string name="membership_inactive_badge">PLUS</string>
     <string name="membership_inactive_perks_summary" formatted="false">Zľava na každú objednávku · pravidelné upratovanie</string>
     <string name="membership_inactive_cta">Získať Cleansia Plus</string>
+    <string name="membership_inactive_cta_trial">Vyskúšať %1$d dní zadarmo</string>
     <string name="membership_success_title">Vitajte v Plus!</string>
     <string name="membership_success_subtitle">Vaše výhody sú hneď aktívne. Tu je, čo ste práve odomkli:</string>
-    <string name="membership_success_subtitle_trial">Vaše skúšobné obdobie Cleansia Plus sa začalo.</string>
-    <string name="membership_trial_perks_title">Čo zahŕňa platené členstvo</string>
-    <string name="membership_trial_perks_note">Počas skúšobného obdobia z toho zatiaľ nič neplatí — výhody začnú až s prvým plateným mesiacom.</string>
+    <string name="membership_success_subtitle_trial">Skúšobné obdobie zadarmo vám beží do %1$s a výhody sú hneď aktívne. Tu je, čo ste práve odomkli:</string>
     <string name="membership_success_perks_header">VAŠE VÝHODY PLUS</string>
-    <string name="membership_success_perk_express">Expresné termíny bez príplatku — od prvého plateného mesiaca</string>
+    <string name="membership_success_perk_express">Expresné termíny bez príplatku</string>
     <string name="membership_success_cta_setup_recurring">Nastaviť pravidelné upratovanie</string>
     <string name="membership_success_cta_back_home">Späť na hlavnú</string>
     <string name="membership_active_status">Aktívne</string>
     <string name="membership_renews_on">Obnoví sa %1$s</string>
+    <string name="membership_trial_until">Skúšobné obdobie zadarmo do %1$s</string>
     <string name="membership_cancelled_until">Aktívne do %1$s</string>
-    <string name="membership_cancel_success_trial">Členstvo zrušené — nenasleduje žiadny platený mesiac, takže vám nič nenaúčtujeme.</string>
+    <string name="membership_cancel_success_trial">Cleansia Plus zrušené — nič vám nenaúčtujeme a výhody platia do konca skúšobného obdobia.</string>
     <string name="membership_cancel_success_now">Cleansia Plus zrušené — nič ďalšie vám nenaúčtujeme.</string>
     <string name="membership_active_until">Aktívne do %1$s</string>
     <string name="membership_status_ending">Zrušenie vyžiadané</string>
     <string name="membership_status_ending_badge">KONČÍ</string>
     <string name="membership_status_active_badge">PLUS · AKTÍVNE</string>
     <string name="membership_then_ends_hint">Výhody Plus týmto dňom skončia.</string>
-    <string name="membership_trial_cancelled_lead">Keďže ste ho zrušili počas skúšobného obdobia, nenasleduje žiadny platený mesiac a výhody Plus tak vôbec nezačnú platiť.</string>
+    <string name="membership_trial_cancelled_lead">Zrušené počas skúšobného obdobia, takže vám nič nenaúčtujeme. Výhody Plus týmto dňom skončia.</string>
     <string name="membership_auto_renew_hint">Obnovuje sa automaticky. Ak členstvo zrušíte, výhody platia do tohto dňa.</string>
+    <string name="membership_trial_first_charge_hint">Všetky výhody Plus už platia. Platiť začnete týmto dňom, ak predtým nezrušíte.</string>
     <string name="membership_status_past_due_badge">PLATBA ZLYHALA</string>
     <string name="membership_past_due_title">Platba zlyhala — výhody pozastavené</string>
     <string name="membership_past_due_body">Platbu za obnovenie sa nepodarilo strhnúť, a preto sú vaše výhody Plus pozastavené. Ak opakovaná platba prejde, výhody sa obnovia. Ak členstvo zrušíte, skončí okamžite a nič ďalšie vám nenaúčtujeme.</string>
     <string name="membership_cancel_action">Zrušiť predplatné</string>
     <string name="membership_cancel_dialog_title">Zrušiť Cleansia Plus?</string>
     <string name="membership_cancel_dialog_message">Vaše výhody zostanú do konca aktuálneho zúčtovacieho obdobia. Ďalšia platba neprebehne.</string>
-    <string name="membership_cancel_dialog_message_trial">Skúšobné obdobie skončí %1$s. Nenasleduje žiadny platený mesiac, takže vám nič nenaúčtujeme a žiadna z výhod Plus nezačne platiť.</string>
+    <string name="membership_cancel_dialog_message_trial">Skúšobné obdobie skončí %1$s a dovtedy vám výhody zostanú. Žiadna platba nenasleduje, takže vám nič nenaúčtujeme.</string>
     <string name="membership_cancel_dialog_message_now">Členstvo skončí okamžite. Nezaplatené obnovenie vám nenaúčtujeme a nič ďalšie už tiež nie.</string>
     <string name="membership_cancel_dialog_confirm">Zrušiť</string>
     <string name="membership_subscribed_success">Vitajte v Cleansia Plus!</string>

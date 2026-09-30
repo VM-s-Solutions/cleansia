@@ -444,9 +444,9 @@ private fun DayChipView(day: DayChip, selected: Boolean, onClick: () -> Unit) {
 /* ── Express waiver disclosure — one line under the slot grid ── */
 
 /**
- * Three server-decided states, and [ExpressWaiverStatus.None] deliberately says nothing: for a guest
+ * Two server-decided states, and [ExpressWaiverStatus.None] deliberately says nothing: for a guest
  * or a plan without the perk, the slot's own "+20%" tag already discloses the charge, and inventing a
- * fourth sentence for them would change a flow this ticket must leave alone.
+ * third sentence for them would change a flow this ticket must leave alone.
  */
 @Composable
 private fun ExpressWaiverNote(waiver: ExpressWaiver) {
@@ -454,7 +454,6 @@ private fun ExpressWaiverNote(waiver: ExpressWaiver) {
         ExpressWaiverStatus.Available ->
             stringResource(R.string.booking_express_waiver_available, waiver.remaining)
         ExpressWaiverStatus.Exhausted -> stringResource(R.string.booking_express_waiver_used)
-        ExpressWaiverStatus.Trial -> stringResource(R.string.booking_express_waiver_trial)
         ExpressWaiverStatus.None -> return
     }
     Row(

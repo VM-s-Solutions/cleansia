@@ -26,13 +26,11 @@ class MembershipExpressClaimTest {
         "membership_perk_express_desc",
         "membership_perk_pill_express",
         "membership_perk_pill_express_used",
-        "membership_perk_pill_express_trial",
         "membership_success_perk_express",
         "booking_slot_express_waived",
         "booking_summary_express_surcharge_waived",
         "booking_express_waiver_available",
         "booking_express_waiver_used",
-        "booking_express_waiver_trial",
     )
 
     /**

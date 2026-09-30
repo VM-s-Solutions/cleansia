@@ -161,6 +161,7 @@ fun HomeTab(
         if (membership == null) membershipRepo.refresh()
     }
     val isPlus = membership?.hasMembership == true
+    val plusTrialDays by viewModel.plusTrialDays.collectAsStateWithLifecycle()
 
     // Catalog — used for the popular-packages quick-book strip. Home prices the chosen market
     // (ADR-0058 D5): refresh on first composition when nothing is loaded, whenever the market
@@ -172,6 +173,9 @@ fun HomeTab(
     val marketCountryId = marketState.countryId
     androidx.compose.runtime.LaunchedEffect(marketCountryId) {
         if (packages.isEmpty() || catalogRepo.countryId.value != marketCountryId) viewModel.refreshCatalog()
+    }
+    androidx.compose.runtime.LaunchedEffect(marketCountryId, isPlus) {
+        if (!isPlus) viewModel.refreshPlusPlans()
     }
     // Top-3 packages by displayOrder (proxy for popularity) — falls back to
     // first 3 if displayOrder is null/uniform across the catalog.
@@ -316,6 +320,7 @@ fun HomeTab(
             // Slides hide based on user state.
             SmartUpsellCarousel(
                 isPlus = isPlus,
+                plusTrialDays = plusTrialDays,
                 showSetupRecurring = showSetupRecurringSlide,
                 onSubscribePlus = onSubscribePlus,
                 onBookCleaning = onBookCleaning,
@@ -509,6 +514,7 @@ private data class UpsellSlide(
     val kind: UpsellKind,
     val topRes: Int,
     val titleRes: Int,
+    val titleArg: Int? = null,
     val ctaRes: Int,
     val gradient: List<Color>,
     val mascotRes: Int,
@@ -518,6 +524,7 @@ private data class UpsellSlide(
 @Composable
 private fun SmartUpsellCarousel(
     isPlus: Boolean,
+    plusTrialDays: Int,
     showSetupRecurring: Boolean,
     onSubscribePlus: () -> Unit,
     onBookCleaning: () -> Unit,
@@ -542,17 +549,19 @@ private fun SmartUpsellCarousel(
     // first so the slide on screen at t=0 is the one the user is most likely
     // to act on.
     val slides = androidx.compose.runtime.remember(
-        isPlus, showSetupRecurring,
+        isPlus, plusTrialDays, showSetupRecurring,
         plusGradient, purpleGradient, cyanGradient, blueGradient,
     ) {
         buildList {
             if (!isPlus) {
+                val offersTrial = plusTrialDays > 0
                 add(
                     UpsellSlide(
                         kind = UpsellKind.Plus,
                         topRes = R.string.home_upsell_plus_top,
-                        titleRes = R.string.home_upsell_plus_title,
-                        ctaRes = R.string.home_upsell_plus_cta,
+                        titleRes = if (offersTrial) R.string.home_upsell_plus_title_trial else R.string.home_upsell_plus_title,
+                        titleArg = plusTrialDays.takeIf { offersTrial },
+                        ctaRes = if (offersTrial) R.string.home_upsell_plus_cta_trial else R.string.home_upsell_plus_cta,
                         // Same gradient as the Plus subscribe page hero — tapping
                         // the card visually previews where the user lands.
                         gradient = plusGradient,
@@ -695,7 +704,7 @@ private fun UpsellSlideCard(slide: UpsellSlide) {
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                stringResource(slide.titleRes),
+                slide.titleArg?.let { stringResource(slide.titleRes, it) } ?: stringResource(slide.titleRes),
                 style = MaterialTheme.typography.headlineSmall.copy(fontFamily = Poppins, fontWeight = FontWeight.Bold),
                 color = Color.White,
             )

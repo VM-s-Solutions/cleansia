@@ -2,7 +2,8 @@ package cz.cleansia.customer.features.booking
 
 import cz.cleansia.customer.core.memberships.GetMyMembershipResponse
 import cz.cleansia.customer.core.memberships.MembershipStatus
-import kotlinx.datetime.Instant
+import kotlin.time.Duration.Companion.days
+import kotlinx.datetime.Clock
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -113,32 +114,16 @@ class CancellationPolicyDisplayTest {
         assertEquals(24, cancellationPolicyFor(membership(true, 0)).freeHours)
     }
 
-    // No Plus benefit runs during the free trial: the server prices a cancellation from the paid
-    // entitlement, so a trialing member is quoted the standard window until the first paid month.
-
-    private val now = Instant.parse("2026-09-27T10:00:00Z")
-
+    /** The server prices a trialing member's cancellation on the Plus terms, as it does a paying one's. */
     @Test
-    fun `a trialing member is quoted the standard window`() {
+    fun `a trialing member is quoted the Plus window`() {
         val trialing = membership(hasMembership = true, freeHours = 4)
-            .copy(trialEndsAtUtc = Instant.parse("2026-10-04T10:00:00Z"))
+            .copy(trialEndsAtUtc = Clock.System.now() + 7.days)
 
-        val policy = cancellationPolicyFor(trialing, now = now)
-
-        assertEquals(24, policy.freeHours)
-        assertNull(policy.plusFreeHours)
-        assertFalse(policy.hasPlusPerk)
-        assertTrue(policy.showMidTier)
-    }
-
-    @Test
-    fun `the Plus window applies once the trial has ended`() {
-        val paid = membership(hasMembership = true, freeHours = 4)
-            .copy(trialEndsAtUtc = Instant.parse("2026-09-20T10:00:00Z"))
-
-        val policy = cancellationPolicyFor(paid, now = now)
+        val policy = cancellationPolicyFor(trialing)
 
         assertEquals(4, policy.freeHours)
+        assertEquals(4, policy.plusFreeHours)
         assertTrue(policy.hasPlusPerk)
     }
 }

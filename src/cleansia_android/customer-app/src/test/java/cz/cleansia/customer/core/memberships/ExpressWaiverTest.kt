@@ -1,30 +1,29 @@
 package cz.cleansia.customer.core.memberships
 
-import kotlinx.datetime.Instant
+import kotlin.time.Duration.Companion.days
+import kotlinx.datetime.Clock
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
 /**
- * The server reports `expressUpgradesRemaining = 0` for a trialing member AND for an exhausted one,
- * and `trialEndsAtUtc` is the only field that separates them. Telling a trial member they used theirs
- * up is a false claim, so both zeros are pinned here rather than left to the screens.
+ * The verdict every express surface renders, from the server's count alone. A trialing member is
+ * entitled like a paying one, so the trial end must not change the verdict.
  */
 class ExpressWaiverTest {
 
-    private val now = Instant.parse("2026-08-05T10:00:00Z")
-    private val tomorrow = Instant.parse("2026-08-06T10:00:00Z")
-    private val yesterday = Instant.parse("2026-08-04T10:00:00Z")
+    private val tomorrow = Clock.System.now() + 1.days
+    private val yesterday = Clock.System.now() - 1.days
 
     @Test
     fun `a missing membership carries no waiver`() {
-        assertEquals(ExpressWaiver.None, resolveExpressWaiver(null, now))
+        assertEquals(ExpressWaiver.None, resolveExpressWaiver(null))
     }
 
     @Test
     fun `an inactive membership carries no waiver`() {
         assertEquals(
             ExpressWaiver.None,
-            resolveExpressWaiver(GetMyMembershipResponse(hasMembership = false), now),
+            resolveExpressWaiver(GetMyMembershipResponse(hasMembership = false)),
         )
     }
 
@@ -32,36 +31,35 @@ class ExpressWaiverTest {
     fun `a plan with no express quota carries no waiver`() {
         assertEquals(
             ExpressWaiver.None,
-            resolveExpressWaiver(active.copy(expressUpgradesPerMonth = null), now),
+            resolveExpressWaiver(active.copy(expressUpgradesPerMonth = null)),
         )
         assertEquals(
             ExpressWaiver.None,
-            resolveExpressWaiver(active.copy(expressUpgradesPerMonth = 0), now),
+            resolveExpressWaiver(active.copy(expressUpgradesPerMonth = 0)),
         )
     }
 
     @Test
-    fun `a trialing member earns no waiver yet`() {
-        assertEquals(
-            ExpressWaiver(ExpressWaiverStatus.Trial, remaining = 0),
-            resolveExpressWaiver(active.copy(trialEndsAtUtc = tomorrow, expressUpgradesRemaining = 0), now),
-        )
-    }
-
-    /** The trial verdict does not depend on the count, so a non-zero one cannot leak a waiver. */
-    @Test
-    fun `a trialing member earns no waiver even when the count is not zero`() {
-        assertEquals(
-            ExpressWaiverStatus.Trial,
-            resolveExpressWaiver(active.copy(trialEndsAtUtc = tomorrow, expressUpgradesRemaining = 2), now).status,
-        )
-    }
-
-    @Test
-    fun `a converted trial resolves on the count again`() {
+    fun `a trialing member with quota left has a waiver available`() {
         assertEquals(
             ExpressWaiver(ExpressWaiverStatus.Available, remaining = 2),
-            resolveExpressWaiver(active.copy(trialEndsAtUtc = yesterday, expressUpgradesRemaining = 2), now),
+            resolveExpressWaiver(active.copy(trialEndsAtUtc = tomorrow, expressUpgradesRemaining = 2)),
+        )
+    }
+
+    @Test
+    fun `a trialing member with none left is exhausted`() {
+        assertEquals(
+            ExpressWaiver(ExpressWaiverStatus.Exhausted, remaining = 0),
+            resolveExpressWaiver(active.copy(trialEndsAtUtc = tomorrow, expressUpgradesRemaining = 0)),
+        )
+    }
+
+    @Test
+    fun `a converted trial resolves on the count`() {
+        assertEquals(
+            ExpressWaiver(ExpressWaiverStatus.Available, remaining = 2),
+            resolveExpressWaiver(active.copy(trialEndsAtUtc = yesterday, expressUpgradesRemaining = 2)),
         )
     }
 
@@ -69,7 +67,7 @@ class ExpressWaiverTest {
     fun `a paid member with quota left has a waiver available`() {
         assertEquals(
             ExpressWaiver(ExpressWaiverStatus.Available, remaining = 1),
-            resolveExpressWaiver(active.copy(expressUpgradesRemaining = 1), now),
+            resolveExpressWaiver(active.copy(expressUpgradesRemaining = 1)),
         )
     }
 
@@ -77,7 +75,7 @@ class ExpressWaiverTest {
     fun `a paid member with none left is exhausted`() {
         assertEquals(
             ExpressWaiver(ExpressWaiverStatus.Exhausted, remaining = 0),
-            resolveExpressWaiver(active.copy(expressUpgradesRemaining = 0), now),
+            resolveExpressWaiver(active.copy(expressUpgradesRemaining = 0)),
         )
     }
 
@@ -85,7 +83,7 @@ class ExpressWaiverTest {
     fun `a missing count is exhausted rather than available`() {
         assertEquals(
             ExpressWaiver(ExpressWaiverStatus.Exhausted, remaining = 0),
-            resolveExpressWaiver(active.copy(expressUpgradesRemaining = null), now),
+            resolveExpressWaiver(active.copy(expressUpgradesRemaining = null)),
         )
     }
 
@@ -99,7 +97,6 @@ class ExpressWaiverTest {
             3,
             resolveExpressWaiver(
                 active.copy(expressUpgradesPerMonth = 2, expressUpgradesRemaining = 3),
-                now,
             ).remaining,
         )
     }

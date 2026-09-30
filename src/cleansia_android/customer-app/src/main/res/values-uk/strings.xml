@@ -111,6 +111,8 @@
     <string name="home_upsell_plus_top">Cleansia Plus</string>
     <string name="home_upsell_plus_title">Економте на кожному прибиранні.</string>
     <string name="home_upsell_plus_cta">Отримати Plus</string>
+    <string name="home_upsell_plus_title_trial">Перші %1$d днів безкоштовно.</string>
+    <string name="home_upsell_plus_cta_trial">Спробувати безкоштовно</string>
     <string name="home_upsell_referral_top">Запросіть друга</string>
     <string name="home_upsell_referral_title">По 150 балів після першого завершеного прибирання друга</string>
     <string name="home_upsell_referral_cta">Поділитися кодом</string>
@@ -566,7 +568,6 @@
     <string name="booking_slot_express_waived">Експрес · без доплати</string>
     <string name="booking_express_waiver_available">Plus покриває 20%% експрес-доплати — %1$d залишилось цього календарного місяця.</string>
     <string name="booking_express_waiver_used" formatted="false">Цього місяця скасування експрес-доплати більше не діє — експрес-слоти оплачуються з +20 % до наступного місяця.</string>
-    <string name="booking_express_waiver_trial" formatted="false">Під час пробного періоду експрес-слоти оплачуються з +20 % — скасування доплати починається з першого оплаченого місяця.</string>
     <string name="booking_slot_select">Вибрати</string>
     <string name="booking_all_slots_booked">Усі слоти на цей день зайняті — виберіть інший день.</string>
 
@@ -871,7 +872,7 @@
     <string name="membership_switch_to_annual_cta">Перейти на річний — економія %1$d%%</string>
     <string name="membership_switch_dialog_title">Перейти на річний?</string>
     <string name="membership_switch_dialog_message">Сьогодні буде списано пропорційну різницю, потім %1$s на рік. Ваші переваги залишаються.</string>
-    <string name="membership_switch_dialog_message_trial">Пробний період триває до %1$s. Новий план (%2$s) застосовується з першого оплаченого періоду, і лише тоді почнуть діяти переваги Plus.</string>
+    <string name="membership_switch_dialog_message_trial">Пробний період і всі переваги Plus тривають до %1$s. Новий план (%2$s) почне списуватися лише після цього, сьогодні ви нічого не платите.</string>
     <string name="membership_switch_dialog_confirm">Перейти</string>
     <string name="membership_switch_success">Ласкаво просимо до річного плану!</string>
     <string name="membership_perk_favorite_cleaner_title">Ваш улюблений клінер</string>
@@ -885,7 +886,7 @@
     <string name="membership_perk_discount_title">%1$d%% знижка для учасників</string>
     <string name="membership_perk_discount_desc" formatted="false">На кожне прибирання. У поєднанні з рівнем лояльності обмежена 12%.</string>
     <string name="membership_perk_express_title">Експрес-замовлення без доплати</string>
-    <string name="membership_perk_express_desc">Ми не беремо 20 %% доплати за експрес-замовлення — прибирання, що починаються через 2–4 години після оформлення. До %1$d на кожен календарний місяць, поки діє ваше оплачене членство; невикористані не переносяться.</string>
+    <string name="membership_perk_express_desc">Ми не беремо 20 %% доплати за експрес-замовлення — прибирання, що починаються через 2–4 години після оформлення. До %1$d на кожен календарний місяць, поки діє ваше членство; невикористані не переносяться.</string>
 
     <!-- Perk pills on the active management card. -->
     <string name="membership_perk_pill_discount">знижка %1$d%%</string>
@@ -893,41 +894,41 @@
     <string name="membership_perk_pill_recurring">Регулярно</string>
     <string name="membership_perk_pill_express">Експрес без доплати · %1$d залишилось</string>
     <string name="membership_perk_pill_express_used">Експрес без доплати · не залишилось</string>
-    <string name="membership_perk_pill_express_trial">Експрес без доплати · після пробного</string>
 
     <!-- Membership management card on Profile -->
     <string name="membership_inactive_title">Cleansia Plus</string>
     <string name="membership_inactive_badge">PLUS</string>
     <string name="membership_inactive_perks_summary" formatted="false">Економія на кожному бронюванні · регулярні прибирання</string>
     <string name="membership_inactive_cta">Отримати Cleansia Plus</string>
+    <string name="membership_inactive_cta_trial">Спробувати %1$d днів безкоштовно</string>
     <string name="membership_success_title">Ласкаво просимо до Plus!</string>
     <string name="membership_success_subtitle">Ваші переваги активні одразу. Ось що щойно відкрилося:</string>
-    <string name="membership_success_subtitle_trial">Ваш пробний період Cleansia Plus розпочався.</string>
-    <string name="membership_trial_perks_title">Що входить у платну підписку</string>
-    <string name="membership_trial_perks_note">Під час пробного періоду нічого з цього не діє — переваги почнуть діяти лише з першого оплаченого місяця.</string>
+    <string name="membership_success_subtitle_trial">Безкоштовний пробний період триває до %1$s, а переваги активні одразу. Ось що щойно відкрилося:</string>
     <string name="membership_success_perks_header">ВАШІ ПЕРЕВАГИ PLUS</string>
-    <string name="membership_success_perk_express">Експрес-замовлення без доплати — з першого оплаченого місяця</string>
+    <string name="membership_success_perk_express">Експрес-замовлення без доплати</string>
     <string name="membership_success_cta_setup_recurring">Налаштувати регулярне прибирання</string>
     <string name="membership_success_cta_back_home">На головну</string>
     <string name="membership_active_status">Активний</string>
     <string name="membership_renews_on">Продовжується %1$s</string>
+    <string name="membership_trial_until">Безкоштовний пробний період до %1$s</string>
     <string name="membership_cancelled_until">Активний до %1$s</string>
-    <string name="membership_cancel_success_trial">Членство скасовано — оплаченого місяця не буде, тож з вас нічого не спишуть.</string>
+    <string name="membership_cancel_success_trial">Cleansia Plus скасовано — з вас нічого не спишуть, а переваги діятимуть до кінця пробного періоду.</string>
     <string name="membership_cancel_success_now">Cleansia Plus скасовано — більше нічого не буде списано.</string>
     <string name="membership_active_until">Активний до %1$s</string>
     <string name="membership_status_ending">Запит на скасування</string>
     <string name="membership_status_ending_badge">ЗАВЕРШУЄТЬСЯ</string>
     <string name="membership_status_active_badge">PLUS · АКТИВНИЙ</string>
     <string name="membership_then_ends_hint">Переваги Plus припиняються в цю дату.</string>
-    <string name="membership_trial_cancelled_lead">Оскільки ви скасували її під час пробного періоду, оплаченого місяця не буде, тож переваги Plus так і не почнуть діяти.</string>
+    <string name="membership_trial_cancelled_lead">Скасовано під час пробного періоду, тож з вас нічого не спишуть. Переваги Plus припиняються в цю дату.</string>
     <string name="membership_auto_renew_hint">Продовжується автоматично. Якщо ви скасуєте, переваги діятимуть до цієї дати.</string>
+    <string name="membership_trial_first_charge_hint">Усі переваги Plus уже діють. Списання почнеться з цієї дати, якщо ви не скасуєте раніше.</string>
     <string name="membership_status_past_due_badge">ОПЛАТА НЕ ВДАЛАСЯ</string>
     <string name="membership_past_due_title">Оплата не вдалася — переваги призупинено</string>
     <string name="membership_past_due_body">Нам не вдалося списати оплату за продовження, тому ваші переваги Plus призупинено. Якщо повторна оплата пройде, вони відновляться. Якщо ви скасуєте, членство завершиться одразу і більше нічого не буде списано.</string>
     <string name="membership_cancel_action">Скасувати підписку</string>
     <string name="membership_cancel_dialog_title">Скасувати Cleansia Plus?</string>
     <string name="membership_cancel_dialog_message">Ваші переваги залишаться до кінця поточного періоду. Списань більше не буде.</string>
-    <string name="membership_cancel_dialog_message_trial">Пробний період закінчиться %1$s. Оплаченого місяця не буде, тож з вас нічого не спишуть і жодна з переваг Plus не почне діяти.</string>
+    <string name="membership_cancel_dialog_message_trial">Пробний період закінчиться %1$s, і до того часу переваги залишаться. Оплати після нього не буде, тож з вас нічого не спишуть.</string>
     <string name="membership_cancel_dialog_message_now">Членство завершиться одразу. Неоплачене продовження не буде списано, і більше нічого також.</string>
     <string name="membership_cancel_dialog_confirm">Скасувати</string>
     <string name="membership_subscribed_success">Ласкаво просимо до Cleansia Plus!</string>

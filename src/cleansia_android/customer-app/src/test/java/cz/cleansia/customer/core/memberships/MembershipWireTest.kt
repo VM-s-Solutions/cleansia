@@ -284,6 +284,17 @@ class MembershipWireTest {
         assertEquals(false, mine(CAPTURED_NON_MEMBER)?.benefitsPaused)
     }
 
+    /**
+     * One free trial per account: the verdict survives in both directions, and an answer without it
+     * offers none, so a returning customer is never promised free days the server will not grant.
+     */
+    @Test
+    fun theTrialEligibilityVerdictSurvivesAndItsAbsenceOffersNoTrial() = runTest {
+        assertEquals(true, mine(CAPTURED_NON_MEMBER)?.trialEligible)
+        assertEquals(false, mine(CAPTURED_MINE)?.trialEligible)
+        assertEquals(false, mine(withoutKey(CAPTURED_NON_MEMBER, "trialEligible"))?.trialEligible)
+    }
+
     @Test
     fun everySurvivingPlanKeepsTheCodeTheWireCarried() = runTest {
         assertEquals(listOf("plus-annual", "plus-monthly"), loadedPlans(CAPTURED_PLANS).map { it.code })

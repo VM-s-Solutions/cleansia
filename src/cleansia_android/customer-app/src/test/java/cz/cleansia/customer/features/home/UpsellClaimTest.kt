@@ -26,8 +26,8 @@ class UpsellClaimTest {
         ?: error("Cleansia.Api.sln not found above ${moduleDir.absolutePath}")
 
     /**
-     * `MembershipPlan.TrialPeriodDays` is 0 on every plan and the admin validators refuse any other
-     * value, so no plan has a trial. These rows render to every non-member with no trial gate.
+     * These rows render to a non-member whether or not a trial is on offer, so none may promise one. The
+     * trial rows are separate keys, shown only while the customer can still get a trial.
      */
     private val ungatedPlusKeys = listOf(
         "home_upsell_plus_top",
@@ -124,6 +124,44 @@ class UpsellClaimTest {
                 val value = declared[key] ?: return@mapNotNull "$locale/$key is missing"
                 if (trialClaim.containsMatchIn(value)) "$locale/$key: $value" else null
             }
+        }
+        assertEquals(emptyList<String>(), claims)
+    }
+
+    /** The trial length is set per plan in the admin console, so a trial row states the plan's days and no number of its own. */
+    private val trialRows = listOf(
+        "home_upsell_plus_title_trial",
+        "membership_inactive_cta_trial",
+        "membership_hero_trial_price",
+    )
+
+    @Test
+    fun `every trial row states the plan's days rather than a number of its own`() {
+        val placeholder = Regex("%\\d+\\$[sd]")
+        locales.forEach { locale ->
+            val declared = strings(locale)
+            trialRows.forEach { key ->
+                val value = declared[key] ?: error("$locale/$key is missing")
+                assertTrue("$locale/$key does not carry the plan's days — $value", Regex("%\\d+\\\$d").containsMatchIn(value))
+                assertTrue("$locale/$key names a number of its own — $value", placeholder.replace(value, "").none { it.isDigit() })
+            }
+        }
+    }
+
+    /** A trialing member has every Plus benefit from day one, so no row may say one waits for a payment. */
+    private val waitsForPaymentClaim = mapOf(
+        "values" to Regex("first paid|paid membership", RegexOption.IGNORE_CASE),
+        "values-cs" to Regex("prvním placen|prvního placen|placené členství|placeného členství", RegexOption.IGNORE_CASE),
+        "values-sk" to Regex("prvým platen|prvého platen|platené členstvo|plateného členstva", RegexOption.IGNORE_CASE),
+        "values-uk" to Regex("першого оплачен|оплачене членство|платну підписку", RegexOption.IGNORE_CASE),
+        "values-ru" to Regex("первого оплаченн|оплаченное членство|платную подписку", RegexOption.IGNORE_CASE),
+    )
+
+    @Test
+    fun `no row tells a trialing member a benefit waits for the first payment`() {
+        val claims = locales.flatMap { locale ->
+            val claim = waitsForPaymentClaim.getValue(locale)
+            strings(locale).filterValues { claim.containsMatchIn(it) }.map { (key, value) -> "$locale/$key: $value" }
         }
         assertEquals(emptyList<String>(), claims)
     }

@@ -112,6 +112,8 @@
     <string name="home_upsell_plus_top">Cleansia Plus</string>
     <string name="home_upsell_plus_title">Save on every cleaning.</string>
     <string name="home_upsell_plus_cta">Get Plus</string>
+    <string name="home_upsell_plus_title_trial">First %1$d days free.</string>
+    <string name="home_upsell_plus_cta_trial">Try it free</string>
     <string name="home_upsell_referral_top">Refer a friend</string>
     <string name="home_upsell_referral_title">You both get 150 points after their first completed cleaning</string>
     <string name="home_upsell_referral_cta">Share my code</string>
@@ -571,7 +573,6 @@
     <string name="booking_slot_express_waived">Express · no surcharge</string>
     <string name="booking_express_waiver_available">Plus covers the 20%% express surcharge — %1$d left this calendar month.</string>
     <string name="booking_express_waiver_used" formatted="false">No express waivers left this month — express slots are charged at +20% until next month.</string>
-    <string name="booking_express_waiver_trial" formatted="false">Express slots are charged at +20% during your trial — the waiver starts with your first paid month.</string>
     <string name="booking_slot_select">Select</string>
     <string name="booking_all_slots_booked">All slots booked for this day — try another date.</string>
 
@@ -885,7 +886,7 @@
     <string name="membership_switch_to_annual_cta">Switch to annual — save %1$d%%</string>
     <string name="membership_switch_dialog_title">Switch to annual?</string>
     <string name="membership_switch_dialog_message">You\'ll be charged the prorated difference today, then %1$s per year. Your benefits keep going.</string>
-    <string name="membership_switch_dialog_message_trial">Your trial continues until %1$s. The new plan (%2$s) applies from your first paid period, and the Plus benefits start only then.</string>
+    <string name="membership_switch_dialog_message_trial">Your trial and every Plus benefit continue until %1$s. The new plan (%2$s) is charged from then, and nothing is charged today.</string>
     <string name="membership_switch_dialog_confirm">Switch</string>
     <string name="membership_switch_success">Welcome to the annual plan!</string>
     <string name="membership_perk_favorite_cleaner_title">Your favorite cleaner</string>
@@ -899,7 +900,7 @@
     <string name="membership_perk_discount_title">%1$d%% member discount</string>
     <string name="membership_perk_discount_desc" formatted="false">Off every cleaning. Combined with your loyalty tier it is capped at 12%.</string>
     <string name="membership_perk_express_title">Express bookings without the surcharge</string>
-    <string name="membership_perk_express_desc">We waive the 20%% surcharge on express bookings — cleanings that start 2 to 4 hours after you book. Up to %1$d each calendar month while your paid membership is active; unused ones don\'t carry over.</string>
+    <string name="membership_perk_express_desc">We waive the 20%% surcharge on express bookings — cleanings that start 2 to 4 hours after you book. Up to %1$d each calendar month while your membership is active; unused ones don\'t carry over.</string>
 
     <!-- Perk pills on the active management card. -->
     <string name="membership_perk_pill_discount">%1$d%% off</string>
@@ -907,42 +908,42 @@
     <string name="membership_perk_pill_recurring">Recurring</string>
     <string name="membership_perk_pill_express">Express waived · %1$d left</string>
     <string name="membership_perk_pill_express_used">Express waived · none left</string>
-    <string name="membership_perk_pill_express_trial">Express waived · after trial</string>
 
     <!-- Membership management card on Profile -->
     <string name="membership_inactive_title">Cleansia Plus</string>
     <string name="membership_inactive_badge">PLUS</string>
     <string name="membership_inactive_perks_summary" formatted="false">Save on every booking · recurring cleanings</string>
     <string name="membership_inactive_cta">Get Cleansia Plus</string>
+    <string name="membership_inactive_cta_trial">Try %1$d days free</string>
     <!-- Post-purchase success screen (Plus) -->
     <string name="membership_success_title">Welcome to Plus!</string>
     <string name="membership_success_subtitle">Your benefits are active right away. Here\'s what just unlocked:</string>
-    <string name="membership_success_subtitle_trial">Your Cleansia Plus trial has started.</string>
-    <string name="membership_trial_perks_title">What a paid membership includes</string>
-    <string name="membership_trial_perks_note">None of these apply during the trial — they start only once a paid month begins.</string>
+    <string name="membership_success_subtitle_trial">Your free trial runs until %1$s, and your benefits are active right away. Here\'s what just unlocked:</string>
     <string name="membership_success_perks_header">YOUR PLUS PERKS</string>
-    <string name="membership_success_perk_express">Express bookings with the surcharge waived — from your first paid month</string>
+    <string name="membership_success_perk_express">Express bookings with the surcharge waived</string>
     <string name="membership_success_cta_setup_recurring">Set up a recurring cleaning</string>
     <string name="membership_success_cta_back_home">Back to home</string>
     <string name="membership_active_status">Active</string>
     <string name="membership_renews_on">Renews on %1$s</string>
+    <string name="membership_trial_until">Free trial until %1$s</string>
     <string name="membership_cancelled_until">Active until %1$s</string>
-    <string name="membership_cancel_success_trial">Membership cancelled — no paid month follows, so you won\'t be charged.</string>
+    <string name="membership_cancel_success_trial">Cleansia Plus cancelled — you won\'t be charged, and your benefits run until the trial ends.</string>
     <string name="membership_cancel_success_now">Cleansia Plus cancelled — nothing more will be charged.</string>
     <string name="membership_active_until">Active until %1$s</string>
     <string name="membership_status_ending">Cancellation requested</string>
     <string name="membership_status_ending_badge">ENDING</string>
     <string name="membership_status_active_badge">PLUS · ACTIVE</string>
     <string name="membership_then_ends_hint">Plus benefits stop on this date.</string>
-    <string name="membership_trial_cancelled_lead">Since you cancelled during the trial, no paid month follows and none of the Plus benefits start.</string>
+    <string name="membership_trial_cancelled_lead">Cancelled during the trial, so you won\'t be charged. Plus benefits stop on this date.</string>
     <string name="membership_auto_renew_hint">Auto-renews. If you cancel, the benefits run until this date.</string>
+    <string name="membership_trial_first_charge_hint">Every Plus benefit applies now. Billing starts on this date unless you cancel before it.</string>
     <string name="membership_status_past_due_badge">PAYMENT FAILED</string>
     <string name="membership_past_due_title">Payment failed — benefits paused</string>
     <string name="membership_past_due_body">We couldn\'t charge your renewal, so your Plus benefits are paused. If a retried payment goes through, they resume. If you cancel, the membership ends right away and nothing more is charged.</string>
     <string name="membership_cancel_action">Cancel subscription</string>
     <string name="membership_cancel_dialog_title">Cancel Cleansia Plus?</string>
     <string name="membership_cancel_dialog_message">Your benefits remain until the end of the current billing period. You won\'t be charged again.</string>
-    <string name="membership_cancel_dialog_message_trial">Your trial ends on %1$s. No paid month follows, so you won\'t be charged and no Plus benefit starts.</string>
+    <string name="membership_cancel_dialog_message_trial">Your trial ends on %1$s, and your benefits stay until then. No payment follows, so you won\'t be charged.</string>
     <string name="membership_cancel_dialog_message_now">Your membership ends right away. The unpaid renewal is not charged, and nothing more will be.</string>
     <string name="membership_cancel_dialog_confirm">Cancel</string>
     <string name="membership_subscribed_success">Welcome to Cleansia Plus!</string>

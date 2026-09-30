@@ -3,18 +3,17 @@ package cz.cleansia.customer.features.membership
 import cz.cleansia.customer.core.memberships.ExpressWaiver
 import cz.cleansia.customer.core.memberships.ExpressWaiverStatus
 import cz.cleansia.customer.core.memberships.GetMyMembershipResponse
-import kotlinx.datetime.Instant
+import kotlin.time.Duration.Companion.days
+import kotlinx.datetime.Clock
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class MembershipPerksTest {
 
-    private val now = Instant.parse("2026-08-05T10:00:00Z")
-
     @Test
     fun `inactive membership carries no perks`() {
-        assertEquals(emptyList<MembershipPerk>(), MembershipPerks.resolve(inactive, now))
+        assertEquals(emptyList<MembershipPerk>(), MembershipPerks.resolve(inactive))
     }
 
     @Test
@@ -25,7 +24,7 @@ class MembershipPerksTest {
                 MembershipPerk.FreeCancellation(hours = 4),
                 MembershipPerk.Recurring,
             ),
-            MembershipPerks.resolve(active, now),
+            MembershipPerks.resolve(active),
         )
     }
 
@@ -33,7 +32,7 @@ class MembershipPerksTest {
     fun `zero discount is omitted`() {
         assertEquals(
             listOf(MembershipPerk.FreeCancellation(hours = 4), MembershipPerk.Recurring),
-            MembershipPerks.resolve(active.copy(discountPercentage = 0.0), now),
+            MembershipPerks.resolve(active.copy(discountPercentage = 0.0)),
         )
     }
 
@@ -41,7 +40,7 @@ class MembershipPerksTest {
     fun `missing discount is omitted`() {
         assertEquals(
             listOf(MembershipPerk.FreeCancellation(hours = 4), MembershipPerk.Recurring),
-            MembershipPerks.resolve(active.copy(discountPercentage = null), now),
+            MembershipPerks.resolve(active.copy(discountPercentage = null)),
         )
     }
 
@@ -49,7 +48,7 @@ class MembershipPerksTest {
     fun `zero cancellation window is omitted`() {
         assertEquals(
             listOf(MembershipPerk.Discount(percent = 5), MembershipPerk.Recurring),
-            MembershipPerks.resolve(active.copy(freeCancellationWindowHours = 0), now),
+            MembershipPerks.resolve(active.copy(freeCancellationWindowHours = 0)),
         )
     }
 
@@ -57,7 +56,7 @@ class MembershipPerksTest {
     fun `missing cancellation window is omitted`() {
         assertEquals(
             listOf(MembershipPerk.Discount(percent = 5), MembershipPerk.Recurring),
-            MembershipPerks.resolve(active.copy(freeCancellationWindowHours = null), now),
+            MembershipPerks.resolve(active.copy(freeCancellationWindowHours = null)),
         )
     }
 
@@ -65,7 +64,7 @@ class MembershipPerksTest {
     fun `fractional discount truncates to whole percent`() {
         assertEquals(
             listOf(MembershipPerk.Discount(percent = 7), MembershipPerk.Recurring),
-            MembershipPerks.resolve(active.copy(discountPercentage = 7.9, freeCancellationWindowHours = null), now),
+            MembershipPerks.resolve(active.copy(discountPercentage = 7.9, freeCancellationWindowHours = null)),
         )
     }
 
@@ -77,10 +76,10 @@ class MembershipPerksTest {
     @Test
     fun `the express flag alone resolves no perk`() {
         assertTrue(active.allowsExpressUpgrade == true)
-        assertEquals(3, MembershipPerks.resolve(active, now).size)
+        assertEquals(3, MembershipPerks.resolve(active).size)
         assertEquals(
-            MembershipPerks.resolve(active, now),
-            MembershipPerks.resolve(active.copy(allowsExpressUpgrade = false), now),
+            MembershipPerks.resolve(active),
+            MembershipPerks.resolve(active.copy(allowsExpressUpgrade = false)),
         )
     }
 
@@ -93,7 +92,7 @@ class MembershipPerksTest {
                 MembershipPerk.Recurring,
                 MembershipPerk.Express(ExpressWaiver(ExpressWaiverStatus.Available, remaining = 2)),
             ),
-            MembershipPerks.resolve(withExpress, now),
+            MembershipPerks.resolve(withExpress),
         )
     }
 
@@ -101,20 +100,19 @@ class MembershipPerksTest {
     fun `an exhausted member still sees the perk, reported as used up`() {
         assertEquals(
             MembershipPerk.Express(ExpressWaiver(ExpressWaiverStatus.Exhausted, remaining = 0)),
-            MembershipPerks.resolve(withExpress.copy(expressUpgradesRemaining = 0), now).last(),
+            MembershipPerks.resolve(withExpress.copy(expressUpgradesRemaining = 0)).last(),
         )
     }
 
     @Test
-    fun `a trialing member sees the perk, reported as not started`() {
+    fun `a trialing member sees the perk with the waivers left`() {
         assertEquals(
-            MembershipPerk.Express(ExpressWaiver(ExpressWaiverStatus.Trial, remaining = 0)),
+            MembershipPerk.Express(ExpressWaiver(ExpressWaiverStatus.Available, remaining = 2)),
             MembershipPerks.resolve(
                 withExpress.copy(
-                    trialEndsAtUtc = Instant.parse("2026-08-06T10:00:00Z"),
-                    expressUpgradesRemaining = 0,
+                    trialEndsAtUtc = Clock.System.now() + 7.days,
+                    expressUpgradesRemaining = 2,
                 ),
-                now,
             ).last(),
         )
     }
@@ -127,7 +125,7 @@ class MembershipPerksTest {
                 MembershipPerk.FreeCancellation(hours = 4),
                 MembershipPerk.Recurring,
             ),
-            MembershipPerks.resolve(active.copy(cancelRequested = true), now),
+            MembershipPerks.resolve(active.copy(cancelRequested = true)),
         )
     }
 

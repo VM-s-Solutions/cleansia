@@ -31,6 +31,10 @@ public class Constants
         public const string PaymentIntentPaymentFailed = "payment_intent.payment_failed";
         public const string PaymentIntentCanceled = "payment_intent.canceled";
 
+        // A card saved as the guarantee for cash bookings: the mobile PaymentSheet confirms a SetupIntent,
+        // and the web's setup-mode Checkout Session completes as CompletedSession with Mode "setup".
+        public const string SetupIntentSucceeded = "setup_intent.succeeded";
+
         // Subscription lifecycle for Cleansia Plus. Stripe is the source of
         // truth — local UserMembership rows are mirrors that webhook handlers
         // keep in sync. We act on these four; trialing / paused / etc. fold

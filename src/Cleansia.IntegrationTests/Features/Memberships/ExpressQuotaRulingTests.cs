@@ -270,7 +270,7 @@ public class ExpressQuotaRulingTests(PostgresContainerFixture fixture) : BaseInt
     private static Task<OrderPricingResult> PriceAsync(
         IOrderPricingCalculator pricing, DateTime cleaningUtc)
         => pricing.CalculateAsync(
-            [ServiceId], [], [], rooms: 0, bathrooms: 0, CurrencyId, cleaningUtc, UserId, AugustUtc,
+            [ServiceId], [], [], rooms: 0, bathrooms: 0, dirtinessLevel: DirtinessLevel.Normal, CurrencyId, cleaningUtc, UserId, AugustUtc,
             CancellationToken.None);
 
     private static IMembershipBenefitUsageRepository Repository(IServiceProvider provider)
@@ -294,7 +294,8 @@ public class ExpressQuotaRulingTests(PostgresContainerFixture fixture) : BaseInt
 
     /// <summary>
     /// Cancel-and-resubscribe. The two writes commit separately because the enrolment invariant is a
-    /// PostgreSQL unique INDEX on <c>(TenantId, UserId) WHERE Status = Active</c>, and an index — unlike
+    /// PostgreSQL unique INDEX on <c>(TenantId, UserId)</c> over the live statuses (Active, PastDue,
+    /// Paused), and an index — unlike
     /// a constraint — cannot be deferred to commit, so the replacement INSERT must not be batched ahead
     /// of the cancellation UPDATE.
     /// </summary>

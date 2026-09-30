@@ -5,6 +5,8 @@ using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.Contracts;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Queue.Abstractions;
+using Cleansia.Core.Queue.Abstractions.Messages;
 
 namespace Cleansia.Core.AppServices.Services;
 
@@ -15,7 +17,8 @@ public sealed class WorkContractAcceptor(
     IEmployeeActionAuditRepository employeeActionAuditRepository,
     IRequestMetadataProvider requestMetadataProvider,
     IUserSessionProvider userSessionProvider,
-    IHostAudienceProvider hostAudienceProvider) : IWorkContractAcceptor
+    IHostAudienceProvider hostAudienceProvider,
+    IPendingDispatch pending) : IWorkContractAcceptor
 {
     public async Task<WorkContractAcceptance> StageAsync(
         Order order, OrderEmployee seat, string textId, CancellationToken cancellationToken)
@@ -31,7 +34,7 @@ public sealed class WorkContractAcceptor(
                 $"Text '{textId}' is not a text of order {order.Id}'s work-contract document '{order.WorkContractDocumentId}'.");
         }
 
-        var facts = await factsBuilder.BuildAsync(order.Id, cancellationToken)
+        var facts = await factsBuilder.BuildAsync(order.Id, seat.EmployeeId, cancellationToken)
             ?? throw new InvalidOperationException($"Order {order.Id} has no facts to freeze on its acceptance.");
 
         // The device is the session's signed claim or nothing — never the X-Device-Id header, which is
@@ -59,6 +62,13 @@ public sealed class WorkContractAcceptor(
         var audit = EmployeeActionAudit.Create(seat.EmployeeId, order.Id, EmployeeAuditAction.ContractAccepted);
         audit.TenantId = order.TenantId;
         employeeActionAuditRepository.Add(audit);
+
+        // Staged with the row, so a copy is sent only for an acceptance that committed.
+        var key = MessageKeys.WorkContractEmail(acceptance.Id);
+        pending.Enqueue(QueueNames.SendEmail,
+            new QueueEnvelope<SendWorkContractEmailMessage>(key, order.TenantId,
+                new SendWorkContractEmailMessage(acceptance.Id, order.TenantId)),
+            key);
 
         return acceptance;
     }

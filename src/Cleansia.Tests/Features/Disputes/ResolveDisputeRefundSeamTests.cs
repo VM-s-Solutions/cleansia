@@ -31,6 +31,8 @@ public class ResolveDisputeRefundSeamTests
     private readonly Mock<IUserSessionProvider> _session = new();
     private readonly Mock<IRefundService> _refundService = new();
     private readonly Mock<INotificationProducer> _producer = new();
+    private readonly Mock<ICreditAccountRepository> _creditAccountRepository = new();
+    private readonly Mock<IOrderEmployeePayRepository> _payRepository = new();
 
     public ResolveDisputeRefundSeamTests()
     {
@@ -40,7 +42,8 @@ public class ResolveDisputeRefundSeamTests
     private readonly AuditContext _auditContext = new();
 
     private ResolveDispute.Handler CreateHandler() =>
-        new(_disputeRepository.Object, _session.Object, _refundService.Object, _producer.Object, _auditContext);
+        new(_disputeRepository.Object, _session.Object, _refundService.Object, Mock.Of<IRefundRepository>(),
+            _creditAccountRepository.Object, _payRepository.Object, _producer.Object, _auditContext);
 
     private static Dispute NewPendingDispute()
     {

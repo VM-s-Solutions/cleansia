@@ -64,6 +64,16 @@ public class OrderRedactionSurfaceTests
         // What the customer still owes for a cancellation is between the customer and the company.
         nameof(OrderItem.CancellationFeeRate),
         nameof(OrderItem.CancellationFeeOwed),
+        // The customer's confirmation, and who took the customer's cash and how much, are between the
+        // customer, the crew and the company.
+        nameof(OrderItem.NeedsConfirmation),
+        nameof(OrderItem.CashCollectedAt),
+        nameof(OrderItem.CashCollectedByName),
+        nameof(OrderItem.CashCollectedAmount),
+        // A crew member's report that they cannot get in, and the calls they made, are the crew's, the
+        // customer's and the company's.
+        nameof(OrderItem.LockoutReportedAt),
+        nameof(OrderItem.LockoutCallAttempts),
     ];
 
     private static readonly string[] DetailReshaped =
@@ -117,6 +127,9 @@ public class OrderRedactionSurfaceTests
         nameof(OrderItem.EstimatedCleanerPay),
         nameof(OrderItem.IsAssignedToCurrentUser),
         nameof(OrderItem.HasAfterPhotos),
+        // How dirty the home is and what that added to the price: a cleaner decides on the job with it.
+        nameof(OrderItem.DirtinessLevel),
+        nameof(OrderItem.DirtinessSurchargeAmount),
         // Kept, and safe to keep BECAUSE the mapper gates it. The column behind this field also
         // carries an admin's free-text cancellation note, which is written by staff for staff and
         // would be a leak here — so OrderMappers only surfaces it when CancelledBy is System, where
@@ -167,6 +180,8 @@ public class OrderRedactionSurfaceTests
         nameof(OrderListItem.AssignedEmployeesCount),
         nameof(OrderListItem.HasAvailableSpots),
         nameof(OrderListItem.EstimatedCleanerPay),
+        nameof(OrderListItem.DirtinessLevel),
+        nameof(OrderListItem.DirtinessSurchargeAmount),
         // Kept, not blanked: a bare bool saying the order carries a review. It names no author, no
         // rating and no text — a browsing cleaner learns only that someone reviewed a job, which the
         // public rating average already implies. The review CONTENT stays where it was, on the detail
@@ -415,7 +430,15 @@ public class OrderRedactionSurfaceTests
                     "acceptance-1", "assignment-1", "employee-1", DateTimeOffset.UtcNow.AddDays(-2), "2026-09-20", "cs"),
             ],
             CancellationFeeRate: 0.25m,
-            CancellationFeeOwed: 250m);
+            CancellationFeeOwed: 250m,
+            NeedsConfirmation: true,
+            CashCollectedAt: new DateTime(2026, 8, 20, 11, 55, 0, DateTimeKind.Utc),
+            CashCollectedByName: "Petra Svobodova",
+            CashCollectedAmount: 1500m,
+            DirtinessLevel: DirtinessLevel.Heavy,
+            DirtinessSurchargeAmount: 540m,
+            LockoutReportedAt: new DateTime(2026, 8, 20, 9, 20, 0, DateTimeKind.Utc),
+            LockoutCallAttempts: "Called 09:05, 09:10 and 09:15, no answer; rang the bell twice");
 
     private static OrderListItem FullyPopulatedListItem() =>
         new(
@@ -455,5 +478,7 @@ public class OrderRedactionSurfaceTests
             EstimatedCleanerPay: 620m,
             CustomerAddressLatitude: 50.0755,
             CustomerAddressLongitude: 14.4378,
-            HasReview: true);
+            HasReview: true,
+            DirtinessLevel: DirtinessLevel.Heavy,
+            DirtinessSurchargeAmount: 540m);
 }

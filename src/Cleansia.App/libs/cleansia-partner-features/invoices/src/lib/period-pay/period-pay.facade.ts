@@ -3,6 +3,7 @@ import { FormControl } from '@angular/forms';
 import { ICleansiaSelectOption } from '@cleansia/components';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
+  CashHeldDto,
   PartnerClient,
   PayPeriodDto,
   PeriodPaySummaryDto,
@@ -30,6 +31,9 @@ export class PeriodPayFacade extends UnsubscribeControlDirective {
   readonly selectedPeriodId = signal<string | null>(null);
   readonly periodCurrencies = signal<PeriodCurrency[]>([]);
   readonly selectedCurrencyId = signal<string | null>(null);
+  readonly cashHeld = signal<CashHeldDto[]>([]);
+  readonly cashHeldLoading = signal<boolean>(false);
+  readonly cashHeldError = signal<boolean>(false);
 
   readonly periodOptions = computed<ICleansiaSelectOption[]>(() =>
     this.payPeriods()
@@ -77,6 +81,7 @@ export class PeriodPayFacade extends UnsubscribeControlDirective {
   init(): void {
     this.initialLoading.set(true);
     this.hasError.set(false);
+    this.loadCashHeld();
 
     this.partnerClient.employeeClient
       .getCurrentEmployee()
@@ -93,6 +98,27 @@ export class PeriodPayFacade extends UnsubscribeControlDirective {
           this.loadPayPeriods();
         } else {
           this.initialLoading.set(false);
+        }
+      });
+  }
+
+  loadCashHeld(): void {
+    this.cashHeldLoading.set(true);
+    this.cashHeldError.set(false);
+
+    this.partnerClient.employeePayrollClient
+      .getCashHeld()
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError(() => {
+          this.cashHeldError.set(true);
+          return of(null);
+        }),
+        finalize(() => this.cashHeldLoading.set(false))
+      )
+      .subscribe((held) => {
+        if (held) {
+          this.cashHeld.set(held);
         }
       });
   }

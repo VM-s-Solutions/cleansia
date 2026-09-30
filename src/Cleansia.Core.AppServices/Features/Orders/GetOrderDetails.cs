@@ -133,8 +133,11 @@ public class GetOrderDetails
             var isAdminCaller = role == UserProfile.Administrator.ToString();
 
             // One per CURRENT seat with a row; a dropped seat's row is history and is read by its own id.
-            var acceptances = await workContractAcceptanceRepository.GetForSeatsAsync(
-                order.AssignedEmployees.Select(ae => ae.Id).ToList(), cancellationToken);
+            // The contract binds the company and the cleaner, so the customer reads none.
+            var acceptances = isCustomerCaller
+                ? []
+                : await workContractAcceptanceRepository.GetForSeatsAsync(
+                    order.AssignedEmployees.Select(ae => ae.Id).ToList(), cancellationToken);
 
             var detail = order.MapToDetail(
                 estimatedCleanerPay,
@@ -155,6 +158,12 @@ public class GetOrderDetails
                 return BusinessResult.Success(detail.RedactForBrowsingCleaner());
             }
 
+            if (isAssignedToCurrentUser
+                && !Order.CustomerDetailsOpenToCrew(order.CurrentStatus, order.CompletedAt, DateTime.UtcNow))
+            {
+                return BusinessResult.Success(detail.RedactForPastJob(callerEmployeeId!));
+            }
+
             // First read only: the partner app fetches this detail again on every resume and refresh.
             if (isAssignedToCurrentUser && !string.IsNullOrWhiteSpace(detail.AccessInstructions))
             {
@@ -171,9 +180,22 @@ public class GetOrderDetails
                 {
                     CancellationFeeRate = order.CancellationFeeRate,
                     CancellationFeeOwed = CancellationAssessor.FeeOwed(order),
+                    CashCollectedAt = order.CashCollectedAt,
+                    CashCollectedByName = await ResolveCashCollectorNameAsync(order, cancellationToken),
+                    CashCollectedAmount = order.CashCollectedAmount,
                 }).WithholdAccessInstructions()
                 : detail);
         }
+
+        private async Task<string?> ResolveCashCollectorNameAsync(Order order, CancellationToken cancellationToken) =>
+            string.IsNullOrEmpty(order.CollectedByEmployeeId)
+                ? null
+                : await employeeRepository.GetQueryableIgnoringTenant()
+                    .AsNoTracking()
+                    // The collector's id comes from the administrator's authorized order.
+                    .Where(e => e.Id == order.CollectedByEmployeeId && e.User != null)
+                    .Select(e => (e.User!.FirstName + " " + e.User.LastName).Trim())
+                    .FirstOrDefaultAsync(cancellationToken);
 
         // The authorized order pins this cross-company lookup; only the company name is returned.
         private async Task<string?> ResolveCustomerCompanyAsync(Order order, CancellationToken cancellationToken)

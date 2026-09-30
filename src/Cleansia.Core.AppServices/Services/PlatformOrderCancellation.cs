@@ -54,9 +54,9 @@ public sealed class PlatformOrderCancellation(
         }
         else if (order.PaymentStatus != PaymentStatus.Paid)
         {
-            // The card was never charged, so there is nothing to refund - but credit WAS taken at
-            // checkout and is the only money this customer actually paid. A platform cancellation is
-            // fee-free anyway, so all of it comes back.
+            // No card refund here - the card was never charged, or has already been partly refunded - but
+            // credit WAS taken at checkout. A platform cancellation is fee-free, so whatever of it has
+            // not already come back on a refund's credit leg comes back now.
             await creditAccountRepository.ReturnUnpaidOrderCreditAsync(order, actorId, cancellationToken);
         }
 

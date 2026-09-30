@@ -268,6 +268,22 @@ class MembershipWireTest {
         assertEquals(false, answer?.cancelRequested)
     }
 
+    /**
+     * A failed renewal is still a live enrolment — the server refuses a second subscription while it
+     * lives — but no benefit runs until it is paid or cancelled.
+     */
+    @Test
+    fun aPastDueOrPausedAnswerIsALiveEnrolmentWithItsBenefitsPaused() = runTest {
+        mapOf(1 to false, 2 to true, 4 to true).forEach { (code, paused) ->
+            val answer = mine(withKey(CAPTURED_MINE, "status", JsonPrimitive(code)))
+
+            assertEquals(true, answer?.hasMembership)
+            assertEquals(code, answer?.status)
+            assertEquals("status $code", paused, answer?.benefitsPaused)
+        }
+        assertEquals(false, mine(CAPTURED_NON_MEMBER)?.benefitsPaused)
+    }
+
     @Test
     fun everySurvivingPlanKeepsTheCodeTheWireCarried() = runTest {
         assertEquals(listOf("plus-annual", "plus-monthly"), loadedPlans(CAPTURED_PLANS).map { it.code })

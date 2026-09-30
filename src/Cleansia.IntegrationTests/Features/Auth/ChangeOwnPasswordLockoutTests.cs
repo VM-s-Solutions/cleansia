@@ -24,7 +24,7 @@ namespace Cleansia.IntegrationTests.Features.Auth;
 public class ChangeOwnPasswordLockoutTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
 {
     private const string CurrentPassword = Constants.TestUserSession.TestUserPassword;
-    private const string NewPassword = "BrandNew123";
+    private const string NewPassword = "BrandNew1234";
 
     private static User CallerWithCurrentPassword()
     {

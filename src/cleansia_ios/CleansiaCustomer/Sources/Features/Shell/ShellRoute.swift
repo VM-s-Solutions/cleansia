@@ -3,8 +3,6 @@
 /// retires the iOS-16 sibling-typed-path crash class).
 enum ShellRoute: Hashable, Codable {
     case orderDetail(String)
-    /// The accepted contract for work behind one crew member's acceptance line on the order detail.
-    case workContract(acceptanceId: String)
     case subscribePlus
     case membershipSuccess
     case recurringList
@@ -15,10 +13,12 @@ enum ShellRoute: Hashable, Codable {
     /// Non-optional on purpose: a dispute is always ABOUT an order, and
     /// `CreateDisputeViewModel.submit` cannot post without one. Making the id
     /// optional is what let the disputes-list "+" push a form that could never
-    /// be submitted — the type now makes that route unrepresentable.
-    case createDispute(orderId: String)
+    /// be submitted — the type now makes that route unrepresentable. `reason` preselects one of
+    /// `DisputeReasonOption`'s values.
+    case createDispute(orderId: String, reason: Int? = nil)
     case disputeDetail(String)
     case addresses
+    case payments
     case editProfile(showBookingHint: Bool)
     case devices
     case notifications

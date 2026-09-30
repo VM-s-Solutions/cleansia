@@ -70,5 +70,6 @@ public record AdminEmployeeDetail(
     /// cleaner and readable by nobody — so a second admin could not see it existed, and the cleaner's
     /// only feedback was a refusal at the moment they tried to take work.</para>
     /// </summary>
-    int? WeeklyOrderLimit
+    int? WeeklyOrderLimit,
+    string? WeeklyOrderLimitReason = null
 );

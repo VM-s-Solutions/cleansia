@@ -37,6 +37,7 @@ Rule partials, forwarded through `common/index.scss` (in load order):
 | Partial | Declares |
 |---|---|
 | `variables.scss` | every `--cleansia-*` custom property: the primary ramp, the neutral / text tokens, the error / success / warning ramps, `--cleansia-radius-{sm,md,lg,xl}` (6 / 12 / 16 / 24), `--cleansia-shadow-{1,2}`, `--cleansia-border`, `--cleansia-text-muted`. A stylesheet reads a token, never a hex; a token read here is declared here (checker rule F9). |
+| `web-fonts.scss` | the self-hosted Nunito `@font-face` rules (normal and italic, variable weight); the files are `libs/shared/assets/src/fonts/*.woff2`, copied to `/assets/fonts` by each app's `project.json`. Poppins is the customer app's own, in `pages/cleansia-customer/_web-fonts.scss` |
 | `sizing.scss` | the body reset and `.h-fit-content` |
 | `error.scss` | `.cleansia-error-message-container` — the field-error list under a `cleansia-*` control |
 | `font.scss` | `$base-font-size: 14px` and the base font rules |

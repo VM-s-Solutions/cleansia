@@ -136,7 +136,7 @@ distance component was removed keep the figures they were calculated with.
 **Override for a specific employee**:
 
 1. Admin opens Employee Detail → Pay Configuration
-2. Picks "Senior" grade + CZK currency
+2. Picks the "Expert" rate template + CZK currency
 3. Clicks "Apply to All"
-4. The system creates per-employee configs for every service and package, multiplying global base prices by `1.0x`
+4. The system creates per-employee configs for every service and package, multiplying the CZK list prices by `0.7x`
 5. The admin can then manually edit individual rows to give this employee custom rates for specific services

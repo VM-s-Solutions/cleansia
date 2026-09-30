@@ -2,6 +2,7 @@ package cz.cleansia.customer.features.orders
 
 import androidx.annotation.StringRes
 import cz.cleansia.customer.R
+import kotlinx.datetime.Instant
 
 /**
  * Local presentation enums for the Orders feature. Mirrors backend
@@ -45,12 +46,25 @@ fun orderStatusFromValue(value: Int?): OrderStatus? = when (value) {
 /**
  * The statuses a customer may cancel from — everything the server's `CancellationAssessor` does not
  * refuse, which is every status before a cleaner has started work. One function for the signed-in
- * and the guest surface: the two used to stop at different statuses.
+ * and the guest surface: the two used to stop at different statuses. The assessor also refuses a
+ * staffed order past its start; [customerAwaitsCleanerPastStart] is that half.
  */
 fun customerCanCancelOrder(statusValue: Int?): Boolean = when (orderStatusFromValue(statusValue)) {
     OrderStatus.New, OrderStatus.Pending, OrderStatus.Confirmed, OrderStatus.OnTheWay -> true
     else -> false
 }
+
+/**
+ * Past the booked start with a cleaner on the job and nobody started: the server refuses a cancel
+ * (`order.start_passed_cannot_cancel`) and the customer reports that the cleaner did not arrive.
+ * → /product/business-rules#cancellation
+ */
+fun customerAwaitsCleanerPastStart(
+    statusValue: Int?,
+    hasCleaner: Boolean,
+    startsAt: Instant?,
+    now: Instant,
+): Boolean = customerCanCancelOrder(statusValue) && hasCleaner && startsAt != null && now >= startsAt
 
 /**
  * Localized label key for an order status value. Keep in sync with the wire

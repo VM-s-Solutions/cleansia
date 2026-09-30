@@ -31,7 +31,7 @@ public class ChangeOwnPasswordTests
     private const string CallerId = "admin-caller";
     private const string OtherAdminId = "admin-other";
     private const string CurrentPassword = "Curr3ntPass";
-    private const string NewPassword = "BrandNew123";
+    private const string NewPassword = "BrandNew1234";
 
     private static readonly Func<object?, object?> WriteConversion = new PasswordConverter().ConvertToProvider;
 
@@ -73,6 +73,18 @@ public class ChangeOwnPasswordTests
             "The new password must verify against the single-hashed stored value (login-path compare).");
         Assert.False(CurrentPassword.VerifyPassword(stored!),
             "The old password must no longer verify.");
+    }
+
+    [Fact]
+    public async Task Correct_Current_Password_Clears_The_First_Sign_In_Password_Change()
+    {
+        var caller = ArrangeCaller();
+        caller.RequirePasswordChange();
+
+        var result = await InvokeHandler(new ChangeOwnPassword.Command(CurrentPassword, NewPassword));
+
+        Assert.True(result.IsSuccess);
+        Assert.False(caller.MustChangePassword);
     }
 
     [Fact]
@@ -237,6 +249,29 @@ public class ChangeOwnPasswordTests
 
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.InvalidPasswordFormat);
+    }
+
+    [Fact]
+    public async Task An_Eleven_Character_New_Password_Fails_With_AdminPasswordTooShort()
+    {
+        var validator = new ChangeOwnPassword.Validator();
+
+        var result = await validator.ValidateAsync(new ChangeOwnPassword.Command(CurrentPassword, "BrandNew123"));
+
+        var error = Assert.Single(result.Errors);
+        Assert.Equal(BusinessErrorMessage.AdminPasswordTooShort, error.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task A_New_Password_Equal_To_The_Current_One_Fails_With_SameResetPassword()
+    {
+        var validator = new ChangeOwnPassword.Validator();
+
+        var result = await validator.ValidateAsync(new ChangeOwnPassword.Command(NewPassword, NewPassword));
+
+        var error = Assert.Single(result.Errors);
+        Assert.Equal(nameof(ChangeOwnPassword.Command.NewPassword), error.PropertyName);
+        Assert.Equal(BusinessErrorMessage.SameResetPassword, error.ErrorMessage);
     }
 
     [Fact]

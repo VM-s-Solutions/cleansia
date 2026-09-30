@@ -9,6 +9,7 @@ import cz.cleansia.customer.api.model.DisputeEvidenceDto as GenDisputeEvidenceDt
 import cz.cleansia.customer.api.model.DisputeListItem as GenDisputeListItem
 import cz.cleansia.customer.api.model.DisputeMessageDto as GenDisputeMessageDto
 import cz.cleansia.customer.api.model.DisputeReason as GenDisputeReason
+import cz.cleansia.customer.api.model.DisputeSettlementPreference as GenDisputeSettlementPreference
 import cz.cleansia.customer.api.model.PagedDataOfDisputeListItem as GenPagedDisputes
 import cz.cleansia.customer.api.model.UploadDisputeEvidenceResponse as GenUploadDisputeEvidenceResponse
 import cz.cleansia.customer.core.user.toAppDto
@@ -68,6 +69,7 @@ class DisputeApi(
                 lines = body.lines?.takeIf { it.isNotEmpty() }?.map {
                     GenDisputeLineSelection(serviceId = it.serviceId, packageId = it.packageId)
                 },
+                settlementPreference = body.settlementPreference.toWire(),
             ),
         ).mapWire { it?.disputeId.required("disputeId") }
 
@@ -201,6 +203,11 @@ private fun GenUploadDisputeEvidenceResponse?.toAppDto(): UploadDisputeEvidenceR
             uploadedOn = uploadedOn?.toString(),
         )
     }
+
+private fun DisputeSettlement.toWire(): GenDisputeSettlementPreference = when (this) {
+    DisputeSettlement.CardRefund -> GenDisputeSettlementPreference._1
+    DisputeSettlement.Credit -> GenDisputeSettlementPreference._2
+}
 
 private fun Int.toWireReason(): GenDisputeReason? = when (this) {
     1 -> GenDisputeReason._1

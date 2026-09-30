@@ -1,10 +1,12 @@
 using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.AppServices.Features.Refunds;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Credit;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
+using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
@@ -149,11 +151,13 @@ public class CancelUnfilledOrdersCreditReturnTests(PostgresContainerFixture fixt
         await using var ctx = NewContext();
         var handler = new CancelUnfilledOrders.Handler(
             new OrderRepository(ctx),
-            new CreditAccountRepository(ctx),
-            NewRefundService(ctx),
-            new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx), new UserRepository(ctx), NullLogger<NotificationProducer>.Instance),
-            new GuestOrderAccessTokenIssuer(new GuestOrderAccessTokenRepository(ctx)),
-            new OutboxPendingDispatch(ctx),
+            new CleanerNoShowCancellation(
+                new CreditAccountRepository(ctx),
+                NewRefundService(ctx),
+                new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx), new UserRepository(ctx), NullLogger<NotificationProducer>.Instance),
+                new GuestOrderAccessTokenIssuer(new GuestOrderAccessTokenRepository(ctx)),
+                new OutboxPendingDispatch(ctx),
+                NullLogger<CleanerNoShowCancellation>.Instance),
             new FixedTenantProvider(TestTenants.Default),
             ctx,
             NullLogger<CancelUnfilledOrders.Handler>.Instance);
@@ -308,6 +312,118 @@ public class CancelUnfilledOrdersCreditReturnTests(PostgresContainerFixture fixt
         Assert.Equal(Credit + Apology, account.Balance);
         Assert.Equal(account.Balance, account.Transactions.Sum(t => t.Amount));
         Assert.Equal(OrderStatus.Cancelled, order.CurrentStatus);
+    }
+
+    /// <summary>
+    /// The hourly watchdog re-drives the refund the sweep left pending, on its own key: the card comes
+    /// back once and the credit, already returned by the sweep, is not returned a second time.
+    /// </summary>
+    [Fact]
+    public async Task The_Hourly_Redrive_Refunds_The_Card_A_Failed_Sweep_Left_Pending_Once()
+    {
+        await ResetAsync();
+        var userId = await SeedAsync();
+        _stripe.SetupSequence(s => s.RefundPaymentIntentAsync(
+                PaymentIntentId, It.IsAny<decimal>(), RefundKey, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new StripeException("card network unavailable"))
+            .Returns(Task.CompletedTask);
+        await SweepAsync();
+        await using (var ctx = NewContext())
+        {
+            await ctx.Database.ExecuteSqlRawAsync(
+                "UPDATE \"Refunds\" SET \"CreatedOn\" = NOW() - INTERVAL '2 hours'");
+        }
+
+        RedrivePendingRefunds.Response redriven;
+        await using (var ctx = NewContext())
+        {
+            var watchdog = new RedrivePendingRefunds.Handler(
+                new RefundRepository(ctx),
+                NewRefundService(ctx),
+                new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx), new UserRepository(ctx), NullLogger<NotificationProducer>.Instance),
+                Mock.Of<IAdminNotifier>(),
+                new UserNotificationRepository(ctx),
+                new FixedTenantProvider(TestTenants.Default),
+                ctx,
+                NullLogger<RedrivePendingRefunds.Handler>.Instance);
+            var result = await watchdog.Handle(new RedrivePendingRefunds.Command(), CancellationToken.None);
+            Assert.True(result.IsSuccess, result.Error?.Message);
+            redriven = result.Value!;
+        }
+
+        Assert.Equal(1, redriven.Redriven);
+        _stripe.Verify(s => s.RefundPaymentIntentAsync(
+            PaymentIntentId, CardShare, RefundKey, It.IsAny<CancellationToken>()), Times.Exactly(2));
+        var (returns, account, refund, order) = await ReadAsync(userId);
+        Assert.Equal(Credit, Assert.Single(returns).Amount);
+        Assert.Equal(Credit + Apology, account.Balance);
+        Assert.Equal(account.Balance, account.Transactions.Sum(t => t.Amount));
+        Assert.Equal(RefundStatus.Succeeded, refund!.Status);
+        Assert.Equal(PaymentStatus.Refunded, order.PaymentStatus);
+        await using (var ctx = NewContext())
+        {
+            Assert.True(await ctx.Set<UserNotification>().IgnoreQueryFilters()
+                .AnyAsync(n => n.UserId == userId && n.EventKey == NotificationEventCatalog.OrderRefunded));
+        }
+    }
+
+    /// <summary>
+    /// One customer, three unfilled orders, one tick. Two carry no charge surface, so their applied
+    /// credit comes back by a raw statement after an earlier order's apology was written through the
+    /// tracked account — whatever order the tick meets them in. Each order commits on its own, so no
+    /// tracked balance writes back over a raw return and the balance still equals its ledger.
+    /// </summary>
+    [Fact]
+    public async Task Several_Orders_Of_One_Customer_In_One_Tick_Keep_Every_Credit_Movement()
+    {
+        await ResetAsync();
+        var userId = await SeedAsync();
+        await using (var ctx = NewContext())
+        {
+            var account = await new CreditAccountRepository(ctx).EnsureForUserAsync(userId, CzkId, CancellationToken.None);
+            account!.Issue(2 * Credit, CreditTransactionReason.Goodwill, "seed-grant-more", "seed", note: "n");
+            foreach (var orderId in new[] { "order-unfilled-credit-b", "order-unfilled-credit-c" })
+            {
+                var order = Order.Create(
+                    customerName: "Unfilled Credit",
+                    customerEmail: "unfilled-credit@cleansia.test",
+                    customerPhone: "+420000000000",
+                    customerAddress: Address.Create("123 Main St", "Prague", "11000", CountryId),
+                    rooms: 1,
+                    bathrooms: 1,
+                    cleaningDateTime: DateTime.UtcNow.AddHours(-2),
+                    paymentType: PaymentType.Card,
+                    totalPrice: Total,
+                    currencyId: CzkId,
+                    paymentStatus: PaymentStatus.Paid,
+                    userId: userId);
+                order.Id = orderId;
+                order.SetMaxEmployees(1);
+                order.ApplyCredit(Credit, userId);
+                order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));
+                order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Confirmed, order));
+                ctx.Orders.Add(order);
+            }
+
+            await ctx.CommitAsync(CancellationToken.None);
+            foreach (var orderId in new[] { "order-unfilled-credit-b", "order-unfilled-credit-c" })
+            {
+                Assert.True(await new CreditAccountRepository(ctx).TryDebitAsync(
+                    account.Id, Credit, CreditTransactionReason.OrderPayment, $"order-payment-{orderId}", userId,
+                    CancellationToken.None, orderId: orderId));
+            }
+        }
+
+        var response = await SweepAsync();
+
+        Assert.Equal(3, response.CancelledCount);
+        Assert.Equal(3, response.CreditedCount);
+        await using var read = NewContext();
+        var balance = await read.CreditAccounts.IgnoreQueryFilters().AsNoTracking()
+            .Include(a => a.Transactions)
+            .SingleAsync(a => a.UserId == userId && a.CurrencyId == CzkId);
+        Assert.Equal(balance.Transactions.Sum(t => t.Amount), balance.Balance);
+        Assert.Equal(3 * (Credit + Apology), balance.Balance);
     }
 
     private sealed class FixedTenantProvider(string? tenantId) : ITenantProvider

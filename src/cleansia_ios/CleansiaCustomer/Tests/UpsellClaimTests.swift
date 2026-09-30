@@ -36,6 +36,16 @@ final class UpsellClaimTests: XCTestCase {
         "ru": "завершённ"
     ]
 
+    /// Every line that tells the customer the referral points, so every line that says when they arrive.
+    private static let referralRewardKeys = [
+        "home_upsell_referral_title",
+        "booking_referral_code_dialog_helper",
+        "booking_referral_code_dialog_success",
+        "booking_referral_code_dialog_success_named",
+        "loyalty_referral_subtitle",
+        "loyalty_referral_share_text"
+    ]
+
     private var restoreBundle: Bundle?
 
     override func setUp() {
@@ -65,16 +75,21 @@ final class UpsellClaimTests: XCTestCase {
         }
     }
 
-    func testTheReferralSlidePaysBothSidesAfterTheFriendsFirstCompletedCleaning() throws {
+    func testEveryReferralRewardWaitsForTheFriendsFirstCompletedCleaning() throws {
         let points = try Self.referralPointsPerSide()
         try forEachLanguage { language in
-            let value = L10n.localized("home_upsell_referral_title")
             let stem = try XCTUnwrap(Self.completedStem[language])
-            XCTAssertTrue(value.contains(String(points)), "\(language) does not state \(points) points: \(value)")
-            XCTAssertNotNil(
-                value.range(of: stem, options: .caseInsensitive),
-                "\(language) does not wait for a completed cleaning: \(value)"
-            )
+            for key in Self.referralRewardKeys {
+                let value = L10n.localized(key)
+                XCTAssertTrue(
+                    value.contains(String(points)),
+                    "\(key) does not state \(points) points in \(language): \(value)"
+                )
+                XCTAssertNotNil(
+                    value.range(of: stem, options: .caseInsensitive),
+                    "\(key) does not wait for a completed cleaning in \(language): \(value)"
+                )
+            }
         }
     }
 

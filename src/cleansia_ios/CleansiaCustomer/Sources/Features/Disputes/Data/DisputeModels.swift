@@ -2,6 +2,16 @@ import CleansiaCore
 import CleansiaCustomerApi
 import Foundation
 
+/// How an upheld complaint is paid back. A card refund unless the customer chooses credit.
+enum DisputeSettlement: Int, CaseIterable, Identifiable {
+    case cardRefund = 1
+    case credit = 2
+
+    var id: Int {
+        rawValue
+    }
+}
+
 struct DisputesPage: Equatable {
     let items: [DisputeListEntry]
     let total: Int

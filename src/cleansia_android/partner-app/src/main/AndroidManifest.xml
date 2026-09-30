@@ -29,6 +29,16 @@
         android:name="android.hardware.camera"
         android:required="false" />
 
+    <!-- Without it, API 30+ hides every browser, so a page on the partner host (which this app
+         claims below) falls back to an implicit intent the app can catch itself. -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="https" />
+        </intent>
+    </queries>
+
     <application
         android:name=".CleansiaPartnerApp"
         android:allowBackup="false"

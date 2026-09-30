@@ -13,14 +13,14 @@ public class UserMembershipRepository(CleansiaDbContext context)
             .ThenByDescending(m => m.CreatedOn).ThenByDescending(m => m.Id)
             .FirstOrDefaultAsync(cancellationToken);
 
-    public Task<UserMembership?> GetActiveForUserAsync(string userId, CancellationToken cancellationToken)
+    public Task<UserMembership?> GetLifecycleForUserAsync(string userId, CancellationToken cancellationToken)
     {
-        return ActiveForUserQuery(userId).FirstOrDefaultAsync(cancellationToken);
+        return LifecycleForUserQuery(userId).FirstOrDefaultAsync(cancellationToken);
     }
 
-    public Task<UserMembership?> GetActiveForUserNoTrackingAsync(string userId, CancellationToken cancellationToken)
+    public Task<UserMembership?> GetLifecycleForUserNoTrackingAsync(string userId, CancellationToken cancellationToken)
     {
-        return ActiveForUserQuery(userId).AsNoTracking().FirstOrDefaultAsync(cancellationToken);
+        return LifecycleForUserQuery(userId).AsNoTracking().FirstOrDefaultAsync(cancellationToken);
     }
 
     public Task<UserMembership?> GetEntitledForUserAsync(string userId, CancellationToken cancellationToken)
@@ -39,22 +39,22 @@ public class UserMembershipRepository(CleansiaDbContext context)
     private IQueryable<UserMembership> EntitledForUserQuery(string userId)
     {
         var now = DateTime.UtcNow;
-        return ActiveForUserQuery(userId)
+        return LifecycleForUserQuery(userId)
             // Benefits follow the account even while an authorized order is operated elsewhere.
             .IgnoreQueryFilters()
+            .Where(m => m.Status == MembershipStatus.Active)
             .Where(m => m.TrialEndsAtUtc == null || m.TrialEndsAtUtc <= now);
     }
 
-    private IQueryable<UserMembership> ActiveForUserQuery(string userId)
+    private IQueryable<UserMembership> LifecycleForUserQuery(string userId)
     {
         return GetDbSet()
             .Include(m => m.MembershipPlan)
             .Include(m => m.Currency)
-            // IsActive on the entity is a computed property combining Status
-            // AND CurrentPeriodEnd > now. Filter both server-side so we don't
-            // pull cancelled rows back into memory just to drop them.
             .Where(m => m.UserId == userId
-                && m.Status == MembershipStatus.Active
+                && (m.Status == MembershipStatus.Active
+                    || m.Status == MembershipStatus.PastDue
+                    || m.Status == MembershipStatus.Paused)
                 && m.CurrentPeriodEnd > DateTime.UtcNow)
             .OrderByDescending(m => m.CurrentPeriodEnd);
     }

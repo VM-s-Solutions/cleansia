@@ -137,7 +137,7 @@ public class IncidentFileTests(PostgresContainerFixture fixture) : BaseIntegrati
                 Assert.Equal(CleanerId, contract.EmployeeId);
                 Assert.Equal("Clean", contract.CleanerFirstName);
                 Assert.Equal(T0.AddMinutes(30), contract.AcceptedOn);
-                Assert.Equal((await LegalSeed.PlatformWideAsync(context, LegalDocumentType.WorkContract)).Version, contract.DocumentVersion);
+                Assert.Equal((await LegalSeed.PlatformWideAsync(context, LegalDocumentType.WorkContract, LegalDocumentAudience.Employee)).Version, contract.DocumentVersion);
                 Assert.Equal("en", contract.Language);
                 Assert.Equal(JwtAudiences.Mobile, contract.ClientAudience);
                 Assert.Equal(CleanerIp, contract.IpAddress);
@@ -405,7 +405,7 @@ public class IncidentFileTests(PostgresContainerFixture fixture) : BaseIntegrati
         drop.Created(CleanerUserId, T0.AddHours(6));
         context.EmployeeActionAudits.Add(drop);
 
-        var contract = await LegalSeed.PlatformWideAsync(context, LegalDocumentType.WorkContract);
+        var contract = await LegalSeed.PlatformWideAsync(context, LegalDocumentType.WorkContract, LegalDocumentAudience.Employee);
         var acceptance = WorkContractAcceptance.Create(
             OrderId, SeatId, CleanerId, contract.TextFor("en")!, contract.Version, JwtAudiences.Mobile,
             CleanerIp, "Pixel 8 / Android 15", CleanerDeviceId,

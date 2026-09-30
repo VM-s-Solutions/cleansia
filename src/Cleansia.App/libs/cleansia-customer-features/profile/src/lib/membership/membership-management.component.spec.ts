@@ -4,21 +4,26 @@ import {
   CustomerClient,
   GetMembershipPlansResponse,
   GetMyMembershipResponse,
+  MembershipStatus,
 } from '@cleansia/customer-services';
 import { selectMarketCountryId } from '@cleansia/customer-stores';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { provideMockStore } from '@ngrx/store/testing';
 import { Confirmation, ConfirmationService } from 'primeng/api';
-import { of } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 import { MembershipManagementComponent } from './membership-management.component';
 import { MembershipFacade } from './membership.facade';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-function membership(trialEndsAtUtc?: Date): GetMyMembershipResponse {
+function membership(
+  trialEndsAtUtc?: Date,
+  status = MembershipStatus.Active,
+): GetMyMembershipResponse {
   const response = new GetMyMembershipResponse();
   response.hasMembership = true;
+  response.status = status;
   response.planCode = 'PLUS_MONTHLY';
   response.currencyCode = 'CZK';
   response.trialEndsAtUtc = trialEndsAtUtc;
@@ -43,7 +48,10 @@ describe('MembershipManagementComponent — what cancelling or switching says', 
   let instant: jest.Mock;
   let showSuccessTranslated: jest.Mock;
 
-  function build(response: GetMyMembershipResponse): MembershipManagementComponent {
+  function build(
+    response: GetMyMembershipResponse,
+    cancel: () => Observable<void> = () => of(undefined),
+  ): MembershipManagementComponent {
     confirm = jest.fn();
     instant = jest.fn((key: string) => key);
     showSuccessTranslated = jest.fn();
@@ -58,7 +66,7 @@ describe('MembershipManagementComponent — what cancelling or switching says', 
             membershipClient: {
               getMine: () => of(response),
               getPlans: () => of([yearlyPlan()]),
-              cancel: () => of(undefined),
+              cancel,
             },
           },
         },
@@ -129,5 +137,42 @@ describe('MembershipManagementComponent — what cancelling or switching says', 
     component.switchTo('PLUS_YEARLY');
     expect(asked().message).toBe('pages.membership.switch_dialog_message');
     expect(asked().acceptLabel).toBe('pages.membership.switch_dialog_confirm');
+  });
+
+  it('tells a member whose renewal failed that the cancel ends it now, then toasts the same', () => {
+    const component = build(membership(undefined, MembershipStatus.PastDue));
+
+    component.confirmCancel();
+    expect(asked().message).toBe('pages.membership.cancel_dialog_message_past_due');
+
+    asked().accept?.();
+    expect(showSuccessTranslated).toHaveBeenCalledWith('pages.membership.cancel_success_past_due');
+  });
+
+  // The Plus page decides what its subscribe buttons do from its own read of the membership, and a
+  // cancel that ends a failed renewal now is the only way back to Plus on the web.
+  it('tells the page hosting it once a failed renewal is cancelled, and not before', () => {
+    const component = build(membership(undefined, MembershipStatus.PastDue));
+    const cancelled = jest.fn();
+    component.cancelled.subscribe(cancelled);
+
+    component.confirmCancel();
+    expect(cancelled).not.toHaveBeenCalled();
+
+    asked().accept?.();
+    expect(cancelled).toHaveBeenCalledTimes(1);
+  });
+
+  it('tells the page nothing when the cancel is refused', () => {
+    const component = build(membership(undefined, MembershipStatus.PastDue), () =>
+      throwError(() => new Error('refused')),
+    );
+    const cancelled = jest.fn();
+    component.cancelled.subscribe(cancelled);
+
+    component.confirmCancel();
+    asked().accept?.();
+
+    expect(cancelled).not.toHaveBeenCalled();
   });
 });

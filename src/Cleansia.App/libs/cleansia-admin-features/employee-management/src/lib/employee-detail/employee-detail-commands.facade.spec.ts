@@ -81,7 +81,7 @@ describe('EmployeeDetailFacade — approval and grade commands', () => {
 
     facade.approveEmployee('country-1');
     facade.rejectEmployee('incomplete profile');
-    facade.bulkApplyGrade('senior', 'cur-1', true);
+    facade.bulkApplyGrade('expert', 'cur-1', true);
 
     expect(approveMock).not.toHaveBeenCalled();
     expect(rejectMock).not.toHaveBeenCalled();
@@ -101,11 +101,11 @@ describe('EmployeeDetailFacade — approval and grade commands', () => {
   });
 
   it('clears the bulk-grade flag whether the apply lands or fails', () => {
-    facade.bulkApplyGrade('senior', 'cur-1', true);
+    facade.bulkApplyGrade('expert', 'cur-1', true);
     expect(facade.bulkApplyingGrade()).toBe(false);
 
     bulkCreateMock.mockReturnValue(throwError(() => new Error('boom')));
-    facade.bulkApplyGrade('senior', 'cur-1', true);
+    facade.bulkApplyGrade('expert', 'cur-1', true);
     expect(facade.bulkApplyingGrade()).toBe(false);
     expect(snackbar.showErrorTranslated).toHaveBeenCalled();
   });
@@ -140,15 +140,15 @@ describe('EmployeeDetailFacade — approval and grade commands', () => {
       expect(request.toJSON()).toEqual({ reason: 'incomplete profile' });
     });
 
-    it('serializes a bulk grade apply with the employee, grade, currency and overwrite flag', () => {
-      facade.bulkApplyGrade('senior', 'cur-1', true);
+    it('serializes a bulk grade apply with the employee, rate template, currency and overwrite flag', () => {
+      facade.bulkApplyGrade('expert', 'cur-1', true);
 
       const command: BulkCreateEmployeePayConfigsCommand =
         bulkCreateMock.mock.calls[0][0];
       expect(command).toBeInstanceOf(BulkCreateEmployeePayConfigsCommand);
       expect(command.toJSON()).toEqual({
         employeeId: 'emp-1',
-        grade: 'senior',
+        grade: 'expert',
         currencyId: 'cur-1',
         overwriteExisting: true,
       });

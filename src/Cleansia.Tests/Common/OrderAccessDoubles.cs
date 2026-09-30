@@ -14,5 +14,11 @@ namespace Cleansia.Tests.Common;
 public static class OrderAccessDoubles
 {
     public static OrderAccessService Over(Mock<IOrderRepository> orders, Mock<IUserSessionProvider> session) =>
-        new(session.Object, Mock.Of<IEmployeeRepository>(), orders.Object, Mock.Of<ICurrencyResolutionService>());
+        new(
+            session.Object,
+            Mock.Of<IEmployeeRepository>(),
+            orders.Object,
+            Mock.Of<ICurrencyResolutionService>(),
+            Mock.Of<ICashLedgerRepository>(),
+            Mock.Of<Cleansia.Core.Domain.Configuration.IAppConfigurationProvider>());
 }

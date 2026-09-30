@@ -50,8 +50,6 @@ public class ReceiptRenderTests
             OrderNumber = "ORD-1",
             IssuedDate = "22.09.2026",
             CustomerName = "Jan Novák",
-            CustomerEmail = "jan@example.com",
-            CustomerPhone = "+420123456789",
             CustomerAddress = "Hlavní 2, Praha, 11000",
             Services = [new ReceiptLineItem("Deep clean", 1300m)],
             Packages = [new ReceiptLineItem("Move-out", 500m)],

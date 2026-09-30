@@ -211,7 +211,8 @@ public class InvoiceDocumentLanguageTests
         _blobContainerClientFactory.Object,
         _tenantProvider.Object,
         _payoutReferenceAllocator.Object,
-        new Mock<ITenantRepository>().Object)
+        new Mock<ITenantRepository>().Object,
+        new Mock<ICashLedgerRepository>().Object)
         .CloseExpiredPeriodsAndOpenNewAsync(CancellationToken.None);
 
     private Task<BusinessResult<RegenerateInvoicePdf.Response>> ReRender(string languageCode) =>

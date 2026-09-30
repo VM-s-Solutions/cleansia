@@ -1,4 +1,4 @@
-import { Code } from '@cleansia/partner-services';
+import { Code, DirtinessLevel } from '@cleansia/partner-services';
 
 export interface StatCard {
   title: string;
@@ -19,5 +19,16 @@ export interface UpcomingOrderCard {
   customerName: string;
   cleaningDate: string;
   customerAddress: string;
-  totalPrice: string;
+  dirtinessLevelKey: string;
+  yourPay: string;
+}
+
+const DIRTINESS_LEVEL_LABEL_KEYS: Readonly<Record<DirtinessLevel, string>> = {
+  [DirtinessLevel.Normal]: 'enums.dirtiness_level.normal',
+  [DirtinessLevel.Increased]: 'enums.dirtiness_level.increased',
+  [DirtinessLevel.Heavy]: 'enums.dirtiness_level.heavy',
+};
+
+export function dirtinessLevelLabelKey(level: DirtinessLevel | undefined): string {
+  return DIRTINESS_LEVEL_LABEL_KEYS[level ?? DirtinessLevel.Normal];
 }

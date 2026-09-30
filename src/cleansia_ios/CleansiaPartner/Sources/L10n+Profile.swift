@@ -34,6 +34,22 @@ extension L10n {
             localized("profile_privacy_summary")
         }
 
+        static var howJobsAreOffered: String {
+            localized("profile_how_jobs_are_offered")
+        }
+
+        static var howJobsAreOfferedSummary: String {
+            localized("profile_how_jobs_are_offered_summary")
+        }
+
+        static func weeklyLimit(_ limit: Int) -> String {
+            format("profile_weekly_limit", limit)
+        }
+
+        static func weeklyLimitReason(_ reason: String) -> String {
+            format("profile_weekly_limit_reason", reason)
+        }
+
         static var language: String {
             localized("language")
         }

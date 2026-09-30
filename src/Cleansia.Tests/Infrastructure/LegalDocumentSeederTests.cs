@@ -1,5 +1,7 @@
 using System.Text.RegularExpressions;
+using Cleansia.Core.AppServices.Features.Legal;
 using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.Domain.Company;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Legal;
 using Cleansia.Core.Domain.Repositories;
@@ -29,9 +31,25 @@ public sealed class LegalDocumentSeederTests : IDisposable
     [
         (LegalDocumentType.TermsOfService, new DateOnly(2026, 9, 14)),
         (LegalDocumentType.TermsOfService, new DateOnly(2026, 9, 27)),
+        (LegalDocumentType.TermsOfService, new DateOnly(2026, 9, 29)),
         (LegalDocumentType.PrivacyPolicy, new DateOnly(2026, 9, 14)),
+        (LegalDocumentType.PrivacyPolicy, new DateOnly(2026, 9, 29)),
         (LegalDocumentType.WorkContract, new DateOnly(2026, 9, 20)),
+        (LegalDocumentType.WorkContract, new DateOnly(2026, 9, 29)),
+        (LegalDocumentType.CleanerFrameworkContract, new DateOnly(2026, 9, 29)),
+        (LegalDocumentType.SelfBillingAgreement, new DateOnly(2026, 9, 29)),
+        (LegalDocumentType.CleanerDataProcessingAgreement, new DateOnly(2026, 9, 29)),
+        (LegalDocumentType.ComplaintsProcedure, new DateOnly(2026, 9, 29)),
     ];
+
+    /// <summary>
+    /// The contract for work binds the operating company and the cleaner (decision 45), and the cleaner's
+    /// three documents are theirs: all four are employee texts; the rest are the customer's.
+    /// </summary>
+    private static LegalDocumentAudience AudienceOf(LegalDocumentType type) =>
+        type == LegalDocumentType.WorkContract || LegalDocument.CleanerConsentTypeFor(type) is not null
+            ? LegalDocumentAudience.Employee
+            : LegalDocumentAudience.Customer;
 
     private readonly SqliteConnection _connection;
 
@@ -81,7 +99,7 @@ public sealed class LegalDocumentSeederTests : IDisposable
         new(LegalDocumentAudience.Customer, type, countryIso, effectiveFrom ?? Today, language, title, body);
 
     [Fact]
-    public async Task The_Embedded_Seed_Creates_Every_Customer_Document_Version_In_Five_Languages()
+    public async Task The_Embedded_Seed_Creates_Every_Document_Version_In_Five_Languages()
     {
         var outcome = await SeedAsync();
 
@@ -92,7 +110,7 @@ public sealed class LegalDocumentSeederTests : IDisposable
             documents.Select(d => (d.Type, d.EffectiveFrom)).OrderBy(v => v.Type).ThenBy(v => v.EffectiveFrom));
         foreach (var document in documents)
         {
-            Assert.Equal(LegalDocumentAudience.Customer, document.Audience);
+            Assert.Equal(AudienceOf(document.Type), document.Audience);
             Assert.Null(document.CountryId);
             Assert.Equal(LegalDocument.VersionFor(document.EffectiveFrom), document.Version);
             Assert.Equal(new[] { "cs", "en", "ru", "sk", "uk" }, document.Texts.Select(t => t.Language).OrderBy(l => l));
@@ -108,7 +126,8 @@ public sealed class LegalDocumentSeederTests : IDisposable
 
         Assert.All(documents.Where(d => d.Type == LegalDocumentType.TermsOfService),
             d => Assert.Equal("Terms of Service", d.TextFor("en")!.Title));
-        Assert.Equal("Contract for Work", documents.Single(d => d.Type == LegalDocumentType.WorkContract).TextFor("en")!.Title);
+        Assert.All(documents.Where(d => d.Type == LegalDocumentType.WorkContract),
+            d => Assert.Equal("Contract for Work", d.TextFor("en")!.Title));
     }
 
     // The contract is a template: it names the job by what the acceptance shows and binds the figures
@@ -118,48 +137,218 @@ public sealed class LegalDocumentSeederTests : IDisposable
     {
         await SeedAsync();
 
-        var contract = (await DocumentsAsync()).Single(d => d.Type == LegalDocumentType.WorkContract);
-        Assert.Equal(new[] { "cs", "en", "ru", "sk", "uk" }, contract.Texts.Select(t => t.Language).OrderBy(l => l));
-        foreach (var text in contract.Texts)
+        var contracts = (await DocumentsAsync()).Where(d => d.Type == LegalDocumentType.WorkContract).ToList();
+        Assert.Equal(SeededVersions.Count(v => v.Type == LegalDocumentType.WorkContract), contracts.Count);
+        foreach (var contract in contracts)
         {
-            Assert.Contains("{{currency}}", text.ContentMarkdown);
-            Assert.DoesNotContain(text.ContentMarkdown, c => char.IsDigit(c));
-            Assert.StartsWith("> ", text.ContentMarkdown);
+            Assert.Equal(new[] { "cs", "en", "ru", "sk", "uk" }, contract.Texts.Select(t => t.Language).OrderBy(l => l));
+            foreach (var text in contract.Texts)
+            {
+                Assert.Contains("{{currency}}", text.ContentMarkdown);
+                Assert.DoesNotContain(text.ContentMarkdown, c => char.IsDigit(c));
+                Assert.StartsWith("> ", text.ContentMarkdown);
+            }
         }
     }
 
-    // The money figure in the terms comes from the market (ADR-0060): the seed carries the placeholder,
-    // never a currency word, so the API fills it the way the locale copy was filled before.
+    /// <summary>
+    /// The contract for work binds the operating company and the cleaner (decision 45): the newest text names
+    /// the client — the company that operates the order — through the placeholders the partner read fills
+    /// from its company record, in every language, beside the currency its reward is stated in. The
+    /// 2026-09-20 text named the customer as the client and said Cleansia was not a party.
+    /// </summary>
     [Fact]
-    public async Task The_Embedded_Terms_Carry_The_Currency_Placeholder_In_Every_Language_And_The_Privacy_Policy_None()
+    public void The_Newest_Work_Contract_Names_The_Operating_Company_As_The_Client_Through_Its_Placeholders()
+    {
+        var newest = NewestOf(LegalDocumentType.WorkContract);
+
+        Assert.Equal(new[] { "cs", "en", "ru", "sk", "uk" }, newest.Select(r => r.Language).Order());
+        Assert.All(newest, r =>
+        {
+            Assert.Equal(LegalDocumentAudience.Employee, r.Audience);
+            Assert.Equal(
+                new[]
+                {
+                    LegalMarkdownRenderer.CurrencyPlaceholder,
+                    LegalMarkdownRenderer.CompanyLegalNamePlaceholder,
+                    LegalMarkdownRenderer.CompanyRegistrationNumberPlaceholder,
+                    LegalMarkdownRenderer.CompanySeatPlaceholder,
+                }.Order(StringComparer.Ordinal),
+                LegalMarkdownRenderer.PlaceholdersIn(r.ContentMarkdown).Order(StringComparer.Ordinal));
+            Assert.DoesNotContain("Cleansia s.r.o.", r.ContentMarkdown);
+        });
+    }
+
+    /// <summary>
+    /// The cleaner's three documents (decision 47) are employee texts in five languages that name the market's
+    /// operating company only through the placeholders the partner read fills from its company record — never
+    /// the VAT number, which a company that is not a VAT payer, the launch state, does not hold, so its
+    /// placeholder would reach the cleaner as braces — and carry no identity of their own. The framework
+    /// contract also states the reward in the market's currency.
+    /// </summary>
+    [Theory]
+    [InlineData(LegalDocumentType.CleanerFrameworkContract)]
+    [InlineData(LegalDocumentType.SelfBillingAgreement)]
+    [InlineData(LegalDocumentType.CleanerDataProcessingAgreement)]
+    public void The_Cleaner_Documents_Name_The_Company_Only_Through_Its_Placeholders_In_Every_Language(LegalDocumentType type)
+    {
+        var newest = NewestOf(type);
+        var expected = type == LegalDocumentType.CleanerFrameworkContract
+            ? TermsPlaceholders
+            : TermsPlaceholders.Where(p => p != LegalMarkdownRenderer.CurrencyPlaceholder).ToArray();
+
+        Assert.Equal(new[] { "cs", "en", "ru", "sk", "uk" }, newest.Select(r => r.Language).Order());
+        Assert.All(newest, r =>
+        {
+            Assert.Equal(LegalDocumentAudience.Employee, r.Audience);
+            Assert.StartsWith("> ", r.ContentMarkdown);
+            Assert.Equal(expected, LegalMarkdownRenderer.PlaceholdersIn(r.ContentMarkdown).Order(StringComparer.Ordinal));
+            Assert.DoesNotContain("@cleansia", r.ContentMarkdown);
+            Assert.DoesNotContain("+420", r.ContentMarkdown);
+            Assert.DoesNotContain("s.r.o.", r.ContentMarkdown);
+        });
+    }
+
+    /// <summary>
+    /// The framework contract tells the cleaner how long to wait at a closed door before reporting a lockout —
+    /// the wait the report is refused before — so moving that constant without publishing a new version of the
+    /// contract fails here, in every language. It states no other minute figure.
+    /// </summary>
+    [Fact]
+    public void The_Framework_Contract_States_The_Lockout_Wait_In_Every_Language()
+    {
+        var newest = NewestOf(LegalDocumentType.CleanerFrameworkContract);
+
+        Assert.Equal(new[] { "cs", "en", "ru", "sk", "uk" }, newest.Select(r => r.Language).Order());
+        Assert.All(newest, r => Assert.Equal(
+            new[] { BookingPolicy.LockoutWaitMinutes },
+            MinutePhrase.Matches(r.ContentMarkdown).Select(m => int.Parse(m.Groups[1].Value))));
+    }
+
+    private static List<LegalSeedResource> NewestOf(LegalDocumentType type) =>
+        LegalSeedResource.ReadAll()
+            .Where(r => r.Type == type)
+            .GroupBy(r => r.EffectiveFrom)
+            .MaxBy(g => g.Key)?
+            .ToList() ?? [];
+
+    // The money figure in the terms comes from the market (ADR-0060): the seed carries the placeholder,
+    // never a currency word, so the API fills it the way the locale copy was filled before. The privacy
+    // policy states no price, so no version of it carries the currency.
+    [Fact]
+    public async Task The_Embedded_Terms_Carry_The_Currency_Placeholder_In_Every_Language_And_No_Privacy_Policy_Does()
     {
         await SeedAsync();
 
         var documents = await DocumentsAsync();
         var terms = documents.Where(d => d.Type == LegalDocumentType.TermsOfService).SelectMany(d => d.Texts).ToList();
-        var privacy = documents.Single(d => d.Type == LegalDocumentType.PrivacyPolicy);
+        var privacy = documents.Where(d => d.Type == LegalDocumentType.PrivacyPolicy).SelectMany(d => d.Texts).ToList();
 
         Assert.Equal(SeededVersions.Count(v => v.Type == LegalDocumentType.TermsOfService) * 5, terms.Count);
         Assert.All(terms, t => Assert.Contains("{{currency}}", t.ContentMarkdown));
-        Assert.All(privacy.Texts, t => Assert.DoesNotContain("{{", t.ContentMarkdown));
+        Assert.Equal(SeededVersions.Count(v => v.Type == LegalDocumentType.PrivacyPolicy) * 5, privacy.Count);
+        Assert.All(privacy, t => Assert.DoesNotContain("{{currency}}", t.ContentMarkdown));
     }
 
     /// <summary>
-    /// The terms a customer accepts state the cancellation grace the platform applies. Read off the
-    /// minute phrases alone, in order — the standard window, then the Plus one — so the hour figures
-    /// elsewhere in the text cannot stand in for them, and moving, swapping or equalising either
-    /// constant without publishing a new terms version fails here.
+    /// The terms a customer accepts state the minutes the platform applies. Read off the minute phrases
+    /// alone, in order — the Plus benefit, then the cancellation grace on a first booking before the
+    /// standard one (owner ruling 2026-09-28), then the cleaner's wait before a lockout — so the hour
+    /// figures elsewhere in the text cannot stand in for them, and moving, swapping or equalising any of
+    /// these constants without publishing a new terms version fails here.
     /// </summary>
     [Fact]
-    public void The_Newest_Terms_State_The_Cancellation_Grace_Minutes_In_Every_Language()
+    public void The_Newest_Terms_State_The_Cancellation_Grace_And_Lockout_Wait_Minutes_In_Every_Language()
     {
         var newest = NewestTerms();
 
         Assert.Equal(new[] { "cs", "en", "ru", "sk", "uk" }, newest.Select(r => r.Language).Order());
         Assert.All(newest, r => Assert.Equal(
-            new[] { BookingPolicy.OopsWindowMinutesStandard, BookingPolicy.OopsWindowMinutesPlus },
+            new[]
+            {
+                BookingPolicy.OopsWindowMinutesPlus,
+                BookingPolicy.OopsWindowMinutesFirstBooking,
+                BookingPolicy.OopsWindowMinutesStandard,
+                BookingPolicy.LockoutWaitMinutes,
+            },
             MinutePhrase.Matches(r.ContentMarkdown).Select(m => int.Parse(m.Groups[1].Value))));
     }
+
+    /// <summary>
+    /// The operating company sells in its own name (the 2026-09-27 ruling; decision 54): the newest terms
+    /// name the seller through the placeholders the read path fills from the market operator's company
+    /// record, in every language, and carry no identity of their own — the 2026-09-27 terms named nobody
+    /// and hard-coded an e-mail and a phone. A placeholder outside this set would reach the customer as
+    /// braces, because nothing fills it — which is why the VAT number is not in it: a company that is not a
+    /// VAT payer, the launch state, holds none (its record clears it), and the price section states the VAT
+    /// position instead.
+    /// </summary>
+    [Fact]
+    public void The_Newest_Terms_Name_The_Seller_Only_Through_The_Company_Placeholders_In_Every_Language()
+    {
+        var newest = NewestTerms();
+
+        Assert.Equal(new[] { "cs", "en", "ru", "sk", "uk" }, newest.Select(r => r.Language).Order());
+        Assert.All(newest, r =>
+        {
+            Assert.Equal(TermsPlaceholders, LegalMarkdownRenderer.PlaceholdersIn(r.ContentMarkdown).Order(StringComparer.Ordinal));
+            Assert.DoesNotContain("@cleansia", r.ContentMarkdown);
+            Assert.DoesNotContain("+420", r.ContentMarkdown);
+            Assert.DoesNotContain("s.r.o.", r.ContentMarkdown);
+        });
+    }
+
+    private static readonly string[] TermsPlaceholders = new[]
+    {
+        LegalMarkdownRenderer.CurrencyPlaceholder,
+        LegalMarkdownRenderer.CompanyLegalNamePlaceholder,
+        LegalMarkdownRenderer.CompanyRegistrationNumberPlaceholder,
+        LegalMarkdownRenderer.CompanySeatPlaceholder,
+        LegalMarkdownRenderer.CompanyEmailPlaceholder,
+        LegalMarkdownRenderer.CompanyPhonePlaceholder,
+    }.Order(StringComparer.Ordinal).ToArray();
+
+    /// <summary>
+    /// The privacy policy names its controller and the complaints procedure the company that decides a
+    /// complaint — the market's operating company, as the terms name the seller (decision 54) — through
+    /// the placeholders the read path fills from its company record, in every language, and neither
+    /// carries an identity of its own: the 2026-09-14 privacy policy hard-coded an e-mail and a phone.
+    /// Like the terms, neither names the VAT number: a company that is not a VAT payer, the launch state,
+    /// holds none, so rendered from such a record the text must leave no placeholder behind.
+    /// </summary>
+    [Theory]
+    [InlineData(LegalDocumentType.PrivacyPolicy)]
+    [InlineData(LegalDocumentType.ComplaintsProcedure)]
+    public void The_Newest_Privacy_Policy_And_Complaints_Procedure_Name_The_Company_Only_Through_Its_Placeholders(LegalDocumentType type)
+    {
+        var newest = LegalSeedResource.ReadAll()
+            .Where(r => r.Type == type)
+            .GroupBy(r => r.EffectiveFrom)
+            .MaxBy(g => g.Key)?
+            .ToList() ?? [];
+        var nonPayer = LegalMarkdownRenderer.MarketPlaceholders(null, CompanyInfo.Create(
+                legalName: "Seller Test a.s.", tradingName: "Seller", registrationNumber: "87654321",
+                street: "Hlavná 1", city: "Bratislava", zipCode: "81101", countryId: Czechia,
+                vatNumber: "SK2020123456", phone: "+421 900 000 000", email: "info@seller.test")
+            .SetVatPayerStatus(false));
+
+        Assert.Equal(new[] { "cs", "en", "ru", "sk", "uk" }, newest.Select(r => r.Language).Order());
+        Assert.All(newest, r =>
+        {
+            Assert.Equal(CompanyPlaceholders, LegalMarkdownRenderer.PlaceholdersIn(r.ContentMarkdown).Order(StringComparer.Ordinal));
+            Assert.DoesNotContain("@cleansia", r.ContentMarkdown);
+            Assert.DoesNotContain("+420", r.ContentMarkdown);
+            Assert.DoesNotContain("s.r.o.", r.ContentMarkdown);
+
+            var html = LegalMarkdownRenderer.Render(r.ContentMarkdown, nonPayer);
+            Assert.Contains("Seller Test a.s.", html);
+            Assert.DoesNotContain("{{", html);
+        });
+    }
+
+    private static readonly string[] CompanyPlaceholders = TermsPlaceholders
+        .Where(p => p != LegalMarkdownRenderer.CurrencyPlaceholder)
+        .ToArray();
 
     /// <summary>
     /// The 2026-09-14 terms promised cash on delivery to everyone; the cash rule admits it only for a
@@ -306,6 +495,35 @@ public sealed class LegalDocumentSeederTests : IDisposable
         Assert.Equal(LegalDocumentAudience.Employee, resource.Audience);
     }
 
+    /// <summary>
+    /// Owner ruling 2026-09-28: the cleaner's three documents are read from the employee folder, the complaints
+    /// procedure from the customer one.
+    /// </summary>
+    [Theory]
+    [InlineData("Seed/Legal/employee/framework-contract/any/2026-12-01/cs.md", LegalDocumentAudience.Employee, LegalDocumentType.CleanerFrameworkContract)]
+    [InlineData("Seed/Legal/employee/self-billing-agreement/any/2026-12-01/cs.md", LegalDocumentAudience.Employee, LegalDocumentType.SelfBillingAgreement)]
+    [InlineData("Seed/Legal/employee/data-processing-agreement/cze/2026-12-01/cs.md", LegalDocumentAudience.Employee, LegalDocumentType.CleanerDataProcessingAgreement)]
+    [InlineData("Seed/Legal/customer/complaints-procedure/any/2026-12-01/cs.md", LegalDocumentAudience.Customer, LegalDocumentType.ComplaintsProcedure)]
+    public void The_Cleaner_Documents_And_The_Complaints_Procedure_Have_Their_Folders(
+        string logicalName, LegalDocumentAudience audience, LegalDocumentType type)
+    {
+        var resource = LegalSeedResource.Parse(logicalName, "---\ntitle: T\n---\nBody");
+
+        Assert.Equal(audience, resource.Audience);
+        Assert.Equal(type, resource.Type);
+    }
+
+    [Theory]
+    [InlineData("Seed/Legal/customer/framework-contract/any/2026-12-01/cs.md")]
+    [InlineData("Seed/Legal/customer/self-billing-agreement/any/2026-12-01/cs.md")]
+    [InlineData("Seed/Legal/customer/data-processing-agreement/any/2026-12-01/cs.md")]
+    public void A_Cleaner_Document_Under_The_Customer_Folder_Fails_Naming_Itself(string logicalName)
+    {
+        var ex = Assert.Throws<InvalidOperationException>(() => LegalSeedResource.Parse(logicalName, "---\ntitle: T\n---\nBody"));
+
+        Assert.Contains(logicalName, ex.Message);
+    }
+
     [Theory]
     [InlineData("Seed/Legal/customer/terms-of-service/any/2026-09-14/en.md", "no front matter")]
     [InlineData("Seed/Legal/customer/terms-of-service/any/2026-09-14/en.md", "---\nsubtitle: x\n---\nBody")]
@@ -329,7 +547,7 @@ public sealed class LegalDocumentSeederTests : IDisposable
         var resources = LegalSeedResource.ReadAll();
 
         Assert.Equal(SeededVersions.Length * 5, resources.Count);
-        Assert.All(resources, r => Assert.Equal(LegalDocumentAudience.Customer, r.Audience));
+        Assert.All(resources, r => Assert.Equal(AudienceOf(r.Type), r.Audience));
         Assert.All(resources, r => Assert.Null(r.CountryIsoCode));
         Assert.Equal(
             SeededVersions.OrderBy(v => v.Type).ThenBy(v => v.EffectiveFrom),

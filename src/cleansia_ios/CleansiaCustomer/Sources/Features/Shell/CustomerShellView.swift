@@ -286,8 +286,6 @@ extension CustomerShellView {
         switch route {
         case let .orderDetail(orderId):
             orderDetail(orderId)
-        case let .workContract(acceptanceId):
-            WorkContractView(acceptanceId: acceptanceId, client: container.orderClient, snackbar: snackbar)
         case .subscribePlus:
             subscribePlus
         case .membershipSuccess:
@@ -318,9 +316,10 @@ extension CustomerShellView {
                 onDisputeClick: { model.path.append(ShellRoute.disputeDetail($0)) },
                 onBrowseOrders: model.openOrders
             )
-        case let .createDispute(orderId):
+        case let .createDispute(orderId, reason):
             CreateDisputeView(
                 orderId: orderId,
+                initialReason: reason,
                 repository: container.disputeRepository,
                 orderClient: container.orderClient,
                 snackbar: snackbar,
@@ -359,6 +358,14 @@ extension CustomerShellView {
     @ViewBuilder
     private func settingsDestination(_ route: ShellRoute) -> some View {
         switch route {
+        case .payments:
+            PaymentsView(
+                savedCardClient: LiveSavedCardClient(),
+                receivableClient: LiveReceivableClient(),
+                snackbar: snackbar,
+                paymentSheet: StripePaymentController(),
+                market: container.marketStore.selected
+            )
         case .devices:
             CustomerDevicesView(
                 client: container.devicesClient,
@@ -417,6 +424,12 @@ extension CustomerShellView {
             // The footer hands back the id of the order on screen — the dispute
             // form is only reachable with one, which is the whole fix.
             onReportIssue: { model.path.append(ShellRoute.createDispute(orderId: $0)) },
+            onReportCleanerNoShow: {
+                model.path.append(ShellRoute.createDispute(
+                    orderId: $0,
+                    reason: DisputeReasonOption.serviceNotProvided
+                ))
+            },
             // Pop FIRST. `rebookOrder` presents the booking sheet at the shell
             // root, so leaving the detail pushed underneath drops the customer
             // back onto the old order when the sheet dismisses — Android pops to
@@ -436,8 +449,7 @@ extension CustomerShellView {
                     ShellRoute.recurringList,
                     ShellRoute.createRecurring(orderId: orderId)
                 ])
-            },
-            onReadWorkContract: { model.path.append(ShellRoute.workContract(acceptanceId: $0)) }
+            }
         )
     }
 

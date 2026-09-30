@@ -4,10 +4,12 @@ import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
   CancelOrderCommand,
   CancelOrderResponse,
+  ConfirmRecurringOrderCommand,
   CustomerAuthService,
   CustomerClient,
   GetCancellationFeePreviewResponse,
   GetMyMembershipResponse,
+  MembershipStatus,
   OrderItem,
   OrderStatus,
   PaymentStatus,
@@ -16,8 +18,7 @@ import {
   SubmitOrderReviewReviewLineScore,
 } from '@cleansia/customer-services';
 import { ReviewLineScore } from './order-review-lines.models';
-import { buildWorkContractAcceptanceLines } from './order-work-contract.models';
-import { SnackbarService } from '@cleansia/services';
+import { extractApiErrorCode, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
 
@@ -32,6 +33,11 @@ const CANCELLABLE_ORDER_STATUSES: readonly OrderStatus[] = [
 ];
 
 const STANDARD_FREE_CANCELLATION_HOURS = 24;
+
+const START_PASSED_CANNOT_CANCEL = 'order.start_passed_cannot_cancel';
+
+/** What ConfirmRecurringOrder answers on the web for a card occurrence already begun in the mobile app. */
+const PAYMENT_BEGUN_ON_OTHER_CHANNEL = 'order.invalid_status_transition';
 
 @Injectable()
 export class OrderDetailFacade extends UnsubscribeControlDirective {
@@ -55,11 +61,40 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
   readonly cancellationPreviewFailed = signal(false);
   readonly cancelling = signal(false);
   readonly cancellationResult = signal<CancelOrderResponse | null>(null);
+  private readonly startPassedRefused = signal(false);
+
+  readonly confirmingRecurring = signal(false);
+  private readonly paymentBegunInApp = signal(false);
+
+  /**
+   * The server keeps one payment surface per order, so a card occurrence begun in the mobile app is
+   * finished there and the web stops offering its own. -> /flows/booking-and-pricing#recurring-bookings
+   */
+  readonly canConfirmRecurring = computed(() =>
+    this.order()?.needsConfirmation === true && !this.paymentBegunInApp());
+
+  readonly recurringPaymentBegunInApp = computed(() =>
+    this.order()?.needsConfirmation === true && this.paymentBegunInApp());
+
+  /**
+   * Past the booked start with a cleaner on the job who has not started, the server refuses a
+   * self-cancel and the customer reports that the cleaner did not arrive. The server's refusal also
+   * counts, so a client clock behind the server's cannot keep offering a cancel it will refuse.
+   * -> /product/business-rules#cancellation
+   */
+  readonly canReportCleanerNoShow = computed(() => {
+    const order = this.order();
+    const status = order?.orderStatus?.value;
+    if (!order || status === undefined || !CANCELLABLE_ORDER_STATUSES.includes(status)) return false;
+    if (this.startPassedRefused()) return true;
+    const startsAt = order.cleaningDateTime?.getTime();
+    return !!order.assignedEmployees?.length && startsAt !== undefined && startsAt <= Date.now();
+  });
 
   readonly canCancel = computed(() => {
     const status = this.order()?.orderStatus?.value;
     return !this.cancellationResult() && status !== undefined &&
-      CANCELLABLE_ORDER_STATUSES.includes(status);
+      CANCELLABLE_ORDER_STATUSES.includes(status) && !this.canReportCleanerNoShow();
   });
 
   /**
@@ -74,18 +109,17 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
       status === PaymentStatus.Pending || status === PaymentStatus.Failed;
   });
 
-  /** One per crew member who accepted the contract for work; nothing before any acceptance. */
-  readonly workContractAcceptances = computed(() => buildWorkContractAcceptanceLines(this.order()));
-
   /**
    * How long free cancellation lasted. Plus shortens the window, but only for a paid month: the
-   * server reads the paid entitlement, which a running trial is not. -> /product/business-rules
+   * server reads the paid entitlement, which neither a running trial nor a failed renewal is.
+   * -> /product/business-rules
    */
   readonly freeCancellationHours = computed(() => {
     const membership = this.membership();
-    const trialEnd = membership?.trialEndsAtUtc;
+    if (membership?.status !== MembershipStatus.Active) return STANDARD_FREE_CANCELLATION_HOURS;
+    const trialEnd = membership.trialEndsAtUtc;
     if (trialEnd && trialEnd.getTime() > Date.now()) return STANDARD_FREE_CANCELLATION_HOURS;
-    return membership?.freeCancellationWindowHours ?? STANDARD_FREE_CANCELLATION_HOURS;
+    return membership.freeCancellationWindowHours ?? STANDARD_FREE_CANCELLATION_HOURS;
   });
 
   readonly canConfirmCancellation = computed(() =>
@@ -215,11 +249,15 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
       .cancellationPreview(orderId)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError(() => of(null)),
+        catchError((error: unknown) => {
+          this.noteStartPassed(error);
+          return of(null);
+        }),
         finalize(() => this.previewLoading.set(false)),
       )
       .subscribe((preview) => {
         if (preview && preview.orderId === orderId) this.cancellationPreview.set(preview);
+        else if (this.startPassedRefused()) this.cancellationOpen.set(false);
         else this.cancellationPreviewFailed.set(true);
       });
   }
@@ -246,7 +284,10 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
       .cancel(command)
       .pipe(
         takeUntil(this.destroyed$),
-        catchError(() => of(null)),
+        catchError((error: unknown) => {
+          this.noteStartPassed(error);
+          return of(null);
+        }),
         finalize(() => this.cancelling.set(false)),
       )
       .subscribe((result) => {
@@ -258,9 +299,46 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
       });
   }
 
+  /**
+   * A card confirm returns the Checkout Session to pay in and the in-flight flag stays set while the
+   * browser leaves, so a second click cannot open a second session. A refusal is voiced by the shared
+   * interceptor, and the re-read shows the page the occurrence as the server now has it.
+   */
+  confirmRecurring(): void {
+    const orderId = this.order()?.id;
+    if (!orderId || !this.canConfirmRecurring() || this.confirmingRecurring()) return;
+    const command = new ConfirmRecurringOrderCommand();
+    command.orderId = orderId;
+    this.confirmingRecurring.set(true);
+    this.customerClient.orderClient
+      .confirmRecurring(command)
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError((error: unknown) => {
+          if (extractApiErrorCode(error) === PAYMENT_BEGUN_ON_OTHER_CHANNEL) this.paymentBegunInApp.set(true);
+          return of(null);
+        }),
+      )
+      .subscribe((response) => {
+        if (response?.checkoutUrl) {
+          if (this.isBrowser) window.location.href = response.checkoutUrl;
+          return;
+        }
+        this.confirmingRecurring.set(false);
+        if (response) {
+          this.snackbar.showSuccess(this.translate.instant('pages.order_detail.recurring_confirm.success'));
+        }
+        this.loadOrder(orderId);
+      });
+  }
+
   showRecurringPlusRequired(): void {
     this.snackbar.showError(
       this.translate.instant('recurring_booking.order_detail_make_recurring_plus_required'),
     );
+  }
+
+  private noteStartPassed(error: unknown): void {
+    if (extractApiErrorCode(error) === START_PASSED_CANNOT_CANCEL) this.startPassedRefused.set(true);
   }
 }

@@ -2,6 +2,7 @@ using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Clients.Abstractions.Stripe;
+using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Validations;
@@ -65,8 +66,9 @@ public class SwapMembershipPlan
             }
 
             var userId = userSessionProvider.GetUserId()!;
-            var membership = await userMembershipRepository.GetActiveForUserAsync(userId, cancellationToken);
-            if (membership == null)
+            var membership = await userMembershipRepository.GetLifecycleForUserAsync(userId, cancellationToken);
+            // Only a paid-up enrolment changes plan; a past-due one is settled or cancelled first.
+            if (membership == null || membership.Status != MembershipStatus.Active)
             {
                 return BusinessResult.Failure<Response>(new Error(
                     nameof(userId), BusinessErrorMessage.MembershipNotFound));

@@ -3,6 +3,8 @@ using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Infra.Common.Configuration;
 using System.Globalization;
+using Cleansia.Core.AppServices.Authentication;
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.Payments;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -13,6 +15,7 @@ using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Core.Queue.Abstractions;
+using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Infra.Common.Configuration.Interfaces;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -24,8 +27,10 @@ using Cleansia.Tests.Common;
 namespace Cleansia.Tests.Features.Orders;
 
 /// <summary>
-/// Payment settlement and recurring cash confirmation emit the money-axis notification without
-/// claiming a cleaner or changing fulfilment status. Their existing payment guards prevent replay.
+/// Payment settlement emits the money-axis notification without claiming a cleaner or changing
+/// fulfilment status. The recurring cash confirmation moves no money, so it says nothing about payment:
+/// the occurrence stays Pending until the cleaner records the cash (owner ruling 2026-09-28). Each
+/// producer's own guard prevents replay.
 /// </summary>
 public class OrderPaymentConfirmedHonestProducerTests
 {
@@ -77,7 +82,27 @@ public class OrderPaymentConfirmedHonestProducerTests
     }
 
     [Fact]
-    public async Task The_Recurring_Cash_Confirmation_Confirms_The_Booking_And_Claims_No_Cleaner()
+    public async Task The_Card_Payment_That_Concludes_The_Contract_Sends_Its_Confirmation_Dated_Then()
+    {
+        var order = ArrangeOrder(PaymentType.Card, recurringTemplateId: null);
+        _orderRepository
+            .Setup(r => r.GetByIdIgnoringTenantAsync(OrderId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(order);
+        var before = DateTimeOffset.UtcNow;
+
+        var result = await CreateWebhookHandler().Handle(SettlementCommand("evt_concluded_1"), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        _pending.Verify(p => p.Enqueue(
+            QueueNames.SendEmail,
+            It.Is<QueueEnvelope<SendOrderBookedEmailMessage>>(e =>
+                e.TenantId == TenantId && e.Payload.OrderId == OrderId
+                && e.Payload.ContractConcludedOn >= before && e.Payload.ContractConcludedOn <= DateTimeOffset.UtcNow),
+            MessageKeys.OrderBookedEmail(OrderId)), Times.Once);
+    }
+
+    [Fact]
+    public async Task The_Recurring_Cash_Confirmation_Confirms_The_Booking_And_Claims_No_Payment_Or_Cleaner()
     {
         var order = ArrangeOrder(PaymentType.Cash, recurringTemplateId: "tmpl-1");
         _orderRepository
@@ -89,12 +114,15 @@ public class OrderPaymentConfirmedHonestProducerTests
 
         var handler = new ConfirmRecurringOrder.Handler(
             OrderAccessDoubles.Over(_orderRepository, session),
+            _orderRepository.Object,
+            SavedCards.SavedCardDoubles.Guaranteed(), Mock.Of<IReceivableRepository>(),
             new Mock<ICreditAccountRepository>().Object,
             new Mock<IUserRepository>().Object,
             session.Object,
             Mock.Of<ITenantProvider>(),
             new Mock<Core.Clients.Abstractions.Stripe.IStripeClient>().Object,
             new StripeConfig(new ConfigurationBuilder().Build()),
+            new OrderChannelProvider(OrderChannel.Mobile),
             _pending.Object,
             _notificationProducer.Object,
             NoPreferredCleanerHold.Resolver,
@@ -105,14 +133,20 @@ public class OrderPaymentConfirmedHonestProducerTests
         Assert.True(result.IsSuccess);
         var replay = await handler.Handle(new ConfirmRecurringOrder.Command(OrderId), CancellationToken.None);
         Assert.True(replay.IsFailure);
-        // Same as the webhook above: money moves, fulfilment does not. The occurrence stays offerable
-        // because OrderAvailability admits New with a satisfied money term — before T-0691 the
-        // Confirmed append was load-bearing here, since a recurring CASH order at New is refused by
-        // the money term.
+        Assert.Equal(BusinessErrorMessage.OrderRecurringAlreadyConfirmed, replay.Error!.Message);
+        // Neither axis moves. The marker is what keeps the occurrence on the board, and the cleaner
+        // records the cash at the door as on any cash order.
         Assert.Equal(OrderStatus.New, order.CurrentStatus);
-        Assert.Equal(PaymentStatus.Paid, order.PaymentStatus);
+        Assert.Equal(PaymentStatus.Pending, order.PaymentStatus);
+        Assert.NotNull(order.CustomerConfirmedAt);
+        Assert.False(order.AwaitsCustomerConfirmation);
         Assert.Empty(order.AssignedEmployees);
-        Assert.Equal([NotificationEventCatalog.OrderPaymentConfirmed], _sentEventKeys);
+        Assert.Empty(_sentEventKeys);
+        // The booking e-mail, not a receipt: the receipt is issued at completion.
+        _pending.Verify(p => p.Enqueue(
+            QueueNames.SendEmail, It.IsAny<It.IsAnyType>(), MessageKeys.OrderBookedEmail(OrderId)), Times.Once);
+        _pending.Verify(p => p.Enqueue(
+            QueueNames.GenerateReceipt, It.IsAny<It.IsAnyType>(), It.IsAny<string>()), Times.Never);
     }
 
     /// <summary>
@@ -122,13 +156,15 @@ public class OrderPaymentConfirmedHonestProducerTests
     /// mode this split is most exposed to, and it is invisible in the two facts above.
     /// </summary>
     [Theory]
-    [InlineData(PaymentType.Card, null)]
-    [InlineData(PaymentType.Cash, "tmpl-1")]
-    public void A_Paid_Order_Resting_At_New_Is_Still_Offerable(
-        PaymentType paymentType, string? recurringTemplateId)
+    [InlineData(PaymentType.Card, null, false)]
+    [InlineData(PaymentType.Cash, "tmpl-1", true)]
+    public void The_Order_Each_Producer_Leaves_At_New_Is_Still_Offerable(
+        PaymentType paymentType, string? recurringTemplateId, bool confirmedByCustomer)
     {
+        var paymentStatus = paymentType == PaymentType.Card ? PaymentStatus.Paid : PaymentStatus.Pending;
         Assert.True(OrderAvailability.IsOfferable(
-            OrderStatus.New, paymentType, PaymentStatus.Paid, recurringTemplateId));
+            OrderStatus.New, paymentType, paymentStatus, recurringTemplateId,
+            confirmedByCustomer ? DateTime.UtcNow : null));
     }
 
     private static Order ArrangeOrder(PaymentType paymentType, string? recurringTemplateId)
@@ -178,12 +214,15 @@ public class OrderPaymentConfirmedHonestProducerTests
             new Mock<IStripeSubscriptionWebhookHandler>().Object,
             new Mock<ITenantProvider>().Object,
             _pending.Object,
+            new GuestOrderAccessTokenIssuer(Mock.Of<IGuestOrderAccessTokenRepository>()),
             _notificationProducer.Object,
             NoPreferredCleanerHold.Resolver,
             Mock.Of<IAdminNotifier>(),
             Mock.Of<IUserNotificationRepository>(),
             Mock.Of<IStripeClientFactory>(),
             Mock.Of<ITenantRepository>(),
+            Mock.Of<ISavedCardRepository>(),
+            Mock.Of<IReceivableRepository>(),
             NullLogger<HandlePaymentNotification.Handler>.Instance);
     }
 

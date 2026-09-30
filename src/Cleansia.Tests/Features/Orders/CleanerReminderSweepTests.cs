@@ -28,9 +28,14 @@ public class CleanerReminderSweepTests
     private readonly Mock<ITenantProvider> _tenantProvider = new();
     private readonly Mock<IUnitOfWork> _unitOfWork = new();
 
+    private readonly Mock<IAdminNotifier> _adminNotifier = new();
+    private readonly Mock<IUserNotificationRepository> _userNotifications = new();
+
     private SendCleanerJobReminders.Handler Handler() => new(
         _orderRepository.Object,
         _producer.Object,
+        _adminNotifier.Object,
+        _userNotifications.Object,
         _tenantProvider.Object,
         _unitOfWork.Object,
         NullLogger<SendCleanerJobReminders.Handler>.Instance);
@@ -218,6 +223,84 @@ public class CleanerReminderSweepTests
 
         Assert.True(result.IsValid);
         Assert.True(command.NudgeLeadMinutesHigh < command.SoonLeadMinutesLow);
+    }
+
+    private Order ArrangeStartedAgo(int minutesAgo, OrderStatus status = OrderStatus.Confirmed, int seats = 1)
+    {
+        var order = ArrangeOrder(minutesOut: -minutesAgo, crew: 1, status);
+        order.SetMaxEmployees(seats);
+        order.TenantId = "tenant-a";
+        return order;
+    }
+
+    private void Alerted(Order order, Times times) =>
+        _adminNotifier.Verify(n => n.NotifyAsync(
+            It.Is<AdminEvent>(e => e.Key == AdminNotificationEventCatalog.OrderCleanerNotStarted
+                && e.TenantId == "tenant-a"
+                && e.Subject == order.Id
+                && e.Args["orderId"] == order.Id),
+            It.IsAny<CancellationToken>()), times);
+
+    [Theory]
+    [InlineData(OrderStatus.Confirmed)]
+    [InlineData(OrderStatus.OnTheWay)]
+    public async Task A_Job_Nobody_Has_Started_Half_An_Hour_After_Its_Start_Alerts_The_Administrators(OrderStatus status)
+    {
+        var order = ArrangeStartedAgo(minutesAgo: 35, status);
+
+        var result = await Handler().Handle(new SendCleanerJobReminders.Command(), CancellationToken.None);
+
+        Alerted(order, Times.Once());
+        Assert.Equal(1, result.Value!.NotStartedAlerts);
+    }
+
+    [Fact]
+    public async Task A_Partly_Filled_Crew_Nobody_Has_Started_Alerts_Too()
+    {
+        var order = ArrangeStartedAgo(minutesAgo: 35, seats: 2);
+
+        await Handler().Handle(new SendCleanerJobReminders.Command(), CancellationToken.None);
+
+        Alerted(order, Times.Once());
+    }
+
+    /// <summary>
+    /// One tick over the jobs the alert must leave alone — inside the half hour, already started,
+    /// already alerted — and the one it must not: only that one is raised, and nothing is cancelled.
+    /// </summary>
+    [Fact]
+    public async Task Only_The_Unstarted_Job_Past_The_Half_Hour_And_Not_Yet_Raised_Is_Alerted()
+    {
+        var due = ArrangeStartedAgo(minutesAgo: 35);
+        var early = Started("order-early", minutesAgo: 20, OrderStatus.Confirmed);
+        var started = Started("order-started", minutesAgo: 35, OrderStatus.InProgress);
+        var raised = Started("order-raised", minutesAgo: 35, OrderStatus.Confirmed);
+        _orderRepository.Setup(r => r.GetQueryableIgnoringTenant())
+            .Returns(new[] { due, early, started, raised }.AsQueryable().BuildMock());
+        _userNotifications
+            .Setup(r => r.AnyForEventAsync(
+                "tenant-a", AdminNotificationEventCatalog.OrderCleanerNotStarted, "orderId", raised.Id,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        var result = await Handler().Handle(new SendCleanerJobReminders.Command(), CancellationToken.None);
+
+        Assert.Equal(1, result.Value!.NotStartedAlerts);
+        Alerted(due, Times.Once());
+        _adminNotifier.Verify(n => n.NotifyAsync(
+            It.Is<AdminEvent>(e => e.Subject != due.Id), It.IsAny<CancellationToken>()), Times.Never);
+        Assert.Equal(OrderStatus.Confirmed, due.CurrentStatus);
+        Assert.Null(due.CancelledAt);
+    }
+
+    private static Order Started(string orderId, int minutesAgo, OrderStatus status)
+    {
+        var order = ValidatorTestHelpers.BuildEmptyOrder(
+            orderId, status, maxEmployees: 1, cleaningDateTime: DateTime.UtcNow.AddMinutes(-minutesAgo));
+        order.AddAssignedEmployee(OrderEmployee.Create(
+            order, ValidatorTestHelpers.BuildEmployee($"emp-{orderId}", ContractStatus.Approved)));
+        order.TenantId = "tenant-a";
+        return order;
     }
 }
 

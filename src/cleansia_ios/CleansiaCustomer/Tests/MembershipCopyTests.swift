@@ -88,6 +88,17 @@ final class MembershipCopyTests: XCTestCase {
         XCTAssertEqual(Self.paid.cancelledHint, L10n.Membership.thenEndsHint)
     }
 
+    /// A past-due membership has no paid period left to run out: the cancel ends it now, so neither the
+    /// dialog nor the confirmation may name a date the benefits last until.
+    func testCancellingAPastDueMembershipEndsItNow() {
+        let pastDue = MembershipCopy(MembershipFixtures.pastDue, now: Self.now)
+        XCTAssertTrue(pastDue.benefitsPaused)
+        XCTAssertEqual(pastDue.cancelDialogMessage, L10n.Membership.cancelDialogMessagePastDue)
+        XCTAssertEqual(pastDue.cancelSuccess(activeUntil: Self.now), L10n.Membership.cancelSuccessPastDue)
+        XCTAssertFalse(Self.paid.benefitsPaused)
+        XCTAssertFalse(MembershipCopy(MembershipFixtures.inactive, now: Self.now).benefitsPaused)
+    }
+
     func testSwitchingDuringTheTrialChargesNothingNow() {
         XCTAssertEqual(
             Self.trialing.switchDialogMessage(price: "2 030 Kč"),
@@ -114,7 +125,7 @@ final class MembershipCopyTests: XCTestCase {
 
     // MARK: - The copy itself
 
-    func testEveryTrialSentenceIsWrittenInAllFiveLanguages() throws {
+    func testEveryTrialAndPastDueSentenceIsWrittenInAllFiveLanguages() throws {
         let keys = [
             "membership_cancel_dialog_message_trial",
             "membership_cancel_success_trial",
@@ -122,7 +133,12 @@ final class MembershipCopyTests: XCTestCase {
             "membership_success_subtitle_trial",
             "membership_trial_perks_title",
             "membership_trial_perks_note",
-            "membership_trial_cancelled_lead"
+            "membership_trial_cancelled_lead",
+            "membership_status_past_due_badge",
+            "membership_past_due_body",
+            "membership_past_due_cancel_hint",
+            "membership_cancel_dialog_message_past_due",
+            "membership_cancel_success_past_due"
         ]
         for language in Self.languages {
             L10n.bundle = try localeBundle(language)
@@ -152,6 +168,7 @@ final class MembershipCopyTests: XCTestCase {
     func testTheCardTheWelcomeAndTheShellReadTheTrialCopy() throws {
         let card = try read("CleansiaCustomer/Sources/Features/Membership/MembershipManagementCard.swift")
         for binding in [
+            "} else if membership.benefitsPaused {",
             "message: vm.copy.cancelDialogMessage",
             "message: vm.copy.switchDialogMessage(",
             "copy.cancelSuccess(activeUntil: date)",

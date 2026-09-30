@@ -129,6 +129,31 @@ public sealed class GuestPlatformCancellationEmailCopyTests
         Assert.DoesNotContain("Nothing was charged", message);
     }
 
+    /// <summary>
+    /// A confirmed lockout keeps a paid card charge and bills a cash booking: the reason states the whole
+    /// price, and neither a refund in progress nor "nothing was charged" is promised.
+    /// </summary>
+    [Theory]
+    [InlineData("en", "the full price is charged as a cancellation fee")]
+    [InlineData("cs", "celá cena se účtuje jako storno poplatek")]
+    [InlineData("sk", "celá cena sa účtuje ako storno poplatok")]
+    [InlineData("uk", "повна вартість стягується як плата за скасування")]
+    [InlineData("ru", "полная стоимость взимается как плата за отмену")]
+    public async Task A_Confirmed_Lockout_States_The_Whole_Price_And_Promises_No_Refund(string language, string fee)
+    {
+        var card = PaidCardOrder();
+        card.Cancel(DateTime.UtcNow, CancelledBy.Admin, 1m, 0m, OrderCancellationReasons.CustomerLockout);
+        var cash = NewOrder(PaymentType.Cash, PaymentStatus.Pending);
+        cash.Cancel(DateTime.UtcNow, CancelledBy.Admin, 1m, 0m, OrderCancellationReasons.CustomerLockout);
+
+        foreach (var order in new[] { card, cash })
+        {
+            var message = await StatusMessageAsync(order, language, refundedAmount: null);
+
+            Assert.EndsWith(fee + ".", message);
+        }
+    }
+
     [Fact]
     public async Task A_Booking_The_Guest_Cancelled_Keeps_Its_Own_Wording()
     {
@@ -212,7 +237,8 @@ public sealed class GuestPlatformCancellationEmailCopyTests
             httpClientFactory.Object,
             translationRepository.Object,
             renderer.Object,
-            Mock.Of<ICountryConfigurationRepository>());
+            Mock.Of<ICountryConfigurationRepository>(),
+            Mock.Of<ICompanyInfoRepository>());
 
         return (service, captured);
     }

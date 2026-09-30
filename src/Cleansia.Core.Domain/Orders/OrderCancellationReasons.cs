@@ -49,4 +49,11 @@ public static class OrderCancellationReasons
     /// the platform cancelled it and refunded it in full. → <c>CompanyWindDownService</c>
     /// </summary>
     public const string CompanyWindDown = "order.cancelled.company_wind_down";
+
+    /// <summary>
+    /// The cleaner could not get in and an administrator confirmed it: a customer cancellation at the whole
+    /// price (owner ruling 2026-09-28, decision 11). Written by an administrator, and a key rather than a
+    /// note, so the mapper exposes it like a platform reason. → <c>AdminCancelOrderAsLockout</c>
+    /// </summary>
+    public const string CustomerLockout = "order.cancelled.customer_lockout";
 }

@@ -45,12 +45,19 @@ jobs:
       # `if (environment.IsDevelopment())`, and deployed hosts apply the EF migration bundle from CI
       # without ever calling the seeder. This workflow was the one remaining path to production, and
       # a human typing "execute" was the only thing in the way.
+      #
+      # The path is resolved inside sql-scripts/ and lower-cased before it is compared, so ./seed/x.sql,
+      # a/../insert_seed_data.sql and Insert_Seed_Data.sql are the fixtures they name, and a path that
+      # resolves outside sql-scripts/ is refused with them.
       - name: Refuse development fixtures against production
         if: inputs.environment == 'PRO'
+        env:
+          SCRIPT_PATH: ${{ inputs.script_path }}
         run: |
-          case "${{ inputs.script_path }}" in
-            insert_seed_data.sql|seed/*)
-              echo "::error::${{ inputs.script_path }} is a development fixture and must never run against PRO."
+          RESOLVED=$(realpath -m --relative-to="$PWD/sql-scripts" "$PWD/sql-scripts/$SCRIPT_PATH" | tr '[:upper:]' '[:lower:]')
+          case "$RESOLVED" in
+            insert_seed_data.sql|seed|seed/*|..|../*|/*)
+              echo "::error::$SCRIPT_PATH is a development fixture, or lies outside sql-scripts/, and must never run against PRO."
               echo "::error::It seeds the development catalogue (see README.md)."
               exit 1
               ;;
@@ -71,8 +78,10 @@ jobs:
           fi
 
       - name: Verify script exists
+        env:
+          SCRIPT_PATH: ${{ inputs.script_path }}
         run: |
-          SCRIPT="sql-scripts/${{ inputs.script_path }}"
+          SCRIPT="sql-scripts/$SCRIPT_PATH"
           if [ ! -f "$SCRIPT" ]; then
             echo "::error::Script not found: $SCRIPT"
             exit 1
@@ -110,8 +119,9 @@ jobs:
       - name: Execute SQL script
         env:
           DB_CONNECTION_STRING: ${{ secrets.DB_CONNECTION_STRING_DEV }}
+          SCRIPT_PATH: ${{ inputs.script_path }}
         run: |
-          SCRIPT="sql-scripts/${{ inputs.script_path }}"
+          SCRIPT="sql-scripts/$SCRIPT_PATH"
 
           if [ -z "$DB_CONNECTION_STRING" ]; then
             echo "::error::DB_CONNECTION_STRING_DEV secret is not set"
@@ -167,8 +177,9 @@ jobs:
       - name: Execute SQL script
         env:
           DB_CONNECTION_STRING: ${{ secrets.DB_CONNECTION_STRING_PRO }}
+          SCRIPT_PATH: ${{ inputs.script_path }}
         run: |
-          SCRIPT="sql-scripts/${{ inputs.script_path }}"
+          SCRIPT="sql-scripts/$SCRIPT_PATH"
 
           if [ -z "$DB_CONNECTION_STRING" ]; then
             echo "::error::DB_CONNECTION_STRING_PRO secret is not set"

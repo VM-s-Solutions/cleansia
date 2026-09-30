@@ -109,7 +109,7 @@ public class CreateMembershipSubscription
                     nameof(command.PlanCode), BusinessErrorMessage.MembershipPlanNotFound));
             }
 
-            var existing = await userMembershipRepository.GetActiveForUserAsync(user.Id, cancellationToken);
+            var existing = await userMembershipRepository.GetLifecycleForUserAsync(user.Id, cancellationToken);
             if (existing != null)
             {
                 return BusinessResult.Failure<Response>(new Error(
@@ -194,7 +194,7 @@ public class CreateMembershipSubscription
                 // The pre-Stripe active-membership guard ran before this Stripe call, so re-check now:
                 // a concurrent confirm that won the race has since committed its row, and the loser must
                 // resolve to a deterministic MembershipAlreadyActive rather than add a duplicate.
-                var concurrentWinner = await userMembershipRepository.GetActiveForUserAsync(user.Id, cancellationToken);
+                var concurrentWinner = await userMembershipRepository.GetLifecycleForUserAsync(user.Id, cancellationToken);
                 if (concurrentWinner != null)
                 {
                     logger.LogInformation(

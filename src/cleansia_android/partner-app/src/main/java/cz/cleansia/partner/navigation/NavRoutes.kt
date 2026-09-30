@@ -39,7 +39,8 @@ sealed interface NavRoute {
     @Serializable data object Dashboard : NavRoute
 
     @Serializable data object Orders : NavRoute
-    @Serializable data class OrderDetail(val orderId: String) : NavRoute
+    /** [showRemovalReason] is set by the removal notice alone: only that entry asks the server why. */
+    @Serializable data class OrderDetail(val orderId: String, val showRemovalReason: Boolean = false) : NavRoute
 
     /**
      * Jobs a customer asked for this cleaner by name, held for them until a deadline. Pushed rather
@@ -92,6 +93,9 @@ sealed interface NavRoute {
 
     @Serializable data object ProfileEmergency : NavRoute
     @Serializable data object ProfileDocuments : NavRoute
+
+    /** The contract documents the cleaner reads and accepts — not the papers [ProfileDocuments] uploads. */
+    @Serializable data object LegalDocuments : NavRoute
 
     /**
      * Full-screen Mapbox picker launched from the Address section. On

@@ -38,6 +38,13 @@ Settings are loaded in order with later files overriding earlier ones. Sensitive
 | `ConnectionString` | PostgreSQL database | Key Vault / User Secrets |
 | `BlobContainerConfigurationConnectionString` | Azure Blob Storage | Key Vault (`UseDevelopmentStorage=true` locally) |
 
+**Production differs on both (E-4).** `ConnectionString` is the least-privilege `cleansia_app`
+login's, with `Ssl Mode=VerifyFull`. Storage has no connection string at all: the hosts carry
+`BlobContainerConfiguration__AccountUrl` and, for queues,
+`QueueStorageConnectionString__queueServiceUri` with `QueueStorageConnectionString__credential` set to
+`managedidentity`, and reach both with their managed identity; the `ConnectionStrings__…` storage
+settings are absent, not empty. → [Azure setup — production posture](/deployment/azure-setup#production-posture)
+
 ### JWT Settings
 
 ```json
@@ -93,6 +100,15 @@ operator who set a 6-hour lifetime got Admin's 15 minutes and no signal that the
 | `WebhookUrl` | No | Relative path for webhook endpoint |
 | `SuccessUrlBase` | No | Redirect URL after successful payment |
 | `CancelUrlBase` | No | Redirect URL after cancelled payment |
+
+**Whose account the keys belong to.** Each environment configures **one** Stripe account. DEV's is a
+Stripe sandbox. Production's is **the operating company's own account** (decision 49 of the
+2026-09-27 meeting plan, owner ruling 2026-09-28), so the payee a customer sees is the company that
+issues the receipt: the `prod-weu` secrets `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY` and the two
+webhook secrets are that account's **live** values. It replaces the holding account with
+intercompany settlement ruled on 2026-09-15, and it holds while there is one operating company — a
+second company that takes card payments needs its own account first.
+→ [Business rules — the market](/product/business-rules#market)
 
 ### SendGrid
 
@@ -336,6 +352,14 @@ The Partner API (`:5000`) also mounts `POST /api/Payment/webhook`, but no Stripe
 
 ### 6. Android App
 
-For the Android app connecting to a local backend, the debug build type uses
-`http://10.0.2.2:5002/api` — `10.0.2.2` maps to the host machine's `localhost` from the Android
-emulator, and `5002` is the **Partner Mobile API**. The customer Android app targets `5004`.
+The debug build of both apps calls the Azure DEV mobile host, and a release build calls production.
+To reach a local backend from the emulator, pass the host explicitly — `10.0.2.2` maps to the host
+machine's `localhost`, `5002` is the **Partner Mobile API** and `5004` the **Customer Mobile API**:
+
+```bash
+./gradlew :partner-app:installDebug  -PAPI_BASE_URL=http://10.0.2.2:5002/
+./gradlew :customer-app:installDebug -PAPI_BASE_URL=http://10.0.2.2:5004/
+```
+
+Every build type's default, and what a release build needs before it can ship:
+[Mobile apps — build types](/mobile-app/overview#build-types-and-where-the-base-url-comes-from).

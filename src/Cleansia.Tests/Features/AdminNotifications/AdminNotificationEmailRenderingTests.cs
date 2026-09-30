@@ -142,6 +142,24 @@ public sealed class AdminNotificationEmailRenderingTests
         Assert.Contains("the cleaner's account was rejected", capture.HtmlContent, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// Only a cancellation's own refund is re-driven every hour; any other is the administrators' to
+    /// retry. An administrator told a dispute's refund is being retried waits for a retry that never comes.
+    /// </summary>
+    [Theory]
+    [InlineData(AdminNotificationEventCatalog.RefundStuck, "It is retried every hour", "retry it from")]
+    [InlineData(AdminNotificationEventCatalog.RefundNeedsRetry, "retry it from the dispute or the order", "retried every hour")]
+    public async Task Each_Stuck_Refund_Email_Says_Who_Retries_It(string eventKey, string says, string doesNotSay)
+    {
+        var (service, capture) = BuildService([]);
+
+        await service.SendAdminNotificationEmailAsync(Recipient, eventKey, SampleArgs(eventKey), "en", CancellationToken.None);
+
+        Assert.Contains("1 250 Kč", capture.HtmlContent, StringComparison.Ordinal);
+        Assert.Contains(says, capture.HtmlContent, StringComparison.Ordinal);
+        Assert.DoesNotContain(doesNotSay, capture.HtmlContent, StringComparison.Ordinal);
+    }
+
     [Fact]
     public async Task A_Day_Arg_Is_Shown_As_A_Date_And_A_Count_As_Itself()
     {
@@ -217,7 +235,8 @@ public sealed class AdminNotificationEmailRenderingTests
             httpClientFactory.Object,
             translationRepository.Object,
             new EmailTemplateRenderer(),
-            Mock.Of<ICountryConfigurationRepository>());
+            Mock.Of<ICountryConfigurationRepository>(),
+            Mock.Of<ICompanyInfoRepository>());
 
         return (service, capture);
     }

@@ -36,6 +36,7 @@ public sealed class PayoutGateDeployDayTests(HostTestPostgresFixture db) : Authz
             var employee = DomainSeed.LegacyPayoutApprovedEmployee(employeeUser);
             ctx.Employees.Add(employee);
             ctx.EmployeeDocuments.Add(DomainSeed.ActiveDocument(employee.Id));
+            await DomainSeed.AcceptCleanerDocumentsAsync(ctx, employee);
 
             var (workContract, textEnId) = await DomainSeed.WorkContractInForceAsync(ctx);
             textId = textEnId;

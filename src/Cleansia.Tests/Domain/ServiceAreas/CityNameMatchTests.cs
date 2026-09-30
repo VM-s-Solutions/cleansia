@@ -8,7 +8,7 @@ namespace Cleansia.Tests.Domain.ServiceAreas;
 /// <para>It was an exact case-insensitive compare, which refuses every spelling an operator did not
 /// seed verbatim — and this repo's own seed contains such a pair: a customer address at <c>'Plzen'</c>
 /// (<c>sql-scripts/seed/insert_addresses.sql:39</c>) against a serviced row <c>'Plzeň'</c>
-/// (<c>insert_seed_data.sql:358</c>). That address could not be booked, and the customer found out at
+/// (<c>prod-bootstrap.sql:392</c>). That address could not be booked, and the customer found out at
 /// payment.</para>
 ///
 /// <para><b>The refusals below are the half that matters.</b> A rule that only widened would be

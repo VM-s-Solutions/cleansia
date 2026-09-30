@@ -13,6 +13,7 @@ import cz.cleansia.customer.core.memberships.CreateMembershipSubscriptionRespons
 import cz.cleansia.customer.core.memberships.GetMyMembershipResponse
 import cz.cleansia.customer.core.memberships.MembershipPlanDto
 import cz.cleansia.customer.core.memberships.MembershipRepository
+import cz.cleansia.customer.core.memberships.MembershipStatus
 import cz.cleansia.customer.core.memberships.SwapMembershipPlanResponse
 import cz.cleansia.customer.testing.MainDispatcherRule
 import cz.cleansia.customer.ui.state.ActionState
@@ -344,6 +345,29 @@ class MembershipViewModelTest {
         verify(exactly = 1) { snackbar.showSuccessKey(R.string.membership_cancel_success_trial) }
         verify(exactly = 0) { snackbar.showSuccess(any<String>()) }
         assertEquals(ActionState.Idle, vm.submitState.value)
+    }
+
+    @Test
+    fun `cancelling a past-due or paused membership says it ended now, not that benefits run to a date`() = runTest {
+        coEvery { repository.cancel() } returns ApiResult.Success(
+            CancelMembershipSubscriptionResponse(effectiveEndDate = "2026-09-29T10:00:00Z"),
+        )
+
+        listOf(MembershipStatus.PastDue, MembershipStatus.Paused).forEach { status ->
+            current.value = GetMyMembershipResponse(
+                hasMembership = true,
+                planCode = "plus_monthly",
+                status = status.code,
+            )
+            val vm = viewModel()
+            advanceUntilIdle()
+            vm.cancel()
+            advanceUntilIdle()
+            assertEquals(ActionState.Idle, vm.submitState.value)
+        }
+
+        verify(exactly = 2) { snackbar.showSuccessKey(R.string.membership_cancel_success_now) }
+        verify(exactly = 0) { snackbar.showSuccess(any<String>()) }
     }
 
     @Test

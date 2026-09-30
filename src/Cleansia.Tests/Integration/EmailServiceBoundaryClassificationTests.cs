@@ -70,7 +70,8 @@ public class EmailServiceBoundaryClassificationTests
             httpClientFactory.Object,
             translations.Object,
             new EmailTemplateRenderer(),
-            Mock.Of<ICountryConfigurationRepository>());
+            Mock.Of<ICountryConfigurationRepository>(),
+            Mock.Of<ICompanyInfoRepository>());
     }
 
     private sealed class AttemptCountingHandler(HttpStatusCode status) : HttpMessageHandler

@@ -103,6 +103,9 @@ public class RedactionUnmaskedFreeTextGuardTests
         // responses hand a StripeCustomerId to the client at all is a separate S4 question about the
         // shipped DTO contract, not about redaction unmasking it.
         "StripeCustomerId",
+        // The Stripe-hosted page a web recurring confirmation redirects to: a URL Stripe builds around
+        // its own session id, with nothing a person typed in it.
+        "CheckoutUrl",
     };
 
     /// <summary>

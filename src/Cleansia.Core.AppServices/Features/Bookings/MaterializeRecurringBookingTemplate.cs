@@ -145,6 +145,15 @@ public class MaterializeRecurringBookingTemplate
                 return BusinessResult.Success(new Response(0));
             }
 
+            if (!BookingPolicy.IsBookableTimeOfDay(template.TimeOfDay))
+            {
+                logger.LogWarning(
+                    "Template {TemplateId} skipped: its start {TimeOfDay} is outside the bookable window. "
+                    + "The schedule is preserved and resumes once its owner moves it to a bookable time",
+                    template.Id, template.TimeOfDay);
+                return BusinessResult.Success(new Response(0));
+            }
+
             // Resolve the template's address, fail-soft. Its market's clock is the one the template's day and
             // time are written in.
             var saved = await savedAddressRepository.GetByIdAsync(template.SavedAddressId, cancellationToken);
@@ -165,7 +174,8 @@ public class MaterializeRecurringBookingTemplate
                 return BusinessResult.Success(new Response(0));
             }
 
-            var marketZone = await MarketZoneAsync(address.CountryId, cancellationToken);
+            var marketZone = await TimeZoneResolution.ForMarketAsync(
+                countryConfigurationRepository, address.CountryId, cancellationToken);
             var occurrences = ComputeOccurrences(template, now, horizon, marketZone).ToList();
             if (occurrences.Count == 0)
             {
@@ -251,6 +261,7 @@ public class MaterializeRecurringBookingTemplate
                 Array.Empty<string>(),
                 template.Rooms,
                 template.Bathrooms,
+                template.DirtinessLevel,
                 currency.Id,
                 cleaningDateUtc: null,
                 userId: null,
@@ -308,9 +319,20 @@ public class MaterializeRecurringBookingTemplate
                     // hold and the push, never the cleaning. Reject where someone can react;
                     // degrade where nobody can.
                     PreferredEmployeeId: template.PreferredEmployeeId,
-                    RecurringTemplateId: template.Id);
+                    RecurringTemplateId: template.Id,
+                    DirtinessLevel: template.DirtinessLevel);
 
-                await orderFactory.CreateAsync(input, cancellationToken);
+                var order = await orderFactory.CreateAsync(input, cancellationToken);
+                if (template.EarlyPerformanceConsentedOn is { } consentedOn)
+                {
+                    order.RecordEarlyPerformanceConsent(
+                        template.EarlyPerformanceConsentTextVersion!,
+                        consentedOn,
+                        template.EarlyPerformanceConsentClient!,
+                        template.EarlyPerformanceConsentIpAddress,
+                        template.EarlyPerformanceConsentDeviceLabel);
+                }
+
                 ordersCreated++;
             }
 
@@ -330,12 +352,12 @@ public class MaterializeRecurringBookingTemplate
         }
 
         /// <summary>
-        /// The CANDIDATE UTC instants for this template in the [now, horizon] window. The template's day and
-        /// time are the market's wall clock, so the walk runs over dates in <paramref name="marketZone"/> and
-        /// each date is converted on its own — a 10:00 schedule stays 10:00 across a daylight-saving change.
-        /// <see cref="RecurringBookingTemplate.LastMaterializedFor"/> only moves the start of the
-        /// derivation forward; it is not the duplicate guard, and it is null on every tick that follows an
-        /// edit. Whether a candidate already has an order is decided by the caller.
+        /// The CANDIDATE UTC instants for this template in the window from now plus the minimum lead time to
+        /// the horizon. The template's day and time are the market's wall clock, so the walk runs over dates
+        /// in <paramref name="marketZone"/> and each date is converted on its own — a 10:00 schedule stays
+        /// 10:00 across a daylight-saving change. <see cref="RecurringBookingTemplate.LastMaterializedFor"/>
+        /// only moves the start of the derivation forward; it is not the duplicate guard, and it is null on
+        /// every tick that follows an edit. Whether a candidate already has an order is decided by the caller.
         /// </summary>
         public static IEnumerable<DateTime> ComputeOccurrences(
             RecurringBookingTemplate template,
@@ -343,37 +365,107 @@ public class MaterializeRecurringBookingTemplate
             DateTime horizon,
             TimeZoneInfo marketZone)
         {
-            // Determine the search start: max(template.StartsOn, lastMaterialized + step, now).
-            var stepDays = template.Frequency switch
-            {
-                RecurrenceFrequency.Weekly => 7,
-                RecurrenceFrequency.Biweekly => 14,
-                RecurrenceFrequency.Monthly => 30, // approximation, fine for matching pool
-                _ => 7,
-            };
-
-            var searchDate = template.LastMaterializedFor.HasValue
-                ? MarketDate(template.LastMaterializedFor.Value, marketZone).AddDays(stepDays)
-                : MarketDate(template.StartsOn, marketZone);
+            var earliest = now.AddHours(BookingPolicy.ExpressLeadTimeHours);
             var today = MarketDate(now, marketZone);
-            if (searchDate < today) searchDate = today;
+            var dates = template.Frequency == RecurrenceFrequency.Monthly
+                ? MonthlyDates(template, today, marketZone)
+                : StepDates(template, today, marketZone);
 
-            while (searchDate.DayOfWeek != template.DayOfWeek)
+            foreach (var date in dates)
             {
-                searchDate = searchDate.AddDays(1);
-            }
+                var occurrence = MarketTimeToUtc(date, template.TimeOfDay, marketZone);
+                if (occurrence > horizon)
+                {
+                    yield break;
+                }
 
-            var occurrence = MarketTimeToUtc(searchDate, template.TimeOfDay, marketZone);
-            while (occurrence <= horizon)
-            {
-                if (occurrence >= template.StartsOn
+                if (occurrence >= earliest
+                    && occurrence >= template.StartsOn
                     && (template.EndsOn == null || occurrence <= template.EndsOn))
                 {
                     yield return occurrence;
                 }
-                searchDate = searchDate.AddDays(stepDays);
-                occurrence = MarketTimeToUtc(searchDate, template.TimeOfDay, marketZone);
             }
+        }
+
+        /// <summary>
+        /// Weekly and biweekly visits fall a whole number of steps after the first scheduled date. Counted
+        /// from <see cref="RecurringBookingTemplate.StartsOn"/> rather than from today, so an edit — which
+        /// clears the resume pointer — keeps a fortnightly schedule on its own weeks.
+        /// </summary>
+        private static IEnumerable<DateOnly> StepDates(
+            RecurringBookingTemplate template, DateOnly today, TimeZoneInfo marketZone)
+        {
+            var stepDays = template.Frequency == RecurrenceFrequency.Biweekly ? 14 : 7;
+            var anchor = FirstScheduledDate(template, marketZone);
+            var from = ResumeFrom(template, anchor, today, marketZone);
+
+            var steps = Math.Max(0, (from.DayNumber - anchor.DayNumber + stepDays - 1) / stepDays);
+            var date = anchor.AddDays(steps * stepDays);
+            while (true)
+            {
+                yield return date;
+                date = date.AddDays(stepDays);
+            }
+        }
+
+        /// <summary>
+        /// Monthly is the nth weekday of each month (owner ruling 2026-09-28), n read off the first scheduled
+        /// date: a schedule that began on the 2nd Thursday stays on the 2nd Thursday, and one that began on
+        /// a 5th weekday takes the last, since most months have none. Derived from
+        /// <see cref="RecurringBookingTemplate.StartsOn"/> rather than stepped from the previous visit, so an
+        /// edit — which clears the resume pointer — keeps the cadence.
+        /// </summary>
+        private static IEnumerable<DateOnly> MonthlyDates(
+            RecurringBookingTemplate template, DateOnly today, TimeZoneInfo marketZone)
+        {
+            var anchor = FirstScheduledDate(template, marketZone);
+            var ordinal = (anchor.Day - 1) / 7 + 1;
+            var from = ResumeFrom(template, anchor, today, marketZone);
+
+            var month = new DateOnly(from.Year, from.Month, 1);
+            while (true)
+            {
+                var date = NthWeekdayOfMonth(month, template.DayOfWeek, ordinal);
+                if (date >= from)
+                {
+                    yield return date;
+                }
+
+                month = month.AddMonths(1);
+            }
+        }
+
+        private static DateOnly FirstScheduledDate(RecurringBookingTemplate template, TimeZoneInfo marketZone)
+        {
+            var date = MarketDate(template.StartsOn, marketZone);
+            while (date.DayOfWeek != template.DayOfWeek)
+            {
+                date = date.AddDays(1);
+            }
+
+            return date;
+        }
+
+        private static DateOnly ResumeFrom(
+            RecurringBookingTemplate template, DateOnly anchor, DateOnly today, TimeZoneInfo marketZone)
+        {
+            var from = template.LastMaterializedFor.HasValue
+                ? MarketDate(template.LastMaterializedFor.Value, marketZone).AddDays(1)
+                : anchor;
+            return from < today ? today : from;
+        }
+
+        private static DateOnly NthWeekdayOfMonth(DateOnly firstOfMonth, DayOfWeek day, int ordinal)
+        {
+            var first = firstOfMonth.AddDays(((int)day - (int)firstOfMonth.DayOfWeek + 7) % 7);
+            if (ordinal < 5)
+            {
+                return first.AddDays(7 * (ordinal - 1));
+            }
+
+            var fifth = first.AddDays(28);
+            return fifth.Month == firstOfMonth.Month ? fifth : first.AddDays(21);
         }
 
         private static DateOnly MarketDate(DateTime utc, TimeZoneInfo marketZone) =>
@@ -388,18 +480,6 @@ public class MaterializeRecurringBookingTemplate
             return marketZone.IsInvalidTime(local)
                 ? DateTime.SpecifyKind(local - marketZone.GetUtcOffset(local.AddDays(-1)), DateTimeKind.Utc)
                 : TimeZoneInfo.ConvertTimeToUtc(local, marketZone);
-        }
-
-        /// <summary>The saved address's market zone; a market with none reads the default market's.</summary>
-        private async Task<TimeZoneInfo> MarketZoneAsync(string countryId, CancellationToken cancellationToken)
-        {
-            var zoneId = (await countryConfigurationRepository.GetByCountryIdAsync(countryId, cancellationToken))?.TimeZoneId;
-            if (string.IsNullOrWhiteSpace(zoneId))
-            {
-                zoneId = (await countryConfigurationRepository.GetDefaultMarketAsync(cancellationToken))?.TimeZoneId;
-            }
-
-            return TimeZoneResolution.Resolve(zoneId);
         }
     }
 }

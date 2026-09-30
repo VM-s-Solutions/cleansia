@@ -161,6 +161,78 @@ public class GetPagedOrdersScopeIntegrationTests(PostgresContainerFixture fixtur
             });
     }
 
+    // ── Owner ruling 2026-09-28 (D67): the crew's access to the customer ends 24 h after completion and at
+    //    once on cancellation, on the list as on the detail. ──
+
+    private const string CompletedLongAgoOrderId = "order-done-25h-gpscope";
+    private const string CompletedRecentlyOrderId = "order-done-23h-gpscope";
+    private const string CancelledOrderId = "order-cancelled-gpscope";
+
+    [Fact]
+    public async Task Past_The_Window_The_Assigned_Cleaners_Row_Carries_No_Customer()
+    {
+        await TestMethod(
+            setup: services => ReplaceWithEmployeeSession(services, UserAId, EmployeeAEmail, EmployeeAId),
+            arrange: SeedPastJobsOfEmployeeA,
+            act: async provider =>
+            {
+                var mediator = provider.GetRequiredService<IMediator>();
+                return await mediator.Send(new GetPagedOrders.Request
+                {
+                    Filter = EmptyFilter() with
+                    {
+                        EmployeeId = EmployeeAId,
+                        OrderStatuses = new[] { OrderStatus.Completed, OrderStatus.Cancelled },
+                    },
+                });
+            },
+            assert: (CleansiaDbContext _, PagedData<OrderListItem> page) =>
+            {
+                var rows = page.Data!.ToList();
+
+                foreach (var closed in new[] { CompletedLongAgoOrderId, CancelledOrderId })
+                {
+                    var row = Assert.Single(rows, r => r.Id == closed);
+                    Assert.Equal(string.Empty, row.CustomerName);
+                    Assert.Equal(string.Empty, row.CustomerPhone);
+                    Assert.Null(row.CustomerAddressLatitude);
+                    Assert.Null(row.CustomerAddressLongitude);
+                }
+
+                var open = Assert.Single(rows, r => r.Id == CompletedRecentlyOrderId);
+                Assert.Equal("Scope Customer", open.CustomerName);
+                Assert.Equal("+420777999888", open.CustomerPhone);
+                Assert.NotNull(open.CustomerAddressLatitude);
+
+                return Task.CompletedTask;
+            });
+    }
+
+    private static async Task SeedPastJobsOfEmployeeA(CleansiaDbContext context)
+    {
+        await SeedTwoEmployeesWithOrders(context);
+        var employeeA = await context.Employees.FindAsync(EmployeeAId);
+
+        foreach (var (orderId, status, completedHoursAgo) in new (string, OrderStatus, int?)[]
+                 {
+                     (CompletedLongAgoOrderId, OrderStatus.Completed, 25),
+                     (CompletedRecentlyOrderId, OrderStatus.Completed, 23),
+                     (CancelledOrderId, OrderStatus.Cancelled, null),
+                 })
+        {
+            var order = CreateOrder(orderId, status, withSecretCoords: false);
+            order.AddAssignedEmployee(OrderEmployee.Create(order, employeeA!));
+            if (completedHoursAgo is { } hours)
+            {
+                order.MarkCompletedAt(DateTime.UtcNow.AddHours(-hours));
+            }
+
+            context.Add(order);
+        }
+
+        await context.CommitAsync(CancellationToken.None);
+    }
+
     private static GetPagedOrders.Request MineRequest(string employeeIdFilter) =>
         new()
         {

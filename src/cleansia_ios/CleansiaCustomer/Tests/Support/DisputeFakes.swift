@@ -14,6 +14,7 @@ final class FakeDisputeClient: DisputeClient, @unchecked Sendable {
     private(set) var createCallCount = 0
     private(set) var lastCreate: (orderId: String, reason: Int, description: String)?
     private(set) var lastCreateLines: [OrderItemLine] = []
+    private(set) var lastCreateSettlement: DisputeSettlement?
 
     var addMessageResult: ApiResult<Void> = .success(())
     private(set) var addMessageCallCount = 0
@@ -51,11 +52,13 @@ final class FakeDisputeClient: DisputeClient, @unchecked Sendable {
         orderId: String,
         reason: Int,
         description: String,
-        lines: [OrderItemLine]
+        lines: [OrderItemLine],
+        settlement: DisputeSettlement
     ) async -> ApiResult<String> {
         createCallCount += 1
         lastCreate = (orderId, reason, description)
         lastCreateLines = lines
+        lastCreateSettlement = settlement
         if let onCreate { await onCreate() }
         return createResult
     }

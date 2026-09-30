@@ -18,6 +18,10 @@ struct BookingQuote: Equatable {
     let expressSurchargeAmount: Double
     let expressSurchargeWaivedByMembership: Bool
     let requiredEmployees: Int
+    /// The level the server priced, echoed so the surcharge row names the level it was charged for.
+    let dirtiness: Dirtiness
+    /// Inside ``totalPrice`` and inside the base the discounts come off; express is measured on top.
+    let dirtinessSurchargeAmount: Double
 
     init(
         totalPrice: Double,
@@ -33,7 +37,9 @@ struct BookingQuote: Equatable {
         expressSurchargeApplied: Bool = false,
         expressSurchargeAmount: Double = 0,
         expressSurchargeWaivedByMembership: Bool = false,
-        requiredEmployees: Int = 1
+        requiredEmployees: Int = 1,
+        dirtiness: Dirtiness = .normal,
+        dirtinessSurchargeAmount: Double = 0
     ) {
         self.totalPrice = totalPrice
         self.originalSubtotal = originalSubtotal
@@ -49,6 +55,8 @@ struct BookingQuote: Equatable {
         self.expressSurchargeAmount = expressSurchargeAmount
         self.expressSurchargeWaivedByMembership = expressSurchargeWaivedByMembership
         self.requiredEmployees = requiredEmployees
+        self.dirtiness = dirtiness
+        self.dirtinessSurchargeAmount = dirtinessSurchargeAmount
     }
 
     /// **Refuse.** This is the number the customer commits to, and the screen does arithmetic on it —
@@ -71,7 +79,9 @@ struct BookingQuote: Equatable {
             expressSurchargeAmount: response.expressSurchargeAmount.require("expressSurchargeAmount"),
             expressSurchargeWaivedByMembership: response.expressSurchargeWaivedByMembership
                 .require("expressSurchargeWaivedByMembership"),
-            requiredEmployees: response.requiredEmployees.require("requiredEmployees")
+            requiredEmployees: response.requiredEmployees.require("requiredEmployees"),
+            dirtiness: Dirtiness(wire: response.dirtinessLevel.require("dirtinessLevel")),
+            dirtinessSurchargeAmount: response.dirtinessSurchargeAmount.require("dirtinessSurchargeAmount")
         )
     }
 }

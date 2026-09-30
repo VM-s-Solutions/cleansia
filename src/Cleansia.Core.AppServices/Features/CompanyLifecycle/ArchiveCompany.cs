@@ -70,6 +70,8 @@ public class ArchiveCompany
                 .WithMessage(BusinessErrorMessage.CompanyHasUninvoicedPay)
                 .MustAsync(async (_, ct) => (await FactsAsync(ct)).OpenDisputes == 0)
                 .WithMessage(BusinessErrorMessage.CompanyHasOpenDisputes)
+                .MustAsync(async (_, ct) => (await FactsAsync(ct)).CleanersHoldingCash == 0)
+                .WithMessage(BusinessErrorMessage.CompanyHasCashHeld)
                 .MustAsync(async (_, ct) => !await WithinChargebackHorizonAsync(ct))
                 .WithMessage(BusinessErrorMessage.CompanyWithinChargebackHorizon)
                 .MustAsync(async (_, ct) => await CompanyAsync(ct) is { IsArchived: false })

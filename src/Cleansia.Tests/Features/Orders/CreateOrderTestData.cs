@@ -73,7 +73,8 @@ internal static class CreateOrderTestData
         string? referralCode = null,
         string? specialInstructions = null,
         string? accessInstructions = null,
-        bool? termsAccepted = true) =>
+        bool? termsAccepted = true,
+        bool? earlyPerformanceRequested = true) =>
         new(
             CustomerName: "Test Customer",
             CustomerEmail: "customer@example.com",
@@ -85,7 +86,7 @@ internal static class CreateOrderTestData
             Rooms: 2,
             Bathrooms: 1,
             Extras: new Dictionary<string, bool>(),
-            CleaningDate: cleaningDate ?? DateTime.UtcNow.AddDays(3),
+            CleaningDate: cleaningDate ?? DateTime.UtcNow.Date.AddDays(3).AddHours(9),
             PaymentType: paymentType,
             CurrencyId: CurrencyId,
             TotalPrice: totalPrice ?? MatchingTotalPrice,
@@ -95,7 +96,8 @@ internal static class CreateOrderTestData
             PreferredEmployeeId: preferredEmployeeId,
             SpecialInstructions: specialInstructions,
             AccessInstructions: accessInstructions,
-            TermsAccepted: termsAccepted);
+            TermsAccepted: termsAccepted,
+            EarlyPerformanceRequested: earlyPerformanceRequested);
 
     public static OrderPricingResult MatchingPricing(decimal totalPrice = MatchingTotalPrice) =>
         new(

@@ -49,13 +49,18 @@ public static class PolicyBuilder
         // Cleansia Plus membership — subscribe / cancel / read own status
         [Policy.CanManageMembership] = PhysicalPolicy.CustomerOnly,
 
+        // The saved card — capture, read own, remove own
+        [Policy.CanManageSavedCard] = PhysicalPolicy.CustomerOnly,
+
         // Recurring booking templates — Plus perk, customer-only
         [Policy.CanManageRecurringBookings] = PhysicalPolicy.CustomerOnly,
         //[Policy.CanCreateOrder] = PhysicalPolicy.Anonymous,
         //[Policy.CanGetOrderStatus] = PhysicalPolicy.Anonymous,
 
         // User
-        [Policy.CanViewPagedUser] = PhysicalPolicy.EmployeeOrAdmin,
+        // The partner host's account list: every customer's name, e-mail and phone, so the administrator's
+        // role gates it as the admin host's order list is gated — never a cleaner.
+        [Policy.CanViewPagedUser] = PhysicalPolicy.SupportOrAbove,
         [Policy.CanViewUserDetail] = PhysicalPolicy.OwnerOrElevated,
         [Policy.CanGetCurrentUser] = PhysicalPolicy.Authenticated,
         //[Policy.CanRequestPasswordChange] = PhysicalPolicy.Anonymous,
@@ -280,6 +285,15 @@ public static class PolicyBuilder
         [Policy.CanIssueCustomerCredit] = PhysicalPolicy.SupportOrAbove,
         [Policy.CanViewUserCredit] = PhysicalPolicy.AdminOnly,
         [Policy.CanExpireCustomerCredit] = PhysicalPolicy.ManagerOrAbove,
+
+        // Receivables (what customers owe the company)
+        [Policy.CanViewReceivables] = PhysicalPolicy.AdminOnly,
+        [Policy.CanWriteOffReceivable] = PhysicalPolicy.ManagerOrAbove,
+
+        // Cash held by cleaners: the Accountant reads it and records what is handed back, a Manager writes it off
+        [Policy.CanViewCashHeld] = PhysicalPolicy.AccountantOrAbove,
+        [Policy.CanRecordCashRemittance] = PhysicalPolicy.AccountantOrAbove,
+        [Policy.CanWriteOffCashHeld] = PhysicalPolicy.ManagerOrAbove,
 
         // Admin Action Audit Log (read surface — ADR-0012 D7)
         [Policy.CanViewAuditLog] = PhysicalPolicy.SupportOrAbove,

@@ -65,6 +65,26 @@ public class LegalDocument : BaseEntity
     {
         ConsentType.TermsOfService => LegalDocumentType.TermsOfService,
         ConsentType.PrivacyPolicy => LegalDocumentType.PrivacyPolicy,
+        ConsentType.CleanerFrameworkContract => LegalDocumentType.CleanerFrameworkContract,
+        ConsentType.SelfBillingAgreement => LegalDocumentType.SelfBillingAgreement,
+        ConsentType.CleanerDataProcessingAgreement => LegalDocumentType.CleanerDataProcessingAgreement,
+        _ => null
+    };
+
+    /// <summary>The employee-audience documents a cleaner must hold the current version of to be approved and to take work.</summary>
+    public static readonly IReadOnlyList<LegalDocumentType> CleanerAcceptedTypes =
+    [
+        LegalDocumentType.CleanerFrameworkContract,
+        LegalDocumentType.SelfBillingAgreement,
+        LegalDocumentType.CleanerDataProcessingAgreement,
+    ];
+
+    /// <summary>The consent row a cleaner's acceptance of this document is recorded on; null for a type a cleaner does not accept.</summary>
+    public static ConsentType? CleanerConsentTypeFor(LegalDocumentType type) => type switch
+    {
+        LegalDocumentType.CleanerFrameworkContract => ConsentType.CleanerFrameworkContract,
+        LegalDocumentType.SelfBillingAgreement => ConsentType.SelfBillingAgreement,
+        LegalDocumentType.CleanerDataProcessingAgreement => ConsentType.CleanerDataProcessingAgreement,
         _ => null
     };
 

@@ -19,6 +19,11 @@ const TYPE_LABEL_KEYS: Readonly<Record<LegalDocumentType, string>> = {
   [LegalDocumentType.TermsOfService]: 'pages.legal_documents.type.terms_of_service',
   [LegalDocumentType.PrivacyPolicy]: 'pages.legal_documents.type.privacy_policy',
   [LegalDocumentType.WorkContract]: 'pages.legal_documents.type.work_contract',
+  [LegalDocumentType.CleanerFrameworkContract]: 'pages.legal_documents.type.cleaner_framework_contract',
+  [LegalDocumentType.SelfBillingAgreement]: 'pages.legal_documents.type.self_billing_agreement',
+  [LegalDocumentType.CleanerDataProcessingAgreement]:
+    'pages.legal_documents.type.cleaner_data_processing_agreement',
+  [LegalDocumentType.ComplaintsProcedure]: 'pages.legal_documents.type.complaints_procedure',
 };
 
 export function getAudienceLabelKey(audience: LegalDocumentAudience): string {

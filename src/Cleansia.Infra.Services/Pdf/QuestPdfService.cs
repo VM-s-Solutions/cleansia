@@ -129,6 +129,28 @@ public class QuestPdfService : IPdfService
         }
     }
 
+    public byte[] GenerateConfirmationPdf(ConfirmationPdfData data)
+    {
+        _logger.LogInformation("Generating confirmation PDF for {Reference}", data.Reference);
+
+        try
+        {
+            byte[] pdfBytes;
+            lock (RenderGate)
+            {
+                pdfBytes = Document.Create(c => ConfirmationLayoutBuilder.Build(c, data)).GeneratePdf();
+            }
+
+            _logger.LogInformation("Confirmation PDF generated successfully ({Size} bytes)", pdfBytes.Length);
+            return pdfBytes;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Confirmation PDF generation failed for {Reference}: {Message}", data.Reference, ex.Message);
+            throw;
+        }
+    }
+
     /// <summary>
     /// The backstop for data built without a country context — the payout mapper already applies
     /// <see cref="CountryInvoiceContext.VatWithinGross"/>, so this only fires for a caller that did not.

@@ -11,6 +11,7 @@ import cz.cleansia.customer.core.booking.CashEligibility
 import cz.cleansia.customer.core.booking.CreateOrderAddressDto
 import cz.cleansia.customer.core.booking.CreateOrderCommand
 import cz.cleansia.customer.core.booking.CreateOrderResponse
+import cz.cleansia.customer.core.booking.DirtinessLevel
 import cz.cleansia.customer.core.booking.PropertySize
 import cz.cleansia.customer.core.booking.QuoteOrderCommand
 import cz.cleansia.customer.core.booking.QuoteOrderResponse
@@ -20,6 +21,8 @@ import cz.cleansia.customer.core.consent.SIGNUP_TICK_CONSENTS
 import cz.cleansia.customer.core.memberships.ExpressWaiver
 import cz.cleansia.customer.core.memberships.MembershipRepository
 import cz.cleansia.customer.core.memberships.resolveExpressWaiver
+import cz.cleansia.customer.core.payments.SavedCardRepository
+import cz.cleansia.customer.core.payments.usableIn
 import cz.cleansia.customer.core.promo.PromoCodeApi
 import cz.cleansia.customer.core.promo.PromoCodeError
 import cz.cleansia.customer.core.promo.ValidatePromoCodeRequest
@@ -27,6 +30,7 @@ import cz.cleansia.customer.core.referral.ReferralRepository
 import cz.cleansia.customer.core.referral.ReferralValidationError
 import cz.cleansia.customer.core.settings.AppSettingsRepository
 import cz.cleansia.customer.core.user.UserRepository
+import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.ui.state.ActionState
@@ -34,6 +38,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -47,6 +52,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import okhttp3.ResponseBody.Companion.toResponseBody
 
 /**
  * Outcome of a submit attempt. The sheet maps these to snackbar + navigation.
@@ -69,6 +75,12 @@ sealed interface BookingSubmitOutcome {
         val paymentSheet: PaymentSheetParams,
     ) : BookingSubmitOutcome
 
+    /**
+     * A cash booking CreateOrder refused for want of a usable saved card: the card is captured in
+     * PaymentSheet's setup mode first, and [BookingViewModel.submitAfterCardGuarantee] books once it lands.
+     */
+    data class CardGuaranteeNeeded(val setup: CardGuaranteeSheetParams) : BookingSubmitOutcome
+
     /** Swallowed failure — snackbar already fired, UI should stay put. */
     data object Failed : BookingSubmitOutcome
     /** User profile is missing a required field; UI should deep-link to Edit Profile. */
@@ -85,6 +97,14 @@ data class PaymentSheetParams(
     val ephemeralKey: String,
     val customerId: String,
     /** The quote's currency — the one the PaymentIntent is minted in, which Google Pay is told up front. */
+    val currencyCode: String,
+)
+
+data class CardGuaranteeSheetParams(
+    val setupIntentClientSecret: String,
+    val ephemeralKey: String,
+    val customerId: String,
+    /** A SetupIntent carries no currency; Google Pay is told the booking's. */
     val currencyCode: String,
 )
 
@@ -145,6 +165,7 @@ class BookingViewModel @Inject constructor(
     private val promoCodeApi: PromoCodeApi,
     private val referralRepository: ReferralRepository,
     private val paymentRepository: cz.cleansia.customer.core.payments.PaymentRepository,
+    private val savedCardRepository: SavedCardRepository,
     private val tokenStore: TokenStore,
     private val snackbar: SnackbarController,
     private val serviceAreaProvider: cz.cleansia.core.servicearea.ServiceAreaProvider,
@@ -177,8 +198,9 @@ class BookingViewModel @Inject constructor(
 
     /**
      * Whether this account already holds the two consents the review step's tick names — Terms of
-     * Service and Privacy Policy — granted at sign-up or on an earlier booking. Re-consenting to the
-     * same two documents on every order is noise, so the box is shown only when this is false.
+     * Service and Privacy Policy — given to the versions in force, at sign-up or on an earlier
+     * booking. Re-consenting to the same two texts on every order is noise, so the box is shown only
+     * when this is false; a newer version in force makes it false until the customer accepts it.
      * Defaults to false and stays false on a failed read: a consent that might not exist is asked for.
      */
     private val _alreadyConsented = MutableStateFlow(false)
@@ -271,19 +293,45 @@ class BookingViewModel @Inject constructor(
     }
 
     /**
-     * The review step's gate on the slide-to-confirm: a payment method the booking may use, and the
-     * terms tick whenever the box is shown. The same rule as the web wizard's place-order button.
+     * The currency every wizard amount is labelled with. The quote's own code the moment one lands;
+     * until then the catalogue's default, which is what the pre-quote catalogue sum is priced in.
+     * Null only before the catalogue has loaded, when there is no figure on screen to label.
      */
-    val canPlaceOrder: StateFlow<Boolean> = combine(_state, _alreadyConsented, cashEligibility) { s, consented, cash ->
-        s.paymentMethod.isNotBlank() &&
-            !(s.paymentMethod == PAYMENT_CASH && cash.isRefused) &&
-            (consented || s.termsAccepted)
-    }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+    val displayCurrencyCode: StateFlow<String?> =
+        combine(_quoteState, catalogRepository.currencyCode) { quote, catalogCurrency ->
+            (quote as? QuoteState.Quoted)?.response?.currencyCode ?: catalogCurrency
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    /**
+     * Cash chosen, and the customer is known to hold no usable card in the booking's currency: the
+     * review step shows the card-guarantee consent, and the slide waits for its tick. An unanswered
+     * card read asks nothing. Only CreateOrder's refusal starts a capture: it asks about debt and the
+     * open-bookings limit first, so a customer who could not book cash even with a card saves none.
+     */
+    val needsCardGuarantee: StateFlow<Boolean> =
+        combine(_state, savedCardRepository.cards, displayCurrencyCode) { s, cards, currencyCode ->
+            s.paymentMethod == PAYMENT_CASH && cards != null && currencyCode != null && cards.usableIn(currencyCode) == null
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    /**
+     * The review step's gate on the slide-to-confirm: a payment method the booking may use, the
+     * terms tick whenever the box is shown, the card-guarantee tick whenever that one is, and the
+     * early-performance tick always. The same rule as the web wizard's place-order button.
+     */
+    val canPlaceOrder: StateFlow<Boolean> =
+        combine(_state, _alreadyConsented, cashEligibility, needsCardGuarantee) { s, consented, cash, needsGuarantee ->
+            s.paymentMethod.isNotBlank() &&
+                !(s.paymentMethod == PAYMENT_CASH && cash.isRefused) &&
+                (consented || s.termsAccepted) &&
+                (!needsGuarantee || s.cardGuaranteeAccepted) &&
+                s.earlyPerformanceRequested
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     fun selectPaymentMethod(method: String) {
         if (method == PAYMENT_CASH && cashEligibility.value != CashEligibility.Available) return
         _cashCleared.value = false
         _state.update { it.copy(paymentMethod = method) }
+        if (method == PAYMENT_CASH) viewModelScope.launch { savedCardRepository.refresh() }
     }
 
     /**
@@ -325,16 +373,6 @@ class BookingViewModel @Inject constructor(
 
     private val _referralCodeState = MutableStateFlow<ReferralCodeUiState>(ReferralCodeUiState.Idle)
     val referralCodeState: StateFlow<ReferralCodeUiState> = _referralCodeState.asStateFlow()
-
-    /**
-     * The currency every wizard amount is labelled with. The quote's own code the moment one lands;
-     * until then the catalogue's default, which is what the pre-quote catalogue sum is priced in.
-     * Null only before the catalogue has loaded, when there is no figure on screen to label.
-     */
-    val displayCurrencyCode: StateFlow<String?> =
-        combine(_quoteState, catalogRepository.currencyCode) { quote, catalogCurrency ->
-            (quote as? QuoteState.Quoted)?.response?.currencyCode ?: catalogCurrency
-        }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     /**
      * Loyalty Phase B — explicit one-shot validation triggered by the promo
@@ -437,6 +475,7 @@ class BookingViewModel @Inject constructor(
         _referralCodeState.value = ReferralCodeUiState.Idle
         lastQuoteInputs.value = null
         _cashCleared.value = false
+        guaranteeCurrencyCode = null
     }
 
     fun update(transform: (BookingState) -> BookingState) {
@@ -543,6 +582,7 @@ class BookingViewModel @Inject constructor(
                     selectedExtraSlugs = s.selectedExtraSlugs.toList(),
                     cleaningDate = instant.toString(),
                     countryId = resolvedCountryId,
+                    dirtinessLevel = s.dirtinessLevel,
                 )
                 val quoteResp = try {
                     bookingApi.quote(quoteCmd)
@@ -573,6 +613,16 @@ class BookingViewModel @Inject constructor(
             ) {
                 dropCash()
                 return BookingSubmitOutcome.Failed
+            }
+
+            if (paymentType == PAYMENT_TYPE_CASH) {
+                guaranteeCurrencyCode?.let { pending ->
+                    if (!awaitUsableCard(pending)) {
+                        snackbar.showInfoKey(R.string.booking_card_guarantee_pending)
+                        return BookingSubmitOutcome.Failed
+                    }
+                    guaranteeCurrencyCode = null
+                }
             }
 
             // Backend's quote response already folds the express surcharge into
@@ -636,6 +686,8 @@ class BookingViewModel @Inject constructor(
                 // Asserted only when the box was shown and ticked; an account that already consented
                 // saw no box and asserts nothing new.
                 termsAccepted = if (!_alreadyConsented.value && s.termsAccepted) true else null,
+                dirtinessLevel = s.dirtinessLevel,
+                earlyPerformanceRequested = if (s.earlyPerformanceRequested) true else null,
             )
 
             val createResp = try {
@@ -645,8 +697,11 @@ class BookingViewModel @Inject constructor(
                 return BookingSubmitOutcome.Failed
             }
             if (!createResp.isSuccessful) {
-                val msg = ApiErrorParser.parseToUserMessage(appContext, createResp.errorBody(), createResp.code())
-                snackbar.showError(msg)
+                val raw = runCatching { createResp.errorBody()?.string() }.getOrNull()
+                if (paymentType == PAYMENT_TYPE_CASH && ApiErrorParser.firstErrorKey(raw) == CASH_REQUIRES_SAVED_CARD) {
+                    return startCardGuarantee(s, resolvedCountryId, quoted.currencyCode)
+                }
+                snackbar.showError(ApiErrorParser.parseToUserMessage(appContext, raw?.toResponseBody(), createResp.code()))
                 return BookingSubmitOutcome.Failed
             }
             val body = createResp.body() ?: run {
@@ -684,6 +739,69 @@ class BookingViewModel @Inject constructor(
         }
     }
 
+    /**
+     * The currency of the card PaymentSheet is saving, until it is seen to land or the sheet is abandoned.
+     * While it is set a cash submit waits for that card instead of capturing a second one.
+     */
+    private var guaranteeCurrencyCode: String? = null
+
+    private suspend fun startCardGuarantee(
+        s: BookingState,
+        countryId: String?,
+        currencyCode: String,
+    ): BookingSubmitOutcome {
+        if (!s.cardGuaranteeAccepted) {
+            // The consent box follows the card read; a stale or failed one would hide the tick asked for here.
+            savedCardRepository.refresh()
+            snackbar.showErrorKey(R.string.booking_card_guarantee_consent_required)
+            return BookingSubmitOutcome.Failed
+        }
+        val setup = when (val started = savedCardRepository.startCapture(s.cardGuaranteeAccepted, countryId)) {
+            is ApiResult.Success -> started.data
+            is ApiResult.Error -> {
+                surfaceError(started.error)
+                return BookingSubmitOutcome.Failed
+            }
+        }
+        guaranteeCurrencyCode = currencyCode
+        return BookingSubmitOutcome.CardGuaranteeNeeded(
+            CardGuaranteeSheetParams(
+                setupIntentClientSecret = setup.setupIntentClientSecret,
+                ephemeralKey = setup.ephemeralKey,
+                customerId = setup.stripeCustomerId,
+                currencyCode = currencyCode,
+            ),
+        )
+    }
+
+    /**
+     * Called once PaymentSheet saved the card. The card reaches the account through Stripe's webhook,
+     * so the booking waits until it can be read before the cash order is created; if it has not landed
+     * in time, nothing is booked and the customer swipes again.
+     */
+    suspend fun submitAfterCardGuarantee(): BookingSubmitOutcome {
+        if (guaranteeCurrencyCode == null) return BookingSubmitOutcome.Failed
+        return submit()
+    }
+
+    /** A cancelled or failed setup sheet saved nothing, so the next cash submit may capture afresh. */
+    fun abandonCardGuarantee() {
+        guaranteeCurrencyCode = null
+    }
+
+    private suspend fun awaitUsableCard(currencyCode: String): Boolean {
+        repeat(CARD_CAPTURE_READS) { read ->
+            if (read > 0) delay(CARD_CAPTURE_READ_INTERVAL_MS)
+            if (savedCardRepository.refresh().getOrNull()?.usableIn(currencyCode) != null) return true
+        }
+        return false
+    }
+
+    private fun surfaceError(error: ApiError) {
+        if (error is ApiError.Network) return
+        snackbar.showError(ApiErrorParser.parseToUserMessage(appContext, error))
+    }
+
     private suspend fun refreshQuote(inputs: QuoteInputs) {
         if (inputs.serviceIds.isEmpty() && inputs.packageIds.isEmpty()) {
             _quoteState.value = QuoteState.Idle
@@ -707,6 +825,7 @@ class BookingViewModel @Inject constructor(
                     selectedExtraSlugs = inputs.extraSlugs.toList(),
                     cleaningDate = inputs.cleaningInstant?.toString(),
                     countryId = inputs.countryId,
+                    dirtinessLevel = inputs.dirtinessLevel,
                 ),
             )
         } catch (t: Throwable) {
@@ -780,6 +899,7 @@ class BookingViewModel @Inject constructor(
         val bathrooms: Int,
         val cleaningInstant: kotlinx.datetime.Instant?,
         val countryId: String?,
+        val dirtinessLevel: DirtinessLevel?,
     )
 
     private fun BookingState.toQuoteInputs(countryId: String?) = QuoteInputs(
@@ -790,16 +910,23 @@ class BookingViewModel @Inject constructor(
         bathrooms = bathrooms,
         cleaningInstant = selectedInstant,
         countryId = countryId,
+        dirtinessLevel = dirtinessLevel,
     )
 
     companion object {
-        const val TOTAL_STEPS = 3
+        const val TOTAL_STEPS = 4
 
         /** Mirrors `CreateOrder`'s `RuleFor(x => x.AccessInstructions).MaximumLength(2000)`. */
         const val ACCESS_INSTRUCTIONS_MAX_LENGTH = 2000
 
         const val PAYMENT_CARD = "card"
         const val PAYMENT_CASH = "cash"
+
+        /** How long a booking waits for a just-saved card: 8 reads, 1.5 s apart. */
+        const val CARD_CAPTURE_READS = 8
+        const val CARD_CAPTURE_READ_INTERVAL_MS = 1_500L
+
+        private const val CASH_REQUIRES_SAVED_CARD = "order.cash_requires_saved_card"
 
         /** The backend's `PaymentType`. */
         private const val PAYMENT_TYPE_CASH = 1

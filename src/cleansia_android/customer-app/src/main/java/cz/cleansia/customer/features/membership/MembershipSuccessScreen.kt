@@ -66,6 +66,8 @@ fun MembershipSuccessScreen(
 ) {
     val trialEndsAt by viewModel.trialEndsAt.collectAsStateWithLifecycle()
     val inTrial = trialEndsAt != null
+    val membership by viewModel.current.collectAsStateWithLifecycle()
+    val discountPercent = membership?.discountPercentage?.toInt() ?: 0
 
     Box(
         modifier = Modifier
@@ -142,10 +144,12 @@ fun MembershipSuccessScreen(
                     style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
                     color = MaterialTheme.colorScheme.onSurface,
                 )
-                PerkRow(
-                    icon = Icons.Outlined.LocalOffer,
-                    title = stringResource(R.string.membership_perk_discount_title),
-                )
+                if (discountPercent > 0) {
+                    PerkRow(
+                        icon = Icons.Outlined.LocalOffer,
+                        title = stringResource(R.string.membership_perk_discount_title, discountPercent),
+                    )
+                }
                 PerkRow(
                     icon = Icons.Outlined.Repeat,
                     title = stringResource(R.string.membership_perk_recurring_title),

@@ -1,4 +1,10 @@
 <cleansia-section [title]="'pages.order_details.customer_information' | translate">
+  @if (closedNoticeKey(); as noticeKey) {
+  <div class="empty-state">
+    <i class="pi pi-eye-slash"></i>
+    <p>{{ noticeKey | translate }}</p>
+  </div>
+  } @else {
   <div class="cleansia-order-details__grid" [formGroup]="formGroup()">
     <div class="cleansia-order-details__field">
       <cleansia-text-input
@@ -36,4 +42,5 @@
       />
     </div>
   </div>
+  }
 </cleansia-section>

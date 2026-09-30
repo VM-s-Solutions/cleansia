@@ -102,6 +102,7 @@ import kotlin.math.roundToInt
 @Composable
 fun OrdersListScreen(
     onOrderClick: (String) -> Unit,
+    onOpenLegalDocuments: () -> Unit,
     viewModel: OrdersListViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -141,6 +142,10 @@ fun OrdersListScreen(
             request = request,
             onDismiss = viewModel::dismissContract,
             onOutcome = viewModel::onWorkContractOutcome,
+            onOpenLegalDocuments = {
+                viewModel.dismissContract()
+                onOpenLegalDocuments()
+            },
         )
     }
 
@@ -610,8 +615,12 @@ private fun AvailableOrderRow(
             val rooms = order.rooms ?: 0
             val baths = order.bathrooms ?: 0
             val extras = order.extras?.count { it.value } ?: 0
-            if (rooms > 0 || baths > 0 || extras > 0) {
+            val dirtinessRes = dirtinessChipLabelRes(order.dirtinessLevel)
+            if (rooms > 0 || baths > 0 || extras > 0 || dirtinessRes != null) {
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    if (dirtinessRes != null) {
+                        ScopeChip(text = stringResource(dirtinessRes))
+                    }
                     if (rooms > 0) {
                         ScopeChip(text = androidx.compose.ui.res.pluralStringResource(R.plurals.scope_rooms, rooms, rooms))
                     }
@@ -1050,7 +1059,8 @@ private fun HistoryRow(order: OrderListItem, onClick: () -> Unit) {
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = order.customerName?.takeIf { it.isNotBlank() } ?: stringResource(R.string.guest),
+                    text = order.customerName?.takeIf { it.isNotBlank() }
+                        ?: "#${order.displayOrderNumber.orEmpty()}",
                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,

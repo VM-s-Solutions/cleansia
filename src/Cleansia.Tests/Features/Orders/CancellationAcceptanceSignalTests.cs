@@ -4,6 +4,7 @@ using System.Globalization;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.Payments;
 using Cleansia.Core.AppServices.Services;
@@ -107,14 +108,17 @@ public class CancellationAcceptanceSignalTests
                 Mock.Of<ITenantProvider>(),
                 _refundService.Object,
                 Mock.Of<IRefundRepository>(),
+                Mock.Of<IReceivableRepository>(),
                 _creditAccountRepository.Object,
                 _loyaltyService.Object,
-                new CancellationPolicyResolver(_membershipRepository.Object),
+                new CancellationPolicyResolver(_membershipRepository.Object, Mock.Of<IOrderRepository>()),
                 _producer.Object,
                 _liveActivityProducer.Object,
                 _expressWaiverConsumer.Object,
+                Mock.Of<IPendingDispatch>(),
                 new AuditContext(),
-                TimeProvider.System));
+                TimeProvider.System,
+                NullLogger<CustomerOrderCancellation>.Instance));
 
     private HandlePaymentNotification.Handler CreateWebhookHandler() =>
         new(
@@ -126,23 +130,29 @@ public class CancellationAcceptanceSignalTests
             _subscriptionHandler.Object,
             _tenantProvider.Object,
             _pending.Object,
+            new GuestOrderAccessTokenIssuer(Mock.Of<IGuestOrderAccessTokenRepository>()),
             _producer.Object,
             NoPreferredCleanerHold.Resolver,
             Mock.Of<IAdminNotifier>(),
             Mock.Of<IUserNotificationRepository>(),
             Mock.Of<IStripeClientFactory>(),
             Mock.Of<ITenantRepository>(),
+            Mock.Of<ISavedCardRepository>(),
+            Mock.Of<IReceivableRepository>(),
             NullLogger<HandlePaymentNotification.Handler>.Instance);
 
     private ConfirmRecurringOrder.Handler CreateRecurringConfirmHandler() =>
         new(
             Cleansia.Tests.Common.OrderAccessDoubles.Over(_orderRepository, _session),
+            _orderRepository.Object,
+            SavedCards.SavedCardDoubles.Guaranteed(), Mock.Of<IReceivableRepository>(),
             _creditAccountRepository.Object,
             _userRepository.Object,
             _session.Object,
             _tenantProvider.Object,
             _stripeClient.Object,
             new StripeConfig(new ConfigurationBuilder().Build()),
+            new OrderChannelProvider(OrderChannel.Mobile),
             _pending.Object,
             _producer.Object,
             NoPreferredCleanerHold.Resolver,
@@ -155,7 +165,8 @@ public class CancellationAcceptanceSignalTests
             _orderRepository.Object,
             _session.Object,
             Mock.Of<IAuditContext>(),
-            _liveActivityProducer.Object);
+            _liveActivityProducer.Object,
+            _pending.Object);
 
     /// <summary>
     /// A brand-new unpaid order booked <paramref name="bookedMinutesAgo"/> ago whose cleaning starts
@@ -279,24 +290,27 @@ public class CancellationAcceptanceSignalTests
     [Fact]
     public async Task CashAutoConfirmed_NoCleanerAssigned_IsFree()
     {
+        // Inside the 50% tier, and past the two-hour floor a recurring occurrence is confirmed on.
         var order = ArrangeNewOrder(
-            cleaningInHours: 1, paymentType: PaymentType.Cash, recurringTemplateId: "tpl-1");
+            cleaningInHours: 3, paymentType: PaymentType.Cash, recurringTemplateId: "tpl-1");
 
         var confirm = await CreateRecurringConfirmHandler().Handle(
             new ConfirmRecurringOrder.Command(OrderId), CancellationToken.None);
 
         Assert.True(confirm.IsSuccess);
-        // T-0691: confirming an occurrence settles the money and leaves fulfilment alone. The point of
-        // this case is unchanged and is now stated more directly — the cancellation fee keys on whether
-        // a cleaner ACCEPTED, never on the status word, so a paid-but-unassigned order is free to
-        // cancel whatever that word says.
+        // Confirming a cash occurrence moves neither axis (owner rulings 2026-09-08 and 2026-09-28): the
+        // customer's confirmation is its own marker and the cash is recorded at the door. The point of
+        // this case is unchanged — the cancellation fee keys on whether a cleaner ACCEPTED, never on the
+        // status word, so a confirmed but unassigned order is free to cancel, and nothing was taken to
+        // give back.
         Assert.Equal(OrderStatus.New, order.CurrentStatus);
-        Assert.Equal(PaymentStatus.Paid, order.PaymentStatus);
+        Assert.Equal(PaymentStatus.Pending, order.PaymentStatus);
+        Assert.NotNull(order.CustomerConfirmedAt);
 
         var response = await CancelAsync();
 
         Assert.Equal(0m, response.FeeRate);
-        Assert.Equal(TotalPrice, response.RefundAmount);
+        Assert.Equal(0m, response.RefundAmount);
     }
 
     // ── AC5: an admin walking the lifecycle forward ──
@@ -322,7 +336,8 @@ public class CancellationAcceptanceSignalTests
         var response = await CancelAsync();
 
         Assert.Equal(0m, response.FeeRate);
-        Assert.Equal(TotalPrice, response.RefundAmount);
+        // Never paid, so nothing goes back.
+        Assert.Equal(0m, response.RefundAmount);
     }
 
     // ── AC3: a real acceptance still charges, at the right tier ──
@@ -387,7 +402,8 @@ public class CancellationAcceptanceSignalTests
         var response = await CancelAsync();
 
         Assert.Equal(BookingPolicy.PartialCancellationFeeRate, response.FeeRate);
-        Assert.Equal(750m, response.RefundAmount);
+        // Never paid, so the fee is owed and nothing goes back.
+        Assert.Equal(0m, response.RefundAmount);
     }
 
     [Fact]

@@ -52,11 +52,18 @@ function readLocale(locale: Locale): { pages: { gdpr: Record<string, string> } }
   return JSON.parse(readFileSync(join(I18N_DIR, `${locale}.json`), 'utf8'));
 }
 
+/** Consent-type labels name a record that already exists; they promise nothing. */
+function withoutConsentTypeLabels(locale: Locale): unknown {
+  const copy = JSON.parse(JSON.stringify(readLocale(locale)));
+  delete copy.pages?.gdpr?.consent_types;
+  return copy;
+}
+
 describe('the partner app promises no self-billing agreement', () => {
   it.each(LOCALES)('no %s value names a self-billing agreement', (locale) => {
-    expect(values(readLocale(locale)).filter((value) => AGREEMENT[locale].test(value))).toEqual(
-      []
-    );
+    expect(
+      values(withoutConsentTypeLabels(locale)).filter((value) => AGREEMENT[locale].test(value))
+    ).toEqual([]);
   });
 
   it.each(LOCALES)('the %s deletion notice keeps the invoices and pay records', (locale) => {

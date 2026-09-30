@@ -3,6 +3,7 @@ using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Infra.Common.Configuration;
 using System.Globalization;
+using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.Payments;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -76,8 +77,7 @@ public class PreferredOfferDeferredAnnouncementTests
 
         // The order is offerable at the instant of the announcement, which is the whole claim: the push
         // and the gate now agree, so the deep link opens a screen that answers.
-        Assert.True(OrderAvailability.IsOfferable(
-            order.CurrentStatus, order.PaymentType, order.PaymentStatus, order.RecurringTemplateId));
+        Assert.True(OrderAvailability.IsOfferable(order));
 
         var offer = Assert.Single(_pushes, p => p.EventKey == NotificationEventCatalog.PreferredOffer);
         Assert.Equal(NoPreferredCleanerHold.RecipientUserId, offer.UserId);
@@ -168,8 +168,7 @@ public class PreferredOfferDeferredAnnouncementTests
             new ConfirmRecurringOrder.Command(OrderId), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
-        Assert.True(OrderAvailability.IsOfferable(
-            order.CurrentStatus, order.PaymentType, order.PaymentStatus, order.RecurringTemplateId));
+        Assert.True(OrderAvailability.IsOfferable(order));
 
         var offer = Assert.Single(_pushes, p => p.EventKey == NotificationEventCatalog.PreferredOffer);
         Assert.Equal(NoPreferredCleanerHold.RecipientUserId, offer.UserId);
@@ -242,12 +241,15 @@ public class PreferredOfferDeferredAnnouncementTests
 
         return new ConfirmRecurringOrder.Handler(
             OrderAccessDoubles.Over(_orderRepository, session),
+            _orderRepository.Object,
+            SavedCards.SavedCardDoubles.Guaranteed(), Mock.Of<IReceivableRepository>(),
             new Mock<ICreditAccountRepository>().Object,
             new Mock<IUserRepository>().Object,
             session.Object,
             Mock.Of<ITenantProvider>(),
             stripeClient.Object,
             new StripeConfig(new ConfigurationBuilder().Build()),
+            new OrderChannelProvider(OrderChannel.Mobile),
             _pending.Object,
             _notificationProducer.Object,
             resolver,
@@ -280,12 +282,15 @@ public class PreferredOfferDeferredAnnouncementTests
             new Mock<IStripeSubscriptionWebhookHandler>().Object,
             new Mock<ITenantProvider>().Object,
             _pending.Object,
+            new GuestOrderAccessTokenIssuer(Mock.Of<IGuestOrderAccessTokenRepository>()),
             _notificationProducer.Object,
             resolver,
             Mock.Of<IAdminNotifier>(),
             Mock.Of<IUserNotificationRepository>(),
             Mock.Of<IStripeClientFactory>(),
             Mock.Of<ITenantRepository>(),
+            Mock.Of<ISavedCardRepository>(),
+            Mock.Of<IReceivableRepository>(),
             NullLogger<HandlePaymentNotification.Handler>.Instance);
     }
 

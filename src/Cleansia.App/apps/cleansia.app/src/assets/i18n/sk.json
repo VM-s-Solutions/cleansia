@@ -30,34 +30,11 @@
     "my_recurring": "Opakované termíny"
   },
   "cookies": {
-    "title": "Vaše súkromie je dôležité",
-    "description": "Používame cookies na zlepšenie prehliadania, poskytovanie personalizovaného obsahu a analýzu návštevnosti.",
-    "accept": "Prijať všetky",
-    "decline": "Odmietnuť všetky",
+    "title": "Cookies na tejto stránke",
+    "description": "Používame len cookies a úložisko prehliadača, ktoré web potrebuje, aby fungoval: aby ste zostali prihlásení, aby sme si pamätali váš jazyk a trh a že ste toto upozornenie videli. Žiadne analytické ani reklamné cookies.",
     "learn_more": "Zistiť viac",
-    "banner_title": "Banner súhlasu s cookies",
-    "customize": "Prispôsobiť",
-    "hide_settings": "Skryť nastavenia",
-    "save_preferences": "Uložiť predvoľby",
-    "always_on": "Vždy zapnuté",
-    "categories": {
-      "necessary": {
-        "name": "Nevyhnutné",
-        "description": "Nevyhnutné pre fungovanie webu. Nedajú sa vypnúť."
-      },
-      "analytics": {
-        "name": "Analytické",
-        "description": "Pomáhajú nám pochopiť, ako návštevníci používajú náš web."
-      },
-      "marketing": {
-        "name": "Marketingové",
-        "description": "Slúžia na zobrazovanie relevantných reklám a sledovanie kampaní."
-      },
-      "preferences": {
-        "name": "Preferenčné",
-        "description": "Zapamätajú si vaše nastavenia, ako je jazyk a téma."
-      }
-    }
+    "banner_title": "Upozornenie na cookies",
+    "acknowledge": "Rozumiem"
   },
   "page_titles": {
     "customer": {
@@ -71,7 +48,6 @@
       "order": "Objednať čistenie",
       "orders": "Moje objednávky",
       "order_detail": "Detail objednávky",
-      "order_contract": "Zmluva o dielo",
       "profile": "Môj profil",
       "disputes": "Moje reklamácie",
       "rewards": "Moje odmeny",
@@ -469,13 +445,13 @@
       },
       "services": {
         "title": "Čo si u nás objednáte",
-        "subtitle": "{{count}} služieb. Vlastné stroje a ekologické prostriedky v cene.",
+        "subtitle": "{{count}} služieb. Upratovač prinesie všetko potrebné a je to v cene.",
         "view_all": "Všetky služby",
         "details": "Podrobnosti",
         "extra_stain": "Odstránenie odolných škvŕn",
         "extra_odour": "Odstránenie zápachu (domáce zvieratá, cigarety)",
         "from": "od",
-        "eco_chip": "Ekologicky · v cene"
+        "supplies_chip": "Prostriedky · v cene"
       },
       "before_after": {
         "title": "Ako to dopadá",
@@ -501,8 +477,8 @@
           "answer": "Nie je to potrebné. Mnohí klienti nám odovzdajú kľúče alebo nás pustia dnu a odídu. Pracujeme samostatne a spoľahlivo."
         },
         "q3": {
-          "question": "Nosíte si vlastné vybavenie a prípravky?",
-          "answer": "Áno, prichádzame vždy plne vybavení. Používame profesionálne stroje a šetrné, certifikované prípravky."
+          "question": "Kto prinesie vybavenie a čistiace prostriedky?",
+          "answer": "Upratovač prinesie všetko potrebné a je to v cene. Nič nemusíte pripravovať."
         },
         "q4": {
           "question": "Dokážete vyčistiť nábytok s jemným čalúnením?",
@@ -521,16 +497,7 @@
         "title": "Nech sa o upratovanie stará niekto iný",
         "desc": "Objednáte za dve minúty, bez registrácie. Cenu vidíte ešte pred potvrdením.",
         "button": "Objednať upratovanie",
-        "secondary": "Naše služby",
-        "promo_title": "Zľavový kód na prvé upratovanie",
-        "promo_badge": "Jednorazovo",
-        "promo_note": "Žiadne ďalšie správy, pokiaľ si ich nevyžiadate.",
-        "promo_placeholder": "vas@email.com",
-        "promo_button": "Poslať kód",
-        "promo_consent": "Súhlasím so spracovaním e-mailu podľa zásad ochrany údajov.",
-        "promo_sending": "Odosielame…",
-        "promo_sent": "Ďakujeme — ak pre túto adresu môžeme kód vystaviť, už mieri k vám.",
-        "promo_failed": "Odoslanie sa nepodarilo. Skúste to o chvíľu znova, alebo nám napíšte na info@cleansia.cz."
+        "secondary": "Naše služby"
       },
       "footer": {
         "contacts": "Kontaktujte nás",
@@ -546,13 +513,12 @@
         "help_center": "Centrum pomoci",
         "gdpr_link": "Súkromie a GDPR",
         "terms_link": "Obchodné podmienky",
-        "work_contract_link": "Zmluva o dielo",
+        "complaints_procedure_link": "Reklamačný poriadok",
         "description": "Profesionálne mobilné čistiace služby. Nábytok, koberce, matrace — prídeme k vám.",
         "address": "Praha, Česká republika",
         "services_col": "Služby",
         "hours_label": "Otvorené denne",
         "hours_value": "08:00–20:00",
-        "registration": "IČO [IČO] · DIČ [DIČ]",
         "apps": "Stiahnuť aplikáciu",
         "apps_coming_soon": "Už čoskoro",
         "svc_home": "Upratovanie domácnosti",
@@ -565,8 +531,7 @@
         "about": "O nás",
         "become_cleaner": "Staňte sa upratovačom",
         "careers": "Kariéra",
-        "complaints": "Reklamácie",
-        "cookie_settings": "Nastavenia cookies"
+        "complaints": "Reklamácie"
       },
       "rules": {
         "badge": "Naše pravidlá",
@@ -577,7 +542,7 @@
         "cancel_desc": "Medzi 4 a 24 hodinami 25 %, pod 4 hodiny 50 %.",
         "rethink_label": "Kým si to upratovač nevezme",
         "rethink_value": "Vždy zadarmo",
-        "rethink_desc": "Kým prácu nikto neprijme, zrušenie nič nestojí, nech je upratovanie akokoľvek blízko. Len čo ju niekto prijme, máte stále 15 minút od objednania — s Cleansia Plus 60 minút.",
+        "rethink_desc": "Kým prácu nikto neprijme, zrušenie nič nestojí, nech je upratovanie akokoľvek blízko. Len čo ju niekto prijme, máte stále 15 minút od objednania — pri prvej objednávke alebo s Cleansia Plus 60 minút.",
         "we_cancel_label": "Keď zrušíme my",
         "we_cancel_value": "Všetko späť + kredit {{amount}}",
         "we_cancel_value_refund_only": "Všetko späť",
@@ -595,7 +560,7 @@
         "title_no_trial": "{{price}} mesačne, zrušíte kedykoľvek",
         "perk1": "Zľava {{percent}} % z každej objednávky",
         "perk2": "Zrušenie zadarmo až {{hours}} hodiny vopred namiesto 24",
-        "perk_grace": "Zrušenie zadarmo do 60 minút od objednania namiesto 15 minút",
+        "perk_grace": "Zrušenie zadarmo do 60 minút od každej objednávky namiesto 15 minút",
         "perk3": "{{count}}× mesačne expresné upratovanie bez príplatku",
         "perk4": "Opakované termíny a obľúbený upratovač",
         "yearly": "{{price}} ročne — ušetríte {{percent}} %",
@@ -607,6 +572,8 @@
         "no_registration": "Bez registrácie",
         "service_label": "Čo je potrebné upratať",
         "size_label": "Veľkosť bytu",
+        "dirtiness_label": "Miera znečistenia",
+        "dirtiness_included": "{{line}} je v cene: {{amount}}",
         "date_label": "Kedy",
         "date_hint": "Nepovinné. Objednávka menej ako 4 hodiny vopred má expresný príplatok.",
         "price_label": "Pevná cena",
@@ -715,11 +682,23 @@
       "credit": {
         "auto_applied": "Kredit — automaticky sa použije na vašu najbližšiu objednávku.",
         "expires_on": "Vyprší {{date}} — každá objednávka lehôtu predĺži."
+      },
+      "saved_cards": {
+        "title": "Uložené karty",
+        "desc": "Karta, ktorá zaručuje vaše rezervácie s platbou v hotovosti. Strhávajú sa z nej len poplatky a nezaplatená hotovosť, s ktorými ste pri uložení súhlasili.",
+        "empty": "Nemáte uloženú kartu. Keď budete nabudúce platiť v hotovosti, požiadame vás o jej uloženie.",
+        "load_error": "Uložené karty sa nepodarilo načítať.",
+        "card_label": "{{brand}} končiaca {{last4}}",
+        "expires": "Platnosť do {{expiry}} · pre rezervácie v {{currency}}",
+        "remove_confirm": "Odstrániť kartu končiacu {{last4}}? Pri ďalšej rezervácii s platbou v hotovosti vás znova požiadame o uloženie karty.",
+        "remove_success": "Karta bola odstránená.",
+        "setup_success": "Karta je uložená. Teraz môžete dokončiť rezerváciu s platbou v hotovosti.",
+        "setup_cancelled": "Žiadna karta nebola uložená. Ak chcete platiť v hotovosti, uložte si kartu — alebo zaplaťte kartou."
       }
     },
     "services": {
       "title": "Naše služby",
-      "subtitle": "Profesionálne upratovanie s vlastnými strojmi a pevnou cenou. Vyberte si službu alebo celý balíček.",
+      "subtitle": "Profesionálne upratovanie za pevnú cenu — upratovač prinesie všetko potrebné. Vyberte si službu alebo celý balíček.",
       "cleaning_services": "Jednotlivé služby",
       "packages": "Balíčky",
       "book_now": "Objednať",
@@ -729,10 +708,8 @@
       "most_popular": "Najobľúbenejšie",
       "per_cleaning": "za čistenie",
       "premium_quality": "Prémiová kvalita čistenia",
-      "vetted_professionals": "Overení profesionáli",
       "check_back_later": "Navštívte nás neskôr pre naše prémiové ponuky.",
-      "trust_certified": "Certifikovaní profesionáli",
-      "trust_eco": "Ekologické produkty",
+      "trust_supplies": "Prostriedky v cene",
       "trust_report_window": "24 h na nahlásenie problému",
       "cta_title": "Pripravení na žiarivý domov?",
       "cta_subtitle": "Objednáte online za dve minúty. Cenu vidíte vopred a už sa nezmení.",
@@ -769,7 +746,7 @@
       "bathrooms": "Počet kúpeľní",
       "bathrooms_count_label": "Počet kúpeľní",
       "bathrooms_label": "Kúpeľne",
-      "cancel_policy_note": "Zrušenie zdarma do 24 hodín. Do 15 minút od objednania neplatíte nič — s Cleansia Plus do 60 minút.",
+      "cancel_policy_note": "Zrušenie zdarma do 24 hodín. Do 15 minút od objednania neplatíte nič — pri prvej objednávke alebo s Cleansia Plus do 60 minút.",
       "cancel_policy_tier1_value": "Zdarma",
       "cancel_policy_tier1_when": "Pred prijatím upratovačom",
       "cancel_policy_tier2_value": "Zdarma",
@@ -831,6 +808,7 @@
       "missing": {
         "heading": "Ešte chýba:",
         "services": "Vyberte aspoň jednu službu alebo balík.",
+        "dirtiness": "Vyberte, ako veľmi je u vás upratané.",
         "address": "Vyberte adresu z našepkávača.",
         "first_name": "Vyplňte meno.",
         "last_name": "Vyplňte priezvisko.",
@@ -840,6 +818,7 @@
         "time": "Vyberte čas, ktorý je ešte voľný.",
         "address_fields": "Doplňte ulicu, mesto a PSČ.",
         "terms": "Potvrďte súhlas s podmienkami.",
+        "early_performance": "Potvrďte, že chcete, aby upratovanie začalo v lehote na odstúpenie.",
         "payment": "Zvoľte, ako chcete platiť."
       },
       "new_address": "Zadať novú adresu",
@@ -950,6 +929,7 @@
       "step_when_title": "Kedy máme prísť?",
       "steps": {
         "services": "Služby",
+        "dirtiness": "Znečistenie",
         "address": "Adresa",
         "datetime": "Dátum a čas",
         "payment": "Platba",
@@ -1003,12 +983,14 @@
       "summary_services": "Služby",
       "summary_with_plus": "S Plus by ste platili",
       "terms_already_accepted": "Podmienky služby a zásady ochrany osobných údajov ste odsúhlasili so svojím účtom.",
-      "work_contract_notice": "Potvrdením objednávky uzatvárate s upratovačkou či upratovačom zmluvu o dielo za <a href='/work-contract' target='_blank' rel='noopener'>týchto podmienok</a>.",
+      "contract_notice": "Potvrdením objednávky uzatvárate zmluvu o upratovaní s prevádzkovou spoločnosťou trhu, na ktorom sa vaša domácnosť nachádza, za jej <a href='/terms' target='_blank' rel='noopener'>obchodných podmienok</a>. Upratovanie vykoná upratovač ako subdodávateľ spoločnosti a stranou vašej zmluvy nie je.",
+      "early_performance": {
+        "early-performance-draft-2026-09-29": "Žiadam, aby sa upratovanie začalo v 14-dňovej lehote na odstúpenie od zmluvy, a beriem na vedomie, že po úplnom vykonaní upratovania právo na odstúpenie strácam."
+      },
       "time_label": "Vyberte čas",
       "time_note": "Sivé časy sú dnes už mimo dojazd. Denné okná {{first}}:00–{{last}}:00.",
       "title": "Objednať čistenie",
       "total_price": "Celková cena",
-      "trust_certified": "Certifikovaní pracovníci",
       "trust_no_hidden": "Žiadne skryté poplatky",
       "zip_code": "PSČ",
       "wizard": {
@@ -1018,8 +1000,51 @@
       "cash_needs_card": "Počet upratovačov potrebných pre túto objednávku: {{count}}. V hotovosti sa dá platiť len za objednávky, ktoré zvládne jeden upratovač, túto preto zaplatíte kartou.",
       "cash_pending": "Či môžete platiť v hotovosti, potvrdíme, keď bude známa cena.",
       "cash_cleared": "Platba v hotovosti už pre túto objednávku nie je možná, preto nie je vybraný žiadny spôsob platby. Zvoľte, ako chcete platiť.",
+      "cash_owed": "Platba v hotovosti nie je možná, kým nie je uhradená suma z predchádzajúcej rezervácie. Zaplaťte ju nižšie a táto rezervácia na vás počká, keď sa k objednávke vrátite — alebo túto rezerváciu zaplaťte hneď kartou.",
       "cash_sign_in": "Prihlásiť sa",
-      "plus_perk_grace": "60 minút po objednaní na bezplatné zrušenie namiesto 15 minút"
+      "plus_perk_grace": "60 minút po každej objednávke na bezplatné zrušenie namiesto 15 minút",
+      "dirtiness": {
+        "title": "Ako veľmi je u vás upratané?",
+        "lead": "Vyberte stav, ktorý najlepšie zodpovedá celej domácnosti.",
+        "hint": "Ak váhate medzi dvoma stupňami, zvoľte vyšší. Upratovačka potom bude mať dosť času a výsledok bude zodpovedať.",
+        "no_surcharge": "Bez príplatku",
+        "surcharge": "+{{rate}} %",
+        "normal": {
+          "name": "Bežné",
+          "lead": "Domácnosť sa upratuje pravidelne, naposledy zhruba pred 1–2 týždňami.",
+          "sign_1": "prach na nábytku a policiach, omrvinky a chlpy na podlahe",
+          "sign_2": "v kúpeľni bežné vodné škvrny, WC bez usadenín",
+          "sign_3": "kuchyňa po bežnom varení: linku a sporák treba utrieť, bez pripečenín",
+          "sign_4": "riad umytý alebo v umývačke"
+        },
+        "increased": {
+          "name": "Zvýšené",
+          "lead": "Posledné upratovanie pred 3–6 týždňami alebo domácnosť so zvieratami či malými deťmi.",
+          "sign_1": "viditeľná vrstva prachu, škvrny a zašlé miesta na podlahe",
+          "sign_2": "vodný kameň na batériách, v sprchovom kúte a vani, zašlé škáry",
+          "sign_3": "mastnota na kuchynskej linke, obklade a digestore, znečistená rúra alebo mikrovlnka zvonka",
+          "sign_4": "chlpy zvierat na sedačke, kobercoch a v rohoch",
+          "surcharge_line": "Príplatok za zvýšené znečistenie"
+        },
+        "heavy": {
+          "name": "Silné",
+          "lead": "Viac ako 2 mesiace bez upratovania alebo dlhodobo zanedbaná domácnosť.",
+          "sign_1": "silný vodný kameň a usadeniny, ktoré nejdú dolu jedným utretím",
+          "sign_2": "pripečená mastnota na sporáku, digestore a skrinkách",
+          "sign_3": "čierne škvrny (pleseň) na silikóne alebo v škárach",
+          "sign_4": "zaschnuté nečistoty na podlahe, lepkavé povrchy, výrazný zápach",
+          "surcharge_line": "Príplatok za silné znečistenie"
+        }
+      },
+      "card_capture": {
+        "title": "Uložte si kartu na platbu v hotovosti",
+        "intro": "Rezervácia s platbou v hotovosti je zaručená kartou uloženou vo vašom účte. Uloženie karty nič nestojí a upratovačovi ďalej platíte v hotovosti.",
+        "consent": {
+          "card-guarantee-draft-2026-09-28": "Súhlasím, že Cleansia môže z tejto karty bez toho, aby sa ma zakaždým pýtala, strhnúť poplatok za neskoré zrušenie, poplatok, keď sa upratovač nedostane do mojej domácnosti, hotovosť, ktorú som za rezerváciu nezaplatil(a), a doplatok, ktorý som schválil(a)."
+        },
+        "continue": "Uložiť kartu",
+        "cancel": "Teraz nie"
+      }
     },
     "orders": {
       "title": "Moje objednávky",
@@ -1035,8 +1060,6 @@
       "past_orders": "Minulé objednávky",
       "rebook": "Objednať znova",
       "empty_subtitle": "Vaša cesta k čistému domovu začína tu! Prezrite si naše služby a objednajte si prvý termín.",
-      "empty_trust_certified": "Certifikovaní profesionáli",
-      "empty_trust_eco": "Ekologické produkty",
       "empty_step1": "Vyberiete službu alebo balík.",
       "empty_step2": "Poviete kam a kedy.",
       "empty_step3": "Zaplatíte kartou alebo na mieste.",
@@ -1135,10 +1158,6 @@
       "step_refunded": "Vrátené",
       "step_not_assigned_yet": "Zatiaľ nepridelený",
       "crew_others": "a ďalší {{count}}",
-      "work_contract": {
-        "accepted_line": "Zmluvu o dielo prijal(a) {{name}} dňa {{date}}, verzia {{version}}",
-        "read": "Čítať zmluvu"
-      },
       "the_booking": "Objednávka",
       "label_when": "Termín",
       "label_address": "Adresa",
@@ -1173,29 +1192,38 @@
           "3": "Platí čiastočný storno poplatok.",
           "4": "Platí storno poplatok za zrušenie na poslednú chvíľu."
         },
-        "grace_note": "Zrušenie do {{minutes}} minút od objednania je zadarmo, aj keď už objednávku prijal upratovač."
+        "grace_note": "Zrušenie do {{minutes}} minút od objednania je zadarmo, aj keď už objednávku prijal upratovač.",
+        "refund_pending": "Vrátenie peňazí na kartu zatiaľ neprebehlo. Budeme to automaticky skúšať znova a dáme vám vedieť, hneď ako peniaze odošleme."
       },
       "estimated_hours": "odhadom {{hours}} h",
-      "label_market": "Trh"
-    },
-    "order_contract": {
-      "eyebrow": "Zmluva k vašej objednávke",
-      "title": "Zmluva o dielo",
-      "back": "Späť na objednávku",
-      "facts": {
-        "title": "Zákazka, ako bola prijatá",
-        "order_number": "Číslo objednávky",
-        "window": "Dátum a čas",
-        "price": "Cena",
-        "location": "Miesto",
-        "rooms_bathrooms": "Izby / kúpeľne",
-        "services": "Služby",
-        "packages": "Balíčky",
-        "extras": "Doplnky"
+      "label_market": "Trh",
+      "label_dirtiness": "Miera znečistenia",
+      "cleaner_no_show": {
+        "action": "Upratovač neprišiel",
+        "note": "Objednaný čas začiatku už uplynul, takže rezerváciu už nemožno zrušiť. Ak upratovač neprišiel, dajte nám vedieť a náš tím sa na to pozrie."
       },
-      "accepted_on": "Prijaté upratovačkou či upratovačom dňa {{date}}, verzia {{version}}",
-      "accepted_in_language": "Prijaté v jazyku: {{language}}",
-      "load_error": "Zmluvu sa nepodarilo načítať. Skúste to prosím znova."
+      "recurring_confirm": {
+        "action_card": "Potvrdiť a zaplatiť",
+        "action_cash": "Potvrdiť rezerváciu",
+        "note_card": "Toto upratovanie je súčasťou vašej opakovanej rezervácie. Potvrďte ho a zaplaťte bezpečne kartou. Ak ho včas nepotvrdíte, bude zadarmo zrušené.",
+        "note_cash": "Toto upratovanie je súčasťou vašej opakovanej rezervácie. Potvrďte ho a upratovačovi zaplaťte v hotovosti v deň upratovania. Ak ho včas nepotvrdíte, bude zadarmo zrušené.",
+        "success": "Rezervácia potvrdená",
+        "begun_in_app": "Platbu za toto upratovanie ste začali v mobilnej aplikácii. Dokončite ju prosím tam."
+      }
+    },
+    "amount_due": {
+      "title": "Dlžná suma",
+      "intro": "Kým nebude uhradená, nie je možné objednávať s platbou v hotovosti. Rezervácií platených kartou sa to netýka.",
+      "after_payment": "Práve ste zaplatili? Môže chvíľu trvať, kým odtiaľto zmizne.",
+      "pay": "Zaplatiť",
+      "load_error": "Nepodarilo sa overiť, či nám niečo dlhujete.",
+      "none": "Nič už nedlhujete.",
+      "kind": {
+        "cash_cancellation_fee": "Poplatok za neskoré zrušenie",
+        "lockout": "Poplatok: upratovač sa nedostal dnu",
+        "unpaid_cash": "Nezaplatená hotovosť za upratovanie",
+        "top_up": "Doplatok, ktorý ste schválili"
+      }
     },
     "checkout": {
       "success": {
@@ -1301,13 +1329,19 @@
       "none_title": "Keď niečo nesedí, napíšte nám",
       "none_lead": "Reklamáciu môžete podať pri ktorejkoľvek dokončenej objednávke. Odpovedáme do jedného pracovného dňa.",
       "none_item1": "Kvalita upratovania, nedokončené upratovanie alebo upratovač, ktorý neprišiel.",
-      "none_item2": "Poškodená vec — poistenie riešime za vás.",
+      "none_item2": "Poškodená vec — napíšte nám a vyriešime to s vami.",
       "none_item3": "Suma, ktorá nesedí, alebo platba, ktorú ste neschválili.",
       "my_orders": "Moje objednávky",
       "attach_photo": "Priložiť fotku",
       "which_items": "Čo konkrétne nedopadlo?",
       "which_items_hint": "Nepovinné. Označte služby, ktoré neboli urobené poriadne — pomôže nám to rýchlejšie napraviť. Ak bol problém celý upratovanie, nechajte prázdne.",
-      "item_in_package": "v balíku {{package}}"
+      "item_in_package": "v balíku {{package}}",
+      "settlement_label": "Ak uznáme, že vám máme vrátiť peniaze",
+      "settlement_card_refund": "Vrátiť peniaze na kartu",
+      "settlement_credit": "Kredit na môj účet Cleansia",
+      "settlement_hint": "Vrátené peniaze prídu na kartu, ktorou ste platili. Kredit namiesto toho uplatníte na ďalšie objednávky: nedá sa vyplatiť a vyprší po 12 mesiacoch bez použitia.",
+      "settlement_cash_refund": "Vrátiť mi peniaze",
+      "settlement_hint_cash": "Platili ste v hotovosti, takže nie je karta, na ktorú peniaze vrátiť: ako vám ich vrátime, dohodneme s vami tu. Kredit namiesto toho uplatníte na ďalšie objednávky: nedá sa vyplatiť a vyprší po 12 mesiacoch bez použitia."
     },
     "rewards": {
       "title": "Odmeny",
@@ -1400,16 +1434,18 @@
       "benefit_express_body": "Odpúšťame 20% príplatok za expresné objednávky — upratovania, ktoré začínajú 2 až 4 hodiny po objednaní. Určitý počet každý kalendárny mesiac počas aktívneho plateného členstva; nevyužité sa neprenášajú.",
       "perk_discount": "{{percent}}% členská zľava",
       "perk_cancel_window": "{{hours}} h na bezplatné zrušenie",
-      "perk_grace": "60 minút po objednaní na bezplatné zrušenie namiesto 15 minút",
+      "perk_grace": "60 minút po každej objednávke na bezplatné zrušenie namiesto 15 minút",
       "perk_express_used": "Expresný príplatok odpustený — tento mesiac už žiadny nezostáva",
       "perk_express_trial": "Expresný príplatok odpustený — začína po skončení skúšobného obdobia",
       "cancel_action": "Zrušiť členstvo",
       "cancel_dialog_title": "Zrušiť Cleansia Plus?",
       "cancel_dialog_message": "Vaše výhody zostanú aktívne do konca aktuálneho zaplateného obdobia. Ďalšia platba nebude vykonaná.",
       "cancel_dialog_message_trial": "Skúšobné obdobie skončí {{date}}. Nenasleduje žiadny platený mesiac, takže vám nič nenaúčtujeme a žiadna z výhod Plus nezačne platiť.",
+      "cancel_dialog_message_past_due": "Členstvo skončí okamžite. Neúspešnú platbu už nebudeme vyberať a nič ďalšie vám nenaúčtujeme.",
       "cancel_dialog_confirm": "Áno, zrušiť",
       "cancel_success": "Členstvo zrušené — výhody zostávajú do konca obdobia.",
       "cancel_success_trial": "Členstvo zrušené — nenasleduje žiadny platený mesiac, takže vám nič nenaúčtujeme.",
+      "cancel_success_past_due": "Členstvo zrušené — nič ďalšie vám nenaúčtujeme.",
       "plan_monthly": "Mesačné",
       "plan_annual": "Ročné",
       "plan_savings_badge": "Ušetríte {{percent}} %",
@@ -1462,6 +1498,10 @@
       "trial_perks_title": "Čo zahŕňa platené členstvo",
       "trial_perks_note": "Počas skúšobného obdobia z toho zatiaľ nič neplatí — výhody začnú až s prvým plateným mesiacom.",
       "trial_cancelled_lead": "Keďže ste ho zrušili počas skúšobného obdobia, nenasleduje žiadny platený mesiac a výhody Plus tak vôbec nezačnú platiť.",
+      "past_due_chip": "Platba zlyhala",
+      "past_due_title": "Posledná platba za Plus neprešla",
+      "past_due_lead": "Kým neprejde, sú výhody Plus pozastavené — pre objednávky medzitým platí bežná cena aj bežné podmienky zrušenia. Ak chcete skončiť, zrušte členstvo hneď: skončí okamžite a nič ďalšie vám nenaúčtujeme.",
+      "past_due_cancel_action": "Zrušiť členstvo hneď",
       "cadence": {
         "monthly": "mesačne",
         "yearly": "ročne"
@@ -1485,11 +1525,20 @@
       "consent_updated": "Súhlas úspešne aktualizovaný",
       "consent_types": {
         "terms_of_service": "Obchodné podmienky",
-        "privacy_policy": "Zásady ochrany súkromia",
-        "marketing_emails": "Marketingové e-maily",
-        "data_processing": "Spracovanie údajov"
+        "privacy_policy": "Zásady ochrany súkromia"
       },
-      "consents_description": "Spravujte, s akým spracovaním údajov súhlasíte.",
+      "consents_description": "Verzie obchodných podmienok a zásad ochrany súkromia, ktoré ste prijali, a vaša voľba týkajúca sa marketingu.",
+      "consents_load_error": "Súhlasy sa nepodarilo načítať.",
+      "legal": {
+        "accepted_version": "Verzia {{version}}, prijaté {{date}}",
+        "accepted": "Prijaté {{date}}",
+        "not_accepted": "Zatiaľ neprijaté",
+        "newer_version": "Platí novšia verzia. Pri ďalšej objednávke vás požiadame o jej prijatie."
+      },
+      "marketing": {
+        "title": "Marketing: akcie a ponuky",
+        "description": "Akcie a ponuky zasielané ako push notifikácie. Iný marketing neposielame. Zostáva vypnutý, kým ho nezapnete, a kedykoľvek ho môžete vypnúť."
+      },
       "export_description": "Stiahnite si kópiu všetkých osobných údajov, ktoré o vás máme v evidencii.",
       "export_button": "Exportovať údaje",
       "delete_title": "Vymazať účet",
@@ -1630,7 +1679,13 @@
       "need_link_title": "Otvorte odkaz z e-mailu",
       "need_link_body": "V e-maile, ktorý sme vám po objednaní poslali, je tlačidlo na túto stránku. Nesie súkromný kľúč k tej objednávke — preto sa vás na nič ďalšie nepýtame.",
       "link_expired": "Tento odkaz už objednávku neotvorí. Prestáva platiť 30 dní po upratovaní a hneď po tom, ako je objednávka zrušená.",
-      "loading": "Otvárame vašu objednávku…"
+      "loading": "Otvárame vašu objednávku…",
+      "cleaner_no_show": {
+        "action": "Upratovač neprišiel",
+        "note": "Objednaný čas začiatku už uplynul, takže rezerváciu už nemožno zrušiť. Ak upratovač neprišiel, dajte nám vedieť a náš tím sa na to pozrie.",
+        "reported": "Ďakujeme. Náš tím o tom vie a bude sa tým zaoberať.",
+        "error": "Hlásenie sa nepodarilo odoslať. Skúste to prosím znova."
+      }
     },
     "saved_addresses": {
       "title": "Moje adresy",
@@ -1662,7 +1717,7 @@
       "cta_trial": "Vyskúšať {{days}} dní zadarmo",
       "cta_try_free": "Vyskúšať zadarmo",
       "cta_whats_in_it": "Čo v tom je",
-      "faq_cancel_a": "Kedykoľvek, jedným tlačidlom v profile. Výhody vám zostanú do konca zaplateného obdobia — nič sa neruší spätne.",
+      "faq_cancel_a": "Kedykoľvek, jedným tlačidlom v profile. Výhody vám zostanú do konca zaplateného obdobia — nič sa neruší spätne. Ak platba za obnovenie neprejde, výhody sa hneď pozastavia; zrušenie potom členstvo ukončí okamžite a nič ďalšie vám nenaúčtujeme.",
       "faq_cancel_q": "Ako členstvo zruším?",
       "faq_express_a": "S prvým plateným mesiacom. Počas {{days}} dní skúšobného obdobia neplatí žiadna z výhod Plus — zľava, podmienky zrušenia aj expresné upratovanie bez príplatku začínajú až so zaplateným členstvom.",
       "faq_express_a_no_trial": "Od prvého mesiaca. Expresný príplatok sa odpúšťa hneď od začiatku predplatného.",
@@ -1678,7 +1733,7 @@
       "none": "—",
       "per_month": "mesačne",
       "per_year": "ročne",
-      "perk_cancel_body": "Bez členstva je hranica 24 hodín. A po objednaní máte na bezplatné zrušenie 60 minút namiesto 15 minút.",
+      "perk_cancel_body": "Bez členstva je hranica 24 hodín. A po každej objednávke máte na bezplatné zrušenie 60 minút namiesto 15 minút.",
       "perk_cancel_title": "Zrušenie zadarmo {{hours}} hodiny vopred",
       "perk_discount_title": "Zľava {{percent}} % na každé upratovanie",
       "perk_express_body": "Upratovanie objednané 2 až 4 hodiny vopred bez príplatku {{percent}} %.",
@@ -1708,7 +1763,7 @@
       "title": "Cleansia Plus",
       "yes": "áno",
       "row_grace": "Zrušenie zadarmo po objednaní",
-      "row_grace_without": "15 minút",
+      "row_grace_without": "15 minút (pri prvej objednávke 60)",
       "row_grace_with": "60 minút"
     }
   },
@@ -1825,8 +1880,8 @@
   "privacy_page": {
     "title": "Zásady ochrany súkromia"
   },
-  "work_contract_page": {
-    "title": "Zmluva o dielo"
+  "complaints_page": {
+    "title": "Reklamačný poriadok"
   },
   "api": {
     "auth": {
@@ -1841,6 +1896,7 @@
       "invalid_apple_token": "Prihlásenie cez Apple sa nepodarilo. Skúste to znova.",
       "social_account_not_found": "K tomuto prihláseniu sme nenašli žiadny účet. Najprv sa zaregistrujte.",
       "invalid_password_format": "Vaše heslo nespĺňa požiadavky.",
+      "admin_password_too_short": "Heslo administrátora musí mať aspoň 12 znakov.",
       "invalid_reset_token": "Tento kód na obnovenie hesla je neplatný alebo vypršal.",
       "same_reset_password": "Vaše nové heslo sa musí líšiť od súčasného.",
       "current_password_invalid": "Vaše súčasné heslo nie je správne.",
@@ -1872,12 +1928,14 @@
       "document_not_found": "Tento právny dokument zatiaľ nie je k dispozícii."
     },
     "consent": {
-      "terms_not_accepted": "Pre pokračovanie prosím prijmite obchodné podmienky a zásady ochrany súkromia."
+      "terms_not_accepted": "Pre pokračovanie prosím prijmite obchodné podmienky a zásady ochrany súkromia.",
+      "early_performance_not_requested": "Pre pokračovanie prosím potvrďte, že žiadate o začatie poskytovania služby v 14-dňovej lehote na odstúpenie od zmluvy."
     },
     "order": {
       "cleaning_date": {
         "future": "Dátum upratovania musí byť v budúcnosti.",
-        "below_lead_time": "Vyberte dátum s dostatočným predstihom na naplánovanie upratovania."
+        "below_lead_time": "Vyberte dátum s dostatočným predstihom na naplánovanie upratovania.",
+        "outside_booking_window": "Vyberte začiatok medzi 8:00 a 19:45 miestneho času, po štvrťhodinách, najviac 60 dní dopredu."
       },
       "already_cancelled": "Táto objednávka už bola zrušená.",
       "already_completed": "Táto objednávka už bola dokončená.",
@@ -1903,6 +1961,9 @@
       },
       "payment_gateway_unavailable": "Platby sú dočasne nedostupné. Skúste to prosím o chvíľu.",
       "cash_not_available": "Platba v hotovosti je možná len po prihlásení a pri objednávke, ktorú zvládne jeden upratovač.",
+      "cash_requires_saved_card": "Na platbu v hotovosti si najprv uložte kartu ako záruku — alebo zaplaťte kartou.",
+      "cash_open_bookings_limit_reached": "Už máte najvyšší povolený počet nezaplatených objednávok v hotovosti. Zvoľte kartu alebo hotovosť znova, keď bude niektorá z nich zaplatená.",
+      "cash_unpaid_receivable": "Máte u nás nezaplatenú sumu, napríklad stornovací poplatok. Zatiaľ zaplaťte kartou; v hotovosti budete môcť platiť znova, keď bude uhradená.",
       "country_operator_mismatch": "Túto adresu obsluhuje iná spoločnosť Cleansia, preto ju tu nie je možné objednať.",
       "payment": {
         "already_paid": "Táto objednávka už bola zaplatená."
@@ -1925,7 +1986,11 @@
         "membership_required": "Výber obľúbeného upratovača je výhoda Cleansia Plus.",
         "not_eligible": "Vybrať si môžete iba upratovača, ktorý u vás už dokončil upratovanie."
       },
-      "preferred_offer_closed": "Túto zákazku už nie je možné ponúknuť konkrétnemu upratovačovi."
+      "preferred_offer_closed": "Túto zákazku už nie je možné ponúknuť konkrétnemu upratovačovi.",
+      "start_passed_cannot_cancel": "Čas začiatku už uplynul a upratovač je pridelený, takže rezerváciu už nemožno zrušiť. Ak upratovač neprišiel, dajte nám vedieť.",
+      "cleaner_already_started": "Upratovač už s upratovaním začal.",
+      "start_time_not_reached": "Objednaný čas začiatku ešte nenastal.",
+      "recurring_already_confirmed": "Toto upratovanie už máte potvrdené. Upratovačovi zaplatíte v hotovosti v deň upratovania."
     },
     "address": {
       "already_exists": "Túto adresu už máte uloženú.",
@@ -1978,7 +2043,8 @@
       "consent_not_found": "Toto nastavenie súhlasu sme nenašli.",
       "consent_already_granted": "Tento súhlas ste už udelili.",
       "deletion_blocked_by_assigned_order": "Váš účet sa nedá zmazať, kým ste priradený k zakázke.",
-      "deletion_blocked_by_unsettled_pay": "Váš účet sa nedá zmazať, kým vám dlžíme odmenu. Najprv to vyriešte s kanceláriou."
+      "deletion_blocked_by_unsettled_pay": "Váš účet sa nedá zmazať, kým vám dlžíme odmenu. Najprv to vyriešte s kanceláriou.",
+      "consent_not_editable": "Tento súhlas tu nemožno zmeniť."
     },
     "promo": {
       "already_sent": "Na túto e-mailovú adresu už bol promo kód odoslaný. Skontrolujte doručenú poštu aj priečinok so spamom.",
@@ -2007,6 +2073,14 @@
       "express_waiver": {
         "no_longer_available": "Vaše bezplatné expresné vylepšenie už pre túto objednávku nie je k dispozícii — expresné objednávky zahrnuté v tomto mesiaci boli práve vyčerpané. Objednať môžete aj za bežnú expresnú cenu."
       }
+    },
+    "saved_card": {
+      "consent_not_accepted": "Pred uložením karty prosím potvrďte súhlas, že na ňu môžu byť účtované poplatky a nezaplatená hotovosť.",
+      "not_found": "Túto uloženú kartu sme nenašli."
+    },
+    "receivable": {
+      "not_found": "Túto dlžnú sumu sme nenašli.",
+      "not_open": "Táto suma už bola uhradená alebo odpustená."
     },
     "recurring_booking": {
       "not_found": "Táto opakovaná objednávka už neexistuje.",
@@ -2174,6 +2248,8 @@
     "price_pending": "Vyberte službu",
     "field_services": "Služby",
     "error_services": "Vyberte aspoň jednu službu alebo balík.",
+    "dirtiness_label": "Miera znečistenia",
+    "error_dirtiness": "Vyberte, ako veľmi je u vás upratané.",
     "error_time": "Vyberte čas.",
     "error_address": "Vyberte adresu alebo nižšie pridajte novú.",
     "error_starts_on": "Vyberte dátum začiatku.",
@@ -2189,6 +2265,8 @@
     "cash_unchecked": "Nepodarilo sa overiť, či sa dá tento rozvrh platiť v hotovosti. Uložte ho o chvíľu znova alebo zvoľte kartu.",
     "payment_placeholder": "Zvoľte spôsob platby",
     "error_payment": "Zvoľte, ako sa bude rozvrh platiť.",
+    "early_performance_label": "Žiadosť o začatie v lehote na odstúpenie",
+    "error_early_performance": "Potvrďte, že chcete, aby upratovania začínali v lehote na odstúpenie.",
     "cash_change_title": "Tento rozvrh sa už nedá platiť v hotovosti",
     "cash_change_body": "Každé upratovanie potrebuje viac ako jedného upratovača a v hotovosti sa dá platiť len za upratovania, ktoré zvládne jeden upratovač, preto sa z neho neobjednávajú žiadne nové upratovania, kým ho nezmeníte. Prepnite ho na platbu kartou alebo vyberte služby či balíky, ktoré zvládne jeden upratovač. Upratovanie, ktoré je z neho už objednané, môžete v Objednávkach zrušiť zadarmo, kým ho neprijme žiadny upratovač.",
     "cash_change_action": "Upraviť rozvrh"
@@ -2212,7 +2290,9 @@
     "list_error": "Vašich upratovačov sa nepodarilo načítať. Skúste to prosím znova.",
     "list_empty": "Zatiaľ nie je koho požiadať — zoznam sa plní s dokončenými upratovaniami.",
     "schedule_refused": "Pri tomto rozvrhu už nemôžeme vášho obľúbeného upratovača požiadať ako prvého — napríklad preto, že adresa upratovania je teraz v inej krajine. Rozvrh môžete uložiť bez neho a každé upratovanie sa potom otvorí celému nášmu tímu.",
-    "schedule_save_without": "Uložiť bez obľúbeného upratovača"
+    "schedule_save_without": "Uložiť bez obľúbeného upratovača",
+    "schedule_explainer": "Výhoda Plus · pri každom upratovaní z tohto rozvrhu ho požiadame ako prvého a upratovanie, ktoré nemôže prevziať, sa otvorí celému nášmu tímu.",
+    "schedule_refused_new": "Pri tomto rozvrhu nemôžeme tohto upratovača požiadať ako prvého — napríklad preto, že adresa upratovania je v krajine, kde nepracuje. Rozvrh môžete uložiť bez neho a každé upratovanie sa potom otvorí celému nášmu tímu."
   },
   "enums": {
     "order_status": {

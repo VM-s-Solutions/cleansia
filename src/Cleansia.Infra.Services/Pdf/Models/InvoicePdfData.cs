@@ -18,6 +18,17 @@ public record InvoicePdfData
     public required decimal DeductionAmount { get; init; }
     public required decimal VatAmount { get; init; }
     public required decimal TotalAmount { get; init; }
+
+    /// <summary>
+    /// The cash the cleaner held that was set off against this invoice; above zero, the document carries a
+    /// set-off statement in <see cref="StatementLanguageCode"/> stating the transfer. The invoice's own
+    /// amounts never include it.
+    /// </summary>
+    public decimal CashSetOffAmount { get; init; }
+
+    /// <summary>The cleaner's language, which the set-off statement is in; the invoice itself is in the jurisdiction's.</summary>
+    public string? StatementLanguageCode { get; init; }
+
     public required string CurrencyCode { get; init; }
     public required string CurrencySymbol { get; init; }
 

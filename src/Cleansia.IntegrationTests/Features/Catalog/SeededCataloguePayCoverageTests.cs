@@ -14,10 +14,10 @@ namespace Cleansia.IntegrationTests.Features.Catalog;
 
 /// <summary>
 /// The seed is the first thing the pay gate judges. A fresh Development boot executes
-/// <c>insert_seed_data.sql</c> and DEV is dropped and re-seeded rather than migrated, so if the seeded
-/// catalogue has entries with no platform-wide <c>EmployeePayConfig</c> then every cleaner on a fresh
-/// database opens the app to a board of blank pay and no admin can be approved at all — the gate would
-/// reject the platform's own starting state.
+/// <c>prod-bootstrap.sql</c> then <c>insert_seed_data.sql</c>, and DEV is dropped and re-seeded rather
+/// than migrated, so if the seeded catalogue has entries with no platform-wide <c>EmployeePayConfig</c>
+/// then every cleaner on a fresh database opens the app to a board of blank pay and no admin can be
+/// approved at all — the gate would reject the platform's own starting state.
 ///
 /// <para>Executed against real PostgreSQL because that is the only thing that runs the script: a text
 /// assertion over the SQL proves the INSERT was typed, not that it covers every row the same file
@@ -59,7 +59,7 @@ public class SeededCataloguePayCoverageTests : IAsyncLifetime
         // format placeholders.
         await using var seedConnection = await _dataSource.OpenConnectionAsync();
         await using var seedCommand = seedConnection.CreateCommand();
-        seedCommand.CommandText = ReadCanonicalSeedScript();
+        seedCommand.CommandText = ReadBootstrapAndFixtures();
         seedCommand.CommandTimeout = 120;
         await seedCommand.ExecuteNonQueryAsync();
     }
@@ -79,7 +79,7 @@ public class SeededCataloguePayCoverageTests : IAsyncLifetime
             new TestUserSessionProvider("system", "system@cleansia.test"),
             new FixedTenantProvider(TestTenants.Default));
 
-    private static string ReadCanonicalSeedScript()
+    private static string ReadBootstrapAndFixtures()
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
         while (dir is not null && dir.GetFiles("*.sln").Length == 0)
@@ -88,8 +88,8 @@ public class SeededCataloguePayCoverageTests : IAsyncLifetime
         }
 
         Assert.True(dir is not null, "Could not locate the solution directory from the test base directory.");
-        return File.ReadAllText(
-            Path.GetFullPath(Path.Combine(dir!.FullName, "..", "sql-scripts", "insert_seed_data.sql")));
+        return string.Join('\n', new[] { "prod-bootstrap.sql", "insert_seed_data.sql" }.Select(script =>
+            File.ReadAllText(Path.GetFullPath(Path.Combine(dir!.FullName, "..", "sql-scripts", script)))));
     }
 
     /// <summary>The seed's one operated currency — the gate is asked in it, as every quote is.</summary>

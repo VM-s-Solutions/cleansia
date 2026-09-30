@@ -38,10 +38,11 @@ const CURRENT_TOTAL_STEMS: Record<Locale, RegExp> = {
  * The rewards page prints whatever `PerksJson` the server sends, through `perk.labelKey |
  * translate`. A seeded perk whose string is gone renders as a raw key on every customer's ladder.
  *
- * The seed sits outside the Nx workspace, so CI runs this only when cleansia.app is affected; a
- * seed-only change is not caught here.
+ * The tiers are production reference data, in `prod-bootstrap.sql`. The seed sits outside the Nx
+ * workspace, so CI runs this only when cleansia.app is affected; a seed-only change is not caught
+ * here.
  */
-const SEED_FILE = join(__dirname, '../../../../../../../sql-scripts/insert_seed_data.sql');
+const SEED_FILE = join(__dirname, '../../../../../../../sql-scripts/prod-bootstrap.sql');
 
 /** A `PerksJson` literal and the tier its INSERT guard or UPDATE filter names. */
 const SEED_PERK_LIST = /'(\[[^']*\])'\s*WHERE[^;]*?"Tier"\s*=\s*(\d+)/g;

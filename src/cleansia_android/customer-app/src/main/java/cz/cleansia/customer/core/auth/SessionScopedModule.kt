@@ -10,6 +10,7 @@ import cz.cleansia.core.notifications.PushTokenRepository
 import cz.cleansia.customer.core.notifications.NotificationFeedRepository
 import cz.cleansia.customer.core.notifications.NotificationPreferencesRepository
 import cz.cleansia.customer.core.orders.OrderRepository
+import cz.cleansia.customer.core.payments.SavedCardRepository
 import cz.cleansia.customer.core.recurring.RecurringBookingRepository
 import cz.cleansia.customer.core.referral.ReferralRepository
 import cz.cleansia.customer.core.user.UserRepository
@@ -64,4 +65,7 @@ abstract class SessionScopedModule {
 
     @Binds @IntoSet
     abstract fun bindNotificationFeedRepository(impl: NotificationFeedRepository): SessionScopedCache
+
+    @Binds @IntoSet
+    abstract fun bindSavedCardRepository(impl: SavedCardRepository): SessionScopedCache
 }

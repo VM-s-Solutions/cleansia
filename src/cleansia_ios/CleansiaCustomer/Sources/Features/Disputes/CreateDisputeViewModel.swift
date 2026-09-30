@@ -24,6 +24,8 @@ final class CreateDisputeViewModel: ViewModel {
     /// Ticked rows, by `OrderItemLine.id`.
     @Published var pickedLineIds: Set<String> = []
 
+    @Published var settlement: DisputeSettlement = .cardRefund
+
     /// Files attached before the dispute exists, uploaded to it in order once the create is acknowledged.
     @Published private(set) var pickedEvidence: [PickedEvidence] = []
 
@@ -117,7 +119,8 @@ final class CreateDisputeViewModel: ViewModel {
             orderId: orderId,
             reason: reason,
             description: description,
-            lines: lines
+            lines: lines,
+            settlement: settlement
         ) {
         case let .success(id):
             createdId = id

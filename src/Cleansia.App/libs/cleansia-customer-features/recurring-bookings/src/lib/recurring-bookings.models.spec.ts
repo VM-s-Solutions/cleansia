@@ -1,4 +1,11 @@
-import { nextOccurrenceUtc, RecurrenceFrequency } from './recurring-bookings.models';
+import { DirtinessLevel } from '@cleansia/customer-services';
+import {
+  missingFields,
+  nextOccurrenceUtc,
+  RECURRING_WIZARD_INITIAL_DATA,
+  RecurrenceFrequency,
+  RecurringWizardFormData,
+} from './recurring-bookings.models';
 
 /**
  * The web's copy of `ComputeOccurrences`. A schedule's "Wednesday 10:00" is
@@ -17,6 +24,7 @@ describe('nextOccurrenceUtc', () => {
   });
 
   const wednesday = 3;
+  const thursday = 4;
   const tuesday = 2;
   const sunday = 0;
 
@@ -81,5 +89,101 @@ describe('nextOccurrenceUtc', () => {
     );
 
     expect(next).toBeNull();
+  });
+
+  it('skips a visit less than two hours away', () => {
+    const next = nextOccurrenceUtc(weekly(wednesday, '10:00'), new Date('2026-07-08T07:00:00Z'), prague);
+
+    expect(next?.toISOString()).toBe('2026-07-15T08:00:00.000Z');
+  });
+
+  it('reads the schedule in the zone the template names', () => {
+    const next = nextOccurrenceUtc(
+      { ...weekly(wednesday, '10:00'), timeZoneId: 'America/New_York' },
+      new Date('2026-07-06T00:00:00Z'),
+    );
+
+    expect(next?.toISOString()).toBe('2026-07-08T14:00:00.000Z');
+  });
+
+  it('keeps a fortnightly schedule on its own weeks after an edit', () => {
+    const next = nextOccurrenceUtc(
+      {
+        frequency: RecurrenceFrequency.Biweekly,
+        dayOfWeek: thursday,
+        timeOfDay: '10:00',
+        startsOn: '2026-01-01T00:00:00Z',
+      },
+      new Date('2026-07-06T00:00:00Z'),
+      prague,
+    );
+
+    expect(next?.toISOString()).toBe('2026-07-16T08:00:00.000Z');
+  });
+
+  describe('monthly', () => {
+    const monthly = (startsOn: string, lastMaterializedFor?: string) => ({
+      frequency: RecurrenceFrequency.Monthly,
+      dayOfWeek: thursday,
+      timeOfDay: '10:00',
+      startsOn,
+      lastMaterializedFor,
+    });
+
+    it('keeps the second Thursday of the month', () => {
+      const next = nextOccurrenceUtc(
+        monthly('2026-10-08T00:00:00Z', '2026-11-12T09:00:00Z'),
+        new Date('2026-11-13T00:00:00Z'),
+        prague,
+      );
+
+      expect(next?.toISOString()).toBe('2026-12-10T09:00:00.000Z');
+    });
+
+    it('takes the fifth Thursday in a month that has five', () => {
+      const next = nextOccurrenceUtc(
+        monthly('2026-10-29T00:00:00Z', '2026-11-26T09:00:00Z'),
+        new Date('2026-11-27T00:00:00Z'),
+        prague,
+      );
+
+      expect(next?.toISOString()).toBe('2026-12-31T09:00:00.000Z');
+    });
+
+    it('takes the last Thursday in a month that has only four', () => {
+      const next = nextOccurrenceUtc(
+        monthly('2026-10-29T00:00:00Z', '2026-10-29T09:00:00Z'),
+        new Date('2026-10-30T00:00:00Z'),
+        prague,
+      );
+
+      expect(next?.toISOString()).toBe('2026-11-26T09:00:00.000Z');
+    });
+
+    it('keeps the cadence after an edit clears the last visit', () => {
+      const next = nextOccurrenceUtc(monthly('2026-10-08T00:00:00Z'), new Date('2026-11-16T00:00:00Z'), prague);
+
+      expect(next?.toISOString()).toBe('2026-12-10T09:00:00.000Z');
+    });
+  });
+});
+
+describe('missingFields', () => {
+  const complete: RecurringWizardFormData = {
+    ...RECURRING_WIZARD_INITIAL_DATA,
+    selectedServiceIds: ['s1'],
+    dirtinessLevel: DirtinessLevel.Normal,
+    savedAddressId: 'addr-1',
+    startsOn: new Date('2026-10-01T00:00:00Z'),
+  };
+
+  it('asks a new schedule for the request to start within the withdrawal period until it is made', () => {
+    expect(RECURRING_WIZARD_INITIAL_DATA.earlyPerformanceRequested).toBe(false);
+    expect(missingFields(complete, true)).toEqual(['earlyPerformance']);
+    expect(missingFields({ ...complete, earlyPerformanceRequested: true }, true)).toEqual([]);
+  });
+
+  it('does not ask an edit, whose schedule recorded the request when it was set up', () => {
+    expect(missingFields(complete, false)).toEqual([]);
   });
 });

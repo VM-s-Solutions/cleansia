@@ -23,6 +23,12 @@ struct MembershipManagementCard: View {
         if let membership = vm.current {
             if !membership.hasMembership {
                 InactiveCard(onClick: onSubscribeClick)
+            } else if membership.benefitsPaused {
+                PastDueCard(
+                    membership: membership,
+                    cancelEnabled: !vm.submitState.isSubmitting,
+                    onCancel: { showCancelDialog = true }
+                )
             } else {
                 ActiveCard(
                     membership: membership,
@@ -247,6 +253,55 @@ private struct ActiveCard: View {
     }
 }
 
+private struct PastDueCard: View {
+    let membership: MyMembership
+    let cancelEnabled: Bool
+    let onCancel: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.m) {
+            HStack(spacing: Spacing.xs) {
+                Image(systemName: "exclamationmark.triangle.fill").foregroundColor(CleansiaColors.error)
+                Text(L10n.Membership.statusPastDueBadge)
+                    .font(CleansiaTypography.labelSmall)
+                    .foregroundColor(CleansiaColors.error)
+                    .padding(.horizontal, Spacing.s)
+                    .padding(.vertical, 3)
+                    .background(
+                        CleansiaColors.error.opacity(0.12),
+                        in: RoundedRectangle(cornerRadius: CornerRadius.extraSmall)
+                    )
+            }
+            Text(membership.planName ?? L10n.Membership.plusTitle)
+                .font(CleansiaTypography.titleLarge)
+                .foregroundColor(CleansiaColors.onSurface)
+            Text(L10n.Membership.pastDueBody)
+                .font(CleansiaTypography.bodyMedium)
+                .foregroundColor(CleansiaColors.onSurface)
+                .fixedSize(horizontal: false, vertical: true)
+            Text(L10n.Membership.pastDueCancelHint)
+                .font(CleansiaTypography.labelMedium)
+                .foregroundColor(CleansiaColors.onSurfaceVariant)
+                .fixedSize(horizontal: false, vertical: true)
+            if cancelEnabled {
+                Button(action: onCancel) {
+                    Text(L10n.Membership.cancelAction)
+                        .font(CleansiaTypography.labelLarge)
+                        .foregroundColor(CleansiaColors.error)
+                }
+                .frame(maxWidth: .infinity)
+            }
+        }
+        .padding(Spacing.m)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(CleansiaColors.surface, in: RoundedRectangle(cornerRadius: CornerRadius.large))
+        .overlay(
+            RoundedRectangle(cornerRadius: CornerRadius.large)
+                .stroke(CleansiaColors.error.opacity(0.35), lineWidth: 1)
+        )
+    }
+}
+
 private struct PerkPill: View {
     let perk: MembershipPerk
     let accent: Color
@@ -288,6 +343,8 @@ private struct PerkPill: View {
                     onSwitch: {}
                 )
                 .previewDisplayName("Ending")
+                PastDueCard(membership: sample(cancelRequested: false), cancelEnabled: true, onCancel: {})
+                    .previewDisplayName("Past due")
             }
             .padding()
             .background(CleansiaColors.background)

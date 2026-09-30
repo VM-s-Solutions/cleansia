@@ -41,7 +41,7 @@ public class EmailServiceCurrencySymbolTests
 
         await service.SendOrderReceiptEmailAsync(Recipient, BuildOrder(currency: null), ct: CancellationToken.None);
 
-        Assert.Equal(1234.5m.ToString("N2", CultureInfo.CurrentCulture), values["TotalAmount"]);
+        Assert.Equal("1,234.50", values["TotalAmount"]);
         Assert.DoesNotContain("Kč", values["TotalAmount"], StringComparison.Ordinal);
     }
 
@@ -62,18 +62,18 @@ public class EmailServiceCurrencySymbolTests
 
         await service.SendOrderStatusUpdateEmailAsync(Recipient, BuildOrder(currency: null), "confirmed", ct: CancellationToken.None);
 
-        Assert.Equal(1234.5m.ToString("N2", CultureInfo.CurrentCulture), values["Total"]);
+        Assert.Equal("1,234.50", values["Total"]);
         Assert.DoesNotContain("Kč", values["Total"], StringComparison.Ordinal);
     }
 
     [Theory]
-    [InlineData("en", "Your order has been cancelled.", "Refund issued:")]
-    [InlineData("cs", "Vaše rezervace byla zrušena.", "Vrácená částka:")]
-    [InlineData("sk", "Vaša rezervácia bola zrušená.", "Vrátená suma:")]
-    [InlineData("uk", "Ваше бронювання скасовано.", "Сума повернення:")]
-    [InlineData("ru", "Ваше бронирование отменено.", "Сумма возврата:")]
+    [InlineData("en", "Your order has been cancelled.", "Refund issued:", "€400.00")]
+    [InlineData("cs", "Vaše rezervace byla zrušena.", "Vrácená částka:", "400,00 €")]
+    [InlineData("sk", "Vaša rezervácia bola zrušená.", "Vrátená suma:", "400,00 €")]
+    [InlineData("uk", "Ваше бронювання скасовано.", "Сума повернення:", "400,00 €")]
+    [InlineData("ru", "Ваше бронирование отменено.", "Сумма возврата:", "400,00 €")]
     public async Task Guest_cancellation_email_localizes_copy_and_only_prints_actual_successful_refund(
-        string language, string cancelled, string refundLabel)
+        string language, string cancelled, string refundLabel, string refund)
     {
         var order = BuildOrder(Euro());
         var (service, values) = BuildService(EmailType.OrderStatusUpdate);
@@ -81,7 +81,7 @@ public class EmailServiceCurrencySymbolTests
             CancellationToken.None, 400m, guestAccessToken: GuestToken);
         Assert.Contains(cancelled, values["StatusMessage"]);
         Assert.Contains(refundLabel, values["StatusMessage"]);
-        Assert.Contains($"€{400m:N2}", values["StatusMessage"]);
+        Assert.Contains(refund, values["StatusMessage"]);
         Assert.DoesNotContain($"{order.TotalPrice:N2}", values["StatusMessage"]);
         Assert.Contains($"token={Uri.EscapeDataString(GuestToken)}", values["OrderStatusLink"]);
         Assert.DoesNotContain(order.ConfirmationCode, values["OrderStatusLink"], StringComparison.Ordinal);
@@ -94,6 +94,34 @@ public class EmailServiceCurrencySymbolTests
         Assert.DoesNotContain("token=", values["OrderStatusLink"], StringComparison.Ordinal);
         Assert.Equal(cancelled, values["StatusMessage"]);
         Assert.DoesNotContain(refundLabel, values["StatusMessage"]);
+    }
+
+    /// <summary>
+    /// Owner ruling 2026-09-28: money in a customer e-mail is written the way the e-mail's language
+    /// writes it, never the way the sending host happens to — a Czech reader takes the comma in
+    /// "€1,234.50" for the decimal point.
+    /// </summary>
+    [Theory]
+    [InlineData("en-US")]
+    [InlineData("de-DE")]
+    public async Task Money_Is_Written_In_The_Emails_Language_Whatever_The_Hosts(string hostCulture)
+    {
+        var host = CultureInfo.CurrentCulture;
+        CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo(hostCulture);
+        try
+        {
+            var (status, statusValues) = BuildService(EmailType.OrderStatusUpdate);
+            await status.SendOrderStatusUpdateEmailAsync(Recipient, BuildOrder(Euro()), "confirmed", "cs", CancellationToken.None);
+            Assert.Equal("1 234,50 €", statusValues["Total"]);
+
+            var (receipt, receiptValues) = BuildService(EmailType.OrderReceipt);
+            await receipt.SendOrderReceiptEmailAsync(Recipient, BuildOrder(Euro()), languageCode: "en", ct: CancellationToken.None);
+            Assert.Equal("€1,234.50", receiptValues["TotalAmount"]);
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = host;
+        }
     }
 
     private static Order BuildOrder(Currency? currency)
@@ -167,7 +195,8 @@ public class EmailServiceCurrencySymbolTests
             httpClientFactory.Object,
             translationRepository.Object,
             renderer.Object,
-            Mock.Of<ICountryConfigurationRepository>());
+            Mock.Of<ICountryConfigurationRepository>(),
+            Mock.Of<ICompanyInfoRepository>());
 
         return (service, captured);
     }

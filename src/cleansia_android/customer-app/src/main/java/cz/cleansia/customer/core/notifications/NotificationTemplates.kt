@@ -74,6 +74,16 @@ object NotificationTemplates {
             R.string.notification_order_no_cleaner_refunded_body,
             NotificationCategoryDto.OrderCancelled,
         )
+        "order.no_cleaner_refund_pending" -> Template(
+            R.string.notification_order_no_cleaner_refund_pending_title,
+            R.string.notification_order_no_cleaner_refund_pending_body,
+            NotificationCategoryDto.OrderCancelled,
+        )
+        "order.no_cleaner_nothing_charged" -> Template(
+            R.string.notification_order_no_cleaner_nothing_charged_title,
+            R.string.notification_order_no_cleaner_nothing_charged_body,
+            NotificationCategoryDto.OrderCancelled,
+        )
         "dispute.reply" -> Template(
             R.string.notification_dispute_reply_title,
             R.string.notification_dispute_reply_body,
@@ -103,6 +113,12 @@ object NotificationTemplates {
             R.string.notification_membership_cancelled_title,
             R.string.notification_membership_cancelled_body,
             NotificationCategoryDto.MembershipCancelled,
+        )
+        // Non-mutable on the server, so it has no category of its own; it rides the renewal channel.
+        "membership.payment_failed" -> Template(
+            R.string.notification_membership_payment_failed_title,
+            R.string.notification_membership_payment_failed_body,
+            NotificationCategoryDto.MembershipExpiring,
         )
         "order.assignment_cancelled" -> Template(
             R.string.notification_order_assignment_cancelled_title,
@@ -139,7 +155,9 @@ object NotificationTemplates {
             }
             // The credit figure arrives already formatted by the server in the credit's own
             // currency ("250 Kč", "10 €"); the device only places it.
-            "order.no_cleaner_refunded" -> {
+            "order.no_cleaner_refunded",
+            "order.no_cleaner_refund_pending",
+            "order.no_cleaner_nothing_charged" -> {
                 val orderNumber = args["orderNumber"].orEmpty()
                 val amount = args["amount"].orEmpty()
                 context.getString(bodyRes, orderNumber, amount)

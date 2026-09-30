@@ -12,6 +12,7 @@ import { EMPTY, of, throwError } from 'rxjs';
 import { ProfileBankFacade } from './profile-bank.facade';
 import { ProfileDocumentsFacade } from './profile-documents.facade';
 import { ProfileJobRadiusFacade } from './profile-job-radius.facade';
+import { ProfileLegalDocumentsFacade } from './profile-legal-documents.facade';
 import { ProfileFacade } from './profile.facade';
 
 /**
@@ -30,6 +31,7 @@ describe('ProfileFacade — job radius seeding', () => {
         ProfileBankFacade,
         ProfileDocumentsFacade,
         ProfileJobRadiusFacade,
+        ProfileLegalDocumentsFacade,
         {
           provide: PartnerClient,
           useValue: {
@@ -153,6 +155,47 @@ describe('ProfileFacade — job radius seeding', () => {
       facade.loadProfile();
 
       expect(facade.legalEntityName()).toBeNull();
+    });
+  });
+
+  describe('weekly job limit', () => {
+    it('shows the cap an administrator set and the reason they gave', () => {
+      getCurrentEmployee.mockReturnValue(
+        of(
+          EmployeeItem.fromJS({
+            id: 'emp-1',
+            weeklyOrderLimit: 3,
+            weeklyOrderLimitReason: 'First month on the platform',
+          })
+        )
+      );
+      const facade = createFacade();
+
+      facade.loadProfile();
+
+      expect(facade.weeklyOrderLimit()).toBe(3);
+      expect(facade.weeklyOrderLimitReason()).toBe('First month on the platform');
+    });
+
+    it('shows a cap recorded without a reason as a cap alone', () => {
+      getCurrentEmployee.mockReturnValue(
+        of(EmployeeItem.fromJS({ id: 'emp-1', weeklyOrderLimit: 5 }))
+      );
+      const facade = createFacade();
+
+      facade.loadProfile();
+
+      expect(facade.weeklyOrderLimit()).toBe(5);
+      expect(facade.weeklyOrderLimitReason()).toBeNull();
+    });
+
+    it('holds neither when no cap is set', () => {
+      const facade = createFacade();
+
+      facade.loadProfile();
+
+      expect(facade.weeklyOrderLimit()).toBeNull();
+      expect(facade.weeklyOrderLimitReason()).toBeNull();
     });
   });
 });

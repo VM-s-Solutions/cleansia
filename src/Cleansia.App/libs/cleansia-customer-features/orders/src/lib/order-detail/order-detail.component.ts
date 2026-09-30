@@ -9,19 +9,27 @@ import {
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { CleansiaButtonComponent, CleansiaTextareaComponent } from '@cleansia/components';
 import { OrderStatusLabelPipe } from '@cleansia/pipes';
-import { OrderStatus, PaymentStatus } from '@cleansia/customer-services';
+import {
+  dirtinessLevelOption,
+  DisputeReason,
+  MembershipStatus,
+  OrderStatus,
+  PaymentStatus,
+  PaymentType,
+} from '@cleansia/customer-services';
 import {
   RECURRING_PREFILL_STORAGE_KEY,
   RecurringPrefillParams,
 } from '@cleansia-customer/recurring-bookings';
 import { CleansiaCustomerRoute } from '@cleansia/services';
-import { formatMoney, localeFor } from '@cleansia/utils';
+import { clearOnBackForwardRestore, formatMoney, localeFor } from '@cleansia/utils';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { DialogModule } from 'primeng/dialog';
 import { SkeletonModule } from 'primeng/skeleton';
+import { AmountDueComponent } from '../amount-due/amount-due.component';
 import { OrderPreferredOfferComponent } from './components/order-preferred-offer.component';
 import { OrderDetailFacade } from './order-detail.facade';
 import { OrderMarketFacade } from '../order-market.facade';
@@ -74,7 +82,6 @@ interface EntryDetail {
   imports: [
     CommonModule,
     FormsModule,
-    RouterLink,
     TranslatePipe,
     SkeletonModule,
     DialogModule,
@@ -82,6 +89,7 @@ interface EntryDetail {
     CleansiaTextareaComponent,
     OrderStatusLabelPipe,
     OrderPreferredOfferComponent,
+    AmountDueComponent,
   ],
   providers: [OrderDetailFacade, OrderPreferredOfferFacade, OrderMarketFacade],
   templateUrl: './order-detail.component.html',
@@ -104,9 +112,9 @@ export class OrderDetailComponent implements OnInit {
   readonly freeCancellationHours = this.facade.freeCancellationHours;
   readonly reviewSubmitting = this.facade.reviewSubmitting;
   readonly downloading = this.facade.downloading;
-  readonly workContractAcceptances = this.facade.workContractAcceptances;
 
   readonly canCancel = this.facade.canCancel;
+  readonly canReportCleanerNoShow = this.facade.canReportCleanerNoShow;
   readonly tookNoCardPayment = this.facade.tookNoCardPayment;
   readonly cancellationOpen = this.facade.cancellationOpen;
   readonly previewLoading = this.facade.previewLoading;
@@ -117,6 +125,30 @@ export class OrderDetailComponent implements OnInit {
   readonly cancellationResult = this.facade.cancellationResult;
   readonly cancellationReasonMaxLength = CANCELLATION_REASON_MAX_LENGTH;
   readonly cancellationReason = signal('');
+
+  readonly canConfirmRecurring = this.facade.canConfirmRecurring;
+  readonly recurringPaymentBegunInApp = this.facade.recurringPaymentBegunInApp;
+  readonly confirmingRecurring = this.facade.confirmingRecurring;
+
+  private readonly recurringPaysByCard = computed(
+    () => this.order()?.paymentType?.value === PaymentType.Card,
+  );
+
+  readonly recurringConfirmLabelKey = computed(() =>
+    this.recurringPaysByCard()
+      ? 'pages.order_detail.recurring_confirm.action_card'
+      : 'pages.order_detail.recurring_confirm.action_cash',
+  );
+
+  readonly recurringConfirmNoteKey = computed(() =>
+    this.recurringPaysByCard()
+      ? 'pages.order_detail.recurring_confirm.note_card'
+      : 'pages.order_detail.recurring_confirm.note_cash',
+  );
+
+  constructor() {
+    clearOnBackForwardRestore(this.facade.confirmingRecurring);
+  }
 
   /**
    * The figure the confirmation names is what the server actually refunded, never the preview's
@@ -296,10 +328,21 @@ export class OrderDetailComponent implements OnInit {
       lines.push({ label: pkg.name ?? '', amount: pkg.price ?? 0 });
     }
 
+    const level = dirtinessLevelOption(order.dirtinessLevel);
+    const dirtinessSurcharge =
+      level && order.dirtinessSurchargeAmount > 0 ? order.dirtinessSurchargeAmount : 0;
+
     const serviceNames = (order.selectedServices ?? []).map((s) => s.name).filter(Boolean);
-    const servicesTotal = (order.originalSubtotal ?? 0) - packagesTotal;
+    const servicesTotal = (order.originalSubtotal ?? 0) - packagesTotal - dirtinessSurcharge;
     if (serviceNames.length > 0) {
       lines.push({ label: serviceNames.join(', '), amount: servicesTotal });
+    }
+
+    if (level && dirtinessSurcharge > 0) {
+      lines.push({
+        labelKey: `pages.order.dirtiness.${level.key}.surcharge_line`,
+        amount: dirtinessSurcharge,
+      });
     }
 
     const discount = (amount: number | undefined, labelKey: string) => {
@@ -312,6 +355,11 @@ export class OrderDetailComponent implements OnInit {
     discount(order.promoDiscountAmount, 'pages.order_detail.discount_promo');
 
     return lines;
+  });
+
+  readonly dirtinessLevelKey = computed(() => {
+    const level = dirtinessLevelOption(this.order()?.dirtinessLevel);
+    return level ? `pages.order.dirtiness.${level.key}.name` : null;
   });
 
   /**
@@ -389,7 +437,7 @@ export class OrderDetailComponent implements OnInit {
     const order = this.order();
     if (!order?.id) return;
 
-    const isPlus = this.membership()?.hasMembership === true;
+    const isPlus = this.membership()?.status === MembershipStatus.Active;
     if (!isPlus) {
       this.facade.showRecurringPlusRequired();
       this.router.navigate([CleansiaCustomerRoute.PLUS]);
@@ -439,10 +487,6 @@ export class OrderDetailComponent implements OnInit {
     this.router.navigate([CleansiaCustomerRoute.ORDERS]);
   }
 
-  contractLink(acceptanceId: string): string[] {
-    return ['/', CleansiaCustomerRoute.ORDERS, this.order()?.id ?? '', 'contract', acceptanceId];
-  }
-
   downloadReceipt(): void {
     this.facade.downloadReceipt();
   }
@@ -460,11 +504,23 @@ export class OrderDetailComponent implements OnInit {
     this.facade.cancelOrder(this.cancellationReason());
   }
 
+  confirmRecurring(): void {
+    this.facade.confirmRecurring();
+  }
+
   reportIssue(): void {
     const order = this.order();
     if (!order?.id) return;
     this.router.navigate([CleansiaCustomerRoute.DISPUTES], {
       queryParams: { orderId: order.id },
+    });
+  }
+
+  reportCleanerNoShow(): void {
+    const order = this.order();
+    if (!order?.id) return;
+    this.router.navigate([CleansiaCustomerRoute.DISPUTES], {
+      queryParams: { orderId: order.id, reason: DisputeReason.ServiceNotProvided },
     });
   }
 

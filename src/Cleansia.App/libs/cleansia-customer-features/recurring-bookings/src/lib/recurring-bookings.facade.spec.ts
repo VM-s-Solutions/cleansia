@@ -1,8 +1,15 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import {
+  CardCaptureFacade,
+  CreateRecurringBookingCommand,
+  CreateSavedCardCheckoutSessionCommand,
+  CreateSavedCardCheckoutSessionResponse,
   CustomerClient,
   DeleteRecurringBookingCommand,
+  DirtinessLevel,
+  GetMyServingCleanersResponse,
+  MembershipStatus,
   PackageListItem,
   PaymentType,
   QuoteOrderResponse,
@@ -10,6 +17,7 @@ import {
   SavedAddressDto,
   ServiceListItem,
   SetRecurringBookingActiveCommand,
+  takeCardSetupReturnUrl,
   UpdateRecurringBookingCommand,
 } from '@cleansia/customer-services';
 import {
@@ -40,7 +48,9 @@ describe('RecurringBookingsFacade', () => {
     setActive: jest.Mock;
     delete: jest.Mock;
   };
-  let orderClient: { quote: jest.Mock };
+  let orderClient: { quote: jest.Mock; myServingCleaners: jest.Mock };
+  let membershipClient: { getMine: jest.Mock };
+  let savedCardClient: { createCheckoutSession: jest.Mock };
   let savedAddressStore: {
     addresses: ReturnType<typeof signal<SavedAddressDto[]>>;
     loaded: ReturnType<typeof signal<boolean>>;
@@ -67,7 +77,21 @@ describe('RecurringBookingsFacade', () => {
       setActive: jest.fn().mockReturnValue(of(undefined)),
       delete: jest.fn().mockReturnValue(of(undefined)),
     };
-    orderClient = { quote: jest.fn() };
+    orderClient = { quote: jest.fn(), myServingCleaners: jest.fn().mockReturnValue(of([])) };
+    membershipClient = {
+      getMine: jest.fn().mockReturnValue(of({ hasMembership: true, status: MembershipStatus.Active })),
+    };
+    const { origin, pathname } = window.location;
+    savedCardClient = {
+      createCheckoutSession: jest.fn().mockReturnValue(
+        of(
+          CreateSavedCardCheckoutSessionResponse.fromJS({
+            savedCardId: 'card-1',
+            checkoutUrl: `${origin}${pathname}#card-setup`,
+          }),
+        ),
+      ),
+    };
     savedAddressStore = {
       addresses: signal<SavedAddressDto[]>([]),
       loaded: signal(true),
@@ -82,13 +106,15 @@ describe('RecurringBookingsFacade', () => {
     TestBed.configureTestingModule({
       providers: [
         RecurringBookingsFacade,
+        CardCaptureFacade,
         provideMockStore(),
         {
           provide: CustomerClient,
           useValue: {
             recurringBookingClient: client,
             orderClient,
-            membershipClient: { getMine: jest.fn().mockReturnValue(of({ hasMembership: true })) },
+            membershipClient,
+            savedCardClient,
           },
         },
         { provide: SavedAddressStore, useValue: savedAddressStore },
@@ -104,6 +130,18 @@ describe('RecurringBookingsFacade', () => {
     store.overrideSelector(selectCustomerPackagesCatalogue, { packages: [], countryId: null });
     store.overrideSelector(selectMarketCountryId, null);
     facade = TestBed.inject(RecurringBookingsFacade);
+  });
+
+  // A failed renewal keeps the enrolment alive, but the server refuses a schedule while it is unpaid.
+  it('shows a member whose renewal payment failed the paywall, not the list', async () => {
+    membershipClient.getMine.mockReturnValue(
+      of({ hasMembership: true, status: MembershipStatus.PastDue }),
+    );
+
+    await facade.initialize();
+
+    expect(facade.isMember()).toBe(false);
+    expect(client.getMine).not.toHaveBeenCalled();
   });
 
   // The catalogue is priced per market and the server withholds what has no price in the saved
@@ -412,6 +450,7 @@ describe('RecurringBookingsFacade', () => {
         selectedServiceIds: ['s1'],
         savedAddressId: 'addr-sk',
         startsOn: new Date('2026-10-01T00:00:00Z'),
+        dirtinessLevel: DirtinessLevel.Normal,
       });
 
       await facade.submit();
@@ -420,6 +459,121 @@ describe('RecurringBookingsFacade', () => {
       const body = JSON.parse(JSON.stringify(client.create.mock.calls[0][0]));
       expect(body).not.toHaveProperty('currencyId');
       expect(body.savedAddressId).toBe('addr-sk');
+    });
+  });
+
+  // Decision 34: a schedule carries the level its customer picks, which prices every clean it books
+  // and, through the crew the quote gives, decides whether it can be paid in cash.
+  describe('the dirtiness level of a schedule', () => {
+    const quoted = () =>
+      of(QuoteOrderResponse.fromJS({ totalPrice: 1300, finalPriceAfterDiscount: 1300, currencyCode: 'CZK' }));
+    const createBody = () => JSON.parse(JSON.stringify(client.create.mock.calls[0][0]));
+    const updateBody = () => JSON.parse(JSON.stringify(client.update.mock.calls[0][0]));
+    const completeForm = () =>
+      facade.updateFormData({
+        selectedServiceIds: ['s1'],
+        savedAddressId: 'addr-1',
+        startsOn: new Date('2026-10-01T00:00:00Z'),
+        earlyPerformanceRequested: true,
+      });
+    const stored = (dirtinessLevel?: DirtinessLevel) =>
+      template({
+        id: 't1',
+        timeOfDay: '10:00',
+        rooms: 2,
+        bathrooms: 1,
+        savedAddressId: 'addr-1',
+        selectedServiceIds: ['s1'],
+        paymentType: PaymentType.Card,
+        startsOn: new Date('2026-10-01T00:00:00Z'),
+        dirtinessLevel,
+      });
+
+    it('asks a new schedule for a level rather than assuming one', () => {
+      completeForm();
+
+      expect(facade.formData().dirtinessLevel).toBeNull();
+      expect(facade.missing()).toEqual(['dirtiness']);
+    });
+
+    it('does not create a schedule before a level is chosen', async () => {
+      completeForm();
+
+      const ok = await facade.submit();
+
+      expect(ok).toBe(false);
+      expect(client.create).not.toHaveBeenCalled();
+    });
+
+    it('quotes the form at normal until a level is chosen, then at the chosen one', async () => {
+      orderClient.quote.mockReturnValue(quoted());
+      facade.updateFormData({ selectedServiceIds: ['s1'] });
+      await facade.quoteForm();
+      const unchosen = facade.pricedSelection();
+
+      facade.updateFormData({ dirtinessLevel: DirtinessLevel.Normal });
+      expect(facade.pricedSelection()).toBe(unchosen);
+
+      facade.updateFormData({ dirtinessLevel: DirtinessLevel.Heavy });
+      expect(facade.pricedSelection()).not.toBe(unchosen);
+      await facade.quoteForm();
+
+      expect(orderClient.quote.mock.calls[0][0].dirtinessLevel).toBe(DirtinessLevel.Normal);
+      expect(orderClient.quote.mock.calls[1][0].dirtinessLevel).toBe(DirtinessLevel.Heavy);
+    });
+
+    it("prices a card at its schedule's own level", async () => {
+      orderClient.quote.mockReturnValue(quoted());
+
+      await facade.quoteTemplate(stored(DirtinessLevel.Increased));
+
+      expect(orderClient.quote.mock.calls[0][0].dirtinessLevel).toBe(DirtinessLevel.Increased);
+    });
+
+    it('creates the schedule at the level chosen', async () => {
+      client.create.mockReturnValue(of(template({ id: 't-new' })));
+      completeForm();
+      facade.updateFormData({ dirtinessLevel: DirtinessLevel.Heavy });
+
+      const ok = await facade.submit();
+
+      expect(ok).toBe(true);
+      expect(createBody().dirtinessLevel).toBe(DirtinessLevel.Heavy);
+    });
+
+    it('opens a schedule for edit at its own level and sends it back unchanged', async () => {
+      client.update.mockReturnValue(of(stored(DirtinessLevel.Increased)));
+      facade.loadForEdit(stored(DirtinessLevel.Increased));
+
+      expect(facade.formData().dirtinessLevel).toBe(DirtinessLevel.Increased);
+      await facade.submit();
+
+      expect(updateBody().dirtinessLevel).toBe(DirtinessLevel.Increased);
+    });
+
+    it('sends the level chosen on edit', async () => {
+      client.update.mockReturnValue(of(stored(DirtinessLevel.Heavy)));
+      facade.loadForEdit(stored(DirtinessLevel.Increased));
+      facade.updateFormData({ dirtinessLevel: DirtinessLevel.Heavy });
+
+      await facade.submit();
+
+      expect(updateBody().dirtinessLevel).toBe(DirtinessLevel.Heavy);
+    });
+
+    it('reads a schedule that names no level as normal, the level the server stored for it', () => {
+      facade.loadForEdit(stored(undefined));
+
+      expect(facade.formData().dirtinessLevel).toBe(DirtinessLevel.Normal);
+      expect(facade.missing()).toEqual([]);
+    });
+
+    it('asks again after the wizard is reset', () => {
+      facade.loadForEdit(stored(DirtinessLevel.Heavy));
+
+      facade.resetWizard();
+
+      expect(facade.formData().dirtinessLevel).toBeNull();
     });
   });
 
@@ -533,6 +687,7 @@ describe('RecurringBookingsFacade', () => {
         savedAddressId: 'addr-1',
         startsOn: new Date('2026-07-01T00:00:00Z'),
         selectedServiceIds: ['s1'],
+        dirtinessLevel: DirtinessLevel.Normal,
       });
     });
 
@@ -570,6 +725,58 @@ describe('RecurringBookingsFacade', () => {
     });
   });
 
+  describe('the request to start within the withdrawal period', () => {
+    beforeEach(() => {
+      facade.updateFormData({
+        savedAddressId: 'addr-1',
+        startsOn: new Date('2026-07-01T00:00:00Z'),
+        selectedServiceIds: ['s1'],
+        dirtinessLevel: DirtinessLevel.Normal,
+      });
+    });
+
+    it('is missing on a new schedule until the customer makes it', () => {
+      expect(facade.missing()).toEqual(['earlyPerformance']);
+
+      facade.updateFormData({ earlyPerformanceRequested: true });
+
+      expect(facade.missing()).toEqual([]);
+    });
+
+    it('rides the create command once made', async () => {
+      client.create.mockReturnValue(of(template({ id: 'new' })));
+      facade.updateFormData({ earlyPerformanceRequested: true });
+
+      await facade.submit();
+
+      const body = JSON.parse(JSON.stringify(client.create.mock.calls[0][0]));
+      expect(body.earlyPerformanceRequested).toBe(true);
+    });
+
+    it('is not asked of a schedule being edited', () => {
+      facade.loadForEdit(
+        template({
+          savedAddressId: 'addr-1',
+          selectedServiceIds: ['s1'],
+          timeOfDay: '10:00',
+          paymentType: PaymentType.Card,
+          startsOn: new Date('2026-07-01T00:00:00Z'),
+          dirtinessLevel: DirtinessLevel.Normal,
+        }),
+      );
+
+      expect(facade.missing()).toEqual([]);
+    });
+
+    it('is asked again after the wizard is reset', () => {
+      facade.updateFormData({ earlyPerformanceRequested: true });
+
+      facade.resetWizard();
+
+      expect(facade.formData().earlyPerformanceRequested).toBe(false);
+    });
+  });
+
   // Owner ruling 2026-09-24: a schedule is always an account's, so cash turns on the crew alone —
   // one cleaner, from the server's quote. A cash choice that stops being allowed is taken away, never
   // swapped for card.
@@ -587,6 +794,7 @@ describe('RecurringBookingsFacade', () => {
         selectedServiceIds: ['s1'],
         savedAddressId: 'addr-1',
         startsOn: new Date('2026-10-01T00:00:00Z'),
+        dirtinessLevel: DirtinessLevel.Normal,
         paymentType,
       });
 
@@ -741,6 +949,104 @@ describe('RecurringBookingsFacade', () => {
       expect(snackbar.showError).not.toHaveBeenCalled();
       expect(facade.formData().paymentType).toBeNull();
       expect(facade.cashCleared()).toBe(true);
+    });
+
+    it.each(['order.cash_unpaid_receivable', 'order.cash_open_bookings_limit_reached'])(
+      'takes cash off the form when the server refuses it with %s, leaving the interceptor toast alone',
+      async (code) => {
+        orderClient.quote.mockReturnValue(of(crewOf(1)));
+        client.create.mockReturnValue(throwError(() => ({ errors: { PaymentType: code } })));
+        completeForm(PaymentType.Cash);
+
+        const ok = await facade.submit();
+
+        expect(ok).toBe(false);
+        expect(snackbar.showError).not.toHaveBeenCalled();
+        expect(facade.formData().paymentType).toBeNull();
+        expect(facade.cashCleared()).toBe(true);
+        expect(facade.cardCaptureVisible()).toBe(false);
+      },
+    );
+
+    // Owner ruling 2026-09-28: the first cash booking saves a card as its guarantee, and a schedule
+    // is refused cash the same way as a one-off booking until one is saved.
+    describe('without a saved card', () => {
+      const slovakAddress = SavedAddressDto.fromJS({ id: 'addr-1', countryId: 'svk' });
+
+      async function refusedForWantOfACard(send: jest.Mock): Promise<boolean> {
+        savedAddressStore.addresses.set([slovakAddress]);
+        orderClient.quote.mockReturnValue(of(crewOf(1)));
+        send.mockReturnValue(
+          throwError(() => ({ errors: { PaymentType: 'order.cash_requires_saved_card' } })),
+        );
+        completeForm(PaymentType.Cash);
+        return facade.submit();
+      }
+
+      function sentCardCommand(): CreateSavedCardCheckoutSessionCommand {
+        return savedCardClient.createCheckoutSession.mock.calls[0][0];
+      }
+
+      beforeEach(() => sessionStorage.clear());
+
+      it('opens the card-capture step and keeps cash on the schedule', async () => {
+        const ok = await refusedForWantOfACard(client.create);
+
+        expect(ok).toBe(false);
+        expect(facade.cardCaptureVisible()).toBe(true);
+        expect(facade.cardCaptureConsent()).toBe(false);
+        expect(facade.formData().paymentType).toBe(PaymentType.Cash);
+        expect(snackbar.showError).not.toHaveBeenCalled();
+      });
+
+      it("saves the card for the schedule address's country and comes back to the new schedule as it was", async () => {
+        await refusedForWantOfACard(client.create);
+        const left = facade.formData();
+
+        facade.setCardCaptureConsent(true);
+        facade.startCardCapture();
+
+        expect(sentCardCommand().consentAccepted).toBe(true);
+        expect(sentCardCommand().countryId).toBe('svk');
+        expect(takeCardSetupReturnUrl()).toBe('/membership/recurring/create');
+
+        facade.resetWizard();
+        facade.restoreParkedForm(null);
+
+        expect(facade.editingId()).toBeNull();
+        expect(facade.formData()).toEqual(left);
+        expect(facade.formData().startsOn).toBeInstanceOf(Date);
+      });
+
+      it('comes back to the schedule being edited, with the edits kept', async () => {
+        facade.loadForEdit(template({ id: 't1', paymentType: PaymentType.Card }));
+        await refusedForWantOfACard(client.update);
+        const left = facade.formData();
+
+        facade.setCardCaptureConsent(true);
+        facade.startCardCapture();
+
+        expect(takeCardSetupReturnUrl()).toBe('/membership/recurring/t1');
+
+        facade.resetWizard();
+        facade.restoreParkedForm('t1');
+
+        expect(facade.editingId()).toBe('t1');
+        expect(facade.formData()).toEqual(left);
+      });
+
+      it('restores nothing parked for another schedule, and reads it only once', async () => {
+        await refusedForWantOfACard(client.create);
+        facade.setCardCaptureConsent(true);
+        facade.startCardCapture();
+        facade.resetWizard();
+
+        facade.restoreParkedForm('t1');
+        facade.restoreParkedForm(null);
+
+        expect(facade.editingId()).toBeNull();
+        expect(facade.formData().paymentType).toBe(PaymentType.Card);
+      });
     });
 
     it('prices the same selection whatever the day, the time, the cadence or the payment', async () => {
@@ -987,6 +1293,7 @@ describe('RecurringBookingsFacade', () => {
         selectedServiceIds: ['s1'],
         savedAddressId: 'addr-1',
         startsOn: new Date('2026-10-01T00:00:00Z'),
+        dirtinessLevel: DirtinessLevel.Normal,
       });
 
       await facade.submit();
@@ -995,6 +1302,152 @@ describe('RecurringBookingsFacade', () => {
       expect(body).not.toHaveProperty('preferredEmployeeId');
       expect(body).not.toHaveProperty('endsOn');
       expect(facade.latestStartsOn()).toBeNull();
+    });
+  });
+
+  // Decision 44: the schedule form offers the cleaners who have served this customer, asked with no
+  // slot because a schedule has no single instant, and the one refusal handling covers create and edit.
+  describe('the favourite cleaner on a schedule', () => {
+    const cleaner = (employeeId: string, fullName: string) =>
+      GetMyServingCleanersResponse.fromJS({
+        employeeId,
+        fullName,
+        lastServedOn: '2026-09-01T10:00:00Z',
+        isAvailableForRequestedSlot: null,
+      });
+    const notEligible = () =>
+      throwError(() => ({
+        detail: 'A validation problem occurred.',
+        errors: { PreferredEmployeeId: 'order.preferred_employee.not_eligible' },
+      }));
+    const createBody = (call: number) =>
+      JSON.parse(JSON.stringify(client.create.mock.calls[call][0] as CreateRecurringBookingCommand));
+    const updateBody = (call: number) =>
+      JSON.parse(JSON.stringify(client.update.mock.calls[call][0] as UpdateRecurringBookingCommand));
+    const completeForm = () =>
+      facade.updateFormData({
+        selectedServiceIds: ['s1'],
+        savedAddressId: 'addr-1',
+        startsOn: new Date('2026-10-01T00:00:00Z'),
+        dirtinessLevel: DirtinessLevel.Normal,
+      });
+    const storedWith = (preferredEmployeeId: string) =>
+      template({
+        id: 't1',
+        timeOfDay: '10:00',
+        savedAddressId: 'addr-1',
+        selectedServiceIds: ['s1'],
+        paymentType: PaymentType.Card,
+        startsOn: new Date('2026-10-01T00:00:00Z'),
+        preferredEmployeeId,
+      });
+
+    it('asks for the cleaners with no slot and offers each by name', async () => {
+      orderClient.myServingCleaners.mockReturnValue(
+        of([cleaner('e-1', 'Jana Nováková'), cleaner('e-2', 'Petr Svoboda')]),
+      );
+
+      await facade.loadServingCleaners();
+
+      expect(orderClient.myServingCleaners).toHaveBeenCalledWith();
+      expect(facade.preferredCleanerVisible()).toBe(true);
+      expect(facade.preferredCleanerOptions()).toEqual([
+        { label: 'Jana Nováková', value: 'e-1', disabled: false },
+        { label: 'Petr Svoboda', value: 'e-2', disabled: false },
+      ]);
+    });
+
+    it('is loading only while the cleaners are being read', async () => {
+      const roster = new Subject<GetMyServingCleanersResponse[]>();
+      orderClient.myServingCleaners.mockReturnValue(roster);
+
+      const loading = facade.loadServingCleaners();
+      expect(facade.servingCleanersLoading()).toBe(true);
+
+      roster.next([cleaner('e-1', 'Jana Nováková')]);
+      roster.complete();
+      await loading;
+
+      expect(facade.servingCleanersLoading()).toBe(false);
+    });
+
+    it('offers no picker when nobody has cleaned for the customer yet', async () => {
+      await facade.loadServingCleaners();
+
+      expect(facade.preferredCleanerVisible()).toBe(false);
+    });
+
+    it('hides the picker without an error when the cleaners cannot be read', async () => {
+      orderClient.myServingCleaners.mockReturnValue(throwError(() => new Error('offline')));
+
+      await facade.loadServingCleaners();
+
+      expect(facade.preferredCleanerVisible()).toBe(false);
+      expect(facade.servingCleanersLoading()).toBe(false);
+      expect(snackbar.showError).not.toHaveBeenCalled();
+    });
+
+    it('sends the chosen cleaner when the schedule is created', async () => {
+      client.create.mockReturnValue(of(template({ id: 't-new' })));
+      completeForm();
+      facade.selectPreferredCleaner('e-1');
+
+      const ok = await facade.submit();
+
+      expect(ok).toBe(true);
+      expect(createBody(0).preferredEmployeeId).toBe('e-1');
+    });
+
+    it('keeps a refused cleaner on a new schedule and offers creating it without them', async () => {
+      client.create.mockReturnValueOnce(notEligible());
+      completeForm();
+      facade.selectPreferredCleaner('e-1');
+
+      const refused = await facade.submit();
+
+      expect(refused).toBe(false);
+      expect(snackbar.showError).not.toHaveBeenCalled();
+      expect(facade.preferredCleanerRefused()).toBe(true);
+      expect(facade.formData().preferredEmployeeId).toBe('e-1');
+
+      client.create.mockReturnValueOnce(of(template({ id: 't-new' })));
+      const ok = await facade.saveWithoutPreferredCleaner();
+
+      expect(ok).toBe(true);
+      expect(createBody(1)).not.toHaveProperty('preferredEmployeeId');
+      expect(facade.formData().preferredEmployeeId).toBeNull();
+    });
+
+    it('sends another cleaner chosen on edit', async () => {
+      client.update.mockReturnValue(of(template({ id: 't1' })));
+      facade.loadForEdit(storedWith('e-1'));
+      facade.selectPreferredCleaner('e-2');
+
+      await facade.submit();
+
+      expect(updateBody(0).preferredEmployeeId).toBe('e-2');
+    });
+
+    it('sends no cleaner once the customer clears the one the schedule had', async () => {
+      client.update.mockReturnValue(of(template({ id: 't1' })));
+      facade.loadForEdit(storedWith('e-1'));
+      facade.selectPreferredCleaner(null);
+
+      await facade.submit();
+
+      expect(updateBody(0)).not.toHaveProperty('preferredEmployeeId');
+    });
+
+    it('puts a refusal notice down once another cleaner is chosen', async () => {
+      client.create.mockReturnValueOnce(notEligible());
+      completeForm();
+      facade.selectPreferredCleaner('e-1');
+      await facade.submit();
+
+      facade.selectPreferredCleaner('e-2');
+
+      expect(facade.preferredCleanerRefused()).toBe(false);
+      expect(facade.formData().preferredEmployeeId).toBe('e-2');
     });
   });
 

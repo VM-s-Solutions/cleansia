@@ -2,20 +2,21 @@ import { Component, input, PLATFORM_ID } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
-import { ActivatedRoute, provideRouter } from '@angular/router';
+import { ActivatedRoute, provideRouter, Router } from '@angular/router';
 import { CleansiaTextareaComponent } from '@cleansia/components';
 import {
   CancelOrderResponse,
   CancellationFeeTier,
   CustomerAuthService,
   CustomerClient,
+  DisputeReason,
   GetCancellationFeePreviewResponse,
   OrderItem,
   OrderStatus,
   PaymentStatus,
   PaymentType,
 } from '@cleansia/customer-services';
-import { SnackbarService } from '@cleansia/services';
+import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
 import { TranslateLoader, TranslateModule, TranslateService } from '@ngx-translate/core';
 import { of, Subject } from 'rxjs';
 import { OrderPreferredOfferComponent } from './components/order-preferred-offer.component';
@@ -105,7 +106,11 @@ describe('OrderDetailComponent — cancelling a booking', () => {
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => ORDER_ID } } } },
         {
           provide: CustomerClient,
-          useValue: { orderClient, membershipClient: { getMine: () => of(null) } },
+          useValue: {
+            orderClient,
+            membershipClient: { getMine: () => of(null) },
+            receivableClient: { getMine: () => of([]) },
+          },
         },
         { provide: CustomerAuthService, useValue: { isLoggedIn: () => true } },
         {
@@ -258,5 +263,53 @@ describe('OrderDetailComponent — cancelling a booking', () => {
     expect(result?.textContent).toContain('Your booking is cancelled.');
     expect(result?.textContent).not.toContain('refund');
     expect(result?.textContent).not.toMatch(/\d/);
+  });
+
+  it('says the card refund is still pending when the server could not issue it', async () => {
+    await setup(OrderStatus.Confirmed);
+    orderClient.cancel.mockReturnValue(
+      of(
+        CancelOrderResponse.fromJS({
+          orderId: ORDER_ID,
+          feeRate: 0.25,
+          refundAmount: 900,
+          totalPrice: 1200,
+          refundInitiated: false,
+          refundPending: true,
+        }),
+      ),
+    );
+    orderClient.getById.mockReturnValue(of(order(OrderStatus.Cancelled)));
+
+    fixture.componentInstance.openCancellation();
+    fixture.componentInstance.confirmCancellation();
+    fixture.detectChanges();
+
+    const result = (fixture.nativeElement as HTMLElement).querySelector('.order-detail__cancellation-result');
+    expect(result?.textContent).toContain('pages.order_detail.cancellation.refund_pending');
+    expect(result?.textContent).not.toContain('A refund of');
+  });
+
+  it('offers the no-show report in place of Cancel once a staffed booking is past its start', async () => {
+    await setup(OrderStatus.Confirmed);
+    const navigate = jest.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    fixture.componentInstance.order.set(
+      OrderItem.fromJS({
+        ...order(OrderStatus.Confirmed).toJSON(),
+        assignedEmployees: [{ employeeId: 'emp-1', fullName: 'Petra S.' }],
+      }),
+    );
+    fixture.detectChanges();
+
+    expect(cancelButton()).toBeNull();
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+      'pages.order_detail.cleaner_no_show.note',
+    );
+
+    fixture.componentInstance.reportCleanerNoShow();
+
+    expect(navigate).toHaveBeenCalledWith([CleansiaCustomerRoute.DISPUTES], {
+      queryParams: { orderId: ORDER_ID, reason: DisputeReason.ServiceNotProvided },
+    });
   });
 });

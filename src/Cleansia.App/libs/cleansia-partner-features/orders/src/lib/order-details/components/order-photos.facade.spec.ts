@@ -1,4 +1,6 @@
 import { TestBed } from '@angular/core/testing';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import {
   BlobFileDto,
   PartnerClient,
@@ -150,5 +152,19 @@ describe('OrderPhotosFacade', () => {
       expect(orderClient.deletePhoto).not.toHaveBeenCalled();
       expect(orderClient.getPhotos).not.toHaveBeenCalled();
     });
+  });
+});
+
+// Owner ruling 2026-09-28: the browser cannot promise that no copy stays on the device, so the web keeps upload
+// but asks for the camera rather than the gallery.
+describe('the job photo picker', () => {
+  it('asks the browser for the rear camera on every file input', () => {
+    const template = readFileSync(join(__dirname, 'order-photos.component.html'), 'utf8');
+    const fileInputs = template.match(/<input[^>]*type="file"[^>]*>/g) ?? [];
+
+    expect(fileInputs.length).toBe(2);
+    for (const input of fileInputs) {
+      expect(input).toContain('capture="environment"');
+    }
   });
 });

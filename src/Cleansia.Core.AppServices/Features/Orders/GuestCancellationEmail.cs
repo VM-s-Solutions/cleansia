@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Core.Queue.Abstractions.Messages;
@@ -12,9 +13,10 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 /// </summary>
 public static class GuestCancellationEmail
 {
+    /// <param name="languageCode">The guest's language, or null for the one the booking was made in.</param>
     public static async Task EnqueueAsync(
         Order order,
-        string languageCode,
+        string? languageCode,
         decimal? successfulRefundAmount,
         GuestOrderAccessTokenIssuer accessTokenIssuer,
         IPendingDispatch pending,
@@ -29,7 +31,8 @@ public static class GuestCancellationEmail
         var key = MessageKeys.GuestOrderCancelledEmail(order.Id);
         pending.Enqueue(QueueNames.SendEmail,
             new QueueEnvelope<SendGuestOrderCancellationEmailMessage>(key, order.TenantId,
-                new SendGuestOrderCancellationEmailMessage(order.Id, languageCode, successfulRefundAmount, order.TenantId)),
+                new SendGuestOrderCancellationEmailMessage(
+                    order.Id, languageCode ?? EmailLocale.Resolve(order.LanguageCode), successfulRefundAmount, order.TenantId)),
             key);
     }
 }

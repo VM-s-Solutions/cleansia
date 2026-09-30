@@ -452,10 +452,14 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'admin_user.email_exists',
   'admin_user.not_found',
   'auth.account_locked',
+  // An administrator's password is 12+ characters: CreateAdminUser and ChangeOwnPassword.
+  'auth.admin_password_too_short',
   'auth.current_password_invalid',
   'auth.insufficient_privileges',
   'auth.invalid_refresh_token',
   'auth.refresh_token_reused',
+  // ChangeOwnPassword refuses a new password equal to the current one.
+  'auth.same_reset_password',
   // The admin sign-in is IOperatorScopedRequest (its refusal audit row needs a tenant), so
   // OperatorTenantScopeBehavior's refusals reach this host through AdminAuthController.Login:
   // `country.not_serviced` is on the contract under country below, this one is only reachable here.
@@ -503,6 +507,7 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'company.has_open_pay_period',
   'company.has_unpaid_invoices',
   'company.has_uninvoiced_pay',
+  'company.has_cash_held',
   'company.has_open_disputes',
   'company.within_chargeback_horizon',
   // A write against a company frozen for archive is refused at the commit and answered 409 by
@@ -560,9 +565,14 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'employee.pay_config_missing',
   'employee.profile_incomplete',
   'employee.weekly_limit_invalid',
+  // A weekly cap carries a reason the cleaner is shown: AdminEmployeeController.SetWeeklyOrderLimit.
+  'employee.weekly_limit_reason_required',
   // ApproveEmployee: the work country's operator must be the approving admin's own operating
   // company (ADR-0061 D6).
   'employee.work_country_operator_mismatch',
+  // ApproveEmployee: a cleaner document in force for the work country whose current version the
+  // cleaner has not accepted.
+  'employee.legal_documents_not_accepted',
   'employee_document.deletion_already_resolved',
   'employee_document.not_found',
   'payout.not_found',
@@ -570,8 +580,14 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'credit.amount_exceeds_sanity_cap',
   'credit.amount_not_whole_minor_units',
   'credit.reason_not_issuable',
+  // IssueCustomerCredit: a dispute settlement is issued by resolving the dispute, never by hand.
+  'credit.dispute_settlement_not_issuable',
   // Orders, disputes, refunds, receipts
   'dispute.already_resolved',
+  // ResolveDispute: a charge to a cleaner found at fault that their pay on the order cannot take.
+  'dispute.cleaner_charge_not_chargeable',
+  // ResolveDispute: a charge to a cleaner is whole cents.
+  'dispute.cleaner_charge_not_whole_minor_units',
   'dispute.invalid_refund_amount',
   'dispute.invalid_status_transition',
   'dispute.max_length_exceeded',
@@ -582,17 +598,40 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'order.employee_already_assigned',
   'order.employee_not_assigned',
   'order.in_progress_cannot_cancel',
+  'order.cleaner_already_started',
+  'order.start_time_not_reached',
+  // The lockout confirmation refuses an order whose cleaner reported no lockout (decision 11).
+  'order.lockout.not_reported',
   'order.invalid_status_transition',
   'order.no_available_spots',
   'order.not_found',
   // The override may not set Confirmed on an order with nobody assigned: AdminOrderController.OverrideOrderStatus.
   'order.status.confirmed_needs_crew',
+  // Completing an order with no after photo needs a written reason: AdminOrderController.OverrideOrderStatus.
+  'order.status.force_complete_reason_required',
   // A placement meets the cleaner's own gates: approved, working in the order's market, free at that
   // time — AdminReassignOrder.Validator behind AdminOrderController.ReassignOrder.
   'order.reassign.employee_busy',
+  // Taking a cleaner off an order needs a written reason they are shown: AdminOrderController.ReassignOrder.
+  'order.reassign.removal_reason_required',
   'order.reassign.employee_not_approved',
   'order.reassign.employee_other_market',
+  // Recording a cash handover the cleaner could not (owner ruling 2026-09-28):
+  // AdminRecordCashReceived behind AdminOrderController.RecordCashReceived.
+  'order.not_in_progress',
+  'order.cash_already_collected',
+  'order.cash_not_allowed_on_card_order',
+  'order.payment_not_outstanding',
+  'order.cash_amount_invalid',
+  'order.cash_received_at_in_future',
+  'order.cash_received_at_before_clean',
   'receipt.not_found',
+  // What customers owe the company: AdminReceivableController.WriteOff (owner ruling 2026-09-28).
+  'receivable.not_found',
+  'receivable.not_open',
+  // The company's cash in its cleaners' hands: AdminCashHeldController.RecordRemittance and WriteOff.
+  'cash_held.amount_invalid',
+  'cash_held.amount_exceeds_balance',
   'refund.line_invalid',
   'refund.lines_required',
   'refund.nothing_refundable',

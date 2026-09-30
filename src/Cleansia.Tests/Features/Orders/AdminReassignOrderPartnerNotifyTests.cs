@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
@@ -36,11 +37,12 @@ public class AdminReassignOrderPartnerNotifyTests
     private readonly Mock<IEmployeeRepository> _employeeRepository = new();
     private readonly Mock<IUserSessionProvider> _session = new();
     private readonly Mock<INotificationProducer> _producer = new();
+    private readonly Mock<IAuditContext> _auditContext = new();
 
     public AdminReassignOrderPartnerNotifyTests() => _session.Setup(s => s.GetUserId()).Returns("admin-user");
 
     private AdminReassignOrder.Handler CreateHandler() =>
-        new(_orderRepository.Object, _employeeRepository.Object, _session.Object, _producer.Object);
+        new(_orderRepository.Object, _employeeRepository.Object, _session.Object, _producer.Object, _auditContext.Object);
 
     [Fact]
     public async Task Assigning_A_Cleaner_Tells_That_Cleaner_With_The_Order_Args()
@@ -87,6 +89,46 @@ public class AdminReassignOrderPartnerNotifyTests
                 && subject.StartsWith(OrderId + ":", StringComparison.Ordinal)
                 && subject.Length > OrderId.Length + 1),
             It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    /// <summary>
+    /// Owner ruling 2026-09-28: a removal is written down, on the admin's audit row, and the removed cleaner
+    /// reads it from there (<c>GetMyAssignmentRemoval</c>). It never rides in a notice: the args of a feed
+    /// row and a push are the order's identifiers only, and a push goes through Google to the device.
+    /// </summary>
+    [Fact]
+    public async Task The_Admins_Reason_Is_Kept_On_The_Audit_Row_And_Never_Put_In_A_Notice()
+    {
+        var order = Arrange(maxEmployees: 1, FromEmployeeId);
+
+        var result = await CreateHandler().Handle(
+            new AdminReassignOrder.Command(OrderId, FromEmployeeId, ToEmployeeId, "  The customer asked for another cleaner.  "),
+            CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        _producer.Verify(p => p.NotifyAsync(
+            FromUserId,
+            NotificationEventCatalog.OrderAssignmentRevoked,
+            It.Is<Dictionary<string, string>>(d =>
+                d.Count == 2 && d["orderId"] == OrderId && d["orderNumber"] == order.DisplayOrderNumber),
+            It.IsAny<string?>(),
+            It.IsAny<string>(),
+            It.IsAny<CancellationToken>()),
+            Times.Once);
+        _producer.Verify(p => p.NotifyAsync(
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.Is<Dictionary<string, string>>(d => d.Values.Any(v => v.Contains("another cleaner"))),
+            It.IsAny<string?>(),
+            It.IsAny<string>(),
+            It.IsAny<CancellationToken>()),
+            Times.Never);
+        _auditContext.Verify(a => a.RecordChange(
+            "Order", OrderId,
+            It.Is<object>(before => ((AdminReassignOrder.CrewSnapshot)before).EmployeeId == FromEmployeeId),
+            It.IsAny<object>(),
+            "The customer asked for another cleaner."),
             Times.Once);
     }
 

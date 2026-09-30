@@ -63,6 +63,7 @@ fun WorkContractSheet(
     request: WorkContractRequest,
     onDismiss: () -> Unit,
     onOutcome: (WorkContractOutcome) -> Unit,
+    onOpenLegalDocuments: () -> Unit,
     viewModel: WorkContractSheetViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -87,6 +88,7 @@ fun WorkContractSheet(
             onAccept = viewModel::accept,
             onRetry = viewModel::retry,
             onClose = onDismiss,
+            onOpenLegalDocuments = onOpenLegalDocuments,
         )
     }
 }
@@ -100,6 +102,7 @@ fun WorkContractSheetContent(
     onAccept: () -> Unit,
     onRetry: () -> Unit,
     onClose: () -> Unit,
+    onOpenLegalDocuments: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -134,6 +137,12 @@ fun WorkContractSheetContent(
                 onCta = onClose,
             )
 
+            WorkContractUiState.LegalDocumentsNotAccepted -> SheetMessage(
+                text = stringResource(R.string.error_employee_legal_documents_not_accepted),
+                ctaLabel = stringResource(R.string.legal_documents_review),
+                onCta = onOpenLegalDocuments,
+            )
+
             is WorkContractUiState.Loaded -> LoadedContract(
                 request = request,
                 contract = uiState.contract,
@@ -159,6 +168,11 @@ private fun LoadedContract(
         Text(
             text = stringResource(R.string.work_contract_version, contract.version),
             style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = stringResource(R.string.work_contract_parties),
+            style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.height(Spacing.S))
@@ -215,11 +229,18 @@ private fun JobFacts(facts: WorkContractJobFacts) {
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f),
             )
-            Text(
-                text = formatOrderPrice(facts.totalPrice, facts.currencyCode),
-                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.primary,
-            )
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = stringResource(R.string.work_contract_reward),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    text = formatOrderPrice(facts.reward, facts.currencyCode),
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
         }
         if (!facts.orderNumber.isNullOrBlank()) {
             FactLine(formatOrderDateRange(facts.cleaningDateTimeUtc, facts.estimatedMinutes))
@@ -324,15 +345,15 @@ private fun WorkContractSheetPreview() {
             uiState = WorkContractUiState.Loaded(
                 WorkContract(
                     legalDocumentTextId = "text-1",
-                    version = "2026-09-20",
+                    version = "2026-09-29",
                     language = "en",
                     title = "Contract for Work",
-                    contentHtml = "<p>This contract for work is concluded between the customer and the cleaner.</p>",
+                    contentHtml = "<p>This contract for work is concluded between the operating company (the client) and you (the contractor).</p>",
                     facts = WorkContractJobFacts(
                         orderNumber = "CL-2026-0042",
                         cleaningDateTimeUtc = "2026-08-12T09:00:00Z",
                         estimatedMinutes = 180,
-                        totalPrice = 1850.0,
+                        reward = 620.0,
                         currencyCode = "CZK",
                         locationApproximate = "Praha 4 · 14000",
                         rooms = 3,
@@ -349,6 +370,7 @@ private fun WorkContractSheetPreview() {
             onAccept = {},
             onRetry = {},
             onClose = {},
+            onOpenLegalDocuments = {},
         )
     }
 }

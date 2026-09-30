@@ -56,12 +56,16 @@ fun QuoteOrderResponse.discountAsCharged(resolvedDiscount: Double): Double {
  * against the number the order is actually created with. Every discount reaching [resolve] is stated
  * against the charged price, so subtracting it from the gross total reproduces the server's own
  * composition; there is no client-chosen base.
+ *
+ * The dirtiness surcharge sits inside the pre-surcharge subtotal, so [subtotal] is stated without it and
+ * [dirtinessSurcharge] is its own row: subtotal + dirtiness + express − discount = total.
  */
 data class BookingPriceSummary(
     val subtotal: Double,
     val expressSurcharge: Double,
     val expressLine: ExpressLine,
     val total: Double,
+    val dirtinessSurcharge: Double = 0.0,
 ) {
     enum class ExpressLine { NotExpress, Charged, Waived }
 
@@ -76,10 +80,11 @@ data class BookingPriceSummary(
                 else -> ExpressLine.NotExpress
             }
             return BookingPriceSummary(
-                subtotal = quote.preSurchargeSubtotal,
+                subtotal = quote.preSurchargeSubtotal - quote.dirtinessSurchargeAmount,
                 expressSurcharge = quote.expressSurchargeAmount,
                 expressLine = expressLine,
                 total = (quote.totalPrice - discount).coerceAtLeast(0.0),
+                dirtinessSurcharge = quote.dirtinessSurchargeAmount,
             )
         }
     }

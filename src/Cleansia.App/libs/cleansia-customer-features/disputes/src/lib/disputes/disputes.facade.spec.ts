@@ -5,6 +5,7 @@ import {
   CustomerClient,
   DisputeDetails,
   DisputeListItem,
+  DisputeSettlementPreference,
 } from '@cleansia/customer-services';
 import {
   CUSTOMER_DISPUTE_FEATURE_KEY,
@@ -285,7 +286,14 @@ describe('DisputesFacade', () => {
       disputeClient.create.mockReturnValue(of('new-dispute-id'));
       const onSuccess = jest.fn();
 
-      facade.createDispute('order-1', 1, 'description text', [], onSuccess);
+      facade.createDispute(
+        'order-1',
+        1,
+        'description text',
+        [],
+        DisputeSettlementPreference.CardRefund,
+        onSuccess
+      );
 
       expect(disputeClient.create).toHaveBeenCalledTimes(1);
       // Every member of a generated command is optional, so a dropped assignment
@@ -296,9 +304,26 @@ describe('DisputesFacade', () => {
         orderId: 'order-1',
         reason: 1,
         description: 'description text',
+        settlementPreference: 1,
       });
       expect(anySuccessSnackbarShown()).toBe(true);
       expect(onSuccess).toHaveBeenCalledTimes(1);
+    });
+
+    it('sends credit as the settlement when the customer chose it', () => {
+      disputeClient.create.mockReturnValue(of('new-dispute-id'));
+
+      facade.createDispute(
+        'order-1',
+        1,
+        'description text',
+        [],
+        DisputeSettlementPreference.Credit,
+        jest.fn()
+      );
+
+      const command = disputeClient.create.mock.calls[0][0];
+      expect(command.toJSON().settlementPreference).toBe(2);
     });
 
     it('surfaces an error snackbar and skips the callback on failure', () => {
@@ -307,7 +332,14 @@ describe('DisputesFacade', () => {
       );
       const onSuccess = jest.fn();
 
-      facade.createDispute('order-1', 1, 'description text', [], onSuccess);
+      facade.createDispute(
+        'order-1',
+        1,
+        'description text',
+        [],
+        DisputeSettlementPreference.CardRefund,
+        onSuccess
+      );
 
       expect(anyErrorSnackbarShown()).toBe(true);
       expect(anySuccessSnackbarShown()).toBe(false);

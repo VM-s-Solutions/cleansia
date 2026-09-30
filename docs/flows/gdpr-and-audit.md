@@ -86,6 +86,11 @@ guest booking left out of the walk keeps its cancellation path. The order-PII sw
 one year after the cleaning, beyond the token's fixed 30-day lifetime, so it cannot erase an order
 while one of those tokens is still live.
 
+**A live membership is cancelled in Stripe first.** A paid-up (`Active`) one ends at its period end; a
+`PastDue` or `Paused` one — no paid period left, a card Stripe keeps retrying — is cancelled at once and
+its open invoice voided (since 2026-09-28; erasure used to cancel only an `Active` subscription, so a
+past-due card went on being charged) → [Business rules — Cleansia Plus](/product/business-rules#cleansia-plus).
+
 **Unused credit is forfeited, last** (owner ruling 2026-09-24). After the Stripe membership cancel and
 the blob deletes, `ForfeitCreditAsync` locks the subject's user row and credit accounts, drains every
 positive balance in every currency and writes one `Expired` ledger row per account under
@@ -224,8 +229,21 @@ again in the same run, and only rows actually removed count towards the run's to
 
 **Dead guest keys are removed too.** `GuestOrderAccessTokens` deletes rows whose expiry has passed
 or whose `RevokedOn` is set, under the token's stored company stamp (copied from the order at issue).
-It needs no additional setting. There are **thirteen retention settings and fourteen tasks**, all
-under the same master switch.
+It needs no additional setting.
+
+**A receipt's PDF is kept for the statutory period, then deleted** (owner ruling 2026-09-28).
+`ReceiptBlobs` reads `retention.receipts.years` (default **10**, and 10 is also the floor, because
+nothing re-renders a deleted PDF) and deletes the stored PDF of every receipt issued before the start of
+the calendar year that many years back, paging by id; the receipt row stays as the record, stamped
+`OrderReceipt.BlobDeletedAt`. A PDF that will not delete keeps its row unmarked for the next run. A
+download afterwards answers `receipt.not_found`, and a company's archive skips a deleted PDF.
+
+**A cleaner's document acceptances share the contract-acceptance window.** The task that blanks the IP
+address, device label and device id of a contract-for-work acceptance after
+`retention.work_contract_metadata.years` does the same to a cleaner's acceptance of their own documents
+(`CleanerLegalDocumentAcceptance`); the acceptance itself is kept.
+
+There are **fourteen retention settings and fifteen tasks**, all under the same master switch.
 
 **The erased customer's dispute text is on it too.** The `DisputeText` task reads only the stamp the
 erasure set (`Dispute.TextRetainedUntil`), blanks the description, the messages and the resolution
@@ -291,7 +309,9 @@ the export of the account whose e-mail placed the booking carries it. [ADR-0062]
 asked for the order term to be re-examined before that path opened, and that re-examination has not
 been done →
 [Cancellation, refund and dispute](/flows/cancellation-refund-dispute#dispute)),
-documents, invoices, consents (with IP, user agent, version and document id), the customer trail
+documents, invoices, consents (with IP, user agent, version and document id), a cleaner's acceptances of
+their own documents (document type, text, version, language, instant, client and — until the metadata
+window or an erasure blanks them — IP and device), the customer trail
 (`customerActions` — the account's own rows only, not the guest rows on its orders: their IP and device
 belong to whoever placed the booking, a stranger's when the address is a typo) and the metadata.
 → [ADR-0062](/decisions/adr-0062) D5/D6 as amended 2026-09-15

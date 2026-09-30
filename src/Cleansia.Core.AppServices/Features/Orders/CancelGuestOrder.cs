@@ -50,7 +50,7 @@ public class CancelGuestOrder
                 return BusinessResult.Failure<CancelOrder.Response>(
                     new Error(nameof(command.AccessToken), BusinessErrorMessage.OrderNotFound));
             }
-            if (CancellationAssessor.BlockedReason(order) is { } blockedReason)
+            if (cancellation.BlockedReason(order) is { } blockedReason)
             {
                 return BusinessResult.Failure<CancelOrder.Response>(
                     new Error(nameof(command.AccessToken), blockedReason));

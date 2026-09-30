@@ -54,7 +54,9 @@ extension BookingQuote {
 ///
 /// `QuoteOrderResponse.totalPrice` already folds the express surcharge in, so re-applying a percentage
 /// on top of it inflates the screen against the number the order is created with. Every discount
-/// reaching ``resolve(quote:discount:)`` is stated against the charged price.
+/// reaching ``resolve(quote:discount:)`` is stated against the charged price. The dirtiness surcharge
+/// is lifted out of the subtotal onto its own row, so subtotal + dirtiness - discount + express is the
+/// total.
 struct BookingPriceSummary: Equatable {
     enum ExpressLine: Equatable {
         case notExpress
@@ -63,13 +65,22 @@ struct BookingPriceSummary: Equatable {
     }
 
     let subtotal: Double
+    let dirtiness: Dirtiness
+    let dirtinessSurcharge: Double
     let expressSurcharge: Double
     let expressLine: ExpressLine
     let total: Double
 
     static func resolve(quote: BookingQuote?, discount: Double) -> BookingPriceSummary {
         guard let quote else {
-            return BookingPriceSummary(subtotal: 0, expressSurcharge: 0, expressLine: .notExpress, total: 0)
+            return BookingPriceSummary(
+                subtotal: 0,
+                dirtiness: .normal,
+                dirtinessSurcharge: 0,
+                expressSurcharge: 0,
+                expressLine: .notExpress,
+                total: 0
+            )
         }
         let expressLine: ExpressLine = if quote.expressSurchargeWaivedByMembership {
             .waived
@@ -79,7 +90,9 @@ struct BookingPriceSummary: Equatable {
             .notExpress
         }
         return BookingPriceSummary(
-            subtotal: quote.preSurchargeSubtotal,
+            subtotal: quote.preSurchargeSubtotal - quote.dirtinessSurchargeAmount,
+            dirtiness: quote.dirtiness,
+            dirtinessSurcharge: quote.dirtinessSurchargeAmount,
             expressSurcharge: quote.expressSurchargeAmount,
             expressLine: expressLine,
             total: max(quote.totalPrice - discount, 0)

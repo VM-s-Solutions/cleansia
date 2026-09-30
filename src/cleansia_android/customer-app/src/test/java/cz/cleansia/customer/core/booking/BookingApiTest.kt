@@ -12,6 +12,7 @@ import retrofit2.Response
 import cz.cleansia.customer.api.model.AppliedDiscountSource as GenAppliedDiscountSource
 import cz.cleansia.customer.api.model.CreateOrderCommand as GenCreateOrderCommand
 import cz.cleansia.customer.api.model.CreateOrderResponse as GenCreateOrderResponse
+import cz.cleansia.customer.api.model.DirtinessLevel as GenDirtinessLevel
 import cz.cleansia.customer.api.model.QuoteOrderResponse as GenQuoteOrderResponse
 
 /**
@@ -34,6 +35,8 @@ class BookingApiTest {
         accessInstructions: String? = null,
         termsAccepted: Boolean? = null,
         language: String = "en",
+        dirtinessLevel: DirtinessLevel? = null,
+        earlyPerformanceRequested: Boolean? = null,
     ) = CreateOrderCommand(
         customerName = "Ada Lovelace",
         customerEmail = "user@example.com",
@@ -49,6 +52,8 @@ class BookingApiTest {
         accessInstructions = accessInstructions,
         termsAccepted = termsAccepted,
         language = language,
+        dirtinessLevel = dirtinessLevel,
+        earlyPerformanceRequested = earlyPerformanceRequested,
     )
 
     private suspend fun sentFor(command: CreateOrderCommand): GenCreateOrderCommand {
@@ -75,8 +80,20 @@ class BookingApiTest {
     }
 
     @Test
+    fun create_carriesTheEarlyPerformanceRequestOntoTheGeneratedCommand() = runTest {
+        assertEquals(true, sentFor(command(earlyPerformanceRequested = true)).earlyPerformanceRequested)
+    }
+
+    @Test
     fun create_carriesTheBookingLanguageOntoTheGeneratedCommand() = runTest {
         assertEquals("cs", sentFor(command(language = "cs")).language)
+    }
+
+    /** The level prices the order; a mapper that drops it books every home at Normal against a heavier quote. */
+    @Test
+    fun create_carriesTheDirtinessLevelOntoTheGeneratedCommand() = runTest {
+        assertEquals(GenDirtinessLevel._2, sentFor(command(dirtinessLevel = DirtinessLevel.Heavy)).dirtinessLevel)
+        assertEquals(GenDirtinessLevel._1, sentFor(command(dirtinessLevel = DirtinessLevel.Increased)).dirtinessLevel)
     }
 
     @Test
@@ -119,6 +136,8 @@ class BookingApiTest {
                 expressSurchargeAmount = 0.0,
                 expressSurchargeWaivedByMembership = true,
                 requiredEmployees = 1,
+                dirtinessSurchargeAmount = 0.0,
+                dirtinessLevel = GenDirtinessLevel._0,
             ),
         )
 

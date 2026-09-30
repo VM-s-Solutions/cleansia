@@ -15,6 +15,7 @@ import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.RecordedRequest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -119,6 +120,25 @@ class BookingQuoteWireTest {
         assertNull(body?.get("countryId"))
     }
 
+    /**
+     * The backend binds the level as an integer. Without the [IntEnumSerializersModule] entry the
+     * generated enum goes out as the string "2", and a customer who has not chosen sends nothing, so
+     * the server prices Normal rather than reading a null.
+     */
+    @Test
+    fun theRequestCarriesTheChosenDirtinessLevelAsTheIntegerTheServerBinds() = runTest {
+        var body: JsonObject? = null
+        quote(CAPTURED_QUOTE, command = COMMAND.copy(dirtinessLevel = DirtinessLevel.Heavy)) {
+            body = Json.parseToJsonElement(it.body.readUtf8()).jsonObject
+        }
+        val level = body?.get("dirtinessLevel")?.jsonPrimitive
+        assertEquals("2", level?.content)
+        assertFalse("the level must be a JSON number, not a string", level!!.isString)
+
+        quote(CAPTURED_QUOTE) { body = Json.parseToJsonElement(it.body.readUtf8()).jsonObject }
+        assertNull(body?.get("dirtinessLevel"))
+    }
+
     // --- rule 1: money is never coerced -----------------------------------------
 
     @Test
@@ -132,6 +152,18 @@ class BookingQuoteWireTest {
         assertEquals(450.00, quote.packagesSubtotal, 0.0)
         assertEquals(300.00, quote.extrasSubtotal, 0.0)
         assertEquals(730.00, quote.expressSurchargeAmount, 0.0)
+        assertEquals(1095.00, quote.dirtinessSurchargeAmount, 0.0)
+    }
+
+    /** The level names the surcharge row; without it the row cannot say what it charges for. */
+    @Test
+    fun theQuotedDirtinessLevelArrivesWithItsLiteralValue() = runTest {
+        assertEquals(DirtinessLevel.Increased, quoted(CAPTURED_QUOTE).dirtinessLevel)
+    }
+
+    @Test
+    fun aMissingDirtinessLevelRefusesTheQuoteRatherThanNamingNormal() = runTest {
+        assertQuoteRefused("dirtinessLevel", withoutKey(CAPTURED_QUOTE, "dirtinessLevel"))
     }
 
     @Test
@@ -304,7 +336,9 @@ class BookingQuoteWireTest {
               "expressSurchargeAmount": 730.00,
               "expressSurchargeWaivedByMembership": false,
               "expressUpgradesRemaining": 2,
-              "requiredEmployees": 2
+              "requiredEmployees": 2,
+              "dirtinessSurchargeAmount": 1095.00,
+              "dirtinessLevel": 1
             }
         """.trimIndent()
 
@@ -330,6 +364,8 @@ class BookingQuoteWireTest {
             "creditBalance",
             "creditMaxShareOfOrder",
             "lines",
+            "dirtinessSurchargeAmount",
+            "dirtinessLevel",
         )
 
         val QUOTE_REQUIRED_MONEY = listOf(
@@ -340,6 +376,7 @@ class BookingQuoteWireTest {
             "packagesSubtotal",
             "extrasSubtotal",
             "expressSurchargeAmount",
+            "dirtinessSurchargeAmount",
         )
 
         val QUOTE_NULLABLE_MONEY = listOf(

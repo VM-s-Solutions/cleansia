@@ -4,6 +4,9 @@ object DisputeFormConstants {
     const val DESCRIPTION_MIN_LENGTH = 10
     const val DESCRIPTION_MAX_LENGTH = 2000
 
+    /** Backend `DisputeReason.ServiceNotProvided`. */
+    const val REASON_SERVICE_NOT_PROVIDED = 2
+
     /**
      * Mirrors the backend evidence validator, so a doomed upload never reaches the network — and if
      * the whitelist grows there it must grow here. -> /flows/cancellation-refund-dispute

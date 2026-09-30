@@ -222,6 +222,23 @@ public class AdminUserProfileFieldsTests
         Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.InvalidAge);
     }
 
+    [Theory]
+    [InlineData("Password123", false)]
+    [InlineData("Password1234", true)]
+    public async Task When_Create_Password_Is_Under_12_Characters_Then_Validation_Fails_With_AdminPasswordTooShort(string password, bool valid)
+    {
+        var validator = new CreateAdminUser.Validator(_userRepository.Object, _languageRepository.Object);
+
+        var result = await validator.ValidateAsync(new CreateAdminUser.Command(
+            "new-admin@example.com", password, "First", "Last", null,
+            BirthDate: null,
+            PreferredLanguageCode: null,
+            Role: AdminRole.Support));
+
+        Assert.Equal(valid, result.IsValid);
+        Assert.Equal(!valid, result.Errors.Any(e => e.ErrorMessage == BusinessErrorMessage.AdminPasswordTooShort));
+    }
+
     [Fact]
     public async Task When_Create_Language_Is_Unknown_Then_Validation_Fails_With_LanguageNotSupported()
     {

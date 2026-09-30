@@ -101,20 +101,21 @@ public class UserMembershipEntityConfiguration : TenantAuditableEntityConfigurat
             .HasFilter("\"CancelledAt\" IS NOT NULL AND \"CancellationReminderSentAt\" IS NULL");
 
         // ADR-0002 D2 — DB-level backstop for the
-        // "at most one ACTIVE membership per user" invariant. The webhook
+        // "at most one LIVE membership per user" invariant. The webhook
         // provisioning path (StripeSubscriptionWebhookHandler
-        // .ProvisionFromCreatedEventAsync) asserts via GetActiveForUserAsync
+        // .ProvisionFromCreatedEventAsync) asserts via GetLifecycleForUserAsync
         // before Create, but a check-then-insert is a TOCTOU race (S7a); this
-        // FILTERED partial unique index makes Postgres reject a second active
+        // FILTERED partial unique index makes Postgres reject a second live
         // row (SQLSTATE 23505) even when two webhooks race past the read.
         //
-        // CRITICAL: the index is FILTERED to Status = Active so a cancelled /
-        // expired membership PLUS a new active subscription is still allowed —
-        // a naive full (TenantId, UserId) unique would wrongly block the
-        // legitimate re-subscribe-after-cancel case (see UserMembership.cs).
-        // Status is mapped as its underlying int (no string conversion above),
-        // and MembershipStatus.Active = 1, so the partial-index predicate is
-        // "Status" = 1.
+        // CRITICAL: the index is FILTERED to the live statuses — Active (1),
+        // PastDue (2) and Paused (4), each a subscription Stripe still holds
+        // open — so a cancelled membership PLUS a new subscription is still
+        // allowed; a naive full (TenantId, UserId) unique would wrongly block
+        // the legitimate re-subscribe-after-cancel case (see UserMembership.cs).
+        // A past-due row is inside the filter because its late payment moves it
+        // back to Active, and a second subscription beside it would then collide.
+        // Status is mapped as its underlying int (no string conversion above).
         //
         // Tenant-scoped (TenantId, UserId) per S8 — UserMembership is an
         // ITenantEntity, and the tenant term is NOT NULL.
@@ -130,6 +131,6 @@ public class UserMembershipEntityConfiguration : TenantAuditableEntityConfigurat
         // Owner-only ef-migration emits this as a partial unique index.
         builder.HasIndex(m => new { m.TenantId, m.UserId })
             .IsUnique()
-            .HasFilter("\"Status\" = 1");
+            .HasFilter("\"Status\" IN (1, 2, 4)");
     }
 }

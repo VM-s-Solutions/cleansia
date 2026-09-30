@@ -15,6 +15,7 @@ public static class RetentionDefaults
     public const string OrderPhotosDaysKey = "retention.order_photos.days";
     public const string AdminAuditRetentionYearsKey = "retention.admin_audit.years";
     public const string EmployeeAuditRetentionYearsKey = "retention.employee_audit.years";
+    public const string ReceiptsYearsKey = "retention.receipts.years";
 
     public const bool DefaultExpiredCodesEnabled = true;
     public const int DefaultStaleDevicesDays = 90;
@@ -29,6 +30,12 @@ public static class RetentionDefaults
     public const int DefaultOrderPhotosDays = 7;
     public const int DefaultAdminAuditRetentionYears = 3;
     public const int DefaultEmployeeAuditRetentionYears = 3;
+
+    /// <summary>
+    /// How long a receipt's PDF is kept after issue — the statutory period for tax documents, 10 years
+    /// pending the lawyer's figure (owner ruling 2026-09-28). The receipt row is not deleted.
+    /// </summary>
+    public const int DefaultReceiptsYears = 10;
 
     /// <summary>
     /// Runaway/abuse guard on the notifications feed — an order of magnitude above a realistic

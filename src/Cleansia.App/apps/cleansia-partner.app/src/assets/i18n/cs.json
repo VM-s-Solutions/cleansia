@@ -35,6 +35,7 @@
       "invoices": "Faktury",
       "invoice_details": "Detail faktury",
       "my_pay": "Moje výplata",
+      "how_jobs_are_offered": "Jak nabízíme zakázky",
       "not_found": "Stránka nenalezena"
     }
   },
@@ -76,7 +77,7 @@
       "change_password_error": "Heslo se nepodařilo změnit. Zkuste to prosím znovu."
     },
     "profile": {
-      "title": "Onboarding profil zaměstnance",
+      "title": "Onboarding profil partnera",
       "description": "Prosím, vyplňte všechny požadované informace a nahrajte potřebné dokumenty pro dokončení procesu onboardingu.",
       "personal_info": "Osobní údaje",
       "first_name": "Jméno",
@@ -145,13 +146,24 @@
       "job_radius_off_hint": "Budeme vás upozorňovat na každou novou zakázku ve vaší zemi.",
       "job_radius_distance": "Vzdálenost od domova (km)",
       "job_radius_distance_hint": "Mezi {{min}} a {{max}} km.",
+      "weekly_limit": "Týdenní limit zakázek",
+      "weekly_limit_text": "Administrátor omezil, kolik zakázek můžete mít za jeden týden: {{count}}.",
+      "weekly_limit_reason": "Důvod: {{reason}}",
       "bank_account": "Bankovní účet",
       "bank_account_hint": "Předčíslí, číslo účtu a kód banky — vložte celý účet a rozdělí se sám.",
       "request_deletion": "Požádat o odstranění",
       "request_deletion_title": "Požádat o odstranění?",
       "request_deletion_message": "Zatím se nic neodstraní. Některé dokumenty musíme uchovávat, proto vaši žádost posoudí administrátor — soubor {{fileName}} zůstává až do jeho odpovědi beze změny.",
       "deletion_reason": "Proč má být odstraněn?",
-      "replace_document": "Nahradit"
+      "replace_document": "Nahradit",
+      "legal_documents": "Smluvní dokumenty",
+      "legal_documents_intro": "Tyto dokumenty upravují vaši práci pro provozní společnost trhu, na kterém pracujete. Přečtěte si a přijměte každý z dokumentů níže. Dokud nepřijmete platnou verzi, nelze vaši registraci schválit a nemůžete přijímat zakázky.",
+      "legal_documents_version": "Verze {{version}}, účinná od {{date}}",
+      "legal_documents_accepted_on": "Přijato {{date}}, verze {{version}}",
+      "legal_documents_new_version": "Platí nová verze. Přijali jste verzi {{version}}.",
+      "legal_documents_awaiting": "Zatím nepřijato",
+      "legal_documents_text": "Plné znění",
+      "legal_documents_accept": "Přečetl(a) jsem si tento dokument a přijímám jej"
     },
     "dashboard": {
       "title": "Nástěnka",
@@ -181,7 +193,7 @@
         "highest_month": "Nejvyšší měsíc",
         "lowest_month": "Nejnižší měsíc",
         "breakdown": "Rozdělení výdělků",
-        "base_pay": "Základní mzda",
+        "base_pay": "Základní odměna",
         "extras_pay": "Příplatky",
         "expenses_pay": "Náklady",
         "bonus": "Bonus",
@@ -254,6 +266,8 @@
       "address": "Adresa",
       "cleaning_date": "Datum úklidu",
       "total_price": "Celková cena",
+      "your_pay": "Vaše odměna (za místo)",
+      "dirtiness_level": "Znečištění",
       "payment_status": "Stav platby",
       "order_status": "Stav objednávky",
       "order_id": "ID objednávky",
@@ -274,7 +288,7 @@
       "no_available_orders": "Žádné dostupné objednávky",
       "no_my_orders": "Ještě jste nedokončili žádné objednávky",
       "order_taken_success": "Objednávka úspěšně převzata!",
-      "employee_not_found": "Informace o zaměstnanci nebyly nalezeny",
+      "employee_not_found": "Informace o partnerovi nebyly nalezeny",
       "no_orders": "Žádné objednávky k zobrazení",
       "no_logs": "Žádné časové záznamy k zobrazení",
       "available_spots": "Volná místa",
@@ -320,11 +334,12 @@
       "work_contract": {
         "title": "Smlouva o dílo",
         "version_line": "Verze {{version}}, účinná od {{date}}",
+        "parties": "Mezi provozní společností, která tento úklid prodala (objednatel), a vámi (zhotovitel)",
         "facts": {
           "title": "Zakázka",
           "order_number": "Číslo objednávky",
           "window": "Datum a čas",
-          "price": "Cena",
+          "reward": "Vaše odměna za místo",
           "location": "Místo",
           "rooms_bathrooms": "Pokoje / koupelny",
           "services": "Služby",
@@ -347,6 +362,8 @@
       "order_status": "Stav objednávky",
       "payment_status": "Stav platby",
       "customer_information": "Informace o zákazníkovi",
+      "customer_details_closed_completed": "Jméno, adresa a telefon zákazníka byly odstraněny 24 hodin po dokončení zakázky.",
+      "customer_details_closed_cancelled": "Jméno, adresa a telefon zákazníka byly odstraněny při zrušení objednávky.",
       "customer_name": "Jméno zákazníka",
       "customer_email": "Email zákazníka",
       "customer_phone": "Telefon zákazníka",
@@ -355,6 +372,7 @@
       "cleaning_date": "Datum úklidu",
       "rooms": "Pokoje",
       "bathrooms": "Koupelny",
+      "dirtiness_level": "Znečištění",
       "estimated_time": "Odhadovaný čas",
       "estimated_time_minutes": "{{minutes}} minut",
       "selected_package": "Vybraný balíček",
@@ -366,9 +384,9 @@
       "payment_type": "Typ platby",
       "total_price": "Celková cena",
       "currency": "Měna",
-      "assigned_employee": "Přiřazený zaměstnanec",
-      "employee_name": "Jméno zaměstnance",
-      "employee_phone": "Telefon zaměstnance",
+      "assigned_employee": "Přiřazený partner",
+      "employee_name": "Jméno partnera",
+      "employee_phone": "Telefon partnera",
       "notes_instructions": "Poznámky & Instrukce",
       "notes": "Poznámky",
       "special_instructions": "Speciální instrukce",
@@ -403,17 +421,19 @@
       "report_issue": "Nahlásit problém",
       "add_note": "Přidat poznámku",
       "take_order": "Převzít objednávku",
-      "assigned_employees": "Přiřazení zaměstnanci",
-      "employee_email": "E-mail zaměstnance",
+      "assigned_employees": "Přiřazení partneři",
+      "employee_email": "E-mail partnera",
       "not_found_title": "Objednávka nenalezena",
       "not_found_message": "Objednávka, kterou hledáte, nebyla nalezena.",
       "load_failed": "Nepodařilo se načíst detail objednávky",
+      "removed_title": "Byli jste z této zakázky odebráni",
+      "removed_message": "Administrátor vás z této zakázky odebral s tímto odůvodněním: {{reason}}",
       "note_content": "Poznámka",
       "note_content_placeholder": "Zadejte poznámku...",
       "issue_description": "Popis problému",
       "issue_description_placeholder": "Popište problém...",
       "issue_type": "Typ problému",
-      "employee_notes": "Poznámky zaměstnance",
+      "employee_notes": "Poznámky partnera",
       "reported_issues": "Nahlášené problémy",
       "resolved": "Vyřešeno",
       "open_issue": "Otevřený",
@@ -434,11 +454,25 @@
         "pending_banner": "Před zahájením práce přijměte smlouvu o dílo",
         "accept": "Přijmout smlouvu",
         "accepted_success": "Smlouva o dílo byla přijata."
+      },
+      "lockout": {
+        "title": "Nemůžete se dostat dovnitř?",
+        "not_yet": "Pokud vám nikdo neotevře, můžete to nahlásit od {{time}}, {{minutes}} minut po začátku.",
+        "body": "Vyfoťte vchod, poznamenejte si, kdy jste zákazníkovi volali, a nahlaste to. Než se uplatní jakýkoli poplatek, potvrdí to administrátor.",
+        "entrance_photo": "Fotka vchodu",
+        "take_photo": "Vyfotit vchod",
+        "photo_needed": "Nejdřív vyfoťte vchod.",
+        "call_attempts": "Vaše hovory",
+        "call_attempts_placeholder": "Kdy jste zákazníkovi volali nebo psali a co se stalo",
+        "report": "Nemohu se dostat dovnitř",
+        "reported_title": "Nahlášeno: nelze se dostat dovnitř",
+        "reported_body": "Nahlášeno v {{time}}. Administrátor to potvrdí; do té doby zakázka zůstává beze změny.",
+        "reported_calls": "Hovory: {{calls}}"
       }
     },
     "invoices": {
-      "title": "Moje mzdové faktury",
-      "description": "Zobrazte si své mzdové faktury a sledujte platby za dokončené objednávky.",
+      "title": "Moje faktury",
+      "description": "Zobrazte si své faktury a sledujte platby za dokončené objednávky.",
       "my_invoices": "Moje faktury",
       "invoice_number": "Číslo faktury",
       "pay_period": "Platební období",
@@ -469,7 +503,7 @@
       "title": "Detail faktury",
       "invoice_details": "Detail faktury",
       "summary": "Souhrn faktury",
-      "employee_name": "Jméno zaměstnance",
+      "employee_name": "Jméno partnera",
       "variable_symbol": "Variabilní symbol",
       "total_orders": "Celkem objednávek",
       "generated_date": "Datum vygenerování",
@@ -481,11 +515,13 @@
       "total_amount": "Celková částka",
       "order_details": "Detail objednávek",
       "order_number": "Číslo objednávky",
-      "base_pay": "Základní mzda",
-      "extras_pay": "Mzda za příplatky",
+      "base_pay": "Základní odměna",
+      "extras_pay": "Odměna za příplatky",
+      "dirtiness_pay": "Odměna za znečištění",
       "expenses_pay": "Náhrada nákladů",
       "bonus_pay": "Bonus",
       "deduction_pay": "Srážky",
+      "deduction_reason": "Důvod srážky",
       "total_pay": "Celkem k výplatě",
       "no_orders": "Pro tuto fakturu nebyly nalezeny žádné objednávky",
       "notes": "Poznámky",
@@ -504,19 +540,31 @@
       "multiple_currencies_hint": "V tomto období jste byli vyplaceni ve více měnách. Vyberte, kterou chcete zobrazit.",
       "summary": "Souhrn období",
       "total_orders": "Celkem objednávek",
-      "base_pay": "Základní mzda",
-      "extras_pay": "Mzda za příplatky",
+      "base_pay": "Základní odměna",
+      "extras_pay": "Odměna za příplatky",
+      "dirtiness_pay": "Odměna za znečištění",
       "expenses_pay": "Náhrada nákladů",
       "bonus_pay": "Bonus",
       "deduction_pay": "Srážky",
+      "deduction_reason": "Důvod srážky",
       "total_pay": "Celkem k výplatě",
       "grand_total": "Celkem za období",
       "order_lines": "Výplata podle objednávek",
       "order_number": "Číslo objednávky",
+      "line_type": "Položka",
       "no_order_pays": "Pro toto období nejsou žádné výplatní položky",
       "no_periods": "Zatím nejsou k dispozici žádná platební období",
       "load_error": "Nepodařilo se načíst výplatu za období",
-      "view_invoice": "Zobrazit fakturu"
+      "view_invoice": "Zobrazit fakturu",
+      "cash_held": {
+        "title": "Hotovost u mě",
+        "description": "Hotovost, kterou jste převzali u dveří a ještě neodevzdali. Započte se proti vaší další výplatě.",
+        "none": "Nedržíte žádnou hotovost společnosti.",
+        "load_error": "Hotovost, kterou držíte, se nepodařilo načíst.",
+        "held": "Držíte",
+        "limit": "Limit",
+        "jobs_hidden": "Držíte více, než je limit, proto se vám zakázky za hotové nezobrazují, dokud hotovost neodevzdáte."
+      }
     },
     "gdpr": {
       "title": "Zásady ochrany osobních údajů & GDPR",
@@ -537,23 +585,44 @@
       "export_success": "Export vašich dat byl stažen.",
       "export_error": "Vaše data se nepodařilo exportovat. Zkuste to později.",
       "consents_title": "Správa souhlasů",
-      "consents_description": "Zkontrolujte a změňte souhlasy, které jste nám udělili.",
-      "consent_updated": "Souhlas byl aktualizován.",
-      "consent_error": "Souhlas se nepodařilo změnit. Přepínač zobrazuje uložený stav.",
+      "consents_description": "Které verze dokumentů o spolupráci jste přijali a kdy.",
+      "consents_load_error": "Souhlasy se nepodařilo načíst.",
       "consent_types": {
-        "terms_of_service": "Obchodní podmínky",
-        "privacy_policy": "Zásady ochrany osobních údajů",
-        "marketing_emails": "Marketingové e-maily",
-        "data_processing": "Zpracování údajů"
+        "cleaner_framework_contract": "Rámcová smlouva o spolupráci (partneři)",
+        "self_billing_agreement": "Dohoda o samofakturaci",
+        "cleaner_data_processing_agreement": "Smlouva o zpracování osobních údajů (partneři)"
+      },
+      "legal": {
+        "accepted_version": "Verze {{version}}, přijato {{date}}",
+        "accepted": "Přijato {{date}}",
+        "none": "Nemáme záznam o žádném přijatém dokumentu o spolupráci."
       },
       "delete_title": "Smazat můj účet",
-      "delete_description": "Trvale smaže váš účet a anonymizuje vaše osobní údaje. Tuto akci nelze vrátit.",
+      "delete_description": "Pošlete nám žádost o smazání účtu. Spolupráce se poté formálně ukončí osobně a teprve potom bude váš účet uzavřen a vaše osobní údaje anonymizovány. Faktury a záznamy o odměnách se uchovávají jako účetní doklady.",
       "delete_button": "Smazat můj účet",
       "delete_confirm_title": "Požádat o smazání účtu?",
-      "delete_confirm_message": "Zahájíme proces ukončení spolupráce. Spolupráce musí být formálně ukončena osobně a je nutné podepsat zbývající dokumenty, teprve poté bude účet uzavřen. Faktury a mzdové záznamy se uchovávají jako účetní doklady.",
+      "delete_confirm_message": "Zahájíme proces ukončení spolupráce. Spolupráce musí být formálně ukončena osobně a je nutné podepsat zbývající dokumenty, teprve poté bude účet uzavřen. Faktury a záznamy o odměnách se uchovávají jako účetní doklady.",
       "delete_confirm_yes": "Požádat o smazání",
       "delete_error": "Váš účet se nepodařilo smazat.",
       "delete_requested": "Vaše žádost o smazání byla odeslána. Ozveme se vám ohledně podpisu dokumentů."
+    },
+    "how_jobs_are_offered": {
+      "title": "Jak nabízíme zakázky",
+      "description": "Pravidla nabídky zakázek: co vidíte, co se děje automaticky a jak požádat, aby rozhodnutí posoudil člověk.",
+      "board_title": "Nabídka zakázek",
+      "board_text": "Všichni schválení partneři vidí stejné volné zakázky. Nabídka ukazuje zakázky na trhu, kde pracujete, a v měně, ve které dostáváte odměnu. Ve výchozím stavu jsou seřazené podle toho, kdy byly zveřejněny, a řazení si můžete změnit. Volné místo získá ten, kdo si ho vezme první.",
+      "preferred_title": "Když si vás zákazník vyžádá",
+      "preferred_text": "Zákazník, u kterého jste už uklízeli, si vás může vyžádat jménem. První místo na takové zakázce pak máte na omezenou dobu jen pro sebe; čím dříve úklid je, tím je tato doba kratší. Pokud si zakázku v té době nevezmete nebo ji uvolníte, přejde do nabídky pro všechny. Uvolnění vám nikdy nebude přičteno k tíži.",
+      "radius_title": "Upozornění na nové zakázky",
+      "radius_text": "Na nové zakázky vás upozorňujeme automaticky. Pokud si v profilu nastavíte vzdálenost, upozorníme vás jen na zakázky v jejím okruhu; jinak na každou novou zakázku ve vaší zemi. Vzdálenost mění jen upozornění: nabídka dál zobrazuje všechny zakázky a kteroukoli z nich si můžete vzít.",
+      "automatic_title": "Co se děje automaticky",
+      "automatic_text": "Několik kroků proběhne samo: vyžádání od zákazníka skončí ve stanovený čas a zakázka se otevře všem; zakázka, na které krátce po plánovaném začátku nikdo není, se zruší a zákazník dostane peníze zpět; připomínáme vám zakázky, které jste si vzali; a pokud zakázka, kterou jste si vzali, není krátce po plánovaném začátku zahájena, administrátoři společnosti se to automaticky dozvědí. Žádný z těchto kroků o vás nerozhoduje ani nemění, které zakázky si můžete vzít: o tom, co se stane se zakázkou, která nebyla zahájena, rozhoduje vždy člověk.",
+      "no_score_title": "O vašem přístupu nerozhoduje žádné skóre",
+      "no_score_text": "Partnery nebodujeme ani je neřadíme do pořadí. Hodnocení nemění, které zakázky vidíte nebo si můžete vzít. Jediným omezením počtu zakázek je týdenní limit, který vám může nastavit administrátor; pokud je nastaven, uvidíte ho i s důvodem ve svém profilu.",
+      "approval_title": "Jak probíhá schválení",
+      "approval_text": "Než si budete moct brát zakázky, administrátor schválí váš účet. Ověří, že máte vyplněný profil, že jste nahráli všechny dokumenty, které vyžaduje země, kde budete pracovat, a že byly přijaty, že jste přijali platné partnerské dokumenty a že v této zemi působíme. O schválení i zamítnutí vždy rozhoduje člověk, nikdy automat.",
+      "review_title": "Požádejte, aby rozhodnutí posoudil člověk",
+      "review_text": "Pokud nesouhlasíte s rozhodnutím o svém účtu nebo zakázkách, například se zamítnutím, odebráním ze zakázky nebo týdenním limitem, napište na info@cleansia.cz. Posoudí to člověk, ne automatický systém, a odpoví vám."
     }
   },
   "sidebar": {
@@ -562,6 +631,7 @@
     "orders": "Objednávky",
     "invoices": "Faktury",
     "my_pay": "Moje výplata",
+    "how_jobs_are_offered": "Jak nabízíme zakázky",
     "logout": "Odhlásit se"
   },
   "components": {
@@ -622,7 +692,9 @@
         "bank_details_load_error": "Vaše bankovní údaje se nepodařilo načíst. Zkuste to prosím znovu.",
         "not_loaded": "Profil se ještě nenačetl",
         "job_radius_saved": "Vzdálenost pro upozornění byla uložena",
-        "job_radius_load_error": "Nepodařilo se načíst vaši vzdálenost pro upozornění. Zkuste to prosím znovu."
+        "job_radius_load_error": "Nepodařilo se načíst vaši vzdálenost pro upozornění. Zkuste to prosím znovu.",
+        "legal_document_accepted": "Dokument byl přijat.",
+        "legal_documents_load_error": "Smluvní dokumenty se nepodařilo načíst. Zkuste to prosím znovu."
       },
       "documents": {
         "load_error": "Nepodařilo se načíst dokumenty. Zkuste to prosím znovu.",
@@ -654,7 +726,8 @@
         "photo_upload_failed": "Nepodařilo se nahrát fotografii. Zkuste to prosím znovu.",
         "photo_read_failed": "Nepodařilo se přečíst soubor fotografie. Zkuste to prosím znovu.",
         "photo_deleted": "Fotografie byla úspěšně smazána.",
-        "photo_delete_failed": "Nepodařilo se smazat fotografii. Zkuste to prosím znovu."
+        "photo_delete_failed": "Nepodařilo se smazat fotografii. Zkuste to prosím znovu.",
+        "lockout_reported": "Nahlášeno. Administrátor to potvrdí."
       },
       "invoices": {
         "invoice_generated": "Faktura byla vygenerována z časových záznamů.",
@@ -791,7 +864,8 @@
       "acceptance_required": "Než budete pokračovat, přijměte smlouvu o dílo k této zakázce."
     },
     "legal": {
-      "document_not_found": "Tuto zakázku nyní nelze převzít."
+      "document_not_found": "Tuto zakázku nyní nelze převzít.",
+      "document_not_in_force": "Tento dokument už není platnou verzí. Načtěte jej znovu a přijměte aktuální verzi."
     },
     "auth": {
       "google_type_error": "Tento účet používá přihlášení přes Google. Použijte tlačítko Google.",
@@ -803,9 +877,10 @@
       "invalid_apple_token": "Neplatný Apple token",
       "social_account_not_found": "Tomuto přihlášení neodpovídá žádný účet. Nejprve se zaregistrujte.",
       "invalid_password_format": "Neplatný formát hesla",
+      "admin_password_too_short": "Heslo administrátora musí mít alespoň 12 znaků.",
       "invalid_reset_token": "Neplatný token pro obnovení hesla",
       "same_reset_password": "Nové heslo se shoduje se starým heslem",
-      "insufficient_privileges": "Nemáte oprávnění přistupovat k partnerské aplikaci. Přihlásit se mohou pouze zaměstnanci a administrátoři.",
+      "insufficient_privileges": "Nemáte oprávnění přistupovat k partnerské aplikaci. Přihlásit se mohou pouze partneři a administrátoři.",
       "current_password_invalid": "Současné heslo není správné",
       "account_locked": "Příliš mnoho neúspěšných pokusů o přihlášení. Účet je dočasně uzamčen — zkuste to znovu za několik minut.",
       "too_many_attempts": "Příliš mnoho pokusů s tímto kódem. Vyžádejte si nový kód a zkuste to znovu.",
@@ -861,6 +936,12 @@
       "invalid_email": "Neplatná e-mailová adresa"
     },
     "order": {
+      "lockout": {
+        "too_early": "Že se nemůžete dostat dovnitř, můžete nahlásit až 15 minut po objednaném začátku.",
+        "photo_required": "Nejdřív vyfoťte dveře nebo vchod a pak nahlaste, že se nemůžete dostat dovnitř.",
+        "already_reported": "Už jste nahlásili, že se nemůžete dostat dovnitř. Kancelář se vám ozve.",
+        "order_closed": "Tato zakázka je už dokončená nebo zrušená, takže není co hlásit."
+      },
       "cleaning_date": {
         "future": "Datum úklidu musí být v budoucnosti"
       },
@@ -882,8 +963,8 @@
         "already_cancelled": "Tato zakázka je již zrušena.",
         "already_completed": "Tato zakázka je již dokončena."
       },
-      "employee_already_assigned": "Zaměstnanec je již přiřazen k této objednávce",
-      "employee_not_assigned": "Zaměstnanec není přiřazen k této objednávce",
+      "employee_already_assigned": "Partner je již přiřazen k této objednávce",
+      "employee_not_assigned": "Partner není přiřazen k této objednávce",
       "not_in_progress": "Objednávka není v průběhu",
       "not_confirmed": "Objednávka musí být ve stavu potvrzena pro zahájení",
       "too_early_to_start": "Na start je příliš brzy — začít můžete až hodinu před termínem.",
@@ -904,7 +985,12 @@
       "payment_gateway_unavailable": "Platební brána není k dispozici",
       "time_conflict": "Tento termín se překrývá s jinou objednávkou ve vašem rozvrhu",
       "weekly_limit_reached": "Dosáhli jste týdenního limitu zakázek.",
-      "employee_already_has_order_in_progress": "Již máte jinou zakázku v průběhu. Před zahájením nové ji prosím dokončete."
+      "cash_float_cap_exceeded": "Máte u sebe více hotovosti společnosti, než je povoleno, proto pro vás zakázky za hotovost nejsou dostupné, dokud část neodevzdáte.",
+      "employee_already_has_order_in_progress": "Již máte jinou zakázku v průběhu. Před zahájením nové ji prosím dokončete.",
+      "photo": {
+        "window_closed": "Tuto fotografii teď nelze přidat: fotografie před úklidem od převzetí zakázky do jejího dokončení, fotografie po úklidu během práce.",
+        "locked": "Po dokončení nebo zrušení objednávky nelze fotografie smazat."
+      }
     },
     "user": {
       "email_confirmed": "E-mail je již potvrzen",
@@ -916,16 +1002,17 @@
       "not_found": "Uživatel nenalezen"
     },
     "employee": {
-      "not_found": "Zaměstnanec nenalezen",
-      "not_allowed_to_update": "Nemáte oprávnění aktualizovat tohoto zaměstnance",
-      "data_not_available": "Data zaměstnance nejsou k dispozici",
+      "not_found": "Partner nenalezen",
+      "not_allowed_to_update": "Nemáte oprávnění aktualizovat tohoto partnera",
+      "data_not_available": "Data partnera nejsou k dispozici",
       "profile_incomplete": "Dokončete informace v profilu",
       "documents_missing": "Nahrajte požadované dokumenty",
       "not_approved": "Váš účet není schválen pro práci na zakázkách",
-      "already_approved": "Zaměstnanec již byl schválen",
-      "already_rejected": "Zaměstnanec již byl zamítnut",
+      "already_approved": "Partner již byl schválen",
+      "already_rejected": "Partner již byl zamítnut",
       "job_radius_out_of_range": "Zadaný dojezdový okruh je mimo povolený rozsah",
-      "legal_entity_not_accepted": "Úklidoví pracovníci s námi spolupracují jako fyzické osoby; firmu zde nelze registrovat"
+      "legal_entity_not_accepted": "Úklidoví pracovníci s námi spolupracují jako fyzické osoby; firmu zde nelze registrovat",
+      "legal_documents_not_accepted": "Než začnete přijímat zakázky, přijměte ve svém profilu aktuální verzi svých smluvních dokumentů."
     },
     "employee_document": {
       "not_found": "Dokument nenalezen",
@@ -949,12 +1036,12 @@
       },
       "unpaid_invoices_exist": "Existují nezaplacené faktury",
       "pay": {
-        "already_calculated": "Mzda již byla vypočtena"
+        "already_calculated": "Odměna již byla vypočtena"
       },
       "no_unpaid_order_pays": "Nenalezeny žádné nezaplacené platby objednávek",
       "no_active_period": "Nenalezeno žádné aktivní platební období",
       "no_pay_configuration": "Konfigurace platby nenalezena",
-      "employee_not_assigned": "Zaměstnanec není přiřazen k této objednávce"
+      "employee_not_assigned": "Partner není přiřazen k této objednávce"
     },
     "receipt": {
       "not_found": "Potvrzení nenalezeno"
@@ -971,12 +1058,12 @@
       "already_exists": "Konfigurace platby již existuje",
       "not_found": "Konfigurace platby nenalezena",
       "has_order_pays": "Nelze smazat konfiguraci platby, která má přiřazené platby objednávek",
-      "base_pay_negative": "Základní mzda nemůže být záporná",
+      "base_pay_negative": "Základní odměna nemůže být záporná",
       "extra_per_room_negative": "Příplatek za místnost nemůže být záporný",
       "extra_per_bathroom_negative": "Příplatek za koupelnu nemůže být záporný",
-      "minimum_pay_negative": "Minimální mzda nemůže být záporná",
-      "maximum_pay_negative": "Maximální mzda nemůže být záporná",
-      "maximum_less_than_minimum": "Maximální mzda nemůže být nižší než minimální mzda",
+      "minimum_pay_negative": "Minimální odměna nemůže být záporná",
+      "maximum_pay_negative": "Maximální odměna nemůže být záporná",
+      "maximum_less_than_minimum": "Maximální odměna nemůže být nižší než minimální odměna",
       "last_for_live_catalogue_entry": "Toto je poslední nastavení odměny pro službu nebo balíček, které se stále používají. Jeho odstraněním by u zakázek zmizela odhadovaná odměna."
     },
     "payout": {
@@ -1019,7 +1106,8 @@
       "deletion_blocked_by_order": "Váš účet nelze smazat, dokud máte aktívní objednávky.",
       "deletion_blocked_by_invoice": "Váš účet nelze smazat, dokud jsou nevyřízené faktury.",
       "deletion_blocked_by_assigned_order": "Váš účet nelze smazat, dokud jste přiřazeni k zakázce.",
-      "deletion_blocked_by_unsettled_pay": "Váš účet nelze smazat, dokud vám dlužíme odměnu. Nejprve to vyřešte s kanceláří."
+      "deletion_blocked_by_unsettled_pay": "Váš účet nelze smazat, dokud vám dlužíme odměnu. Nejprve to vyřešte s kanceláří.",
+      "consent_not_editable": "Tento souhlas zde nelze změnit."
     },
     "company": {
       "not_found": "Informace o společnosti nenalezeny",
@@ -1119,6 +1207,16 @@
       "open": "Otevřené",
       "closed": "Uzavřené",
       "paid": "Vyplacené"
+    },
+    "dirtiness_level": {
+      "normal": "Běžné",
+      "increased": "Zvýšené",
+      "heavy": "Silné"
+    },
+    "pay_line_type": {
+      "job": "Zakázka",
+      "cancellation_fee_share": "Váš podíl z poplatku za pozdní zrušení",
+      "lockout_fee_share": "Váš podíl z poplatku za neumožněný přístup"
     }
   },
   "help": {
@@ -1135,7 +1233,7 @@
       "status_title": "Vysvětlení stavů objednávek",
       "status": {
         "confirmed_desc": "Uklízeč převzal zakázku. O platbě to nic neříká — hotovostní objednávka je Potvrzená dřív, než se pohnou jakékoli peníze.",
-        "in_progress_desc": "Zaměstnanec začal pracovat na této objednávce. Úklid probíhá.",
+        "in_progress_desc": "Partner začal pracovat na této objednávce. Úklid probíhá.",
         "completed_desc": "Práce je dokončena, fotografie nahrány. Připraveno ke zpracování platby.",
         "cancelled_desc": "Objednávka byla zrušena. Není vyžadována žádná platba ani práce."
       },
@@ -1172,34 +1270,11 @@
     "show_help": "Zobrazit nápovědu"
   },
   "cookies": {
-    "title": "Vaše soukromí je pro nás důležité",
-    "description": "Používáme cookies pro zlepšení vašeho prohlížení, poskytování personalizovaného obsahu a analýzu návštěvnosti. Kliknutím na \"Přijmout\" souhlasíte s používáním cookies.",
-    "accept": "Přijmout vše",
-    "decline": "Odmítnout",
+    "title": "Cookies na tomto webu",
+    "description": "Používáme jen cookies a úložiště prohlížeče, které aplikace potřebuje, aby fungovala: abyste zůstali přihlášeni, abychom si pamatovali váš jazyk a že jste toto upozornění viděli. Žádné analytické ani reklamní cookies.",
     "learn_more": "Více informací",
-    "banner_title": "Banner souhlasu s cookies",
-    "customize": "Přizpůsobit",
-    "hide_settings": "Skrýt nastavení",
-    "save_preferences": "Uložit předvolby",
-    "always_on": "Vždy zapnuto",
-    "categories": {
-      "necessary": {
-        "name": "Nezbytné",
-        "description": "Nezbytné pro fungování webu. Nelze vypnout."
-      },
-      "analytics": {
-        "name": "Analytické",
-        "description": "Pomáhají nám pochopit, jak návštěvníci používají náš web."
-      },
-      "marketing": {
-        "name": "Marketingové",
-        "description": "Slouží k zobrazování relevantních reklam a sledování kampaní."
-      },
-      "preferences": {
-        "name": "Preferenční",
-        "description": "Zapamatují si vaše nastavení, jako je jazyk a téma."
-      }
-    }
+    "banner_title": "Upozornění na cookies",
+    "acknowledge": "Rozumím"
   },
   "auth": {
     "login": {

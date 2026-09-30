@@ -87,6 +87,7 @@ struct CancelOrderSheet: View {
     let onConfirm: (String?) -> Void
     let onDismiss: () -> Void
     var requiresQuote = false
+    var tookNoCardPayment = false
 
     @State private var selectedReason: CancelReasonOption?
     @State private var notes = ""
@@ -109,7 +110,11 @@ struct CancelOrderSheet: View {
                     .foregroundColor(CleansiaColors.onSurface)
 
                 CancellationFeeCard(
-                    model: CancellationFeeCardModel(quote, refundIsEstimate: requiresQuote),
+                    model: CancellationFeeCardModel(
+                        quote,
+                        refundIsEstimate: requiresQuote,
+                        tookNoCardPayment: tookNoCardPayment
+                    ),
                     currencyCode: currencyCode,
                     requiresQuote: requiresQuote,
                     onRetry: onRetryQuote

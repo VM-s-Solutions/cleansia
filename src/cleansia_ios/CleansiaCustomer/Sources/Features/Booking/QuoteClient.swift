@@ -12,6 +12,8 @@ struct QuoteRequest: Equatable {
     /// The service address's country — the market the server prices and charges the booking in.
     /// Nil until the address step yields one, which is the platform default.
     let countryId: String?
+    /// Nil before the customer picks a level, which the server prices as Normal.
+    let dirtiness: Dirtiness?
 }
 
 protocol QuoteClient {
@@ -28,7 +30,8 @@ struct LiveQuoteClient: QuoteClient {
             currencyId: nil,
             selectedExtraSlugs: request.extraSlugs,
             cleaningDate: request.cleaningDate,
-            countryId: request.countryId
+            countryId: request.countryId,
+            dirtinessLevel: request.dirtiness?.wire
         )
         return await apiResult(mapError: ApiError.fromGenerated) {
             try await BookingQuote(from: CustomerOrderAPI.orderQuote(quoteOrderCommand: command))

@@ -1,6 +1,7 @@
 ﻿using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Employees;
+using Cleansia.Core.AppServices.Mappers;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Notifications;
@@ -114,7 +115,7 @@ public class AdminSetEmployeeWeeklyOrderLimitTests
         ArrangeEmployee(existingLimit: null);
 
         var result = await Validator().ValidateAsync(
-            new AdminSetEmployeeWeeklyOrderLimit.Command(EmployeeId, limit));
+            new AdminSetEmployeeWeeklyOrderLimit.Command(EmployeeId, limit, "Reason"));
 
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.WeeklyOrderLimitInvalid);
@@ -137,6 +138,71 @@ public class AdminSetEmployeeWeeklyOrderLimitTests
 
         Assert.True(cleared.IsValid);
         Assert.False(zero.IsValid);
+    }
+
+    /// <summary>
+    /// Owner ruling 2026-09-28: a cap on how much a cleaner may work carries a written reason the cleaner is
+    /// shown; clearing the cap needs none and drops the old one.
+    /// </summary>
+    [Fact]
+    public async Task A_Cap_Without_A_Reason_Is_Refused()
+    {
+        ArrangeEmployee(existingLimit: null);
+
+        var missing = await Validator().ValidateAsync(new AdminSetEmployeeWeeklyOrderLimit.Command(EmployeeId, 3));
+        var blank = await Validator().ValidateAsync(new AdminSetEmployeeWeeklyOrderLimit.Command(EmployeeId, 3, "   "));
+
+        Assert.Equal(BusinessErrorMessage.WeeklyOrderLimitReasonRequired, Assert.Single(missing.Errors).ErrorMessage);
+        Assert.Equal(BusinessErrorMessage.WeeklyOrderLimitReasonRequired, Assert.Single(blank.Errors).ErrorMessage);
+    }
+
+    [Fact]
+    public async Task Clearing_The_Cap_Needs_No_Reason()
+    {
+        ArrangeEmployee(existingLimit: 3);
+
+        var result = await Validator().ValidateAsync(new AdminSetEmployeeWeeklyOrderLimit.Command(EmployeeId, null));
+
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public async Task A_Reason_Longer_Than_Five_Hundred_Characters_Is_Refused()
+    {
+        ArrangeEmployee(existingLimit: null);
+
+        var result = await Validator().ValidateAsync(
+            new AdminSetEmployeeWeeklyOrderLimit.Command(EmployeeId, 3, new string('x', 501)));
+
+        Assert.Equal(BusinessErrorMessage.MaxLength, Assert.Single(result.Errors).ErrorMessage);
+    }
+
+    [Fact]
+    public async Task The_Reason_Is_Stored_For_The_Cleaner_And_On_The_Audit_Row()
+    {
+        var employee = ArrangeEmployee(existingLimit: null);
+
+        var result = await Handler().Handle(
+            new AdminSetEmployeeWeeklyOrderLimit.Command(EmployeeId, 3, "  New on the platform, first month.  "),
+            CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("New on the platform, first month.", employee.WeeklyOrderLimitReason);
+        Assert.Equal("New on the platform, first month.", result.Value.Reason);
+        _auditContext.Verify(a => a.RecordChange(
+            "User", employee.UserId, It.IsAny<object>(), It.IsAny<object>(), "New on the platform, first month."));
+    }
+
+    [Fact]
+    public async Task Clearing_The_Cap_Drops_Its_Reason()
+    {
+        var employee = ArrangeEmployee(existingLimit: null);
+        employee.SetWeeklyOrderLimit(3, "First month.");
+
+        await Handler().Handle(new AdminSetEmployeeWeeklyOrderLimit.Command(EmployeeId, null), CancellationToken.None);
+
+        Assert.Null(employee.WeeklyOrderLimit);
+        Assert.Null(employee.WeeklyOrderLimitReason);
     }
 
     // ── Q-CAP-01: who is told, and who deliberately is not ────────────────────
@@ -244,5 +310,29 @@ public class AdminSetEmployeeWeeklyOrderLimitTests
 
         Assert.Equal(2, subjects.Count);
         Assert.Equal(2, subjects.Distinct(StringComparer.Ordinal).Count());
+    }
+
+    /// <summary>Owner ruling 2026-09-28: the cap is shown to the cleaner with its reason, on their own profile read.</summary>
+    [Fact]
+    public void The_Cleaner_Reads_The_Cap_And_Its_Reason_On_Their_Profile()
+    {
+        var employee = ValidatorTestHelpers.BuildEmployee(EmployeeId, ContractStatus.Approved);
+        employee.SetWeeklyOrderLimit(3, "Three late arrivals in September.");
+
+        var item = employee.MapToEmployeeItem();
+
+        Assert.Equal(3, item.WeeklyOrderLimit);
+        Assert.Equal("Three late arrivals in September.", item.WeeklyOrderLimitReason);
+    }
+
+    [Fact]
+    public void The_Cleaners_Erasure_Drops_The_Reason()
+    {
+        var employee = ValidatorTestHelpers.BuildEmployee(EmployeeId, ContractStatus.Approved);
+        employee.SetWeeklyOrderLimit(3, "Three late arrivals in September.");
+
+        employee.Anonymize();
+
+        Assert.Null(employee.WeeklyOrderLimitReason);
     }
 }

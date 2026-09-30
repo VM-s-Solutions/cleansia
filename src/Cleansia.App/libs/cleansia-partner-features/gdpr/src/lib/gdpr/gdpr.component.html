@@ -28,16 +28,27 @@
 
         @if (facade.loadingConsents()) {
           <cleansia-loader />
+        } @else if (facade.consentsError()) {
+          <p class="cleansia-gdpr__text">{{ 'pages.gdpr.consents_load_error' | translate }}</p>
+          <div class="cleansia-gdpr__section-action">
+            <cleansia-button
+              [label]="'global.actions.retry' | translate"
+              icon="pi pi-refresh"
+              [outlined]="true"
+              (onClick)="retryConsents()"
+            />
+          </div>
         } @else {
           <div class="cleansia-gdpr__consents">
-            @for (type of consentTypes; track type) {
+            @for (row of facade.legalConsents(); track row.type) {
               <div class="cleansia-gdpr__consent-item">
-                <strong>{{ consentLabels[type] | translate }}</strong>
-                <p-toggleSwitch
-                  [ngModel]="facade.isConsentGranted(type)"
-                  (ngModelChange)="toggleConsent(type, $event)"
-                />
+                <strong>{{ row.labelKey | translate }}</strong>
+                <span class="cleansia-gdpr__consent-detail">
+                  {{ row.detailKey | translate: row.detailParams }}
+                </span>
               </div>
+            } @empty {
+              <p class="cleansia-gdpr__text">{{ 'pages.gdpr.legal.none' | translate }}</p>
             }
           </div>
         }

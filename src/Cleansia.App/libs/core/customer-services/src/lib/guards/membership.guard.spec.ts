@@ -3,6 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { Router, UrlTree } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { CustomerClient } from '../client/customer-base-client';
+import { MembershipStatus } from '../client/customer-client';
 import { CustomerAuthService } from '../services';
 import { customerMembershipGuard } from './membership.guard';
 
@@ -24,11 +25,14 @@ describe('customerMembershipGuard', () => {
     browser?: boolean;
     loggedIn?: boolean;
     hasMembership?: boolean;
+    status?: MembershipStatus;
     lookupFails?: boolean;
   }) {
+    const hasMembership = options.hasMembership ?? false;
+    const status = options.status ?? (hasMembership ? MembershipStatus.Active : undefined);
     const getMine = options.lookupFails
       ? jest.fn(() => throwError(() => new Error('offline')))
-      : jest.fn(() => of({ hasMembership: options.hasMembership ?? false }));
+      : jest.fn(() => of({ hasMembership, status }));
 
     TestBed.configureTestingModule({
       providers: [
@@ -66,6 +70,17 @@ describe('customerMembershipGuard', () => {
 
   it('sends a signed-in non-member to the page that sells Plus', (done) => {
     setup({ hasMembership: false });
+
+    (run() as { subscribe: (o: (v: unknown) => void) => void }).subscribe((result) => {
+      expect(result).toEqual({ commands: ['/plus'] });
+      done();
+    });
+  });
+
+  // A failed renewal keeps the enrolment alive but every benefit is off, so the schedule it would
+  // create is refused; /plus is where the member reads why and can cancel.
+  it('sends a member whose renewal payment failed to the Plus page', (done) => {
+    setup({ hasMembership: true, status: MembershipStatus.PastDue });
 
     (run() as { subscribe: (o: (v: unknown) => void) => void }).subscribe((result) => {
       expect(result).toEqual({ commands: ['/plus'] });

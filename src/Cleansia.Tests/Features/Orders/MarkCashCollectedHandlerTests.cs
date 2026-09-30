@@ -4,8 +4,8 @@ using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
+using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
-using Cleansia.Core.Queue.Abstractions;
 using Microsoft.Extensions.Logging.Abstractions;
 using MockQueryable;
 using MockQueryable.Moq;
@@ -42,7 +42,7 @@ public class MarkCashCollectedHandlerTests
     private readonly Mock<IOrderRepository> _orderRepository = new();
     private readonly Mock<IOrderAccessService> _accessService = new();
     private readonly Mock<IStripeClient> _stripeClient = new();
-    private readonly Mock<IPendingDispatch> _pending = new();
+    private readonly Mock<ICashLedgerRepository> _cashLedger = new();
 
     public MarkCashCollectedHandlerTests()
     {
@@ -55,7 +55,7 @@ public class MarkCashCollectedHandlerTests
         _orderRepository.Object,
         _accessService.Object,
         _stripeClient.Object,
-        _pending.Object,
+        _cashLedger.Object,
         NullLogger<MarkCashCollected.Handler>.Instance);
 
     private Order ArrangeOrder(
@@ -100,6 +100,54 @@ public class MarkCashCollectedHandlerTests
         _stripeClient.Verify(
             c => c.GetPaymentSnapshotAsync(It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()),
             Times.Never);
+    }
+
+    /// <summary>
+    /// Owner ruling 2026-09-28: the cleaner confirms the handover and the server writes the
+    /// amount due, so the figure on the order is never one somebody typed.
+    /// </summary>
+    [Fact]
+    public async Task The_Collection_Stamps_The_Amount_Due()
+    {
+        var order = ArrangeOrder(PaymentType.Cash, withStripeSurface: false);
+
+        var result = await CreateHandler().Handle(new MarkCashCollected.Command(OrderId), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.True(order.TotalPrice > 0m);
+        Assert.Equal(order.TotalPrice, order.CashCollectedAmount);
+    }
+
+    /// <summary>
+    /// Owner ruling 2026-09-28 (decision 23): the cash taken at the door is the company's, held by the
+    /// cleaner who took it, in the order's currency, from the moment of the handover.
+    /// </summary>
+    [Fact]
+    public async Task The_Collected_Cash_Is_Entered_As_Cash_The_Cleaner_Holds()
+    {
+        var order = ArrangeOrder(PaymentType.Cash, withStripeSurface: false);
+        CashLedgerEntry? entered = null;
+        _cashLedger.Setup(r => r.Add(It.IsAny<CashLedgerEntry>())).Callback<CashLedgerEntry>(e => entered = e);
+
+        var result = await CreateHandler().Handle(new MarkCashCollected.Command(OrderId), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(entered);
+        Assert.Equal(
+            (EmployeeId, (string?)OrderId, ValidatorTestHelpers.CurrencyId, CashLedgerEntryKind.Collection, 1000m, order.CashCollectedAt!.Value),
+            (entered!.EmployeeId, entered.OrderId, entered.CurrencyId, entered.Kind, entered.Amount, entered.OccurredAt));
+    }
+
+    [Fact]
+    public async Task A_Refused_Collection_Enters_No_Cash()
+    {
+        ArrangeOrder(PaymentType.Card, withStripeSurface: true);
+        ArrangeStripeState(StripePaymentState.Processing, PaymentIntentId);
+
+        var result = await CreateHandler().Handle(new MarkCashCollected.Command(OrderId), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        _cashLedger.Verify(r => r.Add(It.IsAny<CashLedgerEntry>()), Times.Never);
     }
 
     /// <summary>

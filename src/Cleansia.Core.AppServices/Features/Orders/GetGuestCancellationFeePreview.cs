@@ -46,14 +46,15 @@ public class GetGuestCancellationFeePreview
                     new Error(nameof(query.AccessToken), BusinessErrorMessage.OrderNotFound));
             }
 
-            if (CancellationAssessor.BlockedReason(order) is { } blockedReason)
+            var nowUtc = timeProvider.GetUtcNow().UtcDateTime;
+            if (CancellationAssessor.BlockedReason(order, nowUtc) is { } blockedReason)
             {
                 return BusinessResult.Failure<GetCancellationFeePreview.Response>(
                     new Error(nameof(query.AccessToken), blockedReason));
             }
 
-            var policy = await cancellationPolicyResolver.ResolveForUserAsync(null, cancellationToken);
-            var assessment = CancellationAssessor.Assess(order, policy, timeProvider.GetUtcNow().UtcDateTime);
+            var policy = await cancellationPolicyResolver.ResolveForOrderAsync(order, cancellationToken);
+            var assessment = CancellationAssessor.Assess(order, policy, nowUtc);
             var forfeit = await expressWaiverConsumer.WouldForfeitOnCustomerCancelAsync(
                 order.Id, assessment.HasBeenAccepted, cancellationToken);
             return BusinessResult.Success(new GetCancellationFeePreview.Response(
@@ -61,7 +62,7 @@ public class GetGuestCancellationFeePreview
                 Tier: assessment.Tier,
                 FeeRate: assessment.FeeRate,
                 FeeAmount: assessment.FeeAmount,
-                RefundAmount: assessment.RefundAmount,
+                RefundAmount: order.TookNoPayment ? 0m : assessment.RefundAmount,
                 TotalPrice: order.TotalPrice,
                 CurrencyCode: order.Currency!.Code,
                 ExpressWaiverForfeitedOnCancel: forfeit,

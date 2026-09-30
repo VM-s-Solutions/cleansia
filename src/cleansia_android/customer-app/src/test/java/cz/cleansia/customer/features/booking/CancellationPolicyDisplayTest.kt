@@ -1,6 +1,7 @@
 package cz.cleansia.customer.features.booking
 
 import cz.cleansia.customer.core.memberships.GetMyMembershipResponse
+import cz.cleansia.customer.core.memberships.MembershipStatus
 import kotlinx.datetime.Instant
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -46,6 +47,18 @@ class CancellationPolicyDisplayTest {
 
         assertEquals(24, policy.freeHours)
         assertNull(policy.plusFreeHours)
+    }
+
+    @Test
+    fun `a past-due or paused membership cancels on the standard terms`() {
+        listOf(MembershipStatus.PastDue, MembershipStatus.Paused).forEach { status ->
+            val policy = cancellationPolicyFor(
+                GetMyMembershipResponse(hasMembership = true, freeCancellationWindowHours = 4, status = status.code),
+            )
+
+            assertEquals("$status", 24, policy.freeHours)
+            assertNull("$status", policy.plusFreeHours)
+        }
     }
 
     /** The real shape: the seeded plans carry 4 against a standard 24. */

@@ -18,6 +18,7 @@ enum OrdersMutation {
     case markCashCollected
     case completeOrder
     case declinePreferredOffer
+    case reportLockout
 
     var affectedPanes: [OrdersPane] {
         switch self {
@@ -27,6 +28,8 @@ enum OrdersMutation {
         // The order is back with the whole board the instant the hold ends, and the cleaner's own
         // jobs did not change.
         case .declinePreferredOffer: [.available]
+        // The job stays as it is until an administrator confirms the report.
+        case .reportLockout: []
         }
     }
 }

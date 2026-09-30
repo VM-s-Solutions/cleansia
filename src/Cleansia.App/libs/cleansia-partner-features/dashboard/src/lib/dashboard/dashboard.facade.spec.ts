@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import {
   DashboardStatsDto,
+  DirtinessLevel,
   OrderListItem,
   OrderStatus,
   PartnerClient,
@@ -109,7 +110,7 @@ describe('DashboardFacade', () => {
   });
 
   describe('upcoming order cards', () => {
-    it('formats the cleaning stamp and the total in the session language', () => {
+    it('formats the cleaning stamp and the cleaner pay in the session language, never the customer price', () => {
       upcoming = [
         OrderListItem.fromJS({
           id: 'o-1',
@@ -118,6 +119,7 @@ describe('DashboardFacade', () => {
           customerAddress: 'Ulice 1, Praha',
           cleaningDateTime: new Date(2026, 8, 21, 11, 0),
           totalPrice: 1250,
+          estimatedCleanerPay: 650,
           currency: { code: 'CZK' },
           orderStatus: { name: 'New', value: OrderStatus.New },
         }),
@@ -125,8 +127,28 @@ describe('DashboardFacade', () => {
       const [card] = facade.upcomingOrderCards();
       expect(card.id).toBe('o-1');
       expect(card.cleaningDate).toBe('21. 9. 2026 11:00');
-      expect(card.totalPrice).toBe('1 250,00 Kč');
+      expect(card.yourPay).toBe('650,00 Kč');
+      expect(Object.values(card)).not.toContain('1 250,00 Kč');
       expect(card.orderStatus).toEqual({ name: 'New', value: OrderStatus.New });
+    });
+
+    it('names the dirtiness level the customer booked', () => {
+      upcoming = [
+        OrderListItem.fromJS({ id: 'o-3', dirtinessLevel: DirtinessLevel.Heavy }),
+        OrderListItem.fromJS({ id: 'o-4', dirtinessLevel: DirtinessLevel.Increased }),
+        OrderListItem.fromJS({ id: 'o-5' }),
+      ];
+      expect(facade.upcomingOrderCards().map((card) => card.dirtinessLevelKey)).toEqual([
+        'enums.dirtiness_level.heavy',
+        'enums.dirtiness_level.increased',
+        'enums.dirtiness_level.normal',
+      ]);
+    });
+
+    it('prints no amount when the server sent no cleaner pay', () => {
+      upcoming = [OrderListItem.fromJS({ id: 'o-2', totalPrice: 1250, currency: { code: 'CZK' } })];
+      const [card] = facade.upcomingOrderCards();
+      expect(card.yourPay).toBe('');
     });
   });
 });

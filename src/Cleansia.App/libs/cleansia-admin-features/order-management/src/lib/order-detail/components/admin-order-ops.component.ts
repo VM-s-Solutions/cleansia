@@ -17,9 +17,12 @@ import {
   ICleansiaSelectOption,
 } from '@cleansia/components';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { DatePickerModule } from 'primeng/datepicker';
+import { FloatLabelModule } from 'primeng/floatlabel';
 import { AdminOrderOpsFacade } from './admin-order-ops.facade';
 import {
   AdminOrderOpsPanel,
+  isLockoutConfirmable,
   OVERRIDE_STATUS_OPTIONS,
 } from './admin-order-ops.models';
 
@@ -34,6 +37,8 @@ import {
     CleansiaTextInputComponent,
     CleansiaTextareaComponent,
     CleansiaButtonComponent,
+    DatePickerModule,
+    FloatLabelModule,
   ],
   templateUrl: './admin-order-ops.component.html',
   providers: [AdminOrderOpsFacade],
@@ -70,6 +75,8 @@ export class AdminOrderOpsComponent {
     () => this.fromEmployeeOptions().length > 0
   );
 
+  readonly canConfirmLockout = computed(() => isLockoutConfirmable(this.order()));
+
   togglePanel(panel: AdminOrderOpsPanel): void {
     this.facade.openPanel(panel);
   }
@@ -82,12 +89,32 @@ export class AdminOrderOpsComponent {
     this.facade.setTargetStatus(value);
   }
 
+  onOverrideReasonChange(value: string): void {
+    this.facade.setOverrideReason(value);
+  }
+
   onFromEmployeeChange(value: string | null): void {
     this.facade.setFromEmployeeId(value);
   }
 
   onToEmployeeChange(value: string): void {
     this.facade.setToEmployeeId(value);
+  }
+
+  onRemovalReasonChange(value: string): void {
+    this.facade.setRemovalReason(value);
+  }
+
+  onCashEmployeeChange(value: string | null): void {
+    this.facade.setCashEmployeeId(value);
+  }
+
+  onCashReceivedAtChange(value: Date | null): void {
+    this.facade.setCashReceivedAt(value);
+  }
+
+  onCashAmountChange(value: string): void {
+    this.facade.setCashAmount(value);
   }
 
   submitCancel(): void {
@@ -112,5 +139,23 @@ export class AdminOrderOpsComponent {
     const orderId = this.order().id;
     if (!orderId) return;
     this.facade.refundOrder(orderId, () => this.changed.emit());
+  }
+
+  submitNoShow(): void {
+    const order = this.order();
+    if (!order.id) return;
+    this.facade.cancelAsNoShow(order.id, order.currency?.code, () => this.changed.emit());
+  }
+
+  submitLockout(): void {
+    const order = this.order();
+    if (!order.id) return;
+    this.facade.cancelAsLockout(order.id, order.currency?.code, () => this.changed.emit());
+  }
+
+  submitRecordCash(): void {
+    const orderId = this.order().id;
+    if (!orderId) return;
+    this.facade.recordCashReceived(orderId, () => this.changed.emit());
   }
 }

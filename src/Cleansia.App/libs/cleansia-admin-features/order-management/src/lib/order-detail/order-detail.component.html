@@ -173,6 +173,10 @@
           <span class="detail-grid__label">{{ 'pages.order_detail.bathrooms' | translate }}</span>
           <span class="detail-grid__value">{{ facade.order()?.bathrooms || 0 }}</span>
         </div>
+        <div class="detail-grid__item cleansia-order-detail__dirtiness-level">
+          <span class="detail-grid__label">{{ 'pages.order_detail.dirtiness_level' | translate }}</span>
+          <span class="detail-grid__value">{{ facade.dirtinessLevelKey() | translate }}</span>
+        </div>
         <div class="detail-grid__item">
           <span class="detail-grid__label">{{ 'pages.order_detail.estimated_time' | translate }}</span>
           <span class="detail-grid__value">{{ facade.formatDuration(facade.order()?.estimatedTime) }}</span>
@@ -257,6 +261,20 @@
           <span class="detail-grid__value">{{ facade.order()?.receiptNumber }}</span>
         </div>
         }
+        @if (facade.order()?.cashCollectedAt) {
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.order_detail.cash_collected_by' | translate }}</span>
+          <span class="detail-grid__value">{{ facade.order()?.cashCollectedByName || '-' }}</span>
+        </div>
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.order_detail.cash_collected_at' | translate }}</span>
+          <span class="detail-grid__value">{{ facade.formatDateTime(facade.order()?.cashCollectedAt) }}</span>
+        </div>
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.order_detail.cash_collected_amount' | translate }}</span>
+          <span class="detail-grid__value">{{ facade.formatPrice(facade.order()?.cashCollectedAmount) }}</span>
+        </div>
+        }
         @if (facade.cancellationFee(); as fee) {
         <div class="detail-grid__item">
           <span class="detail-grid__label">{{ 'pages.order_detail.cancellation_fee_rate' | translate }}</span>
@@ -269,12 +287,37 @@
         }
       </div>
       <div class="detail-ledger">
+        @if (facade.order()?.dirtinessSurchargeAmount) {
+        <div class="detail-ledger__row cleansia-order-detail__dirtiness-surcharge">
+          <span class="detail-ledger__label">{{ 'pages.order_detail.dirtiness_surcharge' | translate }}</span>
+          <span class="detail-ledger__value">{{ facade.formatPrice(facade.order()?.dirtinessSurchargeAmount) }}</span>
+        </div>
+        }
         <div class="detail-ledger__row detail-ledger__row--total">
           <span class="detail-ledger__label">{{ 'pages.order_detail.total_price' | translate }}</span>
           <span class="detail-ledger__value">{{ facade.formatPrice(facade.order()?.totalPrice) }}</span>
         </div>
       </div>
     </cleansia-section>
+
+    @if (facade.order()?.lockoutReportedAt) {
+    <cleansia-section [title]="'pages.order_detail.lockout.title' | translate">
+      <div class="detail-grid">
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.order_detail.lockout.reported_at' | translate }}</span>
+          <span class="detail-grid__value">{{ facade.formatDateTime(facade.order()?.lockoutReportedAt) }}</span>
+        </div>
+        <div class="detail-grid__item detail-grid__item--wide">
+          <span class="detail-grid__label">{{ 'pages.order_detail.lockout.call_attempts' | translate }}</span>
+          <span class="detail-grid__value">{{ facade.order()?.lockoutCallAttempts || '-' }}</span>
+        </div>
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.order_detail.lockout.photo' | translate }}</span>
+          <span class="detail-grid__value">{{ 'pages.order_detail.lockout.photo_hint' | translate }}</span>
+        </div>
+      </div>
+    </cleansia-section>
+    }
 
     @if (facade.order()) {
     <cleansia-section [title]="'pages.order_management.ops.title' | translate">

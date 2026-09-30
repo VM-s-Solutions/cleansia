@@ -29,12 +29,18 @@ internal static class CancellationAssessor
     /// The <c>BusinessErrorMessage</c> key for why this order cannot be cancelled at all, or
     /// <see langword="null"/> when it can. Each caller wraps it in an <c>Error</c> against its own
     /// <c>OrderId</c> field.
+    ///
+    /// <para>Past the booked start with a cleaner on the job and not started, the customer reports that
+    /// the cleaner did not arrive rather than paying the last-minute fee for the platform's no-show.
+    /// → /product/business-rules#cancellation</para>
     /// </summary>
-    public static string? BlockedReason(Order order) => order.CurrentStatus switch
+    public static string? BlockedReason(Order order, DateTime nowUtc) => order.CurrentStatus switch
     {
         OrderStatus.Cancelled => BusinessErrorMessage.OrderAlreadyCancelled,
         OrderStatus.Completed => BusinessErrorMessage.OrderAlreadyCompleted,
         OrderStatus.InProgress => BusinessErrorMessage.OrderInProgressCannotCancel,
+        _ when order.AssignedEmployees.Count > 0 && nowUtc >= order.CleaningDateTime
+            => BusinessErrorMessage.OrderStartPassedCannotCancel,
         _ => null,
     };
 

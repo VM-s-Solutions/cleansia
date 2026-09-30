@@ -28,7 +28,7 @@ history, saved addresses, disputes, Plus, recurring schedules and rewards.
 | Rewards | `/rewards`, `/rewards/activity` — points, tiers and the tier floor line (shown only when the market's currency is the platform default), referral code. The ladder says the tier follows the current points total and the balance note says a tier can drop; each tier lists the perks its `PerksJson` names → [Loyalty — tiers](/flows/loyalty-and-memberships#tiers) |
 | Profile | `/profile` (account, language, notification preferences), `/saved-addresses` |
 | Authentication | `/login`, `/register`, `/r/:code` (referral landing), `/confirm-email` (6-digit code), `/forgot-password`; e-mail + password, Google and Apple sign-in (buttons hidden when the client id is not configured) |
-| Legal | `/terms`, `/privacy` and `/work-contract` — the stored document in force for the chosen market and the UI language, fetched from `GET api/Legal/GetDocument` and rendered with its title, effective date and version (`yyyy-MM-dd`; the currency code filled in from the market — ADR-0063). `/work-contract` is the contract for work every booking is concluded under (ADR-0068): the wizard's confirm step names it in a sentence beneath the consent block, unconditionally, and the footer links it beside the other two; `/gdpr` (cookie consent and data requests — the export, and account deletion, whose description and confirmation say that unused credit is forfeited when the deletion completes → [Credit on a deleted account](/product/business-rules#credit-on-account-deletion)) |
+| Legal | `/terms`, `/privacy` and `/work-contract` — the stored document in force for the chosen market and the UI language, fetched from `GET api/Legal/GetDocument` and rendered with its title, effective date and version (`yyyy-MM-dd`; the currency code filled in from the market — ADR-0063). `/work-contract` is the contract for work every booking is concluded under (ADR-0068): the wizard's confirm step names it in a sentence beneath the consent block, unconditionally, and the footer links it beside the other two; `/gdpr` (the terms and privacy acceptance shown read-only with version and date, the promo push preference as the marketing consent, and data requests — the export, and account deletion, whose description and confirmation say that unused credit is forfeited when the deletion completes → [Credit on a deleted account](/product/business-rules#credit-on-account-deletion)) |
 
 ## Orders across markets
 
@@ -121,7 +121,7 @@ above the guarded `orders` route so they keep winning the match):
 /checkout                      → redirect / (a namespace, not a page)
 /checkout/success              Payment success
 /checkout/cancel               Payment cancelled
-/gdpr                          Cookie consent / data requests
+/gdpr                          Accepted terms and privacy (read-only) / data requests
 /terms                         Terms of service (SSR)
 /privacy                       Privacy policy (SSR)
 /work-contract                 The contract for work (SSR)

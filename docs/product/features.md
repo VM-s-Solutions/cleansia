@@ -59,9 +59,10 @@ they can still read what they were refunded.
 
 **The receipt** — one per order, in the language the customer booked in, with a line per service,
 package and extra, the express surcharge and each discount on lines of their own, summing to the
-total. A sale that charged no VAT prints the non-payer notice and no VAT number. A cash
-booking's receipt, issued before any money moves, is restated as paid — same number — once the cleaner
-records the cash. → [What the receipt says](/flows/payment-and-fiscal#what-the-receipt-says)
+total. A sale that charged no VAT prints the non-payer notice and no VAT number. It names the buyer
+by name and address only. It is issued once money is in: on payment for a card booking, at completion
+for a cash one, after the cleaner has recorded the cash — a cash booking gets an informational e-mail
+instead (since 2026-09-28). → [What the receipt says](/flows/payment-and-fiscal#what-the-receipt-says)
 
 **After the job** — receipt, review, raise a dispute with evidence, request a refund. The review is
 **asked for**, not left to be found: the mobile apps raise a sheet as soon as a completed job is opened,
@@ -70,11 +71,14 @@ takes a tap rather than a paragraph. Tags are a fixed server-owned set, which is
 three complaints this month"* answerable.
 
 **Cancelling** — free while no cleaner has taken the job, within the "oops window" after booking
-(15 minutes, 60 with Plus) or with enough notice; a clear fee otherwise, previewed before the customer
-confirms. See [Business rules](/product/business-rules#cancellation).
+(15 minutes; 60 on the customer's first booking or with Plus) or with enough notice; a clear fee
+otherwise, previewed before the customer confirms. Once the booked start has passed with a cleaner on the
+job, *Cancel* becomes **the cleaner did not arrive**, and an administrator confirms the no-show — full
+refund plus the apology credit. See [Business rules](/product/business-rules#cancellation).
 
-**Cleansia Plus** — a discount, a wider free-cancellation window, a 60-minute oops window instead of
-15, and a monthly quota of express-surcharge waivers. Priced per market: the Plus page, the wizard's Plus step and the mobile
+**Cleansia Plus** — a discount, a wider free-cancellation window, a 60-minute oops window on every
+booking instead of 15, and a monthly quota of express-surcharge waivers. A failed renewal shows as
+*payment failed, benefits paused*, with a cancel that takes effect at once. Priced per market: the Plus page, the wizard's Plus step and the mobile
 Subscribe screens show the plans priced in the chosen market's currency, a market with no priced plan
 says so instead of showing a price, and a subscription keeps the currency it was started in for life.
 No plan has a free trial, and no client offers one: the Android and iOS home Plus card reads *Save on
@@ -84,7 +88,10 @@ with no trial and no *cancel anytime* (since 2026-09-28).
 
 **Honest copy** — the money figures in the customer copy (the apology credit when a cleaner never
 comes, the insurance ceiling on the mobile trust badge and FAQ, the currency named in the terms) come
-from the market, not from the translation; a market with no figure gets the sentence without one. The
+from the market, not from the translation; a market with no figure gets the sentence without one — and
+since 2026-09-28 no market carries an insurance figure. No client claims the cleaners are
+background-checked or vetted, promises a reschedule button, advertises a welcome discount or says the
+supplies are eco products; the cleaner brings the supplies, included in the price. The
 copy promises only what the platform does (since 2026-09-28): the web catalogue's trust chip says
 *24 h to report a problem* — the dispute window — instead of *100 % Satisfaction*; the web order
 detail has no *Track live* button, which only went back; the mobile referral slide says both sides
@@ -229,7 +236,7 @@ because order lines snapshot it, so deactivating is how an extra is retired once
 it. A currency is switched on deliberately — a new one starts inactive — and the platform default
 cannot be switched off. The currency form also authors the no-show apology credit paid in that
 currency; the country form carries the two-letter code the market chip prints and, under "Market",
-the insurance ceiling the customer copy states for that country; and a country cannot be switched on
+the insurance ceiling the customer copy states for that country (none is authored today); and a country cannot be switched on
 as serviced until its configuration names an active currency.
 
 **Growth** — promo codes, referral programme, loyalty tiers, membership plans (a price and a Stripe
@@ -327,8 +334,8 @@ refused sign-in is that account's row.
   and promo code belongs to the company under the holding that serves its market — Cleansia CZ s.r.o.
   today — the database holds it to a company it knows, and a second company is a seed row and a
   country assignment, not code. Each company numbers its own payout invoices and keeps its own
-  retention windows; one email is one identity across the holding; the holding runs one Stripe account
-  for now. A company has a lifecycle its own administrators drive — wind down, deactivate, archive — and
+  retention windows; one email is one identity across the holding; card payments are taken on the
+  operating company's own Stripe account. A company has a lifecycle its own administrators drive — wind down, deactivate, archive — and
   a closed company's customers keep their accounts, their history, their receipts and their right to
   export or erase. → [Business rules — the market](/product/business-rules#market),
   [Business rules — a company's lifecycle](/product/business-rules#company-lifecycle),

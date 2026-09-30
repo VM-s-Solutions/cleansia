@@ -18,7 +18,11 @@ struct EarningsView: View {
         snackbar: SnackbarController,
         deepLinkInvoiceId: Binding<String?> = .constant(nil)
     ) {
-        _vm = StateObject(wrappedValue: EarningsViewModel(client: dashboardClient))
+        _vm = StateObject(wrappedValue: EarningsViewModel(
+            client: dashboardClient,
+            payrollClient: payrollClient,
+            snackbar: snackbar
+        ))
         _deepLinkInvoiceId = deepLinkInvoiceId
         self.payrollClient = payrollClient
         self.invoicesStaleness = invoicesStaleness
@@ -55,8 +59,12 @@ struct EarningsView: View {
         case let .error(error):
             EarningsErrorView(error: error) { Task { await vm.load() } }
         case let .loaded(stats):
-            EarningsContent(stats: stats, onOpenInvoices: { path.append(EarningsRoute.invoices) })
-                .background(CleansiaColors.background.ignoresSafeArea())
+            EarningsContent(
+                stats: stats,
+                cashHeld: vm.cashHeld,
+                onOpenInvoices: { path.append(EarningsRoute.invoices) }
+            )
+            .background(CleansiaColors.background.ignoresSafeArea())
         }
     }
 
@@ -121,13 +129,17 @@ private struct EarningsErrorView: View {
     struct EarningsView_Previews: PreviewProvider {
         static var previews: some View {
             Group {
-                EarningsContent(stats: sample, onOpenInvoices: {})
+                EarningsContent(stats: sample, cashHeld: cashSample, onOpenInvoices: {})
                     .background(CleansiaColors.background)
                     .previewDisplayName("Loaded")
-                EarningsContent(stats: .previewEmpty, onOpenInvoices: {})
+                EarningsContent(stats: .previewEmpty, cashHeld: [], onOpenInvoices: {})
                     .background(CleansiaColors.background)
                     .previewDisplayName("Loaded · empty")
             }
+        }
+
+        private static var cashSample: [CashHeld] {
+            [CashHeld(currencyCode: "CZK", amount: 3250.5, floatCap: 3000, cashJobsHidden: true)]
         }
 
         private static var sample: DashboardStats {

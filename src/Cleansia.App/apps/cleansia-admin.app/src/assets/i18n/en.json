@@ -24,8 +24,8 @@
     "admin": {
       "default": "Admin Portal",
       "login": "Login",
-      "employees": "Employees",
-      "employee_details": "Employee Details",
+      "employees": "Partners",
+      "employee_details": "Partner Details",
       "pay_periods": "Pay Periods",
       "pay_period_details": "Pay Period Details",
       "orders": "Orders",
@@ -88,7 +88,9 @@
       "profile": "My Profile",
       "customer_detail": "Customer",
       "audit_log_customers": "Customer actions",
-      "audit_log_customer_entry": "Customer action"
+      "audit_log_customer_entry": "Customer action",
+      "receivables": "Receivables",
+      "cash_held": "Cash held by cleaners"
     }
   },
   "components": {
@@ -252,10 +254,31 @@
       "active": "Active",
       "inactive": "Inactive",
       "expired": "Expired"
+    },
+    "dirtiness_level": {
+      "normal": "Normal",
+      "increased": "Increased",
+      "heavy": "Heavy"
+    },
+    "receivable_status": {
+      "open": "Open",
+      "paid": "Paid",
+      "written_off": "Written off"
+    },
+    "receivable_kind": {
+      "cash_cancellation_fee": "Late-cancellation fee",
+      "lockout": "Lockout fee",
+      "unpaid_cash": "Unpaid cash",
+      "top_up": "Top-up"
+    },
+    "pay_line_type": {
+      "job": "Job",
+      "cancellation_fee_share": "Share of a cancellation fee",
+      "lockout_fee_share": "Share of a lockout fee"
     }
   },
   "sidebar": {
-    "employees": "Employees",
+    "employees": "Partners",
     "pay_periods": "Pay Periods",
     "orders": "Orders",
     "invoices": "Invoices",
@@ -269,7 +292,7 @@
     "service_area": "Service Area",
     "currencies": "Currencies",
     "legal_documents": "Legal documents",
-    "employee_documents": "Employee documents",
+    "employee_documents": "Partner documents",
     "employee_document_requirements": "Requirements",
     "employee_document_deletion_requests": "Deletion requests",
     "company_info": "Company Info",
@@ -290,7 +313,9 @@
     "data_protection": "Data Protection",
     "audit_log": "Audit Log",
     "notifications": "Notifications",
-    "profile": "My Profile"
+    "profile": "My Profile",
+    "receivables": "Receivables",
+    "cash_held": "Cash held"
   },
   "pages": {
     "unauthorized": {
@@ -298,8 +323,8 @@
       "message": "You don't have permission to access this area. Administrator privileges are required."
     },
     "employee_management": {
-      "title": "Employee Management",
-      "description": "Manage employees, approve registrations, and track performance",
+      "title": "Partner Management",
+      "description": "Manage partners and approve registrations",
       "name": "Name",
       "email": "Email",
       "phone": "Phone",
@@ -312,7 +337,7 @@
       "approve": "Approve",
       "reject": "Reject",
       "view_details": "View Details",
-      "no_employees": "No employees to display",
+      "no_employees": "No partners to display",
       "filters": {
         "search": "Search",
         "search_placeholder": "Search by name, email or phone",
@@ -320,24 +345,24 @@
         "active_status": "Active Status"
       },
       "approve_dialog": {
-        "title": "Approve Employee",
+        "title": "Approve Partner",
         "subtitle": "Pick the country this cleaner is approved to work in. This drives their currency, language and VAT defaults.",
-        "approve_button": "Approve Employee"
+        "approve_button": "Approve Partner"
       },
       "reject_dialog": {
-        "title": "Reject Employee",
-        "subtitle": "Please provide a reason for rejecting this employee",
+        "title": "Reject Partner",
+        "subtitle": "Please provide a reason for rejecting this partner",
         "reason_label": "Rejection Reason",
         "reason_placeholder": "Enter detailed reason for rejection...",
         "reason_hint": "Maximum 500 characters",
-        "reject_button": "Reject Employee"
+        "reject_button": "Reject Partner"
       },
       "messages": {
-        "load_error": "Failed to load employees",
-        "approve_success": "Employee approved successfully",
-        "approve_error": "Failed to approve employee",
-        "reject_success": "Employee rejected successfully",
-        "reject_error": "Failed to reject employee"
+        "load_error": "Failed to load partners",
+        "approve_success": "Partner approved successfully",
+        "approve_error": "Failed to approve partner",
+        "reject_success": "Partner rejected successfully",
+        "reject_error": "Failed to reject partner"
       },
       "contract_status": {
         "pending": "Pending",
@@ -349,8 +374,8 @@
       "profile_incomplete_tooltip": "Profile incomplete - cannot approve"
     },
     "employee_detail": {
-      "title": "Employee Details",
-      "back_to_list": "Back to Employee List",
+      "title": "Partner Details",
+      "back_to_list": "Back to Partner List",
       "personal_info": "Personal Information",
       "first_name": "First Name",
       "last_name": "Last Name",
@@ -362,7 +387,7 @@
       "city": "City",
       "zip_code": "Zip Code",
       "country": "Country",
-      "employment_info": "Employment Information",
+      "employment_info": "Identity and Business Details",
       "nationality": "Nationality",
       "passport_id": "Passport/National ID",
       "tax_id": "Tax ID",
@@ -405,8 +430,8 @@
       "review_notes": "Review Notes",
       "document_description": "Description",
       "actions": {
-        "approve_employee": "Approve Employee",
-        "reject_employee": "Reject Employee",
+        "approve_employee": "Approve Partner",
+        "reject_employee": "Reject Partner",
         "approve_document": "Approve",
         "reject_document": "Reject",
         "download_document": "Download",
@@ -414,24 +439,24 @@
         "set_weekly_limit": "Set weekly limit"
       },
       "approve_employee_dialog": {
-        "title": "Approve Employee",
+        "title": "Approve Partner",
         "subtitle": "Pick the country this cleaner is approved to work in. This drives their currency, language and VAT defaults.",
         "work_country_label": "Work Country",
         "work_country_hint": "Only countries we currently service are selectable.",
         "notes_label": "Approval notes",
         "notes_placeholder": "Optional approval notes...",
         "notes_hint": "Maximum 1000 characters",
-        "approve_button": "Approve Employee"
+        "approve_button": "Approve Partner"
       },
       "reject_employee_dialog": {
-        "title": "Reject Employee",
-        "subtitle": "Please provide a reason for rejecting this employee",
+        "title": "Reject Partner",
+        "subtitle": "Please provide a reason for rejecting this partner",
         "reason_label": "Rejection Reason",
         "reason_placeholder": "Enter detailed reason for rejection...",
         "reason_hint": "Maximum 500 characters",
         "reason_required": "Rejection reason is required",
         "reason_too_long": "Rejection reason is too long (max 500 characters)",
-        "reject_button": "Reject Employee"
+        "reject_button": "Reject Partner"
       },
       "reject_document_dialog": {
         "title": "Reject Document",
@@ -444,18 +469,18 @@
         "reject_button": "Reject Document"
       },
       "messages": {
-        "load_error": "Failed to load employee details",
-        "employee_approve_success": "Employee approved successfully",
-        "employee_approve_error": "Failed to approve employee",
-        "employee_reject_success": "Employee rejected successfully",
-        "employee_reject_error": "Failed to reject employee",
+        "load_error": "Failed to load partner details",
+        "employee_approve_success": "Partner approved successfully",
+        "employee_approve_error": "Failed to approve partner",
+        "employee_reject_success": "Partner rejected successfully",
+        "employee_reject_error": "Failed to reject partner",
         "document_approve_success": "Document approved successfully",
         "document_approve_error": "Failed to approve document",
         "document_reject_success": "Document rejected successfully",
         "document_reject_error": "Failed to reject document",
         "document_download_error": "Failed to download document",
-        "employee_update_success": "Employee updated successfully",
-        "employee_update_error": "Failed to update employee",
+        "employee_update_success": "Partner updated successfully",
+        "employee_update_error": "Failed to update partner",
         "pay_config_save_success": "Pay configuration saved successfully",
         "pay_config_save_error": "Failed to save pay configuration",
         "pay_config_delete_success": "Pay configuration deleted successfully",
@@ -463,7 +488,7 @@
         "pay_config_bulk_success": "Pay configurations applied: {{created}} created, {{skipped}} skipped",
         "weekly_limit_save_success": "Weekly order limit updated"
       },
-      "grade": "Grade",
+      "grade": "Rate Template",
       "document_types": {
         "identity_card": "Identity Card",
         "passport": "Passport",
@@ -489,11 +514,11 @@
       "pay_config_min_pay": "Minimum Pay",
       "pay_config_max_pay": "Maximum Pay",
       "pay_config_description": "Description",
-      "grade_template": "Grade Template",
+      "grade_template": "Rate Template",
       "services_configured": "Services",
       "packages_configured": "Packages",
-      "bulk_apply_grade": "Apply Grade Template",
-      "bulk_apply_grade_hint": "Pick a grade and currency to automatically create pay configs for all services and packages. Rates are calculated from the base price using grade multipliers (Junior 0.5x, Medior 0.75x, Senior 1.0x).",
+      "bulk_apply_grade": "Apply Rate Template",
+      "bulk_apply_grade_hint": "Pick a rate template and currency to automatically create pay configs for all services and packages. Rates are calculated from the base price using the template multipliers (Standard 0.5x, Experienced 0.6x, Expert 0.7x).",
       "overwrite_existing": "Overwrite existing configs",
       "apply_to_all": "Apply to All",
       "services": "Services",
@@ -503,14 +528,14 @@
       "add_override": "Add override",
       "edit_override": "Edit override",
       "delete_override": "Delete override",
-      "delete_override_confirm": "Are you sure you want to remove this pay override? The employee will fall back to the global rate.",
+      "delete_override_confirm": "Are you sure you want to remove this pay override? The partner will fall back to the global rate.",
       "grade_quick_fill": "Quick fill",
-      "grade_junior": "Junior",
-      "grade_medior": "Medior",
-      "grade_senior": "Senior",
+      "grade_standard": "Standard",
+      "grade_experienced": "Experienced",
+      "grade_expert": "Expert",
       "payout_details": {
         "title": "Payout Details",
-        "none": "No payout details on file for this employee.",
+        "none": "No payout details on file for this partner.",
         "load_error": "Could not load payout details.",
         "retry": "Try again",
         "masked_account": "Account",
@@ -546,7 +571,9 @@
       "weekly_order_limit": "Weekly order limit",
       "weekly_order_limit_unlimited": "Unlimited",
       "weekly_order_limit_hint": "Leave empty for no limit",
-      "not_found": "Employee not found",
+      "weekly_order_limit_reason": "Reason for the limit",
+      "weekly_order_limit_reason_hint": "Required with a limit. The cleaner is shown the reason.",
+      "not_found": "Partner not found",
       "actions_section": "Actions",
       "rate_format": "{{base}} + {{room}}/room + {{bath}}/bath"
     },
@@ -629,6 +656,8 @@
           "action": "Override status",
           "confirm": "Manually set the order status. Only valid transitions are allowed.",
           "target": "New status",
+          "reason": "Reason",
+          "reason_hint": "Kept in the audit log. Required to complete an order that has no after photo.",
           "submit": "Apply status",
           "success": "Order status updated successfully."
         },
@@ -638,8 +667,10 @@
           "none_assigned": "This order has no assigned cleaner to reassign.",
           "add_only_hint": "Nobody is on this job. Enter a cleaner to put one on it.",
           "from": "From cleaner",
-          "to": "To cleaner (employee ID)",
-          "to_hint": "Enter the target employee ID.",
+          "removal_reason": "Why this cleaner is taken off",
+          "removal_reason_hint": "Required. The cleaner is shown the reason.",
+          "to": "To cleaner (partner ID)",
+          "to_hint": "Enter the target partner ID.",
           "unnamed": "Unnamed cleaner",
           "submit": "Reassign",
           "success": "Cleaner reassigned successfully."
@@ -649,6 +680,37 @@
           "confirm": "Issue a full refund without changing the order status.",
           "submit": "Issue refund",
           "success": "Refund issued successfully."
+        },
+        "no_show": {
+          "action": "Cancel as cleaner no-show",
+          "context": "Use this when the assigned cleaner did not arrive — after the customer reported it or the alert “The cleaner has not started an order” came in. Check with the cleaner and the customer first.",
+          "confirm": "This cancels the order with no fee, refunds a paid card order in full, gives a signed-in customer the no-show apology credit and closes an open “service not provided” dispute. It cannot be undone.",
+          "submit": "Confirm no-show",
+          "success": "Order cancelled as a cleaner no-show. {{refund}} {{credit}}",
+          "refunded": "{{amount}} was refunded to the card.",
+          "refund_pending": "The card refund has not gone through yet; it is retried automatically.",
+          "nothing_refunded": "This action made no card refund. Check the order's payment status.",
+          "credit_granted": "The customer received {{amount}} in apology credit.",
+          "no_credit": "No apology credit was issued: a guest order, or none is set for this currency."
+        },
+        "record_cash": {
+          "action": "Record cash received",
+          "context": "Use this when the cleaner took the cash but could not record it in their app. The order becomes paid, so the cleaner can complete it; if it is already completed, its receipt is issued now.",
+          "no_cleaner": "Nobody is on this job. Put the cleaner who took the cash on it first.",
+          "cleaner": "Cleaner who took the cash",
+          "received_at": "Received at",
+          "amount": "Amount received",
+          "submit": "Record cash",
+          "success": "Cash recorded. The order is paid."
+        },
+        "lockout": {
+          "action": "Confirm customer lockout",
+          "context": "Use this when the cleaner reported that they could not get in. Check the entrance photo and the calls they made before you confirm.",
+          "confirm": "This cancels the booking as a customer lockout at the whole price. A card order keeps its payment and any credit applied to it; a signed-in customer's unpaid cash booking owes the whole price as a receivable; a guest keeps nothing back and is never charged more. The crew is paid its share of the fee once it is collected. It cannot be undone.",
+          "submit": "Confirm lockout",
+          "success": "Order cancelled as a customer lockout at {{fee}}. {{receivable}}",
+          "receivable_opened": "The customer owes {{amount}}, recorded as a receivable.",
+          "no_receivable": "What the customer paid is kept and nothing more is charged."
         }
       },
       "messages": {
@@ -675,6 +737,7 @@
       "cleaning_time": "Cleaning Time",
       "rooms": "Rooms",
       "bathrooms": "Bathrooms",
+      "dirtiness_level": "Dirtiness",
       "estimated_time": "Estimated Time",
       "actual_time": "Actual Time",
       "completed_at": "Completed at",
@@ -684,12 +747,16 @@
       "payment_info": "Payment Information",
       "payment_type": "Payment Type",
       "payment_status": "Payment Status",
+      "dirtiness_surcharge": "Dirtiness surcharge",
       "total_price": "Total Price",
       "receipt_number": "Receipt Number",
+      "cash_collected_by": "Cash taken by",
+      "cash_collected_at": "Cash received at",
+      "cash_collected_amount": "Cash received",
       "cancellation_fee_rate": "Cancellation fee",
       "cancellation_fee_owed": "Fee still owed",
-      "assigned_employee": "Assigned Employee",
-      "assigned_employees": "Assigned Employees",
+      "assigned_employee": "Assigned Partner",
+      "assigned_employees": "Assigned Partners",
       "employee_name": "Name",
       "employee_phone": "Phone",
       "employee_email": "Email",
@@ -758,13 +825,22 @@
           "load_failed": "The contract could not be loaded. Please try again.",
           "retry": "Try again"
         }
-      }
+      },
+      "lockout": {
+        "title": "Lockout report",
+        "reported_at": "Reported at",
+        "call_attempts": "Calls the cleaner made",
+        "photo": "Entrance photo",
+        "photo_hint": "Under Order Photos"
+      },
+      "entrance_photos": "Entrance photos",
+      "entrance": "Entrance"
     },
     "invoice_management": {
       "title": "Invoice Management",
-      "description": "View and manage employee invoices, approve payments, and track invoice status",
+      "description": "View and manage partner invoices, approve payments, and track invoice status",
       "invoice_number": "Invoice #",
-      "employee_name": "Employee",
+      "employee_name": "Partner",
       "pay_period": "Pay Period",
       "total_orders": "Orders",
       "total_amount": "Total Amount",
@@ -777,7 +853,7 @@
       "no_invoices": "No invoices found",
       "filters": {
         "search": "Search",
-        "search_placeholder": "Search by invoice number or employee",
+        "search_placeholder": "Search by invoice number or partner",
         "status": "Invoice Status",
         "currency": "Currency"
       },
@@ -973,8 +1049,8 @@
     },
     "pay_config_management": {
       "title": "Global Rates",
-      "description": "Manage platform-wide rate defaults applied to all employees by default.",
-      "info_banner": "These are global rates that apply to every employee. To set per-employee rates, open an employee's detail page and use the Apply Grade Template feature.",
+      "description": "Manage platform-wide rate defaults applied to all partners by default.",
+      "info_banner": "These are global rates that apply to every partner. To set per-partner rates, open a partner's detail page and use the Apply Rate Template feature.",
       "create": "Create Global Rate",
       "edit": "Edit",
       "delete": "Delete Global Rate",
@@ -995,7 +1071,7 @@
       "create_title": "Create Global Rate",
       "edit_title": "Edit Global Rate",
       "target": "What this rate applies to",
-      "target_hint": "Select a service OR a package, not both. This rate will apply to all employees unless they have a per-employee override.",
+      "target_hint": "Select a service OR a package, not both. This rate will apply to all partners unless they have a per-partner override.",
       "service": "Service",
       "package": "Package",
       "currency": "Currency",
@@ -1076,6 +1152,7 @@
       "price_required": "Required",
       "price_optional": "Optional",
       "estimated_time": "Estimated Time (minutes)",
+      "minutes_per_room": "Minutes per room or bathroom",
       "messages": {
         "load_error": "Failed to load service",
         "create_success": "Service created successfully",
@@ -1311,12 +1388,16 @@
       "all_markets": "All markets",
       "audience": {
         "customer": "Customer",
-        "employee": "Employee"
+        "employee": "Partner"
       },
       "type": {
         "terms_of_service": "Terms of service",
         "privacy_policy": "Privacy policy",
-        "work_contract": "Contract for work"
+        "work_contract": "Contract for work",
+        "cleaner_framework_contract": "Framework cooperation agreement (partners)",
+        "self_billing_agreement": "Self-billing agreement",
+        "cleaner_data_processing_agreement": "Data processing agreement (partners)",
+        "complaints_procedure": "Complaints procedure"
       },
       "columns": {
         "audience": "Audience",
@@ -1607,7 +1688,7 @@
         "order_date": "Date when the order was placed",
         "total_amount": "Total order amount with currency",
         "order_status_link": "Link to check order status",
-        "employee_name": "The name of the employee",
+        "employee_name": "The name of the partner",
         "period_label": "Pay period label (e.g., 2025-01)",
         "start_date": "Period start date",
         "end_date": "Period end date",
@@ -1781,7 +1862,8 @@
       "categories": {
         "retention": "Data retention",
         "lifecycle": "Company lifecycle",
-        "notifications": "Notifications"
+        "notifications": "Notifications",
+        "cash": "Cash held by cleaners"
       },
       "descriptions": {
         "retention": {
@@ -1795,19 +1877,19 @@
             "years": "Years after a data-protection request is completed before the processing administrator's identity is cleared from it"
           },
           "order_pii": {
-            "years": "Years after the cleaning before a completed order's customer data is anonymised"
+            "years": "Years after the cleaning date before the customer data of a completed or cancelled order is anonymised"
           },
           "withdrawn_consents": {
             "years": "Years a withdrawn consent record is kept"
           },
           "deleted_documents": {
-            "days": "Days a deactivated employee document is kept before the file is deleted"
+            "days": "Days a deactivated partner document is kept before the file is deleted"
           },
           "notifications": {
             "days": "Days a notification stays in the in-app feed"
           },
           "order_photos": {
-            "days": "Days after completion that order photos are kept; unresolved disputes hold the photos until they close"
+            "days": "Days after an order is completed or cancelled that its photos are kept; unresolved disputes hold the photos until they close"
           },
           "admin_audit": {
             "years": "Years an administrator audit row is kept"
@@ -1823,6 +1905,9 @@
           },
           "work_contract_metadata": {
             "years": "Years after a cleaner's acceptance of a contract for work that its IP address and device details are kept before they are blanked; the acceptance itself is kept with the order"
+          },
+          "receipts": {
+            "years": "Years after the end of the year of issue that a receipt's PDF is kept before it is deleted, never fewer than the statutory 10; the receipt record itself is kept"
           }
         },
         "lifecycle": {
@@ -1830,6 +1915,10 @@
         },
         "notifications": {
           "admin_email": "Mailbox that receives one e-mail in English per admin event instead of every administrator; at its default, each administrator is e-mailed in their own language"
+        },
+        "cash": {
+          "float_cap": "The most cash a cleaner may hold in one currency; above it, cash jobs are hidden from them with the reason shown. 0 means no cap",
+          "remittance_request_days": "Days a cleaner may keep cash still held after a pay-period close before they are asked to hand it over (1–365)"
         }
       }
     },
@@ -1895,6 +1984,7 @@
         "unpaidInvoices": "Unpaid cleaner invoices",
         "uninvoicedPayRows": "Uninvoiced pay rows in closed periods",
         "openDisputes": "Open disputes",
+        "cleanersHoldingCash": "Cleaner cash balances not settled",
         "chargebackHorizonEndsOn": "Chargeback horizon",
         "windDownLastRunOn": "Last wind-down run",
         "windDownRunStartedOn": "Wind-down run in progress since"
@@ -1936,7 +2026,7 @@
     },
     "reports": {
       "title": "Reports",
-      "description": "View revenue and payroll reports, analyze performance, and track financial data",
+      "description": "View revenue and partner pay reports and track financial data",
       "date_filter": "Date Range",
       "start_date": "Start Date",
       "end_date": "End Date",
@@ -1947,7 +2037,7 @@
         "currency": "Currency"
       },
       "revenue_report": "Revenue Report",
-      "payroll_report": "Payroll Report",
+      "payroll_report": "Partner Pay Report",
       "no_data": "No data available for the selected period",
       "total_revenue": "Total Revenue",
       "avg_order_value": "Average Order Value",
@@ -1961,26 +2051,26 @@
       "package_name": "Package",
       "payment_type": "Payment Type",
       "order_count": "Orders",
-      "total_payroll": "Total Payroll",
-      "avg_pay_per_employee": "Avg. Pay per Employee",
+      "total_payroll": "Total Partner Pay",
+      "avg_pay_per_employee": "Avg. Pay per Partner",
       "total_invoices": "Total Invoices",
       "pending_invoices": "Pending Invoices",
       "paid_invoices": "Paid Invoices",
       "total_bonuses": "Total Bonuses",
-      "employee_summaries": "Employee Summaries",
-      "employee_name": "Employee",
+      "employee_summaries": "Partner Summaries",
+      "employee_name": "Partner",
       "invoice_count": "Invoices",
       "subtotal": "Subtotal",
       "bonus": "Bonus",
       "deductions": "Deductions",
       "total_amount": "Total",
-      "payroll_by_status": "Payroll by Status",
+      "payroll_by_status": "Pay by Status",
       "status": "Status",
-      "monthly_payroll": "Monthly Payroll",
+      "monthly_payroll": "Monthly Pay",
       "month": "Month",
       "messages": {
         "revenue_load_error": "Failed to load revenue report",
-        "payroll_load_error": "Failed to load payroll report"
+        "payroll_load_error": "Failed to load partner pay report"
       },
       "settled_from_credit": "From customer credit",
       "settled_on_tender": "Taken by this tender",
@@ -2004,7 +2094,7 @@
       "pdf_error_label": "Error",
       "actions_section": "Actions",
       "invoice_summary": "Invoice Summary",
-      "employee_name": "Employee",
+      "employee_name": "Partner",
       "pay_period": "Pay Period",
       "variable_symbol": "Variable Symbol",
       "specific_symbol": "Specific Symbol",
@@ -2039,7 +2129,8 @@
         "bonus_pay": "Bonus",
         "deduction_pay": "Deduction",
         "total_pay": "Total",
-        "created_on": "Created"
+        "created_on": "Created",
+        "line_type": "Line"
       },
       "cancel_dialog": {
         "title": "Cancel Invoice",
@@ -2459,7 +2550,7 @@
         "customer_email": "Email",
         "reason": "Reason",
         "status": "Status",
-        "refund_amount": "Refund",
+        "refund_amount": "Refund requested",
         "created_on": "Created"
       },
       "actions": {
@@ -2509,7 +2600,22 @@
         "notes": "Resolution notes",
         "notes_placeholder": "Explain how this dispute was resolved…",
         "submit": "Resolve dispute",
-        "submitted": "Dispute resolution submitted"
+        "submitted": "Dispute resolution submitted",
+        "settlement_preference": "Customer's choice of settlement",
+        "settlement": {
+          "card_refund": "Refund to card",
+          "credit": "Credit to their balance"
+        },
+        "credit_disclaimer": "The customer chose credit: the amount is added to their credit balance instead of being refunded to the card.",
+        "charge": {
+          "toggle": "Charge the cleaner",
+          "hint": "Only when the dispute finds the cleaner at fault. The amount is deducted from their pay for this order, and they see the reason on it.",
+          "cleaner": "Cleaner",
+          "amount": "Amount to deduct",
+          "reason": "Reason",
+          "reason_placeholder": "The cleaner sees this reason on their pay record…",
+          "unnamed": "Unnamed cleaner"
+        }
       }
     },
     "membership_plans": {
@@ -2629,7 +2735,10 @@
         "terms_of_service": "Terms of service",
         "privacy_policy": "Privacy policy",
         "marketing_emails": "Marketing emails",
-        "data_processing": "Data processing"
+        "data_processing": "Data processing",
+        "cleaner_framework_contract": "Framework cooperation agreement (partners)",
+        "self_billing_agreement": "Self-billing agreement",
+        "cleaner_data_processing_agreement": "Data processing agreement (partners)"
       },
       "user_tools": {
         "title": "User tools",
@@ -2696,6 +2805,14 @@
                 "dropped": "the cleaner dropped it",
                 "rejected": "the cleaner's account was rejected"
               }
+            },
+            "cleaner_not_started": {
+              "title": "The cleaner has not started an order",
+              "body": "Order {{orderNumber}} was booked for {{cleaningDateTime}} and nobody has started it. If the cleaner did not arrive, cancel it as a no-show."
+            },
+            "lockout_reported": {
+              "title": "The cleaner cannot get in",
+              "body": "The cleaner on order {{orderNumber}}, booked for {{cleaningDateTime}}, reports that they cannot get in. Check the entrance photo and the calls they made; if the customer did not let them in, cancel it as a customer lockout."
             }
           },
           "dispute": {
@@ -2716,6 +2833,14 @@
             "failed": {
               "title": "A card payment failed",
               "body": "The card payment for order {{orderNumber}} was declined. The order is cancelled automatically if it stays unpaid."
+            },
+            "refund_stuck": {
+              "title": "A refund is not through",
+              "body": "The refund of {{amount}} on order {{orderNumber}} has not gone through for a day. It is retried every hour; check it in Stripe."
+            },
+            "refund_needs_retry": {
+              "title": "A refund needs a retry",
+              "body": "The refund of {{amount}} on order {{orderNumber}} has not gone through for a day, and it is not retried automatically. Check it in Stripe, then retry it from the dispute or the order."
             }
           },
           "erasure": {
@@ -2748,11 +2873,16 @@
         "current_password": "Current Password",
         "new_password": "New Password",
         "confirm_password": "Confirm New Password",
-        "password_hint": "At least 8 characters, including at least one letter and one digit",
+        "password_hint": "At least 12 characters, including at least one letter and one digit",
         "submit": "Change Password"
       },
       "messages": {
         "change_password_success": "Password changed successfully"
+      },
+      "password_change_required": {
+        "title": "Set your own password",
+        "description": "Someone else chose this account's password. Before you continue, replace it with one only you know; your current password is the one you just signed in with.",
+        "sign_out": "Sign out"
       }
     },
     "customer_detail": {
@@ -2777,11 +2907,78 @@
         "success": "The incident file was downloaded and recorded",
         "error": "The incident file could not be built"
       }
+    },
+    "receivables": {
+      "title": "Receivables",
+      "description": "What customers owe the company on an order: a late-cancellation or lockout fee on a cash booking, or unpaid cash. While a customer owes any, their new cash bookings are refused; card bookings stay open. Writing one off records why it is no longer owed.",
+      "filters": {
+        "status": "Status"
+      },
+      "load_error": "Could not load the receivables.",
+      "retry": "Try again",
+      "empty": "Nothing is owed.",
+      "columns": {
+        "order": "Order",
+        "kind": "Kind",
+        "amount": "Amount",
+        "status": "Status",
+        "attempts": "Charge attempts",
+        "created_on": "Opened",
+        "written_off_on": "Written off",
+        "write_off_note": "Write-off note"
+      },
+      "actions": {
+        "view_order": "Open the order",
+        "write_off": "Write off"
+      },
+      "write_off": {
+        "title": "Write off a receivable",
+        "lede": "The customer will no longer owe this amount, and once nothing else is open they can book cash again. The note is the only record of why.",
+        "note": "Why it is written off",
+        "note_hint": "For example: the customer settled it in person",
+        "submit": "Write off"
+      },
+      "messages": {
+        "write_off_success": "Receivable written off"
+      }
+    },
+    "cash_held": {
+      "title": "Cash held by cleaners",
+      "description": "The company's cash each cleaner took at the door and still holds, per currency. A pay-period close sets it off against the cleaner's invoice; record what a cleaner hands back, or write off what will not come back.",
+      "load_error": "Could not load the cash cleaners hold.",
+      "retry": "Try again",
+      "empty": "No cleaner holds any cash.",
+      "amount": "Amount",
+      "columns": {
+        "cleaner": "Cleaner",
+        "currency": "Currency",
+        "amount": "Cash held"
+      },
+      "actions": {
+        "record_remittance": "Record cash handed back",
+        "write_off": "Write off"
+      },
+      "remittance": {
+        "title": "Record cash handed back",
+        "lede": "Takes the amount the cleaner handed back off the cash they hold in this currency.",
+        "note": "Note (optional)",
+        "submit": "Record"
+      },
+      "write_off": {
+        "title": "Write off cash held",
+        "lede": "Takes cash the cleaner will not hand back off what they hold, without it being received. The note is the only record of why.",
+        "note": "Why it is written off",
+        "submit": "Write off"
+      },
+      "messages": {
+        "remittance_success": "Cash handed back recorded",
+        "write_off_success": "Cash written off"
+      }
     }
   },
   "pay_periods": {
     "title": "Pay Period Management",
-    "description": "Manage pay periods, close periods, and track employee payments",
+    "description": "Manage pay periods, close periods, and track partner payments",
     "create_new": "Create New Pay Period",
     "confirm_close": "Are you sure you want to close this pay period? This action cannot be undone.",
     "filters": {
@@ -2919,12 +3116,13 @@
     },
     "auth": {
       "account_locked": "Too many failed login attempts. The account is temporarily locked — try again in a few minutes.",
+      "admin_password_too_short": "Administrator passwords must be at least 12 characters long.",
       "apple_type_error": "This account uses Sign in with Apple. Use the Apple button.",
       "change_password_failed": "Failed to change the password",
       "current_password_invalid": "The current password is incorrect",
       "external_type_error": "This account uses a different sign-in method.",
       "google_type_error": "This account uses Google sign-in. Use the Google button.",
-      "insufficient_privileges": "You do not have permission to access the admin panel. Only administrators and employees can log in.",
+      "insufficient_privileges": "You do not have permission to access the admin panel. Only administrators can log in.",
       "internal_type_error": "Use email and password to sign in for this account.",
       "invalid_apple_token": "Invalid Apple token",
       "invalid_confirmation_code": "Invalid confirmation code",
@@ -2965,6 +3163,7 @@
       "has_open_pay_period": "A pay period is still open; close it first.",
       "has_unpaid_invoices": "A cleaner's invoice is not yet paid; the archive waits until every invoice is paid or cancelled.",
       "has_uninvoiced_pay": "A closed pay period holds pay that was never invoiced; the archive waits for it.",
+      "has_cash_held": "A cleaner still holds the company's cash; record its remittance or write it off first.",
       "has_open_disputes": "A dispute is still open; resolve it first.",
       "within_chargeback_horizon": "A cardholder can still dispute the company's latest card payment; the archive becomes admissible once the chargeback horizon has passed."
     },
@@ -2983,7 +3182,8 @@
     "credit": {
       "amount_exceeds_sanity_cap": "That amount is above the limit for a single credit. Issue it in smaller amounts if it is correct.",
       "amount_not_whole_minor_units": "A credit amount cannot be smaller than one hundredth of the currency unit.",
-      "reason_not_issuable": "That reason describes credit being spent, not issued. Choose a dispute settlement, cleaner no-show or goodwill."
+      "reason_not_issuable": "That reason describes credit being spent, not issued. Choose a dispute settlement, cleaner no-show or goodwill.",
+      "dispute_settlement_not_issuable": "A complaint is settled by resolving its dispute, and in credit only when the customer chose credit."
     },
     "currency": {
       "cannot_delete_default": "Cannot delete the default currency",
@@ -3009,22 +3209,26 @@
       "not_found": "Dispute not found",
       "not_owned_by_user": "This dispute belongs to a different user.",
       "cleaning_not_started": "This clean hasn't happened yet, so there is nothing to report on it.",
-      "line_not_on_order": "That item isn't on this order."
+      "line_not_on_order": "That item isn't on this order.",
+      "cleaner_charge_not_chargeable": "This cleaner's pay on the order cannot take this charge: there is none, it is already invoiced or charged for a dispute, or it is smaller than the charge.",
+      "cleaner_charge_not_whole_minor_units": "A charge to a cleaner must be in whole hundredths of the currency unit."
     },
     "email": {
       "invalid_email": "Invalid email address",
       "invalid_format": "Invalid email format"
     },
     "employee": {
-      "already_approved": "Employee has already been approved",
-      "already_rejected": "Employee has already been rejected",
+      "already_approved": "Partner has already been approved",
+      "already_rejected": "Partner has already been rejected",
       "documents_not_approved": "This cleaner cannot be approved until every document their work country requires has been uploaded and approved.",
-      "not_allowed_to_update": "You are not allowed to update this employee",
-      "not_found": "Employee not found",
+      "not_allowed_to_update": "You are not allowed to update this partner",
+      "not_found": "Partner not found",
       "pay_config_missing": "This cleaner has no pay configured for one or more active services or packages. Add the missing pay configuration before approving them.",
-      "profile_incomplete": "Employee profile is incomplete",
+      "profile_incomplete": "Partner profile is incomplete",
       "weekly_limit_invalid": "The weekly order limit must be at least 1, or empty for no limit",
-      "work_country_operator_mismatch": "The work country belongs to another operating company."
+      "work_country_operator_mismatch": "The work country belongs to another operating company.",
+      "weekly_limit_reason_required": "Write why this cleaner is limited. They are shown the reason.",
+      "legal_documents_not_accepted": "This cleaner has not yet accepted the current version of every contract document in force for their work country."
     },
     "employee_document": {
       "deletion_already_resolved": "This deletion request has already been answered.",
@@ -3081,6 +3285,9 @@
       }
     },
     "order": {
+      "lockout": {
+        "not_reported": "The cleaner has not reported that they cannot get in, so there is no lockout to confirm."
+      },
       "after_photos": {
         "required": "After photos are required to complete the order"
       },
@@ -3092,8 +3299,8 @@
       "completion_notes": {
         "too_long": "Completion notes are too long"
       },
-      "employee_already_assigned": "Employee is already assigned to this order",
-      "employee_not_assigned": "Employee is not assigned to this order",
+      "employee_already_assigned": "Partner is already assigned to this order",
+      "employee_not_assigned": "Partner is not assigned to this order",
       "empty": "Order is empty",
       "in_progress_cannot_cancel": "An order that is in progress cannot be cancelled",
       "invalid_status_transition": "This status change is not allowed for the current order state",
@@ -3109,17 +3316,27 @@
         "invalid": "Selected services are invalid"
       },
       "status": {
-        "confirmed_needs_crew": "Confirmed means a cleaner took the job. Assign a cleaner to the order instead."
+        "confirmed_needs_crew": "Confirmed means a cleaner took the job. Assign a cleaner to the order instead.",
+        "force_complete_reason_required": "This order has no after photo. Write why it is being completed without one; the reason is kept in the audit log."
       },
       "total_price": {
         "not_match": "Total price doesn't match",
         "positive": "Total price must be positive"
       },
       "reassign": {
-        "employee_not_approved": "This cleaner is not approved yet, so they cannot be placed on a job.",
+        "employee_not_approved": "This cleaner is not approved or is no longer active, so they cannot be placed on a job.",
         "employee_other_market": "This cleaner does not work in this order's country.",
-        "employee_busy": "This cleaner already has another job at this time."
-      }
+        "employee_busy": "This cleaner already has another job at this time.",
+        "removal_reason_required": "Write why this cleaner is being taken off the order. They are shown the reason."
+      },
+      "cleaner_already_started": "The cleaner has already started this job, so it cannot be cancelled as a no-show.",
+      "start_time_not_reached": "The booked start time has not come yet, so there is no no-show to confirm.",
+      "cash_already_collected": "The cash for this order has already been recorded",
+      "payment_not_outstanding": "Nothing is outstanding on this order: it is paid, refunded or disputed",
+      "cash_not_allowed_on_card_order": "This order was booked for card payment, so cash cannot be recorded on it here",
+      "cash_amount_invalid": "Enter an amount above zero, to the cent",
+      "cash_received_at_in_future": "The cash cannot have been received in the future",
+      "cash_received_at_before_clean": "The cash cannot have been received before the clean could begin"
     },
     "extra": {
       "in_use": "Cannot delete extra because an order references it. Deactivate it instead.",
@@ -3159,10 +3376,10 @@
       "stripe_signature_required": "Stripe signature header is required"
     },
     "payout": {
-      "not_found": "This employee has no payout details on file"
+      "not_found": "This partner has no payout details on file"
     },
     "payroll": {
-      "employee_not_assigned": "Employee not assigned to this order",
+      "employee_not_assigned": "Partner not assigned to this order",
       "invoice": {
         "already_cancelled": "Invoice has already been cancelled",
         "already_exists": "Invoice already exists",
@@ -3201,6 +3418,14 @@
     },
     "receipt": {
       "not_found": "Receipt not found"
+    },
+    "receivable": {
+      "not_found": "This receivable no longer exists.",
+      "not_open": "Only an open receivable can be written off."
+    },
+    "cash_held": {
+      "amount_invalid": "Enter an amount above zero, to the cent",
+      "amount_exceeds_balance": "That is more cash than the partner holds in this currency"
     },
     "referral": {
       "action_failed": "The referral action failed. Try again.",
@@ -3280,14 +3505,14 @@
         "country_not_supported": "Payouts to a bank in this country are not supported yet",
         "iban_country_mismatch": "The IBAN is from a different country than the bank. Check the IBAN, or change the bank country so the two match.",
         "iban_mismatch": "The IBAN does not match the account number and bank code. Check all three, or clear the IBAN and it will be derived from them.",
-        "invalid_account_number": "The account number could not be verified — almost always a mistyped digit. Check it against the employee's bank details.",
+        "invalid_account_number": "The account number could not be verified — almost always a mistyped digit. Check it against the partner's bank details.",
         "invalid_account_prefix": "The account prefix could not be verified — it is the part before the dash in the account number. Check the digits, or clear the field if the account has none.",
         "invalid_bank_code": "Enter a 4-digit bank code",
         "invalid_iban": "This is not a valid IBAN",
         "invalid_swift": "The SWIFT/BIC does not belong to the bank's country",
         "looks_like_card": "That looks like a payment card number. Enter the bank account number instead.",
         "scheme_not_supported": "Payouts to this kind of account are not supported yet",
-        "swift_required": "The bank is in a different country than the employee's work country, so the bank's SWIFT/BIC code is also required."
+        "swift_required": "The bank is in a different country than the partner's work country, so the bank's SWIFT/BIC code is also required."
       }
     },
     "review": {
@@ -3295,34 +3520,11 @@
     }
   },
   "cookies": {
-    "title": "We Value Your Privacy",
-    "description": "We use cookies to enhance your browsing experience, provide personalized content, and analyze our traffic. By clicking \"Accept\", you consent to our use of cookies.",
-    "accept": "Accept All",
-    "decline": "Decline",
+    "title": "Cookies on this site",
+    "description": "We use only the cookies and browser storage the app needs to work: keeping you signed in, remembering your language, and remembering that you have seen this notice. No analytics or advertising cookies.",
     "learn_more": "Learn more",
-    "banner_title": "Cookie consent banner",
-    "customize": "Customize",
-    "hide_settings": "Hide Settings",
-    "save_preferences": "Save Preferences",
-    "always_on": "Always On",
-    "categories": {
-      "necessary": {
-        "name": "Necessary",
-        "description": "Essential for the website to function. Cannot be disabled."
-      },
-      "analytics": {
-        "name": "Analytics",
-        "description": "Help us understand how visitors interact with our website."
-      },
-      "marketing": {
-        "name": "Marketing",
-        "description": "Used to deliver relevant ads and track campaigns."
-      },
-      "preferences": {
-        "name": "Preferences",
-        "description": "Remember your settings like language and theme."
-      }
-    }
+    "banner_title": "Cookie notice",
+    "acknowledge": "OK"
   },
   "auth": {
     "login": {

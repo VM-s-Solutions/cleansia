@@ -71,16 +71,27 @@ describe('EmployeeDetailFacade — weekly order limit', () => {
     facade.employee.set({ id: 'emp-1' } as AdminEmployeeDetail);
   });
 
-  it('sends the cap as a typed request', () => {
+  it('sends the cap and its trimmed reason as a typed request', () => {
     weeklyOrderLimitMock.mockReturnValue(of({ employeeId: 'emp-1', weeklyOrderLimit: 5 }));
 
-    facade.setWeeklyOrderLimit(5);
+    facade.setWeeklyOrderLimit(5, '  new partner, first month  ');
 
     expect(weeklyOrderLimitMock).toHaveBeenCalledTimes(1);
     const [employeeId, request] = weeklyOrderLimitMock.mock.calls[0];
     expect(employeeId).toBe('emp-1');
     expect(request).toBeInstanceOf(AdminSetEmployeeWeeklyOrderLimitRequest);
     expect(request.weeklyOrderLimit).toBe(5);
+    expect(request.reason).toBe('new partner, first month');
+  });
+
+  /** The server refuses a cap without a reason; a blank one is sent as absent, not as spaces. */
+  it('sends a blank reason as absent and leaves the refusal to the server', () => {
+    weeklyOrderLimitMock.mockReturnValue(throwError(() => new Error('400')));
+
+    facade.setWeeklyOrderLimit(5, '   ');
+
+    const [, request] = weeklyOrderLimitMock.mock.calls[0];
+    expect(request.reason).toBeUndefined();
   });
 
   /** Clearing is half of what this endpoint exists for. */
@@ -89,7 +100,7 @@ describe('EmployeeDetailFacade — weekly order limit', () => {
       of({ employeeId: 'emp-1', weeklyOrderLimit: undefined })
     );
 
-    facade.setWeeklyOrderLimit(null);
+    facade.setWeeklyOrderLimit(null, '');
 
     const [, request] = weeklyOrderLimitMock.mock.calls[0];
     expect(request.weeklyOrderLimit).toBeUndefined();
@@ -100,7 +111,7 @@ describe('EmployeeDetailFacade — weekly order limit', () => {
     weeklyOrderLimitMock.mockReturnValue(of({ employeeId: 'emp-1', weeklyOrderLimit: 3 }));
     facade.editingWeeklyLimit.set(true);
 
-    facade.setWeeklyOrderLimit(3);
+    facade.setWeeklyOrderLimit(3, 'reason');
 
     expect(facade.editingWeeklyLimit()).toBe(false);
     expect(facade.savingWeeklyLimit()).toBe(false);
@@ -118,7 +129,7 @@ describe('EmployeeDetailFacade — weekly order limit', () => {
     weeklyOrderLimitMock.mockReturnValue(throwError(() => new Error('400')));
     facade.editingWeeklyLimit.set(true);
 
-    facade.setWeeklyOrderLimit(0);
+    facade.setWeeklyOrderLimit(0, 'reason');
 
     expect(facade.editingWeeklyLimit()).toBe(true);
     expect(facade.savingWeeklyLimit()).toBe(false);
@@ -129,7 +140,7 @@ describe('EmployeeDetailFacade — weekly order limit', () => {
   it('does nothing at all without a loaded employee', () => {
     facade.employee.set(null);
 
-    facade.setWeeklyOrderLimit(5);
+    facade.setWeeklyOrderLimit(5, 'reason');
 
     expect(weeklyOrderLimitMock).not.toHaveBeenCalled();
   });

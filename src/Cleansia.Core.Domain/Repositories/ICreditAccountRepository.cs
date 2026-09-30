@@ -131,6 +131,12 @@ public interface ICreditAccountRepository : IRepository<CreditAccount, string>
         IReadOnlyCollection<string> orderIds, CancellationToken cancellationToken);
 
     /// <summary>
+    /// Σ <see cref="CreditTransactionReason.DisputeSettlement"/> granted for one order: the complaints
+    /// about it already settled in credit, which a later settlement on the order must count as given back.
+    /// </summary>
+    Task<decimal> GetDisputeSettledTotalForOrderAsync(string orderId, CancellationToken cancellationToken);
+
+    /// <summary>
     /// Take <paramref name="amount"/> from the balance, or take nothing.
     ///
     /// <para>Returns false when the balance is short. It is <b>the only</b> way credit is spent, and

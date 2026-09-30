@@ -137,7 +137,7 @@ payment initiated, waiting for the webhook" is `PaymentStatus.Pending` while `Or
 | Status | Value | Description |
 |--------|-------|-------------|
 | `Pending` | `1` | Order created, awaiting payment. **Every order starts here, cash included** — cash is not marked `Paid` at creation |
-| `Paid` | `2` | Card webhook settled; a recurring cash occurrence was confirmed; or the assigned cleaner recorded the cash (`MarkCashCollected`), which also restates an issued receipt as paid. `OrderStatus` does not move: a paid order stays `New` until a cleaner takes it ([ADR-0057](/decisions/adr-0057)) |
+| `Paid` | `2` | Card webhook settled; or the assigned cleaner recorded the cash (`MarkCashCollected`), or an administrator recorded it for them (`AdminRecordCashReceived`). A confirmed recurring cash occurrence is **not** `Paid` (since 2026-09-28): the confirm stamps `CustomerConfirmedAt` and the order stays `Pending` until the cash is recorded. `OrderStatus` does not move: a paid order stays `New` until a cleaner takes it ([ADR-0057](/decisions/adr-0057)) |
 | `Failed` | `3` | Payment failed, or `CleanupStalePendingOrders` gave up on an abandoned checkout |
 | `Refunded` | `4` | Full refund issued |
 | `Disputed` | `5` | Reserved; nothing writes it. A chargeback is recorded as a `Chargeback` dispute, not on this axis |

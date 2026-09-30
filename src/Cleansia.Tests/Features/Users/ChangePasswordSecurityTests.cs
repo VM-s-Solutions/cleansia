@@ -4,6 +4,7 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Users;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Common;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Validations;
@@ -31,12 +32,13 @@ public class ChangePasswordSecurityTests
     private const string WrongEmail = "someone-else@example.com";
     private const string NewPassword = "BrandNew123";
 
-    private static User UserWithResetToken(string email, string hashedToken, DateTimeOffset expiresAt)
+    private static User UserWithResetToken(string email, string hashedToken, DateTimeOffset expiresAt, UserProfile profile = UserProfile.Customer)
         => UserMockFactory.Generate(new UserMockFactory.UserPartial
         {
             Email = email,
             ResetPasswordCode = hashedToken,
             ResetPasswordCodeExpiresAt = expiresAt,
+            Profile = profile,
         });
 
     private static Mock<IUserRepository> RepoFor(User user)
@@ -133,6 +135,38 @@ public class ChangePasswordSecurityTests
 
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.NotValidResetPasswordToken);
+    }
+
+    // The length is judged only once the emailed code checks out, so the anonymous reset never tells a
+    // stranger that an address belongs to an administrator.
+    [Fact]
+    public async Task An_Administrator_Is_Refused_An_Eleven_Character_Password_Only_Once_The_Code_Checks_Out()
+    {
+        var raw = SecurityTokens.Generate();
+        var admin = UserWithResetToken(RightEmail, SecurityTokens.Hash(raw), DateTimeOffset.UtcNow.AddMinutes(15), UserProfile.Administrator);
+        var validator = new ChangePassword.Validator(RepoFor(admin).Object, new AuditContext());
+
+        var withoutCode = await validator.ValidateAsync(new ChangePassword.Command(RightEmail, NewPassword, "totally-wrong-code"));
+        var withCode = await validator.ValidateAsync(new ChangePassword.Command(RightEmail, NewPassword, raw));
+
+        Assert.Equal(BusinessErrorMessage.NotValidResetPasswordToken, Assert.Single(withoutCode.Errors).ErrorMessage);
+        var error = Assert.Single(withCode.Errors);
+        Assert.Equal(nameof(ChangePassword.Command.NewPassword), error.ErrorCode);
+        Assert.Equal(BusinessErrorMessage.AdminPasswordTooShort, error.ErrorMessage);
+        Assert.True((await validator.ValidateAsync(new ChangePassword.Command(RightEmail, NewPassword + "4", raw))).IsValid);
+    }
+
+    [Fact]
+    public async Task Handler_Clears_The_First_Sign_In_Password_Change()
+    {
+        var raw = SecurityTokens.Generate();
+        var admin = UserWithResetToken(RightEmail, SecurityTokens.Hash(raw), DateTimeOffset.UtcNow.AddMinutes(15), UserProfile.Administrator);
+        admin.RequirePasswordChange();
+
+        var result = await InvokeHandler(RepoFor(admin).Object, new ChangePassword.Command(RightEmail, NewPassword + "4", raw));
+
+        Assert.True(result.IsSuccess);
+        Assert.False(admin.MustChangePassword);
     }
 
     // One-shot: the handler clears the hashed reset column on success so it cannot be replayed.

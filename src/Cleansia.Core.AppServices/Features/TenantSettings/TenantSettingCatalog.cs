@@ -8,7 +8,10 @@ namespace Cleansia.Core.AppServices.Features.TenantSettings;
 /// reads. The retention defaults are the <see cref="RetentionDefaults"/> constants the sweeps were
 /// written against; the lifecycle entry is the archive's chargeback horizon (ADR-0064 D3); the
 /// notifications entry is the shared mailbox admin events are e-mailed to instead of every
-/// administrator (ADR-0065 D3) — empty, its default, means every administrator.
+/// administrator (ADR-0065 D3) — empty, its default, means every administrator. The cash entries are the
+/// cash a cleaner may hold before cash jobs are hidden from them — 0, its default, is no cap — and the
+/// days a balance carried past a pay-period close may last before the cleaner is asked to hand it over
+/// (owner ruling 2026-09-28, decisions 23 and 25).
 /// </summary>
 public static class TenantSettingCatalog
 {
@@ -18,9 +21,19 @@ public static class TenantSettingCatalog
 
     public const string NotificationsCategory = "notifications";
 
+    public const string CashCategory = "cash";
+
     public const string ChargebackHorizonDaysKey = "lifecycle.chargeback_horizon_days";
 
     public const string AdminNotificationEmailKey = "notifications.admin_email";
+
+    public const string CashFloatCapKey = "cash.float_cap";
+
+    public const string CashRemittanceRequestDaysKey = "cash.remittance_request_days";
+
+    public const int DefaultCashRemittanceRequestDays = 30;
+    private const int MaxCashFloatCap = 10_000_000;
+    private const int MaxCashRemittanceRequestDays = 365;
 
     // Card networks let a cardholder dispute a charge for 120 days and longer on some reason codes; a
     // chargeback on a sealed company is a books event the freeze would refuse, so the archive waits.
@@ -71,11 +84,23 @@ public static class TenantSettingCatalog
     public static readonly IntTenantSetting EmployeeAuditRetentionYears = Years(
         RetentionDefaults.EmployeeAuditRetentionYearsKey, RetentionDefaults.DefaultEmployeeAuditRetentionYears);
 
+    // Floored at the statutory period, not the generic one year: the sweep deletes the PDF for good and
+    // nothing re-renders it, so a lower figure would destroy tax documents still owed to the authority.
+    public static readonly IntTenantSetting ReceiptsYears = new(
+        RetentionDefaults.ReceiptsYearsKey, RetentionCategory, RetentionDefaults.DefaultReceiptsYears,
+        min: RetentionDefaults.DefaultReceiptsYears, max: MaxYears);
+
     public static readonly IntTenantSetting ChargebackHorizonDays = new(
         ChargebackHorizonDaysKey, LifecycleCategory, DefaultChargebackHorizonDays, min: 0, max: MaxChargebackHorizonDays);
 
     public static readonly EmailTenantSetting AdminNotificationEmail = new(
         AdminNotificationEmailKey, NotificationsCategory, @default: string.Empty);
+
+    public static readonly IntTenantSetting CashFloatCap = new(
+        CashFloatCapKey, CashCategory, 0, min: 0, max: MaxCashFloatCap);
+
+    public static readonly IntTenantSetting CashRemittanceRequestDays = new(
+        CashRemittanceRequestDaysKey, CashCategory, DefaultCashRemittanceRequestDays, min: 1, max: MaxCashRemittanceRequestDays);
 
     public static readonly IReadOnlyList<TenantSettingDefinition> All =
     [
@@ -92,8 +117,11 @@ public static class TenantSettingCatalog
         OrderPhotosDays,
         AdminAuditRetentionYears,
         EmployeeAuditRetentionYears,
+        ReceiptsYears,
         ChargebackHorizonDays,
         AdminNotificationEmail,
+        CashFloatCap,
+        CashRemittanceRequestDays,
     ];
 
     private static readonly IReadOnlyDictionary<string, TenantSettingDefinition> ByKey =

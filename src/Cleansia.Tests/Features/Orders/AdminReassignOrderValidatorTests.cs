@@ -1,7 +1,9 @@
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
+using Cleansia.Core.Domain.Legal;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
@@ -53,7 +55,28 @@ public class AdminReassignOrderValidatorTests
             .ReturnsAsync(false);
     }
 
-    private AdminReassignOrder.Validator Validator() => new(_orderRepository.Object, _employeeRepository.Object);
+    private readonly Mock<ILegalDocumentResolver> _legalDocuments = new();
+    private readonly Mock<IUserConsentRepository> _consents = new();
+
+    private AdminReassignOrder.Validator Validator() =>
+        new(_orderRepository.Object, _employeeRepository.Object, _legalDocuments.Object, _consents.Object);
+
+    private LegalDocument FrameworkContractInForce(DateOnly effectiveFrom)
+    {
+        var document = LegalDocument.Create(
+            LegalDocumentAudience.Employee, LegalDocumentType.CleanerFrameworkContract, null, effectiveFrom);
+        document.AddText("en", "Framework contract", "## Terms");
+        _legalDocuments
+            .Setup(r => r.ResolveInForceAsync(
+                LegalDocumentAudience.Employee, LegalDocumentType.CleanerFrameworkContract, Market, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(document);
+        return document;
+    }
+
+    private void TargetAccepted(LegalDocument document) =>
+        _consents
+            .Setup(r => r.GetByUserIdNoTrackingAsync(TargetId + "-user", It.IsAny<CancellationToken>()))
+            .ReturnsAsync([UserConsent.Grant(TargetId + "-user", ConsentType.CleanerFrameworkContract, "203.0.113.9", "Android", document.Version, document.Id)]);
 
     private static AdminReassignOrder.Command Placement() => new(OrderId, FromEmployeeId: null, TargetId);
 
@@ -94,6 +117,30 @@ public class AdminReassignOrderValidatorTests
         Assert.True(result.IsValid, string.Join(", ", result.Errors.Select(e => e.ErrorMessage)));
     }
 
+    /// <summary>Owner ruling 2026-09-28: taking a cleaner off an order needs a written reason; a pure placement does not.</summary>
+    [Fact]
+    public async Task Removing_A_Cleaner_Without_A_Reason_Is_Refused()
+    {
+        ArrangeTarget();
+
+        var missing = await Validator().ValidateAsync(new AdminReassignOrder.Command(OrderId, "emp-removed", TargetId));
+        var blank = await Validator().ValidateAsync(new AdminReassignOrder.Command(OrderId, "emp-removed", TargetId, " "));
+
+        Assert.Equal(BusinessErrorMessage.OrderRemovalReasonRequired, Assert.Single(missing.Errors).ErrorMessage);
+        Assert.Equal(BusinessErrorMessage.OrderRemovalReasonRequired, Assert.Single(blank.Errors).ErrorMessage);
+    }
+
+    [Fact]
+    public async Task Removing_A_Cleaner_With_A_Reason_Passes()
+    {
+        ArrangeTarget();
+
+        var result = await Validator().ValidateAsync(
+            new AdminReassignOrder.Command(OrderId, "emp-removed", TargetId, "Sick leave reported by phone."));
+
+        Assert.True(result.IsValid, string.Join(", ", result.Errors.Select(e => e.ErrorMessage)));
+    }
+
     [Fact]
     public async Task A_Missing_Cleaner_Is_Refused_As_Not_Found()
     {
@@ -118,6 +165,31 @@ public class AdminReassignOrderValidatorTests
         ArrangeTarget().Deactivated("gdpr-erasure", DateTimeOffset.UtcNow);
 
         Assert.Equal(BusinessErrorMessage.ReassignEmployeeNotApproved, await SingleErrorAsync());
+    }
+
+    /// <summary>
+    /// Owner ruling 2026-09-28: an admin placing a cleaner is the cleaner taking the job, so the take's own
+    /// gate applies — a cleaner who has not accepted the contract version in force is not placed on work.
+    /// </summary>
+    [Fact]
+    public async Task A_Cleaner_Who_Has_Not_Accepted_The_Contract_Version_In_Force_Is_Refused()
+    {
+        ArrangeTarget();
+        TargetAccepted(FrameworkContractInForce(new DateOnly(2026, 12, 1)));
+        FrameworkContractInForce(new DateOnly(2027, 1, 1));
+
+        Assert.Equal(BusinessErrorMessage.EmployeeLegalDocumentsNotAccepted, await SingleErrorAsync());
+    }
+
+    [Fact]
+    public async Task A_Cleaner_Holding_The_Contract_Version_In_Force_Is_Placed()
+    {
+        ArrangeTarget();
+        TargetAccepted(FrameworkContractInForce(new DateOnly(2027, 1, 1)));
+
+        var result = await Validator().ValidateAsync(Placement());
+
+        Assert.True(result.IsValid, string.Join(", ", result.Errors.Select(e => e.ErrorMessage)));
     }
 
     [Fact]

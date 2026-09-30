@@ -10,7 +10,7 @@
 > companies exist — no DTO, no endpoint creates, renames or deletes a row); **the lifecycle is
 > admin-written**, by the company's own administrators, through `DeactivateCompany`, `ReactivateCompany`,
 > `WindDownCompany` and `ArchiveCompany` → [Company lifecycle](./company-lifecycle). One row today:
-> `('cleansia-cz', 'Cleansia CZ s.r.o.')`, the first insert in `sql-scripts/insert_seed_data.sql`, stamped
+> `('cleansia-cz', 'Cleansia CZ s.r.o.')`, the first insert in `sql-scripts/prod-bootstrap.sql`, stamped
 > `CreatedBy = 'seed'`.
 
 ## Responsibility (one sentence)
@@ -69,8 +69,10 @@ operating, winding down from a date, deactivated, frozen for archive, archived.
   "every country of one operator shares a region" is the check for the day that column lands.
 - **How to spell itself.** `MaxLength(26)` is the whole rule — every `TenantId` column is `varchar(26)`
   and the first stamped insert enforces it. There is no id grammar and no grammar test (ADR-0061 CH-7).
-- **Its Stripe account.** The holding runs one Stripe account and settles card revenue intercompany
-  (owner note 2026-09-15, with Q-TENANCY-01/05); every wind-down refund and Plus cancel goes through it.
+- **Its Stripe account.** The platform configures one Stripe account per environment, and nothing on
+  this row names it. In production it is the operating company's own account (decision 49, owner
+  ruling 2026-09-28, replacing the holding account with intercompany settlement of 2026-09-15) — right
+  while there is one company. Every wind-down refund and Plus cancel goes through it.
 - **Where its bundle is.** `<tenantId>/<ArchiveRequestedOn:yyyyMMddTHHmmssZ>/` in `company-archives` is a
   function of two things the row already holds; there is no `ArchiveBlobPath` and no DTO carries one.
 

@@ -22,7 +22,7 @@ struct PartnerShellView: View {
     @StateObject private var model = ShellModel()
     @ObservedObject private var preferences: PreferencesModel
     @EnvironmentObject private var pushNavigation: PushNavigationModel
-    @State private var deepLinkOrderId: String?
+    @State private var deepLinkOrderRoute: OrderRoute?
     @State private var deepLinkInvoiceId: String?
     @State private var dashboardPath: [DashboardRoute] = []
     private let container: PartnerAppContainer
@@ -59,7 +59,7 @@ struct PartnerShellView: View {
             deepLinkInvoiceId = plan.invoiceId
         } else {
             model.selectOrders()
-            deepLinkOrderId = plan.orderId
+            deepLinkOrderRoute = PushTapRouting.deepLinkRoute(plan.orderId, showRemovalReason: plan.showRemovalReason)
         }
     }
 
@@ -101,7 +101,8 @@ struct PartnerShellView: View {
                         // A confirmed offer is an ordinary job from that instant on, so it lands on
                         // the detail every other taken job lands on — and the offers screen it came
                         // from is popped out from under it.
-                        onOpenOrder: { dashboardPath = [.orderDetail(orderId: $0)] }
+                        onOpenOrder: { dashboardPath = [.orderDetail(orderId: $0)] },
+                        onOpenLegalDocuments: { dashboardPath.append(.legalDocuments) }
                     )
                 case let .orderDetail(orderId):
                     OrderDetailView(
@@ -111,8 +112,11 @@ struct PartnerShellView: View {
                         checklistStore: container.cleaningChecklistStore,
                         snackbar: container.snackbar,
                         mapProvider: container.mapProvider,
-                        pendingOffers: container.pendingOffers
+                        pendingOffers: container.pendingOffers,
+                        onOpenLegalDocuments: { dashboardPath.append(.legalDocuments) }
                     )
+                case .legalDocuments:
+                    LegalDocumentsView(client: container.profileClient, snackbar: container.snackbar)
                 }
             }
         }
@@ -126,12 +130,13 @@ struct PartnerShellView: View {
 
             OrdersRootView(
                 client: container.orderClient,
+                profileClient: container.profileClient,
                 staleness: container.ordersStaleness,
                 checklistStore: container.cleaningChecklistStore,
                 snackbar: container.snackbar,
                 mapProvider: container.mapProvider,
                 pendingOffers: container.pendingOffers,
-                deepLinkOrderId: $deepLinkOrderId
+                deepLinkRoute: $deepLinkOrderRoute
             )
             .tabItem { Label(ShellTab.orders.label, systemImage: ShellTab.orders.systemImage) }
             .tag(ShellTab.orders)

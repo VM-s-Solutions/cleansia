@@ -87,13 +87,13 @@ that could sign in where it had no business.
 
 A customer granting a consent again later under a **different document** moves the consent row to it
 and writes a `customer.consent.grant` row; withdrawing writes `customer.consent.withdraw`. The consent
-row is the current state; those audit rows are the history. Nobody is re-prompted when a new version
-of the text takes effect. On the partner hosts the same `GrantConsent` command stamps no document, and
-a cleaner's registration (`RegisterEmployee`) sends its tick too — the partner web form does, both
-mobile partner apps still park it for the first sign-in — and grants the two employee consents
-unversioned: a cleaner accepts a different document ([ADR-0041](/decisions/adr-0041)), whose
-versioning is not built, and employee registration is not gated. → [ADR-0062](/decisions/adr-0062) D4 as
-amended, [What is recorded about a customer](/product/business-rules#customer-record)
+row is the current state; those audit rows are the history. Since 2026-09-28 a newer terms or privacy
+text is accepted before the next booking (`UserConsent.Covers`)
+→ [Business rules](/product/business-rules#customer-record). On the partner hosts the same
+`GrantConsent` command stamps no document, and a cleaner's registration records no customer consent
+(`termsAccepted` stays on the wire, unread); a cleaner accepts their own versioned documents through
+`AcceptLegalDocument` → [A cleaner's own documents](/product/business-rules#cleaner-documents).
+Employee registration is not gated. → [ADR-0062](/decisions/adr-0062) D4 as amended
 
 ## Sign-in and session acts leave a row {#session-rows}
 

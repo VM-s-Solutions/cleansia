@@ -185,6 +185,13 @@ public sealed class CompanySettlementReaderTests(PostgresContainerFixture fixtur
         resolved.Resolve("admin", refundAmount: null, "done");
         ctx.Disputes.AddRange(underReview, resolved);
 
+        completedPaid.MarkCashCollected($"emp-{key}-1", DateTime.UtcNow.AddDays(-2), 100m);
+        completedAwaitingPay.MarkCashCollected($"emp-{key}-2", DateTime.UtcNow.AddDays(-2), 100m);
+        ctx.CashLedgerEntries.AddRange(
+            CashLedgerEntry.ForCollection(completedPaid),
+            CashLedgerEntry.ForCollection(completedAwaitingPay),
+            CashLedgerEntry.ForRemittance($"emp-{key}-2", CurrencyId, 100m, null, DateTime.UtcNow.AddDays(-1)));
+
         await ctx.CommitAsync(CancellationToken.None);
         _tenantProvider.ClearTenantOverride();
     }
@@ -272,6 +279,8 @@ public sealed class CompanySettlementReaderTests(PostgresContainerFixture fixtur
         Assert.Equal(1, facts.UnpaidInvoices);
         Assert.Equal(1, facts.UninvoicedPayRows);
         Assert.Equal(1, facts.OpenDisputes);
+        // The cleaner who still holds the cash they collected; the one who handed it back holds none.
+        Assert.Equal(1, facts.CleanersHoldingCash);
         Assert.Equal(LatestCardClean, facts.LatestCardPaidCleaningDateTime);
     }
 
@@ -297,7 +306,7 @@ public sealed class CompanySettlementReaderTests(PostgresContainerFixture fixtur
         var facts = await ReaderFor("cleansia-nobody", ctx).ReadAsync(CancellationToken.None);
 
         Assert.Equal(
-            new CompanySettlementFacts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, null),
+            new CompanySettlementFacts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, null),
             facts);
     }
 

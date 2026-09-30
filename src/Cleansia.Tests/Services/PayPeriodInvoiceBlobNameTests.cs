@@ -183,7 +183,8 @@ public class PayPeriodInvoiceBlobNameTests
         _blobContainerClientFactory.Object,
         _tenantProvider.Object,
         _payoutReferenceAllocator.Object,
-        new Mock<ITenantRepository>().Object)
+        new Mock<ITenantRepository>().Object,
+        new Mock<ICashLedgerRepository>().Object)
         .CloseExpiredPeriodsAndOpenNewAsync(CancellationToken.None);
 
     private static PayPeriod ExpiredPeriod(string id, string tenantId)

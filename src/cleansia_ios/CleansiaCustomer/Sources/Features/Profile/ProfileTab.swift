@@ -88,6 +88,7 @@ struct ProfileTab: View {
                 route: .editProfile(showBookingHint: false)
             ),
             ProfileRowItem(icon: "mappin.and.ellipse", label: L10n.AddressManager.profileRow, route: .addresses),
+            ProfileRowItem(icon: "creditcard", label: L10n.Payments.profileRow, route: .payments),
             ProfileRowItem(icon: "exclamationmark.bubble", label: L10n.Profile.rowDisputes, route: .disputes)
         ]
     }

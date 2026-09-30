@@ -5,8 +5,9 @@ extension L10n {
         static func stepTitle(_ step: Int) -> String {
             switch step {
             case 1: localized("booking_step1_title")
-            case 2: localized("booking_step2_title")
-            case 3: localized("booking_step3_title")
+            case 2: dirtinessQuestion
+            case 3: localized("booking_step2_title")
+            case 4: localized("booking_step3_title")
             default: ""
             }
         }

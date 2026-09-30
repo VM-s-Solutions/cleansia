@@ -49,14 +49,17 @@ its container if it is missing — so it appears the first time a company is arc
 
 ## The development seed, and why its administrator is a separate file {#development-seed}
 
-A local Development boot that finds an empty `Languages` table runs two scripts from the repo-root
-`sql-scripts/`, in order (`CleansiaStartupBase.DevelopmentSeedScripts`): `insert_seed_data.sql` — the
-catalogue, the `cleansia-cz` tenant and `generate_ulid()` — then `insert_local_dev_admin.sql`, which
-creates the local administrator whose password the README publishes. The split exists so that the
-known-password account can never reach a shared database: `execute-sql.yml` refuses
-`insert_local_dev_admin.sql` for DEV and PRO, comparing the file name so a relative path cannot walk
-around it, and the shared fixture creates no user at all. Administrators on the shared DEV database
-are named people, promoted with `set-admin-role.sql` after they register; the README has the steps.
+A local Development boot that finds an empty `Languages` table runs three scripts from the repo-root
+`sql-scripts/`, in order (`CleansiaStartupBase.DevelopmentSeedScripts`): `prod-bootstrap.sql` — the
+reference data production gets as well: `generate_ulid()`, the `cleansia-cz` tenant, the languages,
+the countries, CZK and the Czech market — then `insert_seed_data.sql` — the DEV fixtures: the
+catalogue with its prices and pay rates, Plus plans, promo codes and the company record — then
+`insert_local_dev_admin.sql`, which creates the local administrator whose password the README
+publishes. The split exists so that the known-password account can never reach a shared database:
+`execute-sql.yml` refuses `insert_local_dev_admin.sql` for DEV and PRO, comparing the file name so a
+relative path cannot walk around it, and neither shared script creates a user at all. Administrators
+on the shared DEV database are named people, promoted with `set-admin-role.sql` after they register;
+the README has the steps.
 
 ## The Functions host's local settings are each developer's own {#functions-local-settings}
 

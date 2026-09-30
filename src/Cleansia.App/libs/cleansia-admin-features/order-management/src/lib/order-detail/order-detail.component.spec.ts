@@ -8,6 +8,7 @@ import {
   AdminClient,
   AdminGdprClient,
   CustomerAuditClient,
+  DirtinessLevel,
   OrderItem,
   UserItem,
 } from '@cleansia/admin-services';
@@ -194,6 +195,66 @@ describe('OrderDetailComponent — incident file', () => {
 
     expect(text).not.toContain('pages.order_detail.cancellation_fee_rate');
     expect(text).not.toContain('pages.order_detail.cancellation_fee_owed');
+  });
+
+  it('shows who took the cash, when and how much once it was collected', () => {
+    details.mockReturnValue(
+      of(
+        OrderItem.fromJS({
+          id: 'order-1',
+          currency: { code: 'CZK' },
+          cashCollectedAt: '2026-09-28T09:30:00Z',
+          cashCollectedByName: 'Petra Svobodova',
+          cashCollectedAmount: 1500,
+        })
+      )
+    );
+    const text = render().nativeElement.textContent;
+
+    expect(text).toContain('pages.order_detail.cash_collected_by');
+    expect(text).toContain('Petra Svobodova');
+    expect(text).toContain('pages.order_detail.cash_collected_at');
+    expect(text).toContain('pages.order_detail.cash_collected_amount');
+    expect(text).toMatch(/1\D?500/);
+  });
+
+  it('shows no cash collected on an order whose cash was not collected', () => {
+    const text = render().nativeElement.textContent;
+
+    expect(text).not.toContain('pages.order_detail.cash_collected_by');
+    expect(text).not.toContain('pages.order_detail.cash_collected_at');
+    expect(text).not.toContain('pages.order_detail.cash_collected_amount');
+  });
+
+  it('shows the dirtiness level the customer booked and the surcharge it added', () => {
+    details.mockReturnValue(
+      of(
+        OrderItem.fromJS({
+          id: 'order-1',
+          currency: { code: 'CZK' },
+          dirtinessLevel: DirtinessLevel.Heavy,
+          dirtinessSurchargeAmount: 720,
+        })
+      )
+    );
+    const fixture = render();
+
+    const level = fixture.debugElement.query(By.css('.cleansia-order-detail__dirtiness-level'));
+    expect(level.nativeElement.textContent).toContain('enums.dirtiness_level.heavy');
+    const surcharge = fixture.debugElement.query(By.css('.cleansia-order-detail__dirtiness-surcharge'));
+    expect(surcharge.nativeElement.textContent).toContain('pages.order_detail.dirtiness_surcharge');
+    expect(surcharge.nativeElement.textContent).toMatch(/720/);
+  });
+
+  it('shows a normal level and no surcharge line on an order booked at the normal level', () => {
+    details.mockReturnValue(
+      of(OrderItem.fromJS({ id: 'order-1', dirtinessLevel: DirtinessLevel.Normal, dirtinessSurchargeAmount: 0 }))
+    );
+    const fixture = render();
+
+    const level = fixture.debugElement.query(By.css('.cleansia-order-detail__dirtiness-level'));
+    expect(level.nativeElement.textContent).toContain('enums.dirtiness_level.normal');
+    expect(fixture.debugElement.query(By.css('.cleansia-order-detail__dirtiness-surcharge'))).toBeNull();
   });
 
   it('hides the panel and avoids its request without the customer policy', () => {

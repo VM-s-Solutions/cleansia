@@ -12,6 +12,7 @@ using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
 using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Functions.Core.Handlers;
+using Cleansia.Infra.Database;
 using Cleansia.Infra.Services.Pdf;
 using Cleansia.Infra.Services.Pdf.Models;
 using Cleansia.TestUtilities;
@@ -71,6 +72,11 @@ public partial class CreateOrderCallerCurrencyTests
                 var mediator = provider.GetRequiredService<IMediator>();
                 var created = await mediator.Send(BuildCommand(Slovakia, null, 60m) with { PaymentType = PaymentType.Cash });
                 Assert.True(created.IsSuccess, created.Error?.Message);
+                // A cash sale is receipted once the cleaner has recorded the cash (owner ruling 2026-09-28).
+                var context = provider.GetRequiredService<CleansiaDbContext>();
+                (await context.Orders.IgnoreQueryFilters().SingleAsync(o => o.Id == created.Value.Id))
+                    .MarkCashCollected("employee-cross-market");
+                await context.SaveChangesAsync();
                 AsAccount(provider);
                 await ActivatorUtilities.CreateInstance<GenerateReceiptHandler>(provider)
                     .HandleAsync(JsonSerializer.Serialize(new GenerateReceiptMessage(created.Value.Id, "en"), new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }), CancellationToken.None);

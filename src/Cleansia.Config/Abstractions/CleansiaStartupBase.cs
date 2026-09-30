@@ -255,11 +255,12 @@ public static class DatabaseMigrationExtensions
         }
     }
 
-    // The shared fixture runs first: it defines generate_ulid() and the tenant row the administrator
-    // insert needs. The administrator's password is published, so it lives in its own file that only a
-    // local Development boot runs — execute-sql.yml refuses that file for every environment.
+    // The production bootstrap runs first: it defines generate_ulid() and the reference rows the DEV
+    // fixtures and the administrator insert point at, so DEV and production share one source for them.
+    // The administrator's password is published, so it lives in its own file that only a local
+    // Development boot runs — execute-sql.yml refuses that file for every environment.
     public static readonly IReadOnlyList<string> DevelopmentSeedScripts =
-        ["insert_seed_data.sql", "insert_local_dev_admin.sql"];
+        ["prod-bootstrap.sql", "insert_seed_data.sql", "insert_local_dev_admin.sql"];
 
     private static void SeedDevelopmentData(Cleansia.Infra.Database.CleansiaDbContext dbContext, ILogger logger)
     {

@@ -102,6 +102,45 @@ final class NotificationFeedTemplatesTests: XCTestCase {
         XCTAssertFalse(rendered.body.contains("%"))
     }
 
+    func testEachNoShowOutcomeRowRendersTheOrderNumberAndTheServerFormattedCredit() throws {
+        for eventKey in ["order.no_cleaner_refund_pending", "order.no_cleaner_nothing_charged"] {
+            let args = ["orderId": "ord-7", "orderNumber": "A-1042", "amount": "250 Kč"]
+            let rendered = try XCTUnwrap(NotificationFeedTemplates.render(eventKey: eventKey, args: args), eventKey)
+            XCTAssertEqual(rendered.title, L10n.localized("push.\(eventKey).title"), eventKey)
+            XCTAssertEqual(
+                rendered.body,
+                String(format: L10n.localized("push.\(eventKey).body"), "A-1042", "250 Kč"),
+                eventKey
+            )
+            XCTAssertTrue(rendered.body.contains("#A-1042"), eventKey)
+            XCTAssertTrue(rendered.body.contains("250 Kč"), eventKey)
+            XCTAssertFalse(rendered.body.contains("%"), eventKey)
+            let rows = NotificationFeedTemplates.rows(from: [
+                NotificationFixtures.item(id: eventKey, eventKey: eventKey, args: args)
+            ])
+            XCTAssertEqual(rows.map(\.id), [eventKey])
+        }
+    }
+
+    func testFailedPlusRenewalRowRendersItsArglessCopyAndSurvivesTheCustomerFeedFilter() throws {
+        let rendered = try XCTUnwrap(NotificationFeedTemplates.render(
+            eventKey: "membership.payment_failed",
+            args: ["membershipId": "mem-1"]
+        ))
+        XCTAssertEqual(rendered.title, L10n.localized("push.membership.payment_failed.title"))
+        XCTAssertEqual(rendered.body, L10n.localized("push.membership.payment_failed.body"))
+        XCTAssertFalse(rendered.body.hasPrefix("push."))
+        XCTAssertFalse(rendered.body.contains("%"))
+        let rows = NotificationFeedTemplates.rows(from: [
+            NotificationFixtures.item(
+                id: "failed",
+                eventKey: "membership.payment_failed",
+                args: ["membershipId": "mem-1"]
+            )
+        ])
+        XCTAssertEqual(rows.map(\.id), ["failed"])
+    }
+
     func testThePlainCancellationTakesOnlyTheOrderNumberEvenWhenAnAmountArrives() throws {
         let rendered = try XCTUnwrap(NotificationFeedTemplates.render(
             eventKey: "order.cancelled",

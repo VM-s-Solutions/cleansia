@@ -11,9 +11,13 @@ import {
   CleansiaTitleComponent,
 } from '@cleansia/components';
 import { CleansiaPartnerRoute } from '@cleansia/services';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { PeriodPayFacade } from './period-pay.facade';
-import { formatPayAmount, getPeriodPayTableDefinition } from './period-pay.models';
+import {
+  buildCashHeldRows,
+  formatPayAmount,
+  getPeriodPayTableDefinition,
+} from './period-pay.models';
 
 @Component({
   selector: 'cleansia-partner-period-pay',
@@ -30,19 +34,27 @@ import { formatPayAmount, getPeriodPayTableDefinition } from './period-pay.model
     CleansiaTitleComponent,
   ],
   templateUrl: './period-pay.component.html',
+  styleUrls: ['./period-pay.component.scss'],
   providers: [PeriodPayFacade],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PeriodPayComponent implements OnInit {
   protected readonly facade = inject(PeriodPayFacade);
   private readonly router = inject(Router);
+  private readonly translate = inject(TranslateService);
 
   protected readonly periodControl = new FormControl<string | null>(null);
   protected readonly currencyControl = new FormControl<string | null>(null);
   // Computed, not a field initializer: the currency arrives with the summary, so the column formatters
   // have to be rebuilt when it does or every row would render with whatever was known at construction.
   protected readonly periodPayColumns = computed(
-    () => getPeriodPayTableDefinition(this.facade.summary()?.currencyCode, this.facade.lang()).columns
+    () =>
+      getPeriodPayTableDefinition(this.facade.summary()?.currencyCode, this.facade.lang(), this.translate)
+        .columns
+  );
+
+  protected readonly cashHeldRows = computed(() =>
+    buildCashHeldRows(this.facade.cashHeld(), this.facade.lang())
   );
 
   protected readonly amounts = computed(() => {
@@ -53,6 +65,7 @@ export class PeriodPayComponent implements OnInit {
     return {
       base: amount(summary?.totalBasePay),
       extras: amount(summary?.totalExtrasPay),
+      dirtiness: amount(summary?.totalDirtinessPay),
       expenses: amount(summary?.totalExpensesPay),
       bonus: amount(summary?.totalBonusPay),
       deduction: amount(summary?.totalDeductionPay),
@@ -68,6 +81,10 @@ export class PeriodPayComponent implements OnInit {
 
   retry(): void {
     this.facade.retry();
+  }
+
+  retryCashHeld(): void {
+    this.facade.loadCashHeld();
   }
 
   viewInvoice(): void {

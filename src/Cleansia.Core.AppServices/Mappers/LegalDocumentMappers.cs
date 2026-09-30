@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Features.Legal;
 using Cleansia.Core.AppServices.Features.Legal.DTOs;
 using Cleansia.Core.Domain.Legal;
+using Cleansia.Core.Domain.Users;
 
 namespace Cleansia.Core.AppServices.Mappers;
 
@@ -17,6 +18,27 @@ public static class LegalDocumentMappers
             Title: text.Title,
             ContentHtml: LegalMarkdownRenderer.Render(text.ContentMarkdown, placeholders),
             ContentHash: text.ContentHash);
+    }
+
+    public static CleanerLegalDocumentDto MapToCleanerDto(
+        this LegalDocument document,
+        LegalDocumentText text,
+        IReadOnlyDictionary<string, string> placeholders,
+        UserConsent? acceptance)
+    {
+        return new CleanerLegalDocumentDto(
+            Type: document.Type,
+            LegalDocumentId: document.Id,
+            LegalDocumentTextId: text.Id,
+            Version: document.Version,
+            EffectiveFrom: document.EffectiveFrom,
+            Language: text.Language,
+            Title: text.Title,
+            ContentHtml: LegalMarkdownRenderer.Render(text.ContentMarkdown, placeholders),
+            ContentHash: text.ContentHash,
+            IsAccepted: acceptance?.Covers(document) == true,
+            AcceptedVersion: acceptance is { IsGranted: true } ? acceptance.DocumentVersion : null,
+            AcceptedAt: acceptance is { IsGranted: true } ? acceptance.GrantedAt : null);
     }
 
     public static LegalDocumentVersionDto MapToVersionDto(this LegalDocument document, bool isInForce)

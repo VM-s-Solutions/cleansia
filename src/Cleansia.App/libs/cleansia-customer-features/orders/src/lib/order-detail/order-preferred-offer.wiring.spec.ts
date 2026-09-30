@@ -5,6 +5,7 @@ import {
   CustomerAuthService,
   CustomerClient,
   GetMyMembershipResponse,
+  MyReceivableDto,
   OrderItem,
   OrderStatus,
   PreferredOfferState,
@@ -60,6 +61,7 @@ describe('order detail wiring the preferred-offer facade', () => {
           useValue: {
             orderClient: { getById: () => getById.asObservable() },
             membershipClient: { getMine: () => getMine.asObservable() },
+            receivableClient: { getMine: () => new Subject<MyReceivableDto[]>().asObservable() },
           },
         },
         { provide: CustomerAuthService, useValue: { isLoggedIn: () => true } },

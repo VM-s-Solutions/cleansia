@@ -16,10 +16,18 @@ import {
   GetGuestCancellationFeePreviewQuery,
   PaymentStatus,
   PaymentType,
+  ReportGuestCleanerNoShowCommand,
 } from '@cleansia/customer-services';
 import { OrderStatus } from '@cleansia/models';
 import { catchError, finalize, Observable, of, Subject, takeUntil } from 'rxjs';
 import { GuestOrderService } from './guest-order.service';
+
+const START_PASSED_CANNOT_CANCEL = 'order.start_passed_cannot_cancel';
+
+const INLINE_REFUSALS: readonly string[] = [
+  'order.not_found', 'order.already_cancelled', 'order.in_progress_cannot_cancel', 'order.already_completed',
+  'order.cleaner_already_started', 'order.start_time_not_reached',
+];
 
 /**
  * Shared facade for guest order lookup. One caller now: the track-order page.
@@ -53,10 +61,32 @@ export class TrackOrderFacade extends UnsubscribeControlDirective {
   readonly cancelling = signal(false);
   readonly cancellationResult = signal<CancelOrderResponse | null>(null);
   readonly refundCurrency = signal<string | undefined>(undefined);
+  readonly reportingNoShow = signal(false);
+  readonly noShowReported = signal(false);
+  readonly noShowError = signal<string | null>(null);
+  private readonly startPassedRefused = signal(false);
+
+  /**
+   * Past the booked start once a cleaner has taken the booking and not started, the server refuses a
+   * self-cancel and the guest reports that the cleaner did not arrive. The lookup names no crew, so a
+   * cleaner having taken it reads off Confirmed and On the way; the server's own refusal also counts.
+   * -> /product/business-rules#cancellation
+   */
+  private readonly awaitsCleanerPastStart = computed(() => {
+    const order = this.selectedOrder();
+    const status = order?.orderStatus?.value;
+    if (!this.selectedToken || !order || this.cancellationResult() || status === undefined ||
+      ![OrderStatus.New, OrderStatus.Confirmed, OrderStatus.OnTheWay].includes(status)) return false;
+    if (this.startPassedRefused()) return true;
+    const startsAt = order.cleaningDateTime?.getTime();
+    return status !== OrderStatus.New && startsAt !== undefined && startsAt <= Date.now();
+  });
+  readonly canReportCleanerNoShow = computed(() => this.awaitsCleanerPastStart() && !this.noShowReported());
   readonly canCancel = computed(() => {
     const status = this.selectedOrder()?.orderStatus?.value;
     return !!this.selectedToken && !this.cancellationResult() && status !== undefined &&
-      [OrderStatus.New, OrderStatus.Confirmed, OrderStatus.OnTheWay].includes(status);
+      [OrderStatus.New, OrderStatus.Confirmed, OrderStatus.OnTheWay].includes(status) &&
+      !this.awaitsCleanerPastStart();
   });
   /** No card charge to refund: a guest pays by card, so only a checkout that never completed. */
   readonly tookNoCardPayment = computed(() => {
@@ -96,6 +126,10 @@ export class TrackOrderFacade extends UnsubscribeControlDirective {
     this.cancellationResult.set(null);
     this.refundCurrency.set(undefined);
     this.previewLoading.set(false);
+    this.startPassedRefused.set(false);
+    this.reportingNoShow.set(false);
+    this.noShowReported.set(false);
+    this.noShowError.set(null);
     return true;
   }
 
@@ -122,7 +156,7 @@ export class TrackOrderFacade extends UnsubscribeControlDirective {
       .pipe(
         takeUntil(this.destroyed$), takeUntil(this.cancellationReset$),
         catchError(error => {
-          if (version === this.selectionVersion) this.cancellationError.set(this.errorKey(error, 'preview_error'));
+          if (version === this.selectionVersion) this.refuseCancellation(error, 'preview_error');
           return of(null);
         }),
         finalize(() => { if (version === this.selectionVersion) this.previewLoading.set(false); }),
@@ -156,7 +190,7 @@ export class TrackOrderFacade extends UnsubscribeControlDirective {
         takeUntil(this.destroyed$),
         catchError(error => {
           if (version === this.selectionVersion) {
-            this.cancellationError.set(this.errorKey(error, 'submit_error'));
+            this.refuseCancellation(error, 'submit_error');
             this.cancellationPreview.set(null);
           }
           return of(null);
@@ -179,11 +213,42 @@ export class TrackOrderFacade extends UnsubscribeControlDirective {
       });
   }
 
-  private errorKey(error: unknown, fallback: 'preview_error' | 'submit_error'): string {
+  reportCleanerNoShow(): void {
+    const token = this.selectedToken;
+    if (!token || !this.canReportCleanerNoShow() || this.reportingNoShow()) return;
+    const version = this.selectionVersion;
+    const command = new ReportGuestCleanerNoShowCommand();
+    command.accessToken = token;
+    this.reportingNoShow.set(true);
+    this.noShowError.set(null);
+    this.orderClient.reportGuestNoShow(command)
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError(error => {
+          if (version === this.selectionVersion) {
+            this.noShowError.set(this.errorKey(error, 'pages.track_order.cleaner_no_show.error'));
+          }
+          return of(null);
+        }),
+        finalize(() => { if (version === this.selectionVersion) this.reportingNoShow.set(false); }),
+      )
+      .subscribe(result => {
+        if (version === this.selectionVersion && result) this.noShowReported.set(true);
+      });
+  }
+
+  private refuseCancellation(error: unknown, fallback: 'preview_error' | 'submit_error'): void {
+    if (extractApiErrorCode(error) === START_PASSED_CANNOT_CANCEL) {
+      this.startPassedRefused.set(true);
+      this.cancellationOpen.set(false);
+      return;
+    }
+    this.cancellationError.set(this.errorKey(error, `pages.track_order.cancellation.${fallback}`));
+  }
+
+  private errorKey(error: unknown, fallbackKey: string): string {
     const code = extractApiErrorCode(error);
-    return code && ['order.not_found', 'order.already_cancelled', 'order.in_progress_cannot_cancel',
-      'order.already_completed'].includes(code)
-      ? `api.${code}` : `pages.track_order.cancellation.${fallback}`;
+    return code && INLINE_REFUSALS.includes(code) ? `api.${code}` : fallbackKey;
   }
 
   /**

@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.PayConfig;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Infra.Common.Validations;
@@ -16,14 +17,14 @@ namespace Cleansia.Tests.Features.PayConfig;
 ///
 /// <para><b>The defect it closes.</b> The command takes a <c>CurrencyId</c> and stamps every generated
 /// row with it, but the amount was derived from the catalogue's own price column — one number, no
-/// currency. Generating EUR configs therefore multiplied CZK figures by the grade rate and labelled the
+/// currency. Generating EUR configs therefore multiplied CZK figures by the template rate and labelled the
 /// result EUR: a cleaner "paid" 400 EUR for a job quoted at 400 CZK, roughly 24x, from a button whose
 /// output nobody reads line by line because generating it in bulk is the entire point. The two-column
 /// arithmetic was correct throughout, which is why a suite over the arithmetic would have stayed
 /// green — the unit was wrong, not the maths.</para>
 ///
 /// <para>Every expected value below is hand-derived from the fixture, never the production expression
-/// re-run: 800 x 0.75 = 600, and if the handler starts rounding differently that is a failure rather
+/// re-run: 800 x 0.6 = 480, and if the handler starts rounding differently that is a failure rather
 /// than a matching mistake on both sides.</para>
 /// </summary>
 public class BulkCreateEmployeePayConfigsHandlerTests
@@ -82,13 +83,13 @@ public class BulkCreateEmployeePayConfigsHandlerTests
         _packages.Object);
 
     private Task<BusinessResult<BulkCreateEmployeePayConfigs.Response>>
-        GenerateAsync(string currencyId, string grade = "medior", bool overwrite = false) =>
+        GenerateAsync(string currencyId, string grade = "experienced", bool overwrite = false) =>
         CreateHandler().Handle(
             new BulkCreateEmployeePayConfigs.Command(EmployeeId, grade, currencyId, overwrite),
             CancellationToken.None);
 
     /// <summary>
-    /// Medior is 0.75. Hand-derived: 800 x 0.75 = 600 base, 250 x 0.75 = 187.50 per room, 1200 x 0.75
+    /// Experienced is 0.6. Hand-derived: 800 x 0.6 = 480 base, 250 x 0.6 = 150 per room, 1200 x 0.6
     /// = 900 for the package.
     /// </summary>
     [Fact]
@@ -101,12 +102,12 @@ public class BulkCreateEmployeePayConfigsHandlerTests
         Assert.Equal(0, result.Value.SkippedCount);
 
         var serviceConfig = Assert.Single(_added, c => c.ServiceId == ServiceId);
-        Assert.Equal(600m, serviceConfig.BasePay);
-        Assert.Equal(187.50m, serviceConfig.ExtraPerRoom);
+        Assert.Equal(480m, serviceConfig.BasePay);
+        Assert.Equal(150m, serviceConfig.ExtraPerRoom);
         Assert.Equal(Czk, serviceConfig.CurrencyId);
 
         var packageConfig = Assert.Single(_added, c => c.PackageId == PackageId);
-        Assert.Equal(900m, packageConfig.BasePay);
+        Assert.Equal(720m, packageConfig.BasePay);
         Assert.Equal(Czk, packageConfig.CurrencyId);
     }
 
@@ -131,7 +132,7 @@ public class BulkCreateEmployeePayConfigsHandlerTests
     /// Anti-vacuity for the case above: the EUR run produces nothing because the PRICE is missing, not
     /// because the fixture cannot generate anything at all. Same command, same catalogue, one EUR price
     /// row added — and that entry comes back, at its own authored EUR number rather than a converted
-    /// one. 40 x 0.75 = 30, which no scaling of the 800 CZK price can reach.
+    /// one. 40 x 0.6 = 24, which no scaling of the 800 CZK price can reach.
     /// </summary>
     [Fact]
     public async Task An_Entry_Priced_In_The_Requested_Currency_Is_Generated_At_That_Currencys_Number()
@@ -149,20 +150,22 @@ public class BulkCreateEmployeePayConfigsHandlerTests
 
         var config = Assert.Single(_added);
         Assert.Equal(ServiceId, config.ServiceId);
-        Assert.Equal(30m, config.BasePay);
-        Assert.Equal(9m, config.ExtraPerRoom);
+        Assert.Equal(24m, config.BasePay);
+        Assert.Equal(7.20m, config.ExtraPerRoom);
         Assert.Equal(Eur, config.CurrencyId);
     }
 
     /// <summary>
-    /// Junior is 0.5, senior 1.0 — the grade scales the price, and the seed's platform-wide row uses the
-    /// junior number, so this is the one that has to agree with the seeded data.
+    /// Owner ruling 2026-09-28: three neutral templates at 0.5 / 0.6 / 0.7 of the list price, so every one leaves the
+    /// company a margin. The seed's platform-wide row uses the standard number, so that one has to agree
+    /// with the seeded data.
     /// </summary>
     [Theory]
-    [InlineData("junior", 400, 125)]
-    [InlineData("medior", 600, 187.50)]
-    [InlineData("senior", 800, 250)]
-    public async Task The_Grade_Scales_The_Price(string grade, decimal expectedBase, decimal expectedPerRoom)
+    [InlineData("standard", 400, 125)]
+    [InlineData("experienced", 480, 150)]
+    [InlineData("expert", 560, 175)]
+    [InlineData("Expert", 560, 175)]
+    public async Task The_Template_Scales_The_Price_And_Leaves_A_Margin(string grade, decimal expectedBase, decimal expectedPerRoom)
     {
         await GenerateAsync(Czk, grade);
 
@@ -200,7 +203,7 @@ public class BulkCreateEmployeePayConfigsHandlerTests
         Assert.Equal(2, result.Value!.CreatedCount);
         Assert.Equal(0, result.Value.SkippedCount);
         Assert.Same(stale, Assert.Single(removed));
-        Assert.Equal(600m, Assert.Single(_added, c => c.ServiceId == ServiceId).BasePay);
+        Assert.Equal(480m, Assert.Single(_added, c => c.ServiceId == ServiceId).BasePay);
     }
 
     // ---------------------------------------------------------------- the currency term
@@ -224,7 +227,7 @@ public class BulkCreateEmployeePayConfigsHandlerTests
 
         var config = Assert.Single(_added, c => c.ServiceId == ServiceId);
         Assert.Equal(Eur, config.CurrencyId);
-        Assert.Equal(24m, config.BasePay);
+        Assert.Equal(19.20m, config.BasePay);
         _payConfigs.Verify(r => r.RemoveRange(It.IsAny<IEnumerable<EmployeePayConfig>>()), Times.Never);
     }
 
@@ -282,7 +285,7 @@ public class BulkCreateEmployeePayConfigsHandlerTests
         await GenerateAsync(Eur, overwrite: true);
 
         Assert.Same(eurRate, Assert.Single(removed));
-        Assert.Equal(24m, Assert.Single(_added, c => c.ServiceId == ServiceId).BasePay);
+        Assert.Equal(19.20m, Assert.Single(_added, c => c.ServiceId == ServiceId).BasePay);
         Assert.Equal(555m, czkRate.BasePay);
     }
 
@@ -315,6 +318,25 @@ public class BulkCreateEmployeePayConfigsHandlerTests
         Assert.Empty(removed);
         Assert.Equal(555m, czkRate.BasePay);
         // The package half of the same run still lands, so this is not passing by doing nothing.
-        Assert.Equal(900m, Assert.Single(_added, c => c.PackageId == PackageId).BasePay);
+        Assert.Equal(720m, Assert.Single(_added, c => c.PackageId == PackageId).BasePay);
+    }
+
+    /// <summary>The retired rank names are not templates; nothing pays a rank.</summary>
+    [Theory]
+    [InlineData("junior")]
+    [InlineData("medior")]
+    [InlineData("senior")]
+    [InlineData("anything")]
+    public async Task A_Name_That_Is_Not_A_Rate_Template_Is_Refused(string grade)
+    {
+        var employees = new Mock<IEmployeeRepository>();
+        employees.Setup(r => r.ExistsAsync(EmployeeId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        var validator = new BulkCreateEmployeePayConfigs.Validator(
+            Mock.Of<IUserRepository>(), Mock.Of<IUserSessionProvider>(), employees.Object, Mock.Of<ICurrencyRepository>());
+
+        var result = await validator.ValidateAsync(new BulkCreateEmployeePayConfigs.Command(EmployeeId, grade, Czk, false));
+
+        var error = Assert.Single(result.Errors, e => e.PropertyName == nameof(BulkCreateEmployeePayConfigs.Command.Grade));
+        Assert.Equal(BusinessErrorMessage.InvalidEnumValue, error.ErrorMessage);
     }
 }

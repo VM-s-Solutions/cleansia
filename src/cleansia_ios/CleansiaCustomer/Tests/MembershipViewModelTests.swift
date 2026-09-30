@@ -164,6 +164,23 @@ final class MembershipViewModelTests: XCTestCase {
         XCTAssertNil(vm.annualSwitchPlan)
     }
 
+    func testAPastDueMemberIsOfferedNoSwitchAndNoPerkButCanCancel() async {
+        let client = FakeMembershipManagementClient()
+        client.mineResults = [.success(MembershipFixtures.pastDue), .success(MembershipFixtures.inactive)]
+        let (vm, _, _) = makeVM(client: client)
+        await vm.load()
+
+        XCTAssertNil(vm.annualSwitchPlan)
+        XCTAssertEqual(vm.expressWaiverStatus, .none)
+        XCTAssertTrue(vm.copy.benefitsPaused)
+
+        let date = await vm.cancel()
+
+        XCTAssertNotNil(date)
+        XCTAssertEqual(client.cancelCallCount, 1)
+        XCTAssertEqual(vm.current?.hasMembership, false, "the ended enrolment is re-read")
+    }
+
     // MARK: Stripe's one currency per Customer
 
     func testTheCurrencyLockRefusalNamesTheMembershipsCurrencyWhenKnown() async {

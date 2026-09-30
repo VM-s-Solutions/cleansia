@@ -7,7 +7,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NG_VALUE_ACCESSOR } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { Subject } from 'rxjs';
-import { OrderItem, OrderStatus } from '@cleansia/admin-services';
+import { Code, CurrencyDetailDto, OrderItem, OrderStatus } from '@cleansia/admin-services';
 import {
   CleansiaButtonComponent,
   CleansiaSectionComponent,
@@ -109,22 +109,37 @@ class FacadeStub {
   readonly errorKey = signal<string | null>(null);
   readonly cancelReason = signal<string>('');
   readonly targetStatus = signal<OrderStatus | null>(null);
+  readonly overrideReason = signal<string>('');
   readonly fromEmployeeId = signal<string | null>(null);
   readonly toEmployeeId = signal<string>('');
+  readonly removalReason = signal<string>('');
+  readonly removesCleaner = signal<boolean>(false);
+  readonly cashEmployeeId = signal<string | null>(null);
+  readonly cashReceivedAt = signal<Date | null>(null);
+  readonly cashAmount = signal<string>('');
   readonly canSubmitOverrideStatus = signal<boolean>(false);
   readonly canSubmitReassign = signal<boolean>(false);
+  readonly canSubmitRecordCash = signal<boolean>(false);
   openPanel = jest.fn((panel: AdminOrderOpsPanel) =>
     this.activePanel.set(this.activePanel() === panel ? null : panel)
   );
   closePanel = jest.fn(() => this.activePanel.set(null));
   setCancelReason = jest.fn();
   setTargetStatus = jest.fn();
+  setOverrideReason = jest.fn();
   setFromEmployeeId = jest.fn();
   setToEmployeeId = jest.fn();
+  setRemovalReason = jest.fn();
+  setCashEmployeeId = jest.fn();
+  setCashReceivedAt = jest.fn();
+  setCashAmount = jest.fn();
   cancelOrder = jest.fn();
   overrideStatus = jest.fn();
   reassignOrder = jest.fn();
   refundOrder = jest.fn();
+  cancelAsNoShow = jest.fn();
+  cancelAsLockout = jest.fn();
+  recordCashReceived = jest.fn();
 }
 
 function makeOrder(partial: Partial<OrderItem>): OrderItem {
@@ -188,7 +203,7 @@ describe('AdminOrderOpsComponent', () => {
     expect(meta.onPush).toBe(true);
   });
 
-  it('renders the four action buttons', () => {
+  it('renders the six action buttons', () => {
     setOrder(makeOrder({}));
     const buttons = fixture.debugElement
       .queryAll(By.directive(ButtonStub))
@@ -199,6 +214,8 @@ describe('AdminOrderOpsComponent', () => {
         'pages.order_management.ops.override_status.action',
         'pages.order_management.ops.reassign.action',
         'pages.order_management.ops.refund.action',
+        'pages.order_management.ops.no_show.action',
+        'pages.order_management.ops.record_cash.action',
       ])
     );
   });
@@ -214,6 +231,130 @@ describe('AdminOrderOpsComponent', () => {
       'order-1',
       expect.any(Function)
     );
+  });
+
+  it('opens the no-show panel and delegates submit with the order id and its currency', () => {
+    setOrder(makeOrder({ currency: CurrencyDetailDto.fromJS({ code: 'CZK' }) }));
+    component.togglePanel('noShow');
+    expect(facade.openPanel).toHaveBeenCalledWith('noShow');
+    fixture.detectChanges();
+
+    component.submitNoShow();
+    expect(facade.cancelAsNoShow).toHaveBeenCalledWith(
+      'order-1',
+      'CZK',
+      expect.any(Function)
+    );
+  });
+
+  describe('the lockout confirmation', () => {
+    const LOCKOUT_ACTION = 'pages.order_management.ops.lockout.action';
+    const reportedAt = new Date('2026-09-28T09:20:00Z');
+
+    function buttonLabels(): string[] {
+      return fixture.debugElement
+        .queryAll(By.directive(ButtonStub))
+        .map((b) => (b.componentInstance as ButtonStub).label());
+    }
+
+    it('is not offered on an order no cleaner reported as a lockout', () => {
+      setOrder(makeOrder({}));
+
+      expect(buttonLabels()).not.toContain(LOCKOUT_ACTION);
+    });
+
+    it.each([OrderStatus.Confirmed, OrderStatus.OnTheWay, OrderStatus.InProgress])(
+      'is offered once a lockout is reported on an order still at status %s',
+      (status) => {
+        setOrder(makeOrder({ orderStatus: Code.fromJS({ value: status }), lockoutReportedAt: reportedAt }));
+
+        expect(buttonLabels()).toContain(LOCKOUT_ACTION);
+      }
+    );
+
+    it.each([OrderStatus.Cancelled, OrderStatus.Completed])(
+      'is not offered on a reported order that is already finished (status %s)',
+      (status) => {
+        setOrder(makeOrder({ orderStatus: Code.fromJS({ value: status }), lockoutReportedAt: reportedAt }));
+
+        expect(buttonLabels()).not.toContain(LOCKOUT_ACTION);
+      }
+    );
+
+    it('opens its panel and delegates the confirmation with the order id and its currency', () => {
+      setOrder(
+        makeOrder({
+          lockoutReportedAt: reportedAt,
+          currency: CurrencyDetailDto.fromJS({ code: 'CZK' }),
+        })
+      );
+      component.togglePanel('lockout');
+      expect(facade.openPanel).toHaveBeenCalledWith('lockout');
+      fixture.detectChanges();
+
+      expect(buttonLabels()).toContain('pages.order_management.ops.lockout.submit');
+      component.submitLockout();
+      expect(facade.cancelAsLockout).toHaveBeenCalledWith('order-1', 'CZK', expect.any(Function));
+    });
+  });
+
+  it('opens the record-cash panel, offers the assigned cleaners and delegates submit', () => {
+    setOrder(makeOrder({}));
+    component.togglePanel('recordCash');
+    expect(facade.openPanel).toHaveBeenCalledWith('recordCash');
+    fixture.detectChanges();
+
+    const select = fixture.debugElement.query(By.directive(SelectStub))
+      .componentInstance as SelectStub;
+    expect(select.label()).toBe('pages.order_management.ops.record_cash.cleaner');
+    expect(select.options()).toEqual([{ label: 'Jane Cleaner', value: 'employee-1' }]);
+
+    component.submitRecordCash();
+    expect(facade.recordCashReceived).toHaveBeenCalledWith(
+      'order-1',
+      expect.any(Function)
+    );
+  });
+
+  it('shows no record-cash form when nobody is on the job', () => {
+    setOrder(makeOrder({ assignedEmployees: [] }));
+    component.togglePanel('recordCash');
+    fixture.detectChanges();
+
+    expect(fixture.debugElement.query(By.directive(SelectStub))).toBeNull();
+    expect(fixture.nativeElement.textContent).toContain(
+      'pages.order_management.ops.record_cash.no_cleaner'
+    );
+  });
+
+  it('offers a reason on the status override and hands what is typed to the facade', () => {
+    setOrder(makeOrder({}));
+    component.togglePanel('overrideStatus');
+    fixture.detectChanges();
+
+    const textarea = fixture.debugElement.query(By.directive(TextareaStub));
+    expect((textarea.componentInstance as TextareaStub).label()).toBe(
+      'pages.order_management.ops.override_status.reason'
+    );
+    textarea.triggerEventHandler('valueChanges', 'no photo, confirmed by phone');
+    expect(facade.setOverrideReason).toHaveBeenCalledWith('no photo, confirmed by phone');
+  });
+
+  it('asks for a removal reason only once a cleaner is being taken off', () => {
+    setOrder(makeOrder({}));
+    component.togglePanel('reassign');
+    fixture.detectChanges();
+    expect(fixture.debugElement.query(By.directive(TextareaStub))).toBeNull();
+
+    facade.removesCleaner.set(true);
+    fixture.detectChanges();
+
+    const textarea = fixture.debugElement.query(By.directive(TextareaStub));
+    expect((textarea.componentInstance as TextareaStub).label()).toBe(
+      'pages.order_management.ops.reassign.removal_reason'
+    );
+    textarea.triggerEventHandler('valueChanges', 'did not show up');
+    expect(facade.setRemovalReason).toHaveBeenCalledWith('did not show up');
   });
 
   it('exposes the seven order status options for the override select', () => {

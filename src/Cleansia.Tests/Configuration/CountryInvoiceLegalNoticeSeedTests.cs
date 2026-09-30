@@ -45,25 +45,37 @@ public class CountryInvoiceLegalNoticeSeedTests
     [Fact]
     public void The_Insert_Leaves_Every_Country_Unreviewed_So_The_Fallback_Is_The_Default()
     {
-        var insertColumns = Regex.Match(
+        var inserts = Regex.Matches(
             Statements(),
-            "INSERT INTO public\\.\"CountryInvoiceConfigs\" \\(([^)]*)\\)").Groups[1].Value;
+            "INSERT INTO public\\.\"CountryInvoiceConfigs\" \\(([^)]*)\\)");
 
-        Assert.DoesNotContain("LegalDisclaimerTemplate", insertColumns);
-        Assert.DoesNotContain("LegalDisclaimerLanguageCode", insertColumns);
-        Assert.Contains("LegalDisclaimerReviewStatus", insertColumns);
+        Assert.Equal(2, inserts.Count);
+        Assert.All(inserts, insert =>
+        {
+            var insertColumns = insert.Groups[1].Value;
+            Assert.DoesNotContain("LegalDisclaimerTemplate", insertColumns);
+            Assert.DoesNotContain("LegalDisclaimerLanguageCode", insertColumns);
+            Assert.Contains("LegalDisclaimerReviewStatus", insertColumns);
+        });
     }
 
     [Fact]
     public void Every_Seeded_Invoice_Config_Row_Is_Written_As_NotReviewed()
     {
         var sql = Statements();
-        var start = sql.IndexOf("INSERT INTO public.\"CountryInvoiceConfigs\"", StringComparison.Ordinal);
-        var values = sql[start..sql.IndexOf(';', start)];
+        var rows = 0;
+        var notReviewed = 0;
+        for (var start = sql.IndexOf("INSERT INTO public.\"CountryInvoiceConfigs\"", StringComparison.Ordinal);
+             start >= 0;
+             start = sql.IndexOf("INSERT INTO public.\"CountryInvoiceConfigs\"", start + 1, StringComparison.Ordinal))
+        {
+            var values = sql[start..sql.IndexOf(';', start)];
+            rows += Regex.Matches(values, @"generate_ulid\(\)::TEXT").Count;
+            notReviewed += Regex.Matches(values, @",\s*0\)[,;]?\s*(\n|$)").Count;
+        }
 
-        var rows = Regex.Matches(values, @"generate_ulid\(\)::TEXT").Count;
         Assert.Equal(10, rows);
-        Assert.Equal(rows, Regex.Matches(values, @",\s*0\)[,;]?\s*(\n|$)").Count);
+        Assert.Equal(rows, notReviewed);
     }
 
     // The reviewed notice and the fallback must never be the same string: if they were, nobody reading
@@ -88,7 +100,7 @@ public class CountryInvoiceLegalNoticeSeedTests
     private static string Statements() =>
         string.Join('\n', Seed().Split('\n').Where(line => !line.TrimStart().StartsWith("--", StringComparison.Ordinal)));
 
-    // Mirrors StartupSeedScriptSyncTests — walk up to the *.sln, then across to the canonical script.
+    // Czechia's row and its notice are production reference data; the other nine are DEV fixtures.
     private static string Seed()
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
@@ -98,6 +110,7 @@ public class CountryInvoiceLegalNoticeSeedTests
         }
 
         Assert.True(dir is not null, "Could not locate the solution directory from the test base directory.");
-        return File.ReadAllText(Path.GetFullPath(Path.Combine(dir!.FullName, "..", "sql-scripts", "insert_seed_data.sql")));
+        return string.Join('\n', new[] { "prod-bootstrap.sql", "insert_seed_data.sql" }.Select(script =>
+            File.ReadAllText(Path.GetFullPath(Path.Combine(dir!.FullName, "..", "sql-scripts", script)))));
     }
 }

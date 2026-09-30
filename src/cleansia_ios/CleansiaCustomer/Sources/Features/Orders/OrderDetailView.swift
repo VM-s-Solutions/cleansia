@@ -16,9 +16,9 @@ struct OrderDetailView: View {
     private let paymentSheet: PaymentSheetPresenting
     private let mapProvider: MapProvider
     private let onReportIssue: (String) -> Void
+    private let onReportCleanerNoShow: (String) -> Void
     private let onRebook: (String) -> Void
     private let onMakeRecurring: (String) -> Void
-    private let onReadWorkContract: (String) -> Void
     private let openReviewOnLoad: Bool
     private let onReviewPromptConsumed: () -> Void
     @State private var reviewAutoOpened = false
@@ -36,9 +36,9 @@ struct OrderDetailView: View {
         paymentSheet: PaymentSheetPresenting,
         mapProvider: MapProvider,
         onReportIssue: @escaping (String) -> Void,
+        onReportCleanerNoShow: @escaping (String) -> Void,
         onRebook: @escaping (String) -> Void,
-        onMakeRecurring: @escaping (String) -> Void,
-        onReadWorkContract: @escaping (String) -> Void
+        onMakeRecurring: @escaping (String) -> Void
     ) {
         _vm = StateObject(
             wrappedValue: OrderDetailViewModel(
@@ -57,9 +57,9 @@ struct OrderDetailView: View {
         self.paymentSheet = paymentSheet
         self.mapProvider = mapProvider
         self.onReportIssue = onReportIssue
+        self.onReportCleanerNoShow = onReportCleanerNoShow
         self.onRebook = onRebook
         self.onMakeRecurring = onMakeRecurring
-        self.onReadWorkContract = onReadWorkContract
         self.openReviewOnLoad = openReviewOnLoad
         self.onReviewPromptConsumed = onReviewPromptConsumed
     }
@@ -140,12 +140,10 @@ struct OrderDetailView: View {
                     order: order,
                     markets: vm.markets,
                     photos: vm.photos,
-                    workContractAcceptances: vm.workContractAcceptances,
                     isDownloadingReceipt: vm.receiptState.isSubmitting,
                     onLeaveReview: { showReviewSheet = true },
                     onDownloadReceipt: { Task { await vm.downloadReceipt() } },
-                    onViewPhotos: { showPhotos = true },
-                    onReadWorkContract: onReadWorkContract
+                    onViewPhotos: { showPhotos = true }
                 )
                 .task(id: order.id) { await vm.ensurePhotosLoaded() }
 
@@ -156,7 +154,7 @@ struct OrderDetailView: View {
 
     @ViewBuilder
     private func footer(_ order: CustomerOrderDetail) -> some View {
-        if OrderRecurringConfirm.needsConfirmation(order) {
+        if order.needsConfirmation {
             ConfirmRecurringFooter(
                 submitting: vm.confirmRecurringState.isSubmitting,
                 label: OrderRecurringConfirm.ctaLabel(order)
@@ -171,11 +169,13 @@ struct OrderDetailView: View {
                     authoring: vm.recurringAuthoring
                 ),
                 showCancel: vm.canCancel,
+                showCleanerDidNotArrive: vm.canReportCleanerNoShow,
                 showReportIssue: OrderStatusGroup.isReportable(order.status),
                 cancelEnabled: !vm.cancelState.isSubmitting,
                 onRebook: { onRebook(orderId) },
                 onMakeRecurring: { onMakeRecurring(orderId) },
                 onCancel: { showCancelSheet = true },
+                onCleanerDidNotArrive: { onReportCleanerNoShow(orderId) },
                 onReportIssue: { onReportIssue(orderId) }
             )
         }
@@ -195,7 +195,8 @@ struct OrderDetailView: View {
                     showCancelSheet = false
                     vm.dismissCancelError()
                 }
-            }
+            },
+            tookNoCardPayment: vm.tookNoCardPayment
         )
         .task { await vm.loadCancellationQuote() }
         .snackbarHost(snackbar, bottomInset: SnackbarController.defaultBottomInset)
@@ -258,13 +259,6 @@ private struct ReceiptFile: Identifiable {
 }
 
 enum OrderRecurringConfirm {
-    /// A recurring-generated order awaiting customer confirmation: it carries a
-    /// `recurringTemplateId` and its payment status is Pending (value 1).
-    static func needsConfirmation(_ order: CustomerOrderDetail) -> Bool {
-        guard let templateId = order.recurringTemplateId, !templateId.isBlank else { return false }
-        return order.paymentStatus?.value == 1
-    }
-
     /// "Confirm and pay" is false on a CASH booking — the server's cash arm takes no payment at all.
     /// Branch on Card (value 2) so anything unexpected falls to the label that is true of BOTH
     /// flavours rather than the one that over-promises.
@@ -351,22 +345,25 @@ struct OrderDetailFooterStyle {
 
     static let makeRecurring = Self(icon: "calendar", tint: CleansiaColors.primary)
     static let cancel = Self(icon: "xmark.circle", tint: CleansiaColors.error)
+    static let cleanerDidNotArrive = Self(icon: "person.fill.questionmark", tint: CleansiaColors.error)
     static let reportIssue = Self(icon: "exclamationmark.triangle", tint: CleansiaColors.error)
 }
 
 /// The order-detail footer (`ActionsFooter` in `OrderDetailScreen.kt`).
 /// Several actions overlap on one status, so they are stacked in Android's order
 /// rather than each owning its own footer: Book again (primary) on top, then
-/// Make recurring, then Cancel, then Report issue.
+/// Make recurring, then Cancel or — past the start — The cleaner did not arrive, then Report issue.
 private struct OrderDetailActionsFooter: View {
     let showRebook: Bool
     let showMakeRecurring: Bool
     let showCancel: Bool
+    let showCleanerDidNotArrive: Bool
     let showReportIssue: Bool
     let cancelEnabled: Bool
     let onRebook: () -> Void
     let onMakeRecurring: () -> Void
     let onCancel: () -> Void
+    let onCleanerDidNotArrive: () -> Void
     let onReportIssue: () -> Void
 
     var body: some View {
@@ -393,6 +390,14 @@ private struct OrderDetailActionsFooter: View {
                     contentColor: OrderDetailFooterStyle.cancel.tint,
                     enabled: cancelEnabled,
                     action: onCancel
+                )
+            }
+            if showCleanerDidNotArrive {
+                CleansiaOutlinedButton(
+                    L10n.OrderDetail.actionCleanerDidNotArrive,
+                    leadingIcon: OrderDetailFooterStyle.cleanerDidNotArrive.icon,
+                    contentColor: OrderDetailFooterStyle.cleanerDidNotArrive.tint,
+                    action: onCleanerDidNotArrive
                 )
             }
             if showReportIssue {

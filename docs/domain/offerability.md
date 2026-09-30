@@ -5,13 +5,15 @@ living in exactly one place: `OrderAvailability`. Every surface reads it; none r
 
 ## The rule
 
-It is a property of the **order alone** — four columns in, a bool out — and it spans both axes of the
+It is a property of the **order alone** — five columns in, a bool out — and it spans both axes of the
 [order lifecycle](/domain/order-lifecycle):
 
 ```csharp
 (CurrentStatus == New || CurrentStatus == Confirmed
-    || CurrentStatus == OnTheWay || CurrentStatus == InProgress)                 // the work is not over
-&& (PaymentStatus == Paid || (PaymentType == Cash && RecurringTemplateId == null)) // nothing can retract it
+    || CurrentStatus == OnTheWay || CurrentStatus == InProgress)      // the work is not over
+&& (PaymentStatus == Paid
+    || (PaymentType == Cash
+        && (RecurringTemplateId == null || CustomerConfirmedAt != null))) // nothing can retract it
 ```
 
 The status term asks one thing — is the work over? — and qualifies nothing about money. The money term
@@ -31,13 +33,17 @@ decides:
 | One-off, cash | **yes, from creation** | Nothing scheduled can retract it. The take *is* the confirmation, and the money changes hands at the door |
 | One-off, card, `Paid` | **yes** | The webhook's `Paid` write puts it on the board; the status stays `New` until a cleaner takes it |
 | One-off, card, `Pending` or `Failed` | no | The money has not landed. A `Pending` checkout is cancelled by `CleanupStalePendingOrders` once it is more than an hour old (the sweep runs every 15 minutes). `Failed` is only ever written together with a cancellation — by that sweep, or by the webhook when Stripe expires or cancels the payment |
-| Recurring occurrence, `Pending` (cash or card) | no | The customer has not confirmed it, and `AutoCancelStaleRecurringOrders` withdraws it an hour before the slot. A cleaner should not be standing in a doorway when that happens |
-| Recurring occurrence, `Paid` | **yes** | A cash occurrence gets its `Paid` from the customer's confirm (`ConfirmRecurringOrder`); a card one from the webhook |
+| Recurring occurrence, card, `Pending` | no | The payment has not landed, and `AutoCancelStaleRecurringOrders` withdraws an unpaid occurrence an hour before the slot. A cleaner should not be standing in a doorway when that happens |
+| Recurring occurrence, cash, not confirmed | no | The customer has not confirmed it, and the same sweep withdraws it |
+| Recurring occurrence, cash, confirmed | **yes** | The customer's confirm stamps `CustomerConfirmedAt` — its own marker, since 2026-09-28 — and the occurrence stays `Pending` until the cleaner records the cash, like any cash order. Until then the confirm wrote `Paid` before any money moved |
+| Recurring occurrence, card, `Paid` | **yes** | The webhook's `Paid`, after the customer confirmed and paid |
 
 The money term **refuses everything either retracting sweep can still reach** —
 `CleanupStalePendingOrders` (card, `Pending`, not recurring) and `AutoCancelStaleRecurringOrders`
-(recurring, `Pending`): an order is offerable only when neither sweep's filter would match it. The one
-`Pending` order it admits is a one-off cash order, which neither sweep touches. A third scheduled
+(recurring, `Pending`, and for cash not yet confirmed — `Order.AwaitsCustomerConfirmation`): an order is
+offerable only when neither sweep's filter would match it. The `Pending` orders it admits are cash
+orders neither sweep touches: a one-off cash booking, and a recurring cash occurrence the customer has
+confirmed. A third scheduled
 retractor must be refused there too, or the board offers orders that are about to disappear.
 
 The status term says the work is **not over**, not that it has **not started** (owner ruling
@@ -47,7 +53,7 @@ the dead `Pending` are out.
 
 `OfferableStatuses = { New, Confirmed, OnTheWay, InProgress }` is the status term on its own — **the
 coarse floor, not the rule**. It is there because the clients cannot evaluate the money term (they
-filter on none of the three money columns) and because it is the index-served prefilter on
+filter on none of the money columns) and because it is the index-served prefilter on
 `Orders.CurrentStatus`. A read that asks *"may a cleaner be offered this?"* and uses it without the
 money term offers orders the rule refuses; the reads that use it on purpose ask a different question —
 whether the work is still owed.

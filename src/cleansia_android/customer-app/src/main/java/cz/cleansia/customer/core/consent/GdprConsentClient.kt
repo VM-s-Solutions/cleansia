@@ -18,19 +18,22 @@ class GdprConsentClient @Inject constructor(
 ) {
 
     /**
-     * The consents currently in force — granted and not since withdrawn, the web wizard's own
-     * predicate. Null when the read failed; the caller treats that as "ask", never as "none".
+     * The consents currently in force — granted, not since withdrawn, and given to the version of
+     * the text in force now. A consent to an older version does not count, so the tick reappears
+     * until the customer accepts the new text. Null when the read failed; the caller treats that as
+     * "ask", never as "none".
      *
-     * `UserConsentDto.ConsentType` is non-nullable in C#, so a null one is a broken row and the whole
-     * answer is refused — a dropped row reads as "never granted", which re-asks for a consent the
-     * user already holds. `fromWireValue` returning null is a different fact, a `ConsentType` this
-     * app has no name for, and stays a drop.
+     * `UserConsentDto.ConsentType` and `CoversCurrentVersion` are non-nullable in C#, so a null one
+     * on a granted row is a broken row and the whole answer is refused — a dropped row reads as
+     * "never granted", which re-asks for a consent the user already holds. `fromWireValue`
+     * returning null is a different fact, a `ConsentType` this app has no name for, and stays a drop.
      */
     suspend fun grantedTypes(): Set<SignupConsentType>? =
         safeApiCall(json) { gdprApi.gdprGetMyConsents() }
             .mapWire { consents ->
                 consents
                     .filter { it.isGranted == true && it.withdrawnAt == null }
+                    .filter { it.coversCurrentVersion.required("coversCurrentVersion") }
                     .map { it.consentType.required("consentType") }
                     .mapNotNull { SignupConsentType.fromWireValue(it.value) }
                     .toSet()

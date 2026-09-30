@@ -66,7 +66,7 @@ public class GetMyMembership
         {
             var userId = userSessionProvider.GetUserId()!;
             var trialEligible = !await userMembershipRepository.HasEverStartedTrialAsync(userId, cancellationToken);
-            var membership = await userMembershipRepository.GetActiveForUserNoTrackingAsync(userId, cancellationToken);
+            var membership = await userMembershipRepository.GetLifecycleForUserNoTrackingAsync(userId, cancellationToken);
             if (membership == null)
             {
                 return BusinessResult.Success(new Response(

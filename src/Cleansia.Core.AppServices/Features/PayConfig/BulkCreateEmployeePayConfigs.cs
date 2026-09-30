@@ -10,8 +10,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.Core.AppServices.Features.PayConfig;
 
+/// <summary>
+/// Writes one cleaner's rates for the whole catalogue from a neutral rate template — a share of each
+/// entry's list price in the chosen currency. Every template leaves the company a margin (owner ruling
+/// 2026-09-28): there are no ranks and no template pays the whole price.
+/// </summary>
 public class BulkCreateEmployeePayConfigs
 {
+    /// <param name="Grade">The rate template: <c>standard</c>, <c>experienced</c> or <c>expert</c>.</param>
     public record Command(
         string EmployeeId,
         string Grade,
@@ -20,11 +26,15 @@ public class BulkCreateEmployeePayConfigs
 
     public record Response(int CreatedCount, int SkippedCount);
 
-    private static decimal GetGradeMultiplier(string grade) => grade.ToLowerInvariant() switch
+    private const string StandardTemplate = "standard";
+    private const string ExperiencedTemplate = "experienced";
+    private const string ExpertTemplate = "expert";
+
+    private static decimal GetTemplateMultiplier(string template) => template.ToLowerInvariant() switch
     {
-        "junior" => 0.5m,
-        "medior" => 0.75m,
-        "senior" => 1.0m,
+        StandardTemplate => 0.5m,
+        ExperiencedTemplate => 0.6m,
+        ExpertTemplate => 0.7m,
         _ => 0m
     };
 
@@ -47,8 +57,8 @@ public class BulkCreateEmployeePayConfigs
                 .Cascade(CascadeMode.Stop)
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required)
-                .Must(g => GetGradeMultiplier(g) > 0)
-                .WithMessage(BusinessErrorMessage.PayConfigServiceOrPackageRequired);
+                .Must(g => GetTemplateMultiplier(g) > 0)
+                .WithMessage(BusinessErrorMessage.InvalidEnumValue);
 
             RuleFor(x => x.CurrencyId)
                 .Cascade(CascadeMode.Stop)
@@ -69,7 +79,8 @@ public class BulkCreateEmployeePayConfigs
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
-            var multiplier = GetGradeMultiplier(command.Grade);
+            var multiplier = GetTemplateMultiplier(command.Grade);
+            var template = command.Grade.ToLowerInvariant();
 
             var services = await serviceRepository.GetAll().ToListAsync(cancellationToken);
             var packages = await packageRepository.GetAll().ToListAsync(cancellationToken);
@@ -146,7 +157,7 @@ public class BulkCreateEmployeePayConfigs
                     command.CurrencyId,
                     extraPerRoom,
                     extraPerBathroom: 0,
-                    description: $"Auto-generated from {command.Grade} grade template",
+                    description: $"Auto-generated from the {template} rate template",
                     employeeId: command.EmployeeId);
 
                 toCreate.Add(config);
@@ -182,7 +193,7 @@ public class BulkCreateEmployeePayConfigs
                     command.CurrencyId,
                     extraPerRoom: 0,
                     extraPerBathroom: 0,
-                    description: $"Auto-generated from {command.Grade} grade template",
+                    description: $"Auto-generated from the {template} rate template",
                     employeeId: command.EmployeeId);
 
                 toCreate.Add(config);

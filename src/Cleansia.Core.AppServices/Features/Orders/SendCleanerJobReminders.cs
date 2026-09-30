@@ -37,6 +37,11 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 /// <para>Both are NON-MUTABLE: a cleaner who can silence a reminder about their own booked work can
 /// silence the thing that stops them forgetting it. Same ruling the catalog already makes about a job
 /// appearing on their schedule. → /architecture/push-notifications#event-catalogue</para>
+///
+/// <para>The same tick tells the company's administrators when a job with a cleaner on it — a partly
+/// filled crew included — has still not started half an hour after its start
+/// (<see cref="CleanerNoShow"/>). It never cancels or refunds: only an administrator confirms a no-show
+/// (owner ruling 2026-09-28). → /product/business-rules#when-the-cleaner-cancels-or-no-shows</para>
 /// </summary>
 public class SendCleanerJobReminders
 {
@@ -44,11 +49,15 @@ public class SendCleanerJobReminders
     /// <param name="SoonLeadMinutesHigh">Upper edge of the two-hour notice window.</param>
     /// <param name="NudgeLeadMinutesLow">Lower edge of the not-set-off nudge window.</param>
     /// <param name="NudgeLeadMinutesHigh">Upper edge of the not-set-off nudge window.</param>
+    /// <param name="NotStartedAlertMinutes">How long past the start a job may go unstarted before the administrators are told.</param>
+    /// <param name="NotStartedLookbackHours">How far past the start the alert still looks, which bounds the scan.</param>
     public record Command(
         int SoonLeadMinutesLow = 110,
         int SoonLeadMinutesHigh = 130,
         int NudgeLeadMinutesLow = 25,
-        int NudgeLeadMinutesHigh = 40) : ICommand<Response>;
+        int NudgeLeadMinutesHigh = 40,
+        int NotStartedAlertMinutes = 30,
+        int NotStartedLookbackHours = 24) : ICommand<Response>;
 
     public class Validator : AbstractValidator<Command>
     {
@@ -58,14 +67,18 @@ public class SendCleanerJobReminders
             RuleFor(x => x.NudgeLeadMinutesHigh).GreaterThan(x => x.NudgeLeadMinutesLow);
             RuleFor(x => x.SoonLeadMinutesLow).GreaterThan(x => x.NudgeLeadMinutesHigh);
             RuleFor(x => x.SoonLeadMinutesHigh).GreaterThan(x => x.SoonLeadMinutesLow);
+            RuleFor(x => x.NotStartedAlertMinutes).InclusiveBetween(0, 240);
+            RuleFor(x => x.NotStartedLookbackHours).InclusiveBetween(1, 168);
         }
     }
 
-    public record Response(int SoonSent, int NudgesSent, int Considered);
+    public record Response(int SoonSent, int NudgesSent, int Considered, int NotStartedAlerts = 0);
 
     public class Handler(
         IOrderRepository orderRepository,
         INotificationProducer notificationProducer,
+        IAdminNotifier adminNotifier,
+        IUserNotificationRepository userNotificationRepository,
         ITenantProvider tenantProvider,
         IUnitOfWork unitOfWork,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
@@ -196,14 +209,51 @@ public class SendCleanerJobReminders
                 await unitOfWork.CommitAsync(cancellationToken);
             }
 
-            if (soonSent > 0 || nudgesSent > 0)
+            var notStartedAlerts = await AlertNotStartedAsync(command, now, cancellationToken);
+
+            if (soonSent > 0 || nudgesSent > 0 || notStartedAlerts > 0)
             {
                 logger.LogInformation(
-                    "SendCleanerJobReminders sent {Soon} two-hour notices and {Nudges} nudges over {Considered} assignments",
-                    soonSent, nudgesSent, considered);
+                    "SendCleanerJobReminders sent {Soon} two-hour notices and {Nudges} nudges over {Considered} assignments, and {NotStarted} not-started alerts",
+                    soonSent, nudgesSent, considered, notStartedAlerts);
             }
 
-            return BusinessResult.Success(new Response(soonSent, nudgesSent, considered));
+            return BusinessResult.Success(new Response(soonSent, nudgesSent, considered, notStartedAlerts));
+        }
+
+        private async Task<int> AlertNotStartedAsync(Command command, DateTime now, CancellationToken cancellationToken)
+        {
+            var deadline = now.AddMinutes(-command.NotStartedAlertMinutes);
+            var floor = now.AddHours(-command.NotStartedLookbackHours);
+            var notStarted = await orderRepository.GetQueryableIgnoringTenant()
+                .AsNoTracking()
+                .Where(o => (o.CurrentStatus == OrderStatus.Confirmed || o.CurrentStatus == OrderStatus.OnTheWay)
+                    && o.AssignedEmployees.Any()
+                    && o.CleaningDateTime <= deadline
+                    && o.CleaningDateTime >= floor)
+                .ToListAsync(cancellationToken);
+
+            var alerts = 0;
+            foreach (var tenantGroup in notStarted.GroupBy(o => o.TenantId ?? string.Empty))
+            {
+                tenantProvider.ClearTenantOverride();
+                if (!string.IsNullOrEmpty(tenantGroup.Key))
+                {
+                    tenantProvider.SetTenantOverride(tenantGroup.Key);
+                }
+
+                foreach (var order in tenantGroup)
+                {
+                    if (await CleanerNoShow.AlertAsync(order, adminNotifier, userNotificationRepository, cancellationToken))
+                    {
+                        alerts++;
+                    }
+                }
+
+                await unitOfWork.CommitAsync(cancellationToken);
+            }
+
+            return alerts;
         }
 
         private Task NotifyAsync(

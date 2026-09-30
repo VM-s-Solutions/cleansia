@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Legal;
 using Cleansia.Core.AppServices.Features.Legal.DTOs;
+using Cleansia.Core.Domain.Company;
 using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Legal;
@@ -27,6 +28,7 @@ public sealed class LegalDocumentSeedAndReadTests(PostgresContainerFixture fixtu
 {
     private const string Czechia = "country-cze-legal";
     private const string Slovakia = "country-svk-legal";
+    private const string SlovakSeller = "Cleansia SK s.r.o.";
 
     private static Task Anonymous(IServiceCollection services)
     {
@@ -51,6 +53,12 @@ public sealed class LegalDocumentSeedAndReadTests(PostgresContainerFixture fixtu
         context.CountryConfigurations.AddRange(
             CountryConfiguration.Create(Czechia, "CZK", "cs", 0.21m).AssignOperator(TestTenants.Default).SetAsDefaultMarket(true),
             CountryConfiguration.Create(Slovakia, "EUR", "sk", 0.20m).AssignOperator(TestTenants.Default));
+        // The terms name the seller from the market operator's company record (decision 54). It is not a VAT
+        // payer, the launch state, saved as the admin console saves one: the VAT number typed in is cleared.
+        context.CompanyInfo.Add(CompanyInfo.Create(
+                SlovakSeller, "Cleansia", "87654321", "Hlavná 1", "Bratislava", "81101", Slovakia,
+                vatNumber: "SK2020123456", phone: "+421 900 000 000", email: "info@seller.test")
+            .SetVatPayerStatus(false));
         StampUnstampedAdded(context, TestTenants.Default);
         await context.CommitAsync(CancellationToken.None);
     }
@@ -69,24 +77,32 @@ public sealed class LegalDocumentSeedAndReadTests(PostgresContainerFixture fixtu
                 Assert.False(second.Changed);
 
                 var documents = await context.LegalDocuments.Include(d => d.Texts).AsNoTracking().ToListAsync();
-                Assert.Equal(4, documents.Count);
+                Assert.Equal(11, documents.Count);
                 Assert.All(documents, d => Assert.Null(d.CountryId));
                 Assert.All(documents, d => Assert.Equal(LegalDocument.VersionFor(d.EffectiveFrom), d.Version));
                 Assert.All(documents, d => Assert.Equal(5, d.Texts.Count));
                 Assert.Equal(
-                    [LegalDocumentType.TermsOfService, LegalDocumentType.TermsOfService, LegalDocumentType.PrivacyPolicy, LegalDocumentType.WorkContract],
+                    [
+                        LegalDocumentType.TermsOfService, LegalDocumentType.TermsOfService, LegalDocumentType.TermsOfService,
+                        LegalDocumentType.PrivacyPolicy, LegalDocumentType.PrivacyPolicy,
+                        LegalDocumentType.WorkContract, LegalDocumentType.WorkContract,
+                        LegalDocumentType.CleanerFrameworkContract, LegalDocumentType.SelfBillingAgreement,
+                        LegalDocumentType.CleanerDataProcessingAgreement, LegalDocumentType.ComplaintsProcedure,
+                    ],
                     documents.Select(d => d.Type).OrderBy(t => t));
-                Assert.Equal(20, await context.LegalDocumentTexts.CountAsync());
+                // The contract for work and the cleaner's three documents are employee texts (decisions 45 and 47).
+                Assert.Equal(5, documents.Count(d => d.Audience == LegalDocumentAudience.Employee));
+                Assert.Equal(55, await context.LegalDocumentTexts.CountAsync());
             },
             transactional: false);
     }
 
     /// <summary>
-    /// The contract for work is a customer-audience text (ADR-0068 D1): published where the customer's
-    /// texts are, so the wizard's sentence can link to it before anyone signs in.
+    /// The contract for work binds the operating company and the cleaner (decision 45), so it is seeded as
+    /// an employee text and the customer's read of the legal texts does not serve it.
     /// </summary>
     [Fact]
-    public async Task The_Anonymous_Read_Serves_The_Work_Contract_With_The_Markets_Currency_And_No_Figure()
+    public async Task The_Anonymous_Read_Does_Not_Serve_The_Work_Contract()
     {
         await TestMethod(
             setup: Anonymous,
@@ -94,18 +110,10 @@ public sealed class LegalDocumentSeedAndReadTests(PostgresContainerFixture fixtu
             act: async provider => await ReadAsync(provider, LegalDocumentType.WorkContract, Czechia, "cs"),
             assert: async (context, result) =>
             {
-                Assert.True(result.IsSuccess, result.Error?.Message);
-                var dto = result.Value;
-                var seeded = await LegalSeed.PlatformWideAsync(context, LegalDocumentType.WorkContract);
-
-                Assert.Equal(LegalDocumentType.WorkContract, dto.Type);
-                Assert.Equal(seeded.Version, dto.Version);
-                Assert.Equal("cs", dto.Language);
-                Assert.Equal("Smlouva o dílo", dto.Title);
-                Assert.Contains(" CZK", dto.ContentHtml);
-                Assert.DoesNotContain("{{", dto.ContentHtml);
-                Assert.Contains("<blockquote>", dto.ContentHtml);
-                Assert.DoesNotContain(seeded.TextFor("cs")!.ContentMarkdown, c => char.IsDigit(c));
+                Assert.False(result.IsSuccess);
+                Assert.Equal(BusinessErrorMessage.LegalDocumentNotFound, result.Error!.Message);
+                var seeded = await LegalSeed.PlatformWideAsync(context, LegalDocumentType.WorkContract, LegalDocumentAudience.Employee);
+                Assert.Equal(LegalDocumentAudience.Employee, seeded.Audience);
             },
             transactional: false);
     }
@@ -129,6 +137,8 @@ public sealed class LegalDocumentSeedAndReadTests(PostgresContainerFixture fixtu
                 Assert.Equal(seeded.TextFor("sk")!.Title, dto.Title);
                 Assert.Equal(seeded.TextFor("sk")!.ContentHash, dto.ContentHash);
                 Assert.Contains(" EUR ", dto.ContentHtml);
+                Assert.Contains(SlovakSeller, dto.ContentHtml);
+                Assert.Contains("87654321", dto.ContentHtml);
                 Assert.DoesNotContain("{{", dto.ContentHtml);
                 Assert.Contains("<h2>", dto.ContentHtml);
                 Assert.Contains("<blockquote>", dto.ContentHtml);
@@ -205,5 +215,55 @@ public sealed class LegalDocumentSeedAndReadTests(PostgresContainerFixture fixtu
                 Assert.Equal(BusinessErrorMessage.LegalDocumentNotFound, Assert.Single(refusal.Errors).Message);
             },
             transactional: false);
+    }
+
+    [Fact]
+    public async Task The_Admin_Catalogue_Marks_Only_The_Newest_Past_Version_Of_A_Group_In_Force()
+    {
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var older = MarketTerms(today.AddYears(-2));
+        var newer = MarketTerms(today.AddYears(-1));
+        var future = MarketTerms(today.AddDays(30));
+
+        await TestMethod(
+            arrange: async context =>
+            {
+                await SeedMarketsAndTextsAsync(context);
+                context.LegalDocuments.AddRange(older, newer, future);
+                await context.CommitAsync(CancellationToken.None);
+            },
+            act: async provider =>
+            {
+                var mediator = provider.GetRequiredService<IMediator>();
+                var versions = await mediator.Send(new AdminGetLegalVersions.Query(
+                    LegalDocumentAudience.Customer, LegalDocumentType.TermsOfService, Czechia));
+                var single = new Dictionary<string, bool>();
+                foreach (var document in new[] { older, newer, future })
+                {
+                    single[document.Id] = (await mediator.Send(new AdminGetLegalDocument.Query(document.Id, "en"))).Value.IsInForce;
+                }
+                return (versions.Value, single);
+            },
+            assert: (_, tuple) =>
+            {
+                var (versions, single) = tuple;
+                var inForce = versions.ToDictionary(v => v.Id, v => v.IsInForce);
+
+                Assert.Equal(3, inForce.Count);
+                Assert.True(inForce[newer.Id]);
+                Assert.False(inForce[older.Id]);
+                Assert.False(inForce[future.Id]);
+                Assert.Equal(inForce, single);
+                return Task.CompletedTask;
+            },
+            transactional: false);
+    }
+
+    private static LegalDocument MarketTerms(DateOnly effectiveFrom)
+    {
+        var document = LegalDocument.Create(
+            LegalDocumentAudience.Customer, LegalDocumentType.TermsOfService, Czechia, effectiveFrom);
+        document.AddText("en", "Terms of Service", "Terms effective " + LegalDocument.VersionFor(effectiveFrom));
+        return document;
     }
 }

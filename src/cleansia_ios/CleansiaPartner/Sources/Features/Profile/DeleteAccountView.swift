@@ -83,7 +83,6 @@ struct DeleteAccountView: View {
             VStack(alignment: .leading, spacing: Spacing.xs) {
                 keptItem("doc.text", L10n.DeleteAccount.keptInvoices)
                 keptItem("banknote", L10n.DeleteAccount.keptPay)
-                keptItem("signature", L10n.DeleteAccount.keptAgreement)
             }
             .padding(Spacing.m)
             .frame(maxWidth: .infinity, alignment: .leading)

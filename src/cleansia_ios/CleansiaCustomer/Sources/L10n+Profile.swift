@@ -402,8 +402,28 @@ extension L10n {
             localized("delete_account_item_devices")
         }
 
-        static var itemConsents: String {
-            localized("delete_account_item_consents")
+        static var whatIsKept: String {
+            localized("delete_account_what_is_kept")
+        }
+
+        static var keptBookings: String {
+            localized("delete_account_kept_bookings")
+        }
+
+        static var keptReceipts: String {
+            localized("delete_account_kept_receipts")
+        }
+
+        static var keptConsents: String {
+            localized("delete_account_kept_consents")
+        }
+
+        static var keptAudit: String {
+            localized("delete_account_kept_audit")
+        }
+
+        static var keptDisputes: String {
+            localized("delete_account_kept_disputes")
         }
 
         static var appleRevokeNote: String {

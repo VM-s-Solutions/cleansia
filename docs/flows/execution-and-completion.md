@@ -21,11 +21,11 @@ sequenceDiagram
   C->>API: photos, notes
   opt cash taken at the door
     C->>API: cash collected
-    API->>O: Paid (an issued receipt is restated as paid)
+    API->>O: Paid, amount due stamped (no receipt yet)
   end
   C->>API: complete
   API->>O: Completed
-  O-->>N: push (+ receipt if none was issued yet)
+  O-->>N: push (+ receipt — for cash, the first one)
 ```
 
 ## Only the assigned cleaner may move the job
@@ -78,6 +78,37 @@ marking yourself on the way switches off whichever has not already been sent —
 since nobody is on the way two hours early. The nudge is additionally suppressed for a cleaner already
 out on another job, because asking someone mid-clean whether they have set off is noise.
 
+**The same sweep watches for a job that never starts** (owner ruling 2026-09-28). An order `Confirmed` or
+`OnTheWay` with at least one cleaner on it — a partly filled crew included — whose start passed more than
+**30 minutes** ago (looking back 24 h) raises `admin.order.cleaner_not_started` for its company, once per
+order, under that company's override and commit. It never cancels or refunds: a missing tap is not
+proof of absence, so an administrator confirms the no-show.
+→ [Business rules — when the cleaner no-shows](/product/business-rules#when-the-cleaner-cancels-or-no-shows)
+
+## Photos have windows, and a finished job keeps them {#photo-windows}
+
+**Owner rulings 2026-09-28.** The server decides when a job photo may be taken and removed
+(`OrderPhoto.MayBeAddedAt`, `MayBeDeletedAt`): a *before* photo from the moment a cleaner holds the job
+until it is finished (`Confirmed`, `OnTheWay`, `InProgress`), an *after* photo only while the work is
+under way (`InProgress`). `SaveOrderPhotos` and `UploadOrderPhoto` refuse outside the window
+(`order.photo.window_closed`); `DeleteOrderPhoto` refuses once the order is `Completed` or `Cancelled`
+(`order.photo.locked`), so a cleaner can no longer delete the only *after* photo of a finished job. A
+photo link lives 15 minutes. Android and iOS take job photos with the camera only; the partner web asks
+for the rear camera and follows the same windows.
+
+## The customer's details end with the job {#crew-access}
+
+**Owner ruling 2026-09-28.** An assigned cleaner reads the customer's name, phone, address and door
+instructions while the job is live and for **24 hours after completion** — for the forgotten key or the
+call back — and **not at all once the order is cancelled** (`Order.CustomerDetailsOpenToCrew`; a
+completed order with no completion time counts as closed). After that the crew's view of a past job is
+the browsing cleaner's redaction plus what is theirs: `GetOrderDetails` answers the past-job shape
+(`OrderPiiRedaction.RedactForPastJob` — order number, date, services, their pay, completion notes, their
+own notes and contract acceptance), the order list shows past jobs in the browsing shape, `GetOrderPhotos`
+returns only the photos the caller took, and `DownloadOrderReceipt` answers `order.not_found` to the crew,
+because the receipt names the customer. The partner apps say the customer's details were removed.
+Administrators and the customer are unaffected.
+
 ## What a cleaner who has *not* taken the job can see
 
 A cleaner browsing the board gets **the job, not the household**. The redaction strips the customer's
@@ -101,14 +132,17 @@ token that reaches only their mailbox.
 | Case | What happens |
 |---|---|
 | Non-assigned cleaner tries to start/complete | Refused — the gate is assignment, not role. |
-| Cleaner records the cash (`MarkCashCollected`) | Only while `InProgress`, and only by an approved cleaner on the crew. The order becomes `Paid`. If it already has its receipt (a cash booking gets one at booking), that receipt is restated as paid under the same number. → [The restate](/flows/payment-and-fiscal#cash-receipt-restated) |
+| Cleaner records the cash (`MarkCashCollected`) | Only while `InProgress`, and only by an approved cleaner on the crew. The order becomes `Paid` and the server stamps the amount due (`CashCollectedAmount` = total − applied credit). No receipt yet: the cash receipt is issued at completion. → [What the receipt says](/flows/payment-and-fiscal#what-the-receipt-says) |
+| The cleaner could not record the cash | An administrator records it — which assigned cleaner, when, how much (`AdminRecordCashReceived`); on an order already completed the receipt is issued then. → [Business rules — cash handover](/product/business-rules#cash-handover) |
+| A photo outside its window, or deleted after the job | Refused — `order.photo.window_closed`, `order.photo.locked`. |
 | Admin-placed cleaner taps Start or Complete before accepting the contract | Refused with `contract.acceptance_required`; the app opens the contract, they accept, and the act goes through. A second crew member who neither starts nor completes is never prompted — the stated residual. |
 | Photos requested by a non-assignee | Refused by the strict access gate. Browsing detail is redacted; **photographs of a customer's home are not browsable at all**. |
 | Status moved out of order | Refused by the transition guard. |
 | Cleaner opens tomorrow's job and taps Start | Refused with `order.too_early_to_start` until the job is within an hour. |
 | Cleaner is early at the door — 09:50 for a 10:00 job | Allowed. The window is a grace, not an exact time; cleaners arrive early and the platform must not argue with that. |
 | Cleaner starts three hours late | Allowed and recorded. Late is a real thing that happened. |
-| Admin needs to force a status | A separate admin-only override, which is audited; strictly forward, refuses `Confirmed` on an order with nobody assigned (reassign instead), and dates an override to `Completed` so the order is revenue of a month. |
+| Admin needs to force a status | A separate admin-only override, which is audited; strictly forward, refuses `Confirmed` on an order with nobody assigned (reassign instead), and dates an override to `Completed` so the order is revenue of a month. `Completed` on an order with no *after* photo needs a written reason (`order.status.force_complete_reason_required`), kept on the audit row; a sale already settled in cash gets its receipt there. |
+| A job is still not started 30 minutes after its start | The company's administrators are told once (`admin.order.cleaner_not_started`); nothing is cancelled until one of them confirms the no-show. |
 | The last cleaner drops a job | The seat goes back on the board; a `Confirmed` order returns to `New`, one already on the way or in progress keeps its status; the company's administrators are told either way; the customer is not. → [When the last cleaner leaves](/product/business-rules#crew-lost) |
 | Live Activity token stale | The push is dropped; the activity ends on its own. |
 
@@ -127,8 +161,8 @@ to query immutability, not a change to who can see the instructions.
 
 The cleaner trail now has four labels: `employee.order.cover_requested`, `employee.order.dropped`,
 `employee.order.contract_accepted` and `employee.order.access_instructions_read`. Its rows expire
-under the company's cleaner-audit window, default three years. Time-boxing the cleaner's access
-after completion remains an owner decision; recording a read does not introduce that restriction.
+under the company's cleaner-audit window, default three years. The instructions themselves stop being
+served 24 hours after completion, and at once on cancellation → [above](#crew-access).
 
 > **An admin does not get it with the order.** It is withheld from an administrator read and comes only
 > from a reveal — `POST /AdminOrder/{orderId}/access-instructions/reveal` — which is a **command**

@@ -1,20 +1,21 @@
 import { TestBed } from '@angular/core/testing';
 import { FormControl } from '@angular/forms';
 import {
+  CashHeldDto,
   EmployeeItem,
   PagedDataOfPayPeriodDto,
   PartnerClient,
   PeriodPaySummaryDto,
 } from '@cleansia/partner-services';
 import { TranslateService } from '@ngx-translate/core';
-import { EMPTY, of, throwError } from 'rxjs';
+import { EMPTY, of, Subject, throwError } from 'rxjs';
 import { PeriodPayFacade } from './period-pay.facade';
 
 describe('PeriodPayFacade', () => {
   let facade: PeriodPayFacade;
   let employeeClient: { getCurrentEmployee: jest.Mock };
   let payPeriodClient: { getPagedPayPeriods: jest.Mock };
-  let employeePayrollClient: { getPeriodPays: jest.Mock; getPagedInvoices: jest.Mock };
+  let employeePayrollClient: { getPeriodPays: jest.Mock; getPagedInvoices: jest.Mock; getCashHeld: jest.Mock };
 
   const employee = EmployeeItem.fromJS({ id: 'emp-1' });
 
@@ -50,6 +51,7 @@ describe('PeriodPayFacade', () => {
     employeePayrollClient = {
       getPeriodPays: jest.fn(() => of(summary)),
       getPagedInvoices: jest.fn(),
+      getCashHeld: jest.fn(() => of([])),
     };
 
     TestBed.configureTestingModule({
@@ -298,6 +300,70 @@ describe('PeriodPayFacade', () => {
 
       expect(facade.hasError()).toBe(false);
       expect(employeePayrollClient.getPeriodPays).toHaveBeenLastCalledWith('emp-1', 'period-2', 'cur-eur');
+    });
+  });
+
+  // Owner ruling 2026-09-28, decision 23: the cleaner reads the company cash they hold beside their pay.
+  describe('cash I hold', () => {
+    const held = [
+      CashHeldDto.fromJS({ currencyId: 'cur-czk', currencyCode: 'CZK', amount: 1200, floatCap: 1000, cashJobsHidden: true }),
+    ];
+
+    it('reads the cash the session cleaner holds', () => {
+      employeePayrollClient.getCashHeld.mockReturnValue(of(held));
+
+      facade.init();
+
+      expect(employeePayrollClient.getCashHeld).toHaveBeenCalledTimes(1);
+      expect(facade.cashHeld()).toEqual(held);
+      expect(facade.cashHeldLoading()).toBe(false);
+      expect(facade.cashHeldError()).toBe(false);
+    });
+
+    it('is empty for a cleaner who holds none', () => {
+      facade.init();
+
+      expect(facade.cashHeld()).toEqual([]);
+      expect(facade.cashHeldError()).toBe(false);
+    });
+
+    it('is loading while the read is in flight', () => {
+      employeePayrollClient.getCashHeld.mockReturnValue(new Subject());
+
+      facade.init();
+
+      expect(facade.cashHeldLoading()).toBe(true);
+    });
+
+    it('raises its own error and leaves the pay untouched when the read fails', () => {
+      employeePayrollClient.getCashHeld.mockReturnValue(throwError(() => new Error('boom')));
+
+      facade.init();
+
+      expect(facade.cashHeldError()).toBe(true);
+      expect(facade.cashHeldLoading()).toBe(false);
+      expect(facade.hasError()).toBe(false);
+      expect(facade.summary()?.grandTotal).toBe(3500);
+    });
+
+    it('is read even when the pay periods cannot be', () => {
+      employeeClient.getCurrentEmployee.mockReturnValue(throwError(() => new Error('boom')));
+      employeePayrollClient.getCashHeld.mockReturnValue(of(held));
+
+      facade.init();
+
+      expect(facade.cashHeld()).toEqual(held);
+    });
+
+    it('reads again on a retry of the cash and clears the error', () => {
+      employeePayrollClient.getCashHeld.mockReturnValueOnce(throwError(() => new Error('boom')));
+      facade.init();
+      employeePayrollClient.getCashHeld.mockReturnValue(of(held));
+
+      facade.loadCashHeld();
+
+      expect(facade.cashHeldError()).toBe(false);
+      expect(facade.cashHeld()).toEqual(held);
     });
   });
 });

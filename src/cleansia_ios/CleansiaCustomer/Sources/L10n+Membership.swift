@@ -86,16 +86,16 @@ extension L10n {
             localized("membership_perk_discount_title")
         }
 
-        static var perkDiscountDesc: String {
-            localized("membership_perk_discount_desc")
+        static func perkDiscountDesc(_ percent: Int) -> String {
+            format("membership_perk_discount_desc", percent)
         }
 
         static var perkCancellationTitle: String {
             localized("membership_perk_cancellation_title")
         }
 
-        static var perkCancellationDesc: String {
-            localized("membership_perk_cancellation_desc")
+        static func perkCancellationDesc(_ hours: Int) -> String {
+            format("membership_perk_cancellation_desc", hours)
         }
 
         static var perkFavoriteCleanerTitle: String {
@@ -118,8 +118,8 @@ extension L10n {
             localized("membership_perk_express_title")
         }
 
-        static var perkExpressDesc: String {
-            localized("membership_perk_express_desc")
+        static func perkExpressDesc(_ perMonth: Int) -> String {
+            format("membership_perk_express_desc", perMonth)
         }
 
         static var perkGraceTitle: String {
@@ -200,6 +200,26 @@ extension L10n {
 
         static var statusEndingBadge: String {
             localized("membership_status_ending_badge")
+        }
+
+        static var statusPastDueBadge: String {
+            localized("membership_status_past_due_badge")
+        }
+
+        static var pastDueBody: String {
+            localized("membership_past_due_body")
+        }
+
+        static var pastDueCancelHint: String {
+            localized("membership_past_due_cancel_hint")
+        }
+
+        static var cancelDialogMessagePastDue: String {
+            localized("membership_cancel_dialog_message_past_due")
+        }
+
+        static var cancelSuccessPastDue: String {
+            localized("membership_cancel_success_past_due")
         }
 
         static func renewsOn(_ date: String) -> String {

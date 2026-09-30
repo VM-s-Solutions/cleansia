@@ -2,6 +2,7 @@
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Features.Legal;
 using Cleansia.Core.AppServices.Features.PayConfig;
 using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.Domain.Enums;
@@ -27,7 +28,9 @@ public class ApproveEmployee
             IEmployeeDocumentRequirementRepository documentRequirementRepository,
             ICurrencyResolutionService currencyResolutionService,
             IOperatorTenantResolver operatorTenantResolver,
-            ITenantProvider tenantProvider)
+            ITenantProvider tenantProvider,
+            ILegalDocumentResolver legalDocumentResolver,
+            IUserConsentRepository userConsentRepository)
         {
             RuleFor(x => x.EmployeeId)
                 .Cascade(CascadeMode.Stop)
@@ -134,6 +137,22 @@ public class ApproveEmployee
                     (await operatorTenantResolver.ResolveAsync(workCountryId, cancellationToken)).OperatorTenantId
                     == tenantProvider.GetCurrentTenantId())
                     .WithMessage(BusinessErrorMessage.EmployeeWorkCountryOperatorMismatch);
+
+            // The documents in force for the market the cleaner is approved for; none in force gates nothing.
+            RuleFor(x => x.EmployeeId)
+                .MustAsync(async (command, _, cancellationToken) =>
+                {
+                    var employee = await employeeRepository.GetByIdAsync(command.EmployeeId, cancellationToken);
+
+                    return employee is null || await CleanerLegalDocuments.AllAcceptedAsync(
+                        legalDocumentResolver,
+                        userConsentRepository,
+                        employee.UserId,
+                        string.IsNullOrEmpty(command.WorkCountryId) ? null : command.WorkCountryId,
+                        cancellationToken);
+                })
+                .WithMessage(BusinessErrorMessage.EmployeeLegalDocumentsNotAccepted)
+                .When(x => !string.IsNullOrEmpty(x.EmployeeId));
 
             When(x => !string.IsNullOrEmpty(x.Notes), () =>
             {

@@ -31,7 +31,13 @@ public class ChangeOwnPassword
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required);
 
-            RuleFor(x => x.NewPassword).ValidatePassword();
+            // Only the admin host dispatches this, and it serves administrators alone.
+            RuleFor(x => x.NewPassword)
+                .ValidatePassword()
+                .MinimumLength(ValidationExtensions.AdminPasswordMinLength)
+                .WithMessage(BusinessErrorMessage.AdminPasswordTooShort)
+                .NotEqual(x => x.CurrentPassword)
+                .WithMessage(BusinessErrorMessage.SameResetPassword);
         }
     }
 

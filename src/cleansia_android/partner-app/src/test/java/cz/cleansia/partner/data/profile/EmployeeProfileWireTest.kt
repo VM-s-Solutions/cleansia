@@ -298,7 +298,7 @@ class EmployeeProfileWireTest {
             "profilePhoto",
             "profile",
             "authenticationType",
-            "jobRadiusKm",
+            "jobRadiusKm", "weeklyOrderLimit", "weeklyOrderLimitReason",
         )
 
         val REGISTRATION_SPEC_PROPERTIES = setOf(

@@ -4,9 +4,8 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
+using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
-using Cleansia.Core.Queue.Abstractions;
-using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -18,8 +17,10 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 /// <summary>
 /// The assigned cleaner records that they collected the cash owed for an order that is not yet settled.
 /// This flips the order to <see cref="PaymentStatus.Paid"/> (the same terminal payment state a
-/// Stripe-charged card order reaches) and stamps who/when. It is the gate that lets an unsettled order
-/// pass the CompleteOrder payment check.
+/// Stripe-charged card order reaches) and stamps who, when and the amount due, which the cleaner
+/// confirms rather than types (owner ruling 2026-09-28); the amount then counts as cash the cleaner holds
+/// for the company. It is the gate that lets an unsettled order pass the CompleteOrder payment check, where
+/// the cash receipt is then issued.
 /// <para>
 /// It accepts a CARD booking too — a card order whose Stripe webhook never arrived is otherwise
 /// impossible to complete in the field. For those, the handler reconciles against live Stripe first so
@@ -133,7 +134,7 @@ public class MarkCashCollected
         IOrderRepository orderRepository,
         IOrderAccessService orderAccessService,
         IStripeClient stripeClient,
-        IPendingDispatch pending,
+        ICashLedgerRepository cashLedgerRepository,
         ILogger<Handler> logger)
         : ICommandHandler<Command, Response>
     {
@@ -141,7 +142,6 @@ public class MarkCashCollected
         {
             var order = await orderRepository
                 .GetQueryable()
-                .Include(o => o.Receipt)
                 .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);
 
             if (order is null)
@@ -202,19 +202,7 @@ public class MarkCashCollected
             // The validator guarantees an Approved, assigned caller, so the employee id is present.
             var employeeId = await orderAccessService.GetCallerEmployeeIdAsync(cancellationToken);
             order.MarkCashCollected(employeeId!);
-
-            // A cash sale's receipt was issued at booking, before any money moved, so it says the sale is
-            // awaiting payment. Staged as intent, so only a committed collection restates it.
-            if (order.Receipt is not null)
-            {
-                pending.Enqueue(
-                    QueueNames.GenerateReceipt,
-                    new QueueEnvelope<GenerateReceiptMessage>(
-                        MessageKeys.ReceiptReissue(order.Id),
-                        order.TenantId,
-                        new GenerateReceiptMessage(order.Id, LanguageCode: string.Empty, Reissue: true)),
-                    MessageKeys.ReceiptReissue(order.Id));
-            }
+            cashLedgerRepository.Add(CashLedgerEntry.ForCollection(order));
 
             return BusinessResult.Success(new Response(order.Id, order.PaymentStatus));
         }

@@ -24,6 +24,28 @@
   [outlined]="facade.activePanel() !== 'refund'"
   (onClick)="togglePanel('refund')"
 />
+<cleansia-button
+  [label]="'pages.order_management.ops.no_show.action' | translate"
+  icon="pi pi-user-minus"
+  severity="danger"
+  [outlined]="facade.activePanel() !== 'noShow'"
+  (onClick)="togglePanel('noShow')"
+/>
+<cleansia-button
+  [label]="'pages.order_management.ops.record_cash.action' | translate"
+  icon="pi pi-wallet"
+  [outlined]="facade.activePanel() !== 'recordCash'"
+  (onClick)="togglePanel('recordCash')"
+/>
+@if (canConfirmLockout()) {
+<cleansia-button
+  [label]="'pages.order_management.ops.lockout.action' | translate"
+  icon="pi pi-lock"
+  severity="danger"
+  [outlined]="facade.activePanel() !== 'lockout'"
+  (onClick)="togglePanel('lockout')"
+/>
+}
 
 @if (facade.activePanel() === 'cancel') {
 <div class="detail-actions__panel">
@@ -61,6 +83,12 @@
     (valueChanges)="onTargetStatusChange($event)"
     [showClear]="false"
   />
+  <cleansia-textarea
+    [label]="'pages.order_management.ops.override_status.reason' | translate"
+    [placeholder]="'pages.order_management.ops.override_status.reason_hint' | translate"
+    [ngModel]="facade.overrideReason()"
+    (valueChanges)="onOverrideReasonChange($event)"
+  />
   @if (facade.errorKey()) {
   <p class="detail-actions__error">{{ facade.errorKey()! | translate }}</p>
   }
@@ -97,6 +125,14 @@
     (valueChanges)="onFromEmployeeChange($event)"
     [showClear]="true"
   />
+  @if (facade.removesCleaner()) {
+  <cleansia-textarea
+    [label]="'pages.order_management.ops.reassign.removal_reason' | translate"
+    [placeholder]="'pages.order_management.ops.reassign.removal_reason_hint' | translate"
+    [ngModel]="facade.removalReason()"
+    (valueChanges)="onRemovalReasonChange($event)"
+  />
+  }
   }
   <cleansia-text-input
     [label]="'pages.order_management.ops.reassign.to' | translate"
@@ -132,5 +168,99 @@
     [loading]="facade.submitting()"
     (onClick)="submitRefund()"
   />
+</div>
+}
+
+@if (facade.activePanel() === 'noShow') {
+<div class="detail-actions__panel">
+  <p class="detail-actions__hint">
+    {{ 'pages.order_management.ops.no_show.context' | translate }}
+  </p>
+  <p class="detail-actions__hint">
+    {{ 'pages.order_management.ops.no_show.confirm' | translate }}
+  </p>
+  @if (facade.errorKey()) {
+  <p class="detail-actions__error">{{ facade.errorKey()! | translate }}</p>
+  }
+  <cleansia-button
+    [label]="'pages.order_management.ops.no_show.submit' | translate"
+    icon="pi pi-user-minus"
+    severity="danger"
+    [loading]="facade.submitting()"
+    (onClick)="submitNoShow()"
+  />
+</div>
+}
+
+@if (facade.activePanel() === 'lockout' && canConfirmLockout()) {
+<div class="detail-actions__panel">
+  <p class="detail-actions__hint">
+    {{ 'pages.order_management.ops.lockout.context' | translate }}
+  </p>
+  <p class="detail-actions__hint">
+    {{ 'pages.order_management.ops.lockout.confirm' | translate }}
+  </p>
+  @if (facade.errorKey()) {
+  <p class="detail-actions__error">{{ facade.errorKey()! | translate }}</p>
+  }
+  <cleansia-button
+    [label]="'pages.order_management.ops.lockout.submit' | translate"
+    icon="pi pi-lock"
+    severity="danger"
+    [loading]="facade.submitting()"
+    (onClick)="submitLockout()"
+  />
+</div>
+}
+
+@if (facade.activePanel() === 'recordCash') {
+<div class="detail-actions__panel">
+  <p class="detail-actions__hint">
+    {{ 'pages.order_management.ops.record_cash.context' | translate }}
+  </p>
+  @if (!hasAssignedEmployees()) {
+  <p class="detail-actions__hint">
+    {{ 'pages.order_management.ops.record_cash.no_cleaner' | translate }}
+  </p>
+  } @else {
+  <cleansia-select
+    [label]="'pages.order_management.ops.record_cash.cleaner' | translate"
+    [options]="fromEmployeeOptions()"
+    [ngModel]="facade.cashEmployeeId()"
+    (valueChanges)="onCashEmployeeChange($event)"
+    [showClear]="false"
+  />
+  <p-floatlabel variant="on">
+    <p-datepicker
+      inputId="admin-order-ops-cash-received-at"
+      [ngModel]="facade.cashReceivedAt()"
+      (ngModelChange)="onCashReceivedAtChange($event)"
+      [showTime]="true"
+      [showIcon]="true"
+      iconDisplay="input"
+      dateFormat="dd.mm.yy"
+      appendTo="body"
+    />
+    <label for="admin-order-ops-cash-received-at">
+      {{ 'pages.order_management.ops.record_cash.received_at' | translate }}
+    </label>
+  </p-floatlabel>
+  <cleansia-text-input
+    dataType="number"
+    [label]="'pages.order_management.ops.record_cash.amount' | translate"
+    [ngModel]="facade.cashAmount()"
+    (valueChanges)="onCashAmountChange($event)"
+  />
+  @if (facade.errorKey()) {
+  <p class="detail-actions__error">{{ facade.errorKey()! | translate }}</p>
+  }
+  <cleansia-button
+    [label]="'pages.order_management.ops.record_cash.submit' | translate"
+    icon="pi pi-wallet"
+    [loading]="facade.submitting()"
+    [disabled]="!facade.canSubmitRecordCash()"
+    (onClick)="submitRecordCash()"
+  />
+  }
 </div>
 }

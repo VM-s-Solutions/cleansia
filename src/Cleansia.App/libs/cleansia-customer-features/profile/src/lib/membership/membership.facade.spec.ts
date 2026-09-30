@@ -3,6 +3,7 @@ import {
   CustomerClient,
   GetMembershipPlansResponse,
   GetMyMembershipResponse,
+  MembershipStatus,
   SwapMembershipPlanCommand,
 } from '@cleansia/customer-services';
 import { selectMarketCountryId } from '@cleansia/customer-stores';
@@ -17,9 +18,11 @@ function buildMembership(fields: {
   expressUpgradesRemaining?: number;
   trialEndsAtUtc?: Date;
   currencyCode?: string;
+  status?: MembershipStatus;
 }): GetMyMembershipResponse {
   const response = new GetMyMembershipResponse();
   response.hasMembership = fields.hasMembership ?? true;
+  response.status = fields.status ?? MembershipStatus.Active;
   response.expressUpgradesPerMonth = fields.expressUpgradesPerMonth;
   response.expressUpgradesRemaining = fields.expressUpgradesRemaining;
   response.trialEndsAtUtc = fields.trialEndsAtUtc;
@@ -218,6 +221,56 @@ describe('MembershipFacade — express waiver state', () => {
           'pages.membership.cancel_success',
         );
       });
+    });
+  });
+
+  // A failed renewal keeps the enrolment, so no second subscription starts, but every benefit is
+  // off and the server cancels it now rather than at the period end.
+  describe('a renewal payment that failed', () => {
+    const pastDue = () => buildMembership({ status: MembershipStatus.PastDue });
+
+    it('is what the page shows for a past-due membership', () => {
+      membershipClient.getMine.mockReturnValue(of(pastDue()));
+
+      facade.refresh();
+
+      expect(facade.paymentFailed()).toBe(true);
+    });
+
+    it('is not shown for an active membership, nor before one is loaded', () => {
+      expect(facade.paymentFailed()).toBe(false);
+
+      membershipClient.getMine.mockReturnValue(of(buildMembership({})));
+      facade.refresh();
+
+      expect(facade.paymentFailed()).toBe(false);
+    });
+
+    it('tells the member the cancel ends it now with nothing more charged, then toasts the same', () => {
+      membershipClient.getMine.mockReturnValue(of(pastDue()));
+      facade.refresh();
+
+      facade.cancel();
+
+      expect(membershipClient.cancel).toHaveBeenCalledTimes(1);
+      expect(facade.cancelDialogMessageKey()).toBe(
+        'pages.membership.cancel_dialog_message_past_due',
+      );
+      expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
+        'pages.membership.cancel_success_past_due',
+      );
+    });
+
+    it('voices a refused cancel and stops the spinner', () => {
+      membershipClient.getMine.mockReturnValue(of(pastDue()));
+      membershipClient.cancel.mockReturnValue(throwError(() => new Error('boom')));
+      facade.refresh();
+
+      facade.cancel();
+
+      expect(facade.cancelling()).toBe(false);
+      expect(snackbar.showApiError).toHaveBeenCalledTimes(1);
+      expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
     });
   });
 

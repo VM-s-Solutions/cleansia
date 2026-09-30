@@ -1,9 +1,11 @@
+using Cleansia.Core.Domain.Enums;
+
 namespace Cleansia.Core.AppServices.Services.Interfaces;
 
 /// <summary>
 /// Pricing snapshot. <see cref="TotalPrice"/> is the RAW subtotal <b>before any user-level discount</b>
-/// — but the express surcharge IS already folded in, because the surcharge is a property of the slot
-/// rather than the user. Discount-aware totals are computed downstream.
+/// — but the dirtiness and express surcharges ARE already folded in, because they are properties of the
+/// home and the slot rather than the user. Discount-aware totals are computed downstream.
 /// → /product/business-rules#price-stages
 /// </summary>
 /// <param name="ExpressSurchargeWaivedByMembership">
@@ -56,7 +58,8 @@ public record OrderPricingResult(
     bool ExpressSurchargeWaivedByMembership = false,
     int? ExpressUpgradesRemaining = null,
     IReadOnlyList<OrderPricingLine>? Lines = null,
-    int EstimatedDurationMinutes = 0);
+    int EstimatedDurationMinutes = 0,
+    decimal DirtinessSurchargeAmount = 0m);
 
 public interface IOrderPricingCalculator
 {
@@ -78,6 +81,7 @@ public interface IOrderPricingCalculator
         IEnumerable<string> selectedExtraSlugs,
         int rooms,
         int bathrooms,
+        DirtinessLevel dirtinessLevel,
         string? currencyId,
         DateTime? cleaningDateUtc,
         string? userId,

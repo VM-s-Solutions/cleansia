@@ -1,4 +1,5 @@
 using System.Globalization;
+using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.AdminNotifications;
 using Cleansia.Core.AppServices.Features.Payments;
@@ -16,6 +17,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Stripe;
 using Dispute = Cleansia.Core.Domain.Disputes.Dispute;
+using Cleansia.Core.AppServices.Features.Orders;
 
 namespace Cleansia.Tests.Features.Payments;
 
@@ -74,10 +76,15 @@ public sealed class HandlePaymentNotificationTellsAdministratorsTests
         new Mock<IStripeSubscriptionWebhookHandler>().Object,
         new Mock<ITenantProvider>().Object,
         new Mock<IPendingDispatch>().Object,
+        new GuestOrderAccessTokenIssuer(Mock.Of<IGuestOrderAccessTokenRepository>()),
         new Mock<INotificationProducer>().Object,
         NoPreferredCleanerHold.Resolver,
         _adminNotifier.Object,
         _userNotifications.Object,
+        Mock.Of<IStripeClientFactory>(),
+        Mock.Of<ITenantRepository>(),
+        Mock.Of<ISavedCardRepository>(),
+        Mock.Of<IReceivableRepository>(),
         NullLogger<HandlePaymentNotification.Handler>.Instance);
 
     private Order ArrangeOrder(PaymentStatus paymentStatus = PaymentStatus.Pending)

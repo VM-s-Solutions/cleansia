@@ -1,12 +1,15 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Auditing;
+using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Bookings.DTOs;
+using Cleansia.Core.AppServices.Features.Legal;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.Domain.Bookings;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Validations;
@@ -29,7 +32,13 @@ public class CreateRecurringBooking
         int PaymentType,
         DateTime StartsOn,
         DateTime? EndsOn = null,
-        string? PreferredEmployeeId = null) : ICommand<RecurringBookingTemplateDto>;
+        string? PreferredEmployeeId = null,
+        // The same tick a one-off booking asks for, and on the same terms: required while either legal
+        // consent is not an acceptance of the text in force for the saved address's market.
+        bool? TermsAccepted = null,
+        DirtinessLevel DirtinessLevel = DirtinessLevel.Normal,
+        // One early-performance tick covers every occurrence the schedule creates.
+        bool? EarlyPerformanceRequested = null) : ICommand<RecurringBookingTemplateDto>;
 
     public class Validator : AbstractValidator<Command>
     {
@@ -40,6 +49,10 @@ public class CreateRecurringBooking
         private readonly ICountryRepository _countryRepository;
         private readonly IServiceRepository _serviceRepository;
         private readonly IPackageRepository _packageRepository;
+        private readonly IUserConsentRepository _userConsentRepository;
+        private readonly ILegalDocumentResolver _legalDocumentResolver;
+        private readonly ISavedCardRepository _savedCardRepository;
+        private readonly IReceivableRepository _receivableRepository;
 
         public Validator(
             IOrderRepository orderRepository,
@@ -48,7 +61,11 @@ public class CreateRecurringBooking
             ICurrencyResolutionService currencyResolutionService,
             ICountryRepository countryRepository,
             IServiceRepository serviceRepository,
-            IPackageRepository packageRepository)
+            IPackageRepository packageRepository,
+            IUserConsentRepository userConsentRepository,
+            ILegalDocumentResolver legalDocumentResolver,
+            ISavedCardRepository savedCardRepository,
+            IReceivableRepository receivableRepository)
         {
             _orderRepository = orderRepository;
             _userSessionProvider = userSessionProvider;
@@ -57,6 +74,21 @@ public class CreateRecurringBooking
             _countryRepository = countryRepository;
             _serviceRepository = serviceRepository;
             _packageRepository = packageRepository;
+            _userConsentRepository = userConsentRepository;
+            _legalDocumentResolver = legalDocumentResolver;
+            _savedCardRepository = savedCardRepository;
+            _receivableRepository = receivableRepository;
+
+            RuleFor(x => x.TermsAccepted)
+                .MustAsync((command, termsAccepted, cancellationToken) =>
+                    AssertedOrAlreadyConsentedAsync(command, termsAccepted, cancellationToken))
+                .WithMessage(BusinessErrorMessage.TermsNotAccepted)
+                .WithErrorCode(nameof(Command.TermsAccepted));
+
+            RuleFor(x => x.EarlyPerformanceRequested)
+                .Equal(true)
+                .WithMessage(BusinessErrorMessage.EarlyPerformanceNotRequested)
+                .WithErrorCode(nameof(Command.EarlyPerformanceRequested));
 
             RuleFor(x => x.Frequency)
                 .Must(f => Enum.IsDefined(typeof(RecurrenceFrequency), f))
@@ -66,11 +98,18 @@ public class CreateRecurringBooking
                 .InclusiveBetween(0, 6)
                 .WithMessage(BusinessErrorMessage.InvalidEnumValue);
 
+            RuleFor(x => x.DirtinessLevel)
+                .IsInEnum()
+                .WithMessage(BusinessErrorMessage.InvalidEnumValue);
+
             RuleFor(x => x.TimeOfDay)
+                .Cascade(CascadeMode.Stop)
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required)
                 .Must(t => TimeOnly.TryParse(t, out _))
-                .WithMessage(BusinessErrorMessage.InvalidEnumValue);
+                .WithMessage(BusinessErrorMessage.InvalidEnumValue)
+                .Must(t => BookingPolicy.IsBookableTimeOfDay(TimeOnly.Parse(t)))
+                .WithMessage(BusinessErrorMessage.CleaningDateOutsideBookingWindow);
 
             RuleFor(x => x.Rooms).GreaterThanOrEqualTo(0).WithMessage(BusinessErrorMessage.InvalidEnumValue)
                 .LessThanOrEqualTo(BookingPolicy.MaxRooms).WithMessage(BusinessErrorMessage.OrderSizeExceedsMaximum);
@@ -89,15 +128,25 @@ public class CreateRecurringBooking
                 .Must(p => Enum.IsDefined(typeof(PaymentType), p))
                 .WithMessage(BusinessErrorMessage.InvalidEnumValue)
                 .MustAsync(CashIsAvailableForSelectionAsync)
-                .WithMessage(BusinessErrorMessage.OrderCashNotAvailable);
+                .WithMessage(BusinessErrorMessage.OrderCashNotAvailable)
+                .When(x => Enum.IsDefined(x.DirtinessLevel), ApplyConditionTo.CurrentValidator)
+                .MustAsync(CashOwesNothingAsync)
+                .WithMessage(BusinessErrorMessage.OrderCashUnpaidReceivable)
+                .MustAsync(CashLeavesRoomForAnotherOpenBookingAsync)
+                .WithMessage(BusinessErrorMessage.OrderCashOpenBookingsLimitReached)
+                .MustAsync(CashIsGuaranteedBySavedCardAsync)
+                .WithMessage(BusinessErrorMessage.OrderCashRequiresSavedCard);
 
             RuleFor(x => x)
                 .Must(c => c.SelectedServiceIds.Count > 0 || c.SelectedPackageIds.Count > 0)
                 .WithMessage(BusinessErrorMessage.RecurringTemplateNoServicesOrPackages);
 
             RuleFor(x => x.StartsOn)
+                .Cascade(CascadeMode.Stop)
                 .Must(d => d.Date >= DateTime.UtcNow.Date)
-                .WithMessage(BusinessErrorMessage.RecurringTemplateStartsOnInPast);
+                .WithMessage(BusinessErrorMessage.RecurringTemplateStartsOnInPast)
+                .Must(d => !BookingPolicy.IsBeyondBookingHorizon(d, DateTime.UtcNow))
+                .WithMessage(BusinessErrorMessage.CleaningDateOutsideBookingWindow);
 
             When(x => x.EndsOn.HasValue, () =>
             {
@@ -174,13 +223,81 @@ public class CreateRecurringBooking
                 || await _countryRepository.IsServicedAsync(address.CountryId, cancellationToken);
         }
 
+        /// <summary>
+        /// A schedule is a new booking (owner ruling 2026-09-28): asked again like a one-off order whenever
+        /// the customer's acceptance is not of the texts in force for the saved address's market. The
+        /// orders it goes on to create run on the version accepted here. A saved address the handler will
+        /// refuse passes so its own not-found answer is the one given.
+        /// </summary>
+        private async Task<bool> AssertedOrAlreadyConsentedAsync(
+            Command command, bool? termsAccepted, CancellationToken cancellationToken)
+        {
+            if (termsAccepted == true)
+            {
+                return true;
+            }
+
+            var userId = _userSessionProvider.GetUserId();
+            if (string.IsNullOrEmpty(userId))
+            {
+                return false;
+            }
+
+            var address = await FindSavedAddressAsync(userId, command.SavedAddressId, cancellationToken);
+            return address is null || await CustomerLegalConsents.CoverTextsInForceAsync(
+                _userConsentRepository, _legalDocumentResolver, userId, address.CountryId, cancellationToken);
+        }
+
         private async Task<bool> CashIsAvailableForSelectionAsync(
             Command command, int paymentType, CancellationToken cancellationToken)
             => paymentType != (int)PaymentType.Cash
                || (await RecurringCashEligibility.LoadAsync(
                        _serviceRepository, _packageRepository,
                        command.SelectedServiceIds, command.SelectedPackageIds, cancellationToken))
-                   .Allows(command.SelectedServiceIds, command.SelectedPackageIds);
+                   .Allows(command.SelectedServiceIds, command.SelectedPackageIds,
+                       command.Rooms, command.Bathrooms, command.DirtinessLevel);
+
+        private async Task<bool> CashOwesNothingAsync(
+            Command command, int paymentType, CancellationToken cancellationToken)
+        {
+            var userId = _userSessionProvider.GetUserId();
+            return paymentType != (int)PaymentType.Cash
+                || string.IsNullOrEmpty(userId)
+                || await CustomerCashStanding.OwesNothingAsync(_receivableRepository, userId, cancellationToken);
+        }
+
+        private async Task<bool> CashLeavesRoomForAnotherOpenBookingAsync(
+            Command command, int paymentType, CancellationToken cancellationToken)
+        {
+            var userId = _userSessionProvider.GetUserId();
+            return paymentType != (int)PaymentType.Cash
+                || string.IsNullOrEmpty(userId)
+                || await CustomerCashStanding.HasRoomForAnotherOpenCashBookingAsync(
+                    _orderRepository, userId, cancellationToken);
+        }
+
+        /// <summary>
+        /// The card is asked for in the currency every occurrence is priced in, the saved address's
+        /// country's. A saved address the handler will refuse passes so its own not-found answer is the
+        /// one given.
+        /// </summary>
+        private async Task<bool> CashIsGuaranteedBySavedCardAsync(
+            Command command, int paymentType, CancellationToken cancellationToken)
+        {
+            var userId = _userSessionProvider.GetUserId();
+            if (paymentType != (int)PaymentType.Cash || string.IsNullOrEmpty(userId))
+            {
+                return true;
+            }
+
+            var address = await FindSavedAddressAsync(userId, command.SavedAddressId, cancellationToken);
+            return address is null
+                || await CustomerCashStanding.HoldsUsableCardAsync(
+                    _savedCardRepository,
+                    userId,
+                    (await _currencyResolutionService.ResolveCurrencyForCountryAsync(address.CountryId, cancellationToken)).Id,
+                    cancellationToken);
+        }
 
         private async Task<Address?> FindSavedAddressAsync(string userId, string savedAddressId, CancellationToken cancellationToken)
         {
@@ -195,7 +312,13 @@ public class CreateRecurringBooking
         IUserMembershipRepository userMembershipRepository,
         IUserSessionProvider userSessionProvider,
         IOperatorTenantResolver operatorTenantResolver,
-        IAuditContext auditContext) : ICommandHandler<Command, RecurringBookingTemplateDto>
+        ICountryConfigurationRepository countryConfigurationRepository,
+        IConsentService consentService,
+        IUserConsentRepository userConsentRepository,
+        ILegalDocumentResolver legalDocumentResolver,
+        IAuditContext auditContext,
+        IHostAudienceProvider hostAudienceProvider,
+        IRequestMetadataProvider requestMetadataProvider) : ICommandHandler<Command, RecurringBookingTemplateDto>
     {
         public async Task<BusinessResult<RecurringBookingTemplateDto>> Handle(Command command, CancellationToken cancellationToken)
         {
@@ -235,15 +358,33 @@ public class CreateRecurringBooking
                 paymentType: (PaymentType)command.PaymentType,
                 startsOn: command.StartsOn,
                 endsOn: command.EndsOn,
-                preferredEmployeeId: command.PreferredEmployeeId);
+                preferredEmployeeId: command.PreferredEmployeeId,
+                dirtinessLevel: command.DirtinessLevel);
+            template.RecordEarlyPerformanceConsent(
+                Order.EarlyPerformanceConsentTextVersionInForce,
+                DateTimeOffset.UtcNow,
+                hostAudienceProvider.Audience,
+                requestMetadataProvider.IpAddress,
+                requestMetadataProvider.DeviceLabel);
 
             template.TenantId = (await operatorTenantResolver.ResolveAsync(address.Address.CountryId, cancellationToken)).OperatorTenantId;
             templateRepository.Add(template);
 
+            var (termsVersionAccepted, privacyVersionAccepted) = await CustomerLegalConsents.RecordAsync(
+                consentService, userConsentRepository, legalDocumentResolver,
+                userId, command.TermsAccepted, address.Address.CountryId, cancellationToken);
+
             auditContext.RecordEvidence("RecurringBookingTemplate", template.Id,
-                new RecurringTemplateEvidence(Before: null, After: RecurringTemplateFacts.Of(template)));
+                new RecurringTemplateEvidence(
+                    Before: null,
+                    After: RecurringTemplateFacts.Of(template),
+                    TermsAccepted: command.TermsAccepted,
+                    TermsVersionAccepted: termsVersionAccepted,
+                    PrivacyVersionAccepted: privacyVersionAccepted));
 
             var line = $"{address.Address.Street}, {address.Address.City} {address.Address.ZipCode}";
+            var marketZone = await TimeZoneResolution.ForMarketAsync(
+                countryConfigurationRepository, address.Address.CountryId, cancellationToken);
 
             return BusinessResult.Success(new RecurringBookingTemplateDto(
                 Id: template.Id,
@@ -261,7 +402,9 @@ public class CreateRecurringBooking
                 EndsOn: template.EndsOn,
                 LastMaterializedFor: template.LastMaterializedFor,
                 IsActive: template.IsActive,
-                PreferredEmployeeId: template.PreferredEmployeeId));
+                PreferredEmployeeId: template.PreferredEmployeeId,
+                TimeZoneId: marketZone.Id,
+                DirtinessLevel: template.DirtinessLevel));
         }
     }
 }

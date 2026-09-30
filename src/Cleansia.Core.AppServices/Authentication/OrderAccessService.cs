@@ -1,8 +1,11 @@
 using System.Security.Claims;
 using Cleansia.Core.AppServices.Extensions;
+using Cleansia.Core.AppServices.Features.TenantSettings;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
+using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,18 +17,24 @@ public class OrderAccessService : IOrderAccessService
     private readonly IEmployeeRepository _employeeRepository;
     private readonly IOrderRepository _orderRepository;
     private readonly ICurrencyResolutionService _currencyResolutionService;
+    private readonly ICashLedgerRepository _cashLedgerRepository;
+    private readonly IAppConfigurationProvider _configurationProvider;
     private readonly Lazy<Task<string?>> _callerEmployeeId;
 
     public OrderAccessService(
         IUserSessionProvider userSessionProvider,
         IEmployeeRepository employeeRepository,
         IOrderRepository orderRepository,
-        ICurrencyResolutionService currencyResolutionService)
+        ICurrencyResolutionService currencyResolutionService,
+        ICashLedgerRepository cashLedgerRepository,
+        IAppConfigurationProvider configurationProvider)
     {
         _userSessionProvider = userSessionProvider;
         _employeeRepository = employeeRepository;
         _orderRepository = orderRepository;
         _currencyResolutionService = currencyResolutionService;
+        _cashLedgerRepository = cashLedgerRepository;
+        _configurationProvider = configurationProvider;
         _callerEmployeeId = new Lazy<Task<string?>>(ResolveCallerEmployeeIdAsync);
     }
 
@@ -59,6 +68,14 @@ public class OrderAccessService : IOrderAccessService
     public Task<string?> GetCallerEmployeeIdAsync(CancellationToken cancellationToken)
     {
         return _callerEmployeeId.Value;
+    }
+
+    public async Task<bool> CashJobsHiddenFromAsync(string employeeId, string currencyId, CancellationToken cancellationToken)
+    {
+        var floatCap = await _configurationProvider.GetAsync(TenantSettingCatalog.CashFloatCap, cancellationToken);
+        return floatCap > 0
+            && CashLedgerEntry.HoldsAboveFloatCap(
+                await _cashLedgerRepository.GetHeldAsync(employeeId, currencyId, cancellationToken), floatCap);
     }
 
     public async Task<bool> CanAccessOrderAsync(Order order, CancellationToken cancellationToken)
@@ -123,8 +140,7 @@ public class OrderAccessService : IOrderAccessService
         }
 
         var currency = await _currencyResolutionService.ResolveCurrencyForEmployeeAsync(employeeId, cancellationToken);
-        return OrderAvailability.IsOfferable(
-                order.CurrentStatus, order.PaymentType, order.PaymentStatus, order.RecurringTemplateId)
+        return OrderAvailability.IsOfferable(order)
             // TakeableSeat, not AvailableSpots: the browse gate exists so a cleaner can READ what they
             // may TAKE. A cover-requested seat is takeable, so gating on capacity here would show the
             // job on the board and then 403 the cleaner opening it.

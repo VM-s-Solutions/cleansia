@@ -58,23 +58,38 @@ even less than it did, because the e-mail is no longer part of the key at all.
 
 **An address shared with somebody else is never blanked in place.** Each affected order, and the
 erased cleaner's employee record, receives its own anonymised address copy, preserving its country
-and operating-company stamp. A reference census across companies determines which original address
-rows can be deleted after those replacements and removal of the subject's active saved-address
-rows. Other orders, saved addresses and employees keep their original row. The completed-order PII
-sweep uses the same copy-before-delete rule; even the subject's own newer order or saved address
-protects its original there.
+and operating-company stamp. **Every saved address the subject has is removed**, inactive ones
+included, and the address rows those saved addresses pointed at join the orders' originals as
+candidates for deletion — so an address the subject only ever saved, and never booked at, goes too. A
+reference census across companies determines which of those original rows can be deleted: one that
+another customer's order, saved address or employee record still uses is kept. Other orders, saved
+addresses and employees keep their original row. The order-PII sweep uses the same copy-before-delete
+rule; even the subject's own newer order or saved address protects its original there.
 
 If another reference commits between the census and deletion, the foreign key refuses deletion and the database
 commit fails instead of blanking somebody else's address or deleting their new order. The order's
 address foreign key uses `Restrict`; if deletion wins the race, the competing reference cannot commit
-against the deleted row. This does not extend the erasure to saved-address-only originals
-or inactive saved-address rows; those remain reported gaps.
+against the deleted row.
+
+**What anonymising an order clears.** `Order.AnonymizeCustomerData` — used by the erasure and by the
+order-PII sweep — blanks the customer's name, e-mail and phone, the notes and instructions, the floor,
+the flat number, the access mode and the cancellation reason, and anonymises the order's reviews, notes
+and issues; the address is replaced with a copy as above. **One reason is kept:** when the platform
+cancelled the order (`CancelledBy.System`) its reason is a code such as
+`order.cancelled.company_wind_down`, not anything a person wrote, and the company wind-down finds the
+orders whose refund it still has to retry by that code. A reason a customer or an administrator wrote is
+always cleared.
 
 **An erased guest booking loses its access keys with its personal data.** The ended guest orders
 in the walk have every live token revoked before anonymisation, staged into the same commit. A live
 guest booking left out of the walk keeps its cancellation path. The order-PII sweep starts at least
 one year after the cleaning, beyond the token's fixed 30-day lifetime, so it cannot erase an order
 while one of those tokens is still live.
+
+**A live membership is cancelled in Stripe first.** A paid-up (`Active`) one ends at its period end; a
+`PastDue` or `Paused` one — no paid period left, a card Stripe keeps retrying — is cancelled at once and
+its open invoice voided (since 2026-09-28; erasure used to cancel only an `Active` subscription, so a
+past-due card went on being charged) → [Business rules — Cleansia Plus](/product/business-rules#cleansia-plus).
 
 **Unused credit is forfeited, last** (owner ruling 2026-09-24). After the Stripe membership cancel and
 the blob deletes, `ForfeitCreditAsync` locks the subject's user row and credit accounts, drains every
@@ -101,7 +116,8 @@ resolution notes — is *not* blanked at erasure any more: the erasure stamps `D
 = now + retention.dispute_text.years` (default 3, floor > 0) and leaves it readable for defence of a
 claim; the weekly sweep's `DisputeText` task blanks it once the stamp is past and clears the stamp. The
 evidence **files** still go at erasure (they are not text) and the evidence rows are blanked. The
-cancellation reason is kept as before. The consent rows are withdrawn, and keep their IP, user agent,
+cancellation reason goes with the order's other customer fields, unless the platform wrote it (above).
+The consent rows are withdrawn, and keep their IP, user agent,
 version and document id. A **guest's** booking placed with the account's e-mail is reached by that
 e-mail (above) — the one link there is, since a guest booking is never attached to an account later —
 and its guest audit rows lose their IP and device with it.
@@ -132,9 +148,10 @@ different, and the same endpoint treats them differently.
 
 A customer's relationship with the platform *is* the account, so erasing the account ends it. A
 cleaner's is not: behind the `Employee` row sits a working relationship with a contract, statutory
-financial records, and a self-billing agreement whose facts are the authority for invoices that are
-themselves retained. None of that ends because someone taps a button, and none of it is the subject's
-to delete.
+financial records, and the invoices and pay records issued for their work, which are themselves
+retained. (The versioned self-billing agreement [ADR-0041](/decisions/adr-0041) describes is accepted
+but not built, so the partner apps' deletion screens name only the invoices and pay records as kept.)
+None of that ends because someone taps a button, and none of it is the subject's to delete.
 
 So when a cleaner deletes their own account, a `Pending` `GdprRequest` is **filed** and nothing else
 runs — no anonymisation, no membership cancellation, no blob deletion. They stay signed in and keep
@@ -161,8 +178,9 @@ Referral codes are randomly generated rather than name-derived, so they leak not
 
 ## Retention
 
-A background sweep prunes expired confirmation and reset codes, stale devices, completed GDPR
-requests, old orders, consents, employee documents and notifications — including a per-user
+A background sweep prunes expired confirmation and reset codes, stale and signed-out devices,
+completed GDPR requests, old completed and cancelled orders, consents, employee documents and
+notifications — including a per-user
 notification cap. **It runs once per operating company** (since 2026-09-15): it loops the company
 registry, sets the tenant override per company, reads that company's own windows from its settings
 (the platform defaults where it has set none — → [Company settings](/product/business-rules#customer-record))
@@ -185,18 +203,47 @@ the explicit exception. The catalogue currently permits a one-year minimum for b
 minimum must be three years remains an owner question.
 → [Business rules — retention](/product/business-rules#customer-record)
 
-**Order photos expire from completion.** `OrderPhotos` reads `retention.order_photos.days` (default
-**7**, owner ruling 2026-09-22) and deletes the row and its blob when the order's `CompletedAt` is
-older than that window. Any dispute whose status is neither `Resolved` nor `Closed` holds the photos.
-The order's operating company determines the window, including when a photo carries a different
-uploader stamp. A blob deletion failure leaves its row for a later run. Deletion is attempted on the
-first weekly run after the seven-day window; never-completed orders and disputes raised after the
-photos have already gone remain outside that protection.
+**Order photos expire from completion, or from cancellation.** `OrderPhotos` reads
+`retention.order_photos.days` (default **7**, owner ruling 2026-09-22) and deletes the row and its blob
+when the order's `CompletedAt` — or, on a cancelled order, its `CancelledAt` — is older than that
+window (since 2026-09-28; a cancelled order's photos used to be kept forever). Any dispute whose status
+is neither `Resolved` nor `Closed` holds the photos. An order stuck in progress, neither completed nor
+cancelled, keeps its photos. The order's operating company determines the window, including when a
+photo carries a different uploader stamp. A blob deletion failure leaves its row for a later run.
+Deletion is attempted on the first weekly run after the seven-day window; a dispute raised after the
+photos have already gone cannot bring them back.
+
+**Cancelled orders are anonymised on the same clock as completed ones.** The order-PII task
+(`retention.order_pii.years`, default **2**) selects orders that are completed **or cancelled** and
+whose cleaning date is older than the window — the same address-copy and shared-address rules as
+above. Before 2026-09-28 a cancelled order kept its customer's details forever.
+
+**A signed-out device is deleted too.** `StaleDevices` (`retention.stale_devices.days`, default
+**90**) deletes an active device not seen for that long, **and** a deactivated one — a sign-out
+tombstone — whose `DeactivatedOn` (or, where that is empty, its last activity) is older than the same
+cutoff. Tombstones used to be kept forever. The `(IsActive, LastActiveAt)` index serves both halves.
+
+**A file that will not delete does not stall the sweep.** The superseded-document task pages by id, as
+the photo task does: a document whose blob delete throws is logged, left for a later run and not read
+again in the same run, and only rows actually removed count towards the run's total.
 
 **Dead guest keys are removed too.** `GuestOrderAccessTokens` deletes rows whose expiry has passed
 or whose `RevokedOn` is set, under the token's stored company stamp (copied from the order at issue).
-It needs no additional setting. There are **thirteen retention settings and fourteen tasks**, all
-under the same master switch.
+It needs no additional setting.
+
+**A receipt's PDF is kept for the statutory period, then deleted** (owner ruling 2026-09-28).
+`ReceiptBlobs` reads `retention.receipts.years` (default **10**, and 10 is also the floor, because
+nothing re-renders a deleted PDF) and deletes the stored PDF of every receipt issued before the start of
+the calendar year that many years back, paging by id; the receipt row stays as the record, stamped
+`OrderReceipt.BlobDeletedAt`. A PDF that will not delete keeps its row unmarked for the next run. A
+download afterwards answers `receipt.not_found`, and a company's archive skips a deleted PDF.
+
+**A cleaner's document acceptances share the contract-acceptance window.** The task that blanks the IP
+address, device label and device id of a contract-for-work acceptance after
+`retention.work_contract_metadata.years` does the same to a cleaner's acceptance of their own documents
+(`CleanerLegalDocumentAcceptance`); the acceptance itself is kept.
+
+There are **fourteen retention settings and fifteen tasks**, all under the same master switch.
 
 **The erased customer's dispute text is on it too.** The `DisputeText` task reads only the stamp the
 erasure set (`Dispute.TextRetainedUntil`), blanks the description, the messages and the resolution
@@ -256,10 +303,15 @@ the erasure reaches, a live guest booking included), **disputes** (owner ruling 
 dispute filed on the account or on one of those orders: reason and status by name, the description,
 the resolution notes, the refund with its currency code, every message as author role, time and text,
 the evidence file names; text as stored, so the three-year window's marker once the sweep has run —
-and, through the order term, any dispute on one of the guest bookings, which names no customer; a bank
-chargeback on a guest booking is not among them, because none is recorded →
+and, through the order term, any dispute on one of the guest bookings, which names no customer. Since
+2026-09-28 that includes a **bank chargeback on a guest booking**, which is now recorded as a dispute:
+the export of the account whose e-mail placed the booking carries it. [ADR-0062](/decisions/adr-0062)
+asked for the order term to be re-examined before that path opened, and that re-examination has not
+been done →
 [Cancellation, refund and dispute](/flows/cancellation-refund-dispute#dispute)),
-documents, invoices, consents (with IP, user agent, version and document id), the customer trail
+documents, invoices, consents (with IP, user agent, version and document id), a cleaner's acceptances of
+their own documents (document type, text, version, language, instant, client and — until the metadata
+window or an erasure blanks them — IP and device), the customer trail
 (`customerActions` — the account's own rows only, not the guest rows on its orders: their IP and device
 belong to whoever placed the booking, a stranger's when the address is a typo) and the metadata.
 → [ADR-0062](/decisions/adr-0062) D5/D6 as amended 2026-09-15
@@ -379,7 +431,7 @@ What survives what:
 | An erased customer's dispute | The description, messages and resolution notes stay readable for `retention.dispute_text.years` (3) from the erasure, then the weekly sweep blanks them; the evidence files went at erasure. |
 | A cleaner deletes their own account | A request is filed; nothing is erased. They stay signed in. An admin fulfils it after the paperwork. |
 | A cleaner is staffed on a future job, or is owed pay | Refused — for an admin as much as for the cleaner. |
-| Order photos | For photos on the subject's ended orders, erasure attempts blob deletion and retains each row with `OriginalFileName` anonymised and `Notes` cleared. Its existing blob-name extraction gap can leave the blob behind. Independently, the completion-based seven-day sweep deletes blobs before removing their rows, unless an unresolved dispute holds them. |
+| Order photos | For photos on the subject's ended orders, erasure deletes each blob by its name inside the order-photos container (`OrderPhotoBlobName.FromUrl`, which finds the container segment by name, so the Azure and the Azurite URL shapes both resolve; before 2026-09-28 a positional skip could leave the blob behind) and retains each row with `OriginalFileName` anonymised and `Notes` cleared. A failed blob deletion is logged and the row is anonymised all the same. Independently, the seven-day sweep — counted from completion, or from cancellation on a cancelled order — deletes blobs before removing their rows, unless an unresolved dispute holds them. |
 | An audit row for an erased admin | Survives erasure, then expires by its own age under the company's admin-audit window (default three years). |
 | A customer audit row for an erased customer | Survives, pseudonymised: the three request-metadata columns are blanked and nothing else changes. An erasure whose commit fails leaves the rows untouched. |
 | A contract-for-work acceptance of an erased cleaner | Survives, pseudonymised the same way: IP, device label and device id go; the seat, the exact text row, the instant and the frozen facts stay, and the cleaner's id stays as the pseudonymous handle `Employee.Anonymize` keeps. The per-company sweep blanks the same three columns three years after the acceptance for everyone else; nothing ever deletes the row. |

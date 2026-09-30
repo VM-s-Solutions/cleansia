@@ -24,7 +24,7 @@ final class PreferredCleanerViewModel: ViewModel {
         loaded = true
         guard let membership else { return }
         cancellationPolicy = CancellationPolicyBuilder.make(membership: membership)
-        guard membership.hasMembership else { return }
+        guard membership.hasMembership, !membership.benefitsPaused else { return }
         isPlus = true
         if case let .success(list) = await cleanersClient.myServingCleaners() {
             cleaners = list

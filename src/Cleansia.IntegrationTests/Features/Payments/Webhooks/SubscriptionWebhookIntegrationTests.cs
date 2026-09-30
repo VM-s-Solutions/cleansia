@@ -17,11 +17,11 @@ namespace Cleansia.IntegrationTests.Features.Payments.Webhooks;
 /// subscription branch → <c>StripeSubscriptionWebhookHandler.ProvisionFromCreatedEventAsync</c>) over a
 /// REAL Postgres (Testcontainers). This is the integration depth above the mocked-repo unit suite: the
 /// active-membership pre-check and the FILTERED unique index on
-/// <c>(TenantId, UserId) WHERE Status = Active</c> are asserted by the REAL DB, by counting persisted
+/// <c>(TenantId, UserId)</c> over the live statuses (Active, PastDue, Paused) are asserted by the REAL DB, by counting persisted
 /// <see cref="UserMembership"/> rows after a real commit, not by a mock's Add count.
 ///
 /// The webhook is anonymous: provisioning reads the owning user tenant-ignoring and sets the tenant
-/// override before <c>GetActiveForUserAsync</c> + the insert, so the active-check and the filtered index
+/// override before <c>GetLifecycleForUserAsync</c> + the insert, so the active-check and the filtered index
 /// both resolve in the user's tenant scope (S8).
 /// </summary>
 [Collection("PostgresCollection")]
@@ -218,7 +218,7 @@ public class SubscriptionWebhookIntegrationTests(PostgresContainerFixture fixtur
                     stripeSubscriptionId: "sub_cancelled",
                     currentPeriodStart: DateTime.UtcNow.AddMonths(-2),
                     currentPeriodEnd: DateTime.UtcNow.AddMonths(-1));
-                // Drop the row OUT of the filtered (Status = Active) index predicate.
+                // Drop the row OUT of the filtered (live-status) index predicate.
                 cancelled.UpdateFromStripeWebhook(
                     "canceled", cancelled.CurrentPeriodStart, cancelled.CurrentPeriodEnd, trialEndsAtUtc: null);
                 cancelled.TenantId = TenantId;

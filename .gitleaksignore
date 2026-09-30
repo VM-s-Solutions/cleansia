@@ -1,0 +1,44 @@
+# Known history for the secret scan (.github/workflows/secret-scan.yml), recorded 2026-09-28.
+# Every line is a finding already in git history, by fingerprint (commit:file:rule:line). A NEW finding
+# fails the scan: remove the secret and rotate it; do not add its fingerprint here.
+
+# SendGrid API keys committed between Oct 2025 and Mar 2026. Both must be revoked at SendGrid.
+2c17465b8d0ab5c6849ccbffea2490d84feecd31:src/Cleansia.Web/appsettings.json:sendgrid-api-token:29
+2e37a79931f615faf07229eb5c5ec6837267f9f6:src/Cleansia.Web.Admin/appsettings.json:sendgrid-api-token:29
+360c1ab41a34eab5e4f829c134ff1d95aa9e08e9:src/Cleansia.Web/appsettings.json:sendgrid-api-token:29
+c5f91507ac66e72185c6f01164a2aa127f3d8bc9:src/Cleansia.Web.Mobile/appsettings.json:sendgrid-api-token:30
+
+# The Nx Cloud access token, removed when the workspace left Nx Cloud.
+2e37a79931f615faf07229eb5c5ec6837267f9f6:src/Cleansia.App/nx.json:generic-api-key:92
+51159c06d15c4a21e7aebb3303b8af2deb0046fd:src/Cleansia.App/nx.json:generic-api-key:82
+
+# The published test JWT key in early host settings; no deployed environment may use it.
+2e37a79931f615faf07229eb5c5ec6837267f9f6:src/Cleansia.Web.Admin/appsettings.json:generic-api-key:14
+6e26cba3031f7acf9c1321c277fa35ba17ae8c99:src/Cleansia.Web/appsettings.json:generic-api-key:13
+c5f91507ac66e72185c6f01164a2aa127f3d8bc9:src/Cleansia.Web.Mobile/appsettings.json:generic-api-key:14
+
+# Not credentials: SendGrid template ids, Key Vault role and secret names, Azure domain-verification ids,
+# example tokens in documentation, and a test roster in a ticket.
+0f388f629c480e5771101c2b2c8a94a66a6aac1e:src/Cleansia.Web.Admin/appsettings.json:generic-api-key:35
+29de7b4845d2bba0b27d77a2eb9253334762a200:src/Cleansia.Web.Customer/appsettings.Production.json:generic-api-key:34
+29de7b4845d2bba0b27d77a2eb9253334762a200:src/Cleansia.Web.Mobile.Partner/appsettings.Production.json:generic-api-key:25
+29de7b4845d2bba0b27d77a2eb9253334762a200:src/Cleansia.Web.Partner/appsettings.json:generic-api-key:45
+2c17465b8d0ab5c6849ccbffea2490d84feecd31:src/Cleansia.Web/appsettings.json:generic-api-key:30
+2e37a79931f615faf07229eb5c5ec6837267f9f6:src/Cleansia.Web.Admin/appsettings.json:generic-api-key:30
+3fce5dafac83ddb0e28f8218d5fc117216424fbb:deploy/bicep/modules/roleAssignments.bicep:generic-api-key:28
+3fce5dafac83ddb0e28f8218d5fc117216424fbb:deploy/bicep/modules/roleAssignments.bicep:generic-api-key:29
+5294c27af348d576524f978398e7048f59249157:deploy/bicep/main.bicep:generic-api-key:235
+61f7f58a9d58ac89ae333eeb424ca78586778324:docs/api/authentication.md:generic-api-key:98
+61f7f58a9d58ac89ae333eeb424ca78586778324:docs/deployment/environment-config.md:generic-api-key:93
+bb4e84257fe589c00d55520592f18e339206d4f9:src/Cleansia.Functions/local.settings.json:generic-api-key:12
+c5f91507ac66e72185c6f01164a2aa127f3d8bc9:src/Cleansia.Web.Mobile/appsettings.json:generic-api-key:31
+d2d8338a6268f70e8f3d310decf95ad4e691471a:CLEANSIA_PROJECT_DOCUMENTATION.md:generic-api-key:880
+d5b020bfdb6add27f466e583ddf6ec2622ac4511:agents/backlog/tickets/T-0470-credential-shape-guard-for-unlisted-secrets.md:generic-api-key:274
+d7ade53b879fceb291a3b8ecc476eec9cabcc183:src/Cleansia.Web.Admin/appsettings.Production.json:generic-api-key:23
+d7ade53b879fceb291a3b8ecc476eec9cabcc183:src/Cleansia.Web.Customer/appsettings.Production.json:generic-api-key:29
+d7ade53b879fceb291a3b8ecc476eec9cabcc183:src/Cleansia.Web.Customer/appsettings.json:generic-api-key:39
+d7ade53b879fceb291a3b8ecc476eec9cabcc183:src/Cleansia.Web.Mobile/appsettings.Production.json:generic-api-key:24
+d7ade53b879fceb291a3b8ecc476eec9cabcc183:src/Cleansia.Web/appsettings.Production.json:generic-api-key:29
+db4d95834c67483c7cb33c16f887d753e50cfd96:deploy/bicep/weu.dev.bicepparam:generic-api-key:79
+db4d95834c67483c7cb33c16f887d753e50cfd96:deploy/bicep/weu.dev.bicepparam:generic-api-key:81
+f0e39d7e594611bac9359cb92c24bc7abaded992:deploy/bicep/main.bicep:generic-api-key:468

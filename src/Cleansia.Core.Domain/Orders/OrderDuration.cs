@@ -7,8 +7,8 @@ namespace Cleansia.Core.Domain.Orders;
 /// ADR-0039 D4 — the single definition of "how long is this booking". <c>OrderFactory</c> persists the
 /// result as <see cref="Order.EstimatedTime"/>; the preferred-cleaner picker derives the same number to
 /// build its overlap window. If the two ever differ, the picker is answering about a different job than
-/// the one being booked — which is why <c>OrderDurationAgreementTests</c> pins them together rather
-/// than a comment claiming they match.
+/// the one being booked — which is why <c>ServingCleanersSlotAnswerTests</c> and the span-cap tests pin
+/// the in-memory sum and its SQL twins together rather than a comment claiming they match.
 ///
 /// <para>A service included in a selected package and ALSO selected directly is counted twice, and that
 /// is the shipped behaviour this function preserves rather than fixes: changing it here would silently
@@ -26,9 +26,25 @@ public static class OrderDuration
     /// </remarks>
     public const int MinutesPerEmployee = 120;
 
-    public static int EstimateMinutes(IEnumerable<Service> services, IEnumerable<Package> packages)
-        => services.Sum(s => s.EstimatedTime)
-         + packages.Sum(p => p.IncludedServices.Sum(i => i.Service!.EstimatedTime));
+    /// <summary>
+    /// Each service's own minutes plus its per-room minutes for every room and bathroom, a packaged
+    /// service counted the same way, then lengthened by the dirtiness level (owner ruling 2026-09-28).
+    /// <paramref name="unitCount"/> is rooms + bathrooms, the count the per-room price multiplies;
+    /// <paramref name="dirtinessRate"/> is <c>BookingPolicy.DirtinessSurchargeRate(level)</c>.
+    /// </summary>
+    public static int EstimateMinutes(
+        IEnumerable<Service> services, IEnumerable<Package> packages, int unitCount, decimal dirtinessRate)
+        => ScaleForDirtiness(
+            services.Sum(s => s.EstimatedTime + s.MinutesPerRoom * unitCount)
+            + packages.Sum(p => p.IncludedServices.Sum(i => i.Service!.EstimatedTime + i.Service!.MinutesPerRoom * unitCount)),
+            dirtinessRate);
+
+    /// <summary>
+    /// minutes x (1 + rate), up to the next whole minute, so a dirtier home is never booked shorter than
+    /// the work. The SQL twins sum the catalogue in the database and scale through this.
+    /// </summary>
+    public static int ScaleForDirtiness(int minutes, decimal dirtinessRate)
+        => (int)Math.Ceiling(minutes * (1m + dirtinessRate));
 
     /// <summary>
     /// The crew the booked minutes need — one cleaner per started <see cref="MinutesPerEmployee"/>,

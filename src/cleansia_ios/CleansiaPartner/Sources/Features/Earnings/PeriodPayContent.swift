@@ -64,6 +64,9 @@ private struct BreakdownCard: View {
             if summary.totalExtrasPay != 0 {
                 MoneyRow(label: L10n.PeriodPay.extras, amount: summary.totalExtrasPay, currencyCode: currencyCode)
             }
+            if summary.totalDirtinessPay != 0 {
+                MoneyRow(label: L10n.PeriodPay.dirtiness, amount: summary.totalDirtinessPay, currencyCode: currencyCode)
+            }
             if summary.totalExpensesPay != 0 {
                 MoneyRow(label: L10n.PeriodPay.expenses, amount: summary.totalExpensesPay, currencyCode: currencyCode)
             }
@@ -132,10 +135,20 @@ private struct JobRow: View {
                 Text(orderNumber)
                     .font(CleansiaTypography.bodyLarge)
                     .foregroundColor(CleansiaColors.onSurface)
+                if let caption = line.feeShareCaption {
+                    Text(caption)
+                        .font(CleansiaTypography.labelSmall)
+                        .foregroundColor(CleansiaColors.primary)
+                }
                 if let date = EarningsFormat.shortDate(line.createdOn, locale: locale) {
                     Text(date)
                         .font(CleansiaTypography.labelSmall)
                         .foregroundColor(CleansiaColors.onSurfaceVariant)
+                }
+                if let deduction {
+                    Text(deduction)
+                        .font(CleansiaTypography.labelSmall)
+                        .foregroundColor(CleansiaColors.error)
                 }
             }
             Spacer()
@@ -148,6 +161,24 @@ private struct JobRow: View {
     private var orderNumber: String {
         if let number = line.orderNumber, !number.isEmpty { return number }
         return "—"
+    }
+
+    private var deduction: String? {
+        guard line.deductionPay != 0 else { return nil }
+        let amount = EarningsFormat.decimalMoney(-line.deductionPay, currencyCode: currencyCode)
+        guard let reason = line.deductionReason, !reason.isBlank else { return L10n.PeriodPay.lineDeduction(amount) }
+        return L10n.PeriodPay.lineDeductionReason(amount, reason)
+    }
+}
+
+extension OrderPayLine {
+    /// A fee-share row pays for a job that did not happen, so it says which fee it is a share of.
+    var feeShareCaption: String? {
+        switch lineType {
+        case ._0: nil
+        case ._1: L10n.PeriodPay.lineCancellationFeeShare
+        case ._2: L10n.PeriodPay.lineLockoutFeeShare
+        }
     }
 }
 

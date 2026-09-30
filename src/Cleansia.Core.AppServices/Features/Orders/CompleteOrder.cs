@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Features.EmployeePayroll;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Core.Queue.Abstractions.Messages;
@@ -238,7 +239,7 @@ public class CompleteOrder
                 .Include(o => o.SelectedPackages).ThenInclude(op => op.Package)
                 .Include(o => o.CustomerAddress).ThenInclude(a => a!.Country)
                 .Include(o => o.Currency)
-                .Include(o => o.Receipt)
+                .Include(o => o.Receipts)
                 .Include(o => o.User).ThenInclude(u => u!.PreferredLanguage)
                 .Include(o => o.AssignedEmployees)
                 .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);
@@ -345,16 +346,7 @@ public class CompleteOrder
             // queue retries handle it. The loop is NOT forward-compat: an order's crew is
             // ceil(EstimatedTime / 120), and the catalogue carries single 180- and 240-minute
             // services, so a two-seat job is an ordinary booking and pays two cleaners today.
-            foreach (var assignment in order.AssignedEmployees)
-            {
-                pending.Enqueue(
-                    QueueNames.CalculateOrderPay,
-                    new QueueEnvelope<CalculateOrderPayMessage>(
-                        MessageKeys.Pay(order.Id, assignment.EmployeeId),
-                        order.TenantId,
-                        new CalculateOrderPayMessage(order.Id, assignment.EmployeeId)),
-                    MessageKeys.Pay(order.Id, assignment.EmployeeId));
-            }
+            CalculateOrderPay.EnqueueForCrew(order, pending);
 
             return BusinessResult.Success(new Response(
                 OrderId: order.Id,

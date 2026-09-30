@@ -79,6 +79,7 @@ public class OrderSpanCapTests
                 It.IsAny<IEnumerable<string>>(),
                 It.IsAny<int>(),
                 It.IsAny<int>(),
+                It.IsAny<DirtinessLevel>(),
                 It.IsAny<string?>(),
                 It.IsAny<DateTime?>(),
                 It.IsAny<string?>(),
@@ -305,7 +306,10 @@ public class OrderSpanCapTests
             Cleansia.Tests.Features.Orders.OrderMarketDoubles.OperatedBy("cleansia-cz"),
             Cleansia.Tests.Features.Orders.OrderMarketDoubles.TenantAt("cleansia-cz"),
             Mock.Of<IUserConsentRepository>(),
-            CreateOrderTestData.Speaking(Constants.Language.English));
+            CreateOrderTestData.Speaking(Constants.Language.English),
+            Mock.Of<ICountryConfigurationRepository>(),
+            Mock.Of<ILegalDocumentResolver>(),
+            SavedCards.SavedCardDoubles.Guaranteed(), Mock.Of<IReceivableRepository>());
 
     /// <summary>Anonymous, so the factory stays off the loyalty/membership lookups.</summary>
     private static CreateOrderInput Input() =>

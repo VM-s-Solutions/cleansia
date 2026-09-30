@@ -3,7 +3,7 @@
  * The cross-stack booking-policy parity check.
  *
  * `BookingPolicy` decides what a cancellation costs, how late a booking is accepted and what an
- * express slot adds. Four surfaces then STATE those numbers to a customer — the web copy, the web's
+ * express slot or a dirtiness level adds. Four surfaces then STATE those numbers to a customer — the web copy, the web's
  * shared constants, Android's string resources and iOS's string catalog — and every one of them
  * holds its own literal. Nothing compiled them together, so nothing noticed when they stopped
  * agreeing. The legal seed is held to the same shape (§3): the market's figures reach a legal text
@@ -50,9 +50,12 @@ const REASONS_CS = 'src/Cleansia.Core.Domain/Orders/OrderCancellationReasons.cs'
 const WEB_REASON_MAP = 'src/Cleansia.App/libs/cleansia-customer-features/orders/src/lib/order-detail/order-detail.component.ts';
 const ANDROID_REASON_MAP = 'src/cleansia_android/customer-app/src/main/java/cz/cleansia/customer/features/orders/OrderDetailScreen.kt';
 const IOS_REASON_MAP = 'src/cleansia_ios/CleansiaCustomer/Sources/Features/Orders/CancellationReasonCopy.swift';
-/** The customer legal texts, one dated folder per version, one markdown file per language. */
-const LEGAL_SEED = 'src/Cleansia.Infra.Database/Seed/Legal/customer';
-const LEGAL_SEED_TYPES = ['terms-of-service', 'privacy-policy', 'work-contract'];
+/**
+ * The legal texts under their audience, one dated folder per version, one markdown file per language.
+ * The contract for work binds the operating company and the cleaner, so it is an employee text.
+ */
+const LEGAL_SEED = 'src/Cleansia.Infra.Database/Seed/Legal';
+const LEGAL_SEED_TYPES = ['customer/terms-of-service', 'customer/privacy-policy', 'employee/work-contract'];
 const WEB_MODEL = 'src/Cleansia.App/libs/shared/models/src/lib/models/booking-window.models.ts';
 const WEB_I18N = 'src/Cleansia.App/apps/cleansia.app/src/assets/i18n';
 const ANDROID_RES = 'src/cleansia_android/customer-app/src/main/res';
@@ -111,7 +114,8 @@ export function firstNumberIn(text) {
 function androidString(dir, key) {
   const path = join(REPO, ANDROID_RES, dir, 'strings.xml');
   if (!existsSync(path)) return null;
-  const match = new RegExp(`<string name="${key}">(.*?)</string>`, 's').exec(
+  // Attributes after the name are allowed: a rate chip carries `formatted="false"` for its bare `%`.
+  const match = new RegExp(`<string name="${key}"[^>]*>(.*?)</string>`, 's').exec(
     readFileSync(path, 'utf8'),
   );
   return match ? match[1] : null;
@@ -134,7 +138,10 @@ const policy = {
   FirstWindowHour: readCsConst(policySource, 'FirstWindowHour'),
   LastWindowHour: readCsConst(policySource, 'LastWindowHour'),
   OopsWindowMinutesStandard: readCsConst(policySource, 'OopsWindowMinutesStandard'),
+  OopsWindowMinutesFirstBooking: readCsConst(policySource, 'OopsWindowMinutesFirstBooking'),
   OopsWindowMinutesPlus: readCsConst(policySource, 'OopsWindowMinutesPlus'),
+  IncreasedDirtinessSurchargeRate: readCsConst(policySource, 'IncreasedDirtinessSurchargeRate'),
+  HeavyDirtinessSurchargeRate: readCsConst(policySource, 'HeavyDirtinessSurchargeRate'),
 };
 
 for (const [name, value] of Object.entries(policy)) {
@@ -144,6 +151,8 @@ for (const [name, value] of Object.entries(policy)) {
 const partialPct = Math.round(policy.PartialCancellationFeeRate * 100);
 const lastMinutePct = Math.round(policy.LastMinuteCancellationFeeRate * 100);
 const expressPct = Math.round(policy.ExpressSurchargeRate * 100);
+const increasedDirtinessPct = Math.round(policy.IncreasedDirtinessSurchargeRate * 100);
+const heavyDirtinessPct = Math.round(policy.HeavyDirtinessSurchargeRate * 100);
 
 // ─── 1. The web's shared mirror ─────────────────────────────────────────────
 // It carries a "Mirrors BookingPolicy" comment and, until this checker, nothing that held it to it.
@@ -154,6 +163,9 @@ for (const [tsName, csName] of [
   ['EXPRESS_LEAD_TIME_HOURS', 'ExpressLeadTimeHours'],
   ['STANDARD_LEAD_TIME_HOURS', 'StandardLeadTimeHours'],
   ['EXPRESS_SURCHARGE_RATE', 'ExpressSurchargeRate'],
+  // The web states the dirtiness rates through `{{rate}}`, filled from these two (§2c).
+  ['INCREASED_DIRTINESS_SURCHARGE_RATE', 'IncreasedDirtinessSurchargeRate'],
+  ['HEAVY_DIRTINESS_SURCHARGE_RATE', 'HeavyDirtinessSurchargeRate'],
 ]) {
   const actual = readTsConst(webModel, tsName);
   if (actual === null) {
@@ -254,30 +266,123 @@ for (const locale of LOCALES) {
   }
 }
 
-// ─── 2b. The grace after booking the three clients state (owner ruling 2026-09-24) ─────────
-// Free cancellation for 15 minutes after booking, 60 for an entitled Cleansia Plus member. Each
-// sentence below names both figures (or, for the web comparison rows, one each), so the SET of
-// integers it states must contain the policy's — reordering by a translator is fine.
+// ─── 2b. The grace after booking the three clients state (owner ruling 2026-09-28) ─────────
+// Free cancellation for 15 minutes after booking, 60 on a customer's first booking and 60 for an
+// entitled Cleansia Plus member. Every key below states the grace as a literal, and each names the
+// graces its sentence states. Strictly: the SET of integers it states must hold each of their
+// figures and nothing else but the free-cancellation hours beside them, so reordering by a translator
+// is fine and a figure the policy does not hold is not. The keys that render the server's own
+// per-order figure through a placeholder (`{{minutes}}`, `%d`) state no figure of their own and are
+// not read here.
+//
+// While the first-booking and Plus graces are the same number, one "60" satisfies both figures —
+// which is exactly how the copy before this ruling ("… 60 minutes with Cleansia Plus") would pass.
+// So a sentence that names the first-booking grace must also NAME a first booking, in its locale's
+// words. What stays open: which figure the clause sits beside is not read, so "15 on your first
+// booking, 60 with Plus" states only held figures and passes.
 const graceStandard = policy.OopsWindowMinutesStandard;
+const graceFirstBooking = policy.OopsWindowMinutesFirstBooking;
 const gracePlus = policy.OopsWindowMinutesPlus;
-function checkGrace(where, key, value, expected) {
+const GRACE = { standard: graceStandard, firstBooking: graceFirstBooking, plus: gracePlus };
+/**
+ * How the five locales name a first booking — "first booking", "u první objednávky", "pri prvej
+ * objednávke", "для первого заказа", "для першого замовлення" — case endings left open, and
+ * locale-blind like `percentagesIn`.
+ */
+const FIRST_BOOKING = /\bfirst\s+(?:booking|order)|prv\p{L}*\s+objedn|перв\p{L}*\s+заказ|перш\p{L}*\s+замовлен/iu;
+function checkGrace(where, key, value, graces) {
   if (value === null || value === undefined) {
     note(where, `${key} is missing`);
     return;
   }
   const stated = amountsIn(value);
-  for (const figure of expected) {
+  const figures = graces.map((grace) => GRACE[grace]);
+  for (const figure of new Set(figures)) {
     if (!stated.includes(figure)) note(where, `${key} = "${value}" does not state ${figure} minutes`);
   }
+  for (const figure of new Set(stated)) {
+    if (!figures.includes(figure) && figure !== policy.FreeCancellationHours) {
+      note(
+        where,
+        `${key} = "${value}" states ${figure}, which is none of its graces (${[...new Set(figures)].join(', ')} minutes) ` +
+          `nor the ${policy.FreeCancellationHours}-hour line`,
+      );
+    }
+  }
+  if (graces.includes('firstBooking') && !FIRST_BOOKING.test(value)) {
+    note(where, `${key} = "${value}" no longer names the first-booking grace (${graceFirstBooking} minutes)`);
+  }
 }
+const WEB_GRACE_KEYS = [
+  ['pages.home.rules.rethink_desc', ['standard', 'firstBooking', 'plus']],
+  ['pages.home.plus.perk_grace', ['standard', 'plus']],
+  ['pages.order.cancel_policy_note', ['standard', 'firstBooking', 'plus']],
+  ['pages.order.plus_perk_grace', ['standard', 'plus']],
+  ['pages.membership.perk_grace', ['standard', 'plus']],
+  ['pages.plus.perk_cancel_body', ['standard', 'plus']],
+  ['pages.plus.row_grace_without', ['standard', 'firstBooking']],
+  ['pages.plus.row_grace_with', ['plus']],
+];
+/** The same key names on Android and iOS. */
+const MOBILE_GRACE_KEYS = [
+  ['booking_cancel_grace_note', ['standard', 'firstBooking', 'plus']],
+  ['help_faq_a1', ['standard', 'firstBooking', 'plus']],
+  ['membership_perk_grace_desc', ['standard', 'plus']],
+];
 for (const locale of LOCALES) {
   const web = JSON.parse(read(join(WEB_I18N, `${locale}.json`)));
-  checkGrace(`web/${locale}`, 'pages.plus.row_grace_without', web.pages?.plus?.row_grace_without, [graceStandard]);
-  checkGrace(`web/${locale}`, 'pages.plus.row_grace_with', web.pages?.plus?.row_grace_with, [gracePlus]);
-  checkGrace(`web/${locale}`, 'pages.order.plus_perk_grace', web.pages?.order?.plus_perk_grace, [graceStandard, gracePlus]);
-  for (const key of ['booking_cancel_grace_note', 'membership_perk_grace_desc']) {
-    checkGrace(`android/${ANDROID_DIRS[locale]}`, key, androidString(ANDROID_DIRS[locale], key), [graceStandard, gracePlus]);
-    checkGrace(`ios/${locale}`, key, iosString(iosCatalog, key, locale), [graceStandard, gracePlus]);
+  for (const [key, graces] of WEB_GRACE_KEYS) {
+    checkGrace(`web/${locale}`, key, key.split('.').reduce((node, part) => node?.[part], web), graces);
+  }
+  for (const [key, graces] of MOBILE_GRACE_KEYS) {
+    checkGrace(`android/${ANDROID_DIRS[locale]}`, key, androidString(ANDROID_DIRS[locale], key), graces);
+    checkGrace(`ios/${locale}`, key, iosString(iosCatalog, key, locale), graces);
+  }
+}
+
+// ─── 2c. The dirtiness rates the three clients state (decision 29, 2026-09-28) ─────────────
+// Strictly: a key that states the increased or the heavy rate states that rate and no other, so a
+// chip showing the heavy rate on the increased level fails, and so does a line quoting a second,
+// stale rate beside the right one. The web renders its rate through `{{rate}}` from the shared
+// mirror (pinned in §1), so its copy must carry the placeholder and bake no percentage in.
+function checkRate(where, key, value, expected, csName) {
+  if (value === null || value === undefined) {
+    note(where, `${key} is missing`);
+    return;
+  }
+  const stated = percentagesIn(value);
+  if (stated.length === 0 || stated.some((pct) => pct !== expected)) {
+    note(
+      where,
+      `${key} = "${value}" states ${stated.length ? stated.map((pct) => `${pct}%`).join(', ') : 'no rate'}; ` +
+        `BookingPolicy.${csName} is ${expected}%`,
+    );
+  }
+}
+const DIRTINESS_RATES = {
+  increased: [increasedDirtinessPct, 'IncreasedDirtinessSurchargeRate'],
+  heavy: [heavyDirtinessPct, 'HeavyDirtinessSurchargeRate'],
+};
+for (const locale of LOCALES) {
+  const web = JSON.parse(read(join(WEB_I18N, `${locale}.json`)));
+  const chip = web.pages?.order?.dirtiness?.surcharge;
+  if (chip === undefined) {
+    note(`web/${locale}`, 'pages.order.dirtiness.surcharge is missing');
+  } else {
+    if (!chip.includes('{{rate}}')) {
+      note(`web/${locale}`, `pages.order.dirtiness.surcharge = "${chip}" does not carry the {{rate}} placeholder`);
+    }
+    if (percentagesIn(chip).length) {
+      note(`web/${locale}`, `pages.order.dirtiness.surcharge = "${chip}" bakes a rate in — it comes from BookingPolicy`);
+    }
+  }
+  for (const [level, [expected, csName]] of Object.entries(DIRTINESS_RATES)) {
+    for (const key of [`dirtiness_${level}_price`, `dirtiness_surcharge_${level}`]) {
+      checkRate(`android/${ANDROID_DIRS[locale]}`, key, androidString(ANDROID_DIRS[locale], key), expected, csName);
+    }
+    for (const key of [`booking_dirtiness_${level}_rate`, `booking_dirtiness_surcharge_${level}`]) {
+      checkRate(`ios/${locale}`, key, iosString(iosCatalog, key, locale), expected, csName);
+    }
   }
 }
 
@@ -367,7 +472,7 @@ function pinSeedText(where, markdown, { placeholder } = {}) {
 for (const type of LEGAL_SEED_TYPES) {
   const version = newestSeedVersion(REPO, type);
   if (version === null) {
-    note(`${LEGAL_SEED}/${type}/any`, 'has no dated version folder — the customer legal text has no seed');
+    note(`${LEGAL_SEED}/${type}/any`, 'has no dated version folder — the legal text has no seed');
     continue;
   }
   for (const locale of LOCALES) {
@@ -376,7 +481,7 @@ for (const type of LEGAL_SEED_TYPES) {
       note(rel, 'is missing');
       continue;
     }
-    pinSeedText(rel, read(rel), type === 'terms-of-service' ? { placeholder: '{{currency}}' } : {});
+    pinSeedText(rel, read(rel), type === 'customer/terms-of-service' ? { placeholder: '{{currency}}' } : {});
   }
 }
 
@@ -420,9 +525,10 @@ export function readCancellationReasons(source) {
 /**
  * Keys the server writes that no client renders yet. A gap named here is a finding for the owner,
  * not a pass: the list exists so the gate fails on the NEXT key while a known one is reported.
- * Empty today — every declared reason renders on all three clients.
+ * The confirmed lockout (owner ruling 2026-09-28, decision 11) reached the server first; the three
+ * customer clients render it in their own slices, and each one drops its line from here.
  */
-const REASONS_NOT_YET_RENDERED = new Set();
+const REASONS_NOT_YET_RENDERED = new Set(['order.cancelled.customer_lockout']);
 
 const reasons = existsSync(join(REPO, REASONS_CS)) ? readCancellationReasons(read(REASONS_CS)) : [];
 if (reasons.length === 0) note(REASONS_CS, 'declares no cancellation reason — the parser needs updating');
@@ -479,8 +585,10 @@ if (findings.length) {
   const seedVersions = LEGAL_SEED_TYPES.map((type) => newestSeedVersion(REPO, type)).join(' / ');
   console.log(
     `booking-policy-parity: ${LOCALES.length} locale(s) × web + android + ios agree with ` +
-      `BookingPolicy — cancellation ${partialPct}%/${lastMinutePct}%, grace ${graceStandard}/${gracePlus} min, express +${expressPct}% ` +
+      `BookingPolicy — cancellation ${partialPct}%/${lastMinutePct}%, grace ${graceStandard} min ` +
+      `(${graceFirstBooking} on a first booking, ${gracePlus} with Plus), express +${expressPct}% ` +
       `from ${policy.ExpressLeadTimeHours} h, window ${policy.FirstWindowHour}:00–${policy.LastWindowHour}:00; ` +
+      `dirtiness +${increasedDirtinessPct}%/+${heavyDirtinessPct}%; ` +
       `money figures in copy come from the market; legal seed ${seedVersions} carries the placeholders; ` +
       `${reasons.length - REASONS_NOT_YET_RENDERED.size} cancellation reason(s) render on every client`,
   );

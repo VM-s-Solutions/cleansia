@@ -9,6 +9,8 @@ import cz.cleansia.customer.api.model.UpdateRecurringBookingCommand as GenUpdate
 import kotlinx.datetime.Instant
 import cz.cleansia.core.network.mapWire
 import cz.cleansia.core.network.required
+import cz.cleansia.customer.core.booking.toApp
+import cz.cleansia.customer.core.booking.toWire
 import retrofit2.Response
 
 /**
@@ -51,6 +53,10 @@ class RecurringBookingApi(
                 paymentType = body.paymentType,
                 startsOn = Instant.parse(body.startsOn),
                 endsOn = body.endsOn?.let { Instant.parse(it) },
+                preferredEmployeeId = body.preferredEmployeeId,
+                termsAccepted = body.termsAccepted,
+                dirtinessLevel = body.dirtinessLevel.toWire(),
+                earlyPerformanceRequested = body.earlyPerformanceRequested,
             ),
         )
         return raw.mapWire { it.required("RecurringBookingTemplateDto").toAppDto() }
@@ -72,6 +78,7 @@ class RecurringBookingApi(
                 startsOn = Instant.parse(body.startsOn),
                 endsOn = body.endsOn?.let { Instant.parse(it) },
                 preferredEmployeeId = body.preferredEmployeeId,
+                dirtinessLevel = body.dirtinessLevel.toWire(),
             ),
         )
         return raw.mapWire { it.required("RecurringBookingTemplateDto").toAppDto() }
@@ -100,7 +107,8 @@ class RecurringBookingApi(
  *
  * `rooms` and `bathrooms` are refused with the rest because `CreateRecurringViewModel` copies them
  * straight into the edit form, so a coerced zero is not merely displayed — the next Update writes it
- * back and the client's invention becomes the server's record.
+ * back and the client's invention becomes the server's record. The dirtiness level is refused for the
+ * same reason: a defaulted Normal on a Heavy schedule would reprice every clean after the next edit.
  */
 private fun GenRecurringBookingTemplateDto.toAppDto(): RecurringBookingTemplateDto =
     RecurringBookingTemplateDto(
@@ -121,4 +129,5 @@ private fun GenRecurringBookingTemplateDto.toAppDto(): RecurringBookingTemplateD
         isActive = isActive.required("isActive"),
         preferredEmployeeId = preferredEmployeeId,
         requiresPaymentMethodChange = requiresPaymentMethodChange.required("requiresPaymentMethodChange"),
+        dirtinessLevel = dirtinessLevel.required("dirtinessLevel").toApp(),
     )

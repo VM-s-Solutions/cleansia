@@ -1,19 +1,11 @@
 using Cleansia.Core.AppServices.Abstractions;
-using Cleansia.Core.AppServices.Common;
-using Cleansia.Core.AppServices.Services;
-using Cleansia.Core.AppServices.Services.Interfaces;
-using Cleansia.Core.Domain.Credit;
 using Cleansia.Core.Domain.Enums;
-using Cleansia.Core.Domain.Internationalization;
-using Cleansia.Core.Domain.Notifications;
-using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Polly;
 using BusinessResult = Cleansia.Infra.Common.Validations.BusinessResult;
 
 namespace Cleansia.Core.AppServices.Features.Orders;
@@ -38,10 +30,11 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 /// its own. Here there was nobody to tap. That asymmetry is the entire justification for moving money
 /// without a human, and it does not transfer to any other case.</para>
 ///
-/// <para><b>All the money for this failure moves HERE, and only here.</b> A drop does not cancel a
-/// booking (owner ruling 2026-09-06), so <c>DropOrder</c> refunds nothing — whether the crew left or
-/// never arrived, the same empty seat at the same instant is what triggers payment. One path needs no
-/// guard against a second one paying the same customer twice.</para>
+/// <para><b>All the money for this failure moves through <see cref="CleanerNoShowCancellation"/>.</b> A
+/// drop does not cancel a booking (owner ruling 2026-09-06), so <c>DropOrder</c> refunds nothing —
+/// whether the crew left or never arrived, the same empty seat at the same instant is what triggers
+/// payment. An administrator's no-show confirmation runs the same body; an order is cancelled once, so
+/// neither can pay the customer a second time.</para>
 ///
 /// <para><b>The apology goes on both failure paths</b> because they are the same path: owner ruling,
 /// "the customer must not be paid less when the platform failed harder". Its amount is the order
@@ -51,17 +44,17 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 public class CancelUnfilledOrders
 {
     /// <param name="LookbackHours">
-    /// How far back to look. THE COLD-START BOUND, and the reason it is a parameter rather than a
-    /// literal: every existing row is unswept, so without it the first production tick would select
-    /// the entire history of unfilled orders and refund all of them in one pass, unattended. Six hours
-    /// means the first tick can only reach today's.
+    /// How far back to look. THE COLD-START BOUND: every existing row is unswept, so without it the first
+    /// production tick would select the entire history of unfilled orders and refund all of them in one
+    /// pass, unattended. A week, so a Functions outage of hours or days still leaves every missed order
+    /// to the first tick after it.
     /// </param>
     /// <param name="GraceMinutes">
     /// How long past the slot to wait before giving up. A cleaner can still take a job after its
     /// start time — <c>TakeOrder</c> has no lead-time gate at all — so a late fill is a real outcome
     /// and cancelling at the stroke of the hour would cut it off.
     /// </param>
-    public record Command(int LookbackHours = 6, int GraceMinutes = 30) : ICommand<Response>;
+    public record Command(int LookbackHours = 168, int GraceMinutes = 30) : ICommand<Response>;
 
     public record Response(int CancelledCount, int RefundedCount, int CreditedCount);
 
@@ -87,9 +80,7 @@ public class CancelUnfilledOrders
 
     public class Handler(
         IOrderRepository orderRepository,
-        ICreditAccountRepository creditAccountRepository,
-        IRefundService refundService,
-        INotificationProducer notificationProducer,
+        CleanerNoShowCancellation noShowCancellation,
         ITenantProvider tenantProvider,
         IUnitOfWork unitOfWork,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
@@ -106,8 +97,8 @@ public class CancelUnfilledOrders
             //
             // The money term is OrderAvailability's, and for the same reason: an unpaid card order is
             // an abandoned checkout that CleanupStalePendingOrders owns, and a cash RECURRING
-            // occurrence is structurally unfillable (it can never satisfy the offerability rule), so
-            // sweeping it would cancel and credit the same booking every single week.
+            // occurrence the customer never confirmed was never offered — AutoCancelStaleRecurringOrders
+            // retracts it before its slot.
             //
             // The currency rides along because the apology credit is read off it.
             var unfilled = await orderRepository.GetQueryableIgnoringTenant()
@@ -116,7 +107,8 @@ public class CancelUnfilledOrders
                     && o.CleaningDateTime <= deadline
                     && o.CleaningDateTime >= floor
                     && (o.PaymentStatus == PaymentStatus.Paid
-                        || (o.PaymentType == PaymentType.Cash && o.RecurringTemplateId == null)))
+                        || (o.PaymentType == PaymentType.Cash
+                            && (o.RecurringTemplateId == null || o.CustomerConfirmedAt != null))))
                 .Include(o => o.OrderStatusHistory)
                 .Include(o => o.AssignedEmployees)
                 .Include(o => o.Currency)
@@ -145,95 +137,26 @@ public class CancelUnfilledOrders
                         continue;
                     }
 
-                    // Platform fault: no fee, full refund. The customer did nothing wrong and the
-                    // clean did not happen.
-                    order.Cancel(
-                        nowUtc,
-                        CancelledBy.System,
-                        feeRate: 0m,
-                        refundAmount: order.TotalPrice,
-                        reason: OrderCancellationReasons.NoCleanerAvailable);
-                    order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Cancelled, order));
+                    // THE REPEAT SUPPRESSOR IS THE CANCEL ITSELF: Cancelled is outside NeverStarted, so
+                    // the next tick's own status filter excludes the row, and a refund that did not go
+                    // through is left to RedrivePendingRefunds.
+                    var outcome = await noShowCancellation.ExecuteAsync(
+                        order, CancelledBy.System, SystemActor, nowUtc, cancellationToken);
                     cancelled++;
-
-                    // THE REPEAT SUPPRESSOR IS THE CANCEL ITSELF. Cancelled is outside NeverStarted, so
-                    // the next tick's own status filter excludes the row — the CleanupStalePendingOrders
-                    // shape, and the reason this sweep needs no stamp column and therefore no schema.
-                    // It also means this sweep never retries its own refund: the refund's claim commit
-                    // saves this cancel before Stripe is called, so however the refund fails, the order
-                    // is already out of every later tick.
-
-                    var refundIssued = false;
-                    if (order.PaymentType == PaymentType.Card
-                        && order.PaymentStatus == PaymentStatus.Paid
-                        && order.TotalPrice > 0m
-                        && order.HasRefundableChargeSurface)
+                    if (outcome.RefundedAmount is not null)
                     {
-                        refundIssued = await TryRefundAsync(order, cancellationToken);
-                        if (refundIssued)
-                        {
-                            refunded++;
-                        }
+                        refunded++;
                     }
-
-                    // A refund of the whole sale already returned the applied credit on its own leg.
-                    // Without one — none attempted, or it failed — the credit comes back here, now:
-                    // nothing re-drives this sweep's refund, and any later refund of the order nets
-                    // off credit already returned, so this cannot pay it twice. Separate from the
-                    // apology below: this is the customer's own money coming home, that one is a gift.
-                    if (!refundIssued)
-                    {
-                        await creditAccountRepository.ReturnUnpaidOrderCreditAsync(
-                            order, SystemActor, cancellationToken);
-                    }
-
-                    var apology = await TryIssueApologyCreditAsync(order, cancellationToken);
-                    var apologised = apology is not null;
-                    if (apologised)
+                    if (outcome.ApologyAmount is not null)
                     {
                         credited++;
                     }
 
-                    // ONE message, keyed on the order. A cancellation happens once per order, so the
-                    // bare id is a safe subject here — unlike a refund, which an order can see more
-                    // than one of.
-                    //
-                    // Which message depends on what the customer actually got. Owner ruling 2026-09-06
-                    // is that the credit is announced explicitly, and the key that says so is sent
-                    // only when the credit was really issued: a guest has no account to hold it and
-                    // an order in a currency with no authored credit is refused the grant, so both of
-                    // those get the plain cancellation. Promising credit nobody received would be
-                    // worse than saying less.
-                    //
-                    // The credit rides along WITH its currency, formatted here: a money figure, not
-                    // PII, so it may sit on the lock screen and in the feed row's args.
-                    if (!string.IsNullOrEmpty(order.UserId))
-                    {
-                        var args = new Dictionary<string, string>
-                        {
-                            ["orderId"] = order.Id,
-                            ["orderNumber"] = order.DisplayOrderNumber,
-                        };
-                        if (apology is { } creditAmount)
-                        {
-                            args["amount"] = MoneyText.Format(creditAmount, order.Currency!);
-                        }
-
-                        await notificationProducer.NotifyAsync(
-                            order.UserId,
-                            apologised
-                                ? NotificationEventCatalog.OrderNoCleanerRefunded
-                                : NotificationEventCatalog.OrderCancelled,
-                            args,
-                            order.TenantId,
-                            order.Id,
-                            cancellationToken);
-                    }
+                    // Per ORDER, inside the tenant group: rows are stamped from the ambient tenant at
+                    // commit time, and the flush means the next order's raw credit return never lands
+                    // under a tracked balance that a later commit would write back over it.
+                    await unitOfWork.CommitAsync(cancellationToken);
                 }
-
-                // Inside the loop: rows are stamped from the ambient tenant AT COMMIT TIME, so one
-                // deferred commit would stamp every group with the last tenant seen.
-                await unitOfWork.CommitAsync(cancellationToken);
             }
 
             if (cancelled > 0)
@@ -247,104 +170,6 @@ public class CancelUnfilledOrders
             }
 
             return BusinessResult.Success(new Response(cancelled, refunded, credited));
-        }
-
-        /// <summary>
-        /// The full card refund, and whether it went through. A failure is logged for a person and
-        /// carried on from: the cancellation is still right, and a refund that did not go through is
-        /// not a reason to leave the customer holding a booking nobody is coming to.
-        ///
-        /// <para><b>A Stripe transport fault is a failed refund, not a crash.</b> RefundService turns a
-        /// Stripe refusal into a Failure but lets a timeout, a dropped connection or an open circuit
-        /// escape, after its claim commit has already saved this cancel — rethrown, the applied credit
-        /// would never come back. Caught here and not in RefundService, whose guest cancellation relies
-        /// on that escape to stay retryable.</para>
-        /// </summary>
-        private async Task<bool> TryRefundAsync(Order order, CancellationToken cancellationToken)
-        {
-            BusinessResult<RefundResult> refund;
-            try
-            {
-                refund = await refundService.IssueRefundAsync(
-                    new RefundRequest(
-                        order.Id,
-                        order.TotalPrice,
-                        RefundReason.ServiceNotRendered,
-                        SystemActor),
-                    cancellationToken);
-            }
-            catch (Exception ex) when (IsStripeTransportFailure(ex, cancellationToken))
-            {
-                logger.LogError(ex,
-                    "CancelUnfilledOrders could not reach Stripe to refund order {OrderId}; the refund is left pending",
-                    order.Id);
-                return false;
-            }
-
-            if (refund.IsFailure)
-            {
-                logger.LogError(
-                    "CancelUnfilledOrders could not refund order {OrderId}: {Error}",
-                    order.Id, refund.Error?.Message);
-            }
-
-            return refund.IsSuccess;
-        }
-
-        private static bool IsStripeTransportFailure(Exception ex, CancellationToken cancellationToken) =>
-            ex is HttpRequestException or TimeoutException or ExecutionRejectedException
-            || (ex is OperationCanceledException && !cancellationToken.IsCancellationRequested);
-
-        /// <summary>
-        /// The apology credit: the amount issued, or null — without failing the cancellation —
-        /// whenever it cannot honestly be given.
-        ///
-        /// <para><b>A guest gets the refund and no credit</b>, because there is nowhere to put it:
-        /// <c>Order.UserId</c> is nullable and <c>CreditAccount.UserId</c> is not, behind an FK to
-        /// Users. That is the rule the home page states in five locales.</para>
-        ///
-        /// <para><b>Only what the order's own currency authors.</b> A credit account keeps the currency
-        /// it was opened in and converts nothing, so the amount is <c>Currency.NoShowCredit</c> on the
-        /// order's currency and lands in the customer's account in that same currency. A currency with
-        /// no figure pays none: fail closed and log, the refund is unaffected (owner ruling
-        /// 2026-09-06). Nothing is ever scaled from another currency's figure.</para>
-        /// </summary>
-        private async Task<decimal?> TryIssueApologyCreditAsync(Order order, CancellationToken cancellationToken)
-        {
-            if (string.IsNullOrEmpty(order.UserId))
-            {
-                return null;
-            }
-
-            var amount = order.Currency?.NoShowCredit;
-            if (amount is null or <= 0m)
-            {
-                logger.LogWarning(
-                    "CancelUnfilledOrders skipped the apology credit on order {OrderId}: no apology credit "
-                        + "is authored for {CurrencyCode}. The refund was not affected.",
-                    order.Id, order.Currency?.Code ?? order.CurrencyId);
-                return null;
-            }
-
-            var account = await creditAccountRepository.EnsureForUserAsync(
-                order.UserId, order.CurrencyId, cancellationToken);
-            if (account is null)
-                return null;
-
-            // One key per ORDER, so an order swept twice — a retried tick, a re-entry after a failed
-            // commit — pays the apology once. The ledger's IdempotencyKey carries a plain unique index
-            // that collapses the second write.
-            account.Issue(
-                amount: amount.Value,
-                reason: CreditTransactionReason.CleanerNoShow,
-                idempotencyKey: $"cleaner-noshow:{order.Id}",
-                // "system", not the cleaner who walked and not an admin: no person decided this, and
-                // writing a partner's id onto a customer's money record would be worse than anonymous.
-                issuedBy: SystemActor,
-                orderId: order.Id,
-                note: "No cleaner was assigned when the booking's time arrived.");
-
-            return amount.Value;
         }
     }
 }

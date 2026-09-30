@@ -78,7 +78,9 @@ public sealed class ApproveEmployeeWorkCountryOperatorTests
             requirements.Object,
             currencyResolution.Object,
             _operators.Object,
-            _tenant.Object);
+            _tenant.Object,
+            Mock.Of<ILegalDocumentResolver>(),
+            Mock.Of<IUserConsentRepository>());
     }
 
     [Fact]

@@ -111,6 +111,15 @@ fun GetMyMembershipResponse.trialEndsAt(now: Instant = Clock.System.now()): Inst
     trialEndsAtUtc?.takeIf { hasMembership && it > now }
 
 /**
+ * A live enrolment whose renewal payment failed, or that Stripe paused. [GetMyMembershipResponse.hasMembership]
+ * still counts it — the server refuses a second subscription while it lives — but no Plus benefit runs, and
+ * its cancel takes effect at once. -> /product/business-rules
+ */
+val GetMyMembershipResponse.benefitsPaused: Boolean
+    get() = hasMembership &&
+        MembershipStatus.fromCode(status).let { it == MembershipStatus.PastDue || it == MembershipStatus.Paused }
+
+/**
  * Mirrors backend `GetMembershipPlans.Response`. Drives the monthly/yearly
  * switcher on the subscribe screen. [savingsPercentVsMonthly] is computed
  * server-side relative to the cheapest monthly plan in the catalog — UI just

@@ -47,6 +47,8 @@ public static class DisputeMappers
             Status: dispute.Status.MapToCode(),
             ResolutionNotes: dispute.ResolutionNotes,
             RefundAmount: dispute.RefundAmount,
+            CardRefundedAmount: dispute.CardRefundedAmount,
+            CreditReturnedAmount: dispute.CreditReturnedAmount,
             Currency: dispute.Order?.Currency?.MapToDetailDto(),
             ResolvedOn: dispute.ResolvedOn,
             Messages: dispute.Messages.Select(m => m.MapToDto(dispute)).ToList(),
@@ -59,7 +61,8 @@ public static class DisputeMappers
                 ? null
                 : DisputeLimits.IsWithinFilingWindow(
                     dispute.Order.CompletedAt, dispute.Order.CleaningDateTime, dispute.CreatedOn),
-            Lines: dispute.Lines.Select(line => line.MapToDto(dispute.Order)).ToList()
+            Lines: dispute.Lines.Select(line => line.MapToDto(dispute.Order)).ToList(),
+            SettlementPreference: dispute.SettlementPreference
         );
     }
 

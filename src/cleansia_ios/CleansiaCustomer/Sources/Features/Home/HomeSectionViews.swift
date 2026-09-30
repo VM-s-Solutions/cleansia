@@ -12,7 +12,7 @@ struct HomeSectionTitle: View {
     }
 }
 
-/// Insured / Vetted / Same-day (`TrustStrip`, `HomeTab.kt:626-668`) — the
+/// Insured / Same-day (`TrustStrip`, `HomeTab.kt:626-668`) — the
 /// fallback when there is no completed order to rebook.
 struct TrustStrip: View {
     @Environment(\.locale) private var locale
@@ -20,8 +20,6 @@ struct TrustStrip: View {
     var body: some View {
         HStack(spacing: 0) {
             trustItem(icon: "shield", label: L10n.Home.trustInsured)
-            divider
-            trustItem(icon: "checkmark.shield", label: L10n.Home.trustVetted)
             divider
             trustItem(icon: "bolt", label: L10n.Home.trustSameDay)
         }
@@ -274,6 +272,7 @@ private struct PopularPackageCard: View {
                 timeOfDay: "10:00",
                 rooms: 2,
                 bathrooms: 1,
+                dirtiness: .normal,
                 savedAddressId: "a1",
                 addressLine: "Zenklova 6, Praha",
                 selectedServiceIds: [],

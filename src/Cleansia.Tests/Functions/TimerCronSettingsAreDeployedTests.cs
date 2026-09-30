@@ -192,9 +192,13 @@ public class TimerCronSettingsAreDeployedTests
     }
 
     // A Bicep comment naming a setting would otherwise satisfy every regex above without deploying it.
+    // Strings are kept whole and scanned past, so a /* or */ inside one is text, not a comment: the
+    // admin-link description's "/api/*" once opened a "comment" that ran to the "*/5" of a cron value
+    // and swallowed the cronSettings var with it.
     private static string WithoutComments(string template) =>
         Regex.Replace(
-            Regex.Replace(template, @"/\*.*?\*/", string.Empty, RegexOptions.Singleline),
-            @"//[^\n]*",
-            string.Empty);
+            template,
+            @"(?<text>'''.*?'''|'(?:\\.|[^'\\\r\n])*')|/\*.*?\*/|//[^\n]*",
+            match => match.Groups["text"].Success ? match.Value : string.Empty,
+            RegexOptions.Singleline);
 }

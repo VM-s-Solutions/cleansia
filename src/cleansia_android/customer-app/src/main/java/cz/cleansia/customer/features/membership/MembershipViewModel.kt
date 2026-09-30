@@ -12,6 +12,7 @@ import cz.cleansia.customer.core.market.countryId
 import cz.cleansia.customer.core.memberships.GetMyMembershipResponse
 import cz.cleansia.customer.core.memberships.MembershipPlanDto
 import cz.cleansia.customer.core.memberships.MembershipRepository
+import cz.cleansia.customer.core.memberships.benefitsPaused
 import cz.cleansia.customer.core.memberships.trialEndsAt
 import cz.cleansia.customer.ui.state.ActionState
 import cz.cleansia.core.snackbar.SnackbarController
@@ -198,22 +199,23 @@ class MembershipViewModel @Inject constructor(
     }
 
     /**
-     * Cancel the user's active membership at period end. UI refreshes from
-     * [current] which reflects the cancellation request flag. A paid period runs
-     * to its end; a trial ends with no paid month after it.
+     * Cancel the user's membership. UI refreshes from [current] which reflects the cancellation
+     * request flag. A paid period runs to its end; a trial ends with no paid month after it; a
+     * past-due or paused one ends now.
      */
     fun cancel() {
         if (_submitState.value is ActionState.Submitting) return
         _submitState.value = ActionState.Submitting
+        val endsNow = repository.current.value?.benefitsPaused == true
         val inTrial = trialEndsAt.value != null
         viewModelScope.launch {
             try {
                 val resp = repository.cancel().showErrorUnlessNetwork().getOrNull()
                     ?: return@launch
-                if (inTrial) {
-                    snackbar.showSuccessKey(R.string.membership_cancel_success_trial)
-                } else {
-                    snackbar.showSuccess(
+                when {
+                    endsNow -> snackbar.showSuccessKey(R.string.membership_cancel_success_now)
+                    inTrial -> snackbar.showSuccessKey(R.string.membership_cancel_success_trial)
+                    else -> snackbar.showSuccess(
                         appContext.getString(R.string.membership_cancelled_until, formatPeriodEnd(resp.effectiveEndDate)),
                     )
                 }

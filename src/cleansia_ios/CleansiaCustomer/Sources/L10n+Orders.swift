@@ -332,6 +332,10 @@ extension L10n {
             localized("order_action_report_issue")
         }
 
+        static var actionCleanerDidNotArrive: String {
+            localized("order_action_cleaner_did_not_arrive")
+        }
+
         static var actionRebook: String {
             localized("order_action_rebook")
         }

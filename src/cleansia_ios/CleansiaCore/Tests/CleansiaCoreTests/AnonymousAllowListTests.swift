@@ -23,12 +23,10 @@ final class AnonymousAllowListTests: XCTestCase {
         "/api/Currency/GetOverview",
         "/api/Membership/GetPlans",
         "/api/Order/Quote",
-        "/api/Order/CreateOrder",
         "/api/Order/Lookup",
         "/api/Order/LookupBatch",
         "/api/Order/GuestCancellationPreview",
         "/api/Order/CancelGuest",
-        "/api/Payment/CreateOrder",
         "/api/Referral/Validate"
     ]
 
@@ -86,11 +84,7 @@ final class AnonymousAllowListTests: XCTestCase {
         XCTAssertFalse(AnonymousAllowList.customer.isAnonymous(path: "/api/Order/Get"))
     }
 
-    private let dualUsePaths = [
-        "/api/Order/Quote",
-        "/api/Order/CreateOrder",
-        "/api/Payment/CreateOrder"
-    ]
+    private let dualUsePaths = ["/api/Order/Quote"]
 
     func testCustomerClassifiesBookingPathsAsDualUse() {
         let list = AnonymousAllowList.customer
@@ -126,6 +120,16 @@ final class AnonymousAllowListTests: XCTestCase {
         }
         XCTAssertFalse(list.isAnonymous(path: "/api/Order/Cancel"))
         XCTAssertFalse(list.isAnonymous(path: "/api/Order/CancellationPreview"))
+    }
+
+    /// Guest booking is web-only: the customer mobile host takes an order from a signed-in customer and
+    /// has no second create route, so a create is an ordinary authed call.
+    func testOrderCreationIsNeverAnonymousOrDualUse() {
+        let list = AnonymousAllowList.customer
+        for path in ["/api/Order/CreateOrder", "/api/Payment/CreateOrder"] {
+            XCTAssertFalse(list.isAnonymous(path: path), "\(path) must not be on the guest allow-list")
+            XCTAssertFalse(list.isDualUse(path: path), "\(path) must not be dual-use")
+        }
     }
 
     func testPaymentCreateIntentIsNeverAnonymousOrDualUse() {

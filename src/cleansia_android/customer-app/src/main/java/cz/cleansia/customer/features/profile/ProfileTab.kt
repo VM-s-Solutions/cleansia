@@ -28,6 +28,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowForwardIos
 import androidx.compose.material.icons.automirrored.outlined.Logout
+import androidx.compose.material.icons.outlined.CreditCard
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.DeleteForever
 import androidx.compose.material.icons.outlined.Devices
@@ -111,6 +112,7 @@ fun ProfileTab(
 
     val accountRows = listOf(
         ProfileRow("addresses", Icons.Outlined.Home, R.string.profile_row_addresses),
+        ProfileRow("payments", Icons.Outlined.CreditCard, R.string.profile_row_payments),
         // "Disputes" opens the My Disputes list (Wave 2 Phase 6). Gavel is
         // the canonical formal-complaint glyph in material-icons-extended.
         ProfileRow("disputes", Icons.Outlined.Gavel, R.string.profile_row_disputes),

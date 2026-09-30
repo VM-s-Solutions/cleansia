@@ -7,6 +7,7 @@ using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
+using Cleansia.Core.Queue.Abstractions;
 using MockQueryable;
 using Moq;
 
@@ -41,9 +42,10 @@ public class AdminOverrideOrderStatusHandlerTests
 
     private readonly AuditContext _auditContext = new();
     private readonly Mock<ILiveActivityProducer> _liveActivityProducer = new();
+    private readonly Mock<IPendingDispatch> _pending = new();
 
     private AdminOverrideOrderStatus.Handler CreateHandler() =>
-        new(_orderRepository.Object, _session.Object, _auditContext, _liveActivityProducer.Object);
+        new(_orderRepository.Object, _session.Object, _auditContext, _liveActivityProducer.Object, _pending.Object);
 
     private Order ArrangeOrder(params OrderStatus[] history) => ArrangeOrder(crew: 0, history);
 
@@ -322,5 +324,93 @@ public class AdminOverrideOrderStatusHandlerTests
 
         Assert.True(result.IsFailure);
         Assert.Equal(BusinessErrorMessage.OrderNotFound, result.Error!.Message);
+    }
+
+    /// <summary>
+    /// Owner ruling 2026-09-28: a sale collected in cash is receipted at completion, and an administrator's
+    /// completion does not pass through CompleteOrder — so the override issues it. A sale settled any other
+    /// way already has its receipt from the payment.
+    /// </summary>
+    [Theory]
+    [InlineData(true, 1)]
+    [InlineData(false, 0)]
+    public async Task Completing_A_Sale_Collected_In_Cash_Issues_Its_Receipt(bool collectedInCash, int receipts)
+    {
+        var order = ArrangeOrder(crew: 1, OrderStatus.New, OrderStatus.Confirmed, OrderStatus.InProgress);
+        if (collectedInCash)
+        {
+            order.MarkCashCollected($"{CleanerId}-0");
+        }
+
+        var result = await CreateHandler().Handle(
+            new AdminOverrideOrderStatus.Command(OrderId, OrderStatus.Completed), CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        _pending.Verify(p => p.Enqueue(
+            QueueNames.GenerateReceipt, It.IsAny<It.IsAnyType>(), MessageKeys.Receipt(OrderId)), Times.Exactly(receipts));
+    }
+
+    // Owner ruling 2026-09-28: completing an order that has no after photo is the photo rule's one exception, and it
+    // exists only with a written reason on its audit row.
+
+    private AdminOverrideOrderStatus.Validator Validator(int afterPhotos)
+    {
+        _orderRepository.Setup(r => r.ExistsAsync(OrderId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        var photos = new Mock<IOrderPhotoRepository>();
+        photos
+            .Setup(r => r.GetPhotoCountByOrderIdAndTypeAsync(OrderId, PhotoType.After, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(afterPhotos);
+        return new AdminOverrideOrderStatus.Validator(_orderRepository.Object, photos.Object);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("  ")]
+    public async Task Completing_An_Order_With_No_After_Photo_Needs_A_Reason(string? reason)
+    {
+        var result = await Validator(afterPhotos: 0).ValidateAsync(
+            new AdminOverrideOrderStatus.Command(OrderId, OrderStatus.Completed, reason));
+
+        Assert.Equal(BusinessErrorMessage.OrderForceCompleteReasonRequired, Assert.Single(result.Errors).ErrorMessage);
+    }
+
+    [Fact]
+    public async Task Completing_An_Order_With_No_After_Photo_Passes_With_A_Reason()
+    {
+        var result = await Validator(afterPhotos: 0).ValidateAsync(
+            new AdminOverrideOrderStatus.Command(OrderId, OrderStatus.Completed, "The cleaner's phone broke on site."));
+
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public async Task Completing_An_Order_With_An_After_Photo_Needs_No_Reason()
+    {
+        var result = await Validator(afterPhotos: 1).ValidateAsync(
+            new AdminOverrideOrderStatus.Command(OrderId, OrderStatus.Completed));
+
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public async Task Another_Forward_Move_Needs_No_Reason()
+    {
+        var result = await Validator(afterPhotos: 0).ValidateAsync(
+            new AdminOverrideOrderStatus.Command(OrderId, OrderStatus.InProgress));
+
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public async Task The_Reason_Is_Kept_On_The_Audit_Row()
+    {
+        ArrangeOrder(crew: 1, OrderStatus.New, OrderStatus.Confirmed, OrderStatus.InProgress);
+
+        var result = await CreateHandler().Handle(
+            new AdminOverrideOrderStatus.Command(OrderId, OrderStatus.Completed, "  The cleaner's phone broke on site.  "),
+            CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Equal("The cleaner's phone broke on site.", _auditContext.DrainSnapshot()!.Reason);
     }
 }

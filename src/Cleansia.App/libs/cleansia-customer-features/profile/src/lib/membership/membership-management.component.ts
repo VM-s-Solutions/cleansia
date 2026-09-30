@@ -5,6 +5,7 @@ import {
   OnInit,
   inject,
   input,
+  output,
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { CleansiaButtonComponent } from '@cleansia/components';
@@ -48,6 +49,12 @@ export class MembershipManagementComponent implements OnInit {
    */
   readonly embedded = input(false);
 
+  /**
+   * The host page reads the membership on its own to decide what its subscribe buttons do, and a
+   * cancel that ends a failed renewal now turns this customer back into someone who may subscribe.
+   */
+  readonly cancelled = output<void>();
+
   protected readonly facade = inject(MembershipFacade);
   private readonly translate = inject(TranslateService);
   private readonly confirmService = inject(ConfirmationService);
@@ -64,6 +71,7 @@ export class MembershipManagementComponent implements OnInit {
   readonly expressWaiverExhausted = this.facade.expressWaiverExhausted;
   readonly expressWaiverPendingTrial = this.facade.expressWaiverPendingTrial;
   readonly trialEndsOn = this.facade.trialEndsOn;
+  readonly paymentFailed = this.facade.paymentFailed;
   readonly switchLeadKey = this.facade.switchLeadKey;
 
   /** Yearly plan (if any) — drives the "Switch to annual" CTA visibility. */
@@ -90,7 +98,7 @@ export class MembershipManagementComponent implements OnInit {
       icon: 'pi pi-exclamation-triangle',
       acceptLabel: this.translate.instant('pages.membership.cancel_dialog_confirm'),
       rejectLabel: this.translate.instant('common.back'),
-      accept: () => this.facade.cancel(),
+      accept: () => this.facade.cancel(() => this.cancelled.emit()),
     });
   }
 

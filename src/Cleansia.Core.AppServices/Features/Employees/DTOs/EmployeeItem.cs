@@ -23,6 +23,10 @@ public record EmployeeItem(
     string? LegalEntityName,
     string? EmergencyContactName,
     string? EmergencyContactPhone,
+    // Ahead of the photo on purpose: its base64 is redacted in the request log, and text behind it would
+    // be pulled into the logged window.
+    int? WeeklyOrderLimit,
+    string? WeeklyOrderLimitReason,
     BlobFileDto? ProfilePhoto,
     Code Profile,
     Code AuthenticationType,

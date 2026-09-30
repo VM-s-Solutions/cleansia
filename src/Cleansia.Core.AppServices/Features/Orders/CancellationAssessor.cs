@@ -29,12 +29,18 @@ internal static class CancellationAssessor
     /// The <c>BusinessErrorMessage</c> key for why this order cannot be cancelled at all, or
     /// <see langword="null"/> when it can. Each caller wraps it in an <c>Error</c> against its own
     /// <c>OrderId</c> field.
+    ///
+    /// <para>Past the booked start with a cleaner on the job and not started, the customer reports that
+    /// the cleaner did not arrive rather than paying the last-minute fee for the platform's no-show.
+    /// → /product/business-rules#cancellation</para>
     /// </summary>
-    public static string? BlockedReason(Order order) => order.CurrentStatus switch
+    public static string? BlockedReason(Order order, DateTime nowUtc) => order.CurrentStatus switch
     {
         OrderStatus.Cancelled => BusinessErrorMessage.OrderAlreadyCancelled,
         OrderStatus.Completed => BusinessErrorMessage.OrderAlreadyCompleted,
         OrderStatus.InProgress => BusinessErrorMessage.OrderInProgressCannotCancel,
+        _ when order.AssignedEmployees.Count > 0 && nowUtc >= order.CleaningDateTime
+            => BusinessErrorMessage.OrderStartPassedCannotCancel,
         _ => null,
     };
 
@@ -60,7 +66,7 @@ internal static class CancellationAssessor
         // numeric(18,2) (rounds) while Stripe truncates (long)(amount*100), so an unrounded value can
         // make the ledger and Stripe diverge by a cent and skew the Refunded/PartiallyRefunded
         // comparison. Rounding once here makes every downstream reader agree.
-        var refundAmount = Math.Round(order.TotalPrice * (1m - feeRate), 2, MidpointRounding.AwayFromZero);
+        var refundAmount = RefundAmountFor(order.TotalPrice, feeRate);
 
         // The fee is the residual, never a second rounding of the same half-cent: rounding both legs
         // independently makes them sum to a cent more than the total the customer is looking at.
@@ -71,4 +77,18 @@ internal static class CancellationAssessor
             RefundAmount: refundAmount,
             HasBeenAccepted: hasBeenAccepted);
     }
+
+    public static decimal RefundAmountFor(decimal totalPrice, decimal feeRate) =>
+        Math.Round(totalPrice * (1m - feeRate), 2, MidpointRounding.AwayFromZero);
+
+    /// <summary>
+    /// The cancellation fee a cancelled order still owes: all of it on an order that took no payment,
+    /// none where a card charge covered it. Null on an order that is not cancelled.
+    /// </summary>
+    public static decimal? FeeOwed(Order order) => order.CancellationFeeRate switch
+    {
+        null => null,
+        { } rate when order.TookNoPayment => order.TotalPrice - RefundAmountFor(order.TotalPrice, rate),
+        _ => 0m,
+    };
 }

@@ -104,7 +104,7 @@ struct SubscribePlusScreen: View {
                         onBack: onBack
                     )
                     SocialProofTile()
-                    PerksSection(showExpress: selectedPlan?.allowsExpressUpgrade == true)
+                    PerksSection(plan: selectedPlan)
                     Color.clear.frame(height: 140)
                 }
             }
@@ -375,19 +375,27 @@ private struct SocialProofTile: View {
 }
 
 private struct PerksSection: View {
-    let showExpress: Bool
+    let plan: MembershipPlan?
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.s) {
             Text(L10n.Membership.perksSectionTitle)
                 .font(CleansiaTypography.titleLarge)
                 .foregroundColor(CleansiaColors.onBackground)
-            PerkTile(icon: "tag", title: L10n.Membership.perkDiscountTitle, desc: L10n.Membership.perkDiscountDesc)
-            PerkTile(
-                icon: "checkmark.circle",
-                title: L10n.Membership.perkCancellationTitle,
-                desc: L10n.Membership.perkCancellationDesc
-            )
+            if let percent = plan?.discountPerkPercent {
+                PerkTile(
+                    icon: "tag",
+                    title: L10n.Membership.perkDiscountTitle,
+                    desc: L10n.Membership.perkDiscountDesc(percent)
+                )
+            }
+            if let hours = plan?.cancellationPerkHours {
+                PerkTile(
+                    icon: "checkmark.circle",
+                    title: L10n.Membership.perkCancellationTitle,
+                    desc: L10n.Membership.perkCancellationDesc(hours)
+                )
+            }
             PerkTile(
                 icon: "arrow.uturn.backward",
                 title: L10n.Membership.perkGraceTitle,
@@ -399,11 +407,11 @@ private struct PerksSection: View {
                 desc: L10n.Membership.perkFavoriteCleanerDesc
             )
             PerkTile(icon: "repeat", title: L10n.Membership.perkRecurringTitle, desc: L10n.Membership.perkRecurringDesc)
-            if showExpress {
+            if let perMonth = plan?.expressPerkPerMonth {
                 PerkTile(
                     icon: "bolt",
                     title: L10n.Membership.perkExpressTitle,
-                    desc: L10n.Membership.perkExpressDesc
+                    desc: L10n.Membership.perkExpressDesc(perMonth)
                 )
             }
         }

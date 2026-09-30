@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AUTH_COOKIE_KEYS, CleansiaAdminRoute, LocalStorageKey, Role } from '@cleansia/services';
 import {
@@ -31,6 +31,12 @@ export class AdminAuthService {
       return isLoggedIn;
     })
   );
+
+  /** Set while the administrator still signs in with a password someone else chose (another
+   *  administrator's create, or a seed): the admin guard holds every page but the profile's
+   *  password change, and the shell hides its navigation. The server clears its flag on any
+   *  password write and reports it on every sign-in and refresh; this is the UI's copy of it. */
+  readonly passwordChangeRequired = signal<boolean>(this.readPasswordChangeRequired());
 
   login(
     email: string,
@@ -144,10 +150,15 @@ export class AdminAuthService {
       localStorage.removeItem(this.cookieKeys.refreshTokenExp);
       localStorage.removeItem(this.cookieKeys.csrfToken);
       localStorage.removeItem(this.cookieKeys.role);
-      for (const key of [this.cookieKeys.adminRole, this.cookieKeys.userId]) {
+      for (const key of [
+        this.cookieKeys.adminRole,
+        this.cookieKeys.userId,
+        this.cookieKeys.mustChangePassword,
+      ]) {
         if (key) localStorage.removeItem(key);
       }
     }
+    this.passwordChangeRequired.set(false);
     this.isLoggedIn$.next(false);
   }
 
@@ -159,6 +170,11 @@ export class AdminAuthService {
     // next refresh; a response without one clears it rather than leaving a stale set behind.
     this.storeOrClear(this.cookieKeys.adminRole, authResult.adminRole);
     this.storeOrClear(this.cookieKeys.userId, authResult.userId);
+    this.storeOrClear(
+      this.cookieKeys.mustChangePassword,
+      authResult.mustChangePassword ? 'true' : undefined
+    );
+    this.passwordChangeRequired.set(authResult.mustChangePassword === true);
     if (authResult.refreshTokenExpiresAt) {
       localStorage.setItem(
         this.cookieKeys.refreshTokenExp,
@@ -171,6 +187,20 @@ export class AdminAuthService {
 
     this.isLoggedIn$.next(true);
     this.setWarningDialogStatus(false);
+  }
+
+  /** The password change succeeded. The server cleared its flag with the write and the next
+   *  refresh would say so; clearing the copy here lets the app continue without waiting for it. */
+  clearPasswordChangeRequired(): void {
+    if (typeof localStorage !== 'undefined' && this.cookieKeys.mustChangePassword) {
+      localStorage.removeItem(this.cookieKeys.mustChangePassword);
+    }
+    this.passwordChangeRequired.set(false);
+  }
+
+  private readPasswordChangeRequired(): boolean {
+    const key = this.cookieKeys.mustChangePassword;
+    return typeof localStorage !== 'undefined' && !!key && localStorage.getItem(key) === 'true';
   }
 
   private storeOrClear(key: string | undefined, value: string | undefined): void {

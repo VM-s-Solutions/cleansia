@@ -24,7 +24,11 @@ final class CreateRecurringPreferredCleanerTests: XCTestCase {
         )
     }
 
-    private func makeVM(editing: RecurringTemplate?, client: FakeRecurringBookingClient) -> CreateRecurringViewModel {
+    private func makeVM(
+        editing: RecurringTemplate?,
+        client: FakeRecurringBookingClient,
+        cleaners: FakeServingCleanersClient = FakeServingCleanersClient()
+    ) -> CreateRecurringViewModel {
         CreateRecurringViewModel(
             sourceOrderId: nil,
             editing: editing,
@@ -33,6 +37,7 @@ final class CreateRecurringPreferredCleanerTests: XCTestCase {
             addressClient: FakeRecurringSavedAddressClient(),
             orderClient: FakeOrderClient(),
             quoteClient: FakeQuoteClient(),
+            cleanersClient: cleaners,
             snackbar: SnackbarController(),
             scheduler: TestScheduler.dispatch.eraseToAnyScheduler()
         )
@@ -46,6 +51,7 @@ final class CreateRecurringPreferredCleanerTests: XCTestCase {
             timeOfDay: input.timeOfDay,
             rooms: input.rooms,
             bathrooms: input.bathrooms,
+            dirtiness: input.dirtiness,
             savedAddressId: input.savedAddressId,
             selectedServiceIds: input.selectedServiceIds,
             selectedPackageIds: input.selectedPackageIds,
@@ -98,7 +104,8 @@ final class CreateRecurringPreferredCleanerTests: XCTestCase {
             startsOn: Date(timeIntervalSince1970: 1_780_000_000),
             isActive: true,
             preferredEmployeeId: "emp-1",
-            requiresPaymentMethodChange: false
+            requiresPaymentMethodChange: false,
+            dirtinessLevel: ._0
         )
 
         XCTAssertEqual(try payload.toDomain().preferredEmployeeId, "emp-1")
@@ -168,5 +175,125 @@ final class CreateRecurringPreferredCleanerTests: XCTestCase {
 
         XCTAssertFalse(savedWithout)
         XCTAssertEqual(client.updateInputs.map(\.preferredEmployeeId), ["emp-1", nil, "emp-1"])
+    }
+
+    // MARK: - A new schedule can ask for a favourite cleaner
+
+    private static let eva = ServingCleaner(id: "emp-1", fullName: "Eva")
+
+    private func fillValid(_ vm: CreateRecurringViewModel) {
+        vm.setSavedAddressId("addr-1")
+        vm.toggleService("s-1")
+        vm.setDirtiness(.normal)
+        vm.setStartsOn(Date(timeIntervalSince1970: 1_780_000_000))
+        vm.setEarlyPerformanceRequested(true)
+    }
+
+    /// A schedule has no single instant, so the list is who served this customer, not who is free.
+    func testTheFormOffersTheCleanersWhoServedTheCustomer() async {
+        let cleaners = FakeServingCleanersClient(result: .success([Self.eva]))
+        let vm = makeVM(editing: nil, client: FakeRecurringBookingClient(), cleaners: cleaners)
+
+        await vm.load()
+
+        XCTAssertEqual(vm.servingCleaners, [Self.eva])
+        XCTAssertEqual(cleaners.callCount, 1)
+    }
+
+    func testAFailedCleanerListOffersNoPickAndStillSaves() async {
+        let client = FakeRecurringBookingClient()
+        let cleaners = FakeServingCleanersClient(result: .failure(ApiError(httpStatus: 500)))
+        let vm = makeVM(editing: nil, client: client, cleaners: cleaners)
+        await vm.load()
+        fillValid(vm)
+
+        let saved = await vm.submit()
+
+        XCTAssertTrue(vm.servingCleaners.isEmpty)
+        XCTAssertTrue(saved)
+        XCTAssertNil(client.createInputs.first?.preferredEmployeeId)
+    }
+
+    func testANewScheduleSendsTheFavouriteCleanerPicked() async {
+        let client = FakeRecurringBookingClient()
+        let cleaners = FakeServingCleanersClient(result: .success([Self.eva]))
+        let vm = makeVM(editing: nil, client: client, cleaners: cleaners)
+        await vm.load()
+        fillValid(vm)
+        vm.setPreferredEmployeeId("emp-1")
+
+        let saved = await vm.submit()
+
+        XCTAssertTrue(saved)
+        XCTAssertEqual(client.createInputs.first?.preferredEmployeeId, "emp-1")
+    }
+
+    func testANewScheduleWithNoPickSendsNone() async {
+        let client = FakeRecurringBookingClient()
+        let cleaners = FakeServingCleanersClient(result: .success([Self.eva]))
+        let vm = makeVM(editing: nil, client: client, cleaners: cleaners)
+        await vm.load()
+        fillValid(vm)
+
+        _ = await vm.submit()
+
+        XCTAssertEqual(client.createInputs.count, 1)
+        XCTAssertNil(client.createInputs.first?.preferredEmployeeId)
+    }
+
+    /// A new schedule has no stored favourite to keep: the snackbar names the refusal and the picker is
+    /// the way through, so the pick stays on screen to be changed or cleared.
+    func testARefusedPickOnANewScheduleKeepsThePickAndOffersNoSaveWithout() async {
+        let client = FakeRecurringBookingClient()
+        client.createResult = .failure(Self.notEligible)
+        let cleaners = FakeServingCleanersClient(result: .success([Self.eva]))
+        let vm = makeVM(editing: nil, client: client, cleaners: cleaners)
+        await vm.load()
+        fillValid(vm)
+        vm.setPreferredEmployeeId("emp-1")
+
+        let saved = await vm.submit()
+
+        XCTAssertFalse(saved)
+        XCTAssertFalse(vm.preferredCleanerRefused)
+        XCTAssertEqual(vm.formState.preferredEmployeeId, "emp-1")
+        XCTAssertEqual(client.createInputs.count, 1)
+    }
+
+    // MARK: - An edit can change or clear the favourite cleaner
+
+    func testAnEditSendsANewlyPickedFavouriteCleaner() async {
+        let client = FakeRecurringBookingClient()
+        let vm = makeVM(editing: Self.schedule(), client: client)
+        await vm.load()
+        vm.setPreferredEmployeeId("emp-2")
+
+        _ = await vm.submit()
+
+        XCTAssertEqual(client.updateInputs.first?.preferredEmployeeId, "emp-2")
+    }
+
+    func testAnEditThatClearsTheFavouriteCleanerSendsNone() async {
+        let client = FakeRecurringBookingClient()
+        let vm = makeVM(editing: Self.schedule(), client: client)
+        await vm.load()
+        vm.setPreferredEmployeeId(nil)
+
+        _ = await vm.submit()
+
+        XCTAssertNil(client.updateInputs.first?.preferredEmployeeId)
+    }
+
+    func testChangingTheFavouriteCleanerAfterARefusalWithdrawsTheRefusal() async {
+        let client = FakeRecurringBookingClient()
+        client.updateResult = .failure(Self.notEligible)
+        let vm = makeVM(editing: Self.schedule(), client: client)
+        await vm.load()
+        _ = await vm.submit()
+        XCTAssertTrue(vm.preferredCleanerRefused)
+
+        vm.setPreferredEmployeeId(nil)
+
+        XCTAssertFalse(vm.preferredCleanerRefused)
     }
 }

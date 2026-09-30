@@ -1,21 +1,28 @@
-import { computed, effect, inject, Injectable, Injector, signal, untracked } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { computed, effect, inject, Injectable, Injector, PLATFORM_ID, signal, untracked } from '@angular/core';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
   AddSavedAddressCommand,
+  CardCaptureFacade,
   CreateRecurringBookingCommand,
   CustomerClient,
   DeleteRecurringBookingCommand,
+  DirtinessLevel,
+  GetMyServingCleanersResponse,
+  MembershipStatus,
   PackageListItem,
   PaymentType,
+  PreferredCleanerOption,
   QuoteOrderCommand,
   QuoteOrderResponse,
   RecurringBookingTemplateDto,
   ServiceListItem,
   SetRecurringBookingActiveCommand,
+  toPreferredCleanerOptions,
   UpdateRecurringBookingCommand,
 } from '@cleansia/customer-services';
 import { CashEligibility, cashIsRefused, resolveCashEligibility } from '@cleansia/models';
-import { extractApiErrorCode, SnackbarService } from '@cleansia/services';
+import { CleansiaCustomerRoute, extractApiErrorCode, SnackbarService } from '@cleansia/services';
 import {
   loadCustomerPackages,
   loadCustomerServices,
@@ -50,6 +57,20 @@ export interface QuotedPrice {
 }
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
+const PARKED_FORM_STORAGE_KEY = 'cleansia_recurring_form_parked';
+
+/** Cash refusals the customer answers on this form by paying by card. */
+const CASH_REFUSALS: readonly string[] = [
+  'order.cash_not_available',
+  'order.cash_unpaid_receivable',
+  'order.cash_open_bookings_limit_reached',
+];
+
+interface ParkedForm {
+  templateId: string | null;
+  data: RecurringWizardFormData;
+}
 
 function priceOf(quoted: QuoteOrderResponse): QuotedPrice {
   return {
@@ -87,6 +108,8 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
   private readonly savedAddressStore = inject(SavedAddressStore);
   private readonly store = inject(Store);
   private readonly injector = inject(Injector);
+  private readonly cardCapture = inject(CardCaptureFacade);
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   // ─── List state ────────────────────────────────────────────────────
   readonly templates = signal<RecurringBookingTemplateDto[]>([]);
@@ -109,8 +132,8 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
   /** Template being edited, or null when the form is creating a new one. */
   readonly editingId = signal<string | null>(null);
   /**
-   * The server no longer accepts the schedule's preferred cleaner (the address may now be in a
-   * market they are not paid in). The preference is kept until the customer chooses to save without it.
+   * The server does not accept the schedule's preferred cleaner (the address may be in a market they
+   * are not paid in). The preference is kept until the customer chooses to save without it.
    */
   readonly preferredCleanerRefused = signal(false);
   /** The server refuses a start on or after the schedule's end date, which this form cannot edit. */
@@ -154,8 +177,23 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     }
   });
 
+  // ─── The favourite cleaner (Plus) ──────────────────────────────────
+  readonly servingCleaners = signal<GetMyServingCleanersResponse[]>([]);
+  readonly servingCleanersLoading = signal(false);
+  readonly preferredCleanerOptions = computed<PreferredCleanerOption[]>(() =>
+    toPreferredCleanerOptions(
+      this.servingCleaners(),
+      this.translate.instant('preferred_cleaner.unavailable'),
+    ),
+  );
+  readonly preferredCleanerVisible = computed(() => this.servingCleaners().length > 0);
+
   /** Drives the address field's own spinner — see `ensureAddresses`. */
   readonly addressesLoading = signal(false);
+
+  readonly cardCaptureVisible = this.cardCapture.visible;
+  readonly cardCaptureConsent = this.cardCapture.consentAccepted;
+  readonly cardCaptureStarting = this.cardCapture.starting;
 
   // ─── Wizard state ──────────────────────────────────────────────────
   readonly activeStep = signal(1);
@@ -171,6 +209,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
         packageIds: d.selectedPackageIds,
         rooms: d.rooms,
         bathrooms: d.bathrooms,
+        dirtinessLevel: d.dirtinessLevel ?? DirtinessLevel.Normal,
         countryId: this.countryOf(d.savedAddressId),
       };
     },
@@ -256,7 +295,17 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
   readonly submitAttempted = signal(false);
 
   /** Which required fields are still empty, in the order the form asks them. */
-  readonly missing = computed(() => missingFields(this.formData()));
+  readonly missing = computed(() => missingFields(this.formData(), this.editingId() === null));
+
+  constructor() {
+    super();
+    this.cardCapture.connect({
+      countryId: () => this.countryOf(this.formData().savedAddressId),
+      park: () => this.parkForm(),
+      returnUrl: () =>
+        `/${CleansiaCustomerRoute.MEMBERSHIP}/recurring/${this.editingId() ?? 'create'}`,
+    });
+  }
 
   /**
    * Bootstrap: load templates + addresses + catalog. Safe to call on every
@@ -359,7 +408,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
       const me = await firstValueFrom(
         this.membershipClient.getMine().pipe(takeUntil(this.destroyed$)),
       );
-      this.isMember.set(me?.hasMembership === true);
+      this.isMember.set(me?.status === MembershipStatus.Active);
     } catch {
       this.isMember.set(false);
     } finally {
@@ -383,6 +432,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
       template.selectedPackageIds ?? [],
       template.rooms,
       template.bathrooms,
+      template.dirtinessLevel ?? DirtinessLevel.Normal,
       this.countryOf(template.savedAddressId),
     );
     if (!quoted) return;
@@ -405,6 +455,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
       selection.packageIds,
       selection.rooms,
       selection.bathrooms,
+      selection.dirtinessLevel,
       selection.countryId,
     );
     if (sequence !== this.formQuoteSequence) return;
@@ -481,6 +532,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     packageIds: string[],
     rooms: number,
     bathrooms: number,
+    dirtinessLevel: DirtinessLevel,
     countryId: string | null,
   ): Promise<QuoteOrderResponse | null> {
     if (serviceIds.length === 0 && packageIds.length === 0) return null;
@@ -489,6 +541,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     command.selectedPackageIds = packageIds;
     command.rooms = rooms;
     command.bathrooms = bathrooms;
+    command.dirtinessLevel = dirtinessLevel;
     // The country, never a currency: the server prices in the address country's currency, and
     // on create derives it from the saved address itself. A schedule has no express surcharge to
     // date-shift.
@@ -531,6 +584,32 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     return bundle?.['name'] || item.name || null;
   }
 
+  /**
+   * The cleaners who have served this customer, asked with no slot: a schedule has no single instant,
+   * so the roster says who may be asked, never who is free. A failed read hides the picker, as on the
+   * one-off booking.
+   */
+  async loadServingCleaners(): Promise<void> {
+    if (this.servingCleanersLoading()) return;
+    this.servingCleanersLoading.set(true);
+    try {
+      const roster = await firstValueFrom(
+        this.orderClient.myServingCleaners().pipe(takeUntil(this.destroyed$)),
+      );
+      this.servingCleaners.set(roster ?? []);
+    } catch {
+      this.servingCleaners.set([]);
+    } finally {
+      this.servingCleanersLoading.set(false);
+    }
+  }
+
+  /** A new choice answers any refusal of the previous one. */
+  selectPreferredCleaner(employeeId: string | null): void {
+    this.preferredCleanerRefused.set(false);
+    this.updateFormData({ preferredEmployeeId: employeeId });
+  }
+
   /** Look one template up in the loaded list — the edit screen's entry point. */
   findTemplate(templateId: string): RecurringBookingTemplateDto | null {
     return this.templates().find((t) => t.id === templateId) ?? null;
@@ -550,6 +629,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
       timeOfDay: template.timeOfDay ?? '10:00',
       rooms: template.rooms,
       bathrooms: template.bathrooms,
+      dirtinessLevel: template.dirtinessLevel ?? DirtinessLevel.Normal,
       savedAddressId: template.savedAddressId ?? null,
       selectedServiceIds: [...(template.selectedServiceIds ?? [])],
       selectedPackageIds: [...(template.selectedPackageIds ?? [])],
@@ -557,6 +637,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
       startsOn: template.startsOn ? new Date(template.startsOn) : null,
       endsOn: template.endsOn ? new Date(template.endsOn) : null,
       preferredEmployeeId: template.preferredEmployeeId ?? null,
+      earlyPerformanceRequested: false,
     });
     this.preferredCleanerRefused.set(false);
     this.activeStep.set(1);
@@ -592,6 +673,52 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     this.updateFormData({ paymentType: null });
     this.cashCleared.set(true);
     if (announce) this.snackbar.showInfoTranslated('recurring_booking.cash_cleared');
+  }
+
+  setCardCaptureConsent(accepted: boolean): void {
+    this.cardCapture.setConsent(accepted);
+  }
+
+  closeCardCapture(): void {
+    this.cardCapture.close();
+  }
+
+  startCardCapture(): void {
+    this.cardCapture.start();
+  }
+
+  private parkForm(): void {
+    if (!this.isBrowser) return;
+    try {
+      const parked: ParkedForm = { templateId: this.editingId(), data: this.formData() };
+      sessionStorage.setItem(PARKED_FORM_STORAGE_KEY, JSON.stringify(parked));
+    } catch {
+      // Storage refused: the customer comes back to the form as it loads, not as they left it.
+    }
+  }
+
+  /**
+   * The form as the customer left it to save a card, if it was this schedule (or a new one when
+   * `templateId` is null). Reading consumes it.
+   */
+  restoreParkedForm(templateId: string | null): void {
+    if (!this.isBrowser) return;
+    let parked: ParkedForm | null = null;
+    try {
+      const raw = sessionStorage.getItem(PARKED_FORM_STORAGE_KEY);
+      sessionStorage.removeItem(PARKED_FORM_STORAGE_KEY);
+      parked = raw ? (JSON.parse(raw) as ParkedForm) : null;
+    } catch {
+      return;
+    }
+    if (!parked?.data || parked.templateId !== templateId) return;
+    const { startsOn, endsOn } = parked.data;
+    this.editingId.set(templateId);
+    this.formData.set({
+      ...parked.data,
+      startsOn: startsOn ? new Date(startsOn) : null,
+      endsOn: endsOn ? new Date(endsOn) : null,
+    });
   }
 
   toggleService(id: string): void {
@@ -718,16 +845,22 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     if (this.submitting() || !this.canSubmit()) return false;
     const d = this.formData();
     const paymentType = d.paymentType;
-    if (!d.savedAddressId || !d.startsOn || paymentType === null) return false;
+    const dirtinessLevel = d.dirtinessLevel;
+    if (!d.savedAddressId || !d.startsOn || paymentType === null || dirtinessLevel === null) {
+      return false;
+    }
     const editingId = this.editingId();
+    const preferredEmployeeId = withoutPreferredCleaner
+      ? undefined
+      : (d.preferredEmployeeId ?? undefined);
 
     this.preferredCleanerRefused.set(false);
     this.submitting.set(true);
     try {
       if (paymentType === PaymentType.Cash && !(await this.cashConfirmedForForm())) return false;
       const saved = editingId
-        ? await this.sendUpdate(editingId, d, paymentType, withoutPreferredCleaner)
-        : await this.sendCreate(d, paymentType);
+        ? await this.sendUpdate(editingId, d, paymentType, dirtinessLevel, preferredEmployeeId)
+        : await this.sendCreate(d, paymentType, dirtinessLevel, preferredEmployeeId);
       if (withoutPreferredCleaner) this.updateFormData({ preferredEmployeeId: null });
 
       if (saved) {
@@ -757,11 +890,15 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     } catch (error: unknown) {
       // The interceptor has already said why; a generic toast would replace that sentence.
       const code = extractApiErrorCode(error);
-      if (code === 'order.cash_not_available') {
+      if (code === 'order.cash_requires_saved_card') {
+        this.cardCapture.open();
+        return false;
+      }
+      if (code && CASH_REFUSALS.includes(code)) {
         this.dropCash(false);
         return false;
       }
-      if (editingId && code === 'order.preferred_employee.not_eligible') {
+      if (code === 'order.preferred_employee.not_eligible') {
         this.preferredCleanerRefused.set(true);
         return false;
       }
@@ -791,6 +928,8 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
   private sendCreate(
     d: RecurringWizardFormData,
     paymentType: PaymentType,
+    dirtinessLevel: DirtinessLevel,
+    preferredEmployeeId: string | undefined,
   ): Promise<RecurringBookingTemplateDto> {
     const command = new CreateRecurringBookingCommand();
     command.frequency = d.frequency as unknown as number;
@@ -804,6 +943,9 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     command.paymentType = paymentType;
     command.startsOn = d.startsOn as Date;
     command.endsOn = undefined;
+    command.preferredEmployeeId = preferredEmployeeId;
+    command.dirtinessLevel = dirtinessLevel;
+    command.earlyPerformanceRequested = d.earlyPerformanceRequested ? true : undefined;
     return firstValueFrom(this.client.create(command).pipe(takeUntil(this.destroyed$)));
   }
 
@@ -811,7 +953,8 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     templateId: string,
     d: RecurringWizardFormData,
     paymentType: PaymentType,
-    withoutPreferredCleaner: boolean,
+    dirtinessLevel: DirtinessLevel,
+    preferredEmployeeId: string | undefined,
   ): Promise<RecurringBookingTemplateDto> {
     const command = new UpdateRecurringBookingCommand();
     command.templateId = templateId;
@@ -826,9 +969,8 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     command.paymentType = paymentType;
     command.startsOn = d.startsOn as Date;
     command.endsOn = d.endsOn ?? undefined;
-    command.preferredEmployeeId = withoutPreferredCleaner
-      ? undefined
-      : (d.preferredEmployeeId ?? undefined);
+    command.preferredEmployeeId = preferredEmployeeId;
+    command.dirtinessLevel = dirtinessLevel;
     return firstValueFrom(this.client.update(command).pipe(takeUntil(this.destroyed$)));
   }
 

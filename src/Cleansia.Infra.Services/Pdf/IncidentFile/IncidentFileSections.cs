@@ -81,6 +81,7 @@ public static class IncidentFileSections
                 new("Assigned cleaners", order.AssignedCleaners.Count == 0
                     ? Empty
                     : string.Join("; ", order.AssignedCleaners.Select(c => $"{c.FirstName} ({c.EmployeeId})"))),
+                new("Early start requested", EarlyPerformance(order.EarlyPerformanceConsent)),
             ]));
 
             blocks.Add(new IncidentFileTable(
@@ -243,6 +244,12 @@ public static class IncidentFileSections
     }
 
     private static string Text(string? value) => string.IsNullOrWhiteSpace(value) ? Empty : value;
+
+    private static string EarlyPerformance(IncidentFileEarlyPerformanceConsent? consent) =>
+        consent is null
+            ? Empty
+            : $"{Stamp(consent.ConsentedOn)}, version {consent.TextVersion}, client {consent.Client}, "
+              + $"request {Text(consent.IpAddress)} / {Text(consent.DeviceLabel)}";
 
     private static string Money(decimal amount, string currency) => $"{amount.ToString("N2", Invariant)} {currency}";
 

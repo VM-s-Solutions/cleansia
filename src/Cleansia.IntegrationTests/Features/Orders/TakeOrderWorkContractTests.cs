@@ -6,15 +6,18 @@ using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Contracts;
+using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Services;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Validations;
 using Cleansia.Infra.Database;
 using Cleansia.TestUtilities;
+using Cleansia.TestUtilities.MockDataFactories.Orders;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,7 +28,8 @@ namespace Cleansia.IntegrationTests.Features.Orders;
 /// <summary>
 /// ADR-0068 D3 (Verification #3) on real Postgres: a take with a text of the order's document writes the
 /// seat, the status row, the acceptance (the new seat, the echoed text, the device CLAIM, the builder's
-/// facts) and the audit row in ONE commit; a take without a text or with a text of another document
+/// facts, priced at the taking cleaner's reward for the seat) and the audit row in ONE commit; a take
+/// without a text or with a text of another document
 /// leaves nothing; the seat-race loser's whole commit rolls back so no acceptance exists for a seat
 /// that was never won; the cover take leaves the displaced cleaner's row on their old seat; the
 /// beneficiary of a held order takes it with the acceptance.
@@ -46,6 +50,8 @@ public sealed class TakeOrderWorkContractTests(PostgresContainerFixture fixture)
     private const string CoverOrderId = "order-wctake-cover";
     private const string HeldOrderId = "order-wctake-held";
     private const string DisplacedSeatId = "01SEATWCTAKEDISPLACED00001";
+    private const string CategoryId = "category-wctake";
+    private const string ServiceId = "service-wctake";
 
     private static readonly DateTime Now = DateTime.UtcNow;
 
@@ -82,7 +88,19 @@ public sealed class TakeOrderWorkContractTests(PostgresContainerFixture fixture)
         var other = NewCleaner(OtherUserId, "cleaner-wctake-other@cleansia.test", OtherEmployeeId);
         context.AddRange(caller, other);
 
-        context.Add(NewOrder(OpenOrderId, Now.AddDays(2), document));
+        var category = ServiceCategory.Create("wctake", "Contract take", "Category under test");
+        category.Id = CategoryId;
+        context.Add(category);
+        var service = Service.Create(CategoryId, "Standard clean", "Under test", 120);
+        service.Id = ServiceId;
+        context.Add(service);
+        context.EmployeePayConfigs.AddRange(
+            EmployeePayConfig.CreateForService(ServiceId, 700m, CzkId),
+            EmployeePayConfig.CreateForService(ServiceId, 900m, CzkId, employeeId: CallerEmployeeId));
+
+        var open = NewOrder(OpenOrderId, Now.AddDays(2), document);
+        open.AddSelectedServices([OrderLineMockFactory.ServiceLine(open, service)]);
+        context.Add(open);
 
         // A seat whose holder asked for cover, with the contract they accepted on it.
         var covered = NewOrder(CoverOrderId, Now.AddDays(3), document);
@@ -140,7 +158,8 @@ public sealed class TakeOrderWorkContractTests(PostgresContainerFixture fixture)
                 Assert.Equal(order.DisplayOrderNumber, facts.OrderNumber);
                 Assert.Equal("Praha · 120 xx", facts.LocationApproximate);
                 Assert.Equal("CZK", facts.CurrencyCode);
-                Assert.Equal(1500m, facts.TotalPrice);
+                Assert.Equal(900m, facts.TotalPrice);
+                Assert.Equal(ServiceId, Assert.Single(facts.Services).Id);
                 Assert.Equal(120, facts.EstimatedMinutes);
                 Assert.Equal(CountryId, facts.CountryId);
 

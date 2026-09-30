@@ -9,6 +9,6 @@
          FileProvider, which is the only way to receive a full-resolution image — the Bitmap in
          the legacy intent extra is a thumbnail. The file must survive until the upload reads it,
          and on the avatar screen until Save, because the preview renders from this same URI.
-         Cache dir is auto-cleaned by Android under storage pressure, so nothing purges it here. -->
+         A job photo capture is deleted after its upload, and the app purges the folder on start. -->
     <cache-path name="camera" path="camera/" />
 </paths>

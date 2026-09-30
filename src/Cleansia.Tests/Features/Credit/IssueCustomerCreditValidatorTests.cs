@@ -157,13 +157,26 @@ public class IssueCustomerCreditValidatorTests
     }
 
     [Theory]
-    [InlineData(CreditTransactionReason.DisputeSettlement)]
     [InlineData(CreditTransactionReason.CleanerNoShow)]
     [InlineData(CreditTransactionReason.Goodwill)]
-    public async Task TheThreeIssueSideReasonsAreAccepted(CreditTransactionReason reason)
+    public async Task TheIssueSideReasonsAreAccepted(CreditTransactionReason reason)
     {
         var result = await ValidatorFor().TestValidateAsync(Valid(reason: reason));
         result.ShouldNotHaveValidationErrorFor(x => x.Reason);
+    }
+
+    /// <summary>
+    /// A complaint is settled by ResolveDispute, in credit only when the customer chose credit on filing
+    /// (owner ruling 2026-09-28). A settlement credit issued by hand is the credit-instead-of-a-refund the
+    /// customer did not ask for.
+    /// </summary>
+    [Fact]
+    public async Task ADisputeSettlementIsNotIssuedByHand()
+    {
+        var result = await ValidatorFor().TestValidateAsync(Valid(reason: CreditTransactionReason.DisputeSettlement));
+
+        result.ShouldHaveValidationErrorFor(x => x.Reason)
+            .WithErrorMessage(BusinessErrorMessage.CreditDisputeSettlementNotIssuable);
     }
 
     [Fact]

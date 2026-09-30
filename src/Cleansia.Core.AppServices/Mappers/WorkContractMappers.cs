@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Features.Legal;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.Orders.DTOs;
+using Cleansia.Core.Domain.Company;
 using Cleansia.Core.Domain.Contracts;
 using Cleansia.Core.Domain.Legal;
 
@@ -10,18 +11,18 @@ public static class WorkContractMappers
 {
     /// <summary>
     /// The contract text rendered for a job: <c>{{currency}}</c> is the ORDER's currency, read off the
-    /// facts, never the market's default — the job is priced in exactly one.
+    /// facts, never the market's default — the job is priced in exactly one; the company placeholders
+    /// name the client, the company that operates the order.
     /// </summary>
     public static WorkContractDto MapToWorkContractDto(
         this LegalDocument document,
         LegalDocumentText text,
         WorkContractFacts facts,
-        WorkContractAcceptanceDetails? acceptance)
+        WorkContractAcceptanceDetails? acceptance,
+        CompanyInfo? company)
     {
-        var placeholders = new Dictionary<string, string>
-        {
-            [LegalMarkdownRenderer.CurrencyPlaceholder] = facts.CurrencyCode,
-        };
+        var placeholders = LegalMarkdownRenderer.MarketPlaceholders(market: null, company);
+        placeholders[LegalMarkdownRenderer.CurrencyPlaceholder] = facts.CurrencyCode;
 
         return new WorkContractDto(
             LegalDocumentTextId: text.Id,

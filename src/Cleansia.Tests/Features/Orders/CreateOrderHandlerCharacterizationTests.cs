@@ -58,7 +58,35 @@ public class CreateOrderHandlerCharacterizationTests
 
     private const string UserId = "user-1";
     private const string CreatedOrderId = "order-created-1";
+    private const string RequestIp = "203.0.113.9";
+    private const string RequestDevice = "iPhone 15";
     private const string ConfirmationCode = "ABC123";
+
+    [Fact]
+    public async Task The_Order_Records_The_Request_To_Start_Within_The_Withdrawal_Period_With_The_Wording_Client_And_Request()
+    {
+        Cleansia.Core.Domain.Orders.Order? created = null;
+        _orderFactory
+            .Setup(f => f.CreateAsync(It.IsAny<CreateOrderInput>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((CreateOrderInput input, CancellationToken _) => created = OrderMockFactory.Generate(
+                new OrderMockFactory.OrderPartial
+                {
+                    Id = CreatedOrderId, UserId = input.UserId, PaymentType = PaymentType.Cash,
+                    TotalPrice = input.RawSubtotal, CustomerAddress = input.Address, TenantId = "tenant-1",
+                }));
+        var before = DateTimeOffset.UtcNow;
+
+        var result = await CreateHandler().Handle(
+            CreateOrderTestData.ValidCommand(paymentType: PaymentType.Cash), CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.NotNull(created);
+        Assert.Equal(Cleansia.Core.Domain.Orders.Order.EarlyPerformanceConsentTextVersionInForce, created!.EarlyPerformanceConsentTextVersion);
+        Assert.InRange(created.EarlyPerformanceConsentedOn!.Value, before, DateTimeOffset.UtcNow);
+        Assert.Equal("cleansia.customer", created.EarlyPerformanceConsentClient);
+        Assert.Equal(RequestIp, created.EarlyPerformanceConsentIpAddress);
+        Assert.Equal(RequestDevice, created.EarlyPerformanceConsentDeviceLabel);
+    }
 
     private readonly Mock<IAddressRepository> _addressRepository = new();
     private readonly Mock<ISavedAddressRepository> _savedAddressRepository = new();
@@ -96,6 +124,7 @@ public class CreateOrderHandlerCharacterizationTests
                 It.IsAny<IEnumerable<string>>(),
                 It.IsAny<int>(),
                 It.IsAny<int>(),
+                It.IsAny<DirtinessLevel>(),
                 It.IsAny<string?>(),
                 It.IsAny<DateTime?>(),
                 It.IsAny<string?>(),
@@ -143,6 +172,8 @@ public class CreateOrderHandlerCharacterizationTests
     private CreateOrder.Handler CreateHandler(OrderChannel channel = OrderChannel.Web) =>
         new(
             OrderMarketDoubles.Trading(Czk, ("cz", Czk), (Slovakia, Eur)),
+            Mock.Of<IConsentService>(),
+            Mock.Of<IUserConsentRepository>(),
             _session.Object,
             _pricingCalculator.Object,
             _orderFactory.Object,
@@ -171,11 +202,13 @@ public class CreateOrderHandlerCharacterizationTests
             // an unconfigured Mock returns null from GetSpendableAsync - which is exactly what a
             // customer who has never been credited looks like, and what every case here assumes.
             _creditAccountRepository.Object,
-            new CancellationPolicyResolver(new Mock<IUserMembershipRepository>().Object),
+            new CancellationPolicyResolver(new Mock<IUserMembershipRepository>().Object, Mock.Of<IOrderRepository>()),
             LegalDocumentFixtures.Resolver().Object,
             OrderMarketDoubles.OperatedBy("tenant-1"),
             _tenantProvider.Object,
             new AuditContext(),
+            new HostAudienceProvider("cleansia.customer"),
+            new Cleansia.TestUtilities.TestRequestMetadataProvider(RequestIp, RequestDevice),
             NullLogger<CreateOrder.Handler>.Instance);
 
     private void ArrangeSavedAddress(string savedAddressId, string ownerUserId, Address? resolved = null)
@@ -254,8 +287,12 @@ public class CreateOrderHandlerCharacterizationTests
         Assert.Equal(BusinessErrorMessage.CountryNotServiced, result.Error!.Message);
     }
 
+    /// <summary>
+    /// Owner ruling 2026-09-28: a cash booking moves no money, so it gets the booking e-mail and no
+    /// receipt — that is issued at completion, after the cleaner records the cash.
+    /// </summary>
     [Fact]
-    public async Task AC9_CashPath_EnqueuesGenerateReceipt_AndStripeSessionIdIsNull()
+    public async Task AC9_CashPath_EnqueuesTheBookingEmail_NotAReceipt_AndStripeSessionIdIsNull()
     {
         var command = CreateOrderTestData.ValidCommand(paymentType: PaymentType.Cash);
 
@@ -264,12 +301,15 @@ public class CreateOrderHandlerCharacterizationTests
         Assert.True(result.IsSuccess);
         Assert.Null(result.Value!.StripeSessionId);
         _pending.Verify(p => p.Enqueue(
-            QueueNames.GenerateReceipt,
-            It.Is<QueueEnvelope<GenerateReceiptMessage>>(e =>
+            QueueNames.SendEmail,
+            It.Is<QueueEnvelope<SendOrderBookedEmailMessage>>(e =>
                 e.Payload.OrderId == CreatedOrderId
                 && e.Payload.LanguageCode == command.Language),
-            MessageKeys.Receipt(CreatedOrderId)),
+            MessageKeys.OrderBookedEmail(CreatedOrderId)),
             Times.Once);
+        _pending.Verify(p => p.Enqueue(
+            QueueNames.GenerateReceipt, It.IsAny<It.IsAnyType>(), It.IsAny<string>()),
+            Times.Never);
     }
 
     [Fact]
@@ -441,6 +481,39 @@ public class CreateOrderHandlerCharacterizationTests
         Assert.Null(captured!.AccessInstructions);
     }
 
+    /// <summary>
+    /// The level has to reach both the price and the stored order. Priced at Normal, a Heavy booking is
+    /// charged 60 % less than the quote the validator accepted; stored as Normal, its total carries a
+    /// surcharge with no dirtiness line under it, and lines + dirtiness + express - discounts no longer
+    /// equal the total.
+    /// </summary>
+    [Fact]
+    public async Task The_Dirtiness_Level_Reaches_The_Calculator_And_The_Order_Factory()
+    {
+        CreateOrderInput? captured = null;
+        _orderFactory
+            .Setup(f => f.CreateAsync(It.IsAny<CreateOrderInput>(), It.IsAny<CancellationToken>()))
+            .Callback((CreateOrderInput input, CancellationToken _) => captured = input)
+            .ReturnsAsync(OrderMockFactory.Generate(new OrderMockFactory.OrderPartial
+            {
+                Id = CreatedOrderId,
+                TenantId = "tenant-1",
+            }));
+
+        var command = CreateOrderTestData.ValidCommand() with { DirtinessLevel = DirtinessLevel.Heavy };
+
+        var result = await CreateHandler().Handle(command, CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Equal(DirtinessLevel.Heavy, captured!.DirtinessLevel);
+        _pricingCalculator.Verify(c => c.CalculateAsync(
+            It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(),
+            It.IsAny<IEnumerable<string>>(), It.IsAny<int>(), It.IsAny<int>(),
+            DirtinessLevel.Heavy,
+            It.IsAny<string?>(), It.IsAny<DateTime?>(), It.IsAny<string?>(),
+            It.IsAny<DateTime>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
     // ---------------------------------------------------------------- the order's currency
 
     /// <summary>
@@ -470,6 +543,7 @@ public class CreateOrderHandlerCharacterizationTests
         _pricingCalculator.Verify(c => c.CalculateAsync(
             It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(),
             It.IsAny<IEnumerable<string>>(), It.IsAny<int>(), It.IsAny<int>(),
+            It.IsAny<DirtinessLevel>(),
             Eur.Id, It.IsAny<DateTime?>(), It.IsAny<string?>(),
             It.IsAny<DateTime>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
     }
@@ -533,6 +607,7 @@ public class CreateOrderHandlerCharacterizationTests
             .Setup(c => c.CalculateAsync(
                 It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(),
                 It.IsAny<IEnumerable<string>>(), It.IsAny<int>(), It.IsAny<int>(),
+                It.IsAny<DirtinessLevel>(),
                 It.IsAny<string?>(), It.IsAny<DateTime?>(), It.IsAny<string?>(),
                 It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(CreateOrderTestData.MatchingPricing(totalPrice: 1800m) with

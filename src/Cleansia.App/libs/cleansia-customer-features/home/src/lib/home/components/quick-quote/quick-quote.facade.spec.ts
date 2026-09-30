@@ -2,6 +2,7 @@ import { PLATFORM_ID } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import {
   CustomerClient,
+  DirtinessLevel,
   GetPropertySizePresetsPropertySizePresetDto,
   MarketListItem,
   QuoteOrderCommand,
@@ -117,6 +118,44 @@ describe('QuickQuoteFacade', () => {
       facade.chooseMarket('SVK');
 
       expect(store.dispatch).toHaveBeenCalledWith(chooseMarket({ isoCode: 'SVK' }));
+    });
+  });
+
+  describe('the dirtiness level', () => {
+    it('is quoted as Normal until the visitor picks one, then at the level picked', () => {
+      facade.selectService('svc-1');
+      expect(lastCommand().dirtinessLevel).toBe(DirtinessLevel.Normal);
+
+      facade.selectDirtinessLevel(DirtinessLevel.Heavy);
+
+      expect(quote).toHaveBeenCalledTimes(2);
+      expect(lastCommand().dirtinessLevel).toBe(DirtinessLevel.Heavy);
+    });
+
+    it('states the surcharge inside the price, named for the level the quote priced', () => {
+      quote.mockReturnValue(
+        of(
+          QuoteOrderResponse.fromJS({
+            totalPrice: 3024,
+            currencyCode: 'CZK',
+            dirtinessLevel: DirtinessLevel.Heavy,
+            dirtinessSurchargeAmount: 1134,
+          }),
+        ),
+      );
+
+      facade.selectService('svc-1');
+
+      expect(facade.dirtinessSurcharge()).toEqual({
+        lineKey: 'pages.order.dirtiness.heavy.surcharge_line',
+        amount: '1134',
+      });
+    });
+
+    it('states no surcharge when the level adds none', () => {
+      facade.selectService('svc-1');
+
+      expect(facade.dirtinessSurcharge()).toBeNull();
     });
   });
 

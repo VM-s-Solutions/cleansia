@@ -40,6 +40,25 @@ final class OrderDetailLocationCallSiteTests: XCTestCase {
         )
     }
 
+    func testAPastJobSaysTheCustomerDetailsWereRemovedInsteadOfPromisingThem() throws {
+        XCTAssertTrue(
+            try read(Self.cards).contains("order.customerDetailsClosedNote"),
+            "the customer card must render customerDetailsClosedNote where the customer was — a past job "
+                + "with no address otherwise reads as a job not yet taken"
+        )
+        let detailView = try read(Self.detailView)
+        XCTAssertTrue(
+            detailView.contains("customerDetailsClosed: order.customerDetailsClosedNote != nil"),
+            "the map stand-in must be told the customer details were removed, through the same note the "
+                + "card renders"
+        )
+        XCTAssertTrue(
+            detailView.contains("if !customerDetailsClosed"),
+            "the map stand-in must not say the exact address appears once you take the order on a job "
+                + "whose details were removed for good"
+        )
+    }
+
     func testTheScopeCardRendersTheSeatFacts() throws {
         let source = try read(Self.cards)
         XCTAssertTrue(

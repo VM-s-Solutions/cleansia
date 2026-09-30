@@ -1,18 +1,30 @@
 import { isPlatformBrowser } from '@angular/common';
-import { inject, Injectable, PLATFORM_ID, signal } from '@angular/core';
+import { computed, inject, Injectable, PLATFORM_ID, signal } from '@angular/core';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
   ConsentType,
   CustomerAuthService,
   CustomerClient,
   GdprExportDto,
-  GrantConsentCommand,
+  NotificationPreferencesDto,
+  UpdateNotificationPreferencesCommand,
   UserConsentDto,
-  WithdrawConsentCommand,
 } from '@cleansia/customer-services';
 import { SnackbarService } from '@cleansia/services';
+import { formatDate } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
-import { takeUntil } from 'rxjs';
+import { finalize, forkJoin, takeUntil } from 'rxjs';
+
+const LEGAL_CONSENTS = [
+  {
+    type: ConsentType.TermsOfService,
+    labelKey: 'pages.gdpr.consent_types.terms_of_service',
+  },
+  {
+    type: ConsentType.PrivacyPolicy,
+    labelKey: 'pages.gdpr.consent_types.privacy_policy',
+  },
+];
 
 @Injectable()
 export class GdprFacade extends UnsubscribeControlDirective {
@@ -21,73 +33,101 @@ export class GdprFacade extends UnsubscribeControlDirective {
   private readonly translate = inject(TranslateService);
   private readonly snackbar = inject(SnackbarService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  private readonly language = signal<string>(this.translate.currentLang);
 
   readonly consents = signal<UserConsentDto[]>([]);
+  readonly preferences = signal<NotificationPreferencesDto | null>(null);
   readonly loadingConsents = signal(true);
+  readonly consentsError = signal(false);
+  readonly savingMarketing = signal(false);
   readonly exporting = signal(false);
   readonly deleting = signal(false);
 
   readonly isAuthenticated = this.authService.isLoggedIn;
 
+  readonly legalConsents = computed(() => {
+    const lang = this.language();
+    return LEGAL_CONSENTS.map(({ type, labelKey }) => {
+      const consent = this.consents().find((c) => c.consentType === type);
+      const accepted = consent?.isGranted === true;
+      const version = accepted ? consent.documentVersion ?? '' : '';
+      return {
+        type,
+        labelKey,
+        detailKey: !accepted
+          ? 'pages.gdpr.legal.not_accepted'
+          : version
+            ? 'pages.gdpr.legal.accepted_version'
+            : 'pages.gdpr.legal.accepted',
+        detailParams: {
+          version,
+          date: accepted ? formatDate(consent.grantedAt, lang) : '',
+        },
+        newerVersionInForce: accepted && !consent.coversCurrentVersion,
+      };
+    });
+  });
+
+  readonly marketingConsent = computed(() => this.preferences()?.promo ?? false);
+
+  constructor() {
+    super();
+    this.translate.onLangChange
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe(({ lang }) => this.language.set(lang));
+  }
+
   loadConsents(): void {
     this.loadingConsents.set(true);
-    this.customerClient.gdprClient
-      .consentsGet()
+    this.consentsError.set(false);
+    forkJoin([
+      this.customerClient.gdprClient.consentsGet(),
+      this.customerClient.notificationPreferencesClient.getMine(),
+    ])
       .pipe(takeUntil(this.destroyed$))
       .subscribe({
-        next: (consents) => {
-          // `?? []` because the generated client answers a 200 whose body is not a JSON array —
-          // an empty body, a `{}`, a `null` — and a 204 with NULL, while its declared type
-          // promises an array. The `error` handler below never sees it: null is not an error, and
-          // TypeScript does not object because the declared type is non-nullable. A null parked
-          // here reaches `isConsentGranted`, which is called once per toggle row the page renders,
-          // so the whole GDPR page would throw on an answer the server considers a success.
+        next: ([consents, preferences]) => {
+          // The generated client answers a 200 whose body is not a JSON array, and a 204, with
+          // NULL while its declared type promises an array.
           this.consents.set(consents ?? []);
+          this.preferences.set(preferences);
           this.loadingConsents.set(false);
         },
         error: () => {
+          this.consentsError.set(true);
           this.loadingConsents.set(false);
         },
       });
   }
 
-  toggleConsent(consentType: ConsentType, granted: boolean): void {
-    // Backend now exposes Grant and Withdraw as separate endpoints. IP +
-    // user-agent are populated server-side from the request (legal-audit
-    // integrity), so we don't pass them here.
-    let request$;
+  setMarketingConsent(granted: boolean): void {
+    const current = this.preferences();
+    if (!current || this.savingMarketing()) return;
 
-    if (granted) {
-      const command = new GrantConsentCommand();
-      command.consentType = consentType;
-      request$ = this.customerClient.gdprClient.consentsPost(command);
-    } else {
-      const command = new WithdrawConsentCommand();
-      command.consentType = consentType;
-      request$ = this.customerClient.consentsClient.withdraw(command);
-    }
-
-    request$
-      .pipe(takeUntil(this.destroyed$))
+    const changed = { ...current.toJSON(), promo: granted };
+    // Shown before the save so that restoring `current` on a refusal is a change the switch sees.
+    this.preferences.set(NotificationPreferencesDto.fromJS(changed));
+    this.savingMarketing.set(true);
+    this.customerClient.notificationPreferencesClient
+      .update(UpdateNotificationPreferencesCommand.fromJS(changed))
+      .pipe(
+        takeUntil(this.destroyed$),
+        finalize(() => this.savingMarketing.set(false))
+      )
       .subscribe({
-        next: () => {
+        next: (saved) => {
+          if (saved) this.preferences.set(saved);
           this.snackbar.showSuccess(
             this.translate.instant('pages.gdpr.consent_updated')
           );
-          this.loadConsents();
         },
         error: () => {
+          this.preferences.set(current);
           this.snackbar.showError(
             this.translate.instant('pages.gdpr.consent_error')
           );
-          this.loadConsents();
         },
       });
-  }
-
-  isConsentGranted(type: ConsentType): boolean {
-    const consent = this.consents().find((c) => c.consentType === type);
-    return consent?.isGranted ?? false;
   }
 
   exportData(): void {

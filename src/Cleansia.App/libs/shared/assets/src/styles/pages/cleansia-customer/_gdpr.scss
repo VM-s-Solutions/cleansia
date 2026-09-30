@@ -104,6 +104,10 @@
   color: var(--cl-body);
 }
 
+.customer-gdpr__section .customer-gdpr__consent-detail {
+  margin: calc(0.25 * var(--cl-u)) 0 0;
+}
+
 @media (max-width: 600px) {
   .customer-gdpr__consent-item {
     align-items: flex-start;

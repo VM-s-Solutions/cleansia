@@ -1,5 +1,5 @@
-import { PaymentType } from '@cleansia/customer-services';
-import type { CashEligibility } from '@cleansia/models';
+import { DirtinessLevel, PaymentType } from '@cleansia/customer-services';
+import { CashEligibility, EXPRESS_LEAD_TIME_HOURS } from '@cleansia/models';
 
 /**
  * Frequency enum mirroring backend `RecurrenceFrequency`. Persisted as an int
@@ -43,6 +43,8 @@ export interface RecurringWizardFormData {
   timeOfDay: string;
   rooms: number;
   bathrooms: number;
+  /** Null on a new schedule until the customer picks one: the level is an active choice. */
+  dirtinessLevel: DirtinessLevel | null;
   savedAddressId: string | null;
   selectedServiceIds: string[];
   selectedPackageIds: string[];
@@ -56,6 +58,8 @@ export interface RecurringWizardFormData {
    */
   endsOn: Date | null;
   preferredEmployeeId: string | null;
+  /** One request covers every cleaning the schedule books; asked only when it is set up. */
+  earlyPerformanceRequested: boolean;
 }
 
 export const RECURRING_WIZARD_INITIAL_DATA: RecurringWizardFormData = {
@@ -64,6 +68,7 @@ export const RECURRING_WIZARD_INITIAL_DATA: RecurringWizardFormData = {
   timeOfDay: '10:00',
   rooms: 2,
   bathrooms: 1,
+  dirtinessLevel: null,
   savedAddressId: null,
   selectedServiceIds: [],
   selectedPackageIds: [],
@@ -71,6 +76,7 @@ export const RECURRING_WIZARD_INITIAL_DATA: RecurringWizardFormData = {
   startsOn: null,
   endsOn: null,
   preferredEmployeeId: null,
+  earlyPerformanceRequested: false,
 };
 
 /**
@@ -178,15 +184,14 @@ export function canSubmit(data: RecurringWizardFormData): boolean {
  * The next instant this template will be materialized for, or `null` when the
  * schedule has run out.
  *
- * This is a LINE-BY-LINE mirror of the backend's own derivation —
- * `MaterializeRecurringBookingTemplate.ComputeOccurrences` — and it has to
- * stay one: the card states a date the customer will plan around, and a second
- * opinion about the cadence is worse than no date at all. Every step is in UTC
- * for the same reason, because that is the clock the backend walks; the caller
- * renders the result in the reader's zone.
+ * Computed the way the backend's `MaterializeRecurringBookingTemplate.ComputeOccurrences`
+ * computes it, because the card states a date the customer will plan around. The
+ * schedule's day and time are wall-clock time in the market's zone, which the
+ * template names; the reader's zone stands in only when it does not.
  *
- * `lastMaterializedFor` only moves the START of the search forward — it is not
- * a duplicate guard here any more than it is there.
+ * Every cadence is anchored on the first chosen weekday on or after `startsOn`, so
+ * an edit — which clears `lastMaterializedFor` — keeps a fortnightly schedule on its
+ * weeks and a monthly one on its nth weekday.
  */
 export function nextOccurrenceUtc(
   template: {
@@ -196,17 +201,11 @@ export function nextOccurrenceUtc(
     startsOn: Date | string;
     endsOn?: Date | string;
     lastMaterializedFor?: Date | string;
+    timeZoneId?: string | null;
   },
   now: Date = new Date(),
+  timeZone: string = template.timeZoneId || Intl.DateTimeFormat().resolvedOptions().timeZone,
 ): Date | null {
-  const stepDays =
-    template.frequency === RecurrenceFrequency.Biweekly
-      ? 14
-      : template.frequency === RecurrenceFrequency.Monthly
-        ? 30 // the backend's own approximation — mirrored, not corrected
-        : 7;
-  const stepMs = stepDays * 24 * 60 * 60 * 1000;
-
   const asDate = (v: Date | string | undefined): Date | null => {
     if (!v) return null;
     const d = v instanceof Date ? v : new Date(v);
@@ -218,42 +217,113 @@ export function nextOccurrenceUtc(
   const endsOn = asDate(template.endsOn);
   const lastMaterializedFor = asDate(template.lastMaterializedFor);
 
-  let searchStart = lastMaterializedFor
-    ? new Date(lastMaterializedFor.getTime() + stepMs)
-    : startsOn;
-  if (searchStart.getTime() < now.getTime()) searchStart = now;
+  // Market dates are held as midnight-UTC stand-ins, so day arithmetic is exact.
+  const startDate = marketDate(startsOn, timeZone);
+  const anchor = addDays(startDate, (template.dayOfWeek - startDate.getUTCDay() + 7) % 7);
+  const today = marketDate(now, timeZone);
+  let from = lastMaterializedFor ? addDays(marketDate(lastMaterializedFor, timeZone), 1) : anchor;
+  if (from.getTime() < today.getTime()) from = today;
 
-  // Midnight UTC of the search start, then walk forward to the template's day.
-  const candidate = new Date(
-    Date.UTC(
-      searchStart.getUTCFullYear(),
-      searchStart.getUTCMonth(),
-      searchStart.getUTCDate(),
-    ),
-  );
-  while (candidate.getUTCDay() !== template.dayOfWeek) {
-    candidate.setUTCDate(candidate.getUTCDate() + 1);
-  }
+  const dates =
+    template.frequency === RecurrenceFrequency.Monthly
+      ? monthlyDates(anchor, from, template.dayOfWeek)
+      : stepDates(anchor, from, template.frequency === RecurrenceFrequency.Biweekly ? 14 : 7);
 
   const [hours, minutes] = (template.timeOfDay ?? '00:00').split(':');
-  let occurrence = new Date(
-    candidate.getTime() +
-      (Number(hours) || 0) * 3600000 +
-      (Number(minutes) || 0) * 60000,
-  );
+  const hour = Number(hours) || 0;
+  const minute = Number(minutes) || 0;
+  const earliest = now.getTime() + EXPRESS_LEAD_TIME_HOURS * 60 * 60 * 1000;
 
-  // The backend yields only occurrences inside [startsOn, endsOn]; anything
-  // earlier steps forward. Bounded so a malformed template cannot spin.
+  // Bounded so a malformed template cannot spin.
   for (let i = 0; i < 64; i++) {
+    const occurrence = marketTimeToUtc(dates.next().value, hour, minute, timeZone);
     if (endsOn && occurrence.getTime() > endsOn.getTime()) return null;
-    if (occurrence.getTime() >= startsOn.getTime()) return occurrence;
-    occurrence = new Date(occurrence.getTime() + stepMs);
+    if (occurrence.getTime() >= earliest && occurrence.getTime() >= startsOn.getTime()) return occurrence;
   }
   return null;
 }
 
+function* stepDates(anchor: Date, from: Date, stepDays: number): Generator<Date, never> {
+  const days = Math.round((from.getTime() - anchor.getTime()) / (24 * 60 * 60 * 1000));
+  let date = addDays(anchor, Math.max(0, Math.ceil(days / stepDays)) * stepDays);
+  while (true) {
+    yield date;
+    date = addDays(date, stepDays);
+  }
+}
+
+/** The nth weekday of each month, n read off the anchor; a 5th means the last, since most months have none. */
+function* monthlyDates(anchor: Date, from: Date, dayOfWeek: number): Generator<Date, never> {
+  const ordinal = Math.floor((anchor.getUTCDate() - 1) / 7) + 1;
+  let month = from.getUTCMonth();
+  const year = from.getUTCFullYear();
+  while (true) {
+    const firstOfMonth = new Date(Date.UTC(year, month, 1));
+    const first = addDays(firstOfMonth, (dayOfWeek - firstOfMonth.getUTCDay() + 7) % 7);
+    const fifth = addDays(first, 28);
+    const date =
+      ordinal < 5
+        ? addDays(first, 7 * (ordinal - 1))
+        : fifth.getUTCMonth() === firstOfMonth.getUTCMonth()
+          ? fifth
+          : addDays(first, 21);
+    if (date.getTime() >= from.getTime()) yield date;
+    month++;
+  }
+}
+
+function addDays(date: Date, days: number): Date {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() + days));
+}
+
+/** The wall clock in `timeZone` at `instant`, as if it were UTC. */
+function wallClock(instant: Date, timeZone: string): Date {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    hourCycle: 'h23',
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+  }).formatToParts(instant);
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    Number(parts.find((p) => p.type === type)?.value ?? 0);
+  return new Date(
+    Date.UTC(part('year'), part('month') - 1, part('day'), part('hour'), part('minute')),
+  );
+}
+
+function marketDate(instant: Date, timeZone: string): Date {
+  const local = wallClock(instant, timeZone);
+  return new Date(Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate()));
+}
+
+/**
+ * The instant at which `timeZone` reads `hour:minute` on `date`, the way .NET's
+ * `ConvertTimeToUtc` reads it: a time the autumn change repeats is the later,
+ * standard-time one, and a time the spring change skips reads with the offset
+ * in force before the gap, which moves it forward by the gap.
+ */
+function marketTimeToUtc(date: Date, hour: number, minute: number, timeZone: string): Date {
+  const day = 24 * 60 * 60 * 1000;
+  const asUtc = Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), hour, minute);
+  const offsetAt = (ms: number) =>
+    wallClock(new Date(ms), timeZone).getTime() - Math.floor(ms / 60000) * 60000;
+  const candidates = [asUtc - offsetAt(asUtc - day), asUtc - offsetAt(asUtc + day)];
+  const exact = candidates.filter((ms) => wallClock(new Date(ms), timeZone).getTime() === asUtc);
+  return new Date(exact.length > 0 ? Math.max(...exact) : candidates[0]);
+}
+
 /** A required field the form is still missing, in the order the form asks. */
-export type MissingField = 'services' | 'time' | 'address' | 'startsOn' | 'payment';
+export type MissingField =
+  | 'services'
+  | 'dirtiness'
+  | 'time'
+  | 'address'
+  | 'startsOn'
+  | 'payment'
+  | 'earlyPerformance';
 
 /**
  * What is stopping this schedule from being saved.
@@ -263,15 +333,17 @@ export type MissingField = 'services' | 'time' | 'address' | 'startsOn' | 'payme
  * which field to look at — the previous behaviour was a dead button and a page
  * that appeared to ignore the click.
  */
-export function missingFields(data: RecurringWizardFormData): MissingField[] {
+export function missingFields(data: RecurringWizardFormData, newSchedule = false): MissingField[] {
   const missing: MissingField[] = [];
   if (data.selectedServiceIds.length === 0 && data.selectedPackageIds.length === 0) {
     missing.push('services');
   }
+  if (data.dirtinessLevel === null) missing.push('dirtiness');
   if (!data.timeOfDay) missing.push('time');
   if (!data.savedAddressId) missing.push('address');
   if (!data.startsOn) missing.push('startsOn');
   if (data.paymentType === null) missing.push('payment');
+  if (newSchedule && !data.earlyPerformanceRequested) missing.push('earlyPerformance');
   return missing;
 }
 
@@ -281,6 +353,7 @@ export interface PricedSelection {
   packageIds: string[];
   rooms: number;
   bathrooms: number;
+  dirtinessLevel: DirtinessLevel;
   countryId: string | null;
 }
 
@@ -291,6 +364,7 @@ export function samePricedSelection(a: PricedSelection, b: PricedSelection): boo
     sameIds(a.packageIds, b.packageIds) &&
     a.rooms === b.rooms &&
     a.bathrooms === b.bathrooms &&
+    a.dirtinessLevel === b.dirtinessLevel &&
     a.countryId === b.countryId
   );
 }

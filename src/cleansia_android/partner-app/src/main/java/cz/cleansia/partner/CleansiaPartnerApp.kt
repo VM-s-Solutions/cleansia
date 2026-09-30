@@ -14,6 +14,7 @@ import com.mapbox.common.MapboxOptions
 import cz.cleansia.core.sentry.SentryUserTracker
 import cz.cleansia.partner.core.auth.TokenStoreEntryPoint
 import cz.cleansia.partner.core.notifications.NotificationChannels
+import cz.cleansia.partner.features.media.purgeCaptures
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.android.HiltAndroidApp
 import io.sentry.android.core.SentryAndroid
@@ -25,6 +26,7 @@ import io.sentry.android.core.SentryAndroid
  *  - Coil image-loader configuration (animated WebP support for the
  *    InProgress mascot in [OrderTrackerHero]).
  *  - Sentry, when a DSN is configured.
+ *  - The purge of camera captures an earlier run left behind.
  */
 @HiltAndroidApp
 class CleansiaPartnerApp : Application(), SingletonImageLoader.Factory {
@@ -34,6 +36,7 @@ class CleansiaPartnerApp : Application(), SingletonImageLoader.Factory {
         // Register FCM channels on every cold start (idempotent) so the cleaner
         // can mute categories at the OS level even before the first push lands.
         NotificationChannels.registerAll(this)
+        purgeCaptures(cacheDir)
 
         // Guarded on the DSN: a blank one means Sentry stays dormant rather than initialising into
         // nothing, which is what lets a clone without SENTRY_DSN run normally.

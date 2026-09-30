@@ -1,6 +1,6 @@
 -- INSERT COUNTRIES
 --
--- Derived from the "Countries" block of ../insert_seed_data.sql, which is what the API actually runs
+-- Derived from the "Countries" block of ../prod-bootstrap.sql, which is what the API actually runs
 -- at start-up (CleansiaStartupBase). This copy is the hand-run dev fixture described in ../README.md.
 --
 -- It had drifted: 41 rows carrying en/cs/ru only, and no "IsServiced" column at all. The platform

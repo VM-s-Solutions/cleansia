@@ -75,7 +75,7 @@ public sealed class ExportUserDataAuditEvidenceTests
             [
                 new GdprExportCustomerActionDto("customer.order.cancel", DateTimeOffset.UtcNow, "Order", "order-2", true, null, "{\"feeRate\":0.5}", Ip, "iPhone 15"),
             ],
-            new GdprExportMetadataDto(DateTimeOffset.UtcNow, Email, "JSON"), []);
+            new GdprExportMetadataDto(DateTimeOffset.UtcNow, Email, "JSON"), [], []);
 
     [Fact]
     public void The_Self_Export_Carries_A_Frozen_Customer_Marker_Keyed_On_The_User()

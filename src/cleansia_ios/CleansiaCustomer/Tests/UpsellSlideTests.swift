@@ -3,52 +3,43 @@ import XCTest
 @testable import CleansiaCustomer
 
 final class UpsellSlideTests: XCTestCase {
-    func testFreeUserWithoutOrdersGetsPlusWelcomeReferralBookInOrder() {
-        let slides = UpsellSlide.slides(isPlus: false, hasAnyOrders: false, showSetupRecurring: false)
-        XCTAssertEqual(slides.map(\.kind), [.plus, .welcome, .referral, .book])
-    }
-
-    func testFreeUserWithOrdersDropsTheWelcomeSlide() {
-        let slides = UpsellSlide.slides(isPlus: false, hasAnyOrders: true, showSetupRecurring: false)
+    func testFreeUserGetsPlusReferralBookInOrder() {
+        let slides = UpsellSlide.slides(isPlus: false, showSetupRecurring: false)
         XCTAssertEqual(slides.map(\.kind), [.plus, .referral, .book])
     }
 
     func testPlusUserWithTemplatesDropsThePlusAndSetupSlides() {
-        let slides = UpsellSlide.slides(isPlus: true, hasAnyOrders: true, showSetupRecurring: false)
+        let slides = UpsellSlide.slides(isPlus: true, showSetupRecurring: false)
         XCTAssertEqual(slides.map(\.kind), [.referral, .book])
     }
 
     func testPlusUserWithoutTemplatesLeadsWithSetupRecurring() {
-        let slides = UpsellSlide.slides(isPlus: true, hasAnyOrders: true, showSetupRecurring: true)
+        let slides = UpsellSlide.slides(isPlus: true, showSetupRecurring: true)
         XCTAssertEqual(slides.map(\.kind), [.setupRecurring, .referral, .book])
-    }
-
-    func testPlusUserWithoutOrdersOrTemplatesGetsSetupWelcomeReferralBook() {
-        let slides = UpsellSlide.slides(isPlus: true, hasAnyOrders: false, showSetupRecurring: true)
-        XCTAssertEqual(slides.map(\.kind), [.setupRecurring, .welcome, .referral, .book])
     }
 
     func testReferralAndBookCloseEveryPermutation() {
         for isPlus in [false, true] {
-            for hasAnyOrders in [false, true] {
-                for showSetupRecurring in [false, true] {
-                    let slides = UpsellSlide.slides(
-                        isPlus: isPlus,
-                        hasAnyOrders: hasAnyOrders,
-                        showSetupRecurring: showSetupRecurring
-                    )
-                    XCTAssertEqual(
-                        slides.suffix(2).map(\.kind),
-                        [.referral, .book],
-                        "isPlus=\(isPlus) hasAnyOrders=\(hasAnyOrders) showSetupRecurring=\(showSetupRecurring)"
-                    )
-                }
+            for showSetupRecurring in [false, true] {
+                let slides = UpsellSlide.slides(isPlus: isPlus, showSetupRecurring: showSetupRecurring)
+                XCTAssertEqual(
+                    slides.suffix(2).map(\.kind),
+                    [.referral, .book],
+                    "isPlus=\(isPlus) showSetupRecurring=\(showSetupRecurring)"
+                )
             }
         }
     }
 
+    /// No welcome offer at launch: the slide advertised a code that exists only in DEV.
+    func testTheWelcomeOfferCopyIsGone() {
+        for key in ["home_upsell_welcome_top", "home_upsell_welcome_title", "home_upsell_welcome_cta"] {
+            XCTAssertEqual(L10n.localized(key), key, "\(key) is back in the catalog")
+        }
+    }
+
     func testPlusSlideContentMatchesAndroid() throws {
-        let slides = UpsellSlide.slides(isPlus: false, hasAnyOrders: true, showSetupRecurring: false)
+        let slides = UpsellSlide.slides(isPlus: false, showSetupRecurring: false)
         let slide = try slide(.plus, in: slides)
         XCTAssertEqual(slide.mascot, .ready)
         XCTAssertEqual(slide.gradient, .plusHero)
@@ -59,7 +50,7 @@ final class UpsellSlideTests: XCTestCase {
     }
 
     func testSetupRecurringSlideContentMatchesAndroid() throws {
-        let slides = UpsellSlide.slides(isPlus: true, hasAnyOrders: true, showSetupRecurring: true)
+        let slides = UpsellSlide.slides(isPlus: true, showSetupRecurring: true)
         let slide = try slide(.setupRecurring, in: slides)
         XCTAssertEqual(slide.mascot, .idea)
         XCTAssertEqual(slide.gradient, .purple)
@@ -69,19 +60,8 @@ final class UpsellSlideTests: XCTestCase {
         XCTAssertEqual(slide.cta, L10n.Home.upsellSetupRecurringCta)
     }
 
-    func testWelcomeSlideContentMatchesAndroid() throws {
-        let slides = UpsellSlide.slides(isPlus: false, hasAnyOrders: false, showSetupRecurring: false)
-        let slide = try slide(.welcome, in: slides)
-        XCTAssertEqual(slide.mascot, .mopping)
-        XCTAssertEqual(slide.gradient, .purple)
-        XCTAssertEqual(slide.action, .book)
-        XCTAssertEqual(slide.top, L10n.Home.upsellWelcomeTop)
-        XCTAssertEqual(slide.title, L10n.Home.upsellWelcomeTitle)
-        XCTAssertEqual(slide.cta, L10n.Home.upsellWelcomeCta)
-    }
-
     func testReferralSlideContentMatchesAndroid() throws {
-        let slides = UpsellSlide.slides(isPlus: true, hasAnyOrders: true, showSetupRecurring: false)
+        let slides = UpsellSlide.slides(isPlus: true, showSetupRecurring: false)
         let slide = try slide(.referral, in: slides)
         XCTAssertEqual(slide.mascot, .cleaning)
         XCTAssertEqual(slide.gradient, .cyan)
@@ -92,7 +72,7 @@ final class UpsellSlideTests: XCTestCase {
     }
 
     func testBookSlideContentMatchesAndroid() throws {
-        let slides = UpsellSlide.slides(isPlus: true, hasAnyOrders: true, showSetupRecurring: false)
+        let slides = UpsellSlide.slides(isPlus: true, showSetupRecurring: false)
         let slide = try slide(.book, in: slides)
         XCTAssertEqual(slide.mascot, .cleaning)
         XCTAssertEqual(slide.gradient, .blue)

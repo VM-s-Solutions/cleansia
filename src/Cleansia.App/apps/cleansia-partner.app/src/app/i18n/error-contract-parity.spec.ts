@@ -450,6 +450,9 @@ const PARTNER_SURFACE_ERROR_KEYS: readonly string[] = [
   'auth.invalid_reset_token',
   'auth.refresh_token_reused',
   'auth.same_reset_password',
+  // The reset refuses an administrator a password under 12 characters once the code checks out;
+  // an administrator may reset through this host, which admits the profile.
+  'auth.admin_password_too_short',
   // Same GoogleAuth endpoint as the customer host: an identity matching no account is refused rather
   // than provisioned, so the partner surface can return it too.
   'auth.social_account_not_found',
@@ -461,6 +464,10 @@ const PARTNER_SURFACE_ERROR_KEYS: readonly string[] = [
   'common.required',
   // Order lifecycle the cleaner drives: take → on the way → start → cash → complete
   'order.after_photos.required',
+  // Photo windows and deletion: SavePhotos / UploadPhoto outside the type's window, DeletePhoto once
+  // the order is completed or cancelled.
+  'order.photo.window_closed',
+  'order.photo.locked',
   'order.card_payment_already_settled',
   'order.card_payment_in_progress',
   'order.card_payment_unverified',
@@ -481,6 +488,11 @@ const PARTNER_SURFACE_ERROR_KEYS: readonly string[] = [
   'order.no_available_spots',
   'order.not_confirmed',
   'order.too_early_to_start',
+  // The assigned cleaner's "cannot get in" report (owner ruling 2026-09-28, decision 11).
+  'order.lockout.too_early',
+  'order.lockout.photo_required',
+  'order.lockout.already_reported',
+  'order.lockout.order_closed',
   'order.not_found',
   'order.not_in_progress',
   'order.not_takeable',
@@ -491,6 +503,8 @@ const PARTNER_SURFACE_ERROR_KEYS: readonly string[] = [
   'order.take.already_completed',
   'order.time_conflict',
   'order.weekly_limit_reached',
+  // A cash job refused to a cleaner holding more of the company's cash than its float cap (decision 25).
+  'order.cash_float_cap_exceeded',
   // The contract for work (ADR-0068): the take and the standalone accept refuse a missing or a
   // foreign text, Start and Complete refuse a seat with no acceptance, and the preview answers the
   // legal key for an order booked under no document.
@@ -498,6 +512,10 @@ const PARTNER_SURFACE_ERROR_KEYS: readonly string[] = [
   'contract.text_mismatch',
   'contract.acceptance_required',
   'legal.document_not_found',
+  // The cleaner's own contract documents: AcceptLegalDocument echoes a text that is no longer in force,
+  // and TakeOrder refuses while a document in force is not accepted.
+  'legal.document_not_in_force',
+  'employee.legal_documents_not_accepted',
   // Employee profile + documents
   'employee.job_radius_out_of_range',
   // A cleaner contracts as a natural person; UpdateEmployee refuses EntityType = LegalEntity. The
@@ -546,6 +564,8 @@ const PARTNER_SURFACE_ERROR_KEYS: readonly string[] = [
   // GDPR consents
   'gdpr.consent_already_granted',
   'gdpr.consent_not_found',
+  // Only the terms and the privacy policy are accepted there, and no accepted document is withdrawn.
+  'gdpr.consent_not_editable',
   // Payout destination — UpdateBankDetails runs the whole PayoutDetailsValidator
   // chain, so every arm of it is reachable from the cleaner's bank-details form;
   // GetMyPayoutDetails returns payout.not_found.

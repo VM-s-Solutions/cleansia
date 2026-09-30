@@ -51,10 +51,11 @@ function handle401(
   coordinator: CustomerRefreshCoordinator
 ): Observable<HttpEvent<unknown>> {
   if (coordinator.isInFlight()) {
-    // Another refresh is in flight; wait for its result then replay our
-    // request. The rotated auth cookie carries the new credentials — no
-    // header swap needed.
-    return coordinator.waitForRefresh().pipe(switchMap(() => next(req)));
+    // Wait for the in-flight refresh, then replay with the POST-refresh CSRF token: the
+    // server derives the double-submit key from the token's per-token `jti`, so every refresh
+    // rotates the CSRF value. Replaying with the pre-refresh header the auth interceptor stamped
+    // 403s on `csrf.header_mismatch`.
+    return coordinator.waitForRefresh().pipe(switchMap(() => next(withFreshCsrf(req, authService))));
   }
 
   coordinator.begin();
@@ -64,7 +65,7 @@ function handle401(
       // Pass the CSRF token forward to wake any other queued waiters.
       // (Value doesn't matter, just signals "refresh succeeded".)
       coordinator.complete(authService.getCsrfToken() ?? 'ok');
-      return next(req);
+      return next(withFreshCsrf(req, authService));
     }),
     catchError((refreshError) => {
       coordinator.fail();
@@ -72,6 +73,17 @@ function handle401(
       return throwError(() => refreshError);
     })
   );
+}
+
+/**
+ * Restamps `X-CSRF-Token` from the current (post-refresh) value before a replay. Only touches a
+ * request that ALREADY carried the header (a mutation) — a GET without CSRF must not gain one.
+ */
+function withFreshCsrf(req: HttpRequest<unknown>, authService: CustomerAuthService): HttpRequest<unknown> {
+  const token = authService.getCsrfToken();
+  return token && req.headers.has('X-CSRF-Token')
+    ? req.clone({ headers: req.headers.set('X-CSRF-Token', token) })
+    : req;
 }
 
 function forceLogout(authService: CustomerAuthService, router: Router): void {

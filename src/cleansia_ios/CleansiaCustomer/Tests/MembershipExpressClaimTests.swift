@@ -120,7 +120,7 @@ final class MembershipExpressClaimTests: XCTestCase {
 
     func testTheSellingCopyNamesTheTwoToFourHourWindow() throws {
         try forEachLanguage { language in
-            let body = L10n.Membership.perkExpressDesc
+            let body = L10n.Membership.perkExpressDesc(3)
             XCTAssertNotNil(
                 body.range(of: Self.leadTimeWindow, options: .regularExpression),
                 "the perk body drops the lead-time window in \(language): \(body)"
@@ -134,7 +134,9 @@ final class MembershipExpressClaimTests: XCTestCase {
         let gates = [
             "CleansiaCustomer/Sources/Features/Membership/MembershipPerks.swift": "ExpressWaiverStatus.resolve",
             "CleansiaCustomer/Sources/Features/Membership/SubscribePlusScreen.swift":
-                "selectedPlan?.allowsExpressUpgrade == true",
+                "if let perMonth = plan?.expressPerkPerMonth",
+            "CleansiaCustomer/Sources/Features/Membership/Data/MembershipModels.swift":
+                "allowsExpressUpgrade && expressUpgradesPerMonth > 0",
             "CleansiaCustomer/Sources/Features/Shell/CustomerShellView.swift":
                 "showExpressPerk: membershipVM.expressWaiverAdvertised"
         ]

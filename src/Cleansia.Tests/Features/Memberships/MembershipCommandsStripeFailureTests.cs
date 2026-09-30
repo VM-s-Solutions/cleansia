@@ -67,7 +67,7 @@ public class MembershipCommandsStripeFailureTests
         _priceRepository.PriceIn(_plan.Id, MembershipPricingMockFactory.CzkCurrencyId, StripePriceId);
 
         _membershipRepository
-            .Setup(r => r.GetActiveForUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetLifecycleForUserAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
     }
 
@@ -143,7 +143,7 @@ public class MembershipCommandsStripeFailureTests
             currentPeriodStart: DateTime.UtcNow,
             currentPeriodEnd: DateTime.UtcNow.AddMonths(1));
         _membershipRepository
-            .Setup(r => r.GetActiveForUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetLifecycleForUserAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(membership);
         var newPlan = MembershipPlan.Create(
             code: NewPlanCode,

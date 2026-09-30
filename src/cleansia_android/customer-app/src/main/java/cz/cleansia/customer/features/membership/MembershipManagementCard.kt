@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material.icons.outlined.Autorenew
 import androidx.compose.material.icons.outlined.Bolt
+import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.EventBusy
 import androidx.compose.material.icons.outlined.LocalOffer
 import androidx.compose.material.icons.outlined.Repeat
@@ -45,6 +46,7 @@ import cz.cleansia.core.format.formatOrderPrice
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.memberships.ExpressWaiverStatus
+import cz.cleansia.customer.core.memberships.benefitsPaused
 import cz.cleansia.core.ui.components.CleansiaDialog
 import java.time.Instant
 import java.time.ZoneId
@@ -52,9 +54,10 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 /**
- * Membership card rendered on the Profile tab. Three states:
+ * Membership card rendered on the Profile tab. Four states:
  *  - **No active membership**: shows the marketing card with "Try Plus" CTA
  *    that navigates to [SubscribePlusScreen].
+ *  - **Payment failed**: benefits paused, no subscribe CTA, "Cancel" ends it now.
  *  - **Active**: shows plan name, perks summary, period end, "Cancel" button.
  *  - **Cancellation requested**: shows "Active until {date}, then ends" copy
  *    and hides the cancel button (Stripe handles the actual cancel via the
@@ -96,6 +99,12 @@ fun MembershipManagementCard(
     when {
         membership == null -> Unit  // first load — render nothing rather than flash
         !membership.hasMembership -> InactiveCard(modifier = modifier, onClick = onSubscribeClick)
+        membership.benefitsPaused -> PastDueCard(
+            modifier = modifier,
+            planName = membership.planName,
+            onCancelClick = { showCancelDialog = true },
+            cancelEnabled = !submitting,
+        )
         else -> ActiveCard(
             modifier = modifier,
             response = membership,
@@ -111,10 +120,10 @@ fun MembershipManagementCard(
         CleansiaDialog(
             onDismiss = { showCancelDialog = false },
             title = stringResource(R.string.membership_cancel_dialog_title),
-            message = if (trialEndText != null) {
-                stringResource(R.string.membership_cancel_dialog_message_trial, trialEndText)
-            } else {
-                stringResource(R.string.membership_cancel_dialog_message)
+            message = when {
+                membership?.benefitsPaused == true -> stringResource(R.string.membership_cancel_dialog_message_now)
+                trialEndText != null -> stringResource(R.string.membership_cancel_dialog_message_trial, trialEndText)
+                else -> stringResource(R.string.membership_cancel_dialog_message)
             },
             destructive = true,
             confirmLabel = stringResource(R.string.membership_cancel_dialog_confirm),
@@ -153,7 +162,7 @@ fun MembershipManagementCard(
 }
 
 /**
- * The not-subscribed Plus card: badge and mascot, the value line, then the trial CTA.
+ * The not-subscribed Plus card: badge and mascot, the value line, then the subscribe CTA.
  * -> /product/features
  */
 @Composable
@@ -436,6 +445,89 @@ private fun ActiveCard(
                 }
             }
 
+            if (cancelEnabled) {
+                Spacer(Modifier.height(8.dp))
+                TextButton(
+                    onClick = onCancelClick,
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .height(36.dp),
+                ) {
+                    Text(
+                        text = stringResource(R.string.membership_cancel_action),
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * A renewal payment failed (or Stripe paused the subscription): no benefit runs, the subscribe CTA stays
+ * away because the server refuses a second subscription while this one lives, and a cancel ends it now.
+ * -> /product/business-rules
+ */
+@Composable
+private fun PastDueCard(
+    modifier: Modifier,
+    planName: String?,
+    onCancelClick: () -> Unit,
+    cancelEnabled: Boolean,
+) {
+    val cardShape = RoundedCornerShape(20.dp)
+    val accent = EndingAccent
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(cardShape)
+            .background(MaterialTheme.colorScheme.surface)
+            .border(1.dp, accent.copy(alpha = 0.35f), cardShape),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Brush.horizontalGradient(listOf(accent.copy(alpha = 0.22f), accent.copy(alpha = 0.06f))))
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Outlined.ErrorOutline,
+                    contentDescription = null,
+                    tint = accent,
+                    modifier = Modifier.size(18.dp),
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    text = stringResource(R.string.membership_status_past_due_badge),
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                    color = accent,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(accent.copy(alpha = 0.15f))
+                        .padding(horizontal = 8.dp, vertical = 3.dp),
+                )
+            }
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = planName ?: stringResource(R.string.membership_plus_title),
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        }
+
+        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
+            Text(
+                text = stringResource(R.string.membership_past_due_title),
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = stringResource(R.string.membership_past_due_body),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
             if (cancelEnabled) {
                 Spacer(Modifier.height(8.dp))
                 TextButton(

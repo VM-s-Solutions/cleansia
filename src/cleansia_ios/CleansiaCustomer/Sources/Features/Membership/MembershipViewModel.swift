@@ -66,7 +66,8 @@ final class MembershipViewModel: ViewModel {
     /// own currency: a swap charges the plan's row in THAT currency, whatever market is chosen, so a
     /// price labelled with another market's code would name a figure the customer is not charged.
     var annualSwitchPlan: MembershipPlan? {
-        guard let membership = current, membership.hasMembership, !membership.cancelRequested,
+        guard let membership = current, membership.hasMembership, !membership.benefitsPaused,
+              !membership.cancelRequested,
               membership.billingInterval == 1,
               let yearly = plans.first(where: \.isAnnual),
               yearly.currencyCode == membership.currencyCode

@@ -454,11 +454,11 @@ private fun IssueButton(
     }
 }
 
-private enum class SheetAccent { Brand, Danger }
+internal enum class SheetAccent { Brand, Danger }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun TextEntryBottomSheet(
+internal fun TextEntryBottomSheet(
     title: String,
     description: String,
     label: String,

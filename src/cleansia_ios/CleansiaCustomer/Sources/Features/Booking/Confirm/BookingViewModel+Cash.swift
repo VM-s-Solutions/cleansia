@@ -24,6 +24,9 @@ extension BookingViewModel {
             next.paymentMethod = method
             return next
         }
+        if method == .cash {
+            Task { [weak self] in _ = await self?.refreshSavedCards() }
+        }
     }
 
     func dropCash(announce: Bool) {

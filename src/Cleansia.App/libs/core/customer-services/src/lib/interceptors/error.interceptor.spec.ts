@@ -2,13 +2,14 @@ import {
   HttpErrorResponse,
   HttpEvent,
   HttpHandlerFn,
+  HttpHeaders,
   HttpRequest,
   HttpResponse,
   HttpStatusCode,
 } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
-import { Observable, Subject, of, throwError } from 'rxjs';
+import { Observable, Subject, defer, of, throwError } from 'rxjs';
 import { CleansiaCustomerRoute } from '@cleansia/services';
 import { CustomerAuthService } from '../services';
 import {
@@ -20,6 +21,7 @@ import { CustomerRefreshCoordinator } from './refresh-coordinator';
 
 const API_BASE = 'https://api.cleansia.test';
 const PROTECTED_PATH = '/api/Order/GetMyOrders';
+const CSRF_CHECKED_MUTATION_PATH = '/api/Payment/CreateOrder';
 
 const REFRESH_ROUTE_SPELLINGS = [
   CUSTOMER_REFRESH_TOKEN_PATH,
@@ -236,6 +238,61 @@ describe('CustomerErrorInterceptorFn', () => {
       expect(forwarded).toHaveLength(1);
       expectForcedLogout();
       expect(errors).toHaveLength(1);
+    });
+  });
+
+  describe('a mutation replayed after a refresh', () => {
+    const url = `${API_BASE}${CSRF_CHECKED_MUTATION_PATH}`;
+
+    function sendMutation(next: HttpHandlerFn): void {
+      const request = new HttpRequest('POST', url, null, {
+        headers: new HttpHeaders({ 'X-CSRF-Token': 'csrf-before-refresh' }),
+      });
+      TestBed.runInInjectionContext(() =>
+        CustomerErrorInterceptorFn(request, next).subscribe()
+      );
+    }
+
+    beforeEach(() => getCsrfToken.mockReturnValue('csrf-before-refresh'));
+
+    it('carries the CSRF token the refresh issued', () => {
+      refreshSession.mockReturnValue(
+        defer(() => {
+          getCsrfToken.mockReturnValue('csrf-after-refresh');
+          return of(true);
+        })
+      );
+      const { next, forwarded } = failOnceThenSucceed(url);
+
+      sendMutation(next);
+
+      expect(forwarded).toHaveLength(2);
+      expect(forwarded[0].headers.get('X-CSRF-Token')).toBe('csrf-before-refresh');
+      expect(forwarded[1].headers.get('X-CSRF-Token')).toBe('csrf-after-refresh');
+    });
+
+    it('carries it too when it waited on a refresh another request started', () => {
+      const coordinator = TestBed.inject(CustomerRefreshCoordinator);
+      coordinator.begin();
+      const { next, forwarded } = failOnceThenSucceed(url);
+
+      sendMutation(next);
+      getCsrfToken.mockReturnValue('csrf-after-refresh');
+      coordinator.complete('csrf-after-refresh');
+
+      expect(refreshSession).not.toHaveBeenCalled();
+      expect(forwarded).toHaveLength(2);
+      expect(forwarded[1].headers.get('X-CSRF-Token')).toBe('csrf-after-refresh');
+    });
+
+    it('never adds the header to a GET', () => {
+      const getUrl = `${API_BASE}${PROTECTED_PATH}`;
+      const { next, forwarded } = failOnceThenSucceed(getUrl);
+
+      send(getUrl, next);
+
+      expect(forwarded).toHaveLength(2);
+      expect(forwarded[1].headers.has('X-CSRF-Token')).toBe(false);
     });
   });
 

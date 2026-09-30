@@ -14,16 +14,37 @@ All values below are the shipped ones, read from `BookingPolicy` and the pay cal
 | Standard lead time | **4 h** before the cleaning starts |
 | Express lead time | **2 h** — the hard floor; below this a booking is refused |
 | Express surcharge | **+20 %** of the base price |
-| Client start-time picker | **08:00 – 19:45**, in 15-minute increments |
+| Start time | **08:00 – 19:45**, in **15-minute** steps, read in the market's time zone — enforced by the server |
+| Booking horizon | **60 days** ahead at most |
 | Maximum home size | **8 rooms and 4 bathrooms** |
 | Start grace window | **60 min** — a cleaner may start a job at most this far ahead of its time |
 
 Between 2 and 4 hours' notice a booking is accepted but carries the express surcharge. Under 2 hours
 it is refused outright — not priced higher, refused.
 
-The start-time range and grid are client-picker limits today. `FirstWindowHour` and `LastWindowHour`
-remain the client-parity authority; enforcing that same range and grid on API bookings awaits an owner
-decision. The two-hour lead-time floor above is enforced by the server.
+### The start-time window is the server's {#start-time-window}
+
+**Owner ruling 2026-09-28.** Until then the range and the grid were only what the pickers offered: the
+API took any minute, the iOS recurring wheel accepted 03:07, and the materialiser created same-day
+occurrences that were already past or express-charged. Now one predicate, `BookingPolicy.IsBookableStart`,
+answers every booking path: the start is on the `SlotGridMinutes = 15` grid, from `FirstWindowHour` (08)
+up to the last slot before `LastWindowHour` (20), **read in the service address's market zone** — never
+the device's — and no further ahead than `MaxBookingHorizonDays = 60`. The market zone is the address
+country's `CountryConfiguration.TimeZoneId`, else the default market's, else UTC
+(`TimeZoneResolution.ForMarketAsync`, the same resolution the recurring materialiser walks).
+
+| Path | What it refuses |
+|---|---|
+| `CreateOrder` | a start off the grid, outside the window or past the horizon — `order.cleaning_date.outside_booking_window`, judged after the future and lead-time rules, so those keep their own keys |
+| `QuoteOrder` | the same, with the same key, so a slot the platform will not book never comes back priced |
+| `CreateRecurringBooking` / `UpdateRecurringBooking` | a `TimeOfDay` that is not a bookable time of day, and a `StartsOn` more than 60 days out (on an update this is an upper bound only; a past `StartsOn` is kept) |
+| The recurring materialiser | an active template whose time is outside the window is **skipped** with a warning and kept as authored; and it never creates an occurrence closer than the 2 h floor |
+| `ConfirmRecurringOrder` | an occurrence closer than 2 h — `order.cleaning_date.below_lead_time`, the one-off booking's own floor |
+
+The two-hour lead-time floor and the express window still apply to the exact instant, minutes
+included. The clients mirror the window and the horizon: the web's one-off slots stop at the 60-day
+horizon and a start the server refuses holds the time step with its reason; Android and iOS offer the
+recurring start in quarter-hours from 08:00 to 19:45.
 
 The size limit is enforced by `CreateOrder`, `QuoteOrder`, `QuotePlusSavings`, `CreateRecurringBooking`
 and `UpdateRecurringBooking`, with `order.size_exceeds_maximum` when either count exceeds its limit.
@@ -58,7 +79,9 @@ scheduled.
 
 The booked span is a caller-chosen window pointed at the preferred-cleaner availability answer. Left
 uncapped, that is a binary-search primitive over a cleaner's private schedule. It is also a crew cap:
-24 h implies at most 12 seats.
+24 h implies at most 12 seats. The span judged is the booked time as the order will store it — the
+level and the home's size included ([Crew size](#crew-size)) — on the quote, the Plus preview and the
+booking alike (`order.span_exceeds_maximum`).
 
 > `Order.MaxOrderSpanHours = 168` is a **different** number — the overlap-scan floor. `cap ≤ floor` is
 > the safety argument, and neither may move alone.
@@ -83,6 +106,42 @@ flowchart LR
 
 `CancellationFeeRateFor` is the **only** place a tier is priced.
 
+**A booking that took no payment records no refund.** Every cancellation records the fee rate it
+applied. The refund amount it records is what goes back — so on an order whose payment is still
+`Pending` or `Failed` (a cash booking not yet collected, a card never charged) it is **0**, whoever
+cancelled it. The fee on such an order is owed, not taken. **On a cash booking a signed-in customer
+cancels late, the fee becomes a receivable** — money the customer owes the company, which refuses them
+cash until it is paid or written off (owner ruling 2026-09-28 → [What a customer owes](#receivables)).
+Only a customer's own cancellation and a confirmed [lockout](#lockout) carry a fee at all; on an unpaid
+card order nothing collects it. The admin order detail shows both: *Cancellation fee* (the rate) and
+*Fee still owed* — the whole fee on an order that took no payment, zero where the card charge covered
+it. Only administrators receive those two figures. *Fee still owed* reads the order, not the
+receivable, so it keeps showing the fee after the receivable is paid or written off; the Receivables
+page says which. The cancellation previews (signed-in and guest) and the cancel's own response report
+the same **0** refund on an order that took no payment, and the customer web, Android and iOS cancel sheets
+print no refund line on a cash or unpaid booking.
+
+Since 2026-09-28 the rule has **no cash exception**: a confirmed recurring cash occurrence stays
+`Pending` until the cleaner records the cash ([Paying in cash](#cash)), so it took no payment in the
+server's eyes as in the customer's, and its fee is *still owed* like any other cash booking's.
+
+### After the booked start, the customer does not cancel {#after-the-start}
+
+**Owner ruling 2026-09-28.** Once the booked start has passed with a cleaner on the job and nobody has
+started it, self-cancel is refused — `order.start_passed_cannot_cancel`, on the signed-in and the guest
+cancel and on both previews (`CancellationAssessor.BlockedReason`). Until then a customer whose cleaner
+had not turned up could only cancel, and paid the 50 % last-minute fee for the platform's no-show. The
+clients replace *Cancel* with **the cleaner did not arrive**, which feeds the no-show path
+[below](#when-the-cleaner-cancels-or-no-shows). Before the start nothing changes; an order still
+unassigned at its start stays free to cancel (the unfilled sweep owns it); an order in progress
+stays refused (`order.in_progress_cannot_cancel`).
+
+**A card refund that does not go through is owed, not lost.** When a signed-in customer's cancellation
+cannot reach Stripe, or Stripe refuses the refund, the `Pending` refund row is left for the hourly re-drive,
+the credit share of the order comes back at once on the refund's own key, and the cancel's response
+says `refundPending: true`; the customer web reads it as a refund still pending. A guest's cancel still
+fails on a Stripe transport fault so the guest can retry it. → [Refund](/flows/cancellation-refund-dispute#refund)
+
 ### A guest cancels under the same policy
 
 The guest cancellation API needs the booking’s **access token** — the one the guest's e-mail link
@@ -90,9 +149,12 @@ carries — and accepts only a booking placed without an account. An unknown, ex
 and an account-owned booking all return the same `order.not_found` answer. `CancelGuestOrder` revokes every
 token the booking had outstanding, and a token expires **30 days after the cleaning** regardless.
 The preview and cancellation use the same fee assessment
-as a signed-in customer: no fee while no cleaner is assigned, the standard 15-minute oops window,
-and the standard 24 h / 4 h fee tiers above. A guest has no Plus free-window extension. Cancellation
-is refused once cleaning is under way, completed or already cancelled.
+as a signed-in customer: no fee while no cleaner is assigned, the oops window — 60 minutes on the
+guest's first booking, 15 otherwise ([below](#oops-window)) — and the standard 24 h / 4 h fee tiers
+above. A guest has no Plus free-window extension. Cancellation is refused once cleaning is under way,
+completed or already cancelled, and once the booked start has passed with a cleaner on the job
+([after the start](#after-the-start)); the guest then reports that the cleaner did not arrive
+(`POST api/Order/ReportGuestNoShow`, the same access token).
 
 The cancellation is confirmed by e-mail to the address stored on the booking. A refund line appears
 only when a refund was successfully issued, using that refund’s actual amount; the policy refund
@@ -103,52 +165,153 @@ notification. Assigned cleaners still receive their cancellation notice.
 
 ### The "oops window" {#oops-window}
 
-Free cancellation within **15 minutes** of booking — **60 minutes for an entitled Plus member** —
-regardless of how close the cleaning is, and even after a cleaner has taken the job (owner ruling
-2026-09-24). It protects against an accidental tap, or a change of mind straight after booking.
+Free cancellation within **15 minutes** of booking — **60 minutes on a customer's first booking, and
+for an entitled Plus member** — regardless of how close the cleaning is, and even after a cleaner has
+taken the job. It protects against an accidental tap, or a change of mind straight after booking.
 
-| Customer | Oops window |
-|---|---|
-| A guest, a first-time customer, any account without an entitled membership — trialing, `PastDue`, `Paused`, cancelled or lapsed | **15 min** (`BookingPolicy.OopsWindowMinutesStandard`) |
-| An entitled — paid, current — Plus member | **60 min** (`BookingPolicy.OopsWindowMinutesPlus`) |
+**Owner ruling 2026-09-28**, replacing the ruling of 2026-09-24 that put first-time customers at 15:
+the meeting gave a new customer 60 minutes, and everyone else keeps 15.
+
+| Customer | Oops window | Rule (`OopsWindowRule`) |
+|---|---|---|
+| An entitled — paid, current — Plus member | **60 min** (`BookingPolicy.OopsWindowMinutesPlus`) | `Plus` |
+| Anyone else, guest or account, on their **first booking** | **60 min** (`BookingPolicy.OopsWindowMinutesFirstBooking`) | `FirstBooking` |
+| Everyone else — a returning guest, any account without an entitled membership (trialing, `PastDue`, `Paused`, cancelled or lapsed) | **15 min** (`BookingPolicy.OopsWindowMinutesStandard`) | `Standard` |
+
+**Who counts as new.** The first booking ever on that **account, e-mail or phone**, in any company:
+`IOrderRepository.IsFirstBookingAsync` holds when no order created before this one shares the account,
+the e-mail (compared case-insensitively — `Orders.CustomerEmail` is `citext`, like `Users.Email`, and
+indexed) or the phone. Guest and account bookings count against each other. An abandoned checkout does
+not count: an order cancelled as `order.cancelled.payment_not_completed`, and a one-off card order whose
+payment is still `Pending` or `Failed`, are ignored. One booking gets the 60 minutes, so it cannot be
+farmed by cancelling and rebooking. Newness is computed from earlier orders at each call and adds no
+column.
 
 - **The order of the checks is fixed.** No cleaner on the job → free, whatever the timing. Inside the
   oops window → free. Only then do the notice tiers above price the fee. The window is inclusive: a
-  cancellation at exactly 15 (or 60) minutes is still free.
-- **It is resolved live, at every call.** `ICancellationPolicyResolver` answers it from the same
-  entitlement predicate as every other Plus benefit, for the signed-in and the guest cancel, both
-  previews and the booking's evidence row alike, so a membership that lapses between the preview and
-  the click is judged as it stands at the click. The minutes run from the order's creation — for a
-  recurring occurrence, from when the materialiser created it.
+  cancellation at exactly 15 (or 60) minutes is still free. An entitled Plus member is judged as a
+  member first; the first-booking rule is asked only when no membership answers.
+- **It is resolved live, at every call.** `ICancellationPolicyResolver.ResolveForOrderAsync` answers it
+  for the **order**, from the same entitlement predicate as every other Plus benefit and the
+  first-booking read, for the signed-in and the guest cancel, both previews and the booking's evidence
+  row alike, so a membership that lapses between the preview and the click is judged as it stands at
+  the click. The minutes run from the order's creation — for a recurring occurrence, from when the
+  materialiser created it.
 - **It is minutes after booking, not hours before the cleaning.** The Plus plan's own
   `FreeCancellationWindowHours` still moves only the free notice window (24 h → 4 h); the 60 minutes is
   a separate benefit and is never derived from it. The partial and last-minute thresholds and rates
   never move.
 - **Every client states the customer's own number.** The cancellation preview carries
   `oopsWindowMinutes` (15 or 60) beside the tier, and the web, Android and iOS cancellation sheets —
-  signed-in and guest — print it rather than a figure of their own.
+  signed-in and guest — print it rather than a figure of their own. The static grace copy on every
+  client says 60 minutes on the first booking or with Plus, 15 otherwise.
 
-The evidence records which window applied: a cancellation row carries `oopsMinutesApplied`, a booking
-row `cancellationPolicyShown.oopsMinutesForThisCustomer` → [What is recorded about a customer](#customer-record).
+The evidence records which window applied and why: a cancellation row carries `oopsMinutesApplied`
+and `oopsRuleApplied`, a booking row `cancellationPolicyShown.oopsMinutesForThisCustomer` and
+`oopsRuleForThisCustomer`, and the policy figures include `oopsMinutesFirstBooking`
+→ [What is recorded about a customer](#customer-record).
 
 ### When the cleaner cancels or no-shows
 
 The customer is refunded **and** credited the apology figure authored for the order's currency —
-**250 CZK** on a CZK order. The credit is the apology; the refund is not.
+**250 CZK** on a CZK order. The credit is the apology; the refund is not. A guest has no credit account
+and gets the refund only.
 
-> Implemented by the unfilled-order sweep (`CancelUnfilledOrders`) — the one no-show the platform can
-> prove: the slot was reached and nobody ever took the seat. Every other version of "the cleaner did not
-> arrive" rests on a missing tap, which is indistinguishable from a cleaner who turned up and forgot to
-> slide to start, so no lateness detector refunds on its own, and a drop refunds nothing. The figure is
-> `Currency.NoShowCredit`, authored per currency; a currency with none pays no credit and the push is
-> the plain cancellation. The home page states the figure from the market, never from the translation;
-> see [Money constants](#money-constants).
+**Two ways the platform establishes it, and only one moves money without a person.**
+
+- **Nobody ever took the seat** — the unfilled-order sweep (`CancelUnfilledOrders`), 30 minutes past the
+  slot, looking back up to **168 h** (a week, so a Functions outage of days still leaves every missed
+  order to the first tick after it; it was 6 h until 2026-09-28). The one no-show the platform can
+  prove: there was nobody to tap.
+- **An assigned cleaner did not come** (owner ruling 2026-09-28) — **an administrator confirms**. Every
+  other version of "the cleaner did not arrive" rests on a missing tap, which is indistinguishable from
+  a cleaner who turned up and forgot to slide to start, so no timer refunds on its own and a drop
+  refunds nothing. Two things raise the question: the customer's report — signed in, a
+  *service not provided* dispute, which the clients offer as *the cleaner did not arrive* once the start
+  has passed ([after the start](#after-the-start)); a guest, `POST api/Order/ReportGuestNoShow` — and the
+  reminder sweep, when a job with a cleaner on it (a partly filled crew included) is still `Confirmed`
+  or `OnTheWay` **30 minutes after its start**. Both raise one alert, `admin.order.cleaner_not_started`,
+  once per order ([Administrators are told](#admin-notifications)). Neither moves money. A guest's
+  report is refused before the start (`order.start_time_not_reached`) and once a cleaner has started
+  (`order.cleaner_already_started`); a signed-in customer's dispute is filed either way and raises the
+  alert only in that window.
+- **The administrator's confirmation** is *Cancel as a no-show* on the order detail
+  (`POST api/AdminOrder/cancel-no-show`, Support and above, audited as `order.cancel.no_show`). It runs
+  the sweep's own body (`CleanerNoShowCancellation`), so the two pay a customer the same: no fee, the
+  whole card refund, the customer's applied credit back, the apology credit, the reason
+  `order.cancelled.no_cleaner_available` (which the customer's apps render) and the outcome push. It
+  also ends the live activity, releases the express waiver, tells the assigned cleaners, revokes the
+  booking's loyalty points and **closes an open *service not provided* dispute** on the order. It
+  refuses before the start, on a job in progress (`order.cleaner_already_started` — a cleaner who
+  tapped Start after the report did arrive, and the report stands as a dispute), and on a completed or
+  cancelled one.
+- **One of two cleaners missing stays a dispute** the administrator settles at their discretion;
+  crews are rare and never pay cash.
+
+**The push says what happened to the money.** When the apology was issued: `order.no_cleaner_refunded`
+when the card refund went through, `order.no_cleaner_refund_pending` when a card refund is owed and has
+not gone through (the hourly re-drive owns it), `order.no_cleaner_nothing_charged` when the order took no
+payment; all three carry the credit as `amount`. With no apology — a currency with no figure — the
+plain `order.cancelled`, which promises nothing. All four render on Android and iOS and land in the
+customer's inbox. A guest gets no push; the cancellation e-mail tells them what happened to the money
+([When the platform cancels](#platform-cancellation)).
+
+> The figure is `Currency.NoShowCredit`, authored per currency; a currency with none pays no credit
+> and the push is the plain cancellation. The home page states the figure from the market, never from
+> the translation; see [Money constants](#money-constants).
 >
 > **Credit the customer spent on the booking comes back exactly once.** A paid card order's full refund
-> returns it on the refund's own credit leg; the sweep returns it itself only when no refund went
-> through — a cash or unpaid order, a refund Stripe refused, or Stripe unreachable. A later refund of the
-> same order nets off credit already returned. Until 2026-09-27 the sweep returned it after a successful
+> returns it on the refund's own credit leg; the cancellation returns it itself only when no refund went
+> through — a cash or unpaid order, a refund Stripe refused, or Stripe unreachable — and only what is
+> still outstanding (applied minus already returned). A later refund of the same order nets off credit
+> already returned. The sweep commits **per order**, so an apology balance can never be written back
+> over a later order's credit return. Until 2026-09-27 the sweep returned credit after a successful
 > refund as well, crediting a card customer twice.
+
+### When the customer does not let the cleaner in {#lockout}
+
+**Owner rulings 2026-09-28 (decisions 11 and 13).** A lockout is the customer's cancellation at the
+**whole price**, and the platform establishes it the way it establishes an assigned cleaner's no-show:
+a person confirms it. Nothing about a closed door is provable by a timer.
+
+1. **The cleaner reports it.** From **15 minutes past the booked start**
+   (`BookingPolicy.LockoutWaitMinutes`, the wait the customer FAQ promises), a cleaner on the crew of a
+   job that is not finished saves an **entrance photo** — photo type `Entrance`, accepted from
+   `Confirmed` through `InProgress`, camera-only on the partner apps — and taps *I cannot get in* with a
+   note of the calls they made (`POST api/Order/ReportLockout`; the note is required, at most 1 000
+   characters). It is refused too early (`order.lockout.too_early`), without an entrance photo
+   (`order.lockout.photo_required`), when anyone on the crew already reported it
+   (`order.lockout.already_reported`), on a cancelled or completed order (`order.lockout.order_closed`)
+   and to a caller off the crew (`order.not_found`). The report stamps the order (`LockoutReportedAt`,
+   the reporter, `LockoutCallAttempts`) and tells the company's administrators
+   (`admin.order.lockout_reported` → [Administrators are told](#admin-notifications)). **Nothing is
+   cancelled or charged.** The partner web, Android and iOS open the report at start + 15 and re-read
+   the wall clock when the app comes back, so a phone that slept through the wait still opens it.
+2. **An administrator confirms it** — *Confirm customer lockout* on the order detail, which shows the
+   report, the calls made and the entrance photo (`POST api/AdminOrder/cancel-lockout`, Support and
+   above, audited as `order.cancel.lockout` with the status, the money and the report before and
+   after). Refused without a report (`order.lockout.not_reported`) and on a cancelled or completed
+   order; admitted on a job in progress, because a cleaner may have started at the door. The order is
+   cancelled by the administrator at `BookingPolicy.LockoutFeeRate` — **100 %** — with no refund and
+   the reason key `order.cancelled.customer_lockout`.
+
+| The booking | What the customer pays |
+|---|---|
+| A card booking that was paid — signed in or guest | the payment is kept, with the credit applied to it; nothing more is ever charged |
+| A signed-in customer's cash booking that took no payment | the credit applied comes back, and **the whole price is owed** as a *Lockout* receivable → [What a customer owes](#receivables) |
+
+A guest's booking is always prepaid, so a guest keeps nothing back and is never charged beyond it
+(decision 13 (a)). Either way the express waiver stays consumed, the booking's loyalty points are
+revoked, the crew is told the job is off and the live activity ends. A signed-in customer gets the
+`order.cancelled` push and a cancellation e-mail; a guest gets the guest cancellation e-mail. Both
+e-mails carry a lockout reason line, in five locales, that states the whole price, and no refund or
+*nothing charged* line. **The customer web, Android and iOS do not render
+`order.cancelled.customer_lockout` yet** — the parity checker lists it as declared and not yet rendered
+— so the e-mail is where the customer reads why. The Android and iOS Help FAQ state the 15-minute wait
+and that a lockout costs the full price.
+
+The crew is paid half of the fee once the company has collected it
+→ [The crew's share of a collected fee](#fee-share).
 
 ### When the last cleaner leaves {#crew-lost}
 
@@ -198,12 +361,22 @@ Four reasons exist for a cancellation nobody asked for, each a stable key the cu
 a sentence (`OrderCancellationReasons`): the card payment never completed
 (`order.cancelled.payment_not_completed` — the checkout was abandoned and the slot released), a recurring
 occurrence went unconfirmed (`order.cancelled.recurring_not_confirmed`, fee-free at the lead-time
-cut-off), nobody took the job by its slot (`order.cancelled.no_cleaner_available` — the no-show above;
-**the one key no client renders yet**, a known gap the parity gate names), and **the operating company is
+cut-off), nobody took the job by its slot or an administrator confirmed that the assigned cleaner did
+not come (`order.cancelled.no_cleaner_available` — the no-show above; an admin's no-show confirmation
+exposes this key, never the administrator's own words, as the reason the customer sees), and **the operating company is
 closing** (`order.cancelled.company_wind_down`): the booking fell on or after the company's last day of
 service, so the platform cancelled it and — on a card booking — refunded it in full, absorbing the Stripe
 fee; a cash booking is simply cancelled. No fee is ever charged on a platform cancellation. →
-[A company's lifecycle](#company-lifecycle)
+[A company's lifecycle](#company-lifecycle). A fifth key, `order.cancelled.customer_lockout`, is not
+the platform's cancellation but the customer's, written by an administrator's confirmation and exposed
+like a platform reason, never as the administrator's words → [the lockout](#lockout).
+
+**A guest is told by e-mail.** A platform cancellation of a guest booking — by an administrator, the
+wind-down, or either sweep — e-mails the booking's address in its language, with the reason (from the
+key, never an administrator's own words) and a money line that claims only what happened: the amount a
+refund actually returned, *nothing was charged*, or *your refund is being processed*. Every link the
+guest held stops working; the e-mail carries the one that still opens the booking.
+→ [Guest cancellation](/flows/booking-and-pricing#guest-cancellation)
 
 ## Disputes {#disputes}
 
@@ -235,6 +408,43 @@ A new dispute is refused while an earlier one on that order is still open. Once 
 state — `Resolved` or `Closed` — the customer may raise another. Owner ruling 2026-09-05: a customer
 who has a complaint settled and then finds something else is not out of options.
 
+### A justified complaint is settled to the card, unless the customer chose credit {#dispute-settlement}
+
+**Owner ruling 2026-09-28.** Credit expires and is never paid out, so an administrator may not choose
+it for the customer. The customer chooses when filing: `CreateDispute` carries a
+`settlementPreference` — `CardRefund` (1), the default, or `Credit` (2) — stored on the dispute
+(`Dispute.SettlementPreference`) and shown to the administrator who resolves it. The customer web,
+Android and iOS dispute forms ask the question with the card refund preselected; on a cash order the
+web offers the money back rather than a card refund.
+
+- **The administrator decides the amount, never the tender.** `ResolveDispute`'s `RefundAmount` is the
+  settlement. With `CardRefund` it is the refund through the one refund seam, as before. With `Credit`
+  and an account, it is credit in the order's currency (`CreditTransactionReason.DisputeSettlement`,
+  keyed `dispute-settlement:{disputeId}`, linked to the order and the dispute), recorded as the
+  dispute's `CreditReturnedAmount`. A credit settlement must be whole cents and no more than what the
+  order has not already given back — card refunds, credit returned, earlier complaints settled in
+  credit — else `dispute.invalid_refund_amount`; a later card settlement on the same order is held to
+  what is left the same way. An erased account cannot hold credit, so its settlement goes to the card.
+- **An administrator cannot settle with credit any other way.** *Issue credit* refuses the reason
+  *Dispute settlement* (`credit.dispute_settlement_not_issuable`), and the admin dialog no longer offers
+  it.
+
+### A cleaner is charged for a complaint only when found at fault {#dispute-cleaner-charge}
+
+**Owner ruling 2026-09-28.** A refund alone never reads or writes a cleaner's pay — an automatic,
+proportional deduction would punish goodwill refunds and read as an algorithmic sanction. The one way a
+complaint reaches a reward is the administrator's explicit finding: `ResolveDispute` takes an optional
+`chargeToCleaner` — the cleaner, an amount above zero in whole cents
+(`dispute.cleaner_charge_not_whole_minor_units`) and a written reason of at most 500 characters. It adds
+to that cleaner's `DeductionPay` on the disputed order through the existing clamp-aware recompute and
+records the link (`OrderEmployeePay.DeductionDisputeId`) and the reason (`DeductionReason`), which the
+cleaner reads on their pay record in the partner web and both partner apps. It is refused before any
+money moves (`dispute.cleaner_charge_not_chargeable`) when that cleaner has no pay row on the order,
+or it is already on an invoice, already charged for a dispute, or smaller than the charge — an issued
+self-billing document is never silently changed; the administrator then uses the existing invoice
+deduction. The audit row records the cleaner and the amount, not the reason; the cleaner's erasure
+anonymises the reason on the pay row.
+
 ### Cleansia Plus
 
 **Every Plus benefit requires an active, PAID subscription** (owner ruling 2026-09-08, T-0690). There
@@ -248,17 +458,44 @@ There are **seven** benefits:
 |---|---|
 | Discount | 5% off every clean |
 | Free-cancellation window | Widened from 24h to 4h before the cleaning |
-| Longer oops window | 60 minutes after booking to cancel free, instead of 15 → [The oops window](#oops-window) |
+| Longer oops window | 60 minutes after booking to cancel free, instead of 15, on every booking — anyone's first booking gets it too → [The oops window](#oops-window) |
 | Express-upgrade waiver | The express surcharge is waived, N times per calendar month |
 | Recurring schedules | Authoring and editing a standing booking is Plus-only |
 | Preferred cleaner at booking | Request a specific cleaner when placing the order |
 | Preferred cleaner re-pick | Change that choice after booking |
+
+The free-cancellation window is the plan's `FreeCancellationWindowHours`, which an administrator may
+set anywhere from **0 to 24 h** (`BookingPolicy.FreeCancellationHours`). A longer window would give a
+paying member *less* free cancellation than everyone else, so the create and update plan commands
+refuse it with `membership.plan.free_cancellation_window_too_long`.
 
 All seven resolve through **one** entitlement predicate
 (`UserMembershipRepository.EntitledForUserQuery`), so `PastDue`, `Paused`, `Cancelled`, an elapsed
 period and a trialing enrolment are refused identically. That predicate is deliberately separate from
 the *lifecycle* one that answers "is there a live enrolment?" — the lifecycle question is what stops a
 second Stripe subscription, lets a customer cancel, and is what GDPR erasure reads.
+
+**A renewal that fails pauses the benefits and never hides the membership** (owner ruling
+2026-09-28). Until then a past-due member was told they had no membership, was offered a second,
+double-billed subscription and had no way to cancel. The lifecycle read
+(`IUserMembershipRepository.GetLifecycleForUserAsync`) now answers a **live** enrolment — `Active`,
+`PastDue` or `Paused`, within its period — while entitlement stays `Active` only:
+
+- **The customer sees it.** `GetMyMembership` returns `hasMembership: true` with `status: PastDue`, and
+  the web, Android and iOS show *payment failed, benefits paused* with a cancel; the web's benefit gates
+  read an active status, not `hasMembership` alone, and Android refuses recurring authoring to a
+  past-due or paused member with a paused notice.
+- **Each failed attempt is a notice.** Stripe's `invoice.payment_failed` sends `membership.payment_failed`
+  to the member, keyed on the Stripe event and non-mutable; Android and iOS carry its copy and it lands
+  in the customer's inbox. A failure that lands after the member cancelled is ignored.
+- **The cancel takes effect now.** An `Active` member still cancels at period end. A `PastDue` or
+  `Paused` one has no paid period to run out, so `CancelMembershipSubscription` cancels the Stripe
+  subscription at once (no proration, no final invoice) and voids its open invoice; the membership is
+  `Cancelled` with an effective end of now. GDPR erasure and a company wind-down follow the same
+  split, so Stripe stops retrying the card.
+- **No second subscription while one is alive.** Both subscribe paths refuse a live enrolment
+  (`membership.already_active`), and the database holds it: the `(TenantId, UserId)` unique index
+  covers `Active`, `PastDue` and `Paused`. A plan swap still requires `Active`.
 
 **Plus is priced per market, and a subscription keeps its currency for life** (owner ruling
 2026-09-12, [ADR-0059](/decisions/adr-0059)). A plan's price is a row per currency
@@ -302,21 +539,144 @@ membership lapses the sweep stops generating new occurrences. Three deliberate l
 - **The customer is warned before it happens**, by the existing `membership.expiring_soon`
   notification. There is no dedicated "your schedule has stopped" event yet.
 
-**Monthly recurrence still needs a policy decision.** The materialiser currently adds 30 days and
-then advances to the template's chosen weekday, normally producing a 35-day interval. It is neither
-a fixed 30-day interval nor a calendar-month rule. Choosing a calendar date, a weekday occurrence or
-a fixed interval, including the handling of short months, remains an owner decision.
+**Monthly is the nth weekday** (owner ruling 2026-09-28). A monthly schedule visits on the same
+ordinal weekday every month — the 2nd Thursday stays the 2nd Thursday — which is twelve visits a year
+and keeps the weekday. The ordinal is read off the first chosen weekday on or after the schedule's
+start date, in the market's calendar; a schedule that began on a 5th weekday takes the **last** one,
+since most months have none. Until then the materialiser added 30 days and moved to the weekday, about
+a 35-day interval and ten visits a year. Every cadence is counted from the start date, never stepped
+from the previous visit, so an edit — which clears the resume pointer — keeps a monthly schedule on
+its weekday and a fortnightly one on its own weeks. → [Recurring bookings](/flows/booking-and-pricing#recurring-bookings)
+
+## The dirtiness level {#dirtiness}
+
+**Owner rulings 2026-09-28** (decisions 28–40 of the meeting plan). The customer says how dirty the
+home is, and that one statement moves the price, the booked time and the cleaner pay by the same rate:
+
+| Level | On the wire | Price | Booked time | Cleaner pay |
+|---|---|---|---|---|
+| Normal | `0` | — | × 1 | × 1 |
+| Increased | `1` | **+30 %** | × 1.3 | × 1.3 |
+| Heavy | `2` | **+60 %** | × 1.6 | × 1.6 |
+
+`DirtinessLevel` is an integer enum, append-only on the wire, and **Normal is `0`**, so a request that
+carries no level books at Normal. That default is for old clients and API callers: every shipped
+booking flow — web, Android and iOS — asks as a required step of its own after the services, with the
+three descriptions and the hint to pick the higher level when unsure, and picks nothing for the
+customer. An unknown value is `common.invalid_enum_value` on the quote, the Plus preview, the booking,
+the serving-cleaners picker and both recurring commands. The order stores the level
+(`Order.DirtinessLevel`), and nothing changes it after booking.
+→ [ADR-0069](/decisions/adr-0069)
+
+### What the rate applies to {#dirtiness-price}
+
+**The whole basket — packages, services and extras — inside the raw subtotal** (decision 28):
+
+```
+lines     = Σ packages + Σ services (base + per-room × (rooms + bathrooms)) + Σ extras
+dirtiness = round(lines × rate(level), 2)     # BookingPolicy.DirtinessSurchargeFor, half away from zero
+raw       = lines + dirtiness                 # the base the discounts come off and the 12 % cap judges
+express   = raw × 0.20 on an express slot     # compounds on top: Heavy + express = × 1.92
+```
+
+The discounts come off a price that already carries the surcharge, and the tier floor and the 12 %
+cap are judged on it; express is measured on top. It is the base express already used, so refunds
+needed no change. The quote and the Plus preview price at the level they are asked about, and the
+quote echoes it with the surcharge (`dirtinessLevel`, `dirtinessSurchargeAmount`); the booking re-prices
+at the level it carries, so the quote is the charge. `OrderFactory` stores the surcharge in cents as `Order.DirtinessSurchargeAmount`,
+computed from the lines it stores, so the order's terms add up
+([the identity](#discount-express-correction)).
+
+**The rates are constants** (decision 29) — `BookingPolicy.IncreasedDirtinessSurchargeRate = 0.30` and
+`HeavyDirtinessSurchargeRate = 0.60` — the same in every market, like express, until a market needs
+others. `check-booking-policy-parity.mjs` reads both and pins every copy that states them: the web mirror
+constants in `booking-window.models.ts`, the web chip that renders `{{rate}}` and bakes no percentage in,
+and the Android and iOS level chips and surcharge lines, each of which must state its own level's rate
+and no other.
+
+**The descriptions are client strings in five locales** (decision 30). The order stores the level, not
+the words the customer read; if the on-site top-up comes to depend on that exact wording, the text moves
+to a catalogue the server serves and snapshots on the order.
+
+### Where the surcharge is shown
+
+It is **a line of its own** wherever a price is itemised. The receipt prints *Increased* or *Heavy
+dirtiness surcharge* in the receipt's language, and the fiscal request carries a *Dirtiness surcharge*
+line, so the declared lines still sum to the total. The customer web, Android and iOS summaries and
+order details name the level and itemise its surcharge; the admin order detail shows both; the partner
+board flags an *Increased* or *Heavy* home and the job detail names the level. The booking and
+recurring-confirmation audit rows and the company-archive order row carry the level.
+→ [What the receipt says](/flows/payment-and-fiscal#what-the-receipt-says)
+
+### A schedule carries its level {#dirtiness-recurring}
+
+A recurring schedule has a level of its own (decision 34) — by the descriptions the customer reads, a
+home cleaned once a month (last cleaned 3–6 weeks ago) is *Increased*.
+`RecurringBookingTemplate.DirtinessLevel` is Normal when a client sends none, editable on update and
+refused as an unknown value, and **every occurrence is priced, timed, crewed and paid at it**: the
+materialiser hands it to `OrderFactory`, which stores it on the occurrence. The cash check on create and
+update, the list's `requiresPaymentMethodChange` flag and the schedule's audit facts read it too, so
+raising a cash schedule's level can make it a two-cleaner job the [cash rule](#cash) no longer admits.
+The web, Android and iOS schedule forms ask for the level on a new schedule — the web starts with none
+chosen and names it as missing on save — and keep the stored one on an edit; the web form's quote prices
+at the chosen level (Normal until one is picked), and its schedule cards are quoted at their own. →
+[Recurring bookings](/flows/booking-and-pricing#recurring-bookings)
+
+### The catalogue does not charge twice
+
+**The pet-hair extra is retired** (decision 35) — seeded inactive — because *Increased* covers a home
+with pets and a pet owner would otherwise pay twice for the same effort. The deep-cleaning services stay:
+they are scope, and the level applies on top of them.
+
+### Fixed at booking {#dirtiness-fixed}
+
+The **on-site top-up** — the cleaner finds a dirtier home than booked, and the customer, present,
+approves and pays the difference — is approved in principle (decision 36) and **not built**: it waits for
+the lawyer's answer to PR-10 and ships after launch. When it does it raises pay by the same rule and never
+re-crews the order, so a one-cleaner cash job stays one cleaner. **Extra work on site is not offered**
+(decision 37): the cleaner does the booked scope, and anything else is a new order. The cleaner brings the
+supplies, included in the price (decision 38).
 
 ## Crew size
 
 ```
+EstimatedTime     = ceil( Σ (service.EstimatedTime + service.MinutesPerRoom × (rooms + bathrooms))
+                          × (1 + rate(level)) )       # a packaged service is counted the same way
 RequiredEmployees = ceil(EstimatedTime / 120 minutes)
 MaxEmployees      = RequiredEmployees + SpareSeatsPerOrder
 ```
 
-**`SpareSeatsPerOrder` is `0`.** There is no spare seat, by owner ruling, and the reasoning is pay:
-a cleaner is paid one row per assignment with **no crew-size term**, so a filled spare seat is a second
-full wage against an unchanged customer price.
+**The booked time follows the home** (owner rulings 2026-09-28, decisions 32 and 39). A dirtier home is
+given longer — the minutes × (1 + the level's rate), up to the next whole minute, so it is never booked
+shorter than the work — and so is a bigger one: each service has **minutes per room**
+(`Service.MinutesPerRoom`, edited on the admin catalogue's service form) added for every room and
+bathroom, the same count its per-room price multiplies. `OrderDuration.EstimateMinutes` is the one
+definition; its SQL twins sum the catalogue in the database and scale through the same
+`OrderDuration.ScaleForDirtiness`.
+
+> **Per-room minutes are 0 until the real durations are supplied.** The column is seeded 0 on every
+> service and only the admin form writes it, so today an 8-room flat and a 1-room flat with the same
+> services still get the same time and the same crew; only the level lengthens a job. Size scaling
+> starts when the real service durations — a launch value the owner supplies (decision 77) — are typed
+> into the catalogue. An order stores its `EstimatedTime` and `RequiredEmployees` at booking, so a
+> catalogue edit changes the next booking and never one already made.
+
+**The level can add a cleaner, and with it take cash away.** A 120-minute job is one cleaner; the same
+job is 156 minutes at *Increased* and 192 at *Heavy*, so it needs two, and a two-cleaner job pays by card
+([Paying in cash](#cash)). With the seeded catalogue a lone *General Cleaning* (120 min) is exactly that
+case. The quote answers `estimatedDurationMinutes` and `requiredEmployees` at the level it priced, so
+every client knows before the customer submits.
+
+Every reader of "how long is this job" asks the same estimate: the order, the quote, the Plus preview,
+the [24 h span cap](#maximum-booked-duration-24-h-and-it-is-not-about-calendars) on all three, the
+preferred-cleaner picker's availability window (`GetMyServingCleaners` takes rooms, bathrooms and the
+level with the slot), recurring cash eligibility, and everything that later reads the order's stored
+`EstimatedTime`. A booking with a negative room or bathroom count is refused
+(`validation.must_be_positive`): a negative count would shorten the job and shrink the crew.
+
+**`SpareSeatsPerOrder` is `0`.** There is no spare seat, by owner ruling, and the reasoning is pay: a
+job's pay is split across its `RequiredEmployees` seats ([Cleaner pay](#cleaner-pay)), so a filled spare
+seat would be paid a seat's share on top of the whole job's pay, against an unchanged customer price.
 
 That single fact is also why the seat is arbitrated by a unique database index rather than by an
 in-memory check — see [Offerability](/domain/offerability#seat-allocation).
@@ -334,11 +694,16 @@ order, the quote and the cash rule below all call it: 120 booked minutes is one 
 AllowsCash = signedIn && RequiredEmployees == 1        # BookingPolicy.AllowsCash
 ```
 
+Beyond that rule, the customer's own standing decides (owner rulings 2026-09-28): no debt, at most two
+open unpaid cash bookings, and a card saved as the guarantee
+→ [A saved card guarantees cash](#card-guarantee).
+
 - **The crew is the server's, from the duration.** `RequiredEmployees` is computed from the selected
-  services and packages exactly as the order will be staffed ([Crew size](#crew-size)) — never a count a
-  client sends, never the assigned crew, and never spare seats: capacity is not a second cleaner the
-  work needs. The command carries no duration, so nothing a client says can make a two-cleaner job
-  cash-eligible.
+  services and packages, the home's size and the [dirtiness level](#dirtiness) exactly as the order will
+  be staffed ([Crew size](#crew-size)) — never a count a client sends, never the assigned crew, and never
+  spare seats: capacity is not a second cleaner the work needs. The command carries no duration, so
+  nothing a client says can make a two-cleaner job cash-eligible — but the level it carries can make a
+  one-cleaner selection a two-cleaner job, and so take cash away.
 - **A refusal is `order.cash_not_available`**, on the `paymentType` field, and it comes before anything
   moves: on `CreateOrder` it is a rule in the validator's price chain, after the price match and before
   the promo rules, so a refused booking has reserved no express waiver, debited no credit, accepted no
@@ -369,6 +734,146 @@ never replaced by card, and an ineligible cash booking is never sent. The *not s
 only on the web: both mobile booking flows run inside a signed-in session, so the mobile apps keep that
 branch for parity but never reach it.
 
+### Cash is paid when the cleaner records it, and the receipt comes after {#cash-handover}
+
+**Owner rulings 2026-09-28.** A cash sale is paid at the door, so nothing about it says *paid* until the
+cleaner has the money:
+
+| Moment | What the platform writes |
+|---|---|
+| A cash booking is made | the order, `Pending`, and an **informational booking e-mail** — the amount to pay the cleaner in cash, the slot in market time, the address and this customer's free-cancellation window, in the booking's language, with the booking confirmation PDF attached ([durable confirmations](#durable-confirmations)). **No receipt.** A card booking gets the same e-mail, without the cash line, once its payment completes, and its receipt then too |
+| A recurring cash occurrence is confirmed | `Order.CustomerConfirmedAt` — the confirmation is its own marker. The occurrence stays `Pending`, gets the same booking e-mail, and no receipt and no *payment confirmed* push. Confirming again is refused (`order.recurring_already_confirmed`) |
+| The cleaner records the cash (`MarkCashCollected`) | `Paid`, who, when, and **the amount** — the server stamps the amount due (`TotalPrice − CreditAppliedAmount`) as `Order.CashCollectedAmount`; the cleaner's action stays a confirmation, with no amount to type. The same amount enters the cash ledger as cash the cleaner now holds for the company → [below](#cash-held) |
+| The job is completed | the **receipt**, from the existing completion fallback: it prints the booked slot, the completion time and the cash-received time, all in market time |
+
+- **An administrator can record the handover** the cleaner could not (`POST api/AdminOrder/record-cash`,
+  audited `order.cash.record`): which assigned cleaner took it, when (not in the future and not before
+  the clean could begin) and how much (above zero, whole cents — `order.cash_amount_invalid`,
+  `order.cash_received_at_in_future`, `order.cash_received_at_before_clean`). Only on a cash order in
+  progress or completed that still owes its money. On an order an administrator already completed, the
+  receipt is issued there; an administrator's override to `Completed` issues it for a sale already
+  settled in cash. The admin order detail shows who took the cash, when and how much. Either record
+  enters the cash ledger, once per order.
+- **A cancelled cash order is never paid, so it never gets a receipt.** The fiscal-reconciliation timer
+  has no cash arm any more: it re-sends only a `Paid` order's receipt, and not while collected cash
+  waits for completion.
+- **Nothing restates a receipt.** The old path — a receipt issued at booking as *awaiting payment* and
+  re-rendered as *paid* when the cash arrived — is deleted, key and queue branch with it.
+- **A recurring cash occurrence is offered to cleaners once it is confirmed**, not once paid
+  ([Offerability](/domain/offerability)); the stale-occurrence sweep and the confirm reminders select
+  only occurrences still awaiting that confirmation (`Order.AwaitsCustomerConfirmation`).
+→ [What the receipt says](/flows/payment-and-fiscal#what-the-receipt-says)
+
+### A saved card guarantees cash {#card-guarantee}
+
+**Owner rulings 2026-09-28 (decisions 16 and 24).** A card booking secures its fee by being paid up
+front — a late cancellation keeps the fee out of the refund. A cash booking had nothing behind it: its
+fee was owed and uncollectable. Now a signed-in customer books cash only while they meet three more
+conditions, asked in this order after the one-cleaner rule (`CustomerCashStanding`):
+
+| # | The customer must | Else |
+|---|---|---|
+| 1 | owe no operating company an open receivable → [What a customer owes](#receivables) | `order.cash_unpaid_receivable` |
+| 2 | hold fewer than **2** open unpaid cash bookings (`BookingPolicy.MaxOpenUnpaidCashBookings`) | `order.cash_open_bookings_limit_reached` |
+| 3 | hold a **usable card saved in the booking's currency** | `order.cash_requires_saved_card` |
+
+- **Where it is asked.** `CreateOrder`, `CreateRecurringBooking` and `UpdateRecurringBooking` in their
+  validators — on `CreateOrder` inside the price chain, after `order.cash_not_available` and before the
+  promo rules, so a refused booking has moved nothing — and `ConfirmRecurringOrder` in its handler,
+  after the crew rule. A recurring schedule is judged in its saved address's currency, an occurrence in
+  its own. Card bookings need none of it, and a guest was already refused cash.
+- **Open unpaid** is cash, payment `Pending`, neither cancelled nor completed; a recurring occurrence
+  counts from the customer's confirmation, and the one being confirmed does not count. The debt and the
+  limit are both counted **across every operating company**. There is **no amount ceiling** (decision
+  24): the one-cleaner rule already bounds the price, and the card is the rest of the guarantee.
+- **Usable** is captured, not removed, and not past the end of its expiry month
+  (`SavedCard.IsUsableOn`). A card in another currency does not count.
+
+**The card is captured once, at the first cash booking, and nothing is charged.** The customer ticks a
+consent that a late-cancellation fee, a lockout fee, unpaid cash and an approved top-up may be charged
+to the card (decision 17); no tick is `saved_card.consent_not_accepted`. The server writes a
+`SavedCards` row with the consent evidence — the wording's version, the IP and the device — before the
+capture starts, on the customer's Stripe Customer for the market's currency, which is also the Customer
+Cleansia Plus bills. The version is `SavedCard.ConsentTextVersionInForce`,
+`card-guarantee-draft-2026-09-28`, a draft until the lawyer's wording arrives and bumped with every
+change to it, so each card records the text it was saved under. The web goes through a setup-mode Stripe
+Checkout Session (`POST api/SavedCard/CreateCheckoutSession`), the apps through a card-only SetupIntent
+in PaymentSheet (`POST api/SavedCard/CreateSetupIntent`). The card lands on the row when Stripe's
+webhook reports it → [Payment and fiscal](/flows/payment-and-fiscal#saved-cards-and-receivables), and
+the customer's earlier card in that currency is retired, so one card per currency is live.
+
+- **Where each client captures.** The customer web asks `CreateOrder` — or the schedule form's create
+  or update — first, and opens a card-capture step on `order.cash_requires_saved_card`: it parks the
+  booking or the schedule, sends the customer through Stripe, and brings them back to it as they left
+  it. Android does the same at the one-off booking; iOS reads the saved cards before it books and
+  captures when it finds no usable one. Both then wait for the card to land (eight reads, 1.5 s apart)
+  before they book, and iOS also offers *Save a card* under Profile → Payments. The other two refusals
+  take cash off and send the customer back to choose how to pay; on the web, a debt refusal lists what
+  is owed with *Pay now*.
+- **Removing a card** (`DELETE api/SavedCard/Remove/{id}`, the customer's own; another's is
+  `saved_card.not_found`) deactivates the row and leaves the payment method on the Stripe Customer,
+  because a Plus subscription may renew on the same card; the platform charges only the card its own
+  active row names. The customer web lists the cards on the profile; Android and iOS under Profile →
+  Payments.
+- **Erasure deletes the saved cards** with the per-currency Stripe Customers they hang on.
+
+→ [ADR-0070](/decisions/adr-0070)
+
+## What a customer owes {#receivables}
+
+**Owner rulings 2026-09-28 (decisions 17 and 18).** A **receivable** is money a customer owes a company
+on one order beyond what the order collected: its kind, amount, currency, order, customer, status
+(`Open`, `Paid`, `WrittenOff`) and the number of charges tried. It is the company's books: an erasure
+keeps it, pseudonymous.
+
+| Kind | Opened when | Amount |
+|---|---|---|
+| Cash cancellation fee | a signed-in customer cancels a cash booking that took no payment, late enough to owe a fee → [Cancellation](#cancellation) | the assessed fee |
+| Lockout | an administrator confirms a lockout on a signed-in customer's cash booking that took no payment → [the lockout](#lockout) | the whole price |
+| Unpaid cash, top-up | declared for decision 17; **nothing opens either yet** — the top-up waits for the on-site top-up (decision 36) | — |
+
+A free cancellation, a card booking and a guest open none: a card booking keeps its fee out of the
+refund, and a guest always prepays.
+
+**While one is open, the customer books no cash** — with any company; card bookings stay open, since
+they are prepaid (decision 18 (a)) → [A saved card guarantees cash](#card-guarantee).
+
+**How it is paid.**
+
+- **Through the pay link — the only way today.** The customer's apps list what they owe
+  (`GET api/Receivable/GetMine`, across companies) with *Pay now* (`POST api/Receivable/CreatePayLink/{id}`):
+  a payment-mode Stripe Checkout Session for the amount that returns to the order's page. The link is
+  recorded on the receivable (`PayLinkSessionId`) and handed back while Stripe still has it open; a
+  closed one is replaced by a new session keyed on the old. Only an open receivable gets one
+  (`receivable.not_open`); another customer's is `receivable.not_found`. The customer web shows the
+  amount due on the order's page and, when cash is refused for a debt, on the payment step; Android and
+  iOS under Profile → Payments.
+- **By an off-session charge on the saved card — built, and switched off.** `ChargeOpenReceivables`
+  (Functions, every 15 minutes) charges each open receivable **once** to the customer's usable card in
+  its currency, with the customer absent, company by company, the attempt committed before the call. It
+  does nothing unless `Payments:OffSessionChargesEnabled` is true; the switch is false in code and
+  deliberately absent from `Cleansia.Functions/appsettings.json`, where a committed value would beat the
+  Azure app setting. **It stays off until the phase-4 terms carry the lawyer's consent wording**
+  (decision 16). Once on: a pay link the customer holds is closed first, and one they have already paid
+  is not charged; a customer with no usable card is not charged and the receivable stays open; a frozen
+  company's receivables are left out; a decline or the bank's demand for authentication e-mails the
+  customer a pay link (decision 18 (a)), unless the receivable was settled or written off meanwhile.
+- **Paid once.** Stripe's webhook settles a receivable under its own company, without touching the
+  order's payment status, charge surface or refunds; a second payment of one already paid is refunded
+  in full. A receivable written off and then paid anyway is paid — the money is the company's.
+  → [Payment and fiscal](/flows/payment-and-fiscal#saved-cards-and-receivables)
+- **Its payment earns a fee receipt** of its own, next to the order's sale receipt
+  → [Payment and fiscal](/flows/payment-and-fiscal#fee-receipt); and a paid cancellation or lockout fee
+  pays the crew their share → [The crew's share of a collected fee](#fee-share).
+
+**Administrators** list the company's receivables — Orders → Receivables, filtered by status, kind,
+customer or order (`GET api/AdminReceivable/get-paged`, any administrator) — and write an open one off
+with a required note of at most 500 characters (`POST api/AdminReceivable/write-off`, Manager and
+above, audited as the sensitive `receivable.write_off`). A receivable that is not open is
+`receivable.not_open`, and another company's `receivable.not_found`. A write-off lifts the cash
+refusal.
+→ [ADR-0070](/decisions/adr-0070)
+
 ## Preferred cleaner
 
 | Rule | Value |
@@ -381,25 +886,114 @@ The last one is the constraint that keeps the feature from eating the marketplac
 offerable work must stay on the open board, so preferred holds cannot starve cleaners who have no
 regular customers.
 
+## The legal texts {#legal-texts}
+
+**Owner rulings 2026-09-28 on the 2026-09-27 meeting plan (decisions 45–47, 54, 61, 62 and 70), built
+2026-09-29.** Each operating company sells cleaning in its own name, so every text a customer or a
+cleaner is bound by names that company as the party. The texts are stored documents, one per audience,
+type and market, identified by the date they apply from ([ADR-0063](/decisions/adr-0063)), and **every
+one of them is our own draft until the lawyer delivers** ([below](#legal-drafts)).
+
+| Text | Audience | In force | Who is bound, and how |
+|---|---|---|---|
+| Terms of service | customer | `2026-09-29` | the customer's contract with the operating company of the market the home is in, concluded at booking — a card booking once its payment completes. Accepted by the tick at registration and at booking, and again before the next booking when a newer version applies ([What is recorded about a customer](#customer-record)); shown at `/terms` |
+| Privacy policy | customer | `2026-09-29` | the operating company is the controller; accepted with the terms; shown at `/privacy` |
+| Complaints procedure | customer | `2026-09-29` | read, never accepted; shown at `/complaints` on the customer web and linked from its footer |
+| Framework cooperation agreement, self-billing agreement, data-processing agreement | employee | `2026-09-29` | the cleaner's agreements with the operating company of the market they work in, each accepted in the partner apps → [A cleaner's own documents](#cleaner-documents) |
+| Contract for work | employee | `2026-09-29` | one per seat of a job, between the operating company and the cleaner, stamped on the order at booking and accepted at the take → [The contract for work](#work-contract) |
+
+Earlier versions stay in the database as the texts earlier customers and orders were bound by: the
+terms `2026-09-14` and `2026-09-27`, the privacy policy `2026-09-14`, and the contract for work
+`2026-09-20`, which named the customer and the cleaner as its parties.
+
+### The seller is named from the company record {#company-identity}
+
+**Decision 54.** A text never spells out the company. It carries the placeholders `companyLegalName`,
+`companyRegistrationNumber` (IČO), `companySeat`, `companyEmail` and `companyPhone`, and every read
+fills them from the active company record of the operator, as its receipts print it: a customer page
+from the market's operator, a cleaner's own documents from the operator of the market they work in,
+a contract for work from the order's operator. A value the record does not hold is left as the
+placeholder, visible on the page, rather than invented. No text uses `companyVatNumber` (DIČ): the
+launch company is not a VAT payer and holds no VAT number. The currency is filled the same way, from
+the market — or from the order, on a contract for work.
+
+- **Every e-mail footer** names the company its receipts name — the company of the order's market, or
+  the ambient company where there is no order — instead of a fixed *Cleansia s.r.o.*; the period-end
+  reminder names the company that owns the pay period.
+- **The customer web footer** prints fixed contacts — `info@cleansia.cz` and the phone — and no longer
+  the *IČO [IČO] · DIČ [DIČ]* placeholder line: a fixed footer for a one-company launch. The privacy
+  page points questions at `privacy@cleansia.cz`, every other page at `info@cleansia.cz`, and Help on
+  Android and iOS names `info@cleansia.cz` as the one contact address.
+- **The registered name comes with the registration.** Whether the company is *Cleansia CZ s.r.o.* or
+  *Cleansia s.r.o.* is written once, on the company record, and every text, receipt, confirmation and
+  e-mail footer follows it; the footer's copyright line still reads *Cleansia s.r.o.*
+
+### Every contract is confirmed on a durable medium {#durable-confirmations}
+
+Both contracts are confirmed by e-mail with a PDF built from what the platform stored when the contract
+was concluded, in five languages, through the receipt's PDF and attachment path. Each e-mail is staged
+in the commit that concludes the contract, so nothing is sent for an act that did not commit.
+
+| Contract | Sent | To | The PDF states |
+|---|---|---|---|
+| The customer's booking | when the terms conclude it: a cash booking when it is made, a recurring cash occurrence when the customer confirms it, a card booking once its payment completes | the e-mail on the booking, signed-in and guest alike, in the booking's language, attached to the booking e-mail | the seller from the company record (name, IČO, DIČ when it has one, seat, e-mail, phone); the customer; the booking — number, slot in market time, address, rooms and bathrooms; the price, the credit applied and how it is paid; when the contract was concluded; the terms in force for the market on the booking day, by version and SHA-256; and the request to start within the withdrawal period, with its instant and wording version ([below](#early-performance)) |
+| A contract for work | at every acceptance — the take, or the cleaner's acceptance after a placement | the cleaner, in their preferred language | the operating company as the client and the cleaner as the contractor, by name and IČO; the job as frozen at acceptance; the seat's reward; when it was accepted; the version and SHA-256 of the text accepted; and the text itself |
+
+A card booking now gets the booking e-mail too — until 2026-09-29 only a cash booking did — and the
+e-mail no longer tells a card customer to pay in cash.
+
+### Every text is our draft until the lawyer delivers {#legal-drafts}
+
+Every text in the table above is **our own draft**, written to the owner's rulings and not yet reviewed
+by the lawyer. Each opens with the draft banner (*Návrh —* in Czech and Slovak, *Draft —*, *Черновик —*,
+*Чернетка —*), and **the production deploy refuses to run** while any text in force, or still to come,
+carries it ([CI/CD — Deploy to PRO](/deployment/ci-cd)). The lawyer's wording arrives as a new dated
+version of each text, a seed folder plus a deploy — a version in force is never edited — and a customer
+accepts it before their next booking and a cleaner before their next take, while an order already booked
+keeps its contract for work.
+
+**Two more wordings are our draft, and the deploy gate does not see them.** The request to start within
+the withdrawal period (`early-performance-draft-2026-09-29`) and the card-guarantee consent
+(`card-guarantee-draft-2026-09-28`) are not seeded texts: they are translation strings on the web,
+Android and iOS clients, keyed by the version the server records
+(`Order.EarlyPerformanceConsentTextVersionInForce`, `SavedCard.ConsentTextVersionInForce`). They carry
+no banner, `check-legal-drafts.mjs` reads only the seed tree, and nothing else in the production deploy
+checks them — so **they have to be checked by hand before launch**. The lawyer's wording replaces each
+as a new wording key on all three clients plus a bump of that constant, not a seed folder. The
+off-session charge on a saved card stays switched off until the terms carry the lawyer's consent
+wording → [What a customer owes](#receivables).
+
 ## The contract for work {#work-contract}
 
-**Owner ruling 2026-09-20 → [ADR-0068](/decisions/adr-0068).** The lawyer's model forms an individual
-*smlouva o dílo* between the customer and the cleaner the moment the cleaner accepts the job, on the
-customer terms. Until 2026-09-20 nothing on the platform could substantiate a claim against a cleaner:
-the order named no text, the take wrote a seat the next drop deleted, and an admin's placement left
-the same row a cleaner's own act did. The rules below are what is written down now.
+**The customer's contract is with the company; the contract for work is the company's subcontract with
+the cleaner** (owner ruling 2026-09-27; decisions 45 and 46, 2026-09-28; built 2026-09-29 →
+[ADR-0068 §Amended 2026-09-29](/decisions/adr-0068#company-cleaner-contract)). The customer buys the
+cleaning from the operating company of the market the home is in, which sells it in its own name under
+its terms of service ([above](#legal-texts)). The company buys the work from a cleaner as a subcontract:
+**one contract for work per seat of a job, between the company as the client and the cleaner as the
+contractor**, under the framework cooperation agreement ([below](#cleaner-documents)), priced at **that
+seat's reward**. There is no commission — the company keeps the margin between the customer's price and
+the rewards. The cleaner is no party to the customer's contract, and the customer is no party to the
+contract for work and never sees it.
+
+The machinery is the one [ADR-0068](/decisions/adr-0068) built on 2026-09-20 for the lawyer's earlier
+model, in which the contract formed between the customer and the cleaner; its parties, its price and
+its readers changed on 2026-09-29, and nothing else did. Until 2026-09-20 nothing on the platform could
+substantiate a claim against a cleaner: the order named no text, the take wrote a seat the next drop
+deleted, and an admin's placement left the same row a cleaner's own act did.
 
 | Rule | Value |
 |---|---|
-| The text an order is booked under | the **customer-audience** `WorkContract` document in force for the **address's market** on the booking day — stamped on the order once (`Orders.WorkContractDocumentId`), never changed; a booking with no text in force is **refused** (the factory throws), never booked without one |
-| Where the customer reads it | `/work-contract` beside `/terms` and `/privacy`, and the wizard's confirm step says *"By confirming the order you conclude a contract for work with the cleaner on these terms"* on every client, whether or not the account already consented — a sentence, **not a checkbox** |
+| The text an order is booked under | the **employee-audience** `WorkContract` document in force for the **address's market** on the booking day — stamped on the order once (`Orders.WorkContractDocumentId`), never changed; a booking with no text in force is **refused** (the factory throws), never booked without one. The company ↔ cleaner text is `2026-09-29`; an order booked before it keeps the `2026-09-20` text |
+| Who it names | the client through the company placeholders, filled from the company record of the order's operator when the text is shown ([above](#company-identity)); the cleaner as *you* |
+| What the customer is told | the confirm step's sentence, on every client and whether or not the account already consented: the booking concludes a contract for the cleaning with the operating company of the market where the home is, under its terms of service, and the cleaner carries it out as the company's subcontractor and is no party to it — a sentence, **not a checkbox**. There is no contract-for-work page, no order-detail line and no read for the customer |
 | When the acceptance forms | at the **take**: the cleaner reads the text and the job facts in the app and takes the job in one act; the take **carries the id of the exact text row** they read (`acceptedWorkContractTextId`), and a take without it is refused |
 | One contract per **seat** | a take → drop → re-take is two seats and **two** contracts; a take → drop → admin re-add of the same cleaner is a new seat with **no** contract until they accept |
-| An administrator places a cleaner | **no** acceptance is written — an admin cannot accept on a cleaner's behalf. The cleaner accepts from the job detail (a banner), or is refused at **Start** and at **Complete** with `contract.acceptance_required` and accepts then; a cleaner placed on an **in-progress** job can still accept before completing |
-| What binds | the text row (document, version, language, hash by one join) **and a frozen snapshot of the job as shown at acceptance**: order number, date and time window, price and currency (the customer's price — Q-WC-01), the coarse location (*"Praha · 120"*), rooms, bathrooms, services, packages, extras. Never the street, never a name |
+| An administrator places a cleaner | **no** acceptance is written — an admin cannot accept on a cleaner's behalf. The placement is an offer the cleaner may decline ([below](#placement-is-an-offer)); a cleaner who keeps it accepts from the job detail (a banner), or is refused at **Start** and at **Complete** with `contract.acceptance_required` and accepts then; a cleaner placed on an **in-progress** job can still accept before completing |
+| What binds | the text row (document, version, language, hash by one join) **and a frozen snapshot of the job as shown at acceptance**: order number, date and time window, **the seat's reward** and currency — the accepting cleaner's own rates for one seat, as the board quotes them, never what the customer pays — the coarse location (*"Praha · 120"*), rooms, bathrooms, services, packages, extras. Never the street, never a name |
 | A new version of the text | applies to orders **booked from its date**; an order already booked keeps its text — no re-acceptance, no "stale version" case |
 | What survives | the row outlives the seat (a drop, cover, rejection or reassignment leaves it), the order's anonymisation and the cleaner's erasure — it is books, kept with the order, **never deleted** |
-| Who can read an accepted contract | the order's customer, the cleaner who accepted it (the server still answers them after they left the job — the read is keyed on the acceptance, not the seat), and the company's administrators — with the stored facts and the text in the reader's language (the page says *accepted in Czech* when it renders another); anyone else is told the order does not exist |
+| Who can read an accepted contract | the cleaner who accepted it (the server still answers them after they left the job — the read is keyed on the acceptance, not the seat) and the company's administrators — with the stored facts and the text in the reader's language (the page says *accepted in Czech* when it renders another); anyone else, **the order's customer included**, is told the order does not exist. The customer hosts still mount the read, and it answers every customer that way |
 
 **The three keys.** `contract.not_accepted` — the client sent no text id (a broken or stale client,
 shown as an error); `contract.text_mismatch` — the id is not a text of *this* order's document (a
@@ -409,34 +1003,140 @@ full order still answers `no_available_spots` ahead of a mismatch, and a held or
 indistinguishable from a missing one — the tick is judged before existence, the echo after everything
 else.
 
-**What each party sees.** The partner apps show the contract before every take — the facts, the text,
-and on Android and iOS a *Swipe to accept the contract for work* slider under it, on the web a tick
-and *Accept and take the job*; the job detail states *You accepted the contract for work on {date},
-version {version}* with **Read the contract**. The customer's order detail states *Contract for work
-accepted by {given name} on {date}, version {version}* per crew member, with **Read the contract**;
-before any acceptance it says nothing (the crew list already shows who is on the job). The admin's
-order detail says *accepted {date}, v{version}* or *contract pending* per crew member, with **Read**
-— and, for an Administrator, the accepted text row's SHA-256. There is **no PDF** yet: a dispute is
-answered from the incident file's *Contracts for work* section plus the admin document read's hash.
+**What each party sees.** The partner apps show the contract before every take — the facts, with the
+price labelled as the reward for the seat, the text naming the operating company as the client and the
+cleaner as the contractor, and on Android and iOS a *Swipe to accept the contract for work* slider
+under it, on the web a tick and *Accept and take the job*; the job detail states *You accepted the
+contract for work on {date}, version {version}* with **Read the contract**. The admin's order detail
+says *accepted {date}, v{version}* or *contract pending* per crew member, with **Read** — and, for an
+Administrator, the accepted text row's SHA-256. The customer sees none of it: until 2026-09-29 the
+customer's order detail listed each acceptance and `/work-contract` published the text. **Every
+acceptance is confirmed to the cleaner by e-mail with a PDF copy** ([above](#durable-confirmations));
+a dispute is answered from the incident file's *Contracts for work* section plus the admin document
+read's hash.
 
 **The record, and what is kept of it.** Every acceptance carries the client it came from (partner
 web or partner mobile), the IP address, the device label and the session's signed device id, like
 every other legal act on the platform. It writes `employee.order.contract_accepted` on the order's
-timeline, prints in the incident file, is in the cleaner's own data export in full and in the
-customer's export as the order's document version plus each acceptance's date, version and language
-(no cleaner id), and goes into a company's archive bundle without the IP and device. **Retention of
-the request metadata — 3 years per row, per company** (`retention.work_contract_metadata.years`, the
-tenth window in the table below): the IP address, device label and device id are blanked three years
-after the acceptance, or at the cleaner's erasure, whichever comes first; the acceptance itself, the
-text it names and the facts stay. Nothing is written for a cleaner already on a crew when this
-shipped (DEV only, no backfill).
+timeline, prints in the incident file, is in the cleaner's own data export in full, and goes into a
+company's archive bundle without the IP and device; the customer's export carries no contract-for-work
+entries (until 2026-09-29 it listed the order's document version and each acceptance's date, version
+and language). **Retention of the request metadata — 3 years per row, per company**
+(`retention.work_contract_metadata.years`, the tenth window in the table below): the IP address,
+device label and device id are blanked three years after the acceptance, or at the cleaner's erasure,
+whichever comes first; the acceptance itself, the text it names and the facts stay. Nothing is written
+for a cleaner already on a crew when this shipped (DEV only, no backfill).
 
-**Open with the owner and the lawyer** (defaults in force, [ADR-0068](/decisions/adr-0068) §Open
-questions): which figure is the *cena díla* (the customer's price today), the web gesture (a tick,
-not a slider), how the parties are named (given name only), whether a swipe forms a B2C contract for
-work or a qualified signature is needed (the swipe; Signi is the upgrade path), the VOP wording that
-incorporates the template, whether an admin may force a crew member at all or every seat should be an
-offer the cleaner takes, and the coarse location on a permanent row.
+**Open with the lawyer** (defaults in force, [ADR-0068](/decisions/adr-0068) §Open questions): the
+wording of the text itself, which is our draft ([above](#legal-drafts)); the web gesture (a tick, not a
+slider); whether a swipe forms the contract or a qualified signature is needed (the swipe; Signi is
+the upgrade path); and the coarse location on a permanent row. The *cena díla* is answered — the seat's
+reward — and so is how the parties are named: the company from its record, the cleaner by name and IČO
+on the PDF copy.
+
+### An administrator's placement is an offer {#placement-is-an-offer}
+
+**Owner ruling 2026-09-28**, which answers ADR-0068's open question on forcing a crew member. An
+administrator may still place a cleaner on a job (`AdminReassignOrder`), and the placed cleaner still
+accepts the contract for work before Start or Complete — but the placement is an **offer the cleaner
+may decline without consequence**: a drop costs nothing and feeds no metric (`DropOrder` writes only its
+audit row, which only the action timeline reads). A placement is refused while the cleaner has not
+accepted the cleaner documents in force ([below](#cleaner-documents)), exactly as their own take would
+be.
+
+**Taking someone off needs a written reason, and they see it.** A reassignment that removes a cleaner
+is refused without `removalReason` (`order.reassign.removal_reason_required`, at most 500 characters).
+The reason goes on the audit row's own column; the removed cleaner's `order.assignment_revoked` notice
+carries only the order, and the cleaner reads the reason by asking for it (`GetMyAssignmentRemoval`) —
+shown above the job on the partner web and both partner apps. **A weekly job limit carries a reason
+too**: setting a cap without one is refused (`employee.weekly_limit_reason_required`), the reason is
+cleared with the cap and at erasure, and the cleaner sees the cap and its reason on their profile.
+
+A partner-facing page, **How jobs are offered**, states the rules behind the board — the order of the
+list, the favourite-cleaner hold, the notification radius, the automatic steps (including the
+not-started alert), that no score decides access, how approval works, and a human address for a review
+— linked from the partner web's sidebar and from both partner apps.
+
+## A cleaner's own documents {#cleaner-documents}
+
+**Owner ruling 2026-09-28: an in-app click-through, versioned, enforced at approval and at every take.**
+A cleaner accepts three documents of their own — the **framework contract**
+(`LegalDocumentType.CleanerFrameworkContract`), the **self-billing agreement** (`SelfBillingAgreement`)
+and the **data-processing agreement** (`CleanerDataProcessingAgreement`) — stored as employee-audience
+legal documents per market, like the customer terms. **All three are in force since 2026-09-29**, as
+our own drafts ([The legal texts](#legal-drafts)), for every market, so the gates below are live: a
+cleaner who has not accepted the three is not approved, takes no job and is not placed. A market with
+no text in force would gate nothing.
+
+- **What the drafts say.** *The framework cooperation agreement:* the company is the operating company
+  of the market the cleaner works in — until they are approved, of the market their address is in — and
+  the cleaner a self-employed contractor; the company sells cleaning in its own name and buys the work
+  as a subcontract at the reward, with **no commission**; each job is its own contract for work
+  ([above](#work-contract)); the cleaner is free to take no job and to work for anyone; rewards are
+  settled monthly on an invoice the company issues in the cleaner's name, with the cash they hold for
+  the company set off ([below](#cash-held)); an administrator's placement is an offer they may decline
+  without consequence ([above](#placement-is-an-offer)); the rules of *How jobs are offered*; a valid
+  liability insurance certificate before approval ([Insurance ceiling](#money-constants)); a promise not
+  to work directly for customers met through the platform, for 12 months after the last job, and **no
+  non-compete**; and **one** contractual penalty per breach — ten times the reward for the last job
+  for that customer — instead of stacked sums. *The self-billing agreement:* the company issues the
+  cleaner's invoices in their name, for a supplier who is not a VAT payer. *The data-processing
+  agreement:* the cleaner processes customer data and home photos for the company, keeps no copies —
+  job photos only through the app's camera — and loses access 24 hours after completion
+  ([Photos](#photos-and-access)), with one penalty for intentional or grossly negligent misuse.
+
+- **Reading and accepting.** `GET Employee/GetMyLegalDocuments` (both partner hosts) lists the documents
+  in force for the cleaner's work market — their address's market until they are approved — with the
+  text id and whether the current version is accepted. `POST Employee/AcceptLegalDocument` echoes the
+  text id the cleaner read, which must be a text of the document in force (`legal.document_not_in_force`
+  otherwise). Accepting the version already held is a success that writes nothing. The partner web
+  profile, Android and iOS show the documents with their version and date and record acceptance.
+- **The gates.** `ApproveEmployee`, `TakeOrder` and an administrator's placement refuse with
+  `employee.legal_documents_not_accepted` while any document in force has a current version the cleaner
+  has not accepted; a refused take points the cleaner to the documents.
+- **The record.** The consent row of each type is the *now* the gates read and moves to each new version;
+  every acceptance is also its own append-only row (`CleanerLegalDocumentAcceptance`) — text, version,
+  instant, client, IP and device — so the version a cleaner worked and was self-billed under stays
+  provable after they accept the next one. The row is in the cleaner's data export; its IP address,
+  device label and device id are blanked under the contract-acceptance metadata window
+  (`retention.work_contract_metadata.years`, 3) or at the cleaner's erasure.
+- **No customer consent for a cleaner.** A cleaner's registration no longer records the customer terms
+  and privacy consents (`termsAccepted` stays on the wire, unread), and the partner web's GDPR page
+  lists the cleaner's own documents with version and date, read-only.
+- **The complaints procedure** (`ComplaintsProcedure`) is a customer-audience document, read and never
+  accepted — in force since 2026-09-29 and published at `/complaints` ([The legal texts](#legal-texts)).
+
+## Photos, and the customer's details after the job {#photos-and-access}
+
+**Owner rulings 2026-09-28.** A photo of a customer's home and the customer's address, phone and door
+instructions are held by a cleaner only for as long as the job needs them.
+
+| Rule | Value |
+|---|---|
+| A *before* photo may be added | while a cleaner holds the job and it is not finished — `Confirmed`, `OnTheWay`, `InProgress` |
+| An *after* photo may be added | only while the work is under way — `InProgress` |
+| A photo may be deleted by the cleaner | until the order is `Completed` or `Cancelled`, never after |
+| A photo link lives | **15 minutes** (it was an hour) |
+| The crew reads the customer's name, phone, address and door instructions | while the job is live, and until **24 h after completion**; **not at all** once the order is cancelled |
+| A job is completed without an *after* photo | only by an administrator's override with a written reason |
+
+- **The windows are the server's** (`OrderPhoto.MayBeAddedAt`, `MayBeDeletedAt`): an upload outside
+  them is `order.photo.window_closed`, a delete after the job `order.photo.locked`. Every partner
+  client follows the same windows. On Android and iOS a job photo is **camera-only** — no gallery, no
+  photo library (Android also deletes the capture file after upload); the partner web asks for the
+  rear camera, which a browser cannot guarantee.
+- **After the 24 hours** (`Order.CustomerDetailsOpenToCrew`) the crew's order detail is the browsing
+  cleaner's redaction plus what is theirs — order number, date, services, their pay, completion notes,
+  their own notes and their own contract acceptance; the order list shows past jobs in the browsing
+  shape; the photos are only the ones they took; and the receipt, which names the customer, answers
+  `order.not_found`. The partner apps say why the customer is gone. Administrators and the customer
+  are unaffected.
+- **Force-completing without an after photo** is the only way to close an order stuck in progress, so it
+  stays — with a reason: the admin status override refuses `Completed` on an order with no *after* photo
+  unless it carries one (`order.status.force_complete_reason_required`, at most 500 characters), and the
+  reason is kept on the audit row.
+- **Photo retention is unchanged** — 7 days after completion or cancellation ([below](#customer-record))
+  — until the lawyer answers on the 180-day chargeback horizon.
 
 ## What a cleaner cannot silence {#cleaner-non-mutable}
 
@@ -451,9 +1151,10 @@ up is somebody else's morning. → [Push notifications](/architecture/push-notif
 
 ## Administrators are told {#admin-notifications}
 
-**Nine things the platform can prove happened reach the company's administrators through an in-app
+**Fourteen things the platform can prove happened reach the company's administrators through an in-app
 feed and an e-mail, both** (owner ruling 2026-09-19, [ADR-0065](/decisions/adr-0065): *"both in-app and
-email"*). Until then nothing told an administrator anything: a failed erasure was an Error log line, a
+email"*; the not-started alert, the two refund alerts and the lockout report were added by the rulings
+of 2026-09-28). Until then nothing told an administrator anything: a failed erasure was an Error log line, a
 chargeback was a dispute row nobody opened, an order that lost its crew was re-advertised to cleaners
 only. One writer, `IAdminNotifier`, turns an event into one feed row per administrator of the **named**
 company and one e-mail per recipient address, inside the same unit of work as the event — so the rows
@@ -465,9 +1166,14 @@ an administrator may also hold cannot render these keys.
 |---|---|---|
 | `admin.order.new` | an order the company now has to serve becomes **offerable** — a cash one-off at creation, a card order on its payment, a recurring occurrence on the customer's confirm. Never an unpaid card checkout, which the stale sweep cancels within the hour | order number, amount with its currency, tender, market |
 | `admin.order.crew_lost` | a drop or an admin rejection leaves nobody on the order, at any status → [above](#crew-lost) | order number, the cause, the status at the loss, the slot |
+| `admin.order.cleaner_not_started` | a job with a cleaner on it is still not started 30 minutes after its start, or the customer reports that the cleaner did not arrive — **once per order**, whichever comes first → [the no-show](#when-the-cleaner-cancels-or-no-shows) | order number, the slot |
+| `admin.order.lockout_reported` | the assigned cleaner reports that they cannot get in, 15 minutes or more past the start, with an entrance photo; nothing moves until an administrator confirms it → [the lockout](#lockout) | order number, the slot |
 | `admin.dispute.filed` | a customer files a dispute | order number, the reason (an enum), the dispute |
 | `admin.dispute.chargeback` | the bank reverses a charge — the dispute named is the customer's open one when there is one, else the chargeback's own | order number, the reversed amount, the dispute |
+| `admin.dispute.chargeback_unmatched` | the bank reverses a charge that **no order carries**, so no dispute can be written. The Stripe account is shared by every operating company, so **every company** is told, each on its own row. The e-mail and the console's feed row carry the figures | the reversed amount with its currency, the Stripe dispute id to answer it by in the Stripe dashboard |
 | `admin.payment.failed` | a card payment is declined — **once per order**, the first decline only (default O-6): Stripe fires per attempt and the platform resolves the state itself, by a retry or the stale sweep's cancel | order number |
+| `admin.payment.refund_stuck` | a cancelled order's card refund is still not through **24 h** after it was asked for, although the hourly re-drive keeps trying — once per order | order number, the amount |
+| `admin.payment.refund_needs_retry` | any other refund — a dispute's, an administrator's, a partial one — still `Pending` after 24 h; the re-drive does not touch it, so the administrator retries it from the action that asked for it — once per order | order number, the amount |
 | `admin.erasure.failed` | the daily retry of a failed account erasure fails again — **once per request per day**, and a request that fails again tomorrow is meant to be heard again | the request, the day |
 | `admin.company.wind_down_requested` | an administrator sets the company's last day of service (a re-run announces nothing) | the date |
 | `admin.company.wind_down_run` | a wind-down run **that did something** — cancelled, refunded, failed a refund or closed a period; a run that moved nothing is not news | the four counts |
@@ -477,10 +1183,11 @@ an administrator may also hold cannot render these keys.
 role is in the event's audience** — read by the company **argument**, never by whatever tenant happens to
 be ambient at a webhook or a job — gets their own feed row with their own read state, so the first
 administrator who glances at the bell does not silence it for everyone. The audience is one of the
-administrator sets ([ADR-0066](/decisions/adr-0066) D8): the order, dispute and payment events and a
-lost crew reach **Support and above**; a failed erasure retry reaches **Manager and above**; the three
-company milestones reach **Administrators only**; a **chargeback reaches every role** — Support answers
-the bank, the Accountant reconciles the money that left. The e-mail fan-out below is over the same
+administrator sets ([ADR-0066](/decisions/adr-0066) D8): the order, dispute and payment events, a
+lost crew, a cleaner not started and a lockout report reach **Support and above**; a failed erasure retry reaches **Manager and above**; the three
+company milestones reach **Administrators only**; a **chargeback and a stuck refund reach every role**, a
+chargeback matched to an order or not — Support answers the customer or the bank, the Accountant
+reconciles the money. The e-mail fan-out below is over the same
 narrowed set. A company with no eligible administrator in the audience is a logged warning, not an error.
 
 **The e-mail, and the one setting.** One template, one subject and one paragraph per event in five
@@ -509,52 +1216,119 @@ which is why *both* was the right ruling and not a redundancy. → [Admin notifi
 
 ## Cleaner pay
 
-One `EmployeePayConfig` is selected per selected service **and** per selected package, then summed —
-for **each** assigned cleaner, at that cleaner's rates:
+**A rate describes the job, and each seat earns an equal share of it** (owner rulings 2026-09-28,
+decisions 33 and 40). One `EmployeePayConfig` is selected per selected service **and** per selected
+package, at the paid cleaner's rates, and summed into the job's figures; one seat of the job's
+`RequiredEmployees` is paid an equal share of each, and the [dirtiness level](#dirtiness) raises it by
+the level's rate after the clamp:
 
 ```
-basePay     = Σ config.BasePay                                  # one config per service / package
-extrasPay   = Σ (config.ExtraPerRoom × max(0, rooms - 1))       # the FIRST room is inside BasePay
+# the job
+jobBase     = Σ config.BasePay                                  # one config per service / package
+jobExtras   = Σ (config.ExtraPerRoom × max(0, rooms - 1))       # the FIRST room is inside BasePay
             + Σ (config.ExtraPerBathroom × bathrooms)
-expensesPay = 0                                                 # no distance component
+jobMin      = max(config.MinimumPay > 0)     # the strongest guarantee wins; 0 = no bound
+jobMax      = min(config.MaximumPay > 0)     # the tightest cap wins;        0 = no bound
+jobDirt     = round(clamp(jobBase + jobExtras, jobMin, jobMax) × rate(level), 2)
 
-minPay      = max(config.MinimumPay > 0)     # the strongest guarantee wins; 0 = no bound
-maxPay      = min(config.MaximumPay > 0)     # the tightest cap wins;        0 = no bound
+# one seat, n = RequiredEmployees
+share(x)    = floor(x × 100 / n) / 100       # the first seat takes x − share(x) × (n − 1)
+basePay     = share(jobBase)       extrasPay    = share(jobExtras)
+minPay      = share(jobMin)        maxPay       = share(jobMax)
+dirtinessPay = share(jobDirt)      expensesPay  = 0          # no distance component
 
-TotalPay    = max(0, clamp(base + extras, minPay, maxPay) + bonus - deduction)
+TotalPay    = max(0, clamp(basePay + extrasPay, minPay, maxPay) + dirtinessPay + bonus - deduction)
 ```
 
-`CalculateOrderPay` writes the pay row, and it reads the order's packages beside its services — so a
-package-only order is paid like any other, and one with no rate for any of its lines in its currency
-is refused (`payroll.no_pay_configuration`). There is one formula, in `PayCalculatorExtensions`, and
-the first room is inside `BasePay` everywhere it is applied.
+`CalculateOrderPay` writes one assigned cleaner's pay row, and it reads the order's packages beside its
+services — so a package-only order is paid like any other, and one with no rate for any of its lines in
+its currency is refused (`payroll.no_pay_configuration`). There is one formula,
+`PayCalculatorExtensions.CalculateSeatPay`, and the first room is inside `BasePay` everywhere it is
+applied. For a one-cleaner job at *Normal* it is exactly the old figure.
 
-Four things that surprise people:
+Six things that surprise people:
 
 - **`extrasPay` is rooms and bathrooms, not the extras the customer bought.** The order's extra lines
   (`OrderExtra`) are read by nothing on this path; they earn the cleaner no pay.
 - **A cleaner is not paid for distance** (owner ruling 2026-09-24). Neither calculator path in
   `PayCalculatorExtensions`, nor any pay estimate or preview, reads a kilometre rate or a travel
-  distance: every new pay row carries `ExpensesPay = 0` and a breakdown with no distance term (`Base` and
-  `Extras` only), whatever an old configuration or order still stores. The two legacy columns
-  (`EmployeePayConfig.DistanceRatePerKm`, `Order.TravelDistance`) stay in the schema, unread — nothing
-  writes a travel distance, and no admin command, form or DTO carries a kilometre rate any more, so a
-  rate stored before the ruling is neither shown nor applied. Pay rows, invoices and manual adjustments
-  written before it are not recalculated; a pay view that still draws an *Expenses* line shows 0 on
-  every new row. Neither partner app's address screen (Android `AddressSectionScreen`, iOS
+  distance: every new pay row carries `ExpensesPay = 0` and a breakdown with no distance term (`Base`,
+  `Extras` and `Dirtiness` only), whatever an old configuration or order still stores. The two legacy
+  columns (`EmployeePayConfig.DistanceRatePerKm`, `Order.TravelDistance`) stay in the schema, unread —
+  nothing writes a travel distance, and no admin command, form or DTO carries a kilometre rate any more,
+  so a rate stored before the ruling is neither shown nor applied. Pay rows, invoices and manual
+  adjustments written before it are not recalculated; a pay view that still draws an *Expenses* line
+  shows 0 on every new row. Neither partner app's address screen (Android `AddressSectionScreen`, iOS
   `AddressSectionView`) gives travel pay as a reason for asking for the address.
-- **The clamp bounds are persisted on the pay row.** A later bonus or deduction re-clamps the same
-  core identically, instead of silently dropping the clamp.
-- **Every assigned cleaner is paid the whole figure.** Pay is one row per assigned cleaner with no
-  crew-size term, so a job with a crew of three pays its rates three times against one customer price.
-  Whether a rate describes the job or one cleaner is an open owner question; until it is answered,
-  this is the rule. → [Pay and payouts](/flows/pay-and-payouts)
+- **The clamp bounds are persisted on the pay row** — the seat's share of them. A later bonus or
+  deduction re-clamps the same core identically, instead of silently dropping the clamp.
+- **The dirtiness term sits outside the clamp.** It is the job's clamped pay × the level's rate, split
+  like the rest and added after the seat's clamp, so a maximum cannot swallow it; a later bonus or
+  deduction re-clamps base + extras (and any legacy expenses) and adds it back outside the clamp. It
+  is stored as `OrderEmployeePays.DirtinessPay` and named in the breakdown
+  (`Base: …, Extras: …, Dirtiness: …`).
+- **A full crew adds up to the job, and an empty seat's share is nobody's.** The divisor is
+  `RequiredEmployees`, not the number of cleaners who turned up. Every term's cent residue goes to the
+  first seat — the crew member with the lowest `SeatOrdinal` when the pay is calculated — so a full
+  crew's rows sum to the job's figures exactly; a cleaner who works a two-seat job alone is paid one
+  seat. Until 2026-09-28 every assigned cleaner was paid the whole figure, so a crew of three paid its
+  rates three times against one customer price.
+- **What a cleaner is shown is the seat's share.** The board, the job detail, the dashboard estimate and
+  the available-jobs preview quote `OrderPayEstimator`'s figure — one seat, raised by the level, without
+  the first seat's residue cents — and the partner web labels it *per spot*. My Pay carries the term as
+  `dirtinessPay` on each row and `totalDirtinessPay` on the period summary, and the partner web, Android
+  and iOS show it in the pay breakdown. → [Pay and payouts](/flows/pay-and-payouts)
 
 ### Per-employee rates
 
 `EmployeePayConfig.EmployeeId` is nullable: `null` is the platform-wide rate for that service or
 package, non-null is an override for one cleaner. Per target id, the employee-specific config wins,
 otherwise the global one.
+
+**The admin writes one cleaner's whole rate card from a neutral rate template** (owner ruling
+2026-09-28): **standard 0.5**, **experienced 0.6** or **expert 0.7** of each entry's list price in the
+chosen currency (`BulkCreateEmployeePayConfigs`, field `grade`). Every template leaves the company a
+margin. Until then the tool offered ranks — junior 0.5, medior 0.75 and senior 1.0, the last paying the
+cleaner the whole customer price; the rank names are now refused (`common.invalid_enum_value`). The
+seed's platform-wide default is the standard template's 0.5. A template's rate describes the job like
+any other rate, so on a two-cleaner job each seat earns half of it.
+
+**A deduction linked to a complaint carries its reason.** An administrator's finding that the cleaner
+was at fault in a dispute is recorded on the pay row with the dispute and a reason the cleaner sees;
+the unlinked manual deduction is unchanged → [A cleaner is charged only when found at fault](#dispute-cleaner-charge).
+
+### The crew's share of a collected fee {#fee-share}
+
+**Owner ruling 2026-09-28 (decision 12).** A late cancellation or a [lockout](#lockout) pays the
+cleaners who lost the job **half of the fee** (`BookingPolicy.CleanerFeeShareRate = 0.50`) — **once the
+company has collected it**, never on a fee that is still owed. Until then the company kept every fee.
+
+```
+collected = on an order that took a payment:
+              max(0, min(TotalPrice − the cancellation refund,
+                         TotalPrice − succeeded card refunds − credit returned on it))
+            on an order that took no payment:
+              Σ its paid cash-cancellation-fee and lockout receivables
+seat      = share(collected × 0.50)    # over RequiredEmployees, the residue on the first seat, as job pay is
+```
+
+- **When it is asked for.** At a customer's cancellation of an order that took a payment and owes a
+  fee, signed in or guest; at an administrator's lockout confirmation of an order that took a payment;
+  and when the webhook settles a cash-cancellation or lockout receivable. Each asks for every crew
+  member's pay on the existing pay queue, as a completion does.
+- **Never more than the company still holds.** An order refunded before it was cancelled or locked out
+  pays nothing, and one partly refunded pays on what is left: a late cancellation at 50 % of a 1 000
+  order after a 700 refund pays its one seat 150, half of the 300 still held. A cancellation refund
+  still waiting for its re-drive does not lower the figure — the first term keeps it to the fee. A
+  cancelled order that collected nothing writes no row (`payroll.no_collected_fee`, which only the queue
+  consumer sees and logs).
+- **A pay line of its own.** The row's `LineType` is `CancellationFeeShare` or `LockoutFeeShare`
+  (`PayLineType`, beside `Job`; wire integers 0–2, append-only). Its base is the seat's share with no
+  rates read and no clamp. The self-billed invoice line says it is a share of the fee — in Czech for a
+  Czech cleaner, in English elsewhere — and My Pay on the partner web, Android and iOS, like the admin
+  invoice, names each line's type.
+- Two seats of a 666.66 fee are paid 166.67 and 166.66; a paid 900 lockout receivable pays one seat 450,
+  as a lockout share.
 
 ### Rates are per currency {#rates-per-currency}
 
@@ -608,9 +1382,12 @@ and that one currency scopes everything the cleaner sees and does with money:
   closed — an empty board, never every board.
 - **Pay follows the order, so it follows the board.** Because a cleaner can only take orders in their
   currency, every pay row they earn is in it, and a period closes into one invoice in it. The
-  per-currency invoicing above still exists for the one path that can cross the line: **an admin
-  reassigning a cleaner onto an order is the deliberate override** (`AdminReassignOrder` is not
-  gated), and an order the cleaner is already on stays visible to them whatever its currency.
+  per-currency invoicing above still exists as the backstop for the one path the board does not
+  decide: **an admin reassigning a cleaner onto an order is the deliberate override**.
+  `AdminReassignOrder` does not read the cleaner's currency; it checks that the cleaner works in the
+  order's **market** (`order.reassign.employee_other_market`), is approved and is free at the time.
+  An order the cleaner is already on stays visible to them whatever its currency.
+  → [Admin order management — reassignment](/admin-app/order-management#order-reassignment)
 - **My Pay and the dashboard label with it.** Every partner-facing money aggregate is filtered to the
   resolved currency and printed with its code; counts stay over all orders. **A period that holds pay
   in more than one currency offers a switch** (owner ruling 2026-09-19): the period view answers the
@@ -642,6 +1419,59 @@ default. Only a **null** country resolves to the platform default: an unapproved
 country yet, or the customer wizard before an address is known. The seed is what keeps this from ever
 firing — see [Money constants](#money-constants).
 → [Pay and payouts](/flows/pay-and-payouts#approval-is-the-last-refusal)
+
+## The company's cash in a cleaner's hands {#cash-held}
+
+**Owner rulings 2026-09-28 (decisions 23 and 25).** A cleaner who takes cash at the door holds the
+company's money, while the company owes them their pay. A ledger records the first, each invoice sets
+it off against the second, and a limit stops the pile from growing.
+
+**The ledger** (`CashLedgerEntries`, the company's books): cleaner, order, currency, kind, a signed
+amount, when, and a note. The cash a cleaner holds in a currency is the sum of their entries in it.
+
+| Entry | Written by | Moves the balance |
+|---|---|---|
+| Collection | the cleaner's *cash collected* (`MarkCashCollected`, a card order paid in cash included) or an administrator's *record cash received*, with the amount, currency and moment stamped on the order. **One per order**, held by a unique index, so two racing taps cannot count the cash twice; a refused collection enters nothing | up |
+| Remittance | an administrator records cash the cleaner handed back (`POST api/AdminCashHeld/record-remittance`, Accountant and above, audited as `cash_held.remittance`) | down |
+| Write-off | an administrator writes cash off with a required note of at most 500 characters (`POST api/AdminCashHeld/write-off`, Manager and above, audited as the sensitive `cash_held.write_off`) | down |
+| Set-off | an invoice sets the cash off against the pay it states → below | down; up again when an invoice gives it back |
+
+A remittance or a write-off is a positive amount of money (`cash_held.amount_invalid`) and never more
+than the cleaner holds in that currency (`cash_held.amount_exceeds_balance`); a cleaner or currency the
+company does not have is refused. The validator answers first, and the handler checks again under a
+lock on that cleaner's cash in that currency, held until the commit — so a double-submitted
+remittance, or a remittance and a write-off posted together, cannot leave the cleaner holding less than
+nothing. The admin app's *Cash held* page (under Pay periods; `GET api/AdminCashHeld/get-all`,
+Accountant and above) lists every cleaner holding cash, per currency. A cleaner reads *cash I hold*, per
+currency, on My Pay on the partner web and Pay & Earnings on Android and iOS
+(`GET api/EmployeePayroll/GetCashHeld`).
+
+**Set off at every invoice** (decision 23 (c)). Both invoice writers — the pay-period close and
+`GenerateInvoice` — take the cash the cleaner holds in the invoice's currency off against it, **up to
+the invoice's total**, under the same lock: `EmployeeInvoice.CashSetOffAmount`, and a *Set-off* ledger
+entry dated at issue. The invoice's own amounts do not change; **`TransferAmount = TotalAmount −
+CashSetOffAmount`** is what the bank transfer carries. What the invoice could not cover stays in the
+ledger: that is the balance carried forward. Cancelling an invoice gives its set-off back to the ledger,
+and lowering an invoice's total below its set-off gives back the difference.
+→ [Pay and payouts — cash set off](/flows/pay-and-payouts#cash-set-off)
+
+**A request to hand the cash over, after 30 days.** A balance is the run of a cleaner's cash in one
+currency above zero; it counts as carried from the **first pay-period close after it began**. Once that
+close is more than `cash.remittance_request_days` ago (company setting, default **30**, 1–365), the
+daily `RequestCashRemittances` timer (08:00, company by company, a frozen company left out) e-mails the
+cleaner a request to hand it over, in five locales — **once per balance**; one that falls to zero and
+rises again is asked about afresh.
+
+**A float cap** (decision 25 (a)). `cash.float_cap` (company setting, default **0** — no cap). A cleaner
+holding **strictly more** than it no longer sees cash jobs: not on the board, the dashboard preview and
+count, or their pending offers, and a take is refused (`order.cash_float_cap_exceeded`). A cash job
+they are already on stays, and card jobs are never hidden. *Cash I hold* states the cap and whether
+cash jobs are hidden (`floatCap`, `cashJobsHidden`), per currency, which is the reason the partner apps
+show. → [Money constants](#money-constants)
+
+**The archive waits for it.** A company cannot be archived while a cleaner holds a non-zero balance
+(`company.has_cash_held`); the wind-down's last close sets cash off like any other
+→ [A company's lifecycle](#company-lifecycle).
 
 ## The revenue report {#revenue-report}
 
@@ -722,9 +1552,11 @@ When a promo wins, it fully replaces the combined figure and both go to zero.
 
 ### The express-surcharge correction {#discount-express-correction}
 
-Discount resolution happens on the **raw, pre-surcharge** subtotal and stays there: the tier floor and
+Discount resolution happens on the **raw, pre-express** subtotal and stays there: the tier floor and
 the 12 % cap must be judged on the same base the quote judged them on, or a booking straddling the
-floor qualifies in the wizard and loses the discount at submit.
+floor qualifies in the wizard and loses the discount at submit. The dirtiness surcharge is **inside**
+that raw subtotal — lines + dirtiness — so the discounts come off it
+([What the rate applies to](#dirtiness-price)).
 
 But the price the discount comes off **carries the surcharge**. On an express order the raw figure
 under-states the saving: the customer would have paid `raw × 1.2` and pays `(raw − d) × 1.2`, so they
@@ -735,12 +1567,14 @@ the lifetime-savings sum, every client's `totalPrice − discount` — and reads
 saving. So the correction is made once, before the amount is persisted, and no consumer re-applies it.
 
 **The order stores every term of its price in cents, and the terms add up.** `OrderFactory` stores
-the surcharge it charged as an amount — `Order.ExpressSurchargeAmount` = `raw × 1.2 − raw` rounded to
-the cent, zero when none applied — and each discount rounded to the cent on its own, with whatever cent
-the three roundings leave over added to the largest source. The result holds exactly:
+both surcharges it charged as amounts — `Order.DirtinessSurchargeAmount`, the level's rate on the stored
+lines rounded to the cent, and `Order.ExpressSurchargeAmount` = `raw × 1.2 − raw` on the raw subtotal
+(lines + dirtiness) rounded to the cent, each zero when none applied — and each discount rounded to the
+cent on its own, with whatever cent the three roundings leave over added to the largest source. The
+result holds exactly:
 
 ```
-Σ lines + ExpressSurchargeAmount
+Σ lines + DirtinessSurchargeAmount + ExpressSurchargeAmount
         − (TierDiscountAmount + MembershipDiscountAmount + PromoDiscountAmount) = TotalPrice
 ```
 
@@ -792,11 +1626,13 @@ never scaled from another currency's figure). It is not an activation gate: a ma
 an apology credit. **No locale string states the figure** ([ADR-0060](/decisions/adr-0060)): the home
 page's rules card carries `{{amount}}` and formats the market's `noShowCredit` in the market's
 currency, or renders the refund-only sentence when the market has none. **The push names the credit
-with its own currency** (owner ruling 2026-09-13): `order.no_cleaner_refunded` carries an `amount`
-argument formatted on the server from the credit's currency row — the number with no trailing zeros,
-a space, the symbol, "250 Kč" / "10 €" — because the credit's currency is the credit's own and the
-device cannot derive it from the order; the lock-screen allow-list is `{orderNumber, count, amount}`,
-with `amount` on that one key ([ADR-0025](/decisions/adr-0025) Amendment A2).
+with its own currency** (owner ruling 2026-09-13): the three no-show outcome keys
+(`order.no_cleaner_refunded`, `order.no_cleaner_refund_pending`, `order.no_cleaner_nothing_charged`)
+carry an `amount` argument formatted on the server from the credit's currency row — the number with no
+trailing zeros, a space, the symbol, "250 Kč" / "10 €" — because the credit's currency is the credit's
+own and the device cannot derive it from the order; the lock-screen allow-list is
+`{orderNumber, count, amount}`, with `amount` on those three keys ([ADR-0025](/decisions/adr-0025)
+Amendment A2).
 `check-booking-policy-parity.mjs` pins the *absence* of a figure and the presence of the placeholder
 in every locale.
 
@@ -808,10 +1644,13 @@ keeps it — see [Cleansia Plus](#cleansia-plus).
 **Insurance ceiling — `CountryConfiguration.InsuranceCoverageAmount`.** The one marketing figure in
 customer copy (the mobile trust badge and FAQ), a number in the country's `DefaultCurrencyCode`, per
 country because a policy is written per jurisdiction. Authored on the admin country form's Market
-section. **CZE is seeded at 1 000 000 CZK** (owner ruling 2026-09-13: every cleaner is insured for the
-amount and buys the insurance themselves); every other configuration is null, so the copy there
-reads "Insured" with no figure until the owner authors that market's ceiling — SK's EUR figure is his
-to write on the country form when that market opens.
+section. **No market states a figure** (owner ruling 2026-09-28, replacing the 1 000 000 CZK seeded
+for CZE on 2026-09-13): every configuration is seeded null, so the copy reads "Insured" with no figure
+until the owner decides whose policy covers a booking — the cleaner's own or the company's — and at
+what amount, and authors it on the country form. The "background-checked" and "vetted" claims are gone
+from every client. **Whichever policy it becomes, a cleaner is approved only with a valid liability
+insurance certificate**: `InsuranceDocument` is seeded as a required cleaner document for CZE and SVK,
+so approval's existing required-documents rule refuses a cleaner without an approved one.
 
 **Loyalty earn — `Currency.LoyaltyPointsDivisor`.** A completed order earns
 `floor(total / divisor)` in the order's currency, and the partial-refund clawback removes the same
@@ -847,6 +1686,12 @@ an admin issuing credit, unit-free on purpose: it caps 10 000 in whatever curren
 in EUR it is about twenty-five times looser and catches almost nothing. Accepted — a per-currency table
 for a typo guard is worse than the typo, and an admin who genuinely owes more issues it twice with both
 rows in the ledger under their name.
+
+**Cash float cap — `cash.float_cap`.** A company setting, a whole number (0 = no cap, at most
+10 000 000), compared with the cash a cleaner holds **in the currency being judged** — the cleaner's own
+on the board, the order's at a take. It is unit-free on purpose: a cleaner works in one currency, so for
+every cleaner it is read in that one. A company that pays cleaners in two currencies has one figure for
+both. → [The company's cash in a cleaner's hands](#cash-held)
 
 **Stripe fixed refund fee — `CountryConfiguration.RefundStripeFixedFee`.** A number in the country's
 `DefaultCurrencyCode` (6 on the CZE row means 6 CZK), deducted only from a refund whose order is in that
@@ -988,8 +1833,12 @@ company, from the first write:
   created in. Login, password reset and social sign-in find the one account wherever it lives.
 - **Each company keeps its own books:** receipts and refunds belong to the order’s operator, receipt
   numbers come from that operator’s counter, its pay rates and promo codes are its own, and a site-wide
-  campaign reaches its own customers only. Card payments use **one holding Stripe account**, with
-  revenue settled intercompany (Q-TENANCY-01/05); there is no per-company Stripe account today.
+  campaign reaches its own customers only. **Card payments are taken on the operating company's own
+  Stripe account**, so the payee a customer sees is the company that issues the receipt (decision 49,
+  owner ruling 2026-09-28; it replaces the holding account with intercompany settlement of
+  Q-TENANCY-01/05). The platform configures one Stripe account per environment, so this holds while
+  there is one operating company: a second company that takes card payments needs its own account
+  first → [Environment configuration — Stripe](/deployment/environment-config#stripe)
 
 **Opening a market is data, gated twice** — three times when a *new* company will serve it: the
 currency needs a loyalty divisor before `ActivateCurrency` accepts it
@@ -1051,7 +1900,8 @@ re-run that moved nothing is not news), and the archive (the day the books were 
    later decision to move it to the holding has a row to read.
 6. **The last pay period is closed and invoiced — only once the company is deactivated, no job is open
    and no completed job still awaits its pay calculation** — by the same body the nightly close uses
-   (one invoice per cleaner per currency, the PDF, the e-mail), and **no new period is opened**. A period
+   (one invoice per cleaner per currency, the PDF, the e-mail, and the cash each cleaner holds set off
+   against it → [cash held](#cash-held)), and **no new period is opened**. A period
    already closed is never re-invoiced: a pay row an allocation failure left uninvoiced is a fact the
    page shows and the admin settles with the pay-period tools.
 
@@ -1104,7 +1954,8 @@ its receipt (`…has_orders_awaiting_receipt`), a receipt still to be fiscally r
 even one already ending at period end (`…has_active_memberships`), a credit balance
 (`…has_credit_balances`), an open pay period (`…has_open_pay_period`), an unpaid invoice
 (`…has_unpaid_invoices`), an uninvoiced pay row (`…has_uninvoiced_pay`), an open dispute
-(`…has_open_disputes`), and the horizon (`company.within_chargeback_horizon`). **The chargeback horizon**
+(`…has_open_disputes`), cash a cleaner still holds — remitted or written off first
+(`…has_cash_held`, counted per cleaner and currency) — and the horizon (`company.within_chargeback_horizon`). **The chargeback horizon**
 is the company's latest card-paid cleaning date plus `lifecycle.chargeback_horizon_days` (default 180,
 range 0–730, set on Company settings): a cardholder can dispute a charge for months, and a chargeback on
 sealed books would have nowhere to land. The page shows every count, with a link to the list that
@@ -1117,7 +1968,8 @@ as dead letters for operations (Stripe is always answered 200, never asked to re
 Then, in the background, **a sealed bundle** is written to the `company-archives` storage container under
 the company's id and the freeze instant: the ledgers as one JSON Lines file per table (orders as the
 two-year retention sweep leaves them — no name, contact, street, instruction or note; status history; pay
-rows; receipts; refunds; disputes without their text or the customer; pay periods; invoices; the cleaners
+rows; receipts; refunds; disputes without their text or the customer; pay periods; invoices, with their
+cash set-off; the cash ledger, without its notes; the cleaners
 as the invoice prints them — legal entity, registration number, work country, status, nothing personal;
 credit accounts and their ledger; promo codes and redemptions; the company record; the two counters; the
 company's settings; the admin and cleaner audit trails), every receipt PDF and every payout-invoice PDF
@@ -1174,6 +2026,58 @@ restored, and the admin console's erasure and *Retry* confirmations say it is wr
 → [GDPR — erasure](/flows/gdpr-and-audit#erasure-is-anonymise-in-place),
 [Customer credit in the admin console](/admin-app/user-management#customer-credit)
 
+## Consents, cookies and fonts {#consents}
+
+**Owner rulings 2026-09-28: only necessary cookies, no tracker before launch, and opt-in promo push as
+the only marketing channel.**
+
+- **Two consents, both read-only.** The terms and the privacy policy are the only consents a customer
+  grants, and they are granted by the tick above. `GrantConsent` accepts nothing else — the
+  marketing-e-mail and data-processing types and the cleaner document types are refused with
+  `gdpr.consent_not_editable` — and `WithdrawConsent` refuses every document-backed type (terms,
+  privacy, the three cleaner documents) with the same key; an older marketing or data-processing row can
+  still be withdrawn. The customer web's GDPR page shows the terms and privacy read-only with the
+  accepted version and date, and the promo push preference as the marketing consent. Two more acts sit
+  beside them, recorded on what they govern rather than as consent rows: the request to start within
+  the withdrawal period, on every booking ([below](#early-performance)), and the card-guarantee consent,
+  on the saved card ([A saved card guarantees cash](#card-guarantee)).
+- **Necessary cookies only.** The customer, partner and admin web apps show a necessary-only cookie
+  notice — no accept, no decline, no categories — and the customer banner no longer writes consent
+  rows.
+- **No page loads from Google.** Nunito and Poppins are self-hosted in all three web apps, so no visitor's
+  address reaches Google Fonts.
+
+### The request to start within the withdrawal period {#early-performance}
+
+**Owner ruling 2026-09-28 (decision 61).** A consumer may withdraw from the contract within 14 days of
+concluding it, and a booking can start two hours after it is made. Performance may begin inside that
+period only at the customer's express request, and the right to withdraw is lost once the cleaning has
+been fully performed — so every booking asks for that request, as a tick of its own beside the terms.
+
+- **Asked on every booking and every new schedule.** `CreateOrder`, signed-in and guest alike, and
+  `CreateRecurringBooking` refuse without `earlyPerformanceRequested: true`
+  (`consent.early_performance_not_requested`) — a customer whose consents already cover the terms
+  included: unlike the terms tick, it is never skipped. The customer web wizard, signed-in and guest,
+  its new-schedule form, and the Android and iOS booking and new-schedule screens show the tick and do
+  not send the booking without it. Updating a schedule or confirming an occurrence asks nothing new.
+- **Recorded on the booking, like the other legal acts.** The order stores the wording's version, the
+  instant, the host it came from, the IP address and the device label. The version is
+  `Order.EarlyPerformanceConsentTextVersionInForce`, `early-performance-draft-2026-09-29` — a draft until
+  the lawyer's wording arrives, bumped with every change to the wording, and the key the clients show
+  the wording under, so each booking records the text it was made under. A schedule stores the act once
+  and every occurrence it creates copies it, so each order carries it even after the schedule is
+  deleted.
+- **Where it shows.** The incident file prints it on each order; the customer's data export carries it
+  on each order row — without the IP address and device label on a guest booking found under the
+  subject's e-mail, whose sender may be someone else; and the booking confirmation states it
+  ([durable confirmations](#durable-confirmations)).
+- **What is kept.** The act is kept with the order. Its IP address and device label are blanked with
+  the order's other customer details — at the customer's erasure and by the order-PII window
+  ([below](#customer-record)).
+- **What the terms say.** Section 18 of the terms `2026-09-29`: the request, the loss of the right once
+  the cleaning is fully performed, the proportional price when withdrawing after the start, and how to
+  withdraw — our draft, like the tick's wording ([The legal texts](#legal-drafts)).
+
 ## What is recorded about a customer {#customer-record}
 
 A money dispute is answered from the record, not from memory ([ADR-0062](/decisions/adr-0062), owner
@@ -1189,8 +2093,8 @@ just in case (ADR-0045 D13). The acts, and the evidence each success row carries
 
 | Act | Label | What the row proves |
 |---|---|---|
-| Book (signed in or guest) | `customer.order.create` | the server-computed price breakdown — total, net, VAT, currency, tier and promo and membership discounts, express surcharge and whether Plus waived it, credit applied — plus the payment type, the cleaning time and lead time, the line items by id and slug, rooms and bathrooms, the address by id, the language, whether it was a guest booking, the **cancellation policy as shown** (24 h / 4 h / 25 % / 50 %, this customer's free window and this customer's oops window — `oopsMinutesForThisCustomer`, 15 or 60), and the **terms tick with the version in force** |
-| Cancel | `customer.order.cancel` | the fee tier, rate and amount, the refund amount, the notice given in hours, the minutes since booking, the oops window applied (`oopsMinutesApplied` — 15, or 60 for an entitled Plus member), whether a cleaner had already accepted, the free window applied (Plus or standard), the policy figures at that moment (`oopsMinutesStandard` and `oopsMinutesPlus` among them — a row written before 2026-09-24 carries `oopsMinutesFirstTime` instead), whether an express-waiver slot was released, whether a refund was initiated, the payment type and status, and that a reason was given (never the reason) |
+| Book (signed in or guest) | `customer.order.create` | the server-computed price breakdown — total, net, VAT, currency, tier and promo and membership discounts, express surcharge and whether Plus waived it, credit applied — plus the payment type, the cleaning time and lead time, the line items by id and slug, rooms and bathrooms, the address by id, the language, whether it was a guest booking, the **cancellation policy as shown** (24 h / 4 h / 25 % / 50 %, this customer's free window and this customer's oops window — `oopsMinutesForThisCustomer`, 15 or 60, and `oopsRuleForThisCustomer`, *Standard*, *FirstBooking* or *Plus*), and the **terms tick with the terms and privacy versions the booking is made under** (`termsVersionAccepted`, `privacyVersionAccepted`: the texts in force when the box was ticked, else the versions the customer's consents hold) |
+| Cancel | `customer.order.cancel` | the fee tier, rate and amount, the refund amount (0 on an order that took no payment), the notice given in hours, the minutes since booking, the oops window applied and why (`oopsMinutesApplied` — 15 or 60 — and `oopsRuleApplied`), whether a cleaner had already accepted, the free window applied (Plus or standard), the policy figures at that moment (`oopsMinutesStandard`, `oopsMinutesPlus` and `oopsMinutesFirstBooking` among them — a row written before 2026-09-24 carries `oopsMinutesFirstTime` instead), whether an express-waiver slot was released, whether a refund was initiated, the payment type and status, and that a reason was given (never the reason) |
 | Confirm a recurring occurrence | `customer.order.recurring.confirm` | the order, the template, the price, the currency, the payment type, the cleaning time and lead time |
 | File a dispute | `customer.dispute.create` | the dispute and order ids, the reason (an enum), hours since completion against the 24 h window, the window shown, the description's length and line count (never its text), the order total and currency |
 | Register by email | `customer.account.register` | the method, the language, whether a referral code was given, the terms tick, and the terms and privacy versions in force (the effective dates of the documents shown). A Google or Apple **sign-up** writes no registration row — its proof is the two server-written consent rows with the version, plus `User.CreatedOn` — but a refused one is recorded (see the next row) |
@@ -1199,11 +2103,11 @@ just in case (ADR-0045 D13). The acts, and the evidence each success row carries
 | Ask for a password reset / complete one | `customer.password.reset_requested` / `.reset_completed` | who — and nothing else. A request for an address that matches no account is a row with **no user and no address**: the address the caller typed reaches no column |
 | Confirm the e-mail | `customer.account.email_confirmed` | which shape confirmed it — the 6-digit code or a legacy link |
 | Export their own data | `customer.gdpr.export` | how many orders, disputes, consents and trail rows the export held — never the export |
-| Grant / withdraw a consent | `customer.consent.grant` / `.withdraw` | the consent type and the document version — this **is** the consent history, because the `UserConsents` row is overwritten in place |
+| Grant / withdraw a consent | `customer.consent.grant` / `.withdraw` | the consent type and the document version — this **is** the consent history, because the `UserConsents` row is overwritten in place. Since 2026-09-28 only the terms and the privacy policy can be granted here, and no document-backed consent can be withdrawn here (`gdpr.consent_not_editable`) → [Consents](#consents) |
 | Subscribe to Plus (either surface) | `customer.membership.subscribe` | the plan, currency, price, monthly equivalent, country, trial days (none today), the channel, and whether the row is an idempotent replay of an earlier confirm (`reconciled`) |
 | Swap / cancel Plus | `customer.membership.swap` / `.cancel` | plan and price before and after; or the plan and when the current period ends |
 | Change notification preferences | `customer.notification_preferences.update` | the flags before and after — the "I was never told" defence |
-| Create / update / pause-resume / delete a recurring schedule | `customer.recurring.create` / `.update` / `.set_active` / `.delete` | the schedule facts before and after: frequency, weekday, time, line items, saved address by id, active flag (a delete records the last state, because the row is gone) |
+| Create / update / pause-resume / delete a recurring schedule | `customer.recurring.create` / `.update` / `.set_active` / `.delete` | the schedule facts before and after: frequency, weekday, time, line items, saved address by id, active flag (a delete records the last state, because the row is gone); a create also carries the terms tick and the terms and privacy versions the schedule is made under |
 
 **A refused attempt is recorded too, with the reason.** A validation reject, a business refusal or an
 exception leaves a row with `Success = false` and the **error key** (`order.in_progress_cannot_cancel`,
@@ -1230,41 +2134,49 @@ failed order"* (owner, Q-AUD-O2).
 **The terms have a version, and the version is the date the text started applying.** The terms and
 the privacy policy are stored documents (`LegalDocuments`, one per audience, type and market, seeded
 from files in the repository at every host start), each identified by its effective date as
-`yyyy-MM-dd`. For the whole platform, in five languages, the privacy policy is `2026-09-14` and the
-terms are `2026-09-27`: that version says cash on delivery is for a signed-in customer whose booking
-one cleaner can do, and states the 15/60-minute free-cancellation grace; `2026-09-14` stays as the
-text earlier customers accepted. **A document in force
+`yyyy-MM-dd`. For the whole platform, in five languages, the terms, the privacy policy and the
+complaints procedure in force are `2026-09-29` — our drafts, naming the operating company as the seller
+([The legal texts](#legal-texts)); the terms `2026-09-27` and `2026-09-14` and the privacy policy
+`2026-09-14` stay as the texts earlier customers accepted. **A document in force
 is immutable**: an edit to its file is refused with a warning, and a wording change is a new file
-under a new date, so every text a customer ever accepted stays in the database. The `/terms` and
-`/privacy` pages show the version in force for the customer's market (a market's own copy beats the
-platform-wide one; a text dated in the future is invisible until its day) with its effective date;
-the currency it names is filled in from the market, never written into the text. The version and the
-document are stamped on the consent row (`UserConsents.DocumentVersion` + `LegalDocumentId`) and the
+under a new date, so every text a customer ever accepted stays in the database. The `/terms`,
+`/privacy` and `/complaints` pages show the version in force for the customer's market (a market's own
+copy beats the platform-wide one; a text dated in the future is invisible until its day) with its
+effective date; the currency it names is filled in from the market and the company from its record
+([The seller is named from the company record](#company-identity)), never written into the text. The
+version and the document are stamped on the consent row (`UserConsents.DocumentVersion` + `LegalDocumentId`) and the
 version string on the registration and booking rows at the moment of acceptance. A re-acceptance
 under a **different document** moves the consent row to it and writes a consent-grant row; the same
-document again is a no-op on the row and still a row in the trail. **Nobody is re-prompted on a new
-version** — a customer's consent keeps pointing at the text they accepted (a re-prompt is a product
-decision per version, not built). → [ADR-0063](/decisions/adr-0063)
+document again is a no-op on the row and still a row in the trail. → [ADR-0063](/decisions/adr-0063)
+
+**A newer text is accepted before the next booking** (owner ruling 2026-09-28). A consent *covers* the
+text in force (`UserConsent.Covers`) when it is granted, not withdrawn and points at **that very
+document** — so a newer version, or a market's own copy, is not covered by an acceptance of the old one.
+The tick reappears whenever the customer's terms or privacy consent does not cover the text in force for
+the booking's market; no new booking or new schedule is made until they accept; bookings already made
+run on the versions they were made under. The consent reads carry `documentVersion` and
+`coversCurrentVersion` for the clients to decide the box by. The booking evidence records the version
+actually accepted, not the newest one.
 
 **Registration and booking are refused without the terms tick (owner ruling 2026-09-14, Q-AUD-L4).**
-A customer registration by e-mail must assert `termsAccepted: true`, and a booking must assert it
-**unless the signed-in customer's account already holds both the terms and the privacy consent,
-granted and not withdrawn** — that customer sees no box on any client and sends nothing; a guest
-always asserts it. The refusal key is **`consent.terms_not_accepted`** (a missing tick and a `false`
-one are the same refusal; the failure row records it). A Google or Apple **sign-up** without the tick
+A customer registration by e-mail must assert `termsAccepted: true`, and a booking — a one-off order
+(`CreateOrder`) or, since 2026-09-28, a new recurring schedule (`CreateRecurringBooking`) — must assert
+it **unless the signed-in customer's terms and privacy consents both cover the texts in force for the
+booking's market** (above); that customer sees no box and sends nothing, and a guest always asserts it.
+The refusal key is **`consent.terms_not_accepted`** (a missing tick and a `false` one are the same
+refusal; the failure row records it). A Google or Apple **sign-up** without the tick
 is refused as `auth.social_account_not_found` instead — on the shared sign-in-or-sign-up endpoint the
 tick is what tells the two screens apart, every sign-up screen refuses client-side first, and the
 clients read that key as "sign up first". Confirming a recurring occurrence is not gated (the template
-was accepted); an employee's registration is not gated (a cleaner accepts a different document,
-ADR-0041). When the tick arrives the server grants `TermsOfService` and `PrivacyPolicy` in the same
-commit as the account, with the document in force for the market, the IP and the device — nothing is
-parked in the browser; every client (customer web, Android, iOS) sends the tick on registration and
-on a booking that showed the box. A partner's registration sends its tick too and the server grants
-the two employee consents, unversioned, in the same commit — on the partner web and, since 2026-09-16,
-on both mobile partner apps, which no longer park it. One residual, stated: a booking by a
-signed-in customer with no consent rows records the tick but grants no rows — in production every
-account has both from registration, so only a DEV account created before the grant existed is asked
-again.
+was accepted); an employee's registration is not gated and records no customer consent (a cleaner
+accepts their own documents → [A cleaner's own documents](#cleaner-documents)). When the tick arrives
+the server grants `TermsOfService` and `PrivacyPolicy` — on registration in the same commit as the
+account, on a booking by moving (or, where none exists, creating) the signed-in customer's two rows to
+the texts in force — with the document in force for the market, the IP and the device; nothing is
+parked in the browser. The web wizard, Android and iOS show the box when the consents on record do not
+cover the texts in force and send the tick when it was ticked; Android's new-schedule form does the
+same, while the web and iOS schedule forms do not ask yet, so a customer behind on the version is
+refused there until they accept on a booking.
 
 **What a row never holds.** A name, an email, a phone, an address line, an entry instruction, the
 text of a reason or a description, card data, a token or a live code — and not the preferred cleaner
@@ -1289,7 +2201,7 @@ settings currently permit one to one hundred years; whether the admin and cleane
 three years is still an owner question.
 
 **Every retention window is per operating company** (owner ruling 2026-09-15, Q-TENANCY-04). The
-thirteen retention settings below are the platform defaults; an admin sets **their own company's**
+fourteen retention settings below are the platform defaults; an admin sets **their own company's**
 value on the admin app's *Company settings* page, inside the range shown, and resets it to the default. The sweep runs
 once per company under that company's values, so two companies keep different windows and neither can
 see or set the other's. A value outside the range is refused at the page, and a stored value the
@@ -1298,33 +2210,38 @@ catalogue no longer accepts falls back to the default rather than to zero.
 | Window | Setting | Default | Range | What it governs |
 |---|---|---|---|---|
 | Expired sign-in codes | `retention.expired_codes.enabled` | on | on / off | whether expired confirmation and reset codes are cleared off the account |
-| Stale devices | `retention.stale_devices.days` | 90 | 1 – 36 500 days | a device row not seen for that long is deleted |
+| Stale devices | `retention.stale_devices.days` | 90 | 1 – 36 500 days | an active device not seen for that long is deleted, and so is a signed-out one whose sign-out (or, undated, its last activity) is that old |
 | GDPR requests | `retention.gdpr_requests.years` | 3 | 1 – 100 years | who processed a completed request is blanked after it |
-| Order PII | `retention.order_pii.years` | 2 | 1 – 100 years | the order's customer fields, from the cleaning date of a completed order |
+| Order PII | `retention.order_pii.years` | 2 | 1 – 100 years | the order's customer fields — name, contact details, address copy, floor, flat, access mode, the cleaner's note of the calls made on a [lockout](#lockout) report, the IP address and device label of the [request to start within the withdrawal period](#early-performance), and a customer's or administrator's cancellation reason — from the cleaning date of a completed or cancelled order |
 | Withdrawn consents | `retention.withdrawn_consents.years` | 3 | 1 – 100 years | consent rows after withdrawal |
-| Superseded documents | `retention.deleted_documents.days` | 365 | 1 – 36 500 days | a cleaner's deactivated document and its file |
+| Superseded documents | `retention.deleted_documents.days` | 365 | 1 – 36 500 days | a cleaner's deactivated document and its file; a file that will not delete is left for a later run |
 | Notifications | `retention.notifications.days` | 90 | 1 – 36 500 days | in-app notification rows (plus a 500-per-user cap that is not a setting) |
 | Customer audit rows | `retention.customer_audit.years` | 3 | 1 – 100 years | per row, from its own act |
 | Dispute text after erasure | `retention.dispute_text.years` | 3 | 1 – 100 years | the description, messages and resolution notes of an **erased** customer's disputes, from the erasure |
-| Contract-acceptance metadata | `retention.work_contract_metadata.years` | 3 | 1 – 100 years | the IP address, device label and device id on a cleaner's acceptance of the contract for work, from the acceptance; the acceptance itself is kept with the order → [The contract for work](#work-contract) |
-| Order photos | `retention.order_photos.days` | 7 | 1 – 36 500 days | photo rows and blobs, from the order's completion, held while any dispute is unresolved |
+| Contract-acceptance metadata | `retention.work_contract_metadata.years` | 3 | 1 – 100 years | the IP address, device label and device id on a cleaner's acceptance of the contract for work — and, since 2026-09-28, of their own documents — from the acceptance; the acceptance itself is kept → [The contract for work](#work-contract), [A cleaner's own documents](#cleaner-documents) |
+| Order photos | `retention.order_photos.days` | 7 | 1 – 36 500 days | photo rows and blobs, from the order's completion or its cancellation, held while any dispute is unresolved; an order stuck in progress keeps them |
+| Receipt PDFs | `retention.receipts.years` | 10 | 10 – 100 years | a receipt's stored PDF, counted from the end of the calendar year it was issued in — the statutory period for a tax document, pending the lawyer's figure (owner ruling 2026-09-28). The receipt row stays as the record, stamped `BlobDeletedAt`; a download of a deleted PDF answers `receipt.not_found`, and the company archive skips it. The floor is the default because nothing re-renders a deleted PDF |
 | Admin audit rows | `retention.admin_audit.years` | 3 | 1 – 100 years | per row, from `OccurredOn` |
 | Cleaner audit rows | `retention.employee_audit.years` | 3 | 1 – 100 years | per row, from `CreatedOn` |
 
-The weekly sweep has **fourteen tasks**: the thirteen settings above plus expired or revoked guest
+The weekly sweep has **fifteen tasks**: the fourteen settings above plus expired or revoked guest
 access tokens, whose own timestamps decide deletion. Photo eligibility begins seven days after
-`CompletedAt`; deletion is attempted on the first weekly run after that window. An existing
-dispute holds them until it is `Resolved` or `Closed`. Orders without a completion timestamp are
-outside this photo rule. A later dispute cannot recover photos already deleted; the adequacy of
-that window for later claims remains an owner question.
+`CompletedAt` — or, on a cancelled order, after `CancelledAt`; deletion is attempted on the first
+weekly run after that window. An existing dispute holds them until it is `Resolved` or `Closed`. An
+order that is neither completed nor cancelled is outside this photo rule. A later dispute cannot
+recover photos already deleted; the adequacy of that window for later claims remains an owner
+question.
 
-Two further keys bring the catalogue to **fifteen**. Under `lifecycle` sits the
+Four further keys bring the catalogue to **eighteen**. Under `lifecycle` sits the
 **chargeback horizon** (`lifecycle.chargeback_horizon_days`, default **180**, range **0 – 730** days —
 zero means no horizon), counted from the company's latest card-paid cleaning; the company cannot be
 archived until it has passed → [A company's lifecycle](#company-lifecycle). Under
 `notifications` sits the **shared mailbox for administrator notices**
 (`notifications.admin_email`, an e-mail address; empty by default, which means every administrator is
-e-mailed individually) → [Administrators are told](#admin-notifications).
+e-mailed individually) → [Administrators are told](#admin-notifications). Under `cash` sit the
+**float cap** (`cash.float_cap`, default **0** — no cap, range 0 – 10 000 000) and the **days before a
+cleaner is asked to hand cash over** (`cash.remittance_request_days`, default **30**, range 1 – 365)
+→ [The company's cash in a cleaner's hands](#cash-held).
 
 **Erasure keeps the row and blanks where it came from — and it is one commit.** Account deletion
 nulls the IP address, the device label and the device id on every row of the subject — and on the
@@ -1338,7 +2255,12 @@ exactly as they were, never half done → [Credit on a deleted account](#credit-
 **The dispute text survives erasure for three years** (owner ruling 2026-09-14, Q-AUD-L3: *"keep it
 for 3 years then delete — cleaner and better for defence"*): the description, the messages and the
 resolution notes stay readable under a stamp the erasure sets, and the weekly sweep blanks them once
-it is past; the evidence files still go at erasure; the cancellation reason is kept as before.
+it is past; the evidence files still go at erasure. The cancellation reason is cleared with the
+order's other customer fields — unless the platform wrote it, because a platform reason is a code
+(`order.cancelled.company_wind_down`), not personal data, and the wind-down retries its refunds by it.
+**Every saved address goes**, inactive ones included, and an address the subject only ever saved is
+deleted unless another customer's order, saved address or employee record still uses it.
+→ [GDPR — erasure](/flows/gdpr-and-audit#erasure-is-anonymise-in-place)
 
 **Erasure reaches the guest bookings placed with the account's e-mail (owner ruling 2026-09-15).** A
 guest booking is never attached to an account, so the e-mail is the only link — and the erasure uses

@@ -17,7 +17,7 @@ const TEMPLATE_ROOTS = [
  * Shrink-only: an entry leaves when its sheet is self-hosted, and a new one
  * is argued for here rather than added to the HTML.
  */
-const REMAINING_THIRD_PARTY_STYLESHEETS = ['fonts.googleapis.com/css2'];
+const REMAINING_THIRD_PARTY_STYLESHEETS: string[] = [];
 
 interface CssRule {
   media: string;

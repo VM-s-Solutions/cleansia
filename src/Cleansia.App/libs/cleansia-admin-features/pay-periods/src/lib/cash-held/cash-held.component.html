@@ -1,0 +1,97 @@
+<div class="cleansia-cash-held cleansia-page">
+  <div class="cleansia-cash-held__container page-wrapper">
+    <div class="cleansia-page-header">
+      <div class="cleansia-page-header__heading">
+        <cleansia-title [title]="'pages.cash_held.title' | translate" [level]="1" />
+        <p class="cleansia-page-header__description">
+          {{ 'pages.cash_held.description' | translate }}
+        </p>
+      </div>
+    </div>
+
+    <cleansia-section>
+      @if (facade.initialLoading()) {
+      <cleansia-loader />
+      } @else if (facade.hasError()) {
+      <div class="not-found-state">
+        <div class="not-found-state__icon"><i class="pi pi-exclamation-triangle"></i></div>
+        <p class="not-found-state__message">{{ 'pages.cash_held.load_error' | translate }}</p>
+        <div class="not-found-state__actions">
+          <cleansia-button
+            [label]="'pages.cash_held.retry' | translate"
+            icon="pi pi-refresh"
+            severity="secondary"
+            [outlined]="true"
+            (onClick)="facade.loadCashHeld()"
+          />
+        </div>
+      </div>
+      } @else {
+      <cleansia-table
+        [data]="facade.cashHeld()"
+        [columns]="table().columns"
+        [actions]="table().actions"
+        [config]="{
+          paginator: false,
+          emptyMessage: 'pages.cash_held.empty'
+        }"
+        [loading]="facade.loading()"
+      />
+      }
+    </cleansia-section>
+
+    @if (facade.action(); as action) {
+    @let copy = facade.actionCopy()!;
+    <cleansia-section [title]="copy.titleKey | translate">
+      <p class="form-hint">{{ copy.ledeKey | translate }}</p>
+      <div class="detail-grid">
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.cash_held.columns.cleaner' | translate }}</span>
+          <span class="detail-grid__value">{{ action.row.employeeName || '-' }}</span>
+        </div>
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.cash_held.columns.amount' | translate }}</span>
+          <span class="detail-grid__value">{{ heldOf(action.row) }}</span>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-field form-field--third">
+          <cleansia-text-input
+            dataType="number"
+            [label]="'pages.cash_held.amount' | translate"
+            [ngModel]="facade.amount()"
+            (valueChanges)="facade.setAmount($event)"
+          />
+        </div>
+        <div class="form-field form-field--full">
+          <cleansia-textarea
+            [label]="copy.noteKey | translate"
+            [rows]="3"
+            [maxLength]="500"
+            [ngModel]="facade.note()"
+            (valueChanges)="facade.setNote($event)"
+          />
+        </div>
+      </div>
+      <div class="form-actions">
+        <cleansia-button
+          [label]="'global.actions.cancel' | translate"
+          severity="secondary"
+          [outlined]="true"
+          [disabled]="facade.submitting()"
+          (onClick)="facade.cancelAction()"
+        />
+        <cleansia-button
+          [label]="copy.submitKey | translate"
+          [icon]="copy.icon"
+          [severity]="copy.severity"
+          [outlined]="copy.outlined"
+          [loading]="facade.submitting()"
+          [disabled]="!facade.canSubmit()"
+          (onClick)="facade.submit()"
+        />
+      </div>
+    </cleansia-section>
+    }
+  </div>
+</div>

@@ -3,6 +3,7 @@ import { cashIsRefused, resolveCashEligibility } from '@cleansia/models';
 import { formatDate as formatSharedDate, formatMoney, localeFor, toSnakeCase } from '@cleansia/utils';
 import {
   AssignedEmployeeDto,
+  DirtinessLevel,
   OrderItem,
   OrderStatus,
   PaymentStatus,
@@ -39,6 +40,16 @@ export function formatAddress(address: {
 }
 
 // --- Translation helpers ---
+
+const DIRTINESS_LEVEL_LABEL_KEYS: Readonly<Record<DirtinessLevel, string>> = {
+  [DirtinessLevel.Normal]: 'enums.dirtiness_level.normal',
+  [DirtinessLevel.Increased]: 'enums.dirtiness_level.increased',
+  [DirtinessLevel.Heavy]: 'enums.dirtiness_level.heavy',
+};
+
+export function dirtinessLevelLabelKey(level: DirtinessLevel | undefined): string {
+  return DIRTINESS_LEVEL_LABEL_KEYS[level ?? DirtinessLevel.Normal];
+}
 
 export function translateEnum(
   translateService: TranslateService,
@@ -148,24 +159,35 @@ export function canManagePhotos(
   return isPhotoEligibleStatus && isEmployeeAssigned(assignedEmployees, employeeId);
 }
 
-// Before photos: allowed during Confirmed or OnTheWay (preparation phase).
+// Mirrors OrderPhoto.MayBeAddedAt: a before photo from the take until the work is done, an after
+// photo only while it is in progress.
 export function canUploadBeforePhotos(
   orderStatusValue: number,
   assignedEmployees: AssignedEmployeeDto[] | undefined,
   employeeId: string
 ): boolean {
-  const isPreparationPhase =
-    orderStatusValue === OrderStatus.Confirmed || orderStatusValue === OrderStatus.OnTheWay;
-  return isPreparationPhase && isEmployeeAssigned(assignedEmployees, employeeId);
+  const isBeforeWindow =
+    orderStatusValue === OrderStatus.Confirmed ||
+    orderStatusValue === OrderStatus.OnTheWay ||
+    orderStatusValue === OrderStatus.InProgress;
+  return isBeforeWindow && isEmployeeAssigned(assignedEmployees, employeeId);
 }
 
-// After photos: allowed only during InProgress (active work phase).
 export function canUploadAfterPhotos(
   orderStatusValue: number,
   assignedEmployees: AssignedEmployeeDto[] | undefined,
   employeeId: string
 ): boolean {
   return orderStatusValue === OrderStatus.InProgress && isEmployeeAssigned(assignedEmployees, employeeId);
+}
+
+// The server answers a crew member with no customer and no address once their access has ended: 24
+// hours after completion, at once on cancellation. A live job always carries its address.
+export function customerDetailsClosedNoticeKey(order: OrderItem, employeeId: string): string | null {
+  if (order.address || !isEmployeeAssigned(order.assignedEmployees, employeeId)) return null;
+  return order.orderStatus?.value === OrderStatus.Cancelled
+    ? 'pages.order_details.customer_details_closed_cancelled'
+    : 'pages.order_details.customer_details_closed_completed';
 }
 
 // Notes / issues: allowed for any active order status (Confirmed, OnTheWay, InProgress),
@@ -246,6 +268,34 @@ export function canAcceptWorkContract(
     isEmployeeAssigned(assignedEmployees, employeeId) &&
     findCallerWorkContractAcceptance(assignedEmployees, workContractAcceptances, employeeId) === null
   );
+}
+
+// BookingPolicy.LockoutWaitMinutes: how long past the booked start the crew waits before reporting.
+export const LOCKOUT_WAIT_MINUTES = 15;
+
+export enum LockoutStanding {
+  Hidden,
+  NotYet,
+  Open,
+  Reported,
+}
+
+export function lockoutOpensAt(cleaningDateTime: Date | string | undefined): Date | null {
+  if (!cleaningDateTime) return null;
+  const start = new Date(cleaningDateTime).getTime();
+  return Number.isNaN(start) ? null : new Date(start + LOCKOUT_WAIT_MINUTES * 60_000);
+}
+
+// Mirrors ReportOrderLockout: the crew of a job being worked reports once, from the wait past the start.
+export function lockoutStanding(order: OrderItem, employeeId: string, now: number): LockoutStanding {
+  const status = order.orderStatus?.value;
+  const isWorked =
+    status === OrderStatus.Confirmed || status === OrderStatus.OnTheWay || status === OrderStatus.InProgress;
+  if (!isWorked || !isEmployeeAssigned(order.assignedEmployees, employeeId)) return LockoutStanding.Hidden;
+  if (order.lockoutReportedAt) return LockoutStanding.Reported;
+  const opensAt = lockoutOpensAt(order.cleaningDateTime);
+  if (!opensAt) return LockoutStanding.Hidden;
+  return now < opensAt.getTime() ? LockoutStanding.NotYet : LockoutStanding.Open;
 }
 
 export function computeElapsedTime(

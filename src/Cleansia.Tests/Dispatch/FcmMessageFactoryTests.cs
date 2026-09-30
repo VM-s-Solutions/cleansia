@@ -292,7 +292,7 @@ public class FcmMessageFactoryTests
 
     // ── TC-PUSH-APNS-5 — S6 tripwire: lock-screen args stay inside the closed allowlist ──────
     // {orderNumber, count} plus `amount` since owner ruling 2026-09-13: a server-
-    // formatted money figure with its currency's symbol, carried only by order.no_cleaner_refunded.
+    // formatted money figure with its currency's symbol, carried only by the order.no_cleaner_* outcomes.
 
     [Fact]
     public void Display_Map_Arg_Names_Stay_Within_The_OrderNumber_Count_Amount_Allowlist()
@@ -308,15 +308,18 @@ public class FcmMessageFactoryTests
     }
 
     [Fact]
-    public void Only_The_No_Cleaner_Refund_Carries_The_Amount_Slot_And_It_Follows_The_Order_Number()
+    public void Only_The_No_Cleaner_Outcomes_Carry_The_Amount_Slot_And_It_Follows_The_Order_Number()
     {
         var carriers = FcmMessageFactory.ApnsDisplayMap
             .Where(entry => entry.Value.Contains("amount"))
             .Select(entry => entry.Key)
+            .OrderBy(key => key, StringComparer.Ordinal)
             .ToList();
 
-        Assert.Equal(["order.no_cleaner_refunded"], carriers);
-        Assert.Equal(["orderNumber", "amount"], FcmMessageFactory.ApnsDisplayMap["order.no_cleaner_refunded"]);
+        Assert.Equal(
+            ["order.no_cleaner_nothing_charged", "order.no_cleaner_refund_pending", "order.no_cleaner_refunded"],
+            carriers);
+        Assert.All(carriers, key => Assert.Equal(["orderNumber", "amount"], FcmMessageFactory.ApnsDisplayMap[key]));
     }
 
     [Fact]
@@ -333,6 +336,7 @@ public class FcmMessageFactoryTests
             "loyalty.tier_upgrade",
             "membership.cancellation_effective",
             "membership.expiring_soon",
+            "membership.payment_failed",
             "order.assigned",
             "order.assignment_cancelled",
             "order.assignment_revoked",
@@ -341,6 +345,8 @@ public class FcmMessageFactoryTests
             "order.completed",
             "order.in_progress",
             "order.new_available",
+            "order.no_cleaner_nothing_charged",
+            "order.no_cleaner_refund_pending",
             "order.no_cleaner_refunded",
             "order.on_the_way",
             "order.payment_confirmed",

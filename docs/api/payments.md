@@ -61,14 +61,15 @@ card. → [Paying in cash](/product/business-rules#cash)
 
 ### Create Payment (via CreateOrder)
 
-Payment is initiated through the `CreateOrder` endpoint on both the Partner and Customer APIs.
+Payment is initiated through the `CreateOrder` endpoint.
 
 ```
-POST /api/Payment/CreateOrder
-POST /api/Order/CreateOrder
+POST /api/Payment/CreateOrder     (customer web host only)
+POST /api/Order/CreateOrder       (customer web, anonymous; customer mobile, signed in)
 ```
 
-Both routes invoke the same `CreateOrder.Command` handler.
+Both routes invoke the same `CreateOrder.Command` handler. The customer mobile host serves only
+`Order/CreateOrder`, and only to a signed-in caller → [Orders - CreateOrder](/api/orders#createorder)
 
 **Request body:** See [Orders - CreateOrder](/api/orders#createorder)
 
@@ -136,14 +137,15 @@ payment initiated, waiting for the webhook" is `PaymentStatus.Pending` while `Or
 | Status | Value | Description |
 |--------|-------|-------------|
 | `Pending` | `1` | Order created, awaiting payment. **Every order starts here, cash included** — cash is not marked `Paid` at creation |
-| `Paid` | `2` | Card webhook settled; a recurring cash occurrence was confirmed; or the assigned cleaner recorded the cash (`MarkCashCollected`), which also restates an issued receipt as paid. `OrderStatus` does not move: a paid order stays `New` until a cleaner takes it ([ADR-0057](/decisions/adr-0057)) |
+| `Paid` | `2` | Card webhook settled; or the assigned cleaner recorded the cash (`MarkCashCollected`), or an administrator recorded it for them (`AdminRecordCashReceived`). A confirmed recurring cash occurrence is **not** `Paid` (since 2026-09-28): the confirm stamps `CustomerConfirmedAt` and the order stays `Pending` until the cash is recorded. `OrderStatus` does not move: a paid order stays `New` until a cleaner takes it ([ADR-0057](/decisions/adr-0057)) |
 | `Failed` | `3` | Payment failed, or `CleanupStalePendingOrders` gave up on an abandoned checkout |
 | `Refunded` | `4` | Full refund issued |
 | `Disputed` | `5` | Reserved; nothing writes it. A chargeback is recorded as a `Chargeback` dispute, not on this axis |
 | `PartiallyRefunded` | `6` | Partial refund issued |
 
-A cash order therefore stays `New` + `Pending` until a cleaner takes it — and it is still offerable,
-because the offerability rule admits `New` + `Cash` explicitly.
+A cash order therefore stays `New` + `Pending` until a cleaner takes it — and a one-off one is still
+offerable, because the offerability rule's money term admits a one-off cash order without a payment
+→ [Offerability](/domain/offerability).
 
 ## Stripe Configuration
 

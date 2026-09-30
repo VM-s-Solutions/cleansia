@@ -6,6 +6,7 @@ using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Queue.Abstractions;
+using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -17,7 +18,10 @@ public class AdminOverrideOrderStatus
 {
     public record Command(
         string OrderId,
-        OrderStatus TargetStatus
+        OrderStatus TargetStatus,
+        // Kept on the audit row. Required to complete an order that has no after photo: the photo, or
+        // a recorded administrator's exception (owner ruling 2026-09-28).
+        string? Reason = null
     ) : ICommand<Response>;
 
     public record Response(
@@ -28,7 +32,7 @@ public class AdminOverrideOrderStatus
 
     public class Validator : AbstractValidator<Command>
     {
-        public Validator(IOrderRepository orderRepository)
+        public Validator(IOrderRepository orderRepository, IOrderPhotoRepository orderPhotoRepository)
         {
             RuleFor(x => x.OrderId)
                 .Cascade(CascadeMode.Stop)
@@ -40,6 +44,18 @@ public class AdminOverrideOrderStatus
             RuleFor(x => x.TargetStatus)
                 .IsInEnum()
                 .WithMessage(BusinessErrorMessage.InvalidEnumValue);
+
+            RuleFor(x => x.Reason)
+                .MaximumLength(500)
+                .WithMessage(BusinessErrorMessage.MaxLength);
+
+            RuleFor(x => x.Reason)
+                .MustAsync(async (command, reason, cancellationToken) =>
+                    !string.IsNullOrWhiteSpace(reason)
+                    || await orderPhotoRepository.GetPhotoCountByOrderIdAndTypeAsync(
+                        command.OrderId, PhotoType.After, cancellationToken) > 0)
+                .WithMessage(BusinessErrorMessage.OrderForceCompleteReasonRequired)
+                .When(x => x.TargetStatus == OrderStatus.Completed && !string.IsNullOrEmpty(x.OrderId));
         }
     }
 
@@ -47,7 +63,8 @@ public class AdminOverrideOrderStatus
         IOrderRepository orderRepository,
         IUserSessionProvider userSessionProvider,
         IAuditContext auditContext,
-        ILiveActivityProducer liveActivityProducer
+        ILiveActivityProducer liveActivityProducer,
+        IPendingDispatch pending
     ) : ICommandHandler<Command, Response>
     {
         // The RANK array — not the set of legal targets. It must stay total over every status a row
@@ -73,6 +90,7 @@ public class AdminOverrideOrderStatus
                 .GetQueryable()
                 .Include(o => o.OrderStatusHistory)
                 .Include(o => o.AssignedEmployees)
+                .Include(o => o.Receipts)
                 .AsSplitQuery()
                 .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);
 
@@ -141,6 +159,20 @@ public class AdminOverrideOrderStatus
             if (command.TargetStatus == OrderStatus.Completed)
             {
                 order.MarkCompletedAt(DateTime.UtcNow);
+
+                // A cash sale's receipt is issued at completion (owner ruling 2026-09-28), and this
+                // completion does not pass through CompleteOrder. Uncollected cash earns none yet:
+                // AdminRecordCashReceived issues it when the cash is recorded.
+                if (order.SettledInCash && order.Receipt is null)
+                {
+                    pending.Enqueue(
+                        QueueNames.GenerateReceipt,
+                        new QueueEnvelope<GenerateReceiptMessage>(
+                            MessageKeys.Receipt(order.Id),
+                            order.TenantId,
+                            new GenerateReceiptMessage(order.Id, Constants.Language.English)),
+                        MessageKeys.Receipt(order.Id));
+                }
             }
 
             var transition = OrderStatusTrack.Create(command.TargetStatus, order);
@@ -160,7 +192,8 @@ public class AdminOverrideOrderStatus
                 "Order",
                 order.Id,
                 new StatusSnapshot(order.Id, currentStatus),
-                new StatusSnapshot(order.Id, command.TargetStatus));
+                new StatusSnapshot(order.Id, command.TargetStatus),
+                string.IsNullOrWhiteSpace(command.Reason) ? null : command.Reason.Trim());
 
             return BusinessResult.Success(new Response(
                 OrderId: order.Id,

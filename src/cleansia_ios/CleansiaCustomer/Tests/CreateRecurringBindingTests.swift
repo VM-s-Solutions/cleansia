@@ -50,6 +50,45 @@ final class CreateRecurringBindingTests: XCTestCase {
         )
     }
 
+    func testTheStartPickerIsBoundedByTheViewModelsRange() throws {
+        let source = try read(Self.screen)
+        XCTAssertTrue(source.contains("range: vm.startRange"), "the start picker is not given the end-date cap")
+        XCTAssertTrue(source.contains("in: range,"), "the start picker ignores the range it is given")
+    }
+
+    /// A free time wheel offered 03:07, which the server refuses and the materialiser would book.
+    func testTheTimeWheelOffersOnlyBookableStarts() throws {
+        let source = try read(Self.screen)
+        XCTAssertTrue(
+            source.contains("ForEach(RecurringTime.bookableTimes, id: \\.self)"),
+            "the wheel is not built from the bookable starts"
+        )
+        XCTAssertTrue(source.contains(".pickerStyle(.wheel)"), "the bookable starts are not on a wheel")
+        XCTAssertFalse(source.contains("displayedComponents: .hourAndMinute"), "a free time wheel is back")
+    }
+
+    func testTheFormOffersTheFavouriteCleanerPickerBoundToTheForm() throws {
+        let source = try read(Self.screen)
+        XCTAssertTrue(source.contains("cleaners: vm.servingCleaners"), "the picker is not given the served list")
+        XCTAssertTrue(
+            source.contains("selectedId: vm.formState.preferredEmployeeId"),
+            "the picker does not show the form's favourite cleaner"
+        )
+        XCTAssertTrue(source.contains("onSelect: vm.setPreferredEmployeeId"), "a pick is never applied")
+    }
+
+    /// The server always accepted a favourite cleaner on create; no client ever sent one.
+    func testTheCreateCommandCarriesTheFavouriteCleaner() throws {
+        let source = try read("CleansiaCustomer/Sources/Features/Recurring/Data/RecurringBookingClient.swift")
+        let start = try XCTUnwrap(source.range(of: "func create(", options: .backwards), "no create call")
+        let end = try XCTUnwrap(source.range(of: "func update(", options: .backwards), "no update call")
+        let create = source[start.upperBound ..< end.lowerBound]
+        XCTAssertTrue(
+            create.contains("preferredEmployeeId: input.preferredEmployeeId"),
+            "the create command drops the favourite cleaner"
+        )
+    }
+
     func testTheScreenSpellsNoLabelItself() throws {
         let source = try read(Self.screen)
         for hardcoded in ["Rooms", "Bathrooms", "Add new"] {

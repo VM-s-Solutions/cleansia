@@ -64,6 +64,9 @@ final class FakePartnerOrderClient: PartnerOrderClient {
     /// view model always issues sees the write it just made.
     var onDeclinePreferredOffer: ((String) -> Void)?
 
+    var removalReasonResult: ApiResult<String> = .success("The customer asked for another cleaner.")
+    private(set) var removalReasonRequests: [String] = []
+
     var previewResult: ApiResult<WorkContract> = .success(.sample())
     var contractResult: ApiResult<WorkContract> = .success(.sample(acceptance: .sample()))
     /// Every contract read, by the id it was keyed on and the language asked for.
@@ -99,6 +102,11 @@ final class FakePartnerOrderClient: PartnerOrderClient {
         case let .failure(error):
             return .failure(error)
         }
+    }
+
+    func getMyAssignmentRemovalReason(orderId: String) async -> ApiResult<String> {
+        removalReasonRequests.append(orderId)
+        return removalReasonResult
     }
 
     func resumeCommand() {
@@ -204,6 +212,13 @@ final class FakePartnerOrderClient: PartnerOrderClient {
         await recordNote("deleteIssue", id: issueId, content: nil)
     }
 
+    private(set) var lockoutReports: [(orderId: String, callAttempts: String)] = []
+
+    func reportLockout(orderId: String, callAttempts: String) async -> ApiResult<Void> {
+        lockoutReports.append((orderId: orderId, callAttempts: callAttempts))
+        return await record("reportLockout", orderId)
+    }
+
     func getPhotos(orderId _: String) async -> ApiResult<[OrderPhoto]> {
         getPhotosCallCount += 1
         return getPhotosResult
@@ -255,7 +270,7 @@ extension WorkContract {
                 orderNumber: "CL-2026-0042",
                 cleaningDateTimeUtc: Date(timeIntervalSince1970: 1_786_200_000),
                 estimatedMinutes: 180,
-                totalPrice: 1850,
+                reward: 1850,
                 currencyCode: "CZK",
                 locationApproximate: "Praha 4 · 14000",
                 rooms: 3,

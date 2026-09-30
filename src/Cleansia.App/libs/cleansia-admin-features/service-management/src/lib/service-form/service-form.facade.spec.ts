@@ -33,6 +33,7 @@ describe('ServiceFormFacade', () => {
       EUR: { basePrice: 48, perRoomPrice: 10 },
     },
     estimatedTime: 180,
+    minutesPerRoom: 15,
     categoryId: 'cat-1',
     translations: {
       cs: { name: 'Hloubkové čištění', description: 'Celý byt' },
@@ -191,6 +192,7 @@ describe('ServiceFormFacade', () => {
           EUR: { basePrice: 48, perRoomPrice: 10 },
         },
         estimatedTime: 180,
+        minutesPerRoom: 15,
         categoryId: 'cat-1',
         translations: {
           cs: { name: 'Hloubkové čištění', description: 'Celý byt' },
@@ -212,6 +214,7 @@ describe('ServiceFormFacade', () => {
           EUR: { basePrice: 48, perRoomPrice: 10 },
         },
         estimatedTime: 180,
+        minutesPerRoom: 15,
         categoryId: 'cat-1',
         translations: {
           cs: { name: 'Hloubkové čištění', description: 'Celý byt' },

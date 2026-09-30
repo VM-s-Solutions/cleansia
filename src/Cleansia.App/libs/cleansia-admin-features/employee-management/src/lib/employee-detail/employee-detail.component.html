@@ -57,6 +57,15 @@
           }}</strong>
         </span>
       </div>
+      @if (employee.weeklyOrderLimitReason) {
+      <p class="detail-identity__note">
+        <i class="pi pi-info-circle"></i>
+        <span>
+          {{ 'pages.employee_detail.weekly_order_limit_reason' | translate }}:
+          {{ employee.weeklyOrderLimitReason }}
+        </span>
+      </p>
+      }
       <p
         class="detail-identity__note"
         [class.detail-identity__note--success]="employee.isProfileComplete"
@@ -124,6 +133,13 @@
           />
           <p class="detail-actions__hint">
             {{ 'pages.employee_detail.weekly_order_limit_hint' | translate }}
+          </p>
+          <cleansia-textarea
+            [label]="'pages.employee_detail.weekly_order_limit_reason' | translate"
+            [formControl]="weeklyLimitReasonControl"
+          />
+          <p class="detail-actions__hint">
+            {{ 'pages.employee_detail.weekly_order_limit_reason_hint' | translate }}
           </p>
           <div class="detail-actions">
             <cleansia-button
@@ -716,27 +732,15 @@
       <span class="dialog-toolbar__label">
         {{ 'pages.employee_detail.grade_quick_fill' | translate }}
       </span>
+      @for (template of rateTemplates; track template.value) {
       <cleansia-button
-        [label]="'pages.employee_detail.grade_junior' | translate"
+        [label]="template.labelKey | translate"
         severity="secondary"
         buttonSize="small"
         [outlined]="true"
-        (onClick)="applyGradeMultiplier(0.5)"
+        (onClick)="applyGradeMultiplier(template.multiplier)"
       />
-      <cleansia-button
-        [label]="'pages.employee_detail.grade_medior' | translate"
-        severity="secondary"
-        buttonSize="small"
-        [outlined]="true"
-        (onClick)="applyGradeMultiplier(0.75)"
-      />
-      <cleansia-button
-        [label]="'pages.employee_detail.grade_senior' | translate"
-        severity="secondary"
-        buttonSize="small"
-        [outlined]="true"
-        (onClick)="applyGradeMultiplier(1)"
-      />
+      }
     </div>
   </form>
 

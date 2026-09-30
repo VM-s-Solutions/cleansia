@@ -2,10 +2,16 @@ using System.ComponentModel.DataAnnotations;
 using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
+using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Fiscal.Abstractions;
 
 namespace Cleansia.Core.Domain.Receipts;
 
+/// <summary>
+/// A receipt issued on an order. An order has at most one SALE receipt — the booking's — and one FEE
+/// receipt per receivable paid on it, each with its own number from the same counter. The sale receipt
+/// is <see cref="Cleansia.Core.Domain.Orders.Order.Receipt"/>, and the refund paths read only the order's own sale.
+/// </summary>
 public class OrderReceipt : TenantAuditable
 {
     [Required]
@@ -14,6 +20,13 @@ public class OrderReceipt : TenantAuditable
 
     public string OrderId { get; private set; } = default!;
     public Order? Order { get; private set; }
+
+    /// <summary>The receivable a fee receipt was issued for; null on the sale receipt.</summary>
+    [MaxLength(26)]
+    public string? ReceivableId { get; private set; }
+    public Receivable? Receivable { get; private set; }
+
+    public bool IsFee => ReceivableId is not null;
 
     public DateTime IssuedAt { get; private set; }
 
@@ -25,6 +38,12 @@ public class OrderReceipt : TenantAuditable
 
     public string LanguageId { get; private set; } = default!;
     public Language? Language { get; private set; }
+
+    /// <summary>
+    /// When the rendered PDF was deleted at the end of the company's receipt retention period; the row
+    /// stays as the record of the number, the sale and its fiscal registration.
+    /// </summary>
+    public DateTime? BlobDeletedAt { get; private set; }
 
     public bool EmailSent { get; private set; }
     public DateTime? EmailSentAt { get; private set; }
@@ -99,6 +118,21 @@ public class OrderReceipt : TenantAuditable
             EmailSent = false
         };
     }
+
+    public static OrderReceipt CreateFee(
+        Receivable receivable,
+        string receiptNumber,
+        string fileName,
+        string blobName,
+        string languageId)
+    {
+        var receipt = Create(receivable.OrderId, receiptNumber, fileName, blobName, languageId);
+        receipt.ReceivableId = receivable.Id;
+        receipt.Receivable = receivable;
+        return receipt;
+    }
+
+    public void MarkBlobDeleted(DateTime deletedAtUtc) => BlobDeletedAt ??= deletedAtUtc;
 
     public void MarkEmailSent(string messageId)
     {

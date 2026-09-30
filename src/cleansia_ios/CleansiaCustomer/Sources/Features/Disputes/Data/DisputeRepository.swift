@@ -69,13 +69,15 @@ final class DisputeRepository: SessionScopedCache {
         orderId: String,
         reason: Int,
         description: String,
-        lines: [OrderItemLine] = []
+        lines: [OrderItemLine] = [],
+        settlement: DisputeSettlement = .cardRefund
     ) async -> ApiResult<String> {
         await client.create(
             orderId: orderId,
             reason: reason,
             description: description,
-            lines: lines
+            lines: lines,
+            settlement: settlement
         )
     }
 

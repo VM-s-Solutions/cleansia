@@ -1,7 +1,13 @@
-import { OrderEmployeePayDto } from '@cleansia/admin-services';
+import { OrderEmployeePayDto, PayLineType } from '@cleansia/admin-services';
 import { TableColumn, TableAction } from '@cleansia/components';
 import { formatDate, formatMoney, localeFor } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
+
+export const PAY_LINE_TYPE_LABEL_KEYS: Readonly<Record<PayLineType, string>> = {
+  [PayLineType.Job]: 'enums.pay_line_type.job',
+  [PayLineType.CancellationFeeShare]: 'enums.pay_line_type.cancellation_fee_share',
+  [PayLineType.LockoutFeeShare]: 'enums.pay_line_type.lockout_fee_share',
+};
 
 export function getOrderPaysTableDefinition(
   translate: TranslateService
@@ -16,6 +22,18 @@ export function getOrderPaysTableDefinition(
         header: translate.instant(
           'pages.invoice_detail.order_pays.order_number'
         ),
+        width: '12%',
+      },
+      {
+        id: 'lineType',
+        field: 'lineType',
+        header: translate.instant(
+          'pages.invoice_detail.order_pays.line_type'
+        ),
+        getValue: (row: OrderEmployeePayDto) => {
+          const key = PAY_LINE_TYPE_LABEL_KEYS[row.lineType];
+          return key ? translate.instant(key) : '-';
+        },
         width: '12%',
       },
       {

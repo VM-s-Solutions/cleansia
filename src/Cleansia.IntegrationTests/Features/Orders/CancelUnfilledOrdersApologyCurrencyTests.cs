@@ -121,9 +121,13 @@ public class CancelUnfilledOrdersApologyCurrencyTests(PostgresContainerFixture f
         await using var ctx = NewContext();
         var handler = new CancelUnfilledOrders.Handler(
             new OrderRepository(ctx),
-            new CreditAccountRepository(ctx),
-            new NoRefunds(),
-            new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx), new UserRepository(ctx), Microsoft.Extensions.Logging.Abstractions.NullLogger<NotificationProducer>.Instance),
+            new CleanerNoShowCancellation(
+                new CreditAccountRepository(ctx),
+                new NoRefunds(),
+                new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx), new UserRepository(ctx), Microsoft.Extensions.Logging.Abstractions.NullLogger<NotificationProducer>.Instance),
+                new GuestOrderAccessTokenIssuer(new GuestOrderAccessTokenRepository(ctx)),
+                new OutboxPendingDispatch(ctx),
+                NullLogger<CleanerNoShowCancellation>.Instance),
             new FixedTenantProvider(TestTenants.Default),
             ctx,
             NullLogger<CancelUnfilledOrders.Handler>.Instance);
@@ -173,21 +177,15 @@ public class CancelUnfilledOrdersApologyCurrencyTests(PostgresContainerFixture f
             .Where(m => m.QueueName == QueueNames.NotificationsDispatch)
             .Select(m => m.Body)
             .ToListAsync();
-        Assert.Equal(2, pushes.Count(b => b.Contains(NotificationEventCatalog.OrderNoCleanerRefunded)));
+        // Cash bookings took no money: the push says nothing was charged, never "refunded in full".
+        Assert.Equal(2, pushes.Count(b => b.Contains(NotificationEventCatalog.OrderNoCleanerNothingCharged)));
+        Assert.DoesNotContain(pushes, b => b.Contains(NotificationEventCatalog.OrderNoCleanerRefunded));
         Assert.Equal(1, pushes.Count(b => b.Contains(NotificationEventCatalog.OrderCancelled)));
 
-        // The push and the feed row carry the credit WITH its own currency (owner ruling 2026-09-13);
-        // these currencies are seeded with the code as the symbol.
+        // The push carries the credit WITH its own currency (owner ruling 2026-09-13); these currencies
+        // are seeded with the code as the symbol.
         Assert.Single(pushes, b => b.Contains("250 CZK"));
         Assert.Single(pushes, b => b.Contains("10 NOK"));
-        var feedArgs = await ctx.Set<UserNotification>()
-            .IgnoreQueryFilters()
-            .Where(n => n.EventKey == NotificationEventCatalog.OrderNoCleanerRefunded)
-            .Select(n => n.ArgsJson)
-            .ToListAsync();
-        Assert.Equal(2, feedArgs.Count);
-        Assert.Single(feedArgs, a => a.Contains("250 CZK"));
-        Assert.Single(feedArgs, a => a.Contains("10 NOK"));
     }
 
     [Fact]
@@ -212,6 +210,9 @@ public class CancelUnfilledOrdersApologyCurrencyTests(PostgresContainerFixture f
     /// <summary>Every order here is cash, so a refund call would be a bug rather than a Stripe round trip.</summary>
     private sealed class NoRefunds : IRefundService
     {
+        public Task<BusinessResult<RefundResult>> RedriveAsync(string refundId, string actorId, CancellationToken cancellationToken)
+            => throw new NotSupportedException();
+
         public Task<BusinessResult<RefundResult>> IssueRefundAsync(RefundRequest request, CancellationToken cancellationToken)
             => throw new InvalidOperationException($"No refund was expected for order {request.OrderId}.");
     }

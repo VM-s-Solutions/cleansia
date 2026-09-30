@@ -18,27 +18,6 @@
         </span>
         <span class="detail-grid__value">{{ formatMinutes(actualTime()) }}</span>
       </div>
-
-      <div class="detail-grid__item">
-        <span class="detail-grid__label">
-          @if (isDelayed()) {
-          {{ 'pages.orders.complete_order.delay' | translate }}
-          } @else {
-          {{ 'pages.orders.complete_order.status' | translate }}
-          }
-        </span>
-        <span class="detail-grid__value">
-          @if (isDelayed()) {
-          <span class="status-badge status-badge--warning">
-            +{{ formatMinutes(delay()) }} (+{{ delayPercentage() }}%)
-          </span>
-          } @else {
-          <span class="status-badge status-badge--success">
-            {{ 'pages.orders.complete_order.on_time' | translate }}
-          </span>
-          }
-        </span>
-      </div>
     </div>
   </div>
 

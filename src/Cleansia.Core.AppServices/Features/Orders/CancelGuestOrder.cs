@@ -5,7 +5,6 @@ using Cleansia.Core.AppServices.Common.Validators;
 using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Queue.Abstractions;
-using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -51,19 +50,15 @@ public class CancelGuestOrder
                 return BusinessResult.Failure<CancelOrder.Response>(
                     new Error(nameof(command.AccessToken), BusinessErrorMessage.OrderNotFound));
             }
-            if (CancellationAssessor.BlockedReason(order) is { } blockedReason)
+            if (cancellation.BlockedReason(order) is { } blockedReason)
             {
                 return BusinessResult.Failure<CancelOrder.Response>(
                     new Error(nameof(command.AccessToken), blockedReason));
             }
 
             var outcome = await cancellation.ExecuteAsync(order, command.Reason, "System", cancellationToken);
-            await accessTokenIssuer.RevokeAsync(order, cancellationToken);
-            var key = MessageKeys.GuestOrderCancelledEmail(order.Id);
-            pending.Enqueue(QueueNames.SendEmail,
-                new QueueEnvelope<SendGuestOrderCancellationEmailMessage>(key, order.TenantId,
-                    new SendGuestOrderCancellationEmailMessage(order.Id, command.Language,
-                        outcome.SuccessfulRefundAmount, order.TenantId)), key);
+            await GuestCancellationEmail.EnqueueAsync(order, command.Language, outcome.SuccessfulRefundAmount,
+                accessTokenIssuer, pending, cancellationToken);
             return BusinessResult.Success(outcome.Response);
         }
     }

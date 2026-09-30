@@ -44,7 +44,7 @@ public class CreateMembershipSubscriptionContractLockTests
         _session.Setup(s => s.GetUserId()).Returns(UserId);
 
         _membershipRepository
-            .Setup(r => r.GetActiveForUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetLifecycleForUserAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
 
         _plan = MembershipPlan.Create(

@@ -45,6 +45,12 @@ protocol PartnerProfileClient: AnyObject {
     /// for it — the caller falls back to its own neutral wording rather than inventing a label.
     func getCountryFieldLabels(countryId: String)
         async -> ApiResult<GetCountryFieldLabelsCountryFieldLabelsDto?>
+
+    /// Empty while no cleaner document is in force: then nothing is owed and neither approval nor a
+    /// take is gated.
+    func getLegalDocuments(language: String) async -> ApiResult<[CleanerLegalDocument]>
+    /// Accepting the version already accepted is a success.
+    func acceptLegalDocument(legalDocumentTextId: String) async -> ApiResult<Void>
 }
 
 final class LivePartnerProfileClient: PartnerProfileClient, SessionScopedCache {
@@ -179,6 +185,22 @@ final class LivePartnerProfileClient: PartnerProfileClient, SessionScopedCache {
             return .success(labels)
         case .failure:
             return .success(nil)
+        }
+    }
+
+    /// One broken row refuses the whole list: dropping it would hide a document the cleaner owes.
+    func getLegalDocuments(language: String) async -> ApiResult<[CleanerLegalDocument]> {
+        await apiResult(mapError: ApiError.fromGenerated) {
+            try await PartnerEmployeeAPI.employeeGetMyLegalDocuments(language: language)
+                .map(CleanerLegalDocument.init)
+        }
+    }
+
+    func acceptLegalDocument(legalDocumentTextId: String) async -> ApiResult<Void> {
+        await apiResult(mapError: ApiError.fromGenerated) {
+            _ = try await PartnerEmployeeAPI.employeeAcceptLegalDocument(
+                acceptLegalDocumentCommand: AcceptLegalDocumentCommand(acceptedTextId: legalDocumentTextId)
+            )
         }
     }
 

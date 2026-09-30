@@ -43,12 +43,16 @@
       <dt>{{ 'pages.track_order.cancellation.fee' | translate }}</dt>
       <dd>{{ formatAmount(preview.feeAmount, preview.currencyCode) }} ({{ preview.feeRate | percent }})</dd>
     </div>
+    @if (!facade.tookNoCardPayment()) {
     <div>
       <dt>{{ 'pages.track_order.cancellation.refund_estimate' | translate }}</dt>
       <dd>{{ formatAmount(preview.refundAmount, preview.currencyCode) }}</dd>
     </div>
+    }
   </dl>
+  @if (!facade.tookNoCardPayment()) {
   <p>{{ 'pages.track_order.cancellation.refund_note' | translate }}</p>
+  }
   }
   <ng-template #footer>
     <div class="cl-trk__cancellation-actions">
@@ -230,6 +234,26 @@
           [disabled]="facade.cancelling()"
           (onClick)="facade.openCancellation()"
         />
+        }
+        @if (facade.canReportCleanerNoShow()) {
+        <p class="cl-trk__total-note">{{ 'pages.track_order.cleaner_no_show.note' | translate }}</p>
+        <cleansia-button
+          [block]="true"
+          class="cl-trk__cancel"
+          [label]="'pages.track_order.cleaner_no_show.action' | translate"
+          severity="danger"
+          [outlined]="true"
+          [loading]="facade.reportingNoShow()"
+          (onClick)="facade.reportCleanerNoShow()"
+        />
+        }
+        @if (facade.noShowError(); as error) {
+        <p role="alert" class="cl-trk__cancellation-error">{{ error | translate }}</p>
+        }
+        @if (facade.noShowReported()) {
+        <div class="cl-trk__cancellation-result" role="status">
+          <p>{{ 'pages.track_order.cleaner_no_show.reported' | translate }}</p>
+        </div>
         }
 
         <a class="cl-trk__action" [routerLink]="'/' + routes.DISPUTES">

@@ -82,16 +82,8 @@
     <string name="rewards_next_milestone">%1$d more to unlock %2$s</string>
     <string name="rewards_all_tiers_unlocked">You\'ve unlocked all tiers — thank you!</string>
     <string name="rewards_tiers_title">Milestones</string>
-    <string name="rewards_tier_unlocked">Unlocked</string>
-    <string name="rewards_tier_regular">Regular</string>
-    <string name="rewards_tier_regular_perk">Priority rescheduling &amp; cleaning tips guide</string>
-    <string name="rewards_tier_vip">VIP Member</string>
-    <string name="rewards_tier_vip_perk">Priority support &amp; free eco-products upgrade</string>
-    <string name="rewards_tier_hero">Cleansia Hero</string>
-    <string name="rewards_tier_hero_perk">Guaranteed same-day slots &amp; early access to new services</string>
 
     <string name="rewards_referral_title">Invite a friend</string>
-    <string name="rewards_referral_subtitle">They get a welcome treat, you get a free add-on.</string>
     <string name="rewards_referral_your_code">Your code</string>
     <string name="rewards_referral_share">Share your code</string>
     <string name="rewards_referral_no_joins">Be the first — share your code</string>
@@ -118,13 +110,10 @@
     <!-- Smart upsell carousel slides — Plus / Welcome / Referral. The Book
          slide reuses the existing home_hero_* trio above. -->
     <string name="home_upsell_plus_top">Cleansia Plus</string>
-    <string name="home_upsell_plus_title">Save on every cleaning. 14 days free.</string>
-    <string name="home_upsell_plus_cta">Try Plus free</string>
-    <string name="home_upsell_welcome_top">Welcome offer</string>
-    <string name="home_upsell_welcome_title">15% off your first cleaning with WELCOME15</string>
-    <string name="home_upsell_welcome_cta">Book your first one</string>
+    <string name="home_upsell_plus_title">Save on every cleaning.</string>
+    <string name="home_upsell_plus_cta">Get Plus</string>
     <string name="home_upsell_referral_top">Refer a friend</string>
-    <string name="home_upsell_referral_title">You both get 150 points after they book</string>
+    <string name="home_upsell_referral_title">You both get 150 points after their first completed cleaning</string>
     <string name="home_upsell_referral_cta">Share my code</string>
     <string name="home_upsell_setup_recurring_top">Plus perk</string>
     <string name="home_upsell_setup_recurring_title">Set up a recurring cleaning — book once, run forever</string>
@@ -133,13 +122,8 @@
     <string name="home_hero2_top">Spring is here</string>
     <string name="home_hero2_title">Deep clean + windows combo</string>
 
-    <string name="home_hero3_top">Invite a friend</string>
-    <string name="home_hero3_title">Give a treat, get a free add-on</string>
-    <string name="home_hero3_cta">Share your code</string>
-
     <!-- Home — trust strip -->
     <string name="home_trust_insured">Insured</string>
-    <string name="home_trust_vetted">Vetted</string>
     <string name="home_trust_same_day">Same-day</string>
 
     <!-- Home — popular packages (tap-to-book) -->
@@ -188,16 +172,11 @@
     <string name="home_promo_title">For you</string>
 
     <string name="home_hero_slide1_title">Spotless in hours</string>
-    <string name="home_hero_slide1_subtitle">Book a vetted cleaner. Transparent pricing, no phone calls.</string>
     <string name="home_hero_book_now">Book now</string>
 
     <string name="home_hero_slide2_title">Deep clean, easy week</string>
     <string name="home_hero_slide2_subtitle">Carpets, upholstery, windows — all in a single visit.</string>
     <string name="home_hero_slide2_cta">Explore</string>
-
-    <string name="home_hero_slide3_title">100% satisfaction</string>
-    <string name="home_hero_slide3_subtitle">Not happy? We\'ll come back and make it right.</string>
-    <string name="home_hero_slide3_cta">Learn more</string>
 
     <!-- Orders tab -->
     <string name="orders_title">My orders</string>
@@ -303,6 +282,7 @@
     <string name="order_cancel_fee_last_minute">This is a last-minute cancellation, so the fee is higher.</string>
     <string name="order_cancel_fee_none">No cancellation fee.</string>
     <string name="order_cancel_fee_split">Cancellation fee %1$s — you\'ll be refunded %2$s.</string>
+    <string name="order_cancel_fee_only">Cancellation fee %1$s.</string>
     <string name="order_cancel_fee_checking">Checking what cancelling this booking costs…</string>
     <string name="order_cancel_fee_unavailable">We couldn\'t check the cancellation fee just now. You can still cancel — the amount is confirmed when you do.</string>
     <string name="order_cancel_fee_retry">Try again</string>
@@ -393,20 +373,9 @@
     <string name="order_photos_metadata_by">By %1$s</string>
     <string name="common_close">Close</string>
 
-    <!-- Contract for work: the wizard sentence at the offer, the detail line per accepting crew member, the contract screen -->
-    <string name="booking_work_contract_notice"><![CDATA[By confirming the order you conclude a contract for work with the cleaner on <a href="cleansia://work-contract">these terms</a>.]]></string>
-    <string name="work_contract_title">Contract for work</string>
-    <string name="work_contract_accepted_line">Contract for work accepted by %1$s on %2$s, version %3$s</string>
-    <string name="work_contract_read">Read the contract</string>
-    <string name="work_contract_version">Version %1$s</string>
-    <string name="work_contract_facts_title">The job as accepted</string>
-    <string name="work_contract_order_number">Order number</string>
-    <string name="work_contract_window">Date and time</string>
-    <string name="work_contract_price">Price</string>
-    <string name="work_contract_location">Location</string>
-    <string name="work_contract_accepted_on">Accepted by the cleaner on %1$s, version %2$s</string>
-    <string name="work_contract_accepted_in_language">Accepted in %1$s</string>
-    <string name="work_contract_load_error">We couldn\'t load this contract. Please try again.</string>
+    <!-- Booking review: the contract sentence and the request to start within the withdrawal period -->
+    <string name="booking_contract_notice"><![CDATA[By confirming the order you conclude a contract for the cleaning with the operating company of the market where your home is, under its <a href="cleansia://terms">Terms of Service</a>. The cleaner carries it out as a subcontractor of the company and is not a party to your contract.]]></string>
+    <string name="consent_early_performance_draft_2026_09_29">I ask for the cleaning to start within the 14-day withdrawal period, and I acknowledge that I lose the right to withdraw once the cleaning has been fully performed.</string>
 
     <!-- Profile tab -->
     <string name="profile_greeting">Hi, there!</string>
@@ -531,17 +500,17 @@
     <string name="help_call">Call support</string>
     <string name="help_call_desc">Mon–Sun · 8:00–20:00</string>
     <string name="help_email">Email us</string>
-    <string name="help_email_desc">support@cleansia.cz</string>
+    <string name="help_email_desc">info@cleansia.cz</string>
     <string name="help_faq_title">Frequently asked questions</string>
     <string name="help_faq_q1">How do I cancel my booking?</string>
-    <string name="help_faq_a1">Open your booking from the Orders tab and tap \"Cancel\". Cancellations free of charge up to 24 hours before the cleaning start time. Within 15 minutes of booking you pay nothing — within 60 minutes with Cleansia Plus.</string>
+    <string name="help_faq_a1">Open your booking from the Orders tab and tap \"Cancel\". Cancellations free of charge up to 24 hours before the cleaning start time. Within 15 minutes of booking you pay nothing — within 60 minutes on your first booking or with Cleansia Plus.</string>
     <string name="help_faq_q2">What if I\'m not home when the cleaner arrives?</string>
-    <string name="help_faq_a2">Add access instructions when booking (e.g., door code, key location). Cleaners wait up to 15 minutes; if we can\'t reach you, the booking may be cancelled.</string>
-    <string name="help_faq_q3">Are cleaners insured and vetted?</string>
-    <string name="help_faq_a3">Yes. All Cleansia cleaners are background-checked and covered by insurance up to %1$s per booking.</string>
-    <string name="help_faq_a3_no_figure">Yes. All Cleansia cleaners are background-checked and covered by insurance.</string>
-    <string name="help_faq_q4">How do I reschedule?</string>
-    <string name="help_faq_a4">From the Orders tab, open the upcoming booking and tap \"Reschedule\". Free rescheduling up to 12 hours before the cleaning.</string>
+    <string name="help_faq_a2">Add access instructions when booking (e.g., door code, key location). The cleaner waits 15 minutes past the start time and tries to call you. If they still can\'t get in, the booking is cancelled and the full price is charged.</string>
+    <string name="help_faq_q3">Are cleaners insured?</string>
+    <string name="help_faq_a3">Yes. All Cleansia cleaners are covered by insurance up to %1$s per booking.</string>
+    <string name="help_faq_a3_no_figure">Yes. All Cleansia cleaners are covered by insurance.</string>
+    <string name="help_faq_q4">Can I change the date or time?</string>
+    <string name="help_faq_a4">Not yet — a booking can\'t be moved. Cancel it from the Orders tab and book a new time; cancelling is free while no cleaner has taken the booking.</string>
     <string name="help_faq_q5">What\'s included in a standard cleaning?</string>
     <string name="help_faq_a5">Kitchen (countertops, sink, appliances exterior), bathrooms (toilet, shower, tiles), all floors, dusting, general tidying. Extras like oven cleaning are available as add-ons.</string>
 
@@ -583,7 +552,7 @@
     <string name="security_code_helper">Enter the code from the email we just sent you.</string>
     <string name="security_code_label">Verification code</string>
 
-    <!-- Booking wizard (3 steps) -->
+    <!-- Booking wizard (4 steps) -->
     <string name="booking_step1_title">What do you need?</string>
     <string name="booking_step2_title">When &amp; where</string>
     <string name="booking_step3_title">Confirm booking</string>
@@ -621,14 +590,13 @@
     <string name="booking_cancel_plus_badge">PLUS PERK</string>
     <!-- %1$d = the user's extended free window in hours. -->
     <string name="booking_cancel_plus_subtitle">As a Plus member you can cancel free up to %1$d hours before.</string>
-    <string name="booking_cancel_grace_note">Within 15 minutes of booking you pay nothing — within 60 minutes with Cleansia Plus.</string>
+    <string name="booking_cancel_grace_note">Within 15 minutes of booking you pay nothing — within 60 minutes on your first booking or with Cleansia Plus.</string>
 
     <!-- Booking — save address -->
     <string name="booking_save_address">Save this address</string>
     <string name="booking_set_as_default">Set as default</string>
     <string name="booking_trust_insured">Insured up to %1$s</string>
     <string name="booking_trust_insured_no_figure">Insured</string>
-    <string name="booking_trust_vetted">Background-checked cleaners</string>
 
     <string name="booking_pick_service">Pick a service</string>
     <string name="booking_or_package">Or choose a package</string>
@@ -720,6 +688,36 @@
     <string name="booking_summary_subtotal">Subtotal</string>
     <string name="booking_summary_express_surcharge">Express surcharge (+20%)</string>
     <string name="booking_summary_express_surcharge_waived">Express slot — waived with Plus</string>
+
+    <!-- Dirtiness level: booking step, recurring wizard, summaries -->
+    <string name="dirtiness_title">How clean is your home?</string>
+    <string name="dirtiness_intro">Choose the state that best matches your whole home.</string>
+    <string name="dirtiness_hint">If you are torn between two levels, choose the higher one. Your cleaner will then have enough time and the result will be as it should.</string>
+    <string name="dirtiness_level_label">Dirtiness level</string>
+    <string name="dirtiness_normal_title">Normal</string>
+    <string name="dirtiness_normal_price">No surcharge</string>
+    <string name="dirtiness_normal_when">The home is cleaned regularly, last time about 1–2 weeks ago.</string>
+    <string name="dirtiness_normal_detail_1">Dust on furniture and shelves, crumbs and hair on the floor</string>
+    <string name="dirtiness_normal_detail_2">Ordinary water spots in the bathroom, no build-up in the toilet</string>
+    <string name="dirtiness_normal_detail_3">Kitchen after everyday cooking: the worktop and hob need a wipe, nothing baked on</string>
+    <string name="dirtiness_normal_detail_4">Dishes washed or in the dishwasher</string>
+    <string name="dirtiness_increased_title">Increased</string>
+    <string name="dirtiness_increased_price" formatted="false">+30%</string>
+    <string name="dirtiness_increased_when">Last cleaned 3–6 weeks ago, or a home with pets or small children.</string>
+    <string name="dirtiness_increased_detail_1">A visible layer of dust, stains and grimy patches on the floor</string>
+    <string name="dirtiness_increased_detail_2">Limescale on the taps, shower and bath, grimy grout</string>
+    <string name="dirtiness_increased_detail_3">Grease on the kitchen worktop, tiles and cooker hood, a dirty oven or microwave on the outside</string>
+    <string name="dirtiness_increased_detail_4">Pet hair on the sofa, carpets and in the corners</string>
+    <string name="dirtiness_heavy_title">Heavy</string>
+    <string name="dirtiness_heavy_price" formatted="false">+60%</string>
+    <string name="dirtiness_heavy_when">Not cleaned for more than 2 months, or a home neglected for a long time.</string>
+    <string name="dirtiness_heavy_detail_1">Heavy limescale and deposits that do not come off with one wipe</string>
+    <string name="dirtiness_heavy_detail_2">Baked-on grease on the hob, cooker hood and cupboards</string>
+    <string name="dirtiness_heavy_detail_3">Black spots (mould) on silicone or in the grout</string>
+    <string name="dirtiness_heavy_detail_4">Dried-on dirt on the floor, sticky surfaces, a strong smell</string>
+    <string name="dirtiness_surcharge_increased" formatted="false">Increased dirtiness surcharge (+30%)</string>
+    <string name="dirtiness_surcharge_heavy" formatted="false">Heavy dirtiness surcharge (+60%)</string>
+
     <string name="booking_summary_promo_discount">Promo (-%1$s)</string>
     <string name="booking_summary_membership_discount">Cleansia Plus discount</string>
     <string name="booking_summary_tier_discount">Loyalty tier discount</string>
@@ -757,18 +755,18 @@
     <string name="booking_referral_code_row_applied">%1$s applied</string>
     <string name="booking_referral_code_row_clear">Remove</string>
     <string name="booking_referral_code_dialog_title">Enter referral code</string>
-    <string name="booking_referral_code_dialog_helper">Have a friend\'s code? Both of you earn 150 bonus tier-points after your first cleaning.</string>
+    <string name="booking_referral_code_dialog_helper">Have a friend\'s code? Both of you earn 150 bonus tier-points after your first completed cleaning.</string>
     <string name="booking_referral_code_dialog_apply">Apply</string>
     <string name="booking_referral_code_dialog_cancel">Cancel</string>
     <string name="booking_referral_code_dialog_done">Done</string>
-    <string name="booking_referral_code_dialog_success_named">Code from %1$s accepted — you\'ll both get 150 bonus points.</string>
+    <string name="booking_referral_code_dialog_success_named">Code from %1$s accepted — you\'ll both get 150 bonus points after your first completed cleaning.</string>
 
     <!-- Plus: pre-request a favorite cleaner -->
     <string name="booking_preferred_cleaner_title">Request your favorite cleaner</string>
     <string name="booking_preferred_cleaner_subtitle">Plus benefit · choose someone who\'s cleaned for you before</string>
     <string name="booking_preferred_cleaner_dialog_title">Pick a cleaner</string>
     <string name="booking_preferred_cleaner_clear">Clear preferred cleaner</string>
-    <string name="booking_referral_code_dialog_success">Code accepted — you\'ll both get 150 bonus points.</string>
+    <string name="booking_referral_code_dialog_success">Code accepted — you\'ll both get 150 bonus points after your first completed cleaning.</string>
 
     <string name="booking_payment_method">How do you want to pay?</string>
     <string name="booking_pay_card">Card</string>
@@ -779,6 +777,12 @@
     <string name="booking_cash_needs_card">Cleaners needed for this booking: %1$d. Cash is only for bookings one cleaner handles alone, so this one is paid by card.</string>
     <string name="booking_cash_pending">Whether you can pay in cash is confirmed once the price is ready.</string>
     <string name="booking_cash_cleared">Cash is no longer available for this booking, so no payment method is selected. Choose how you want to pay.</string>
+    <string name="booking_card_guarantee_title">A card to guarantee cash bookings</string>
+    <string name="booking_card_guarantee_body">Your first cash booking saves a card. Nothing is charged now: you still pay the cleaner in cash.</string>
+    <string name="consent_card_guarantee_draft_2026_09_28">I agree that Cleansia may charge this card for a cancellation fee, a lockout fee, cash I did not pay and a top-up I approved on my cash bookings.</string>
+    <string name="booking_card_guarantee_consent_required">Agree to the card guarantee to pay in cash, or choose card.</string>
+    <string name="booking_card_guarantee_pending">We\'re still confirming your card. Swipe again in a moment.</string>
+    <string name="booking_card_guarantee_cancelled">Your card wasn\'t saved, so nothing was booked. Save a card to pay in cash, or choose card.</string>
     <string name="booking_special_instructions_hint">Any special requests? (optional)</string>
     <string name="booking_access_instructions_hint">How do we get in? (optional)</string>
 
@@ -820,21 +824,26 @@
     <!-- Account deletion -->
     <string name="profile_delete_account">Delete account</string>
     <string name="delete_account_title">Delete your account</string>
-    <string name="delete_account_subtitle">This will permanently delete your account and all associated data. Any unused credit is forfeited when the account is deleted — it cannot be paid out or restored. This action cannot be undone.</string>
+    <string name="delete_account_subtitle">Deleting your account removes your personal details. We keep only what the law or the defence of legal claims requires, listed below. Any unused credit is forfeited when the account is deleted — it cannot be paid out or restored. This action cannot be undone.</string>
     <string name="delete_account_what_happens">What gets deleted</string>
     <string name="delete_account_item_profile">• Your profile (name, email, phone, photo)</string>
     <string name="delete_account_item_addresses">• All saved addresses</string>
-    <string name="delete_account_item_history">• Booking history will be anonymised</string>
+    <string name="delete_account_item_history">• Your name, contact details, address and photos on your bookings</string>
     <string name="delete_account_item_devices">• Sign-in on all your devices</string>
-    <string name="delete_account_item_consents">• All marketing consents</string>
+    <string name="delete_account_what_is_kept">What we keep</string>
+    <string name="delete_account_kept_bookings">• Your bookings, as the record of each contract, without your personal details</string>
+    <string name="delete_account_kept_receipts">• Receipts, for as long as accounting law requires</string>
+    <string name="delete_account_kept_consents">• The record of the consents you gave, for 3 years</string>
+    <string name="delete_account_kept_audit">• The log of actions on your account, for 3 years, without IP addresses or device details</string>
+    <string name="delete_account_kept_disputes">• The text of any dispute you raised, for 3 years</string>
     <string name="delete_account_confirm_label">To confirm, type your email</string>
     <string name="delete_account_confirm_hint">your@email.com</string>
     <string name="delete_account_confirm_mismatch">Email doesn\'t match your account</string>
     <string name="delete_account_confirm_button">Permanently delete account</string>
     <string name="delete_account_success">Your account has been deleted.</string>
-    <!-- Final confirmation dialog — second gate after the typed-email match. Copy matches iOS. -->
+    <!-- Final confirmation dialog — second gate after the typed-email match. -->
     <string name="delete_account_dialog_title">Delete account?</string>
-    <string name="delete_account_dialog_message">This permanently deletes your account and data. This cannot be undone. Any unused credit on your account is forfeited once the deletion completes — it cannot be paid out or restored.</string>
+    <string name="delete_account_dialog_message">Your personal details are removed and this cannot be undone; the records listed on this screen are kept for the periods it states. Any unused credit on your account is forfeited once the deletion completes — it cannot be paid out or restored.</string>
     <string name="delete_account_dialog_confirm">Delete</string>
 
     <!-- Error handling — generics (used when a specific key can't be resolved) -->
@@ -848,8 +857,7 @@
          and perk wording is provisional; lock with product before launch. -->
     <string name="membership_plus_title">Cleansia Plus</string>
     <string name="membership_plus_subtitle">A better way to keep your home clean</string>
-    <string name="membership_subscribe_cta">Try Cleansia Plus</string>
-    <string name="membership_disclosure">Cancel anytime. Your subscription renews automatically until you cancel.</string>
+    <string name="membership_disclosure">Renews automatically until you cancel. If you cancel, the benefits run to the end of the paid period. If a renewal payment fails, the benefits pause, and a cancellation then takes effect at once.</string>
     <string name="plus_not_available_in_market">Plus is not available in your market yet</string>
 
     <!-- Plus subscribe page redesign (Bolt+/Wolt+ style) -->
@@ -872,8 +880,6 @@
     <string name="membership_plan_per_month_billed_annually">%1$s / month — billed annually as %2$s</string>
     <string name="membership_plan_per_month">%1$s / month</string>
     <string name="membership_plan_per_year">%1$s / year</string>
-    <string name="membership_trial_badge">%1$d-day free trial</string>
-    <string name="membership_trial_disclosure">Free for the first %1$d days. After that, your card is billed automatically. Cancel anytime before the trial ends.</string>
 
     <!-- Switch to annual flow (in management card for monthly subscribers) -->
     <string name="membership_switch_to_annual_cta">Switch to annual — save %1$d%%</string>
@@ -887,13 +893,13 @@
     <string name="membership_perk_recurring_title">Recurring bookings</string>
     <string name="membership_perk_recurring_desc">Set it once — every other Tuesday at 10am, automatically.</string>
     <string name="membership_perk_cancellation_title">Free cancellation</string>
-    <string name="membership_perk_cancellation_desc">Cancel up to 4 hours before your cleaning, no fees.</string>
+    <string name="membership_perk_cancellation_desc">Cancel up to %1$d hours before your cleaning, no fees.</string>
     <string name="membership_perk_grace_title">Free cancellation after booking</string>
-    <string name="membership_perk_grace_desc">60 minutes after booking to cancel free, instead of 15 minutes</string>
-    <string name="membership_perk_discount_title" formatted="false">5% member discount</string>
+    <string name="membership_perk_grace_desc">60 minutes after every booking to cancel free, instead of 15 minutes</string>
+    <string name="membership_perk_discount_title">%1$d%% member discount</string>
     <string name="membership_perk_discount_desc" formatted="false">Off every cleaning. Combined with your loyalty tier it is capped at 12%.</string>
     <string name="membership_perk_express_title">Express bookings without the surcharge</string>
-    <string name="membership_perk_express_desc" formatted="false">We waive the 20% surcharge on express bookings — cleanings that start 2 to 4 hours after you book. A set number each calendar month while your paid membership is active; unused ones don\'t carry over.</string>
+    <string name="membership_perk_express_desc">We waive the 20%% surcharge on express bookings — cleanings that start 2 to 4 hours after you book. Up to %1$d each calendar month while your paid membership is active; unused ones don\'t carry over.</string>
 
     <!-- Perk pills on the active management card. -->
     <string name="membership_perk_pill_discount">%1$d%% off</string>
@@ -905,10 +911,9 @@
 
     <!-- Membership management card on Profile -->
     <string name="membership_inactive_title">Cleansia Plus</string>
-    <string name="membership_inactive_subtitle" formatted="false">5% off, free cancellation, your favorite cleaner.</string>
     <string name="membership_inactive_badge">PLUS</string>
-    <string name="membership_inactive_perks_summary" formatted="false">Save on every booking · cancel anytime · recurring cleanings</string>
-    <string name="membership_inactive_cta">Try free for 14 days</string>
+    <string name="membership_inactive_perks_summary" formatted="false">Save on every booking · recurring cleanings</string>
+    <string name="membership_inactive_cta">Get Cleansia Plus</string>
     <!-- Post-purchase success screen (Plus) -->
     <string name="membership_success_title">Welcome to Plus!</string>
     <string name="membership_success_subtitle">Your benefits are active right away. Here\'s what just unlocked:</string>
@@ -923,17 +928,22 @@
     <string name="membership_renews_on">Renews on %1$s</string>
     <string name="membership_cancelled_until">Active until %1$s</string>
     <string name="membership_cancel_success_trial">Membership cancelled — no paid month follows, so you won\'t be charged.</string>
+    <string name="membership_cancel_success_now">Cleansia Plus cancelled — nothing more will be charged.</string>
     <string name="membership_active_until">Active until %1$s</string>
     <string name="membership_status_ending">Cancellation requested</string>
     <string name="membership_status_ending_badge">ENDING</string>
     <string name="membership_status_active_badge">PLUS · ACTIVE</string>
     <string name="membership_then_ends_hint">Plus benefits stop on this date.</string>
     <string name="membership_trial_cancelled_lead">Since you cancelled during the trial, no paid month follows and none of the Plus benefits start.</string>
-    <string name="membership_auto_renew_hint">Auto-renews — cancel anytime.</string>
+    <string name="membership_auto_renew_hint">Auto-renews. If you cancel, the benefits run until this date.</string>
+    <string name="membership_status_past_due_badge">PAYMENT FAILED</string>
+    <string name="membership_past_due_title">Payment failed — benefits paused</string>
+    <string name="membership_past_due_body">We couldn\'t charge your renewal, so your Plus benefits are paused. If a retried payment goes through, they resume. If you cancel, the membership ends right away and nothing more is charged.</string>
     <string name="membership_cancel_action">Cancel subscription</string>
     <string name="membership_cancel_dialog_title">Cancel Cleansia Plus?</string>
     <string name="membership_cancel_dialog_message">Your benefits remain until the end of the current billing period. You won\'t be charged again.</string>
     <string name="membership_cancel_dialog_message_trial">Your trial ends on %1$s. No paid month follows, so you won\'t be charged and no Plus benefit starts.</string>
+    <string name="membership_cancel_dialog_message_now">Your membership ends right away. The unpaid renewal is not charged, and nothing more will be.</string>
     <string name="membership_cancel_dialog_confirm">Cancel</string>
     <string name="membership_subscribed_success">Welcome to Cleansia Plus!</string>
     <string name="membership_already_active">You\'re already a Plus member.</string>
@@ -966,9 +976,11 @@
     <string name="recurring_bookings_create_fab">New schedule</string>
     <string name="recurring_plus_gate_title">Recurring is a Plus perk</string>
     <string name="recurring_plus_gate_subtitle">Join Cleansia Plus to set up weekly or biweekly cleanings that book themselves.</string>
-    <string name="recurring_plus_gate_cta">Try Cleansia Plus</string>
+    <string name="recurring_plus_gate_cta">Get Cleansia Plus</string>
     <string name="recurring_lapsed_notice_title">Cleansia Plus is no longer active</string>
     <string name="recurring_lapsed_notice_body">These schedules keep running and are booked at the full non-member price. You can pause or delete any of them here at any time. Resubscribe to add or change a schedule.</string>
+    <string name="recurring_paused_notice_title">Recurring paused — Plus payment failed</string>
+    <string name="recurring_paused_notice_body">We couldn\'t charge your Plus renewal, so your recurring schedules book no new cleanings, and none can be added or changed. They start booking again if a retried payment goes through.</string>
 
     <!-- Recurring booking create form (PA14) -->
     <string name="recurring_create_title_blank">New recurring cleaning</string>
@@ -1087,9 +1099,14 @@
     <string name="error_order_address_exactly_one_required">Please select a saved address or enter a new one.</string>
     <string name="error_order_cleaning_date_future">Date must be in the future.</string>
     <string name="error_order_cleaning_date_below_lead_time">This time is too close. Please choose a later slot.</string>
+    <string name="error_order_cleaning_date_outside_booking_window">Pick a start between 08:00 and 19:45 local time, on the quarter-hour, no more than 60 days ahead.</string>
     <string name="error_order_already_cancelled">This booking is already cancelled.</string>
     <string name="error_order_already_completed">This booking is already completed.</string>
     <string name="error_order_in_progress_cannot_cancel">This booking is in progress and can\'t be cancelled.</string>
+    <string name="error_order_start_passed_cannot_cancel">The start time has passed and a cleaner is booked, so this booking can no longer be cancelled. If the cleaner did not arrive, let us know.</string>
+    <string name="error_order_cleaner_already_started">The cleaner has already started this cleaning.</string>
+    <string name="error_order_start_time_not_reached">The booked start time has not come yet.</string>
+    <string name="error_order_invalid_status_transition">That action isn\'t allowed for the order\'s current status.</string>
     <string name="error_order_cancellation_window_closed">The cancellation window has closed.</string>
     <string name="error_order_empty">Your order is empty. Please add at least one service.</string>
     <string name="error_order_size_exceeds_maximum">A booking can include up to 8 rooms and 4 bathrooms.</string>
@@ -1103,8 +1120,16 @@
     <string name="error_order_total_price_not_match">Price changed. Please refresh and try again.</string>
     <string name="error_order_payment_gateway_unavailable">Payment service is temporarily unavailable.</string>
     <string name="error_order_payment_already_paid">This order has already been paid.</string>
+    <string name="error_order_recurring_already_confirmed">You\'ve already confirmed this cleaning. Pay the cleaner in cash on the day.</string>
     <string name="error_order_creation_failed">Couldn\'t create booking. Please try again.</string>
     <string name="error_order_cash_not_available">Cash is only available when you\'re signed in and the booking needs a single cleaner.</string>
+    <string name="error_order_cash_requires_saved_card">To pay in cash, first save a card as a guarantee — or pay by card.</string>
+    <string name="error_order_cash_open_bookings_limit_reached">You already have as many unpaid cash bookings as allowed. Choose card, or pay in cash again once one of them is paid.</string>
+    <string name="error_order_cash_unpaid_receivable">You have an unpaid amount with us, such as a cancellation fee. Pay by card for now; cash is available again once you settle it under Payments in your profile.</string>
+    <string name="error_saved_card_consent_not_accepted">Please agree that fees and unpaid cash may be charged to your card before saving it.</string>
+    <string name="error_saved_card_not_found">We couldn\'t find that saved card.</string>
+    <string name="error_receivable_not_found">We couldn\'t find that amount due.</string>
+    <string name="error_receivable_not_open">This amount has already been paid or waived.</string>
     <string name="error_order_review_already_exists">You\'ve already reviewed this booking.</string>
     <string name="error_order_review_rating_invalid">Rating must be between 1 and 5.</string>
     <string name="error_order_not_owned_by_user">You can\'t access this booking.</string>
@@ -1132,6 +1157,7 @@
 
     <!-- Order detail action -->
     <string name="order_action_report_issue">Report issue</string>
+    <string name="order_action_cleaner_no_show">The cleaner did not arrive</string>
     <string name="order_action_rebook">Book again</string>
     <string name="order_rebook_unavailable_items">Some items from your previous booking are no longer available.</string>
     <string name="booking_market_items_unavailable">Some of your picks aren\'t offered at this address and were removed.</string>
@@ -1223,20 +1249,19 @@
     <string name="loyalty_retry">Retry</string>
 
     <!-- Loyalty Phase C — Referrals -->
-    <string name="loyalty_referral_section_title">Invite friends — earn 150 points each</string>
-    <string name="loyalty_referral_subtitle">Share your code. They get 150 bonus points on their first cleaning, you get 150 too.</string>
+    <string name="loyalty_referral_section_title">Invite friends</string>
+    <string name="loyalty_referral_subtitle">Share your code. Your friend and you each get 150 bonus points after their first completed cleaning.</string>
     <string name="loyalty_referral_code_label">Your code</string>
     <string name="loyalty_referral_share_button">Share</string>
     <string name="loyalty_referral_copy_button">Copy</string>
     <string name="loyalty_referral_copied_toast">Code copied</string>
-    <string name="loyalty_referral_share_text">Get 150 bonus points on your first Cleansia cleaning! Use my code %1$s at signup: %2$s</string>
+    <string name="loyalty_referral_share_text">Get 150 bonus points after your first completed Cleansia cleaning! Use my code %1$s at signup: %2$s</string>
     <string name="loyalty_referral_stats_empty">Be the first — share your code</string>
     <string name="loyalty_referral_stats_qualified">%1$d friend joined · %2$d qualified</string>
     <string name="loyalty_referral_share_failed">Couldn\'t open share. Code copied to clipboard.</string>
     <string name="referral_code_field_collapsed">I have a referral code</string>
     <string name="referral_code_field_label">Referral code</string>
     <string name="referral_code_field_placeholder">X3K9P2</string>
-    <string name="referral_code_valid">Code from %1$s — you\'ll get 150 bonus points</string>
     <string name="referral_code_validating">Checking…</string>
     <string name="error_referral_not_found">Referral code not found</string>
     <string name="error_referral_self_referral">You can\'t refer yourself</string>
@@ -1275,6 +1300,10 @@
     <string name="notification_order_refunded_body">Your refund for booking #%1$s is being processed.</string>
     <string name="notification_order_no_cleaner_refunded_title">No cleaner was available</string>
     <string name="notification_order_no_cleaner_refunded_body">Nobody was able to take booking #%1$s, so we have refunded it in full and added %2$s credit towards your next clean. Sorry.</string>
+    <string name="notification_order_no_cleaner_refund_pending_title">No cleaner was available</string>
+    <string name="notification_order_no_cleaner_refund_pending_body">No cleaner could make it to booking #%1$s, so we have cancelled it. Your refund is on its way, and we have added %2$s credit towards your next clean. Sorry.</string>
+    <string name="notification_order_no_cleaner_nothing_charged_title">No cleaner was available</string>
+    <string name="notification_order_no_cleaner_nothing_charged_body">No cleaner could make it to booking #%1$s, so we have cancelled it. You have not been charged, and we have added %2$s credit towards your next clean. Sorry.</string>
     <string name="notification_dispute_reply_title">Support replied</string>
     <string name="notification_dispute_reply_body">You have a new message about your dispute. Tap to read.</string>
     <string name="notification_recurring_scheduled_title">Confirm tomorrow\'s cleaning</string>
@@ -1288,11 +1317,38 @@
     <string name="notification_membership_expiring_body">Your subscription renews in 3 days. Manage your plan in the app.</string>
     <string name="notification_membership_cancelled_title">Cleansia Plus has ended</string>
     <string name="notification_membership_cancelled_body">Your subscription has ended. Resubscribe to keep your Plus perks.</string>
+    <string name="notification_membership_payment_failed_title">Cleansia Plus payment failed</string>
+    <string name="notification_membership_payment_failed_body">Your last Plus payment didn\'t go through, so your Plus benefits are paused until it does. Manage your plan in the app.</string>
 
     <string name="notification_order_assignment_cancelled_title">Job cancelled</string>
     <string name="notification_order_assignment_cancelled_body">A job you accepted was cancelled: #%1$s. Tap for details.</string>
     <string name="notification_payroll_invoice_paid_title">You\'ve been paid</string>
     <string name="notification_payroll_invoice_paid_body">Your invoice for the latest pay period has been paid. Tap to view.</string>
+    <!-- ── Payments ── -->
+    <string name="profile_row_payments">Payments</string>
+    <string name="payments_title">Payments</string>
+    <string name="payments_due_title">Amounts due</string>
+    <string name="payments_due_intro">Pay what you owe to book in cash again. Card bookings are not affected.</string>
+    <string name="payments_due_order">Order %1$s</string>
+    <string name="payments_pay_action">Pay</string>
+    <string name="receivable_kind_cancellation_fee">Cancellation fee</string>
+    <string name="receivable_kind_lockout">Lockout fee</string>
+    <string name="receivable_kind_unpaid_cash">Unpaid cash</string>
+    <string name="receivable_kind_top_up">Approved top-up</string>
+    <string name="receivable_kind_other">Amount due</string>
+    <string name="payments_card_title">Saved card</string>
+    <string name="payments_card_intro">The card that guarantees your cash bookings. A cancellation fee, a lockout fee, unpaid cash or a top-up you approved may be charged to it.</string>
+    <string name="payments_card_label">%1$s •••• %2$s</string>
+    <string name="payments_card_expires">Expires %1$02d/%2$02d · %3$s</string>
+    <string name="payments_card_empty">No card saved. Your first cash booking asks for one.</string>
+    <string name="payments_card_remove_action">Remove card</string>
+    <string name="payments_card_remove_title">Remove this card?</string>
+    <string name="payments_card_remove_message">Your next cash booking will ask for a card again.</string>
+    <string name="payments_card_remove_confirm">Remove</string>
+    <string name="payments_card_removed">Card removed</string>
+    <string name="payments_card_remove_retry_hint">Couldn\'t remove the card. Please try again.</string>
+    <string name="payments_error_message">We couldn\'t load your payments. Check your connection and try again.</string>
+    <string name="payments_error_retry">Try again</string>
     <!-- ── Your devices ── -->
     <string name="profile_row_devices">Your devices</string>
     <string name="devices_title">Your devices</string>
@@ -1323,6 +1379,7 @@
     <string name="error_auth_too_many_attempts">Too many attempts with this code. Request a new code and try again.</string>
     <string name="error_company_not_found">Company information not found</string>
     <string name="error_consent_terms_not_accepted">Please accept the Terms of Service and Privacy Policy to continue.</string>
+    <string name="error_consent_early_performance_not_requested">To continue, please confirm that you want the service to start within the 14-day withdrawal period.</string>
     <string name="error_country_not_existing_id">Country not found</string>
     <string name="error_currency_invalid">Invalid currency</string>
     <string name="error_country_not_serviced">We don\'t operate in this country yet.</string>
@@ -1346,6 +1403,7 @@
     <string name="error_file_required">File is required</string>
     <string name="error_gdpr_consent_already_granted">This consent has already been granted.</string>
     <string name="error_gdpr_consent_not_found">Consent not found.</string>
+    <string name="error_gdpr_consent_not_editable">This consent can\'t be changed here.</string>
     <string name="error_gdpr_deletion_blocked_by_invoice">Your account can\'t be deleted yet — there is an open invoice.</string>
     <string name="error_gdpr_deletion_blocked_by_order">Your account can\'t be deleted yet — there is an active order.</string>
     <string name="error_general_not_found">Resource not found</string>
@@ -1398,8 +1456,8 @@
         <item quantity="other">%1$d cleanings completed</item>
     </plurals>
     <plurals name="loyalty_referral_stats_waiting">
-        <item quantity="one">%1$d friend joined — waiting on first booking</item>
-        <item quantity="other">%1$d friends joined — waiting on first booking</item>
+        <item quantity="one">%1$d friend joined — waiting on their first completed cleaning</item>
+        <item quantity="other">%1$d friends joined — waiting on their first completed cleaning</item>
     </plurals>
     <plurals name="home_milestone_subtitle_v2">
         <item quantity="one">%1$d more point to %2$s</item>
@@ -1424,6 +1482,12 @@
     <string name="dispute_create_item_in_package">in %1$s</string>
     <string name="dispute_create_evidence_hint">Optional. Photos or PDFs up to 10 MB each — they upload when you submit.</string>
     <string name="dispute_create_evidence_partial">Your dispute was submitted, but these files could not be uploaded: %1$s. Add them again from the dispute.</string>
+    <string name="dispute_create_settlement_title">If your complaint is upheld</string>
+    <string name="dispute_create_settlement_hint">Choose how you want the money back. We refund to your card unless you choose credit.</string>
+    <string name="dispute_settlement_card_refund">Refund to my card</string>
+    <string name="dispute_settlement_card_refund_desc">The money goes back to the card you paid with.</string>
+    <string name="dispute_settlement_credit">Cleansia credit</string>
+    <string name="dispute_settlement_credit_desc">Added to your account for future bookings. Credit is never paid out and expires 12 months after your last credit activity.</string>
     <string name="dispute_evidence_remove">Remove</string>
     <string name="dispute_evidence_uploaded">Uploaded</string>
     <string name="dispute_evidence_upload_failed">Upload failed</string>

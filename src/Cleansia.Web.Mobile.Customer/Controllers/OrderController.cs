@@ -37,6 +37,19 @@ public class OrderController(IMediator mediator) : CustomerMobileApiController(m
         return HandleResult<GetCancellationFeePreview.Response>(await Mediator.Send(query, cancellationToken));
     }
 
+    // Offered once the start has passed and self-cancel is refused; it alerts the administrators and
+    // moves no money.
+    [AllowAnonymous]
+    [EnableRateLimiting("auth")]
+    [HttpPost("ReportGuestNoShow")]
+    [ProducesResponseType(typeof(ReportGuestCleanerNoShow.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ReportGuestNoShow(
+        [FromBody] ReportGuestCleanerNoShow.Command command, CancellationToken cancellationToken)
+    {
+        return HandleResult<ReportGuestCleanerNoShow.Response>(await Mediator.Send(command, cancellationToken));
+    }
+
     [AllowAnonymous]
     [EnableRateLimiting("auth")]
     [HttpPost("Lookup")]
@@ -71,7 +84,8 @@ public class OrderController(IMediator mediator) : CustomerMobileApiController(m
         return HandleResult<LookupOrderBatch.Response>(result);
     }
 
-    [AllowAnonymous]
+    // Guest booking is web-only: a native app books from a signed-in session or not at all.
+    [Authorize]
     [EnableRateLimiting("auth")]
     [HttpPost("CreateOrder")]
     [ProducesResponseType(typeof(CreateOrder.Response), StatusCodes.Status200OK)]
@@ -94,10 +108,9 @@ public class OrderController(IMediator mediator) : CustomerMobileApiController(m
     }
 
     /// <summary>
-    /// Customer-driven confirmation of a Pending recurring-template Order.
-    /// Cash returns success immediately (order flips to Confirmed + Paid).
-    /// Card returns a Stripe PaymentIntent + ephemeral key so the mobile
-    /// PaymentSheet can collect payment.
+    /// Customer-driven confirmation of a recurring occurrence awaiting it. Cash returns success at once
+    /// and the occurrence stays unpaid until the cleaner records the cash. Card returns a Stripe
+    /// PaymentIntent + ephemeral key so the mobile PaymentSheet can collect payment.
     /// </summary>
     [Authorize]
     [EnableRateLimiting("auth")]
@@ -266,8 +279,9 @@ public class OrderController(IMediator mediator) : CustomerMobileApiController(m
         return HandleResult<ChoosePreferredCleaner.Response>(result);
     }
 
-    // The accepted contract for work, keyed on the acceptance (ADR-0068 D4): the order's customer, the
-    // cleaner who accepted it and an administrator read it; anyone else answers order.not_found.
+    // The contract for work binds the operating company and the cleaner, so every customer is answered
+    // order.not_found. The route stays only while the customer web and mobile apps still call it; it goes
+    // with their contract screens.
     [HttpGet("GetWorkContract")]
     [Permission(Policy.CanViewOrderDetail)]
     [EnableRateLimiting("interactive")]

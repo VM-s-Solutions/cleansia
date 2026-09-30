@@ -9,6 +9,8 @@ using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Core.Domain.Notifications;
+using Cleansia.Core.Queue.Abstractions;
+using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Infra.Common.Validations;
 using Microsoft.Extensions.Logging;
 using MockQueryable;
@@ -42,6 +44,8 @@ public class CancelUnfilledOrdersTests
     private readonly Mock<ICreditAccountRepository> _credit = new();
     private readonly Mock<IRefundService> _refunds = new();
     private readonly Mock<INotificationProducer> _notifications = new();
+    private readonly Mock<IGuestOrderAccessTokenRepository> _guestTokens = new();
+    private readonly List<(string Queue, string Key, object Message)> _enqueued = [];
     private readonly Mock<ITenantProvider> _tenants = new();
     private readonly Mock<IUnitOfWork> _uow = new();
     private readonly List<(LogLevel Level, string Message)> _log = [];
@@ -69,6 +73,10 @@ public class CancelUnfilledOrdersTests
                 It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(BusinessResult.Success(
                 new RefundResult("refund-1", "refund:key", 1000m, RefundStatus.Succeeded, false)));
+
+        _guestTokens.Setup(r => r.GetLiveForOrderIgnoringTenantAsync(
+                It.IsAny<string>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<GuestOrderAccessToken>());
 
         _credit.Setup(c => c.EnsureForUserAsync(
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -155,9 +163,12 @@ public class CancelUnfilledOrdersTests
             .Returns(orders.AsQueryable().BuildMock());
 
     private CancelUnfilledOrders.Handler Handler() =>
-        new(_orders.Object, _credit.Object, _refunds.Object,
-            _notifications.Object, _tenants.Object, _uow.Object,
-            new CapturingLogger(_log));
+        new(_orders.Object,
+            new CleanerNoShowCancellation(_credit.Object, _refunds.Object, _notifications.Object,
+                new GuestOrderAccessTokenIssuer(_guestTokens.Object), new RecordingDispatch(_enqueued),
+                new CapturingLogger<CleanerNoShowCancellation>(_log)),
+            _tenants.Object, _uow.Object,
+            new CapturingLogger<CancelUnfilledOrders.Handler>(_log));
 
     private Task<BusinessResult<CancelUnfilledOrders.Response>> Sweep() =>
         Handler().Handle(new CancelUnfilledOrders.Command(), default);
@@ -394,6 +405,49 @@ public class CancelUnfilledOrdersTests
     }
 
     /// <summary>
+    /// Owner ruling 2026-09-28: a recurring cash occurrence the customer confirmed stays unpaid until the
+    /// cleaner records the cash, and it was offered on the board, so at its slot with nobody on it it is
+    /// swept like any cash booking. One the customer never confirmed was never offered, and is not.
+    /// </summary>
+    [Fact]
+    public async Task A_Confirmed_Recurring_Cash_Occurrence_Is_Swept_And_An_Unconfirmed_One_Is_Not()
+    {
+        var confirmed = RecurringCashOccurrence("order-recurring-confirmed", "tmpl-confirmed");
+        confirmed.ConfirmByCustomer(DateTime.UtcNow.AddDays(-1));
+        var unconfirmed = RecurringCashOccurrence("order-recurring-unconfirmed", "tmpl-unconfirmed");
+        Arrange(confirmed, unconfirmed);
+
+        var result = await Sweep();
+
+        Assert.Equal(1, result.Value.CancelledCount);
+        Assert.Equal(OrderStatus.Cancelled, confirmed.CurrentStatus);
+        Assert.Equal(OrderStatus.New, unconfirmed.CurrentStatus);
+    }
+
+    private Order RecurringCashOccurrence(string orderId, string recurringTemplateId)
+    {
+        var order = Order.Create(
+            customerName: "Test Customer",
+            customerEmail: "test@example.com",
+            customerPhone: "+420000000000",
+            customerAddress: Address.Create("123 Main St", "Prague", "11000", "cz"),
+            rooms: 1,
+            bathrooms: 1,
+            cleaningDateTime: DateTime.UtcNow.AddHours(-2),
+            paymentType: PaymentType.Cash,
+            totalPrice: 1000m,
+            currencyId: _czk.Id,
+            paymentStatus: PaymentStatus.Pending,
+            userId: UserId,
+            recurringTemplateId: recurringTemplateId);
+        order.Id = orderId;
+        order.SetCurrency(_czk);
+        order.SetMaxEmployees(1);
+        order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));
+        return order;
+    }
+
+    /// <summary>
     /// A card refund of the whole sale already puts the credit share back on its own leg, so the
     /// order-ended return must not pay the same credit a second time.
     /// </summary>
@@ -414,8 +468,8 @@ public class CancelUnfilledOrdersTests
     }
 
     /// <summary>
-    /// Nothing re-drives this sweep's refund, so a card refund that failed still gives the credit back
-    /// now. A later refund of the order nets off what already went back, so this cannot double it.
+    /// The card refund that failed waits for the hourly re-drive, but the credit comes back now. The
+    /// re-drive nets off what already went back, so this cannot double it.
     /// </summary>
     [Fact]
     public async Task AFailedCardRefundStillReturnsTheAppliedCreditOnce()
@@ -617,8 +671,164 @@ public class CancelUnfilledOrdersTests
         _tenants.Verify(t => t.SetTenantOverride("tenant-b"), Times.Once);
     }
 
-    private sealed class CapturingLogger(List<(LogLevel Level, string Message)> entries)
-        : ILogger<CancelUnfilledOrders.Handler>
+    /// <summary>
+    /// A guest has no push and no feed, so the e-mail is the only word they get that nobody is coming. It
+    /// retires every link they hold — the send mints the one that still opens the booking — and states the
+    /// refund that actually went through.
+    /// </summary>
+    [Fact]
+    public async Task AGuestIsEmailedWithTheirOldLinksRetiredAndTheRefundThatWentThrough()
+    {
+        var order = UnfilledOrder(userId: null);
+        order.SetLanguage("cs");
+        var oldLink = GuestOrderAccessToken.Issue(order.Id, DateTimeOffset.UtcNow.AddDays(3));
+        _guestTokens.Setup(r => r.GetLiveForOrderIgnoringTenantAsync(
+                order.Id, It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([oldLink]);
+        Arrange(order);
+
+        await Sweep();
+
+        Assert.NotNull(oldLink.RevokedOn);
+        var (queue, key, message) = Assert.Single(_enqueued);
+        Assert.Equal(QueueNames.SendEmail, queue);
+        Assert.Equal(MessageKeys.GuestOrderCancelledEmail(order.Id), key);
+        var email = Assert.IsType<QueueEnvelope<SendGuestOrderCancellationEmailMessage>>(message).Payload;
+        Assert.Equal(order.Id, email.OrderId);
+        Assert.Equal("cs", email.LanguageCode);
+        Assert.Equal(1000m, email.SuccessfulRefundAmount);
+    }
+
+    [Fact]
+    public async Task AGuestWhoseRefundDidNotGoThroughIsNotToldTheyWereRefunded()
+    {
+        var order = UnfilledOrder(userId: null);
+        _refunds.Setup(r => r.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(BusinessResult.Failure<RefundResult>(
+                new Error(nameof(RefundRequest.Amount), BusinessErrorMessage.RefundFailed)));
+        Arrange(order);
+
+        await Sweep();
+
+        var (_, _, message) = Assert.Single(_enqueued);
+        var email = Assert.IsType<QueueEnvelope<SendGuestOrderCancellationEmailMessage>>(message).Payload;
+        Assert.Null(email.SuccessfulRefundAmount);
+        Assert.Equal(Constants.Language.English, email.LanguageCode);
+    }
+
+    [Fact]
+    public async Task AnAccountHolderIsToldByTheirOwnNotificationAndGetsNoGuestEmail()
+    {
+        Arrange(UnfilledOrder());
+
+        await Sweep();
+
+        Assert.Empty(_enqueued);
+        _guestTokens.Verify(r => r.GetLiveForOrderIgnoringTenantAsync(
+            It.IsAny<string>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>
+    /// The push says what happened to the money. A card refund that did not go through is pending,
+    /// never "refunded in full" — the hourly re-drive owns it.
+    /// </summary>
+    [Fact]
+    public async Task A_Card_Refund_That_Did_Not_Go_Through_Is_Announced_As_Pending()
+    {
+        var order = UnfilledOrder();
+        _refunds.Setup(r => r.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(BusinessResult.Failure<RefundResult>(
+                new Error(nameof(RefundRequest.Amount), BusinessErrorMessage.RefundFailed)));
+        Arrange(order);
+
+        await Sweep();
+
+        VerifyAnnounced(order, NotificationEventCatalog.OrderNoCleanerRefundPending);
+    }
+
+    [Fact]
+    public async Task A_Stripe_Outage_Is_Announced_As_A_Pending_Refund()
+    {
+        var order = UnfilledOrder();
+        _refunds.Setup(r => r.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new HttpRequestException("connection reset"));
+        Arrange(order);
+
+        await Sweep();
+
+        VerifyAnnounced(order, NotificationEventCatalog.OrderNoCleanerRefundPending);
+    }
+
+    /// <summary>A cash booking took no money, so the push says nothing was charged.</summary>
+    [Fact]
+    public async Task A_Cash_Order_Is_Announced_As_Nothing_Charged()
+    {
+        var order = UnfilledOrder(paymentType: PaymentType.Cash, paymentStatus: PaymentStatus.Pending);
+        Arrange(order);
+
+        await Sweep();
+
+        VerifyAnnounced(order, NotificationEventCatalog.OrderNoCleanerNothingCharged);
+    }
+
+    /// <summary>
+    /// A Functions outage longer than six hours used to leave its orders unswept for good: the old
+    /// lookback floor had moved past them by the first tick after it.
+    /// </summary>
+    [Fact]
+    public async Task An_Order_Missed_For_Half_A_Day_Is_Still_Swept()
+    {
+        Arrange(BuildOrder(
+            "order-missed", OrderStatus.Confirmed, PaymentType.Card, PaymentStatus.Paid,
+            UserId, _czk, cleaningDateTime: DateTime.UtcNow.AddHours(-12)));
+
+        var result = await Sweep();
+
+        Assert.Equal(1, result.Value.CancelledCount);
+    }
+
+    /// <summary>
+    /// Each order commits on its own, so a customer's second order never lands its raw credit return
+    /// under a tracked balance from the first that a later commit would write back over it.
+    /// </summary>
+    [Fact]
+    public async Task Each_Order_Commits_On_Its_Own()
+    {
+        Arrange(UnfilledOrder("order-a"), UnfilledOrder("order-b"));
+
+        await Sweep();
+
+        _uow.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Exactly(2));
+    }
+
+    private void VerifyAnnounced(Order order, string eventKey)
+    {
+        _notifications.Verify(n => n.NotifyAsync(
+            UserId,
+            eventKey,
+            It.Is<Dictionary<string, string>>(args => args["amount"] == "250 Kč"),
+            It.IsAny<string?>(),
+            order.Id,
+            It.IsAny<CancellationToken>()), Times.Once);
+        _notifications.Verify(n => n.NotifyAsync(
+            It.IsAny<string>(),
+            It.Is<string>(key => key != eventKey),
+            It.IsAny<Dictionary<string, string>>(),
+            It.IsAny<string?>(),
+            It.IsAny<string>(),
+            It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    private sealed class RecordingDispatch(List<(string Queue, string Key, object Message)> enqueued) : IPendingDispatch
+    {
+        public void Enqueue<T>(string queueName, T message, string messageKey) =>
+            enqueued.Add((queueName, messageKey, message!));
+
+        public IReadOnlyList<PendingMessage> Drain() => [];
+    }
+
+    private sealed class CapturingLogger<T>(List<(LogLevel Level, string Message)> entries)
+        : ILogger<T>
     {
         public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
         public bool IsEnabled(LogLevel logLevel) => true;

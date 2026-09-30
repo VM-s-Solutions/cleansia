@@ -45,6 +45,11 @@ final class GatedQuoteClient: QuoteClient, @unchecked Sendable {
         self.result = result
     }
 
+    /// Quotes waiting at the gate; a test releases only once the quote it means is here.
+    var heldCount: Int {
+        held.count
+    }
+
     func quote(_: QuoteRequest) async -> ApiResult<BookingQuote> {
         callCount += 1
         await withCheckedContinuation { held.append($0) }

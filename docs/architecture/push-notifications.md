@@ -254,10 +254,11 @@ The in-app feed has **three** audiences, and the host controller sets which one 
 count or mark-read a row of their partner-app feed. The customer and partner keysets are lists that
 trail their clients' templates (a key belongs in a keyset only once the audience's clients render it,
 or the badge counts a row the app drops unrendered). **The admin keyset is the catalogue by
-construction** — `NotificationFeedEventKeys.Admin = AdminNotificationEventCatalog.All`, the nine
-`admin.*` keys ([ADR-0065](/decisions/adr-0065)) — because the console is built to render every key of
-its catalogue, and a spec walks the C# file so a key added on the server fails the admin build without
-its five-locale sentence.
+construction** — `NotificationFeedEventKeys.Admin = AdminNotificationEventCatalog.All`, the thirteen
+`admin.*` keys ([ADR-0065](/decisions/adr-0065); the not-started alert and the two refund alerts joined
+on 2026-09-28) — because the console is built to render every key of its catalogue, and a spec walks the
+C# file so a key added on the server fails the admin build without its five-locale sentence and its
+entry in the console's mirror (`ADMIN_NOTIFICATION_EVENT_KEYS`).
 
 Three things separate this audience from the other two:
 
@@ -291,12 +292,27 @@ push. A new cleaner is a new confirmation; the e-mail is true when it is sent (d
 → [Business rules — administrators are told](/product/business-rules#admin-notifications),
 [Admin notifier](/domain/roles/admin-notifier)
 
+### The no-show pushes say what happened to the money {#no-show-outcomes}
+
+A booking the platform cancels because no cleaner came — the unfilled sweep, or an administrator's
+no-show confirmation — sends **one** of four keys, chosen by what actually moved:
+`order.no_cleaner_refunded` (the card refund went through), `order.no_cleaner_refund_pending` (a card
+refund is owed and has not gone through; the hourly re-drive owns it), `order.no_cleaner_nothing_charged`
+(the order took no payment) — each announcing the apology credit with its `amount` — or the plain
+`order.cancelled` when no apology was issued (a currency with no figure; a guest gets no push at all,
+only the cancellation e-mail). All four sit in the
+`OrderCancelled` category, show `orderNumber` on the lock screen (`amount` too on the three that promise
+credit; `orderId` is the deep link only), render on Android and iOS and land in the customer feed. A refund
+re-driven later sends `order.refunded`, keyed on the refund.
+→ [Business rules — when the cleaner no-shows](/product/business-rules#when-the-cleaner-cancels-or-no-shows)
+
 ### Why the cleaner-assigned event is not the confirmed event {#assigned-vs-confirmed}
 
-`order.payment_confirmed` records the payment-side confirmation. The Stripe webhook settles a card
-payment; recurring cash confirmation accepts the occurrence before onsite collection. Neither means
-a cleaner accepted the job, and since [ADR-0057](/decisions/adr-0057) neither writes a fulfilment status.
-The key therefore says “confirmed”, rather than claiming cash has already been received.
+`order.payment_confirmed` records the payment-side confirmation: the Stripe webhook settled a card
+payment. It does not mean a cleaner accepted the job, and since [ADR-0057](/decisions/adr-0057) it writes
+no fulfilment status. A recurring **cash** confirmation sends it no longer (owner ruling 2026-09-28): it
+moves no money, so it gets the informational booking e-mail instead, and the occurrence stays unpaid
+until the cleaner records the cash.
 → [the order lifecycle](/domain/order-lifecycle)
 
 `order.payment_confirmed` is the one key for this event. The earlier `order.confirmed` is gone from
@@ -354,9 +370,11 @@ Most order events sit under the existing `OrderUpdates` category rather than get
 A new category is a boolean **column** plus a toggle in every client, and someone who silenced order
 updates has already answered the question.
 
-Five are deliberately **non-mutable**, and every one of them is aimed at a **cleaner**, about a job they
-have already accepted. That is the line: a customer may silence anything, because the consequence of a
-missed message is theirs. A cleaner not turning up is somebody else's morning.
+Five are deliberately **non-mutable** for a **cleaner**, every one about a job they have already
+accepted. That is the line: a customer may silence almost anything, because the consequence of a missed
+message is theirs. A cleaner not turning up is somebody else's morning. The one customer exception is
+`membership.payment_failed` (owner ruling 2026-09-28): a card Stripe keeps retrying while the benefits
+are paused is not a notice the member may switch off, so it maps to no category.
 
 | Event | Key | Why it cannot be silenced |
 |---|---|---|

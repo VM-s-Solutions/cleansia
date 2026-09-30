@@ -2,7 +2,13 @@ import { computed, inject, Injectable, PLATFORM_ID, signal } from '@angular/core
 import { isPlatformBrowser } from '@angular/common';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
-import { CustomerClient, QuoteOrderCommand, QuoteOrderResponse } from '@cleansia/customer-services';
+import {
+  CustomerClient,
+  DirtinessLevel,
+  dirtinessLevelOption,
+  QuoteOrderCommand,
+  QuoteOrderResponse,
+} from '@cleansia/customer-services';
 import { chooseMarket, selectMarket, selectMarkets } from '@cleansia/customer-stores';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
@@ -54,6 +60,7 @@ export class QuickQuoteFacade extends UnsubscribeControlDirective {
   private readonly _sizeCode = signal<string | null>(null);
   private readonly _cleaningDate = signal<string | null>(null);
   private readonly _cleaningTime = signal<string | null>(null);
+  private readonly _dirtinessLevel = signal<DirtinessLevel>(DirtinessLevel.Normal);
   private readonly _state = signal<QuoteState>('idle');
   private readonly _quote = signal<QuoteOrderResponse | null>(null);
 
@@ -72,6 +79,7 @@ export class QuickQuoteFacade extends UnsubscribeControlDirective {
   });
   readonly cleaningDate = this._cleaningDate.asReadonly();
   readonly cleaningTime = this._cleaningTime.asReadonly();
+  readonly dirtinessLevel = this._dirtinessLevel.asReadonly();
   readonly state = this._state.asReadonly();
   readonly quote = this._quote.asReadonly();
 
@@ -94,9 +102,24 @@ export class QuickQuoteFacade extends UnsubscribeControlDirective {
    */
   readonly amountLabel = computed(() => {
     const price = this.displayPrice();
-    if (price === null) return null;
-    return this.hasMarket() ? String(price) : `${price} ${this.currencyCode() ?? ''}`.trim();
+    return price === null ? null : this.withUnit(price);
   });
+
+  /** The level's surcharge inside the price, named for the level the quote priced; null when it adds none. */
+  readonly dirtinessSurcharge = computed(() => {
+    const quote = this._quote();
+    const level = dirtinessLevelOption(quote?.dirtinessLevel);
+    const amount = quote?.dirtinessSurchargeAmount ?? 0;
+    if (!level || amount <= 0) return null;
+    return {
+      lineKey: `pages.order.dirtiness.${level.key}.surcharge_line`,
+      amount: this.withUnit(amount),
+    };
+  });
+
+  private withUnit(amount: number): string {
+    return this.hasMarket() ? String(amount) : `${amount} ${this.currencyCode() ?? ''}`.trim();
+  }
 
   /** What the small label above the number says, given the current state. */
   readonly priceLabelKey = computed(() => {
@@ -280,6 +303,14 @@ export class QuickQuoteFacade extends UnsubscribeControlDirective {
     }
   }
 
+  selectDirtinessLevel(level: DirtinessLevel): void {
+    if (this._dirtinessLevel() === level) {
+      return;
+    }
+    this._dirtinessLevel.set(level);
+    this.refresh();
+  }
+
   selectSize(size: PropertySizePreset): void {
     if (this.selectedSize().code === size.code) {
       return;
@@ -311,6 +342,7 @@ export class QuickQuoteFacade extends UnsubscribeControlDirective {
     command.selectedExtraSlugs = [];
     command.rooms = size.rooms;
     command.bathrooms = size.bathrooms;
+    command.dirtinessLevel = this._dirtinessLevel();
 
     const date = this._cleaningDate();
     if (date) {

@@ -2,6 +2,7 @@ using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Clients.Abstractions.Stripe;
+using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
@@ -37,17 +38,29 @@ public class CancelMembershipSubscription
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
             var userId = userSessionProvider.GetUserId()!;
-            var membership = await userMembershipRepository.GetActiveForUserAsync(userId, cancellationToken);
+            var membership = await userMembershipRepository.GetLifecycleForUserAsync(userId, cancellationToken);
             if (membership == null)
             {
                 return BusinessResult.Failure<Response>(new Error(
                     nameof(userId), BusinessErrorMessage.MembershipNotFound));
             }
 
+            // A paid-up member keeps the period they paid for. A past-due or paused one has none to run out,
+            // and cancelling at period end would leave Stripe retrying their card until then (owner ruling
+            // 2026-09-28): the cancel takes effect now and the open invoice is voided.
+            var runsToPeriodEnd = membership.Status == MembershipStatus.Active;
             try
             {
-                await stripeClient.CancelSubscriptionAtPeriodEndAsync(
-                    membership.StripeSubscriptionId, cancellationToken);
+                if (runsToPeriodEnd)
+                {
+                    await stripeClient.CancelSubscriptionAtPeriodEndAsync(
+                        membership.StripeSubscriptionId, cancellationToken);
+                }
+                else
+                {
+                    await stripeClient.CancelSubscriptionNowAsync(
+                        membership.StripeSubscriptionId, cancellationToken);
+                }
             }
             catch (StripeException ex)
             {
@@ -56,17 +69,25 @@ public class CancelMembershipSubscription
                     nameof(membership.StripeSubscriptionId), BusinessErrorMessage.PaymentGatewayUnavailable));
             }
 
-            membership.MarkCancellationRequested();
+            var effectiveEnd = runsToPeriodEnd ? membership.CurrentPeriodEnd : DateTime.UtcNow;
+            if (runsToPeriodEnd)
+            {
+                membership.MarkCancellationRequested();
+            }
+            else
+            {
+                membership.MarkCancelledNow(effectiveEnd);
+            }
 
             logger.LogInformation(
                 "Cancellation requested for membership {MembershipId}; effective {EndDate}",
-                membership.Id, membership.CurrentPeriodEnd);
+                membership.Id, effectiveEnd);
 
             auditContext.RecordEvidence("UserMembership", membership.Id, new MembershipCancelEvidence(
                 PlanCode: membership.MembershipPlan?.Code,
-                CurrentPeriodEndsAt: new DateTimeOffset(DateTime.SpecifyKind(membership.CurrentPeriodEnd, DateTimeKind.Utc))));
+                CurrentPeriodEndsAt: new DateTimeOffset(DateTime.SpecifyKind(effectiveEnd, DateTimeKind.Utc))));
 
-            return BusinessResult.Success(new Response(membership.CurrentPeriodEnd));
+            return BusinessResult.Success(new Response(effectiveEnd));
         }
     }
 }

@@ -164,12 +164,12 @@ public class SessionAuditTests(PostgresContainerFixture fixture) : BaseIntegrati
             assert: async (CleansiaDbContext context, BusinessResult<JwtTokenResponse> result) =>
             {
                 Assert.True(result.IsFailure);
-                Assert.Contains(((IValidationResult)result).Errors, e => e.Message == BusinessErrorMessage.NotExistingUserWithEmail);
+                Assert.Contains(((IValidationResult)result).Errors, e => e.Message == BusinessErrorMessage.InvalidPassword);
 
                 var row = Assert.Single(await CustomerRows(context));
                 Assert.Equal("customer.session.login", row.Action);
                 Assert.False(row.Success);
-                Assert.Equal(BusinessErrorMessage.NotExistingUserWithEmail, row.ErrorCode);
+                Assert.Equal(BusinessErrorMessage.InvalidPassword, row.ErrorCode);
                 Assert.Null(row.UserId);
                 Assert.Null(row.ResourceId);
                 Assert.Null(row.PayloadJson);

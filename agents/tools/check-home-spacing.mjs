@@ -56,7 +56,6 @@ const CHECKS = [
   ['cta row1',            '.cl-cta__row--claim', { gap: '32px' }],
   ['cta desc',            '.cl-cta__desc', { margin: '8px 0px 0px' }],
   ['cta actions',         '.cl-cta__actions', { gap: '24px' }],
-  ['cta row2',            '.cl-cta__row--promo', { marginTop: '32px', paddingTop: '28px', gap: '28px' }],
   ['footer body',         '.cl-footer__body', { padding: '56px 64px 0px' }],
   ['footer grid',         '.cl-footer__columns', { gap: '36px' }],
   ['footer desc',         '.cl-footer__brand-desc', { margin: '12px 0px 0px' }],

@@ -50,7 +50,7 @@ param geoRedundantBackup string = 'Disabled'
 @maxValue(35)
 param backupRetentionDays int = 7
 
-@description('Public network access (the Q-INFRA-03 seam). Enabled = the dev posture (firewall rules below apply). Disabled = private-endpoint-only — the firewall rules are skipped, and the CI migration path + admin psql access need a private path (see deploy/AZURE-PROD-POSTURE.md).')
+@description('Public network access (the Q-INFRA-03 seam). Enabled = the dev posture (firewall rules below apply). Disabled = private-endpoint-only, the prod posture — the firewall rules are skipped, and the CI migration and admin psql open a temporary public window for one IP per run (deploy/AZURE-PROD-POSTURE.md §6).')
 @allowed([
   'Enabled'
   'Disabled'
@@ -136,11 +136,12 @@ resource allowedExtensions 'Microsoft.DBforPostgreSQL/flexibleServers/configurat
   }
 }
 
-// Firewall: allow other Azure services (the App Services + Functions reach the server). The
-// 0.0.0.0 sentinel rule is Azure's "allow Azure-internal traffic" switch, NOT an open-to-internet
-// rule — it does not expose the server to arbitrary public IPs. Dev-accepted only (Q-INFRA-03):
-// when publicNetworkAccess is Disabled the server takes no firewall rules at all — traffic arrives
-// via the private endpoint (modules/privateNetworking.bicep).
+// Firewall: allow Azure services, so the App Services + Functions reach the server over its public
+// endpoint. The 0.0.0.0 sentinel rule admits every source address inside Azure — any subscription's,
+// other customers' included — not only this deployment's hosts, so from there the admin password is
+// the only barrier. Dev-accepted only (Q-INFRA-03): when publicNetworkAccess is Disabled the server
+// takes no firewall rules at all — traffic arrives via the private endpoint
+// (modules/privateNetworking.bicep).
 resource allowAzureServices 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2024-08-01' = if (publicNetworkAccess == 'Enabled') {
   parent: postgres
   name: 'AllowAllAzureServicesAndResources'

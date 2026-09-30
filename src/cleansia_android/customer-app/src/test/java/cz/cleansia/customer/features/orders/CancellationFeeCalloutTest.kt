@@ -92,6 +92,16 @@ class CancellationFeeCalloutTest {
     }
 
     @Test
+    fun `a booking that took no card payment is told the fee and no refund`() {
+        for (tier in listOf(3, 4)) {
+            val quote = preview(tier = tier, feeAmount = 250.0, refundAmount = 750.0)
+            val callout = cancellationFeeCallout(quote, tookNoCardPayment = true)!!
+            assertEquals(R.string.order_cancel_fee_only, callout.amountRes)
+            assertEquals(listOf(250.0), callout.amounts)
+        }
+    }
+
+    @Test
     fun `rate disagreeing with the tier does not move the copy`() {
         val callout = cancellationFeeCallout(
             preview(tier = 2, feeRate = 0.5, feeAmount = 500.0, refundAmount = 500.0),

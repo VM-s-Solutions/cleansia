@@ -6,8 +6,11 @@ import Foundation
 struct MembershipCopy: Equatable {
     /// When the running trial ends; nil when no trial is running.
     let trialEndsOn: Date?
+    /// The renewal payment failed: nothing runs to a period end, so a cancel is immediate.
+    let benefitsPaused: Bool
 
     init(_ membership: MyMembership?, now: Date = Date()) {
+        benefitsPaused = membership.map { $0.hasMembership && $0.benefitsPaused } ?? false
         guard let membership, membership.hasMembership,
               let trialEndsAtUtc = membership.trialEndsAtUtc, trialEndsAtUtc > now
         else {
@@ -34,12 +37,15 @@ struct MembershipCopy: Equatable {
     }
 
     var cancelDialogMessage: String {
+        if benefitsPaused { return L10n.Membership.cancelDialogMessagePastDue }
         guard let trialEndsOn else { return L10n.Membership.cancelDialogMessage }
         return L10n.Membership.cancelDialogMessageTrial(MembershipFormat.periodEnd(trialEndsOn))
     }
 
     func cancelSuccess(activeUntil date: Date) -> String {
-        isTrial ? L10n.Membership.cancelSuccessTrial : L10n.Membership.cancelledUntil(MembershipFormat.periodEnd(date))
+        if benefitsPaused { return L10n.Membership.cancelSuccessPastDue }
+        if isTrial { return L10n.Membership.cancelSuccessTrial }
+        return L10n.Membership.cancelledUntil(MembershipFormat.periodEnd(date))
     }
 
     /// A swap during a trial keeps the trial and charges nothing now.

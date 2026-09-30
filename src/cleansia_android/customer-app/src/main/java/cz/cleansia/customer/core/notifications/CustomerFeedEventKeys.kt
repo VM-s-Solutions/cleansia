@@ -22,11 +22,14 @@ object CustomerFeedEventKeys {
         "order.cancelled",
         "order.refunded",
         "order.no_cleaner_refunded",
+        "order.no_cleaner_refund_pending",
+        "order.no_cleaner_nothing_charged",
         "dispute.reply",
         "recurring.scheduled",
         "recurring.paused",
         "membership.expiring_soon",
         "membership.cancellation_effective",
+        "membership.payment_failed",
         "loyalty.tier_upgrade",
     )
 

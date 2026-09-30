@@ -26,8 +26,8 @@ public static class FcmMessageFactory
     /// enforced by <c>ApnsDisplayMapIosCatalogSyncTests</c>, which reads both <c>.xcstrings</c> off
     /// disk — and keep arg names inside the closed {orderNumber, count, amount} lock-screen allowlist
     /// (D3, widened by one slot on owner ruling 2026-09-13: <c>amount</c> is a
-    /// server-formatted money figure with its own currency's symbol, "250 Kč", carried only by
-    /// <c>order.no_cleaner_refunded</c>): internal ids and raw enum values must never render.
+    /// server-formatted money figure with its own currency's symbol, "250 Kč", carried only by the three
+    /// <c>order.no_cleaner_*</c> outcomes): internal ids and raw enum values must never render.
     /// </summary>
     public static IReadOnlyDictionary<string, IReadOnlyList<string>> ApnsDisplayMap { get; } =
         new Dictionary<string, IReadOnlyList<string>>
@@ -43,6 +43,8 @@ public static class FcmMessageFactory
             [NotificationEventCatalog.OrderCancelled] = OrderNumberArg,
             [NotificationEventCatalog.OrderRefunded] = OrderNumberArg,
             [NotificationEventCatalog.OrderNoCleanerRefunded] = OrderNumberAndAmountArgs,
+            [NotificationEventCatalog.OrderNoCleanerRefundPending] = OrderNumberAndAmountArgs,
+            [NotificationEventCatalog.OrderNoCleanerNothingCharged] = OrderNumberAndAmountArgs,
             [NotificationEventCatalog.RecurringScheduled] = OrderNumberArg,
             [NotificationEventCatalog.RecurringPaused] = NoArgs,
             [NotificationEventCatalog.NewJobsAvailable] = CountArg,
@@ -59,6 +61,7 @@ public static class FcmMessageFactory
             [NotificationEventCatalog.LoyaltyTierUpgrade] = NoArgs,
             [NotificationEventCatalog.MembershipExpiringSoon] = NoArgs,
             [NotificationEventCatalog.MembershipCancellationEffective] = NoArgs,
+            [NotificationEventCatalog.MembershipPaymentFailed] = NoArgs,
         };
 
     public static MulticastMessage Build(

@@ -1,4 +1,5 @@
 using System.Globalization;
+using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Payments;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -13,6 +14,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Stripe;
 using Dispute = Cleansia.Core.Domain.Disputes.Dispute;
+using Cleansia.Core.AppServices.Features.Orders;
 
 namespace Cleansia.Tests.Features.Payments;
 
@@ -60,10 +62,15 @@ public class LateSettlementAfterCashCollectionTests
         _subscriptionHandler.Object,
         _tenantProvider.Object,
         _pending.Object,
+        new GuestOrderAccessTokenIssuer(Mock.Of<IGuestOrderAccessTokenRepository>()),
         _producer.Object,
         NoPreferredCleanerHold.Resolver,
         Mock.Of<IAdminNotifier>(),
         Mock.Of<IUserNotificationRepository>(),
+        Mock.Of<IStripeClientFactory>(),
+        Mock.Of<ITenantRepository>(),
+        Mock.Of<ISavedCardRepository>(),
+        Mock.Of<IReceivableRepository>(),
         NullLogger<HandlePaymentNotification.Handler>.Instance);
 
     private Order ArrangeOrder(bool collectedInCash)

@@ -43,7 +43,7 @@ public class CreateMembershipCheckoutSessionContractLockTests
         _session.Setup(s => s.GetUserId()).Returns(UserId);
 
         _membershipRepository
-            .Setup(r => r.GetActiveForUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetLifecycleForUserAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
 
         var plan = MembershipPlan.Create(
@@ -122,7 +122,7 @@ public class CreateMembershipCheckoutSessionContractLockTests
             billingInterval: BillingInterval.Monthly, trialPeriodDays: 0);
         var active = UserMembership.Create(UserId, plan.Id, "currency-czk", "sub_active_1", DateTime.UtcNow, DateTime.UtcNow.AddMonths(1));
         _membershipRepository
-            .Setup(r => r.GetActiveForUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetLifecycleForUserAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(active);
 
         var result = await CreateHandler().Handle(

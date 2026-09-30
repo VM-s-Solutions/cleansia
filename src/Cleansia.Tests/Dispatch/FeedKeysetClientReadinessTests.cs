@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Infra.Clients.Fcm;
 
@@ -54,6 +55,32 @@ public class FeedKeysetClientReadinessTests
         // prevent. The wave that ships those three iOS sites deletes this test.
         Assert.Contains(eventKey, FcmMessageFactory.ApnsDisplayMap.Keys);
         Assert.False(NotificationFeedEventKeys.IsFeedEvent(eventKey));
+    }
+
+    /// <summary>
+    /// Whatever the no-show body tells the customer — refunded, refund pending, nothing charged, or the
+    /// plain cancellation — must show on an iPhone and answer to the one cancellation toggle. Read from
+    /// the source rather than driven through outcomes, so a new branch naming a new key is caught without
+    /// anyone remembering to arrange it.
+    /// </summary>
+    [Fact]
+    public void Every_Key_The_No_Show_Body_Can_Send_Renders_On_iOS_Under_The_Cancellation_Toggle()
+    {
+        var source = File.ReadAllText(Path.Combine(
+            RequireSolutionDirectory(), "Cleansia.Core.AppServices", "Features", "Orders", "CleanerNoShowCancellation.cs"));
+        var emitted = Regex.Matches(source, @"NotificationEventCatalog\.(\w+)")
+            .Select(match => typeof(NotificationEventCatalog).GetField(match.Groups[1].Value))
+            .Where(field => field is { IsLiteral: true })
+            .Select(field => (string)field!.GetRawConstantValue()!)
+            .Distinct()
+            .ToList();
+
+        Assert.Contains(NotificationEventCatalog.OrderCancelled, emitted);
+        Assert.All(emitted, key =>
+        {
+            Assert.Contains(key, FcmMessageFactory.ApnsDisplayMap.Keys);
+            Assert.Equal(NotificationCategory.OrderCancelled, NotificationEventCatalog.GetCategoryFor(key));
+        });
     }
 
     /// <summary>
@@ -159,4 +186,16 @@ public class FeedKeysetClientReadinessTests
     [InlineData(NotificationEventCatalog.OrderAssignmentRevoked)]
     public void The_Admin_Reassign_Events_Are_Non_Mutable(string eventKey) =>
         Assert.Null(NotificationEventCatalog.GetCategoryFor(eventKey));
+
+    private static string RequireSolutionDirectory()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && directory.GetFiles("*.sln").Length == 0)
+        {
+            directory = directory.Parent;
+        }
+
+        Assert.True(directory is not null, "Could not locate the solution directory from the test base directory.");
+        return directory!.FullName;
+    }
 }

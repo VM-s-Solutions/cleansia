@@ -67,6 +67,14 @@ public class UploadOrderPhoto
                 .WithMessage(BusinessErrorMessage.FileSizeExceeded)
                 .Must(data => SniffedContentType.FromContent(data, UploadIntake.OrderPhoto) is not null)
                 .WithMessage(BusinessErrorMessage.InvalidFileType);
+
+            // A missing order is the OrderId rule's answer, not this one's.
+            RuleFor(x => x.PhotoType)
+                .MustAsync(async (command, photoType, cancellationToken) =>
+                    await orderRepository.GetCurrentStatusAsync(command.OrderId, cancellationToken) is not { } status
+                    || OrderPhoto.MayBeAddedAt(photoType, status))
+                .WithMessage(BusinessErrorMessage.OrderPhotoWindowClosed)
+                .When(x => !string.IsNullOrEmpty(x.OrderId));
         }
     }
 

@@ -12,10 +12,14 @@ import cz.cleansia.core.network.networkCall
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.core.booking.BookingApi
 import cz.cleansia.customer.core.booking.CashEligibility
+import cz.cleansia.customer.core.booking.DirtinessLevel
+import cz.cleansia.customer.core.booking.PropertySize
 import cz.cleansia.customer.core.booking.QuoteOrderCommand
 import cz.cleansia.customer.core.catalog.CatalogRepository
 import cz.cleansia.customer.core.catalog.PackageListItem
 import cz.cleansia.customer.core.catalog.ServiceListItem
+import cz.cleansia.customer.core.consent.GdprConsentClient
+import cz.cleansia.customer.core.consent.SIGNUP_TICK_CONSENTS
 import cz.cleansia.customer.core.data.AddressRepository
 import cz.cleansia.customer.core.data.UserAddress
 import cz.cleansia.customer.core.market.MarketRepository
@@ -26,6 +30,9 @@ import cz.cleansia.customer.core.recurring.RecurrenceFrequency
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.recurring.RecurringBookingRepository
 import cz.cleansia.customer.core.recurring.UpdateRecurringBookingRequest
+import cz.cleansia.customer.features.booking.BOOKING_SLOT_INTERVAL_MINUTES
+import cz.cleansia.customer.features.booking.FIRST_WINDOW_HOUR
+import cz.cleansia.customer.features.booking.LAST_WINDOW_HOUR
 import cz.cleansia.customer.ui.state.ActionState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -48,9 +55,13 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.minus
 import kotlinx.datetime.toLocalDateTime
+import java.util.Locale
 
 /**
  * Shared form state for the recurring-booking form, backing three paths: blank create, create pre-filled
@@ -70,6 +81,7 @@ class CreateRecurringViewModel @Inject constructor(
     private val addressRepo: AddressRepository,
     private val marketRepo: MarketRepository,
     private val bookingApi: BookingApi,
+    private val consentClient: GdprConsentClient,
     private val snackbar: SnackbarController,
     @ApplicationContext private val appContext: Context,
 ) : ViewModel() {
@@ -81,6 +93,14 @@ class CreateRecurringViewModel @Inject constructor(
     val editingTemplateId: String? = savedStateHandle.get<String>("templateId")?.takeIf { it.isNotBlank() }
 
     val isEditing: Boolean = editingTemplateId != null
+
+    /**
+     * A new schedule is a new booking, so it asks for the booking's terms tick on the same rule: shown
+     * until both consents on record cover the versions in force, and on a failed read. An edit asks
+     * nothing — the server only gates a create.
+     */
+    private val _termsAsked = MutableStateFlow(!isEditing)
+    val termsAsked: StateFlow<Boolean> = _termsAsked.asStateFlow()
 
     private val _state = MutableStateFlow(CreateRecurringFormState())
     val state: StateFlow<CreateRecurringFormState> = _state.asStateFlow()
@@ -100,14 +120,16 @@ class CreateRecurringViewModel @Inject constructor(
      */
     val catalogState: StateFlow<RecurringCatalogState> = _catalogState.asStateFlow()
 
-    val canAdvance: StateFlow<Boolean> = combine(_state, _step, _catalogState) { s, step, catalog ->
+    val canAdvance: StateFlow<Boolean> = combine(_state, _step, _catalogState, _termsAsked) { s, step, catalog, asked ->
         when (step) {
-            1 -> s.timeOfDay.isNotBlank()
-            2 -> s.selectedServiceIds.isNotEmpty() || s.selectedPackageIds.isNotEmpty()
+            1 -> s.timeOfDay in START_TIMES
+            2 -> (s.selectedServiceIds.isNotEmpty() || s.selectedPackageIds.isNotEmpty()) && s.dirtinessLevel != null
             3 -> s.savedAddressId.isNotBlank() &&
                 s.startsOnIso.isNotBlank() &&
                 s.paymentType != null &&
-                catalog is RecurringCatalogState.Loaded
+                catalog is RecurringCatalogState.Loaded &&
+                (!asked || s.termsAccepted) &&
+                (isEditing || s.earlyPerformanceRequested)
             else -> false
         }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
@@ -126,8 +148,9 @@ class CreateRecurringViewModel @Inject constructor(
     val submitted: SharedFlow<Unit> = _submitted.asSharedFlow()
 
     /**
-     * The server no longer accepts the schedule's favourite cleaner. The form keeps them until the
-     * customer chooses [saveWithoutPreferredCleaner]; nothing drops them on the customer's behalf.
+     * The server does not accept the schedule's favourite cleaner. The form keeps them until the
+     * customer picks again or chooses [saveWithoutPreferredCleaner]; nothing drops them on the
+     * customer's behalf.
      */
     private val _preferredCleanerRefused = MutableStateFlow(false)
     val preferredCleanerRefused: StateFlow<Boolean> = _preferredCleanerRefused.asStateFlow()
@@ -186,6 +209,9 @@ class CreateRecurringViewModel @Inject constructor(
                 }
             }
             if (sourceOrderId != null) prefillFromOrder(sourceOrderId)
+            viewModelScope.launch {
+                _termsAsked.value = consentClient.grantedTypes()?.containsAll(SIGNUP_TICK_CONSENTS) != true
+            }
         }
     }
 
@@ -194,8 +220,9 @@ class CreateRecurringViewModel @Inject constructor(
     fun setFrequency(f: RecurrenceFrequency) { _state.update { it.copy(frequency = f) } }
     fun setDayOfWeek(dow: Int) { _state.update { it.copy(dayOfWeek = dow) } }
     fun setTimeOfDay(time: String) { _state.update { it.copy(timeOfDay = time) } }
-    fun setRooms(n: Int) { _state.update { it.copy(rooms = n.coerceAtLeast(0)) } }
-    fun setBathrooms(n: Int) { _state.update { it.copy(bathrooms = n.coerceAtLeast(0)) } }
+    fun setRooms(n: Int) { _state.update { it.copy(rooms = n.coerceIn(0, PropertySize.MAX_ROOMS)) } }
+    fun setBathrooms(n: Int) { _state.update { it.copy(bathrooms = n.coerceIn(0, PropertySize.MAX_BATHROOMS)) } }
+    fun setDirtinessLevel(level: DirtinessLevel) { _state.update { it.copy(dirtinessLevel = level) } }
     fun setSavedAddressId(id: String) { _state.update { it.copy(savedAddressId = id) } }
     fun toggleService(id: String) {
         _state.update {
@@ -217,6 +244,12 @@ class CreateRecurringViewModel @Inject constructor(
         _state.update { it.copy(paymentType = t) }
     }
     fun setStartsOn(iso: String) { _state.update { it.copy(startsOnIso = iso) } }
+    fun setPreferredEmployeeId(id: String?) {
+        _preferredCleanerRefused.value = false
+        _state.update { it.copy(preferredEmployeeId = id) }
+    }
+    fun setTermsAccepted(accepted: Boolean) { _state.update { it.copy(termsAccepted = accepted) } }
+    fun setEarlyPerformanceRequested(requested: Boolean) { _state.update { it.copy(earlyPerformanceRequested = requested) } }
 
     fun nextStep() { _step.update { (it + 1).coerceAtMost(TOTAL_STEPS) } }
     fun previousStep() { _step.update { (it - 1).coerceAtLeast(1) } }
@@ -233,10 +266,15 @@ class CreateRecurringViewModel @Inject constructor(
         savedAddressId.isNotBlank() &&
             (selectedServiceIds.isNotEmpty() || selectedPackageIds.isNotEmpty()) &&
             startsOnIso.isNotBlank() &&
-            timeOfDay.isNotBlank() &&
-            paymentType != null
+            timeOfDay in START_TIMES &&
+            paymentType != null &&
+            dirtinessLevel != null
 
-    private fun CreateRecurringFormState.toCreateRequest(paymentType: Int) = CreateRecurringBookingRequest(
+    private fun CreateRecurringFormState.toCreateRequest(
+        paymentType: Int,
+        dirtinessLevel: DirtinessLevel,
+        withoutPreferredCleaner: Boolean,
+    ) = CreateRecurringBookingRequest(
         frequency = frequency.code,
         dayOfWeek = dayOfWeek,
         timeOfDay = timeOfDay,
@@ -247,17 +285,22 @@ class CreateRecurringViewModel @Inject constructor(
         selectedPackageIds = selectedPackageIds.toList(),
         paymentType = paymentType,
         startsOn = startsOnIso,
+        preferredEmployeeId = if (withoutPreferredCleaner) null else preferredEmployeeId,
+        termsAccepted = if (_termsAsked.value && termsAccepted) true else null,
+        dirtinessLevel = dirtinessLevel,
+        earlyPerformanceRequested = if (earlyPerformanceRequested) true else null,
     )
 
     /**
      * The backend's `UpdateSchedule` rewrites every schedule column from the
      * command, so a field the form does not echo back is not "left alone" —
-     * it is erased. `endsOn` and the favourite cleaner have no editor in this
-     * wizard, which is exactly why the stored values have to ride along.
+     * it is erased. `endsOn` has no editor in this wizard, which is exactly
+     * why the stored value has to ride along.
      */
     private fun CreateRecurringFormState.toUpdateRequest(
         templateId: String,
         paymentType: Int,
+        dirtinessLevel: DirtinessLevel,
         withoutPreferredCleaner: Boolean,
     ) = UpdateRecurringBookingRequest(
         templateId = templateId,
@@ -273,6 +316,7 @@ class CreateRecurringViewModel @Inject constructor(
         startsOn = startsOnIso,
         endsOn = endsOnIso,
         preferredEmployeeId = if (withoutPreferredCleaner) null else preferredEmployeeId,
+        dirtinessLevel = dirtinessLevel,
     )
 
     /**
@@ -294,15 +338,20 @@ class CreateRecurringViewModel @Inject constructor(
         if (_catalogState.value !is RecurringCatalogState.Loaded) return
         val form = _state.value
         if (!form.isSubmittable()) return
+        if (_termsAsked.value && !form.termsAccepted) return
+        if (!isEditing && !form.earlyPerformanceRequested) return
         val paymentType = form.paymentType ?: return
+        val dirtinessLevel = form.dirtinessLevel ?: return
         _preferredCleanerRefused.value = false
         _submitState.value = ActionState.Submitting
         viewModelScope.launch {
             if (paymentType == PAYMENT_CASH && !cashConfirmedFor(form)) return@launch
             val result = if (editingTemplateId != null) {
-                recurringRepo.update(form.toUpdateRequest(editingTemplateId, paymentType, withoutPreferredCleaner))
+                recurringRepo.update(
+                    form.toUpdateRequest(editingTemplateId, paymentType, dirtinessLevel, withoutPreferredCleaner),
+                )
             } else {
-                recurringRepo.create(form.toCreateRequest(paymentType))
+                recurringRepo.create(form.toCreateRequest(paymentType, dirtinessLevel, withoutPreferredCleaner))
             }
             when (result) {
                 is ApiResult.Success -> {
@@ -315,7 +364,7 @@ class CreateRecurringViewModel @Inject constructor(
                 }
                 is ApiResult.Error -> {
                     val error = result.error
-                    if (isEditing && (error as? ApiError.BadRequest)?.errorKey == PREFERRED_CLEANER_NOT_ELIGIBLE) {
+                    if ((error as? ApiError.BadRequest)?.errorKey == PREFERRED_CLEANER_NOT_ELIGIBLE) {
                         _preferredCleanerRefused.value = true
                         _submitState.value =
                             ActionState.Error(appContext.getString(R.string.preferred_cleaner_schedule_refused))
@@ -375,6 +424,7 @@ class CreateRecurringViewModel @Inject constructor(
                     rooms = selection.rooms,
                     bathrooms = selection.bathrooms,
                     countryId = resolveCountryId(selection.savedAddressId),
+                    dirtinessLevel = selection.dirtinessLevel,
                 ),
             )
         }
@@ -473,6 +523,11 @@ class CreateRecurringViewModel @Inject constructor(
         private const val QUOTE_DEBOUNCE_MS = 400L
 
         private const val PREFERRED_CLEANER_NOT_ELIGIBLE = "order.preferred_employee.not_eligible"
+
+        /** Every start a schedule may take, "HH:mm": the server's window on its 15-minute grid. */
+        val START_TIMES: List<String> =
+            (FIRST_WINDOW_HOUR * 60 until LAST_WINDOW_HOUR * 60 step BOOKING_SLOT_INTERVAL_MINUTES)
+                .map { "%02d:%02d".format(Locale.ROOT, it / 60, it % 60) }
     }
 
     // ─── Path C pre-fill ───
@@ -501,6 +556,7 @@ class CreateRecurringViewModel @Inject constructor(
                 startsOnIso = template.startsOn,
                 endsOnIso = template.endsOn,
                 preferredEmployeeId = template.preferredEmployeeId,
+                dirtinessLevel = template.dirtinessLevel,
             )
         }
     }
@@ -519,7 +575,7 @@ class CreateRecurringViewModel @Inject constructor(
                     val local = instant.toLocalDateTime(TimeZone.currentSystemDefault())
                     "%02d:%02d".format(local.hour, local.minute)
                 }.getOrNull()
-            }
+            }?.takeIf { it in START_TIMES }
             val dayOfWeek = order.cleaningDateTime?.let { iso ->
                 runCatching {
                     val instant = Instant.parse(iso)
@@ -530,8 +586,8 @@ class CreateRecurringViewModel @Inject constructor(
             }
             _state.update { current ->
                 current.copy(
-                    rooms = order.rooms.coerceAtLeast(0),
-                    bathrooms = order.bathrooms.coerceAtLeast(0),
+                    rooms = order.rooms.coerceIn(0, PropertySize.MAX_ROOMS),
+                    bathrooms = order.bathrooms.coerceIn(0, PropertySize.MAX_BATHROOMS),
                     selectedServiceIds = order.selectedServices?.mapNotNull { it.id }?.toSet().orEmpty(),
                     selectedPackageIds = order.selectedPackages?.mapNotNull { it.id }?.toSet().orEmpty(),
                     paymentType = order.paymentType?.value ?: current.paymentType,
@@ -551,6 +607,7 @@ private data class PricedSelection(
     val rooms: Int,
     val bathrooms: Int,
     val savedAddressId: String,
+    val dirtinessLevel: DirtinessLevel?,
 )
 
 private data class QuotedCrew(val selection: PricedSelection, val requiredEmployees: Int)
@@ -561,6 +618,7 @@ private fun CreateRecurringFormState.pricedSelection() = PricedSelection(
     rooms = rooms,
     bathrooms = bathrooms,
     savedAddressId = savedAddressId,
+    dirtinessLevel = dirtinessLevel,
 )
 
 sealed interface RecurringCatalogState {
@@ -591,6 +649,16 @@ data class CreateRecurringFormState(
     val startsOnIso: String = "",
     /** ISO-8601 instant. No editor in the wizard; carried so an edit doesn't erase it. */
     val endsOnIso: String? = null,
-    /** No editor in the wizard either; carried for the same reason. */
     val preferredEmployeeId: String? = null,
-)
+    /** Read only while [CreateRecurringViewModel.termsAsked] is true. */
+    val termsAccepted: Boolean = false,
+    /** Asked on a new schedule only; the server copies it onto every occurrence. */
+    val earlyPerformanceRequested: Boolean = false,
+    /** Chosen by the customer on a new schedule; an edit starts from the stored one. */
+    val dirtinessLevel: DirtinessLevel? = null,
+) {
+    /** The server refuses a start on or after [endsOnIso], and this form cannot move the end date. */
+    fun latestStartDate(tz: TimeZone): LocalDate? = endsOnIso
+        ?.let { runCatching { Instant.parse(it).toLocalDateTime(tz).date }.getOrNull() }
+        ?.minus(1, DateTimeUnit.DAY)
+}

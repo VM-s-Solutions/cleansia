@@ -223,7 +223,9 @@ public class GetDashboardStats
 
         private async Task<int> GetAvailableOrdersCountAsync(string employeeId, string cleanerCurrencyId, CancellationToken cancellationToken)
         {
-            var specification = DashboardSpecifications.CreateAvailableOrdersSpec(employeeId, cleanerCurrencyId, DateTime.UtcNow);
+            var cashJobsHidden = await orderAccessService.CashJobsHiddenFromAsync(employeeId, cleanerCurrencyId, cancellationToken);
+            var specification = DashboardSpecifications.CreateAvailableOrdersSpec(
+                employeeId, cleanerCurrencyId, DateTime.UtcNow, cashJobsHidden);
             return await orderRepository.GetCountAsync(specification.SatisfiedBy(), cancellationToken);
         }
 

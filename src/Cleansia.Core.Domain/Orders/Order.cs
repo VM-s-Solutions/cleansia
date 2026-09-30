@@ -51,8 +51,23 @@ public class Order : TenantAuditable
 
     public string? CollectedByEmployeeId { get; private set; }
 
+    /// <summary>The cash handed over, in the order's currency. Null until the cash is recorded.</summary>
+    public decimal? CashCollectedAmount { get; private set; }
+
     [NotMapped]
     public bool SettledInCash => CashCollectedAt is not null;
+
+    /// <summary>
+    /// The assigned cleaner's report that they cannot get in (owner ruling 2026-09-28, decision 11): when,
+    /// who, and the calls they made. An administrator confirms it before the lockout fee applies.
+    /// </summary>
+    public DateTime? LockoutReportedAt { get; private set; }
+
+    [MaxLength(26)]
+    public string? LockoutReportedByEmployeeId { get; private set; }
+
+    [MaxLength(1000)]
+    public string? LockoutCallAttempts { get; private set; }
 
     /// <summary>
     /// The tender the customer ACTUALLY paid with, as opposed to <see cref="PaymentType"/>, which stays
@@ -99,6 +114,21 @@ public class Order : TenantAuditable
     /// `CancelledAt` pattern.
     /// </summary>
     public DateTime? CompletedAt { get; private set; }
+
+    /// <summary>
+    /// How long after completion the crew still reads the customer's name, phone, address and door
+    /// instructions — for the forgotten key or the call back (owner ruling 2026-09-28). A cancelled
+    /// order closes them at once.
+    /// </summary>
+    public static readonly TimeSpan CrewCustomerDetailsAfterCompletion = TimeSpan.FromHours(24);
+
+    /// <summary>Whether an assigned cleaner may still read the customer's details; a completion with no timestamp is closed.</summary>
+    public static bool CustomerDetailsOpenToCrew(OrderStatus status, DateTime? completedAt, DateTime nowUtc) => status switch
+    {
+        OrderStatus.Cancelled => false,
+        OrderStatus.Completed => completedAt is { } at && nowUtc < at + CrewCustomerDetailsAfterCompletion,
+        _ => true
+    };
 
     [MaxLength(1000)]
     public string? CompletionNotes { get; private set; }
@@ -156,6 +186,10 @@ public class Order : TenantAuditable
     [NotMapped]
     public bool HasRefundableChargeSurface =>
         !string.IsNullOrEmpty(StripeSessionId) || !string.IsNullOrEmpty(StripePaymentIntentId);
+
+    /// <summary>No money was ever taken: a cash order not yet collected, or a card never charged.</summary>
+    [NotMapped]
+    public bool TookNoPayment => PaymentStatus is PaymentStatus.Pending or PaymentStatus.Failed;
 
     public string? Notes { get; private set; }
 
@@ -215,11 +249,44 @@ public class Order : TenantAuditable
     [MaxLength(26)]
     public string? WorkContractDocumentId { get; private set; }
 
+    /// <summary>
+    /// The wording of the early-performance tick the clients show. A draft until the lawyer's wording
+    /// arrives; bump it with every change to that wording, so each booking records the text it was made under.
+    /// </summary>
+    public const string EarlyPerformanceConsentTextVersionInForce = "early-performance-draft-2026-09-29";
+
+    /// <summary>
+    /// The customer's express request that performance start within the 14-day withdrawal period, with
+    /// the acknowledgement that the right is lost once the service is fully performed (decision 61): the
+    /// wording's version, when, and the client and request it came from. A recurring occurrence carries the
+    /// act of the schedule that created it. Null on an order booked before the act existed.
+    /// </summary>
+    [MaxLength(64)]
+    public string? EarlyPerformanceConsentTextVersion { get; private set; }
+
+    public DateTimeOffset? EarlyPerformanceConsentedOn { get; private set; }
+
+    [MaxLength(40)]
+    public string? EarlyPerformanceConsentClient { get; private set; }
+
+    [MaxLength(45)]
+    public string? EarlyPerformanceConsentIpAddress { get; private set; }
+
+    [MaxLength(120)]
+    public string? EarlyPerformanceConsentDeviceLabel { get; private set; }
+
     public string? UserId { get; private set; }
     public User? User { get; private set; }
 
     public string? ReceiptId { get; private set; }
-    public OrderReceipt? Receipt { get; private set; }
+
+    private ICollection<OrderReceipt> _receipts = [];
+
+    /// <summary>The sale receipt and a fee receipt for each receivable paid on the order.</summary>
+    public IReadOnlyCollection<OrderReceipt> Receipts => _receipts.ToList().AsReadOnly();
+
+    /// <summary>The receipt of the booking's own sale; a fee receipt is never it.</summary>
+    public OrderReceipt? Receipt => _receipts.FirstOrDefault(r => !r.IsFee);
 
     /// <summary>
     /// When the customer cancelled this order. Null while active.
@@ -275,7 +342,8 @@ public class Order : TenantAuditable
 
     /// <summary>
     /// Amount actually refunded to the customer on cancellation.
-    /// Zero if the full fee applied (100% no-refund charge).
+    /// Zero if the full fee applied (100% no-refund charge), and zero on an order that
+    /// <see cref="TookNoPayment"/>: nothing was taken, so nothing goes back.
     /// </summary>
     public decimal? CancellationRefundAmount { get; private set; }
 
@@ -304,6 +372,14 @@ public class Order : TenantAuditable
     /// express surcharge the customer was never charged.</para>
     /// </summary>
     public decimal ExpressSurchargeAmount { get; private set; }
+
+    public DirtinessLevel DirtinessLevel { get; private set; }
+
+    /// <summary>
+    /// The dirtiness surcharge this booking was charged, in the order's currency: the level's rate on the
+    /// lines' sum, in cents. Stored for the same reason as <see cref="ExpressSurchargeAmount"/>.
+    /// </summary>
+    public decimal DirtinessSurchargeAmount { get; private set; }
 
     /// <summary>
     /// The language the customer booked in, as the booking request stated it. Null where no customer
@@ -422,6 +498,25 @@ public class Order : TenantAuditable
     /// window. Null until the sweep fires; never cleared after that.
     /// </summary>
     public DateTime? RecurringReminderSentAt { get; private set; }
+
+    /// <summary>
+    /// When the customer confirmed this recurring occurrence. It is the whole confirmation for a cash
+    /// occurrence, which stays <see cref="PaymentStatus.Pending"/> until the cleaner records the cash; a
+    /// card occurrence is confirmed only once its payment settles.
+    /// → /flows/booking-and-pricing#recurring-bookings
+    /// </summary>
+    public DateTime? CustomerConfirmedAt { get; private set; }
+
+    /// <summary>
+    /// A recurring occurrence the customer still has to confirm: open, unpaid, and — for cash, where no
+    /// payment follows the confirmation — not yet confirmed.
+    /// </summary>
+    [NotMapped]
+    public bool AwaitsCustomerConfirmation =>
+        RecurringTemplateId is not null
+        && CurrentStatus is not (OrderStatus.Cancelled or OrderStatus.Completed)
+        && PaymentStatus == PaymentStatus.Pending
+        && (PaymentType != PaymentType.Cash || CustomerConfirmedAt is null);
 
     /// <summary>
     /// Timestamp when the "your cleaning starts in about an hour" push was dispatched for this one-off
@@ -572,6 +667,13 @@ public class Order : TenantAuditable
         return this;
     }
 
+    /// <summary>First stamp wins, so a card customer retrying a failed payment keeps the original confirmation.</summary>
+    public Order ConfirmByCustomer(DateTime confirmedAtUtc)
+    {
+        CustomerConfirmedAt ??= confirmedAtUtc;
+        return this;
+    }
+
     /// <summary>
     /// Stamp the instant the pre-cleaning reminder was dispatched. First stamp wins, so a re-entrant
     /// sweep cannot move it forward and re-open the order to a second reminder.
@@ -706,12 +808,24 @@ public class Order : TenantAuditable
     // Stripe-charged card order reaches) and stamps the audit trail. Idempotency and the InProgress gate
     // are enforced in MarkCashCollected.Validator, and the Stripe reconciliation that keeps a card order
     // from being charged twice is in its handler, so this stays a pure happy-path mutator.
-    public Order MarkCashCollected(string employeeId)
+    //
+    // Without an amount the cleaner confirmed the amount due, which the server stamps; an administrator
+    // recording the handover on the cleaner's behalf states both the amount and the moment.
+    public Order MarkCashCollected(string employeeId, DateTime? collectedAtUtc = null, decimal? amount = null)
     {
         PaymentStatus = PaymentStatus.Paid;
-        CashCollectedAt = DateTime.UtcNow;
+        CashCollectedAt = collectedAtUtc ?? DateTime.UtcNow;
         CollectedByEmployeeId = employeeId;
+        CashCollectedAmount = amount ?? TotalPrice - CreditAppliedAmount;
 
+        return this;
+    }
+
+    public Order ReportLockout(string employeeId, string callAttempts, DateTime reportedAtUtc)
+    {
+        LockoutReportedAt = reportedAtUtc;
+        LockoutReportedByEmployeeId = employeeId;
+        LockoutCallAttempts = callAttempts;
         return this;
     }
 
@@ -754,6 +868,17 @@ public class Order : TenantAuditable
         return this;
     }
 
+    public Order RecordEarlyPerformanceConsent(
+        string textVersion, DateTimeOffset consentedOn, string client, string? ipAddress, string? deviceLabel)
+    {
+        EarlyPerformanceConsentTextVersion = textVersion;
+        EarlyPerformanceConsentedOn = consentedOn;
+        EarlyPerformanceConsentClient = client;
+        EarlyPerformanceConsentIpAddress = ipAddress;
+        EarlyPerformanceConsentDeviceLabel = deviceLabel;
+        return this;
+    }
+
     public Order MarkEmployeePayCalculated()
     {
         EmployeePayCalculated = true;
@@ -783,6 +908,15 @@ public class Order : TenantAuditable
         ArgumentOutOfRangeException.ThrowIfLessThan(amount, 0m);
 
         ExpressSurchargeAmount = amount;
+        return this;
+    }
+
+    public Order SetDirtinessSurcharge(DirtinessLevel level, decimal amount)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(amount, 0m);
+
+        DirtinessLevel = level;
+        DirtinessSurchargeAmount = amount;
         return this;
     }
 
@@ -902,7 +1036,7 @@ public class Order : TenantAuditable
         CancelledAt = cancelledAtUtc;
         CancelledBy = cancelledBy;
         CancellationFeeRate = feeRate;
-        CancellationRefundAmount = refundAmount;
+        CancellationRefundAmount = TookNoPayment ? 0m : refundAmount;
         CancellationReason = reason;
         return this;
     }
@@ -984,7 +1118,19 @@ public class Order : TenantAuditable
         Notes = null;
         SpecialInstructions = null;
         AccessInstructions = null;
+        CustomerFloor = null;
+        CustomerApartment = null;
+        AccessMode = null;
         CompletionNotes = null;
+        LockoutCallAttempts = null;
+        EarlyPerformanceConsentIpAddress = null;
+        EarlyPerformanceConsentDeviceLabel = null;
+        // A platform reason is a code, not personal data, and the wind-down's refund re-drive selects its
+        // cancelled orders by it; the customer's or an admin's free text goes.
+        if (CancelledBy != Enums.CancelledBy.System)
+        {
+            CancellationReason = null;
+        }
         foreach (var review in Reviews)
         {
             review.Anonymize();

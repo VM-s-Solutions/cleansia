@@ -3282,7 +3282,6 @@
         "code_already_exists": "A plan with this code already exists.",
         "discount_out_of_range": "Discount must be between 0 and 100.",
         "not_found": "Membership plan not found.",
-        "trial_not_permitted": "Cleansia Plus benefits require an active subscription, so a free trial cannot be set. Leave the trial at 0 days.",
         "stripe_price_already_used": "That Stripe Price id is already used by another plan price.",
         "free_cancellation_window_too_long": "The free cancellation window cannot be longer than the standard 24 hours."
       }

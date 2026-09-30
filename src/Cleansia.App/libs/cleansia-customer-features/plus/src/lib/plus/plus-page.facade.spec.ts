@@ -202,6 +202,110 @@ describe('PlusPageFacade', () => {
     });
   });
 
+  // One trial per account — the server's `trialEligible` — and each plan carries its own length.
+  describe('the free trial the page offers', () => {
+    const membership = (hasMembership: boolean, trialEligible: boolean) =>
+      GetMyMembershipResponse.fromJS({ hasMembership, trialEligible, status: MembershipStatus.Active });
+    const offered = () => [facade.trialDays(), facade.monthlyTrialDays(), facade.yearlyTrialDays()];
+
+    beforeEach(() => {
+      getPlans.mockReturnValue(
+        of([
+          plan({ code: 'PLUS_MONTHLY', billingInterval: MONTHLY, trialPeriodDays: 14 }),
+          plan({ code: 'PLUS_YEARLY', billingInterval: YEARLY, price: 2030, trialPeriodDays: 30 }),
+        ]),
+      );
+      build();
+      facade.load();
+    });
+
+    it("offers each plan's own trial to a visitor", () => {
+      expect(offered()).toEqual([14, 14, 30]);
+    });
+
+    it('offers it to a signed-in customer who has never had one', () => {
+      getMine.mockReturnValue(of(membership(false, true)));
+
+      facade.refreshMembership();
+
+      expect(offered()).toEqual([14, 14, 30]);
+    });
+
+    it('offers none to a customer who has had their trial', () => {
+      getMine.mockReturnValue(of(membership(false, false)));
+
+      facade.refreshMembership();
+
+      expect(offered()).toEqual([0, 0, 0]);
+    });
+
+    it('offers none to a member', () => {
+      getMine.mockReturnValue(of(membership(true, true)));
+
+      facade.refreshMembership();
+
+      expect(offered()).toEqual([0, 0, 0]);
+    });
+  });
+
+  // The footnote under the plan cards speaks for both at once, and each plan carries its own trial.
+  describe('the billing terms stated under both plan cards', () => {
+    const load = (monthlyTrial: number, yearlyTrial: number) => {
+      getPlans.mockReturnValue(
+        of([
+          plan({ code: 'PLUS_MONTHLY', billingInterval: MONTHLY, trialPeriodDays: monthlyTrial }),
+          plan({ code: 'PLUS_YEARLY', billingInterval: YEARLY, price: 2030, trialPeriodDays: yearlyTrial }),
+        ]),
+      );
+      build();
+      facade.load();
+    };
+    const footnote = () => ({
+      trialOnEveryPlan: facade.trialOnEveryPlan(),
+      trialOnNoPlan: facade.trialOnNoPlan(),
+    });
+
+    it('promise the free days when both plans offer them', () => {
+      load(14, 30);
+
+      expect(footnote()).toEqual({ trialOnEveryPlan: true, trialOnNoPlan: false });
+    });
+
+    it('say billing starts at once when neither plan offers a trial', () => {
+      load(0, 0);
+
+      expect(footnote()).toEqual({ trialOnEveryPlan: false, trialOnNoPlan: true });
+    });
+
+    it.each([
+      [14, 0],
+      [0, 14],
+    ])('state neither when the monthly plan offers %i free days and the yearly %i', (monthly, yearly) => {
+      load(monthly, yearly);
+
+      expect(footnote()).toEqual({ trialOnEveryPlan: false, trialOnNoPlan: false });
+    });
+
+    it('say billing starts at once to a customer who has had their trial', () => {
+      load(14, 14);
+      getMine.mockReturnValue(
+        of(GetMyMembershipResponse.fromJS({ hasMembership: false, trialEligible: false })),
+      );
+
+      facade.refreshMembership();
+
+      expect(footnote()).toEqual({ trialOnEveryPlan: false, trialOnNoPlan: true });
+    });
+
+    it('follow the one card shown when only one plan is on sale', () => {
+      getPlans.mockReturnValue(of([plan({ code: 'PLUS_YEARLY', billingInterval: YEARLY, trialPeriodDays: 14 })]));
+      build();
+      facade.load();
+
+      expect(footnote()).toEqual({ trialOnEveryPlan: true, trialOnNoPlan: false });
+    });
+  });
+
   it('splits the two plans by billing interval, not by code', () => {
     facade.load();
     expect(facade.monthlyPlan()?.code).toBe('PLUS_MONTHLY');

@@ -100,7 +100,6 @@ class FakeOrderWizardFacade {
   expressUpgradesRemaining = signal(0);
   expressWaiverAvailable = signal(false);
   expressWaiverExhausted = signal(false);
-  expressWaiverPendingTrial = signal(false);
   appliedDiscountKind = signal<'none' | 'membership' | 'tier' | 'combined' | 'promo'>('none');
   // The summary rail reads the server's quote for the duration estimate, so the
   // double needs it or every template render throws before an assertion runs.
@@ -118,6 +117,9 @@ class FakeOrderWizardFacade {
   plans = signal<GetMembershipPlansResponse[]>([]);
   plusSavings = signal<QuotePlusSavingsResponse | null>(null);
   plusUnavailable = signal(false);
+  trialDaysOnEveryPlan = signal(0);
+  trialOnNoPlan = signal(false);
+  trialDaysOf = jest.fn(() => 0);
   activeMembership = signal<GetMyMembershipResponse | null>(null);
   loadPlans = jest.fn();
   loadPlusSavings = jest.fn();

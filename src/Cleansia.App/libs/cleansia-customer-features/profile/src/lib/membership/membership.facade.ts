@@ -66,9 +66,6 @@ export class MembershipFacade extends UnsubscribeControlDirective {
   // Subscribe state
   submitting = signal(false);
 
-  // Express-surcharge waiver. `expressUpgradesRemaining` is 0 both for an exhausted member and
-  // for one still inside the trial, so the state is resolved once against the load instant
-  // rather than re-derived per render.
   expressWaiverStatus = signal<ExpressWaiverStatus>('none');
   readonly expressUpgradesRemaining = computed(
     () => this.membership()?.expressUpgradesRemaining ?? 0,
@@ -82,14 +79,8 @@ export class MembershipFacade extends UnsubscribeControlDirective {
   readonly expressWaiverExhausted = computed(
     () => this.expressWaiverStatus() === 'exhausted',
   );
-  readonly expressWaiverPendingTrial = computed(
-    () => this.expressWaiverStatus() === 'trial',
-  );
 
-  /**
-   * When the running trial ends, or null. `hasMembership` counts a trial, but no Plus benefit runs
-   * during one — every benefit waits for the first paid month. → /product/business-rules
-   */
+  /** When the running free trial ends and the first payment falls, or null. */
   readonly trialEndsOn = signal<Date | null>(null);
 
   /**
@@ -98,7 +89,7 @@ export class MembershipFacade extends UnsubscribeControlDirective {
    */
   readonly paymentFailed = computed(() => this.membership()?.status === MembershipStatus.PastDue);
 
-  /** A trialing member who cancels or switches has no running benefit to keep. */
+  /** A trialing member who cancels or switches is charged nothing before the trial ends. */
   readonly cancelDialogMessageKey = computed(() => {
     if (this.paymentFailed()) return 'pages.membership.cancel_dialog_message_past_due';
     return this.trialEndsOn()
@@ -131,7 +122,7 @@ export class MembershipFacade extends UnsubscribeControlDirective {
           const now = new Date();
           const trialEnd = response?.hasMembership ? response.trialEndsAtUtc : undefined;
           this.membership.set(response);
-          this.expressWaiverStatus.set(resolveExpressWaiverStatus(response, now));
+          this.expressWaiverStatus.set(resolveExpressWaiverStatus(response));
           this.trialEndsOn.set(trialEnd && trialEnd.getTime() > now.getTime() ? trialEnd : null);
           this.loading.set(false);
         },
@@ -164,7 +155,7 @@ export class MembershipFacade extends UnsubscribeControlDirective {
       });
   }
 
-  /** A paid period runs to its end, a trial ends unpaid, a failed renewal ends now. */
+  /** A paid period and a trial run to their end, a failed renewal ends now. */
   cancel(onCancelled?: () => void): void {
     const successKey = this.paymentFailed()
       ? 'pages.membership.cancel_success_past_due'

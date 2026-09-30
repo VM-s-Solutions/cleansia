@@ -22,7 +22,6 @@ class MembershipPerkPillBindingTest {
         "membership_perk_pill_recurring",
         "membership_perk_pill_express",
         "membership_perk_pill_express_used",
-        "membership_perk_pill_express_trial",
     )
 
     private val moduleDir: File = sequenceOf(
@@ -59,24 +58,14 @@ class MembershipPerkPillBindingTest {
         assertFalse(card.contains("allowsExpressUpgrade"))
     }
 
-    /**
-     * "N left", "none left until next month" and "starts when your trial ends" are three different
-     * claims; a swapped arm tells a trialing member they used up waivers they never had.
-     */
     @Test
-    fun `each express pill state maps to its own label`() {
+    fun `the available express pill carries its count`() {
         val flat = card.replace(Regex("\\s+"), " ")
         assertTrue(
             "the available pill lost its count",
             flat.contains(
                 "ExpressWaiverStatus.Available -> " +
                     "stringResource(R.string.membership_perk_pill_express, perk.waiver.remaining)",
-            ),
-        )
-        assertTrue(
-            "the trial pill no longer says the waiver has not started",
-            flat.contains(
-                "ExpressWaiverStatus.Trial -> stringResource(R.string.membership_perk_pill_express_trial)",
             ),
         )
     }

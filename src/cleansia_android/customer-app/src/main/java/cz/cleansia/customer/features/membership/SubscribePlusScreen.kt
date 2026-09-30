@@ -62,6 +62,7 @@ import cz.cleansia.core.format.formatOrderPrice
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.customer.core.market.selectedOrNull
 import cz.cleansia.customer.core.memberships.MembershipPlanDto
+import cz.cleansia.customer.core.memberships.trialDaysOn
 import com.stripe.android.paymentsheet.PaymentSheet
 import com.stripe.android.paymentsheet.PaymentSheetResult
 import com.stripe.android.paymentsheet.rememberPaymentSheet
@@ -96,6 +97,7 @@ fun SubscribePlusScreen(
         mutableStateOf(plans.firstOrNull { it.billingInterval == 1 }?.code ?: plans.firstOrNull()?.code.orEmpty())
     }
     val selectedPlan = remember(plans, selectedPlanCode) { plans.firstOrNull { it.code == selectedPlanCode } }
+    val trialDays = current.trialDaysOn(selectedPlan)
 
     // Guards the post-purchase nav so it only fires once even when both the
     // PaymentSheet result handler AND the membership-state LaunchedEffect
@@ -159,6 +161,7 @@ fun SubscribePlusScreen(
                 selectedPlanCode = selectedPlanCode,
                 onSelectPlan = { selectedPlanCode = it },
                 selectedPlan = selectedPlan,
+                trialDays = trialDays,
             )
 
             Spacer(Modifier.height(20.dp))
@@ -226,12 +229,12 @@ fun SubscribePlusScreen(
         // surface so the button is always visible regardless of scroll position.
         StickyCtaBar(
             modifier = Modifier.align(Alignment.BottomCenter),
-            ctaLabel = if ((selectedPlan?.trialPeriodDays ?: 0) > 0) {
+            ctaLabel = if (trialDays > 0) {
                 stringResource(R.string.membership_cta_start_trial)
             } else {
                 stringResource(R.string.membership_cta_subscribe)
             },
-            disclosure = buildDisclosure(selectedPlan),
+            disclosure = buildDisclosure(selectedPlan, trialDays),
             enabled = !submitting && selectedPlanCode.isNotBlank(),
             onClick = {
                 if (selectedPlanCode.isBlank()) return@StickyCtaBar
@@ -300,8 +303,8 @@ private fun HeroBlock(
     selectedPlanCode: String,
     onSelectPlan: (String) -> Unit,
     selectedPlan: MembershipPlanDto?,
+    trialDays: Int,
 ) {
-    val trialDays = selectedPlan?.trialPeriodDays ?: 0
     val currencyCode = selectedPlan?.currencyCode
     // Annual: lead with the year price (no per-month split — keeps pricing
     // honest and frames the one-off annual commitment up front).
@@ -708,14 +711,12 @@ private fun StickyCtaBar(
 }
 
 /**
- * Build the fine-print disclosure under the CTA. Trial-aware: when the plan
- * has a trial, lead with "Then X/month"; otherwise the renewal and
- * cancellation terms.
+ * Build the fine-print disclosure under the CTA. Trial-aware: when this customer gets a trial on the
+ * plan, lead with "Then X/month"; otherwise the renewal and cancellation terms.
  */
 @Composable
-private fun buildDisclosure(plan: MembershipPlanDto?): String {
-    if (plan == null) return stringResource(R.string.membership_disclosure)
-    if (plan.trialPeriodDays <= 0) return stringResource(R.string.membership_disclosure)
+private fun buildDisclosure(plan: MembershipPlanDto?, trialDays: Int): String {
+    if (plan == null || trialDays <= 0) return stringResource(R.string.membership_disclosure)
     // Trial-aware disclosure. Annual variant uses year price; monthly uses
     // per-month — mirrors the hero block's billing-interval split so the
     // user never sees a per-month figure for an annual plan.

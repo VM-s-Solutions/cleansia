@@ -15,12 +15,10 @@ function buildMembership(fields: {
   return response;
 }
 
-const NOW = new Date('2026-08-04T10:00:00Z');
-
 describe('resolveExpressWaiverStatus', () => {
   it('is none without a membership', () => {
-    expect(resolveExpressWaiverStatus(null, NOW)).toBe('none');
-    expect(resolveExpressWaiverStatus(buildMembership({ hasMembership: false }), NOW)).toBe(
+    expect(resolveExpressWaiverStatus(null)).toBe('none');
+    expect(resolveExpressWaiverStatus(buildMembership({ hasMembership: false }))).toBe(
       'none',
     );
   });
@@ -28,7 +26,6 @@ describe('resolveExpressWaiverStatus', () => {
   it('is none when the plan carries no express quota', () => {
     const status = resolveExpressWaiverStatus(
       buildMembership({ expressUpgradesPerMonth: 0, expressUpgradesRemaining: 0 }),
-      NOW,
     );
 
     expect(status).toBe('none');
@@ -37,7 +34,6 @@ describe('resolveExpressWaiverStatus', () => {
   it('is available while waivers remain', () => {
     const status = resolveExpressWaiverStatus(
       buildMembership({ expressUpgradesPerMonth: 2, expressUpgradesRemaining: 1 }),
-      NOW,
     );
 
     expect(status).toBe('available');
@@ -46,48 +42,20 @@ describe('resolveExpressWaiverStatus', () => {
   it('is exhausted once the remaining count hits zero', () => {
     const status = resolveExpressWaiverStatus(
       buildMembership({ expressUpgradesPerMonth: 2, expressUpgradesRemaining: 0 }),
-      NOW,
     );
 
     expect(status).toBe('exhausted');
   });
 
-  it('is trial — not exhausted — for a zero remaining count inside the trial', () => {
-    const status = resolveExpressWaiverStatus(
+  it("counts the waivers of a member inside the free trial like a paying member's", () => {
+    const trialing = (expressUpgradesRemaining: number) =>
       buildMembership({
         expressUpgradesPerMonth: 2,
-        expressUpgradesRemaining: 0,
-        trialEndsAtUtc: new Date('2026-08-18T10:00:00Z'),
-      }),
-      NOW,
-    );
+        expressUpgradesRemaining,
+        trialEndsAtUtc: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      });
 
-    expect(status).toBe('trial');
-  });
-
-  it('leaves the trial state the instant the trial ends', () => {
-    const status = resolveExpressWaiverStatus(
-      buildMembership({
-        expressUpgradesPerMonth: 2,
-        expressUpgradesRemaining: 2,
-        trialEndsAtUtc: NOW,
-      }),
-      NOW,
-    );
-
-    expect(status).toBe('available');
-  });
-
-  it('is exhausted, not trial, once a past trial has converted', () => {
-    const status = resolveExpressWaiverStatus(
-      buildMembership({
-        expressUpgradesPerMonth: 2,
-        expressUpgradesRemaining: 0,
-        trialEndsAtUtc: new Date('2026-07-21T10:00:00Z'),
-      }),
-      NOW,
-    );
-
-    expect(status).toBe('exhausted');
+    expect(resolveExpressWaiverStatus(trialing(2))).toBe('available');
+    expect(resolveExpressWaiverStatus(trialing(0))).toBe('exhausted');
   });
 });

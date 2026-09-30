@@ -59,6 +59,11 @@ describe('getMembershipPlanTableDefinition', () => {
     expect(column('currencyCode').getValue?.(row)).toBe('CZK');
   });
 
+  it('renders the trial length in days, zero included', () => {
+    expect(column('trialPeriodDays').getValue?.(MembershipPlanListItem.fromJS({ trialPeriodDays: 14 }))).toBe('14');
+    expect(column('trialPeriodDays').getValue?.(MembershipPlanListItem.fromJS({ trialPeriodDays: 0 }))).toBe('0');
+  });
+
   it('offers no price sort — the sortable field list is not part of the admin contract', () => {
     expect(columns.every((c) => !('sortable' in c && c.sortable))).toBe(true);
   });

@@ -11,7 +11,10 @@ namespace Cleansia.Core.Domain.Repositories;
 /// </summary>
 public interface IUserMembershipRepository : IRepository<UserMembership, string>
 {
-    /// <summary>Latest authoritatively paid enrolment for a proven account owner, tracked for its lapse latch.</summary>
+    /// <summary>
+    /// Latest enrolment that held the Plus benefits — an authoritatively paid period or a started trial —
+    /// for a proven account owner, tracked for its lapse latch.
+    /// </summary>
     Task<UserMembership?> GetLatestPaidForUserAsync(string userId, CancellationToken cancellationToken);
 
     /// <summary>
@@ -32,23 +35,18 @@ public interface IUserMembershipRepository : IRepository<UserMembership, string>
     Task<UserMembership?> GetLifecycleForUserNoTrackingAsync(string userId, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Resolve the membership that ENTITLES the user to Cleansia Plus benefits — a live enrolment that is
-    /// also being paid for. Owner ruling 2026-09-08 (T-0690): no Plus benefit is granted until the
-    /// customer actually subscribes.
+    /// Resolve the membership that ENTITLES the user to Cleansia Plus benefits — a live enrolment in good
+    /// standing: <see cref="MembershipStatus.Active"/> and inside its period, whether it is paid or inside
+    /// its free trial. A trialing member gets every benefit a paying one does (owner ruling 2026-09-30).
     ///
     /// <para><b>This is deliberately a second method rather than a narrowing of
     /// <see cref="GetLifecycleForUserAsync"/>, and the distinction is load-bearing.</b> That one answers "is
     /// there a live enrolment?" and is what stops a second Stripe subscription being created, what lets a
-    /// customer cancel, what the webhook reconciles against, and what GDPR erasure must see. Narrowing it
-    /// in place would make a trialing or past-due customer look unsubscribed to
-    /// <c>CreateMembershipSubscription</c>, which would mint a SECOND subscription and collide with the
-    /// filtered unique index on (TenantId, UserId) over the live statuses — a 500 on a paying customer. It
-    /// would also refuse to cancel a live trial. Two questions, two methods.</para>
-    ///
-    /// <para>With the trial removed this is a backstop rather than a live gate: no new enrolment can be
-    /// trialing, because both admin plan commands refuse a non-zero trial period. It stays because
-    /// <c>TrialEndsAtUtc</c> is never cleared once set, historical rows may carry one, and a trial
-    /// reintroduced by any route must not silently start granting benefits again.</para>
+    /// customer cancel, what the webhook reconciles against, and what GDPR erasure must see. A past-due or
+    /// paused member is live there and entitled to nothing here. Narrowing the lifecycle read in place
+    /// would make such a customer look unsubscribed to <c>CreateMembershipSubscription</c>, which would
+    /// mint a SECOND subscription and collide with the filtered unique index on (TenantId, UserId) over the
+    /// live statuses. Two questions, two methods.</para>
     /// </summary>
     Task<UserMembership?> GetEntitledForUserAsync(string userId, CancellationToken cancellationToken);
 

@@ -696,7 +696,6 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   // A Stripe Price is single-currency and single-product; one id on two plan prices is a typo:
   // the per-currency price validators of CreateMembershipPlan / UpdateMembershipPlan.
   'membership.plan.stripe_price_already_used',
-  'membership.plan.trial_not_permitted',
   'promo.amount_must_be_positive',
   'promo.code_already_exists',
   'promo.code_invalid_format',

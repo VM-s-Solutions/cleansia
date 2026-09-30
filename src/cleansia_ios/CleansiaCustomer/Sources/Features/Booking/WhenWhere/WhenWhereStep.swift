@@ -266,8 +266,6 @@ private struct ExpressWaiverNote: View {
             note(icon: "bolt.fill", text: L10n.Booking.expressWaiverAvailable(remaining), tint: CleansiaColors.primary)
         case .exhausted:
             note(icon: "info.circle", text: L10n.Booking.expressWaiverUsed, tint: CleansiaColors.onSurfaceVariant)
-        case .trial:
-            note(icon: "info.circle", text: L10n.Booking.expressWaiverTrial, tint: CleansiaColors.onSurfaceVariant)
         }
     }
 

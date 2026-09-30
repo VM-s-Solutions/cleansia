@@ -690,11 +690,6 @@
               <i class="pi pi-info-circle" aria-hidden="true"></i>
               {{ 'pages.order.express_waiver_used' | translate }}
             </p>
-            } @else if (facade.expressWaiverPendingTrial()) {
-            <p class="cl-wiz__time-express">
-              <i class="pi pi-info-circle" aria-hidden="true"></i>
-              {{ 'pages.order.express_waiver_trial' | translate }}
-            </p>
             }
             }
           </div>
@@ -906,19 +901,21 @@
         <p class="cl-body cl-wiz__lead">
           {{ 'pages.order.plus_lead_before' | translate }}
           <strong class="cl-wiz__plus-amount">{{ formatPrice(savings.wouldSaveAmount, savings.currencyCode) }}</strong>
-          @if (trialDays() > 0) {
-            {{ 'pages.order.plus_lead_after' | translate: { days: trialDays() } }}
-          } @else {
+          @if (trialDaysOnEveryPlan() > 0) {
+            {{ 'pages.order.plus_lead_after' | translate: { days: trialDaysOnEveryPlan() } }}
+          } @else if (trialOnNoPlan()) {
             {{ 'pages.order.plus_lead_after_no_trial' | translate }}
+          } @else {
+            {{ 'pages.order.plus_lead_after_plans_differ' | translate }}
           }
         </p>
-        } @else {
+        } @else if (trialDaysOnEveryPlan() > 0) {
         <p class="cl-body cl-wiz__lead">
-          @if (trialDays() > 0) {
-            {{ 'pages.order.plus_lead_plain' | translate: { days: trialDays() } }}
-          } @else {
-            {{ 'pages.order.plus_lead_plain_no_trial' | translate }}
-          }
+          {{ 'pages.order.plus_lead_plain' | translate: { days: trialDaysOnEveryPlan() } }}
+        </p>
+        } @else if (trialOnNoPlan()) {
+        <p class="cl-body cl-wiz__lead">
+          {{ 'pages.order.plus_lead_plain_no_trial' | translate }}
         </p>
         }
 
@@ -931,19 +928,34 @@
             <div class="cl-lbl cl-wiz__plan-period">{{ 'pages.order.plus_interval.' + plan.billingInterval | translate }}</div>
             <div class="cl-num cl-wiz__plan-price">{{ formatPrice(plan.price, plan.currencyCode) }}</div>
             <div class="cl-muted cl-wiz__plan-per">{{ 'pages.order.plus_interval.' + plan.billingInterval | translate }}</div>
+            @if (facade.trialDaysOf(plan) > 0) {
             <p class="cl-wiz__plan-note">
-              @if (plan.savingsPercentVsMonthly > 0) {
-              {{ 'pages.order.plus_saves_vs_monthly' | translate: { percent: plan.savingsPercentVsMonthly } }}
-              } @else if (plan.trialPeriodDays > 0) {
-              {{ 'pages.order.plus_trial_free' | translate: { days: plan.trialPeriodDays } }}
-              }
+              {{
+                'pages.order.plus_trial_then.' + plan.billingInterval
+                  | translate: { days: facade.trialDaysOf(plan), price: formatPrice(plan.price, plan.currencyCode) }
+              }}
             </p>
+            }
+            @if (plan.savingsPercentVsMonthly > 0) {
+            <p class="cl-wiz__plan-note">
+              {{ 'pages.order.plus_saves_vs_monthly' | translate: { percent: plan.savingsPercentVsMonthly } }}
+            </p>
+            }
             <button
               type="button"
               class="cl-btn cl-wiz__plan-cta"
-              [attr.aria-label]="'aria.choose_plan' | translate: { name: plan.name }"
+              [attr.aria-label]="
+                (facade.trialDaysOf(plan) > 0 ? 'aria.start_trial_plan' : 'aria.choose_plan')
+                  | translate: { name: plan.name }
+              "
               (click)="choosePlan(plan)"
-            >{{ 'pages.order.plus_choose' | translate }}</button>
+            >
+              @if (facade.trialDaysOf(plan) > 0) {
+              {{ 'pages.order.plus_start_trial' | translate }}
+              } @else {
+              {{ 'pages.order.plus_choose' | translate }}
+              }
+            </button>
           </div>
           }
         </div>

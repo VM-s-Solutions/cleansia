@@ -733,11 +733,10 @@ WHERE NOT EXISTS (SELECT 1 FROM public."PromoCodes" WHERE "Code" = 'LOYAL10' AND
 -- row per currency (ADR-0059): CZK below, nothing for EUR until the owner mints EUR Stripe Prices
 -- and the admin enters them. The monthly→yearly upgrade path (SwapMembershipPlan command) reads
 -- BillingInterval to know which plan is the "upgrade target".
--- TrialPeriodDays is 0 on both, and the admin validators refuse anything else (T-0690, owner ruling
--- 2026-09-08): a customer gets no Cleansia Plus benefit until they actually subscribe. A trial is by
--- definition benefits without payment, so under that ruling it cannot exist. It gave away far more
--- than the headline 5% discount — a trialing member could author a recurring schedule that outlives
--- the trial, and got the widened free-cancellation window with no cap on use.
+-- TrialPeriodDays is 14 on both (owner ruling 2026-09-30): a first-time subscriber gets a 14-day free
+-- trial with every Plus benefit from day one, and is charged when it ends unless they cancel before.
+-- One trial per account — MembershipTrialResolver sends 0 days to Stripe for anyone who has had one.
+-- A deployed database gets its plans from the admin console, where the trial length is per plan.
 
 -- PLUS_MONTHLY
 INSERT INTO public."MembershipPlans" (
@@ -752,7 +751,7 @@ SELECT '01PLUSMONTHLY00000000000A', true, 'system', CURRENT_TIMESTAMP, NULL, NUL
     'PLUS_MONTHLY', 'Cleansia Plus (Monthly)',
     5.00, 4, true,
     1,
-    1, 0
+    1, 14
 WHERE NOT EXISTS (SELECT 1 FROM public."MembershipPlans" WHERE "Code" = 'PLUS_MONTHLY');
 
 -- PLUS_YEARLY (the annual charge is on its price row; ≈15% off vs monthly in CZK).
@@ -768,7 +767,7 @@ SELECT '01PLUSYEARLY000000000000A', true, 'system', CURRENT_TIMESTAMP, NULL, NUL
     'PLUS_YEARLY', 'Cleansia Plus (Annual)',
     5.00, 4, true,
     1,
-    2, 0
+    2, 14
 WHERE NOT EXISTS (SELECT 1 FROM public."MembershipPlans" WHERE "Code" = 'PLUS_YEARLY');
 
 -- One price per (plan, currency). CZK only: 199 Kč/month and 2030 Kč/year against the two sandbox

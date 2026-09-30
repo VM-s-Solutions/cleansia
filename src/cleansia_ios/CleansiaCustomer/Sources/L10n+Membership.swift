@@ -150,6 +150,10 @@ extension L10n {
             localized("membership_inactive_cta")
         }
 
+        static func inactiveCtaTrial(_ days: Int) -> String {
+            format("membership_inactive_cta_trial", days)
+        }
+
         static var successTitle: String {
             localized("membership_success_title")
         }
@@ -190,10 +194,6 @@ extension L10n {
             localized("membership_perk_pill_express_used")
         }
 
-        static var perkPillExpressTrial: String {
-            localized("membership_perk_pill_express_trial")
-        }
-
         static var statusActiveBadge: String {
             localized("membership_status_active_badge")
         }
@@ -230,12 +230,20 @@ extension L10n {
             format("membership_active_until", date)
         }
 
+        static func trialUntil(_ date: String) -> String {
+            format("membership_trial_until", date)
+        }
+
         static var thenEndsHint: String {
             localized("membership_then_ends_hint")
         }
 
         static var autoRenewHint: String {
             localized("membership_auto_renew_hint")
+        }
+
+        static var trialFirstChargeHint: String {
+            localized("membership_trial_first_charge_hint")
         }
 
         static var cancelAction: String {
@@ -270,16 +278,8 @@ extension L10n {
             format("membership_switch_dialog_message_trial", trialEndsOn, price)
         }
 
-        static var successSubtitleTrial: String {
-            localized("membership_success_subtitle_trial")
-        }
-
-        static var trialPerksTitle: String {
-            localized("membership_trial_perks_title")
-        }
-
-        static var trialPerksNote: String {
-            localized("membership_trial_perks_note")
+        static func successSubtitleTrial(_ trialEndsOn: String) -> String {
+            format("membership_success_subtitle_trial", trialEndsOn)
         }
 
         static var trialCancelledLead: String {

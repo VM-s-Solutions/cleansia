@@ -8,8 +8,8 @@ public class UserMembershipRepository(CleansiaDbContext context)
     : BaseRepository<UserMembership>(context), IUserMembershipRepository
 {
     public Task<UserMembership?> GetLatestPaidForUserAsync(string userId, CancellationToken cancellationToken) =>
-        GetDbSet().Where(m => m.UserId == userId && m.PaidPeriodConfirmedAt != null)
-            .OrderByDescending(m => m.PaidPeriodConfirmedAt)
+        GetDbSet().Where(m => m.UserId == userId && (m.PaidPeriodConfirmedAt != null || m.TrialEndsAtUtc != null))
+            .OrderByDescending(m => m.PaidPeriodConfirmedAt ?? m.TrialEndsAtUtc)
             .ThenByDescending(m => m.CreatedOn).ThenByDescending(m => m.Id)
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -33,17 +33,12 @@ public class UserMembershipRepository(CleansiaDbContext context)
         return EntitledForUserQuery(userId).AsNoTracking().FirstOrDefaultAsync(cancellationToken);
     }
 
-    // Entitlement = a live enrolment that is also PAID. The trial conjunct is spelled out rather than
-    // calling UserMembership.IsInTrialAt, which is a computed property and would not translate — EF would
-    // either throw or, worse, evaluate it client-side after pulling the row.
     private IQueryable<UserMembership> EntitledForUserQuery(string userId)
     {
-        var now = DateTime.UtcNow;
         return LifecycleForUserQuery(userId)
             // Benefits follow the account even while an authorized order is operated elsewhere.
             .IgnoreQueryFilters()
-            .Where(m => m.Status == MembershipStatus.Active)
-            .Where(m => m.TrialEndsAtUtc == null || m.TrialEndsAtUtc <= now);
+            .Where(m => m.Status == MembershipStatus.Active);
     }
 
     private IQueryable<UserMembership> LifecycleForUserQuery(string userId)

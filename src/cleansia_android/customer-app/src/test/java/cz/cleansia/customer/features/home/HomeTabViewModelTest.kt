@@ -8,19 +8,24 @@ import cz.cleansia.customer.core.loyalty.LoyaltyRepository
 import cz.cleansia.customer.core.market.MarketListItem
 import cz.cleansia.customer.core.market.MarketRepository
 import cz.cleansia.customer.core.market.MarketState
+import cz.cleansia.customer.core.memberships.GetMyMembershipResponse
+import cz.cleansia.customer.core.memberships.MembershipPlanDto
 import cz.cleansia.customer.core.memberships.MembershipRepository
 import cz.cleansia.customer.core.notifications.NotificationFeedRepository
 import cz.cleansia.customer.core.orders.OrderRepository
 import cz.cleansia.customer.core.recurring.RecurringBookingRepository
 import cz.cleansia.customer.testing.MainDispatcherRule
+import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -78,7 +83,25 @@ class HomeTabViewModelTest {
         every { marketRepository.staleness } returns marketStaleness
         coEvery { marketRepository.ensureLoaded() } returns MarketState.Unavailable
         coEvery { catalogRepository.refresh(any()) } returns ApiResult.Success(Unit)
+        every { membershipRepository.current } returns membership
+        coEvery { membershipRepository.getPlans(any(), any()) } returns ApiResult.Success(emptyList())
     }
+
+    private val membership = MutableStateFlow<GetMyMembershipResponse?>(null)
+
+    private fun plan(billingInterval: Int, trialDays: Int) = MembershipPlanDto(
+        code = "plus_$billingInterval",
+        name = "Cleansia Plus",
+        price = 199.0,
+        monthlyEquivalentPrice = 199.0,
+        billingInterval = billingInterval,
+        discountPercentage = 5.0,
+        freeCancellationWindowHours = 4,
+        allowsExpressUpgrade = true,
+        trialPeriodDays = trialDays,
+        savingsPercentVsMonthly = 0.0,
+        currencyCode = "EUR",
+    )
 
     private fun market(iso: String) = MarketListItem(
         countryId = "$iso-id",
@@ -124,6 +147,50 @@ class HomeTabViewModelTest {
         advanceUntilIdle()
 
         coVerify(exactly = 1) { catalogRepository.refresh(null) }
+    }
+
+    // "Try Plus free" is offered only while this customer can still get a trial, for the days the
+    // chosen market's plan carries.
+
+    @Test
+    fun plusTrialDays_offersTheChosenMarketsMonthlyTrialToACustomerWhoNeverHadOne() = runTest {
+        val svk = market("SVK")
+        coEvery { marketRepository.ensureLoaded() } returns MarketState.Resolved(listOf(svk), svk)
+        coEvery { membershipRepository.getPlans("SVK-id", any()) } returns ApiResult.Success(
+            listOf(plan(billingInterval = 2, trialDays = 30), plan(billingInterval = 1, trialDays = 14)),
+        )
+        membership.value = GetMyMembershipResponse(hasMembership = false, trialEligible = true)
+
+        val vm = newViewModel()
+        vm.refreshPlusPlans()
+        advanceUntilIdle()
+
+        assertEquals(14, vm.plusTrialDays.value)
+    }
+
+    @Test
+    fun plusTrialDays_offersNoneToACustomerWhoHasHadTheirTrial() = runTest {
+        coEvery { membershipRepository.getPlans(null, any()) } returns
+            ApiResult.Success(listOf(plan(billingInterval = 1, trialDays = 14)))
+        membership.value = GetMyMembershipResponse(hasMembership = false, trialEligible = false)
+
+        val vm = newViewModel()
+        vm.refreshPlusPlans()
+        advanceUntilIdle()
+
+        assertEquals(0, vm.plusTrialDays.value)
+    }
+
+    @Test
+    fun plusTrialDays_offersNoneWhenThePlansCannotBeRead() = runTest {
+        coEvery { membershipRepository.getPlans(any(), any()) } returns ApiResult.Error(ApiError.Network("offline"))
+        membership.value = GetMyMembershipResponse(hasMembership = false, trialEligible = true)
+
+        val vm = newViewModel()
+        vm.refreshPlusPlans()
+        advanceUntilIdle()
+
+        assertEquals(0, vm.plusTrialDays.value)
     }
 
     @Test

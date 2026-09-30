@@ -42,30 +42,21 @@ class BookingExpressWaiverBindingTest {
     }
 
     @Test
-    fun `the slot grid discloses all three server-decided waiver states`() {
+    fun `the slot grid discloses both server-decided waiver states`() {
         val step = source("WhenWhereStep.kt")
         listOf(
             "booking_express_waiver_available",
             "booking_express_waiver_used",
-            "booking_express_waiver_trial",
         ).forEach {
             assertTrue("the slot grid dropped $it", step.contains(it))
         }
     }
 
-    /**
-     * A trialing member and an exhausted one both report zero remaining. Collapsing them would tell a
-     * trial member they used up waivers they never had.
-     */
     @Test
-    fun `the disclosure separates the trial state from the exhausted one`() {
+    fun `the disclosure maps each waiver state to its own sentence`() {
         val flat = source("WhenWhereStep.kt").replace(Regex("\\s+"), " ")
         assertTrue(
-            "a trialing member is told they used theirs up",
-            flat.contains("ExpressWaiverStatus.Trial -> stringResource(R.string.booking_express_waiver_trial)"),
-        )
-        assertTrue(
-            "an exhausted member is told their waivers have not started yet",
+            "an exhausted member is not told their waivers are used up",
             flat.contains("ExpressWaiverStatus.Exhausted -> stringResource(R.string.booking_express_waiver_used)"),
         )
     }

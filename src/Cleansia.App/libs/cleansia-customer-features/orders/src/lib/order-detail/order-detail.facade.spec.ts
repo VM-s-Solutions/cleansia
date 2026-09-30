@@ -262,8 +262,7 @@ describe('OrderDetailFacade', () => {
     });
   });
 
-  // The server charges by the paid entitlement, which `hasMembership` is not: it counts a running
-  // trial too, and a trialing member cancels on the standard window.
+  // The server charges by the entitlement, which a running trial holds and a failed renewal does not.
   describe('the free-cancellation window the page states', () => {
     const DAY_MS = 24 * 60 * 60 * 1000;
     const plus = (trialEndsAtUtc?: Date, status = MembershipStatus.Active) =>
@@ -279,9 +278,9 @@ describe('OrderDetailFacade', () => {
       expect(facade.freeCancellationHours()).toBe(12);
     });
 
-    it('is the standard 24 hours during a running trial', () => {
+    it("is the plan's window during a running trial", () => {
       facade.membership.set(plus(new Date(Date.now() + 7 * DAY_MS)));
-      expect(facade.freeCancellationHours()).toBe(24);
+      expect(facade.freeCancellationHours()).toBe(12);
     });
 
     it("is the plan's window once the trial has ended", () => {

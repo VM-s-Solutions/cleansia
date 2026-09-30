@@ -2638,6 +2638,7 @@
         "monthly_equivalent": "Monthly equivalent",
         "discount": "Discount",
         "free_cancel_window": "Free-cancel (h)",
+        "trial": "Trial (days)",
         "express": "Express",
         "status": "Status",
         "currency": "Currency"
@@ -2676,6 +2677,8 @@
           "stripe_price_id_help": "Copy from the Stripe dashboard (price_...). The platform does not create Stripe prices.",
           "discount": "Discount (%)",
           "free_cancel_window": "Free-cancellation window (hours)",
+          "trial_days": "Free trial (days)",
+          "trial_days_help": "Days a new member gets every Plus benefit before the first charge. One trial per account; 0 means no trial.",
           "express_upgrade": "Allows express upgrade",
           "express_upgrades_per_month": "Included express upgrades per month",
           "express_upgrades_per_month_help": "How many express bookings a member gets each month without the express surcharge. Zero means none."
@@ -3279,7 +3282,6 @@
         "code_already_exists": "A plan with this code already exists.",
         "discount_out_of_range": "Discount must be between 0 and 100.",
         "not_found": "Membership plan not found.",
-        "trial_not_permitted": "Cleansia Plus benefits require an active subscription, so a free trial cannot be set. Leave the trial at 0 days.",
         "stripe_price_already_used": "That Stripe Price id is already used by another plan price.",
         "free_cancellation_window_too_long": "The free cancellation window cannot be longer than the standard 24 hours."
       }

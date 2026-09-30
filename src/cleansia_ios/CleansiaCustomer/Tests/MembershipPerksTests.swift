@@ -10,8 +10,8 @@ final class MembershipPerksTests: XCTestCase {
 
     /// Every benefit stops on the first failed renewal, so a past-due member is shown none of them.
     func testAPastDueMembershipCarriesNoPerksAndNoExpressWaiver() {
-        XCTAssertEqual(MembershipPerks.resolve(MembershipFixtures.pastDue, now: Self.now), [])
-        XCTAssertEqual(ExpressWaiverStatus.resolve(MembershipFixtures.pastDue, now: Self.now), .none)
+        XCTAssertEqual(MembershipPerks.resolve(MembershipFixtures.pastDue), [])
+        XCTAssertEqual(ExpressWaiverStatus.resolve(MembershipFixtures.pastDue), .none)
         let snapshot = MembershipSnapshot(
             hasMembership: true,
             freeCancellationWindowHours: 4,
@@ -19,7 +19,7 @@ final class MembershipPerksTests: XCTestCase {
             expressUpgradesRemaining: 1,
             benefitsPaused: true
         )
-        XCTAssertEqual(ExpressWaiverStatus.resolve(snapshot, now: Self.now), .none)
+        XCTAssertEqual(ExpressWaiverStatus.resolve(snapshot), .none)
     }
 
     func testTheSubscribeTilesStateThePlansOwnFigures() {
@@ -69,33 +69,33 @@ final class MembershipPerksTests: XCTestCase {
 
     func testActiveMembershipCarriesDiscountCancellationRecurringAndExpress() {
         XCTAssertEqual(
-            MembershipPerks.resolve(MembershipFixtures.active, now: Self.now),
+            MembershipPerks.resolve(MembershipFixtures.active),
             [.discount(percent: 5), .freeCancellation(hours: 4), .recurring, .express(.available(remaining: 1))]
         )
     }
 
     func testZeroDiscountIsOmitted() {
-        let perks = MembershipPerks.resolve(membership(discount: 0, cancellationHours: 4), now: Self.now)
+        let perks = MembershipPerks.resolve(membership(discount: 0, cancellationHours: 4))
         XCTAssertEqual(perks, [.freeCancellation(hours: 4), .recurring])
     }
 
     func testMissingDiscountIsOmitted() {
-        let perks = MembershipPerks.resolve(membership(discount: nil, cancellationHours: 4), now: Self.now)
+        let perks = MembershipPerks.resolve(membership(discount: nil, cancellationHours: 4))
         XCTAssertEqual(perks, [.freeCancellation(hours: 4), .recurring])
     }
 
     func testZeroCancellationWindowIsOmitted() {
-        let perks = MembershipPerks.resolve(membership(discount: 5, cancellationHours: 0), now: Self.now)
+        let perks = MembershipPerks.resolve(membership(discount: 5, cancellationHours: 0))
         XCTAssertEqual(perks, [.discount(percent: 5), .recurring])
     }
 
     func testMissingCancellationWindowIsOmitted() {
-        let perks = MembershipPerks.resolve(membership(discount: 5, cancellationHours: nil), now: Self.now)
+        let perks = MembershipPerks.resolve(membership(discount: 5, cancellationHours: nil))
         XCTAssertEqual(perks, [.discount(percent: 5), .recurring])
     }
 
     func testFractionalDiscountTruncatesToWholePercent() {
-        let perks = MembershipPerks.resolve(membership(discount: 7.9, cancellationHours: nil), now: Self.now)
+        let perks = MembershipPerks.resolve(membership(discount: 7.9, cancellationHours: nil))
         XCTAssertEqual(perks, [.discount(percent: 7), .recurring])
     }
 
@@ -103,63 +103,33 @@ final class MembershipPerksTests: XCTestCase {
     /// the layout's.
     func testAPlanWithNoExpressQuotaAdvertisesNoExpressPerk() {
         let perks = MembershipPerks.resolve(
-            membership(discount: 5, cancellationHours: 4, perMonth: 0, remaining: 0),
-            now: Self.now
+            membership(discount: 5, cancellationHours: 4, perMonth: 0, remaining: 0)
         )
         XCTAssertEqual(perks, [.discount(percent: 5), .freeCancellation(hours: 4), .recurring])
     }
 
     func testAnExhaustedQuotaStillAdvertisesThePerkAsUsedUp() {
         let perks = MembershipPerks.resolve(
-            membership(discount: 5, cancellationHours: 4, perMonth: 2, remaining: 0),
-            now: Self.now
+            membership(discount: 5, cancellationHours: 4, perMonth: 2, remaining: 0)
         )
         XCTAssertEqual(perks.last, .express(.exhausted))
     }
 
-    /// The owner ruled no express waivers during the trial. A trialing member's remaining count is 0 for
-    /// the same reason an exhausted member's is, so reporting "used up" would be a fresh false claim.
-    func testATrialingMemberIsToldTheWaiverHasNotStartedYet() {
-        let perks = MembershipPerks.resolve(
-            membership(
-                discount: 5,
-                cancellationHours: 4,
-                perMonth: 2,
-                remaining: 0,
-                trialEndsAtUtc: Self.now.addingTimeInterval(3600)
-            ),
-            now: Self.now
-        )
-        XCTAssertEqual(perks.last, .express(.pendingTrial))
-    }
-
-    func testATrialingMemberKeepsTheDiscountAndTheCancellationWindow() {
-        let perks = MembershipPerks.resolve(
-            membership(
-                discount: 5,
-                cancellationHours: 4,
-                perMonth: 2,
-                remaining: 0,
-                trialEndsAtUtc: Self.now.addingTimeInterval(3600)
-            ),
-            now: Self.now
-        )
-        XCTAssertTrue(perks.contains(.discount(percent: 5)))
-        XCTAssertTrue(perks.contains(.freeCancellation(hours: 4)))
-    }
-
-    func testAnExpiredTrialEarnsTheWaiverAgain() {
+    /// A member inside the free trial holds every Plus benefit from day one, the express waiver included.
+    func testATrialingMemberHoldsEveryPerkAPayingMemberDoes() {
         let perks = MembershipPerks.resolve(
             membership(
                 discount: 5,
                 cancellationHours: 4,
                 perMonth: 2,
                 remaining: 2,
-                trialEndsAtUtc: Self.now.addingTimeInterval(-3600)
-            ),
-            now: Self.now
+                trialEndsAtUtc: Self.now.addingTimeInterval(3600)
+            )
         )
-        XCTAssertEqual(perks.last, .express(.available(remaining: 2)))
+        XCTAssertEqual(
+            perks,
+            [.discount(percent: 5), .freeCancellation(hours: 4), .recurring, .express(.available(remaining: 2))]
+        )
     }
 
     func testRecurringSurvivesACancellationRequest() {
@@ -178,25 +148,23 @@ final class MembershipPerksTests: XCTestCase {
             expressUpgradesRemaining: membership.expressUpgradesRemaining
         )
         XCTAssertEqual(
-            MembershipPerks.resolve(membership, now: Self.now),
+            MembershipPerks.resolve(membership),
             [.discount(percent: 5), .freeCancellation(hours: 4), .recurring, .express(.available(remaining: 1))]
         )
     }
 
     func testEveryPerkResolvesALocalizedLabel() {
-        for perk in MembershipPerks.resolve(MembershipFixtures.active, now: Self.now) {
+        for perk in MembershipPerks.resolve(MembershipFixtures.active) {
             XCTAssertFalse(perk.label.isEmpty)
             XCTAssertFalse(perk.label.hasPrefix("membership_perk_pill_"), "\(perk) fell through to its key")
         }
     }
 
-    func testTheThreeExpressLabelsAreDistinctSoNoStateReadsAsAnother() {
-        let labels = [
+    func testTheExpressLabelsAreDistinctSoNoStateReadsAsAnother() {
+        XCTAssertNotEqual(
             MembershipPerk.express(.available(remaining: 1)).label,
-            MembershipPerk.express(.exhausted).label,
-            MembershipPerk.express(.pendingTrial).label
-        ]
-        XCTAssertEqual(Set(labels).count, 3)
+            MembershipPerk.express(.exhausted).label
+        )
     }
 
     private func membership(
@@ -230,8 +198,8 @@ final class ExpressWaiverStatusTests: XCTestCase {
     private static let now = Date(timeIntervalSince1970: 1_780_000_000)
 
     func testAGuestOrNonMemberIsToldNothing() {
-        XCTAssertEqual(ExpressWaiverStatus.resolve(nil as MyMembership?, now: Self.now), .none)
-        XCTAssertEqual(ExpressWaiverStatus.resolve(MembershipFixtures.inactive, now: Self.now), .none)
+        XCTAssertEqual(ExpressWaiverStatus.resolve(nil as MyMembership?), .none)
+        XCTAssertEqual(ExpressWaiverStatus.resolve(MembershipFixtures.inactive), .none)
     }
 
     func testAMemberOnAPlanWithoutTheQuotaIsToldNothing() {
@@ -247,44 +215,28 @@ final class ExpressWaiverStatusTests: XCTestCase {
         XCTAssertEqual(status(perMonth: 2, remaining: 0), .exhausted)
     }
 
-    /// The server states the three shapes in as many words: *null = no membership; 0 = exhausted, OR
-    /// still inside the trial*. Collapsing null onto zero therefore tells a member on a quota plan
-    /// that they used up a benefit they paid for — the coerced value is the opposite of what the
-    /// server's own null means, and "used up" is a claim where silence is not.
+    /// The server states the shapes in as many words: *null = no membership; 0 = exhausted*. Collapsing
+    /// null onto zero therefore tells a member on a quota plan that they used up a benefit they paid for —
+    /// the coerced value is the opposite of what the server's own null means, and "used up" is a claim
+    /// where silence is not.
     func testAnUnreportedQuotaIsNeverReportedAsUsedUp() {
         XCTAssertEqual(status(perMonth: 2, remaining: nil), .none)
         XCTAssertNotEqual(status(perMonth: 2, remaining: nil), .exhausted)
     }
 
-    func testAnUnreportedQuotaIsNotAdvertisedEitherWay() {
+    func testAnUnreportedQuotaIsNotAdvertised() {
         XCTAssertFalse(status(perMonth: 2, remaining: nil).isAdvertised)
-        XCTAssertFalse(status(perMonth: 2, remaining: nil, trialEndsAtUtc: Self.now.addingTimeInterval(3600))
-            .isAdvertised)
     }
 
-    /// A trial member is active and keeps the other benefits but earns no waiver; the quota still
-    /// reports the plan's number so the client can say WHEN waivers start.
-    func testATrialInFlightIsNeverAvailableEvenWithQuotaReported() {
-        XCTAssertEqual(
-            status(perMonth: 2, remaining: 2, trialEndsAtUtc: Self.now.addingTimeInterval(1)),
-            .trial
-        )
-        XCTAssertEqual(
-            status(perMonth: 2, remaining: 0, trialEndsAtUtc: Self.now.addingTimeInterval(86400)),
-            .trial
-        )
-    }
-
-    func testATrialThatHasAlreadyEndedNoLongerSuppressesTheWaiver() {
-        XCTAssertEqual(
-            status(perMonth: 2, remaining: 2, trialEndsAtUtc: Self.now.addingTimeInterval(-1)),
-            .available
-        )
+    /// A member inside the trial is entitled like a paying one, so the server's count is read as it is.
+    func testATrialInFlightReadsTheServersCount() {
+        let trialEnd = Self.now.addingTimeInterval(86400)
+        XCTAssertEqual(status(perMonth: 2, remaining: 2, trialEndsAtUtc: trialEnd), .available)
+        XCTAssertEqual(status(perMonth: 2, remaining: 0, trialEndsAtUtc: trialEnd), .exhausted)
     }
 
     func testOnlyTheNoneCaseIsUnadvertised() {
         XCTAssertFalse(ExpressWaiverStatus.none.isAdvertised)
-        XCTAssertTrue(ExpressWaiverStatus.trial.isAdvertised)
         XCTAssertTrue(ExpressWaiverStatus.available.isAdvertised)
         XCTAssertTrue(ExpressWaiverStatus.exhausted.isAdvertised)
     }
@@ -294,11 +246,10 @@ final class ExpressWaiverStatusTests: XCTestCase {
             hasMembership: true,
             freeCancellationWindowHours: 48,
             expressUpgradesPerMonth: 2,
-            expressUpgradesRemaining: 0,
-            trialEndsAtUtc: Self.now.addingTimeInterval(3600)
+            expressUpgradesRemaining: 0
         )
-        XCTAssertEqual(ExpressWaiverStatus.resolve(snapshot, now: Self.now), .trial)
-        XCTAssertEqual(ExpressWaiverStatus.resolve(nil as MembershipSnapshot?, now: Self.now), .none)
+        XCTAssertEqual(ExpressWaiverStatus.resolve(snapshot), .exhausted)
+        XCTAssertEqual(ExpressWaiverStatus.resolve(nil as MembershipSnapshot?), .none)
     }
 
     private func status(perMonth: Int?, remaining: Int?, trialEndsAtUtc: Date? = nil) -> ExpressWaiverStatus {
@@ -316,8 +267,7 @@ final class ExpressWaiverStatusTests: XCTestCase {
                 expressUpgradesPerMonth: perMonth,
                 expressUpgradesRemaining: remaining,
                 trialEndsAtUtc: trialEndsAtUtc
-            ),
-            now: Self.now
+            )
         )
     }
 }

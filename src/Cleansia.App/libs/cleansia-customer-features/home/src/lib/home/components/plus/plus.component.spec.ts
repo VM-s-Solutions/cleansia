@@ -1,19 +1,17 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { CustomerAuthService, MembershipPlanFactsService } from '@cleansia/customer-services';
-import { selectMarketCountryId } from '@cleansia/customer-stores';
-import { MockStore, provideMockStore } from '@ngrx/store/testing';
 import { TranslateService } from '@ngx-translate/core';
 import { PlusComponent } from './plus.component';
+import { PlusFacade } from './plus.facade';
 
 /**
  * Rendered without its template: the band's markup is covered by the home checkers, and what
- * is pinned here is the plan price label — which locale groups the digits — and the market the
- * plans are read for.
+ * is pinned here is the plan price label — which locale groups the digits. The market the plans
+ * are read for and the trial offered are the facade's, and its spec pins them.
  */
 describe('PlusComponent', () => {
   let component: PlusComponent;
-  let store: MockStore;
   let load: jest.Mock;
   let translate: { currentLang: string };
 
@@ -23,18 +21,15 @@ describe('PlusComponent', () => {
     TestBed.configureTestingModule({
       providers: [
         PlusComponent,
-        provideMockStore({
-          selectors: [{ selector: selectMarketCountryId, value: 'cze-id' }],
-        }),
         { provide: CustomerAuthService, useValue: { isLoggedIn: signal(false) } },
         {
           provide: MembershipPlanFactsService,
-          useValue: { load, hasPlans: signal(false), currencyCode: signal(currencyCode) },
+          useValue: { hasPlans: signal(false), currencyCode: signal(currencyCode) },
         },
+        { provide: PlusFacade, useValue: { load } },
         { provide: TranslateService, useValue: translate },
       ],
     });
-    store = TestBed.inject(MockStore);
     component = TestBed.inject(PlusComponent);
   }
 
@@ -58,13 +53,11 @@ describe('PlusComponent', () => {
     expect(component.formatPrice(199)).toContain('€');
   });
 
-  it('reads the plans for the chosen market and again when it changes', () => {
+  it('loads the band through its facade when it starts', () => {
     build();
 
     component.ngOnInit();
-    store.overrideSelector(selectMarketCountryId, 'svk-id');
-    store.refreshState();
 
-    expect(load.mock.calls).toEqual([['cze-id'], ['svk-id']]);
+    expect(load).toHaveBeenCalledTimes(1);
   });
 });

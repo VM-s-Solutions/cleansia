@@ -81,7 +81,7 @@ public class RecurringPauseNotificationTests(PostgresContainerFixture fixture) :
     }
 
     private static async Task Seed(CleansiaDbContext db, bool muted = false, bool secondAccountTemplate = false,
-        bool history = false, bool trialOnly = false, bool existingOccurrence = false)
+        bool history = false, bool trialOnly = false, bool existingOccurrence = false, bool trialEnded = false)
     {
         var now = DateTime.UtcNow;
         db.Languages.Add(Language.Create("en", "English"));
@@ -109,7 +109,7 @@ public class RecurringPauseNotificationTests(PostgresContainerFixture fixture) :
             preferences.Set(NotificationCategory.RecurringScheduled, !muted);
             db.UserNotificationPreferences.Add(preferences);
             var membership = UserMembership.Create(userId, plan.Id, currency.Id, $"sub-{userId}", now.AddDays(-10), now.AddDays(20),
-                trialOnly && userId == UserA ? now.AddDays(2) : null);
+                trialOnly && userId == UserA ? now.AddDays(trialEnded ? -1 : 2) : null);
             membership.Id = membershipId;
             membership.TenantId = tenant;
             membership.Created("seed", DateTimeOffset.UtcNow.AddDays(-10));
@@ -566,6 +566,33 @@ public class RecurringPauseNotificationTests(PostgresContainerFixture fixture) :
                 Assert.Empty(await db.Set<UserNotification>().IgnoreQueryFilters().ToListAsync());
                 Assert.Empty(await db.OutboxMessages.IgnoreQueryFilters().ToListAsync());
                 Assert.All(await db.UserMemberships.IgnoreQueryFilters().ToListAsync(), x => Assert.Equal(0, x.RecurringPauseNotificationSequence));
+            }, transactional: false);
+    }
+
+    [Theory]
+    [InlineData("canceled")]
+    [InlineData("past_due")]
+    public async Task A_trial_that_lapses_unpaid_is_told_once_that_its_schedule_paused(string lapse)
+    {
+        var run = new Run();
+        await TestMethod<bool>(setup: run.Setup, arrange: (CleansiaDbContext db) => Seed(db, trialOnly: true, trialEnded: true),
+            act: async (IServiceProvider provider) =>
+            {
+                await UpdateMembership(provider, lapse);
+                await Skip(provider);
+                await Skip(provider, TemplateA2);
+                await Skip(provider);
+                return true;
+            }, assert: async (CleansiaDbContext db, bool _) =>
+            {
+                var membership = await db.UserMemberships.IgnoreQueryFilters().SingleAsync(x => x.Id == MemberA);
+                Assert.Null(membership.PaidPeriodConfirmedAt);
+                Assert.Equal(1, membership.RecurringPauseNotificationSequence);
+                var notice = Assert.Single(await db.Set<UserNotification>().IgnoreQueryFilters().ToListAsync());
+                Assert.Equal(UserA, notice.UserId);
+                Assert.Equal(NotificationEventCatalog.RecurringPaused, notice.EventKey);
+                Assert.Equal(MessageKeys.Push(UserA, NotificationEventCatalog.RecurringPaused, $"{MemberA}:1"),
+                    Assert.Single(await db.OutboxMessages.IgnoreQueryFilters().Select(x => x.MessageKey).ToListAsync()));
             }, transactional: false);
     }
 

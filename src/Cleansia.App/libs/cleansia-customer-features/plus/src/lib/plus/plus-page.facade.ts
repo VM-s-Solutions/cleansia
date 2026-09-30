@@ -1,10 +1,11 @@
-import { inject, Injectable, signal } from '@angular/core';
+import { computed, inject, Injectable, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import {
   CreateMembershipCheckoutSessionCommand,
   CustomerClient,
   GetMyMembershipResponse,
   MembershipPlanFactsService,
+  offeredTrialDays,
 } from '@cleansia/customer-services';
 import { selectMarketCountryId } from '@cleansia/customer-stores';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
@@ -52,7 +53,6 @@ export class PlusPageFacade extends UnsubscribeControlDirective {
   readonly discountPercent = this.facts.discountPercent;
   readonly cancellationHours = this.facts.cancellationHours;
   readonly expressPerMonth = this.facts.expressPerMonth;
-  readonly trialDays = this.facts.trialDays;
   readonly yearlySavingsPercent = this.facts.yearlySavingsPercent;
   readonly hasExpressPerk = this.facts.hasExpressPerk;
   readonly hasPlans = this.facts.hasPlans;
@@ -66,6 +66,33 @@ export class PlusPageFacade extends UnsubscribeControlDirective {
   readonly membership = signal<GetMyMembershipResponse | null>(null);
   readonly isMember = signal(false);
   readonly submitting = signal(false);
+
+  /** The trial the page's plan-less actions start — the monthly plan's, as `startTrial()` picks it. */
+  readonly trialDays = computed(() =>
+    offeredTrialDays(this.monthlyPlan() ?? this.plans()[0], this.membership()),
+  );
+  readonly monthlyTrialDays = computed(() =>
+    offeredTrialDays(this.monthlyPlan(), this.membership()),
+  );
+  readonly yearlyTrialDays = computed(() =>
+    offeredTrialDays(this.yearlyPlan(), this.membership()),
+  );
+
+  /**
+   * The footnote under the plan cards speaks for every card at once, and the trial length is per
+   * plan — so it may only state billing terms the cards share. When they differ it says nothing,
+   * and each card states its own.
+   */
+  private readonly cardTrialDays = computed(() => [
+    ...(this.monthlyPlan() ? [this.monthlyTrialDays()] : []),
+    ...(this.yearlyPlan() ? [this.yearlyTrialDays()] : []),
+  ]);
+  readonly trialOnEveryPlan = computed(
+    () => this.cardTrialDays().length > 0 && this.cardTrialDays().every((days) => days > 0),
+  );
+  readonly trialOnNoPlan = computed(
+    () => this.cardTrialDays().length > 0 && this.cardTrialDays().every((days) => days === 0),
+  );
 
   load(): void {
     this.store

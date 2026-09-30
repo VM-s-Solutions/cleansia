@@ -12,13 +12,13 @@
           is the drift this replaced.
         -->
         <h2 class="cl-plus__title">
-          @if (facts.trialDays() > 0) {
+          @if (facade.trialDays() > 0) {
             {{
               'pages.home.plus.title'
                 | translate
                   : {
                       price: formatPrice(facts.monthlyPlan()!.price),
-                      days: facts.trialDays()
+                      days: facade.trialDays()
                     }
             }}
           } @else {
@@ -47,7 +47,7 @@
 
         <div class="cl-plus__actions">
           <a class="cl-btn cl-btn--inverse cl-plus__cta" [routerLink]="ctaLink()">
-            @if (facts.trialDays() > 0) {
+            @if (facade.trialDays() > 0) {
               {{ 'pages.home.plus.cta' | translate }}
             } @else {
               {{ 'pages.home.plus.cta_no_trial' | translate }}

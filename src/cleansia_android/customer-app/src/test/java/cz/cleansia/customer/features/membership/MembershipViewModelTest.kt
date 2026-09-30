@@ -293,7 +293,39 @@ class MembershipViewModelTest {
         assertEquals(ActionState.Idle, vm.submitState.value)
     }
 
-    // No Plus benefit runs during the free trial; every one starts with the first paid month.
+    @Test
+    fun `the not-subscribed card offers the monthly plan's trial to a customer who never had one`() = runTest {
+        coEvery { repository.getPlans(null) } returns ApiResult.Success(
+            listOf(
+                plan("plus_yearly", "CZK").copy(billingInterval = 2, trialPeriodDays = 30),
+                plan("plus_monthly", "CZK").copy(trialPeriodDays = 14),
+            ),
+        )
+        current.value = GetMyMembershipResponse(hasMembership = false, trialEligible = true)
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        assertEquals(14, vm.offeredTrialDays.value)
+    }
+
+    @Test
+    fun `the not-subscribed card offers no trial once the customer has had theirs`() = runTest {
+        coEvery { repository.getPlans(null) } returns ApiResult.Success(
+            listOf(plan("plus_monthly", "CZK").copy(trialPeriodDays = 14)),
+        )
+        current.value = GetMyMembershipResponse(hasMembership = false, trialEligible = true)
+        val vm = viewModel()
+        advanceUntilIdle()
+        assertEquals(14, vm.offeredTrialDays.value)
+
+        current.value = GetMyMembershipResponse(hasMembership = false, trialEligible = false)
+        advanceUntilIdle()
+
+        assertEquals(0, vm.offeredTrialDays.value)
+    }
+
+    // A trialing member has every Plus benefit; the trial only decides when the first payment falls.
 
     private fun member(trialEndsAtUtc: Instant?, hasMembership: Boolean = true) = GetMyMembershipResponse(
         hasMembership = hasMembership,
@@ -331,7 +363,7 @@ class MembershipViewModelTest {
     }
 
     @Test
-    fun `cancelling during the trial says no paid month follows, not that benefits run on`() = runTest {
+    fun `cancelling during the trial says nothing is charged, not that a paid period runs on`() = runTest {
         current.value = member(trialEndsAtUtc = trialRunning)
         coEvery { repository.cancel() } returns ApiResult.Success(
             CancelMembershipSubscriptionResponse(effectiveEndDate = "2026-10-04T00:00:00Z"),

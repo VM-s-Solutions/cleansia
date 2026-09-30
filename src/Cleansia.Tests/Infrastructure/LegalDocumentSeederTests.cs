@@ -32,6 +32,7 @@ public sealed class LegalDocumentSeederTests : IDisposable
         (LegalDocumentType.TermsOfService, new DateOnly(2026, 9, 14)),
         (LegalDocumentType.TermsOfService, new DateOnly(2026, 9, 27)),
         (LegalDocumentType.TermsOfService, new DateOnly(2026, 9, 29)),
+        (LegalDocumentType.TermsOfService, new DateOnly(2026, 9, 30)),
         (LegalDocumentType.PrivacyPolicy, new DateOnly(2026, 9, 14)),
         (LegalDocumentType.PrivacyPolicy, new DateOnly(2026, 9, 29)),
         (LegalDocumentType.WorkContract, new DateOnly(2026, 9, 20)),
@@ -369,6 +370,32 @@ public sealed class LegalDocumentSeederTests : IDisposable
         Assert.Equal(unconditional.Keys.Order(), newest.Select(r => r.Language).Order());
         Assert.All(newest, r => Assert.DoesNotContain(unconditional[r.Language], r.ContentMarkdown));
     }
+
+    /// <summary>
+    /// Owner ruling 2026-09-30: Cleansia Plus has a 14-day free trial again, one per account, and the
+    /// newest terms offer it in every language — as the only day figure in the Plus section, which used to
+    /// say there was no free trial.
+    /// </summary>
+    [Fact]
+    public void The_Newest_Terms_Offer_The_Plus_Free_Trial_In_Every_Language()
+    {
+        var newest = NewestTerms();
+
+        Assert.Equal(new[] { "cs", "en", "ru", "sk", "uk" }, newest.Select(r => r.Language).Order());
+        Assert.All(newest, r =>
+        {
+            var plusSection = r.ContentMarkdown.ReplaceLineEndings("\n")
+                .Split("\n## ")
+                .Single(section => section.StartsWith("10. Cleansia Plus"));
+            Assert.Equal(
+                new[] { PlusTrialDays },
+                DayPhrase.Matches(plusSection).Select(m => int.Parse(m.Groups[1].Value)));
+        });
+    }
+
+    private const int PlusTrialDays = 14;
+
+    private static readonly Regex DayPhrase = new(@"(\d+)\s+(?:days|dní|днів|дней)", RegexOptions.IgnoreCase);
 
     private static readonly Regex MinutePhrase = new(@"(\d+)\s+(?:min|хвилин|минут)", RegexOptions.IgnoreCase);
 

@@ -10,15 +10,20 @@ import cz.cleansia.customer.core.data.AddressRepository
 import cz.cleansia.customer.core.loyalty.LoyaltyRepository
 import cz.cleansia.customer.core.market.MarketRepository
 import cz.cleansia.customer.core.market.countryId
+import cz.cleansia.customer.core.memberships.MembershipPlanDto
 import cz.cleansia.customer.core.memberships.MembershipRepository
+import cz.cleansia.customer.core.memberships.headlineTrialDays
 import cz.cleansia.customer.core.notifications.NotificationFeedRepository
 import cz.cleansia.customer.core.orders.OrderRepository
 import cz.cleansia.customer.core.recurring.RecurringBookingRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 
@@ -26,8 +31,8 @@ import kotlinx.coroutines.launch
  * Injection seam for the home screen's seven singleton repositories.
  *
  * **Almost no state lives here** — it exists so the screen avoids the EntryPointAccessors
- * pattern. The one exception is [isUserRefreshing], and it is an exception on purpose: see
- * its own note.
+ * pattern. The exceptions are [isUserRefreshing], on purpose — see its own note — and
+ * [plusTrialDays].
  */
 @HiltViewModel
 class HomeTabViewModel @Inject constructor(
@@ -52,6 +57,21 @@ class HomeTabViewModel @Inject constructor(
             catalogRepository.refresh(market.countryId).onError { error ->
                 if (error !is ApiError.Network) snackbar.showError(error)
             }
+        }
+    }
+
+    private val plusPlans = MutableStateFlow<List<MembershipPlanDto>>(emptyList())
+
+    /** The free trial the Plus slide offers; 0 once this customer has had theirs or no plan carries one. */
+    val plusTrialDays: StateFlow<Int> = combine(membershipRepository.current, plusPlans) { membership, plans ->
+        membership.headlineTrialDays(plans)
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, 0)
+
+    /** The chosen market's plans. Silent on failure: the slide then sells Plus without a trial, which is never false. */
+    fun refreshPlusPlans() {
+        viewModelScope.launch {
+            val market = marketRepository.ensureLoaded()
+            membershipRepository.getPlans(market.countryId).onSuccess { plusPlans.value = it }
         }
     }
 

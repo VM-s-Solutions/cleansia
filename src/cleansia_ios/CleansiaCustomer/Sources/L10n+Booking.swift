@@ -140,10 +140,6 @@ extension L10n {
             localized("booking_express_waiver_used")
         }
 
-        static var expressWaiverTrial: String {
-            localized("booking_express_waiver_trial")
-        }
-
         static var slotEarliest: String {
             localized("booking_slot_earliest")
         }

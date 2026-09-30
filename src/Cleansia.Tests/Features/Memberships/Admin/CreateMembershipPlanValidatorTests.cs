@@ -162,12 +162,24 @@ public class CreateMembershipPlanValidatorTests
     }
 
     [Fact]
-    public async Task NegativeTrial_Fails()
+    public async Task NegativeTrial_Fails_MustBePositive()
     {
         var result = await Validator().ValidateAsync(Valid() with { TrialPeriodDays = -1 });
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, e =>
-            e.PropertyName == nameof(CreateMembershipPlan.Command.TrialPeriodDays));
+            e.PropertyName == nameof(CreateMembershipPlan.Command.TrialPeriodDays)
+            && e.ErrorMessage == BusinessErrorMessage.MustBePositive);
+    }
+
+    /// <summary>Owner ruling 2026-09-30: the trial length is the plan's, set here, and zero means no trial.</summary>
+    [Theory]
+    [InlineData(0)]
+    [InlineData(14)]
+    [InlineData(30)]
+    public async Task ATrialLength_Passes(int days)
+    {
+        var result = await Validator().ValidateAsync(Valid() with { TrialPeriodDays = days });
+        Assert.True(result.IsValid);
     }
 
     [Fact]

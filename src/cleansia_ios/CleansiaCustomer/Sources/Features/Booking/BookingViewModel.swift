@@ -346,7 +346,7 @@ final class BookingViewModel: ViewModel {
         membershipLoad = nil
         guard let snapshot else { return nil }
         membership = snapshot
-        expressWaiverStatus = ExpressWaiverStatus.resolve(snapshot, now: Date())
+        expressWaiverStatus = ExpressWaiverStatus.resolve(snapshot)
         return snapshot
     }
 

@@ -285,18 +285,6 @@
       color: var(--cl-muted);
     }
   }
-
-  // Not yet on: a trialing member has the discount and the window but no
-  // express waiver until the trial ends.
-  &--trial {
-    background: var(--cl-warn-soft);
-    border-color: var(--cl-warn-line);
-    color: var(--cl-warn-ink);
-
-    i {
-      color: var(--cl-warn-ink);
-    }
-  }
 }
 
 // ---- Changing plan ---------------------------------------------------------------------
@@ -394,15 +382,6 @@
   i {
     flex-shrink: 0;
     margin-top: 2px;
-  }
-
-  &--warn {
-    padding: var(--cl-u) calc(1.125 * var(--cl-u));
-    border-radius: calc(1.125 * var(--cl-u));
-    background: var(--cl-warn-soft);
-    border: 1px solid var(--cl-warn-line);
-    font-size: calc(0.875 * var(--cl-u));
-    color: var(--cl-warn-ink);
   }
 }
 

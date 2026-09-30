@@ -262,7 +262,8 @@ rule then previews the code for the signed-in customer, and the handler applies 
 same preview the validator accepted, so the two cannot disagree.
 
 `preferredEmployeeId`, when set, runs its own `Cascade.Stop` chain after these: the caller holds an
-active, paid Plus membership (`order.preferred_employee.membership_required`), then the named cleaner is
+entitled Plus membership — active, paid or inside its free trial
+(`order.preferred_employee.membership_required`) — then the named cleaner is
 **eligible** — a completed order together **and** paid in the order's currency, the service address's
 country's (`order.preferred_employee.not_eligible`, one key for both terms). A cleaner paid in another
 currency does not see the order on their board and cannot take it, so a hold on them could only lapse.

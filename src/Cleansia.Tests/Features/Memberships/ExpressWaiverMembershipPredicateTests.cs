@@ -54,7 +54,7 @@ public sealed class ExpressWaiverMembershipPredicateTests : IDisposable
             new FixedTenantProvider(TestTenants.Default));
     }
 
-    private async Task SeedMembershipAsync(MembershipStatus status)
+    private async Task SeedMembershipAsync(MembershipStatus status, DateTime? trialEndsAtUtc = null)
     {
         await using var ctx = NewContext();
         await TestTenants.EnsureCreatedWithRegistryAsync(ctx);
@@ -79,8 +79,14 @@ public sealed class ExpressWaiverMembershipPredicateTests : IDisposable
         ctx.Add(user);
 
         var membership = UserMembership.Create(
-            UserId, plan.Id, currency.Id, "sub_pastdue", DateTime.UtcNow.AddDays(-10), DateTime.UtcNow.AddDays(20));
-        if (status != MembershipStatus.Active)
+            UserId, plan.Id, currency.Id, "sub_pastdue", DateTime.UtcNow.AddDays(-10), DateTime.UtcNow.AddDays(20),
+            trialEndsAtUtc);
+        if (trialEndsAtUtc is not null)
+        {
+            membership.UpdateFromStripeWebhook(
+                "trialing", DateTime.UtcNow.AddDays(-10), DateTime.UtcNow.AddDays(20), trialEndsAtUtc);
+        }
+        else if (status != MembershipStatus.Active)
         {
             // Through the REAL writer, so the test pins production wiring rather than a field poke:
             // "past_due" is what Stripe sends when the first invoice fails.
@@ -134,6 +140,22 @@ public sealed class ExpressWaiverMembershipPredicateTests : IDisposable
 
         Assert.True(waiver.Waived);
         Assert.Equal(2, waiver.Quota);
+    }
+
+    /// <summary>
+    /// Owner ruling 2026-09-30: a member inside the free trial gets every Plus benefit from day one,
+    /// the metered waiver included — the entitlement predicate draws no line at the trial's end.
+    /// </summary>
+    [Fact]
+    public async Task TrialingMember_GetsTheExpressWaiver()
+    {
+        await SeedMembershipAsync(MembershipStatus.Active, trialEndsAtUtc: DateTime.UtcNow.AddDays(10));
+
+        var waiver = await ResolveAsync();
+
+        Assert.True(waiver.Waived);
+        Assert.Equal(2, waiver.Quota);
+        Assert.Equal(2, waiver.RemainingBeforeThisBooking);
     }
 
     private sealed class FixedTenantProvider(string? tenantId) : ITenantProvider

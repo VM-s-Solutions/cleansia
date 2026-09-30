@@ -1,39 +1,42 @@
 import Foundation
 
-/// The sentences a membership surface owes a member. `hasMembership` counts a running trial, but no Plus
-/// benefit runs during one — every benefit starts with the first paid month — so a trialing member is told
-/// what a paid membership will include and when, never that a benefit is already on.
+/// The sentences a membership surface owes a member. A running trial carries every Plus benefit; what it
+/// changes is the money — nothing is charged until it ends, and a cancel inside it means no payment follows.
 struct MembershipCopy: Equatable {
     /// When the running trial ends; nil when no trial is running.
     let trialEndsOn: Date?
     /// The renewal payment failed: nothing runs to a period end, so a cancel is immediate.
     let benefitsPaused: Bool
+    let cancelRequested: Bool
+    /// When the running trial or the paid period ends.
+    let periodEnd: Date?
 
     init(_ membership: MyMembership?, now: Date = Date()) {
-        benefitsPaused = membership.map { $0.hasMembership && $0.benefitsPaused } ?? false
-        guard let membership, membership.hasMembership,
-              let trialEndsAtUtc = membership.trialEndsAtUtc, trialEndsAtUtc > now
-        else {
-            trialEndsOn = nil
-            return
-        }
-        trialEndsOn = trialEndsAtUtc
+        let member = membership?.hasMembership == true ? membership : nil
+        benefitsPaused = member?.benefitsPaused ?? false
+        cancelRequested = member?.cancelRequested ?? false
+        trialEndsOn = member?.trialEndsAtUtc.flatMap { $0 > now ? $0 : nil }
+        periodEnd = trialEndsOn ?? member?.currentPeriodEnd
     }
 
     var isTrial: Bool {
         trialEndsOn != nil
     }
 
-    var perksTitle: String? {
-        isTrial ? L10n.Membership.trialPerksTitle : nil
+    var periodHeadline: String? {
+        guard let periodEnd else { return nil }
+        let date = MembershipFormat.periodEnd(periodEnd)
+        if cancelRequested { return L10n.Membership.activeUntil(date) }
+        return isTrial ? L10n.Membership.trialUntil(date) : L10n.Membership.renewsOn(date)
     }
 
-    var perksNote: String? {
-        isTrial ? L10n.Membership.trialPerksNote : nil
-    }
-
-    var cancelledHint: String {
-        isTrial ? L10n.Membership.trialCancelledLead : L10n.Membership.thenEndsHint
+    var periodHint: String {
+        switch (cancelRequested, isTrial) {
+        case (true, true): L10n.Membership.trialCancelledLead
+        case (true, false): L10n.Membership.thenEndsHint
+        case (false, true): L10n.Membership.trialFirstChargeHint
+        case (false, false): L10n.Membership.autoRenewHint
+        }
     }
 
     var cancelDialogMessage: String {
@@ -58,15 +61,7 @@ struct MembershipCopy: Equatable {
     }
 
     var successSubtitle: String {
-        isTrial ? L10n.Membership.successSubtitleTrial : L10n.Membership.successSubtitle
-    }
-
-    var successPerksHeader: String {
-        isTrial ? L10n.Membership.trialPerksTitle : L10n.Membership.successPerksHeader
-    }
-
-    /// The server refuses a schedule until a paid month begins.
-    var offersRecurringSetup: Bool {
-        !isTrial
+        guard let trialEndsOn else { return L10n.Membership.successSubtitle }
+        return L10n.Membership.successSubtitleTrial(MembershipFormat.periodEnd(trialEndsOn))
     }
 }

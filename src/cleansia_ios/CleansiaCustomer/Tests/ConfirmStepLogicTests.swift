@@ -100,22 +100,6 @@ final class CancellationPolicyTests: XCTestCase {
         XCTAssertNil(policy.plusFreeHours)
     }
 
-    /// The server reads the paid entitlement, which a running trial is not.
-    func testATrialingMemberIsQuotedTheStandardWindow() {
-        let now = Date(timeIntervalSince1970: 1_780_000_000)
-        let policy = CancellationPolicyBuilder.make(
-            membership: MembershipSnapshot(
-                hasMembership: true,
-                freeCancellationWindowHours: 4,
-                trialEndsAtUtc: now.addingTimeInterval(86400)
-            ),
-            now: now
-        )
-        XCTAssertEqual(policy.freeHours, 24)
-        XCTAssertNil(policy.plusFreeHours)
-        XCTAssertFalse(policy.hasPlusPerk)
-    }
-
     /// A failed renewal stops every benefit at once, the window included.
     func testAPastDueMemberIsQuotedTheStandardWindow() {
         let policy = CancellationPolicyBuilder.make(
@@ -124,20 +108,6 @@ final class CancellationPolicyTests: XCTestCase {
         XCTAssertEqual(policy.freeHours, 24)
         XCTAssertNil(policy.plusFreeHours)
         XCTAssertFalse(policy.hasPlusPerk)
-    }
-
-    func testThePlusWindowStartsWithThePaidMonth() {
-        let now = Date(timeIntervalSince1970: 1_780_000_000)
-        let policy = CancellationPolicyBuilder.make(
-            membership: MembershipSnapshot(
-                hasMembership: true,
-                freeCancellationWindowHours: 4,
-                trialEndsAtUtc: now.addingTimeInterval(-60)
-            ),
-            now: now
-        )
-        XCTAssertEqual(policy.freeHours, 4)
-        XCTAssertTrue(policy.hasPlusPerk)
     }
 }
 

@@ -85,7 +85,6 @@ describe('OrderMembershipFacade', () => {
       expect(facade.expressWaiverStatus()).toBe('available');
       expect(facade.expressWaiverAvailable()).toBe(true);
       expect(facade.expressWaiverExhausted()).toBe(false);
-      expect(facade.expressWaiverPendingTrial()).toBe(false);
     });
 
     it('reports an exhausted member so the wizard can disclose the surcharge', () => {
@@ -99,12 +98,12 @@ describe('OrderMembershipFacade', () => {
       expect(facade.expressUpgradesRemaining()).toBe(0);
     });
 
-    it('reports a trialing member as pending, never as exhausted', () => {
+    it('counts the waivers of a member inside the free trial', () => {
       membershipClient.getMine.mockReturnValue(
         of(
           buildMembership({
             expressUpgradesPerMonth: 2,
-            expressUpgradesRemaining: 0,
+            expressUpgradesRemaining: 1,
             trialEndsAtUtc: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
           }),
         ),
@@ -112,8 +111,8 @@ describe('OrderMembershipFacade', () => {
 
       facade.load(true);
 
-      expect(facade.expressWaiverPendingTrial()).toBe(true);
-      expect(facade.expressWaiverExhausted()).toBe(false);
+      expect(facade.expressWaiverAvailable()).toBe(true);
+      expect(facade.expressUpgradesRemaining()).toBe(1);
     });
 
     it('says nothing about express for a member on a plan without the perk', () => {
@@ -156,6 +155,75 @@ describe('OrderMembershipFacade', () => {
 
       expect(membershipClient.getMine).not.toHaveBeenCalled();
       expect(facade.expressWaiverStatus()).toBe('none');
+    });
+  });
+
+  // One trial per account — the server's `trialEligible` — and each plan carries its own length.
+  describe('the free trial the Plus step offers', () => {
+    const plus = (trialPeriodDays: number) =>
+      GetMembershipPlansResponse.fromJS({ code: 'PLUS_MONTHLY', trialPeriodDays });
+
+    beforeEach(() => {
+      build('browser');
+      membershipClient.getPlans.mockReturnValue(of([plus(14)]));
+      facade.loadPlans();
+    });
+
+    it("is the plan's own trial for a customer the server has not answered for", () => {
+      expect(facade.trialDaysOnEveryPlan()).toBe(14);
+      expect(facade.trialDaysOf(plus(30))).toBe(30);
+    });
+
+    it('is none once the customer has had their trial', () => {
+      membershipClient.getMine.mockReturnValue(
+        of(GetMyMembershipResponse.fromJS({ hasMembership: false, trialEligible: false })),
+      );
+
+      facade.load(true);
+
+      expect(facade.trialDaysOnEveryPlan()).toBe(0);
+      expect(facade.trialDaysOf(plus(30))).toBe(0);
+    });
+  });
+
+  // The step's lead speaks for every plan card at once, and each plan carries its own trial.
+  describe('the billing terms the Plus step lead states', () => {
+    const plansOffering = (...trials: number[]) =>
+      trials.map((trialPeriodDays, index) =>
+        GetMembershipPlansResponse.fromJS({ code: `PLUS_${index}`, trialPeriodDays }),
+      );
+    const lead = () => ({
+      trialDaysOnEveryPlan: facade.trialDaysOnEveryPlan(),
+      trialOnNoPlan: facade.trialOnNoPlan(),
+    });
+
+    beforeEach(() => build('browser'));
+
+    it.each([
+      [[14, 14], { trialDaysOnEveryPlan: 14, trialOnNoPlan: false }],
+      [[0, 0], { trialDaysOnEveryPlan: 0, trialOnNoPlan: true }],
+      [[14, 0], { trialDaysOnEveryPlan: 0, trialOnNoPlan: false }],
+      [[0, 14], { trialDaysOnEveryPlan: 0, trialOnNoPlan: false }],
+      [[14, 30], { trialDaysOnEveryPlan: 0, trialOnNoPlan: false }],
+      [[], { trialDaysOnEveryPlan: 0, trialOnNoPlan: false }],
+    ])('for plans offering %j free days is %j', (trials, expected) => {
+      membershipClient.getPlans.mockReturnValue(of(plansOffering(...trials)));
+
+      facade.loadPlans();
+
+      expect(lead()).toEqual(expected);
+    });
+
+    it('says billing starts today to a customer who has had their trial', () => {
+      membershipClient.getPlans.mockReturnValue(of(plansOffering(14, 14)));
+      membershipClient.getMine.mockReturnValue(
+        of(GetMyMembershipResponse.fromJS({ hasMembership: false, trialEligible: false })),
+      );
+
+      facade.loadPlans();
+      facade.load(true);
+
+      expect(lead()).toEqual({ trialDaysOnEveryPlan: 0, trialOnNoPlan: true });
     });
   });
 

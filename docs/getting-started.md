@@ -109,10 +109,11 @@ anything else ([the cash rule](/product/business-rules#cash)). Refunds and cance
 the receipt: a card booking's is issued on payment; a cash booking gets an informational e-mail, and
 its receipt is issued at completion, after the cleaner has recorded the cash.
 
-**Plus is a paid subscription, with no trial.** Two plans, monthly and annual, each with a discount on
-every booking; both carry zero trial days and the admin plan commands refuse any other value. Every
-benefit needs an active, paid period, so starting one needs a real Stripe payment method.
-→ [Business rules — Cleansia Plus](/product/business-rules#cleansia-plus)
+**Plus is a subscription with a free trial, one per account.** Two plans, monthly and annual, each with
+a discount on every booking; both are seeded with a 14-day trial, and an administrator sets the length
+per plan. Every benefit applies from the trial's first day, and Stripe charges when it ends. A test
+account that has had its trial is offered none again, so test the trial with a fresh account.
+→ [Business rules — the free trial](/product/business-rules#plus-trial)
 
 **Loyalty tiers are automatic, and they go both ways.** The tier follows the account's points total:
 completed bookings raise it and unlock a discount at the higher tiers, and points taken back — a

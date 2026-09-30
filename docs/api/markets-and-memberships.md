@@ -109,7 +109,7 @@ an error. Without `countryId` the list is in the platform default currency.
     "freeCancellationWindowHours": 4,
     "allowsExpressUpgrade": true,
     "expressUpgradesPerMonth": 1,
-    "trialPeriodDays": 0,
+    "trialPeriodDays": 14,
     "savingsPercentVsMonthly": 15,
     "currencyCode": "CZK"
   }
@@ -139,6 +139,10 @@ warning) if the plan's row in that currency has been removed. The other fields a
 (`hasMembership`, `planCode`, `planName`, `discountPercentage`, `freeCancellationWindowHours`,
 `allowsExpressUpgrade`, `status`, `currentPeriodEnd`, `cancelRequested`, `billingInterval`,
 `expressUpgradesPerMonth`, `expressUpgradesRemaining`, `trialEndsAtUtc`, `trialEligible`).
+`trialEligible` is answered with or without a membership, and is `false` once the account has had a
+free trial; `trialEndsAtUtc`, while in the future, means the member is inside the trial — every benefit
+applies, and the first charge falls on that date unless they cancel.
+→ [Business rules — the free trial](/product/business-rules#plus-trial)
 
 ---
 
@@ -217,7 +221,7 @@ Stripe Price objects are created out of band — the admin enters ids.
   },
   "discountPercentage": 5,
   "freeCancellationWindowHours": 4,
-  "trialPeriodDays": 0,
+  "trialPeriodDays": 14,
   "allowsExpressUpgrade": true,
   "expressUpgradesPerMonth": 1
 }
@@ -232,7 +236,7 @@ Stripe Price objects are created out of band — the admin enters ids.
 - Refusals: `currency.not_found` (a key naming no currency), `membership.plan.stripe_price_already_used`
   (a Stripe Price id already charging another row, in this payload or in the database — a Stripe Price
   is single-currency), `Required` / `MaxLength` on a blank or over-long id, `MustBePositive` on a
-  negative price, `membership.plan.trial_not_permitted` on any `trialPeriodDays` but 0.
+  negative price or a negative `trialPeriodDays` (`0` is no trial).
 
 **Detail** returns `prices` as `{ "CZK": { "price", "monthlyEquivalentPrice", "stripePriceId" } }` —
 an absent key is a currency the plan is not priced in, never a zero. **The paged list** carries the

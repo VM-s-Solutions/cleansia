@@ -2943,41 +2943,6 @@
         }
       }
     },
-    "booking_express_waiver_trial": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Během zkušební doby se expresní termíny účtují s +20 % — odpuštění začíná prvním placeným měsícem."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Express slots are charged at +20% during your trial — the waiver starts with your first paid month."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Во время пробного периода экспресс-слоты оплачиваются с +20 % — отмена доплаты начинается с первого оплаченного месяца."
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Počas skúšobného obdobia sa expresné termíny účtujú s +20 % — odpustenie začína prvým plateným mesiacom."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Під час пробного періоду експрес-слоти оплачуються з +20 % — скасування доплати починається з першого оплаченого місяця."
-          }
-        }
-      }
-    },
     "booking_express_waiver_used": {
       "extractionState": "manual",
       "localizations": {
@@ -13239,6 +13204,76 @@
         }
       }
     },
+    "home_upsell_plus_title_trial": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prvních %1$d dní zdarma."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "First %1$d days free."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Первые %1$d дней бесплатно."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prvých %1$d dní zadarmo."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перші %1$d днів безкоштовно."
+          }
+        }
+      }
+    },
+    "home_upsell_plus_cta_trial": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vyzkoušet zdarma"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try it free"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Попробовать бесплатно"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vyskúšať zadarmo"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Спробувати безкоштовно"
+          }
+        }
+      }
+    },
     "home_upsell_plus_title": {
       "extractionState": "stale",
       "localizations": {
@@ -15413,6 +15448,41 @@
         }
       }
     },
+    "membership_trial_first_charge_hint": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Všechny výhody Plus už platí. Platit začnete tímto dnem, pokud předtím nezrušíte."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Every Plus benefit applies now. Billing starts on this date unless you cancel before it."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Все преимущества Plus уже действуют. Списание начнётся с этой даты, если вы не отмените раньше."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Všetky výhody Plus už platia. Platiť začnete týmto dňom, ak predtým nezrušíte."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Усі переваги Plus уже діють. Списання почнеться з цієї дати, якщо ви не скасуєте раніше."
+          }
+        }
+      }
+    },
     "membership_cancel_action": {
       "extractionState": "stale",
       "localizations": {
@@ -15559,31 +15629,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zkušební období skončí %1$@. Nenásleduje žádný placený měsíc, takže vám nic nenaúčtujeme a žádná z výhod Plus nezačne platit."
+            "value": "Zkušební období skončí %1$@ a do té doby vám výhody zůstanou. Žádná platba nenásleduje, takže vám nic nenaúčtujeme."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your trial ends on %1$@. No paid month follows, so you won't be charged and no Plus benefit starts."
+            "value": "Your trial ends on %1$@, and your benefits stay until then. No payment follows, so you won't be charged."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Пробный период закончится %1$@. Оплаченного месяца не будет, поэтому с вас ничего не спишут и ни одно из преимуществ Plus не начнёт действовать."
+            "value": "Пробный период закончится %1$@, и до этого преимущества сохранятся. Оплаты после него не будет, поэтому с вас ничего не спишут."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Skúšobné obdobie skončí %1$@. Nenasleduje žiadny platený mesiac, takže vám nič nenaúčtujeme a žiadna z výhod Plus nezačne platiť."
+            "value": "Skúšobné obdobie skončí %1$@ a dovtedy vám výhody zostanú. Žiadna platba nenasleduje, takže vám nič nenaúčtujeme."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Пробний період закінчиться %1$@. Оплаченого місяця не буде, тож з вас нічого не спишуть і жодна з переваг Plus не почне діяти."
+            "value": "Пробний період закінчиться %1$@, і до того часу переваги залишаться. Оплати після нього не буде, тож з вас нічого не спишуть."
           }
         }
       }
@@ -15664,31 +15734,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Členství zrušeno — nenásleduje žádný placený měsíc, takže vám nic nenaúčtujeme."
+            "value": "Cleansia Plus zrušeno — nic vám nenaúčtujeme a výhody platí do konce zkušebního období."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Membership cancelled — no paid month follows, so you won't be charged."
+            "value": "Cleansia Plus cancelled — you won't be charged, and your benefits run until the trial ends."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Членство отменено — оплаченного месяца не будет, поэтому с вас ничего не спишут."
+            "value": "Cleansia Plus отменено — с вас ничего не спишут, а преимущества будут действовать до конца пробного периода."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Členstvo zrušené — nenasleduje žiadny platený mesiac, takže vám nič nenaúčtujeme."
+            "value": "Cleansia Plus zrušené — nič vám nenaúčtujeme a výhody platia do konca skúšobného obdobia."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Членство скасовано — оплаченого місяця не буде, тож з вас нічого не спишуть."
+            "value": "Cleansia Plus скасовано — з вас нічого не спишуть, а переваги діятимуть до кінця пробного періоду."
           }
         }
       }
@@ -16113,6 +16183,41 @@
         }
       }
     },
+    "membership_inactive_cta_trial": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vyzkoušet %1$d dní zdarma"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try %1$d days free"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Попробовать %1$d дней бесплатно"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vyskúšať %1$d dní zadarmo"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Спробувати %1$d днів безкоштовно"
+          }
+        }
+      }
+    },
     "membership_inactive_perks_summary": {
       "extractionState": "stale",
       "localizations": {
@@ -16399,31 +16504,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Odpouštíme 20%% příplatek za expresní objednávky — úklidy, které začínají 2 až 4 hodiny po objednání. Až %1$d každý kalendářní měsíc po dobu aktivního placeného členství; nevyužité se nepřevádějí."
+            "value": "Odpouštíme 20%% příplatek za expresní objednávky — úklidy, které začínají 2 až 4 hodiny po objednání. Až %1$d každý kalendářní měsíc po dobu aktivního členství; nevyužité se nepřevádějí."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "We waive the 20%% surcharge on express bookings — cleanings that start 2 to 4 hours after you book. Up to %1$d each calendar month while your paid membership is active; unused ones don't carry over."
+            "value": "We waive the 20%% surcharge on express bookings — cleanings that start 2 to 4 hours after you book. Up to %1$d each calendar month while your membership is active; unused ones don't carry over."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Мы не берём 20 %% доплаты за экспресс-заказы — уборки, которые начинаются через 2–4 часа после оформления. До %1$d в каждый календарный месяц, пока действует ваше оплаченное членство; неиспользованные не переносятся."
+            "value": "Мы не берём 20 %% доплаты за экспресс-заказы — уборки, которые начинаются через 2–4 часа после оформления. До %1$d в каждый календарный месяц, пока действует ваше членство; неиспользованные не переносятся."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Odpúšťame 20%% príplatok za expresné objednávky — upratovania, ktoré začínajú 2 až 4 hodiny po objednaní. Až %1$d každý kalendárny mesiac počas aktívneho plateného členstva; nevyužité sa neprenášajú."
+            "value": "Odpúšťame 20%% príplatok za expresné objednávky — upratovania, ktoré začínajú 2 až 4 hodiny po objednaní. Až %1$d každý kalendárny mesiac počas aktívneho členstva; nevyužité sa neprenášajú."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ми не беремо 20 %% доплати за експрес-замовлення — прибирання, що починаються через 2–4 години після оформлення. До %1$d на кожен календарний місяць, поки діє ваше оплачене членство; невикористані не переносяться."
+            "value": "Ми не беремо 20 %% доплати за експрес-замовлення — прибирання, що починаються через 2–4 години після оформлення. До %1$d на кожен календарний місяць, поки діє ваше членство; невикористані не переносяться."
           }
         }
       }
@@ -16704,41 +16809,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Експрес без доплати · %1$d залишилось"
-          }
-        }
-      }
-    },
-    "membership_perk_pill_express_trial": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Expres odpuštěn · po zkušební době"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Express waived · after trial"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Экспресс без доплаты · после пробного"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Expres odpustený · po skúšobnej dobe"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Експрес без доплати · після пробного"
           }
         }
       }
@@ -17303,6 +17373,41 @@
         }
       }
     },
+    "membership_trial_until": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zkušební období zdarma do %1$@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Free trial until %1$@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Бесплатный пробный период до %1$@"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skúšobné obdobie zadarmo do %1$@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Безкоштовний пробний період до %1$@"
+          }
+        }
+      }
+    },
     "membership_social_proof_headline": {
       "extractionState": "stale",
       "localizations": {
@@ -17519,31 +17624,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Expresní termíny bez příplatku — od prvního placeného měsíce"
+            "value": "Expresní termíny bez příplatku"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Express bookings with the surcharge waived — from your first paid month"
+            "value": "Express bookings with the surcharge waived"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Экспресс-заказы без доплаты — с первого оплаченного месяца"
+            "value": "Экспресс-заказы без доплаты"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Expresné termíny bez príplatku — od prvého plateného mesiaca"
+            "value": "Expresné termíny bez príplatku"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Експрес-замовлення без доплати — з першого оплаченого місяця"
+            "value": "Експрес-замовлення без доплати"
           }
         }
       }
@@ -17624,31 +17729,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vaše zkušební období Cleansia Plus začalo."
+            "value": "Zkušební období zdarma vám běží do %1$@ a výhody jsou hned aktivní. Tady je, co jste právě odemkli:"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your Cleansia Plus trial has started."
+            "value": "Your free trial runs until %1$@, and your benefits are active right away. Here's what just unlocked:"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ваш пробный период Cleansia Plus начался."
+            "value": "Бесплатный пробный период длится до %1$@, а преимущества активны сразу. Вот что только что открылось:"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vaše skúšobné obdobie Cleansia Plus sa začalo."
+            "value": "Skúšobné obdobie zadarmo vám beží do %1$@ a výhody sú hneď aktívne. Tu je, čo ste práve odomkli:"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ваш пробний період Cleansia Plus розпочався."
+            "value": "Безкоштовний пробний період триває до %1$@, а переваги активні одразу. Ось що щойно відкрилося:"
           }
         }
       }
@@ -17764,31 +17869,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zkušební období pokračuje do %1$@. Nový plán (%2$@) se uplatní od prvního placeného období a teprve s ním začnou platit výhody Plus."
+            "value": "Zkušební období i všechny výhody Plus pokračují do %1$@. Nový plán (%2$@) se začne účtovat až potom, dnes neplatíte nic."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your trial continues until %1$@. The new plan (%2$@) applies from your first paid period, and the Plus benefits start only then."
+            "value": "Your trial and every Plus benefit continue until %1$@. The new plan (%2$@) is charged from then, and nothing is charged today."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Пробный период продолжается до %1$@. Новый план (%2$@) применяется с первого оплаченного периода, и только тогда начнут действовать преимущества Plus."
+            "value": "Пробный период и все преимущества Plus продолжаются до %1$@. Новый план (%2$@) начнёт списываться только после этого, сегодня вы ничего не платите."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Skúšobné obdobie pokračuje do %1$@. Nový plán (%2$@) sa uplatní od prvého plateného obdobia a až s ním začnú platiť výhody Plus."
+            "value": "Skúšobné obdobie aj všetky výhody Plus pokračujú do %1$@. Nový plán (%2$@) sa začne účtovať až potom, dnes neplatíte nič."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Пробний період триває до %1$@. Новий план (%2$@) застосовується з першого оплаченого періоду, і лише тоді почнуть діяти переваги Plus."
+            "value": "Пробний період і всі переваги Plus тривають до %1$@. Новий план (%2$@) почне списуватися лише після цього, сьогодні ви нічого не платите."
           }
         }
       }
@@ -17939,101 +18044,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Protože jste ho zrušili během zkušebního období, žádný placený měsíc nenásleduje a výhody Plus tak vůbec nezačnou platit."
+            "value": "Zrušeno během zkušebního období, takže vám nic nenaúčtujeme. Výhody Plus tímto dnem skončí."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Since you cancelled during the trial, no paid month follows and none of the Plus benefits start."
+            "value": "Cancelled during the trial, so you won't be charged. Plus benefits stop on this date."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Поскольку вы отменили её во время пробного периода, оплаченного месяца не будет, и преимущества Plus так и не начнут действовать."
+            "value": "Отменено во время пробного периода, поэтому с вас ничего не спишут. Преимущества Plus прекратятся в эту дату."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Keďže ste ho zrušili počas skúšobného obdobia, nenasleduje žiadny platený mesiac a výhody Plus tak vôbec nezačnú platiť."
+            "value": "Zrušené počas skúšobného obdobia, takže vám nič nenaúčtujeme. Výhody Plus týmto dňom skončia."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Оскільки ви скасували її під час пробного періоду, оплаченого місяця не буде, тож переваги Plus так і не почнуть діяти."
-          }
-        }
-      }
-    },
-    "membership_trial_perks_note": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Během zkušebního období z toho zatím nic neplatí — výhody začnou až s prvním placeným měsícem."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "None of these apply during the trial — they start only once a paid month begins."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Во время пробного периода ничего из этого не действует — преимущества начнут действовать только с первого оплаченного месяца."
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Počas skúšobného obdobia z toho zatiaľ nič neplatí — výhody začnú až s prvým plateným mesiacom."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Під час пробного періоду нічого з цього не діє — переваги почнуть діяти лише з першого оплаченого місяця."
-          }
-        }
-      }
-    },
-    "membership_trial_perks_title": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Co zahrnuje placené členství"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "What a paid membership includes"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Что входит в платную подписку"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Čo zahŕňa platené členstvo"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Що входить у платну підписку"
+            "value": "Скасовано під час пробного періоду, тож з вас нічого не спишуть. Переваги Plus припиняються в цю дату."
           }
         }
       }

@@ -174,9 +174,9 @@ the meeting gave a new customer 60 minutes, and everyone else keeps 15.
 
 | Customer | Oops window | Rule (`OopsWindowRule`) |
 |---|---|---|
-| An entitled — paid, current — Plus member | **60 min** (`BookingPolicy.OopsWindowMinutesPlus`) | `Plus` |
+| An entitled — current, paid or inside the free trial — Plus member | **60 min** (`BookingPolicy.OopsWindowMinutesPlus`) | `Plus` |
 | Anyone else, guest or account, on their **first booking** | **60 min** (`BookingPolicy.OopsWindowMinutesFirstBooking`) | `FirstBooking` |
-| Everyone else — a returning guest, any account without an entitled membership (trialing, `PastDue`, `Paused`, cancelled or lapsed) | **15 min** (`BookingPolicy.OopsWindowMinutesStandard`) | `Standard` |
+| Everyone else — a returning guest, any account without an entitled membership (`PastDue`, `Paused`, cancelled or lapsed) | **15 min** (`BookingPolicy.OopsWindowMinutesStandard`) | `Standard` |
 
 **Who counts as new.** The first booking ever on that **account, e-mail or phone**, in any company:
 `IOrderRepository.IsFirstBookingAsync` holds when no order created before this one shares the account,
@@ -447,10 +447,49 @@ anonymises the reason on the pay row.
 
 ### Cleansia Plus
 
-**Every Plus benefit requires an active, PAID subscription** (owner ruling 2026-09-08, T-0690). There
-is no free trial: both seeded plans carry `TrialPeriodDays = 0`, the admin plan commands refuse
-anything else, and the admin plan form offers no trial field at all (it sends the zero the server
-accepts), because a trial is by definition benefits without payment.
+**Every Plus benefit requires a current subscription, paid or inside its free trial** (owner ruling
+2026-09-30, which reverses the trial half of the 2026-09-08 ruling, T-0690, under which a benefit
+needed a paid period and no plan could have a trial).
+
+#### The free trial {#plus-trial}
+
+| Rule | Value |
+|---|---|
+| Trial length | **14 days** on both seeded plans, monthly and yearly — **per plan** (`MembershipPlan.TrialPeriodDays`), set by an administrator; `0` is no trial |
+| What a trialing member gets | **Every** benefit below, from day one, exactly as a paying member |
+| Trials per account | **One** — any earlier trial, on any enrolment, means none |
+| First charge | When the trial ends, unless the member cancels before |
+
+- **The length is the plan's, and an administrator sets it.** The plan form's *Free trial (days)* field
+  is 14 on a new plan and `0` means no trial; the plan list shows each plan's days. The create and
+  update commands refuse only a negative number (`validation.must_be_positive`). Production plans are
+  typed into the admin console, so the seed's 14 decides nothing there.
+- **Every benefit, from day one.** Stripe reports a trial as `trialing`, which the platform holds as
+  `Active` with the trial's end in `UserMembership.TrialEndsAtUtc`. The entitlement predicate below
+  asks only for `Active` inside the period, so the discount, both cancellation windows, the express
+  waivers, recurring schedules and the preferred cleaner all apply during the trial.
+- **One trial per account, and no per-card check.** Both subscribe paths — Stripe Checkout
+  (`CreateCheckoutSession`) and the direct `Subscribe` — ask `MembershipTrialResolver`, which sends
+  Stripe the plan's days, or **0** to a customer who has ever started a trial
+  (`HasEverStartedTrialAsync`: a trial end on any of the account's enrolments, whatever its status).
+  Stripe is only asked for a trial when the answer is above zero.
+- **No client states a length of its own.** The web, Android and iOS read the plan's
+  `trialPeriodDays` (`GetPlans`) and the customer's `trialEligible` (`GetMine`), and offer a trial only
+  while the customer may still have one. A current member, a customer who has had a trial, and any
+  plan at `0` days get the paid wording. The web offers the trial to a signed-out visitor; the mobile
+  apps offer it only once the server has said the customer is eligible. The subscribe itself grants no
+  second trial.
+- **Cancelling inside the trial charges nothing.** The benefits run to the trial's end and the
+  membership ends there. A first charge that fails pauses the benefits exactly as a failed renewal
+  does, below.
+- **A trial that ends unpaid is a lapse.** A trialing member may author a recurring schedule, so when
+  the trial ends without a payment the schedule stops generating like any other lapsed membership's,
+  and the member is told once (`recurring.paused` →
+  [Push notifications](/architecture/push-notifications#recurring-paused)).
+- **The customer terms say so.** The terms `2026-09-30` offer the 14-day trial on either plan, one per
+  account, with the first charge when it ends unless cancelled before ([The legal texts](#legal-texts)).
+- **A DEV database seeded before the ruling** keeps `0` days on both seeded plans, because the seed
+  never updates a plan that exists; `sql-scripts/fix-plus-trial-14-days.sql` sets them to 14.
 
 There are **seven** benefits:
 
@@ -470,10 +509,11 @@ paying member *less* free cancellation than everyone else, so the create and upd
 refuse it with `membership.plan.free_cancellation_window_too_long`.
 
 All seven resolve through **one** entitlement predicate
-(`UserMembershipRepository.EntitledForUserQuery`), so `PastDue`, `Paused`, `Cancelled`, an elapsed
-period and a trialing enrolment are refused identically. That predicate is deliberately separate from
-the *lifecycle* one that answers "is there a live enrolment?" — the lifecycle question is what stops a
-second Stripe subscription, lets a customer cancel, and is what GDPR erasure reads.
+(`UserMembershipRepository.EntitledForUserQuery`), so `PastDue`, `Paused`, `Cancelled` and an elapsed
+period are refused identically, and a trialing enrolment is served like a paying one. That predicate is
+deliberately separate from the *lifecycle* one that answers "is there a live enrolment?" — the
+lifecycle question is what stops a second Stripe subscription, lets a customer cancel, and is what GDPR
+erasure reads.
 
 **A renewal that fails pauses the benefits and never hides the membership** (owner ruling
 2026-09-28). Until then a past-due member was told they had no membership, was offered a second,
@@ -537,7 +577,8 @@ membership lapses the sweep stops generating new occurrences. Three deliberate l
   already exist when the lapse lands. They are real orders, possibly already authorised on a card, and
   they are left alone — retracting them is a refund path that does not exist.
 - **The customer is warned before it happens**, by the existing `membership.expiring_soon`
-  notification. There is no dedicated "your schedule has stopped" event yet.
+  notification, and told once when it does, by `recurring.paused` — a trial that ends unpaid included
+  → [Push notifications](/architecture/push-notifications#recurring-paused).
 
 **Monthly is the nth weekday** (owner ruling 2026-09-28). A monthly schedule visits on the same
 ordinal weekday every month — the 2nd Thursday stays the 2nd Thursday — which is twelve visits a year
@@ -896,15 +937,17 @@ one of them is our own draft until the lawyer delivers** ([below](#legal-drafts)
 
 | Text | Audience | In force | Who is bound, and how |
 |---|---|---|---|
-| Terms of service | customer | `2026-09-29` | the customer's contract with the operating company of the market the home is in, concluded at booking — a card booking once its payment completes. Accepted by the tick at registration and at booking, and again before the next booking when a newer version applies ([What is recorded about a customer](#customer-record)); shown at `/terms` |
+| Terms of service | customer | `2026-09-30` | the customer's contract with the operating company of the market the home is in, concluded at booking — a card booking once its payment completes. Accepted by the tick at registration and at booking, and again before the next booking when a newer version applies ([What is recorded about a customer](#customer-record)); shown at `/terms` |
 | Privacy policy | customer | `2026-09-29` | the operating company is the controller; accepted with the terms; shown at `/privacy` |
 | Complaints procedure | customer | `2026-09-29` | read, never accepted; shown at `/complaints` on the customer web and linked from its footer |
 | Framework cooperation agreement, self-billing agreement, data-processing agreement | employee | `2026-09-29` | the cleaner's agreements with the operating company of the market they work in, each accepted in the partner apps → [A cleaner's own documents](#cleaner-documents) |
 | Contract for work | employee | `2026-09-29` | one per seat of a job, between the operating company and the cleaner, stamped on the order at booking and accepted at the take → [The contract for work](#work-contract) |
 
 Earlier versions stay in the database as the texts earlier customers and orders were bound by: the
-terms `2026-09-14` and `2026-09-27`, the privacy policy `2026-09-14`, and the contract for work
-`2026-09-20`, which named the customer and the cleaner as its parties.
+terms `2026-09-14`, `2026-09-27` and `2026-09-29`, the privacy policy `2026-09-14`, and the contract for
+work `2026-09-20`, which named the customer and the cleaner as its parties. The terms `2026-09-30` differ
+from `2026-09-29` only where Plus is concerned: they offer the free trial, and the Plus cancellation
+terms follow having the Plus benefits rather than a paid membership ([The free trial](#plus-trial)).
 
 ### The seller is named from the company record {#company-identity}
 
@@ -2104,7 +2147,7 @@ just in case (ADR-0045 D13). The acts, and the evidence each success row carries
 | Confirm the e-mail | `customer.account.email_confirmed` | which shape confirmed it — the 6-digit code or a legacy link |
 | Export their own data | `customer.gdpr.export` | how many orders, disputes, consents and trail rows the export held — never the export |
 | Grant / withdraw a consent | `customer.consent.grant` / `.withdraw` | the consent type and the document version — this **is** the consent history, because the `UserConsents` row is overwritten in place. Since 2026-09-28 only the terms and the privacy policy can be granted here, and no document-backed consent can be withdrawn here (`gdpr.consent_not_editable`) → [Consents](#consents) |
-| Subscribe to Plus (either surface) | `customer.membership.subscribe` | the plan, currency, price, monthly equivalent, country, trial days (none today), the channel, and whether the row is an idempotent replay of an earlier confirm (`reconciled`) |
+| Subscribe to Plus (either surface) | `customer.membership.subscribe` | the plan, currency, price, monthly equivalent, country, the trial days granted (none recorded when there were none — a plan without a trial, or a customer who has had theirs), the channel, and whether the row is an idempotent replay of an earlier confirm (`reconciled`) |
 | Swap / cancel Plus | `customer.membership.swap` / `.cancel` | plan and price before and after; or the plan and when the current period ends |
 | Change notification preferences | `customer.notification_preferences.update` | the flags before and after — the "I was never told" defence |
 | Create / update / pause-resume / delete a recurring schedule | `customer.recurring.create` / `.update` / `.set_active` / `.delete` | the schedule facts before and after: frequency, weekday, time, line items, saved address by id, active flag (a delete records the last state, because the row is gone); a create also carries the terms tick and the terms and privacy versions the schedule is made under |
@@ -2134,10 +2177,10 @@ failed order"* (owner, Q-AUD-O2).
 **The terms have a version, and the version is the date the text started applying.** The terms and
 the privacy policy are stored documents (`LegalDocuments`, one per audience, type and market, seeded
 from files in the repository at every host start), each identified by its effective date as
-`yyyy-MM-dd`. For the whole platform, in five languages, the terms, the privacy policy and the
-complaints procedure in force are `2026-09-29` — our drafts, naming the operating company as the seller
-([The legal texts](#legal-texts)); the terms `2026-09-27` and `2026-09-14` and the privacy policy
-`2026-09-14` stay as the texts earlier customers accepted. **A document in force
+`yyyy-MM-dd`. For the whole platform, in five languages, the terms in force are `2026-09-30` and the
+privacy policy and the complaints procedure `2026-09-29` — our drafts, naming the operating company as
+the seller ([The legal texts](#legal-texts)); the terms `2026-09-29`, `2026-09-27` and `2026-09-14` and
+the privacy policy `2026-09-14` stay as the texts earlier customers accepted. **A document in force
 is immutable**: an edit to its file is refused with a warning, and a wording change is a new file
 under a new date, so every text a customer ever accepted stays in the database. The `/terms`,
 `/privacy` and `/complaints` pages show the version in force for the customer's market (a market's own

@@ -128,6 +128,7 @@ private fun GenGetMyMembershipResponse?.toAppDto(): GetMyMembershipResponse {
         expressUpgradesPerMonth = mine.expressUpgradesPerMonth,
         expressUpgradesRemaining = mine.expressUpgradesRemaining,
         trialEndsAtUtc = mine.trialEndsAtUtc,
+        trialEligible = mine.trialEligible ?: false,
         currencyCode = mine.currencyCode,
     )
 }

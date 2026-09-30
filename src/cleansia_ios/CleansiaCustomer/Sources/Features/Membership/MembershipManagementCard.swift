@@ -22,7 +22,7 @@ struct MembershipManagementCard: View {
     private var content: some View {
         if let membership = vm.current {
             if !membership.hasMembership {
-                InactiveCard(onClick: onSubscribeClick)
+                InactiveCard(trialDays: vm.headlineTrialDays, onClick: onSubscribeClick)
             } else if membership.benefitsPaused {
                 PastDueCard(
                     membership: membership,
@@ -90,6 +90,7 @@ struct MembershipManagementCard: View {
 }
 
 private struct InactiveCard: View {
+    let trialDays: Int
     let onClick: () -> Void
 
     var body: some View {
@@ -124,7 +125,7 @@ private struct InactiveCard: View {
                 }
 
                 HStack {
-                    Text(L10n.Membership.inactiveCta)
+                    Text(trialDays > 0 ? L10n.Membership.inactiveCtaTrial(trialDays) : L10n.Membership.inactiveCta)
                         .font(CleansiaTypography.titleMedium)
                         .foregroundColor(CleansiaColors.onPrimary)
                     Spacer()
@@ -195,36 +196,20 @@ private struct ActiveCard: View {
             }
 
             if !perks.isEmpty {
-                if let perksTitle = copy.perksTitle {
-                    Text(perksTitle)
-                        .font(CleansiaTypography.labelLarge)
-                        .foregroundColor(CleansiaColors.onSurface)
-                }
                 ChipFlow(spacing: Spacing.xs) {
                     ForEach(perks) { perk in
                         PerkPill(perk: perk, accent: accent)
                     }
                 }
-                if let perksNote = copy.perksNote {
-                    Text(perksNote)
-                        .font(CleansiaTypography.labelMedium)
-                        .foregroundColor(CleansiaColors.onSurfaceVariant)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
                 Divider().background(CleansiaColors.outlineVariant)
             }
 
-            if let periodEnd = membership.currentPeriodEnd {
-                let dateText = MembershipFormat.periodEnd(periodEnd)
+            if let periodHeadline = copy.periodHeadline {
                 VStack(alignment: .leading, spacing: Spacing.hair) {
-                    Text(membership.cancelRequested
-                        ? L10n.Membership.activeUntil(dateText)
-                        : L10n.Membership.renewsOn(dateText))
+                    Text(periodHeadline)
                         .font(CleansiaTypography.bodyMedium)
                         .foregroundColor(CleansiaColors.onSurface)
-                    Text(membership.cancelRequested
-                        ? copy.cancelledHint
-                        : L10n.Membership.autoRenewHint)
+                    Text(copy.periodHint)
                         .font(CleansiaTypography.labelMedium)
                         .foregroundColor(CleansiaColors.onSurfaceVariant)
                 }

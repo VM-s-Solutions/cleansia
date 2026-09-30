@@ -97,6 +97,22 @@ public class RecurringPauseLatchTests
         Assert.Equal(Now, swappedTrial.RecurringPauseNotificationSentAt);
     }
 
+    [Theory]
+    [InlineData("canceled")]
+    [InlineData("past_due")]
+    [InlineData("paused")]
+    public void A_trial_that_lapsed_unpaid_latches_once(string lapse)
+    {
+        var trial = UserMembership.Create("user", "plan", "currency", "sub", Now.AddDays(-14), Now.AddHours(-1), Now.AddHours(-1));
+        trial.UpdateFromStripeWebhook(lapse, trial.CurrentPeriodStart, trial.CurrentPeriodEnd, null);
+        trial.RecordRecurringPauseState(lapse, Now, Now);
+
+        Assert.True(trial.TryMarkRecurringPauseNotificationSent(Now));
+        Assert.False(trial.TryMarkRecurringPauseNotificationSent(Now.AddDays(1)));
+        Assert.Null(trial.PaidPeriodConfirmedAt);
+        Assert.Equal(1, trial.RecurringPauseNotificationSequence);
+    }
+
     [Fact]
     public void Genuine_paid_recovery_created_before_the_notice_but_delivered_after_it_rearms_the_next_lapse()
     {

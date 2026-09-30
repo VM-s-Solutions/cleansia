@@ -33,14 +33,16 @@ struct UpsellSlide: Equatable, Identifiable {
 
     /// The Android `buildList` — order matters: most-relevant first so the
     /// slide on screen at t=0 is the one the user is most likely to act on.
-    static func slides(isPlus: Bool, showSetupRecurring: Bool) -> [UpsellSlide] {
+    /// `plusTrialDays` is the free trial this customer can still get, 0 for none.
+    static func slides(isPlus: Bool, plusTrialDays: Int = 0, showSetupRecurring: Bool) -> [UpsellSlide] {
         var slides: [UpsellSlide] = []
         if !isPlus {
+            let offersTrial = plusTrialDays > 0
             slides.append(UpsellSlide(
                 kind: .plus,
                 top: L10n.Home.upsellPlusTop,
-                title: L10n.Home.upsellPlusTitle,
-                cta: L10n.Home.upsellPlusCta,
+                title: offersTrial ? L10n.Home.upsellPlusTitleTrial(plusTrialDays) : L10n.Home.upsellPlusTitle,
+                cta: offersTrial ? L10n.Home.upsellPlusCtaTrial : L10n.Home.upsellPlusCta,
                 gradient: .plusHero,
                 mascot: .ready,
                 action: .subscribePlus

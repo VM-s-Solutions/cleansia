@@ -25,67 +25,65 @@ const MEMBERSHIP_DIR = join(
 );
 
 /**
- * Owner ruling 2026-09-08: no Plus benefit before payment. The discount, the notice window, the
- * 60-minute grace and the express waiver all follow the PAID entitlement, which a running trial is
- * not — yet `hasMembership` counts one. So every membership screen branches on the running trial,
- * the sentences that say a benefit is on now render only outside that branch, and what the branch
- * says instead names the paid month as the start.
+ * Owner ruling 2026-09-30: a member inside the free trial holds every Plus benefit, exactly as a
+ * paying one. The membership screens branch on the running trial only to say when the first payment
+ * falls and that nothing is charged before it — never to withhold a benefit, and never to say one
+ * waits for a paid month.
  */
-const TRIAL_GATE = '@if (trialEndsOn()) {';
-/** A block shown only outside the running trial — the recurring schedule a trialist cannot create. */
-const PAID_GATE = '@if (!trialEndsOn()) {';
+const TRIAL_GATES = ['@if (trialEndsOn()) {', '@if (trialEndsOn(); as trialEnd) {', '@if (!trialEndsOn()) {'];
 
 interface Surface {
   name: string;
   template: string;
-  benefitsOnNow: string[];
-  trialOnly: string[];
+  benefits: string[];
 }
 
 const SURFACES: Surface[] = [
   {
     name: 'the page every Plus checkout lands on',
     template: join(MEMBERSHIP_DIR, 'membership-welcome.component.html'),
-    benefitsOnNow: [
-      'pages.membership.welcome_subtitle',
+    benefits: [
       'pages.membership.from_now',
+      'pages.membership.welcome_perk_discount',
+      'pages.membership.welcome_perk_cancellation',
+      'pages.membership.welcome_perk_express',
+      'pages.membership.welcome_perk_recurring',
       'pages.membership.welcome_cta_setup_recurring',
-    ],
-    trialOnly: [
-      'pages.membership.welcome_subtitle_trial',
-      'pages.membership.trial_perks_title',
-      'pages.membership.trial_perks_note',
     ],
   },
   {
     name: 'the membership card',
     template: join(MEMBERSHIP_DIR, 'membership-management.component.html'),
-    benefitsOnNow: [
+    benefits: [
       'pages.membership.what_you_get',
       'pages.membership.what_you_have_until',
-      'pages.membership.nothing_retroactive',
+      'pages.membership.perk_grace',
+      'pages.membership.perk_recurring',
       'recurring_booking.membership_section_link_title',
-    ],
-    trialOnly: [
-      'pages.membership.trial_perks_title',
-      'pages.membership.trial_perks_note',
-      'pages.membership.trial_cancelled_lead',
     ],
   },
 ];
 
-/** What a trialing member reads about the benefits: each must say they wait for a paid month. */
-const TRIAL_SENTENCES = [
+/** The copy that told a trialing member a benefit had not started. */
+const WITHHOLDING_KEYS = [
+  'pages.membership.trial_perks_title',
   'pages.membership.trial_perks_note',
-  'pages.membership.trial_cancelled_lead',
-  // Rendered on /plus behind the plan's trial days: the answer a would-be trialist reads.
-  'pages.plus.faq_express_a',
-  // Built in code for a trialing member — the cancel and switch dialogs and the cancel toast.
-  'pages.membership.cancel_dialog_message_trial',
-  'pages.membership.cancel_success_trial',
-  'pages.membership.switch_dialog_message_trial',
-  'pages.membership.switch_lead_trial',
+  'pages.membership.perk_express_trial',
+  'pages.order.express_waiver_trial',
 ];
+
+/** What a trialing member reads about the trial, and the placeholders the code fills in each. */
+const TRIAL_SENTENCES: Record<string, string[]> = {
+  'pages.membership.trial_next_payment': ['{{date}}', '{{amount}}'],
+  'pages.membership.cancel_dialog_message_trial': ['{{date}}'],
+  'pages.membership.cancel_success_trial': [],
+  'pages.membership.switch_dialog_message_trial': ['{{date}}', '{{price}}'],
+  'pages.membership.switch_lead_trial': [],
+  'pages.membership.trial_cancelled_lead': [],
+  'pages.membership.welcome_subtitle_trial': [],
+  'pages.plus.faq_express_a': ['{{days}}'],
+  'pages.plus.faq_trial_a': ['{{days}}'],
+};
 
 const PAID_MONTH: Record<Locale, RegExp> = {
   en: /\bpaid\b/i,
@@ -95,18 +93,6 @@ const PAID_MONTH: Record<Locale, RegExp> = {
   ru: /оплачен|оплат/i,
 };
 
-/** A whole word or phrase — `\b` knows no letter outside ASCII, so it would miss "уже" or "běží". */
-const phrase = (text: string): RegExp => new RegExp(`(?<!\\p{L})${text}(?!\\p{L})`, 'iu');
-
-/** "Already running", "you have the discount": a benefit said to be on during the trial. */
-const ON_NOW: Record<Locale, RegExp[]> = {
-  en: ['already', 'right away', 'from now', 'you have the'].map(phrase),
-  cs: ['už teď', 'hned', 'od teď', 'máte slevu', 'běží'].map(phrase),
-  sk: ['už teraz', 'hneď', 'odteraz', 'máte zľavu', 'bežia?'].map(phrase),
-  uk: ['вже', 'одразу', 'відтепер', 'у вас є'].map(phrase),
-  ru: ['уже', 'сразу', 'с этого момента', 'у вас есть'].map(phrase),
-};
-
 function readLocale(locale: Locale): Record<string, unknown> {
   return JSON.parse(readFileSync(join(I18N_DIR, `${locale}.json`), 'utf8')) as Record<
     string,
@@ -114,7 +100,7 @@ function readLocale(locale: Locale): Record<string, unknown> {
   >;
 }
 
-function resolveKey(bundle: unknown, key: string): string {
+function resolveKey(bundle: unknown, key: string): string | undefined {
   const value = key
     .split('.')
     .reduce<unknown>(
@@ -122,7 +108,7 @@ function resolveKey(bundle: unknown, key: string): string {
         node && typeof node === 'object' ? (node as Record<string, unknown>)[segment] : undefined,
       bundle
     );
-  return typeof value === 'string' ? value : '';
+  return typeof value === 'string' ? value : undefined;
 }
 
 /** The index of the brace that closes the one at `open`. */
@@ -135,120 +121,73 @@ function closingBrace(source: string, open: number): number {
   return source.length;
 }
 
-/**
- * Each trial branch, and the `@else` that follows it (the paid branch), by brace matching; and each
- * block gated on the trial NOT running, which is a paid branch too.
- */
-function branches(source: string): { trial: [number, number][]; paid: [number, number][] } {
-  const trial: [number, number][] = [];
-  const paid: [number, number][] = [];
+/** Every block that renders on one side of the running trial only: each gate and its `@else`. */
+function trialBranches(source: string): [number, number][] {
+  const spans: [number, number][] = [];
+  for (const gate of TRIAL_GATES) {
+    for (let from = 0; ; ) {
+      const start = source.indexOf(gate, from);
+      if (start < 0) break;
 
-  for (let from = 0; ; ) {
-    const start = source.indexOf(PAID_GATE, from);
-    if (start < 0) break;
-    const end = closingBrace(source, start + PAID_GATE.length - 1);
-    paid.push([start, end]);
-    from = end + 1;
-  }
-
-  for (let from = 0; ; ) {
-    const start = source.indexOf(TRIAL_GATE, from);
-    if (start < 0) return { trial, paid };
-
-    const end = closingBrace(source, start + TRIAL_GATE.length - 1);
-    trial.push([start, end]);
-
-    const elseMatch = /^\s*@else\s*\{/.exec(source.slice(end + 1));
-    if (elseMatch) {
-      const open = end + elseMatch[0].length;
-      const elseEnd = closingBrace(source, open);
-      paid.push([open, elseEnd]);
-      from = elseEnd + 1;
-    } else {
+      const end = closingBrace(source, start + gate.length - 1);
+      spans.push([start, end]);
       from = end + 1;
+
+      const elseMatch = /^\s*@else\s*\{/.exec(source.slice(end + 1));
+      if (elseMatch) {
+        const open = end + elseMatch[0].length;
+        const elseEnd = closingBrace(source, open);
+        spans.push([open, elseEnd]);
+        from = elseEnd + 1;
+      }
     }
   }
+  return spans;
 }
 
-function renderedKeys(surface: Surface): {
-  trial: Set<string>;
-  paid: Set<string>;
-  always: Set<string>;
-} {
-  const source = readFileSync(surface.template, 'utf8');
-  const spans = branches(source);
-  const inside = (at: number, list: [number, number][]) =>
-    list.some(([start, end]) => at > start && at < end);
-  const keys = { trial: new Set<string>(), paid: new Set<string>(), always: new Set<string>() };
+describe.each(SURFACES)('$name gives a trialing member every benefit', (surface) => {
+  it('renders each benefit whether or not the trial is running', () => {
+    const source = readFileSync(surface.template, 'utf8');
+    const spans = trialBranches(source);
 
-  for (const match of source.matchAll(/'([a-z0-9_]+(?:\.[a-z0-9_]+)+)'\s*\|\s*translate/g)) {
-    const at = match.index ?? 0;
-    const bucket = inside(at, spans.trial) ? 'trial' : inside(at, spans.paid) ? 'paid' : 'always';
-    keys[bucket].add(match[1]);
-  }
-  return keys;
-}
-
-describe.each(SURFACES)('$name promises a trialing member no benefit', (surface) => {
-  it('says a benefit is on now only outside the running trial', () => {
-    const { trial, paid, always } = renderedKeys(surface);
-
-    for (const key of surface.benefitsOnNow) {
-      expect({ key, paid: paid.has(key), trial: trial.has(key), always: always.has(key) }).toEqual({
-        key,
-        paid: true,
-        trial: false,
-        always: false,
-      });
-    }
-  });
-
-  it('says what a trialing member gets only inside the running trial', () => {
-    const { trial, paid, always } = renderedKeys(surface);
-
-    for (const key of surface.trialOnly) {
-      expect({ key, trial: trial.has(key), paid: paid.has(key), always: always.has(key) }).toEqual({
-        key,
-        trial: true,
-        paid: false,
-        always: false,
-      });
+    for (const key of surface.benefits) {
+      const at = source.indexOf(`'${key}'`);
+      const branched = spans.some(([start, end]) => at > start && at < end);
+      expect({ key, rendered: at >= 0, branched }).toEqual({ key, rendered: true, branched: false });
     }
   });
 });
 
 describe('the trial copy', () => {
-  it.each(LOCALES)('names the paid month as when the benefits start, in %s', (locale) => {
+  it.each(LOCALES)('no longer carries a sentence that withholds a benefit, in %s', (locale) => {
     const bundle = readLocale(locale);
 
-    for (const key of TRIAL_SENTENCES) {
-      const value = resolveKey(bundle, key);
+    expect(WITHHOLDING_KEYS.filter((key) => resolveKey(bundle, key) !== undefined)).toEqual([]);
+  });
+
+  it.each(LOCALES)('never ties a benefit to a paid month, in %s', (locale) => {
+    const bundle = readLocale(locale);
+
+    for (const key of Object.keys(TRIAL_SENTENCES)) {
+      const value = resolveKey(bundle, key) ?? '';
       expect({ key, value, namesPaidMonth: PAID_MONTH[locale].test(value) }).toEqual({
         key,
         value,
-        namesPaidMonth: true,
+        namesPaidMonth: false,
       });
     }
   });
 
-  it.each(LOCALES)('never says a benefit is already on during the trial, in %s', (locale) => {
+  it.each(LOCALES)('is present with the placeholders the code fills, in %s', (locale) => {
     const bundle = readLocale(locale);
-    const trialKeys = new Set([...TRIAL_SENTENCES, ...SURFACES.flatMap((s) => s.trialOnly)]);
 
-    for (const key of trialKeys) {
-      const value = resolveKey(bundle, key);
-      expect({ key, value, onNow: ON_NOW[locale].filter((stem) => stem.test(value)).map(String) }).toEqual({
+    for (const [key, placeholders] of Object.entries(TRIAL_SENTENCES)) {
+      const value = resolveKey(bundle, key) ?? '';
+      expect({
         key,
-        value,
-        onNow: [],
-      });
+        present: value.trim().length > 0,
+        missing: placeholders.filter((placeholder) => !value.includes(placeholder)),
+      }).toEqual({ key, present: true, missing: [] });
     }
-  });
-
-  it.each(LOCALES)('is present in %s', (locale) => {
-    const bundle = readLocale(locale);
-    const trialKeys = [...TRIAL_SENTENCES, ...SURFACES.flatMap((s) => s.trialOnly)];
-
-    expect(trialKeys.filter((key) => !resolveKey(bundle, key).trim())).toEqual([]);
   });
 });

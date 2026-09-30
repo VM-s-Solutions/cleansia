@@ -19,6 +19,7 @@ final class HomeTabViewModel: ViewModel {
     @Published private(set) var loyaltyAccount: LoyaltyAccount?
     @Published private(set) var loyaltyLoaded = false
     @Published private(set) var membership: MyMembership?
+    @Published private(set) var plusPlans: [MembershipPlan] = []
     @Published private(set) var addresses: [SavedAddress] = []
     @Published private(set) var selectedAddressId: String?
     @Published private(set) var packages: [CatalogPackage] = []
@@ -67,6 +68,7 @@ final class HomeTabViewModel: ViewModel {
         loyaltyRepository.$account.assign(to: &$loyaltyAccount)
         loyaltyRepository.$loaded.assign(to: &$loyaltyLoaded)
         membershipRepository.$current.assign(to: &$membership)
+        membershipRepository.$plans.assign(to: &$plusPlans)
         savedAddressRepository.$addresses.assign(to: &$addresses)
         savedAddressRepository.$selectedId.assign(to: &$selectedAddressId)
         catalogSource.$catalogState
@@ -77,6 +79,18 @@ final class HomeTabViewModel: ViewModel {
 
     var isPlus: Bool {
         membership?.hasMembership == true
+    }
+
+    /// The free trial the Plus slide offers; 0 once this customer has had theirs or no plan carries one.
+    var plusTrialDays: Int {
+        MembershipPlan.headline(of: plusPlans)?.trialDays(for: membership) ?? 0
+    }
+
+    /// The chosen market's plans, read once for a non-member; the repository re-reads them when the
+    /// market changes. A failed read leaves the slide selling Plus without a trial, which is never false.
+    func refreshPlusPlans() async {
+        guard !isPlus, plusPlans.isEmpty else { return }
+        await membershipRepository.refreshPlans()
     }
 
     static func marketChip(_ state: MarketState) -> Market? {

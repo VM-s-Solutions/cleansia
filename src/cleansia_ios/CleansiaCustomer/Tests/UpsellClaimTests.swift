@@ -7,8 +7,8 @@ import XCTest
 final class UpsellClaimTests: XCTestCase {
     private static let languages = ["en", "cs", "sk", "uk", "ru"]
 
-    /// `MembershipPlan.TrialPeriodDays` is 0 on every plan and the admin validators refuse any other
-    /// value, so no plan has a trial. These rows render to every non-member with no trial gate.
+    /// These rows render to a non-member whether or not a trial is on offer, so none may promise one. The
+    /// trial rows are separate keys, shown only while the customer can still get a trial.
     private static let ungatedPlusKeys = [
         "home_upsell_plus_top",
         "home_upsell_plus_title",
@@ -17,6 +17,23 @@ final class UpsellClaimTests: XCTestCase {
         "membership_inactive_title",
         "membership_inactive_perks_summary",
         "membership_inactive_cta"
+    ]
+
+    /// The trial length is set per plan in the admin console, so a trial row states the plan's days and no
+    /// number of its own.
+    private static let trialRows = [
+        "home_upsell_plus_title_trial",
+        "membership_inactive_cta_trial",
+        "membership_hero_trial_price"
+    ]
+
+    /// A trialing member has every Plus benefit from day one, so no row may say one waits for a payment.
+    private static let waitsForPaymentClaim = [
+        "en": "first paid|paid membership",
+        "cs": "prvním placen|prvního placen|placené členství|placeného členství",
+        "sk": "prvým platen|prvého platen|platené členstvo|plateného členstva",
+        "uk": "першого оплачен|оплачене членство|платну підписку",
+        "ru": "первого оплаченн|оплаченное членство|платную подписку"
     ]
 
     /// The web spec's stems. A bare "free" is absent: free cancellation is a real, ungated perk.
@@ -68,6 +85,26 @@ final class UpsellClaimTests: XCTestCase {
         }
     }
 
+    func testEveryTrialRowStatesThePlansDaysRatherThanANumberOfItsOwn() throws {
+        try forEachLanguage { language in
+            for key in Self.trialRows {
+                let value = L10n.localized(key)
+                XCTAssertNotEqual(value, key, "\(key) is unlocalized in \(language)")
+                XCTAssertTrue(Self.matches(value, #"%\d+\$d"#), "\(key) drops the plan's days in \(language)")
+                let residue = value.replacingOccurrences(of: #"%\d+\$[@d]"#, with: "", options: .regularExpression)
+                XCTAssertNil(residue.rangeOfCharacter(from: .decimalDigits), "\(key) names a number in \(language)")
+            }
+        }
+    }
+
+    func testNoRowTellsATrialingMemberABenefitWaitsForTheFirstPayment() throws {
+        for language in Self.languages {
+            let claim = try XCTUnwrap(Self.waitsForPaymentClaim[language])
+            let offenders = try catalog(language).filter { Self.matches($0.value, claim) }.keys.sorted()
+            XCTAssertEqual(offenders, [], "\(language) holds a benefit back until a payment")
+        }
+    }
+
     func testTheNonMemberPerksLineDoesNotPromiseCancellingAnytime() throws {
         try forEachLanguage { language in
             let value = L10n.localized("membership_inactive_perks_summary")
@@ -100,6 +137,17 @@ final class UpsellClaimTests: XCTestCase {
         for removed in ["Save on every booking · cancel anytime · recurring cleanings", "отмена в любое время"] {
             XCTAssertTrue(Self.matches(removed, Self.cancelAnytimeClaim), "the scan cannot see \(removed)")
         }
+        let removedWaits = [
+            ("en", "Express bookings with the surcharge waived — from your first paid month"),
+            ("cs", "Expresní termíny bez příplatku — od prvního placeného měsíce"),
+            ("sk", "Až 3 každý kalendárny mesiac počas aktívneho plateného členstva"),
+            ("uk", "Що входить у платну підписку"),
+            ("ru", "Экспресс-заказы без доплаты — с первого оплаченного месяца")
+        ]
+        for (language, removed) in removedWaits {
+            let claim = Self.waitsForPaymentClaim[language] ?? ""
+            XCTAssertTrue(Self.matches(removed, claim), "the \(language) scan cannot see \(removed)")
+        }
     }
 
     private static func matches(_ text: String, _ pattern: String) -> Bool {
@@ -121,6 +169,15 @@ final class UpsellClaimTests: XCTestCase {
         )
         let digits = try XCTUnwrap(Range(match.range(at: 1), in: source))
         return try XCTUnwrap(Int(source[digits]))
+    }
+
+    private func catalog(_ language: String) throws -> [String: String] {
+        let bundle = try localeBundle(language)
+        let path = try XCTUnwrap(
+            bundle.path(forResource: "Localizable", ofType: "strings"),
+            "no compiled Localizable.strings in \(language).lproj"
+        )
+        return try XCTUnwrap(NSDictionary(contentsOfFile: path) as? [String: String])
     }
 
     private func forEachLanguage(_ body: (String) throws -> Void) throws {

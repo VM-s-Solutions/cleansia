@@ -15,10 +15,10 @@ enum CancellationPolicyBuilder {
     static let standardFreeHours = 24
     static let penaltyHours = 4
 
-    /// The Plus window follows the paid entitlement, which neither a running trial nor an unpaid renewal is,
-    /// so a trialing or past-due member is quoted the standard window.
-    static func make(membership: MembershipSnapshot?, now: Date = Date()) -> CancellationPolicy {
-        let entitled = membership.map { $0.hasMembership && !$0.benefitsPaused && !$0.isInTrial(at: now) } ?? false
+    /// The Plus window follows the entitlement, which a running trial carries and an unpaid renewal does
+    /// not, so a past-due member is quoted the standard window.
+    static func make(membership: MembershipSnapshot?) -> CancellationPolicy {
+        let entitled = membership.map { $0.hasMembership && !$0.benefitsPaused } ?? false
         let rawPlusHours = (entitled ? membership?.freeCancellationWindowHours : nil)
             .flatMap { $0 > 0 ? $0 : nil }
         // SMALLER is the perk, and the comparison used to read `>`.

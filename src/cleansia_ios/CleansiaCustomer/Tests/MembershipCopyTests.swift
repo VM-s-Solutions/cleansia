@@ -2,15 +2,19 @@ import CleansiaCore
 import XCTest
 @testable import CleansiaCustomer
 
-/// No Plus benefit runs during the free trial — every one starts with the first paid month. `hasMembership`
-/// counts the trial, so each membership surface has to ask `trialEndsAtUtc` before it says a benefit is on,
-/// that it stays until a paid period ends, or that a switch is paid for today.
+/// A running trial carries every Plus benefit from day one; what it changes is the money. `hasMembership`
+/// counts the trial, so each surface that names a charge or a date has to ask `trialEndsAtUtc` first.
 final class MembershipCopyTests: XCTestCase {
     private static let now = Date(timeIntervalSince1970: 1_780_000_000)
     private static let trialEnd = now.addingTimeInterval(7 * 86400)
+    private static let paidPeriodEnd = now.addingTimeInterval(30 * 86400)
     private static let languages = ["en", "cs", "sk", "uk", "ru"]
 
-    private static func membership(hasMembership: Bool = true, trialEndsAtUtc: Date?) -> MyMembership {
+    private static func membership(
+        hasMembership: Bool = true,
+        trialEndsAtUtc: Date?,
+        cancelRequested: Bool = false
+    ) -> MyMembership {
         MyMembership(
             hasMembership: hasMembership,
             planCode: "plus_monthly",
@@ -18,8 +22,8 @@ final class MembershipCopyTests: XCTestCase {
             discountPercentage: 5,
             freeCancellationWindowHours: 4,
             allowsExpressUpgrade: true,
-            currentPeriodEnd: trialEnd,
-            cancelRequested: false,
+            currentPeriodEnd: paidPeriodEnd,
+            cancelRequested: cancelRequested,
             billingInterval: 1,
             trialEndsAtUtc: trialEndsAtUtc
         )
@@ -59,33 +63,62 @@ final class MembershipCopyTests: XCTestCase {
             now: Self.now
         )
         XCTAssertFalse(lapsed.isTrial)
+        XCTAssertNil(lapsed.periodHeadline)
         XCTAssertFalse(MembershipCopy(nil, now: Self.now).isTrial)
     }
 
     // MARK: - What each surface says
 
-    func testATrialingMemberIsToldWhatAPaidMembershipIncludes() {
-        XCTAssertEqual(Self.trialing.perksTitle, L10n.Membership.trialPerksTitle)
-        XCTAssertEqual(Self.trialing.perksNote, L10n.Membership.trialPerksNote)
-        XCTAssertNil(Self.paid.perksTitle)
-        XCTAssertNil(Self.paid.perksNote)
+    /// A trial names the day it ends and the first charge falls on; a paid month, the day it renews.
+    func testTheCardsDateLineNamesTheTrialEndAndTheFirstCharge() {
+        XCTAssertEqual(
+            Self.trialing.periodHeadline,
+            L10n.Membership.trialUntil(MembershipFormat.periodEnd(Self.trialEnd))
+        )
+        XCTAssertEqual(Self.trialing.periodHint, L10n.Membership.trialFirstChargeHint)
+
+        XCTAssertEqual(
+            Self.paid.periodHeadline,
+            L10n.Membership.renewsOn(MembershipFormat.periodEnd(Self.paidPeriodEnd))
+        )
+        XCTAssertEqual(Self.paid.periodHint, L10n.Membership.autoRenewHint)
     }
 
-    func testCancellingDuringTheTrialSaysNoPaidMonthFollows() {
+    func testACancelledTrialRunsToItsEndAndChargesNothing() {
+        let cancelledTrial = MembershipCopy(
+            Self.membership(trialEndsAtUtc: Self.trialEnd, cancelRequested: true),
+            now: Self.now
+        )
+        XCTAssertEqual(
+            cancelledTrial.periodHeadline,
+            L10n.Membership.activeUntil(MembershipFormat.periodEnd(Self.trialEnd))
+        )
+        XCTAssertEqual(cancelledTrial.periodHint, L10n.Membership.trialCancelledLead)
+
+        let cancelledPaid = MembershipCopy(
+            Self.membership(trialEndsAtUtc: nil, cancelRequested: true),
+            now: Self.now
+        )
+        XCTAssertEqual(
+            cancelledPaid.periodHeadline,
+            L10n.Membership.activeUntil(MembershipFormat.periodEnd(Self.paidPeriodEnd))
+        )
+        XCTAssertEqual(cancelledPaid.periodHint, L10n.Membership.thenEndsHint)
+    }
+
+    func testCancellingDuringTheTrialChargesNothing() {
         let periodEnd = Self.trialEnd
         XCTAssertEqual(
             Self.trialing.cancelDialogMessage,
             L10n.Membership.cancelDialogMessageTrial(MembershipFormat.periodEnd(Self.trialEnd))
         )
         XCTAssertEqual(Self.trialing.cancelSuccess(activeUntil: periodEnd), L10n.Membership.cancelSuccessTrial)
-        XCTAssertEqual(Self.trialing.cancelledHint, L10n.Membership.trialCancelledLead)
 
         XCTAssertEqual(Self.paid.cancelDialogMessage, L10n.Membership.cancelDialogMessage)
         XCTAssertEqual(
             Self.paid.cancelSuccess(activeUntil: periodEnd),
             L10n.Membership.cancelledUntil(MembershipFormat.periodEnd(periodEnd))
         )
-        XCTAssertEqual(Self.paid.cancelledHint, L10n.Membership.thenEndsHint)
     }
 
     /// A past-due membership has no paid period left to run out: the cancel ends it now, so neither the
@@ -113,14 +146,12 @@ final class MembershipCopyTests: XCTestCase {
         )
     }
 
-    func testTheWelcomeClaimsNoBenefitDuringTheTrial() {
-        XCTAssertEqual(Self.trialing.successSubtitle, L10n.Membership.successSubtitleTrial)
-        XCTAssertEqual(Self.trialing.successPerksHeader, L10n.Membership.trialPerksTitle)
-        XCTAssertFalse(Self.trialing.offersRecurringSetup, "a trialing member is sent to a schedule the server refuses")
-
+    func testTheWelcomeTellsATrialingMemberWhenTheirTrialEnds() {
+        XCTAssertEqual(
+            Self.trialing.successSubtitle,
+            L10n.Membership.successSubtitleTrial(MembershipFormat.periodEnd(Self.trialEnd))
+        )
         XCTAssertEqual(Self.paid.successSubtitle, L10n.Membership.successSubtitle)
-        XCTAssertEqual(Self.paid.successPerksHeader, L10n.Membership.successPerksHeader)
-        XCTAssertTrue(Self.paid.offersRecurringSetup)
     }
 
     // MARK: - The copy itself
@@ -131,9 +162,9 @@ final class MembershipCopyTests: XCTestCase {
             "membership_cancel_success_trial",
             "membership_switch_dialog_message_trial",
             "membership_success_subtitle_trial",
-            "membership_trial_perks_title",
-            "membership_trial_perks_note",
             "membership_trial_cancelled_lead",
+            "membership_trial_until",
+            "membership_trial_first_charge_hint",
             "membership_status_past_due_badge",
             "membership_past_due_body",
             "membership_past_due_cancel_hint",
@@ -152,7 +183,7 @@ final class MembershipCopyTests: XCTestCase {
 
     /// A dropped placeholder renders as literal text, and the date is the one fact these sentences exist
     /// to state.
-    func testTheTrialDialogsCarryTheDateAndThePriceInEveryLanguage() throws {
+    func testTheTrialSentencesCarryTheDateAndThePriceInEveryLanguage() throws {
         for language in Self.languages {
             L10n.bundle = try localeBundle(language)
             let cancel = L10n.Membership.cancelDialogMessageTrial("DATE")
@@ -160,6 +191,11 @@ final class MembershipCopyTests: XCTestCase {
             XCTAssertTrue(cancel.contains("DATE"), "the cancel dialog drops the trial end in \(language)")
             XCTAssertTrue(swap.contains("DATE"), "the switch dialog drops the trial end in \(language)")
             XCTAssertTrue(swap.contains("PRICE"), "the switch dialog drops the price in \(language)")
+            XCTAssertTrue(L10n.Membership.trialUntil("DATE").contains("DATE"), "the card drops it in \(language)")
+            XCTAssertTrue(
+                L10n.Membership.successSubtitleTrial("DATE").contains("DATE"),
+                "the welcome drops the trial end in \(language)"
+            )
         }
     }
 
@@ -169,21 +205,43 @@ final class MembershipCopyTests: XCTestCase {
         let card = try read("CleansiaCustomer/Sources/Features/Membership/MembershipManagementCard.swift")
         for binding in [
             "} else if membership.benefitsPaused {",
+            "InactiveCard(trialDays: vm.headlineTrialDays",
             "message: vm.copy.cancelDialogMessage",
             "message: vm.copy.switchDialogMessage(",
             "copy.cancelSuccess(activeUntil: date)",
-            "? copy.cancelledHint",
-            "if let perksTitle = copy.perksTitle",
-            "if let perksNote = copy.perksNote"
+            "if let periodHeadline = copy.periodHeadline",
+            "Text(copy.periodHint)"
         ] {
             XCTAssertTrue(card.contains(binding), "the membership card lost `\(binding)`")
         }
         let welcome = try read("CleansiaCustomer/Sources/Features/Membership/MembershipSuccessScreen.swift")
-        for binding in ["Text(copy.successSubtitle)", "Text(copy.successPerksHeader)", "if copy.offersRecurringSetup"] {
+        for binding in ["Text(copy.successSubtitle)", "L10n.Membership.successCtaSetupRecurring"] {
             XCTAssertTrue(welcome.contains(binding), "the welcome screen lost `\(binding)`")
         }
+        XCTAssertNil(
+            welcome.range(of: #"if\s+(let\s+\w+\s*=\s*)?copy\."#, options: .regularExpression),
+            "the welcome holds a perk or the schedule back from a trialing member"
+        )
         let shell = try read("CleansiaCustomer/Sources/Features/Shell/CustomerShellView.swift")
         XCTAssertTrue(shell.contains("copy: membershipVM.copy"), "the welcome screen is handed no trial state")
+    }
+
+    /// The one surface that takes the payment: the plan's own days would promise a returning customer a
+    /// trial the server does not give, and charge them on day one.
+    func testTheSubscribeScreenPricesLabelsAndDisclosesOnlyTheTrialThisCustomerGets() throws {
+        let subscribe = try read("CleansiaCustomer/Sources/Features/Membership/SubscribePlusScreen.swift")
+        for binding in [
+            "vm.offeredTrialDays(selectedPlan)",
+            "trialDays: trialDays,",
+            "label: trialDays > 0 ? L10n.Membership.ctaStartTrial",
+            "guard let plan = selectedPlan, trialDays > 0 else"
+        ] {
+            XCTAssertTrue(subscribe.contains(binding), "the subscribe screen lost `\(binding)`")
+        }
+        XCTAssertNil(
+            subscribe.range(of: "trialPeriodDays"),
+            "the subscribe screen reads the plan's trial days past the eligibility check"
+        )
     }
 
     private func localeBundle(_ tag: String) throws -> Bundle {

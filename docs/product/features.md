@@ -77,14 +77,22 @@ job, *Cancel* becomes **the cleaner did not arrive**, and an administrator confi
 refund plus the apology credit. See [Business rules](/product/business-rules#cancellation).
 
 **Cleansia Plus** — a discount, a wider free-cancellation window, a 60-minute oops window on every
-booking instead of 15, and a monthly quota of express-surcharge waivers. A failed renewal shows as
+booking instead of 15, a monthly quota of express-surcharge waivers, recurring schedules and the
+preferred cleaner. An account's first subscription starts with a **free trial** of the plan's length —
+14 days on both plans as seeded, set per plan by an administrator — with every benefit from day one;
+billing starts the day it ends unless the member cancels first. A failed renewal shows as
 *payment failed, benefits paused*, with a cancel that takes effect at once. Priced per market: the Plus page, the wizard's Plus step and the mobile
 Subscribe screens show the plans priced in the chosen market's currency, a market with no priced plan
 says so instead of showing a price, and a subscription keeps the currency it was started in for life.
-No plan has a free trial, and no client offers one: the Android and iOS home Plus card reads *Save on
-every cleaning.* / *Get Plus*, and the membership card a non-member sees offers *Get Cleansia Plus*,
-with no trial and no *cancel anytime* (since 2026-09-28).
-→ [Business rules — Cleansia Plus](/product/business-rules#cleansia-plus)
+Every surface that offers Plus reads the trial from the plan and asks the server whether this customer
+may still have one; none states a length of its own. To a customer who may: the Plus page and the wizard's Plus
+step say *N days free, then …* and *Start free trial*, and the Android and iOS home Plus card reads
+*First N days free.* / *Try it free* and the membership card a non-member sees *Try N days free*. To
+one who has had their trial, or on a plan without one, they fall back to the paid wording — *Save on
+every cleaning.* / *Get Plus* and *Get Cleansia Plus*, with no *cancel anytime* (since 2026-09-28). A
+trialing member's membership screen says *Free trial until* the day of the first charge.
+→ [Business rules — Cleansia Plus](/product/business-rules#cleansia-plus),
+[the free trial](/product/business-rules#plus-trial)
 
 **Honest copy** — the money figures in the customer copy (the apology credit when a cleaner never
 comes, the insurance ceiling on the mobile trust badge and FAQ, the currency named in the terms) come
@@ -241,7 +249,8 @@ as serviced until its configuration names an active currency.
 
 **Growth** — promo codes, referral programme, loyalty tiers, membership plans (a price and a Stripe
 Price id per currency, any currency optional — a plan unpriced in a market is simply not on sale
-there), site-wide push campaigns, email templates.
+there — and the free-trial length in days, 14 on a new plan and 0 for none, shown in the plan list),
+site-wide push campaigns, email templates.
 
 **Oversight** — an append-only audit log of privileged actions, including the ones that failed, plus
 revenue and payroll reporting — one currency per report, never a sum across two; the revenue report's

@@ -181,6 +181,83 @@ final class MembershipViewModelTests: XCTestCase {
         XCTAssertEqual(vm.current?.hasMembership, false, "the ended enrolment is re-read")
     }
 
+    // MARK: The free trial — each plan's own length, once per account
+
+    func testACustomerWhoMayStillHaveATrialIsOfferedEachPlansOwnLength() async {
+        let client = FakeMembershipManagementClient()
+        client.mineResults = [.success(Self.nonMember(trialEligible: true))]
+        client.plansResult = .success(Self.plans(trialDays: [10, 0]))
+        let (vm, _, _) = makeVM(client: client)
+        await vm.load()
+
+        XCTAssertEqual(vm.plans.map { vm.offeredTrialDays($0) }, [10, 0])
+    }
+
+    func testACustomerWhoHasHadATrialIsOfferedNone() async {
+        let client = FakeMembershipManagementClient()
+        client.mineResults = [.success(Self.nonMember(trialEligible: false))]
+        let (vm, _, _) = makeVM(client: client)
+        await vm.load()
+
+        XCTAssertEqual(vm.plans.map { vm.offeredTrialDays($0) }, [0, 0])
+    }
+
+    /// The not-subscribed card has no plan picker, so it leads with the monthly plan's trial.
+    func testTheCardOffersTheMonthlyPlansTrial() async {
+        let client = FakeMembershipManagementClient()
+        client.mineResults = [.success(Self.nonMember(trialEligible: true))]
+        client.plansResult = .success(Array(Self.plans(trialDays: [14, 30]).reversed()))
+        let (vm, _, _) = makeVM(client: client)
+        await vm.load()
+
+        XCTAssertEqual(vm.headlineTrialDays, 14)
+    }
+
+    func testAnUnreadMembershipOffersNoTrial() async {
+        let client = FakeMembershipManagementClient()
+        client.mineResults = [.failure(ApiError(httpStatus: 500))]
+        let (vm, _, _) = makeVM(client: client)
+        await vm.load()
+
+        XCTAssertEqual(vm.plans.map { vm.offeredTrialDays($0) }, [0, 0])
+        XCTAssertEqual(vm.offeredTrialDays(nil), 0)
+        XCTAssertEqual(vm.headlineTrialDays, 0)
+    }
+
+    private static func nonMember(trialEligible: Bool) -> MyMembership {
+        MyMembership(
+            hasMembership: false,
+            planCode: nil,
+            planName: nil,
+            discountPercentage: nil,
+            freeCancellationWindowHours: nil,
+            allowsExpressUpgrade: nil,
+            currentPeriodEnd: nil,
+            cancelRequested: false,
+            billingInterval: nil,
+            trialEligible: trialEligible
+        )
+    }
+
+    private static func plans(trialDays: [Int]) -> [MembershipPlan] {
+        zip(MembershipFixtures.plans, trialDays).map { plan, days in
+            MembershipPlan(
+                code: plan.code,
+                name: plan.name,
+                price: plan.price,
+                monthlyEquivalentPrice: plan.monthlyEquivalentPrice,
+                billingInterval: plan.billingInterval,
+                discountPercentage: plan.discountPercentage,
+                freeCancellationWindowHours: plan.freeCancellationWindowHours,
+                allowsExpressUpgrade: plan.allowsExpressUpgrade,
+                expressUpgradesPerMonth: plan.expressUpgradesPerMonth,
+                trialPeriodDays: days,
+                savingsPercentVsMonthly: plan.savingsPercentVsMonthly,
+                currencyCode: plan.currencyCode
+            )
+        }
+    }
+
     // MARK: Stripe's one currency per Customer
 
     func testTheCurrencyLockRefusalNamesTheMembershipsCurrencyWhenKnown() async {

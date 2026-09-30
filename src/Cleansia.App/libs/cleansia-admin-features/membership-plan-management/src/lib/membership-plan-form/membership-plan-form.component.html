@@ -138,6 +138,21 @@
                 [required]="true"
               />
             </div>
+            <div class="form-field form-field--third">
+              <cleansia-text-input
+                [label]="
+                  'pages.membership_plans.form.field.trial_days' | translate
+                "
+                formControlName="trialPeriodDays"
+                dataType="number"
+                [required]="true"
+              />
+            </div>
+            <p class="form-hint">
+              {{
+                'pages.membership_plans.form.field.trial_days_help' | translate
+              }}
+            </p>
           </div>
         </cleansia-section>
 

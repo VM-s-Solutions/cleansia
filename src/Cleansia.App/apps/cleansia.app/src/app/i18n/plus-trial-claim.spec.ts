@@ -22,10 +22,9 @@ const I18N_DIR = join(SOLUTION_DIR, 'Cleansia.App/apps/cleansia.app/src/assets/i
 const FEATURES_DIR = join(SOLUTION_DIR, 'Cleansia.App/libs/cleansia-customer-features');
 
 /**
- * `MembershipPlan.TrialPeriodDays` is 0 on both seeded plans and the admin validators
- * (`CreateMembershipPlan`, `UpdateMembershipPlan`) refuse any other value, so `trialDays()` is 0
- * for every customer today and checkout bills on subscribe. Every sentence that sells a trial has
- * to sit behind its surface's `trialDays() > 0` gate, or it promises something no plan delivers.
+ * `MembershipPlan.TrialPeriodDays` is per plan and an admin may set it to 0, and a customer who has
+ * had their one trial gets none (`GetMyMembership.trialEligible`). Every sentence that sells a trial
+ * has to sit behind its surface's trial-days gate, or it promises something checkout will not give.
  *
  * A bare "free" stem is deliberately absent: "free cancellation" is a real perk rendered ungated.
  */
@@ -53,7 +52,7 @@ const TRIAL_STEMS = [
 interface Surface {
   name: string;
   template: string;
-  gate: string | null;
+  gates: string[];
   mustBeGated: string[];
   mustBeUngated: string[];
   blocks: string[];
@@ -63,20 +62,34 @@ const SURFACES: Surface[] = [
   {
     name: 'the Plus page',
     template: join(FEATURES_DIR, 'plus/src/lib/plus/plus-page.component.html'),
-    gate: '@if (facade.trialDays() > 0) {',
-    mustBeGated: ['pages.plus.cta_trial', 'pages.plus.cta_try_free', 'pages.plus.closing_title'],
+    gates: [
+      '@if (facade.trialDays() > 0) {',
+      '@if (facade.monthlyTrialDays() > 0) {',
+      '@if (facade.yearlyTrialDays() > 0) {',
+      '@if (facade.trialOnEveryPlan()) {',
+    ],
+    mustBeGated: [
+      'pages.plus.plans_footnote',
+      'pages.plus.cta_trial',
+      'pages.plus.cta_try_free',
+      'pages.plus.closing_title',
+      'pages.plus.price_note_trial',
+      'pages.plus.plan_trial_monthly',
+      'pages.plus.plan_trial_yearly',
+    ],
     mustBeUngated: [
       'pages.plus.cta_subscribe',
       'pages.plus.closing_title_no_trial',
       'pages.plus.closing_text',
       'pages.plus.closing_cta',
+      'pages.plus.price_note',
     ],
     blocks: ['pages.plus'],
   },
   {
     name: 'the home page Plus band',
     template: join(FEATURES_DIR, 'home/src/lib/home/components/plus/plus.component.html'),
-    gate: '@if (facts.trialDays() > 0) {',
+    gates: ['@if (facade.trialDays() > 0) {'],
     mustBeGated: ['pages.home.plus.title', 'pages.home.plus.cta'],
     mustBeUngated: ['pages.home.plus.title_no_trial', 'pages.home.plus.cta_no_trial'],
     blocks: ['pages.home.plus'],
@@ -87,7 +100,7 @@ const SURFACES: Surface[] = [
       FEATURES_DIR,
       'recurring-bookings/src/lib/recurring-bookings-list/recurring-bookings-list.component.html'
     ),
-    gate: null,
+    gates: [],
     mustBeGated: [],
     mustBeUngated: ['recurring_booking.gate_cta', 'recurring_booking.gate_lead'],
     blocks: ['recurring_booking'],
@@ -95,8 +108,8 @@ const SURFACES: Surface[] = [
   {
     name: 'the page every Plus checkout lands on',
     template: join(FEATURES_DIR, 'profile/src/lib/membership/membership-welcome.component.html'),
-    gate: '@if (trialEndsOn()) {',
-    mustBeGated: ['pages.membership.welcome_subtitle_trial', 'pages.membership.trial_perks_note'],
+    gates: ['@if (trialEndsOn()) {'],
+    mustBeGated: ['pages.membership.welcome_subtitle_trial'],
     mustBeUngated: [
       'pages.membership.welcome_title',
       'pages.membership.welcome_subtitle',
@@ -123,30 +136,32 @@ function resolveKey(bundle: unknown, key: string): unknown {
     );
 }
 
-/** The [start, end] index of every gated block, by brace matching. */
-function gatedSpans(source: string, gate: string | null): [number, number][] {
+/** The [start, end] index of every block behind one of the gates, by brace matching. */
+function gatedSpans(source: string, gates: string[]): [number, number][] {
   const spans: [number, number][] = [];
-  if (!gate) return spans;
 
-  for (let from = 0; ; ) {
-    const start = source.indexOf(gate, from);
-    if (start < 0) return spans;
+  for (const gate of gates) {
+    for (let from = 0; ; ) {
+      const start = source.indexOf(gate, from);
+      if (start < 0) break;
 
-    let depth = 0;
-    let index = start + gate.length - 1;
-    for (; index < source.length; index++) {
-      if (source[index] === '{') depth++;
-      else if (source[index] === '}' && --depth === 0) break;
+      let depth = 0;
+      let index = start + gate.length - 1;
+      for (; index < source.length; index++) {
+        if (source[index] === '{') depth++;
+        else if (source[index] === '}' && --depth === 0) break;
+      }
+
+      spans.push([start, index]);
+      from = index + 1;
     }
-
-    spans.push([start, index]);
-    from = index + 1;
   }
+  return spans;
 }
 
 function renderedKeys(surface: Surface): { gated: Set<string>; ungated: Set<string> } {
   const source = readFileSync(surface.template, 'utf8');
-  const spans = gatedSpans(source, surface.gate);
+  const spans = gatedSpans(source, surface.gates);
   const gated = new Set<string>();
   const ungated = new Set<string>();
 
@@ -159,7 +174,7 @@ function renderedKeys(surface: Surface): { gated: Set<string>; ungated: Set<stri
   return { gated, ungated };
 }
 
-describe.each(SURFACES)('$name sells no trial while no plan carries one', (surface) => {
+describe.each(SURFACES)('$name sells a trial only where one is offered', (surface) => {
   // Anti-false-green: a scanner that found no gate, or put every key behind one, would pass the
   // claim below while reading nothing.
   it('tells the gated copy from the copy it always renders', () => {
@@ -215,5 +230,44 @@ describe.each(SURFACES)('$name sells no trial while no plan carries one', (surfa
         expect({ block, locale, keys: keysOf(locale) }).toEqual({ block, locale, keys: enKeys });
       }
     }
+  });
+});
+
+// A plan's own trial column says nothing about whether THIS customer may still have a trial, so a
+// subscribe surface reads the offered days from its facade and never the column itself.
+describe('the booking and Plus pages offer the trial this customer can still have', () => {
+  it.each([
+    'plus/src/lib/plus/plus-page.component.html',
+    'order-wizard/src/lib/order-wizard/order-wizard.component.html',
+    'home/src/lib/home/components/plus/plus.component.html',
+  ])('%s never reads the plan trial column', (template) => {
+    expect(readFileSync(join(FEATURES_DIR, template), 'utf8')).not.toContain('trialPeriodDays');
+  });
+});
+
+// A sentence under all the plan cards at once speaks for each of them, and each plan carries its
+// own trial — so it states billing terms only when every card shares them, never one card's.
+describe('a sentence speaking for every plan card states only the terms they share', () => {
+  const PLUS = 'plus/src/lib/plus/plus-page.component.html';
+  const WIZARD = 'order-wizard/src/lib/order-wizard/order-wizard.component.html';
+
+  it.each([
+    [PLUS, '@if (facade.trialOnEveryPlan()) {', 'pages.plus.plans_footnote'],
+    [PLUS, '@else if (facade.trialOnNoPlan()) {', 'pages.plus.plans_footnote_no_trial'],
+    [WIZARD, '@if (trialDaysOnEveryPlan() > 0) {', 'pages.order.plus_lead_after'],
+    [WIZARD, '@else if (trialDaysOnEveryPlan() > 0) {', 'pages.order.plus_lead_plain'],
+    [WIZARD, '@else if (trialOnNoPlan()) {', 'pages.order.plus_lead_after_no_trial'],
+    [WIZARD, '@else if (trialOnNoPlan()) {', 'pages.order.plus_lead_plain_no_trial'],
+  ])('%s renders behind %s the key %s', (template, gate, key) => {
+    const { gated } = renderedKeys({
+      name: template,
+      template: join(FEATURES_DIR, template),
+      gates: [gate],
+      mustBeGated: [],
+      mustBeUngated: [],
+      blocks: [],
+    });
+
+    expect([...gated]).toContain(key);
   });
 });

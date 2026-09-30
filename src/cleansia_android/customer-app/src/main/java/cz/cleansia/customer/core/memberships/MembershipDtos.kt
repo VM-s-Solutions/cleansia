@@ -93,22 +93,34 @@ data class GetMyMembershipResponse(
     val expressUpgradesPerMonth: Int? = null,
     /**
      * Live waivers left this calendar month, before any booking under composition. Null = no
-     * membership; 0 = exhausted OR still inside the trial — [trialEndsAtUtc] tells those apart.
+     * membership; 0 = exhausted, or a past-due or paused enrolment.
      */
     val expressUpgradesRemaining: Int? = null,
-    /** End of the Stripe free trial. In the future means metered benefits have not started yet. */
+    /** End of the Stripe free trial. In the future means the first payment falls on it. */
     val trialEndsAtUtc: kotlinx.datetime.Instant? = null,
+    /** False once this customer has had their one free trial. Absent reads as false: no trial is promised unconfirmed. */
+    val trialEligible: Boolean = false,
     /** Null only for a non-member, or when the plan's price row in this currency was deleted. */
     val currencyCode: String? = null,
 )
 
 /**
- * When the running free trial ends, or null. [GetMyMembershipResponse.hasMembership] counts a trial, but
- * no Plus benefit runs during one — the server grants them from the paid entitlement, so every benefit
- * starts with the first paid month. -> /product/business-rules
+ * When the running free trial ends, or null. A trialing member has every Plus benefit; the trial only
+ * decides when the first payment falls. -> /product/business-rules
  */
 fun GetMyMembershipResponse.trialEndsAt(now: Instant = Clock.System.now()): Instant? =
     trialEndsAtUtc?.takeIf { hasMembership && it > now }
+
+/**
+ * The free-trial days this customer would get on [plan]: the plan's own while they have never had a
+ * trial, else 0 — one trial per account, and the server bills anyone who has had it from day one.
+ */
+fun GetMyMembershipResponse?.trialDaysOn(plan: MembershipPlanDto?): Int =
+    if (this?.trialEligible == true && plan != null) plan.trialPeriodDays else 0
+
+/** The trial a surface without a plan picker offers: the monthly plan's, the one every Plus surface leads with. */
+fun GetMyMembershipResponse?.headlineTrialDays(plans: List<MembershipPlanDto>): Int =
+    trialDaysOn(plans.firstOrNull { it.billingInterval == 1 } ?: plans.firstOrNull())
 
 /**
  * A live enrolment whose renewal payment failed, or that Stripe paused. [GetMyMembershipResponse.hasMembership]

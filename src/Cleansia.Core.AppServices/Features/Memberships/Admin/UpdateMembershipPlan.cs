@@ -76,13 +76,9 @@ public class UpdateMembershipPlan
                 .LessThanOrEqualTo(BookingPolicy.FreeCancellationHours)
                 .WithMessage(BusinessErrorMessage.MembershipPlanFreeCancellationWindowTooLong);
 
-            // A trial grants Cleansia Plus benefits to somebody who has not paid, which the owner ruling
-            // of 2026-09-08 (T-0690) forbids. Refused here rather than merely defaulted to 0, because a
-            // deployed database gets its plans from this admin surface and not from the dev seed — so the
-            // seed value alone would enforce nothing where it matters.
             RuleFor(x => x.TrialPeriodDays)
-                .Equal(0)
-                .WithMessage(BusinessErrorMessage.MembershipPlanTrialNotPermitted);
+                .GreaterThanOrEqualTo(0)
+                .WithMessage(BusinessErrorMessage.MustBePositive);
         }
     }
 

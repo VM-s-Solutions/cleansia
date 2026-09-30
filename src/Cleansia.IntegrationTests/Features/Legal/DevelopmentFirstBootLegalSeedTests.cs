@@ -81,7 +81,7 @@ public sealed class DevelopmentFirstBootLegalSeedTests(PostgresContainerFixture 
         var documents = await context.LegalDocuments.Include(d => d.Texts).AsNoTracking().ToListAsync();
         Assert.Equal(
             [
-                LegalDocumentType.TermsOfService, LegalDocumentType.TermsOfService, LegalDocumentType.TermsOfService,
+                LegalDocumentType.TermsOfService, LegalDocumentType.TermsOfService, LegalDocumentType.TermsOfService, LegalDocumentType.TermsOfService,
                 LegalDocumentType.PrivacyPolicy, LegalDocumentType.PrivacyPolicy,
                 LegalDocumentType.WorkContract, LegalDocumentType.WorkContract,
                 LegalDocumentType.CleanerFrameworkContract, LegalDocumentType.SelfBillingAgreement,

@@ -124,7 +124,7 @@ is no arrow.
 | **[ADR-0032](./adr-0032)** | Catalog law declarations require a named ci gate | `accepted` |
 | **[ADR-0033](./adr-0033)** | Catalog edit authority the routing test and cross… | `accepted` |
 | **[ADR-0034](./adr-0034)** | Partner payout details shape | `accepted` |
-| **[ADR-0035](./adr-0035)** | Metered membership benefit usage | `accepted` |
+| **[ADR-0035](./adr-0035)** | Metered membership benefit usage (amended 2026-09-30: the Plus free trial is back with every benefit, express waivers included — overrides AM-18; records T-0690 of 2026-09-08) | `accepted` |
 | **[ADR-0036](./adr-0036)** | Preferred cleaner first refusal hold ⟲ | `accepted` |
 | **[ADR-0037](./adr-0037)** | Order offerability is a payment qualified status… ⟲ | `accepted` |
 | **[ADR-0038](./adr-0038)** | Promo redemption reservation runs after the uow… | `accepted` |

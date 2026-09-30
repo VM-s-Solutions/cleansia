@@ -2,7 +2,6 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  DestroyRef,
   inject,
   OnInit,
 } from '@angular/core';
@@ -11,12 +10,9 @@ import {
   CustomerAuthService,
   MembershipPlanFactsService,
 } from '@cleansia/customer-services';
-import { selectMarketCountryId } from '@cleansia/customer-stores';
 import { formatMoney, localeFor } from '@cleansia/utils';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Store } from '@ngrx/store';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { distinctUntilChanged } from 'rxjs';
+import { PlusFacade } from './plus.facade';
 
 /**
  * The home page's argument for Cleansia Plus.
@@ -38,13 +34,13 @@ import { distinctUntilChanged } from 'rxjs';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [TranslatePipe, RouterModule],
+  providers: [PlusFacade],
 })
 export class PlusComponent implements OnInit {
   private readonly authService = inject(CustomerAuthService);
-  private readonly store = inject(Store);
   private readonly translate = inject(TranslateService);
-  private readonly destroyRef = inject(DestroyRef);
   readonly facts = inject(MembershipPlanFactsService);
+  readonly facade = inject(PlusFacade);
 
   /**
    * This CTA pointed at `/membership/subscribe` unconditionally, which is
@@ -72,10 +68,7 @@ export class PlusComponent implements OnInit {
   readonly canStateFigures = this.facts.hasPlans;
 
   ngOnInit(): void {
-    this.store
-      .select(selectMarketCountryId)
-      .pipe(distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
-      .subscribe((countryId) => this.facts.load(countryId));
+    this.facade.load();
   }
 
   /** Labelled with the plans' own currency code, never a platform default. */

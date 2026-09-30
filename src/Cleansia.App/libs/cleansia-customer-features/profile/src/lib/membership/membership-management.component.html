@@ -101,11 +101,18 @@
           @if (cadenceKey(m); as cadence) { · {{ cadence | translate }} }
         </h2>
         <p class="cl-mbr__plan-next">
+          @if (trialEndsOn(); as trialEnd) {
+          {{
+            'pages.membership.trial_next_payment'
+              | translate: { amount: formatPrice(currentPrice(m)), date: formatDate(trialEnd) }
+          }}
+          } @else {
           {{
             'pages.membership.next_payment'
               | translate
                 : { amount: formatPrice(currentPrice(m)), date: formatDate(m.currentPeriodEnd) }
           }}
+          }
         </p>
 
         <div class="cl-mbr__plan-actions">
@@ -132,22 +139,17 @@
     <!--
       What the membership actually buys. The same list in both states — the
       point of the "running out" state is that these are still true — with the
-      heading naming the date they stop. A running trial carries none of them,
-      so for a trialing member the list is what a paid membership includes.
+      heading naming the date they stop. A running trial carries all of them.
       → /product/business-rules
     -->
     <section class="cl-mbr__card">
       <h2 class="cl-mbr__card-title">
-        @if (trialEndsOn()) {
-        {{ 'pages.membership.trial_perks_title' | translate }}
-        } @else {
         {{
           m.cancelRequested
             ? ('pages.membership.what_you_have_until'
               | translate: { date: formatDate(m.currentPeriodEnd) })
             : ('pages.membership.what_you_get' | translate)
         }}
-        }
       </h2>
 
       <ul class="cl-mbr__perks">
@@ -185,10 +187,6 @@
         </li>
       </ul>
 
-      @if (trialEndsOn()) {
-      <p class="cl-mbr__note">{{ 'pages.membership.trial_perks_note' | translate }}</p>
-      }
-
       <!-- The express allowance as a COUNT, not a promise: the server's figure for this month. -->
       @if (expressWaiverAvailable()) {
       <p class="cl-mbr__credit">
@@ -206,11 +204,6 @@
       <p class="cl-mbr__credit cl-mbr__credit--spent">
         <i class="pi pi-bolt"></i>
         <span>{{ 'pages.membership.perk_express_used' | translate }}</span>
-      </p>
-      } @else if (expressWaiverPendingTrial()) {
-      <p class="cl-mbr__credit cl-mbr__credit--trial">
-        <i class="pi pi-bolt"></i>
-        <span>{{ 'pages.membership.perk_express_trial' | translate }}</span>
       </p>
       }
     </section>
@@ -260,8 +253,6 @@
     </section>
     }
 
-    <!-- Plus-only: the schedules a paid month unlocks. The server refuses one during a trial. -->
-    @if (!trialEndsOn()) {
     <a class="cl-mbr__jump" [routerLink]="['recurring']">
       <i class="pi pi-calendar-clock"></i>
       <span class="cl-mbr__jump-text">
@@ -270,7 +261,6 @@
       </span>
       <i class="pi pi-chevron-right"></i>
     </a>
-    }
 
     }
 

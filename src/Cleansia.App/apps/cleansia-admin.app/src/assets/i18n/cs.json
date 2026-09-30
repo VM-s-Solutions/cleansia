@@ -2638,6 +2638,7 @@
         "monthly_equivalent": "Měsíční ekvivalent",
         "discount": "Sleva",
         "free_cancel_window": "Storno zdarma (h)",
+        "trial": "Zkušební doba (dny)",
         "express": "Expres",
         "status": "Stav",
         "currency": "Měna"
@@ -2676,6 +2677,8 @@
           "stripe_price_id_help": "Zkopírujte ze Stripe dashboardu (price_...). Platforma ceny ve Stripe nevytváří.",
           "discount": "Sleva (%)",
           "free_cancel_window": "Lhůta pro bezplatné storno (hodiny)",
+          "trial_days": "Zkušební doba zdarma (dny)",
+          "trial_days_help": "Počet dní, kdy má nový člen všechny výhody Plus ještě před první platbou. Jedna zkušební doba na účet; 0 znamená bez zkušební doby.",
           "express_upgrade": "Umožňuje expresní upgrade",
           "express_upgrades_per_month": "Zahrnuté expresní upgrady za měsíc",
           "express_upgrades_per_month_help": "Kolik expresních rezervací dostane člen každý měsíc bez expresního příplatku. Nula znamená žádné."
@@ -3279,7 +3282,6 @@
         "code_already_exists": "Plán s tímto kódem již existuje.",
         "discount_out_of_range": "Sleva musí být mezi 0 a 100.",
         "not_found": "Plán členství nebyl nalezen.",
-        "trial_not_permitted": "Výhody Cleansia Plus vyžadují aktivní předplatné, zkušební období proto nelze nastavit. Ponechte 0 dní.",
         "stripe_price_already_used": "Toto Stripe Price id už používá cena jiného plánu.",
         "free_cancellation_window_too_long": "Okno pro bezplatné zrušení nemůže být delší než standardních 24 hodin."
       }

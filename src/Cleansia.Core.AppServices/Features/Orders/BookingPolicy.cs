@@ -160,7 +160,7 @@ public static class BookingPolicy
     public const int OopsWindowMinutesFirstBooking = 60;
 
     /// <summary>
-    /// The oops window of an entitled, paid Plus member. MINUTES after booking — a separate benefit from
+    /// The oops window of an entitled Plus member. MINUTES after booking — a separate benefit from
     /// the plan's <c>FreeCancellationWindowHours</c> before the cleaning, and never derived from it.
     /// </summary>
     public const int OopsWindowMinutesPlus = 60;

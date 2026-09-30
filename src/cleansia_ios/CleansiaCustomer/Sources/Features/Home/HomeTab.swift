@@ -112,6 +112,7 @@ struct HomeTab: View {
         .task { await vm.refreshCatalogIfNeeded() }
         .task { await notificationBadge.refresh() }
         .task { await vm.refreshRecurring() }
+        .task(id: vm.isPlus) { await vm.refreshPlusPlans() }
         .onChange(of: scenePhase) { phase in
             if phase == .active {
                 // The badge is cheap enough to refetch on every foreground; the
@@ -137,6 +138,7 @@ struct HomeTab: View {
 
                 UpsellCarousel(
                     isPlus: vm.isPlus,
+                    plusTrialDays: vm.plusTrialDays,
                     showSetupRecurring: vm.showSetupRecurringSlide,
                     onAction: handleUpsell
                 )

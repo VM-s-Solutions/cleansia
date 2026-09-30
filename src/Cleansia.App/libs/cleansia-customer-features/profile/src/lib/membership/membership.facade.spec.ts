@@ -121,8 +121,8 @@ describe('MembershipFacade — express waiver state', () => {
     });
   });
 
-  // `hasMembership` counts a running trial, but no Plus benefit runs during one — every benefit
-  // follows the paid entitlement. The screens branch on this, not on `hasMembership`.
+  // A running trial carries every Plus benefit. The screens branch on it only to say when the first
+  // payment falls and that nothing is charged before then.
   describe('a running trial', () => {
     const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -178,7 +178,7 @@ describe('MembershipFacade — express waiver state', () => {
       const trialing = () =>
         buildMembership({ trialEndsAtUtc: new Date(Date.now() + 7 * DAY_MS) });
 
-      it('tells a trialing member that no paid month follows and no benefit starts', () => {
+      it('tells a trialing member that nothing is charged before the trial ends', () => {
         membershipClient.getMine.mockReturnValue(of(trialing()));
         facade.refresh();
 
@@ -304,12 +304,12 @@ describe('MembershipFacade — express waiver state', () => {
     expect(facade.expressWaiverAvailable()).toBe(false);
   });
 
-  it('advertises the perk as pending — not exhausted — during the trial', () => {
+  it('advertises the remaining count for a member inside the free trial', () => {
     membershipClient.getMine.mockReturnValue(
       of(
         buildMembership({
           expressUpgradesPerMonth: 2,
-          expressUpgradesRemaining: 0,
+          expressUpgradesRemaining: 2,
           trialEndsAtUtc: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
         }),
       ),
@@ -317,8 +317,8 @@ describe('MembershipFacade — express waiver state', () => {
 
     facade.refresh();
 
-    expect(facade.expressWaiverPendingTrial()).toBe(true);
-    expect(facade.expressWaiverExhausted()).toBe(false);
+    expect(facade.expressWaiverAvailable()).toBe(true);
+    expect(facade.expressUpgradesRemaining()).toBe(2);
   });
 
   it('advertises nothing on a plan that carries no express quota', () => {

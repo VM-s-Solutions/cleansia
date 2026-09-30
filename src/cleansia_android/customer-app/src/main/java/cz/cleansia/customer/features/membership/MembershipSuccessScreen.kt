@@ -54,9 +54,8 @@ import cz.cleansia.customer.ui.components.MascotAnimation
  *    once because it's the headline Plus perk; everything else they can
  *    discover on their own from the Profile tab.
  *
- * A running trial carries no Plus benefit, so a trialing member is told what a paid membership
- * includes rather than what just unlocked, and is not sent to set up a schedule the server refuses
- * until the first paid month. -> /product/business-rules
+ * A trialing member has every benefit from day one, and is told when the free trial ends.
+ * -> /product/business-rules
  */
 @Composable
 fun MembershipSuccessScreen(
@@ -65,7 +64,6 @@ fun MembershipSuccessScreen(
     viewModel: MembershipViewModel = hiltViewModel(),
 ) {
     val trialEndsAt by viewModel.trialEndsAt.collectAsStateWithLifecycle()
-    val inTrial = trialEndsAt != null
     val membership by viewModel.current.collectAsStateWithLifecycle()
     val discountPercent = membership?.discountPercentage?.toInt() ?: 0
 
@@ -111,9 +109,9 @@ fun MembershipSuccessScreen(
             )
             Spacer(Modifier.height(6.dp))
             Text(
-                text = stringResource(
-                    if (inTrial) R.string.membership_success_subtitle_trial else R.string.membership_success_subtitle,
-                ),
+                text = trialEndsAt?.let {
+                    stringResource(R.string.membership_success_subtitle_trial, formatPeriodEnd(it.toString()))
+                } ?: stringResource(R.string.membership_success_subtitle),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
@@ -138,9 +136,7 @@ fun MembershipSuccessScreen(
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 Text(
-                    text = stringResource(
-                        if (inTrial) R.string.membership_trial_perks_title else R.string.membership_success_perks_header,
-                    ),
+                    text = stringResource(R.string.membership_success_perks_header),
                     style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
                     color = MaterialTheme.colorScheme.onSurface,
                 )
@@ -162,42 +158,27 @@ fun MembershipSuccessScreen(
                     icon = Icons.Outlined.Bolt,
                     title = stringResource(R.string.membership_success_perk_express),
                 )
-                if (inTrial) {
-                    Text(
-                        text = stringResource(R.string.membership_trial_perks_note),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
             }
 
             Spacer(Modifier.height(28.dp))
 
-            if (inTrial) {
-                CleansiaPrimaryButton(
-                    onClick = onPrimary,
+            // Primary action — pull users into the headline benefit.
+            CleansiaPrimaryButton(
+                onClick = onSecondary,
+                text = stringResource(R.string.membership_success_cta_setup_recurring),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(8.dp))
+            // Secondary — plain "I'm done here" exit. TextButton-style so the
+            // recurring CTA stays the dominant choice.
+            androidx.compose.material3.TextButton(
+                onClick = onPrimary,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(
                     text = stringResource(R.string.membership_success_cta_back_home),
-                    modifier = Modifier.fillMaxWidth(),
+                    style = MaterialTheme.typography.titleMedium,
                 )
-            } else {
-                // Primary action — pull users into the headline benefit.
-                CleansiaPrimaryButton(
-                    onClick = onSecondary,
-                    text = stringResource(R.string.membership_success_cta_setup_recurring),
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Spacer(Modifier.height(8.dp))
-                // Secondary — plain "I'm done here" exit. TextButton-style so the
-                // recurring CTA stays the dominant choice.
-                androidx.compose.material3.TextButton(
-                    onClick = onPrimary,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(
-                        text = stringResource(R.string.membership_success_cta_back_home),
-                        style = MaterialTheme.typography.titleMedium,
-                    )
-                }
             }
 
             Spacer(Modifier.height(24.dp))

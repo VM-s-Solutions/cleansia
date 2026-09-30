@@ -13,6 +13,7 @@ import cz.cleansia.customer.core.memberships.GetMyMembershipResponse
 import cz.cleansia.customer.core.memberships.MembershipPlanDto
 import cz.cleansia.customer.core.memberships.MembershipRepository
 import cz.cleansia.customer.core.memberships.benefitsPaused
+import cz.cleansia.customer.core.memberships.headlineTrialDays
 import cz.cleansia.customer.core.memberships.trialEndsAt
 import cz.cleansia.customer.ui.state.ActionState
 import cz.cleansia.core.snackbar.SnackbarController
@@ -25,6 +26,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -75,10 +77,7 @@ class MembershipViewModel @Inject constructor(
     val current: StateFlow<GetMyMembershipResponse?> = repository.current
     val loading: StateFlow<Boolean> = repository.loading
 
-    /**
-     * When the running free trial ends, or null. A trialing member has no benefit running yet, so the
-     * membership screens say what a paid month will bring rather than what is on.
-     */
+    /** When the running free trial ends, or null: the date the first payment falls on. */
     val trialEndsAt: StateFlow<Instant?> = repository.current
         .map { it?.trialEndsAt() }
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
@@ -100,6 +99,11 @@ class MembershipViewModel @Inject constructor(
     private val _plansLoaded = MutableStateFlow(false)
     /** Tells the empty market apart from a read that has not answered — only the former renders the empty state. */
     val plansLoaded: StateFlow<Boolean> = _plansLoaded.asStateFlow()
+
+    /** The free trial the not-subscribed card offers; 0 once this customer has had theirs or no plan carries one. */
+    val offeredTrialDays: StateFlow<Int> = combine(repository.current, _plans) { membership, plans ->
+        membership.headlineTrialDays(plans)
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, 0)
 
     /**
      * Client idempotency token for the CURRENT logical subscribe attempt.
@@ -200,8 +204,8 @@ class MembershipViewModel @Inject constructor(
 
     /**
      * Cancel the user's membership. UI refreshes from [current] which reflects the cancellation
-     * request flag. A paid period runs to its end; a trial ends with no paid month after it; a
-     * past-due or paused one ends now.
+     * request flag. A paid period or a trial runs to its end, a trial with nothing charged after it;
+     * a past-due or paused one ends now.
      */
     fun cancel() {
         if (_submitState.value is ActionState.Submitting) return

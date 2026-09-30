@@ -31,6 +31,10 @@ struct SubscribePlusScreen: View {
         vm.plans.first { $0.code == selectedPlanCode }
     }
 
+    private var trialDays: Int {
+        vm.offeredTrialDays(selectedPlan)
+    }
+
     var body: some View {
         ZStack(alignment: .bottom) {
             switch vm.plansState {
@@ -100,6 +104,7 @@ struct SubscribePlusScreen: View {
                         plans: plans,
                         selectedPlanCode: selectedPlanCode,
                         selectedPlan: selectedPlan,
+                        trialDays: trialDays,
                         onSelectPlan: { selectedPlanCode = $0 },
                         onBack: onBack
                     )
@@ -110,8 +115,7 @@ struct SubscribePlusScreen: View {
             }
             if vm.canSubscribe {
                 StickyCtaBar(
-                    label: (selectedPlan?.trialPeriodDays ?? 0) > 0
-                        ? L10n.Membership.ctaStartTrial : L10n.Membership.ctaSubscribe,
+                    label: trialDays > 0 ? L10n.Membership.ctaStartTrial : L10n.Membership.ctaSubscribe,
                     disclosure: disclosure,
                     enabled: !vm.submitState.isSubmitting && selectedPlan != nil,
                     onTap: subscribe
@@ -145,7 +149,7 @@ struct SubscribePlusScreen: View {
     }
 
     private var disclosure: String {
-        guard let plan = selectedPlan, plan.trialPeriodDays > 0 else { return L10n.Membership.disclosure }
+        guard let plan = selectedPlan, trialDays > 0 else { return L10n.Membership.disclosure }
         let price = MembershipFormat.price(plan.price, currencyCode: plan.currencyCode)
         return plan.isAnnual
             ? L10n.Membership.ctaDisclosureTrialYear(price)
@@ -222,6 +226,7 @@ private struct HeroBlock: View {
     let plans: [MembershipPlan]
     let selectedPlanCode: String
     let selectedPlan: MembershipPlan?
+    let trialDays: Int
     let onSelectPlan: (String) -> Void
     let onBack: () -> Void
 
@@ -268,7 +273,6 @@ private struct HeroBlock: View {
 
     @ViewBuilder
     private func priceBlock(_ plan: MembershipPlan) -> some View {
-        let trialDays = plan.trialPeriodDays
         let regularPrice = MembershipFormat.price(plan.price, currencyCode: plan.currencyCode)
         let isAnnual = plan.isAnnual
         if trialDays > 0 {

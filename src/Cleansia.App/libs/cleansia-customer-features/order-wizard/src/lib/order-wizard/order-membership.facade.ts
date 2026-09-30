@@ -8,6 +8,7 @@ import {
   ExpressWaiverStatus,
   GetMembershipPlansResponse,
   GetMyMembershipResponse,
+  offeredTrialDays,
   QuotePlusSavingsQuery,
   QuotePlusSavingsResponse,
   resolveExpressWaiverStatus,
@@ -48,9 +49,6 @@ export class OrderMembershipFacade extends UnsubscribeControlDirective {
   readonly expressWaiverExhausted = computed(
     () => this.expressWaiverStatus() === 'exhausted',
   );
-  readonly expressWaiverPendingTrial = computed(
-    () => this.expressWaiverStatus() === 'trial',
-  );
 
   /**
    * The plans on offer, for the wizard's Plus step. Anonymous-readable, because
@@ -62,6 +60,23 @@ export class OrderMembershipFacade extends UnsubscribeControlDirective {
    * edits a plan edits the copy with it.
    */
   readonly plans = signal<GetMembershipPlansResponse[]>([]);
+
+  /**
+   * The step's lead speaks for every plan card at once, and the trial length is per plan — so it
+   * names a trial only when every plan offers this customer the same one, and says billing starts
+   * today only when none offers any. Otherwise it states no billing terms; each card states its own.
+   */
+  private readonly offeredTrials = computed(() =>
+    this.plans().map((plan) => offeredTrialDays(plan, this.membership())),
+  );
+  readonly trialDaysOnEveryPlan = computed(() => {
+    const offered = this.offeredTrials();
+    const first = offered[0] ?? 0;
+    return first > 0 && offered.every((days) => days === first) ? first : 0;
+  });
+  readonly trialOnNoPlan = computed(
+    () => this.offeredTrials().length > 0 && this.offeredTrials().every((days) => days === 0),
+  );
 
   /**
    * The market listed no plan: Plus is not on sale there, and the step has
@@ -127,6 +142,10 @@ export class OrderMembershipFacade extends UnsubscribeControlDirective {
       .subscribe((savings) => this.plusSavings.set(savings));
   }
 
+  trialDaysOf(plan: GetMembershipPlansResponse): number {
+    return offeredTrialDays(plan, this.membership());
+  }
+
   load(isAuthenticated: boolean): void {
     if (!this.isBrowser || !isAuthenticated) return;
 
@@ -145,7 +164,7 @@ export class OrderMembershipFacade extends UnsubscribeControlDirective {
           return;
         }
         this.membership.set(response);
-        this.expressWaiverStatus.set(resolveExpressWaiverStatus(response, new Date()));
+        this.expressWaiverStatus.set(resolveExpressWaiverStatus(response));
       });
   }
 }

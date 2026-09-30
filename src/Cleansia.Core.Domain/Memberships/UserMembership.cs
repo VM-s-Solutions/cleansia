@@ -106,15 +106,16 @@ public class UserMembership : TenantAuditable
     /// End of the Stripe free trial, mirrored from the subscription's <c>trial_end</c>.
     /// NULL = this enrolment is not, and never was, in a trial.
     ///
-    /// <para>Metered benefits (ADR-0035) are withheld while <c>UtcNow &lt; TrialEndsAtUtc</c>; the
-    /// discount and the free-cancellation window are NOT (owner ruling 2026-08-03). Stripe flattens
-    /// <c>"active"</c> and <c>"trialing"</c> onto <see cref="MembershipStatus.Active"/> in
-    /// <see cref="UpdateFromStripeWebhook"/>, so without this column "is this member trialing?" has no
-    /// answer in the database.</para>
+    /// <para>No benefit is withheld while <c>UtcNow &lt; TrialEndsAtUtc</c>: a trialing member gets every
+    /// Plus benefit a paying one does (owner ruling 2026-09-30). Stripe flattens <c>"active"</c> and
+    /// <c>"trialing"</c> onto <see cref="MembershipStatus.Active"/> in <see cref="UpdateFromStripeWebhook"/>,
+    /// so without this column "is this member trialing?" has no answer in the database. The recurring-pause
+    /// latch reads it too: a trial never records paid proof, yet a started trial is proof the member held
+    /// the benefits, so a trial that lapses unpaid is told its schedule paused exactly as a paid one is.</para>
     ///
     /// <para>A stored instant rather than a bool, deliberately: a bool needs a writer to flip it on
-    /// conversion and no sweep exists, so it would go stale and grant waivers forever to anyone whose
-    /// conversion webhook was missed. A deadline expires by clock with no actor.</para>
+    /// conversion and no sweep exists, so it would go stale for anyone whose conversion webhook was
+    /// missed. A deadline expires by clock with no actor.</para>
     ///
     /// <para>Read across ALL of a user's rows it is also the once-per-customer trial marker (owner ruling
     /// 2026-08-03) — see <c>IUserMembershipRepository.HasEverStartedTrialAsync</c>. That is why it is
@@ -208,16 +209,15 @@ public class UserMembership : TenantAuditable
         CurrentPeriodEnd = currentPeriodEnd;
         // Null means the event said nothing about the trial — invoice.payment_failed carries an Invoice,
         // which has no trial_end at all. Assigning it would clear the marker on a dunning event, handing
-        // the customer both their withheld benefits and a second free trial (ADR-0035 AM-18). Stripe
-        // keeps trial_end populated after a trial converts, so a genuine "no trial" subscription is the
-        // only one that stays null here.
+        // the customer a second free trial. Stripe keeps trial_end populated after a trial converts, so a
+        // genuine "no trial" subscription is the only one that stays null here.
         TrialEndsAtUtc = trialEndsAtUtc ?? TrialEndsAtUtc;
         return this;
     }
 
     public bool TryMarkRecurringPauseNotificationSent(DateTime nowUtc)
     {
-        if (PaidPeriodConfirmedAt is null
+        if ((PaidPeriodConfirmedAt is null && TrialEndsAtUtc is null)
             || RecurringPauseNotificationSentAt is not null
             || (Status == MembershipStatus.Active && nowUtc < CurrentPeriodEnd)
             || IsInTrialAt(nowUtc))

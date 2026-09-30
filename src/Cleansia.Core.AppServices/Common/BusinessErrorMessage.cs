@@ -227,14 +227,6 @@ public static class BusinessErrorMessage
     /// <summary>A plan's free-notice window longer than the standard one would make a member's cancellation terms worse.</summary>
     public const string MembershipPlanFreeCancellationWindowTooLong = "membership.plan.free_cancellation_window_too_long";
 
-    /// <summary>
-    /// A free trial is benefits without payment, and the owner ruling of 2026-09-08 (T-0690) is that no
-    /// Cleansia Plus benefit is granted until the customer actually subscribes. The field stays on the
-    /// plan because Stripe subscriptions carry it and historical rows may hold a non-zero value; only
-    /// setting a new one is refused.
-    /// </summary>
-    public const string MembershipPlanTrialNotPermitted = "membership.plan.trial_not_permitted";
-
     // Saved card, the guarantee for cash bookings
     /// <summary>A card capture started without the customer's consent that fees and unpaid cash may be charged to the card.</summary>
     public const string SavedCardConsentNotAccepted = "saved_card.consent_not_accepted";

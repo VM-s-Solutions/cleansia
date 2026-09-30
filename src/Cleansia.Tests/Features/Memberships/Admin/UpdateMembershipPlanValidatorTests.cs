@@ -142,4 +142,27 @@ public class UpdateMembershipPlanValidatorTests
 
         Assert.True(result.IsValid);
     }
+
+    /// <summary>Owner ruling 2026-09-30: an admin sets the plan's trial length, and zero means no trial.</summary>
+    [Theory]
+    [InlineData(0)]
+    [InlineData(14)]
+    [InlineData(30)]
+    public async Task ATrialLength_Passes(int days)
+    {
+        var result = await Validator().ValidateAsync(Valid(null) with { TrialPeriodDays = days });
+
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public async Task ANegativeTrial_Fails_MustBePositive()
+    {
+        var result = await Validator().ValidateAsync(Valid(null) with { TrialPeriodDays = -1 });
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e =>
+            e.PropertyName == nameof(UpdateMembershipPlan.Command.TrialPeriodDays)
+            && e.ErrorMessage == BusinessErrorMessage.MustBePositive);
+    }
 }

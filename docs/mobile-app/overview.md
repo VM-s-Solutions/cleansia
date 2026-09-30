@@ -437,6 +437,8 @@ enum AppConfig {
 
 ```bash
 brew install xcodegen                                       # once
+# once: openapi-generator EXACTLY 7.10.0 (src/cleansia_ios/MANUAL_STEPS.md §1) — not brew's,
+# which is the latest release; generate-api-clients.sh refuses any other version
 
 cd src/cleansia_ios
 ./scripts/generate-api-clients.sh                            # emits Cleansia{Partner,Customer}Api
@@ -474,6 +476,15 @@ own test: `./scripts/tests/check-local-config.test.sh`.
 
 `CleansiaCore` is iOS-only (`platforms: [.iOS(.v16)]`), so a bare `swift build` host-builds for
 macOS and fails the iOS-only SwiftUI availability checks. Always target a simulator.
+
+::: warning Keep the clone out of `~/Desktop`, `~/Documents` and `~/Downloads`
+macOS privacy protection does not let the simulator read those folders, and a good number of tests
+read repo files at run time — the string catalogs, sources, mascot assets. Run from a clone there,
+all three suites report dozens of failures, every one *"Operation not permitted"*, while every build
+and archive succeeds; the same commit from a clone elsewhere is green. A `-derivedDataPath` inside
+those folders is worse: `CleansiaCoreTests.xctest` does not load at all. CI checks out to an
+unprotected path, which is why it never sees this.
+:::
 
 ::: warning There are three test schemes, and `CleansiaCoreTests` is under neither app
 Running the two app schemes leaves the entire `CleansiaCore` suite unexecuted. The package's tests

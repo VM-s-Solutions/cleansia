@@ -6,6 +6,10 @@
 > [`README.md`](README.md) — this doc is the map, not the manual.
 >
 > **Branch:** `master`. **iOS lives at** `src/cleansia_ios/`. Last iOS commit at handover: `c1009c63`.
+>
+> **The status sections are a Phase 0 snapshot** — both apps have shipped far past it. The current
+> build, test and release flow is `docs/mobile-app/overview.md`; the commands below were corrected on
+> 2026-09-30 to the order CI runs them in.
 
 ---
 
@@ -58,13 +62,13 @@ needs a real toolchain**, which only the Mac has:
 | Needs the Mac | Why |
 |---|---|
 | `xcodegen generate` + open the workspace | XcodeGen + Xcode |
-| `swift build` / `swift test` | Swift toolchain |
-| **Generate the API client** | openapi-generator + the specs |
+| `xcodebuild … build test` on an iOS simulator | Xcode + the iOS simulator runtime |
+| **Generate the API client** | openapi-generator 7.10.0 + the specs |
 | Run in a **simulator** / on a device | Xcode + signing |
 
 So from here on, **iOS development happens on the Mac.** The first thing to do is prove Phase 0 actually
 compiles — it was verified *structurally* on Windows (no duplicate symbols, idiomatic Swift, correct
-imports), but the definitive `swift build` only happens on the Mac. Better to confirm a 65-file
+imports), but the definitive build only happens on the Mac. Better to confirm a 65-file
 foundation builds than to stack features on an unverified base.
 
 ---
@@ -73,21 +77,29 @@ foundation builds than to stack features on an unverified base.
 
 > Full commands: [`MANUAL_STEPS.md`](MANUAL_STEPS.md). The short version:
 
-1. **Toolchain** (once): `brew install xcodegen swiftlint swiftformat openapi-generator`
-2. **Generate the Xcode projects** + open the workspace:
+1. **Toolchain** (once): `brew install xcodegen xcbeautify`, then `openapi-generator` **exactly 7.10.0**
+   and SwiftFormat 0.60.1 / SwiftLint 0.65.0 — MANUAL_STEPS §1 and §5. Not `brew install
+   openapi-generator`, which is the latest release; the generate script refuses it.
+2. **Generate the API clients, THEN the Xcode projects** + open the workspace. Both `project.yml` files
+   reference the generated packages, so the clients come first:
    ```sh
-   cd src/cleansia_ios/CleansiaPartner  && xcodegen generate
-   cd src/cleansia_ios/CleansiaCustomer && xcodegen generate
-   open src/cleansia_ios/Cleansia.xcworkspace
+   cd src/cleansia_ios
+   ./scripts/generate-api-clients.sh
+   (cd CleansiaPartner  && xcodegen generate)
+   (cd CleansiaCustomer && xcodegen generate)
+   open Cleansia.xcworkspace
    ```
-3. **Verify Phase 0 builds** (the critical checkpoint):
+3. **Verify it builds and tests** (the critical checkpoint). `CleansiaCore` is iOS-only, so a bare
+   `swift build` host-builds for macOS and fails — test it from the package directory on a simulator,
+   then both app schemes from the workspace, as `ios-ci.yml` does:
    ```sh
-   cd src/cleansia_ios/CleansiaCore && swift build && swift test
+   cd src/cleansia_ios/CleansiaCore
+   xcodebuild -scheme CleansiaCore -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build test
    ```
-   Then build both app schemes for an **iOS-16 simulator** in Xcode. **If anything fails, fix it here
-   before any Phase 1 work** — this is the structural-verification gap closing.
-4. **Lint check:** `swiftlint --strict` and `swiftformat --lint .` at `src/cleansia_ios/` — the configs
-   are checked in; this is the ADR-0016 bar.
+   **If anything fails, fix it here before any Phase 1 work** — this is the structural-verification
+   gap closing.
+4. **Lint check:** `swiftformat --lint .` then `swiftlint lint --strict` at `src/cleansia_ios/` — the
+   configs are checked in; this is the ADR-0016 bar.
 5. **Bundle the brand fonts** (Poppins/Nunito `.ttf`) into each app — see MANUAL_STEPS §6. Until then the
    apps fall back to the system font but still build.
 
@@ -95,10 +107,10 @@ foundation builds than to stack features on an unverified base.
 6. **The Azure dev API must be live** — confirm `https://api-cleansia-partner-mobile-weu-dev.azurewebsites.net`
    responds (the owner is finishing this deploy). The app's `API_BASE_URL` in each `project.yml` already
    points at the `-mobile-weu-dev` hosts.
-7. **Generate the API client** (`manual_step: mobile-spec-regen`) — refresh the committed mobile specs
-   from the running hosts, then run `scripts/generate-api-clients.sh`, then wire the generated packages
-   into each `project.yml`. See MANUAL_STEPS §7 + `openapi/README.md`. The auth client stays
-   hand-written (excluded from codegen).
+7. **The API clients** are generated in step 2 from the committed specs, and both packages are already
+   wired into each `project.yml`. Refresh a spec from a running host only when the backend contract
+   changed — MANUAL_STEPS §7 + `openapi/README.md`. The auth client stays hand-written (excluded from
+   codegen).
 
 ---
 
@@ -121,7 +133,7 @@ cited Android Compose screen, ADR-0018).
 
 You have two ways to work with the agent from here:
 
-- **Best: run Claude Code ON the Mac.** Then Claude has the full toolchain — it can `swift build`, run
+- **Best: run Claude Code ON the Mac.** Then Claude has the full toolchain — it can build, run
   tests, generate the client, and drive Phase 1 **compile-verified** (the same way it became reliable on
   the Bicep once it had the bicep CLI). This is the recommended setup for iOS. Point it at this doc + the
   ADRs and it can pick up cold.
@@ -153,8 +165,8 @@ porting (`src/cleansia_android/{partner,customer}-app/.../features/<screen>`).
 > `src/cleansia_ios/` on `master`. **Phase 0 (foundation) is done + committed** — the CleansiaCore SPM
 > package (iOS-16, ObservableObject), 2 app targets, the hand-written auth/session/header spine, design
 > system, native SwiftUI components, DI, snackbar, codegen wiring; 65 Swift + 11 test files. It was
-> authored on Windows and verified structurally; **the first Mac task is `xcodegen generate` → open
-> `Cleansia.xcworkspace` → `swift build && swift test` → build both app schemes for an iOS-16 simulator**
-> to confirm it compiles. Then (needs: the Azure dev API live + the mobile-spec regen) proceed to **Phase
+> authored on Windows and verified structurally; **the first Mac task is `generate-api-clients.sh` →
+> `xcodegen generate` → open `Cleansia.xcworkspace` → `xcodebuild … build test` on an iOS simulator for
+> `CleansiaCore` and both app schemes** to confirm it compiles. Then (needs: the Azure dev API live + the mobile-spec regen) proceed to **Phase
 > 1 = the partner login → Dashboard vertical (T-0303)** per `agents/archive/2026-08/backlog/status/sprint-12.md`. Governing
 > decisions: ADR-0013/0014/0016/0018. Quality gates per screen: SwiftLint/SwiftFormat + Gate-AR + Gate-DP.

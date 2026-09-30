@@ -48,11 +48,17 @@ cannot wipe it — which they previously did to the same values held in `project
 `Info.plist`. **Do this before step 2**, or the first customer build warns that card payment is
 disabled.
 
-## 2. Generate the Xcode projects
+## 2. Generate the API clients, then the Xcode projects
+
+Clients first: both `project.yml` files reference the generated `Cleansia{Partner,Customer}Api`
+packages, so a project generated before them builds against a stale client or none. This is the
+order CI runs, and it is the same after every pull.
 
 ```sh
-cd src/cleansia_ios/CleansiaPartner  && xcodegen generate
-cd src/cleansia_ios/CleansiaCustomer && xcodegen generate
+cd src/cleansia_ios
+./scripts/generate-api-clients.sh
+(cd CleansiaPartner  && xcodegen generate)
+(cd CleansiaCustomer && xcodegen generate)
 ```
 
 Open `src/cleansia_ios/Cleansia.xcworkspace` in Xcode. Confirm both app schemes
@@ -68,6 +74,12 @@ the macOS host and fails the iOS-only SwiftUI availability checks. Verify agains
 cd src/cleansia_ios/CleansiaCore
 xcodebuild -scheme CleansiaCore -destination 'platform=iOS Simulator,name=iPhone 17' build test
 ```
+
+**Keep the clone out of `~/Desktop`, `~/Documents` and `~/Downloads`.** macOS privacy protection
+does not let the simulator read those folders, and a good number of tests read repo files at run
+time (string catalogs, sources, mascot assets). There they fail with *"Operation not permitted"* —
+builds and archives are unaffected, so it looks like a test regression when it is not. A
+`-derivedDataPath` inside those folders goes further: `CleansiaCoreTests.xctest` does not load at all.
 
 ## 4. Signing & provisioning (Apple Developer)
 
@@ -121,7 +133,7 @@ If a face is ever missing, `CleansiaFont` falls back to the system font at the s
 the apps still build and run, they just lose the brand typeface. Note that this fallback is **per glyph**:
 Poppins covers no Cyrillic at all, so `ru`/`uk` headings already fall back while Latin ones do not.
 
-## 7. Generate the Swift API clients — `manual_step: mobile-spec-regen`
+## 7. Generate the Swift API clients
 
 > **The first generation has HAPPENED — this section is now the re-run instruction, not a blocker.**
 > Verified 2026-08-14: the committed specs carry `Device/Mine`, the device revoke and
@@ -131,8 +143,8 @@ Poppins covers no Cyrillic at all, so `ru`/`uk` headings already fall back while
 
 The typed business clients are generated from the **shared committed mobile specs**
 (`src/cleansia_android/openapi/{partner,customer}-mobile-api.json`) with `openapi-generator` (swift5 +
-URLSession). A **spec re-dump stays owner-run** (`manual_step: mobile-spec-regen`) — it needs the mobile
-API hosts running — but generating from the specs already committed does not.
+URLSession). A **spec re-dump** needs the mobile API hosts running; generating from the specs already
+committed does not.
 
 **To regenerate the clients — this is the whole command, and it needs nothing running:**
 
@@ -168,6 +180,11 @@ the files on disk are correct, and the build still sees the old shape.
 
 Order matters — regenerate, then clear what cached it, then rebuild:
 
+**Quit Xcode before deleting or regenerating a project.** Deleting the two `.xcodeproj` while Xcode
+had the workspace open made it re-resolve packages without them and rewrite the committed
+`Cleansia.xcworkspace/xcshareddata/swiftpm/Package.resolved` down to the one pin `CleansiaCore`
+needs. If `git status` shows that file modified afterwards, `git checkout` it.
+
 ```sh
 cd src/cleansia_ios
 ./scripts/generate-api-clients.sh customer      # prints the model count it produced
@@ -198,14 +215,9 @@ Folder. If the two `grep`s above find nothing, the generator genuinely did not r
 `openapi-generator` must be **7.10.0** (§1) — the hand-written request spine subclasses generator
 internals, and the script now stops with the version it found rather than generating with another.
 
-After the first generation, wire each generated package into its app: uncomment the
-`Cleansia{Partner,Customer}Api` entry under `packages:` **and** under the target's `dependencies:` in
-`CleansiaPartner/project.yml` / `CleansiaCustomer/project.yml`, then re-run `xcodegen generate`. See
-`openapi/README.md` ("Wiring into the build") for the full flow and the never-hand-edit discipline.
-
 This emits `CleansiaPartnerApi/` and `CleansiaCustomerApi/` (gitignored, machine-owned — never
-hand-edit; see `openapi/README.md`). After the first generation, add each local package to its app's
-`project.yml` and regenerate the Xcode project (the dependency lines are in `README.md`).
+hand-edit; see `openapi/README.md`). Both are already wired into their app's `project.yml`, under
+`packages:` and the target's `dependencies:`; there is nothing to uncomment.
 
 The **auth client stays hand-written** (`CleansiaCore/Auth`) and is **excluded from codegen** — only the
 business endpoints are generated. Generation does not block the rest of Phase 0, which builds against

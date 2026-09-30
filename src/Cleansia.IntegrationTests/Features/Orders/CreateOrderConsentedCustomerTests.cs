@@ -75,7 +75,8 @@ public class CreateOrderConsentedCustomerTests(PostgresContainerFixture fixture)
         PaymentType: PaymentType.Cash,
         CurrencyId: null,
         TotalPrice: CzkServicePrice,
-        TermsAccepted: null);
+        TermsAccepted: null,
+        EarlyPerformanceRequested: true);
 
     private static async Task<List<CustomerActionAudit>> CustomerRows(CleansiaDbContext context) =>
         await context.CustomerActionAudits.IgnoreQueryFilters().ToListAsync();

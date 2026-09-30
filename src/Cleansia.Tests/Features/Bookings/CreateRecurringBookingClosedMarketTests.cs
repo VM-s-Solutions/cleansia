@@ -88,7 +88,8 @@ public class CreateRecurringBookingClosedMarketTests
             SelectedServiceIds: ["service-1"],
             SelectedPackageIds: [],
             PaymentType: (int)PaymentType.Card,
-            StartsOn: DateTime.UtcNow.AddDays(3));
+            StartsOn: DateTime.UtcNow.AddDays(3),
+            EarlyPerformanceRequested: true);
 
     private static SavedAddress SavedAddressIn(string savedAddressId, string countryId)
     {

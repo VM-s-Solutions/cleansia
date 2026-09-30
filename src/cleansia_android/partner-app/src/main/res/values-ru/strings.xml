@@ -900,8 +900,10 @@
     <string name="work_contract_pending_banner">Прежде чем начать, примите договор подряда</string>
     <string name="work_contract_accept_cta">Принять договор</string>
     <string name="work_contract_read">Прочитать договор</string>
+    <string name="work_contract_reward">Ваше вознаграждение</string>
+    <string name="work_contract_parties">Между операционной компанией, которая продала эту уборку (заказчик), и вами (подрядчик)</string>
     <string name="legal_documents_title">Договорные документы</string>
-    <string name="legal_documents_intro">Эти документы регулируют ваше сотрудничество с Cleansia. Прочитайте каждый и примите его действующую версию — пока вы этого не сделаете, вас не смогут одобрить и вы не сможете брать заказы.</string>
+    <string name="legal_documents_intro">Эти документы регулируют вашу работу для операционной компании рынка, на котором вы работаете. Прочитайте каждый и примите его действующую версию — пока вы этого не сделаете, вас не смогут одобрить и вы не сможете брать заказы.</string>
     <string name="legal_documents_empty">Сейчас у вас нет документов для принятия.</string>
     <string name="legal_documents_version">Версия %1$s</string>
     <string name="legal_documents_accepted_on">Принято %1$s, версия %2$s</string>

@@ -80,13 +80,24 @@ public sealed class DevelopmentFirstBootLegalSeedTests(PostgresContainerFixture 
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         var documents = await context.LegalDocuments.Include(d => d.Texts).AsNoTracking().ToListAsync();
         Assert.Equal(
-            [LegalDocumentType.TermsOfService, LegalDocumentType.TermsOfService, LegalDocumentType.PrivacyPolicy, LegalDocumentType.WorkContract],
+            [
+                LegalDocumentType.TermsOfService, LegalDocumentType.TermsOfService, LegalDocumentType.TermsOfService,
+                LegalDocumentType.PrivacyPolicy, LegalDocumentType.PrivacyPolicy,
+                LegalDocumentType.WorkContract, LegalDocumentType.WorkContract,
+                LegalDocumentType.CleanerFrameworkContract, LegalDocumentType.SelfBillingAgreement,
+                LegalDocumentType.CleanerDataProcessingAgreement, LegalDocumentType.ComplaintsProcedure,
+            ],
             documents.Select(d => d.Type).Order());
-        Assert.All(documents, d => Assert.Equal(LegalDocumentAudience.Customer, d.Audience));
+        Assert.All(documents, d => Assert.Equal(
+            d.Type == LegalDocumentType.WorkContract || LegalDocument.CleanerConsentTypeFor(d.Type) is not null
+                ? LegalDocumentAudience.Employee
+                : LegalDocumentAudience.Customer,
+            d.Audience));
         Assert.All(documents, d => Assert.True(d.IsInForceOn(today), $"{d.Type} {d.Version} is not in force"));
 
-        var contract = documents.Single(d => d.Type == LegalDocumentType.WorkContract);
-        Assert.Equal(["cs", "en", "ru", "sk", "uk"], contract.Texts.Select(t => t.Language).Order(StringComparer.Ordinal));
+        Assert.All(
+            documents.Where(d => d.Type == LegalDocumentType.WorkContract),
+            contract => Assert.Equal(["cs", "en", "ru", "sk", "uk"], contract.Texts.Select(t => t.Language).Order(StringComparer.Ordinal)));
     }
 
     private DbContextOptions<CleansiaDbContext> Options() =>

@@ -1016,6 +1016,41 @@
         }
       }
     },
+    "error.consent.early_performance_not_requested": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro pokračování prosím potvrďte, že žádáte o zahájení služby ve 14denní lhůtě pro odstoupení od smlouvy."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To continue, please confirm that you want the service to start within the 14-day withdrawal period."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Чтобы продолжить, подтвердите, что вы просите начать оказание услуги в течение 14-дневного срока для отказа от договора."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pre pokračovanie prosím potvrďte, že žiadate o začatie poskytovania služby v 14-dňovej lehote na odstúpenie od zmluvy."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Щоб продовжити, підтвердьте, що ви просите розпочати надання послуги протягом 14-денного строку для відмови від договору."
+          }
+        }
+      }
+    },
     "error.consent.terms_not_accepted": {
       "extractionState": "manual",
       "localizations": {

@@ -14,8 +14,9 @@ namespace Cleansia.Core.AppServices.Features.Legal;
 /// The customer legal text in force today for a market, rendered for the page: the named market's
 /// own copy or the platform-wide one, the requested language or English, and the market's figures
 /// filled in where the copy carries a placeholder — the currency prices are displayed in is the
-/// market's, never written into a text (ADR-0060 D3). Anonymous: the register form and the booking
-/// wizard link here before anyone signs in.
+/// market's, never written into a text (ADR-0060 D3), and the seller is the company operating the
+/// market, named from its company record. Anonymous: the register form and the booking wizard link
+/// here before anyone signs in.
 /// </summary>
 public class GetLegalDocument
 {
@@ -33,7 +34,8 @@ public class GetLegalDocument
 
     public class Handler(
         ICountryConfigurationRepository countryConfigurationRepository,
-        ILegalDocumentResolver legalDocumentResolver) : IQueryHandler<Query, LegalDocumentDto>
+        ILegalDocumentResolver legalDocumentResolver,
+        ICompanyInfoRepository companyInfoRepository) : IQueryHandler<Query, LegalDocumentDto>
     {
         public async Task<BusinessResult<LegalDocumentDto>> Handle(Query request, CancellationToken cancellationToken)
         {
@@ -54,12 +56,11 @@ public class GetLegalDocument
                     new Error(nameof(request.Type), BusinessErrorMessage.LegalDocumentNotFound));
             }
 
-            var placeholders = new Dictionary<string, string>
-            {
-                [LegalMarkdownRenderer.CurrencyPlaceholder] = market.DefaultCurrencyCode,
-            };
+            var company = market.OperatorTenantId is { } operatorTenantId
+                ? await companyInfoRepository.GetActiveForOperatorAsync(operatorTenantId, market.CountryId, cancellationToken)
+                : null;
 
-            return BusinessResult.Success(document.MapToDto(text, placeholders));
+            return BusinessResult.Success(document.MapToDto(text, LegalMarkdownRenderer.MarketPlaceholders(market, company)));
         }
     }
 }

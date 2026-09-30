@@ -119,7 +119,7 @@ public partial class CreateOrderCallerCurrencyTests
                 var starts = DateTime.UtcNow.AddDays(2).Date;
                 var template = await provider.GetRequiredService<IMediator>().Send(new CreateRecurringBooking.Command(
                     (int)RecurrenceFrequency.Weekly, (int)starts.DayOfWeek, "10:00", 2, 1, ReceiptSavedAddressId,
-                    [ServiceId], [], (int)PaymentType.Cash, starts, TermsAccepted: true));
+                    [ServiceId], [], (int)PaymentType.Cash, starts, TermsAccepted: true, EarlyPerformanceRequested: true));
                 Assert.True(template.IsSuccess, template.Error?.Message);
 
                 var materialized = await ActivatorUtilities.CreateInstance<MaterializeRecurringBookingTemplate.Handler>(provider)

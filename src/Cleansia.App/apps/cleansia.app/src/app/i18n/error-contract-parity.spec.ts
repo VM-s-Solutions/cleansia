@@ -434,6 +434,9 @@ const CUSTOMER_SURFACE_ERROR_KEYS: readonly string[] = [
   // arms of the ChangePassword validator are reachable from the customer app.
   'auth.invalid_reset_token',
   'auth.same_reset_password',
+  // The reset is keyed on the address, so an administrator can complete one here too and is
+  // refused a password under 12 characters once the code checks out.
+  'auth.admin_password_too_short',
   // Refresh: RefreshToken splits its failures in two — the reuse/theft signal
   // gets its own key, and expiry, an unknown token or an audience mismatch all
   // land on invalid_refresh_token.
@@ -599,6 +602,9 @@ const CUSTOMER_SURFACE_ERROR_KEYS: readonly string[] = [
   // Consent — the terms gate on Register and CreateOrder: a registration, or a booking by a guest or
   // by a customer whose account does not already hold both legal consents, that asserts no tick.
   'consent.terms_not_accepted',
+  // The request to start within the 14-day withdrawal period, asked on every CreateOrder and
+  // CreateRecurringBooking, a consented customer's included.
+  'consent.early_performance_not_requested',
   // Promo — request a first-clean code, and CreateOrder refusing a promo the
   // server will not honour (one key per PromoCodeError reason, plus a code on
   // an anonymous booking, which the applier would otherwise drop silently)

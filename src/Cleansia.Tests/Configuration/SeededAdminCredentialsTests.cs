@@ -8,9 +8,10 @@ namespace Cleansia.Tests.Configuration;
 /// <summary>
 /// The local development administrator that <c>sql-scripts/insert_local_dev_admin.sql</c> creates.
 ///
-/// Its password is written in README.md, so it lives apart from the shared fixture
-/// <c>insert_seed_data.sql</c>, which also seeds the shared DEV database through execute-sql.yml. Only a
-/// local Development boot runs both files; named DEV administrators come from set-admin-role.sql.
+/// Its password is written in README.md, so it lives apart from <c>prod-bootstrap.sql</c> and the shared
+/// fixture <c>insert_seed_data.sql</c>, which also seed the shared DEV database through execute-sql.yml
+/// (and the first, production). Only a local Development boot runs all three files; named DEV
+/// administrators come from set-admin-role.sql.
 ///
 /// Postgres cannot compute the password hash itself: it is PBKDF2-SHA256 at 600 000 iterations and
 /// pgcrypto is deliberately unavailable (Azure blocks it unless allow-listed — the same reason
@@ -21,6 +22,7 @@ namespace Cleansia.Tests.Configuration;
 /// </summary>
 public class SeededAdminCredentialsTests
 {
+    private const string BootstrapFile = "prod-bootstrap.sql";
     private const string SharedFixtureFile = "insert_seed_data.sql";
     private const string AdminFile = "insert_local_dev_admin.sql";
     private const string SeededEmail = "admin@cleansia.local";
@@ -68,20 +70,22 @@ public class SeededAdminCredentialsTests
         Assert.EndsWith(".local", SeededEmail);
     }
 
-    [Fact]
-    public void The_Shared_Fixture_Creates_No_User()
+    [Theory]
+    [InlineData(BootstrapFile)]
+    [InlineData(SharedFixtureFile)]
+    public void The_Shared_Scripts_Create_No_User(string fileName)
     {
-        var fixture = SqlScript(SharedFixtureFile);
+        var script = SqlScript(fileName);
 
-        Assert.DoesNotContain(SeededEmail, fixture, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotMatch(@"'v2\$[A-Za-z0-9+/=]+'", fixture);
-        Assert.DoesNotMatch(@"INSERT\s+INTO\s+public\.""Users""", fixture);
+        Assert.DoesNotContain(SeededEmail, script, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotMatch(@"'v2\$[A-Za-z0-9+/=]+'", script);
+        Assert.DoesNotMatch(@"INSERT\s+INTO\s+public\.""Users""", script);
     }
 
     [Fact]
-    public void A_Local_Development_Boot_Seeds_The_Fixture_Then_The_Administrator()
+    public void A_Local_Development_Boot_Seeds_The_Bootstrap_Then_The_Fixture_Then_The_Administrator()
     {
-        Assert.Equal([SharedFixtureFile, AdminFile], DatabaseMigrationExtensions.DevelopmentSeedScripts);
+        Assert.Equal([BootstrapFile, SharedFixtureFile, AdminFile], DatabaseMigrationExtensions.DevelopmentSeedScripts);
     }
 
     /// <summary>

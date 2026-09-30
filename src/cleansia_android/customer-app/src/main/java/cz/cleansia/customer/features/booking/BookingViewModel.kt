@@ -315,15 +315,16 @@ class BookingViewModel @Inject constructor(
 
     /**
      * The review step's gate on the slide-to-confirm: a payment method the booking may use, the
-     * terms tick whenever the box is shown, and the card-guarantee tick whenever that one is. The
-     * same rule as the web wizard's place-order button.
+     * terms tick whenever the box is shown, the card-guarantee tick whenever that one is, and the
+     * early-performance tick always. The same rule as the web wizard's place-order button.
      */
     val canPlaceOrder: StateFlow<Boolean> =
         combine(_state, _alreadyConsented, cashEligibility, needsCardGuarantee) { s, consented, cash, needsGuarantee ->
             s.paymentMethod.isNotBlank() &&
                 !(s.paymentMethod == PAYMENT_CASH && cash.isRefused) &&
                 (consented || s.termsAccepted) &&
-                (!needsGuarantee || s.cardGuaranteeAccepted)
+                (!needsGuarantee || s.cardGuaranteeAccepted) &&
+                s.earlyPerformanceRequested
         }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     fun selectPaymentMethod(method: String) {
@@ -686,6 +687,7 @@ class BookingViewModel @Inject constructor(
                 // saw no box and asserts nothing new.
                 termsAccepted = if (!_alreadyConsented.value && s.termsAccepted) true else null,
                 dirtinessLevel = s.dirtinessLevel,
+                earlyPerformanceRequested = if (s.earlyPerformanceRequested) true else null,
             )
 
             val createResp = try {

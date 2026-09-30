@@ -109,6 +109,10 @@ private struct LoadedContract: View {
             Text(L10n.WorkContract.version(contract.version))
                 .font(CleansiaTypography.labelMedium)
                 .foregroundColor(CleansiaColors.onSurfaceVariant)
+            Text(L10n.WorkContract.parties)
+                .font(CleansiaTypography.bodyMedium)
+                .foregroundColor(CleansiaColors.onSurfaceVariant)
+                .fixedSize(horizontal: false, vertical: true)
             JobFactsCard(facts: contract.facts, locale: locale)
             if let acceptance = contract.acceptance {
                 AcceptanceFacts(acceptance: acceptance, renderedLanguage: contract.language, locale: locale)
@@ -176,9 +180,14 @@ private struct JobFactsCard: View {
                     .font(CleansiaTypography.titleMedium)
                     .foregroundColor(CleansiaColors.onSurface)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                Text(EarningsFormat.wholeMoney(facts.totalPrice, currencyCode: facts.currencyCode))
-                    .font(CleansiaTypography.titleMedium)
-                    .foregroundColor(CleansiaColors.primary)
+                VStack(alignment: .trailing, spacing: 0) {
+                    Text(L10n.WorkContract.reward)
+                        .font(CleansiaTypography.labelSmall)
+                        .foregroundColor(CleansiaColors.onSurfaceVariant)
+                    Text(EarningsFormat.wholeMoney(facts.reward, currencyCode: facts.currencyCode))
+                        .font(CleansiaTypography.titleMedium)
+                        .foregroundColor(CleansiaColors.primary)
+                }
             }
             if orderNumber != nil {
                 FactLine(window)
@@ -281,15 +290,16 @@ private struct SheetMessage: View {
     extension WorkContract {
         static let preview = WorkContract(
             legalDocumentTextId: "text-1",
-            version: "2026-09-20",
+            version: "2026-09-29",
             language: "en",
             title: "Contract for work",
-            contentHtml: "<p>This contract for work is concluded between the customer and the cleaner.</p>",
+            contentHtml: "<p>This contract for work is concluded between the operating company (the client)"
+                + " and you (the contractor).</p>",
             facts: WorkContractJobFacts(
                 orderNumber: "CL-2026-0042",
                 cleaningDateTimeUtc: Date(timeIntervalSince1970: 1_786_200_000),
                 estimatedMinutes: 180,
-                totalPrice: 1850,
+                reward: 620,
                 currencyCode: "CZK",
                 locationApproximate: "Praha 4 · 14000",
                 rooms: 3,

@@ -20,8 +20,11 @@ public static class MessageKeys
     /// <summary>One guest cancellation email per order.</summary>
     public static string GuestOrderCancelledEmail(string orderId) => $"email:guest-order-cancelled:{orderId}";
 
-    /// <summary>One booking-confirmed email per cash order.</summary>
+    /// <summary>One booking-confirmed email per order.</summary>
     public static string OrderBookedEmail(string orderId) => $"email:order-booked:{orderId}";
+
+    /// <summary>One copy of the contract for work per acceptance.</summary>
+    public static string WorkContractEmail(string acceptanceId) => $"email:work-contract:{acceptanceId}";
 
     /// <summary>One lockout cancellation email per signed-in customer's order.</summary>
     public static string OrderLockoutEmail(string orderId) => $"email:order-lockout:{orderId}";

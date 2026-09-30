@@ -118,7 +118,7 @@ public sealed class RecurringBookingAuditEvidenceTests
         _templateRepository.Setup(r => r.Add(It.IsAny<RecurringBookingTemplate>())).Callback<RecurringBookingTemplate>(t => added = t);
 
         var result = await new CreateRecurringBooking.Handler(
-                _templateRepository.Object, _savedAddressRepository.Object, _membershipRepository.Object, _session.Object, Cleansia.Tests.Features.Orders.OrderMarketDoubles.OperatedBy("cleansia-cz"), Mock.Of<ICountryConfigurationRepository>(), Mock.Of<Cleansia.Core.AppServices.Services.Interfaces.IConsentService>(), Cleansia.Tests.Features.Legal.CustomerConsentDoubles.Consented(), Mock.Of<Cleansia.Core.AppServices.Services.Interfaces.ILegalDocumentResolver>(), _auditContext)
+                _templateRepository.Object, _savedAddressRepository.Object, _membershipRepository.Object, _session.Object, Cleansia.Tests.Features.Orders.OrderMarketDoubles.OperatedBy("cleansia-cz"), Mock.Of<ICountryConfigurationRepository>(), Mock.Of<Cleansia.Core.AppServices.Services.Interfaces.IConsentService>(), Cleansia.Tests.Features.Legal.CustomerConsentDoubles.Consented(), Mock.Of<Cleansia.Core.AppServices.Services.Interfaces.ILegalDocumentResolver>(), _auditContext, new Cleansia.Core.AppServices.Authentication.HostAudienceProvider("cleansia.customer"), new Cleansia.TestUtilities.TestRequestMetadataProvider())
             .Handle(new CreateRecurringBooking.Command(
                 Frequency: (int)RecurrenceFrequency.Weekly, DayOfWeek: (int)System.DayOfWeek.Tuesday, TimeOfDay: "09:00",
                 Rooms: 2, Bathrooms: 1, SavedAddressId: SavedAddressId, SelectedServiceIds: ["service-1"], SelectedPackageIds: [],
@@ -203,7 +203,7 @@ public sealed class RecurringBookingAuditEvidenceTests
             .ReturnsAsync((UserMembership?)null);
 
         var result = await new CreateRecurringBooking.Handler(
-                _templateRepository.Object, _savedAddressRepository.Object, _membershipRepository.Object, _session.Object, Cleansia.Tests.Features.Orders.OrderMarketDoubles.OperatedBy("cleansia-cz"), Mock.Of<ICountryConfigurationRepository>(), Mock.Of<Cleansia.Core.AppServices.Services.Interfaces.IConsentService>(), Cleansia.Tests.Features.Legal.CustomerConsentDoubles.Consented(), Mock.Of<Cleansia.Core.AppServices.Services.Interfaces.ILegalDocumentResolver>(), _auditContext)
+                _templateRepository.Object, _savedAddressRepository.Object, _membershipRepository.Object, _session.Object, Cleansia.Tests.Features.Orders.OrderMarketDoubles.OperatedBy("cleansia-cz"), Mock.Of<ICountryConfigurationRepository>(), Mock.Of<Cleansia.Core.AppServices.Services.Interfaces.IConsentService>(), Cleansia.Tests.Features.Legal.CustomerConsentDoubles.Consented(), Mock.Of<Cleansia.Core.AppServices.Services.Interfaces.ILegalDocumentResolver>(), _auditContext, new Cleansia.Core.AppServices.Authentication.HostAudienceProvider("cleansia.customer"), new Cleansia.TestUtilities.TestRequestMetadataProvider())
             .Handle(new CreateRecurringBooking.Command(
                 Frequency: (int)RecurrenceFrequency.Weekly, DayOfWeek: (int)System.DayOfWeek.Tuesday, TimeOfDay: "09:00",
                 Rooms: 2, Bathrooms: 1, SavedAddressId: SavedAddressId, SelectedServiceIds: ["service-1"], SelectedPackageIds: [],

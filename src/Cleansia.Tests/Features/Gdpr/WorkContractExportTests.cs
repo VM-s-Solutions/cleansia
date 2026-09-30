@@ -15,10 +15,9 @@ using Moq;
 namespace Cleansia.Tests.Features.Gdpr;
 
 /// <summary>
-/// ADR-0068 D5 (Verification #7) — both subjects' halves in the export: the cleaner's own rows, full
-/// (the job, the seat, the exact text, the instant, the client, the trio and the facts), and on the
-/// customer's orders the version the order was booked under with each acceptance's instant, version
-/// and language — and no cleaner id, the counterparty's identity being the platform's to hold.
+/// ADR-0068 D5 (Verification #7) — the cleaner's own rows in their export, full (the job, the seat, the
+/// exact text, the instant, the client, the trio and the facts), and nothing of the contract on the
+/// customer's orders: it binds the operating company and the cleaner, and the customer is not a party.
 /// </summary>
 public sealed class WorkContractExportTests : IDisposable
 {
@@ -65,25 +64,16 @@ public sealed class WorkContractExportTests : IDisposable
     }
 
     [Fact]
-    public async Task The_Customers_Export_Lists_The_Orders_Version_And_Each_Acceptances_Instant_Version_And_Language_Without_An_Employee_Id()
+    public async Task The_Customers_Export_Lists_Their_Orders_With_Nothing_Of_The_Contract_For_Work()
     {
         await SeedAsync();
 
         var export = await ExportAsync(CustomerUserId);
 
         Assert.Empty(export.WorkContractAcceptances);
-        var order = Assert.Single(export.Orders, o => o.Id == OrderId);
-        Assert.Equal(WorkContractTestData.Version, order.WorkContractDocumentVersion);
-        var acceptances = order.WorkContractAcceptances!;
-        Assert.Equal(2, acceptances.Count);
-        Assert.Equal(["cs", "en"], acceptances.Select(a => a.Language).OrderBy(l => l));
-        Assert.All(acceptances, a => Assert.Equal(WorkContractTestData.Version, a.DocumentVersion));
-        Assert.DoesNotContain(typeof(Core.AppServices.Features.Gdpr.DTOs.GdprExportOrderWorkContractAcceptanceDto).GetProperties(),
-            p => p.Name.Contains("Employee", StringComparison.Ordinal));
-
-        var unbooked = Assert.Single(export.Orders, o => o.Id == OtherOrderId);
-        Assert.Null(unbooked.WorkContractDocumentVersion);
-        Assert.Empty(unbooked.WorkContractAcceptances!);
+        Assert.Equal([OrderId, OtherOrderId], export.Orders.Select(o => o.Id).Order());
+        Assert.DoesNotContain(typeof(Core.AppServices.Features.Gdpr.DTOs.GdprExportOrderDto).GetProperties(),
+            p => p.Name.Contains("Contract", StringComparison.Ordinal));
     }
 
     private async Task<Core.AppServices.Features.Gdpr.DTOs.GdprExportDto> ExportAsync(string userId)

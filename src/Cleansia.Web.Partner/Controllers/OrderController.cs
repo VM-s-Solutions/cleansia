@@ -314,8 +314,8 @@ public class OrderController(IMediator mediator) : ApiController(mediator)
         return HandleResult<AcceptWorkContract.Response>(result);
     }
 
-    // The accepted contract for work, keyed on the acceptance (ADR-0068 D4): the order's customer, the
-    // cleaner who accepted it and an administrator read it; anyone else answers order.not_found.
+    // The accepted contract for work, keyed on the acceptance (ADR-0068 D4): the cleaner who accepted it
+    // and an administrator read it; anyone else answers order.not_found.
     [HttpGet("GetWorkContract")]
     [Permission(Policy.CanViewOrderDetail)]
     [EnableRateLimiting("interactive")]

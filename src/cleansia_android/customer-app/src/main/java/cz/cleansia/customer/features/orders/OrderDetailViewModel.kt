@@ -139,11 +139,6 @@ class OrderDetailViewModel @Inject constructor(
         }
         .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
-    /** One per crew member who accepted the contract for work; nothing before any acceptance. */
-    val workContractAcceptances: StateFlow<List<WorkContractAcceptanceLine>> = _state
-        .map { (it as? OrderDetailUiState.Loaded)?.order?.workContractAcceptanceLines().orEmpty() }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
-
     /**
      * Gates the "Make this recurring" shortcut, from the same nullable membership
      * the recurring list resolves. This screen fetches the answer itself rather

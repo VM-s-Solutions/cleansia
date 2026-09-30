@@ -87,6 +87,17 @@ public class TokenServiceRecordLoginTests
         Assert.Null(user.LastLoginAt);
     }
 
+    [Fact]
+    public async Task GenerateTokenAsync_Tells_The_Console_An_Administrator_Must_Change_The_Password()
+    {
+        var admin = UserMockFactory.Generate(new UserMockFactory.UserPartial { Profile = UserProfile.Administrator });
+        admin.RequirePasswordChange();
+
+        var response = await CreateSut().GenerateTokenAsync(admin, rememberMe: false, JwtAudiences.Admin);
+
+        Assert.True(response.MustChangePassword);
+    }
+
     private static void ForceUnconfirmed(User user)
     {
         typeof(User)

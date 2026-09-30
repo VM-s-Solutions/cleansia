@@ -2873,11 +2873,16 @@
         "current_password": "Súčasné heslo",
         "new_password": "Nové heslo",
         "confirm_password": "Potvrdenie nového hesla",
-        "password_hint": "Aspoň 8 znakov, z toho aspoň jedno písmeno a jedna číslica",
+        "password_hint": "Aspoň 12 znakov, z toho aspoň jedno písmeno a jedna číslica",
         "submit": "Zmeniť heslo"
       },
       "messages": {
         "change_password_success": "Heslo bolo úspešne zmenené"
+      },
+      "password_change_required": {
+        "title": "Nastavte si vlastné heslo",
+        "description": "Heslo tohto účtu zvolil niekto iný. Skôr než budete pokračovať, nahraďte ho heslom, ktoré poznáte iba vy; súčasné heslo je to, ktorým ste sa práve prihlásili.",
+        "sign_out": "Odhlásiť sa"
       }
     },
     "customer_detail": {
@@ -3111,6 +3116,7 @@
     },
     "auth": {
       "account_locked": "Príliš veľa neúspešných pokusov o prihlásenie. Účet je dočasne uzamknutý — skúste to znova o niekoľko minút.",
+      "admin_password_too_short": "Heslo administrátora musí mať aspoň 12 znakov.",
       "apple_type_error": "Tento účet používa prihlásenie cez Apple. Použite tlačidlo Apple.",
       "change_password_failed": "Zmena hesla sa nepodarila",
       "current_password_invalid": "Súčasné heslo nie je správne",

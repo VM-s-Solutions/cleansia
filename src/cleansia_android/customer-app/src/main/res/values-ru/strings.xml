@@ -368,20 +368,9 @@
     <string name="order_photos_metadata_by">От %1$s</string>
     <string name="common_close">Закрыть</string>
 
-    <!-- Contract for work: the wizard sentence at the offer, the detail line per accepting crew member, the contract screen -->
-    <string name="booking_work_contract_notice"><![CDATA[Подтверждая заказ, вы заключаете с уборщиком или уборщицей договор подряда на <a href="cleansia://work-contract">этих условиях</a>.]]></string>
-    <string name="work_contract_title">Договор подряда</string>
-    <string name="work_contract_accepted_line">Договор подряда принял(а) %1$s %2$s, версия %3$s</string>
-    <string name="work_contract_read">Читать договор</string>
-    <string name="work_contract_version">Версия %1$s</string>
-    <string name="work_contract_facts_title">Заказ, как он был принят</string>
-    <string name="work_contract_order_number">Номер заказа</string>
-    <string name="work_contract_window">Дата и время</string>
-    <string name="work_contract_price">Цена</string>
-    <string name="work_contract_location">Место</string>
-    <string name="work_contract_accepted_on">Принято уборщиком или уборщицей %1$s, версия %2$s</string>
-    <string name="work_contract_accepted_in_language">Принято на языке: %1$s</string>
-    <string name="work_contract_load_error">Не удалось загрузить договор. Попробуйте ещё раз.</string>
+    <!-- Booking review: the contract sentence and the request to start within the withdrawal period -->
+    <string name="booking_contract_notice"><![CDATA[Подтверждая заказ, вы заключаете договор на уборку с операционной компанией рынка, на котором находится ваше жильё, в соответствии с её <a href="cleansia://terms">Условиями использования</a>. Уборку выполняет уборщик как субподрядчик компании, и он не является стороной вашего договора.]]></string>
+    <string name="consent_early_performance_draft_2026_09_29">Я прошу начать уборку в течение 14-дневного срока для отказа от договора и признаю, что после полного выполнения уборки теряю право на отказ.</string>
 
     <!-- Profile tab -->
     <string name="profile_greeting">Привет!</string>
@@ -506,7 +495,7 @@
     <string name="help_call">Позвонить в поддержку</string>
     <string name="help_call_desc">Пн–Вс · 8:00–20:00</string>
     <string name="help_email">Написать email</string>
-    <string name="help_email_desc">support@cleansia.cz</string>
+    <string name="help_email_desc">info@cleansia.cz</string>
     <string name="help_faq_title">Часто задаваемые вопросы</string>
     <string name="help_faq_q1">Как отменить бронирование?</string>
     <string name="help_faq_a1">Откройте бронирование во вкладке Заказы и нажмите \"Отменить\". Бесплатная отмена за 24 часа до начала уборки. В течение 15 минут после заказа вы не платите ничего — для первого заказа или с Cleansia Plus в течение 60 минут.</string>
@@ -1363,6 +1352,7 @@
     <string name="error_auth_too_many_attempts">Слишком много попыток с этим кодом. Запросите новый код и попробуйте ещё раз.</string>
     <string name="error_company_not_found">Информация о компании не найдена</string>
     <string name="error_consent_terms_not_accepted">Чтобы продолжить, примите Условия использования и Политику конфиденциальности.</string>
+    <string name="error_consent_early_performance_not_requested">Чтобы продолжить, подтвердите, что вы просите начать оказание услуги в течение 14-дневного срока для отказа от договора.</string>
     <string name="error_country_not_existing_id">Страна не найдена</string>
     <string name="error_currency_invalid">Недействительная валюта</string>
     <string name="error_country_not_serviced">В этой стране мы пока не работаем.</string>

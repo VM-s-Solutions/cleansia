@@ -447,7 +447,7 @@ where it is seen.
   (`Cleansia.Config/Validation/FluentValidationExtensions.cs:35-36`, named in
   `UnitOfWorkPipelineBehavior.cs:22-26`), so a write from a **validator** never sits inside the unit of
   work at all and this rule does not reach it. The S7a attempt-budget charges are the live instances —
-  `UserRepository.RecordFailedLoginAsync` (`LoginValidator.cs:156`),
+  `UserRepository.RecordFailedLoginAsync` (`LoginValidator.cs:121`),
   `TryChargeConfirmationCodeAttemptAsync` (`ConfirmUserEmail.cs:67`),
   `TryChargeResetPasswordCodeAttemptAsync` (`ChangePassword.cs:100`). **They are governed by
   `security-rules.md` S7a, not by this entry**; do not add them here, and do not read their absence as

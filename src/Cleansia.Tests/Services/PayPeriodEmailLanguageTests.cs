@@ -203,6 +203,7 @@ public class PayPeriodEmailLanguageTests
             _payPeriodRepository.Object,
             _employeeRepository.Object,
             _emailService.Object,
+            _tenantProvider.Object,
             NullLogger<PeriodReminderBackgroundService>.Instance);
     }
 

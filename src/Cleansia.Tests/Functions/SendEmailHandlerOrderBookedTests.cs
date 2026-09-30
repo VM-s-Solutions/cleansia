@@ -19,8 +19,9 @@ namespace Cleansia.Tests.Functions;
 /// <summary>
 /// The booking-confirmed arm of the send-email consumer (owner ruling 2026-09-28): the discriminator routes
 /// the producer's envelope to the booked e-mail, with the order's own language and the free-cancellation
-/// window that applies to this customer; a redelivery sends once; a booking cancelled before the message
-/// was read is not confirmed to anyone.
+/// window that applies to this customer, and the confirmation of the contract attached, dated when the
+/// contract was concluded; a redelivery sends once; a booking cancelled before the message was read is not
+/// confirmed to anyone.
 /// </summary>
 public sealed class SendEmailHandlerOrderBookedTests
 {
@@ -31,13 +32,19 @@ public sealed class SendEmailHandlerOrderBookedTests
     private readonly Mock<IOrderRepository> _orders = new();
     private readonly Mock<ICancellationPolicyResolver> _policies = new();
     private readonly Mock<ITenantProvider> _tenantProvider = new();
+    private readonly Mock<IContractConfirmationService> _confirmations = new();
     private readonly InMemoryIdempotencyGuard _guard = new();
+    private static readonly byte[] ConfirmationPdf = [0x25, 0x50, 0x44, 0x46];
+    private const string ConfirmationFileName = "booking-confirmation-ORD-1.pdf";
 
     public SendEmailHandlerOrderBookedTests()
     {
         _policies
             .Setup(p => p.ResolveForOrderAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new CancellationPolicy(4, 2, 0.25m, 0.5m, 60, OopsWindowRule.Plus));
+        _confirmations
+            .Setup(c => c.ForBookingAsync(It.IsAny<Order>(), It.IsAny<DateTimeOffset>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ConfirmationPdf, ConfirmationFileName));
     }
 
     private SendEmailHandler CreateHandler() => new(
@@ -52,7 +59,10 @@ public sealed class SendEmailHandlerOrderBookedTests
         TestGuestOrderAccessTokenIssuer.WithNoLiveTokens(),
         Mock.Of<IUnitOfWork>(),
         _policies.Object,
-        Mock.Of<IReceivableRepository>());
+        Mock.Of<IReceivableRepository>(),
+        _confirmations.Object,
+        Mock.Of<IWorkContractAcceptanceRepository>(),
+        Mock.Of<IEmployeeRepository>());
 
     private Order ArrangeOrder(bool cancelled = false)
     {
@@ -82,9 +92,10 @@ public sealed class SendEmailHandlerOrderBookedTests
         return order;
     }
 
-    private static string Body() => JsonSerializer.Serialize(
+    private static string Body(DateTimeOffset? contractConcludedOn = null) => JsonSerializer.Serialize(
         new QueueEnvelope<SendOrderBookedEmailMessage>(
-            MessageKeys.OrderBookedEmail(OrderId), TenantId, new SendOrderBookedEmailMessage(OrderId, "en", TenantId)),
+            MessageKeys.OrderBookedEmail(OrderId), TenantId,
+            new SendOrderBookedEmailMessage(OrderId, "en", TenantId, contractConcludedOn)),
         new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
 
     [Fact]
@@ -97,9 +108,33 @@ public sealed class SendEmailHandlerOrderBookedTests
         await handler.HandleAsync(Body(), CancellationToken.None);
 
         _emailService.Verify(s => s.SendOrderBookedEmailAsync(
-            order.CustomerEmail, It.Is<Order>(o => o.Id == OrderId), 4, "cs", It.IsAny<CancellationToken>(), null),
+            order.CustomerEmail, It.Is<Order>(o => o.Id == OrderId), 4, "cs", It.IsAny<CancellationToken>(), null,
+            ConfirmationPdf, ConfirmationFileName),
             Times.Once);
         _tenantProvider.Verify(t => t.SetTenantOverride(TenantId), Times.AtLeastOnce);
+    }
+
+    [Fact]
+    public async Task The_Confirmation_Is_Dated_When_The_Producer_Says_The_Contract_Was_Concluded()
+    {
+        ArrangeOrder();
+        var concludedOn = new DateTimeOffset(2026, 9, 29, 12, 34, 56, TimeSpan.Zero);
+
+        await CreateHandler().HandleAsync(Body(concludedOn), CancellationToken.None);
+
+        _confirmations.Verify(c => c.ForBookingAsync(
+            It.Is<Order>(o => o.Id == OrderId), concludedOn, "cs", It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task A_Message_Enqueued_Before_The_Moment_Was_Carried_Dates_The_Confirmation_At_The_Booking()
+    {
+        var order = ArrangeOrder();
+
+        await CreateHandler().HandleAsync(Body(), CancellationToken.None);
+
+        _confirmations.Verify(c => c.ForBookingAsync(
+            It.IsAny<Order>(), order.CreatedOn, "cs", It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -111,7 +146,7 @@ public sealed class SendEmailHandlerOrderBookedTests
 
         _emailService.Verify(s => s.SendOrderBookedEmailAsync(
             It.IsAny<string>(), It.IsAny<Order>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<CancellationToken>(),
-            It.IsAny<string?>()), Times.Never);
+            It.IsAny<string?>(), It.IsAny<byte[]?>(), It.IsAny<string?>()), Times.Never);
     }
 
     private sealed class InMemoryIdempotencyGuard : IIdempotencyGuard

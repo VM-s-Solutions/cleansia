@@ -17,6 +17,8 @@ struct CreateRecurringFormState: Equatable {
     var paymentType: Int? = RecurringPaymentType.card
     var startsOn: Date?
     var preferredEmployeeId: String?
+    /// Asked of a new schedule only; the server copies the one act onto every occurrence.
+    var earlyPerformanceRequested = false
 
     static let totalSteps = 3
 
@@ -197,7 +199,7 @@ final class CreateRecurringViewModel: ViewModel {
     /// A schedule is only ever submitted against a catalogue the customer could see: a prefilled
     /// selection that no market has vetted yet is not a booking.
     var isValid: Bool {
-        formState.isValid && isCatalogLoaded
+        formState.isValid && isCatalogLoaded && (isEditing || formState.earlyPerformanceRequested)
     }
 
     private var isCatalogLoaded: Bool {
@@ -414,6 +416,10 @@ final class CreateRecurringViewModel: ViewModel {
         preferredCleanerRefused = false
     }
 
+    func setEarlyPerformanceRequested(_ requested: Bool) {
+        formState.earlyPerformanceRequested = requested
+    }
+
     func setRooms(_ count: Int) {
         formState.rooms = min(max(0, count), PropertySize.maxRooms)
     }
@@ -548,7 +554,8 @@ final class CreateRecurringViewModel: ViewModel {
               let startsOn = state.startsOn,
               RecurringTime.bookableTimes.contains(state.timeOfDay),
               let paymentType = state.paymentType,
-              let dirtiness = state.dirtiness
+              let dirtiness = state.dirtiness,
+              isEditing || state.earlyPerformanceRequested
         else { return nil }
         return CreateRecurringInput(
             frequency: state.frequency.rawValue,
@@ -562,7 +569,8 @@ final class CreateRecurringViewModel: ViewModel {
             selectedPackageIds: Array(state.selectedPackageIds),
             paymentType: paymentType,
             startsOn: startsOn,
-            preferredEmployeeId: state.preferredEmployeeId
+            preferredEmployeeId: state.preferredEmployeeId,
+            earlyPerformanceRequested: state.earlyPerformanceRequested
         )
     }
 

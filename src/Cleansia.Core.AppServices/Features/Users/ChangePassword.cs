@@ -64,6 +64,11 @@ public class ChangePassword
                 .MustAsync(CheckIfPasswordDifferentAsync)
                     .WithErrorCode(nameof(Command.NewPassword))
                     .WithMessage(BusinessErrorMessage.SameResetPassword)
+                // After the code check, so the anonymous endpoint never tells a stranger which
+                // addresses belong to administrators.
+                .MustAsync(MeetsAdminLengthIfAdministratorAsync)
+                    .WithErrorCode(nameof(Command.NewPassword))
+                    .WithMessage(BusinessErrorMessage.AdminPasswordTooShort)
                 .When(c => !string.IsNullOrWhiteSpace(c.Code) && !string.IsNullOrWhiteSpace(c.NewPassword))
                 .WhenAsync((c, cc) => userRepository.ExistsWithEmailIgnoringTenantAsync(c.Email, cc));
         }
@@ -123,6 +128,13 @@ public class ChangePassword
         {
             var user = await ResolveAsync(command.Email, cancellationToken);
             return user is not null && !command.NewPassword.CheckIfPasswordSame(user.Password!);
+        }
+
+        private async Task<bool> MeetsAdminLengthIfAdministratorAsync(Command command, CancellationToken cancellationToken)
+        {
+            var user = await ResolveAsync(command.Email, cancellationToken);
+            return user?.Profile != UserProfile.Administrator
+                || command.NewPassword.Length >= ValidationExtensions.AdminPasswordMinLength;
         }
 
         // Whichever rule refuses, the account it refused is already named on the audit context.

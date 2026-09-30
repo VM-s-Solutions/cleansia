@@ -12,6 +12,8 @@ public interface IPdfService
     /// last page — the caller records it, so the audit row and the document name the same content.
     /// </summary>
     IncidentFilePdf GenerateIncidentFilePdf(IncidentFilePdfData data);
+
+    byte[] GenerateConfirmationPdf(ConfirmationPdfData data);
 }
 
 public sealed record IncidentFilePdf(byte[] Bytes, string DataSha256);

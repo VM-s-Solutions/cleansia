@@ -368,20 +368,9 @@
     <string name="order_photos_metadata_by">Від %1$s</string>
     <string name="common_close">Закрити</string>
 
-    <!-- Contract for work: the wizard sentence at the offer, the detail line per accepting crew member, the contract screen -->
-    <string name="booking_work_contract_notice"><![CDATA[Підтверджуючи замовлення, ви укладаєте з прибиральником чи прибиральницею договір підряду на <a href="cleansia://work-contract">цих умовах</a>.]]></string>
-    <string name="work_contract_title">Договір підряду</string>
-    <string name="work_contract_accepted_line">Договір підряду прийняв(ла) %1$s %2$s, версія %3$s</string>
-    <string name="work_contract_read">Читати договір</string>
-    <string name="work_contract_version">Версія %1$s</string>
-    <string name="work_contract_facts_title">Замовлення, як його було прийнято</string>
-    <string name="work_contract_order_number">Номер замовлення</string>
-    <string name="work_contract_window">Дата й час</string>
-    <string name="work_contract_price">Ціна</string>
-    <string name="work_contract_location">Місце</string>
-    <string name="work_contract_accepted_on">Прийнято прибиральником чи прибиральницею %1$s, версія %2$s</string>
-    <string name="work_contract_accepted_in_language">Прийнято мовою: %1$s</string>
-    <string name="work_contract_load_error">Не вдалося завантажити договір. Спробуйте ще раз.</string>
+    <!-- Booking review: the contract sentence and the request to start within the withdrawal period -->
+    <string name="booking_contract_notice"><![CDATA[Підтверджуючи замовлення, ви укладаєте договір про прибирання з операційною компанією ринку, на якому розташоване ваше житло, відповідно до її <a href="cleansia://terms">Умов використання</a>. Прибирання виконує прибиральник як субпідрядник компанії, і він не є стороною вашого договору.]]></string>
+    <string name="consent_early_performance_draft_2026_09_29">Я прошу розпочати прибирання протягом 14-денного строку для відмови від договору та визнаю, що після повного виконання прибирання втрачаю право на відмову.</string>
 
     <!-- Profile tab -->
     <string name="profile_greeting">Привіт!</string>
@@ -506,7 +495,7 @@
     <string name="help_call">Зателефонувати в підтримку</string>
     <string name="help_call_desc">Пн–Нд · 8:00–20:00</string>
     <string name="help_email">Написати email</string>
-    <string name="help_email_desc">support@cleansia.cz</string>
+    <string name="help_email_desc">info@cleansia.cz</string>
     <string name="help_faq_title">Поширені запитання</string>
     <string name="help_faq_q1">Як скасувати бронювання?</string>
     <string name="help_faq_a1">Відкрийте бронювання у вкладці Замовлення та натисніть \"Скасувати\". Безкоштовне скасування за 24 години до початку прибирання. Протягом 15 хвилин після замовлення ви не платите нічого — для першого замовлення або з Cleansia Plus протягом 60 хвилин.</string>
@@ -1363,6 +1352,7 @@
     <string name="error_auth_too_many_attempts">Забагато спроб із цим кодом. Запросіть новий код і спробуйте ще раз.</string>
     <string name="error_company_not_found">Інформацію про компанію не знайдено</string>
     <string name="error_consent_terms_not_accepted">Щоб продовжити, прийміть Умови надання послуг та Політику конфіденційності.</string>
+    <string name="error_consent_early_performance_not_requested">Щоб продовжити, підтвердьте, що ви просите розпочати надання послуги протягом 14-денного строку для відмови від договору.</string>
     <string name="error_country_not_existing_id">Країну не знайдено</string>
     <string name="error_currency_invalid">Недійсна валюта</string>
     <string name="error_country_not_serviced">У цій країні ми поки що не працюємо.</string>

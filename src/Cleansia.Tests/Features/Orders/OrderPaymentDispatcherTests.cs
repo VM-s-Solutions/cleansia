@@ -144,7 +144,8 @@ public class OrderPaymentDispatcherTests
             QueueNames.SendEmail,
             It.Is<QueueEnvelope<SendOrderBookedEmailMessage>>(e =>
                 e.Payload.OrderId == OrderId
-                && e.Payload.LanguageCode == LanguageCode),
+                && e.Payload.LanguageCode == LanguageCode
+                && e.Payload.ContractConcludedOn != null),
             MessageKeys.OrderBookedEmail(OrderId)),
             Times.Once);
         _pending.Verify(p => p.Enqueue(

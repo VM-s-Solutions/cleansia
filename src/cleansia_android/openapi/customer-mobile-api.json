@@ -8312,6 +8312,10 @@
           },
           "dirtinessLevel": {
             "$ref": "#/components/schemas/DirtinessLevel"
+          },
+          "earlyPerformanceRequested": {
+            "type": "boolean",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -8448,6 +8452,10 @@
           },
           "dirtinessLevel": {
             "$ref": "#/components/schemas/DirtinessLevel"
+          },
+          "earlyPerformanceRequested": {
+            "type": "boolean",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -9394,32 +9402,24 @@
             "type": "string",
             "format": "date-time"
           },
-          "workContractDocumentVersion": {
+          "earlyPerformanceConsentTextVersion": {
             "type": "string",
             "nullable": true
           },
-          "workContractAcceptances": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/GdprExportOrderWorkContractAcceptanceDto"
-            },
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "GdprExportOrderWorkContractAcceptanceDto": {
-        "type": "object",
-        "properties": {
-          "acceptedOn": {
+          "earlyPerformanceConsentedOn": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "nullable": true
           },
-          "documentVersion": {
+          "earlyPerformanceConsentClient": {
             "type": "string",
             "nullable": true
           },
-          "language": {
+          "earlyPerformanceConsentIpAddress": {
+            "type": "string",
+            "nullable": true
+          },
+          "earlyPerformanceConsentDeviceLabel": {
             "type": "string",
             "nullable": true
           }
@@ -10204,6 +10204,9 @@
           "adminRole": {
             "type": "string",
             "nullable": true
+          },
+          "mustChangePassword": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false

@@ -342,6 +342,9 @@ test('customer can drive the booking wizard to the checkout handoff', async ({ p
   // A guest has no consent on record, so the tick is asked for and the
   // place-order button refuses without it.
   await page.getByRole('checkbox', { name: /I agree to the terms/ }).check();
+  // Every booking, a guest's included, asks for the request to start inside the
+  // withdrawal period, and the place-order button refuses without it.
+  await page.getByRole('checkbox', { name: /start within the 14-day withdrawal period/ }).check();
 
   const placeOrder = page.getByRole('button', { name: 'Place Order' });
   await expect(placeOrder).toBeVisible();

@@ -219,6 +219,7 @@ export class CreateRecurringWizardComponent implements OnInit {
       address: 'recurring_booking.address_label',
       startsOn: 'recurring_booking.starts_on_label',
       payment: 'recurring_booking.payment_label',
+      earlyPerformance: 'recurring_booking.early_performance_label',
     };
     return this.facade
       .missing()

@@ -140,7 +140,7 @@ class WorkContractWireTest {
         assertEquals("cs", contract.language)
         assertEquals("Smlouva o dílo", contract.title)
         assertEquals("<h2>Vznik</h2><p>Smlouva vzniká.</p>", contract.contentHtml)
-        assertEquals(1850.50, contract.facts.totalPrice, 0.0)
+        assertEquals(1850.50, contract.facts.reward, 0.0)
         assertEquals(240, contract.facts.estimatedMinutes)
         assertEquals(3, contract.facts.rooms)
         assertEquals(2, contract.facts.bathrooms)
@@ -197,7 +197,7 @@ class WorkContractWireTest {
         assertNull(contract.facts.orderNumber)
         assertNull(contract.facts.currencyCode)
         assertNull(contract.facts.locationApproximate)
-        assertEquals(1850.50, contract.facts.totalPrice, 0.0)
+        assertEquals(1850.50, contract.facts.reward, 0.0)
     }
 
     // --- the read -----------------------------------------------------------------

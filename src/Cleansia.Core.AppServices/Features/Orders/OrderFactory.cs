@@ -81,7 +81,7 @@ public sealed class OrderFactory(
         // and the recurring materializer reaches this factory without CreateOrder's validator. Nothing
         // is in force only when a deploy carries a future-dated folder alone; the seed test is the guard.
         var workContract = await legalDocumentResolver.ResolveInForceAsync(
-            LegalDocumentType.WorkContract, input.Address.CountryId, cancellationToken)
+            LegalDocumentAudience.Employee, LegalDocumentType.WorkContract, input.Address.CountryId, cancellationToken)
             ?? throw new InvalidOperationException(
                 $"No work-contract text is in force for market '{input.Address.CountryId}'. An order booked without one could not be accepted by any cleaner.");
 

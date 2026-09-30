@@ -16,8 +16,9 @@ namespace Cleansia.Tests.Features.Orders;
 
 /// <summary>
 /// ADR-0068 D4 (Verification #5) — the detail lists the acceptances of the CURRENT seats, keyed on the
-/// seat so the client pairs each with its crew entry, with no name of its own; the crew and the customer
-/// read it full, a browsing cleaner reads it empty.
+/// seat so the client pairs each with its crew entry, with no name of its own; the crew reads it full, a
+/// browsing cleaner reads it empty, and so does the customer, the contract binding the company and the
+/// cleaner.
 /// </summary>
 public sealed class GetOrderDetailsWorkContractTests
 {
@@ -111,6 +112,24 @@ public sealed class GetOrderDetailsWorkContractTests
         _acceptanceRepository.Verify(
             r => r.GetForSeatsAsync(It.Is<IReadOnlyCollection<string>>(ids => ids.Single() == seat.Id), It.IsAny<CancellationToken>()),
             Times.Once);
+    }
+
+    [Fact]
+    public async Task The_Customer_Reads_It_Empty()
+    {
+        ArrangeEmployeeCaller(CrewEmployeeId, entitled: true);
+        _orderAccessService.Setup(a => a.IsCustomerCaller()).Returns(true);
+        _userSessionProvider
+            .Setup(s => s.GetTypedUserClaim(ClaimTypes.Role))
+            .Returns(new Claim(ClaimTypes.Role, UserProfile.Customer.ToString()));
+
+        var result = await CreateHandler().Handle(new GetOrderDetails.Query(OrderId), CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Empty(result.Value!.WorkContractAcceptances!);
+        _acceptanceRepository.Verify(
+            r => r.GetForSeatsAsync(It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     [Fact]

@@ -168,10 +168,11 @@ ${o.heavyDirtinessRate === null ? '' : `    public const decimal HeavyDirtinessS
 `);
 
   if (o.seedPresent) {
+    const audience = { 'terms-of-service': 'customer', 'privacy-policy': 'customer', 'work-contract': 'employee' };
     const seedFile = (type, version, lang, body) =>
       write(
         root,
-        `src/Cleansia.Infra.Database/Seed/Legal/customer/${type}/any/${version}/${lang}.md`,
+        `src/Cleansia.Infra.Database/Seed/Legal/${audience[type]}/${type}/any/${version}/${lang}.md`,
         `---\ntitle: ${type} ${lang}\n---\n\n${body}\n`,
       );
     for (const lang of o.seedLanguages) {
@@ -568,14 +569,15 @@ scenario(
     silentAbout: ['bakes a figure in', '/en.md', 'terms-of-service/'],
   },
 );
-// The contract for work binds the price through the order's snapshot; a figure pasted into the text
-// would outlive the market's price and contradict the record.
+// The contract for work binds the price through the seat's snapshot; a figure pasted into the text
+// would outlive the reward and contradict the record. It binds the company and the cleaner, so it is
+// read under employee/.
 scenario(
   'catches a baked price in one language of the work-contract seed',
   { seedByFile: { 'work-contract/cs': 'Smlouva o dílo.\n\n## Cena\n\nCena díla je {{currency}} 1000 za úklid.' } },
   {
     code: 1,
-    mentions: ['work-contract/any/2026-09-14/cs.md', 'bakes a figure in'],
+    mentions: ['employee/work-contract/any/2026-09-14/cs.md', 'bakes a figure in'],
     silentAbout: ['/en.md', 'terms-of-service/', 'privacy-policy/'],
   },
 );

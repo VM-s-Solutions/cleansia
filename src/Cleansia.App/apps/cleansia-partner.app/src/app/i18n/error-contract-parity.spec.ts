@@ -450,6 +450,9 @@ const PARTNER_SURFACE_ERROR_KEYS: readonly string[] = [
   'auth.invalid_reset_token',
   'auth.refresh_token_reused',
   'auth.same_reset_password',
+  // The reset refuses an administrator a password under 12 characters once the code checks out;
+  // an administrator may reset through this host, which admits the profile.
+  'auth.admin_password_too_short',
   // Same GoogleAuth endpoint as the customer host: an identity matching no account is refused rather
   // than provisioned, so the partner surface can return it too.
   'auth.social_account_not_found',

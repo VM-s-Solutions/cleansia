@@ -9242,6 +9242,7 @@ export class CreateOrderCommand implements ICreateOrderCommand {
     accessMode!: string | undefined;
     termsAccepted!: boolean | undefined;
     dirtinessLevel!: DirtinessLevel;
+    earlyPerformanceRequested!: boolean | undefined;
 
     constructor(data?: ICreateOrderCommand) {
         if (data) {
@@ -9293,6 +9294,7 @@ export class CreateOrderCommand implements ICreateOrderCommand {
             this.accessMode = Data["accessMode"];
             this.termsAccepted = Data["termsAccepted"];
             this.dirtinessLevel = Data["dirtinessLevel"];
+            this.earlyPerformanceRequested = Data["earlyPerformanceRequested"];
         }
     }
 
@@ -9344,6 +9346,7 @@ export class CreateOrderCommand implements ICreateOrderCommand {
         data["accessMode"] = this.accessMode;
         data["termsAccepted"] = this.termsAccepted;
         data["dirtinessLevel"] = this.dirtinessLevel;
+        data["earlyPerformanceRequested"] = this.earlyPerformanceRequested;
         return data;
     }
 }
@@ -9374,6 +9377,7 @@ export interface ICreateOrderCommand {
     accessMode: string | undefined;
     termsAccepted: boolean | undefined;
     dirtinessLevel: DirtinessLevel;
+    earlyPerformanceRequested: boolean | undefined;
 }
 
 export class CreateOrderResponse implements ICreateOrderResponse {
@@ -9563,6 +9567,7 @@ export class CreateRecurringBookingCommand implements ICreateRecurringBookingCom
     preferredEmployeeId!: string | undefined;
     termsAccepted!: boolean | undefined;
     dirtinessLevel!: DirtinessLevel;
+    earlyPerformanceRequested!: boolean | undefined;
 
     constructor(data?: ICreateRecurringBookingCommand) {
         if (data) {
@@ -9597,6 +9602,7 @@ export class CreateRecurringBookingCommand implements ICreateRecurringBookingCom
             this.preferredEmployeeId = Data["preferredEmployeeId"];
             this.termsAccepted = Data["termsAccepted"];
             this.dirtinessLevel = Data["dirtinessLevel"];
+            this.earlyPerformanceRequested = Data["earlyPerformanceRequested"];
         }
     }
 
@@ -9631,6 +9637,7 @@ export class CreateRecurringBookingCommand implements ICreateRecurringBookingCom
         data["preferredEmployeeId"] = this.preferredEmployeeId;
         data["termsAccepted"] = this.termsAccepted;
         data["dirtinessLevel"] = this.dirtinessLevel;
+        data["earlyPerformanceRequested"] = this.earlyPerformanceRequested;
         return data;
     }
 }
@@ -9650,6 +9657,7 @@ export interface ICreateRecurringBookingCommand {
     preferredEmployeeId: string | undefined;
     termsAccepted: boolean | undefined;
     dirtinessLevel: DirtinessLevel;
+    earlyPerformanceRequested: boolean | undefined;
 }
 
 export class CreateSavedCardCheckoutSessionCommand implements ICreateSavedCardCheckoutSessionCommand {
@@ -11225,8 +11233,11 @@ export class GdprExportOrderDto implements IGdprExportOrderDto {
     totalPrice!: number;
     cleaningDateTime!: Date;
     createdOn!: Date;
-    workContractDocumentVersion!: string | undefined;
-    workContractAcceptances!: GdprExportOrderWorkContractAcceptanceDto[] | undefined;
+    earlyPerformanceConsentTextVersion!: string | undefined;
+    earlyPerformanceConsentedOn!: Date | undefined;
+    earlyPerformanceConsentClient!: string | undefined;
+    earlyPerformanceConsentIpAddress!: string | undefined;
+    earlyPerformanceConsentDeviceLabel!: string | undefined;
 
     constructor(data?: IGdprExportOrderDto) {
         if (data) {
@@ -11247,12 +11258,11 @@ export class GdprExportOrderDto implements IGdprExportOrderDto {
             this.totalPrice = Data["totalPrice"];
             this.cleaningDateTime = Data["cleaningDateTime"] ? new Date(Data["cleaningDateTime"].toString()) : undefined as any;
             this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
-            this.workContractDocumentVersion = Data["workContractDocumentVersion"];
-            if (Array.isArray(Data["workContractAcceptances"])) {
-                this.workContractAcceptances = [] as any;
-                for (let item of Data["workContractAcceptances"])
-                    this.workContractAcceptances!.push(GdprExportOrderWorkContractAcceptanceDto.fromJS(item));
-            }
+            this.earlyPerformanceConsentTextVersion = Data["earlyPerformanceConsentTextVersion"];
+            this.earlyPerformanceConsentedOn = Data["earlyPerformanceConsentedOn"] ? new Date(Data["earlyPerformanceConsentedOn"].toString()) : undefined as any;
+            this.earlyPerformanceConsentClient = Data["earlyPerformanceConsentClient"];
+            this.earlyPerformanceConsentIpAddress = Data["earlyPerformanceConsentIpAddress"];
+            this.earlyPerformanceConsentDeviceLabel = Data["earlyPerformanceConsentDeviceLabel"];
         }
     }
 
@@ -11273,12 +11283,11 @@ export class GdprExportOrderDto implements IGdprExportOrderDto {
         data["totalPrice"] = this.totalPrice;
         data["cleaningDateTime"] = this.cleaningDateTime ? this.cleaningDateTime.toISOString() : undefined as any;
         data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
-        data["workContractDocumentVersion"] = this.workContractDocumentVersion;
-        if (Array.isArray(this.workContractAcceptances)) {
-            data["workContractAcceptances"] = [];
-            for (let item of this.workContractAcceptances)
-                data["workContractAcceptances"].push(item ? item.toJSON() : undefined as any);
-        }
+        data["earlyPerformanceConsentTextVersion"] = this.earlyPerformanceConsentTextVersion;
+        data["earlyPerformanceConsentedOn"] = this.earlyPerformanceConsentedOn ? this.earlyPerformanceConsentedOn.toISOString() : undefined as any;
+        data["earlyPerformanceConsentClient"] = this.earlyPerformanceConsentClient;
+        data["earlyPerformanceConsentIpAddress"] = this.earlyPerformanceConsentIpAddress;
+        data["earlyPerformanceConsentDeviceLabel"] = this.earlyPerformanceConsentDeviceLabel;
         return data;
     }
 }
@@ -11292,52 +11301,11 @@ export interface IGdprExportOrderDto {
     totalPrice: number;
     cleaningDateTime: Date;
     createdOn: Date;
-    workContractDocumentVersion: string | undefined;
-    workContractAcceptances: GdprExportOrderWorkContractAcceptanceDto[] | undefined;
-}
-
-export class GdprExportOrderWorkContractAcceptanceDto implements IGdprExportOrderWorkContractAcceptanceDto {
-    acceptedOn!: Date;
-    documentVersion!: string | undefined;
-    language!: string | undefined;
-
-    constructor(data?: IGdprExportOrderWorkContractAcceptanceDto) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (this as any)[property] = (data as any)[property];
-            }
-        }
-    }
-
-    init(Data?: any) {
-        if (Data) {
-            this.acceptedOn = Data["acceptedOn"] ? new Date(Data["acceptedOn"].toString()) : undefined as any;
-            this.documentVersion = Data["documentVersion"];
-            this.language = Data["language"];
-        }
-    }
-
-    static fromJS(data: any): GdprExportOrderWorkContractAcceptanceDto {
-        data = typeof data === 'object' ? data : {};
-        let result = new GdprExportOrderWorkContractAcceptanceDto();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["acceptedOn"] = this.acceptedOn ? this.acceptedOn.toISOString() : undefined as any;
-        data["documentVersion"] = this.documentVersion;
-        data["language"] = this.language;
-        return data;
-    }
-}
-
-export interface IGdprExportOrderWorkContractAcceptanceDto {
-    acceptedOn: Date;
-    documentVersion: string | undefined;
-    language: string | undefined;
+    earlyPerformanceConsentTextVersion: string | undefined;
+    earlyPerformanceConsentedOn: Date | undefined;
+    earlyPerformanceConsentClient: string | undefined;
+    earlyPerformanceConsentIpAddress: string | undefined;
+    earlyPerformanceConsentDeviceLabel: string | undefined;
 }
 
 export class GdprExportPayoutDetailsDto implements IGdprExportPayoutDetailsDto {
@@ -12761,6 +12729,7 @@ export class JwtTokenResponse implements IJwtTokenResponse {
     csrfToken!: string | undefined;
     role!: string | undefined;
     adminRole!: string | undefined;
+    mustChangePassword!: boolean;
 
     constructor(data?: IJwtTokenResponse) {
         if (data) {
@@ -12783,6 +12752,7 @@ export class JwtTokenResponse implements IJwtTokenResponse {
             this.csrfToken = Data["csrfToken"];
             this.role = Data["role"];
             this.adminRole = Data["adminRole"];
+            this.mustChangePassword = Data["mustChangePassword"];
         }
     }
 
@@ -12805,6 +12775,7 @@ export class JwtTokenResponse implements IJwtTokenResponse {
         data["csrfToken"] = this.csrfToken;
         data["role"] = this.role;
         data["adminRole"] = this.adminRole;
+        data["mustChangePassword"] = this.mustChangePassword;
         return data;
     }
 }
@@ -12820,6 +12791,7 @@ export interface IJwtTokenResponse {
     csrfToken: string | undefined;
     role: string | undefined;
     adminRole: string | undefined;
+    mustChangePassword: boolean;
 }
 
 export class LanguageListItem implements ILanguageListItem {

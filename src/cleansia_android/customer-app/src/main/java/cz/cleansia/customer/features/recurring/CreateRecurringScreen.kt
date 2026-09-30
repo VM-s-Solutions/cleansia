@@ -657,6 +657,16 @@ private fun WhereAndPayStep(
         )
     }
 
+    if (!isEditing) {
+        Spacer(Modifier.height(if (termsAsked) 12.dp else 24.dp))
+        CleansiaConsentCheckbox(
+            checked = state.earlyPerformanceRequested,
+            onCheckedChange = viewModel::setEarlyPerformanceRequested,
+            html = stringResource(R.string.consent_early_performance_draft_2026_09_29),
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+
     if (isEditing) {
         Spacer(Modifier.height(24.dp))
         EditImpactNotice()

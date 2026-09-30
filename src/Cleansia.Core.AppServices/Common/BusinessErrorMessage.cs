@@ -22,6 +22,7 @@ public static class BusinessErrorMessage
     // returning user to re-accept on every sign-in is both odd and evidentially worthless.
     public const string SocialAccountNotFound = "auth.social_account_not_found";
     public const string InvalidPasswordFormat = "auth.invalid_password_format";
+    public const string AdminPasswordTooShort = "auth.admin_password_too_short";
     public const string NotValidResetPasswordToken = "auth.invalid_reset_token";
     public const string SameResetPassword = "auth.same_reset_password";
     public const string InsufficientPrivileges = "auth.insufficient_privileges";
@@ -675,6 +676,11 @@ public static class BusinessErrorMessage
     /// sees no box and is not asked again; a guest always asserts it.
     /// </summary>
     public const string TermsNotAccepted = "consent.terms_not_accepted";
+    /// <summary>
+    /// A booking or a recurring schedule that does not assert the request to start within the 14-day
+    /// withdrawal period is refused (decision 61). Unlike the terms, it is asked on every booking.
+    /// </summary>
+    public const string EarlyPerformanceNotRequested = "consent.early_performance_not_requested";
 
     // Contract for work (ADR-0068)
     /// <summary>The client sent no text id with the take or the standalone accept: a broken or stale client, shown as an error.</summary>

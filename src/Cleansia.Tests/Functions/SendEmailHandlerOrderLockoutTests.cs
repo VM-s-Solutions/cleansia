@@ -43,7 +43,7 @@ public sealed class SendEmailHandlerOrderLockoutTests
         TestGuestOrderAccessTokenIssuer.WithNoLiveTokens(),
         Mock.Of<IUnitOfWork>(),
         Mock.Of<ICancellationPolicyResolver>(),
-        Mock.Of<IReceivableRepository>());
+        Mock.Of<IReceivableRepository>(), Mock.Of<IContractConfirmationService>(), Mock.Of<IWorkContractAcceptanceRepository>(), Mock.Of<IEmployeeRepository>());
 
     private Order ArrangeOrder(string? reason)
     {

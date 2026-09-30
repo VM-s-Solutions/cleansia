@@ -82,6 +82,10 @@ public record GdprExportPayoutDetailsDto(
 /// anonymise is an order this lists (a guest booking still live is listed here and left for the sweep
 /// there); a guest booking under another address is never listed, whoever asks. The trail section is
 /// narrower: the account's own rows only, never the guest rows the erasure blanks on these orders.
+/// The early-performance members are the customer's request to start within the withdrawal period, as
+/// recorded on the order; after an erasure its IP address and device label read null. On a guest row the
+/// IP address and device label are withheld, as the trail's are: they are the guest request's, whose
+/// sender may be a stranger.
 /// </summary>
 public record GdprExportOrderDto(
     string Id,
@@ -92,16 +96,11 @@ public record GdprExportOrderDto(
     decimal TotalPrice,
     DateTime CleaningDateTime,
     DateTimeOffset CreatedOn,
-    /// <summary>The customer's half of the contract for work: the version the order was booked under (ADR-0068).</summary>
-    string? WorkContractDocumentVersion = null,
-    /// <summary>The crew's acceptances of it — when, which version, in which language. No cleaner id or name: the counterparty's identity is the platform's to hold.</summary>
-    List<GdprExportOrderWorkContractAcceptanceDto>? WorkContractAcceptances = null
-);
-
-public record GdprExportOrderWorkContractAcceptanceDto(
-    DateTimeOffset AcceptedOn,
-    string DocumentVersion,
-    string Language
+    string? EarlyPerformanceConsentTextVersion = null,
+    DateTimeOffset? EarlyPerformanceConsentedOn = null,
+    string? EarlyPerformanceConsentClient = null,
+    string? EarlyPerformanceConsentIpAddress = null,
+    string? EarlyPerformanceConsentDeviceLabel = null
 );
 
 /// <summary>

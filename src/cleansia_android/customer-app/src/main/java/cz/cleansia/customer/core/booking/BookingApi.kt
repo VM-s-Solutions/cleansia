@@ -77,6 +77,7 @@ private fun CreateOrderCommand.toWire(): GenCreateOrderCommand = GenCreateOrderC
     accessInstructions = accessInstructions,
     termsAccepted = termsAccepted,
     dirtinessLevel = dirtinessLevel?.toWire(),
+    earlyPerformanceRequested = earlyPerformanceRequested,
 )
 
 private fun CreateOrderAddressDto.toWire(): GenAddressDto = GenAddressDto(

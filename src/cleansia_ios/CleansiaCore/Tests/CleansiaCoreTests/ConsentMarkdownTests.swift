@@ -88,15 +88,16 @@ final class CleansiaWebTests: XCTestCase {
         XCTAssertEqual(CleansiaWeb.origin, "https://\(CleansiaWeb.domain)")
         XCTAssertEqual(CleansiaWeb.termsURL.absoluteString, "\(CleansiaWeb.origin)/terms")
         XCTAssertEqual(CleansiaWeb.privacyURL.absoluteString, "\(CleansiaWeb.origin)/privacy")
-        XCTAssertEqual(CleansiaWeb.workContractURL.absoluteString, "\(CleansiaWeb.origin)/work-contract")
     }
 
+    /// The contract for work binds the operating company and the cleaner, so no customer sentence links
+    /// its text: the customer's contract is the one on the terms.
     func testEveryLinkPlaceholderResolvesToItsOwnPage() {
-        XCTAssertEqual(ConsentLink.workContract.url, CleansiaWeb.workContractURL)
+        XCTAssertEqual(ConsentLink.allCases.map(\.url), [CleansiaWeb.termsURL, CleansiaWeb.privacyURL])
         XCTAssertEqual(
-            ConsentMarkdown.attributed("on [these terms](cleansia://work-contract)").runs
+            ConsentMarkdown.attributed("on [these terms](cleansia://terms)").runs
                 .compactMap { $0.link?.absoluteString },
-            ["\(CleansiaWeb.origin)/work-contract"]
+            ["\(CleansiaWeb.origin)/terms"]
         )
     }
 
@@ -107,8 +108,8 @@ final class CleansiaWebTests: XCTestCase {
         )
     }
 
-    func testReferralLinkAndSupportEmailShareTheSameDomain() {
+    func testReferralLinkAndContactEmailShareTheSameDomain() {
         XCTAssertEqual(CleansiaWeb.referralLink(code: "ABC123"), "\(CleansiaWeb.origin)/r/ABC123")
-        XCTAssertEqual(CleansiaWeb.supportEmail, "support@\(CleansiaWeb.domain)")
+        XCTAssertEqual(CleansiaWeb.contactEmail, "info@\(CleansiaWeb.domain)")
     }
 }

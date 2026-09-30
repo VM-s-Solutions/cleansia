@@ -55,7 +55,8 @@ enum BookingOrderCommandFactory {
             specialInstructions: BookingInstructions.trimmedOrNil(state.specialInstructions),
             accessInstructions: BookingInstructions.trimmedOrNil(state.accessInstructions),
             termsAccepted: termsAccepted,
-            dirtinessLevel: state.dirtiness?.wire
+            dirtinessLevel: state.dirtiness?.wire,
+            earlyPerformanceRequested: state.earlyPerformanceRequested ? true : nil
         )
     }
 }

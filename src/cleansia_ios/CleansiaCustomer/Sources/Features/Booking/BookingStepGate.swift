@@ -5,7 +5,7 @@ enum BookingStepGate {
 
     /// `alreadyConsented` is the account's record of both documents the review step's tick names;
     /// with it the box is not shown, so the tick is not asked for either. The card-guarantee tick is
-    /// asked only while `needsCardGuarantee` shows its box.
+    /// asked only while `needsCardGuarantee` shows its box; the early-performance tick always.
     static func canContinue(
         step: Int,
         state: BookingState,
@@ -22,6 +22,7 @@ enum BookingStepGate {
         case 4:
             state.paymentMethod != nil && (alreadyConsented || state.termsAccepted)
                 && (!needsCardGuarantee || state.cardGuaranteeAccepted)
+                && state.earlyPerformanceRequested
         default:
             false
         }

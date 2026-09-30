@@ -5,7 +5,8 @@ import XCTest
 
 /// The review step's terms tick: shown unless the account already holds Terms of Service and Privacy
 /// Policy, and asserted on `CreateOrder` only when the box was shown and ticked — an account that saw
-/// no box asserts nothing new, which is the web wizard's own rule.
+/// no box asserts nothing new, which is the web wizard's own rule. The early-performance tick beside it
+/// is asked on every booking and asserted the same way.
 @MainActor
 final class BookingTermsTickTests: XCTestCase {
     private func makeVM(
@@ -120,10 +121,16 @@ final class BookingTermsTickTests: XCTestCase {
         let vm = makeVM(consent: FakeConsentStatusClient(granted: [.termsOfService, .privacyPolicy]))
         await vm.loadConsentStatus()
         vm.update(readyState(termsAccepted: true))
+        vm.update { current in
+            var next = current
+            next.earlyPerformanceRequested = true
+            return next
+        }
 
         vm.reset()
 
         XCTAssertFalse(vm.state.termsAccepted)
+        XCTAssertFalse(vm.state.earlyPerformanceRequested, "the request carried over to the next booking")
         XCTAssertTrue(vm.alreadyConsented)
     }
 
@@ -163,5 +170,37 @@ final class BookingTermsTickTests: XCTestCase {
 
         let command = try XCTUnwrap(create.commands.first)
         XCTAssertNil(command.termsAccepted)
+    }
+
+    // MARK: - The request to start within the withdrawal period
+
+    /// Asked of an account that already consented too: the request belongs to the booking, not the account.
+    func testATickedRequestIsAssertedOnTheOrderWhateverIsOnRecord() async throws {
+        let create = FakeOrderCreateClient()
+        let vm = makeVM(consent: FakeConsentStatusClient(granted: [.termsOfService, .privacyPolicy]), create: create)
+        await vm.loadConsentStatus()
+        vm.update(readyState(termsAccepted: false))
+        vm.update { current in
+            var next = current
+            next.earlyPerformanceRequested = true
+            return next
+        }
+
+        _ = await vm.submit()
+
+        let command = try XCTUnwrap(create.commands.first)
+        XCTAssertEqual(command.earlyPerformanceRequested, true)
+    }
+
+    /// Reachable only by a caller that bypasses the gate; the order must then not claim the request.
+    func testAnUntickedRequestAssertsNothingOnTheOrder() async throws {
+        let create = FakeOrderCreateClient()
+        let vm = makeVM(create: create)
+        vm.update(readyState(termsAccepted: true))
+
+        _ = await vm.submit()
+
+        let command = try XCTUnwrap(create.commands.first)
+        XCTAssertNil(command.earlyPerformanceRequested)
     }
 }

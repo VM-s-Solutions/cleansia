@@ -189,6 +189,7 @@ data class CreateOrderCommand(
      */
     val termsAccepted: Boolean? = null,
     val dirtinessLevel: DirtinessLevel? = null,
+    val earlyPerformanceRequested: Boolean? = null,
 )
 
 @Serializable

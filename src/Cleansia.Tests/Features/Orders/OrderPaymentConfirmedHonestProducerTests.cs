@@ -15,6 +15,7 @@ using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Core.Queue.Abstractions;
+using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Infra.Common.Configuration.Interfaces;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -78,6 +79,26 @@ public class OrderPaymentConfirmedHonestProducerTests
         Assert.Equal(PaymentStatus.Paid, order.PaymentStatus);
         Assert.Empty(order.AssignedEmployees);
         Assert.Equal([NotificationEventCatalog.OrderPaymentConfirmed], _sentEventKeys);
+    }
+
+    [Fact]
+    public async Task The_Card_Payment_That_Concludes_The_Contract_Sends_Its_Confirmation_Dated_Then()
+    {
+        var order = ArrangeOrder(PaymentType.Card, recurringTemplateId: null);
+        _orderRepository
+            .Setup(r => r.GetByIdIgnoringTenantAsync(OrderId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(order);
+        var before = DateTimeOffset.UtcNow;
+
+        var result = await CreateWebhookHandler().Handle(SettlementCommand("evt_concluded_1"), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        _pending.Verify(p => p.Enqueue(
+            QueueNames.SendEmail,
+            It.Is<QueueEnvelope<SendOrderBookedEmailMessage>>(e =>
+                e.TenantId == TenantId && e.Payload.OrderId == OrderId
+                && e.Payload.ContractConcludedOn >= before && e.Payload.ContractConcludedOn <= DateTimeOffset.UtcNow),
+            MessageKeys.OrderBookedEmail(OrderId)), Times.Once);
     }
 
     [Fact]

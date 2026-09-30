@@ -295,7 +295,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
   readonly submitAttempted = signal(false);
 
   /** Which required fields are still empty, in the order the form asks them. */
-  readonly missing = computed(() => missingFields(this.formData()));
+  readonly missing = computed(() => missingFields(this.formData(), this.editingId() === null));
 
   constructor() {
     super();
@@ -637,6 +637,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
       startsOn: template.startsOn ? new Date(template.startsOn) : null,
       endsOn: template.endsOn ? new Date(template.endsOn) : null,
       preferredEmployeeId: template.preferredEmployeeId ?? null,
+      earlyPerformanceRequested: false,
     });
     this.preferredCleanerRefused.set(false);
     this.activeStep.set(1);
@@ -944,6 +945,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     command.endsOn = undefined;
     command.preferredEmployeeId = preferredEmployeeId;
     command.dirtinessLevel = dirtinessLevel;
+    command.earlyPerformanceRequested = d.earlyPerformanceRequested ? true : undefined;
     return firstValueFrom(this.client.create(command).pipe(takeUntil(this.destroyed$)));
   }
 

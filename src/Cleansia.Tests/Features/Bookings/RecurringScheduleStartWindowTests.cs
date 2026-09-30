@@ -129,7 +129,8 @@ public sealed class RecurringScheduleStartWindowTests
             SelectedServiceIds: ["service-1"],
             SelectedPackageIds: [],
             PaymentType: (int)PaymentType.Card,
-            StartsOn: startsOn);
+            StartsOn: startsOn,
+            EarlyPerformanceRequested: true);
 
     private static UpdateRecurringBooking.Command UpdateCommand(string timeOfDay, DateTime startsOn) =>
         new(

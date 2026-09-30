@@ -322,7 +322,17 @@ public class MaterializeRecurringBookingTemplate
                     RecurringTemplateId: template.Id,
                     DirtinessLevel: template.DirtinessLevel);
 
-                await orderFactory.CreateAsync(input, cancellationToken);
+                var order = await orderFactory.CreateAsync(input, cancellationToken);
+                if (template.EarlyPerformanceConsentedOn is { } consentedOn)
+                {
+                    order.RecordEarlyPerformanceConsent(
+                        template.EarlyPerformanceConsentTextVersion!,
+                        consentedOn,
+                        template.EarlyPerformanceConsentClient!,
+                        template.EarlyPerformanceConsentIpAddress,
+                        template.EarlyPerformanceConsentDeviceLabel);
+                }
+
                 ordersCreated++;
             }
 

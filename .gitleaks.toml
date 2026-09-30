@@ -14,13 +14,14 @@ title = "Cleansia secret scan"
 useDefault = true
 
 [[allowlists]]
-description = "Test fakes: the published test JWT key, sandbox-shaped Stripe ids and tokens in test code"
+description = "Test fakes: the published test JWT key, sandbox-shaped Stripe ids, tokens and passwords in test code (backend, Android, iOS and web specs)"
 targetRules = ["generic-api-key"]
 paths = [
   '''^src/Cleansia\.(Tests|IntegrationTests|HostTests|TestUtilities)/''',
   '''^src/cleansia_android/[^/]+/src/test/''',
   '''^src/cleansia_ios/[^/]+/Tests/''',
   '''^src/cleansia_ios/CleansiaCore/Tests/''',
+  '''^src/Cleansia\.App/.+\.spec\.ts$''',
 ]
 
 [[allowlists]]

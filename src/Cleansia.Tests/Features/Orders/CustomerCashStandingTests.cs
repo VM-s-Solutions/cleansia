@@ -287,7 +287,8 @@ public sealed class CustomerCashStandingTests
                 SelectedServiceIds: [TwoHours.Id],
                 SelectedPackageIds: [],
                 PaymentType: (int)paymentType,
-                StartsOn: DateTime.UtcNow.AddDays(3)));
+                StartsOn: DateTime.UtcNow.AddDays(3),
+                EarlyPerformanceRequested: true));
 
     private Task<ValidationResult> ValidateUpdate(PaymentType paymentType) =>
         new UpdateRecurringBooking.Validator(

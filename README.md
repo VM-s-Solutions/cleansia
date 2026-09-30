@@ -86,16 +86,18 @@ up with no services, no countries and no serviced cities — which looks like a 
 empty database:
 
 ```bash
+psql "$CONNECTION_STRING" -f sql-scripts/prod-bootstrap.sql
 psql "$CONNECTION_STRING" -f sql-scripts/insert_seed_data.sql
 ```
 
-That seeds the service catalogue, the five languages, currencies, membership plans, loyalty tiers, and
+The first is the reference data production gets as well; the second adds the DEV fixtures and needs
+the first. Together they seed the service catalogue, the five languages, currencies, membership plans, loyalty tiers, and
 the Prague service area (including the district spellings in both Czech and English). `sql-scripts/`
 has its own `README.md`, plus `reset-database.sql` for starting over and `set-admin-role.sql` for
 promoting a registered user to admin.
 
 A local Development boot seeds automatically: when a host starts on an empty database it runs
-`insert_seed_data.sql`, then `insert_local_dev_admin.sql`, which creates a **local** administrator so a
+`prod-bootstrap.sql`, then `insert_seed_data.sql`, then `insert_local_dev_admin.sql`, which creates a **local** administrator so a
 fresh database is usable immediately:
 
 | | |
@@ -103,11 +105,11 @@ fresh database is usable immediately:
 | Email | `admin@cleansia.local` |
 | Password | `Admin123!` |
 
-Seeding by hand with `psql`, run that second file after the first to get the same account.
+Seeding by hand with `psql`, run that last file after the other two to get the same account.
 
 **That account is for your own machine only.** Its password is published here, so it lives in its own
 file: `execute-sql.yml` refuses `insert_local_dev_admin.sql` for DEV and PRO alike, and the shared DEV
-database, which is re-seeded with `insert_seed_data.sql` alone, gets no administrator from the seed.
+database, which is re-seeded with `prod-bootstrap.sql` and `insert_seed_data.sql` alone, gets no administrator from the seed.
 The insert also runs only into a database with no users at all. `.local` is a reserved suffix, so the
 address cannot resolve to a real mailbox.
 

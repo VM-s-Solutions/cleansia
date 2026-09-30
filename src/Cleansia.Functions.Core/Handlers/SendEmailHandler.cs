@@ -15,11 +15,12 @@ using Microsoft.Extensions.Logging;
 namespace Cleansia.Functions.Core.Handlers;
 
 /// <summary>
-/// Realizes every e-mail the send-email queue carries, off the request path. The queue holds six
+/// Realizes every e-mail the send-email queue carries, off the request path. The queue holds seven
 /// payload shapes told apart by their <c>messageType</c> discriminator: the bare
 /// <see cref="SendEmailMessage"/> (no discriminator; confirmation, reset, promo and the two wind-down
-/// notices, resolved by <see cref="EmailType"/>), the guest order cancellation, the cash booking
-/// confirmation, the admin notification, the receivable pay link and the lockout cancellation. Each is sent via the existing
+/// notices, resolved by <see cref="EmailType"/>), the guest order cancellation, the booking
+/// confirmation, the admin notification, the receivable pay link, the lockout cancellation and the
+/// cleaner's copy of a contract for work. Each is sent via the existing
 /// <see cref="IEmailService"/> in the language the producer chose.
 ///
 /// Idempotent via <see cref="IIdempotencyGuard"/> in ACT-THEN-CLAIM mode (at-least-once): non-claiming
@@ -43,7 +44,10 @@ public class SendEmailHandler(
     GuestOrderAccessTokenIssuer guestAccessTokenIssuer,
     IUnitOfWork unitOfWork,
     ICancellationPolicyResolver cancellationPolicyResolver,
-    IReceivableRepository receivableRepository)
+    IReceivableRepository receivableRepository,
+    IContractConfirmationService contractConfirmations,
+    IWorkContractAcceptanceRepository workContractAcceptanceRepository,
+    IEmployeeRepository employeeRepository)
 {
     private static readonly JsonSerializerOptions JsonOptions =
         new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
@@ -55,6 +59,7 @@ public class SendEmailHandler(
         SendAdminNotificationEmailMessage? adminMessage;
         SendReceivablePayLinkEmailMessage? payLinkMessage;
         SendOrderLockoutEmailMessage? lockoutMessage;
+        SendWorkContractEmailMessage? workContractMessage;
         string? discriminatedTenantId;
         try
         {
@@ -74,6 +79,8 @@ public class SendEmailHandler(
                 ? payload.Deserialize<SendReceivablePayLinkEmailMessage>(JsonOptions) : null;
             lockoutMessage = messageType == SendOrderLockoutEmailMessage.Discriminator
                 ? payload.Deserialize<SendOrderLockoutEmailMessage>(JsonOptions) : null;
+            workContractMessage = messageType == SendWorkContractEmailMessage.Discriminator
+                ? payload.Deserialize<SendWorkContractEmailMessage>(JsonOptions) : null;
             discriminatedTenantId = root.TryGetProperty("tenantId", out var tenant) && tenant.ValueKind == JsonValueKind.String ? tenant.GetString() : null;
         }
         catch (JsonException ex)
@@ -104,6 +111,11 @@ public class SendEmailHandler(
         if (lockoutMessage is not null)
         {
             await SendOrderLockoutAsync(lockoutMessage, discriminatedTenantId, ct);
+            return;
+        }
+        if (workContractMessage is not null)
+        {
+            await SendWorkContractAsync(workContractMessage, discriminatedTenantId, ct);
             return;
         }
 
@@ -269,6 +281,8 @@ public class SendEmailHandler(
         var policy = await cancellationPolicyResolver.ResolveForOrderAsync(order, ct);
         var languageCode = EmailLocale.Resolve(
             order.LanguageCode ?? order.User?.PreferredLanguageCode ?? message.LanguageCode);
+        var confirmation = await contractConfirmations.ForBookingAsync(
+            order, message.ContractConcludedOn ?? order.CreatedOn, languageCode, ct);
 
         // The guest's link to the booking, committed before the send so an e-mailed token always has
         // its row — the receipt that used to carry it now comes after the clean.
@@ -279,7 +293,7 @@ public class SendEmailHandler(
         }
 
         await emailService.SendOrderBookedEmailAsync(order.CustomerEmail, order, policy.FreeCancellationHours,
-            languageCode, ct, guestAccessToken);
+            languageCode, ct, guestAccessToken, confirmation.Bytes, confirmation.FileName);
         try
         {
             await idempotencyGuard.MarkProcessedAsync(key, ct);
@@ -287,6 +301,43 @@ public class SendEmailHandler(
         catch (Exception ex)
         {
             logger.LogWarning(ex, "Booking e-mail sent for order {OrderId}, but its delivery claim failed", order.Id);
+        }
+    }
+
+    // Act-then-claim like the shapes beside it.
+    private async Task SendWorkContractAsync(
+        SendWorkContractEmailMessage message, string? envelopeTenantId, CancellationToken ct)
+    {
+        var tenantId = envelopeTenantId ?? message.TenantId;
+        if (string.IsNullOrWhiteSpace(message.AcceptanceId) || string.IsNullOrWhiteSpace(tenantId))
+        {
+            logger.LogWarning("Discarding work-contract e-mail with no acceptance or operator");
+            return;
+        }
+        var key = MessageKeys.WorkContractEmail(message.AcceptanceId);
+        if (await idempotencyGuard.HasProcessedAsync(key, ct)) return;
+
+        tenantProvider.SetTenantOverride(tenantId);
+        var acceptance = await workContractAcceptanceRepository.GetByIdAsync(message.AcceptanceId, ct);
+        var cleaner = acceptance is null ? null : await employeeRepository.GetByIdAsync(acceptance.EmployeeId, ct);
+        if (acceptance is null || cleaner?.User is not { Email.Length: > 0 } user)
+        {
+            logger.LogWarning("Discarding work-contract e-mail: acceptance {AcceptanceId} has no eligible destination", message.AcceptanceId);
+            return;
+        }
+
+        var languageCode = EmailLocale.Resolve(user.PreferredLanguageCode);
+        var contract = await contractConfirmations.ForWorkContractAsync(acceptance, cleaner, languageCode, ct);
+        await emailService.SendWorkContractEmailAsync(
+            user.Email, $"{user.FirstName} {user.LastName}".Trim(), WorkContractFacts.FromJson(acceptance.FactsJson).OrderNumber,
+            contract.Bytes, contract.FileName, languageCode, ct);
+        try
+        {
+            await idempotencyGuard.MarkProcessedAsync(key, ct);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Work-contract e-mail sent for acceptance {AcceptanceId}, but its delivery claim failed", acceptance.Id);
         }
     }
 

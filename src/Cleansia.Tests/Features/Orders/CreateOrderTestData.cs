@@ -73,7 +73,8 @@ internal static class CreateOrderTestData
         string? referralCode = null,
         string? specialInstructions = null,
         string? accessInstructions = null,
-        bool? termsAccepted = true) =>
+        bool? termsAccepted = true,
+        bool? earlyPerformanceRequested = true) =>
         new(
             CustomerName: "Test Customer",
             CustomerEmail: "customer@example.com",
@@ -95,7 +96,8 @@ internal static class CreateOrderTestData
             PreferredEmployeeId: preferredEmployeeId,
             SpecialInstructions: specialInstructions,
             AccessInstructions: accessInstructions,
-            TermsAccepted: termsAccepted);
+            TermsAccepted: termsAccepted,
+            EarlyPerformanceRequested: earlyPerformanceRequested);
 
     public static OrderPricingResult MatchingPricing(decimal totalPrice = MatchingTotalPrice) =>
         new(

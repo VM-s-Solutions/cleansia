@@ -128,6 +128,39 @@ public sealed class CreateRecurringBookingTermsTickTests
         Assert.Equal("2026-09-14", payload.GetProperty("privacyVersionAccepted").GetString());
     }
 
+    [Theory]
+    [InlineData(null)]
+    [InlineData(false)]
+    public async Task A_Customer_Holding_The_Texts_In_Force_Is_Refused_Without_The_Early_Performance_Request(bool? earlyPerformanceRequested)
+    {
+        OnRecord(Accepted(ConsentType.TermsOfService, _newTerms), Accepted(ConsentType.PrivacyPolicy, _privacy));
+
+        var result = await Validator().TestValidateAsync(Command(termsAccepted: null, earlyPerformanceRequested));
+
+        result.ShouldHaveValidationErrorFor(x => x.EarlyPerformanceRequested)
+            .WithErrorMessage(BusinessErrorMessage.EarlyPerformanceNotRequested)
+            .WithErrorCode(nameof(CreateRecurringBooking.Command.EarlyPerformanceRequested));
+    }
+
+    [Fact]
+    public async Task One_Early_Performance_Request_Is_Recorded_On_The_Schedule_With_The_Wording_Client_And_Request()
+    {
+        OnRecord(Accepted(ConsentType.TermsOfService, _newTerms), Accepted(ConsentType.PrivacyPolicy, _privacy));
+        RecurringBookingTemplate? added = null;
+        _templates.Setup(r => r.Add(It.IsAny<RecurringBookingTemplate>())).Callback<RecurringBookingTemplate>(t => added = t);
+        var before = DateTimeOffset.UtcNow;
+
+        var result = await Handler().Handle(Command(termsAccepted: null), CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.NotNull(added);
+        Assert.Equal(Cleansia.Core.Domain.Orders.Order.EarlyPerformanceConsentTextVersionInForce, added!.EarlyPerformanceConsentTextVersion);
+        Assert.InRange(added.EarlyPerformanceConsentedOn!.Value, before, DateTimeOffset.UtcNow);
+        Assert.Equal("cleansia.customer", added.EarlyPerformanceConsentClient);
+        Assert.Equal("203.0.113.9", added.EarlyPerformanceConsentIpAddress);
+        Assert.Equal("Pixel 8", added.EarlyPerformanceConsentDeviceLabel);
+    }
+
     private void OnRecord(params UserConsent[] consents) =>
         _consents.Setup(r => r.GetByUserIdNoTrackingAsync(UserId, It.IsAny<CancellationToken>())).ReturnsAsync(consents.ToList());
 
@@ -158,9 +191,11 @@ public sealed class CreateRecurringBookingTermsTickTests
             _consentService.Object,
             _consents.Object,
             _resolver.Object,
-            _auditContext);
+            _auditContext,
+            new Cleansia.Core.AppServices.Authentication.HostAudienceProvider("cleansia.customer"),
+            new Cleansia.TestUtilities.TestRequestMetadataProvider("203.0.113.9", "Pixel 8"));
 
-    private static CreateRecurringBooking.Command Command(bool? termsAccepted) =>
+    private static CreateRecurringBooking.Command Command(bool? termsAccepted, bool? earlyPerformanceRequested = true) =>
         new(
             Frequency: (int)RecurrenceFrequency.Weekly,
             DayOfWeek: (int)System.DayOfWeek.Tuesday,
@@ -172,7 +207,8 @@ public sealed class CreateRecurringBookingTermsTickTests
             SelectedPackageIds: [],
             PaymentType: (int)PaymentType.Card,
             StartsOn: DateTime.UtcNow.AddDays(3),
-            TermsAccepted: termsAccepted);
+            TermsAccepted: termsAccepted,
+            EarlyPerformanceRequested: earlyPerformanceRequested);
 
     private static SavedAddress SavedAddressInCzechia()
     {

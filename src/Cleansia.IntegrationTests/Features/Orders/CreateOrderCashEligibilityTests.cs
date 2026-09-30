@@ -404,7 +404,8 @@ public class CreateOrderCashEligibilityTests(PostgresContainerFixture fixture) :
         PaymentType: paymentType,
         CurrencyId: null,
         TotalPrice: totalPrice,
-        TermsAccepted: true);
+        TermsAccepted: true,
+        EarlyPerformanceRequested: true);
 
     private static Task AccountSession(IServiceCollection services)
     {

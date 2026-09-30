@@ -61,7 +61,7 @@ public class SeededCataloguePricingTests : IAsyncLifetime
         // translation columns carry braces, which EF's raw-SQL builder parses as format placeholders.
         await using var seedConnection = await _dataSource.OpenConnectionAsync();
         await using var seedCommand = seedConnection.CreateCommand();
-        seedCommand.CommandText = ReadCanonicalSeedScript();
+        seedCommand.CommandText = ReadBootstrapAndFixtures();
         seedCommand.CommandTimeout = 120;
         await seedCommand.ExecuteNonQueryAsync();
     }
@@ -81,7 +81,7 @@ public class SeededCataloguePricingTests : IAsyncLifetime
             new TestUserSessionProvider("system", "system@cleansia.test"),
             new FixedTenantProvider(TestTenants.Default));
 
-    private static string ReadCanonicalSeedScript()
+    private static string ReadBootstrapAndFixtures()
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
         while (dir is not null && dir.GetFiles("*.sln").Length == 0)
@@ -90,8 +90,8 @@ public class SeededCataloguePricingTests : IAsyncLifetime
         }
 
         Assert.True(dir is not null, "Could not locate the solution directory from the test base directory.");
-        return File.ReadAllText(
-            Path.GetFullPath(Path.Combine(dir!.FullName, "..", "sql-scripts", "insert_seed_data.sql")));
+        return string.Join('\n', new[] { "prod-bootstrap.sql", "insert_seed_data.sql" }.Select(script =>
+            File.ReadAllText(Path.GetFullPath(Path.Combine(dir!.FullName, "..", "sql-scripts", script)))));
     }
 
     private static Task<string> DefaultCurrencyIdAsync(CleansiaDbContext ctx) =>

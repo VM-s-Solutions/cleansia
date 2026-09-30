@@ -250,7 +250,8 @@ public class RecurringCashEligibilityTests
             SelectedServiceIds: serviceIds,
             SelectedPackageIds: packageIds,
             PaymentType: (int)paymentType,
-            StartsOn: DateTime.UtcNow.AddDays(3));
+            StartsOn: DateTime.UtcNow.AddDays(3),
+            EarlyPerformanceRequested: true);
 
     private static UpdateRecurringBooking.Command UpdateCommand(
         PaymentType paymentType, IReadOnlyList<string> serviceIds, IReadOnlyList<string> packageIds) =>

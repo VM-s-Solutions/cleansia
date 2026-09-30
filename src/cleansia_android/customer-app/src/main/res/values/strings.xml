@@ -373,20 +373,9 @@
     <string name="order_photos_metadata_by">By %1$s</string>
     <string name="common_close">Close</string>
 
-    <!-- Contract for work: the wizard sentence at the offer, the detail line per accepting crew member, the contract screen -->
-    <string name="booking_work_contract_notice"><![CDATA[By confirming the order you conclude a contract for work with the cleaner on <a href="cleansia://work-contract">these terms</a>.]]></string>
-    <string name="work_contract_title">Contract for work</string>
-    <string name="work_contract_accepted_line">Contract for work accepted by %1$s on %2$s, version %3$s</string>
-    <string name="work_contract_read">Read the contract</string>
-    <string name="work_contract_version">Version %1$s</string>
-    <string name="work_contract_facts_title">The job as accepted</string>
-    <string name="work_contract_order_number">Order number</string>
-    <string name="work_contract_window">Date and time</string>
-    <string name="work_contract_price">Price</string>
-    <string name="work_contract_location">Location</string>
-    <string name="work_contract_accepted_on">Accepted by the cleaner on %1$s, version %2$s</string>
-    <string name="work_contract_accepted_in_language">Accepted in %1$s</string>
-    <string name="work_contract_load_error">We couldn\'t load this contract. Please try again.</string>
+    <!-- Booking review: the contract sentence and the request to start within the withdrawal period -->
+    <string name="booking_contract_notice"><![CDATA[By confirming the order you conclude a contract for the cleaning with the operating company of the market where your home is, under its <a href="cleansia://terms">Terms of Service</a>. The cleaner carries it out as a subcontractor of the company and is not a party to your contract.]]></string>
+    <string name="consent_early_performance_draft_2026_09_29">I ask for the cleaning to start within the 14-day withdrawal period, and I acknowledge that I lose the right to withdraw once the cleaning has been fully performed.</string>
 
     <!-- Profile tab -->
     <string name="profile_greeting">Hi, there!</string>
@@ -511,7 +500,7 @@
     <string name="help_call">Call support</string>
     <string name="help_call_desc">Mon–Sun · 8:00–20:00</string>
     <string name="help_email">Email us</string>
-    <string name="help_email_desc">support@cleansia.cz</string>
+    <string name="help_email_desc">info@cleansia.cz</string>
     <string name="help_faq_title">Frequently asked questions</string>
     <string name="help_faq_q1">How do I cancel my booking?</string>
     <string name="help_faq_a1">Open your booking from the Orders tab and tap \"Cancel\". Cancellations free of charge up to 24 hours before the cleaning start time. Within 15 minutes of booking you pay nothing — within 60 minutes on your first booking or with Cleansia Plus.</string>
@@ -1390,6 +1379,7 @@
     <string name="error_auth_too_many_attempts">Too many attempts with this code. Request a new code and try again.</string>
     <string name="error_company_not_found">Company information not found</string>
     <string name="error_consent_terms_not_accepted">Please accept the Terms of Service and Privacy Policy to continue.</string>
+    <string name="error_consent_early_performance_not_requested">To continue, please confirm that you want the service to start within the 14-day withdrawal period.</string>
     <string name="error_country_not_existing_id">Country not found</string>
     <string name="error_currency_invalid">Invalid currency</string>
     <string name="error_country_not_serviced">We don\'t operate in this country yet.</string>

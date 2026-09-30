@@ -1793,8 +1793,8 @@
   cursor: pointer;
 }
 
-// The sentence that names the contract for work. Information, not a control,
-// so it reads like the consent note above it rather than like a second tick.
+// The sentence that names who the customer buys the cleaning from. Information,
+// not a control, so it reads like the consent note rather than like another tick.
 .cl-wiz__contract-note {
   margin: 12px 0 0;
   font-size: calc(0.875 * var(--cl-u));

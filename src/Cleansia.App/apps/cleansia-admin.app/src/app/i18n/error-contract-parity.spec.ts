@@ -452,10 +452,14 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'admin_user.email_exists',
   'admin_user.not_found',
   'auth.account_locked',
+  // An administrator's password is 12+ characters: CreateAdminUser and ChangeOwnPassword.
+  'auth.admin_password_too_short',
   'auth.current_password_invalid',
   'auth.insufficient_privileges',
   'auth.invalid_refresh_token',
   'auth.refresh_token_reused',
+  // ChangeOwnPassword refuses a new password equal to the current one.
+  'auth.same_reset_password',
   // The admin sign-in is IOperatorScopedRequest (its refusal audit row needs a tenant), so
   // OperatorTenantScopeBehavior's refusals reach this host through AdminAuthController.Login:
   // `country.not_serviced` is on the contract under country below, this one is only reachable here.

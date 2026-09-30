@@ -49,17 +49,42 @@ five locales, or if the copy promises that a tier cannot drop.
 
 A membership buys a discount, a wider free-cancellation window, a 60-minute oops window after every
 booking instead of the standard 15 — anyone's first booking gets 60 too
-([the oops window](/product/business-rules#oops-window)) — and a quota of express-surcharge waivers.
+([the oops window](/product/business-rules#oops-window)) — a quota of express-surcharge waivers,
+recurring schedules and the preferred cleaner, all of them from the first day of a free trial.
 
-**There is no free trial, and a trialing enrolment is not a member** (owner ruling 2026-09-08,
-T-0690). Both seeded plans carry `TrialPeriodDays = 0` and the admin plan commands refuse any other
-value (`membership.plan.trial_not_permitted`), because a trial is benefits without payment. Every Plus
-benefit — the discount, the cancellation window, the 60-minute oops window, the waiver quota, recurring
-schedules and the preferred cleaner — resolves through the one entitlement predicate (`UserMembershipRepository
-.EntitledForUserQuery`), which refuses a `Trialing` enrolment exactly as it refuses `PastDue`, `Paused`,
-`Cancelled` or an elapsed period. The `trialEndsAtUtc` / `trialEligible` fields on `GetMyMembership`
-still ride the wire for clients built before the ruling; with every plan at zero days no enrolment
-carries a trial end. → [Business rules — Cleansia Plus](/product/business-rules#cleansia-plus)
+**A free trial carries every benefit, and an account gets one** (owner ruling 2026-09-30, reversing
+the trial half of the 2026-09-08 ruling, T-0690). The trial is the plan's `TrialPeriodDays` — 14 on both
+seeded plans, set per plan by an administrator, `0` for none. It flows like this:
+
+1. **The offer.** `GetPlans` carries each plan's `trialPeriodDays` and `GetMine` the customer's
+   `trialEligible`. The web (`offeredTrialDays`) offers a plan's days unless the customer is a member
+   or has had a trial, and offers them to a signed-out visitor; Android (`trialDaysOn`) and iOS
+   (`offeredTrialDays`) offer them only when the server says `trialEligible`. A surface with no plan
+   picker offers the monthly plan's days. No client states a length of its own. The web home page's
+   Plus band is the one surface that skips the check: it reads the plan's days alone.
+2. **The subscribe.** Checkout and the direct subscribe both ask `MembershipTrialResolver`: the plan's
+   days, or `0` when `HasEverStartedTrialAsync` finds a trial end on any of the account's enrolments,
+   in any status. Stripe gets `TrialPeriodDays` only when that is above zero; there is no per-card
+   check. The subscribe audit row records the days granted.
+3. **The trial.** Stripe reports `trialing`; the platform holds it as `Active` and mirrors `trial_end`
+   into `UserMembership.TrialEndsAtUtc`, from the subscribe result and from the webhook — which never
+   clears it, since a dunning event carries no trial end and clearing it would hand out a second trial.
+   The entitlement predicate (`UserMembershipRepository.EntitledForUserQuery`) asks only `Active`
+   inside the period, so the discount, both cancellation windows, the 60-minute oops window, the
+   waiver quota, recurring schedules and the preferred cleaner all apply from day one. `PastDue`,
+   `Paused`, `Cancelled` and an elapsed period stay refused. While `trialEndsAtUtc` is in the future
+   the clients show *Free trial until* that date, the day of the first charge.
+4. **The end.** Stripe charges when the trial ends. A cancel inside it charges nothing and keeps the
+   benefits to the trial's end. A first charge that fails is `PastDue` or `Paused`, like a failed
+   renewal. A trial that ends unpaid lapses like a paid period: `GetLatestPaidForUserAsync` reads an
+   enrolment with paid proof **or** a trial end, so a recurring schedule the member set up during the
+   trial pauses and the member is told once
+   ([`recurring.paused`](/architecture/push-notifications#recurring-paused)).
+
+**The one-trial check is tenant-scoped.** `HasEverStartedTrialAsync` reads through the tenant query
+filter, so it is asked inside a customer request, where the tenant is the customer's. A caller with no
+tenant — a background job — would see no earlier trial on any tenanted row and hand out a second one.
+→ [Business rules — the free trial](/product/business-rules#plus-trial)
 
 **A failed renewal pauses the benefits and keeps the membership visible** (owner ruling 2026-09-28).
 The lifecycle read (`GetLifecycleForUserAsync`, renamed from `GetActiveForUser*`) answers a live

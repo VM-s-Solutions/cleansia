@@ -328,9 +328,9 @@ or APNs localization key it does not bundle, and nothing on the server updates a
 Widening that key to carry "a cleaner is committed to your booking" would repeat the overloading one
 layer up, in the thing that writes to a customer's lock screen.
 
-### A recurring schedule pauses once per paid lapse {#recurring-paused}
+### A recurring schedule pauses once per lapse {#recurring-paused}
 
-When materialization skips a recurring template because paid Plus is inactive, `recurring.paused`
+When materialization skips a recurring template because Plus is no longer entitled, `recurring.paused`
 tells the account owner to renew. The template stays saved and existing occurrences stay booked.
 The notification belongs to the account's operator, even when a template serves another market.
 It uses the existing recurring-notification preference; a muted push still leaves the feed item.
@@ -341,14 +341,19 @@ again. The notice, outbox intent and membership latch commit together; PostgreSQ
 allows only one competing template or sweep to acquire that latch.
 
 An authoritative Stripe `active` observation for a live, non-trial period establishes paid-period
-proof. The account's latest proven-paid membership owns its lapse; an unsuccessful new subscription
-cannot replace it with a fresh latch. Paid and unpaid observations retain their provider chronology,
-so a delayed genuine recovery can rearm the next lapse while an older replay cannot. Equal or missing
-event chronology does not rearm. Existing entitlement reconciliation is unchanged.
+proof. **A started trial counts as well** (owner ruling 2026-09-30): a trialing member holds every Plus
+benefit and may author a schedule, so a trial that ends unpaid — cancelled inside it, or a first charge
+reported `past_due` or `paused` — is told once, exactly as a paid lapse is.
+`GetLatestPaidForUserAsync` reads the account's enrolments with paid proof or a trial end, newest by
+`PaidPeriodConfirmedAt ?? TrialEndsAtUtc`, and the latch refuses only an enrolment with neither. The
+account's latest such membership owns its lapse; an unsuccessful new subscription cannot replace it
+with a fresh latch. Paid and unpaid observations retain their provider chronology, so a delayed genuine
+recovery can rearm the next lapse while an older replay cannot. Equal or missing event chronology does
+not rearm. Existing entitlement reconciliation is unchanged.
 
 No payment history is inferred for an unmarked membership: it continues to follow existing scheduling
-rules but receives this notice only after an authoritative paid observation establishes proof. There
-is no historical-data backfill. Both mobile apps carry the five-locale display copy; the customer's
+rules but receives this notice only after an authoritative paid observation or a trial establishes
+proof. There is no historical-data backfill. Both mobile apps carry the five-locale display copy; the customer's
 feed and tap route lead to membership renewal.
 
 ### Why the preferred-offer-closed message is one sentence {#one-sentence}

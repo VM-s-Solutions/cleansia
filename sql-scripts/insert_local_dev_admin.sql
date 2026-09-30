@@ -1,19 +1,19 @@
 -- ============================================================
--- LOCAL DEVELOPMENT ADMINISTRATOR — never for a shared database
+-- LOCAL DEVELOPMENT ADMINISTRATOR — a developer's database or DEV, never PRO
 -- ============================================================
 --
 --     admin@cleansia.local  /  Admin123!
 --
--- The password is published in README.md, so this account must exist only on a developer's own
--- database. A local Development boot runs this file right after prod-bootstrap.sql and
--- insert_seed_data.sql (DatabaseMigrationExtensions.DevelopmentSeedScripts), and only when that
--- boot found an empty Languages table. execute-sql.yml refuses this file for DEV and PRO alike: the
--- shared DEV database gets named administrators instead — register the account, confirm its e-mail,
--- then run set-admin-role.sql against DEV with that address. After the first, an Administrator adds
--- the rest from the admin console.
+-- The password is published in README.md. A local Development boot runs this file right after
+-- prod-bootstrap.sql and insert_seed_data.sql (DatabaseMigrationExtensions.DevelopmentSeedScripts),
+-- and only when that boot found an empty Languages table. The shared DEV database may run it too,
+-- through execute-sql.yml (owner ruling 2026-09-30: an app registration will gate the DEV apps; until
+-- then anyone who reads the README can sign in as this account there), and like every run it inserts
+-- only into a database with no users. execute-sql.yml refuses it for PRO. Named administrators come
+-- from set-admin-role.sql, and fix-deactivate-local-dev-admin.sql retires this account once one exists.
 --
--- Run it by hand only against a local database, after prod-bootstrap.sql: it needs generate_ulid()
--- and the cleansia-cz tenant row that file creates.
+-- Run it by hand after prod-bootstrap.sql: it needs generate_ulid() and the cleansia-cz tenant row
+-- that file creates.
 --
 -- WHY THE HASH IS A LITERAL. Password is stored as v2$ + base64(salt[16] ‖
 -- PBKDF2-SHA256(password, salt, 600000, 32)) — see PasswordExtensions.HashAndSaltPassword. Postgres

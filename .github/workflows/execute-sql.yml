@@ -64,15 +64,16 @@ jobs:
           esac
           echo "Not a development fixture — continuing."
 
-      # insert_local_dev_admin.sql mints an administrator whose password is in README.md. It is for a
-      # developer's own database only; the shared DEV database gets named administrators through
-      # set-admin-role.sql. Compared by basename so a path like seed/../ cannot walk around it.
-      - name: Refuse the local administrator fixture in every environment
+      # insert_local_dev_admin.sql mints an administrator whose password is in README.md. Owner ruling
+      # 2026-09-30: DEV may hold it until an app registration gates the DEV apps; PRO never does.
+      # Compared by basename so a path like seed/../ cannot walk around it.
+      - name: Refuse the local administrator fixture against production
+        if: inputs.environment == 'PRO'
         env:
           SCRIPT_PATH: ${{ inputs.script_path }}
         run: |
           if [ "$(basename "$SCRIPT_PATH")" = "insert_local_dev_admin.sql" ]; then
-            echo "::error::insert_local_dev_admin.sql creates a known-password administrator and never runs against DEV or PRO."
+            echo "::error::insert_local_dev_admin.sql creates an administrator whose password is published in README.md, and never runs against PRO (DEV may run it: owner ruling 2026-09-30)."
             echo "::error::Create a named administrator with set-admin-role.sql instead (see README.md)."
             exit 1
           fi

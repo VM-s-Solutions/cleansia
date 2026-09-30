@@ -257,8 +257,8 @@ public static class DatabaseMigrationExtensions
 
     // The production bootstrap runs first: it defines generate_ulid() and the reference rows the DEV
     // fixtures and the administrator insert point at, so DEV and production share one source for them.
-    // The administrator's password is published, so it lives in its own file that only a local
-    // Development boot runs — execute-sql.yml refuses that file for every environment.
+    // The administrator's password is published, so it lives in its own file: a local Development
+    // boot runs it, DEV may run it through execute-sql.yml, and that workflow refuses it for PRO.
     public static readonly IReadOnlyList<string> DevelopmentSeedScripts =
         ["prod-bootstrap.sql", "insert_seed_data.sql", "insert_local_dev_admin.sql"];
 

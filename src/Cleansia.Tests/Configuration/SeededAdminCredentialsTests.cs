@@ -10,8 +10,8 @@ namespace Cleansia.Tests.Configuration;
 ///
 /// Its password is written in README.md, so it lives apart from <c>prod-bootstrap.sql</c> and the shared
 /// fixture <c>insert_seed_data.sql</c>, which also seed the shared DEV database through execute-sql.yml
-/// (and the first, production). Only a local Development boot runs all three files; named DEV
-/// administrators come from set-admin-role.sql.
+/// (and the first, production). A local Development boot runs all three files; DEV may run the third
+/// through execute-sql.yml, which refuses it for PRO; named administrators come from set-admin-role.sql.
 ///
 /// Postgres cannot compute the password hash itself: it is PBKDF2-SHA256 at 600 000 iterations and
 /// pgcrypto is deliberately unavailable (Azure blocks it unless allow-listed — the same reason

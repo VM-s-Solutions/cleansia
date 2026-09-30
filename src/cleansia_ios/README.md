@@ -78,10 +78,11 @@ severity rules with `./scripts/tests/check-local-config.test.sh`.
 The two `.xcodeproj` files are produced by [XcodeGen](https://github.com/yonaskolb/XcodeGen) from the
 checked-in `project.yml` specs (a hand-written `.pbxproj` is fragile and merge-hostile; the spec is the
 source of truth). They are gitignored — regenerate after pulling or editing a `project.yml`, after the
-API clients, which both `project.yml` files depend on:
+API clients, which both `project.yml` files depend on. Install XcodeGen once, and `openapi-generator`
+7.10.0 as `MANUAL_STEPS.md` §1 describes:
 
 ```sh
-brew install xcodegen          # once; openapi-generator 7.10.0 too — MANUAL_STEPS.md §1
+brew install xcodegen
 cd src/cleansia_ios
 ./scripts/generate-api-clients.sh
 (cd CleansiaPartner  && xcodegen generate)

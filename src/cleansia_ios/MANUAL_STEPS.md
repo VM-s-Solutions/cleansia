@@ -24,8 +24,13 @@ mkdir -p ~/.local/bin
 printf '#!/usr/bin/env bash\nexec /opt/homebrew/opt/openjdk@21/bin/java -jar "$HOME/openapi-generator-cli-7.10.0.jar" "$@"\n' \
   > ~/.local/bin/openapi-generator
 chmod +x ~/.local/bin/openapi-generator
-echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zprofile    # a NEW shell, then:
-openapi-generator version                                     # must print 7.10.0
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zprofile
+```
+
+Then open a **new** shell and check it — this must print `7.10.0`:
+
+```sh
+openapi-generator version
 ```
 
 If a Homebrew copy is already installed, `brew unlink openapi-generator` takes it off `PATH`
@@ -51,8 +56,9 @@ disabled.
 ## 2. Generate the API clients, then the Xcode projects
 
 Clients first: both `project.yml` files reference the generated `Cleansia{Partner,Customer}Api`
-packages, so a project generated before them builds against a stale client or none. This is the
-order CI runs, and it is the same after every pull.
+packages. On a fresh clone `xcodegen generate` run before them stops with `Spec validation error:
+Invalid local package`; over an older generation it succeeds and the build uses the stale client.
+This is the order CI runs, and it is the same after every pull.
 
 ```sh
 cd src/cleansia_ios

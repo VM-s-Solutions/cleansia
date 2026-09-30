@@ -117,7 +117,7 @@ with no local setup.
 > `api-customer-mobile` key in the `customDomains` of `weu.prod.bicepparam`, which `main.bicep`
 > binds to the two production mobile hosts. Until then an Android release build that must reach DEV
 > passes the DEV host with `-PAPI_BASE_URL`, and a TestFlight build passes it to its lane —
-> `bundle exec fastlane customer api_base_url:https://api-cleansia-customer-mobile-weu-dev.azurewebsites.net`
+> `FASTLANE_SKIP_DOCS=1 bundle exec fastlane customer api_base_url:https://api-cleansia-customer-mobile-weu-dev.azurewebsites.net`
 > (and the partner host to `partner`). Without it, a TestFlight build made before the domains exist
 > calls a host that does not answer.
 
@@ -433,12 +433,12 @@ enum AppConfig {
 ### After every pull, regenerate
 
 `.xcodeproj` is gitignored and the generated API clients are too, so a fresh checkout — and every
-`git pull` or branch switch that touches a `project.yml` — needs:
+`git pull` or branch switch that touches a `project.yml` — needs the sequence below. The generator
+must be `openapi-generator` **exactly 7.10.0**, installed as `src/cleansia_ios/MANUAL_STEPS.md` §1
+describes; brew's is the latest release, and `generate-api-clients.sh` refuses any other version.
 
 ```bash
 brew install xcodegen                                       # once
-# once: openapi-generator EXACTLY 7.10.0 (src/cleansia_ios/MANUAL_STEPS.md §1) — not brew's,
-# which is the latest release; generate-api-clients.sh refuses any other version
 
 cd src/cleansia_ios
 ./scripts/generate-api-clients.sh                            # emits Cleansia{Partner,Customer}Api

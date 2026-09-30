@@ -2873,11 +2873,16 @@
         "current_password": "Current Password",
         "new_password": "New Password",
         "confirm_password": "Confirm New Password",
-        "password_hint": "At least 8 characters, including at least one letter and one digit",
+        "password_hint": "At least 12 characters, including at least one letter and one digit",
         "submit": "Change Password"
       },
       "messages": {
         "change_password_success": "Password changed successfully"
+      },
+      "password_change_required": {
+        "title": "Set your own password",
+        "description": "Someone else chose this account's password. Before you continue, replace it with one only you know; your current password is the one you just signed in with.",
+        "sign_out": "Sign out"
       }
     },
     "customer_detail": {

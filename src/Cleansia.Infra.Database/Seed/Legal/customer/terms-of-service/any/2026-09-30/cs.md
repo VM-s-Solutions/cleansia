@@ -81,11 +81,11 @@ Kredit je zůstatek na vašem účtu, který společnost poskytuje například j
 
 ## 10. Cleansia Plus
 
-Cleansia Plus je placené členství, měsíční nebo roční, za cenu uvedenou pro váš trh; kde cena uvedena není, nabízeno není. Členství se na konci každého období automaticky obnovuje a platí z vaší karty, dokud je nezrušíte. Zůstává v měně, ve které jste je koupili. Zkušební období zdarma neexistuje.
+Cleansia Plus je placené členství, měsíční nebo roční, za cenu uvedenou pro váš trh; kde cena uvedena není, nabízeno není. První členství na vašem účtu začíná zkušebním obdobím zdarma v délce 14 dní, u obou plánů; každý účet má nárok jen na jedno zkušební období zdarma. Z vaší karty se poprvé platí, až zkušební období skončí, pokud členství předtím nezrušíte. Členství se pak na konci každého období automaticky obnovuje a platí z vaší karty, dokud je nezrušíte. Zůstává v měně, ve které jste je koupili.
 
-Výhody platí jen po dobu, kdy je členství zaplacené a platné: sleva na každý úklid; bezplatné zrušení až do 4 hodin před začátkem místo 24 hodin; bezplatné zrušení do 60 minut od objednání; určitý počet prominutých expresních příplatků v každém kalendářním měsíci; opakovaný úklid; a výběr oblíbeného uklízeče. Výši slevy a počet prominutí pro váš plán uvádíme při sjednání členství.
+Výhody platí od prvního dne, včetně zkušebního období zdarma, po celou dobu, kdy je členství platné: sleva na každý úklid; bezplatné zrušení až do 4 hodin před začátkem místo 24 hodin; bezplatné zrušení do 60 minut od objednání; určitý počet prominutých expresních příplatků v každém kalendářním měsíci; opakovaný úklid; a výběr oblíbeného uklízeče. Výši slevy a počet prominutí pro váš plán uvádíme při sjednání členství.
 
-Pokud se platba za obnovení nezdaří, výhody se pozastaví, dokud platba neproběhne. Členství můžete kdykoli zrušit: skončí pak koncem zaplaceného období, nebo okamžitě, pokud se platba za obnovení nezdařila.
+Pokud se platba nezdaří, ať první po zkušebním období, nebo za obnovení, výhody se pozastaví, dokud platba neproběhne. Členství můžete kdykoli zrušit. Zrušíte-li je ve zkušebním období, skončí jeho koncem a nic nezaplatíte; jinak skončí koncem zaplaceného období, nebo okamžitě, pokud se platba nezdařila.
 
 ## 11. Věrnostní body
 
@@ -102,8 +102,8 @@ Sleva Cleansia Plus a sleva za věrnostní úroveň činí dohromady nejvýše 1
 Objednávku zrušíte v aplikaci nebo na webu; jako host přes odkaz v e-mailu k objednávce. Storno poplatek je podílem z ceny:
 
 - Zdarma, dokud objednávku nepřijal žádný uklízeč.
-- Zdarma do 60 minut od objednání u vaší první objednávky nebo s placeným členstvím Cleansia Plus a jinak do 15 minut od objednání — i když už objednávku uklízeč přijal. Vaši první objednávku poznáme podle účtu, e-mailu nebo telefonu, včetně objednávek hosta.
-- Jinak, jakmile objednávku přijal uklízeč: zdarma do 24 hodin před začátkem, 25 % mezi 24 a 4 hodinami před začátkem a 50 % méně než 4 hodiny před začátkem. S placeným členstvím Cleansia Plus: zdarma do 4 hodin před začátkem a poté 50 %.
+- Zdarma do 60 minut od objednání u vaší první objednávky nebo po dobu, kdy máte výhody Cleansia Plus (článek 10), a jinak do 15 minut od objednání — i když už objednávku uklízeč přijal. Vaši první objednávku poznáme podle účtu, e-mailu nebo telefonu, včetně objednávek hosta.
+- Jinak, jakmile objednávku přijal uklízeč: zdarma do 24 hodin před začátkem, 25 % mezi 24 a 4 hodinami před začátkem a 50 % méně než 4 hodiny před začátkem. S výhodami Cleansia Plus: zdarma do 4 hodin před začátkem a poté 50 %.
 - Jakmile čas začátku uplyne a na objednávce je přidělený uklízeč, zrušit ji nemůžete; pokud uklízeč nedorazil, nahlaste to (článek 14). Probíhající úklid zrušit nelze.
 
 U objednávky placené kartou si společnost ponechá poplatek z toho, co jste zaplatili kartou a kreditem, ve stejném poměru, v jakém jste cenu zaplatili, a zbytek vrátí stejným způsobem: podíl zaplacený kartou na vaši kartu a podíl zaplacený kreditem na váš zůstatek. U objednávky placené v hotovosti je poplatek dlužný a hradí se podle článku 8.

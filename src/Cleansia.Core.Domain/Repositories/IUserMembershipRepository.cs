@@ -11,7 +11,10 @@ namespace Cleansia.Core.Domain.Repositories;
 /// </summary>
 public interface IUserMembershipRepository : IRepository<UserMembership, string>
 {
-    /// <summary>Latest authoritatively paid enrolment for a proven account owner, tracked for its lapse latch.</summary>
+    /// <summary>
+    /// Latest enrolment that held the Plus benefits — an authoritatively paid period or a started trial —
+    /// for a proven account owner, tracked for its lapse latch.
+    /// </summary>
     Task<UserMembership?> GetLatestPaidForUserAsync(string userId, CancellationToken cancellationToken);
 
     /// <summary>

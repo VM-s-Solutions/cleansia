@@ -109,8 +109,9 @@ public class UserMembership : TenantAuditable
     /// <para>No benefit is withheld while <c>UtcNow &lt; TrialEndsAtUtc</c>: a trialing member gets every
     /// Plus benefit a paying one does (owner ruling 2026-09-30). Stripe flattens <c>"active"</c> and
     /// <c>"trialing"</c> onto <see cref="MembershipStatus.Active"/> in <see cref="UpdateFromStripeWebhook"/>,
-    /// so without this column "is this member trialing?" has no answer in the database — and the
-    /// recurring-pause latch needs that answer, because a trial is not a paid period.</para>
+    /// so without this column "is this member trialing?" has no answer in the database. The recurring-pause
+    /// latch reads it too: a trial never records paid proof, yet a started trial is proof the member held
+    /// the benefits, so a trial that lapses unpaid is told its schedule paused exactly as a paid one is.</para>
     ///
     /// <para>A stored instant rather than a bool, deliberately: a bool needs a writer to flip it on
     /// conversion and no sweep exists, so it would go stale for anyone whose conversion webhook was
@@ -216,7 +217,7 @@ public class UserMembership : TenantAuditable
 
     public bool TryMarkRecurringPauseNotificationSent(DateTime nowUtc)
     {
-        if (PaidPeriodConfirmedAt is null
+        if ((PaidPeriodConfirmedAt is null && TrialEndsAtUtc is null)
             || RecurringPauseNotificationSentAt is not null
             || (Status == MembershipStatus.Active && nowUtc < CurrentPeriodEnd)
             || IsInTrialAt(nowUtc))

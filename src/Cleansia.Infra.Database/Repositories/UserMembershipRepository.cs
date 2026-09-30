@@ -8,8 +8,8 @@ public class UserMembershipRepository(CleansiaDbContext context)
     : BaseRepository<UserMembership>(context), IUserMembershipRepository
 {
     public Task<UserMembership?> GetLatestPaidForUserAsync(string userId, CancellationToken cancellationToken) =>
-        GetDbSet().Where(m => m.UserId == userId && m.PaidPeriodConfirmedAt != null)
-            .OrderByDescending(m => m.PaidPeriodConfirmedAt)
+        GetDbSet().Where(m => m.UserId == userId && (m.PaidPeriodConfirmedAt != null || m.TrialEndsAtUtc != null))
+            .OrderByDescending(m => m.PaidPeriodConfirmedAt ?? m.TrialEndsAtUtc)
             .ThenByDescending(m => m.CreatedOn).ThenByDescending(m => m.Id)
             .FirstOrDefaultAsync(cancellationToken);
 

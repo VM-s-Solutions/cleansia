@@ -81,11 +81,11 @@ Kredit je zostatok na vašom účte, ktorý spoločnosť poskytuje napríklad ak
 
 ## 10. Cleansia Plus
 
-Cleansia Plus je platené členstvo, mesačné alebo ročné, za cenu uvedenú pre váš trh; kde cena uvedená nie je, neponúka sa. Členstvo sa na konci každého obdobia automaticky obnovuje a platí z vašej karty, kým ho nezrušíte. Zostáva v mene, v ktorej ste ho kúpili. Skúšobné obdobie zadarmo neexistuje.
+Cleansia Plus je platené členstvo, mesačné alebo ročné, za cenu uvedenú pre váš trh; kde cena uvedená nie je, neponúka sa. Prvé členstvo na vašom účte začína skúšobným obdobím zadarmo v dĺžke 14 dní, pri oboch plánoch; každý účet má nárok len na jedno skúšobné obdobie zadarmo. Z vašej karty sa prvýkrát platí, až keď skúšobné obdobie skončí, ak členstvo predtým nezrušíte. Členstvo sa potom na konci každého obdobia automaticky obnovuje a platí z vašej karty, kým ho nezrušíte. Zostáva v mene, v ktorej ste ho kúpili.
 
-Výhody platia len počas obdobia, keď je členstvo zaplatené a platné: zľava na každé upratovanie; bezplatné zrušenie až do 4 hodín pred začiatkom namiesto 24 hodín; bezplatné zrušenie do 60 minút od objednania; určitý počet odpustených expresných príplatkov v každom kalendárnom mesiaci; opakované upratovanie; a výber obľúbeného upratovača. Výšku zľavy a počet odpustení pre váš plán uvádzame pri uzatvorení členstva.
+Výhody platia od prvého dňa, vrátane skúšobného obdobia zadarmo, počas celého obdobia, keď je členstvo platné: zľava na každé upratovanie; bezplatné zrušenie až do 4 hodín pred začiatkom namiesto 24 hodín; bezplatné zrušenie do 60 minút od objednania; určitý počet odpustených expresných príplatkov v každom kalendárnom mesiaci; opakované upratovanie; a výber obľúbeného upratovača. Výšku zľavy a počet odpustení pre váš plán uvádzame pri uzatvorení členstva.
 
-Ak sa platba za obnovenie nepodarí, výhody sa pozastavia, kým platba neprebehne. Členstvo môžete kedykoľvek zrušiť: skončí potom koncom zaplateného obdobia, alebo okamžite, ak sa platba za obnovenie nepodarila.
+Ak sa platba nepodarí, či už prvá po skúšobnom období, alebo za obnovenie, výhody sa pozastavia, kým platba neprebehne. Členstvo môžete kedykoľvek zrušiť. Ak ho zrušíte v skúšobnom období, skončí jeho koncom a nič nezaplatíte; inak skončí koncom zaplateného obdobia, alebo okamžite, ak sa platba nepodarila.
 
 ## 11. Vernostné body
 
@@ -102,8 +102,8 @@ Zľava Cleansia Plus a zľava za vernostnú úroveň spolu tvoria najviac 12 % c
 Objednávku zrušíte v aplikácii alebo na webe; ako hosť cez odkaz v e-maile k objednávke. Stornovací poplatok je podielom z ceny:
 
 - Zadarmo, kým objednávku neprijal žiadny upratovač.
-- Zadarmo do 60 minút od objednania pri vašej prvej objednávke alebo s plateným členstvom Cleansia Plus a inak do 15 minút od objednania — aj keď už objednávku upratovač prijal. Vašu prvú objednávku rozpoznáme podľa účtu, e-mailu alebo telefónu, vrátane objednávok hosťa.
-- Inak, len čo objednávku prijal upratovač: zadarmo do 24 hodín pred začiatkom, 25 % medzi 24 a 4 hodinami pred začiatkom a 50 % menej ako 4 hodiny pred začiatkom. S plateným členstvom Cleansia Plus: zadarmo do 4 hodín pred začiatkom a potom 50 %.
+- Zadarmo do 60 minút od objednania pri vašej prvej objednávke alebo počas obdobia, keď máte výhody Cleansia Plus (článok 10), a inak do 15 minút od objednania — aj keď už objednávku upratovač prijal. Vašu prvú objednávku rozpoznáme podľa účtu, e-mailu alebo telefónu, vrátane objednávok hosťa.
+- Inak, len čo objednávku prijal upratovač: zadarmo do 24 hodín pred začiatkom, 25 % medzi 24 a 4 hodinami pred začiatkom a 50 % menej ako 4 hodiny pred začiatkom. S výhodami Cleansia Plus: zadarmo do 4 hodín pred začiatkom a potom 50 %.
 - Len čo čas začiatku uplynie a na objednávke je pridelený upratovač, zrušiť ju nemôžete; ak upratovač neprišiel, nahláste to (článok 14). Prebiehajúce upratovanie zrušiť nemožno.
 
 Pri objednávke platenej kartou si spoločnosť ponechá poplatok z toho, čo ste zaplatili kartou a kreditom, v rovnakom pomere, v akom ste cenu zaplatili, a zvyšok vráti rovnakým spôsobom: podiel zaplatený kartou na vašu kartu a podiel zaplatený kreditom na váš zostatok. Pri objednávke platenej v hotovosti je poplatok dlžný a hradí sa podľa článku 8.

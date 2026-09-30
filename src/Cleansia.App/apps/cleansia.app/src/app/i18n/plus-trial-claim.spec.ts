@@ -89,7 +89,7 @@ const SURFACES: Surface[] = [
   {
     name: 'the home page Plus band',
     template: join(FEATURES_DIR, 'home/src/lib/home/components/plus/plus.component.html'),
-    gates: ['@if (facts.trialDays() > 0) {'],
+    gates: ['@if (facade.trialDays() > 0) {'],
     mustBeGated: ['pages.home.plus.title', 'pages.home.plus.cta'],
     mustBeUngated: ['pages.home.plus.title_no_trial', 'pages.home.plus.cta_no_trial'],
     blocks: ['pages.home.plus'],

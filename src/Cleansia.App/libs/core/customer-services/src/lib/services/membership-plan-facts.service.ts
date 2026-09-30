@@ -81,7 +81,6 @@ export class MembershipPlanFactsService {
   readonly expressPerMonth = computed(
     () => this.benefitPlan()?.expressUpgradesPerMonth ?? 0,
   );
-  readonly trialDays = computed(() => this.benefitPlan()?.trialPeriodDays ?? 0);
   readonly yearlySavingsPercent = computed(
     () => this.yearlyPlan()?.savingsPercentVsMonthly ?? 0,
   );

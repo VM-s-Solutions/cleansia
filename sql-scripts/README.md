@@ -31,7 +31,9 @@ Operational SQL scripts for the Cleansia database. These are executed via the **
 
 A Development boot runs both, then `insert_local_dev_admin.sql`
 (`CleansiaStartupBase.DevelopmentSeedScripts`). To re-seed the shared DEV database, run
-`prod-bootstrap.sql` and then `insert_seed_data.sql` through **Execute SQL Script** with **DEV**.
+`prod-bootstrap.sql` and then `insert_seed_data.sql` through **Execute SQL Script** with **DEV**,
+then `insert_local_dev_admin.sql` for the published local administrator (owner ruling 2026-09-30;
+the workflow refuses it for PRO).
 
 ## `seed/` — dev fixture data
 

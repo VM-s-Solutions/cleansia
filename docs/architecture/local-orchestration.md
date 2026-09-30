@@ -55,11 +55,13 @@ reference data production gets as well: `generate_ulid()`, the `cleansia-cz` ten
 the countries, CZK and the Czech market — then `insert_seed_data.sql` — the DEV fixtures: the
 catalogue with its prices and pay rates, Plus plans, promo codes and the company record — then
 `insert_local_dev_admin.sql`, which creates the local administrator whose password the README
-publishes. The split exists so that the known-password account can never reach a shared database:
-`execute-sql.yml` refuses `insert_local_dev_admin.sql` for DEV and PRO, comparing the file name so a
-relative path cannot walk around it, and neither shared script creates a user at all. Administrators
-on the shared DEV database are named people, promoted with `set-admin-role.sql` after they register;
-the README has the steps.
+publishes. The split exists so that the known-password account reaches a shared database only on
+purpose: neither shared script creates a user at all, and `execute-sql.yml` refuses
+`insert_local_dev_admin.sql` for PRO, comparing the file name so a relative path cannot walk around
+it. The shared DEV database may run it (owner ruling 2026-09-30, until an app registration gates the
+DEV apps), and like every run it inserts only into a database with no users. Named administrators are
+promoted with `set-admin-role.sql` after they register, and `fix-deactivate-local-dev-admin.sql`
+retires the published account once one exists; the README has the steps.
 
 ## The Functions host's local settings are each developer's own {#functions-local-settings}
 

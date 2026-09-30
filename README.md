@@ -107,22 +107,24 @@ fresh database is usable immediately:
 
 Seeding by hand with `psql`, run that last file after the other two to get the same account.
 
-**That account is for your own machine only.** Its password is published here, so it lives in its own
-file: `execute-sql.yml` refuses `insert_local_dev_admin.sql` for DEV and PRO alike, and the shared DEV
-database, which is re-seeded with `prod-bootstrap.sql` and `insert_seed_data.sql` alone, gets no administrator from the seed.
-The insert also runs only into a database with no users at all. `.local` is a reserved suffix, so the
-address cannot resolve to a real mailbox.
+**That account never reaches production.** Its password is published here, so it lives in its own
+file, and `execute-sql.yml` refuses `insert_local_dev_admin.sql` for PRO. The shared DEV database may
+hold it (owner ruling 2026-09-30): after re-seeding DEV with `prod-bootstrap.sql` and
+`insert_seed_data.sql`, dispatch `execute-sql.yml` for DEV with `insert_local_dev_admin.sql`. An app
+registration will gate the DEV apps later; until then anyone who reads this README can sign in to DEV
+as that administrator. The insert runs only into a database with no users at all. `.local` is a
+reserved suffix, so the address cannot resolve to a real mailbox.
 
-**Administrators on the shared DEV environment are named people.** Invite the person to the deployed
-admin console with the `admin_console` role (`docs/admin-app/overview.md`). Have them register an
-account through the customer app and confirm its e-mail. `execute-sql.yml` takes no address, so edit
+**Named administrators on the shared DEV environment** come from `set-admin-role.sql`. Invite the
+person to the deployed admin console with the `admin_console` role (`docs/admin-app/overview.md`).
+Have them register an account through the customer app and confirm its e-mail. `execute-sql.yml` takes no address, so edit
 `\set target_email` in `set-admin-role.sql` to theirs on a branch and dispatch `execute-sql.yml` for DEV
 from that branch. After the first, an Administrator adds the rest from the admin console. The same
 script promotes your own account locally if you want a password nobody else knows.
 
-A DEV database seeded before this split may still hold `admin@cleansia.local`. Once a named
-Administrator exists, run `fix-deactivate-local-dev-admin.sql` against DEV through `execute-sql.yml`;
-it refuses while that account is the only active Administrator.
+To retire `admin@cleansia.local` from DEV once a named Administrator exists, run
+`fix-deactivate-local-dev-admin.sql` against DEV through `execute-sql.yml`; it refuses while that
+account is the only active Administrator.
 
 ### Functions host settings
 

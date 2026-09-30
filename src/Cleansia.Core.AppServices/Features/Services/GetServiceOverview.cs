@@ -4,6 +4,7 @@ using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.AppServices.Features.Services.DTOs;
 using Cleansia.Core.AppServices.Mappers;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.Domain.Repositories;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -17,7 +18,7 @@ public class GetServiceOverview
     /// filtered in that country's currency (owner ruling 2026-09-12). Null -- the wizard before the
     /// address step, the home page, the partner app -- is the platform default.
     /// </param>
-    public record Request(string? CountryId = null) : IRequest<IEnumerable<ServiceListItem>>;
+    public record Request(string? CountryId = null) : IRequest<IEnumerable<ServiceListItem>>, IOperatorScopedRequest;
 
     public class Handler(
         IServiceRepository serviceRepository,

@@ -45,15 +45,22 @@ public sealed class OperatorTenantScopeBehaviorOrderTests
 
     private sealed record PlainCommand : ICommand;
 
+    private sealed record ScopedListRead(string? CountryId) : IRequest<IReadOnlyList<string>>, IOperatorScopedRequest;
+
     private static (OperatorTenantScopeBehavior<TRequest, BusinessResult> Behaviour, Mock<ITenantProvider> Tenant, Mock<IOperatorTenantResolver> Resolver)
         Build<TRequest>(string? ambientTenant, OperatorResolution resolution)
-        where TRequest : IRequest<BusinessResult>
+        where TRequest : IRequest<BusinessResult> =>
+        Build<TRequest, BusinessResult>(ambientTenant, resolution);
+
+    private static (OperatorTenantScopeBehavior<TRequest, TResponse> Behaviour, Mock<ITenantProvider> Tenant, Mock<IOperatorTenantResolver> Resolver)
+        Build<TRequest, TResponse>(string? ambientTenant, OperatorResolution resolution)
+        where TRequest : IRequest<TResponse>
     {
         var tenant = new Mock<ITenantProvider>();
         tenant.Setup(t => t.GetCurrentTenantId()).Returns(ambientTenant);
         var resolver = new Mock<IOperatorTenantResolver>();
         resolver.Setup(r => r.ResolveAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>())).ReturnsAsync(resolution);
-        return (new OperatorTenantScopeBehavior<TRequest, BusinessResult>(tenant.Object, resolver.Object,
+        return (new OperatorTenantScopeBehavior<TRequest, TResponse>(tenant.Object, resolver.Object,
             new Cleansia.Core.AppServices.Features.Orders.GuestOrderAccess(
                 Mock.Of<IOrderRepository>(), Mock.Of<IGuestOrderAccessTokenRepository>()),
             new Cleansia.Core.AppServices.Auditing.AuditContext()), tenant, resolver);
@@ -137,6 +144,77 @@ public sealed class OperatorTenantScopeBehaviorOrderTests
         tenant.Verify(t => t.SetTenantOverride(It.IsAny<string>()), Times.Never);
     }
 
+    [Fact]
+    public async Task An_Anonymous_List_Read_Naming_A_Market_Gets_Its_Operator_As_The_Ambient_Tenant()
+    {
+        var (behaviour, tenant, _) = Build<ScopedListRead, IReadOnlyList<string>>(null, new OperatorResolution(true, "cleansia-sk"));
+
+        var result = await behaviour.Handle(
+            new ScopedListRead("SVK"),
+            _ => Task.FromResult<IReadOnlyList<string>>(["entry"]),
+            CancellationToken.None);
+
+        Assert.Equal(["entry"], result);
+        tenant.Verify(t => t.SetTenantOverride("cleansia-sk"), Times.Once);
+    }
+
+    /// <summary>
+    /// A bare list cannot carry a refusal, and a catalogue read naming a country that is not a market
+    /// answers an empty list rather than a 400. So it reaches its handler with no tenant, where the
+    /// filter shows it no company's rows.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task An_Anonymous_List_Read_Naming_No_Operated_Market_Reaches_Its_Handler_Unscoped(bool isMarket)
+    {
+        var (behaviour, tenant, _) = Build<ScopedListRead, IReadOnlyList<string>>(null, new OperatorResolution(isMarket, null));
+        var reachedHandler = false;
+
+        var result = await behaviour.Handle(
+            new ScopedListRead("XXX"),
+            _ => { reachedHandler = true; return Task.FromResult<IReadOnlyList<string>>([]); },
+            CancellationToken.None);
+
+        Assert.True(reachedHandler);
+        Assert.Empty(result);
+        tenant.Verify(t => t.SetTenantOverride(It.IsAny<string>()), Times.Never);
+    }
+
+    /// <summary>
+    /// A generic constraint on the behaviour is not a compile error for the open-generic registration:
+    /// the container silently leaves it out of the chain for a response type it rejects, and the marker
+    /// on that request scopes nothing. That is how the anonymous catalogue read no company's pay
+    /// configs. So the container is asked, the way MediatR asks it, for every marked request.
+    /// </summary>
+    [Fact]
+    public void The_Scope_Behaviour_Wraps_Every_Marked_Request()
+    {
+        var registration = Assert.Single(new ServiceCollection().AddValidators(), d =>
+            d.ServiceType == typeof(IPipelineBehavior<,>) && d.ImplementationType == typeof(OperatorTenantScopeBehavior<,>));
+        IServiceCollection services = new ServiceCollection();
+        services.Add(registration);
+        services.AddSingleton(Mock.Of<ITenantProvider>());
+        services.AddSingleton(Mock.Of<IOperatorTenantResolver>());
+        services.AddSingleton(new Cleansia.Core.AppServices.Features.Orders.GuestOrderAccess(
+            Mock.Of<IOrderRepository>(), Mock.Of<IGuestOrderAccessTokenRepository>()));
+        services.AddSingleton<Cleansia.Core.AppServices.Auditing.IAuditContext>(new Cleansia.Core.AppServices.Auditing.AuditContext());
+        using var provider = services.BuildServiceProvider();
+
+        var unwrapped = typeof(IOperatorScopedRequest).Assembly.GetTypes()
+            .Where(t => typeof(IOperatorScopedRequest).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract)
+            .Select(request => (Request: request, Response: request.GetInterfaces()
+                .Single(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRequest<>))
+                .GetGenericArguments()[0]))
+            .Where(pair => !provider
+                .GetServices(typeof(IPipelineBehavior<,>).MakeGenericType(pair.Request, pair.Response))
+                .Any(behavior => behavior!.GetType().GetGenericTypeDefinition() == typeof(OperatorTenantScopeBehavior<,>)))
+            .Select(pair => $"{pair.Request.FullName} -> {pair.Response.Name}")
+            .ToList();
+
+        Assert.Empty(unwrapped);
+    }
+
     /// <summary>
     /// Market requests, anonymous session acts and secret-key guest operations are explicitly
     /// enumerated so adding an operator-scoped request requires reviewing its tenant resolution.
@@ -167,8 +245,10 @@ public sealed class OperatorTenantScopeBehaviorOrderTests
             "Cleansia.Core.AppServices.Features.Orders.QuoteOrder+Command",
             "Cleansia.Core.AppServices.Features.Orders.QuotePlusSavings+Query",
             "Cleansia.Core.AppServices.Features.Orders.ReportGuestCleanerNoShow+Command",
+            "Cleansia.Core.AppServices.Features.Packages.GetPackageOverview+Request",
             "Cleansia.Core.AppServices.Features.PromoCodes.RequestPromoCode+Command",
             "Cleansia.Core.AppServices.Features.Referrals.ValidateReferral+Query",
+            "Cleansia.Core.AppServices.Features.Services.GetServiceOverview+Request",
             "Cleansia.Core.AppServices.Features.Users.ChangePassword+Command",
             "Cleansia.Core.AppServices.Features.Users.RequestPasswordChange+Command",
         ], marked);

@@ -85,8 +85,7 @@ billing starts the day it ends unless the member cancels first. A failed renewal
 Subscribe screens show the plans priced in the chosen market's currency, a market with no priced plan
 says so instead of showing a price, and a subscription keeps the currency it was started in for life.
 Every surface that offers Plus reads the trial from the plan and asks the server whether this customer
-may still have one; none states a length of its own (the web home page's Plus band is the one
-exception: it reads the plan's days alone). To a customer who may: the Plus page and the wizard's Plus
+may still have one; none states a length of its own. To a customer who may: the Plus page and the wizard's Plus
 step say *N days free, then …* and *Start free trial*, and the Android and iOS home Plus card reads
 *First N days free.* / *Try it free* and the membership card a non-member sees *Try N days free*. To
 one who has had their trial, or on a plan without one, they fall back to the paid wording — *Save on

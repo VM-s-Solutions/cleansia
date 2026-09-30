@@ -239,6 +239,7 @@ describe('the booking and Plus pages offer the trial this customer can still hav
   it.each([
     'plus/src/lib/plus/plus-page.component.html',
     'order-wizard/src/lib/order-wizard/order-wizard.component.html',
+    'home/src/lib/home/components/plus/plus.component.html',
   ])('%s never reads the plan trial column', (template) => {
     expect(readFileSync(join(FEATURES_DIR, template), 'utf8')).not.toContain('trialPeriodDays');
   });

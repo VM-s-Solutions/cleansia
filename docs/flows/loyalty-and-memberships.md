@@ -60,8 +60,7 @@ seeded plans, set per plan by an administrator, `0` for none. It flows like this
    `trialEligible`. The web (`offeredTrialDays`) offers a plan's days unless the customer is a member
    or has had a trial, and offers them to a signed-out visitor; Android (`trialDaysOn`) and iOS
    (`offeredTrialDays`) offer them only when the server says `trialEligible`. A surface with no plan
-   picker offers the monthly plan's days. No client states a length of its own. The web home page's
-   Plus band is the one surface that skips the check: it reads the plan's days alone.
+   picker offers the monthly plan's days. No client states a length of its own.
 2. **The subscribe.** Checkout and the direct subscribe both ask `MembershipTrialResolver`: the plan's
    days, or `0` when `HasEverStartedTrialAsync` finds a trial end on any of the account's enrolments,
    in any status. Stripe gets `TrialPeriodDays` only when that is above zero; there is no per-card

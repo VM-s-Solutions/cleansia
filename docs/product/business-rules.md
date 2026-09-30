@@ -477,10 +477,8 @@ needed a paid period and no plan could have a trial).
   `trialPeriodDays` (`GetPlans`) and the customer's `trialEligible` (`GetMine`), and offer a trial only
   while the customer may still have one. A current member, a customer who has had a trial, and any
   plan at `0` days get the paid wording. The web offers the trial to a signed-out visitor; the mobile
-  apps offer it only once the server has said the customer is eligible. One surface is the exception
-  today: the web home page's Plus band states the monthly plan's days to everyone, member or not, and
-  never asks `trialEligible` (`MembershipPlanFactsService.trialDays`). The subscribe itself still grants
-  no second trial.
+  apps offer it only once the server has said the customer is eligible. The subscribe itself grants no
+  second trial.
 - **Cancelling inside the trial charges nothing.** The benefits run to the trial's end and the
   membership ends there. A first charge that fails pauses the benefits exactly as a failed renewal
   does, below.

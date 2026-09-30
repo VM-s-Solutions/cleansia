@@ -226,6 +226,24 @@ final class MembershipCopyTests: XCTestCase {
         XCTAssertTrue(shell.contains("copy: membershipVM.copy"), "the welcome screen is handed no trial state")
     }
 
+    /// The one surface that takes the payment: the plan's own days would promise a returning customer a
+    /// trial the server does not give, and charge them on day one.
+    func testTheSubscribeScreenPricesLabelsAndDisclosesOnlyTheTrialThisCustomerGets() throws {
+        let subscribe = try read("CleansiaCustomer/Sources/Features/Membership/SubscribePlusScreen.swift")
+        for binding in [
+            "vm.offeredTrialDays(selectedPlan)",
+            "trialDays: trialDays,",
+            "label: trialDays > 0 ? L10n.Membership.ctaStartTrial",
+            "guard let plan = selectedPlan, trialDays > 0 else"
+        ] {
+            XCTAssertTrue(subscribe.contains(binding), "the subscribe screen lost `\(binding)`")
+        }
+        XCTAssertNil(
+            subscribe.range(of: "trialPeriodDays"),
+            "the subscribe screen reads the plan's trial days past the eligibility check"
+        )
+    }
+
     private func localeBundle(_ tag: String) throws -> Bundle {
         let hosts = [Bundle.main, Bundle(for: Self.self)]
         let path = hosts.lazy.compactMap { $0.path(forResource: tag, ofType: "lproj") }.first

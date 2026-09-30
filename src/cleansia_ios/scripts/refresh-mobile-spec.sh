@@ -157,9 +157,12 @@ refresh_one() {
   # has CHANGED, and if the API is not up there is nothing to pull. The committed spec stays exactly
   # as it was, and `generate-api-clients.sh` reads it from disk and needs no host at all — so the
   # common case (regenerating clients from the spec already in git) must not be blocked by this.
+  # Capitalize the first letter portably (macOS ships Bash 3.2, no ${name^}).
+  local cap
+  cap="$(printf '%s' "${name:0:1}" | tr 'a-z' 'A-Z')${name:1}"
   echo "  skipped: no ${name}-mobile-api host on ${url}." >&2
   echo "           The committed spec is untouched, which is correct unless you changed the backend" >&2
-  echo "           contract. Start the host (dotnet run in Cleansia.Web.Mobile.${name^}) only if you" >&2
+  echo "           contract. Start the host (dotnet run in Cleansia.Web.Mobile.${cap}) only if you" >&2
   echo "           did. To regenerate the CLIENTS you do not need this script at all." >&2
   wsl_localhost_note "$url"
   skipped=$((skipped + 1))

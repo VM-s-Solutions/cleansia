@@ -33,8 +33,10 @@ then regenerate — edits made by hand are silently overwritten on the next run.
 
 ## Regenerate
 
+Once: install `openapi-generator` **exactly 7.10.0** as `MANUAL_STEPS.md` §1 describes — not brew's,
+which is the latest release and which the script refuses.
+
 ```sh
-brew install openapi-generator        # once, 7.x
 src/cleansia_ios/scripts/generate-api-clients.sh            # both apps
 src/cleansia_ios/scripts/generate-api-clients.sh partner    # one app
 ```

@@ -75,15 +75,19 @@ severity rules with `./scripts/tests/check-local-config.test.sh`.
 
 ## Generating the Xcode projects (Mac, owner/dev)
 
-The two `.xcodeproj` files are produced by [XcodeGen](https://github.com/yonyz/XcodeGen) from the
+The two `.xcodeproj` files are produced by [XcodeGen](https://github.com/yonaskolb/XcodeGen) from the
 checked-in `project.yml` specs (a hand-written `.pbxproj` is fragile and merge-hostile; the spec is the
-source of truth). They are gitignored — regenerate after pulling or editing a `project.yml`:
+source of truth). They are gitignored — regenerate after pulling or editing a `project.yml`, after the
+API clients, which both `project.yml` files depend on. Install XcodeGen once, and `openapi-generator`
+7.10.0 as `MANUAL_STEPS.md` §1 describes:
 
 ```sh
-brew install xcodegen          # once
-cd src/cleansia_ios/CleansiaPartner  && xcodegen generate
-cd src/cleansia_ios/CleansiaCustomer && xcodegen generate
-open src/cleansia_ios/Cleansia.xcworkspace
+brew install xcodegen
+cd src/cleansia_ios
+./scripts/generate-api-clients.sh
+(cd CleansiaPartner  && xcodegen generate)
+(cd CleansiaCustomer && xcodegen generate)
+open Cleansia.xcworkspace
 ```
 
 The package builds and tests on an iOS simulator. `CleansiaCore` is iOS-only (`platforms: [.iOS(.v16)]`),
@@ -102,15 +106,15 @@ that Android also reads (`src/cleansia_android/openapi/{partner,customer}-mobile
 backend contract, three clients (web NSwag, Android kotlin, iOS swift5), so the platforms can't drift.
 
 - Config + the never-hand-edit discipline: `openapi/README.md` and `openapi/openapi-generator-config.*.yaml`.
-- Regenerate: `scripts/generate-api-clients.sh [partner|customer]` (needs `openapi-generator` 7.x).
+- Regenerate: `scripts/generate-api-clients.sh [partner|customer]` (needs `openapi-generator` **exactly
+  7.10.0** — the script refuses any other; install it as `MANUAL_STEPS.md` §1 describes).
 - Output (`CleansiaPartnerApi/`, `CleansiaCustomerApi/`) is **gitignored and machine-owned** — change the
   spec or the config and regenerate; never hand-edit it.
 - The **auth/session/header spine is hand-written** (`CleansiaCore/Auth`) and **excluded from codegen** —
   see below. Only the business endpoints are generated.
 
-Each app depends on its own generated package. After the first generation, add the local package to the
-app's `project.yml` (these lines are commented-in only once the package directory exists, otherwise
-`xcodegen generate` fails on the missing path):
+Each app depends on its own generated package, already wired into its `project.yml` — which is why the
+clients are generated before `xcodegen generate`, not after:
 
 ```yaml
 packages:
@@ -123,11 +127,8 @@ targets:
       - package: CleansiaPartnerApi
 ```
 
-> **First real generation is owner-gated** (`manual_step: mobile-spec-regen`). The committed specs are
-> current as of 2026-08-14; the clients are generated, wired into both project.yml files, and nothing is
-> blocked on them. A spec **re-dump** stays owner-run because it needs the mobile hosts up. (Was: specs
-> stale pre-T-0272 — that is retired.) Formerly: the toolchain emitted a stale client until the
-> owner regenerates the shared specs. See `MANUAL_STEPS.md` step 7.
+> The clients are generated from the committed specs and need nothing running. A spec **re-dump**
+> needs the mobile hosts up and is only for a backend contract change — see `MANUAL_STEPS.md` step 7.
 
 ## Docs
 

@@ -2,11 +2,39 @@
 
 These steps require a Mac, Xcode, and/or an Apple Developer account. Agents do not run them.
 
-## 1. Install the project generator (once)
+## 1. Install the toolchain (once)
 
 ```sh
-brew install xcodegen
+brew install xcodegen xcbeautify
 ```
+
+`openapi-generator` must be **exactly 7.10.0** — the version CI and Android pin — and
+`scripts/generate-api-clients.sh` refuses any other. **Not** `brew install openapi-generator`: that is
+the latest release. Install the jar CI installs (the checksum is in `.github/workflows/ios-ci.yml`) and
+put a wrapper ahead of `/opt/homebrew/bin` on `PATH`. It needs a JDK 11+; macOS ships none, and
+Homebrew's `openjdk@21` is keg-only, so the wrapper calls its `java` directly:
+
+```sh
+brew install openjdk@21
+curl -fsSL -o ~/openapi-generator-cli-7.10.0.jar \
+  https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/7.10.0/openapi-generator-cli-7.10.0.jar
+echo "615e014705af34861e789e0b2a11075d3c80db134f881e937265479a4a83996e  $HOME/openapi-generator-cli-7.10.0.jar" \
+  | shasum -a 256 -c -
+mkdir -p ~/.local/bin
+printf '#!/usr/bin/env bash\nexec /opt/homebrew/opt/openjdk@21/bin/java -jar "$HOME/openapi-generator-cli-7.10.0.jar" "$@"\n' \
+  > ~/.local/bin/openapi-generator
+chmod +x ~/.local/bin/openapi-generator
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zprofile
+```
+
+Then open a **new** shell and check it — this must print `7.10.0`:
+
+```sh
+openapi-generator version
+```
+
+If a Homebrew copy is already installed, `brew unlink openapi-generator` takes it off `PATH`
+(`brew link` puts it back). The fastlane lanes run the same script, so they need the wrapper too.
 
 ## 1b. Create the local build config (once, and only once)
 
@@ -25,11 +53,18 @@ cannot wipe it — which they previously did to the same values held in `project
 `Info.plist`. **Do this before step 2**, or the first customer build warns that card payment is
 disabled.
 
-## 2. Generate the Xcode projects
+## 2. Generate the API clients, then the Xcode projects
+
+Clients first: both `project.yml` files reference the generated `Cleansia{Partner,Customer}Api`
+packages. On a fresh clone `xcodegen generate` run before them stops with `Spec validation error:
+Invalid local package`; over an older generation it succeeds and the build uses the stale client.
+This is the order CI runs, and it is the same after every pull.
 
 ```sh
-cd src/cleansia_ios/CleansiaPartner  && xcodegen generate
-cd src/cleansia_ios/CleansiaCustomer && xcodegen generate
+cd src/cleansia_ios
+./scripts/generate-api-clients.sh
+(cd CleansiaPartner  && xcodegen generate)
+(cd CleansiaCustomer && xcodegen generate)
 ```
 
 Open `src/cleansia_ios/Cleansia.xcworkspace` in Xcode. Confirm both app schemes
@@ -45,6 +80,12 @@ the macOS host and fails the iOS-only SwiftUI availability checks. Verify agains
 cd src/cleansia_ios/CleansiaCore
 xcodebuild -scheme CleansiaCore -destination 'platform=iOS Simulator,name=iPhone 17' build test
 ```
+
+**Keep the clone out of `~/Desktop`, `~/Documents` and `~/Downloads`.** macOS privacy protection
+does not let the simulator read those folders, and a good number of tests read repo files at run
+time (string catalogs, sources, mascot assets). There they fail with *"Operation not permitted"* —
+builds and archives are unaffected, so it looks like a test regression when it is not. A
+`-derivedDataPath` inside those folders goes further: `CleansiaCoreTests.xctest` does not load at all.
 
 ## 4. Signing & provisioning (Apple Developer)
 
@@ -98,7 +139,7 @@ If a face is ever missing, `CleansiaFont` falls back to the system font at the s
 the apps still build and run, they just lose the brand typeface. Note that this fallback is **per glyph**:
 Poppins covers no Cyrillic at all, so `ru`/`uk` headings already fall back while Latin ones do not.
 
-## 7. Generate the Swift API clients — `manual_step: mobile-spec-regen`
+## 7. Generate the Swift API clients
 
 > **The first generation has HAPPENED — this section is now the re-run instruction, not a blocker.**
 > Verified 2026-08-14: the committed specs carry `Device/Mine`, the device revoke and
@@ -108,8 +149,8 @@ Poppins covers no Cyrillic at all, so `ru`/`uk` headings already fall back while
 
 The typed business clients are generated from the **shared committed mobile specs**
 (`src/cleansia_android/openapi/{partner,customer}-mobile-api.json`) with `openapi-generator` (swift5 +
-URLSession). A **spec re-dump stays owner-run** (`manual_step: mobile-spec-regen`) — it needs the mobile
-API hosts running — but generating from the specs already committed does not.
+URLSession). A **spec re-dump** needs the mobile API hosts running; generating from the specs already
+committed does not.
 
 **To regenerate the clients — this is the whole command, and it needs nothing running:**
 
@@ -145,6 +186,11 @@ the files on disk are correct, and the build still sees the old shape.
 
 Order matters — regenerate, then clear what cached it, then rebuild:
 
+**Quit Xcode before deleting or regenerating a project.** Deleting the two `.xcodeproj` while Xcode
+had the workspace open made it re-resolve packages without them and rewrite the committed
+`Cleansia.xcworkspace/xcshareddata/swiftpm/Package.resolved` down to the one pin `CleansiaCore`
+needs. If `git status` shows that file modified afterwards, `git checkout` it.
+
 ```sh
 cd src/cleansia_ios
 ./scripts/generate-api-clients.sh customer      # prints the model count it produced
@@ -172,18 +218,12 @@ In Xcode the equivalent is **File → Packages → Reset Package Caches**, then 
 Folder. If the two `grep`s above find nothing, the generator genuinely did not run — check that
 `openapi-generator` is on PATH and is 7.10.0.
 
-`openapi-generator` must be **7.10.0** — see the pinned install in `.github/workflows/ios-ci.yml`.
-`brew install openapi-generator` now gives 7.15+, and the hand-written request spine subclasses
-generator internals.
-
-After the first generation, wire each generated package into its app: uncomment the
-`Cleansia{Partner,Customer}Api` entry under `packages:` **and** under the target's `dependencies:` in
-`CleansiaPartner/project.yml` / `CleansiaCustomer/project.yml`, then re-run `xcodegen generate`. See
-`openapi/README.md` ("Wiring into the build") for the full flow and the never-hand-edit discipline.
+`openapi-generator` must be **7.10.0** (§1) — the hand-written request spine subclasses generator
+internals, and the script now stops with the version it found rather than generating with another.
 
 This emits `CleansiaPartnerApi/` and `CleansiaCustomerApi/` (gitignored, machine-owned — never
-hand-edit; see `openapi/README.md`). After the first generation, add each local package to its app's
-`project.yml` and regenerate the Xcode project (the dependency lines are in `README.md`).
+hand-edit; see `openapi/README.md`). Both are already wired into their app's `project.yml`, under
+`packages:` and the target's `dependencies:`; there is nothing to uncomment.
 
 The **auth client stays hand-written** (`CleansiaCore/Auth`) and is **excluded from codegen** — only the
 business endpoints are generated. Generation does not block the rest of Phase 0, which builds against

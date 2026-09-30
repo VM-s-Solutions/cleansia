@@ -24,9 +24,16 @@
 #   ./scripts/generate-api-clients.sh partner    # one app
 #   ./scripts/generate-api-clients.sh customer
 #
-# Requires `openapi-generator` 7.x on PATH (brew install openapi-generator).
+# Requires `openapi-generator` EXACTLY 7.10.0 on PATH — see MANUAL_STEPS.md §1 for the install.
 
 set -euo pipefail
+
+# The same pin as .github/workflows/ios-ci.yml and Android's libs.versions.toml. It is exact, not 7.x:
+# the hand-written Cleansia*/Sources/Generated/*CoreSpineRequestBuilderFactory.swift subclass this
+# generator's URLSessionRequestBuilder internals, and `brew install openapi-generator` gives the
+# latest release, whose output CI has never built. Refusing it here names the problem up front
+# instead of leaving a pile of missing-member errors in Xcode to be traced back to the generator.
+REQUIRED_GENERATOR_VERSION="7.10.0"
 
 IOS_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CONFIG_DIR="${IOS_ROOT}/openapi"
@@ -39,7 +46,15 @@ fi
 
 if ! command -v openapi-generator >/dev/null 2>&1; then
   echo "error: openapi-generator not found on PATH." >&2
-  echo "       Install it with: brew install openapi-generator" >&2
+  echo "       Install ${REQUIRED_GENERATOR_VERSION} as MANUAL_STEPS.md §1 describes (not brew, which gives the latest)." >&2
+  exit 1
+fi
+
+generator_version="$(openapi-generator version 2>/dev/null | tail -n 1 | tr -d '[:space:]' || true)"
+if [[ "$generator_version" != "$REQUIRED_GENERATOR_VERSION" ]]; then
+  echo "error: $(command -v openapi-generator) is openapi-generator ${generator_version:-of an unknown version};" >&2
+  echo "       these clients must be generated with exactly ${REQUIRED_GENERATOR_VERSION}, as CI does." >&2
+  echo "       Install ${REQUIRED_GENERATOR_VERSION} as MANUAL_STEPS.md §1 describes, ahead of any Homebrew copy on PATH." >&2
   exit 1
 fi
 
@@ -92,7 +107,7 @@ SWIFT
   models="${CONFIG_DIR}/../Cleansia${cap}Api/Models"
   if [[ -d "$models" ]]; then
     count="$(find "$models" -name '*.swift' | wc -l | tr -d ' ')"
-    echo "  ${count} model(s) in Cleansia${cap}Api/Sources/Cleansia${cap}Api/Models"
+    echo "  ${count} model(s) in Cleansia${cap}Api/Models"
   else
     echo "  warning: no Models directory at ${models} — the generator produced nothing." >&2
   fi

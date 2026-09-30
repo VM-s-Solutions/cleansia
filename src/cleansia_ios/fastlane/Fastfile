@@ -7,6 +7,10 @@
 #   bundle exec fastlane partner    # build + upload the Partner app
 #   bundle exec fastlane all        # both, in sequence
 #
+# Release calls the production API. To point one TestFlight build at another
+# host — the Azure DEV one, while production has no DNS — pass it per app:
+#   bundle exec fastlane customer api_base_url:https://api-cleansia-customer-mobile-weu-dev.azurewebsites.net
+#
 # These run on the OWNER'S MAC, on purpose: it already has Config/Local.xcconfig
 # + GoogleService-Info.plist (both gitignored) and the Xcode-managed signing
 # identity, so nothing secret ever has to live in CI.
@@ -19,41 +23,56 @@ default_platform(:ios)
 
 IOS_ROOT = File.expand_path("..", __dir__)
 
+# Archived through the workspace, not the app's .xcodeproj: the workspace's committed
+# Package.resolved is what CI builds against. A bare .xcodeproj resolves its packages on its own,
+# which floated transitive Firebase dependencies past those pins and rewrote the committed
+# CleansiaCore/Package.resolved on every run.
+WORKSPACE = File.join(IOS_ROOT, "Cleansia.xcworkspace")
+
 APPS = {
   customer: {
     scheme: "CleansiaCustomer",
-    project: "CleansiaCustomer/CleansiaCustomer.xcodeproj",
+    dir: "CleansiaCustomer",
     bundle_id: "cz.cleansia.customer",
   },
   partner: {
     scheme: "CleansiaPartner",
-    project: "CleansiaPartner/CleansiaPartner.xcodeproj",
+    dir: "CleansiaPartner",
     bundle_id: "cz.cleansia.partner",
   },
 }.freeze
 
 platform :ios do
-  desc "Build + upload the Customer app to TestFlight"
-  lane :customer do
-    ship(:customer)
+  desc "Build + upload the Customer app to TestFlight (optional api_base_url:)"
+  lane :customer do |options|
+    ship(:customer, options)
   end
 
-  desc "Build + upload the Partner app to TestFlight"
-  lane :partner do
-    ship(:partner)
+  desc "Build + upload the Partner app to TestFlight (optional api_base_url:)"
+  lane :partner do |options|
+    ship(:partner, options)
   end
 
   desc "Build + upload BOTH apps to TestFlight"
-  lane :all do
+  lane :all do |options|
+    # The two apps call different hosts, so one URL cannot be right for both.
+    if options[:api_base_url]
+      UI.user_error!("api_base_url is per app: run the customer and partner lanes one at a time")
+    end
     ship(:customer)
     ship(:partner)
   end
 end
 
 # Regenerate → bump → archive → upload for one app.
-def ship(key)
+def ship(key, options = {})
   app = APPS.fetch(key)
   team_id = ENV.fetch("ASC_TEAM_ID")
+  api_base_url = options[:api_base_url]
+  # `api_base_url: https://…` with a space reaches here as "" — refuse it before it becomes an upload.
+  if api_base_url && !api_base_url.start_with?("https://")
+    UI.user_error!("api_base_url must be an https:// URL written with no space after the colon, got #{api_base_url.inspect}")
+  end
 
   api_key = app_store_connect_api_key(
     key_id: ENV.fetch("ASC_KEY_ID"),
@@ -62,12 +81,15 @@ def ship(key)
   )
 
   # 1. Regenerate the two gitignored, build-required inputs from their source of
-  #    truth: the OpenAPI Swift client packages and the .xcodeproj. Safe to run
-  #    at will — the Stripe key and team id live in Config/Local.xcconfig, which
-  #    xcodegen does not write.
-  app_dir = File.join(IOS_ROOT, app[:project].split("/").first)
+  #    truth: the OpenAPI Swift client packages and the .xcodeproj files. Safe to
+  #    run at will — the Stripe key and team id live in Config/Local.xcconfig,
+  #    which xcodegen does not write. BOTH projects, because the workspace
+  #    resolves packages across every project in it: one missing or stale project
+  #    drops its dependencies from that resolution.
   sh("cd #{IOS_ROOT.shellescape} && ./scripts/generate-api-clients.sh")
-  sh("cd #{app_dir.shellescape} && xcodegen generate")
+  APPS.each_value do |project|
+    sh("cd #{File.join(IOS_ROOT, project[:dir]).shellescape} && xcodegen generate")
+  end
 
   # 2. Next build number = one past the highest already on TestFlight (0 → 1 for
   #    the very first upload). TestFlight rejects a duplicate build number.
@@ -81,16 +103,23 @@ def ship(key)
   # 3. Archive (Release, device) with Xcode-managed automatic signing. The build
   #    number is injected as an xcarg — never edited into project.yml — so it
   #    survives the xcodegen regen above and applies to the app + its Live
-  #    Activity extension together (they must share a version).
+  #    Activity extension together (they must share a version). An api_base_url
+  #    is injected the same way: a command-line build setting outranks the
+  #    Release value in project.yml, which is otherwise the production host.
+  xcargs = "CURRENT_PROJECT_VERSION=#{build_number} DEVELOPMENT_TEAM=#{team_id} -allowProvisioningUpdates"
+  if api_base_url
+    UI.important("🌐 #{app[:bundle_id]} build ##{build_number} calls #{api_base_url}, not the Release host")
+    xcargs += " API_BASE_URL=#{api_base_url.shellescape}"
+  end
   build_app(
-    project: File.join(IOS_ROOT, app[:project]),
+    workspace: WORKSPACE,
     scheme: app[:scheme],
     configuration: "Release",
     export_method: "app-store",
     output_directory: File.join(IOS_ROOT, "build"),
     output_name: "#{app[:scheme]}.ipa",
     clean: true,
-    xcargs: "CURRENT_PROJECT_VERSION=#{build_number} DEVELOPMENT_TEAM=#{team_id} -allowProvisioningUpdates",
+    xcargs: xcargs,
     # Let Xcode create/download the App Store profile at export time too (not
     # just archive), so a first non-interactive run can provision the app + the
     # Live Activity extension.

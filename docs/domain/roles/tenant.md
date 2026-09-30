@@ -10,7 +10,7 @@
 > companies exist — no DTO, no endpoint creates, renames or deletes a row); **the lifecycle is
 > admin-written**, by the company's own administrators, through `DeactivateCompany`, `ReactivateCompany`,
 > `WindDownCompany` and `ArchiveCompany` → [Company lifecycle](./company-lifecycle). One row today:
-> `('cleansia-cz', 'Cleansia CZ s.r.o.')`, the first insert in `sql-scripts/insert_seed_data.sql`, stamped
+> `('cleansia-cz', 'Cleansia CZ s.r.o.')`, the first insert in `sql-scripts/prod-bootstrap.sql`, stamped
 > `CreatedBy = 'seed'`.
 
 ## Responsibility (one sentence)

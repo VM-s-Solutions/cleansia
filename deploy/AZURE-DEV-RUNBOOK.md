@@ -646,8 +646,39 @@ any of this — it lives in each provider's console — so it is recorded here a
 > `*-weu-prod` hostnames — except the admin API, whose smoke is the one below: in prod it answers
 > **401** on its own hostname by design.
 
+> **MANUAL_STEP P7 — reference data and the first administrator.** The owner runs this; an agent never
+> runs anything against PRO. The migration creates the schema and seeds nothing but the legal texts, so
+> until this step nobody can register or book: an anonymous request names a market, and no market has
+> an operating company yet. Never while a `Deploy to PRO` run is in flight.
+>
+> 1. Open the database window as in [`AZURE-PROD-POSTURE.md`](AZURE-PROD-POSTURE.md) §6 and run the
+>    bootstrap as the administrator, from the repository root:
+>
+>    ```bash
+>    psql "host=$PG.postgres.database.azure.com port=5432 dbname=Cleansia user=cleansia_admin sslmode=require" \
+>      -v ON_ERROR_STOP=1 -f sql-scripts/prod-bootstrap.sql
+>    ```
+>
+>    It creates the operating company `cleansia-cz`, the five languages, every country with Czechia
+>    serviced, the Czech service cities, CZK, the Czech market and its operator, the Czech invoice
+>    configuration, the cleaner document requirements (the insurance certificate among them), the e-mail
+>    texts, the four loyalty tiers and the Czech size ladder. One transaction; a second run changes
+>    nothing. It writes no users, orders, promo codes, catalogue, prices, Plus plans or company record.
+>    `execute-sql.yml` cannot run it: the database is private and that workflow opens no window.
+> 2. The first administrator: register on the customer site with the address that will administer,
+>    with a password of at least 12 characters, and confirm the e-mail. In the same window set
+>    `target_email` in `sql-scripts/set-admin-role.sql` and run it the same way. Invite that person to
+>    the admin console with `admin_console` (P0 item 8). Every later administrator comes from the console.
+> 3. Close the window (§6), even if a step failed.
+> 4. In the admin console, from the launch values sheet (decision 77): the company record, the catalogue
+>    with its CZK prices and service durations, the cleaner pay rates, the Cleansia Plus plans with their
+>    **live** Stripe Price ids, and the insurance figure on the Czech market. The CZK loyalty divisor and
+>    apology credit (currency form) and the tier thresholds and discounts (loyalty tiers) start at the
+>    documented defaults; change them there where the sheet differs.
+
 Provision order recap: **P1 environment+reviewers → P2 OIDC federation → P3 resource group →
-P4 secrets → P5 what-if, then deploy → P6 SWA tokens + final deploy + smoke test.**
+P4 secrets → P5 what-if, then deploy → P6 SWA tokens + final deploy + smoke test → P7 reference data +
+first administrator.**
 
 ### The admin API is reachable only through the admin console (E-1)
 

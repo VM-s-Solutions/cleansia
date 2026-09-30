@@ -459,7 +459,7 @@ CZK-only — `MembershipPlan`, the last structurally CZK-bound entity, lost its 
 - `Country : Auditable` (NOT `ITenantEntity`) — **platform config**. Has `IsoCode`, `IsServiced`
   (operate-here flag, distinct from `IsActive` admin-catalog flag), translations
   (`Country.cs`). Seeded with ~45 countries; **only CZE has `IsServiced = true`**
-  (`insert_seed_data.sql:82`; all others `false`).
+  (`prod-bootstrap.sql:173`; all others `false`).
 - `Language : BaseEntity` (NOT `ITenantEntity`) — platform config.
 - `CountryConfiguration : Auditable` (NOT `ITenantEntity`), keyed by `CountryId`
   (`CountryConfiguration.cs`). Repo `GetByCountryIdAsync` (`CountryConfigurationRepository.cs`).
@@ -894,8 +894,10 @@ country by the same read that decides currency.
   `CurrencyResolutionService.cs`, `OrderPricingCalculator.cs`, `Country.cs`, `Language.cs`,
   `CountryConfiguration.cs`, `CountryInvoiceConfig.cs`, `CleansiaDbContext.cs:111-179`,
   `TenantProvider.cs`, `MembershipPlan.cs:24`, `Employee.cs`, `ProcessedStripeEvent.cs:11-20`,
-  `ProcessedStripeEventRepository.cs:12-19`, `insert_seed_data.sql` (countries :76+, currencies
-  :517-541, price rows :748-810, invoice configs :940+, country configs :1030+, plans :1819+).
+  `ProcessedStripeEventRepository.cs:12-19`, `prod-bootstrap.sql` (countries :107+, CZK :499-506,
+  the Czech invoice config :516+, the Czech market :564+), `insert_seed_data.sql` (the other
+  currencies :38-47, price rows :256-311, the other invoice configs :450+, the other country configs
+  :514+, plans :743+).
 
 ---
 

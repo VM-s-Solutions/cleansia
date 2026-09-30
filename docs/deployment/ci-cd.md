@@ -322,16 +322,19 @@ the smoke test. Every production value is the owner's, and an agent never runs a
 production. The Stripe secrets are the **live** keys of the operating company's own Stripe account
 (decision 49) — [Environment configuration — Stripe](/deployment/environment-config#stripe).
 
-Two steps follow the deploy, and the first is not yet built.
+Two steps follow the deploy, both runbook step P7.
 
-> **The reference-data bootstrap (E-9) is not yet built.** A migrated production database holds no
-> reference data at all — no operating company, language, country, currency or market — so nobody can
-> register or book. E-9 is a reviewed, idempotent script the owner runs once through the database
-> window: the operating company, the languages, the countries with Czechia serviced, CZK, the Czech
-> market and its operator, its invoice configuration, the cleaner document requirements, the e-mail
-> texts and the loyalty tier skeleton. No users, orders, prices, catalogue, Plus plans or company
-> record: those come from the launch values sheet (decision 77), typed into the admin console.
-> **Retires when:** `sql-scripts/prod-bootstrap.sql` exists.
+**The reference-data bootstrap (E-9).** A migrated production database holds no reference data at
+all — no operating company, language, country, currency or market — so nobody can register or book
+until `sql-scripts/prod-bootstrap.sql` has run. The owner runs it once, as the administrator, through
+the database window. It is one transaction and idempotent, so a second run changes nothing: the
+operating company, the languages, every country with Czechia serviced, the Czech service cities, CZK,
+the Czech market and its operator, its invoice configuration, the cleaner document requirements (the
+insurance certificate among them), the e-mail texts, the four loyalty tiers and the Czech size ladder.
+No users, orders, promo codes, catalogue, prices, pay rates, Plus plans or company record: those come
+from the launch values sheet (decision 77), typed into the admin console. A Development boot runs the
+same file before the DEV fixtures in `insert_seed_data.sql`, and `ProductionBootstrapScriptTests`
+runs it twice on an emptied migrated database and then books on it.
 
 **The first administrator** comes after the bootstrap. Register on the customer site with the address
 that will administer, confirm the e-mail, then run `sql-scripts/set-admin-role.sql` with that address,

@@ -953,9 +953,8 @@ profile-photo and dispute-evidence links are **user-delegation SAS**, minted und
   straight from it. What guards a blob is its signature — S12's point that a link is a bearer
   capability for as long as it lives.
 
-The first production administrator is made by hand, after a reference-data bootstrap that is not yet
-built — [CI/CD — the first production deploy](/deployment/ci-cd#first-production-deploy).
-**Retires when:** `sql-scripts/prod-bootstrap.sql` exists.
+The first production administrator is made by hand, after the reference-data bootstrap
+`sql-scripts/prod-bootstrap.sql` — [CI/CD — the first production deploy](/deployment/ci-cd#first-production-deploy).
 
 ---
 

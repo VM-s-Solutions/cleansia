@@ -5,14 +5,14 @@
 --     admin@cleansia.local  /  Admin123!
 --
 -- The password is published in README.md, so this account must exist only on a developer's own
--- database. A local Development boot runs this file right after insert_seed_data.sql
--- (DatabaseMigrationExtensions.DevelopmentSeedScripts), and only when that boot found an empty
--- Languages table. execute-sql.yml refuses this file for DEV and PRO alike: the shared DEV database
--- gets named administrators instead — register the account, confirm its e-mail, then run
--- set-admin-role.sql against DEV with that address. After the first, an Administrator adds the rest
--- from the admin console.
+-- database. A local Development boot runs this file right after prod-bootstrap.sql and
+-- insert_seed_data.sql (DatabaseMigrationExtensions.DevelopmentSeedScripts), and only when that
+-- boot found an empty Languages table. execute-sql.yml refuses this file for DEV and PRO alike: the
+-- shared DEV database gets named administrators instead — register the account, confirm its e-mail,
+-- then run set-admin-role.sql against DEV with that address. After the first, an Administrator adds
+-- the rest from the admin console.
 --
--- Run it by hand only against a local database, after insert_seed_data.sql: it needs generate_ulid()
+-- Run it by hand only against a local database, after prod-bootstrap.sql: it needs generate_ulid()
 -- and the cleansia-cz tenant row that file creates.
 --
 -- WHY THE HASH IS A LITERAL. Password is stored as v2$ + base64(salt[16] ‖

@@ -1,8 +1,9 @@
 # Role — `OperatorTenantScopeBehavior` + `IOperatorScopedRequest` (CRC card)
 
 > Introduced by **ADR-0061 D3** (`docs/decisions/adr-0061.md`, **`accepted`** 2026-09-13).
-> `Cleansia.Core.AppServices.Tenancy`; a MediatR `IPipelineBehavior` constrained to `BusinessResult`
-> responses, registered in `FluentValidationExtensions` **between `PostCommitDispatchBehavior` and
+> `Cleansia.Core.AppServices.Tenancy`; a MediatR `IPipelineBehavior` over every response type — a
+> `BusinessResult` request is refused, a bare-list read runs unscoped instead (ADR-0061 D3 as amended
+> 2026-09-30) — registered in `FluentValidationExtensions` **between `PostCommitDispatchBehavior` and
 > `ValidationPipelineBehavior`** — the position is the contract, and `OperatorTenantScopeBehaviorOrderTests`
 > pins it. The marker is one property: `string? CountryId`. Nine request records carry it: `Register`,
 > `RegisterEmployee`, `GoogleAuth`, `AppleAuth`, `RequestPromoCode`, `ValidateReferral` (each gained an
@@ -13,7 +14,8 @@
 ## Responsibility (one sentence)
 Before validation runs, give an anonymous market-scoped request the ambient tenant of its market's
 operating company; step aside when a claim exists; refuse `country.not_serviced` when the named country
-is not a market and `tenant.not_found` when it is one nobody operates.
+is not a market and `tenant.not_found` when it is one nobody operates — or, for a read that answers a bare
+list, let it run with no tenant, so it reads no company's rows and answers empty.
 
 ## Collaborators
 - `ITenantProvider` — read once (`GetCurrentTenantId() is not null` ⇒ a claim is present ⇒ do nothing;

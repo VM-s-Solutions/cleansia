@@ -4,6 +4,7 @@ using Cleansia.Core.AppServices.Features.Packages.DTOs;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.AppServices.Mappers;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.Domain.Repositories;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -13,7 +14,7 @@ namespace Cleansia.Core.AppServices.Features.Packages;
 public class GetPackageOverview
 {
     /// <param name="CountryId">See <see cref="Services.GetServiceOverview.Request"/>.</param>
-    public record Request(string? CountryId = null) : IRequest<IEnumerable<PackageListItem>>;
+    public record Request(string? CountryId = null) : IRequest<IEnumerable<PackageListItem>>, IOperatorScopedRequest;
 
     public class Handler(
         IPackageRepository packageRepository,

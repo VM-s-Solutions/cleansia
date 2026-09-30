@@ -21,8 +21,9 @@ public sealed class OperatorTenantScopeBehavior<TRequest, TResponse>(
     IAuditContext auditContext)
     : IPipelineBehavior<TRequest, TResponse>
     where TRequest : IRequest<TResponse>
-    where TResponse : BusinessResult
 {
+    private static readonly bool ResponseCarriesFailure = typeof(BusinessResult).IsAssignableFrom(typeof(TResponse));
+
     public async Task<TResponse> Handle(
         TRequest request,
         RequestHandlerDelegate<TResponse> next,
@@ -56,6 +57,13 @@ public sealed class OperatorTenantScopeBehavior<TRequest, TResponse>(
         }
 
         var (isMarket, operatorTenantId) = await resolver.ResolveAsync(scoped.CountryId, cancellationToken);
+        if (!ResponseCarriesFailure && (!isMarket || operatorTenantId is null))
+        {
+            // A bare list cannot carry the refusal: it runs with no tenant, the filter shows it no
+            // company's rows, and a country that is not an operated market gets an empty answer.
+            return await next(cancellationToken);
+        }
+
         if (!isMarket)
         {
             return Refuse(BusinessErrorMessage.CountryNotServiced);

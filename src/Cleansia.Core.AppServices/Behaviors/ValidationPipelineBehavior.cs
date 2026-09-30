@@ -107,9 +107,8 @@ public class ValidationPipelineBehavior<TRequest, TResponse>
         return string.IsNullOrEmpty(failure.PropertyName) ? code : failure.PropertyName;
     }
 
-    internal static TResult CreateValidationResult<TResult>(Error[] errors)
-        where TResult : BusinessResult =>
-        (TResult)CreateValidationResult(typeof(TResult), errors);
+    internal static TResult CreateValidationResult<TResult>(Error[] errors) =>
+        (TResult)(object)CreateValidationResult(typeof(TResult), errors);
 
     private static BusinessResult CreateValidationResult(Type resultType, Error[] errors)
     {

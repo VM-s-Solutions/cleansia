@@ -30,13 +30,18 @@ function dto(overrides: Partial<UserNotificationDto> = {}): UserNotificationDto 
 }
 
 describe('the admin event catalogue mirror', () => {
-  it('pins the nine keys the backend catalogue declares, in its order', () => {
+  it('pins the fourteen keys the backend catalogue declares, in its order', () => {
     expect(ADMIN_NOTIFICATION_EVENT_KEYS).toEqual([
       'admin.order.new',
       'admin.order.crew_lost',
+      'admin.order.cleaner_not_started',
+      'admin.order.lockout_reported',
       'admin.dispute.filed',
       'admin.dispute.chargeback',
+      'admin.dispute.chargeback_unmatched',
       'admin.payment.failed',
+      'admin.payment.refund_stuck',
+      'admin.payment.refund_needs_retry',
       'admin.erasure.failed',
       'admin.company.wind_down_requested',
       'admin.company.wind_down_run',
@@ -51,13 +56,22 @@ describe('the admin event catalogue mirror', () => {
     expect(isAdminNotificationEventKey(undefined)).toBe(false);
   });
 
+  it('routes an unmatched chargeback nowhere, since there is no dispute to open', () => {
+    expect(getNotificationRoute('admin.dispute.chargeback_unmatched', { amount: '100 CZK', stripeDisputeId: 'dp_1' })).toBeNull();
+  });
+
   it('sorts every key into a family the page has an icon for', () => {
     const families = ADMIN_NOTIFICATION_EVENT_KEYS.map(getNotificationFamily);
     expect(families).toEqual([
       NotificationFamily.Order,
       NotificationFamily.Order,
+      NotificationFamily.Order,
+      NotificationFamily.Order,
       NotificationFamily.Dispute,
       NotificationFamily.Dispute,
+      NotificationFamily.Dispute,
+      NotificationFamily.Payment,
+      NotificationFamily.Payment,
       NotificationFamily.Payment,
       NotificationFamily.Erasure,
       NotificationFamily.Company,
@@ -139,7 +153,15 @@ describe('buildNotificationParams', () => {
 });
 
 describe('getNotificationRoute', () => {
-  it.each(['admin.order.new', 'admin.order.crew_lost', 'admin.payment.failed'])('%s opens the order', (key) => {
+  it.each([
+    'admin.order.new',
+    'admin.order.crew_lost',
+    'admin.order.cleaner_not_started',
+    'admin.order.lockout_reported',
+    'admin.payment.failed',
+    'admin.payment.refund_stuck',
+    'admin.payment.refund_needs_retry',
+  ])('%s opens the order', (key) => {
     expect(getNotificationRoute(key, { orderId: 'o-1', disputeId: 'd-1' })).toEqual(['order-management', 'o-1']);
   });
 

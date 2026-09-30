@@ -10,6 +10,7 @@ import cz.cleansia.partner.core.settings.AppSettingsRepository
 import cz.cleansia.partner.core.settings.LanguagePreference
 import cz.cleansia.partner.core.settings.LanguagePreferenceSync
 import cz.cleansia.partner.data.auth.AuthRepository
+import cz.cleansia.partner.data.profile.CleanerLegalDocument
 import cz.cleansia.partner.data.profile.ProfileRepository
 import cz.cleansia.partner.navigation.NavRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -46,6 +47,11 @@ data class RegistrationLockUiState(
     val isBackgroundRefreshing: Boolean = false,
     val status: RegistrationCompletionStatus? = null,
     /**
+     * The contract documents in force for this cleaner, or null until first read. An admin cannot
+     * approve a cleaner who has not accepted them, so they are a step of their own.
+     */
+    val legalDocuments: List<CleanerLegalDocument>? = null,
+    /**
      * Translated error message from the most recent failed refresh, or
      * null when the last refresh succeeded. Surfaced inline on the lock
      * screen as a banner with a Retry button — pull-to-refresh is also
@@ -78,6 +84,7 @@ enum class StepStatus { Done, Pending, Missing }
 enum class StepCategory(val key: String) {
     Profile("profile"),
     Documents("documents"),
+    LegalDocuments("legal_documents"),
     Approval("approval"),
 }
 
@@ -209,6 +216,9 @@ class RegistrationLockViewModel @Inject constructor(
             if (userInitiated) it.copy(isUserRefreshing = true)
             else it.copy(isBackgroundRefreshing = true)
         }
+        val documents = profileRepository.getLegalDocuments(appSettingsRepository.emailLanguageTag())
+        val documentsRead = (documents as? ApiResult.Success)?.data
+        val documentsError = (documents as? ApiResult.Error)?.let { errorTranslator.translate(it.error) }
         when (val result = profileRepository.getRegistrationStatus()) {
             is ApiResult.Success -> _uiState.update {
                 // Clear both loading flags + any prior error on success.
@@ -219,7 +229,8 @@ class RegistrationLockViewModel @Inject constructor(
                     isUserRefreshing = false,
                     isBackgroundRefreshing = false,
                     status = result.data,
-                    errorMessage = null,
+                    legalDocuments = documentsRead ?: it.legalDocuments,
+                    errorMessage = documentsError,
                     hasLoadedOnce = true,
                 )
             }
@@ -234,6 +245,7 @@ class RegistrationLockViewModel @Inject constructor(
                 it.copy(
                     isUserRefreshing = false,
                     isBackgroundRefreshing = false,
+                    legalDocuments = documentsRead ?: it.legalDocuments,
                     errorMessage = errorTranslator.translate(result.error),
                     hasLoadedOnce = true,
                 )
@@ -259,11 +271,18 @@ class RegistrationLockViewModel @Inject constructor(
          */
         const val STALE_WINDOW_MS: Long = 15_000L
 
-        /** Builds the 3 category rows the lock screen renders. */
-        fun buildSteps(status: RegistrationCompletionStatus?): List<StepRow> {
+        /**
+         * Builds the category rows the lock screen renders. The contract-documents row appears only
+         * while a document is in force; until then approval does not wait on it.
+         */
+        fun buildSteps(
+            status: RegistrationCompletionStatus?,
+            legalDocuments: List<CleanerLegalDocument>? = null,
+        ): List<StepRow> {
             val profileMissing = status?.missingFields.orEmpty()
             val profileDone = status?.hasCompletedProfile == true
             val docsDone = status?.areDocumentsUploaded == true
+            val legalDone = legalDocuments.orEmpty().all { it.isAccepted }
             val contract = status?.contractStatus
 
             val approvalStatus: StepStatus
@@ -282,7 +301,7 @@ class RegistrationLockViewModel @Inject constructor(
                     // mailto link directly in the row, not a NavRoute.
                     approvalFixDestination = null
                 }
-                profileDone && docsDone &&
+                profileDone && docsDone && legalDone &&
                     contract == ContractStatus._1 -> {
                     approvalStatus = StepStatus.Pending
                     approvalDetails = listOf("registration_lock.approval_awaiting_review")
@@ -295,7 +314,7 @@ class RegistrationLockViewModel @Inject constructor(
                 }
             }
 
-            return listOf(
+            return listOfNotNull(
                 StepRow(
                     category = StepCategory.Profile,
                     status = if (profileDone) StepStatus.Done else StepStatus.Missing,
@@ -315,6 +334,14 @@ class RegistrationLockViewModel @Inject constructor(
                     else listOf("registration_lock.documents_required"),
                     fixDestination = if (docsDone) null else NavRoute.ProfileDocuments,
                 ),
+                legalDocuments?.takeIf { it.isNotEmpty() }?.let {
+                    StepRow(
+                        category = StepCategory.LegalDocuments,
+                        status = if (legalDone) StepStatus.Done else StepStatus.Missing,
+                        detailKeys = emptyList(),
+                        fixDestination = if (legalDone) null else NavRoute.LegalDocuments,
+                    )
+                },
                 StepRow(
                     category = StepCategory.Approval,
                     status = approvalStatus,

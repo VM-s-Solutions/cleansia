@@ -57,6 +57,25 @@ public class GetAvailableJobsPreviewCurrencyScopeTests
         Assert.Equal(EurPayPerJob, response.TotalPotentialEarnings);
     }
 
+    [Fact]
+    public async Task The_Headline_Sums_One_Seat_Of_A_Crew_Job_Raised_By_Its_Level()
+    {
+        var service = Service.Create("category-scope", "Deep clean", "Payable", 120);
+        service.Id = ServiceId;
+        var order = NewOfferableOrder("order-eur-crew", EurId, totalPrice: 150m, service);
+        order.UpdateEstimatedTime(240).CalculateRequiredEmployees(spareSeats: 0);
+        order.SetDirtinessSurcharge(DirtinessLevel.Heavy, 90m);
+
+        var handler = CreateHandler([order], paidIn: EurId);
+
+        var result = await (Task<BusinessResult<AvailableJobsPreviewResponse>>)HandleMethod.Invoke(
+            handler, [new GetAvailableJobsPreview.Query(Limit: 5), CancellationToken.None])!;
+
+        // 13 over two seats is 6.50; heavy adds 60 % of the job's 13, 3.90 a seat.
+        Assert.True(result.IsSuccess);
+        Assert.Equal(10.40m, result.Value!.TotalPotentialEarnings);
+    }
+
     // The handler is internal, as every query handler in this folder is; the dashboard sibling test
     // reaches its (public) handler the same Activator way.
     private static readonly Type HandlerType =

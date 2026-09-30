@@ -65,7 +65,6 @@ describe('OrderMembershipFacade', () => {
       expect(facade.loading()).toBe(false);
       expect(facade.loadFailed()).toBe(false);
       expect(facade.expressWaiverStatus()).toBe('none');
-      expect(facade.freeCancellationWindowHours()).toBeNull();
       expect(facade.expressUpgradesRemaining()).toBe(0);
     });
 
@@ -82,7 +81,6 @@ describe('OrderMembershipFacade', () => {
       expect(membershipClient.getMine).toHaveBeenCalledTimes(1);
       expect(facade.loading()).toBe(false);
       expect(facade.loadFailed()).toBe(false);
-      expect(facade.freeCancellationWindowHours()).toBe(4);
       expect(facade.expressUpgradesRemaining()).toBe(2);
       expect(facade.expressWaiverStatus()).toBe('available');
       expect(facade.expressWaiverAvailable()).toBe(true);
@@ -126,17 +124,15 @@ describe('OrderMembershipFacade', () => {
       facade.load(true);
 
       expect(facade.expressWaiverStatus()).toBe('none');
-      expect(facade.freeCancellationWindowHours()).toBe(4);
     });
 
-    it('leaves a non-member with no cancellation override and no express claim', () => {
+    it('leaves a non-member with no express claim', () => {
       membershipClient.getMine.mockReturnValue(
         of(buildMembership({ hasMembership: false })),
       );
 
       facade.load(true);
 
-      expect(facade.freeCancellationWindowHours()).toBeNull();
       expect(facade.expressWaiverStatus()).toBe('none');
       expect(facade.loadFailed()).toBe(false);
     });
@@ -149,7 +145,6 @@ describe('OrderMembershipFacade', () => {
       expect(facade.loadFailed()).toBe(true);
       expect(facade.loading()).toBe(false);
       expect(facade.expressWaiverStatus()).toBe('none');
-      expect(facade.freeCancellationWindowHours()).toBeNull();
     });
   });
 

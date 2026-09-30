@@ -3,6 +3,8 @@ import {
   CreateMembershipCheckoutSessionCommand,
   CustomerClient,
   GetMembershipPlansResponse,
+  GetMyMembershipResponse,
+  MembershipStatus,
 } from '@cleansia/customer-services';
 import { selectMarketCountryId } from '@cleansia/customer-stores';
 import { SnackbarService } from '@cleansia/services';
@@ -49,6 +51,7 @@ describe('PlusPageFacade', () => {
   let store: MockStore;
   let getPlans: jest.Mock;
   let createCheckoutSession: jest.Mock;
+  let getMine: jest.Mock;
 
   // Resets first: several tests re-mock `getPlans` and rebuild, and configuring
   // a TestBed that has already been instantiated throws rather than replacing
@@ -63,7 +66,7 @@ describe('PlusPageFacade', () => {
         }),
         {
           provide: CustomerClient,
-          useValue: { membershipClient: { getPlans, createCheckoutSession } },
+          useValue: { membershipClient: { getPlans, createCheckoutSession, getMine } },
         },
         // Reached only by startCheckout's failure path, which these plan-facts
         // cases never take — the facade still needs them to construct.
@@ -78,6 +81,7 @@ describe('PlusPageFacade', () => {
   beforeEach(() => {
     getPlans = jest.fn().mockReturnValue(of(SEEDED));
     createCheckoutSession = jest.fn().mockReturnValue(of({ checkoutUrl: '' }));
+    getMine = jest.fn().mockReturnValue(of(null));
     build();
   });
 
@@ -172,6 +176,29 @@ describe('PlusPageFacade', () => {
       facade.startCheckout('PLUS_MONTHLY');
 
       expect(snackbar.showError).toHaveBeenCalledWith('pages.plus.checkout_failed');
+    });
+  });
+
+  // The server refuses a second subscription while a failed renewal is alive, so the page opens
+  // the member's panel for it instead of a checkout.
+  describe('who counts as a member', () => {
+    const membership = (hasMembership: boolean, status?: MembershipStatus) =>
+      GetMyMembershipResponse.fromJS({ hasMembership, status });
+
+    it('counts a member whose renewal payment failed', () => {
+      getMine.mockReturnValue(of(membership(true, MembershipStatus.PastDue)));
+
+      facade.refreshMembership();
+
+      expect(facade.isMember()).toBe(true);
+    });
+
+    it('does not count a customer with no membership', () => {
+      getMine.mockReturnValue(of(membership(false)));
+
+      facade.refreshMembership();
+
+      expect(facade.isMember()).toBe(false);
     });
   });
 

@@ -30,19 +30,44 @@
 
       @if (loadingConsents()) {
         <p>{{ 'global.loading' | translate }}</p>
+      } @else if (facade.consentsError()) {
+        <p>{{ 'pages.gdpr.consents_load_error' | translate }}</p>
+        <cleansia-button
+          [title]="'global.actions.retry' | translate"
+          [severity]="'secondary'"
+          [icon]="'pi pi-refresh'"
+          (clickFn)="facade.loadConsents()"
+        />
       } @else {
         <div class="customer-gdpr__consents">
-          @for (type of [ConsentType.TermsOfService, ConsentType.PrivacyPolicy, ConsentType.MarketingEmails, ConsentType.DataProcessing]; track type) {
+          @for (row of facade.legalConsents(); track row.type) {
             <div class="customer-gdpr__consent-item">
               <div>
-                <strong>{{ consentLabels[type] | translate }}</strong>
+                <strong>{{ row.labelKey | translate }}</strong>
+                <p class="customer-gdpr__consent-detail">
+                  {{ row.detailKey | translate: row.detailParams }}
+                </p>
+                @if (row.newerVersionInForce) {
+                  <p class="customer-gdpr__consent-detail">
+                    {{ 'pages.gdpr.legal.newer_version' | translate }}
+                  </p>
+                }
               </div>
-              <p-toggleSwitch
-                [ngModel]="isConsentGranted(type)"
-                (ngModelChange)="toggleConsent(type, $event)"
-              />
             </div>
           }
+          <div class="customer-gdpr__consent-item">
+            <div>
+              <strong>{{ 'pages.gdpr.marketing.title' | translate }}</strong>
+              <p class="customer-gdpr__consent-detail">
+                {{ 'pages.gdpr.marketing.description' | translate }}
+              </p>
+            </div>
+            <p-toggleSwitch
+              [ngModel]="facade.marketingConsent()"
+              (ngModelChange)="facade.setMarketingConsent($event)"
+              [disabled]="facade.savingMarketing()"
+            />
+          </div>
         </div>
       }
     </div>

@@ -25,8 +25,8 @@ import cz.cleansia.partner.api.model.OrderItem
 
 /**
  * Property + selected services + selected packages + extras card. This is
- * the cleaner's "what am I doing here?" reference: rooms / baths on top
- * for a one-glance scope read, then the crew the job needs and whether a
+ * the cleaner's "what am I doing here?" reference: rooms / baths and the
+ * dirtiness level on top for a one-glance scope read, then the crew the job needs and whether a
  * seat is still open, then the named services they're paid to deliver,
  * package adds with their listed prices, and finally the emoji-tagged
  * extras the customer ticked.
@@ -73,6 +73,15 @@ fun ScopeCard(
             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
             color = MaterialTheme.colorScheme.onSurface,
         )
+
+        dirtinessLevelLabelRes(order.dirtinessLevel)?.let { res ->
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = stringResource(res),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
 
         val crew = order.orderCrew()
         if (crew != null) {

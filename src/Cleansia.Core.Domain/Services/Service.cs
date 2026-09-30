@@ -20,6 +20,12 @@ public class Service : Auditable
 
     public int EstimatedTime { get; private set; }
 
+    /// <summary>
+    /// Minutes added to <see cref="EstimatedTime"/> per room and per bathroom of the home, the same count
+    /// the per-room price multiplies. → /product/business-rules
+    /// </summary>
+    public int MinutesPerRoom { get; private set; }
+
     [Required]
     public string CategoryId { get; private set; }
     public ServiceCategory? Category { get; private set; }
@@ -33,20 +39,23 @@ public class Service : Auditable
     private ICollection<OrderService> _includedInOrders = [];
     public IReadOnlyCollection<OrderService> IncludedInOrders => _includedInOrders.ToList().AsReadOnly();
 
-    public static Service Create(string categoryId, string name, string description, int estimatedTime = 0) => new()
+    public static Service Create(
+        string categoryId, string name, string description, int estimatedTime = 0, int minutesPerRoom = 0) => new()
     {
         CategoryId = categoryId,
         Name = name,
         Description = description,
-        EstimatedTime = estimatedTime
+        EstimatedTime = estimatedTime,
+        MinutesPerRoom = minutesPerRoom
     };
 
-    public Service Update(string categoryId, string name, string description, int estimatedTime)
+    public Service Update(string categoryId, string name, string description, int estimatedTime, int minutesPerRoom)
     {
         CategoryId = categoryId;
         Name = name;
         Description = description;
         EstimatedTime = estimatedTime;
+        MinutesPerRoom = minutesPerRoom;
         return this;
     }
 

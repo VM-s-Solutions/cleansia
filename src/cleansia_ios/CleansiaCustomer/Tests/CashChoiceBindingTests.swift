@@ -50,12 +50,15 @@ final class CashChoiceBindingTests: XCTestCase {
 
     /// A refused slide has sent nothing, so the slider must come back for the customer's next choice.
     func testARefusedCashSubmitHandsTheSliderBack() throws {
-        let submit = try block(in: read(Self.sheet), after: "private func submit() async {")
-        let refused = try XCTUnwrap(submit.range(of: "case .paymentMethodCleared:"), "the refusal is not handled")
-        let next = submit.range(of: "case ", range: refused.upperBound ..< submit.endIndex)?.lowerBound
-            ?? submit.endIndex
+        let source = try read(Self.sheet)
+        let submit = try block(in: source, after: "private func submit() async {")
+        XCTAssertTrue(submit.contains("await handle(vm.submit())"), "the submit's outcome is never handled")
+        let handle = try block(in: source, after: "private func handle(_ outcome: BookingSubmitOutcome) async {")
+        let refused = try XCTUnwrap(handle.range(of: "case .paymentMethodCleared:"), "the refusal is not handled")
+        let next = handle.range(of: "case ", range: refused.upperBound ..< handle.endIndex)?.lowerBound
+            ?? handle.endIndex
         XCTAssertTrue(
-            submit[refused.upperBound ..< next].contains("slideResetCount += 1"),
+            handle[refused.upperBound ..< next].contains("slideResetCount += 1"),
             "a refused cash submit leaves the slider spent"
         )
     }

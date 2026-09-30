@@ -95,7 +95,7 @@ targets:
         API_BASE_URL: $(API_BASE_URL)
         NSCameraUsageDescription: Cleansia uses the camera to capture before and after photos of your cleaning jobs.
         NSPhotoLibraryUsageDescription: Cleansia needs access to your photos so you can attach before and after photos to your jobs.
-        NSLocationWhenInUseUsageDescription: Cleansia uses your location to center the map on your current position when you set your address.
+        NSLocationWhenInUseUsageDescription: Cleansia uses your location to center the map when you set your address and to show on your job list how far each job is from you. The distance is calculated on your device only.
         UIAppFonts:
           - Poppins-Medium.ttf
           - Poppins-SemiBold.ttf
@@ -115,6 +115,14 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         TARGETED_DEVICE_FAMILY: "1"
         API_BASE_URL: https:/$()/api-cleansia-partner-mobile-weu-dev.azurewebsites.net
+      configs:
+        # The production custom domain, matching the Android release build. The TestFlight lanes
+        # archive Release, so this is also the host a TestFlight upload calls by default. Owner step
+        # before the first one: the CNAME + asuid TXT records (deploy/AZURE-DEV-RUNBOOK.md §12.1),
+        # then an `api-partner-mobile` key in weu.prod.bicepparam's customDomains, which main.bicep
+        # binds to the prod Partner Mobile host.
+        Release:
+          API_BASE_URL: https:/$()/api-partner-mobile.cleansia.cz
     preBuildScripts:
       - name: Verify local build configuration
         basedOnDependencyAnalysis: false

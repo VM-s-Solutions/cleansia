@@ -174,18 +174,25 @@ fun SubscribePlusScreen(
             Spacer(Modifier.height(12.dp))
 
             // Order matters: economic value first, niche perks last.
-            PerkTile(
-                icon = Icons.Outlined.LocalOffer,
-                title = stringResource(R.string.membership_perk_discount_title),
-                desc = stringResource(R.string.membership_perk_discount_desc),
-            )
-            Spacer(Modifier.height(10.dp))
-            PerkTile(
-                icon = Icons.Outlined.CheckCircle,
-                title = stringResource(R.string.membership_perk_cancellation_title),
-                desc = stringResource(R.string.membership_perk_cancellation_desc),
-            )
-            Spacer(Modifier.height(10.dp))
+            val discountPercent = selectedPlan?.discountPercentage?.toInt() ?: 0
+            val freeCancellationHours = selectedPlan?.freeCancellationWindowHours ?: 0
+            val expressPerMonth = selectedPlan?.expressUpgradesPerMonth ?: 0
+            if (discountPercent > 0) {
+                PerkTile(
+                    icon = Icons.Outlined.LocalOffer,
+                    title = stringResource(R.string.membership_perk_discount_title, discountPercent),
+                    desc = stringResource(R.string.membership_perk_discount_desc),
+                )
+                Spacer(Modifier.height(10.dp))
+            }
+            if (freeCancellationHours > 0) {
+                PerkTile(
+                    icon = Icons.Outlined.CheckCircle,
+                    title = stringResource(R.string.membership_perk_cancellation_title),
+                    desc = stringResource(R.string.membership_perk_cancellation_desc, freeCancellationHours),
+                )
+                Spacer(Modifier.height(10.dp))
+            }
             PerkTile(
                 icon = Icons.Outlined.History,
                 title = stringResource(R.string.membership_perk_grace_title),
@@ -203,12 +210,14 @@ fun SubscribePlusScreen(
                 title = stringResource(R.string.membership_perk_recurring_title),
                 desc = stringResource(R.string.membership_perk_recurring_desc),
             )
-            Spacer(Modifier.height(10.dp))
-            PerkTile(
-                icon = Icons.Outlined.Bolt,
-                title = stringResource(R.string.membership_perk_express_title),
-                desc = stringResource(R.string.membership_perk_express_desc),
-            )
+            if (expressPerMonth > 0) {
+                Spacer(Modifier.height(10.dp))
+                PerkTile(
+                    icon = Icons.Outlined.Bolt,
+                    title = stringResource(R.string.membership_perk_express_title),
+                    desc = stringResource(R.string.membership_perk_express_desc, expressPerMonth),
+                )
+            }
 
             Spacer(Modifier.height(24.dp))
         }
@@ -700,8 +709,8 @@ private fun StickyCtaBar(
 
 /**
  * Build the fine-print disclosure under the CTA. Trial-aware: when the plan
- * has a trial, lead with "Then X/month, cancel anytime"; otherwise the
- * plain "Cancel anytime" disclosure.
+ * has a trial, lead with "Then X/month"; otherwise the renewal and
+ * cancellation terms.
  */
 @Composable
 private fun buildDisclosure(plan: MembershipPlanDto?): String {

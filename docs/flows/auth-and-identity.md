@@ -10,11 +10,14 @@ use**. Only a hash of it is stored.
 | Host | Access token |
 |---|---|
 | Admin web | 15 min |
-| Partner web, Customer web | 24 h |
+| Partner web, Customer web | 30 min |
 | Both mobile hosts | 30 min |
 
-The admin figure is deliberate: on web there is no device id, so the TTL *is* the revocation window.
-Partner and customer web stay at 24 h by a separate, recorded decision.
+The web figures are deliberate: on web there is no device id, so the TTL *is* the revocation window.
+Partner and customer web moved from 24 h to 30 min on 2026-09-28; both web clients refresh silently on
+a `401` and replay the request, so a signed-in session outlives its access token. The customer site's
+server render is always anonymous and never sees the token.
+→ [ADR-0030](/decisions/adr-0030)
 
 ## Rotation detects theft
 
@@ -84,13 +87,13 @@ that could sign in where it had no business.
 
 A customer granting a consent again later under a **different document** moves the consent row to it
 and writes a `customer.consent.grant` row; withdrawing writes `customer.consent.withdraw`. The consent
-row is the current state; those audit rows are the history. Nobody is re-prompted when a new version
-of the text takes effect. On the partner hosts the same `GrantConsent` command stamps no document, and
-a cleaner's registration (`RegisterEmployee`) sends its tick too — the partner web form does, both
-mobile partner apps still park it for the first sign-in — and grants the two employee consents
-unversioned: a cleaner accepts a different document ([ADR-0041](/decisions/adr-0041)), whose
-versioning is not built, and employee registration is not gated. → [ADR-0062](/decisions/adr-0062) D4 as
-amended, [What is recorded about a customer](/product/business-rules#customer-record)
+row is the current state; those audit rows are the history. Since 2026-09-28 a newer terms or privacy
+text is accepted before the next booking (`UserConsent.Covers`)
+→ [Business rules](/product/business-rules#customer-record). On the partner hosts the same
+`GrantConsent` command stamps no document, and a cleaner's registration records no customer consent
+(`termsAccepted` stays on the wire, unread); a cleaner accepts their own versioned documents through
+`AcceptLegalDocument` → [A cleaner's own documents](/product/business-rules#cleaner-documents).
+Employee registration is not gated. → [ADR-0062](/decisions/adr-0062) D4 as amended
 
 ## Sign-in and session acts leave a row {#session-rows}
 

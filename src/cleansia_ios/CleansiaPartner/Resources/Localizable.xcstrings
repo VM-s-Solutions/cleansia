@@ -4572,7 +4572,7 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Stále máte nevyrovnanou mzdu. Až bude mzdové období vyplaceno, můžete o smazání požádat znovu."
+            "value": "Stále máte nevyplacenou odměnu. Až bude výplatní období vyplaceno, můžete o smazání požádat znovu."
           }
         },
         "en": {
@@ -4590,7 +4590,7 @@
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Stále máte nevyrovnanú mzdu. Keď bude mzdové obdobie vyplatené, môžete o zmazanie požiadať znova."
+            "value": "Stále máte nevyplatenú odmenu. Keď bude výplatné obdobie vyplatené, môžete o zmazanie požiadať znova."
           }
         },
         "uk": {
@@ -4632,41 +4632,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Запит на видалення акаунта"
-          }
-        }
-      }
-    },
-    "delete_account_kept_agreement": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dohodu o samofakturaci k těmto fakturám"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The self-billing agreement behind those invoices"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Соглашение о самовыставлении счетов к ним"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dohodu o samofakturácii k týmto faktúram"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Угоду про самовиставлення рахунків до них"
           }
         }
       }
@@ -4747,7 +4712,7 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Mzdové záznamy za dokončené zakázky"
+            "value": "Záznamy o odměnách za dokončené zakázky"
           }
         },
         "en": {
@@ -4765,7 +4730,7 @@
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Mzdové záznamy za dokončené zákazky"
+            "value": "Záznamy o odmenách za dokončené zákazky"
           }
         },
         "uk": {
@@ -5787,6 +5752,111 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ваші пристрої"
+          }
+        }
+      }
+    },
+    "dirtiness_level_heavy": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Silné znečištění"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heavy dirtiness"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сильное загрязнение"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Silné znečistenie"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сильне забруднення"
+          }
+        }
+      }
+    },
+    "dirtiness_level_increased": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zvýšené znečištění"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Increased dirtiness"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Повышенное загрязнение"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zvýšené znečistenie"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Підвищене забруднення"
+          }
+        }
+      }
+    },
+    "dirtiness_level_normal": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Běžné znečištění"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Normal dirtiness"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Обычное загрязнение"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bežné znečistenie"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Звичайне забруднення"
           }
         }
       }
@@ -6977,6 +7047,146 @@
           "stringUnit": {
             "state": "translated",
             "value": "Заробіток"
+          }
+        }
+      }
+    },
+    "earnings_cash_held_jobs_hidden": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Držíte více, než je limit, proto se vám zakázky za hotové nezobrazují, dokud hotovost neodevzdáte."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You hold more than the limit, so cash jobs are hidden from you until you hand cash over."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "У вас больше лимита, поэтому заказы с оплатой наличными скрыты, пока вы не сдадите наличные."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Držíte viac, než je limit, preto sa vám zákazky za hotovosť nezobrazujú, kým hotovosť neodovzdáte."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "У вас більше, ніж дозволяє ліміт, тому замовлення з оплатою готівкою приховані, доки ви не передасте готівку."
+          }
+        }
+      }
+    },
+    "earnings_cash_held_limit": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Limit %1$@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Limit %1$@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Лимит %1$@"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Limit %1$@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ліміт %1$@"
+          }
+        }
+      }
+    },
+    "earnings_cash_held_subtitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hotovost, kterou jste převzali u dveří a ještě neodevzdali. Započte se proti vaší další výplatě."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cash you took at the door and have not handed over yet. It is set off against your next payout."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Наличные, которые вы получили у двери и ещё не сдали. Они будут зачтены в счёт вашей следующей выплаты."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hotovosť, ktorú ste prevzali pri dverách a ešte ste ju neodovzdali. Započíta sa proti vašej ďalšej výplate."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Готівка, яку ви отримали біля дверей і ще не передали. Її буде зараховано в рахунок вашої наступної виплати."
+          }
+        }
+      }
+    },
+    "earnings_cash_held_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hotovost u mě"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cash I hold"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Наличные у меня"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hotovosť u mňa"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Готівка в мене"
           }
         }
       }
@@ -8202,41 +8412,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Доброго ранку, %1$@"
-          }
-        }
-      }
-    },
-    "guest": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Host"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Guest"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Гость"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hosť"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Гість"
           }
         }
       }
@@ -10236,6 +10411,846 @@
         }
       }
     },
+    "legal_documents_accept": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Přijmout dokument"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accept this document"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Принять документ"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prijať dokument"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Прийняти документ"
+          }
+        }
+      }
+    },
+    "legal_documents_accepted_on": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Přijato %1$@, verze %2$@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accepted on %1$@, version %2$@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Принято %1$@, версия %2$@"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prijaté %1$@, verzia %2$@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Прийнято %1$@, версія %2$@"
+          }
+        }
+      }
+    },
+    "legal_documents_accepted_toast": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dokument přijat."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Document accepted."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Документ принят."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dokument prijatý."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Документ прийнято."
+          }
+        }
+      }
+    },
+    "legal_documents_awaiting": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Čeká na vaše přijetí"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Awaiting your acceptance"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ожидает вашего принятия"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Čaká na vaše prijatie"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Очікує вашого прийняття"
+          }
+        }
+      }
+    },
+    "legal_documents_empty": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Momentálně nemáte žádné dokumenty k přijetí."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "There are no documents for you to accept right now."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сейчас у вас нет документов для принятия."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Momentálne nemáte žiadne dokumenty na prijatie."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Зараз у вас немає документів для прийняття."
+          }
+        }
+      }
+    },
+    "legal_documents_intro": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tyto dokumenty upravují vaši práci pro provozní společnost trhu, na kterém pracujete. Každý si přečtěte a přijměte jeho aktuální verzi — dokud to neuděláte, nemůžete být schváleni ani přijímat zakázky."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "These documents govern your work for the operating company of the market you work in. Read each one and accept its current version — until you do, you can't be approved or take jobs."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Эти документы регулируют вашу работу для операционной компании рынка, на котором вы работаете. Прочитайте каждый и примите его действующую версию — пока вы этого не сделаете, вас не смогут одобрить и вы не сможете брать заказы."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tieto dokumenty upravujú vašu prácu pre prevádzkovú spoločnosť trhu, na ktorom pracujete. Každý si prečítajte a prijmite jeho aktuálnu verziu — kým to neurobíte, nemôžete byť schválení ani prijímať zákazky."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ці документи регулюють вашу роботу для операційної компанії ринку, на якому ви працюєте. Прочитайте кожен і прийміть його чинну версію — доки ви цього не зробите, вас не можуть схвалити і ви не можете брати замовлення."
+          }
+        }
+      }
+    },
+    "legal_documents_new_version": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Platí nová verze. Přijali jste verzi %1$@."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A new version is in force. You accepted version %1$@."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Действует новая версия. Вы приняли версию %1$@."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Platí nová verzia. Prijali ste verziu %1$@."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Діє нова версія. Ви прийняли версію %1$@."
+          }
+        }
+      }
+    },
+    "legal_documents_review": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zobrazit dokumenty"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Review documents"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Посмотреть документы"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zobraziť dokumenty"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Переглянути документи"
+          }
+        }
+      }
+    },
+    "legal_documents_text_updated": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tento dokument byl aktualizován — přečtěte si jej prosím znovu."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This document was updated — please read it again."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Этот документ обновлён — пожалуйста, прочитайте его ещё раз."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tento dokument bol aktualizovaný — prečítajte si ho prosím znova."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Цей документ оновлено — будь ласка, прочитайте його ще раз."
+          }
+        }
+      }
+    },
+    "legal_documents_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Smluvní dokumenty"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contract documents"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Договорные документы"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zmluvné dokumenty"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Договірні документи"
+          }
+        }
+      }
+    },
+    "legal_documents_version": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verze %1$@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version %1$@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Версия %1$@"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verzia %1$@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Версія %1$@"
+          }
+        }
+      }
+    },
+    "lockout_call_attempts_label": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaše hovory"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calls you made"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваши звонки"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaše hovory"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваші дзвінки"
+          }
+        }
+      }
+    },
+    "lockout_card_body": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vyfoťte vchod, poznamenejte si, kdy jste zákazníkovi volali, a nahlaste to. Než se uplatní jakýkoli poplatek, potvrdí to administrátor."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Take a photo of the entrance, note when you called the customer, and report it. An administrator confirms it before any fee applies."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сфотографируйте вход, запишите, когда вы звонили клиенту, и сообщите об этом. Администратор подтверждает это, прежде чем будет применён какой-либо сбор."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odfoťte vchod, poznačte si, kedy ste zákazníkovi volali, a nahláste to. Skôr než sa uplatní akýkoľvek poplatok, potvrdí to administrátor."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сфотографуйте вхід, запишіть, коли ви телефонували клієнту, і повідомте про це. Адміністратор підтверджує це, перш ніж буде застосовано будь-який збір."
+          }
+        }
+      }
+    },
+    "lockout_card_not_yet": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pokud vám nikdo neotevře, můžete to nahlásit od %1$@, %2$d minut po začátku."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If nobody opens the door, you can report it from %1$@, %2$d minutes after the start."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Если вам никто не открывает, вы можете сообщить об этом с %1$@, через %2$d минут после начала."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ak vám nikto neotvorí, môžete to nahlásiť od %1$@, %2$d minút po začiatku."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Якщо вам ніхто не відчиняє, ви можете повідомити про це з %1$@, через %2$d хвилин після початку."
+          }
+        }
+      }
+    },
+    "lockout_card_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nemůžete se dostat dovnitř?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cannot get in?"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не можете попасть внутрь?"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nemôžete sa dostať dnu?"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не можете потрапити всередину?"
+          }
+        }
+      }
+    },
+    "lockout_entrance_photo": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotka vchodu"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entrance photo"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Фото входа"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotka vchodu"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Фото входу"
+          }
+        }
+      }
+    },
+    "lockout_photo_needed": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nejdřív vyfoťte vchod."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Take a photo of the entrance first."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сначала сфотографируйте вход."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Najprv odfoťte vchod."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Спершу сфотографуйте вхід."
+          }
+        }
+      }
+    },
+    "lockout_report_action": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nemohu se dostat dovnitř"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I cannot get in"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не могу попасть внутрь"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nemôžem sa dostať dnu"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не можу потрапити всередину"
+          }
+        }
+      }
+    },
+    "lockout_reported_body": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nahlášeno v %1$@. Administrátor to potvrdí; do té doby zakázka zůstává beze změny."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reported at %1$@. An administrator will confirm it; until then the job stays as it is."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сообщено в %1$@. Администратор это подтвердит; до тех пор заказ остаётся без изменений."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nahlásené o %1$@. Administrátor to potvrdí; dovtedy zákazka zostáva bez zmeny."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Повідомлено о %1$@. Адміністратор це підтвердить; до того замовлення залишається без змін."
+          }
+        }
+      }
+    },
+    "lockout_reported_calls": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hovory: %1$@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calls: %1$@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Звонки: %1$@"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hovory: %1$@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Дзвінки: %1$@"
+          }
+        }
+      }
+    },
+    "lockout_reported_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nahlásili jste, že se nemůžete dostat dovnitř"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You reported you cannot get in"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вы сообщили, что не можете попасть внутрь"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nahlásili ste, že sa nemôžete dostať dnu"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ви повідомили, що не можете потрапити всередину"
+          }
+        }
+      }
+    },
+    "lockout_reported_toast": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nahlášeno. Administrátor to potvrdí."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reported. An administrator will confirm it."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сообщение отправлено. Администратор его подтвердит."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nahlásené. Administrátor to potvrdí."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Повідомлено. Адміністратор це підтвердить."
+          }
+        }
+      }
+    },
+    "lockout_sheet_description": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poznamenejte si, kdy jste zákazníkovi volali nebo psali a co se stalo. Administrátor si to přečte spolu s vaší fotkou."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Note when you called or messaged the customer and what happened. The administrator reads it with your photo."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Запишите, когда вы звонили или писали клиенту и что произошло. Администратор прочитает это вместе с вашим фото."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poznačte si, kedy ste zákazníkovi volali alebo písali a čo sa stalo. Administrátor si to prečíta spolu s vašou fotkou."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Запишіть, коли ви телефонували або писали клієнту і що сталося. Адміністратор прочитає це разом із вашим фото."
+          }
+        }
+      }
+    },
+    "lockout_sheet_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nahlásit, že se nemůžete dostat dovnitř"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Report that you cannot get in"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сообщить, что вы не можете попасть внутрь"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nahlásiť, že sa nemôžete dostať dnu"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Повідомити, що ви не можете потрапити всередину"
+          }
+        }
+      }
+    },
     "login": {
       "extractionState": "stale",
       "localizations": {
@@ -10477,6 +11492,76 @@
           "stringUnit": {
             "state": "translated",
             "value": "Приблизний район — точна адреса з'явиться, щойно ви візьмете замовлення."
+          }
+        }
+      }
+    },
+    "order_customer_details_closed_completed": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jméno, adresa a telefon zákazníka byly odstraněny 24 hodin po dokončení zakázky."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The customer's name, address and phone number were removed 24 hours after the job was completed."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Имя, адрес и номер телефона клиента удалены через 24 часа после завершения заказа."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meno, adresa a telefón zákazníka boli odstránené 24 hodín po dokončení zákazky."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ім'я, адресу й номер телефону клієнта видалено через 24 години після завершення замовлення."
+          }
+        }
+      }
+    },
+    "order_customer_details_closed_cancelled": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jméno, adresa a telefon zákazníka byly odstraněny při zrušení objednávky."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The customer's name, address and phone number were removed when the order was cancelled."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Имя, адрес и номер телефона клиента удалены при отмене заказа."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meno, adresa a telefón zákazníka boli odstránené pri zrušení objednávky."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ім'я, адресу й номер телефону клієнта видалено під час скасування замовлення."
           }
         }
       }
@@ -12616,6 +13701,76 @@
         }
       }
     },
+    "camera_unavailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toto zařízení nemá fotoaparát."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This device has no camera."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "На этом устройстве нет камеры."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toto zariadenie nemá fotoaparát."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "На цьому пристрої немає камери."
+          }
+        }
+      }
+    },
+    "job_photos_camera_only": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotografie k zakázce lze pořídit jen fotoaparátem, nelze je vybrat z galerie. K jejich přidání použijte telefon s fotoaparátem."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Job photos can only be taken with the camera, not chosen from the gallery. Use a phone with a camera to add them."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Фото к заказу можно сделать только камерой, выбрать их из галереи нельзя. Чтобы добавить их, воспользуйтесь телефоном с камерой."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotografie k zákazke sa dajú urobiť len fotoaparátom, nedajú sa vybrať z galérie. Na ich pridanie použite telefón s fotoaparátom."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Фото до замовлення можна зробити лише камерою, вибрати їх із галереї не можна. Щоб додати їх, скористайтеся телефоном із камерою."
+          }
+        }
+      }
+    },
     "order_completed_toast": {
       "extractionState": "stale",
       "localizations": {
@@ -12647,6 +13802,76 @@
           "stringUnit": {
             "state": "translated",
             "value": "Замовлення позначено як виконане"
+          }
+        }
+      }
+    },
+    "order_removal_message": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Administrátor vás z této zakázky odebral s tímto odůvodněním:\n\n%1$@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "An administrator took you off this job and gave this reason:\n\n%1$@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Администратор снял вас с этого заказа и указал причину:\n\n%1$@"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Administrátor vás z tejto zákazky odobral s týmto odôvodnením:\n\n%1$@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Адміністратор зняв вас із цього замовлення і вказав причину:\n\n%1$@"
+          }
+        }
+      }
+    },
+    "order_removal_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Byli jste z této zakázky odebráni"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You were taken off this job"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вас сняли с этого заказа"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Boli ste z tejto zákazky odobraní"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вас знято з цього замовлення"
           }
         }
       }
@@ -13701,6 +14926,41 @@
         }
       }
     },
+    "period_pay_dirtiness": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Příplatek za znečištění"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dirtiness supplement"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Доплата за загрязнение"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Príplatok za znečistenie"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Доплата за забруднення"
+          }
+        }
+      }
+    },
     "period_pay_empty": {
       "extractionState": "stale",
       "localizations": {
@@ -13942,6 +15202,146 @@
           "stringUnit": {
             "state": "translated",
             "value": "Замовлення за цей період"
+          }
+        }
+      }
+    },
+    "period_pay_line_cancellation_fee_share": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Váš podíl z poplatku za pozdní zrušení"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your share of the late-cancellation fee"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваша доля сбора за позднюю отмену"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Váš podiel z poplatku za neskoré zrušenie"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваша частка збору за пізнє скасування"
+          }
+        }
+      }
+    },
+    "period_pay_line_deduction": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Srážka %1$@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deduction %1$@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Удержание %1$@"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zrážka %1$@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Утримання %1$@"
+          }
+        }
+      }
+    },
+    "period_pay_line_deduction_reason": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Srážka %1$@: %2$@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deduction %1$@: %2$@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Удержание %1$@: %2$@"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zrážka %1$@: %2$@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Утримання %1$@: %2$@"
+          }
+        }
+      }
+    },
+    "period_pay_line_lockout_fee_share": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Váš podíl z poplatku za neumožněný přístup"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your share of the lockout fee"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваша доля сбора за непредоставленный доступ"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Váš podiel z poplatku za neumožnený prístup"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваша частка збору за ненаданий доступ"
           }
         }
       }
@@ -15521,6 +16921,76 @@
         }
       }
     },
+    "profile_how_jobs_are_offered": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jak nabízíme zakázky"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How jobs are offered"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Как мы предлагаем заказы"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ako ponúkame zákazky"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Як ми пропонуємо замовлення"
+          }
+        }
+      }
+    },
+    "profile_how_jobs_are_offered_summary": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pravidla nabídky zakázek"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The rules behind the job board"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Правила списка заказов"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pravidlá ponuky zákaziek"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Правила списку замовлень"
+          }
+        }
+      }
+    },
     "profile_iban": {
       "extractionState": "stale",
       "localizations": {
@@ -15587,6 +17057,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "Прізвище"
+          }
+        }
+      }
+    },
+    "profile_legal_documents_summary": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Přečtěte si a přijměte dokumenty, podle kterých pracujete"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Read and accept the documents you work under"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Прочитайте и примите документы, по которым вы работаете"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prečítajte si a prijmite dokumenty, podľa ktorých pracujete"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Прочитайте та прийміть документи, за якими ви працюєте"
           }
         }
       }
@@ -16151,6 +17656,76 @@
         }
       }
     },
+    "profile_weekly_limit": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Týdenní limit zakázek: %1$d"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weekly job limit: %1$d"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Недельный лимит заказов: %1$d"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Týždenný limit zákaziek: %1$d"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Тижневий ліміт замовлень: %1$d"
+          }
+        }
+      }
+    },
+    "profile_weekly_limit_reason": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Důvod: %1$@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reason: %1$@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Причина: %1$@"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dôvod: %1$@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Причина: %1$@"
+          }
+        }
+      }
+    },
     "profile_zip_code": {
       "extractionState": "stale",
       "localizations": {
@@ -16532,6 +18107,76 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cleansia Plus скоро поновиться"
+          }
+        }
+      }
+    },
+    "push.membership.payment_failed.body": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poslední platba za Plus neprošla, takže jsou výhody Plus pozastavené, dokud neprojde. Plán spravujete v aplikaci."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your last Plus payment didn't go through, so your Plus benefits are paused until it does. Manage your plan in the app."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Последний платёж за Plus не прошёл, поэтому преимущества Plus приостановлены, пока он не пройдёт. Управляйте планом в приложении."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Posledná platba za Plus neprešla, takže výhody Plus sú pozastavené, kým neprejde. Plán spravujete v aplikácii."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Останній платіж за Plus не пройшов, тому переваги Plus призупинено, доки він не пройде. Керуйте планом у застосунку."
+          }
+        }
+      }
+    },
+    "push.membership.payment_failed.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Platba za Cleansia Plus neprošla"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cleansia Plus payment failed"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Платёж за Cleansia Plus не прошёл"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Platba za Cleansia Plus neprešla"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Платіж за Cleansia Plus не пройшов"
           }
         }
       }
@@ -17162,6 +18807,146 @@
           "stringUnit": {
             "state": "translated",
             "value": "Нові доступні замовлення"
+          }
+        }
+      }
+    },
+    "push.order.no_cleaner_nothing_charged.body": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na objednávku #%1$@ nemohl dorazit žádný uklízeč, proto jsme ji zrušili. Nic jsme vám neúčtovali a přidali jsme vám kredit %2$@ na příští úklid. Omlouváme se."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No cleaner could make it to booking #%1$@, so we have cancelled it. You have not been charged, and we have added %2$@ credit towards your next clean. Sorry."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "На заказ #%1$@ не смог приехать ни один уборщик, поэтому мы его отменили. Мы ничего с вас не списали, а ещё добавили бонус %2$@ на следующую уборку. Простите."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na objednávku #%1$@ nemohol prísť žiadny upratovač, preto sme ju zrušili. Nič sme vám neúčtovali a pridali sme vám kredit %2$@ na ďalšie upratovanie. Ospravedlňujeme sa."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "На замовлення #%1$@ не зміг приїхати жоден прибиральник, тому ми його скасували. Ми нічого з вас не списали, а ще додали бонус %2$@ на наступне прибирання. Вибачте."
+          }
+        }
+      }
+    },
+    "push.order.no_cleaner_nothing_charged.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Žádný uklízeč nebyl k dispozici"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No cleaner was available"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Свободных уборщиков не нашлось"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Žiadny upratovač nebol k dispozícii"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вільних прибиральників не знайшлося"
+          }
+        }
+      }
+    },
+    "push.order.no_cleaner_refund_pending.body": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na objednávku #%1$@ nemohl dorazit žádný uklízeč, proto jsme ji zrušili. Vrácení peněz je na cestě a přidali jsme vám kredit %2$@ na příští úklid. Omlouváme se."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No cleaner could make it to booking #%1$@, so we have cancelled it. Your refund is on its way, and we have added %2$@ credit towards your next clean. Sorry."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "На заказ #%1$@ не смог приехать ни один уборщик, поэтому мы его отменили. Возврат средств обрабатывается, а ещё мы добавили бонус %2$@ на следующую уборку. Простите."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na objednávku #%1$@ nemohol prísť žiadny upratovač, preto sme ju zrušili. Vrátenie peňazí je na ceste a pridali sme vám kredit %2$@ na ďalšie upratovanie. Ospravedlňujeme sa."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "На замовлення #%1$@ не зміг приїхати жоден прибиральник, тому ми його скасували. Повернення коштів обробляється, а ще ми додали бонус %2$@ на наступне прибирання. Вибачте."
+          }
+        }
+      }
+    },
+    "push.order.no_cleaner_refund_pending.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Žádný uklízeč nebyl k dispozici"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No cleaner was available"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Свободных уборщиков не нашлось"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Žiadny upratovač nebol k dispozícii"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вільних прибиральників не знайшлося"
           }
         }
       }
@@ -18838,6 +20623,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "Документи"
+          }
+        }
+      }
+    },
+    "registration_lock_category_legal_documents": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Smluvní dokumenty"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contract documents"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Договорные документы"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zmluvné dokumenty"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Договірні документи"
           }
         }
       }
@@ -22035,6 +23855,41 @@
         }
       }
     },
+    "work_contract_parties": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mezi provozní společností, která tento úklid prodala (objednatel), a vámi (zhotovitel)"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Between the operating company that sold this cleaning (the client) and you (the contractor)"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Между операционной компанией, которая продала эту уборку (заказчик), и вами (подрядчик)"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Medzi prevádzkovou spoločnosťou, ktorá toto upratovanie predala (objednávateľ), a vami (zhotoviteľ)"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Між операційною компанією, яка продала це прибирання (замовник), і вами (підрядник)"
+          }
+        }
+      }
+    },
     "work_contract_pending_banner": {
       "extractionState": "manual",
       "localizations": {
@@ -22101,6 +23956,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "Прочитати договір"
+          }
+        }
+      }
+    },
+    "work_contract_reward": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaše odměna"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your reward"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваше вознаграждение"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaša odmena"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваша винагорода"
           }
         }
       }

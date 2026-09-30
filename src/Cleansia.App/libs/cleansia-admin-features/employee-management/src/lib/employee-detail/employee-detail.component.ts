@@ -39,6 +39,7 @@ import { EmployeeDetailFacade } from './employee-detail.facade';
 import { EmployeeDocumentsFacade } from './employee-documents.facade';
 import { EmployeeDocumentsSectionComponent } from './employee-documents-section.component';
 import { EmployeePayoutSectionComponent } from './employee-payout-section.component';
+import { RATE_TEMPLATES } from './employee-detail.models';
 
 @Component({
   selector: 'cleansia-admin-employee-detail',
@@ -108,11 +109,14 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
   protected readonly weeklyLimitControl = new FormControl<number | null>(null, [
     Validators.min(1),
   ]);
+  protected readonly weeklyLimitReasonControl = new FormControl<string>('', {
+    nonNullable: true,
+  });
 
   protected startEditingWeeklyLimit(): void {
-    this.weeklyLimitControl.setValue(
-      this.facade.employee()?.weeklyOrderLimit ?? null
-    );
+    const employee = this.facade.employee();
+    this.weeklyLimitControl.setValue(employee?.weeklyOrderLimit ?? null);
+    this.weeklyLimitReasonControl.setValue(employee?.weeklyOrderLimitReason ?? '');
     this.facade.startEditingWeeklyLimit();
   }
 
@@ -129,7 +133,8 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
         : Number(raw);
 
     this.facade.setWeeklyOrderLimit(
-      limit === null || Number.isNaN(limit) ? null : limit
+      limit === null || Number.isNaN(limit) ? null : limit,
+      this.weeklyLimitReasonControl.value
     );
   }
 
@@ -197,20 +202,12 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
     overwriteExisting: new FormControl<boolean>(false),
   });
 
-  readonly gradeOptions: ICleansiaSelectOption[] = [
-    {
-      label: this.translate.instant('pages.employee_detail.grade_junior'),
-      value: 'junior',
-    },
-    {
-      label: this.translate.instant('pages.employee_detail.grade_medior'),
-      value: 'medior',
-    },
-    {
-      label: this.translate.instant('pages.employee_detail.grade_senior'),
-      value: 'senior',
-    },
-  ];
+  protected readonly rateTemplates = RATE_TEMPLATES;
+
+  readonly gradeOptions: ICleansiaSelectOption[] = RATE_TEMPLATES.map((template) => ({
+    label: this.translate.instant(template.labelKey),
+    value: template.value,
+  }));
 
   ngOnInit(): void {
     const employeeId = this.route.snapshot.paramMap.get('employeeId');

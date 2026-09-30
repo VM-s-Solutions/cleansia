@@ -54,10 +54,20 @@ public sealed class ArchivedCompanyWriteGuardRosterTests : IDisposable
         typeof(Cleansia.Core.Domain.Loyalty.PromoCodeRedemption),
         typeof(Cleansia.Core.Domain.Bookings.RecurringBookingTemplate),
         typeof(Cleansia.Core.Domain.Payments.Refund),
+        // Money a customer owes the company on one of its orders: its ledger, frozen with it.
+        typeof(Cleansia.Core.Domain.Payments.Receivable),
+        // The company's cash in its cleaners' hands: its ledger, frozen with it.
+        typeof(Cleansia.Core.Domain.Payments.CashLedgerEntry),
+        // The guarantee a customer gives the company for its fees and unpaid cash: a frozen company
+        // takes no booking for a card to guarantee.
+        typeof(SavedCard),
         typeof(Cleansia.Core.Domain.Configuration.TenantConfiguration),
         // A contract record for a retained order: a frozen company forms no contracts, and the archive
         // preconditions leave no open order, so the guard is belt rather than path here.
         typeof(Cleansia.Core.Domain.Contracts.WorkContractAcceptance),
+        // The cleaner's acceptance of the company's own contract texts: a frozen company forms no new
+        // contract with anyone, and its cleaners are refused on the partner apps before they could.
+        typeof(Cleansia.Core.Domain.Legal.CleanerLegalDocumentAcceptance),
     ];
 
     /// <summary>

@@ -3,3 +3,4 @@ export { TrackOrderComponent } from './lib/track-order/track-order.component';
 export { GuestOrderService } from './lib/track-order/guest-order.service';
 export type { GuestOrder } from './lib/track-order/guest-order.service';
 export { TrackOrderFacade } from './lib/track-order/track-order.facade';
+export { AmountDueComponent } from './lib/amount-due/amount-due.component';

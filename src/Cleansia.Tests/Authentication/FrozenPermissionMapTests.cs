@@ -52,10 +52,11 @@ public class FrozenPermissionMapTests
         // Customer self-service
         [Policy.CanManageSavedAddresses] = PhysicalPolicy.CustomerOnly,
         [Policy.CanManageMembership] = PhysicalPolicy.CustomerOnly,
+        [Policy.CanManageSavedCard] = PhysicalPolicy.CustomerOnly, // additive — the saved card, the guarantee for cash bookings
         [Policy.CanManageRecurringBookings] = PhysicalPolicy.CustomerOnly,
 
         // User
-        [Policy.CanViewPagedUser] = PhysicalPolicy.EmployeeOrAdmin,
+        [Policy.CanViewPagedUser] = PhysicalPolicy.SupportOrAbove, // was EmployeeOrAdmin: a cleaner could list every customer's contact details
         [Policy.CanViewUserDetail] = PhysicalPolicy.OwnerOrElevated,
         [Policy.CanGetCurrentUser] = PhysicalPolicy.Authenticated,
         [Policy.CanChangeOwnPassword] = PhysicalPolicy.Authenticated, // additive — [OWN-DATA] authenticated change-own-password
@@ -185,9 +186,9 @@ public class FrozenPermissionMapTests
 
         // Company Info
         [Policy.CanViewCompanyInfo] = PhysicalPolicy.AdminOnly,
-        [Policy.CanCreateCompanyInfo] = PhysicalPolicy.ManagerOrAbove,
-        [Policy.CanUpdateCompanyInfo] = PhysicalPolicy.ManagerOrAbove,
-        [Policy.CanDeleteCompanyInfo] = PhysicalPolicy.ManagerOrAbove,
+        [Policy.CanCreateCompanyInfo] = PhysicalPolicy.AdministratorOnly,
+        [Policy.CanUpdateCompanyInfo] = PhysicalPolicy.AdministratorOnly,
+        [Policy.CanDeleteCompanyInfo] = PhysicalPolicy.AdministratorOnly,
 
         // Email Templates
         [Policy.CanViewEmailTemplates] = PhysicalPolicy.AdminOnly,
@@ -237,6 +238,13 @@ public class FrozenPermissionMapTests
         [Policy.CanIssueCustomerCredit] = PhysicalPolicy.SupportOrAbove,
         [Policy.CanViewUserCredit] = PhysicalPolicy.AdminOnly,
         [Policy.CanExpireCustomerCredit] = PhysicalPolicy.ManagerOrAbove,
+        // Receivables (additive): any administrator reads what customers owe, a Manager writes it off
+        [Policy.CanViewReceivables] = PhysicalPolicy.AdminOnly,
+        [Policy.CanWriteOffReceivable] = PhysicalPolicy.ManagerOrAbove,
+        // Cash held by cleaners (additive): the Accountant reads it and records remittances, a Manager writes it off
+        [Policy.CanViewCashHeld] = PhysicalPolicy.AccountantOrAbove,
+        [Policy.CanRecordCashRemittance] = PhysicalPolicy.AccountantOrAbove,
+        [Policy.CanWriteOffCashHeld] = PhysicalPolicy.ManagerOrAbove,
         [Policy.CanRedeemPromoCode] = PhysicalPolicy.CustomerOnly,
         [Policy.CanViewMyReferral] = PhysicalPolicy.CustomerOnly,
 

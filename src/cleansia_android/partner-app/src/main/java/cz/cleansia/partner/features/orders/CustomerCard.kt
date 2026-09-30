@@ -54,6 +54,7 @@ fun CustomerCard(
     customerName: String?,
     disclosure: OrderDisclosure,
     location: OrderLocation,
+    closedNote: String?,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -79,6 +80,14 @@ fun CustomerCard(
                     icon = Icons.Outlined.Place,
                     text = addressLine,
                     isPrimary = false,
+                )
+            }
+            if (closedNote != null) {
+                if (!customerName.isNullOrBlank() || addressLine != null) Spacer(Modifier.height(6.dp))
+                Text(
+                    text = closedNote,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
 

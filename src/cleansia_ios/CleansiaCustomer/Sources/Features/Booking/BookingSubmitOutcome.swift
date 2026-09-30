@@ -21,4 +21,12 @@ enum BookingSubmitOutcome: Equatable {
     /// The fresh quote refused the cash choice, so it was taken away and nothing was sent; the
     /// customer has already been told and chooses again.
     case paymentMethodCleared
+    /// A cash booking by a customer with no usable card in the booking's currency: the card is captured
+    /// in PaymentSheet's setup mode first, and `submitAfterCardGuarantee` books once it lands.
+    case cardGuaranteeNeeded(PaymentSheetPresentation)
+    /// The booking needs a card captured and the customer has not ticked the consent; nothing was sent.
+    case cardGuaranteeConsentRequired
+    /// PaymentSheet saved the card but the server does not hold it yet; nothing was sent, and the
+    /// customer slides again.
+    case cardGuaranteePending
 }

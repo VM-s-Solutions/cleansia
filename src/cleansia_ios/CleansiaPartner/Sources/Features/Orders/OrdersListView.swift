@@ -5,8 +5,9 @@ import SwiftUI
 struct OrdersRootView: View {
     @StateObject private var vm: OrdersListViewModel
     @State private var path = NavigationPath()
-    @Binding private var deepLinkOrderId: String?
+    @Binding private var deepLinkRoute: OrderRoute?
     private let client: PartnerOrderClient
+    private let profileClient: PartnerProfileClient
     private let staleness: OrdersStaleness
     private let checklistStore: CleaningChecklistStore
     private let snackbar: SnackbarController
@@ -15,18 +16,20 @@ struct OrdersRootView: View {
 
     init(
         client: PartnerOrderClient,
+        profileClient: PartnerProfileClient,
         staleness: OrdersStaleness,
         checklistStore: CleaningChecklistStore,
         snackbar: SnackbarController,
         mapProvider: MapProvider,
         pendingOffers: PendingOffersStore,
-        deepLinkOrderId: Binding<String?> = .constant(nil)
+        deepLinkRoute: Binding<OrderRoute?> = .constant(nil)
     ) {
         _vm = StateObject(
             wrappedValue: OrdersListViewModel(client: client, staleness: staleness, snackbar: snackbar)
         )
-        _deepLinkOrderId = deepLinkOrderId
+        _deepLinkRoute = deepLinkRoute
         self.client = client
+        self.profileClient = profileClient
         self.staleness = staleness
         self.checklistStore = checklistStore
         self.snackbar = snackbar
@@ -39,7 +42,7 @@ struct OrdersRootView: View {
             OrdersListView(vm: vm)
                 .navigationDestination(for: OrderRoute.self) { route in
                     switch route {
-                    case let .detail(orderId):
+                    case let .detail(orderId, showRemovalReason):
                         OrderDetailView(
                             orderId: orderId,
                             client: client,
@@ -47,8 +50,12 @@ struct OrdersRootView: View {
                             checklistStore: checklistStore,
                             snackbar: snackbar,
                             mapProvider: mapProvider,
-                            pendingOffers: pendingOffers
+                            pendingOffers: pendingOffers,
+                            showRemovalReason: showRemovalReason,
+                            onOpenLegalDocuments: { path.append(OrderRoute.legalDocuments) }
                         )
+                    case .legalDocuments:
+                        LegalDocumentsView(client: profileClient, snackbar: snackbar)
                     }
                 }
         }
@@ -57,21 +64,25 @@ struct OrdersRootView: View {
                 request: request,
                 client: client,
                 onDismiss: vm.dismissContract,
-                onOutcome: { outcome in Task { await vm.onWorkContractOutcome(outcome) } }
+                onOutcome: { outcome in Task { await vm.onWorkContractOutcome(outcome) } },
+                onOpenLegalDocuments: {
+                    vm.dismissContract()
+                    path.append(OrderRoute.legalDocuments)
+                }
             )
         }
         .onReceive(vm.navigateToDetail) { orderId in
             path.append(OrderRoute.detail(orderId: orderId))
         }
-        .onChange(of: deepLinkOrderId) { orderId in
-            guard let route = PushTapRouting.deepLinkRoute(orderId) else { return }
+        .onChange(of: deepLinkRoute) { route in
+            guard let route else { return }
             path.append(route)
-            deepLinkOrderId = nil
+            deepLinkRoute = nil
         }
         .onAppear {
-            guard let route = PushTapRouting.deepLinkRoute(deepLinkOrderId) else { return }
+            guard let route = deepLinkRoute else { return }
             path.append(route)
-            deepLinkOrderId = nil
+            deepLinkRoute = nil
         }
     }
 

@@ -30,6 +30,8 @@ final class BookingViewModel: ViewModel {
     @Published private(set) var marketState: MarketState = .unavailable
     /// Set when a cash choice was taken away; cleared by the customer's next choice.
     @Published internal(set) var cashCleared = false
+    /// The customer's saved cards, nil until the first read answers.
+    @Published internal(set) var savedCards: [SavedCard]?
 
     @Published private(set) var currentStep = 1
 
@@ -46,6 +48,8 @@ final class BookingViewModel: ViewModel {
     let paymentIntentClient: PaymentIntentClient
     let countryResolver: CountryResolver
     let consentClient: ConsentStatusClient
+    let savedCardClient: SavedCardClient
+    let pauseBetweenCardReads: () async -> Void
     let tokenStore: TokenStore
     let languageTag: () -> String
     let isCardPaymentAvailable: Bool
@@ -53,6 +57,8 @@ final class BookingViewModel: ViewModel {
     private let scheduler: AnySchedulerOf<DispatchQueue>
 
     var lastQuoteRequest: QuoteRequest?
+    /// The currency of the card PaymentSheet is saving; the booking waits for that card to land.
+    var guaranteeCurrencyCode: String?
     private var quoteTask: Task<Void, Never>?
     private var catalogLoad: Task<Void, Never>?
     private var marketReload: Task<Void, Never>?
@@ -72,6 +78,8 @@ final class BookingViewModel: ViewModel {
         paymentIntentClient: PaymentIntentClient = LivePaymentIntentClient(),
         countryResolver: CountryResolver = LiveCountryResolver(),
         consentClient: ConsentStatusClient = LiveConsentStatusClient(),
+        savedCardClient: SavedCardClient = LiveSavedCardClient(),
+        pauseBetweenCardReads: @escaping () async -> Void = { _ = try? await Task.sleep(nanoseconds: 1_500_000_000) },
         tokenStore: TokenStore = CustomerBookingTokenStore.shared,
         languageTag: @escaping () -> String = { CoreL10n.languageTag },
         market: AnyPublisher<MarketState, Never> = Just(.unavailable).eraseToAnyPublisher(),
@@ -90,6 +98,8 @@ final class BookingViewModel: ViewModel {
         self.paymentIntentClient = paymentIntentClient
         self.countryResolver = countryResolver
         self.consentClient = consentClient
+        self.savedCardClient = savedCardClient
+        self.pauseBetweenCardReads = pauseBetweenCardReads
         self.tokenStore = tokenStore
         self.languageTag = languageTag
         self.isCardPaymentAvailable = isCardPaymentAvailable
@@ -186,6 +196,30 @@ final class BookingViewModel: ViewModel {
         }
     }
 
+    func setRooms(_ count: Int) {
+        update { current in
+            var next = current
+            next.rooms = min(max(count, 1), PropertySize.maxRooms)
+            return next
+        }
+    }
+
+    func setBathrooms(_ count: Int) {
+        update { current in
+            var next = current
+            next.bathrooms = min(max(count, 1), PropertySize.maxBathrooms)
+            return next
+        }
+    }
+
+    func setDirtiness(_ level: Dirtiness) {
+        update { current in
+            var next = current
+            next.dirtiness = level
+            return next
+        }
+    }
+
     @discardableResult
     func advance() -> Bool {
         guard currentStep < BookingStepGate.totalSteps else { return false }
@@ -209,6 +243,8 @@ final class BookingViewModel: ViewModel {
         promoState = .idle
         referralState = .idle
         cashCleared = false
+        savedCards = nil
+        guaranteeCurrencyCode = nil
         currentStep = 1
         lastQuoteRequest = nil
         quoteTask?.cancel()
@@ -460,7 +496,8 @@ extension BookingState {
             rooms: rooms,
             bathrooms: bathrooms,
             cleaningDate: selectedInstant,
-            countryId: countryId ?? marketCountryId
+            countryId: countryId ?? marketCountryId,
+            dirtiness: dirtiness
         )
     }
 }

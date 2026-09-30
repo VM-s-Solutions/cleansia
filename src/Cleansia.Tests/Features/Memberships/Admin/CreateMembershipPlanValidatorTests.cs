@@ -179,6 +179,27 @@ public class CreateMembershipPlanValidatorTests
             e.PropertyName == nameof(CreateMembershipPlan.Command.FreeCancellationWindowHours));
     }
 
+    [Theory]
+    [InlineData(25)]
+    [InlineData(48)]
+    public async Task ACancellationWindowLongerThanTheStandardOne_Fails_TooLong(int hours)
+    {
+        var result = await Validator().ValidateAsync(Valid() with { FreeCancellationWindowHours = hours });
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e =>
+            e.PropertyName == nameof(CreateMembershipPlan.Command.FreeCancellationWindowHours)
+            && e.ErrorMessage == BusinessErrorMessage.MembershipPlanFreeCancellationWindowTooLong);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(24)]
+    public async Task ACancellationWindowUpToTheStandardOne_Passes(int hours)
+    {
+        var result = await Validator().ValidateAsync(Valid() with { FreeCancellationWindowHours = hours });
+        Assert.True(result.IsValid);
+    }
+
     [Fact]
     public async Task OutOfRangeBillingInterval_Fails_InvalidEnum()
     {

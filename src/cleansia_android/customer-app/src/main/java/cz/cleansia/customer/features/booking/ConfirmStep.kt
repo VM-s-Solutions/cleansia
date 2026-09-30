@@ -23,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.AccessTime
 import androidx.compose.material.icons.outlined.CalendarToday
+import androidx.compose.material.icons.outlined.CleaningServices
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.ConfirmationNumber
 import androidx.compose.material.icons.outlined.CreditCard
@@ -31,7 +32,6 @@ import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Shield
-import androidx.compose.material.icons.outlined.VerifiedUser
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -58,6 +58,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.customer.core.booking.CashEligibility
 import cz.cleansia.customer.core.memberships.GetMyMembershipResponse
+import cz.cleansia.customer.core.memberships.benefitsPaused
+import cz.cleansia.customer.core.memberships.trialEndsAt
 import cz.cleansia.customer.features.orders.roomsAndBathrooms
 import cz.cleansia.customer.R
 import cz.cleansia.core.format.formatOrderPrice
@@ -67,6 +69,8 @@ import cz.cleansia.core.ui.components.ConsentMarkup
 import cz.cleansia.customer.ui.theme.CleansiaTheme
 import cz.cleansia.customer.ui.theme.selectionTint
 import cz.cleansia.customer.ui.theme.SuccessText
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 
 @Composable
 fun ConfirmStep(
@@ -107,6 +111,7 @@ fun ConfirmStep(
     val alreadyConsented by bookingVm.alreadyConsented.collectAsStateWithLifecycle()
     val cashEligibility by bookingVm.cashEligibility.collectAsStateWithLifecycle()
     val cashClearedNotice by bookingVm.cashClearedNotice.collectAsStateWithLifecycle()
+    val needsCardGuarantee by bookingVm.needsCardGuarantee.collectAsStateWithLifecycle()
     // Every money row comes from the one resolver, so this card and the sticky bar below it cannot
     // disagree with each other or with the total the order is created with.
     val summary = BookingPriceSummary.resolve(quote, effectiveDiscount)
@@ -207,6 +212,11 @@ fun ConfirmStep(
                 stringResource(R.string.booking_summary_property),
                 roomsAndBathrooms(state.rooms, state.bathrooms),
             )
+            LabeledInfoRow(
+                Icons.Outlined.CleaningServices,
+                stringResource(R.string.dirtiness_level_label),
+                state.dirtinessLevel?.let { stringResource(it.titleRes()) } ?: "—",
+            )
             LabeledInfoRow(Icons.Outlined.CalendarToday, stringResource(R.string.booking_summary_date), state.selectedDate.ifBlank { "—" })
             LabeledInfoRow(Icons.Outlined.AccessTime, stringResource(R.string.booking_summary_time), state.selectedTime.ifBlank { "—" })
 
@@ -225,6 +235,21 @@ fun ConfirmStep(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
+            }
+            val dirtinessLine = quote?.dirtinessLevel?.surchargeLineRes()?.takeIf { summary.dirtinessSurcharge > 0.0 }
+            if (dirtinessLine != null) {
+                Row(Modifier.fillMaxWidth().padding(vertical = 2.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text(
+                        stringResource(dirtinessLine),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        "+${formatOrderPrice(summary.dirtinessSurcharge, currencyCode)}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
             }
             if (showPromoLine) {
                 Row(Modifier.fillMaxWidth().padding(vertical = 2.dp), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -300,7 +325,8 @@ fun ConfirmStep(
             // the order falls below the per-tier minimum. Only show when no
             // discount is currently winning, otherwise it's misleading noise.
             val tierFloor = quote?.tierDiscountMinOrderAmount
-            if (effectiveDiscount == 0.0 && tierFloor != null && tierFloor > 0.0 && subtotal < tierFloor) {
+            val floorBase = quote?.preSurchargeSubtotal ?: subtotal
+            if (effectiveDiscount == 0.0 && tierFloor != null && tierFloor > 0.0 && floorBase < tierFloor) {
                 Text(
                     stringResource(
                         R.string.booking_summary_tier_discount_min_not_met,
@@ -384,6 +410,13 @@ fun ConfirmStep(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+        if (needsCardGuarantee) {
+            Spacer(Modifier.height(12.dp))
+            CardGuaranteeConsent(
+                accepted = state.cardGuaranteeAccepted,
+                onAcceptedChange = { onUpdate(state.copy(cardGuaranteeAccepted = it)) },
+            )
+        }
 
         Spacer(Modifier.height(16.dp))
 
@@ -411,7 +444,8 @@ fun ConfirmStep(
         Spacer(Modifier.height(16.dp))
 
         // The same two documents the sign-up tick names, asked only of an account that has not
-        // already granted both. Gates the slide-to-confirm and rides `termsAccepted` on CreateOrder.
+        // already accepted the versions in force. Gates the slide-to-confirm and rides
+        // `termsAccepted` on CreateOrder.
         if (!alreadyConsented) {
             CleansiaConsentCheckbox(
                 checked = state.termsAccepted,
@@ -422,9 +456,15 @@ fun ConfirmStep(
             Spacer(Modifier.height(16.dp))
         }
 
-        // The contract for work the confirmation concludes, named at the offer whether or not the
-        // account already consented: an information line with the public text behind it, never a tick.
-        WorkContractNotice(modifier = Modifier.fillMaxWidth())
+        CleansiaConsentCheckbox(
+            checked = state.earlyPerformanceRequested,
+            onCheckedChange = { onUpdate(state.copy(earlyPerformanceRequested = it)) },
+            html = stringResource(R.string.consent_early_performance_draft_2026_09_29),
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(Modifier.height(16.dp))
+
+        ContractNotice(modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(16.dp))
 
         // ── Trust badges ──
@@ -446,12 +486,6 @@ fun ConfirmStep(
                 } ?: stringResource(R.string.booking_trust_insured_no_figure),
                 Modifier.weight(1f).fillMaxHeight(),
             )
-            Box(Modifier.width(1.dp).fillMaxHeight().background(MaterialTheme.colorScheme.outlineVariant))
-            TrustBadge(
-                Icons.Outlined.VerifiedUser,
-                stringResource(R.string.booking_trust_vetted),
-                Modifier.weight(1f).fillMaxHeight(),
-            )
         }
 
         Spacer(Modifier.height(32.dp))
@@ -471,8 +505,38 @@ fun ConfirmStep(
 }
 
 @Composable
-private fun WorkContractNotice(modifier: Modifier = Modifier) {
-    val html = stringResource(R.string.booking_work_contract_notice)
+private fun CardGuaranteeConsent(accepted: Boolean, onAcceptedChange: (Boolean) -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(14.dp))
+            .padding(14.dp),
+    ) {
+        Text(
+            stringResource(R.string.booking_card_guarantee_title),
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            stringResource(R.string.booking_card_guarantee_body),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(8.dp))
+        CleansiaConsentCheckbox(
+            checked = accepted,
+            onCheckedChange = onAcceptedChange,
+            html = stringResource(R.string.consent_card_guarantee_draft_2026_09_28),
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+@Composable
+private fun ContractNotice(modifier: Modifier = Modifier) {
+    val html = stringResource(R.string.booking_contract_notice)
     val linkColor = MaterialTheme.colorScheme.primary
     val sentence = remember(html, linkColor) {
         ConsentMarkup.annotated(
@@ -681,9 +745,12 @@ internal fun cancellationPolicyFor(
     membership: GetMyMembershipResponse?,
     standardFreeHours: Int = 24,
     penaltyHours: Int = 4,
+    now: Instant = Clock.System.now(),
 ): CancellationPolicyDisplay {
+    // A running trial is a membership but not a paid one, and the server prices the cancellation from
+    // the paid entitlement: a trialing, past-due or paused member cancels on the standard terms.
     val rawPlusHours = membership
-        ?.takeIf { it.hasMembership }
+        ?.takeIf { it.hasMembership && !it.benefitsPaused && it.trialEndsAt(now) == null }
         ?.freeCancellationWindowHours
         ?.takeIf { it > 0 }
     // Plus moves the free-cancellation deadline CLOSER to the cleaning, so the perk is a SMALLER

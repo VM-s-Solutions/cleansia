@@ -15,21 +15,21 @@ public interface IUserMembershipRepository : IRepository<UserMembership, string>
     Task<UserMembership?> GetLatestPaidForUserAsync(string userId, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Resolve the user's currently-providing-benefits membership, with
-    /// <see cref="UserMembership.MembershipPlan"/> eagerly loaded so the
-    /// pricing pipeline can read DiscountPercentage / FreeCancellationWindowHours
-    /// without a second round-trip. Returns null when the user has no active
-    /// membership (or no memberships at all).
+    /// The user's live enrolment — a subscription Stripe still holds open, paid up or not:
+    /// Active, PastDue or Paused, inside its period, with
+    /// <see cref="UserMembership.MembershipPlan"/> loaded. It is what refuses a second subscription, what
+    /// the customer cancels, what the webhook reconciles against and what erasure cancels — so a past-due
+    /// member, whose benefits have stopped, is still found here. Null when nothing is live.
     /// </summary>
-    Task<UserMembership?> GetActiveForUserAsync(string userId, CancellationToken cancellationToken);
+    Task<UserMembership?> GetLifecycleForUserAsync(string userId, CancellationToken cancellationToken);
 
     /// <summary>
-    /// No-tracking variant of <see cref="GetActiveForUserAsync"/> for read-only callers
+    /// No-tracking variant of <see cref="GetLifecycleForUserAsync"/> for read-only callers
     /// (GetMyMembership, cancellation-policy resolution). Returns the SAME row + MembershipPlan as the
     /// tracked variant; it just doesn't enrol the entity in the change tracker. The tracked variant
     /// stays the one for load-then-mutate handlers (cancel/swap/webhook reconciliation).
     /// </summary>
-    Task<UserMembership?> GetActiveForUserNoTrackingAsync(string userId, CancellationToken cancellationToken);
+    Task<UserMembership?> GetLifecycleForUserNoTrackingAsync(string userId, CancellationToken cancellationToken);
 
     /// <summary>
     /// Resolve the membership that ENTITLES the user to Cleansia Plus benefits — a live enrolment that is
@@ -37,13 +37,13 @@ public interface IUserMembershipRepository : IRepository<UserMembership, string>
     /// customer actually subscribes.
     ///
     /// <para><b>This is deliberately a second method rather than a narrowing of
-    /// <see cref="GetActiveForUserAsync"/>, and the distinction is load-bearing.</b> That one answers "is
+    /// <see cref="GetLifecycleForUserAsync"/>, and the distinction is load-bearing.</b> That one answers "is
     /// there a live enrolment?" and is what stops a second Stripe subscription being created, what lets a
     /// customer cancel, what the webhook reconciles against, and what GDPR erasure must see. Narrowing it
-    /// in place would make a trialing customer look unsubscribed to <c>CreateMembershipSubscription</c>,
-    /// which would mint a SECOND subscription and collide with the filtered unique index on
-    /// (TenantId, UserId) WHERE Status = Active — a 500 on a paying customer. It would also refuse to
-    /// cancel a live trial. Two questions, two methods.</para>
+    /// in place would make a trialing or past-due customer look unsubscribed to
+    /// <c>CreateMembershipSubscription</c>, which would mint a SECOND subscription and collide with the
+    /// filtered unique index on (TenantId, UserId) over the live statuses — a 500 on a paying customer. It
+    /// would also refuse to cancel a live trial. Two questions, two methods.</para>
     ///
     /// <para>With the trial removed this is a backstop rather than a live gate: no new enrolment can be
     /// trialing, because both admin plan commands refuse a non-zero trial period. It stays because

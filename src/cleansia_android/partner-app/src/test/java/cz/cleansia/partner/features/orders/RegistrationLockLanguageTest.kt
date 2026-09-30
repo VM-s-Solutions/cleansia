@@ -71,6 +71,7 @@ class RegistrationLockLanguageTest {
         // init now always fetches on a view model that holds no status, so this has to answer.
         coEvery { profileRepository.getRegistrationStatus() } returns
             ApiResult.Success(RegistrationCompletionStatus(hasCompletedProfile = false))
+        coEvery { profileRepository.getLegalDocuments(any()) } returns ApiResult.Success(emptyList())
     }
 
     private fun TestScope.viewModel(): RegistrationLockViewModel {

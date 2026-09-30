@@ -98,6 +98,16 @@ object ApiErrorParser {
             ?: genericForStatus(context, httpCode)
     }
 
+    /**
+     * The backend key [parseToUserMessage] resolves its sentence from, for a caller that answers one
+     * refusal itself. Takes the body text because an error body can be read only once.
+     */
+    fun firstErrorKey(raw: String?): String? {
+        if (raw.isNullOrBlank()) return null
+        val problem = runCatching { json.decodeFromString<ProblemDetailsBody>(raw) }.getOrNull()
+        return problem?.errors?.values?.firstNotNullOfOrNull { firstErrorValue(it) }
+    }
+
     private fun firstErrorValue(element: JsonElement): String? = when (element) {
         is JsonPrimitive -> element.contentOrNull
         is JsonArray -> element.firstOrNull()?.let { (it as? JsonPrimitive)?.contentOrNull }

@@ -5,7 +5,9 @@ import cz.cleansia.customer.api.model.AppliedDiscountSource
 import cz.cleansia.customer.api.model.CancellationFeeTier
 import cz.cleansia.customer.api.model.ConsentType
 import cz.cleansia.customer.api.model.ContractStatus
+import cz.cleansia.customer.api.model.DirtinessLevel
 import cz.cleansia.customer.api.model.DisputeReason
+import cz.cleansia.customer.api.model.DisputeSettlementPreference
 import cz.cleansia.customer.api.model.EmployeeEntityType
 import cz.cleansia.customer.api.model.EmployeeInvoiceStatus
 import cz.cleansia.customer.api.model.LoyaltyEarnSource
@@ -49,10 +51,20 @@ val IntEnumSerializersModule = SerializersModule {
         { it.value },
         { raw -> ContractStatus.entries.firstOrNull { it.value == raw } },
     ))
+    contextual(DirtinessLevel::class, IntValueEnumSerializer(
+        "DirtinessLevel",
+        { it.value },
+        { raw -> DirtinessLevel.entries.firstOrNull { it.value == raw } },
+    ))
     contextual(DisputeReason::class, IntValueEnumSerializer(
         "DisputeReason",
         { it.value },
         { raw -> DisputeReason.entries.firstOrNull { it.value == raw } },
+    ))
+    contextual(DisputeSettlementPreference::class, IntValueEnumSerializer(
+        "DisputeSettlementPreference",
+        { it.value },
+        { raw -> DisputeSettlementPreference.entries.firstOrNull { it.value == raw } },
     ))
     contextual(EmployeeEntityType::class, IntValueEnumSerializer(
         "EmployeeEntityType",

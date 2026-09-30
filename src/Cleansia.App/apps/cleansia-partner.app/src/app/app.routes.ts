@@ -3,6 +3,9 @@ import { CleansiaNotFoundComponent } from '@cleansia/components';
 import { authGuard, guestGuard } from '@cleansia/partner-services';
 import { CleansiaPartnerRoute, CommonRoute } from '@cleansia/services';
 
+// Public, and linked by this URL from the partner mobile apps, which open it in a browser.
+export const HOW_JOBS_ARE_OFFERED_PATH = 'how-jobs-are-offered';
+
 export const appRoutes: Route[] = [
   {
     path: CleansiaPartnerRoute.LOGIN,
@@ -67,6 +70,13 @@ export const appRoutes: Route[] = [
     loadChildren: () =>
       import('@cleansia-partner/gdpr').then((m) => m.gdprRoutes),
     canActivate: [authGuard],
+  },
+  {
+    path: HOW_JOBS_ARE_OFFERED_PATH,
+    loadChildren: () =>
+      import('@cleansia-partner/profile').then(
+        (m) => m.howJobsAreOfferedRoutes
+      ),
   },
   {
     path: CleansiaPartnerRoute.HOME,

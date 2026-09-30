@@ -44,6 +44,11 @@ public class EmployeeInvoiceEntityConfiguration : TenantAuditableEntityConfigura
             .IsRequired()
             .HasPrecision(18, 2);
 
+        builder.Property(e => e.CashSetOffAmount)
+            .IsRequired()
+            .HasPrecision(18, 2)
+            .HasDefaultValue(0m);
+
         builder.Property(e => e.CurrencyId)
             .IsRequired()
             .HasMaxLength(26);

@@ -3,6 +3,7 @@ import {
   CustomerClient,
   GetMembershipPlansResponse,
   GetMyMembershipResponse,
+  MembershipStatus,
   SwapMembershipPlanCommand,
 } from '@cleansia/customer-services';
 import { selectMarketCountryId } from '@cleansia/customer-stores';
@@ -17,9 +18,11 @@ function buildMembership(fields: {
   expressUpgradesRemaining?: number;
   trialEndsAtUtc?: Date;
   currencyCode?: string;
+  status?: MembershipStatus;
 }): GetMyMembershipResponse {
   const response = new GetMyMembershipResponse();
   response.hasMembership = fields.hasMembership ?? true;
+  response.status = fields.status ?? MembershipStatus.Active;
   response.expressUpgradesPerMonth = fields.expressUpgradesPerMonth;
   response.expressUpgradesRemaining = fields.expressUpgradesRemaining;
   response.trialEndsAtUtc = fields.trialEndsAtUtc;
@@ -40,6 +43,7 @@ describe('MembershipFacade — express waiver state', () => {
     getMine: jest.Mock;
     swapPlan: jest.Mock;
     getPlans: jest.Mock;
+    cancel: jest.Mock;
   };
   let snackbar: {
     showApiError: jest.Mock;
@@ -52,6 +56,7 @@ describe('MembershipFacade — express waiver state', () => {
       getMine: jest.fn(),
       swapPlan: jest.fn(),
       getPlans: jest.fn().mockReturnValue(of([])),
+      cancel: jest.fn().mockReturnValue(of(undefined)),
     };
     snackbar = {
       showApiError: jest.fn(),
@@ -113,6 +118,159 @@ describe('MembershipFacade — express waiver state', () => {
       facade.loadPlans();
 
       expect(facade.switchablePlans().map((p) => p.code)).toEqual(['PLUS_MONTHLY', 'PLUS_YEARLY']);
+    });
+  });
+
+  // `hasMembership` counts a running trial, but no Plus benefit runs during one — every benefit
+  // follows the paid entitlement. The screens branch on this, not on `hasMembership`.
+  describe('a running trial', () => {
+    const DAY_MS = 24 * 60 * 60 * 1000;
+
+    it('is the date the trial ends while it is still running', () => {
+      const trialEndsAtUtc = new Date(Date.now() + 7 * DAY_MS);
+      membershipClient.getMine.mockReturnValue(of(buildMembership({ trialEndsAtUtc })));
+
+      facade.refresh();
+
+      expect(facade.trialEndsOn()).toEqual(trialEndsAtUtc);
+    });
+
+    it('is nothing once the trial has ended', () => {
+      membershipClient.getMine.mockReturnValue(
+        of(buildMembership({ trialEndsAtUtc: new Date(Date.now() - DAY_MS) })),
+      );
+
+      facade.refresh();
+
+      expect(facade.trialEndsOn()).toBeNull();
+    });
+
+    it('is nothing for a membership that never had a trial', () => {
+      membershipClient.getMine.mockReturnValue(of(buildMembership({})));
+
+      facade.refresh();
+
+      expect(facade.trialEndsOn()).toBeNull();
+    });
+
+    it('is nothing for a customer with no membership', () => {
+      membershipClient.getMine.mockReturnValue(
+        of(
+          buildMembership({
+            hasMembership: false,
+            trialEndsAtUtc: new Date(Date.now() + 7 * DAY_MS),
+          }),
+        ),
+      );
+
+      facade.refresh();
+
+      expect(facade.trialEndsOn()).toBeNull();
+    });
+
+    it('is nothing before the membership is loaded', () => {
+      expect(facade.trialEndsOn()).toBeNull();
+    });
+
+    // The cancel dialog, its success toast and the switch dialog are built in code, not in the
+    // templates the claim spec reads, so they are pinned here.
+    describe('what cancelling or switching tells the member', () => {
+      const trialing = () =>
+        buildMembership({ trialEndsAtUtc: new Date(Date.now() + 7 * DAY_MS) });
+
+      it('tells a trialing member that no paid month follows and no benefit starts', () => {
+        membershipClient.getMine.mockReturnValue(of(trialing()));
+        facade.refresh();
+
+        facade.cancel();
+
+        expect(facade.cancelDialogMessageKey()).toBe('pages.membership.cancel_dialog_message_trial');
+        expect(facade.switchDialogMessageKey()).toBe('pages.membership.switch_dialog_message_trial');
+        expect(facade.switchLeadKey()).toBe('pages.membership.switch_lead_trial');
+        expect(facade.switchConfirmKey()).toBe('pages.membership.switch_dialog_confirm_trial');
+        expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
+          'pages.membership.cancel_success_trial',
+        );
+      });
+
+      it('tells a paid member that the paid period runs to its end', () => {
+        membershipClient.getMine.mockReturnValue(of(buildMembership({})));
+        facade.refresh();
+
+        facade.cancel();
+
+        expect(facade.cancelDialogMessageKey()).toBe('pages.membership.cancel_dialog_message');
+        expect(facade.switchDialogMessageKey()).toBe('pages.membership.switch_dialog_message');
+        expect(facade.switchLeadKey()).toBe('pages.membership.switch_lead');
+        expect(facade.switchConfirmKey()).toBe('pages.membership.switch_dialog_confirm');
+        expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
+          'pages.membership.cancel_success',
+        );
+      });
+
+      it('tells a member whose trial has ended what a paid member is told', () => {
+        membershipClient.getMine.mockReturnValue(
+          of(buildMembership({ trialEndsAtUtc: new Date(Date.now() - DAY_MS) })),
+        );
+        facade.refresh();
+
+        facade.cancel();
+
+        expect(facade.cancelDialogMessageKey()).toBe('pages.membership.cancel_dialog_message');
+        expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
+          'pages.membership.cancel_success',
+        );
+      });
+    });
+  });
+
+  // A failed renewal keeps the enrolment, so no second subscription starts, but every benefit is
+  // off and the server cancels it now rather than at the period end.
+  describe('a renewal payment that failed', () => {
+    const pastDue = () => buildMembership({ status: MembershipStatus.PastDue });
+
+    it('is what the page shows for a past-due membership', () => {
+      membershipClient.getMine.mockReturnValue(of(pastDue()));
+
+      facade.refresh();
+
+      expect(facade.paymentFailed()).toBe(true);
+    });
+
+    it('is not shown for an active membership, nor before one is loaded', () => {
+      expect(facade.paymentFailed()).toBe(false);
+
+      membershipClient.getMine.mockReturnValue(of(buildMembership({})));
+      facade.refresh();
+
+      expect(facade.paymentFailed()).toBe(false);
+    });
+
+    it('tells the member the cancel ends it now with nothing more charged, then toasts the same', () => {
+      membershipClient.getMine.mockReturnValue(of(pastDue()));
+      facade.refresh();
+
+      facade.cancel();
+
+      expect(membershipClient.cancel).toHaveBeenCalledTimes(1);
+      expect(facade.cancelDialogMessageKey()).toBe(
+        'pages.membership.cancel_dialog_message_past_due',
+      );
+      expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
+        'pages.membership.cancel_success_past_due',
+      );
+    });
+
+    it('voices a refused cancel and stops the spinner', () => {
+      membershipClient.getMine.mockReturnValue(of(pastDue()));
+      membershipClient.cancel.mockReturnValue(throwError(() => new Error('boom')));
+      facade.refresh();
+
+      facade.cancel();
+
+      expect(facade.cancelling()).toBe(false);
+      expect(snackbar.showApiError).toHaveBeenCalledTimes(1);
+      expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
     });
   });
 

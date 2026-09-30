@@ -8,6 +8,7 @@ using Cleansia.Infra.Common.Validations;
 using MediatR;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using Cleansia.Core.AppServices.Features.Refunds;
 
 namespace Cleansia.Tests.Functions;
 
@@ -31,6 +32,10 @@ public class TimerSweepFailureBranchTests
         _mediator
             .Setup(m => m.Send(It.IsAny<AutoCancelStaleRecurringOrders.Command>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Fail<AutoCancelStaleRecurringOrders.Response>());
+        // The refund re-drive rides the same tick: its failure logs and never hides the other's.
+        _mediator
+            .Setup(m => m.Send(It.IsAny<RedrivePendingRefunds.Command>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Fail<RedrivePendingRefunds.Response>());
 
         var handler = new AutoCancelStaleRecurringOrdersHandler(
             _mediator.Object, NullLogger<AutoCancelStaleRecurringOrdersHandler>.Instance);
@@ -40,6 +45,9 @@ public class TimerSweepFailureBranchTests
         Assert.Null(ex);
         _mediator.Verify(
             m => m.Send(It.IsAny<AutoCancelStaleRecurringOrders.Command>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+        _mediator.Verify(
+            m => m.Send(It.IsAny<RedrivePendingRefunds.Command>(), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 

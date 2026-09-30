@@ -15,8 +15,8 @@ namespace Cleansia.Tests.Features.Bookings;
 /// <summary>
 /// Owner ruling 2026-09-24 on the recurring entry points. A template always belongs to an account, so
 /// only the crew term can fail: cash is refused when the selection needs more than one cleaner, by the
-/// live catalogue's minutes through the same sum the order factory stamps. Rooms and bathrooms do not
-/// enter that sum, so every case here crosses the line through services and packages.
+/// live catalogue's minutes through the same sum the order factory stamps. Rooms and bathrooms enter
+/// that sum through a service's per-room minutes; every template here is two rooms and a bathroom.
 /// </summary>
 public class RecurringCashEligibilityTests
 {
@@ -28,6 +28,8 @@ public class RecurringCashEligibilityTests
     private static readonly Service OneHour = CatalogueDoubles.Service("svc-60", 60);
     private static readonly Service OneHourAndAMinute = CatalogueDoubles.Service("svc-61", 61);
     private static readonly Package PackageOf61 = CatalogueDoubles.Package("pkg-61", OneHourAndAMinute);
+    private static readonly Service TwoHoursWithTheRooms = CatalogueDoubles.Service("svc-90-10", 90, minutesPerRoom: 10);
+    private static readonly Service OverTwoHoursWithTheRooms = CatalogueDoubles.Service("svc-90-11", 90, minutesPerRoom: 11);
 
     private readonly Mock<IUserSessionProvider> _session = new();
     private readonly Mock<ISavedAddressRepository> _savedAddressRepository = new();
@@ -54,6 +56,8 @@ public class RecurringCashEligibilityTests
         { PaymentType.Cash, ["svc-121"], [], false },
         { PaymentType.Cash, ["svc-60"], ["pkg-61"], false },
         { PaymentType.Cash, ["svc-61", "svc-61"], [], true },
+        { PaymentType.Cash, ["svc-90-10"], [], true },
+        { PaymentType.Cash, ["svc-90-11"], [], false },
         { PaymentType.Card, ["svc-121"], [], true },
         { PaymentType.Card, ["svc-60"], ["pkg-61"], true },
     };
@@ -66,6 +70,54 @@ public class RecurringCashEligibilityTests
         var result = await CreateValidator().ValidateAsync(CreateCommand(paymentType, serviceIds, packageIds));
 
         AssertCashVerdict(result, accepted);
+    }
+
+    public static TheoryData<string, DirtinessLevel, bool> Levels => new()
+    {
+        { "svc-120", DirtinessLevel.Normal, true },
+        { "svc-120", DirtinessLevel.Increased, false },
+        { "svc-60", DirtinessLevel.Heavy, true },
+        { "svc-90-10", DirtinessLevel.Heavy, false },
+    };
+
+    /// <summary>
+    /// The level lengthens the booked time before the crew is counted, so a selection one cleaner covers
+    /// at Normal can need two at a higher level, and cash falls away with it.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(Levels))]
+    public async Task Creating_A_Template_Counts_The_Crew_At_Its_Level(string serviceId, DirtinessLevel level, bool accepted)
+    {
+        var result = await CreateValidator().ValidateAsync(
+            CreateCommand(PaymentType.Cash, [serviceId], []) with { DirtinessLevel = level });
+
+        AssertCashVerdict(result, accepted);
+    }
+
+    [Theory]
+    [MemberData(nameof(Levels))]
+    public async Task Updating_A_Template_Counts_The_Crew_At_Its_Level(string serviceId, DirtinessLevel level, bool accepted)
+    {
+        var result = await UpdateValidator().ValidateAsync(
+            UpdateCommand(PaymentType.Cash, [serviceId], []) with { DirtinessLevel = level });
+
+        AssertCashVerdict(result, accepted);
+    }
+
+    [Fact]
+    public async Task An_Unknown_Level_Is_Refused_As_Such_Rather_Than_Failing_The_Cash_Check()
+    {
+        var create = await CreateValidator().ValidateAsync(
+            CreateCommand(PaymentType.Cash, ["svc-120"], []) with { DirtinessLevel = (DirtinessLevel)7 });
+        var update = await UpdateValidator().ValidateAsync(
+            UpdateCommand(PaymentType.Cash, ["svc-120"], []) with { DirtinessLevel = (DirtinessLevel)7 });
+
+        foreach (var result in new[] { create, update })
+        {
+            var error = Assert.Single(result.Errors);
+            Assert.Equal(BusinessErrorMessage.InvalidEnumValue, error.ErrorMessage);
+            Assert.Equal(nameof(CreateRecurringBooking.Command.DirtinessLevel), error.PropertyName);
+        }
     }
 
     [Theory]
@@ -104,12 +156,14 @@ public class RecurringCashEligibilityTests
         var eligible = Template(PaymentType.Cash, [TwoHours.Id], [], "tpl-cash-120");
         var card = Template(PaymentType.Card, [TwoHoursAndAMinute.Id], [], "tpl-card-121");
         var paused = Template(PaymentType.Cash, [TwoHoursAndAMinute.Id], [], "tpl-paused").Pause();
+        var roomsTipIt = Template(PaymentType.Cash, [OverTwoHoursWithTheRooms.Id], [], "tpl-cash-rooms");
+        var levelTipsIt = Template(PaymentType.Cash, [TwoHours.Id], [], "tpl-cash-120-increased", DirtinessLevel.Increased);
         _templateRepository
             .Setup(r => r.GetByUserAsync(UserId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync([needsChange, packaged, eligible, card, paused]);
+            .ReturnsAsync([needsChange, packaged, eligible, card, paused, roomsTipIt, levelTipsIt]);
 
         var result = await new GetMyRecurringBookings.Handler(
-                _templateRepository.Object, _savedAddressRepository.Object, _session.Object, Services(), Packages())
+                _templateRepository.Object, _savedAddressRepository.Object, _session.Object, Services(), Packages(), Mock.Of<ICountryConfigurationRepository>())
             .Handle(new GetMyRecurringBookings.Query(), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
@@ -119,6 +173,8 @@ public class RecurringCashEligibilityTests
         Assert.False(flags["tpl-cash-120"]);
         Assert.False(flags["tpl-card-121"]);
         Assert.True(flags["tpl-paused"]);
+        Assert.True(flags["tpl-cash-rooms"]);
+        Assert.True(flags["tpl-cash-120-increased"]);
     }
 
     [Fact]
@@ -131,7 +187,7 @@ public class RecurringCashEligibilityTests
             .ReturnsAsync([Template(PaymentType.Card, [TwoHoursAndAMinute.Id], [])]);
 
         var result = await new GetMyRecurringBookings.Handler(
-                _templateRepository.Object, _savedAddressRepository.Object, _session.Object, services.Object, packages.Object)
+                _templateRepository.Object, _savedAddressRepository.Object, _session.Object, services.Object, packages.Object, Mock.Of<ICountryConfigurationRepository>())
             .Handle(new GetMyRecurringBookings.Query(), CancellationToken.None);
 
         Assert.False(Assert.Single(result.Value!).RequiresPaymentMethodChange);
@@ -151,7 +207,8 @@ public class RecurringCashEligibilityTests
     }
 
     private static IServiceRepository Services() =>
-        CatalogueDoubles.Services(TwoHours, TwoHoursAndAMinute, OneHour, OneHourAndAMinute);
+        CatalogueDoubles.Services(
+            TwoHours, TwoHoursAndAMinute, OneHour, OneHourAndAMinute, TwoHoursWithTheRooms, OverTwoHoursWithTheRooms);
 
     private static IPackageRepository Packages() => CatalogueDoubles.Packages(PackageOf61);
 
@@ -163,7 +220,10 @@ public class RecurringCashEligibilityTests
             OrderMarketDoubles.Trading(CreateOrderTestData.DefaultCurrency()),
             OrderMarketDoubles.Servicing("country-cz"),
             Services(),
-            Packages());
+            Packages(),
+            Cleansia.Tests.Features.Legal.CustomerConsentDoubles.Consented(),
+            Mock.Of<Cleansia.Core.AppServices.Services.Interfaces.ILegalDocumentResolver>(),
+            SavedCards.SavedCardDoubles.Guaranteed(), Mock.Of<IReceivableRepository>());
 
     private UpdateRecurringBooking.Validator UpdateValidator() =>
         new(
@@ -175,7 +235,8 @@ public class RecurringCashEligibilityTests
             OrderMarketDoubles.Trading(CreateOrderTestData.DefaultCurrency()),
             OrderMarketDoubles.Servicing("country-cz"),
             Services(),
-            Packages());
+            Packages(),
+            SavedCards.SavedCardDoubles.Guaranteed(), Mock.Of<IReceivableRepository>());
 
     private static CreateRecurringBooking.Command CreateCommand(
         PaymentType paymentType, IReadOnlyList<string> serviceIds, IReadOnlyList<string> packageIds) =>
@@ -189,7 +250,8 @@ public class RecurringCashEligibilityTests
             SelectedServiceIds: serviceIds,
             SelectedPackageIds: packageIds,
             PaymentType: (int)paymentType,
-            StartsOn: DateTime.UtcNow.AddDays(3));
+            StartsOn: DateTime.UtcNow.AddDays(3),
+            EarlyPerformanceRequested: true);
 
     private static UpdateRecurringBooking.Command UpdateCommand(
         PaymentType paymentType, IReadOnlyList<string> serviceIds, IReadOnlyList<string> packageIds) =>
@@ -208,7 +270,7 @@ public class RecurringCashEligibilityTests
 
     private static RecurringBookingTemplate Template(
         PaymentType paymentType, IReadOnlyList<string> serviceIds, IReadOnlyList<string> packageIds,
-        string id = TemplateId)
+        string id = TemplateId, DirtinessLevel dirtinessLevel = DirtinessLevel.Normal)
     {
         var template = RecurringBookingTemplate.Create(
             userId: UserId,
@@ -221,7 +283,8 @@ public class RecurringCashEligibilityTests
             selectedServiceIds: serviceIds,
             selectedPackageIds: packageIds,
             paymentType: paymentType,
-            startsOn: DateTime.UtcNow.AddDays(1));
+            startsOn: DateTime.UtcNow.AddDays(1),
+            dirtinessLevel: dirtinessLevel);
         template.Id = id;
         return template;
     }

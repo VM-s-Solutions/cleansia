@@ -25,7 +25,6 @@ final class PartnerNotificationDeepLinkTests: XCTestCase {
             "order.seat_open",
             "order.preferred_offer",
             "order.assigned",
-            "order.assignment_revoked",
             "dispute.reply"
         ]
         for key in keys {
@@ -38,11 +37,12 @@ final class PartnerNotificationDeepLinkTests: XCTestCase {
     }
 
     /// The cleaner is off the job, and the order detail is still the destination: the copy says the job
-    /// moved, and the detail is where they read which day just came off their schedule (Android parity).
-    func testARevokedAssignmentStillOpensTheOrderItWasTakenFrom() {
+    /// moved, and the detail is where they read which day came off their schedule, and the administrator's
+    /// reason for it (Android parity).
+    func testARevokedAssignmentOpensTheOrderItWasTakenFromWithTheReason() {
         XCTAssertEqual(
             PartnerNotificationDeepLink.resolve(eventKey: "order.assignment_revoked", orderId: "ord-4"),
-            .order(orderId: "ord-4")
+            .removedFromOrder(orderId: "ord-4")
         )
     }
 

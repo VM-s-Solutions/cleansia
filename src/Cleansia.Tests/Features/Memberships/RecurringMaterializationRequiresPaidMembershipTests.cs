@@ -60,6 +60,7 @@ public class RecurringMaterializationRequiresPaidMembershipTests
             .Setup(c => c.CalculateAsync(
                 It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(),
                 It.IsAny<IEnumerable<string>>(), It.IsAny<int>(), It.IsAny<int>(),
+                It.IsAny<DirtinessLevel>(),
                 It.IsAny<string?>(), It.IsAny<DateTime?>(), It.IsAny<string?>(),
                 It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(CreateOrderTestData.MatchingPricing());
@@ -125,6 +126,7 @@ public class RecurringMaterializationRequiresPaidMembershipTests
             _templateRepository.Object,
             _savedAddressRepository.Object,
             _addressRepository.Object,
+            Mock.Of<ICountryConfigurationRepository>(),
             OrderMarketDoubles.Trading(Currency.Create("CZK", "Kč", "Czech Koruna")),
             _orderRepository.Object,
             _pricingCalculator.Object,
@@ -175,6 +177,7 @@ public class RecurringMaterializationRequiresPaidMembershipTests
             c => c.CalculateAsync(
                 It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(),
                 It.IsAny<IEnumerable<string>>(), It.IsAny<int>(), It.IsAny<int>(),
+                It.IsAny<DirtinessLevel>(),
                 It.IsAny<string?>(), null, null, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()),
             Times.AtLeastOnce);
     }

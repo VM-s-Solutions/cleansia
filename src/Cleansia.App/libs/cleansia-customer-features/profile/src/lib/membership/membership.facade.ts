@@ -7,6 +7,7 @@ import {
   ExpressWaiverStatus,
   GetMembershipPlansResponse,
   GetMyMembershipResponse,
+  MembershipStatus,
   resolveExpressWaiverStatus,
   SwapMembershipPlanCommand,
 } from '@cleansia/customer-services';
@@ -85,6 +86,40 @@ export class MembershipFacade extends UnsubscribeControlDirective {
     () => this.expressWaiverStatus() === 'trial',
   );
 
+  /**
+   * When the running trial ends, or null. `hasMembership` counts a trial, but no Plus benefit runs
+   * during one — every benefit waits for the first paid month. → /product/business-rules
+   */
+  readonly trialEndsOn = signal<Date | null>(null);
+
+  /**
+   * A renewal payment failed. `hasMembership` still counts the enrolment so no second subscription
+   * starts, but every benefit is off, a plan switch is refused, and a cancel ends it now.
+   */
+  readonly paymentFailed = computed(() => this.membership()?.status === MembershipStatus.PastDue);
+
+  /** A trialing member who cancels or switches has no running benefit to keep. */
+  readonly cancelDialogMessageKey = computed(() => {
+    if (this.paymentFailed()) return 'pages.membership.cancel_dialog_message_past_due';
+    return this.trialEndsOn()
+      ? 'pages.membership.cancel_dialog_message_trial'
+      : 'pages.membership.cancel_dialog_message';
+  });
+  readonly switchDialogMessageKey = computed(() =>
+    this.trialEndsOn()
+      ? 'pages.membership.switch_dialog_message_trial'
+      : 'pages.membership.switch_dialog_message',
+  );
+  /** A swap during the trial keeps the trial and charges nothing, so no "immediately" or "pay difference". */
+  readonly switchLeadKey = computed(() =>
+    this.trialEndsOn() ? 'pages.membership.switch_lead_trial' : 'pages.membership.switch_lead',
+  );
+  readonly switchConfirmKey = computed(() =>
+    this.trialEndsOn()
+      ? 'pages.membership.switch_dialog_confirm_trial'
+      : 'pages.membership.switch_dialog_confirm',
+  );
+
   /** Refresh /membership/mine and update the loading flag. */
   refresh(onError?: () => void): void {
     this.loading.set(true);
@@ -93,8 +128,11 @@ export class MembershipFacade extends UnsubscribeControlDirective {
       .pipe(takeUntil(this.destroyed$))
       .subscribe({
         next: (response) => {
+          const now = new Date();
+          const trialEnd = response?.hasMembership ? response.trialEndsAtUtc : undefined;
           this.membership.set(response);
-          this.expressWaiverStatus.set(resolveExpressWaiverStatus(response, new Date()));
+          this.expressWaiverStatus.set(resolveExpressWaiverStatus(response, now));
+          this.trialEndsOn.set(trialEnd && trialEnd.getTime() > now.getTime() ? trialEnd : null);
           this.loading.set(false);
         },
         error: (err) => {
@@ -126,8 +164,13 @@ export class MembershipFacade extends UnsubscribeControlDirective {
       });
   }
 
-  /** Cancel-at-period-end. The benefit window is unaffected until period end. */
-  cancel(): void {
+  /** A paid period runs to its end, a trial ends unpaid, a failed renewal ends now. */
+  cancel(onCancelled?: () => void): void {
+    const successKey = this.paymentFailed()
+      ? 'pages.membership.cancel_success_past_due'
+      : this.trialEndsOn()
+        ? 'pages.membership.cancel_success_trial'
+        : 'pages.membership.cancel_success';
     this.cancelling.set(true);
     this.client
       .cancel()
@@ -135,8 +178,9 @@ export class MembershipFacade extends UnsubscribeControlDirective {
       .subscribe({
         next: () => {
           this.cancelling.set(false);
-          this.snackbar.showSuccessTranslated('pages.membership.cancel_success');
+          this.snackbar.showSuccessTranslated(successKey);
           this.refresh();
+          onCancelled?.();
         },
         error: (err) => {
           this.cancelling.set(false);

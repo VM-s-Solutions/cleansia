@@ -1,6 +1,7 @@
 package cz.cleansia.customer.core.orders
 
 import cz.cleansia.core.network.WireContractViolation
+import cz.cleansia.customer.core.booking.DirtinessLevel
 import cz.cleansia.customer.core.network.IntEnumSerializersModule
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -168,6 +169,18 @@ class OrderWireTest {
         assertEquals(3650.00, order.originalSubtotal, 0.0)
         assertEquals(2, order.appliedDiscountSource)
         assertEquals(450.00, order.selectedPackages?.first()?.price)
+        assertEquals(1095.00, order.dirtinessSurchargeAmount, 0.0)
+    }
+
+    @Test
+    fun theDetailCarriesTheDirtinessLevelItWasBookedAt() = runTest {
+        assertEquals(DirtinessLevel.Heavy, detailed(CAPTURED_ORDER).dirtinessLevel)
+    }
+
+    /** The level labels the surcharge row and the details card; a defaulted Normal would unlabel a charge. */
+    @Test
+    fun aMissingDirtinessLevelRefusesTheOrderRatherThanReadingNormal() = runTest {
+        refuses("dirtinessLevel") { detailed(withoutKey(CAPTURED_ORDER, "dirtinessLevel")) }
     }
 
     @Test
@@ -337,6 +350,31 @@ class OrderWireTest {
         assertNull(order.selectedPackages)
         assertNull(order.selectedServices)
         assertEquals(4380.00, order.totalPrice, 0.0)
+    }
+
+    /** A confirmed cash occurrence stays payment-Pending, so only the flag tells the two apart. */
+    @Test
+    fun theConfirmationFlagArrivesLiterallyOnTwoPendingOccurrences() = runTest {
+        fun pendingCash(needsConfirmation: Boolean) = mutating(CAPTURED_ORDER) { root ->
+            root +
+                ("paymentType" to Json.parseToJsonElement("""{ "type": "PaymentType", "name": "Cash", "value": 1 }""")) +
+                ("paymentStatus" to Json.parseToJsonElement("""{ "type": "PaymentStatus", "name": "Pending", "value": 1 }""")) +
+                ("needsConfirmation" to kotlinx.serialization.json.JsonPrimitive(needsConfirmation))
+        }
+
+        val awaiting = detailed(pendingCash(needsConfirmation = true))
+        val confirmed = detailed(pendingCash(needsConfirmation = false))
+
+        assertEquals(1, awaiting.paymentStatus?.value)
+        assertEquals(1, confirmed.paymentStatus?.value)
+        assertTrue(awaiting.needsConfirmation)
+        assertEquals(false, confirmed.needsConfirmation)
+    }
+
+    @Test
+    fun anOrderWithoutTheConfirmationFlagNeedsNoConfirmation() = runTest {
+        assertEquals(false, detailed(withoutKey(CAPTURED_ORDER, "needsConfirmation")).needsConfirmation)
+        assertEquals(false, detailed(withKey(CAPTURED_ORDER, "needsConfirmation", JsonNull)).needsConfirmation)
     }
 
     /**
@@ -597,7 +635,9 @@ class OrderWireTest {
               "assignedEmployeesCount": 1,
               "hasAvailableSpots": true,
               "isAssignedToCurrentUser": true,
-              "hasAfterPhotos": true
+              "hasAfterPhotos": true,
+              "dirtinessLevel": 2,
+              "dirtinessSurchargeAmount": 1095.00
             }
         """.trimIndent()
 
@@ -664,12 +704,14 @@ class OrderWireTest {
             "hasReview",
             "creditAppliedAmount",
             "amountDueOnCard",
+            "dirtinessLevel",
+            "dirtinessSurchargeAmount",
         )
 
         val CURRENCY_SPEC_PROPERTIES = setOf("id", "code", "symbol", "name", "isDefault")
 
         val CANCEL_SPEC_PROPERTIES =
-            setOf("orderId", "feeRate", "refundAmount", "totalPrice", "refundInitiated", "actualRefundAmount")
+            setOf("orderId", "feeRate", "refundAmount", "totalPrice", "refundInitiated", "actualRefundAmount", "refundPending")
 
         val PREVIEW_SPEC_PROPERTIES = setOf(
             "orderId",
@@ -685,7 +727,8 @@ class OrderWireTest {
 
         val LIST_ROW_REQUIRED_MONEY = listOf("totalPrice", "originalSubtotal", "appliedDiscountSource")
 
-        val DETAIL_REQUIRED_MONEY = listOf("totalPrice", "originalSubtotal", "appliedDiscountSource")
+        val DETAIL_REQUIRED_MONEY =
+            listOf("totalPrice", "originalSubtotal", "appliedDiscountSource", "dirtinessSurchargeAmount")
 
         val CANCEL_REQUIRED_MONEY = listOf("feeRate", "refundAmount", "totalPrice")
 

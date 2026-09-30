@@ -35,6 +35,7 @@
       "invoices": "Invoices",
       "invoice_details": "Invoice Details",
       "my_pay": "My Pay",
+      "how_jobs_are_offered": "How jobs are offered",
       "not_found": "Page Not Found"
     }
   },
@@ -76,7 +77,7 @@
       "change_password_error": "Could not change your password. Please try again."
     },
     "profile": {
-      "title": "Employee Onboarding Profile",
+      "title": "Partner Onboarding Profile",
       "description": "Please fill in all required information and upload the necessary documents to complete the onboarding process.",
       "personal_info": "Personal Information",
       "full_name": "Full Name",
@@ -92,7 +93,7 @@
       "tax_id": "Tax ID",
       "registration_number": "Registration Number",
       "legal_entity_name": "Legal Entity Name",
-      "bank_details": "Bank Details for Payroll",
+      "bank_details": "Bank Details for Payouts",
       "iban": "IBAN",
       "emergency_contact": "Emergency Contact",
       "emergency_name": "Name",
@@ -145,13 +146,24 @@
       "job_radius_off_hint": "We'll notify you about every new job in your country.",
       "job_radius_distance": "Distance from home (km)",
       "job_radius_distance_hint": "Between {{min}} and {{max}} km.",
+      "weekly_limit": "Weekly job limit",
+      "weekly_limit_text": "An administrator has limited how many jobs you can have in one week: {{count}}.",
+      "weekly_limit_reason": "Reason: {{reason}}",
       "bank_account": "Bank account",
       "bank_account_hint": "Prefix, account number and bank code — paste a whole account and it splits itself.",
       "request_deletion": "Request removal",
       "request_deletion_title": "Ask us to remove this?",
       "request_deletion_message": "Nothing is removed yet. Some of these documents we have to keep, so an admin reviews your request — {{fileName}} stays exactly as it is until they answer.",
       "deletion_reason": "Why should it be removed?",
-      "replace_document": "Replace"
+      "replace_document": "Replace",
+      "legal_documents": "Contract documents",
+      "legal_documents_intro": "These documents govern your work for the operating company of the market you work in. Read and accept each one below. Until you accept the version in force, your registration cannot be approved and you cannot take jobs.",
+      "legal_documents_version": "Version {{version}}, effective from {{date}}",
+      "legal_documents_accepted_on": "Accepted on {{date}}, version {{version}}",
+      "legal_documents_new_version": "A new version is in force. You accepted version {{version}}.",
+      "legal_documents_awaiting": "Not accepted yet",
+      "legal_documents_text": "Full text",
+      "legal_documents_accept": "I have read and accept this document"
     },
     "dashboard": {
       "title": "Dashboard",
@@ -254,6 +266,8 @@
       "address": "Address",
       "cleaning_date": "Cleaning Date",
       "total_price": "Total Price",
+      "your_pay": "Your Pay (per spot)",
+      "dirtiness_level": "Dirtiness",
       "payment_status": "Payment Status",
       "order_status": "Order Status",
       "order_id": "Order ID",
@@ -274,7 +288,7 @@
       "no_available_orders": "No available orders",
       "no_my_orders": "You haven't completed any orders yet",
       "order_taken_success": "Order taken successfully!",
-      "employee_not_found": "Employee information not found",
+      "employee_not_found": "Partner information not found",
       "available_spots": "Available Spots",
       "complete_order": {
         "title": "Complete Order",
@@ -282,12 +296,9 @@
         "estimated_time": "Estimated Time",
         "actual_time": "Actual Time",
         "actual_time_input": "Actual Completion Time",
-        "delay": "Delay",
-        "status": "Status",
-        "on_time": "On Time",
         "completion_notes": "Completion Notes",
         "completion_notes_placeholder": "Explain why it took longer or shorter than estimated (e.g., extra stains, simpler than expected, equipment issues)",
-        "notes_hint": "Required: These notes help us understand time variances and improve estimates. They also justify employee payment adjustments.",
+        "notes_hint": "Optional. These notes help us understand time differences and improve our estimates.",
         "optional": "optional",
         "minutes": "min",
         "complete_button": "Complete Order",
@@ -323,11 +334,12 @@
       "work_contract": {
         "title": "Contract for work",
         "version_line": "Version {{version}}, effective from {{date}}",
+        "parties": "Between the operating company that sold this cleaning (the client) and you (the contractor)",
         "facts": {
           "title": "The job",
           "order_number": "Order number",
           "window": "Date and time",
-          "price": "Price",
+          "reward": "Your reward for your spot",
           "location": "Location",
           "rooms_bathrooms": "Rooms / bathrooms",
           "services": "Services",
@@ -350,6 +362,8 @@
       "order_status": "Order Status",
       "payment_status": "Payment Status",
       "customer_information": "Customer Information",
+      "customer_details_closed_completed": "The customer's name, address and phone number were removed 24 hours after the job was completed.",
+      "customer_details_closed_cancelled": "The customer's name, address and phone number were removed when the order was cancelled.",
       "customer_name": "Customer Name",
       "customer_email": "Customer Email",
       "customer_phone": "Customer Phone",
@@ -358,6 +372,7 @@
       "cleaning_date": "Cleaning Date",
       "rooms": "Rooms",
       "bathrooms": "Bathrooms",
+      "dirtiness_level": "Dirtiness",
       "estimated_time": "Estimated Time",
       "estimated_time_minutes": "{{minutes}} minutes",
       "selected_package": "Selected Package",
@@ -369,9 +384,9 @@
       "payment_type": "Payment Type",
       "total_price": "Total Price",
       "currency": "Currency",
-      "assigned_employee": "Assigned Employee",
-      "employee_name": "Employee Name",
-      "employee_phone": "Employee Phone",
+      "assigned_employee": "Assigned Partner",
+      "employee_name": "Partner Name",
+      "employee_phone": "Partner Phone",
       "notes_instructions": "Notes & Instructions",
       "notes": "Notes",
       "special_instructions": "Special Instructions",
@@ -406,17 +421,19 @@
       "report_issue": "Report Issue",
       "add_note": "Add Note",
       "take_order": "Take Order",
-      "assigned_employees": "Assigned Employees",
-      "employee_email": "Employee Email",
+      "assigned_employees": "Assigned Partners",
+      "employee_email": "Partner Email",
       "not_found_title": "Order Not Found",
       "not_found_message": "The order you are looking for could not be found.",
       "load_failed": "Failed to load order details",
+      "removed_title": "You were taken off this job",
+      "removed_message": "An administrator took you off this job and gave this reason: {{reason}}",
       "note_content": "Note",
       "note_content_placeholder": "Enter your note here...",
       "issue_description": "Issue Description",
       "issue_description_placeholder": "Describe the issue...",
       "issue_type": "Issue Type",
-      "employee_notes": "Employee Notes",
+      "employee_notes": "Partner Notes",
       "reported_issues": "Reported Issues",
       "resolved": "Resolved",
       "open_issue": "Open",
@@ -437,11 +454,25 @@
         "pending_banner": "Accept the contract for work before you start",
         "accept": "Accept the contract",
         "accepted_success": "Contract for work accepted."
+      },
+      "lockout": {
+        "title": "Cannot get in?",
+        "not_yet": "If nobody opens the door, you can report it from {{time}}, {{minutes}} minutes after the start.",
+        "body": "Take a photo of the entrance, note when you called the customer, and report it. An administrator confirms it before any fee applies.",
+        "entrance_photo": "Entrance photo",
+        "take_photo": "Take entrance photo",
+        "photo_needed": "Take a photo of the entrance first.",
+        "call_attempts": "Calls you made",
+        "call_attempts_placeholder": "When you called or messaged the customer and what happened",
+        "report": "I cannot get in",
+        "reported_title": "Reported: cannot get in",
+        "reported_body": "Reported at {{time}}. An administrator will confirm it; until then the job stays as it is.",
+        "reported_calls": "Calls: {{calls}}"
       }
     },
     "invoices": {
-      "title": "My Payroll Invoices",
-      "description": "View your payroll invoices and track payments for completed orders.",
+      "title": "My Invoices",
+      "description": "View your invoices and track payments for completed orders.",
       "my_invoices": "My Invoices",
       "invoice_number": "Invoice Number",
       "pay_period": "Pay Period",
@@ -472,7 +503,7 @@
       "title": "Invoice Details",
       "invoice_details": "Invoice Details",
       "summary": "Invoice Summary",
-      "employee_name": "Employee Name",
+      "employee_name": "Partner Name",
       "variable_symbol": "Variable Symbol",
       "total_orders": "Total Orders",
       "generated_date": "Generated Date",
@@ -486,9 +517,11 @@
       "order_number": "Order Number",
       "base_pay": "Base Pay",
       "extras_pay": "Extras Pay",
+      "dirtiness_pay": "Dirtiness Pay",
       "expenses_pay": "Expenses Pay",
       "bonus_pay": "Bonus Pay",
       "deduction_pay": "Deduction Pay",
+      "deduction_reason": "Deduction Reason",
       "total_pay": "Total Pay",
       "no_orders": "No orders found for this invoice",
       "notes": "Notes",
@@ -509,17 +542,29 @@
       "total_orders": "Total Orders",
       "base_pay": "Base Pay",
       "extras_pay": "Extras Pay",
+      "dirtiness_pay": "Dirtiness Pay",
       "expenses_pay": "Expenses Pay",
       "bonus_pay": "Bonus Pay",
       "deduction_pay": "Deduction Pay",
+      "deduction_reason": "Deduction Reason",
       "total_pay": "Total Pay",
       "grand_total": "Grand Total",
       "order_lines": "Per-Order Pay",
       "order_number": "Order Number",
+      "line_type": "Line",
       "no_order_pays": "No pay lines for this period",
       "no_periods": "No pay periods are available yet",
       "load_error": "Failed to load your period pay",
-      "view_invoice": "View Invoice"
+      "view_invoice": "View Invoice",
+      "cash_held": {
+        "title": "Cash I hold",
+        "description": "Cash you took at the door and have not handed over yet. It is set off against your next payout.",
+        "none": "You hold no company cash.",
+        "load_error": "We couldn't load the cash you hold.",
+        "held": "You hold",
+        "limit": "Limit",
+        "jobs_hidden": "You hold more than the limit, so cash jobs are hidden from you until you hand cash over."
+      }
     },
     "gdpr": {
       "title": "Privacy Policy & GDPR",
@@ -540,23 +585,44 @@
       "export_success": "Your data export has been downloaded.",
       "export_error": "We couldn't export your data. Try again later.",
       "consents_title": "Consent management",
-      "consents_description": "Review and change the consents you've given us.",
-      "consent_updated": "Consent updated.",
-      "consent_error": "We couldn't update your consent. The switch shows the saved state.",
+      "consents_description": "Which versions of your cooperation documents you accepted, and when.",
+      "consents_load_error": "Your consents could not be loaded.",
       "consent_types": {
-        "terms_of_service": "Terms of service",
-        "privacy_policy": "Privacy policy",
-        "marketing_emails": "Marketing emails",
-        "data_processing": "Data processing"
+        "cleaner_framework_contract": "Framework cooperation agreement (partners)",
+        "self_billing_agreement": "Self-billing agreement",
+        "cleaner_data_processing_agreement": "Data processing agreement (partners)"
+      },
+      "legal": {
+        "accepted_version": "Version {{version}}, accepted on {{date}}",
+        "accepted": "Accepted on {{date}}",
+        "none": "No accepted cooperation documents on record."
       },
       "delete_title": "Delete my account",
-      "delete_description": "Permanently delete your account and anonymize your personal data. This cannot be undone.",
+      "delete_description": "Send us a request to delete your account. Your cooperation is then formally ended in person, and only after that is your account closed and your personal data anonymised. Invoices and pay records are kept as financial records.",
       "delete_button": "Delete my account",
       "delete_confirm_title": "Request account deletion?",
-      "delete_confirm_message": "We will start the offboarding process. Your cooperation has to be formally ended in person and any outstanding paperwork signed before your account is closed. Invoices, pay records and the self-billing agreement are kept as financial records.",
+      "delete_confirm_message": "We will start the offboarding process. Your cooperation has to be formally ended in person and any outstanding paperwork signed before your account is closed. Invoices and pay records are kept as financial records.",
       "delete_confirm_yes": "Request deletion",
       "delete_error": "We couldn't delete your account.",
       "delete_requested": "Your deletion request has been submitted. We will be in touch to arrange the paperwork."
+    },
+    "how_jobs_are_offered": {
+      "title": "How jobs are offered",
+      "description": "The rules behind the job board: what you see, what happens automatically, and how to ask a person to look at a decision.",
+      "board_title": "The job board",
+      "board_text": "Every approved partner sees the same open jobs. The board shows the jobs in the market you work in, in the currency you are paid in. By default they are listed by when they were posted, and you can sort the list yourself. A free place goes to whoever takes it first.",
+      "preferred_title": "When a customer asks for you",
+      "preferred_text": "A customer you have cleaned for can ask for you by name. You then have the first place on that job to yourself for a limited time, which is shorter the sooner the clean is. If you do not take it in that time, or you release it, it goes to the open board for everyone. Releasing it is never held against you.",
+      "radius_title": "New-job notifications",
+      "radius_text": "We tell you about new jobs automatically. If you set a distance on your profile, we tell you only about jobs within it; if you do not, about every new job in your country. The distance changes only the notifications: the board still lists every job, and you can take any of them.",
+      "automatic_title": "What happens automatically",
+      "automatic_text": "A few things happen on their own: a customer's request for you ends at its deadline and the job opens to everyone; a job with nobody on it shortly after its start time is cancelled and the customer is refunded; we remind you of the jobs you have taken; and if a job you have taken has not been started shortly after its start time, the company's administrators are told automatically. None of these steps decides anything about you or changes which jobs you can take: what happens to a job that was not started is always decided by a person.",
+      "no_score_title": "No score decides your access",
+      "no_score_text": "We do not score partners or put them in order. Ratings do not change which jobs you see or can take. The only limit on how many jobs you take is a weekly limit an administrator may set for you; if one is set, you see it and its reason on your profile.",
+      "approval_title": "How approval works",
+      "approval_text": "Before you can take jobs, an administrator approves your account. They check that your profile is complete, that every document the country you will work in requires has been uploaded and accepted, that you have accepted the partner documents in force, and that we operate in that country. Approval and rejection are always decided by a person, never automatically.",
+      "review_title": "Ask a person to review a decision",
+      "review_text": "If you disagree with a decision about your account or your jobs, such as a rejection, a removal from a job or a weekly limit, write to info@cleansia.cz. A person, not an automated system, will look at it and answer you."
     }
   },
   "sidebar": {
@@ -565,6 +631,7 @@
     "orders": "Orders",
     "invoices": "Invoices",
     "my_pay": "My Pay",
+    "how_jobs_are_offered": "How jobs are offered",
     "logout": "Logout"
   },
   "components": {
@@ -625,7 +692,9 @@
         "bank_details_load_error": "We could not load your bank details. Please try again.",
         "not_loaded": "Profile not loaded yet",
         "job_radius_saved": "Job alert distance saved",
-        "job_radius_load_error": "We could not load your job alert distance. Please try again."
+        "job_radius_load_error": "We could not load your job alert distance. Please try again.",
+        "legal_document_accepted": "Document accepted.",
+        "legal_documents_load_error": "Your contract documents could not be loaded. Please try again."
       },
       "documents": {
         "load_error": "Failed to load documents. Please try again.",
@@ -645,7 +714,6 @@
         "invalid_request": "Invalid request. Missing required information.",
         "order_started": "Order started successfully.",
         "cash_collected": "Cash collected. The order is marked as paid.",
-        "cash_collect_failed": "Failed to record the cash collection. Please try again.",
         "failed_to_start": "Failed to start order. Please try again.",
         "print_failed": "Failed to print order. Please try again.",
         "receipt_not_available": "Receipt is not available for this order.",
@@ -658,7 +726,8 @@
         "photo_upload_failed": "Failed to upload photo. Please try again.",
         "photo_read_failed": "Failed to read photo file. Please try again.",
         "photo_deleted": "Photo deleted successfully.",
-        "photo_delete_failed": "Failed to delete photo. Please try again."
+        "photo_delete_failed": "Failed to delete photo. Please try again.",
+        "lockout_reported": "Reported. An administrator will confirm it."
       },
       "invoices": {
         "invoice_generated": "Invoice generated from time logs.",
@@ -795,7 +864,8 @@
       "acceptance_required": "Accept the contract for work for this job before you continue."
     },
     "legal": {
-      "document_not_found": "This job cannot be taken right now."
+      "document_not_found": "This job cannot be taken right now.",
+      "document_not_in_force": "This document is no longer the version in force. Reload it and accept the current one."
     },
     "auth": {
       "google_type_error": "This account uses Google sign-in. Use the Google button.",
@@ -807,9 +877,10 @@
       "invalid_apple_token": "Invalid Apple token",
       "social_account_not_found": "No account matches that sign-in. Please register first.",
       "invalid_password_format": "Invalid password format",
+      "admin_password_too_short": "Administrator passwords must be at least 12 characters long.",
       "invalid_reset_token": "Invalid password reset token",
       "same_reset_password": "New password matches the old password",
-      "insufficient_privileges": "You do not have permission to access the partner app. Only employees and administrators can log in.",
+      "insufficient_privileges": "You do not have permission to access the partner app. Only partners and administrators can log in.",
       "current_password_invalid": "The current password is incorrect",
       "account_locked": "Too many failed login attempts. The account is temporarily locked — try again in a few minutes.",
       "too_many_attempts": "Too many attempts with this code. Request a new code and try again.",
@@ -865,6 +936,12 @@
       "invalid_email": "Invalid email address"
     },
     "order": {
+      "lockout": {
+        "too_early": "You can report that you cannot get in once 15 minutes have passed since the booked start.",
+        "photo_required": "Take a photo of the door or the entrance first, then report that you cannot get in.",
+        "already_reported": "You have already reported that you cannot get in. The office will get back to you.",
+        "order_closed": "This job is already finished or cancelled, so there is nothing to report."
+      },
       "cleaning_date": {
         "future": "Cleaning date must be in the future"
       },
@@ -886,8 +963,8 @@
         "already_cancelled": "This order is already cancelled.",
         "already_completed": "This order is already completed."
       },
-      "employee_already_assigned": "Employee is already assigned to this order",
-      "employee_not_assigned": "Employee is not assigned to this order",
+      "employee_already_assigned": "Partner is already assigned to this order",
+      "employee_not_assigned": "Partner is not assigned to this order",
       "not_in_progress": "Order is not in progress",
       "not_confirmed": "Order must be in confirmed status to start",
       "too_early_to_start": "Too early to start — you can begin up to an hour before the booking.",
@@ -897,6 +974,8 @@
       "card_payment_already_settled": "The card payment already went through. Refresh and complete the order — don't take cash.",
       "card_payment_in_progress": "The card payment is still being processed. Wait a moment and try again — don't take cash yet.",
       "card_payment_unverified": "We couldn't check the card payment status right now, so cash can't be recorded. Try again shortly or contact an administrator.",
+      "cash_not_allowed_on_card_order": "This order is paid by card, so cash can't be recorded for it. Don't take cash — ask an office admin to settle it.",
+      "payment_not_outstanding": "This order has no payment left to collect — it is already settled or refunded. Don't take cash.",
       "completion_notes": {
         "too_long": "Completion notes are too long"
       },
@@ -906,7 +985,12 @@
       "payment_gateway_unavailable": "Payment gateway is unavailable",
       "time_conflict": "This time conflicts with another booking on your schedule",
       "weekly_limit_reached": "You've reached your weekly order limit.",
-      "employee_already_has_order_in_progress": "You already have another order in progress. Finish it before starting a new one."
+      "cash_float_cap_exceeded": "You hold more of the company's cash than it allows, so cash jobs are not available to you until you hand some over.",
+      "employee_already_has_order_in_progress": "You already have another order in progress. Finish it before starting a new one.",
+      "photo": {
+        "window_closed": "This photo cannot be added now: before photos from the moment you hold the job until it is finished, after photos while the work is in progress.",
+        "locked": "Photos cannot be deleted once the order is completed or cancelled."
+      }
     },
     "user": {
       "email_confirmed": "Email is already confirmed",
@@ -918,16 +1002,17 @@
       "not_found": "User not found"
     },
     "employee": {
-      "not_found": "Employee not found",
-      "not_allowed_to_update": "You are not allowed to update this employee",
-      "data_not_available": "Employee data not available",
+      "not_found": "Partner not found",
+      "not_allowed_to_update": "You are not allowed to update this partner",
+      "data_not_available": "Partner data not available",
       "profile_incomplete": "Complete profile information",
       "documents_missing": "Upload required documents",
       "not_approved": "Your account is not approved to work on orders",
-      "already_approved": "Employee has already been approved",
-      "already_rejected": "Employee has already been rejected",
+      "already_approved": "Partner has already been approved",
+      "already_rejected": "Partner has already been rejected",
       "job_radius_out_of_range": "The travel radius you entered is outside the allowed range",
-      "legal_entity_not_accepted": "Cleaners work with us as natural persons; a company cannot be registered here"
+      "legal_entity_not_accepted": "Cleaners work with us as natural persons; a company cannot be registered here",
+      "legal_documents_not_accepted": "Accept the current version of your contract documents in your profile before taking jobs."
     },
     "employee_document": {
       "not_found": "Document not found",
@@ -956,7 +1041,7 @@
       "no_unpaid_order_pays": "No unpaid order pays found",
       "no_active_period": "No active pay period found",
       "no_pay_configuration": "No pay configuration found",
-      "employee_not_assigned": "Employee not assigned to this order"
+      "employee_not_assigned": "Partner not assigned to this order"
     },
     "receipt": {
       "not_found": "Receipt not found"
@@ -1021,7 +1106,8 @@
       "deletion_blocked_by_order": "Your account can't be deleted while you have active orders.",
       "deletion_blocked_by_invoice": "Your account can't be deleted while invoices are outstanding.",
       "deletion_blocked_by_assigned_order": "Your account can't be deleted while you are still assigned to a job.",
-      "deletion_blocked_by_unsettled_pay": "Your account can't be deleted while pay is still owed to you. Contact the office to settle it first."
+      "deletion_blocked_by_unsettled_pay": "Your account can't be deleted while pay is still owed to you. Contact the office to settle it first.",
+      "consent_not_editable": "This consent cannot be changed here."
     },
     "company": {
       "not_found": "Company information not found",
@@ -1121,6 +1207,16 @@
       "open": "Open",
       "closed": "Closed",
       "paid": "Paid"
+    },
+    "dirtiness_level": {
+      "normal": "Normal",
+      "increased": "Increased",
+      "heavy": "Heavy"
+    },
+    "pay_line_type": {
+      "job": "Job",
+      "cancellation_fee_share": "Your share of the late-cancellation fee",
+      "lockout_fee_share": "Your share of the lockout fee"
     }
   },
   "help": {
@@ -1137,7 +1233,7 @@
       "status_title": "Order Status Explained",
       "status": {
         "confirmed_desc": "A cleaner has taken the job. This says nothing about payment — a cash order is Confirmed before any money moves.",
-        "in_progress_desc": "An employee has started working on this order. Cleaning is underway.",
+        "in_progress_desc": "A partner has started working on this order. Cleaning is underway.",
         "completed_desc": "Work is finished, photos uploaded. Ready for payment processing.",
         "cancelled_desc": "Order was cancelled. No payment or work required."
       },
@@ -1174,34 +1270,11 @@
     "show_help": "Show Help"
   },
   "cookies": {
-    "title": "We Value Your Privacy",
-    "description": "We use cookies to enhance your browsing experience, provide personalized content, and analyze our traffic. By clicking \"Accept\", you consent to our use of cookies.",
-    "accept": "Accept All",
-    "decline": "Decline",
+    "title": "Cookies on this site",
+    "description": "We use only the cookies and browser storage the app needs to work: keeping you signed in, remembering your language, and remembering that you have seen this notice. No analytics or advertising cookies.",
     "learn_more": "Learn more",
-    "banner_title": "Cookie consent banner",
-    "customize": "Customize",
-    "hide_settings": "Hide Settings",
-    "save_preferences": "Save Preferences",
-    "always_on": "Always On",
-    "categories": {
-      "necessary": {
-        "name": "Necessary",
-        "description": "Essential for the website to function. Cannot be disabled."
-      },
-      "analytics": {
-        "name": "Analytics",
-        "description": "Help us understand how visitors interact with our website."
-      },
-      "marketing": {
-        "name": "Marketing",
-        "description": "Used to deliver relevant ads and track campaigns."
-      },
-      "preferences": {
-        "name": "Preferences",
-        "description": "Remember your settings like language and theme."
-      }
-    }
+    "banner_title": "Cookie notice",
+    "acknowledge": "OK"
   },
   "auth": {
     "login": {

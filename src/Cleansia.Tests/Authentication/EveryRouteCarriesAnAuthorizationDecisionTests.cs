@@ -94,6 +94,12 @@ public class EveryRouteCarriesAnAuthorizationDecisionTests
         "Customer/PaymentController.ResumeCheckout",
         "Mobile.Customer/OrderController.ConfirmRecurring",
         "Mobile.Customer/PaymentController.CreatePaymentIntent",
+
+        // (d) A signed-in customer's booking on the native apps. The order is created FOR the caller
+        //     — CreateOrder.cs stamps the session user as its owner — so there is no one else's row
+        //     to guard. The web host keeps the same command anonymous for guest booking, which the
+        //     apps do not offer; requiring the sign-in is what keeps a guest off the mobile API.
+        "Mobile.Customer/OrderController.CreateOrder",
     };
 
     private sealed record Route(string Host, string Controller, string Action)

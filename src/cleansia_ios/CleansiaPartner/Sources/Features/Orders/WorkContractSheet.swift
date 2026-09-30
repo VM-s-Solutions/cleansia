@@ -11,16 +11,19 @@ struct WorkContractSheet: View {
     @StateObject private var vm: WorkContractSheetViewModel
     private let onDismiss: () -> Void
     private let onOutcome: (WorkContractOutcome) -> Void
+    private let onOpenLegalDocuments: () -> Void
 
     init(
         request: WorkContractRequest,
         client: PartnerOrderClient,
         onDismiss: @escaping () -> Void,
-        onOutcome: @escaping (WorkContractOutcome) -> Void
+        onOutcome: @escaping (WorkContractOutcome) -> Void,
+        onOpenLegalDocuments: @escaping () -> Void
     ) {
         _vm = StateObject(wrappedValue: WorkContractSheetViewModel(request: request, client: client))
         self.onDismiss = onDismiss
         self.onOutcome = onOutcome
+        self.onOpenLegalDocuments = onOpenLegalDocuments
     }
 
     private var submitting: Bool {
@@ -36,7 +39,8 @@ struct WorkContractSheet: View {
                 submitting: submitting,
                 onAccept: { Task { await vm.accept() } },
                 onRetry: { Task { await vm.load() } },
-                onClose: onDismiss
+                onClose: onDismiss,
+                onOpenLegalDocuments: onOpenLegalDocuments
             )
             .navigationTitle(vm.state.loadedContract?.title ?? L10n.WorkContract.title)
             .navigationBarTitleDisplayMode(.inline)
@@ -61,6 +65,7 @@ struct WorkContractSheetContent: View {
     var onAccept: () -> Void = {}
     var onRetry: () -> Void = {}
     var onClose: () -> Void = {}
+    var onOpenLegalDocuments: () -> Void = {}
 
     var body: some View {
         switch state {
@@ -71,6 +76,12 @@ struct WorkContractSheetContent: View {
             SheetMessage(text: L10n.WorkContract.loadError, ctaLabel: L10n.retry, onCta: onRetry)
         case let .unavailable(error):
             SheetMessage(text: ApiErrorLocalizer().message(for: error), ctaLabel: L10n.close, onCta: onClose)
+        case .legalDocumentsNotAccepted:
+            SheetMessage(
+                text: ApiErrorLocalizer().message(for: ApiError(code: WorkContractErrorKey.legalDocumentsNotAccepted)),
+                ctaLabel: L10n.LegalDocuments.review,
+                onCta: onOpenLegalDocuments
+            )
         case let .loaded(contract):
             LoadedContract(
                 request: request,
@@ -98,6 +109,10 @@ private struct LoadedContract: View {
             Text(L10n.WorkContract.version(contract.version))
                 .font(CleansiaTypography.labelMedium)
                 .foregroundColor(CleansiaColors.onSurfaceVariant)
+            Text(L10n.WorkContract.parties)
+                .font(CleansiaTypography.bodyMedium)
+                .foregroundColor(CleansiaColors.onSurfaceVariant)
+                .fixedSize(horizontal: false, vertical: true)
             JobFactsCard(facts: contract.facts, locale: locale)
             if let acceptance = contract.acceptance {
                 AcceptanceFacts(acceptance: acceptance, renderedLanguage: contract.language, locale: locale)
@@ -165,9 +180,14 @@ private struct JobFactsCard: View {
                     .font(CleansiaTypography.titleMedium)
                     .foregroundColor(CleansiaColors.onSurface)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                Text(EarningsFormat.wholeMoney(facts.totalPrice, currencyCode: facts.currencyCode))
-                    .font(CleansiaTypography.titleMedium)
-                    .foregroundColor(CleansiaColors.primary)
+                VStack(alignment: .trailing, spacing: 0) {
+                    Text(L10n.WorkContract.reward)
+                        .font(CleansiaTypography.labelSmall)
+                        .foregroundColor(CleansiaColors.onSurfaceVariant)
+                    Text(EarningsFormat.wholeMoney(facts.reward, currencyCode: facts.currencyCode))
+                        .font(CleansiaTypography.titleMedium)
+                        .foregroundColor(CleansiaColors.primary)
+                }
             }
             if orderNumber != nil {
                 FactLine(window)
@@ -229,7 +249,7 @@ private struct AcceptanceFacts: View {
     }
 }
 
-private struct NoticeRow: View {
+struct NoticeRow: View {
     let text: String
 
     var body: some View {
@@ -270,15 +290,16 @@ private struct SheetMessage: View {
     extension WorkContract {
         static let preview = WorkContract(
             legalDocumentTextId: "text-1",
-            version: "2026-09-20",
+            version: "2026-09-29",
             language: "en",
             title: "Contract for work",
-            contentHtml: "<p>This contract for work is concluded between the customer and the cleaner.</p>",
+            contentHtml: "<p>This contract for work is concluded between the operating company (the client)"
+                + " and you (the contractor).</p>",
             facts: WorkContractJobFacts(
                 orderNumber: "CL-2026-0042",
                 cleaningDateTimeUtc: Date(timeIntervalSince1970: 1_786_200_000),
                 estimatedMinutes: 180,
-                totalPrice: 1850,
+                reward: 620,
                 currencyCode: "CZK",
                 locationApproximate: "Praha 4 · 14000",
                 rooms: 3,
@@ -309,6 +330,8 @@ private struct SheetMessage: View {
                     state: .unavailable(ApiError(code: WorkContractErrorKey.documentNotFound))
                 )
                 .previewDisplayName("Unavailable")
+                WorkContractSheetContent(request: .take(orderId: "order-1"), state: .legalDocumentsNotAccepted)
+                    .previewDisplayName("Contract documents owed")
             }
             .background(CleansiaColors.surface)
         }

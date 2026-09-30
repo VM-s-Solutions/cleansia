@@ -1,5 +1,7 @@
 package cz.cleansia.partner.features.orders
 
+import androidx.annotation.StringRes
+import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.OrderItem
 import cz.cleansia.partner.api.model.OrderStatus
 
@@ -41,3 +43,18 @@ fun OrderDisclosure.showsAccessCard(status: OrderStatus?): Boolean =
  */
 fun OrderDisclosure.showsWorkRecordSection(canAddNotesOrIssues: Boolean): Boolean =
     showsWorkRecord || canAddNotesOrIssues
+
+/**
+ * What stands where the customer was on a job the caller worked, once the server has closed it to the
+ * crew (24 hours after completion, at once on cancellation). Null while it is open, and for a caller
+ * who never had the details.
+ */
+@StringRes
+fun OrderItem.customerDetailsClosedNote(): Int? {
+    if (isAssignedToCurrentUser != true || orderLocation() is OrderLocation.Precise) return null
+    return when (orderStatus.toOrderStatus()) {
+        OrderStatus._5 -> R.string.order_customer_details_closed_completed
+        OrderStatus._6 -> R.string.order_customer_details_closed_cancelled
+        else -> null
+    }
+}

@@ -23,6 +23,7 @@ import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.customer.BuildConfig
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.orders.OrderDetailDto
+import cz.cleansia.customer.features.booking.surchargeLineRes
 
 /**
  * What the customer is charged and how. The per-source discount amounts are on
@@ -44,7 +45,9 @@ internal fun PriceBreakdownCard(order: OrderDetailDto) {
             ?.takeIf { it > 0.0 }
             ?.let { stringResource(R.string.order_detail_discount_promo) to it },
     )
-    val showSubtotal = order.originalSubtotal > 0.0 && order.originalSubtotal != order.totalPrice
+    val dirtinessLine = order.dirtinessLevel.surchargeLineRes()?.takeIf { order.dirtinessSurchargeAmount > 0.0 }
+    val showSubtotal = dirtinessLine != null ||
+        (order.originalSubtotal > 0.0 && order.originalSubtotal != order.totalPrice)
 
     Card {
         SectionHeader(title = stringResource(R.string.order_detail_services))
@@ -53,7 +56,14 @@ internal fun PriceBreakdownCard(order: OrderDetailDto) {
         if (showSubtotal) {
             InfoRow(
                 label = stringResource(R.string.order_detail_subtotal),
-                value = formatOrderPrice(order.originalSubtotal, currencyCode),
+                value = formatOrderPrice(order.subtotalBeforeDirtiness(), currencyCode),
+            )
+            Spacer(Modifier.height(6.dp))
+        }
+        if (dirtinessLine != null) {
+            InfoRow(
+                label = stringResource(dirtinessLine),
+                value = "+" + formatOrderPrice(order.dirtinessSurchargeAmount, currencyCode),
             )
             Spacer(Modifier.height(6.dp))
         }
@@ -93,6 +103,12 @@ internal fun PriceBreakdownCard(order: OrderDetailDto) {
         }
     }
 }
+
+/**
+ * The subtotal row with the stored dirtiness surcharge taken out, so subtotal + surcharge − discounts
+ * reads as the total. The express part stays inside the subtotal, which the order detail does not itemise.
+ */
+internal fun OrderDetailDto.subtotalBeforeDirtiness(): Double = originalSubtotal - dirtinessSurchargeAmount
 
 /** Backend `PaymentType`: Cash = 1, Card = 2. */
 @StringRes

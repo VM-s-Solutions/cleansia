@@ -103,6 +103,7 @@ fun CancelOrderSheet(
     errorMessage: String? = null,
     onReasonChanged: () -> Unit = {},
     requireValidPreview: Boolean = false,
+    tookNoCardPayment: Boolean = false,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var selectedReason by remember { mutableStateOf<CancelReasonOption?>(null) }
@@ -137,7 +138,12 @@ fun CancelOrderSheet(
             )
             Spacer(Modifier.height(12.dp))
 
-            FeePreviewBlock(state = previewState, onRetry = onRetryPreview, requireValidPreview = requireValidPreview)
+            FeePreviewBlock(
+                state = previewState,
+                onRetry = onRetryPreview,
+                requireValidPreview = requireValidPreview,
+                tookNoCardPayment = tookNoCardPayment,
+            )
             Spacer(Modifier.height(16.dp))
 
             // Reason picker — tap a chip; tapping again deselects. "Other"
@@ -331,6 +337,7 @@ private fun FeePreviewBlock(
     state: CancellationPreviewUiState,
     onRetry: () -> Unit,
     requireValidPreview: Boolean,
+    tookNoCardPayment: Boolean,
 ) {
     when (state) {
         CancellationPreviewUiState.Loading -> FeeCard(
@@ -348,7 +355,11 @@ private fun FeePreviewBlock(
         )
         CancellationPreviewUiState.Error -> UnavailableFeeCard(onRetry, requireValidPreview)
         is CancellationPreviewUiState.Loaded -> {
-            val callout = cancellationFeeCallout(state.preview, refundIsEstimate = requireValidPreview)
+            val callout = cancellationFeeCallout(
+                state.preview,
+                refundIsEstimate = requireValidPreview,
+                tookNoCardPayment = tookNoCardPayment,
+            )
             if (callout == null) {
                 UnavailableFeeCard(onRetry, requireValidPreview)
             } else {

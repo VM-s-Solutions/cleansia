@@ -1,5 +1,6 @@
 import {
   AssignedEmployeeDto,
+  DirtinessLevel,
   OrderItem,
   TimelineEntryDto,
   TimelineSource,
@@ -21,6 +22,16 @@ export function resolveIncidentSubject(
     (e) => e.source === TimelineSource.Customer && e.success && Boolean(e.actorId)
   );
   return own?.actorId ?? null;
+}
+
+const DIRTINESS_LEVEL_LABEL_KEYS: Readonly<Record<DirtinessLevel, string>> = {
+  [DirtinessLevel.Normal]: 'enums.dirtiness_level.normal',
+  [DirtinessLevel.Increased]: 'enums.dirtiness_level.increased',
+  [DirtinessLevel.Heavy]: 'enums.dirtiness_level.heavy',
+};
+
+export function dirtinessLevelLabelKey(level: DirtinessLevel | undefined): string {
+  return DIRTINESS_LEVEL_LABEL_KEYS[level ?? DirtinessLevel.Normal];
 }
 
 export interface CrewEntry {

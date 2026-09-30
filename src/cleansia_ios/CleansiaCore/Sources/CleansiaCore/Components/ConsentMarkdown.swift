@@ -7,13 +7,11 @@ import SwiftUI
 public enum ConsentLink: String, CaseIterable {
     case terms = "cleansia://terms"
     case privacy = "cleansia://privacy"
-    case workContract = "cleansia://work-contract"
 
     public var url: URL {
         switch self {
         case .terms: CleansiaWeb.termsURL
         case .privacy: CleansiaWeb.privacyURL
-        case .workContract: CleansiaWeb.workContractURL
         }
     }
 

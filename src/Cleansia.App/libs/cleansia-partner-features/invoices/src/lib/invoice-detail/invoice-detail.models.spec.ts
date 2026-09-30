@@ -20,9 +20,34 @@ describe('getOrderPaysTableDefinition', () => {
 
   it('right-aligns every amount column in tabular figures', () => {
     const { columns } = getOrderPaysTableDefinition('CZK', 'cs');
-    for (const column of columns.filter((c) => c.id !== 'orderNumber')) {
+    for (const column of columns.filter((c) => c.id !== 'orderNumber' && c.id !== 'deductionReason')) {
       expect(column.numeric).toBe(true);
     }
+  });
+
+  it('prints the reason given for a deduction beside it, and nothing for a row without one', () => {
+    const { columns } = getOrderPaysTableDefinition('CZK', 'cs');
+    const ids = columns.map((column) => column.id);
+    expect(ids.indexOf('deductionReason')).toBe(ids.indexOf('deductionPay') + 1);
+
+    const reason = columns.find((column) => column.id === 'deductionReason');
+    if (!reason?.getValue) throw new Error('deductionReason column missing or static');
+    expect(
+      reason.getValue(OrderEmployeePayDto.fromJS({ deductionPay: 200, deductionReason: 'Kitchen left uncleaned' }))
+    ).toBe('Kitchen left uncleaned');
+    expect(reason.getValue(OrderEmployeePayDto.fromJS({ deductionPay: 0 }))).toBe('');
+  });
+});
+
+describe('the dirtiness term on an invoice line', () => {
+  it('sits beside the extras and prints in the invoice currency', () => {
+    const { columns } = getOrderPaysTableDefinition('CZK', 'cs');
+    const ids = columns.map((column) => column.id);
+    expect(ids.indexOf('dirtinessPay')).toBe(ids.indexOf('extrasPay') + 1);
+
+    const dirtiness = columns.find((column) => column.id === 'dirtinessPay');
+    if (!dirtiness?.getValue) throw new Error('dirtinessPay column missing or static');
+    expect(dirtiness.getValue(OrderEmployeePayDto.fromJS({ dirtinessPay: 195 }))).toBe('195,00 Kč');
   });
 });
 

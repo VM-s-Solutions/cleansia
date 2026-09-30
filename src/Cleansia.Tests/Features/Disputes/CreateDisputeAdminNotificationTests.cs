@@ -7,6 +7,7 @@ using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Tests.Features.Orders;
 using Moq;
 
 namespace Cleansia.Tests.Features.Disputes;
@@ -33,6 +34,8 @@ public sealed class CreateDisputeAdminNotificationTests
     private readonly Mock<IAdminNotifier> _adminNotifier = new();
     private readonly List<AdminEvent> _raised = [];
 
+    private readonly Mock<IUserNotificationRepository> _userNotifications = new();
+
     public CreateDisputeAdminNotificationTests()
     {
         _session.Setup(s => s.GetUserId()).Returns(CallerUserId);
@@ -47,9 +50,14 @@ public sealed class CreateDisputeAdminNotificationTests
 
     private CreateDispute.Handler CreateHandler() =>
         new(_disputeRepository.Object, Cleansia.Tests.Common.OrderAccessDoubles.Over(_orderRepository, _session),
-            _session.Object, Mock.Of<ITenantProvider>(), new AuditContext(), _adminNotifier.Object);
+            _session.Object, Mock.Of<ITenantProvider>(), new AuditContext(), _adminNotifier.Object,
+            _userNotifications.Object);
 
-    private Order ArrangeOrder(string? ownerUserId = CallerUserId, DateTime? cleaningDateTime = null)
+    private Order ArrangeOrder(
+        string? ownerUserId = CallerUserId,
+        DateTime? cleaningDateTime = null,
+        OrderStatus? status = null,
+        bool staffed = false)
     {
         var order = Order.Create(
             customerName: CustomerName,
@@ -66,6 +74,15 @@ public sealed class CreateDisputeAdminNotificationTests
             userId: ownerUserId);
         order.Id = OrderId;
         order.TenantId = OrderTenantId;
+        if (status is { } current)
+        {
+            order.AddOrderStatus(OrderStatusTrack.Create(current, order));
+        }
+        if (staffed)
+        {
+            order.AddAssignedEmployee(OrderEmployee.Create(
+                order, ValidatorTestHelpers.BuildEmployee("emp-dispute", ContractStatus.Approved)));
+        }
         _orderRepository.Setup(r => r.GetByIdAsync(OrderId, It.IsAny<CancellationToken>())).ReturnsAsync(order);
         return order;
     }
@@ -110,6 +127,68 @@ public sealed class CreateDisputeAdminNotificationTests
             Assert.DoesNotContain("kitchen", value);
         });
         Assert.True(Enum.TryParse<DisputeReason>(Assert.Single(_raised).Args["reason"], ignoreCase: false, out _));
+    }
+
+    /// <summary>
+    /// "The cleaner did not arrive" from a signed-in customer is a service-not-provided dispute on a job
+    /// nobody has started: the administrators also get the no-show alert the reminder sweep raises.
+    /// </summary>
+    [Theory]
+    [InlineData(OrderStatus.Confirmed)]
+    [InlineData(OrderStatus.OnTheWay)]
+    public async Task A_Cleaner_Did_Not_Arrive_Report_Also_Raises_The_No_Show_Alert(OrderStatus status)
+    {
+        ArrangeOrder(status: status, staffed: true);
+
+        var result = await CreateHandler().Handle(
+            new CreateDispute.Command(OrderId, DisputeReason.ServiceNotProvided, Description), CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Equal(
+            [AdminNotificationEventCatalog.DisputeFiled, AdminNotificationEventCatalog.OrderCleanerNotStarted],
+            _raised.Select(e => e.Key).ToList());
+        var alert = _raised[1];
+        Assert.Equal(OrderTenantId, alert.TenantId);
+        Assert.Equal(OrderId, alert.Args["orderId"]);
+    }
+
+    /// <summary>
+    /// A service-not-provided dispute on a started or finished job, and another reason on an unstarted
+    /// one, are disputes only; the one that is a no-show report raises the alert.
+    /// </summary>
+    [Fact]
+    public async Task Only_A_Service_Not_Provided_Dispute_On_An_Unstarted_Job_Raises_The_No_Show_Alert()
+    {
+        foreach (var (status, reason) in new[]
+        {
+            (OrderStatus.InProgress, DisputeReason.ServiceNotProvided),
+            (OrderStatus.Completed, DisputeReason.ServiceNotProvided),
+            (OrderStatus.Confirmed, DisputeReason.QualityIssue),
+            (OrderStatus.Confirmed, DisputeReason.ServiceNotProvided),
+        })
+        {
+            ArrangeOrder(status: status, staffed: true);
+            await CreateHandler().Handle(new CreateDispute.Command(OrderId, reason, Description), CancellationToken.None);
+        }
+
+        Assert.Single(_raised, e => e.Key == AdminNotificationEventCatalog.OrderCleanerNotStarted);
+        Assert.Equal(4, _raised.Count(e => e.Key == AdminNotificationEventCatalog.DisputeFiled));
+    }
+
+    /// <summary>
+    /// With nobody assigned there is no cleaner to be missing: the unfilled sweep cancels and refunds the
+    /// booking itself, so the dispute is filed and no no-show alert is raised.
+    /// </summary>
+    [Fact]
+    public async Task A_Service_Not_Provided_Dispute_On_A_Job_Nobody_Was_Assigned_To_Raises_No_No_Show_Alert()
+    {
+        ArrangeOrder(status: OrderStatus.New);
+
+        var result = await CreateHandler().Handle(
+            new CreateDispute.Command(OrderId, DisputeReason.ServiceNotProvided, Description), CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Equal([AdminNotificationEventCatalog.DisputeFiled], _raised.Select(e => e.Key).ToList());
     }
 
     [Fact]

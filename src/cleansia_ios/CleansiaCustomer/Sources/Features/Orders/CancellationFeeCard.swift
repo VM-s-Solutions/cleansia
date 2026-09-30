@@ -27,11 +27,16 @@ enum CancellationFeeCardModel: Equatable {
     case unavailable
     case quoted(CancellationFeeCallout)
 
-    init(_ state: UiState<CancellationQuote>, refundIsEstimate: Bool = false) {
+    init(_ state: UiState<CancellationQuote>, refundIsEstimate: Bool = false, tookNoCardPayment: Bool = false) {
         switch state {
         case .loading: self = .checking
         case .error: self = .unavailable
-        case let .loaded(quote): self = .quoted(CancellationFeeCallout(quote, refundIsEstimate: refundIsEstimate))
+        case let .loaded(quote):
+            self = .quoted(CancellationFeeCallout(
+                quote,
+                refundIsEstimate: refundIsEstimate,
+                tookNoCardPayment: tookNoCardPayment
+            ))
         }
     }
 }
@@ -39,8 +44,17 @@ enum CancellationFeeCardModel: Equatable {
 extension CancellationFeeCallout {
     /// `refundIsEstimate` is the guest's reading of a charged tier: the policy refund is a ceiling on a
     /// card refund that only a collected payment can produce, so the guest copy calls it a maximum and
-    /// points at the confirmation for the actual figure. The signed-in copy is unchanged.
-    init(_ quote: CancellationQuote, refundIsEstimate: Bool = false) {
+    /// points at the confirmation for the actual figure. `tookNoCardPayment` states the fee alone: the
+    /// server refunds nothing on an order that took no payment.
+    init(_ quote: CancellationQuote, refundIsEstimate: Bool = false, tookNoCardPayment: Bool = false) {
+        let amountKey = if tookNoCardPayment {
+            "order_cancel_fee_only"
+        } else if refundIsEstimate {
+            "guest_order_fee_estimate"
+        } else {
+            "order_cancel_fee_split"
+        }
+        let amounts = tookNoCardPayment ? [quote.feeAmount] : [quote.feeAmount, quote.refundAmount]
         switch quote.tier {
         case .freeNotAccepted:
             self.init(free: "order_cancel_fee_not_accepted", quote)
@@ -49,13 +63,20 @@ extension CancellationFeeCallout {
         case .freeOutsideWindow:
             self.init(free: "order_cancel_fee_outside_window", quote)
         case .partial:
-            self.init(charged: "order_cancel_fee_partial", severity: .fee, quote, refundIsEstimate: refundIsEstimate)
+            self.init(
+                charged: "order_cancel_fee_partial",
+                severity: .fee,
+                quote,
+                amountKey: amountKey,
+                amounts: amounts
+            )
         case .lastMinute:
             self.init(
                 charged: "order_cancel_fee_last_minute",
                 severity: .lastMinute,
                 quote,
-                refundIsEstimate: refundIsEstimate
+                amountKey: amountKey,
+                amounts: amounts
             )
         }
     }
@@ -75,12 +96,13 @@ extension CancellationFeeCallout {
         charged titleKey: String,
         severity: CancellationFeeSeverity,
         _ quote: CancellationQuote,
-        refundIsEstimate: Bool
+        amountKey: String,
+        amounts: [Double]
     ) {
         self.init(
             titleKey: titleKey,
-            amountKey: refundIsEstimate ? "guest_order_fee_estimate" : "order_cancel_fee_split",
-            amounts: [quote.feeAmount, quote.refundAmount],
+            amountKey: amountKey,
+            amounts: amounts,
             severity: severity,
             warnsExpressWaiverForfeited: quote.forfeitsExpressWaiver,
             graceMinutes: quote.statedGraceMinutes

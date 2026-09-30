@@ -21,14 +21,4 @@ public static class DashboardConstants
     /// Starting date for all-time statistics calculation
     /// </summary>
     public static readonly DateTime AllTimeStartDate = DateTime.SpecifyKind(new DateTime(2020, 1, 1), DateTimeKind.Utc);
-
-    /// <summary>
-    /// Weight of completion percentage in efficiency score calculation
-    /// </summary>
-    public const double CompletionPercentageWeight = 0.6;
-
-    /// <summary>
-    /// Weight of on-time completion rate in efficiency score calculation
-    /// </summary>
-    public const double OnTimeCompletionWeight = 0.4;
 }

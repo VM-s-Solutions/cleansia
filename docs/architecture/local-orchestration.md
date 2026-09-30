@@ -47,6 +47,31 @@ The AppHost declares the containers so the emulator creates them at startup:
 read-before-write path — the archive build's first act is a streaming write, and every blob write creates
 its container if it is missing — so it appears the first time a company is archived.
 
+## The development seed, and why its administrator is a separate file {#development-seed}
+
+A local Development boot that finds an empty `Languages` table runs three scripts from the repo-root
+`sql-scripts/`, in order (`CleansiaStartupBase.DevelopmentSeedScripts`): `prod-bootstrap.sql` — the
+reference data production gets as well: `generate_ulid()`, the `cleansia-cz` tenant, the languages,
+the countries, CZK and the Czech market — then `insert_seed_data.sql` — the DEV fixtures: the
+catalogue with its prices and pay rates, Plus plans, promo codes and the company record — then
+`insert_local_dev_admin.sql`, which creates the local administrator whose password the README
+publishes. The split exists so that the known-password account can never reach a shared database:
+`execute-sql.yml` refuses `insert_local_dev_admin.sql` for DEV and PRO, comparing the file name so a
+relative path cannot walk around it, and neither shared script creates a user at all. Administrators
+on the shared DEV database are named people, promoted with `set-admin-role.sql` after they register;
+the README has the steps.
+
+## The Functions host's local settings are each developer's own {#functions-local-settings}
+
+`src/Cleansia.Functions/local.settings.json` holds a database password, so each developer's copy is
+meant to be their own. `.gitignore` lists it, but **the file is still tracked**: an ignore rule does not
+untrack a file already committed, and it has not yet been removed from the index
+(`git rm --cached src/Cleansia.Functions/local.settings.json`). Until it is, git still sees every edit
+to it — do not commit your values into it. `local.settings.example.json` beside it has the same keys,
+with the Postgres password replaced by `YOUR_LOCAL_POSTGRES_PASSWORD`; copy it and put in your own
+values. Committed secrets are what the CI secret scan looks for →
+[CI/CD — secret scan](/deployment/ci-cd#secret-scan).
+
 ## The Postgres password is fixed, not generated {#postgres-password}
 
 The container is **persistent**, so its password is baked in when it is first created and is never

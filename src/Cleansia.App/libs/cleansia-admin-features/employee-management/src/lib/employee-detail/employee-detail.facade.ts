@@ -237,13 +237,17 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
    *
    * The backend tells the cleaner only when the cap APPEARS or MOVES DOWN. Raising and clearing are
    * deliberately silent, so nothing here needs to warn the admin that they are about to notify.
+   *
+   * A cap needs a reason the cleaner is shown; the server refuses one without it and drops the reason
+   * with the cap, so a blank reason is sent as absent and the rule stays the server's.
    */
-  setWeeklyOrderLimit(weeklyOrderLimit: number | null): void {
+  setWeeklyOrderLimit(weeklyOrderLimit: number | null, reason: string): void {
     const employeeId = this.employee()?.id;
     if (!employeeId) return;
 
     const request = new AdminSetEmployeeWeeklyOrderLimitRequest();
     request.weeklyOrderLimit = weeklyOrderLimit ?? undefined;
+    request.reason = reason.trim() || undefined;
 
     this.savingWeeklyLimit.set(true);
     this.adminClient.adminEmployeeClient

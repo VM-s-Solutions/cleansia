@@ -36,15 +36,52 @@ public sealed class ConsentValidatorErrorKeyTests
             .WithErrorMessage(BusinessErrorMessage.InvalidEnumValue);
     }
 
+    /// <summary>
+    /// Owner ruling 2026-09-28: the terms and the privacy policy are the only acceptances the consent endpoint
+    /// records. The cookie banner's analytics and marketing categories write nothing, and a cleaner's
+    /// documents are accepted through their own endpoint, which echoes the text shown.
+    /// </summary>
     [Theory]
     [InlineData(ConsentType.TermsOfService)]
     [InlineData(ConsentType.PrivacyPolicy)]
-    [InlineData(ConsentType.MarketingEmails)]
-    [InlineData(ConsentType.DataProcessing)]
-    public void Every_Known_Consent_Type_Passes_Both_Validators(ConsentType consentType)
+    public void The_Terms_And_The_Privacy_Policy_Can_Be_Accepted(ConsentType consentType)
     {
         new GrantConsent.Validator().TestValidate(new GrantConsent.Command(consentType))
             .ShouldNotHaveAnyValidationErrors();
+    }
+
+    [Theory]
+    [InlineData(ConsentType.MarketingEmails)]
+    [InlineData(ConsentType.DataProcessing)]
+    [InlineData(ConsentType.CleanerFrameworkContract)]
+    [InlineData(ConsentType.SelfBillingAgreement)]
+    [InlineData(ConsentType.CleanerDataProcessingAgreement)]
+    public void No_Other_Type_Is_Granted_Through_The_Consent_Endpoint(ConsentType consentType)
+    {
+        new GrantConsent.Validator().TestValidate(new GrantConsent.Command(consentType))
+            .ShouldHaveValidationErrorFor(c => c.ConsentType)
+            .WithErrorMessage(BusinessErrorMessage.ConsentNotEditable);
+    }
+
+    /// <summary>An accepted text is shown read-only (owner ruling 2026-09-28); a consent with no text stays withdrawable.</summary>
+    [Theory]
+    [InlineData(ConsentType.TermsOfService)]
+    [InlineData(ConsentType.PrivacyPolicy)]
+    [InlineData(ConsentType.CleanerFrameworkContract)]
+    [InlineData(ConsentType.SelfBillingAgreement)]
+    [InlineData(ConsentType.CleanerDataProcessingAgreement)]
+    public void An_Accepted_Document_Cannot_Be_Withdrawn(ConsentType consentType)
+    {
+        new WithdrawConsent.Validator().TestValidate(new WithdrawConsent.Command(consentType))
+            .ShouldHaveValidationErrorFor(c => c.ConsentType)
+            .WithErrorMessage(BusinessErrorMessage.ConsentNotEditable);
+    }
+
+    [Theory]
+    [InlineData(ConsentType.MarketingEmails)]
+    [InlineData(ConsentType.DataProcessing)]
+    public void A_Consent_Without_A_Document_Can_Be_Withdrawn(ConsentType consentType)
+    {
         new WithdrawConsent.Validator().TestValidate(new WithdrawConsent.Command(consentType))
             .ShouldNotHaveAnyValidationErrors();
     }

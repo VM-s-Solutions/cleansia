@@ -21,7 +21,6 @@ import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.DeleteForever
 import androidx.compose.material.icons.outlined.Description
-import androidx.compose.material.icons.outlined.Handshake
 import androidx.compose.material.icons.outlined.ReceiptLong
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -168,7 +167,6 @@ fun DeleteAccountScreen(
                     Column(modifier = Modifier.padding(Spacing.M)) {
                         KeptRow(Icons.Outlined.ReceiptLong, R.string.delete_account_kept_invoices)
                         KeptRow(Icons.Outlined.Description, R.string.delete_account_kept_pay)
-                        KeptRow(Icons.Outlined.Handshake, R.string.delete_account_kept_agreement)
                     }
                 }
 

@@ -60,4 +60,24 @@ final class DisputeWireFormatTests: XCTestCase {
         XCTAssertEqual(object["orderId"] as? String, "o-1")
         XCTAssertNil(object["lines"])
     }
+
+    /// The server reads the preference by its wire number: 1 is a card refund, 2 is credit.
+    func testTheSettlementPreferenceTravelsAsItsWireNumber() throws {
+        for settlement in DisputeSettlement.allCases {
+            let command = CreateDisputeCommand(
+                orderId: "o-1",
+                reason: DisputeReason(rawValue: 1),
+                description: "late",
+                lines: nil,
+                settlementPreference: DisputeSettlementPreference(rawValue: settlement.rawValue)
+            )
+
+            let body = try CodableHelper.jsonEncoder.encode(command)
+            let object = try XCTUnwrap(JSONSerialization.jsonObject(with: body) as? [String: Any])
+
+            XCTAssertEqual(object["settlementPreference"] as? Int, settlement.rawValue)
+        }
+        XCTAssertEqual(DisputeSettlement.cardRefund.rawValue, 1)
+        XCTAssertEqual(DisputeSettlement.credit.rawValue, 2)
+    }
 }

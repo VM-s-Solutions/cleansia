@@ -238,6 +238,7 @@ public sealed class CompanyLifecycleRouteTests(HostTestPostgresFixture db) : Aut
         currencyId = (string?)null,
         totalPrice,
         termsAccepted = true,
+        earlyPerformanceRequested = true,
     };
 
     private static object RecurringBookingAt(string savedAddressId) => new
@@ -254,6 +255,8 @@ public sealed class CompanyLifecycleRouteTests(HostTestPostgresFixture db) : Aut
         startsOn = DateTime.UtcNow.Date.AddDays(3),
         endsOn = (DateTime?)null,
         preferredEmployeeId = (string?)null,
+        termsAccepted = true,
+        earlyPerformanceRequested = true,
     };
 
     private static object SavedAddressAt(string countryId, string label) => new

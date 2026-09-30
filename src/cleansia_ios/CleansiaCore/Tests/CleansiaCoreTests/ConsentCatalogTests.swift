@@ -5,8 +5,8 @@ import XCTest
 /// A legal sentence renders as plain text when its markup is missing, so a
 /// translation that dropped a link would silently unpublish a legal document
 /// instead of failing. Pin the markup in every locale of both apps — the two
-/// consent ticks and the booking wizard's contract-for-work line, each against
-/// the pages it names.
+/// consent ticks and the booking wizard's contract line, each against the pages
+/// it names.
 final class ConsentCatalogTests: XCTestCase {
     private struct LegalSentence {
         let catalog: String
@@ -20,7 +20,7 @@ final class ConsentCatalogTests: XCTestCase {
     private static let sentences = [
         LegalSentence(catalog: customerCatalog, key: "register_terms_and_conditions", links: [.terms, .privacy]),
         LegalSentence(catalog: partnerCatalog, key: "accept_terms", links: [.terms, .privacy]),
-        LegalSentence(catalog: customerCatalog, key: "booking_work_contract_notice", links: [.workContract])
+        LegalSentence(catalog: customerCatalog, key: "booking_contract_notice", links: [.terms])
     ]
 
     private static let locales = ["en", "cs", "sk", "uk", "ru"]

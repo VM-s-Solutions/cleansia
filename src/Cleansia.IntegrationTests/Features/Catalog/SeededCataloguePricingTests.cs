@@ -1,3 +1,4 @@
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Database;
 using Cleansia.TestUtilities;
@@ -60,7 +61,7 @@ public class SeededCataloguePricingTests : IAsyncLifetime
         // translation columns carry braces, which EF's raw-SQL builder parses as format placeholders.
         await using var seedConnection = await _dataSource.OpenConnectionAsync();
         await using var seedCommand = seedConnection.CreateCommand();
-        seedCommand.CommandText = ReadCanonicalSeedScript();
+        seedCommand.CommandText = ReadBootstrapAndFixtures();
         seedCommand.CommandTimeout = 120;
         await seedCommand.ExecuteNonQueryAsync();
     }
@@ -80,7 +81,7 @@ public class SeededCataloguePricingTests : IAsyncLifetime
             new TestUserSessionProvider("system", "system@cleansia.test"),
             new FixedTenantProvider(TestTenants.Default));
 
-    private static string ReadCanonicalSeedScript()
+    private static string ReadBootstrapAndFixtures()
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
         while (dir is not null && dir.GetFiles("*.sln").Length == 0)
@@ -89,8 +90,8 @@ public class SeededCataloguePricingTests : IAsyncLifetime
         }
 
         Assert.True(dir is not null, "Could not locate the solution directory from the test base directory.");
-        return File.ReadAllText(
-            Path.GetFullPath(Path.Combine(dir!.FullName, "..", "sql-scripts", "insert_seed_data.sql")));
+        return string.Join('\n', new[] { "prod-bootstrap.sql", "insert_seed_data.sql" }.Select(script =>
+            File.ReadAllText(Path.GetFullPath(Path.Combine(dir!.FullName, "..", "sql-scripts", script)))));
     }
 
     private static Task<string> DefaultCurrencyIdAsync(CleansiaDbContext ctx) =>
@@ -157,6 +158,19 @@ public class SeededCataloguePricingTests : IAsyncLifetime
             .ToListAsync();
 
         Assert.Equal([], unpriced);
+    }
+
+    /// <summary>
+    /// Owner ruling 2026-09-28: the pet-hair extra is retired, because the Increased dirtiness level
+    /// covers homes with pets and a pet owner would otherwise pay twice for the same effort. Seeded
+    /// inactive, so the booking wizard no longer offers it; every other extra still is.
+    /// </summary>
+    [Fact]
+    public async Task The_Pet_Hair_Extra_Is_Seeded_Retired()
+    {
+        await using var ctx = NewContext();
+
+        Assert.Equal(["pet-hair-supplement"], await ctx.Extras.Where(e => !e.IsActive).Select(e => e.Slug).ToListAsync());
     }
 
     /// <summary>
@@ -264,12 +278,11 @@ public class SeededCataloguePricingTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// Owner rulings 2026-09-13: CZE is the default market and states the 1 000 000 CZK insurance
-    /// ceiling; every other configuration is unflagged and figure-less until the owner authors that
-    /// market's figure.
+    /// Owner rulings 2026-09-13 and 2026-09-28: CZE is the default market, and no market
+    /// states an insurance figure until the owner decides whose policy covers a booking.
     /// </summary>
     [Fact]
-    public async Task Czechia_Is_The_Seeded_Default_Market_With_The_Insurance_Figure_And_Nothing_Else_Is()
+    public async Task Czechia_Is_The_Seeded_Default_Market_And_No_Market_States_An_Insurance_Figure()
     {
         await using var ctx = NewContext();
 
@@ -280,8 +293,22 @@ public class SeededCataloguePricingTests : IAsyncLifetime
 
         var czechia = Assert.Single(configurations, c => c.IsDefaultMarket);
         Assert.Equal("CZE", czechia.IsoCode);
-        Assert.Equal(1_000_000m, czechia.InsuranceCoverageAmount);
-        Assert.All(configurations.Where(c => c.IsoCode != "CZE"), c => Assert.Null(c.InsuranceCoverageAmount));
+        Assert.All(configurations, c => Assert.Null(c.InsuranceCoverageAmount));
+    }
+
+    /// <summary>Owner ruling 2026-09-28: a cleaner working in Czechia or Slovakia is approved only with a valid insurance certificate.</summary>
+    [Fact]
+    public async Task The_Insurance_Certificate_Is_A_Required_Cleaner_Document_In_Czechia_And_Slovakia()
+    {
+        await using var ctx = NewContext();
+
+        var required = await ctx.EmployeeDocumentRequirements
+            .Where(r => r.IsRequired && r.DocumentType == DocumentType.InsuranceDocument)
+            .Join(ctx.Countries, r => r.CountryId, c => c.Id, (_, c) => c.IsoCode)
+            .OrderBy(iso => iso)
+            .ToListAsync();
+
+        Assert.Equal(["CZE", "SVK"], required);
     }
 
     private sealed class FixedTenantProvider(string? tenantId) : ITenantProvider

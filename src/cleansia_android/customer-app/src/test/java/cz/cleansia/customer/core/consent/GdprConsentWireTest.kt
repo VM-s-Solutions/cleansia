@@ -25,9 +25,10 @@ import cz.cleansia.customer.api.client.GdprApi as GenGdprApi
 import cz.cleansia.customer.api.model.UserConsentDto as GenUserConsentDto
 
 /**
- * `grantedTypes` decides whether the booking review step shows the terms tick. A row lost on the
- * way in reads as "never granted", so the app re-asks for a consent the user already holds and
- * writes it back — which makes a dropped row here a GDPR record the user did not make.
+ * `grantedTypes` decides whether the booking review step shows the terms tick: only a consent that
+ * covers the version in force counts. A row lost on the way in reads as "never granted", so the app
+ * re-asks for a consent the user already holds and writes it back — which makes a dropped row here a
+ * GDPR record the user did not make.
  * `UserConsentDto.ConsentType` is non-nullable in C#; the spec carries it as a bare `$ref`, whose
  * silence means nothing.
  */
@@ -139,6 +140,22 @@ class GdprConsentWireTest {
         assertEquals(emptySet<SignupConsentType>(), granted(body))
     }
 
+    /**
+     * A consent to an older text is not a consent to the one in force: the tick reappears and the
+     * booking waits for it.
+     */
+    @Test
+    fun aConsentToAnOlderVersionIsNotGrantedSoTheTickReappears() = runTest {
+        val body = grantedRowsWithFirstRow { it + ("coversCurrentVersion" to JsonPrimitive(false)) }
+
+        assertEquals(setOf(SignupConsentType.PrivacyPolicy), granted(body))
+    }
+
+    @Test
+    fun aGrantedRowWithoutItsVersionVerdictRefusesTheAnswer() = runTest {
+        assertNull(granted(grantedRowsWithFirstRow { it - "coversCurrentVersion" }))
+    }
+
     /** A failed read is a refusal, not "nothing granted" — the caller shows the tick either way. */
     @Test
     fun aFailedReadRefusesRatherThanReadingAsNothingGranted() = runTest {
@@ -195,7 +212,9 @@ class GdprConsentWireTest {
                 "isGranted": true,
                 "grantedAt": "2026-06-02T10:00:00Z",
                 "withdrawnAt": "2026-07-02T10:00:00Z",
-                "createdOn": "2026-06-02T10:00:00Z"
+                "createdOn": "2026-06-02T10:00:00Z",
+                "documentVersion": "2026-09-27",
+                "coversCurrentVersion": true
               },
               {
                 "id": "con-2",
@@ -203,7 +222,9 @@ class GdprConsentWireTest {
                 "isGranted": true,
                 "grantedAt": "2026-06-02T10:00:01Z",
                 "withdrawnAt": "2026-07-02T10:00:01Z",
-                "createdOn": "2026-06-02T10:00:01Z"
+                "createdOn": "2026-06-02T10:00:01Z",
+                "documentVersion": "2026-09-27",
+                "coversCurrentVersion": true
               }
             ]
         """.trimIndent()
@@ -215,6 +236,8 @@ class GdprConsentWireTest {
             "grantedAt",
             "withdrawnAt",
             "createdOn",
+            "documentVersion",
+            "coversCurrentVersion",
         )
     }
 }

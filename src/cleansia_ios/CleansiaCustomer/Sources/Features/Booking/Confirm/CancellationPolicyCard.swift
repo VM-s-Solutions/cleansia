@@ -92,21 +92,15 @@ struct TrustBadges: View {
     let insurance: MarketMoney?
 
     var body: some View {
-        HStack(spacing: Spacing.s) {
-            TrustBadge(systemImage: "checkmark.shield", text: InsuranceCopy.trustBadge(insurance))
-            Rectangle()
-                .fill(CleansiaColors.outlineVariant)
-                .frame(width: 1)
-            TrustBadge(systemImage: "person.badge.shield.checkmark", text: L10n.Booking.trustVetted)
-        }
-        .fixedSize(horizontal: false, vertical: true)
-        .padding(Spacing.m)
-        .background(CleansiaColors.surface)
-        .overlay(
-            RoundedRectangle(cornerRadius: CornerRadius.large)
-                .stroke(CleansiaColors.outlineVariant, lineWidth: 1)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.large))
+        TrustBadge(systemImage: "checkmark.shield", text: InsuranceCopy.trustBadge(insurance))
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(Spacing.m)
+            .background(CleansiaColors.surface)
+            .overlay(
+                RoundedRectangle(cornerRadius: CornerRadius.large)
+                    .stroke(CleansiaColors.outlineVariant, lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.large))
     }
 }
 

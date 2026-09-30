@@ -35,7 +35,7 @@ export class MembershipWelcomeComponent implements OnInit {
    * that has to come from the server rather than from the template.
    */
   protected readonly expressWaiverAdvertised = this.facade.expressWaiverAdvertised;
-  protected readonly expressWaiverPendingTrial = this.facade.expressWaiverPendingTrial;
+  protected readonly trialEndsOn = this.facade.trialEndsOn;
 
   ngOnInit(): void {
     this.facade.refresh();

@@ -24,7 +24,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /** Per-action discriminator so individual buttons can show their own spinners. */
-enum class OrderAction { Take, AcceptContract, Start, NotifyOnTheWay, MarkCashCollected, Complete, DeclineOffer }
+enum class OrderAction { Take, AcceptContract, Start, NotifyOnTheWay, MarkCashCollected, Complete, DeclineOffer, ReportLockout }
 
 sealed interface OrderDetailUiState {
     data object Loading : OrderDetailUiState
@@ -43,6 +43,8 @@ class OrderDetailViewModel @Inject constructor(
 
     private val orderId: String = savedStateHandle.get<String>("orderId")
         ?: error("orderId required for OrderDetail route")
+
+    private val showRemovalReason: Boolean = savedStateHandle.get<Boolean>("showRemovalReason") == true
 
     private val _uiState = MutableStateFlow<OrderDetailUiState>(OrderDetailUiState.Loading)
     val uiState: StateFlow<OrderDetailUiState> = _uiState.asStateFlow()
@@ -67,6 +69,9 @@ class OrderDetailViewModel @Inject constructor(
     private val _offerRefusal = MutableStateFlow<OfferRefusal?>(null)
     val offerRefusal: StateFlow<OfferRefusal?> = _offerRefusal.asStateFlow()
 
+    private val _removalReason = MutableStateFlow<String?>(null)
+    val removalReason: StateFlow<String?> = _removalReason.asStateFlow()
+
     /** The contract sheet the screen is showing, if any: a take, a standalone acceptance or a read. */
     private val _contractRequest = MutableStateFlow<WorkContractRequest?>(null)
     val contractRequest: StateFlow<WorkContractRequest?> = _contractRequest.asStateFlow()
@@ -87,6 +92,15 @@ class OrderDetailViewModel @Inject constructor(
         ensureFreshOrCachedAsync()
         ensureOffersFresh()
         viewModelScope.launch { myEmployeeId.value = employeeIdResolver.resolve() }
+        if (showRemovalReason) {
+            viewModelScope.launch {
+                _removalReason.value = ordersRepository.getMyAssignmentRemovalReason(orderId).getOrNull()
+            }
+        }
+    }
+
+    fun dismissRemovalReason() {
+        _removalReason.value = null
     }
 
     /**
@@ -182,6 +196,12 @@ class OrderDetailViewModel @Inject constructor(
         ordersRepository.completeOrder(orderId, actualMinutes, notes)
     }
 
+    fun reportLockout(callAttempts: String) {
+        val note = callAttempts.trim()
+        if (note.isEmpty()) return
+        runAction(OrderAction.ReportLockout) { ordersRepository.reportLockout(orderId, note) }
+    }
+
     fun onContentMutated() = ensureFreshOrCachedAsync()
 
     private fun runAction(action: OrderAction, block: suspend () -> ApiResult<Unit>) {
@@ -196,6 +216,9 @@ class OrderDetailViewModel @Inject constructor(
                     }
                     if (action == OrderAction.DeclineOffer) {
                         snackbar.showSuccessKey(R.string.offer_declined_toast)
+                    }
+                    if (action == OrderAction.ReportLockout) {
+                        snackbar.showSuccessKey(R.string.lockout_reported_toast)
                     }
                     _actionState.value = ActionState.Idle
                     _inFlightAction.value = null

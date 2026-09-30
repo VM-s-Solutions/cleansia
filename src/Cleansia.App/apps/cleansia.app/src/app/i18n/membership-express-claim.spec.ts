@@ -107,7 +107,6 @@ const MEMBERSHIP_PERK_KEYS = [
   'perk_express_used',
   'perk_express_trial',
   'welcome_perk_express',
-  'welcome_express_after_trial',
 ];
 
 const BOOKING_FLOW_KEYS = [

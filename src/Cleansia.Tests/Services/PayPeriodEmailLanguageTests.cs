@@ -187,7 +187,8 @@ public class PayPeriodEmailLanguageTests
             _blobContainerClientFactory.Object,
             _tenantProvider.Object,
             _payoutReferenceAllocator.Object,
-        new Mock<ITenantRepository>().Object);
+        new Mock<ITenantRepository>().Object,
+        new Mock<ICashLedgerRepository>().Object);
     }
 
     private PeriodReminderBackgroundService CreateReminderService()
@@ -202,6 +203,7 @@ public class PayPeriodEmailLanguageTests
             _payPeriodRepository.Object,
             _employeeRepository.Object,
             _emailService.Object,
+            _tenantProvider.Object,
             NullLogger<PeriodReminderBackgroundService>.Instance);
     }
 

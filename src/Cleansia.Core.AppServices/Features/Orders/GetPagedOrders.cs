@@ -47,6 +47,7 @@ public class GetPagedOrders
 
             string? callerEmployeeId = null;
             string? callerCurrencyId = null;
+            var cashJobsHidden = false;
             if (!isAdmin)
             {
                 callerEmployeeId = await orderAccessService.GetCallerEmployeeIdAsync(cancellationToken);
@@ -57,6 +58,8 @@ public class GetPagedOrders
 
                 callerCurrencyId = (await currencyResolutionService
                     .ResolveCurrencyForEmployeeAsync(callerEmployeeId, cancellationToken)).Id;
+                cashJobsHidden = await orderAccessService.CashJobsHiddenFromAsync(
+                    callerEmployeeId, callerCurrencyId, cancellationToken);
             }
 
             DateTime? cleaningDateFrom = request.Filter?.CleaningDateFrom;
@@ -98,7 +101,8 @@ public class GetPagedOrders
                 notHeldFromEmployeeId: isAdmin ? null : callerEmployeeId,
                 nowUtc: isAdmin ? null : DateTime.UtcNow,
                 cleanerCurrencyId: callerCurrencyId,
-                currencyId: request.Filter?.CurrencyId);
+                currencyId: request.Filter?.CurrencyId,
+                hideCashFromEmployeeId: cashJobsHidden ? callerEmployeeId : null);
 
             var filter = specification.SatisfiedBy();
             var sort = request.Sort.MapToDomain()
@@ -189,7 +193,9 @@ public class GetPagedOrders
                     && order.AssignedEmployees.Any(ae => ae.EmployeeId == callerEmployeeId);
                 if (isAssigned)
                 {
-                    items.Add(dto);
+                    items.Add(Order.CustomerDetailsOpenToCrew(order.OrderStatus, order.CompletedAt, DateTime.UtcNow)
+                        ? dto
+                        : dto.RedactForBrowsingCleaner());
                     continue;
                 }
 

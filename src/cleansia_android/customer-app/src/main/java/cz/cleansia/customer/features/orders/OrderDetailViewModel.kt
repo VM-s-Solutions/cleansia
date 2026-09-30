@@ -36,12 +36,15 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 
 /**
  * UI state for the Order detail screen. Drives a Loading → Loaded/Error
@@ -111,15 +114,30 @@ class OrderDetailViewModel @Inject constructor(
     private val _state = MutableStateFlow<OrderDetailUiState>(OrderDetailUiState.Loading)
     val state: StateFlow<OrderDetailUiState> = _state.asStateFlow()
 
-    /** Whether the footer offers Cancel: the server's set, read off the loaded order's status. */
-    val canCancel: StateFlow<Boolean> = _state
-        .map { customerCanCancelOrder((it as? OrderDetailUiState.Loaded)?.order?.orderStatus?.value) }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+    /**
+     * When the loaded order was last read. Every fetch moves it, so an unchanged order re-read across its
+     * booked start still re-evaluates the footer.
+     */
+    private val readAt = MutableStateFlow(Clock.System.now())
 
-    /** One per crew member who accepted the contract for work; nothing before any acceptance. */
-    val workContractAcceptances: StateFlow<List<WorkContractAcceptanceLine>> = _state
-        .map { (it as? OrderDetailUiState.Loaded)?.order?.workContractAcceptanceLines().orEmpty() }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+    /** Whether the footer offers "the cleaner did not arrive" in Cancel's place. */
+    val canReportCleanerNoShow: StateFlow<Boolean> = combine(_state, readAt) { state, now ->
+        (state as? OrderDetailUiState.Loaded)?.order?.awaitsCleanerPastStart(now) == true
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    /** Whether the footer offers Cancel: the server's set, read off the loaded order and the clock. */
+    val canCancel: StateFlow<Boolean> = combine(_state, readAt) { state, now ->
+        val order = (state as? OrderDetailUiState.Loaded)?.order
+        customerCanCancelOrder(order?.orderStatus?.value) && order?.awaitsCleanerPastStart(now) == false
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    /** Whether the cancel sheet must leave out the card refund the preview quotes. */
+    val tookNoCardPayment: StateFlow<Boolean> = _state
+        .map { state ->
+            (state as? OrderDetailUiState.Loaded)?.order
+                ?.let { noCardPaymentTaken(it.paymentType?.value, it.paymentStatus?.value) } == true
+        }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     /**
      * Gates the "Make this recurring" shortcut, from the same nullable membership
@@ -128,7 +146,7 @@ class OrderDetailViewModel @Inject constructor(
      * empty on a cold deep link, and a paid-up member lost the shortcut for it.
      */
     val recurringAuthoring: StateFlow<RecurringAuthoringGate> = membershipRepository.current
-        .map { RecurringAuthoringGate.resolve(it?.hasMembership) }
+        .map { RecurringAuthoringGate.resolve(it) }
         .stateIn(viewModelScope, SharingStarted.Eagerly, RecurringAuthoringGate.Allowed)
 
     /**
@@ -256,6 +274,7 @@ class OrderDetailViewModel @Inject constructor(
         viewModelScope.launch {
             val dto = orderRepository.getById(id).surfaceError().getOrNull()
             if (dto != null) {
+                readAt.value = Clock.System.now()
                 _state.value = OrderDetailUiState.Loaded(dto)
             } else if (!hadContent) {
                 // Nothing on screen and the fetch failed. The error is already
@@ -313,6 +332,7 @@ class OrderDetailViewModel @Inject constructor(
                     val id = orderId ?: break
                     val fresh = orderRepository.getById(id).surfaceError().getOrNull()
                     if (fresh != null) {
+                        readAt.value = Clock.System.now()
                         _state.value = OrderDetailUiState.Loaded(fresh)
                         // Status may have flipped to Completed/Cancelled — stop
                         // burning a request every 5 minutes on a finished order.
@@ -407,10 +427,10 @@ class OrderDetailViewModel @Inject constructor(
     }
 
     /**
-     * Wave 3.3 — confirm a Pending recurring-template order. Backend branches
-     * on payment type:
-     *   * Cash response (clientSecret == null) → backend already flipped the
-     *     order to Confirmed + Paid; we push a success snackbar + refetch.
+     * Confirm a recurring occurrence. Backend branches on payment type:
+     *   * Cash response (clientSecret == null) → the occurrence is confirmed and
+     *     its payment stays Pending until the cleaner collects; we push a success
+     *     snackbar + refetch, and the refetched order no longer needs confirmation.
      *   * Card response (clientSecret != null) → screen consumes [confirmResult]
      *     and opens the Stripe PaymentSheet with the returned client secret.
      *
@@ -431,11 +451,9 @@ class OrderDetailViewModel @Inject constructor(
             _confirmResult.emit(resp)
             _confirmRecurringState.value = ActionState.Idle
 
-            // Cash path: backend already moved the order to Confirmed + Paid.
-            // Push the success snackbar + refetch so the screen reflects the
-            // new status. Card path's snackbars fire from the PaymentSheet
-            // result callback (via [notifyCardPaymentResult]) since only the
-            // screen sees the Stripe outcome.
+            // Card path's snackbars fire from the PaymentSheet result callback
+            // (via [notifyCardPaymentResult]) since only the screen sees the
+            // Stripe outcome.
             if (resp.clientSecret.isNullOrBlank()) {
                 snackbar.showSuccess(
                     appContext.getString(R.string.recurring_confirm_success),
@@ -623,4 +641,11 @@ class OrderDetailViewModel @Inject constructor(
     private fun <T> ApiResult<T>.surfaceError(): ApiResult<T> = onError { error ->
         if (error !is ApiError.Network) snackbar.showError(error)
     }
+
+    private fun OrderDetailDto.awaitsCleanerPastStart(now: Instant): Boolean = customerAwaitsCleanerPastStart(
+        statusValue = orderStatus?.value,
+        hasCleaner = !assignedEmployees.isNullOrEmpty(),
+        startsAt = cleaningDateTime?.let { runCatching { Instant.parse(it) }.getOrNull() },
+        now = now,
+    )
 }

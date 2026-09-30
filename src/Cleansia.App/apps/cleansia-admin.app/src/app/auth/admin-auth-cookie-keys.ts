@@ -12,4 +12,5 @@ export const ADMIN_AUTH_COOKIE_KEYS: AuthCookieKeys = {
   csrfToken: 'admin_csrf',
   adminRole: 'admin_administrator_role',
   userId: 'admin_user_id',
+  mustChangePassword: 'admin_must_change_password',
 };

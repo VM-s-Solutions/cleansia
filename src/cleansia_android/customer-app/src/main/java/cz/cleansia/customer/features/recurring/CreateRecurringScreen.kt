@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,8 +26,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -73,17 +73,22 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.booking.CashEligibility
+import cz.cleansia.customer.core.booking.PropertySize
 import cz.cleansia.customer.core.catalog.PackageListItem
 import cz.cleansia.customer.core.catalog.ServiceListItem
 import cz.cleansia.customer.core.data.UserAddress
 import cz.cleansia.customer.core.recurring.RecurrenceFrequency
 import cz.cleansia.customer.features.addresses.AddressManagerSheet
+import cz.cleansia.customer.features.booking.DirtinessLevelPicker
+import cz.cleansia.customer.features.booking.PreferredCleanerPicker
 import cz.cleansia.customer.features.booking.localizedDescription
 import cz.cleansia.customer.features.booking.localizedName
 import cz.cleansia.customer.ui.state.ActionState
+import cz.cleansia.core.ui.components.CleansiaConsentCheckbox
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.plus
@@ -115,6 +120,8 @@ fun CreateRecurringScreen(
     val catalogState by viewModel.catalogState.collectAsStateWithLifecycle()
     val cashEligibility by viewModel.cashEligibility.collectAsStateWithLifecycle()
     val cashClearedNotice by viewModel.cashClearedNotice.collectAsStateWithLifecycle()
+    val preferredCleanerRefused by viewModel.preferredCleanerRefused.collectAsStateWithLifecycle()
+    val termsAsked by viewModel.termsAsked.collectAsStateWithLifecycle()
     val submitting = submitState is ActionState.Submitting
     val isEditing = viewModel.isEditing
 
@@ -158,10 +165,12 @@ fun CreateRecurringScreen(
                 canAdvance = canAdvance,
                 submitting = submitting,
                 isEditing = isEditing,
+                preferredCleanerRefused = preferredCleanerRefused,
                 onPrevious = viewModel::previousStep,
                 onNext = {
                     if (currentStep < TOTAL_STEPS) viewModel.nextStep() else viewModel.submit()
                 },
+                onSaveWithoutPreferredCleaner = viewModel::saveWithoutPreferredCleaner,
             )
         },
     ) { padding ->
@@ -212,6 +221,7 @@ fun CreateRecurringScreen(
                             savedAddresses = savedAddresses,
                             cashEligibility = cashEligibility,
                             cashClearedNotice = cashClearedNotice,
+                            termsAsked = termsAsked,
                             viewModel = viewModel,
                             onOpenAddressSheet = { addressSheetOpen = true },
                             isEditing = isEditing,
@@ -407,54 +417,75 @@ private fun WizardBottomBar(
     canAdvance: Boolean,
     submitting: Boolean,
     isEditing: Boolean,
+    preferredCleanerRefused: Boolean,
     onPrevious: () -> Unit,
     onNext: () -> Unit,
+    onSaveWithoutPreferredCleaner: () -> Unit,
 ) {
     // navigationBarsPadding lifts the action row above the system gesture
     // indicator so Back / Next don't sit flush with the bottom bezel.
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.surface)
             .navigationBarsPadding()
             .padding(horizontal = 20.dp, vertical = 14.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        if (currentStep > 1) {
+        if (preferredCleanerRefused && currentStep == TOTAL_STEPS) {
+            Text(
+                text = stringResource(R.string.preferred_cleaner_schedule_refused),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+            )
             OutlinedButton(
-                onClick = onPrevious,
+                onClick = onSaveWithoutPreferredCleaner,
                 enabled = !submitting,
-                modifier = Modifier.weight(1f).defaultMinSize(minHeight = 54.dp),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(text = stringResource(R.string.preferred_cleaner_schedule_save_without))
+            }
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (currentStep > 1) {
+                OutlinedButton(
+                    onClick = onPrevious,
+                    enabled = !submitting,
+                    modifier = Modifier.weight(1f).defaultMinSize(minHeight = 54.dp),
+                ) {
+                    Text(
+                        text = stringResource(R.string.recurring_create_back),
+                        style = MaterialTheme.typography.titleMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+            Button(
+                onClick = onNext,
+                enabled = canAdvance && !submitting,
+                modifier = Modifier.weight(if (currentStep > 1) 1f else 2f).defaultMinSize(minHeight = 54.dp),
             ) {
                 Text(
-                    text = stringResource(R.string.recurring_create_back),
-                    style = MaterialTheme.typography.titleMedium,
+                    text = stringResource(
+                        when {
+                            currentStep < TOTAL_STEPS -> R.string.recurring_create_next
+                            isEditing -> R.string.recurring_edit_submit
+                            else -> R.string.recurring_create_submit
+                        },
+                    ),
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    // ru "Сохранить изменения" is 166dp against a 131.5dp slot, and the button used to be
+                    // a FIXED 54.dp — so the label wrapped to two lines and the second one was cut off
+                    // inside the button. defaultMinSize above lets it grow; this keeps it to one line.
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-        }
-        Button(
-            onClick = onNext,
-            enabled = canAdvance && !submitting,
-            modifier = Modifier.weight(if (currentStep > 1) 1f else 2f).defaultMinSize(minHeight = 54.dp),
-        ) {
-            Text(
-                text = stringResource(
-                    when {
-                        currentStep < TOTAL_STEPS -> R.string.recurring_create_next
-                        isEditing -> R.string.recurring_edit_submit
-                        else -> R.string.recurring_create_submit
-                    },
-                ),
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                // ru "Сохранить изменения" is 166dp against a 131.5dp slot, and the button used to be
-                // a FIXED 54.dp — so the label wrapped to two lines and the second one was cut off
-                // inside the button. defaultMinSize above lets it grow; this keeps it to one line.
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
         }
     }
 }
@@ -525,14 +556,20 @@ private fun WhatStep(
         Column(modifier = Modifier.weight(1f)) {
             SectionLabel(stringResource(R.string.recurring_create_rooms_label))
             Spacer(Modifier.height(8.dp))
-            Stepper(value = state.rooms, onChange = viewModel::setRooms)
+            Stepper(value = state.rooms, max = PropertySize.MAX_ROOMS, onChange = viewModel::setRooms)
         }
         Column(modifier = Modifier.weight(1f)) {
             SectionLabel(stringResource(R.string.recurring_create_bathrooms_label))
             Spacer(Modifier.height(8.dp))
-            Stepper(value = state.bathrooms, onChange = viewModel::setBathrooms)
+            Stepper(value = state.bathrooms, max = PropertySize.MAX_BATHROOMS, onChange = viewModel::setBathrooms)
         }
     }
+
+    Spacer(Modifier.height(24.dp))
+
+    SectionLabel(stringResource(R.string.dirtiness_title))
+    Spacer(Modifier.height(8.dp))
+    DirtinessLevelPicker(selected = state.dirtinessLevel, onSelect = viewModel::setDirtinessLevel)
 }
 
 /* ─────────────── Step 3 — Where & Pay ─────────────── */
@@ -543,6 +580,7 @@ private fun WhereAndPayStep(
     savedAddresses: List<UserAddress>,
     cashEligibility: CashEligibility,
     cashClearedNotice: Boolean,
+    termsAsked: Boolean,
     viewModel: CreateRecurringViewModel,
     onOpenAddressSheet: () -> Unit,
     isEditing: Boolean,
@@ -597,7 +635,37 @@ private fun WhereAndPayStep(
 
     SectionLabel(stringResource(R.string.recurring_create_starts_label))
     Spacer(Modifier.height(8.dp))
-    StartsOnPicker(isoValue = state.startsOnIso, onChange = viewModel::setStartsOn)
+    StartsOnPicker(
+        isoValue = state.startsOnIso,
+        latestDate = state.latestStartDate(TimeZone.currentSystemDefault()),
+        onChange = viewModel::setStartsOn,
+    )
+
+    Spacer(Modifier.height(24.dp))
+    PreferredCleanerPicker(
+        selectedEmployeeId = state.preferredEmployeeId,
+        onSelect = { id, _ -> viewModel.setPreferredEmployeeId(id) },
+    )
+
+    if (termsAsked) {
+        Spacer(Modifier.height(24.dp))
+        CleansiaConsentCheckbox(
+            checked = state.termsAccepted,
+            onCheckedChange = viewModel::setTermsAccepted,
+            html = stringResource(R.string.register_terms_and_conditions),
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+
+    if (!isEditing) {
+        Spacer(Modifier.height(if (termsAsked) 12.dp else 24.dp))
+        CleansiaConsentCheckbox(
+            checked = state.earlyPerformanceRequested,
+            onCheckedChange = viewModel::setEarlyPerformanceRequested,
+            html = stringResource(R.string.consent_early_performance_draft_2026_09_29),
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
 
     if (isEditing) {
         Spacer(Modifier.height(24.dp))
@@ -826,13 +894,12 @@ private fun DayChip(
  * Time-of-day picker — slots grouped into Morning / Afternoon / Evening with
  * section labels and matching glyphs (sun rising / sun / moon). The grouping
  * gives users orientation ("ah, the cleaner comes in the morning") instead
- * of forcing them to mentally categorize a flat list of "08:00, 09:00…".
+ * of forcing them to mentally categorize a flat list of "08:00, 08:15…".
  */
 @Composable
 private fun TimeOfDayPicker(selected: String, onSelect: (String) -> Unit) {
-    val morning = remember { (8..11).map { "%02d:00".format(it) } }
-    val afternoon = remember { (12..16).map { "%02d:00".format(it) } }
-    val evening = remember { (17..19).map { "%02d:00".format(it) } }
+    val (morning, rest) = remember { CreateRecurringViewModel.START_TIMES.partition { it < "12:00" } }
+    val (afternoon, evening) = remember(rest) { rest.partition { it < "17:00" } }
 
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
         TimeSlotGroup(
@@ -859,6 +926,7 @@ private fun TimeOfDayPicker(selected: String, onSelect: (String) -> Unit) {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun TimeSlotGroup(
     label: String,
@@ -883,8 +951,11 @@ private fun TimeSlotGroup(
             )
         }
         Spacer(Modifier.height(6.dp))
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(slots) { slot ->
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            slots.forEach { slot ->
                 OutlinedSelectableChip(
                     selected = slot == selected,
                     onClick = { onSelect(slot) },
@@ -939,7 +1010,7 @@ private fun OutlinedSelectableChip(
 }
 
 @Composable
-private fun Stepper(value: Int, onChange: (Int) -> Unit) {
+private fun Stepper(value: Int, max: Int, onChange: (Int) -> Unit) {
     Row(
         modifier = Modifier
             .clip(RoundedCornerShape(12.dp))
@@ -955,7 +1026,7 @@ private fun Stepper(value: Int, onChange: (Int) -> Unit) {
             modifier = Modifier.padding(horizontal = 12.dp),
             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
         )
-        IconButton(onClick = { onChange(value + 1) }) {
+        IconButton(onClick = { onChange(value + 1) }, enabled = value < max) {
             Icon(Icons.Outlined.Add, contentDescription = null)
         }
     }
@@ -1342,7 +1413,7 @@ private fun PaymentCard(
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun StartsOnPicker(isoValue: String, onChange: (String) -> Unit) {
+private fun StartsOnPicker(isoValue: String, latestDate: LocalDate?, onChange: (String) -> Unit) {
     val tz = TimeZone.currentSystemDefault()
     val today = remember { Clock.System.now().toLocalDateTime(tz).date }
     val parsed = remember(isoValue) {
@@ -1391,8 +1462,7 @@ private fun StartsOnPicker(isoValue: String, onChange: (String) -> Unit) {
 
     if (dialogOpen) {
         val initialMillis = displayDate.atStartOfDayIn(TimeZone.UTC).toEpochMilliseconds()
-        val todayUtcMs = today.atStartOfDayIn(TimeZone.UTC).toEpochMilliseconds()
-        val selectableDates = NotInPastSelectableDates(todayUtcMs)
+        val selectableDates = StartsOnSelectableDates(today = today, latest = latestDate)
         val pickerState = rememberDatePickerState(
             initialSelectedDateMillis = initialMillis,
             selectableDates = selectableDates,
@@ -1421,13 +1491,17 @@ private fun StartsOnPicker(isoValue: String, onChange: (String) -> Unit) {
 }
 
 /**
- * SelectableDates impl that blocks any UTC-day before [todayUtcMs]. Hoisted
- * out of the composable so it sits in plain code — keeps the compose
- * compiler plugin from flagging an inline `object :` literal.
+ * The start days the picker offers: none before [today], and in edit mode none after [latest]. Hoisted
+ * out of the composable so it sits in plain code — keeps the compose compiler plugin from flagging an
+ * inline `object :` literal.
  */
 @OptIn(ExperimentalMaterial3Api::class)
-private class NotInPastSelectableDates(
-    private val todayUtcMs: Long,
+internal class StartsOnSelectableDates(
+    private val today: LocalDate,
+    private val latest: LocalDate?,
 ) : androidx.compose.material3.SelectableDates {
-    override fun isSelectableDate(utcTimeMillis: Long): Boolean = utcTimeMillis >= todayUtcMs
+    override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+        val day = Instant.fromEpochMilliseconds(utcTimeMillis).toLocalDateTime(TimeZone.UTC).date
+        return day >= today && (latest == null || day <= latest)
+    }
 }

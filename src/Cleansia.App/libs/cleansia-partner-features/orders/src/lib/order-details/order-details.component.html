@@ -29,6 +29,26 @@
     @if (loading() && !orderDetails()) {
     <cleansia-loader />
     } @else if (error()) {
+    @if (removalReason()) {
+    <div class="not-found-state">
+      <div class="not-found-state__icon">
+        <i class="pi pi-user-minus"></i>
+      </div>
+      <h3 class="not-found-state__title">{{ 'pages.order_details.removed_title' | translate }}</h3>
+      <p class="not-found-state__message">
+        {{ 'pages.order_details.removed_message' | translate: { reason: removalReason() } }}
+      </p>
+      <div class="not-found-state__actions">
+        <cleansia-button
+          [label]="'global.actions.back' | translate"
+          [icon]="'pi pi-arrow-left'"
+          [severity]="'secondary'"
+          [outlined]="true"
+          (onClick)="navigateToOrders()"
+        />
+      </div>
+    </div>
+    } @else {
     <div class="not-found-state">
       <div class="not-found-state__icon">
         <i class="pi pi-search"></i>
@@ -50,6 +70,7 @@
         />
       </div>
     </div>
+    }
     } @else if (orderDetails()) {
     <form [formGroup]="formGroup" class="cleansia-order-details__form-content">
       <!-- Order Header with status banner, order number and action buttons -->
@@ -62,6 +83,15 @@
         (print)="printOrder()"
         (downloadInvoice)="downloadInvoice()"
       />
+
+      @if (removalReason(); as reason) {
+      <div class="cleansia-order-details__contract cleansia-order-details__contract--pending" role="status">
+        <i class="pi pi-user-minus"></i>
+        <span class="cleansia-order-details__contract-text">
+          {{ 'pages.order_details.removed_message' | translate: { reason: reason } }}
+        </span>
+      </div>
+      }
 
       <!-- Take Order Action -->
       @if (canTakeOrder()) {
@@ -138,7 +168,7 @@
       }
 
       <!-- Action buttons row: Report Issue / Add Note available across active statuses, Mark Cash Collected
-           only while InProgress and unpaid, Complete only in InProgress with after-photos. -->
+           only while InProgress, awaiting payment and not refused by anything the job sheet shows, Complete only in InProgress with after-photos. -->
       @if (canAddNoteOrIssue() || canMarkCashCollected() || canCompleteOrder()) {
       <div class="cleansia-order-details__actions-row">
         @if (canMarkCashCollected()) {
@@ -178,6 +208,14 @@
       </div>
       }
 
+      @if (currentEmployeeId(); as employeeId) {
+      <cleansia-partner-order-lockout
+        [order]="orderDetails()!"
+        [employeeId]="employeeId"
+        (reported)="onLockoutReported()"
+      />
+      }
+
       <!-- Order Status Section -->
       <cleansia-partner-order-status
         [formGroup]="formGroup"
@@ -186,7 +224,10 @@
       />
 
       <!-- Customer Information Section -->
-      <cleansia-partner-order-customer-info [formGroup]="formGroup" />
+      <cleansia-partner-order-customer-info
+        [formGroup]="formGroup"
+        [closedNoticeKey]="customerDetailsClosedNoticeKey()"
+      />
 
       <!-- Service Details Section -->
       <cleansia-partner-order-service-details [formGroup]="formGroup" />

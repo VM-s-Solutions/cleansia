@@ -133,7 +133,7 @@ public class OrderPaymentDispatcherTests
     }
 
     [Fact]
-    public async Task Cash_EnqueuesReceiptAtOutboxSeam_ReturnsNullSession_NoStripeCall()
+    public async Task Cash_EnqueuesTheBookingEmailAtOutboxSeam_NoReceipt_ReturnsNullSession_NoStripeCall()
     {
         var result = await CreateDispatcher().DispatchAsync(
             BuildOrder(PaymentType.Cash), LanguageCode, CancellationToken.None);
@@ -141,12 +141,16 @@ public class OrderPaymentDispatcherTests
         Assert.Null(result.Failure);
         Assert.Null(result.CheckoutUrl);
         _pending.Verify(p => p.Enqueue(
-            QueueNames.GenerateReceipt,
-            It.Is<QueueEnvelope<GenerateReceiptMessage>>(e =>
+            QueueNames.SendEmail,
+            It.Is<QueueEnvelope<SendOrderBookedEmailMessage>>(e =>
                 e.Payload.OrderId == OrderId
-                && e.Payload.LanguageCode == LanguageCode),
-            MessageKeys.Receipt(OrderId)),
+                && e.Payload.LanguageCode == LanguageCode
+                && e.Payload.ContractConcludedOn != null),
+            MessageKeys.OrderBookedEmail(OrderId)),
             Times.Once);
+        _pending.Verify(p => p.Enqueue(
+            QueueNames.GenerateReceipt, It.IsAny<It.IsAnyType>(), It.IsAny<string>()),
+            Times.Never);
         _stripeClient.Verify(
             c => c.CreateCheckoutSessionAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()),
             Times.Never);

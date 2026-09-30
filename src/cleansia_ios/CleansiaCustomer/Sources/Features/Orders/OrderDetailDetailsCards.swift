@@ -14,6 +14,10 @@ struct CleaningDetailsCard: View {
                 value: L10n.OrderDetail.roomsBathrooms(order.rooms, order.bathrooms)
             )
             OrderInfoRow(
+                label: L10n.Booking.dirtinessLevelLabel,
+                value: L10n.Booking.dirtinessName(order.dirtiness)
+            )
+            OrderInfoRow(
                 label: L10n.OrderDetail.estimated,
                 value: order.estimatedMinutes > 0
                     ? L10n.OrderDetail.durationMinutes(order.estimatedMinutes)

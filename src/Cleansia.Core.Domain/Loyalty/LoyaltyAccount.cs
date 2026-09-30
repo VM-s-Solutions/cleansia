@@ -121,14 +121,32 @@ public class LoyaltyAccount : TenantAuditable
         Updated(actorId, DateTimeOffset.UtcNow);
     }
 
-    private void RecomputeTier(LoyaltyTierThresholds thresholds)
+    /// <summary>
+    /// Re-read the tier against edited thresholds, with no points moving. The tier follows points both
+    /// ways (owner ruling 2026-09-28), so a threshold edit moves an account up or down at once rather
+    /// than at its next grant or revoke. True when the tier changed.
+    /// </summary>
+    public bool ApplyTierThresholds(LoyaltyTierThresholds thresholds, string actorId)
+    {
+        if (!RecomputeTier(thresholds))
+        {
+            return false;
+        }
+
+        Updated(actorId, DateTimeOffset.UtcNow);
+        return true;
+    }
+
+    private bool RecomputeTier(LoyaltyTierThresholds thresholds)
     {
         var newTier = thresholds.ResolveTier(LifetimePoints);
-
-        if (newTier != CurrentTier)
+        if (newTier == CurrentTier)
         {
-            CurrentTier = newTier;
-            TierAchievedOn = DateTimeOffset.UtcNow;
+            return false;
         }
+
+        CurrentTier = newTier;
+        TierAchievedOn = DateTimeOffset.UtcNow;
+        return true;
     }
 }

@@ -121,6 +121,11 @@ struct SummaryCard: View {
                 value: L10n.Booking.summaryProperty(rooms: state.rooms, bathrooms: state.bathrooms)
             )
             LabeledInfoRow(
+                systemImage: "sparkles",
+                label: L10n.Booking.dirtinessLevelLabel,
+                value: state.dirtiness.map(L10n.Booking.dirtinessName) ?? "—"
+            )
+            LabeledInfoRow(
                 systemImage: "calendar",
                 label: L10n.Booking.summaryDate,
                 value: state.selectedDate.isBlank ? "—" : state.selectedDate
@@ -136,6 +141,9 @@ struct SummaryCard: View {
     private var totalsSection: some View {
         VStack(spacing: Spacing.xxs) {
             AmountRow(label: L10n.Booking.summarySubtotal, value: money(summary.subtotal), emphasis: .normal)
+            if summary.dirtinessSurcharge > 0, let label = L10n.Booking.dirtinessSurcharge(summary.dirtiness) {
+                AmountRow(label: label, value: "+\(money(summary.dirtinessSurcharge))", emphasis: .normal)
+            }
             if showPromoLine {
                 AmountRow(
                     label: L10n.Booking.summaryPromoDiscount(state.promoCode),

@@ -23,11 +23,11 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 namespace Cleansia.IntegrationTests.Features.Orders;
 
 /// <summary>
-/// Owner ruling 2026-09-24 through the real pipeline on real Postgres, at a fixed clock: the oops window
-/// after booking is 15 minutes for a standard account (first-time or returning) and for a guest, and 60
-/// for an entitled Plus member. On every route the quote and the charge agree, and both land on a
-/// hand-derived amount; a membership that lapses between the quote and the cancel is judged as it
-/// stands at the cancel.
+/// Owner ruling 2026-09-28 through the real pipeline on real Postgres, at a fixed clock: the oops window
+/// after booking is 60 minutes on a customer's first booking ever — account or guest, matched by account,
+/// e-mail or phone — and for an entitled Plus member, and 15 for everyone returning. On every route the
+/// quote and the charge agree, and both land on a hand-derived amount; a membership that lapses between
+/// the quote and the cancel is judged as it stands at the cancel.
 ///
 /// <para>The job is three hours after booking and a cleaner is on it, so outside the oops window every
 /// case is the 50% last-minute tier — the Plus plan's 4-hour free window cannot mask it.</para>
@@ -37,6 +37,7 @@ public class CancellationOopsWindowTests(PostgresContainerFixture fixture) : Bas
 {
     private const string CustomerId = "user-oops-window";
     private const string CustomerEmail = "oops-window@cleansia.test";
+    private const string CustomerPhone = "+420777111333";
     private const string OrderId = "order-oops-window";
     private const string PriorOrderId = "order-oops-window-prior";
     private const string CurrencyId = "currency-czk-oops-window";
@@ -63,7 +64,9 @@ public class CancellationOopsWindowTests(PostgresContainerFixture fixture) : Bas
         return Task.CompletedTask;
     };
 
-    private Func<CleansiaDbContext, Task> Seed(bool guest = false, bool plus = false, bool returning = false) => async db =>
+    private Func<CleansiaDbContext, Task> Seed(
+        bool guest = false, bool plus = false, bool returning = false,
+        string priorEmail = CustomerEmail, string priorPhone = CustomerPhone) => async db =>
     {
         db.Languages.Add(Language.Create("en", "English"));
         var country = Country.Create("Czechia", "CZE", "CZ", isServiced: true);
@@ -103,7 +106,8 @@ public class CancellationOopsWindowTests(PostgresContainerFixture fixture) : Bas
 
         if (returning)
         {
-            db.Orders.Add(NewOrder(PriorOrderId, CustomerId, _bookedAt.AddDays(-30), OrderStatus.Completed));
+            db.Orders.Add(NewOrder(PriorOrderId, guest ? null : CustomerId, _bookedAt.AddDays(-30), OrderStatus.Completed,
+                priorEmail, priorPhone));
         }
 
         if (plus)
@@ -124,12 +128,14 @@ public class CancellationOopsWindowTests(PostgresContainerFixture fixture) : Bas
         await db.CommitAsync(CancellationToken.None);
     };
 
-    private static Order NewOrder(string id, string? userId, DateTimeOffset bookedAt, OrderStatus status)
+    private static Order NewOrder(
+        string id, string? userId, DateTimeOffset bookedAt, OrderStatus status,
+        string email = CustomerEmail, string phone = CustomerPhone)
     {
         var order = Order.Create(
             customerName: "Oops Window",
-            customerEmail: CustomerEmail,
-            customerPhone: "+420777111333",
+            customerEmail: email,
+            customerPhone: phone,
             customerAddress: Address.Create("Testovaci 15", "Praha", "11000", CountryId),
             rooms: 2,
             bathrooms: 1,
@@ -183,24 +189,26 @@ public class CancellationOopsWindowTests(PostgresContainerFixture fixture) : Bas
         return JsonDocument.Parse(row.PayloadJson!).RootElement;
     }
 
-    public static TheoryData<bool, bool, bool, int, CancellationFeeTier, decimal, int> QuoteAndChargeCases => new()
+    public static TheoryData<bool, bool, bool, int, CancellationFeeTier, decimal, int, string> QuoteAndChargeCases => new()
     {
-        // guest, plus, returning, minutes after booking, tier, fee, oops minutes applied
-        { false, true, false, 59, CancellationFeeTier.FreeOopsWindow, 0m, 60 },
-        { false, true, false, 61, CancellationFeeTier.LastMinute, 500m, 60 },
-        { false, false, false, 14, CancellationFeeTier.FreeOopsWindow, 0m, 15 },
-        { false, false, false, 16, CancellationFeeTier.LastMinute, 500m, 15 },
-        { false, false, true, 14, CancellationFeeTier.FreeOopsWindow, 0m, 15 },
-        { false, false, true, 16, CancellationFeeTier.LastMinute, 500m, 15 },
-        { true, false, false, 14, CancellationFeeTier.FreeOopsWindow, 0m, 15 },
-        { true, false, false, 16, CancellationFeeTier.LastMinute, 500m, 15 },
+        // guest, plus, returning, minutes after booking, tier, fee, oops minutes applied, rule recorded
+        { false, true, true, 59, CancellationFeeTier.FreeOopsWindow, 0m, 60, "plus" },
+        { false, true, true, 61, CancellationFeeTier.LastMinute, 500m, 60, "plus" },
+        { false, false, false, 59, CancellationFeeTier.FreeOopsWindow, 0m, 60, "firstBooking" },
+        { false, false, false, 61, CancellationFeeTier.LastMinute, 500m, 60, "firstBooking" },
+        { false, false, true, 14, CancellationFeeTier.FreeOopsWindow, 0m, 15, "standard" },
+        { false, false, true, 16, CancellationFeeTier.LastMinute, 500m, 15, "standard" },
+        { true, false, false, 59, CancellationFeeTier.FreeOopsWindow, 0m, 60, "firstBooking" },
+        { true, false, false, 61, CancellationFeeTier.LastMinute, 500m, 60, "firstBooking" },
+        { true, false, true, 14, CancellationFeeTier.FreeOopsWindow, 0m, 15, "standard" },
+        { true, false, true, 16, CancellationFeeTier.LastMinute, 500m, 15, "standard" },
     };
 
     [Theory]
     [MemberData(nameof(QuoteAndChargeCases))]
     public async Task The_Quote_And_The_Charge_Agree_On_The_Customers_Own_Oops_Window(
         bool guest, bool plus, bool returning, int minutesAfterBooking,
-        CancellationFeeTier expectedTier, decimal expectedFee, int expectedOopsMinutes)
+        CancellationFeeTier expectedTier, decimal expectedFee, int expectedOopsMinutes, string expectedRule)
     {
         var expectedRefund = TotalPrice - expectedFee;
         await TestMethod(
@@ -233,6 +241,32 @@ public class CancellationOopsWindowTests(PostgresContainerFixture fixture) : Bas
                     JsonNamingPolicy.CamelCase.ConvertName(expectedTier.ToString()),
                     evidence.GetProperty("tier").GetString());
                 Assert.Equal(expectedOopsMinutes, evidence.GetProperty("oopsMinutesApplied").GetInt32());
+                Assert.Equal(expectedRule, evidence.GetProperty("oopsRuleApplied").GetString());
+            },
+            transactional: false);
+    }
+
+    /// <summary>
+    /// CustomerEmail is citext: a guest who booked before under the same address, typed in another case
+    /// and with another phone, is a returning guest.
+    /// </summary>
+    [Fact]
+    public async Task A_Guest_Who_Booked_Before_Under_The_Same_Email_In_Another_Case_Is_Returning()
+    {
+        await TestMethod(
+            setup: Session(guest: true),
+            arrange: Seed(guest: true, returning: true,
+                priorEmail: CustomerEmail.ToUpperInvariant(), priorPhone: "+420600000001"),
+            act: async provider =>
+            {
+                _clock.Set(_bookedAt.AddMinutes(30));
+                return await PreviewAsync(provider, guest: true);
+            },
+            assert: (CleansiaDbContext _, GetCancellationFeePreview.Response preview) =>
+            {
+                Assert.Equal(CancellationFeeTier.LastMinute, preview.Tier);
+                Assert.Equal(BookingPolicy.OopsWindowMinutesStandard, preview.OopsWindowMinutes);
+                return Task.CompletedTask;
             },
             transactional: false);
     }
@@ -242,7 +276,7 @@ public class CancellationOopsWindowTests(PostgresContainerFixture fixture) : Bas
     {
         await TestMethod(
             setup: Session(guest: false),
-            arrange: Seed(plus: true),
+            arrange: Seed(plus: true, returning: true),
             act: async provider =>
             {
                 _clock.Set(_bookedAt.AddMinutes(30));
@@ -289,6 +323,9 @@ public class CancellationOopsWindowTests(PostgresContainerFixture fixture) : Bas
 
     private sealed class SucceedingRefunds : IRefundService
     {
+        public Task<BusinessResult<RefundResult>> RedriveAsync(string refundId, string actorId, CancellationToken cancellationToken)
+            => throw new NotSupportedException();
+
         public Task<BusinessResult<RefundResult>> IssueRefundAsync(RefundRequest request, CancellationToken cancellationToken)
             => Task.FromResult(BusinessResult.Success(new RefundResult(
                 "refund-oops-window", $"refund:{request.OrderId}:cancel", request.Amount, RefundStatus.Succeeded, false)));

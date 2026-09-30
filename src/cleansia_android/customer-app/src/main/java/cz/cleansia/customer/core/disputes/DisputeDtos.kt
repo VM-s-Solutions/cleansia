@@ -137,7 +137,11 @@ data class CreateDisputeRequest(
      * wire shape matches what the web client sends; the backend treats the two the same.
      */
     val lines: List<DisputeLineRequest>? = null,
+    val settlementPreference: DisputeSettlement = DisputeSettlement.CardRefund,
 )
+
+/** How an upheld complaint is paid back: a card refund unless the customer chooses credit. */
+enum class DisputeSettlement { CardRefund, Credit }
 
 /**
  * Mirrors backend `DisputeLineDto` — an item the customer named, as the server reports it back.

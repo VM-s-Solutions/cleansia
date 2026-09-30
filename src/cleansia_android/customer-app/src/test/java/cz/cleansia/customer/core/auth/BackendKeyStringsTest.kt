@@ -115,6 +115,11 @@ class BackendKeyStringsTest {
         "consent.terms_not_accepted",
     )
 
+    /** `CreateOrder` and `CreateRecurringBooking` refuse every booking without the request, a consented account included. */
+    private val earlyPerformanceKeys = listOf(
+        "consent.early_performance_not_requested",
+    )
+
     /**
      * The archived-company write guard (ADR-0064 D3): a review, a dispute or a cancellation against a
      * company frozen for archive is refused at the commit and answered 409 with this key on every
@@ -131,6 +136,80 @@ class BackendKeyStringsTest {
      */
     private val cashEligibilityKeys = listOf(
         "order.cash_not_available",
+    )
+
+    /**
+     * A start off the quarter-hour, outside 08:00–19:45 in the market's clock, or more than 60 days
+     * ahead: refused by `QuoteOrder`, `CreateOrder`, `CreateRecurringBooking` and `UpdateRecurringBooking`.
+     */
+    private val bookingWindowKeys = listOf(
+        "order.cleaning_date.outside_booking_window",
+    )
+
+    /**
+     * Past the start with a cleaner assigned, the cancel and both previews refuse; the guest
+     * `ReportGuestNoShow` refuses before the start, once the job runs, and on a closed order.
+     */
+    private val cleanerNoShowKeys = listOf(
+        "order.start_passed_cannot_cancel",
+        "order.cleaner_already_started",
+        "order.start_time_not_reached",
+        "order.already_cancelled",
+        "order.already_completed",
+    )
+
+    /** Every refusal `ConfirmRecurringOrder` can answer. */
+    private val confirmRecurringKeys = listOf(
+        "common.required",
+        "common.invalid_enum_value",
+        "order.not_found",
+        "order.already_cancelled",
+        "order.payment_already_paid",
+        "order.recurring_already_confirmed",
+        "order.cleaning_date.below_lead_time",
+        "order.cash_not_available",
+        "order.cash_unpaid_receivable",
+        "order.cash_open_bookings_limit_reached",
+        "order.cash_requires_saved_card",
+        "order.payment_gateway_unavailable",
+        "order.invalid_status_transition",
+        "user.not_found",
+    )
+
+    /**
+     * Beyond the one-cleaner rule, cash needs no open receivable, room under the open unpaid cash
+     * bookings and a usable card saved in the booking's currency (owner ruling 2026-09-28). Refused on
+     * `CreateOrder`, both recurring writes and `ConfirmRecurringOrder`.
+     */
+    private val cashStandingKeys = listOf(
+        "order.cash_unpaid_receivable",
+        "order.cash_open_bookings_limit_reached",
+        "order.cash_requires_saved_card",
+    )
+
+    /** Every refusal `SavedCard/CreateSetupIntent` and `SavedCard/Remove` can answer. */
+    private val savedCardKeys = listOf(
+        "saved_card.consent_not_accepted",
+        "saved_card.not_found",
+        "country.not_serviced",
+        "order.payment_gateway_unavailable",
+        "user.not_found",
+        "common.required",
+    )
+
+    /** Every refusal `Receivable/CreatePayLink` can answer. */
+    private val receivableKeys = listOf(
+        "receivable.not_found",
+        "receivable.not_open",
+        "order.payment_gateway_unavailable",
+        "common.required",
+    )
+
+    /** Every refusal `GrantConsent` and `WithdrawConsent` can answer beyond the common validators. */
+    private val consentKeys = listOf(
+        "gdpr.consent_not_editable",
+        "gdpr.consent_already_granted",
+        "gdpr.consent_not_found",
     )
 
     private val resDir: File = sequenceOf(
@@ -193,6 +272,11 @@ class BackendKeyStringsTest {
     }
 
     @Test
+    fun `the early-performance refusal a booking or schedule can answer resolves to a sentence in all five locales`() {
+        assertAllResolve(earlyPerformanceKeys)
+    }
+
+    @Test
     fun `the archived-company refusal every write can answer resolves to a sentence in all five locales`() {
         assertAllResolve(archivedCompanyKeys)
     }
@@ -200,6 +284,41 @@ class BackendKeyStringsTest {
     @Test
     fun `the cash refusal a booking or schedule can answer resolves to a sentence in all five locales`() {
         assertAllResolve(cashEligibilityKeys)
+    }
+
+    @Test
+    fun `the booking-window refusal a booking or schedule can answer resolves to a sentence in all five locales`() {
+        assertAllResolve(bookingWindowKeys)
+    }
+
+    @Test
+    fun `every post-start cancel and no-show refusal resolves to a sentence in all five locales`() {
+        assertAllResolve(cleanerNoShowKeys)
+    }
+
+    @Test
+    fun `every refusal ConfirmRecurringOrder can answer resolves to a sentence in all five locales`() {
+        assertAllResolve(confirmRecurringKeys)
+    }
+
+    @Test
+    fun `every consent refusal resolves to a sentence in all five locales`() {
+        assertAllResolve(consentKeys)
+    }
+
+    @Test
+    fun `every cash-standing refusal a booking or schedule can answer resolves to a sentence in all five locales`() {
+        assertAllResolve(cashStandingKeys)
+    }
+
+    @Test
+    fun `every saved-card refusal resolves to a sentence in all five locales`() {
+        assertAllResolve(savedCardKeys)
+    }
+
+    @Test
+    fun `every pay-link refusal resolves to a sentence in all five locales`() {
+        assertAllResolve(receivableKeys)
     }
 
     private fun assertAllResolve(keys: List<String>) {

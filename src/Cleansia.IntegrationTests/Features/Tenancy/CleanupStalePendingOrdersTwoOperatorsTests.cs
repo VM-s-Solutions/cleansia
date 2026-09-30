@@ -151,6 +151,8 @@ public sealed class CleanupStalePendingOrdersTwoOperatorsTests(PostgresContainer
                 new OrderRepository(ctx),
                 new CreditAccountRepository(ctx),
                 new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx), new UserRepository(ctx), Microsoft.Extensions.Logging.Abstractions.NullLogger<NotificationProducer>.Instance),
+                new GuestOrderAccessTokenIssuer(new GuestOrderAccessTokenRepository(ctx)),
+                new OutboxPendingDispatch(ctx),
                 _tenantProvider,
                 ctx,
                 NullLogger<CleanupStalePendingOrders.Handler>.Instance);

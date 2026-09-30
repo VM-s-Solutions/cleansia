@@ -12,6 +12,7 @@ using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Legal;
+using Cleansia.Core.Domain.Orders;
 using Cleansia.IntegrationTests.Features.Legal;
 using Cleansia.Core.Domain.Packages;
 using Cleansia.Core.Domain.Repositories;
@@ -71,7 +72,7 @@ public class CreateOrderGuestAuditTests(PostgresContainerFixture fixture) : Base
         return Task.CompletedTask;
     }
 
-    private static CreateOrder.Command GuestCommand(decimal totalPrice, bool? termsAccepted) => new(
+    private static CreateOrder.Command GuestCommand(decimal totalPrice, bool? termsAccepted, bool? earlyPerformanceRequested = true) => new(
         CustomerName: "Guest Customer",
         CustomerEmail: GuestEmail,
         CustomerPhone: "+420777333444",
@@ -82,12 +83,13 @@ public class CreateOrderGuestAuditTests(PostgresContainerFixture fixture) : Base
         Rooms: 2,
         Bathrooms: 1,
         Extras: new Dictionary<string, bool>(),
-        CleaningDate: DateTime.UtcNow.AddDays(3),
+        CleaningDate: DateTime.UtcNow.Date.AddDays(3).AddHours(9),
         PaymentType: PaymentType.Card,
         CurrencyId: null,
         TotalPrice: totalPrice,
         SpecialInstructions: "gate code 1234",
-        TermsAccepted: termsAccepted);
+        TermsAccepted: termsAccepted,
+        EarlyPerformanceRequested: earlyPerformanceRequested);
 
     private static async Task<List<CustomerActionAudit>> CustomerRows(CleansiaDbContext context) =>
         await context.CustomerActionAudits.IgnoreQueryFilters().ToListAsync();
@@ -145,6 +147,49 @@ public class CreateOrderGuestAuditTests(PostgresContainerFixture fixture) : Base
                 Assert.DoesNotContain(GuestStreet, row.PayloadJson);
                 Assert.DoesNotContain("gate code", row.PayloadJson);
                 Assert.Equal(0, await context.AdminActionAudits.IgnoreQueryFilters().CountAsync());
+            },
+            transactional: false);
+    }
+
+    [Fact]
+    public async Task A_Guest_Checkout_Stores_The_Request_To_Start_Early_On_The_Order_With_The_Client_And_The_Request()
+    {
+        var before = DateTimeOffset.UtcNow;
+        await TestMethod(
+            setup: GuestSession,
+            arrange: SeedAsync,
+            act: async provider => await provider.GetRequiredService<IMediator>()
+                .Send(GuestCommand(CzkServicePrice + CzkPackagePrice, termsAccepted: true)),
+            assert: async (CleansiaDbContext context, BusinessResult<CreateOrder.Response> result) =>
+            {
+                Assert.True(result.IsSuccess, $"CreateOrder failed with: {string.Join("; ", (result as IValidationResult)?.Errors.Select(e => $"{e.Code}={e.Message}") ?? [result.Error?.Message])}");
+                var order = await context.Orders.IgnoreQueryFilters().AsNoTracking().SingleAsync(o => o.Id == result.Value.Id);
+                Assert.Equal(Order.EarlyPerformanceConsentTextVersionInForce, order.EarlyPerformanceConsentTextVersion);
+                Assert.InRange(order.EarlyPerformanceConsentedOn!.Value, before.AddSeconds(-1), DateTimeOffset.UtcNow.AddSeconds(1));
+                Assert.Equal(JwtAudiences.Customer, order.EarlyPerformanceConsentClient);
+                Assert.Equal(Ip, order.EarlyPerformanceConsentIpAddress);
+                Assert.Equal(DeviceLabel, order.EarlyPerformanceConsentDeviceLabel);
+            },
+            transactional: false);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData(false)]
+    public async Task A_Guest_Checkout_Without_The_Request_To_Start_Early_Is_Refused_With_Its_Key_And_No_Order(bool? earlyPerformanceRequested)
+    {
+        await TestMethod(
+            setup: GuestSession,
+            arrange: SeedAsync,
+            act: async provider => await provider.GetRequiredService<IMediator>()
+                .Send(GuestCommand(CzkServicePrice + CzkPackagePrice, termsAccepted: true, earlyPerformanceRequested)),
+            assert: async (CleansiaDbContext context, BusinessResult<CreateOrder.Response> result) =>
+            {
+                Assert.True(result.IsFailure);
+                var refusal = Assert.Single(Assert.IsAssignableFrom<IValidationResult>(result).Errors);
+                Assert.Equal(BusinessErrorMessage.EarlyPerformanceNotRequested, refusal.Message);
+                Assert.Equal(nameof(CreateOrder.Command.EarlyPerformanceRequested), refusal.Code);
+                Assert.Empty(await context.Orders.IgnoreQueryFilters().ToListAsync());
             },
             transactional: false);
     }

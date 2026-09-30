@@ -1,6 +1,7 @@
 package cz.cleansia.customer.features.recurring
 
 import android.content.Context
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModelStore
 import app.cash.turbine.test
@@ -10,12 +11,16 @@ import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.booking.BookingApi
 import cz.cleansia.customer.core.booking.CashEligibility
+import cz.cleansia.customer.core.booking.DirtinessLevel
+import cz.cleansia.customer.core.booking.PropertySize
 import cz.cleansia.customer.core.booking.QuoteOrderCommand
 import cz.cleansia.customer.core.booking.QuoteOrderResponse
 import cz.cleansia.customer.core.catalog.CatalogRepository
 import cz.cleansia.customer.core.catalog.CategoryDto
 import cz.cleansia.customer.core.catalog.PackageListItem
 import cz.cleansia.customer.core.catalog.ServiceListItem
+import cz.cleansia.customer.core.consent.GdprConsentClient
+import cz.cleansia.customer.core.consent.SignupConsentType
 import cz.cleansia.customer.core.data.AddressRepository
 import cz.cleansia.customer.core.data.UserAddress
 import cz.cleansia.customer.core.market.MarketListItem
@@ -45,7 +50,14 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.toInstant
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -64,6 +76,7 @@ class CreateRecurringViewModelTest {
     private lateinit var addressRepo: AddressRepository
     private lateinit var marketRepo: MarketRepository
     private lateinit var bookingApi: BookingApi
+    private lateinit var consentClient: GdprConsentClient
     private lateinit var snackbar: SnackbarController
     private lateinit var appContext: Context
     private lateinit var marketFlow: MutableStateFlow<MarketState>
@@ -84,6 +97,9 @@ class CreateRecurringViewModelTest {
         marketRepo = mockk(relaxed = true)
         bookingApi = mockk()
         coEvery { bookingApi.quote(any()) } returns Response.success(crewQuote(1))
+        consentClient = mockk()
+        coEvery { consentClient.grantedTypes() } returns
+            setOf(SignupConsentType.TermsOfService, SignupConsentType.PrivacyPolicy)
         snackbar = mockk(relaxed = true)
         appContext = mockk(relaxed = true)
         marketFlow = MutableStateFlow(MarketState.Unavailable)
@@ -119,6 +135,7 @@ class CreateRecurringViewModelTest {
             addressRepo = addressRepo,
             marketRepo = marketRepo,
             bookingApi = bookingApi,
+            consentClient = consentClient,
             snackbar = snackbar,
             appContext = appContext,
         )
@@ -267,7 +284,9 @@ class CreateRecurringViewModelTest {
     private fun fillValidForm(vm: CreateRecurringViewModel) {
         vm.setSavedAddressId("addr-1")
         vm.toggleService("svc-1")
+        vm.setDirtinessLevel(DirtinessLevel.Normal)
         vm.setStartsOn("2026-07-01T00:00:00Z")
+        vm.setEarlyPerformanceRequested(true)
     }
 
     private val plusRefusal = "Recurring cleanings are a Cleansia Plus benefit — subscribe to set one up."
@@ -312,12 +331,21 @@ class CreateRecurringViewModelTest {
         catalogLoadedFlow.value = true
     }
 
-    private fun sourceOrder(services: List<String>, packages: List<String> = emptyList()) {
+    private fun sourceOrder(
+        services: List<String>,
+        packages: List<String> = emptyList(),
+        rooms: Int = 3,
+        bathrooms: Int = 2,
+        cleaningDateTime: String? = null,
+        dirtinessLevel: DirtinessLevel = DirtinessLevel.Normal,
+    ) {
         coEvery { orderRepo.getById("ord-7") } returns ApiResult.Success(
             OrderDetailDto(
                 id = "ord-7",
-                rooms = 3,
-                bathrooms = 2,
+                rooms = rooms,
+                bathrooms = bathrooms,
+                cleaningDateTime = cleaningDateTime,
+                dirtinessLevel = dirtinessLevel,
                 totalPrice = 100.0,
                 originalSubtotal = 100.0,
                 appliedDiscountSource = 0,
@@ -426,6 +454,7 @@ class CreateRecurringViewModelTest {
         selectedPackageIds = listOf("pkg-3"),
         paymentType = 2,
         startsOn = "2026-09-15T00:00:00Z",
+        dirtinessLevel = DirtinessLevel.Heavy,
     )
 
     @Test
@@ -447,6 +476,7 @@ class CreateRecurringViewModelTest {
         assertEquals(setOf("pkg-3"), state.selectedPackageIds)
         assertEquals(2, state.paymentType)
         assertEquals("2026-09-15T00:00:00Z", state.startsOnIso)
+        assertEquals(DirtinessLevel.Heavy, state.dirtinessLevel)
     }
 
     @Test
@@ -487,6 +517,7 @@ class CreateRecurringViewModelTest {
         assertEquals(listOf("svc-7"), request.captured.selectedServiceIds)
         assertEquals(listOf("pkg-3"), request.captured.selectedPackageIds)
         assertEquals("2026-09-15T00:00:00Z", request.captured.startsOn)
+        assertEquals(DirtinessLevel.Heavy, request.captured.dirtinessLevel)
         assertEquals(ActionState.Idle, vm.submitState.value)
     }
 
@@ -533,6 +564,241 @@ class CreateRecurringViewModelTest {
         assertEquals("2026-12-31T00:00:00Z", request.captured.endsOn)
     }
 
+    // The server refuses a start on or after the end date (`recurring_template.ends_on_before_start`),
+    // and this form cannot move the end date, so the picker stops the day before it — as the web does.
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Test
+    fun `edit mode offers no start on or after the stored end date`() = runTest {
+        templatesFlow.value = listOf(editableTemplate.copy(endsOn = "2026-12-31T00:00:00Z"))
+
+        val vm = viewModel(templateId = "tpl-1")
+        advanceUntilIdle()
+
+        val latest = vm.state.value.latestStartDate(TimeZone.UTC)
+        assertEquals(LocalDate(2026, 12, 30), latest)
+        val dates = StartsOnSelectableDates(today = LocalDate(2026, 9, 1), latest = latest)
+        assertTrue(dates.isSelectableDate(utcMidnight(LocalDate(2026, 12, 30))))
+        assertFalse(dates.isSelectableDate(utcMidnight(LocalDate(2026, 12, 31))))
+        assertFalse(dates.isSelectableDate(utcMidnight(LocalDate(2027, 1, 15))))
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Test
+    fun `a schedule with no end date leaves the start open after today`() = runTest {
+        templatesFlow.value = listOf(editableTemplate)
+
+        val vm = viewModel(templateId = "tpl-1")
+        advanceUntilIdle()
+
+        val latest = vm.state.value.latestStartDate(TimeZone.UTC)
+        assertNull(latest)
+        val dates = StartsOnSelectableDates(today = LocalDate(2026, 9, 1), latest = latest)
+        assertTrue(dates.isSelectableDate(utcMidnight(LocalDate(2030, 1, 1))))
+        assertFalse(dates.isSelectableDate(utcMidnight(LocalDate(2026, 8, 31))))
+    }
+
+    private fun utcMidnight(date: LocalDate): Long = date.atStartOfDayIn(TimeZone.UTC).toEpochMilliseconds()
+
+    // Every basket validator refuses a home above BookingPolicy.MaxRooms / MaxBathrooms.
+
+    @Test
+    fun `the size steppers stop at the largest home the server accepts`() = runTest {
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.setRooms(PropertySize.MAX_ROOMS + 1)
+        vm.setBathrooms(PropertySize.MAX_BATHROOMS + 1)
+
+        assertEquals(PropertySize.MAX_ROOMS, vm.state.value.rooms)
+        assertEquals(PropertySize.MAX_BATHROOMS, vm.state.value.bathrooms)
+    }
+
+    @Test
+    fun `a schedule made from a larger past order starts at the largest home the server accepts`() = runTest {
+        sourceOrder(services = listOf("svc-1"), rooms = PropertySize.MAX_ROOMS + 3, bathrooms = PropertySize.MAX_BATHROOMS + 2)
+
+        val vm = viewModel(orderId = "ord-7")
+        advanceUntilIdle()
+
+        assertEquals(PropertySize.MAX_ROOMS, vm.state.value.rooms)
+        assertEquals(PropertySize.MAX_BATHROOMS, vm.state.value.bathrooms)
+    }
+
+    // The update replaces the favourite cleaner with whatever it is sent, so the loaded one rides along;
+    // when the server no longer accepts them, dropping them is the customer's call, never the form's.
+
+    private val notEligible = ApiResult.Error(
+        ApiError.BadRequest(
+            message = "The selected cleaner isn't available for this order.",
+            errorKey = "order.preferred_employee.not_eligible",
+        ),
+    )
+
+    @Test
+    fun `edit mode echoes the stored favourite cleaner back so the update cannot erase it`() = runTest {
+        templatesFlow.value = listOf(editableTemplate.copy(preferredEmployeeId = "emp-7"))
+        coEvery { recurringRepo.update(any()) } returns ApiResult.Success(editableTemplate)
+
+        val vm = viewModel(templateId = "tpl-1")
+        advanceUntilIdle()
+        vm.setRooms(4)
+        vm.submit()
+        advanceUntilIdle()
+
+        val request = slot<UpdateRecurringBookingRequest>()
+        coVerify(exactly = 1) { recurringRepo.update(capture(request)) }
+        assertEquals("emp-7", request.captured.preferredEmployeeId)
+    }
+
+    @Test
+    fun `a refused favourite cleaner is kept and offered back, and nothing is resent on its own`() = runTest {
+        templatesFlow.value = listOf(editableTemplate.copy(preferredEmployeeId = "emp-7"))
+        coEvery { recurringRepo.update(any()) } returns notEligible
+
+        val vm = viewModel(templateId = "tpl-1")
+        advanceUntilIdle()
+        vm.submit()
+        advanceUntilIdle()
+
+        assertEquals(true, vm.preferredCleanerRefused.value)
+        assertEquals("emp-7", vm.state.value.preferredEmployeeId)
+        assertTrue(vm.submitState.value is ActionState.Error)
+        coVerify(exactly = 1) { recurringRepo.update(any()) }
+        verify(exactly = 0) { snackbar.showError(any<ApiError>()) }
+    }
+
+    @Test
+    fun `saving without the favourite cleaner resends the same update with only the cleaner cleared`() = runTest {
+        templatesFlow.value = listOf(editableTemplate.copy(preferredEmployeeId = "emp-7", endsOn = "2026-12-31T00:00:00Z"))
+        val sent = mutableListOf<UpdateRecurringBookingRequest>()
+        coEvery { recurringRepo.update(capture(sent)) } returnsMany listOf(notEligible, ApiResult.Success(editableTemplate))
+        val vm = viewModel(templateId = "tpl-1")
+        advanceUntilIdle()
+        vm.setRooms(4)
+        vm.submit()
+        advanceUntilIdle()
+
+        vm.submitted.test {
+            vm.saveWithoutPreferredCleaner()
+            advanceUntilIdle()
+            awaitItem()
+        }
+
+        assertEquals(2, sent.size)
+        assertEquals(null, sent[1].preferredEmployeeId)
+        assertEquals(sent[0].copy(preferredEmployeeId = null), sent[1])
+        assertEquals(false, vm.preferredCleanerRefused.value)
+        assertEquals(ActionState.Idle, vm.submitState.value)
+    }
+
+    @Test
+    fun `a new schedule carries the favourite cleaner the customer picked`() = runTest {
+        coEvery { recurringRepo.create(any()) } returns ApiResult.Success(template)
+        val vm = viewModel()
+        advanceUntilIdle()
+        fillValidForm(vm)
+        vm.setPreferredEmployeeId("emp-7")
+
+        vm.submit()
+        advanceUntilIdle()
+
+        val request = slot<CreateRecurringBookingRequest>()
+        coVerify(exactly = 1) { recurringRepo.create(capture(request)) }
+        assertEquals("emp-7", request.captured.preferredEmployeeId)
+    }
+
+    @Test
+    fun `a new schedule with no pick names no favourite cleaner`() = runTest {
+        coEvery { recurringRepo.create(any()) } returns ApiResult.Success(template)
+        val vm = viewModel()
+        advanceUntilIdle()
+        fillValidForm(vm)
+
+        vm.submit()
+        advanceUntilIdle()
+
+        val request = slot<CreateRecurringBookingRequest>()
+        coVerify(exactly = 1) { recurringRepo.create(capture(request)) }
+        assertNull(request.captured.preferredEmployeeId)
+    }
+
+    @Test
+    fun `a refused favourite cleaner on a new schedule is kept and offered back`() = runTest {
+        coEvery { recurringRepo.create(any()) } returns notEligible
+        val vm = viewModel()
+        advanceUntilIdle()
+        fillValidForm(vm)
+        vm.setPreferredEmployeeId("emp-7")
+
+        vm.submit()
+        advanceUntilIdle()
+
+        assertEquals(true, vm.preferredCleanerRefused.value)
+        assertEquals("emp-7", vm.state.value.preferredEmployeeId)
+        assertTrue(vm.submitState.value is ActionState.Error)
+        coVerify(exactly = 1) { recurringRepo.create(any()) }
+        verify(exactly = 0) { snackbar.showError(any<ApiError>()) }
+    }
+
+    @Test
+    fun `saving a new schedule without the favourite cleaner resends the same create with only the cleaner cleared`() = runTest {
+        val sent = mutableListOf<CreateRecurringBookingRequest>()
+        coEvery { recurringRepo.create(capture(sent)) } returnsMany listOf(notEligible, ApiResult.Success(template))
+        val vm = viewModel()
+        advanceUntilIdle()
+        fillValidForm(vm)
+        vm.setPreferredEmployeeId("emp-7")
+        vm.submit()
+        advanceUntilIdle()
+
+        vm.submitted.test {
+            vm.saveWithoutPreferredCleaner()
+            advanceUntilIdle()
+            awaitItem()
+        }
+
+        assertEquals(2, sent.size)
+        assertEquals(sent[0].copy(preferredEmployeeId = null), sent[1])
+        assertEquals(false, vm.preferredCleanerRefused.value)
+        assertEquals(ActionState.Idle, vm.submitState.value)
+    }
+
+    @Test
+    fun `an edit sends the favourite cleaner the customer changed to, and none once cleared`() = runTest {
+        templatesFlow.value = listOf(editableTemplate.copy(preferredEmployeeId = "emp-7"))
+        val sent = mutableListOf<UpdateRecurringBookingRequest>()
+        coEvery { recurringRepo.update(capture(sent)) } returns ApiResult.Success(editableTemplate)
+        val vm = viewModel(templateId = "tpl-1")
+        advanceUntilIdle()
+
+        vm.setPreferredEmployeeId("emp-9")
+        vm.submit()
+        advanceUntilIdle()
+        vm.setPreferredEmployeeId(null)
+        vm.submit()
+        advanceUntilIdle()
+
+        assertEquals(listOf("emp-9", null), sent.map { it.preferredEmployeeId })
+    }
+
+    @Test
+    fun `a new pick withdraws the refusal of the previous one`() = runTest {
+        coEvery { recurringRepo.create(any()) } returns notEligible
+        val vm = viewModel()
+        advanceUntilIdle()
+        fillValidForm(vm)
+        vm.setPreferredEmployeeId("emp-7")
+        vm.submit()
+        advanceUntilIdle()
+        assertTrue(vm.preferredCleanerRefused.value)
+
+        vm.setPreferredEmployeeId("emp-9")
+
+        assertFalse(vm.preferredCleanerRefused.value)
+        assertEquals("emp-9", vm.state.value.preferredEmployeeId)
+    }
+
     @Test
     fun `submit failure shows the backend message, not a generic key`() = runTest {
         templatesFlow.value = listOf(editableTemplate)
@@ -546,6 +812,7 @@ class CreateRecurringViewModelTest {
 
         verify(exactly = 1) { snackbar.showError(match<ApiError> { it.getUserMessage() == plusRefusal }) }
         verify(exactly = 0) { snackbar.showErrorKey(any()) }
+        assertEquals(false, vm.preferredCleanerRefused.value)
     }
 
     @Test
@@ -838,24 +1105,113 @@ class CreateRecurringViewModelTest {
     }
 
     @Test
-    fun `step one advances once a time of day is set`() = runTest {
+    fun `step one advances only on a start the picker offers`() = runTest {
         val vm = viewModel()
         advanceUntilIdle()
         assertEquals(true, vm.canAdvance.value)
 
-        vm.setTimeOfDay("")
-        runCurrent()
-        assertEquals(false, vm.canAdvance.value)
+        listOf("", "07:45", "09:07", "20:00", "03:07").forEach { start ->
+            vm.setTimeOfDay(start)
+            runCurrent()
+            assertEquals("\"$start\" is not an offered start", false, vm.canAdvance.value)
+        }
 
-        vm.setTimeOfDay("09:30")
+        listOf("08:00", "09:30", "19:45").forEach { start ->
+            vm.setTimeOfDay(start)
+            runCurrent()
+            assertEquals("\"$start\" is an offered start", true, vm.canAdvance.value)
+        }
+    }
+
+    // ── the start-time window: the server refuses a schedule off 08:00–19:45 or off the quarter-hour ──
+
+    @Test
+    fun `the picker offers the server's window on its 15-minute grid`() {
+        val starts = CreateRecurringViewModel.START_TIMES
+
+        assertEquals(48, starts.size)
+        assertEquals(listOf("08:00", "08:15", "08:30", "08:45", "09:00"), starts.take(5))
+        assertEquals("19:45", starts.last())
+        assertTrue(starts.none { it < "08:00" || it >= "20:00" })
+    }
+
+    private fun localStart(hour: Int, minute: Int): String =
+        LocalDateTime(2026, 7, 2, hour, minute).toInstant(TimeZone.currentSystemDefault()).toString()
+
+    @Test
+    fun `a schedule made from a past order takes the order's start when the picker offers it`() = runTest {
+        sourceOrder(services = listOf("svc-1"), cleaningDateTime = localStart(9, 45))
+
+        val vm = viewModel(orderId = "ord-7")
+        advanceUntilIdle()
+
+        assertEquals("09:45", vm.state.value.timeOfDay)
+    }
+
+    @Test
+    fun `a past order's start the picker does not offer leaves the default start`() = runTest {
+        listOf(localStart(6, 30), localStart(9, 7)).forEach { cleaningAt ->
+            sourceOrder(services = listOf("svc-1"), cleaningDateTime = cleaningAt)
+
+            val vm = viewModel(orderId = "ord-7")
+            advanceUntilIdle()
+
+            assertEquals(CreateRecurringFormState().timeOfDay, vm.state.value.timeOfDay)
+            assertEquals(true, vm.canAdvance.value)
+        }
+    }
+
+    @Test
+    fun `a stored start off the grid goes back only once an offered start is picked`() = runTest {
+        templatesFlow.value = listOf(editableTemplate.copy(timeOfDay = "03:07"))
+        coEvery { recurringRepo.update(any()) } returns ApiResult.Success(editableTemplate)
+
+        val vm = viewModel(templateId = "tpl-1")
+        advanceUntilIdle()
+
+        assertEquals(false, vm.canAdvance.value)
+        vm.submit()
+        advanceUntilIdle()
+        coVerify(exactly = 0) { recurringRepo.update(any()) }
+
+        vm.setTimeOfDay("08:15")
         runCurrent()
         assertEquals(true, vm.canAdvance.value)
+        vm.submit()
+        advanceUntilIdle()
+
+        val request = slot<UpdateRecurringBookingRequest>()
+        coVerify(exactly = 1) { recurringRepo.update(capture(request)) }
+        assertEquals("08:15", request.captured.timeOfDay)
+    }
+
+    @Test
+    fun `a schedule the server refuses for the start window says why and stays on the form`() = runTest {
+        val refusal = ApiError.BadRequest(
+            message = "Pick a start between 08:00 and 19:45 local time, on the quarter-hour, no more than 60 days ahead.",
+            errorKey = "order.cleaning_date.outside_booking_window",
+        )
+        coEvery { recurringRepo.create(any()) } returns ApiResult.Error(refusal)
+
+        val vm = viewModel()
+        advanceUntilIdle()
+        fillValidForm(vm)
+
+        vm.submitted.test {
+            vm.submit()
+            advanceUntilIdle()
+            expectNoEvents()
+        }
+
+        verify(exactly = 1) { snackbar.showError(refusal) }
+        assertEquals(ActionState.Error(refusal.message), vm.submitState.value)
     }
 
     @Test
     fun `step two advances only with a service or a package picked`() = runTest {
         val vm = viewModel()
         advanceUntilIdle()
+        vm.setDirtinessLevel(DirtinessLevel.Normal)
         vm.nextStep()
         runCurrent()
         assertEquals(false, vm.canAdvance.value)
@@ -875,9 +1231,69 @@ class CreateRecurringViewModelTest {
     }
 
     @Test
+    fun `step two advances only once the customer has chosen a dirtiness level`() = runTest {
+        val vm = viewModel()
+        advanceUntilIdle()
+        vm.nextStep()
+        vm.toggleService("svc-1")
+        runCurrent()
+        assertEquals(false, vm.canAdvance.value)
+
+        vm.setDirtinessLevel(DirtinessLevel.Increased)
+        runCurrent()
+
+        assertEquals(true, vm.canAdvance.value)
+    }
+
+    @Test
+    fun `a new schedule without a chosen dirtiness level is never created`() = runTest {
+        coEvery { recurringRepo.create(any()) } returns ApiResult.Success(template)
+        val vm = viewModel()
+        advanceUntilIdle()
+        vm.setSavedAddressId("addr-1")
+        vm.toggleService("svc-1")
+        vm.setStartsOn("2026-07-01T00:00:00Z")
+        advanceUntilIdle()
+
+        vm.submit()
+        advanceUntilIdle()
+
+        assertEquals(false, vm.isValid.value)
+        coVerify(exactly = 0) { recurringRepo.create(any()) }
+    }
+
+    @Test
+    fun `a new schedule is created at the dirtiness level the customer chose`() = runTest {
+        coEvery { recurringRepo.create(any()) } returns ApiResult.Success(template)
+        val vm = viewModel()
+        advanceUntilIdle()
+        fillValidForm(vm)
+        vm.setDirtinessLevel(DirtinessLevel.Heavy)
+
+        vm.submit()
+        advanceUntilIdle()
+
+        val request = slot<CreateRecurringBookingRequest>()
+        coVerify(exactly = 1) { recurringRepo.create(capture(request)) }
+        assertEquals(DirtinessLevel.Heavy, request.captured.dirtinessLevel)
+    }
+
+    /** A one-off clean says little about how a home looks between visits, so a schedule asks again. */
+    @Test
+    fun `a schedule made from a past order still asks for the dirtiness level`() = runTest {
+        sourceOrder(services = listOf("svc-1"), dirtinessLevel = DirtinessLevel.Heavy)
+
+        val vm = viewModel(orderId = "ord-7")
+        advanceUntilIdle()
+
+        assertNull(vm.state.value.dirtinessLevel)
+    }
+
+    @Test
     fun `step three advances only with an address and a start date`() = runTest {
         val vm = viewModel()
         advanceUntilIdle()
+        vm.setEarlyPerformanceRequested(true)
         vm.nextStep()
         vm.nextStep()
         runCurrent()
@@ -990,6 +1406,27 @@ class CreateRecurringViewModelTest {
         assertEquals(null, last.cleaningDate)
     }
 
+    /** A heavier level lengthens each clean, so the crew quoted for it decides cash. */
+    @Test
+    fun `the crew quote prices the chosen dirtiness level and cash follows it`() = runTest {
+        val sent = mutableListOf<QuoteOrderCommand>()
+        coEvery { bookingApi.quote(capture(sent)) } coAnswers {
+            val crew = if (sent.last().dirtinessLevel == DirtinessLevel.Heavy) 2 else 1
+            Response.success(crewQuote(crew))
+        }
+        val vm = viewModel()
+        advanceUntilIdle()
+        fillValidForm(vm)
+        advanceUntilIdle()
+        assertEquals(CashEligibility.Available, vm.cashEligibility.value)
+
+        vm.setDirtinessLevel(DirtinessLevel.Heavy)
+        advanceUntilIdle()
+
+        assertEquals(DirtinessLevel.Heavy, sent.last().dirtinessLevel)
+        assertEquals(CashEligibility.NeedsCard(2), vm.cashEligibility.value)
+    }
+
     @Test
     fun `a cash choice that stops being allowed is taken away, not switched to card`() = runTest {
         val vm = filledForm(requiredEmployees = 1)
@@ -1099,5 +1536,98 @@ class CreateRecurringViewModelTest {
 
         assertEquals(false, vm.canAdvance.value)
         coVerify(exactly = 0) { recurringRepo.create(any()) }
+    }
+
+    // ── the booking's terms tick — a new schedule asks for it until both consents cover the texts in force ──
+
+    private fun kotlinx.coroutines.test.TestScope.onStepThree(): CreateRecurringViewModel {
+        coEvery { recurringRepo.create(any()) } returns ApiResult.Success(template)
+        val vm = viewModel()
+        advanceUntilIdle()
+        fillValidForm(vm)
+        vm.nextStep()
+        vm.nextStep()
+        runCurrent()
+        return vm
+    }
+
+    @Test
+    fun `a consent to an older text shows the tick and holds the schedule until it is ticked`() = runTest {
+        coEvery { consentClient.grantedTypes() } returns setOf(SignupConsentType.PrivacyPolicy)
+        val vm = onStepThree()
+
+        assertEquals(true, vm.termsAsked.value)
+        assertEquals(false, vm.canAdvance.value)
+        vm.submit()
+        advanceUntilIdle()
+        coVerify(exactly = 0) { recurringRepo.create(any()) }
+
+        vm.setTermsAccepted(true)
+        runCurrent()
+        assertEquals(true, vm.canAdvance.value)
+        val sent = slot<CreateRecurringBookingRequest>()
+        coEvery { recurringRepo.create(capture(sent)) } returns ApiResult.Success(template)
+        vm.submit()
+        advanceUntilIdle()
+
+        assertEquals(true, sent.captured.termsAccepted)
+    }
+
+    @Test
+    fun `consents covering the texts in force show no tick and assert nothing`() = runTest {
+        val vm = onStepThree()
+
+        assertEquals(false, vm.termsAsked.value)
+        assertEquals(true, vm.canAdvance.value)
+        val sent = slot<CreateRecurringBookingRequest>()
+        coEvery { recurringRepo.create(capture(sent)) } returns ApiResult.Success(template)
+        vm.submit()
+        advanceUntilIdle()
+
+        assertNull(sent.captured.termsAccepted)
+    }
+
+    @Test
+    fun `a failed consent read asks for the tick`() = runTest {
+        coEvery { consentClient.grantedTypes() } returns null
+        val vm = onStepThree()
+
+        assertEquals(true, vm.termsAsked.value)
+        assertEquals(false, vm.canAdvance.value)
+    }
+
+    /** One tick covers the series: the server copies the schedule's request onto every occurrence. */
+    @Test
+    fun `a new schedule is held until the early-performance tick and then sends the request`() = runTest {
+        val vm = onStepThree()
+        vm.setEarlyPerformanceRequested(false)
+        runCurrent()
+
+        assertEquals(false, vm.canAdvance.value)
+        vm.submit()
+        advanceUntilIdle()
+        coVerify(exactly = 0) { recurringRepo.create(any()) }
+
+        vm.setEarlyPerformanceRequested(true)
+        runCurrent()
+        assertEquals(true, vm.canAdvance.value)
+        val sent = slot<CreateRecurringBookingRequest>()
+        coEvery { recurringRepo.create(capture(sent)) } returns ApiResult.Success(template)
+        vm.submit()
+        advanceUntilIdle()
+
+        assertEquals(true, sent.captured.earlyPerformanceRequested)
+    }
+
+    @Test
+    fun `an edit asks for no tick and reads no consents`() = runTest {
+        coEvery { consentClient.grantedTypes() } returns emptySet()
+        templatesFlow.value = listOf(template)
+
+        val vm = viewModel(templateId = template.id)
+        advanceUntilIdle()
+
+        assertEquals(false, vm.termsAsked.value)
+        coVerify(exactly = 0) { consentClient.grantedTypes() }
     }
 }

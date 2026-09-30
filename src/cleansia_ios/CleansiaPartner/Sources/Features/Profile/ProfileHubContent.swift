@@ -79,7 +79,7 @@ struct ProfileHubContent: View {
     }
 
     private var workLegalRows: [ProfileHubRowItem] {
-        [
+        var rows = [
             ProfileHubRowItem(
                 icon: "person.text.rectangle",
                 title: L10n.Profile.identification,
@@ -97,8 +97,23 @@ struct ProfileHubContent: View {
                 title: L10n.Profile.myDocuments,
                 summary: L10n.Profile.documentsSummary,
                 action: .route(.documents)
+            ),
+            ProfileHubRowItem(
+                icon: "signature",
+                title: L10n.LegalDocuments.title,
+                summary: L10n.LegalDocuments.profileSummary,
+                action: .route(.legalDocuments)
             )
         ]
+        if let limit = employee.weeklyOrderLimit {
+            rows.append(ProfileHubRowItem(
+                icon: "calendar",
+                title: L10n.Profile.weeklyLimit(limit),
+                summary: employee.weeklyOrderLimitReason.nonBlankOrNil.map(L10n.Profile.weeklyLimitReason) ?? "",
+                action: .info
+            ))
+        }
+        return rows
     }
 
     private var preferenceRows: [ProfileHubRowItem] {
@@ -144,6 +159,12 @@ struct ProfileHubContent: View {
                 title: L10n.Profile.privacy,
                 summary: L10n.Profile.privacySummary,
                 action: .openURL(CleansiaWeb.privacyURL)
+            ),
+            ProfileHubRowItem(
+                icon: "info.circle",
+                title: L10n.Profile.howJobsAreOffered,
+                summary: L10n.Profile.howJobsAreOfferedSummary,
+                action: .openURL(CleansiaWeb.howJobsAreOfferedURL)
             )
         ]
     }
@@ -160,6 +181,7 @@ struct ProfileHubContent: View {
                         switch rows[index].action {
                         case let .route(route): onOpen(route)
                         case let .openURL(url): openURL(url)
+                        case .info: break
                         }
                     })
                     if index < rows.count - 1 {
@@ -211,6 +233,13 @@ private struct ProfileHubRowItem {
     enum Action {
         case route(ProfileRoute)
         case openURL(URL)
+        /// Read-only: nothing to open, so the row carries no chevron and may wrap.
+        case info
+    }
+
+    var isInfo: Bool {
+        if case .info = action { return true }
+        return false
     }
 }
 
@@ -358,21 +387,26 @@ private struct ProfileSectionRow: View {
                     Text(item.title)
                         .font(CleansiaTypography.titleMedium)
                         .foregroundColor(CleansiaColors.onSurface)
-                    Text(item.summary)
-                        .font(CleansiaTypography.labelSmall)
-                        .foregroundColor(CleansiaColors.onSurfaceVariant)
-                        .lineLimit(1)
+                    if !item.summary.isEmpty {
+                        Text(item.summary)
+                            .font(CleansiaTypography.labelSmall)
+                            .foregroundColor(CleansiaColors.onSurfaceVariant)
+                            .lineLimit(item.isInfo ? nil : 1)
+                    }
                 }
                 Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(CleansiaColors.onSurfaceVariant)
+                if !item.isInfo {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(CleansiaColors.onSurfaceVariant)
+                }
             }
             .padding(.horizontal, Spacing.m)
             .padding(.vertical, Spacing.s + 2)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .disabled(item.isInfo)
     }
 }
 

@@ -124,7 +124,7 @@ final class BookingViewModelTests: XCTestCase {
         XCTAssertFalse(vm.isLastStep)
     }
 
-    func testAdvanceWalksOneTwoThreeAndStopsAtThree() {
+    func testAdvanceWalksEveryStepAndStopsAtTheLast() {
         let vm = BookingViewModel()
 
         XCTAssertTrue(vm.advance())
@@ -132,10 +132,14 @@ final class BookingViewModelTests: XCTestCase {
 
         XCTAssertTrue(vm.advance())
         XCTAssertEqual(vm.currentStep, 3)
+        XCTAssertFalse(vm.isLastStep)
+
+        XCTAssertTrue(vm.advance())
+        XCTAssertEqual(vm.currentStep, 4)
         XCTAssertTrue(vm.isLastStep)
 
         XCTAssertFalse(vm.advance())
-        XCTAssertEqual(vm.currentStep, 3)
+        XCTAssertEqual(vm.currentStep, 4)
     }
 
     func testBackWalksThreeTwoOneAndStopsAtOne() {
@@ -196,6 +200,25 @@ final class BookingViewModelTests: XCTestCase {
             return next
         }
         XCTAssertEqual(vm.state.rooms, 3)
+    }
+
+    /// Every basket validator refuses a home above `BookingPolicy.MaxRooms` / `MaxBathrooms`.
+    func testTheSizeSettersStopAtTheLargestHomeTheServerAccepts() {
+        let vm = BookingViewModel()
+        vm.setRooms(PropertySize.maxRooms + 1)
+        vm.setBathrooms(PropertySize.maxBathrooms + 1)
+
+        XCTAssertEqual(vm.state.rooms, PropertySize.maxRooms)
+        XCTAssertEqual(vm.state.bathrooms, PropertySize.maxBathrooms)
+    }
+
+    func testTheSizeSettersNeverGoBelowOne() {
+        let vm = BookingViewModel()
+        vm.setRooms(0)
+        vm.setBathrooms(0)
+
+        XCTAssertEqual(vm.state.rooms, 1)
+        XCTAssertEqual(vm.state.bathrooms, 1)
     }
 
     func testAccessInstructionsAreCappedAtTheBackendLimit() {
@@ -380,7 +403,7 @@ final class BookingViewModelTests: XCTestCase {
         scheduler.advance(by: .milliseconds(400))
         XCTAssertEqual(vm.quoteState, .quoting(previous: nil))
 
-        await drainQuote()
+        await eventually { vm.quoteState.quote != nil }
 
         XCTAssertEqual(vm.quoteState.quote?.totalPrice, 1200)
         XCTAssertEqual(quote.callCount, 1)
@@ -900,6 +923,15 @@ final class BookingViewModelTests: XCTestCase {
 
     private func drainQuote() async {
         for _ in 0 ..< 5 {
+            await Task.yield()
+        }
+    }
+
+    /// The fake quote runs off the main actor, so a fixed number of yields can finish before it answers
+    /// on a loaded runner; this waits for the answer itself.
+    private func eventually(_ condition: () -> Bool) async {
+        for _ in 0 ..< 500 {
+            if condition() { return }
             await Task.yield()
         }
     }

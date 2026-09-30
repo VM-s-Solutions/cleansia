@@ -8,6 +8,8 @@ import cz.cleansia.customer.core.booking.BookingApi
 import cz.cleansia.customer.core.booking.CashEligibility
 import cz.cleansia.customer.core.booking.CreateOrderCommand
 import cz.cleansia.customer.core.booking.CreateOrderResponse
+import cz.cleansia.customer.core.booking.DirtinessLevel
+import cz.cleansia.customer.core.booking.PropertySize
 import cz.cleansia.customer.core.booking.QuoteOrderCommand
 import cz.cleansia.customer.core.booking.QuoteOrderResponse
 import cz.cleansia.customer.core.catalog.CatalogRepository
@@ -23,6 +25,9 @@ import cz.cleansia.customer.core.memberships.GetMyMembershipResponse
 import cz.cleansia.customer.core.memberships.MembershipRepository
 import cz.cleansia.customer.core.payments.CreatePaymentIntentResponse
 import cz.cleansia.customer.core.payments.PaymentRepository
+import cz.cleansia.customer.core.payments.SavedCard
+import cz.cleansia.customer.core.payments.SavedCardRepository
+import cz.cleansia.customer.core.payments.SavedCardSetup
 import cz.cleansia.customer.core.promo.PromoCodeApi
 import cz.cleansia.customer.core.promo.PromoCodeError
 import cz.cleansia.customer.core.promo.ValidatePromoCodeRequest
@@ -53,6 +58,8 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -80,6 +87,7 @@ class BookingViewModelTest {
     private lateinit var promoCodeApi: PromoCodeApi
     private lateinit var referralRepository: ReferralRepository
     private lateinit var paymentRepository: PaymentRepository
+    private lateinit var savedCardRepository: SavedCardRepository
     private lateinit var tokenStore: cz.cleansia.core.auth.TokenStore
     private lateinit var snackbar: SnackbarController
     private lateinit var serviceAreaProvider: cz.cleansia.core.servicearea.ServiceAreaProvider
@@ -103,6 +111,8 @@ class BookingViewModelTest {
     private val catalogServicesFlow = MutableStateFlow<List<ServiceListItem>>(emptyList())
     private val catalogPackagesFlow = MutableStateFlow<List<PackageListItem>>(emptyList())
     private val catalogExtrasFlow = MutableStateFlow<List<ExtraListItem>>(emptyList())
+    private val usableCzkCard = SavedCard(id = "card-1", brand = "visa", last4 = "4242", expMonth = 12, expYear = 2099, currencyCode = "CZK")
+    private val savedCardsFlow = MutableStateFlow<List<SavedCard>?>(listOf(usableCzkCard))
     private val marketNotice = "Some of your picks are not offered at this address and were removed."
 
     private val networkMessage = "Check your internet connection and try again."
@@ -117,6 +127,9 @@ class BookingViewModelTest {
         promoCodeApi = mockk()
         referralRepository = mockk(relaxed = true)
         paymentRepository = mockk(relaxed = true)
+        savedCardRepository = mockk(relaxed = true)
+        every { savedCardRepository.cards } returns savedCardsFlow
+        coEvery { savedCardRepository.refresh() } coAnswers { ApiResult.Success(savedCardsFlow.value.orEmpty()) }
         tokenStore = mockk(relaxed = true)
         snackbar = mockk(relaxed = true)
         serviceAreaProvider = mockk()
@@ -170,6 +183,7 @@ class BookingViewModelTest {
         promoCodeApi = promoCodeApi,
         referralRepository = referralRepository,
         paymentRepository = paymentRepository,
+        savedCardRepository = savedCardRepository,
         tokenStore = tokenStore,
         snackbar = snackbar,
         serviceAreaProvider = serviceAreaProvider,
@@ -533,6 +547,28 @@ class BookingViewModelTest {
         vm.updateAccessInstructions("  Ring the bell twice.  ")
 
         assertEquals("  Ring the bell twice.  ", vm.state.value.accessInstructions)
+    }
+
+    @Test
+    fun setRoomsAndBathrooms_whenAboveTheServerCap_stopAtTheLargestHome() = runTest {
+        val vm = newViewModel()
+
+        vm.setRooms(PropertySize.MAX_ROOMS + 1)
+        vm.setBathrooms(PropertySize.MAX_BATHROOMS + 1)
+
+        assertEquals(PropertySize.MAX_ROOMS, vm.state.value.rooms)
+        assertEquals(PropertySize.MAX_BATHROOMS, vm.state.value.bathrooms)
+    }
+
+    @Test
+    fun setRoomsAndBathrooms_whenBelowOne_stayAtOne() = runTest {
+        val vm = newViewModel()
+
+        vm.setRooms(0)
+        vm.setBathrooms(0)
+
+        assertEquals(1, vm.state.value.rooms)
+        assertEquals(1, vm.state.value.bathrooms)
     }
 
     // ── wizard steps ──
@@ -1565,13 +1601,18 @@ class BookingViewModelTest {
             setOf(SignupConsentType.TermsOfService, SignupConsentType.PrivacyPolicy)
     }
 
-    private fun BookingViewModel.readyToPlace(termsAccepted: Boolean, paymentMethod: String = "cash") {
+    private fun BookingViewModel.readyToPlace(
+        termsAccepted: Boolean,
+        paymentMethod: String = "cash",
+        earlyPerformanceRequested: Boolean = true,
+    ) {
         update {
             it.copy(
                 selectedServiceIds = setOf("s-1"),
                 selectedInstant = futureCleaningInstant(),
                 paymentMethod = paymentMethod,
                 termsAccepted = termsAccepted,
+                earlyPerformanceRequested = earlyPerformanceRequested,
             )
         }
     }
@@ -1669,6 +1710,19 @@ class BookingViewModelTest {
         advanceUntilIdle()
 
         assertEquals(false, vm.state.value.termsAccepted)
+        assertEquals(false, vm.state.value.earlyPerformanceRequested)
+    }
+
+    /** CreateOrder refuses every booking without the request, a consented account included. */
+    @Test
+    fun canPlaceOrder_withoutTheEarlyPerformanceTick_isFalseEvenWhenConsented() = runTest {
+        bothConsentsOnRecord()
+
+        val vm = newViewModel()
+        vm.readyToPlace(termsAccepted = true, earlyPerformanceRequested = false)
+        advanceUntilIdle()
+
+        assertEquals(false, vm.canPlaceOrder.value)
     }
 
     private suspend fun kotlinx.coroutines.test.TestScope.createCommandSent(vm: BookingViewModel): CreateOrderCommand {
@@ -1712,6 +1766,15 @@ class BookingViewModelTest {
         vm.readyToPlace(termsAccepted = false)
 
         assertNull(createCommandSent(vm).termsAccepted)
+    }
+
+    @Test
+    fun submit_whenAlreadyConsented_stillSendsTheEarlyPerformanceRequest() = runTest {
+        bothConsentsOnRecord()
+        val vm = newViewModel()
+        vm.readyToPlace(termsAccepted = false)
+
+        assertEquals(true, createCommandSent(vm).earlyPerformanceRequested)
     }
 
     /** The receipt is rendered in the booking's language ahead of the account's, so it must be the app's. */
@@ -1935,6 +1998,310 @@ class BookingViewModelTest {
 
         assertEquals(BookingSubmitOutcome.Failed, outcome)
         coVerify(exactly = 0) { bookingApi.create(any()) }
+    }
+
+    // ── the card guarantee — a cash booking needs a usable card saved in its currency (decision 16) ──
+
+    private val captureSetup = SavedCardSetup(
+        savedCardId = "card-9",
+        setupIntentClientSecret = "seti_9_secret",
+        stripeCustomerId = "cus_9",
+        ephemeralKey = "ek_9",
+    )
+
+    private suspend fun kotlinx.coroutines.test.TestScope.cashReady(guaranteeAccepted: Boolean = false): BookingViewModel {
+        currentUserFlow.value = completeUser()
+        val vm = quotedFor(requiredEmployees = 1)
+        vm.update {
+            it.copy(
+                paymentMethod = BookingViewModel.PAYMENT_CASH,
+                cardGuaranteeAccepted = guaranteeAccepted,
+                earlyPerformanceRequested = true,
+            )
+        }
+        coEvery { savedCardRepository.startCapture(any(), any()) } returns ApiResult.Success(captureSetup)
+        coEvery { bookingApi.create(any()) } returns Response.success(CreateOrderResponse(id = "o-1", confirmationCode = "ABC123"))
+        advanceUntilIdle()
+        return vm
+    }
+
+    private fun createRefusedWith(key: String): Response<CreateOrderResponse> = Response.error(
+        400,
+        """{"status":400,"errors":{"PaymentType":"$key"}}""".toResponseBody("application/problem+json".toMediaType()),
+    )
+
+    /** CreateOrder decides whether a card is needed; a review-step read that found none captures nothing. */
+    @Test
+    fun submit_cashCreateOrderAccepts_booksWithoutReadingOrCapturingACard() = runTest {
+        savedCardsFlow.value = emptyList()
+        val vm = cashReady(guaranteeAccepted = true)
+
+        val outcome = vm.submit()
+
+        assertTrue("expected Success but was $outcome", outcome is BookingSubmitOutcome.Success)
+        coVerify(exactly = 0) { savedCardRepository.refresh() }
+        coVerify(exactly = 0) { savedCardRepository.startCapture(any(), any()) }
+    }
+
+    /** The server asks about debt and the open-bookings limit before the card, so neither sends the customer to save one. */
+    @Test
+    fun submit_cashRefusedForDebtOrTheOpenBookingsLimit_capturesNoCard() = runTest {
+        savedCardsFlow.value = emptyList()
+        val vm = cashReady(guaranteeAccepted = true)
+
+        listOf("order.cash_unpaid_receivable", "order.cash_open_bookings_limit_reached").forEach { key ->
+            coEvery { bookingApi.create(any()) } coAnswers { createRefusedWith(key) }
+
+            assertEquals(BookingSubmitOutcome.Failed, vm.submit())
+            verify(exactly = 1) { snackbar.showError(key) }
+        }
+        coVerify(exactly = 0) { savedCardRepository.startCapture(any(), any()) }
+    }
+
+    @Test
+    fun submit_cashRefusedForWantOfASavedCard_capturesOneAndBooksNothingYet() = runTest {
+        savedCardsFlow.value = emptyList()
+        val vm = cashReady(guaranteeAccepted = true)
+        coEvery { bookingApi.create(any()) } coAnswers { createRefusedWith("order.cash_requires_saved_card") }
+
+        val outcome = vm.submit()
+
+        assertEquals(
+            BookingSubmitOutcome.CardGuaranteeNeeded(
+                CardGuaranteeSheetParams(
+                    setupIntentClientSecret = "seti_9_secret",
+                    ephemeralKey = "ek_9",
+                    customerId = "cus_9",
+                    currencyCode = "CZK",
+                ),
+            ),
+            outcome,
+        )
+        coVerify(exactly = 1) { savedCardRepository.startCapture(true, any()) }
+        coVerify(exactly = 1) { bookingApi.create(any()) }
+    }
+
+    /** An unanswered card read hid the consent box; the refusal re-reads the cards so the tick it asks for is shown. */
+    @Test
+    fun submit_cashRefusedForWantOfASavedCardWithoutTheConsent_capturesNothingAndShowsTheTick() = runTest {
+        bothConsentsOnRecord()
+        savedCardsFlow.value = null
+        val vm = cashReady(guaranteeAccepted = false)
+        coEvery { bookingApi.create(any()) } coAnswers { createRefusedWith("order.cash_requires_saved_card") }
+        coEvery { savedCardRepository.refresh() } coAnswers {
+            savedCardsFlow.value = emptyList()
+            ApiResult.Success(emptyList())
+        }
+        assertEquals(false, vm.needsCardGuarantee.value)
+
+        val outcome = vm.submit()
+        advanceUntilIdle()
+
+        assertEquals(BookingSubmitOutcome.Failed, outcome)
+        coVerify(exactly = 0) { savedCardRepository.startCapture(any(), any()) }
+        verify(exactly = 1) { snackbar.showErrorKey(R.string.booking_card_guarantee_consent_required) }
+        assertEquals(true, vm.needsCardGuarantee.value)
+        assertEquals(false, vm.canPlaceOrder.value)
+    }
+
+    @Test
+    fun submit_byCard_neverReadsOrCapturesACard() = runTest {
+        savedCardsFlow.value = emptyList()
+        currentUserFlow.value = completeUser()
+        val vm = quotedFor(requiredEmployees = 1)
+        vm.selectPaymentMethod(BookingViewModel.PAYMENT_CARD)
+        coEvery { bookingApi.create(any()) } returns Response.success(CreateOrderResponse(id = "o-1", confirmationCode = "ABC123"))
+        coEvery { paymentRepository.createPaymentIntent("o-1") } returns ApiResult.Success(
+            CreatePaymentIntentResponse(clientSecret = "pi_secret", paymentIntentId = "pi_1", stripeCustomerId = "cus_1", ephemeralKey = "ek_1"),
+        )
+        advanceUntilIdle()
+
+        val outcome = vm.submit()
+
+        assertTrue("expected CardPending but was $outcome", outcome is BookingSubmitOutcome.CardPending)
+        coVerify(exactly = 0) { savedCardRepository.refresh() }
+        coVerify(exactly = 0) { savedCardRepository.startCapture(any(), any()) }
+    }
+
+    /** The card reaches the account through Stripe's webhook, so the booking waits for it to be readable. */
+    @Test
+    fun submitAfterCardGuarantee_onceTheCardLands_booksTheCashOrder() = runTest {
+        val empty = ApiResult.Success(emptyList<SavedCard>())
+        val landed = ApiResult.Success(listOf(usableCzkCard))
+        coEvery { savedCardRepository.refresh() } returnsMany listOf(empty, empty, landed)
+        val vm = cashReady(guaranteeAccepted = true)
+        val sent = mutableListOf<CreateOrderCommand>()
+        coEvery { bookingApi.create(capture(sent)) } returnsMany listOf(
+            createRefusedWith("order.cash_requires_saved_card"),
+            Response.success(CreateOrderResponse(id = "o-1", confirmationCode = "ABC123")),
+        )
+        assertTrue(vm.submit() is BookingSubmitOutcome.CardGuaranteeNeeded)
+
+        val outcome = vm.submitAfterCardGuarantee()
+
+        assertTrue("expected Success but was $outcome", outcome is BookingSubmitOutcome.Success)
+        assertEquals(listOf(1, 1), sent.map { it.paymentType })
+        coVerify(exactly = 1) { savedCardRepository.startCapture(any(), any()) }
+        coVerify(exactly = 3) { savedCardRepository.refresh() }
+        assertEquals(ActionState.Idle, vm.submitState.value)
+    }
+
+    @Test
+    fun submitAfterCardGuarantee_whenTheCardNeverLands_booksNothingAndSaysSo() = runTest {
+        savedCardsFlow.value = emptyList()
+        val vm = cashReady(guaranteeAccepted = true)
+        coEvery { bookingApi.create(any()) } coAnswers { createRefusedWith("order.cash_requires_saved_card") }
+        assertTrue(vm.submit() is BookingSubmitOutcome.CardGuaranteeNeeded)
+
+        val outcome = vm.submitAfterCardGuarantee()
+
+        assertEquals(BookingSubmitOutcome.Failed, outcome)
+        coVerify(exactly = 1) { bookingApi.create(any()) }
+        coVerify(exactly = BookingViewModel.CARD_CAPTURE_READS) { savedCardRepository.refresh() }
+        verify(exactly = 1) { snackbar.showInfoKey(R.string.booking_card_guarantee_pending) }
+        assertEquals(ActionState.Idle, vm.submitState.value)
+    }
+
+    /** The pending notice says swipe again: that swipe waits for the card already being saved, never captures a second. */
+    @Test
+    fun submit_againWhileTheSavedCardHasNotLanded_waitsForItInsteadOfCapturingAnother() = runTest {
+        savedCardsFlow.value = emptyList()
+        val vm = cashReady(guaranteeAccepted = true)
+        coEvery { bookingApi.create(any()) } coAnswers { createRefusedWith("order.cash_requires_saved_card") }
+        assertTrue(vm.submit() is BookingSubmitOutcome.CardGuaranteeNeeded)
+        assertEquals(BookingSubmitOutcome.Failed, vm.submitAfterCardGuarantee())
+
+        val outcome = vm.submit()
+
+        assertEquals(BookingSubmitOutcome.Failed, outcome)
+        coVerify(exactly = 1) { savedCardRepository.startCapture(any(), any()) }
+        coVerify(exactly = 1) { bookingApi.create(any()) }
+        coVerify(exactly = 2 * BookingViewModel.CARD_CAPTURE_READS) { savedCardRepository.refresh() }
+        verify(exactly = 2) { snackbar.showInfoKey(R.string.booking_card_guarantee_pending) }
+    }
+
+    @Test
+    fun submit_afterTheSetupSheetWasAbandoned_capturesAfresh() = runTest {
+        savedCardsFlow.value = emptyList()
+        val vm = cashReady(guaranteeAccepted = true)
+        coEvery { bookingApi.create(any()) } coAnswers { createRefusedWith("order.cash_requires_saved_card") }
+        assertTrue(vm.submit() is BookingSubmitOutcome.CardGuaranteeNeeded)
+
+        vm.abandonCardGuarantee()
+        val outcome = vm.submit()
+
+        assertTrue("expected CardGuaranteeNeeded but was $outcome", outcome is BookingSubmitOutcome.CardGuaranteeNeeded)
+        coVerify(exactly = 2) { savedCardRepository.startCapture(any(), any()) }
+        coVerify(exactly = 0) { savedCardRepository.refresh() }
+    }
+
+    @Test
+    fun submitAfterCardGuarantee_withNoCaptureStarted_booksNothing() = runTest {
+        val vm = cashReady(guaranteeAccepted = true)
+
+        assertEquals(BookingSubmitOutcome.Failed, vm.submitAfterCardGuarantee())
+        coVerify(exactly = 0) { bookingApi.create(any()) }
+    }
+
+    @Test
+    fun needsCardGuarantee_cashWithoutAUsableCard_showsTheConsentAndGatesTheSlide() = runTest {
+        bothConsentsOnRecord()
+        savedCardsFlow.value = emptyList()
+        val vm = cashReady(guaranteeAccepted = false)
+
+        assertEquals(true, vm.needsCardGuarantee.value)
+        assertEquals(false, vm.canPlaceOrder.value)
+
+        vm.update { it.copy(cardGuaranteeAccepted = true) }
+        advanceUntilIdle()
+        assertEquals(true, vm.canPlaceOrder.value)
+    }
+
+    @Test
+    fun needsCardGuarantee_isNotAskedWithACardUnreadCardsOrACardPayment() = runTest {
+        bothConsentsOnRecord()
+        val vm = cashReady(guaranteeAccepted = false)
+        assertEquals(false, vm.needsCardGuarantee.value)
+        assertEquals(true, vm.canPlaceOrder.value)
+
+        savedCardsFlow.value = null
+        advanceUntilIdle()
+        assertEquals(false, vm.needsCardGuarantee.value)
+
+        savedCardsFlow.value = emptyList()
+        vm.selectPaymentMethod(BookingViewModel.PAYMENT_CARD)
+        advanceUntilIdle()
+        assertEquals(false, vm.needsCardGuarantee.value)
+    }
+
+    @Test
+    fun choosingCash_readsTheSavedCards() = runTest {
+        val vm = quotedFor(requiredEmployees = 1)
+
+        vm.selectPaymentMethod(BookingViewModel.PAYMENT_CASH)
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { savedCardRepository.refresh() }
+    }
+
+    // ── the dirtiness level — priced by the server, and the crew and cash follow it ──
+
+    @Test
+    fun quoteWatcher_pricesTheChosenDirtinessLevel() = runTest {
+        val sent = mutableListOf<QuoteOrderCommand>()
+        coEvery { bookingApi.quote(capture(sent)) } returns Response.success(quoteWith())
+        val vm = newViewModel()
+        vm.update { it.copy(selectedServiceIds = setOf("s-1")) }
+        advanceUntilIdle()
+        assertNull(sent.last().dirtinessLevel)
+
+        vm.update { it.copy(dirtinessLevel = DirtinessLevel.Heavy) }
+        advanceUntilIdle()
+
+        assertEquals(DirtinessLevel.Heavy, sent.last().dirtinessLevel)
+    }
+
+    @Test
+    fun submit_createsTheOrderAtTheChosenDirtinessLevel() = runTest {
+        val vm = newViewModel()
+        vm.readyToPlace(termsAccepted = true)
+        vm.update { it.copy(dirtinessLevel = DirtinessLevel.Increased) }
+
+        assertEquals(DirtinessLevel.Increased, createCommandSent(vm).dirtinessLevel)
+    }
+
+    /** A heavier level lengthens the job, so the crew the server quotes for it decides cash, not the old one. */
+    @Test
+    fun cash_followsTheCrewQuotedForTheChosenDirtinessLevel() = runTest {
+        coEvery { bookingApi.quote(any()) } coAnswers {
+            val crew = if (firstArg<QuoteOrderCommand>().dirtinessLevel == DirtinessLevel.Heavy) 2 else 1
+            Response.success(quoteWith(requiredEmployees = crew))
+        }
+        val vm = newViewModel()
+        vm.update {
+            it.copy(
+                selectedServiceIds = setOf("s-1"),
+                selectedInstant = futureCleaningInstant(),
+                dirtinessLevel = DirtinessLevel.Normal,
+            )
+        }
+        advanceUntilIdle()
+        assertEquals(CashEligibility.Available, vm.cashEligibility.value)
+
+        vm.update { it.copy(dirtinessLevel = DirtinessLevel.Heavy) }
+        advanceUntilIdle()
+
+        assertEquals(CashEligibility.NeedsCard(2), vm.cashEligibility.value)
+    }
+
+    @Test
+    fun reset_forgetsTheChosenDirtinessLevel() = runTest {
+        val vm = newViewModel()
+        vm.update { it.copy(dirtinessLevel = DirtinessLevel.Heavy) }
+
+        vm.reset()
+
+        assertNull(vm.state.value.dirtinessLevel)
     }
 
     private fun quoteWith(

@@ -132,6 +132,7 @@ class DisputeRepository @Inject constructor(
         reason: Int,
         description: String,
         lines: List<DisputeLineRequest> = emptyList(),
+        settlement: DisputeSettlement = DisputeSettlement.CardRefund,
     ): ApiResult<String> = wireResult {
         val resp = networkCall {
             api.create(
@@ -140,6 +141,7 @@ class DisputeRepository @Inject constructor(
                     reason = reason,
                     description = description,
                     lines = lines.takeIf { it.isNotEmpty() },
+                    settlementPreference = settlement,
                 ),
             )
         } ?: return@wireResult networkError()

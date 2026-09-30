@@ -5,25 +5,31 @@ import Foundation
 struct CreateRecurringFormState: Equatable {
     var frequency: RecurrenceFrequency = .weekly
     var dayOfWeek = 4
-    var timeOfDay = "10:00"
+    var timeOfDay = RecurringTime.defaultTime
     var rooms = 2
     var bathrooms = 1
+    /// Nil on a new schedule until the customer picks one; an edit starts from the stored level.
+    var dirtiness: Dirtiness?
     var savedAddressId = ""
     var selectedServiceIds: Set<String> = []
     var selectedPackageIds: Set<String> = []
     /// Nil once a cash choice was taken away and the customer has not chosen again.
     var paymentType: Int? = RecurringPaymentType.card
     var startsOn: Date?
+    var preferredEmployeeId: String?
+    /// Asked of a new schedule only; the server copies the one act onto every occurrence.
+    var earlyPerformanceRequested = false
 
     static let totalSteps = 3
 
     /// The Android form's per-step gate (`CreateRecurringViewModel.kt` `canAdvance`): the schedule
-    /// (1), the selection (2), the address and the start (3). The one-page form here reads the
-    /// conjunction, so both platforms refuse the same incomplete form.
+    /// (1), the selection and its level (2), the address and the start (3). The one-page form here reads the
+    /// conjunction, so both platforms refuse the same incomplete form. The schedule step also refuses a
+    /// start the server would refuse.
     func canAdvance(step: Int) -> Bool {
         switch step {
-        case 1: !timeOfDay.isBlank
-        case 2: !selectedServiceIds.isEmpty || !selectedPackageIds.isEmpty
+        case 1: RecurringTime.bookableTimes.contains(timeOfDay)
+        case 2: (!selectedServiceIds.isEmpty || !selectedPackageIds.isEmpty) && dirtiness != nil
         case 3: !savedAddressId.isBlank && startsOn != nil
         default: false
         }
@@ -38,19 +44,21 @@ struct CreateRecurringFormState: Equatable {
     init(_ template: RecurringTemplate) {
         frequency = RecurrenceFrequency(rawValue: template.frequency) ?? .weekly
         dayOfWeek = template.dayOfWeek
-        timeOfDay = template.timeOfDay
+        timeOfDay = RecurringTime.nearestBookable(template.timeOfDay)
         rooms = template.rooms
         bathrooms = template.bathrooms
+        dirtiness = template.dirtiness
         savedAddressId = template.savedAddressId
         selectedServiceIds = Set(template.selectedServiceIds)
         selectedPackageIds = Set(template.selectedPackageIds)
         paymentType = template.paymentType
         startsOn = template.startsOn
+        preferredEmployeeId = template.preferredEmployeeId
     }
 }
 
 extension UpdateRecurringInput {
-    init(_ input: CreateRecurringInput, templateId: String, endsOn: Date?) {
+    init(_ input: CreateRecurringInput, templateId: String, endsOn: Date?, preferredEmployeeId: String?) {
         self.init(
             templateId: templateId,
             frequency: input.frequency,
@@ -58,12 +66,14 @@ extension UpdateRecurringInput {
             timeOfDay: input.timeOfDay,
             rooms: input.rooms,
             bathrooms: input.bathrooms,
+            dirtiness: input.dirtiness,
             savedAddressId: input.savedAddressId,
             selectedServiceIds: input.selectedServiceIds,
             selectedPackageIds: input.selectedPackageIds,
             paymentType: input.paymentType,
             startsOn: input.startsOn,
-            endsOn: endsOn
+            endsOn: endsOn,
+            preferredEmployeeId: preferredEmployeeId
         )
     }
 }
@@ -74,6 +84,7 @@ struct RecurringPricedSelection: Equatable {
     let packageIds: [String]
     let rooms: Int
     let bathrooms: Int
+    let dirtiness: Dirtiness?
     let countryId: String?
 
     init(_ form: CreateRecurringFormState, countryId: String?) {
@@ -81,6 +92,7 @@ struct RecurringPricedSelection: Equatable {
         packageIds = form.selectedPackageIds.sorted()
         rooms = form.rooms
         bathrooms = form.bathrooms
+        dirtiness = form.dirtiness
         self.countryId = countryId
     }
 
@@ -96,7 +108,8 @@ struct RecurringPricedSelection: Equatable {
             rooms: rooms,
             bathrooms: bathrooms,
             cleaningDate: nil,
-            countryId: countryId
+            countryId: countryId,
+            dirtiness: dirtiness
         )
     }
 }
@@ -123,6 +136,10 @@ final class CreateRecurringViewModel: ViewModel {
     @Published private(set) var formCrew: RecurringCrew?
     /// Set when a cash choice was taken away; cleared by the customer's next choice.
     @Published private(set) var cashCleared = false
+    /// The server no longer accepts the schedule's favourite cleaner. The cleaner is kept until the
+    /// customer chooses to save without them.
+    @Published private(set) var preferredCleanerRefused = false
+    @Published private(set) var servingCleaners: [ServingCleaner] = []
 
     let sourceOrderId: String?
     let editing: RecurringTemplate?
@@ -133,6 +150,7 @@ final class CreateRecurringViewModel: ViewModel {
     private let addressClient: RecurringSavedAddressClient
     private let orderClient: OrderClient
     private let quoteClient: QuoteClient
+    private let cleanersClient: ServingCleanersClient
     private let snackbar: SnackbarController
     private let quoteDebounce: DispatchQueue.SchedulerTimeType.Stride
     private let scheduler: AnySchedulerOf<DispatchQueue>
@@ -150,6 +168,7 @@ final class CreateRecurringViewModel: ViewModel {
         addressClient: RecurringSavedAddressClient,
         orderClient: OrderClient,
         quoteClient: QuoteClient,
+        cleanersClient: ServingCleanersClient,
         snackbar: SnackbarController,
         quoteDebounce: DispatchQueue.SchedulerTimeType.Stride = .milliseconds(400),
         scheduler: AnySchedulerOf<DispatchQueue> = .main
@@ -161,6 +180,7 @@ final class CreateRecurringViewModel: ViewModel {
         self.addressClient = addressClient
         self.orderClient = orderClient
         self.quoteClient = quoteClient
+        self.cleanersClient = cleanersClient
         self.snackbar = snackbar
         self.quoteDebounce = quoteDebounce
         self.scheduler = scheduler
@@ -179,7 +199,7 @@ final class CreateRecurringViewModel: ViewModel {
     /// A schedule is only ever submitted against a catalogue the customer could see: a prefilled
     /// selection that no market has vetted yet is not a booking.
     var isValid: Bool {
-        formState.isValid && isCatalogLoaded
+        formState.isValid && isCatalogLoaded && (isEditing || formState.earlyPerformanceRequested)
     }
 
     private var isCatalogLoaded: Bool {
@@ -200,6 +220,16 @@ final class CreateRecurringViewModel: ViewModel {
         return min(startsOn, Date())
     }
 
+    /// The server refuses a start on or after the end date, and this form cannot move the end date.
+    var latestStart: Date? {
+        editing?.endsOn.flatMap { Calendar.current.date(byAdding: .day, value: -1, to: $0) }
+    }
+
+    var startRange: ClosedRange<Date> {
+        let earliest = earliestStart
+        return earliest ... max(earliest, latestStart ?? .distantFuture)
+    }
+
     /// The country of the picked saved address — the market the schedule is priced in.
     var selectedCountryId: String? {
         savedAddresses.first { $0.id == formState.savedAddressId }?.countryId
@@ -216,7 +246,7 @@ final class CreateRecurringViewModel: ViewModel {
     }
 
     /// The addresses come first so the catalogue is read once, priced for the seeded address's market,
-    /// and the prefill last so the order's picks are pruned against that catalogue. A template being
+    /// and the prefill after it so the order's picks are pruned against that catalogue. A template being
     /// edited is pruned the same way: what its market no longer lists would be refused at submit.
     func load() async {
         if case let .success(addresses) = await addressClient.getMine() {
@@ -228,6 +258,9 @@ final class CreateRecurringViewModel: ViewModel {
         }
         if let sourceOrderId {
             await prefill(from: sourceOrderId)
+        }
+        if case let .success(cleaners) = await cleanersClient.myServingCleaners() {
+            servingCleaners = cleaners
         }
     }
 
@@ -378,12 +411,25 @@ final class CreateRecurringViewModel: ViewModel {
         formState.timeOfDay = time
     }
 
+    func setPreferredEmployeeId(_ id: String?) {
+        formState.preferredEmployeeId = id
+        preferredCleanerRefused = false
+    }
+
+    func setEarlyPerformanceRequested(_ requested: Bool) {
+        formState.earlyPerformanceRequested = requested
+    }
+
     func setRooms(_ count: Int) {
-        formState.rooms = max(0, count)
+        formState.rooms = min(max(0, count), PropertySize.maxRooms)
     }
 
     func setBathrooms(_ count: Int) {
-        formState.bathrooms = max(0, count)
+        formState.bathrooms = min(max(0, count), PropertySize.maxBathrooms)
+    }
+
+    func setDirtiness(_ level: Dirtiness) {
+        formState.dirtiness = level
     }
 
     func setSavedAddressId(_ id: String) {
@@ -426,9 +472,21 @@ final class CreateRecurringViewModel: ViewModel {
 
     // MARK: - Submit
 
+    private static let preferredCleanerRefusalCode = "order.preferred_employee.not_eligible"
+
     func submit() async -> Bool {
+        await save(keepingPreferredCleaner: true)
+    }
+
+    /// The customer's own answer to a refused favourite cleaner, never taken on their behalf.
+    func saveWithoutPreferredCleaner() async -> Bool {
+        await save(keepingPreferredCleaner: false)
+    }
+
+    private func save(keepingPreferredCleaner: Bool) async -> Bool {
         guard !submitState.isSubmitting, isCatalogLoaded else { return false }
         guard let input = buildInput() else { return false }
+        preferredCleanerRefused = false
         submitState = .submitting
         if input.paymentType == RecurringPaymentType.cash {
             let confirmed = await cashConfirmedForForm()
@@ -438,7 +496,12 @@ final class CreateRecurringViewModel: ViewModel {
             }
         }
         let result: ApiResult<RecurringTemplate> = if let editing {
-            await repository.update(UpdateRecurringInput(input, templateId: editing.id, endsOn: editing.endsOn))
+            await repository.update(UpdateRecurringInput(
+                input,
+                templateId: editing.id,
+                endsOn: editing.endsOn,
+                preferredEmployeeId: keepingPreferredCleaner ? input.preferredEmployeeId : nil
+            ))
         } else {
             await repository.create(input)
         }
@@ -451,6 +514,9 @@ final class CreateRecurringViewModel: ViewModel {
             snackbar.showApiError(error)
             if error.code == CashEligibility.refusalCode {
                 dropCash(announce: false)
+            }
+            if isEditing, error.code == Self.preferredCleanerRefusalCode {
+                preferredCleanerRefused = true
             }
             submitState = .error(isEditing ? L10n.Recurring.editFailed : L10n.Recurring.createFailed)
             return false
@@ -486,8 +552,10 @@ final class CreateRecurringViewModel: ViewModel {
         guard !state.savedAddressId.isBlank,
               !state.selectedServiceIds.isEmpty || !state.selectedPackageIds.isEmpty,
               let startsOn = state.startsOn,
-              !state.timeOfDay.isBlank,
-              let paymentType = state.paymentType
+              RecurringTime.bookableTimes.contains(state.timeOfDay),
+              let paymentType = state.paymentType,
+              let dirtiness = state.dirtiness,
+              isEditing || state.earlyPerformanceRequested
         else { return nil }
         return CreateRecurringInput(
             frequency: state.frequency.rawValue,
@@ -495,44 +563,34 @@ final class CreateRecurringViewModel: ViewModel {
             timeOfDay: state.timeOfDay,
             rooms: state.rooms,
             bathrooms: state.bathrooms,
+            dirtiness: dirtiness,
             savedAddressId: state.savedAddressId,
             selectedServiceIds: Array(state.selectedServiceIds),
             selectedPackageIds: Array(state.selectedPackageIds),
             paymentType: paymentType,
-            startsOn: startsOn
+            startsOn: startsOn,
+            preferredEmployeeId: state.preferredEmployeeId,
+            earlyPerformanceRequested: state.earlyPerformanceRequested
         )
     }
 
     private func prefill(from orderId: String) async {
         guard case let .success(order) = await orderClient.getById(orderId: orderId) else { return }
         var state = formState
-        state.rooms = max(0, order.rooms)
-        state.bathrooms = max(0, order.bathrooms)
+        state.rooms = min(max(0, order.rooms), PropertySize.maxRooms)
+        state.bathrooms = min(max(0, order.bathrooms), PropertySize.maxBathrooms)
         state.selectedServiceIds = Set(order.services.compactMap(\.id))
         state.selectedPackageIds = Set(order.packages.compactMap(\.id))
         if let paymentType = order.paymentType?.value {
             state.paymentType = paymentType
         }
         if let cleaningDate = order.cleaningDateTime {
-            state.timeOfDay = RecurringTime.format(cleaningDate)
+            state.timeOfDay = RecurringTime.nearestBookable(RecurringTime.format(cleaningDate))
             state.dayOfWeek = RecurringTime.dotNetDayOfWeek(cleaningDate)
         }
         formState = state
         if isCatalogForSelectedMarket, let catalog = catalogState.loadedValue {
             pruneSelection(notListedIn: catalog)
         }
-    }
-}
-
-enum RecurringTime {
-    static func format(_ date: Date) -> String {
-        let components = Calendar.current.dateComponents([.hour, .minute], from: date)
-        return String(format: "%02d:%02d", components.hour ?? 0, components.minute ?? 0)
-    }
-
-    /// Foundation weekday: Sun=1..Sat=7. Backend wants .NET DayOfWeek: Sun=0..Sat=6.
-    static func dotNetDayOfWeek(_ date: Date) -> Int {
-        let weekday = Calendar.current.component(.weekday, from: date)
-        return (weekday - 1) % 7
     }
 }

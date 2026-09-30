@@ -40,6 +40,12 @@ export class AdminPhotoGalleryComponent {
 
   readonly PhotoType = PhotoType;
 
+  readonly photoTypeLabelKeys: Readonly<Record<PhotoType, string>> = {
+    [PhotoType.Before]: 'pages.order_detail.before',
+    [PhotoType.After]: 'pages.order_detail.after',
+    [PhotoType.Entrance]: 'pages.order_detail.entrance',
+  };
+
   readonly isOpen = signal(false);
   readonly currentIndex = signal(0);
 

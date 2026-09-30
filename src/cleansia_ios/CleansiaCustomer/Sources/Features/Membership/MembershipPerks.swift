@@ -3,9 +3,9 @@ import Foundation
 /// What a customer surface may say about the express surcharge waiver.
 ///
 /// `expressUpgradesRemaining` is `0` for a member still inside the trial **and** for one who has used
-/// the month's allowance up, so `trialEndsAtUtc` is the only field that separates them — a trialing
-/// member is active and keeps the discount and the cancellation window, but earns no waiver, and
-/// telling them they used theirs up would be a fresh false claim.
+/// the month's allowance up, so `trialEndsAtUtc` is the only field that separates them — no Plus benefit
+/// runs during a trial, the waiver included, and telling a trialing member they used theirs up would be a
+/// fresh false claim.
 enum ExpressWaiverStatus: Equatable {
     case none
     case trial
@@ -38,7 +38,7 @@ enum ExpressWaiverStatus: Equatable {
     static func resolve(_ membership: MyMembership?, now: Date = Date()) -> ExpressWaiverStatus {
         guard let membership else { return .none }
         return resolve(
-            hasMembership: membership.hasMembership,
+            hasMembership: membership.hasMembership && !membership.benefitsPaused,
             upgradesPerMonth: membership.expressUpgradesPerMonth,
             upgradesRemaining: membership.expressUpgradesRemaining,
             trialEndsAtUtc: membership.trialEndsAtUtc,
@@ -49,7 +49,7 @@ enum ExpressWaiverStatus: Equatable {
     static func resolve(_ snapshot: MembershipSnapshot?, now: Date = Date()) -> ExpressWaiverStatus {
         guard let snapshot else { return .none }
         return resolve(
-            hasMembership: snapshot.hasMembership,
+            hasMembership: snapshot.hasMembership && !snapshot.benefitsPaused,
             upgradesPerMonth: snapshot.expressUpgradesPerMonth,
             upgradesRemaining: snapshot.expressUpgradesRemaining,
             trialEndsAtUtc: snapshot.trialEndsAtUtc,
@@ -118,7 +118,7 @@ enum MembershipPerk: Equatable, Identifiable {
 
 enum MembershipPerks {
     static func resolve(_ membership: MyMembership, now: Date = Date()) -> [MembershipPerk] {
-        guard membership.hasMembership else { return [] }
+        guard membership.hasMembership, !membership.benefitsPaused else { return [] }
         var perks: [MembershipPerk] = []
         if let percent = membership.discountPercentage.map({ Int($0) }), percent > 0 {
             perks.append(.discount(percent: percent))

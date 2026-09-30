@@ -83,6 +83,35 @@ export const PAYMENT_STATUS_FLOW: StatusFlowItem[] = [
   },
 ];
 
+// The partner's own pay for the job (the booked pay row, else the server's estimate), never the
+// customer's price.
+function yourPayColumn(lang: string | undefined): TableColumn<OrderListItem> {
+  return {
+    id: 'estimatedCleanerPay',
+    field: 'estimatedCleanerPay',
+    header: 'pages.orders.your_pay',
+    getValue: (row?: OrderListItem) => {
+      const pay = row?.estimatedCleanerPay;
+      return typeof pay === 'number'
+        ? formatMoney(pay, row?.currency?.code, localeFor(lang), { fractionDigits: 2 })
+        : '';
+    },
+    sortable: true,
+    width: '12%',
+    numeric: true,
+  };
+}
+
+function dirtinessColumn(template?: TemplateRef<OrderListItem>): TableColumn<OrderListItem> {
+  return {
+    id: 'dirtinessLevel',
+    field: 'dirtinessLevel',
+    header: 'pages.orders.dirtiness_level',
+    customTemplate: template,
+    width: '10%',
+  };
+}
+
 export function getAvailableOrdersTableDefinition(
   defs: {
     onTakeOrder: (row: OrderListItem) => void;
@@ -90,7 +119,8 @@ export function getAvailableOrdersTableDefinition(
   },
   lang: string | undefined,
   statusTemplate?: TemplateRef<OrderListItem>,
-  orderStatusTemplate?: TemplateRef<OrderListItem>
+  orderStatusTemplate?: TemplateRef<OrderListItem>,
+  dirtinessTemplate?: TemplateRef<OrderListItem>
 ): {
   columns: TableColumn<OrderListItem>[];
   actions: TableAction<OrderListItem>[];
@@ -121,18 +151,8 @@ export function getAvailableOrdersTableDefinition(
           `${row?.customerAddress || ''}`.trim().replace(/^,\s*/, ''),
         width: '20%',
       },
-      {
-        id: 'totalPrice',
-        field: 'totalPrice',
-        header: 'pages.orders.total_price',
-        getValue: (row?: OrderListItem) =>
-          row?.totalPrice
-            ? formatMoney(row.totalPrice, row.currency?.code, localeFor(lang), { fractionDigits: 2 })
-            : '',
-        sortable: true,
-        width: '12%',
-        numeric: true,
-      },
+      dirtinessColumn(dirtinessTemplate),
+      yourPayColumn(lang),
       {
         id: 'availableSpots',
         field: 'availableSpots',
@@ -187,7 +207,8 @@ export function getMyOrdersTableDefinition(
   },
   lang: string | undefined,
   statusTemplate?: TemplateRef<OrderListItem>,
-  orderStatusTemplate?: TemplateRef<OrderListItem>
+  orderStatusTemplate?: TemplateRef<OrderListItem>,
+  dirtinessTemplate?: TemplateRef<OrderListItem>
 ): {
   columns: TableColumn<OrderListItem>[];
   actions: TableAction<OrderListItem>[];
@@ -231,18 +252,8 @@ export function getMyOrdersTableDefinition(
           `${row?.customerAddress || ''}`.trim().replace(/^,\s*/, ''),
         width: '18%',
       },
-      {
-        id: 'totalPrice',
-        field: 'totalPrice',
-        header: 'pages.orders.total_price',
-        getValue: (row?: OrderListItem) =>
-          row?.totalPrice
-            ? formatMoney(row.totalPrice, row.currency?.code, localeFor(lang), { fractionDigits: 2 })
-            : '',
-        sortable: true,
-        width: '12%',
-        numeric: true,
-      },
+      dirtinessColumn(dirtinessTemplate),
+      yourPayColumn(lang),
       {
         id: 'orderStatus',
         field: 'orderStatus',

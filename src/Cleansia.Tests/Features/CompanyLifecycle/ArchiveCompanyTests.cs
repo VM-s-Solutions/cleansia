@@ -30,7 +30,7 @@ public sealed class ArchiveCompanyTests
         OpenOrders: 0, OpenOrdersOnOrAfterWindDownFrom: 0, ActiveTemplates: 0, ActiveMemberships: 0,
         CreditBalances: 0, PendingRefunds: 0, OrdersAwaitingPay: 0, OrdersAwaitingReceipt: 0,
         ReceiptsAwaitingFiscalRegistration: 0, OpenPayPeriods: 0, UnpaidInvoices: 0, UninvoicedPayRows: 0,
-        OpenDisputes: 0, LatestCardPaidCleaningDateTime: null);
+        OpenDisputes: 0, CleanersHoldingCash: 0, LatestCardPaidCleaningDateTime: null);
 
     private readonly Mock<ITenantRepository> _tenants = new();
     private readonly Mock<ITenantProvider> _tenantProvider = new();
@@ -116,6 +116,7 @@ public sealed class ArchiveCompanyTests
         { Settled with { UnpaidInvoices = 1 }, BusinessErrorMessage.CompanyHasUnpaidInvoices },
         { Settled with { UninvoicedPayRows = 1 }, BusinessErrorMessage.CompanyHasUninvoicedPay },
         { Settled with { OpenDisputes = 1 }, BusinessErrorMessage.CompanyHasOpenDisputes },
+        { Settled with { CleanersHoldingCash = 1 }, BusinessErrorMessage.CompanyHasCashHeld },
         { Settled with { LatestCardPaidCleaningDateTime = Now.UtcDateTime.AddDays(-100) }, BusinessErrorMessage.CompanyWithinChargebackHorizon },
     };
 

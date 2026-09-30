@@ -29,13 +29,15 @@ namespace Cleansia.Core.AppServices.Features.Bookings;
 /// </summary>
 public class AutoCancelStaleRecurringOrders
 {
+    public const int DefaultMissedConfirmGraceHours = 1;
+
     /// <param name="MissedConfirmGraceHours">
     /// Hours before <c>CleaningDateTime</c> after which an unconfirmed
     /// recurring order is considered stale. Default 1h: the customer had ~23h
     /// since the reminder push to confirm; if they didn't, free the slot
     /// before the cleaner shows up to nothing.
     /// </param>
-    public record Command(int MissedConfirmGraceHours = 1) : ICommand<Response>;
+    public record Command(int MissedConfirmGraceHours = DefaultMissedConfirmGraceHours) : ICommand<Response>;
 
     public class Validator : AbstractValidator<Command>
     {
@@ -66,10 +68,14 @@ public class AutoCancelStaleRecurringOrders
             // Cross-tenant query — sweep runs system-level. Each cancellation
             // dispatches a push tagged with the order's TenantId so the
             // dispatcher routes it correctly.
+            //
+            // Unconfirmed is Order.AwaitsCustomerConfirmation in SQL: a confirmed cash occurrence stays
+            // Pending until the cleaner records the cash, and is the cleaner's job, not this sweep's.
             var stale = await orderRepository.GetQueryableIgnoringTenant()
                 .Include(o => o.OrderStatusHistory)
                 .Where(o => o.RecurringTemplateId != null
                     && o.PaymentStatus == PaymentStatus.Pending
+                    && (o.PaymentType != PaymentType.Cash || o.CustomerConfirmedAt == null)
                     && o.CleaningDateTime <= cutoff
                     && o.UserId != null)
                 .ToListAsync(cancellationToken);

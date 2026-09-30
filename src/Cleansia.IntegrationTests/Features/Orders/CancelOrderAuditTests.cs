@@ -263,6 +263,9 @@ public class CancelOrderAuditTests(PostgresContainerFixture fixture) : BaseInteg
 
     private sealed class SucceedingRefunds : IRefundService
     {
+        public Task<BusinessResult<RefundResult>> RedriveAsync(string refundId, string actorId, CancellationToken cancellationToken)
+            => throw new NotSupportedException();
+
         public Task<BusinessResult<RefundResult>> IssueRefundAsync(RefundRequest request, CancellationToken cancellationToken)
             => Task.FromResult(BusinessResult.Success(new RefundResult(
                 "refund-cancel-audit", $"refund:{request.OrderId}:cancel", request.Amount, RefundStatus.Succeeded, false)));

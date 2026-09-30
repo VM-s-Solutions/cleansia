@@ -23,9 +23,16 @@ struct MembershipManagementCard: View {
         if let membership = vm.current {
             if !membership.hasMembership {
                 InactiveCard(onClick: onSubscribeClick)
+            } else if membership.benefitsPaused {
+                PastDueCard(
+                    membership: membership,
+                    cancelEnabled: !vm.submitState.isSubmitting,
+                    onCancel: { showCancelDialog = true }
+                )
             } else {
                 ActiveCard(
                     membership: membership,
+                    copy: vm.copy,
                     cancelEnabled: !vm.submitState.isSubmitting && !membership.cancelRequested,
                     switchSavings: yearlyPlan.map { Int($0.savingsPercentVsMonthly) },
                     onCancel: { showCancelDialog = true },
@@ -43,7 +50,7 @@ struct MembershipManagementCard: View {
                 confirmLabel: L10n.Membership.cancelDialogConfirm,
                 onConfirm: confirmCancel,
                 onDismiss: { showCancelDialog = false },
-                message: L10n.Membership.cancelDialogMessage,
+                message: vm.copy.cancelDialogMessage,
                 dismissLabel: L10n.Membership.back,
                 destructive: true
             )
@@ -54,8 +61,8 @@ struct MembershipManagementCard: View {
                 confirmLabel: L10n.Membership.switchDialogConfirm,
                 onConfirm: { confirmSwitch(yearlyPlan) },
                 onDismiss: { showSwitchDialog = false },
-                message: L10n.Membership.switchDialogMessage(
-                    MembershipFormat.price(yearlyPlan.price, currencyCode: yearlyPlan.currencyCode)
+                message: vm.copy.switchDialogMessage(
+                    price: MembershipFormat.price(yearlyPlan.price, currencyCode: yearlyPlan.currencyCode)
                 ),
                 dismissLabel: L10n.Membership.back
             )
@@ -64,9 +71,10 @@ struct MembershipManagementCard: View {
 
     private func confirmCancel() {
         showCancelDialog = false
+        let copy = vm.copy
         Task {
             if let date = await vm.cancel() {
-                snackbar.showSuccess(L10n.Membership.cancelledUntil(MembershipFormat.periodEnd(date)))
+                snackbar.showSuccess(copy.cancelSuccess(activeUntil: date))
             }
         }
     }
@@ -143,6 +151,7 @@ private struct InactiveCard: View {
 
 private struct ActiveCard: View {
     let membership: MyMembership
+    let copy: MembershipCopy
     let cancelEnabled: Bool
     let switchSavings: Int?
     let onCancel: () -> Void
@@ -186,10 +195,21 @@ private struct ActiveCard: View {
             }
 
             if !perks.isEmpty {
+                if let perksTitle = copy.perksTitle {
+                    Text(perksTitle)
+                        .font(CleansiaTypography.labelLarge)
+                        .foregroundColor(CleansiaColors.onSurface)
+                }
                 ChipFlow(spacing: Spacing.xs) {
                     ForEach(perks) { perk in
                         PerkPill(perk: perk, accent: accent)
                     }
+                }
+                if let perksNote = copy.perksNote {
+                    Text(perksNote)
+                        .font(CleansiaTypography.labelMedium)
+                        .foregroundColor(CleansiaColors.onSurfaceVariant)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 Divider().background(CleansiaColors.outlineVariant)
             }
@@ -203,7 +223,7 @@ private struct ActiveCard: View {
                         .font(CleansiaTypography.bodyMedium)
                         .foregroundColor(CleansiaColors.onSurface)
                     Text(membership.cancelRequested
-                        ? L10n.Membership.thenEndsHint
+                        ? copy.cancelledHint
                         : L10n.Membership.autoRenewHint)
                         .font(CleansiaTypography.labelMedium)
                         .foregroundColor(CleansiaColors.onSurfaceVariant)
@@ -233,6 +253,55 @@ private struct ActiveCard: View {
     }
 }
 
+private struct PastDueCard: View {
+    let membership: MyMembership
+    let cancelEnabled: Bool
+    let onCancel: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.m) {
+            HStack(spacing: Spacing.xs) {
+                Image(systemName: "exclamationmark.triangle.fill").foregroundColor(CleansiaColors.error)
+                Text(L10n.Membership.statusPastDueBadge)
+                    .font(CleansiaTypography.labelSmall)
+                    .foregroundColor(CleansiaColors.error)
+                    .padding(.horizontal, Spacing.s)
+                    .padding(.vertical, 3)
+                    .background(
+                        CleansiaColors.error.opacity(0.12),
+                        in: RoundedRectangle(cornerRadius: CornerRadius.extraSmall)
+                    )
+            }
+            Text(membership.planName ?? L10n.Membership.plusTitle)
+                .font(CleansiaTypography.titleLarge)
+                .foregroundColor(CleansiaColors.onSurface)
+            Text(L10n.Membership.pastDueBody)
+                .font(CleansiaTypography.bodyMedium)
+                .foregroundColor(CleansiaColors.onSurface)
+                .fixedSize(horizontal: false, vertical: true)
+            Text(L10n.Membership.pastDueCancelHint)
+                .font(CleansiaTypography.labelMedium)
+                .foregroundColor(CleansiaColors.onSurfaceVariant)
+                .fixedSize(horizontal: false, vertical: true)
+            if cancelEnabled {
+                Button(action: onCancel) {
+                    Text(L10n.Membership.cancelAction)
+                        .font(CleansiaTypography.labelLarge)
+                        .foregroundColor(CleansiaColors.error)
+                }
+                .frame(maxWidth: .infinity)
+            }
+        }
+        .padding(Spacing.m)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(CleansiaColors.surface, in: RoundedRectangle(cornerRadius: CornerRadius.large))
+        .overlay(
+            RoundedRectangle(cornerRadius: CornerRadius.large)
+                .stroke(CleansiaColors.error.opacity(0.35), lineWidth: 1)
+        )
+    }
+}
+
 private struct PerkPill: View {
     let perk: MembershipPerk
     let accent: Color
@@ -258,6 +327,7 @@ private struct PerkPill: View {
             Group {
                 ActiveCard(
                     membership: sample(cancelRequested: false),
+                    copy: MembershipCopy(sample(cancelRequested: false)),
                     cancelEnabled: true,
                     switchSavings: 15,
                     onCancel: {},
@@ -266,12 +336,15 @@ private struct PerkPill: View {
                 .previewDisplayName("Active")
                 ActiveCard(
                     membership: sample(cancelRequested: true),
+                    copy: MembershipCopy(sample(cancelRequested: true)),
                     cancelEnabled: false,
                     switchSavings: nil,
                     onCancel: {},
                     onSwitch: {}
                 )
                 .previewDisplayName("Ending")
+                PastDueCard(membership: sample(cancelRequested: false), cancelEnabled: true, onCancel: {})
+                    .previewDisplayName("Past due")
             }
             .padding()
             .background(CleansiaColors.background)

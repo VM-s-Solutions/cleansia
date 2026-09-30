@@ -31,6 +31,14 @@ administrator's manual revoke and a reversed referral. Nothing ratchets. The web
 the ladder states that the tier follows the current points total, and the balance note says a tier can
 drop.
 
+**Editing the thresholds re-tiers everyone at once** (owner ruling 2026-09-28: the tier follows the
+points both ways, and stale tiers after a threshold edit are fixed). `UpdateTierConfig` builds the
+thresholds from the saved configuration (`LoyaltyTierThresholds.From`, the same factory
+`LoyaltyService` resolves them with) and, in the same save, applies them to every loyalty account of
+every company (`LoyaltyAccount.ApplyTierThresholds`, read across tenants because a tier configuration is
+the platform's), so an account never keeps a tier its points no longer reach, or misses one they do. An
+account whose tier moves is stamped; no upgrade push is sent for a threshold edit.
+
 **A tier's perks are what the rewards page can name.** The page renders each tier's `PerksJson` as
 stored. As seeded, that is the welcome badge on every tier plus the tier's discount from the second
 tier up. No tier lists priority support or a dedicated cleaner pool, because nothing in the platform
@@ -39,9 +47,9 @@ five locales, or if the copy promises that a tier cannot drop.
 
 ## Cleansia Plus
 
-A membership buys a discount, a wider free-cancellation window, a 60-minute oops window after booking
-instead of the standard 15 ([the oops window](/product/business-rules#oops-window)), and a quota of
-express-surcharge waivers.
+A membership buys a discount, a wider free-cancellation window, a 60-minute oops window after every
+booking instead of the standard 15 — anyone's first booking gets 60 too
+([the oops window](/product/business-rules#oops-window)) — and a quota of express-surcharge waivers.
 
 **There is no free trial, and a trialing enrolment is not a member** (owner ruling 2026-09-08,
 T-0690). Both seeded plans carry `TrialPeriodDays = 0` and the admin plan commands refuse any other
@@ -52,6 +60,19 @@ schedules and the preferred cleaner — resolves through the one entitlement pre
 `Cancelled` or an elapsed period. The `trialEndsAtUtc` / `trialEligible` fields on `GetMyMembership`
 still ride the wire for clients built before the ruling; with every plan at zero days no enrolment
 carries a trial end. → [Business rules — Cleansia Plus](/product/business-rules#cleansia-plus)
+
+**A failed renewal pauses the benefits and keeps the membership visible** (owner ruling 2026-09-28).
+The lifecycle read (`GetLifecycleForUserAsync`, renamed from `GetActiveForUser*`) answers a live
+enrolment — `Active`, `PastDue` or `Paused` within its period — and entitlement stays `Active`. So a
+past-due member's `GetMyMembership` is `hasMembership: true, status: PastDue`, every client shows
+*payment failed, benefits paused* with a cancel, both subscribe paths refuse a second subscription
+(`membership.already_active`), and the unique index over `(TenantId, UserId)` covers the three live
+statuses. The member's cancel takes effect **now** — `IStripeClient.CancelSubscriptionNowAsync` cancels
+the subscription without proration and voids its open invoice, and the row becomes `Cancelled` with an
+effective end of now — while an `Active` member still cancels at period end. Each
+`invoice.payment_failed` sends the member `membership.payment_failed`, one per failed attempt; one that
+lands after the cancel is ignored. Erasure and a company wind-down cancel a past-due membership at once
+too. A plan swap still requires `Active` (`membership.not_found` otherwise).
 
 ## Plus is priced per market, end to end
 

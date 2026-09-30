@@ -85,7 +85,7 @@ public sealed class ArchivedCompanyConsumerClassificationTests
         var handler = new GenerateReceiptHandler(
             orders.Object, receipts.Object, Mock.Of<IEmailService>(), TestGuestOrderAccessTokenIssuer.WithNoLiveTokens(),
             Mock.Of<ICountryConfigurationRepository>(),
-            unitOfWork.Object, Mock.Of<ITenantProvider>(), DeadLetter(), NullLogger<GenerateReceiptHandler>.Instance);
+            unitOfWork.Object, Mock.Of<ITenantProvider>(), DeadLetter(), Mock.Of<IReceivableRepository>(), NullLogger<GenerateReceiptHandler>.Instance);
         var body = JsonSerializer.Serialize(
             new QueueEnvelope<GenerateReceiptMessage>(MessageKeys.Receipt(order.Id), TenantId, new GenerateReceiptMessage(order.Id, "en")), CamelCase);
 

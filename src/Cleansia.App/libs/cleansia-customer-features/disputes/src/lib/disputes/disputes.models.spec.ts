@@ -10,6 +10,7 @@ import {
   getDisputeReasonLabelKey,
   getDisputeStatusSeverity,
   hasUnreadStaffReply,
+  initialDisputeReason,
   readCreatedDisputeId,
   isDisputeOpen,
   latestStaffMessageTimestamp,
@@ -90,6 +91,24 @@ describe('disputes.models', () => {
       );
       expect(getDisputeReasonLabelKey(undefined)).toBe(
         'pages.disputes.reasons.unknown'
+      );
+    });
+  });
+
+  describe('initialDisputeReason', () => {
+    it('opens on ServiceNotProvided when the order detail sends it, which is what raises the no-show alert', () => {
+      expect(initialDisputeReason(String(DisputeReason.ServiceNotProvided))).toBe(
+        DisputeReason.ServiceNotProvided
+      );
+    });
+
+    it('opens on QualityIssue with no reason, an unknown one, or any other reason', () => {
+      expect(initialDisputeReason(null)).toBe(DisputeReason.QualityIssue);
+      expect(initialDisputeReason('')).toBe(DisputeReason.QualityIssue);
+      expect(initialDisputeReason('abc')).toBe(DisputeReason.QualityIssue);
+      expect(initialDisputeReason('99')).toBe(DisputeReason.QualityIssue);
+      expect(initialDisputeReason(String(DisputeReason.DamagedProperty))).toBe(
+        DisputeReason.QualityIssue
       );
     });
   });

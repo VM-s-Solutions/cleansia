@@ -121,6 +121,7 @@ fun MainScaffold(
                 )
                 MainTab.Orders -> OrdersListScreen(
                     onOrderClick = onOpenOrderDetails,
+                    onOpenLegalDocuments = { onOpenProfileSection(NavRoute.LegalDocuments) },
                 )
                 MainTab.Invoices -> InvoicesListScreen(
                     onInvoiceClick = onOpenInvoiceDetails,
@@ -133,6 +134,7 @@ fun MainScaffold(
                     onNavigateToBank = { onOpenProfileSection(NavRoute.ProfileBank()) },
                     onNavigateToEmergency = { onOpenProfileSection(NavRoute.ProfileEmergency) },
                     onNavigateToDocuments = { onOpenProfileSection(NavRoute.ProfileDocuments) },
+                    onNavigateToLegalDocuments = { onOpenProfileSection(NavRoute.LegalDocuments) },
                     onNavigateToLanguage = { onOpenProfileSection(NavRoute.PreferenceLanguage) },
                     onNavigateToTheme = { onOpenProfileSection(NavRoute.PreferenceTheme) },
                     onNavigateToJobRadius = { onOpenProfileSection(NavRoute.PreferenceJobRadius) },

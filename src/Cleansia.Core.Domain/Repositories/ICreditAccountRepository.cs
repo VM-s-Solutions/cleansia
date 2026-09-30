@@ -119,6 +119,9 @@ public interface ICreditAccountRepository : IRepository<CreditAccount, string>
     /// </summary>
     Task<decimal> GetReturnedTotalForOrderAsync(string orderId, CancellationToken cancellationToken);
 
+    /// <summary>What one return key put back on a balance; zero when the key was never used.</summary>
+    Task<decimal> GetReturnedAmountAsync(string idempotencyKey, CancellationToken cancellationToken);
+
     /// <summary>
     /// The batch form of <see cref="GetReturnedTotalForOrderAsync"/>: Σ
     /// <see cref="CreditTransactionReason.OrderPaymentReturned"/> per order, keyed by order id; an order
@@ -126,6 +129,12 @@ public interface ICreditAccountRepository : IRepository<CreditAccount, string>
     /// </summary>
     Task<IReadOnlyDictionary<string, decimal>> GetReturnedTotalsByOrderAsync(
         IReadOnlyCollection<string> orderIds, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Σ <see cref="CreditTransactionReason.DisputeSettlement"/> granted for one order: the complaints
+    /// about it already settled in credit, which a later settlement on the order must count as given back.
+    /// </summary>
+    Task<decimal> GetDisputeSettledTotalForOrderAsync(string orderId, CancellationToken cancellationToken);
 
     /// <summary>
     /// Take <paramref name="amount"/> from the balance, or take nothing.

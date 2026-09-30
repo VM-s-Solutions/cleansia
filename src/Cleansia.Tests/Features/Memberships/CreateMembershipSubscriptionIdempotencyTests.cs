@@ -22,7 +22,7 @@ namespace Cleansia.Tests.Features.Memberships;
 ///
 /// THE HOLE: <see cref="CreateMembershipSubscription.Handler"/> generated a FRESH
 /// <c>Guid.NewGuid()</c> per call as the Stripe idempotency attempt id, so two concurrent confirmed
-/// subscribes (a double-tapped mobile PaymentSheet) — both passing the <see cref="GetActiveForUserAsync"/>
+/// subscribes (a double-tapped mobile PaymentSheet) — both passing the <see cref="GetLifecycleForUserAsync"/>
 /// "no active membership" guard before commit — called Stripe with TWO DIFFERENT keys and created TWO
 /// subscriptions + TWO UserMembership rows. The customer is billed twice.
 ///
@@ -144,7 +144,7 @@ public class CreateMembershipSubscriptionIdempotencyTests
     {
         // No active membership at the first guard for either request.
         _membershipRepository
-            .Setup(r => r.GetActiveForUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetLifecycleForUserAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
 
         var capturedAttemptIds = new List<string>();
@@ -170,7 +170,7 @@ public class CreateMembershipSubscriptionIdempotencyTests
     public async Task DifferentTokens_ProduceDifferentDerivedAttemptIds_AndNewSubscriptions()
     {
         _membershipRepository
-            .Setup(r => r.GetActiveForUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetLifecycleForUserAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
 
         var created = new List<UserMembership>();
@@ -194,7 +194,7 @@ public class CreateMembershipSubscriptionIdempotencyTests
     public async Task SameToken_TwoConfirms_PersistExactlyOneSubscription()
     {
         _membershipRepository
-            .Setup(r => r.GetActiveForUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetLifecycleForUserAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
 
         var created = new List<UserMembership>();
@@ -221,7 +221,7 @@ public class CreateMembershipSubscriptionIdempotencyTests
         // Second (loser) request: still no active membership at the FIRST guard (TOCTOU window), but the
         // post-Stripe re-check now finds the winner's row — so it must NOT Add a duplicate.
         _membershipRepository
-            .Setup(r => r.GetActiveForUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetLifecycleForUserAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(() => active);
 
         UserMembership? winnerRow = null;
@@ -246,9 +246,9 @@ public class CreateMembershipSubscriptionIdempotencyTests
     //
     // Round-1's test (SameToken_Loser_RechecksAfterStripe...) ran SERIALIZED: it let the winner run to
     // completion, MANUALLY set active=winnerRow, then ran the loser — i.e. it modelled confirm-AFTER-commit,
-    // where the post-Stripe re-check (GetActiveForUserAsync) already sees the winner. That is NOT the genuine
+    // where the post-Stripe re-check (GetLifecycleForUserAsync) already sees the winner. That is NOT the genuine
     // concurrent window the ticket exists to close. In the real race the LOSER re-checks BEFORE the winner's
-    // pipeline CommitAsync has made the winner's row visible: GetActiveForUserAsync returns NULL, the loser
+    // pipeline CommitAsync has made the winner's row visible: GetLifecycleForUserAsync returns NULL, the loser
     // proceeds to Add + flush, and the unique index on StripeSubscriptionId (UserMembershipEntityConfiguration
     // :56-57) rejects the insert with a Postgres 23505 unique-violation wrapped in a DbUpdateException.
     //
@@ -263,7 +263,7 @@ public class CreateMembershipSubscriptionIdempotencyTests
         // The loser NEVER sees an active membership at either guard or re-check — the winner's row is not yet
         // visible (pre-winner-commit). This is the window the round-1 serialized test did not exercise.
         _membershipRepository
-            .Setup(r => r.GetActiveForUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetLifecycleForUserAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
 
         var added = new List<UserMembership>();
@@ -311,7 +311,7 @@ public class CreateMembershipSubscriptionIdempotencyTests
     public async Task NullToken_DerivesDeterministicFallbackKey_FromStableInputs()
     {
         _membershipRepository
-            .Setup(r => r.GetActiveForUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetLifecycleForUserAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
 
         var capturedAttemptIds = new List<string>();
@@ -337,7 +337,7 @@ public class CreateMembershipSubscriptionIdempotencyTests
     public async Task NullToken_FallbackKey_DiffersPerCurrency_SoACzkAttemptCannotReplayAsEur()
     {
         _membershipRepository
-            .Setup(r => r.GetActiveForUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetLifecycleForUserAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
         var eur = MembershipPricingMockFactory.Eur();
         _currencyResolution
@@ -370,7 +370,7 @@ public class CreateMembershipSubscriptionIdempotencyTests
     public async Task UnconfirmedPhase1_ReturnsSetupIntentAndEphemeralKey_AndCreatesNoSubscription()
     {
         _membershipRepository
-            .Setup(r => r.GetActiveForUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetLifecycleForUserAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
         _stripe
             .Setup(c => c.CreateSetupIntentAsync(StripeCustomerId, It.IsAny<CancellationToken>()))

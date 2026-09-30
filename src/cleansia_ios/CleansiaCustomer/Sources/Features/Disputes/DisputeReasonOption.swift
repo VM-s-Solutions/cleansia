@@ -11,6 +11,8 @@ struct DisputeReasonOption: Identifiable {
         value
     }
 
+    static let serviceNotProvided = 2
+
     static var all: [DisputeReasonOption] {
         (1 ... 7).map { DisputeReasonOption(value: $0, label: L10n.Disputes.reason($0)) }
     }

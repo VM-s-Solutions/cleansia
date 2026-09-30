@@ -57,6 +57,7 @@ public class GenerateReceiptHandlerBranchTests
         _unitOfWork.Object,
         _tenantProvider.Object,
         new ArchivedCompanyDeadLetter(Mock.Of<IServiceScopeFactory>(), NullLogger<ArchivedCompanyDeadLetter>.Instance),
+        Mock.Of<IReceivableRepository>(),
         NullLogger<GenerateReceiptHandler>.Instance);
 
     private static Order BuildOrder(PaymentType paymentType, PaymentStatus paymentStatus, string countryId = "cz")
@@ -82,7 +83,7 @@ public class GenerateReceiptHandlerBranchTests
         OrderReceipt.Create(OrderId, "2026-000001", "receipt.pdf", "2026/ORD/receipt.pdf", LanguageCode);
 
     private static void AttachReceipt(Order order, OrderReceipt receipt) =>
-        typeof(Order).GetProperty(nameof(Order.Receipt))!.SetValue(order, receipt);
+        OrderReceiptAttachment.Attach(order, receipt);
 
     private static string Body() => JsonSerializer.Serialize(
         new QueueEnvelope<GenerateReceiptMessage>(
@@ -110,10 +111,42 @@ public class GenerateReceiptHandlerBranchTests
             Times.Never);
     }
 
+    /// <summary>
+    /// Owner ruling 2026-09-28: a receipt says money was received, for every tender. A cash booking whose
+    /// cash nobody recorded — a booking not yet cleaned, or one cancelled — gets none.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task A_Cash_Order_Whose_Cash_Was_Not_Recorded_Gets_No_Receipt(bool cancelled)
+    {
+        var order = BuildOrder(PaymentType.Cash, PaymentStatus.Pending);
+        if (cancelled)
+        {
+            order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Cancelled, order));
+        }
+
+        _orderRepository
+            .Setup(r => r.GetByIdIgnoringTenantAsync(OrderId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(order);
+
+        var ex = await Record.ExceptionAsync(() => CreateHandler().HandleAsync(Body(), CancellationToken.None));
+
+        Assert.Null(ex);
+        _receiptService.Verify(
+            s => s.ReserveReceiptAsync(It.IsAny<Order>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+        _emailService.Verify(
+            s => s.SendOrderReceiptEmailAsync(
+                It.IsAny<string>(), It.IsAny<Order>(), It.IsAny<byte[]?>(), It.IsAny<string>(),
+                It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<string?>()),
+            Times.Never);
+    }
+
     [Fact]
     public async Task Order_With_An_Existing_Receipt_Is_Acked_Without_Re_Reserving()
     {
-        var order = BuildOrder(PaymentType.Cash, PaymentStatus.Pending);
+        var order = BuildOrder(PaymentType.Cash, PaymentStatus.Paid);
         AttachReceipt(order, BuildReceipt());
         _orderRepository
             .Setup(r => r.GetByIdIgnoringTenantAsync(OrderId, It.IsAny<CancellationToken>()))
@@ -131,7 +164,7 @@ public class GenerateReceiptHandlerBranchTests
     [Fact]
     public async Task BlockingOnline_Country_With_No_Fiscal_Signature_Holds_The_Email()
     {
-        var order = BuildOrder(PaymentType.Cash, PaymentStatus.Pending, CountryId);
+        var order = BuildOrder(PaymentType.Cash, PaymentStatus.Paid, CountryId);
         var receipt = BuildReceipt(); // no SetFiscalData → FiscalCode stays null
 
         _orderRepository

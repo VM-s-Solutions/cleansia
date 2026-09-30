@@ -4,6 +4,7 @@ import SwiftUI
 
 struct EarningsContent: View {
     let stats: DashboardStats
+    let cashHeld: [CashHeld]
     let onOpenInvoices: () -> Void
 
     var body: some View {
@@ -13,6 +14,9 @@ struct EarningsContent: View {
                 BreakdownGrid(stats: stats)
                 if let period = PayPeriodWindow(stats: stats) {
                     PayPeriodCardView(period: period)
+                }
+                if !cashHeld.isEmpty {
+                    CashHeldCard(cashHeld: cashHeld)
                 }
                 InvoicesEntryCard(onClick: onOpenInvoices)
             }
@@ -174,6 +178,52 @@ private struct PayPeriodCardView: View {
         let start = EarningsFormat.shortDate(period.start, locale: locale) ?? ""
         let end = EarningsFormat.shortDate(period.end, locale: locale) ?? ""
         return "\(start) – \(end)"
+    }
+}
+
+/// The company cash the cleaner took at the door and has not handed over, per currency. Above the
+/// company's cap the server keeps cash jobs off their board, and this card is where they read why.
+private struct CashHeldCard: View {
+    let cashHeld: [CashHeld]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: Spacing.m) {
+                IconHalo(systemImage: "banknote")
+                VStack(alignment: .leading, spacing: Spacing.hair) {
+                    Text(L10n.Earnings.cashHeldTitle)
+                        .font(CleansiaTypography.labelMedium)
+                        .foregroundColor(CleansiaColors.primary)
+                    Text(L10n.Earnings.cashHeldSubtitle)
+                        .font(CleansiaTypography.labelSmall)
+                        .foregroundColor(CleansiaColors.onSurfaceVariant)
+                }
+                Spacer(minLength: 0)
+            }
+            ForEach(Array(cashHeld.enumerated()), id: \.offset) { _, held in
+                EarningsDivider().padding(.vertical, Spacing.m)
+                HStack(alignment: .firstTextBaseline) {
+                    Text(EarningsFormat.decimalMoney(held.amount, currencyCode: held.currencyCode))
+                        .font(CleansiaTypography.titleMedium)
+                        .foregroundColor(CleansiaColors.onSurface)
+                    Spacer()
+                    if let cap = held.floatCap {
+                        Text(L10n.Earnings.cashHeldLimit(
+                            EarningsFormat.decimalMoney(cap, currencyCode: held.currencyCode)
+                        ))
+                        .font(CleansiaTypography.labelSmall)
+                        .foregroundColor(CleansiaColors.onSurfaceVariant)
+                    }
+                }
+                if held.cashJobsHidden {
+                    Text(L10n.Earnings.cashHeldJobsHidden)
+                        .font(CleansiaTypography.labelSmall)
+                        .foregroundColor(CleansiaColors.error)
+                        .padding(.top, Spacing.xs)
+                }
+            }
+        }
+        .cardPadding()
     }
 }
 

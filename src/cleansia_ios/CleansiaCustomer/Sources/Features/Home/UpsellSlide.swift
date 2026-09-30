@@ -8,7 +8,6 @@ struct UpsellSlide: Equatable, Identifiable {
     enum Kind: Equatable {
         case plus
         case setupRecurring
-        case welcome
         case referral
         case book
     }
@@ -34,7 +33,7 @@ struct UpsellSlide: Equatable, Identifiable {
 
     /// The Android `buildList` — order matters: most-relevant first so the
     /// slide on screen at t=0 is the one the user is most likely to act on.
-    static func slides(isPlus: Bool, hasAnyOrders: Bool, showSetupRecurring: Bool) -> [UpsellSlide] {
+    static func slides(isPlus: Bool, showSetupRecurring: Bool) -> [UpsellSlide] {
         var slides: [UpsellSlide] = []
         if !isPlus {
             slides.append(UpsellSlide(
@@ -56,17 +55,6 @@ struct UpsellSlide: Equatable, Identifiable {
                 gradient: .purple,
                 mascot: .idea,
                 action: .setupRecurring
-            ))
-        }
-        if !hasAnyOrders {
-            slides.append(UpsellSlide(
-                kind: .welcome,
-                top: L10n.Home.upsellWelcomeTop,
-                title: L10n.Home.upsellWelcomeTitle,
-                cta: L10n.Home.upsellWelcomeCta,
-                gradient: .purple,
-                mascot: .mopping,
-                action: .book
             ))
         }
         slides.append(UpsellSlide(

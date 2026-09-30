@@ -1,3 +1,5 @@
+import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import {
   AddOrderNoteCommand,
@@ -34,6 +36,8 @@ interface OrderOverrides {
   orderStatusValue?: number;
   paymentStatusValue?: number;
   paymentTypeValue?: number;
+  requiredEmployees?: number;
+  creditAppliedAmount?: number;
   assignedEmployeeId?: string | null;
 }
 
@@ -42,6 +46,8 @@ function buildOrder(overrides: OrderOverrides = {}): OrderItem {
     orderStatusValue = OrderStatus.InProgress,
     paymentStatusValue = PaymentStatus.Pending,
     paymentTypeValue = PaymentType.Cash,
+    requiredEmployees,
+    creditAppliedAmount = 0,
     assignedEmployeeId = EMPLOYEE_ID,
   } = overrides;
 
@@ -53,6 +59,8 @@ function buildOrder(overrides: OrderOverrides = {}): OrderItem {
     orderStatus: { type: 'order_status', name: 'InProgress', value: orderStatusValue },
     paymentStatus: { type: 'payment_status', name: 'Pending', value: paymentStatusValue },
     paymentType: { type: 'payment_type', name: 'Cash', value: paymentTypeValue },
+    requiredEmployees,
+    creditAppliedAmount,
     assignedEmployees: assignedEmployeeId
       ? [{ employeeId: assignedEmployeeId, fullName: 'Jan Novak' }]
       : [],
@@ -81,6 +89,8 @@ describe('OrderDetailsFacade', () => {
   const createFacade = (): OrderDetailsFacade => {
     TestBed.configureTestingModule({
       providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
         OrderDetailsFacade,
         { provide: PartnerClient, useValue: { orderClient, employeeClient } },
         { provide: SnackbarService, useValue: snackbar },
@@ -147,19 +157,54 @@ describe('OrderDetailsFacade', () => {
       expect(snackbar.showApiError).not.toHaveBeenCalled();
     });
 
-    it('surfaces the API error and does NOT refresh when the call fails', () => {
+    // The interceptor has already toasted the translated refusal; a second toast from here
+    // would clear it and print the raw code in its place.
+    it('leaves a refusal to the translated toast', () => {
       const facade = createFacade();
-      const error = new Error('order.cash_already_collected');
-      orderClient.markCashCollected.mockReturnValue(throwError(() => error));
+      orderClient.markCashCollected.mockReturnValue(
+        throwError(() => refusal('order.cash_not_allowed_on_card_order'))
+      );
 
       facade.markCashCollected(ORDER_ID);
 
-      expect(snackbar.showApiError).toHaveBeenCalledWith(
-        error,
-        'global.messages.orders.cash_collect_failed'
-      );
-      expect(orderClient.getById).not.toHaveBeenCalled();
+      expect(snackbar.showApiError).not.toHaveBeenCalled();
+      expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
       expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
+      expect(facade.loading()).toBe(false);
+    });
+
+    // The server repairs a card payment Stripe already settled to Paid, then refuses the cash.
+    it('re-reads the order after a refusal, so a repaired order stops offering the action', () => {
+      const facade = createFacade();
+      orderClient.markCashCollected.mockReturnValue(
+        throwError(() => refusal('order.card_payment_already_settled'))
+      );
+      orderClient.getById.mockReturnValue(
+        of(buildOrder({ paymentTypeValue: PaymentType.Card, paymentStatusValue: PaymentStatus.Paid }))
+      );
+
+      facade.markCashCollected(ORDER_ID);
+
+      expect(orderClient.getById).toHaveBeenCalledTimes(1);
+      expect(orderClient.getById).toHaveBeenCalledWith(ORDER_ID);
+      expect(facade.orderDetails()?.paymentStatus.value).toBe(PaymentStatus.Paid);
+      expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
+      expect(snackbar.showApiError).not.toHaveBeenCalled();
+    });
+
+    // No answer from the server: the sheet stays as it was instead of a re-read that would fail too.
+    it('keeps the job sheet when the call never reached the server', () => {
+      const facade = createFacade();
+      facade.orderDetails.set(buildOrder());
+      orderClient.markCashCollected.mockReturnValue(
+        throwError(() => new HttpErrorResponse({ status: 0, statusText: 'Unknown Error' }))
+      );
+
+      facade.markCashCollected(ORDER_ID);
+
+      expect(orderClient.getById).not.toHaveBeenCalled();
+      expect(facade.orderDetails()).not.toBeNull();
+      expect(facade.error()).toBeNull();
       expect(facade.loading()).toBe(false);
     });
 
@@ -443,9 +488,11 @@ describe('OrderDetailsFacade', () => {
       expect(orderClient.markCashCollected).not.toHaveBeenCalled();
     });
 
-    it('offers collection on a CARD order — the backend reconciles against Stripe', () => {
+    it('offers collection on a card order one cleaner does — the server repairs or refuses it', () => {
       const facade = createFacade();
-      facade.orderDetails.set(buildOrder({ paymentTypeValue: PaymentType.Card }));
+      facade.orderDetails.set(
+        buildOrder({ paymentTypeValue: PaymentType.Card, requiredEmployees: 1 })
+      );
       facade.currentEmployeeId.set(EMPLOYEE_ID);
       dialogService.open.mockReturnValue({ onClose: EMPTY });
 
@@ -453,6 +500,49 @@ describe('OrderDetailsFacade', () => {
 
       expect(dialogService.open).toHaveBeenCalledTimes(1);
       expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
+    });
+
+    it('refuses a card order that needs more than one cleaner, saying why', () => {
+      const facade = createFacade();
+      facade.orderDetails.set(
+        buildOrder({ paymentTypeValue: PaymentType.Card, requiredEmployees: 2 })
+      );
+      facade.currentEmployeeId.set(EMPLOYEE_ID);
+
+      facade.openMarkCashCollectedDialog();
+
+      expect(dialogService.open).not.toHaveBeenCalled();
+      expect(snackbar.showErrorTranslated).toHaveBeenCalledWith(
+        'api.order.cash_not_allowed_on_card_order'
+      );
+    });
+
+    it('offers collection on an order booked as cash whatever the crew', () => {
+      const facade = createFacade();
+      facade.orderDetails.set(
+        buildOrder({ paymentTypeValue: PaymentType.Cash, requiredEmployees: 3 })
+      );
+      facade.currentEmployeeId.set(EMPLOYEE_ID);
+      dialogService.open.mockReturnValue({ onClose: EMPTY });
+
+      facade.openMarkCashCollectedDialog();
+
+      expect(dialogService.open).toHaveBeenCalledTimes(1);
+    });
+
+    it('refuses an order partly paid from credit before asking for the full total', () => {
+      const facade = createFacade();
+      facade.orderDetails.set(
+        buildOrder({ paymentTypeValue: PaymentType.Card, requiredEmployees: 1, creditAppliedAmount: 150 })
+      );
+      facade.currentEmployeeId.set(EMPLOYEE_ID);
+
+      facade.openMarkCashCollectedDialog();
+
+      expect(dialogService.open).not.toHaveBeenCalled();
+      expect(snackbar.showErrorTranslated).toHaveBeenCalledWith(
+        'api.credit.cash_not_collectable_on_credit_order'
+      );
     });
 
     it('refuses an order that is already paid', () => {
@@ -467,6 +557,24 @@ describe('OrderDetailsFacade', () => {
         'pages.order_details.mark_cash_collected_gating_error'
       );
     });
+
+    it.each([PaymentStatus.Refunded, PaymentStatus.PartiallyRefunded, PaymentStatus.Disputed])(
+      'refuses a refunded or disputed order, status %s',
+      (status) => {
+        const facade = createFacade();
+        facade.orderDetails.set(
+          buildOrder({ paymentTypeValue: PaymentType.Card, requiredEmployees: 1, paymentStatusValue: status })
+        );
+        facade.currentEmployeeId.set(EMPLOYEE_ID);
+
+        facade.openMarkCashCollectedDialog();
+
+        expect(dialogService.open).not.toHaveBeenCalled();
+        expect(snackbar.showErrorTranslated).toHaveBeenCalledWith(
+          'pages.order_details.mark_cash_collected_gating_error'
+        );
+      }
+    );
 
     it('refuses an order that is not InProgress', () => {
       const facade = createFacade();

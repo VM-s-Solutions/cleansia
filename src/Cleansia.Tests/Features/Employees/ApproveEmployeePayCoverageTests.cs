@@ -150,7 +150,9 @@ public class ApproveEmployeePayCoverageTests
         return new(
             _employees.Object, _countries.Object, _services.Object, _packages.Object,
             _payConfigs.Object, _documentRequirements.Object, _currencyResolution.Object,
-            Mock.Of<IOperatorTenantResolver>(), Mock.Of<ITenantProvider>());
+            Mock.Of<IOperatorTenantResolver>(), Mock.Of<ITenantProvider>(),
+            Mock.Of<ILegalDocumentResolver>(),
+            Mock.Of<IUserConsentRepository>());
     }
 
     private ApproveEmployee.Handler CreateHandler()

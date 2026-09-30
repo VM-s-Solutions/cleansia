@@ -25,23 +25,35 @@ the money axis, in **two evaluation forms that a test proves equal**.
 > the money **progress**, not only the money **model**.
 
 ```
-Offerable(o) ⟺ ( o.CurrentStatus == Confirmed
-               ∨ (o.CurrentStatus == New ∧ o.PaymentType == Cash) )
+Offerable(o) ⟺ o.CurrentStatus ∈ { New, Confirmed, OnTheWay, InProgress }
              ∧ NotRetractable(o)
 
 NotRetractable(o) ⟺ o.PaymentStatus == Paid
-                  ∨ (o.PaymentType == Cash ∧ o.RecurringTemplateId == null)
+                  ∨ (o.PaymentType == Cash
+                     ∧ (o.RecurringTemplateId == null ∨ o.CustomerConfirmedAt ≠ null))
 ```
+
+> **Status term amended twice since the panel.** The owner ruling of 2026-09-06 admitted `OnTheWay`
+> and `InProgress` (the work is not *over*, not "has not started"), and
+> [ADR-0057](/decisions/adr-0057) (2026-09-08) dropped the `New ∧ Cash` qualifier — a paid card
+> order now rests at `New`, and the money term already carried the payment qualification.
+>
+> **Money term amended 2026-09-28** (owner ruling: a recurring cash occurrence shows *paid* only when the
+> cleaner records the cash). The customer's confirm no longer writes `Paid`; it stamps
+> `Order.CustomerConfirmedAt`, and a confirmed recurring cash occurrence is admitted on that marker while
+> it stays `Pending`. `AutoCancelStaleRecurringOrders` and `SendRecurringOrderReminders` gained the matching
+> term — they select a cash occurrence only while it is unconfirmed — so the negation still holds.
 
 | Member | Job |
 |---|---|
-| `OfferableStatuses` = `[New, Confirmed]` | the **coarse** fulfilment floor — the index-served prefilter on `Orders.CurrentStatus`, and the thing the clients mirror. **Not the rule** — `New` is conditional. |
+| `OfferableStatuses` = `[New, Confirmed, OnTheWay, InProgress]` | the **coarse** fulfilment floor — exactly the status term, the index-served prefilter on `Orders.CurrentStatus`, and the thing the clients mirror. **Not the rule** — it has no money term. |
 | `IsOfferableSql` : `Expression<Func<Order,bool>>` | queryable form, composed into `OrderSpecification` |
-| `IsOfferable(OrderStatus?, PaymentType, PaymentStatus, string? recurringTemplateId)` | in-memory form, for the `TakeOrder` write gate. **Four scalars, all columns on `Order`** — no navigation properties, no I/O, no collaborator. |
+| `IsOfferable(OrderStatus?, PaymentType, PaymentStatus, string? recurringTemplateId, DateTime? customerConfirmedAt)` | in-memory form, for the `TakeOrder` write gate. **Five scalars, all columns on `Order`** — no navigation properties, no I/O, no collaborator. `IsOfferable(Order)` is the overload for callers that hold the entity; the take's probe projects the five columns. |
 
 **`NotRetractable` is the union of the negations of the two sweeps that actually run**, read off their
-own `WHERE` clauses — `CleanupStalePendingOrders.cs:50-53` (**no `OrderStatus` term**) and
-`AutoCancelStaleRecurringOrders.cs:63-69` (**no `PaymentType` term**). If a third scheduled retractor
+own `WHERE` clauses — `CleanupStalePendingOrders` (**no `OrderStatus` term**) and
+`AutoCancelStaleRecurringOrders` (a `PaymentType` term only for the cash confirmation: cash is
+retractable while `CustomerConfirmedAt` is null). If a third scheduled retractor
 is ever added, **this term is where it must be reflected** — a sweep whose predicate is not negated
 here silently re-creates the defect the panel caught.
 
@@ -76,8 +88,9 @@ an exhaustiveness test over `Enum.GetValues<PaymentType>()` goes red until it is
   about *liveness*, not capacity; they are separate conjuncts and the take gate evaluates availability
   **first** so a cancelled order with a free seat reports the honest reason.
 - **Whether an order occupies a cleaner's calendar.** That is `SlotBlockingStatuses`
-  (`OrderRepository.cs:263-270`) and it is a **different set for a different question** — it correctly
-  includes `OnTheWay`/`InProgress`, which are never offerable. Do not unify them.
+  (`OrderRepository.cs`) and it is a **different set for a different question** — it has no money term
+  and still tolerates legacy `Pending` rows. That it now shares `OnTheWay`/`InProgress` with the floor
+  is a consequence of the 2026-09-06 ruling, not a shared definition. Do not unify them.
 - **Which statuses a cleaner's *own* list shows.** My-Active and My-Completed are the my-orders
   question. A cleaner must always see their own terminal orders; availability must never floor them.
 - **How to write a status.** It reads `CurrentStatus`; it never appends a track. `TakeOrder.cs:192-194`

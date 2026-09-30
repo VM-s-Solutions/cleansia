@@ -25,6 +25,10 @@ public class ServiceEntityConfiguration : AuditableEntityConfiguration<Service, 
             .IsRequired()
             .HasMaxLength(500);
 
+        builder.Property(s => s.MinutesPerRoom)
+            .IsRequired()
+            .HasDefaultValue(0);
+
 
 
         builder.Property(s => s.CategoryId)

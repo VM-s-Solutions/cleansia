@@ -42,6 +42,15 @@ param stagingSlotEnabled bool = false
 @description('Subnet id for regional VNet integration (the Q-INFRA-03 private-networking seam). Empty (default) = no VNet integration — the dev public-endpoint posture unchanged.')
 param virtualNetworkSubnetId string = ''
 
+@description('''Name of a Static Web App (same resource group, Standard tier) to link this host to as its backend.
+Empty (default) = no link. When set, the SWA proxies its /api/* to this host and Azure configures the
+host's authentication with the "Azure Static Web Apps (Linked)" provider, so the production slot
+answers 401 to anything the SWA did not proxy. The link guards the production slot only, and App
+Service authentication settings stay with their slot across a swap, so the staging slot is closed
+too: it answers 401 to everything except /health, which CI warms before every swap. Unlinking does
+not remove the provider — see deploy/AZURE-DEV-RUNBOOK.md §11.''')
+param linkedStaticWebAppName string = ''
+
 @description('Resource tags applied to the host.')
 param tags object = {}
 
@@ -118,6 +127,70 @@ resource stagingSlot 'Microsoft.Web/sites/slots@2023-12-01' = if (stagingSlotEna
         allowedOrigins: corsAllowedOrigins
         supportCredentials: !empty(corsAllowedOrigins)
       }
+    }
+  }
+}
+
+// CI deploys through its OIDC identity (ARM and Entra-authenticated Kudu), so the basic-auth FTP and
+// SCM publishing credentials every site carries by default are only a password nobody uses.
+resource ftpBasicAuth 'Microsoft.Web/sites/basicPublishingCredentialsPolicies@2023-12-01' = {
+  parent: appService
+  name: 'ftp'
+  properties: {
+    allow: false
+  }
+}
+
+resource scmBasicAuth 'Microsoft.Web/sites/basicPublishingCredentialsPolicies@2023-12-01' = {
+  parent: appService
+  name: 'scm'
+  properties: {
+    allow: false
+  }
+}
+
+resource stagingSlotFtpBasicAuth 'Microsoft.Web/sites/slots/basicPublishingCredentialsPolicies@2023-12-01' = if (stagingSlotEnabled) {
+  parent: stagingSlot
+  name: 'ftp'
+  properties: {
+    allow: false
+  }
+}
+
+resource stagingSlotScmBasicAuth 'Microsoft.Web/sites/slots/basicPublishingCredentialsPolicies@2023-12-01' = if (stagingSlotEnabled) {
+  parent: stagingSlot
+  name: 'scm'
+  properties: {
+    allow: false
+  }
+}
+
+resource linkedStaticWebApp 'Microsoft.Web/staticSites@2023-12-01' existing = if (!empty(linkedStaticWebAppName)) {
+  name: linkedStaticWebAppName
+}
+
+resource staticWebAppBackendLink 'Microsoft.Web/staticSites/linkedBackends@2023-12-01' = if (!empty(linkedStaticWebAppName)) {
+  parent: linkedStaticWebApp
+  name: 'backend'
+  properties: {
+    backendResourceId: appService.id
+    region: location
+  }
+}
+
+resource stagingSlotAuth 'Microsoft.Web/sites/slots/config@2023-12-01' = if (stagingSlotEnabled && !empty(linkedStaticWebAppName)) {
+  parent: stagingSlot
+  name: 'authsettingsV2'
+  properties: {
+    platform: {
+      enabled: true
+    }
+    globalValidation: {
+      requireAuthentication: true
+      unauthenticatedClientAction: 'Return401'
+      excludedPaths: [
+        '/health'
+      ]
     }
   }
 }

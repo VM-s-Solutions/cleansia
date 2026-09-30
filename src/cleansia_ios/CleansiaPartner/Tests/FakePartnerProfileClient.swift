@@ -1,5 +1,6 @@
 import CleansiaCore
 import CleansiaPartnerApi
+import Foundation
 @testable import CleansiaPartner
 
 @MainActor
@@ -132,5 +133,55 @@ final class FakePartnerProfileClient: PartnerProfileClient {
     ) async -> ApiResult<GetCountryFieldLabelsCountryFieldLabelsDto?> {
         fieldLabelsRequestedFor.append(countryId)
         return fieldLabelsResult
+    }
+
+    var legalDocumentsResult: ApiResult<[CleanerLegalDocument]> = .success([])
+    var acceptLegalDocumentResult: ApiResult<Void> = .success(())
+    /// Fired before the acceptance returns, so a test can move the server's rows on before the re-read.
+    var onAcceptLegalDocument: ((String) -> Void)?
+    /// When set, the acceptance suspends until `resumeAccept()`, so a test can try a second one mid-flight.
+    var suspendAccept = false
+    private var acceptGate: CheckedContinuation<Void, Never>?
+    private(set) var legalDocumentLanguages: [String] = []
+    private(set) var acceptedLegalDocumentTextIds: [String] = []
+
+    func getLegalDocuments(language: String) async -> ApiResult<[CleanerLegalDocument]> {
+        legalDocumentLanguages.append(language)
+        return legalDocumentsResult
+    }
+
+    func acceptLegalDocument(legalDocumentTextId: String) async -> ApiResult<Void> {
+        acceptedLegalDocumentTextIds.append(legalDocumentTextId)
+        onAcceptLegalDocument?(legalDocumentTextId)
+        if suspendAccept {
+            await withCheckedContinuation { acceptGate = $0 }
+        }
+        return acceptLegalDocumentResult
+    }
+
+    func resumeAccept() {
+        acceptGate?.resume()
+        acceptGate = nil
+    }
+}
+
+extension CleanerLegalDocument {
+    static func sample(
+        type: LegalDocumentType,
+        textId: String = "text-1",
+        version: String = "2026-12-01",
+        isAccepted: Bool = false,
+        acceptedVersion: String? = nil
+    ) -> CleanerLegalDocument {
+        CleanerLegalDocument(
+            type: type,
+            legalDocumentTextId: textId,
+            version: version,
+            title: "Framework contract",
+            contentHtml: "<p>The contract.</p>",
+            isAccepted: isAccepted,
+            acceptedVersion: acceptedVersion,
+            acceptedAt: isAccepted ? Date(timeIntervalSince1970: 1_791_000_000) : nil
+        )
     }
 }

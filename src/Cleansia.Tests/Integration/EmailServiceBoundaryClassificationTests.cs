@@ -69,7 +69,9 @@ public class EmailServiceBoundaryClassificationTests
             NullLogger<EmailService>.Instance,
             httpClientFactory.Object,
             translations.Object,
-            new EmailTemplateRenderer());
+            new EmailTemplateRenderer(),
+            Mock.Of<ICountryConfigurationRepository>(),
+            Mock.Of<ICompanyInfoRepository>());
     }
 
     private sealed class AttemptCountingHandler(HttpStatusCode status) : HttpMessageHandler

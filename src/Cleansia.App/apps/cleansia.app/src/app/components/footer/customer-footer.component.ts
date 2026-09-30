@@ -9,7 +9,6 @@ import { TranslatePipe } from '@ngx-translate/core';
 // Entry-point imports — see the note in app.ts. → T-0682
 import { CleansiaLanguageSwitcherComponent } from '@cleansia/components/cleansia-language-switcher';
 import { CleansiaMarketSwitcherComponent } from '@cleansia/components/cleansia-market-switcher';
-import { CookieConsentService } from '@cleansia/components/cleansia-cookie-consent';
 
 @Component({
   selector: 'cleansia-customer-footer',
@@ -26,7 +25,6 @@ import { CookieConsentService } from '@cleansia/components/cleansia-cookie-conse
 export class CleansiaCustomerFooterComponent {
   private readonly authService = inject(CustomerAuthService);
   private readonly themeService = inject(ThemeService);
-  private readonly cookieConsent = inject(CookieConsentService);
   private readonly store = inject(Store);
 
   // The same market control the header carries, so the two cannot disagree.
@@ -69,11 +67,6 @@ export class CleansiaCustomerFooterComponent {
    * and the management screen for a member, matching the nav bar's Plus link.
    */
   readonly plusLink = computed(() => (this.isAnonymous() ? '/plus' : '/membership'));
-
-  /** Reopens the cookie banner on its settings panel. */
-  openCookieSettings(): void {
-    this.cookieConsent.openSettings();
-  }
 
   toggleTheme(): void {
     this.themeService.toggleTheme();

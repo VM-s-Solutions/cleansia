@@ -140,6 +140,7 @@ public class GenerateReceiptHandlerLanguageTests
                 _unitOfWork.Object,
                 Mock.Of<ITenantProvider>(),
                 new ArchivedCompanyDeadLetter(Mock.Of<IServiceScopeFactory>(), NullLogger<ArchivedCompanyDeadLetter>.Instance),
+                Mock.Of<IReceivableRepository>(),
                 NullLogger<GenerateReceiptHandler>.Instance)
             .HandleAsync(
                 JsonSerializer.Serialize(

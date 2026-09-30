@@ -8,7 +8,7 @@ import org.junit.Test
 import java.io.File
 
 /**
- * The legal sentences — the two consent ticks and the booking wizard's contract-for-work line —
+ * The legal sentences — the two consent ticks and the booking wizard's contract line —
  * are the only strings in either app whose *markup* is load-bearing, and every way of breaking
  * that markup is silent:
  *
@@ -32,7 +32,7 @@ class ConsentCatalogTest {
         val CONSENT_KEYS = listOf(
             LegalSentence("customer-app", "register_terms_and_conditions", listOf(ConsentLink.TERMS, ConsentLink.PRIVACY)),
             LegalSentence("partner-app", "accept_terms", listOf(ConsentLink.TERMS, ConsentLink.PRIVACY)),
-            LegalSentence("customer-app", "booking_work_contract_notice", listOf(ConsentLink.WORK_CONTRACT)),
+            LegalSentence("customer-app", "booking_contract_notice", listOf(ConsentLink.TERMS)),
         )
 
         // The default `values` directory is the `en` source of truth.

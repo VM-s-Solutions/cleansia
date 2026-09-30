@@ -147,7 +147,9 @@ public class RegenerateInvoicePdf
                 var payoutDetails = await employeePayoutDetailsRepository
                     .GetByEmployeeIdAsync(invoice.EmployeeId, cancellationToken);
 
-                var pdfData = invoice.CreatePdfData(employee, currency, orderPays, countryContext, companyInfo, payoutDetails, dateFormat);
+                var pdfData = invoice.CreatePdfData(
+                    employee, currency, orderPays, countryContext, companyInfo, payoutDetails, dateFormat,
+                    employee.User?.PreferredLanguageCode);
 
                 // The document's language is the JURISDICTION's, not the caller's and not the reader's:
                 // it is a tax document, and its legal-notice box is reviewed per country, so a notice

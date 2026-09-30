@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Authentication;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
@@ -246,5 +247,6 @@ public class OrderCleanerAssignedNotificationTests
             _orderRepository.Object,
             _employeeRepository.Object,
             _session.Object,
-            _notificationProducer.Object);
+            _notificationProducer.Object,
+            Mock.Of<IAuditContext>());
 }

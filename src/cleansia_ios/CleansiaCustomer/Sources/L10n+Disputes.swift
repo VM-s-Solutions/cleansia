@@ -201,5 +201,27 @@ extension L10n {
         static func createItemInPackage(_ package: String) -> String {
             format("dispute_create_item_in_package", package)
         }
+
+        static var createSettlementTitle: String {
+            localized("dispute_create_settlement_title")
+        }
+
+        static var createSettlementHint: String {
+            localized("dispute_create_settlement_hint")
+        }
+
+        static func settlementTitle(_ settlement: DisputeSettlement) -> String {
+            switch settlement {
+            case .cardRefund: localized("dispute_settlement_card_refund")
+            case .credit: localized("dispute_settlement_credit")
+            }
+        }
+
+        static func settlementDescription(_ settlement: DisputeSettlement) -> String {
+            switch settlement {
+            case .cardRefund: localized("dispute_settlement_card_refund_desc")
+            case .credit: localized("dispute_settlement_credit_desc")
+            }
+        }
     }
 }

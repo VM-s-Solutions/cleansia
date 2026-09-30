@@ -17,7 +17,8 @@ namespace Cleansia.Tests.Features.Orders;
 
 /// <summary>
 /// ADR-0068 D1 (Verification #2) — the one production writer of an order stamps it with the
-/// contract-for-work document in force for the ORDER's market at booking, and refuses to book when
+/// contract-for-work document in force for the ORDER's market at booking — the cleaner's text, since the
+/// contract binds the operating company and the cleaner — and refuses to book when
 /// nothing is in force: an order no contract can form on must not exist, and the recurring
 /// materializer reaches this factory without <c>CreateOrder</c>'s validator.
 /// </summary>
@@ -100,14 +101,14 @@ public sealed class OrderFactoryWorkContractStampTests
         var address = AddressMockFactory.Generate();
         var document = WorkContractTestData.Document();
         _legalDocumentResolver
-            .Setup(r => r.ResolveInForceAsync(LegalDocumentType.WorkContract, address.CountryId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.ResolveInForceAsync(LegalDocumentAudience.Employee, LegalDocumentType.WorkContract, address.CountryId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(document);
 
         var order = await CreateOrderAsync(address);
 
         Assert.Equal(WorkContractTestData.DocumentId, order.WorkContractDocumentId);
         _legalDocumentResolver.Verify(
-            r => r.ResolveInForceAsync(LegalDocumentType.WorkContract, address.CountryId, It.IsAny<CancellationToken>()),
+            r => r.ResolveInForceAsync(LegalDocumentAudience.Employee, LegalDocumentType.WorkContract, address.CountryId, It.IsAny<CancellationToken>()),
             Times.Once);
         _orderRepository.Verify(r => r.Add(order), Times.Once);
     }
@@ -117,7 +118,7 @@ public sealed class OrderFactoryWorkContractStampTests
     {
         var address = AddressMockFactory.Generate();
         _legalDocumentResolver
-            .Setup(r => r.ResolveInForceAsync(LegalDocumentType.WorkContract, It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.ResolveInForceAsync(LegalDocumentAudience.Employee, LegalDocumentType.WorkContract, It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((LegalDocument?)null);
 
         var thrown = await Assert.ThrowsAsync<InvalidOperationException>(() => CreateOrderAsync(address));
@@ -132,12 +133,12 @@ public sealed class OrderFactoryWorkContractStampTests
     {
         var address = AddressMockFactory.Generate();
         _legalDocumentResolver
-            .Setup(r => r.ResolveInForceAsync(LegalDocumentType.WorkContract, It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.ResolveInForceAsync(LegalDocumentAudience.Employee, LegalDocumentType.WorkContract, It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((LegalDocument?)null);
         await Assert.ThrowsAsync<InvalidOperationException>(() => CreateOrderAsync(address));
 
         _legalDocumentResolver
-            .Setup(r => r.ResolveInForceAsync(LegalDocumentType.WorkContract, It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.ResolveInForceAsync(LegalDocumentAudience.Employee, LegalDocumentType.WorkContract, It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(WorkContractTestData.Document());
 
         Assert.Equal(WorkContractTestData.DocumentId, (await CreateOrderAsync(address)).WorkContractDocumentId);

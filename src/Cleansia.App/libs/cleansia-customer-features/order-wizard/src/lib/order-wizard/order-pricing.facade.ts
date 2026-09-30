@@ -4,9 +4,11 @@ import { toObservable } from '@angular/core/rxjs-interop';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
   CustomerClient,
+  DirtinessLevel,
   QuoteOrderCommand,
   QuoteOrderResponse,
 } from '@cleansia/customer-services';
+import { extractApiErrorCode } from '@cleansia/services';
 import {
   catchError,
   distinctUntilChanged,
@@ -28,6 +30,7 @@ import {
   composeFinalPriceForUnquotedDiscount,
   composeSlotMoment,
   OrderWizardFormData,
+  OUTSIDE_BOOKING_WINDOW,
 } from './order-wizard.models';
 
 const QUOTE_DEBOUNCE_MS = 200;
@@ -42,6 +45,8 @@ interface QuoteInputs {
   selectedExtraSlugs: string[];
   rooms: number;
   bathrooms: number;
+  /** Normal until the customer picks a level — what the server prices a quote that names none at. */
+  dirtinessLevel: DirtinessLevel;
   /**
    * The service address's country, or the chosen market's before an address names one
    * (ADR-0058 D4). The server prices the booking in that country's currency, so the wizard names
@@ -92,6 +97,7 @@ export class OrderPricingFacade extends UnsubscribeControlDirective {
   readonly quoting = signal(false);
   /** Snapshot of inputs that produced the current `quote()`, for cache reuse. */
   private readonly lastQuotedInputs = signal<QuoteInputs | null>(null);
+  private readonly windowRefusedInputs = signal<QuoteInputs | null>(null);
   private readonly cancelQuote$ = new Subject<void>();
   private pendingQuote: {
     inputs: QuoteInputs;
@@ -126,6 +132,12 @@ export class OrderPricingFacade extends UnsubscribeControlDirective {
   readonly expressSurchargeWaived = computed(
     () => this.quote()?.expressSurchargeWaivedByMembership ?? false,
   );
+
+  /**
+   * The dirtiness level's surcharge on the undiscounted basket, as the server stored it. Discounts
+   * come off after it and express goes on top, so it is a line of its own beside the basket's rows.
+   */
+  readonly dirtinessSurcharge = computed(() => this.quote()?.dirtinessSurchargeAmount ?? 0);
 
   readonly tierDiscount = computed(() => this.quote()?.tierDiscountAmount ?? 0);
   readonly membershipDiscount = computed(() => this.quote()?.membershipDiscountAmount ?? 0);
@@ -219,9 +231,21 @@ export class OrderPricingFacade extends UnsubscribeControlDirective {
       selectedExtraSlugs,
       rooms: data.rooms,
       bathrooms: data.bathrooms,
+      dirtinessLevel: data.dirtinessLevel ?? DirtinessLevel.Normal,
       countryId: data.address.countryId || this.deps?.marketCountryId() || null,
       cleaningDate: cleaningDateIso,
     };
+  });
+
+  /** The server refused the chosen start, read in the quoted market, as outside its booking window. */
+  readonly slotOutsideWindow = computed(() => {
+    const refused = this.windowRefusedInputs();
+    const current = this.quoteInputs();
+    return (
+      !!refused &&
+      refused.cleaningDate === current.cleaningDate &&
+      refused.countryId === current.countryId
+    );
   });
 
   private isEmptyInputs(i: QuoteInputs): boolean {
@@ -240,6 +264,7 @@ export class OrderPricingFacade extends UnsubscribeControlDirective {
     command.selectedPackageIds = inputs.selectedPackageIds;
     command.rooms = inputs.rooms;
     command.bathrooms = inputs.bathrooms;
+    command.dirtinessLevel = inputs.dirtinessLevel;
     command.countryId = inputs.countryId ?? undefined;
     command.selectedExtraSlugs = inputs.selectedExtraSlugs;
     command.cleaningDate = inputs.cleaningDate
@@ -302,12 +327,18 @@ export class OrderPricingFacade extends UnsubscribeControlDirective {
     const response$ = this.customerClient.orderClient.quote(this.toQuoteCommand(inputs)).pipe(
       takeUntil(this.cancelQuote$),
       takeUntil(this.destroyed$),
-      catchError(() => of(null)),
+      catchError((error: unknown) => {
+        if (extractApiErrorCode(error) === OUTSIDE_BOOKING_WINDOW) {
+          this.windowRefusedInputs.set(inputs);
+        }
+        return of(null);
+      }),
       map((resp) => this.quoteInputsEqual(inputs, this.quoteInputs()) ? resp : null),
       tap((resp) => {
         if (resp) {
           this.quote.set(resp);
           this.lastQuotedInputs.set(inputs);
+          this.windowRefusedInputs.set(null);
         }
       }),
       finalize(() => {

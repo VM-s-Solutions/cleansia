@@ -2,6 +2,7 @@ using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
@@ -32,8 +33,40 @@ public class DownloadOrderReceipt
                 .WithMessage(BusinessErrorMessage.Required)
                 .MustAsync(orderAccessService.OrderExistsForCallerAsync)
                 .WithMessage(BusinessErrorMessage.OrderNotFound)
+                .MustAsync(StillOpenToTheCallerAsync)
+                .WithMessage(BusinessErrorMessage.OrderNotFound)
                 .MustAsync(OrderHasReceiptAsync)
                 .WithMessage(BusinessErrorMessage.ReceiptNotFound);
+        }
+
+        // The receipt names the customer and their address, so it closes to the crew with the rest.
+        private async Task<bool> StillOpenToTheCallerAsync(string orderId, CancellationToken cancellationToken)
+        {
+            if (_orderAccessService.IsCustomerCaller())
+            {
+                return true;
+            }
+
+            var employeeId = await _orderAccessService.GetCallerEmployeeIdAsync(cancellationToken);
+            if (employeeId is null)
+            {
+                return true;
+            }
+
+            var order = await _orderAccessService
+                .OrdersForCaller()
+                .Where(o => o.Id == orderId)
+                .Select(o => new
+                {
+                    o.CurrentStatus,
+                    o.CompletedAt,
+                    OnTheCrew = o.AssignedEmployees.Any(ae => ae.EmployeeId == employeeId),
+                })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            return order is null
+                || !order.OnTheCrew
+                || Order.CustomerDetailsOpenToCrew(order.CurrentStatus, order.CompletedAt, DateTime.UtcNow);
         }
 
         // The receipt is reached through the order the caller may read, never on its own: it carries
@@ -42,7 +75,7 @@ public class DownloadOrderReceipt
         {
             return _orderAccessService
                 .OrdersForCaller()
-                .AnyAsync(o => o.Id == orderId && o.Receipt != null, cancellationToken);
+                .AnyAsync(o => o.Id == orderId && o.Receipts.Any(r => r.ReceivableId == null && r.BlobDeletedAt == null), cancellationToken);
         }
     }
 
@@ -54,7 +87,7 @@ public class DownloadOrderReceipt
         {
             var order = await orderAccessService
                 .OrdersForCaller()
-                .Include(o => o.Receipt)
+                .Include(o => o.Receipts)
                 .Include(o => o.AssignedEmployees)
                 .FirstOrDefaultAsync(o => o.Id == query.OrderId, cancellationToken);
 

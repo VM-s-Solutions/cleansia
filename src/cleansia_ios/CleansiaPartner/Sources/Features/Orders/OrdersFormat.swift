@@ -76,6 +76,11 @@ enum OrdersFormat {
         L10n.Orders.extras(count)
     }
 
+    /// The board card flags only a dirtier-than-normal home; the detail names every level.
+    static func dirtinessChip(_ level: DirtinessLevel?) -> String? {
+        level == ._0 ? nil : L10n.Orders.dirtinessLevel(level)
+    }
+
     /// The same " · " join the list card uses for rooms and baths: the seat facts are the same
     /// class of fact, and a second visual language for them is how the two surfaces come to
     /// disagree.
@@ -95,7 +100,7 @@ enum OrdersFormat {
     }
 
     static func compactSubtitle(_ order: OrderListItem) -> String {
-        nonBlank(order.customerAddress) ?? nonBlank(order.customerName) ?? L10n.Orders.guest
+        nonBlank(order.customerAddress) ?? nonBlank(order.customerName) ?? "#\(order.displayOrderNumber ?? "")"
     }
 
     static func bannerTitle(_ order: OrderListItem) -> String {

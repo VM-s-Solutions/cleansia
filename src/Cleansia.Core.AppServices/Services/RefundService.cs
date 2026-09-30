@@ -9,6 +9,7 @@ using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Polly;
 using StripeException = Stripe.StripeException;
 
 namespace Cleansia.Core.AppServices.Services;
@@ -53,7 +54,7 @@ public sealed class RefundService(
         var existing = await refundRepository.GetByRefundKeyAsync(refundKey, cancellationToken);
         if (existing is { Status: RefundStatus.Succeeded })
         {
-            return ResolveToExisting(existing);
+            return await ResolveToExistingAsync(existing, cancellationToken);
         }
 
         if (!order.HasRefundableChargeSurface)
@@ -129,7 +130,7 @@ public sealed class RefundService(
                     logger.LogInformation(
                         "Refund collapsed on RefundKey unique-violation for order {OrderId} — resolved to existing succeeded refund {RefundId}, no second Stripe refund issued.",
                         order.Id, winner.Id);
-                    return ResolveToExisting(winner);
+                    return await ResolveToExistingAsync(winner, cancellationToken);
                 }
 
                 // The winner is Pending/Failed — re-drive its Stripe call (same key → Stripe replays once).
@@ -137,6 +138,77 @@ public sealed class RefundService(
             }
         }
 
+        return await SettleAsync(order, refund, split.Credit, request.ActorId, cancellationToken);
+    }
+
+    public async Task<BusinessResult<RefundResult>> RedriveAsync(
+        string refundId, string actorId, CancellationToken cancellationToken)
+    {
+        var refund = await refundRepository.GetByIdAsync(refundId, cancellationToken);
+        if (refund is null)
+        {
+            return BusinessResult.Failure<RefundResult>(new Error(
+                nameof(refundId), BusinessErrorMessage.RefundFailed));
+        }
+
+        if (refund.Status == RefundStatus.Succeeded)
+        {
+            return await ResolveToExistingAsync(refund, cancellationToken);
+        }
+
+        var order = await orderRepository.GetByIdAsync(refund.OrderId, cancellationToken);
+        if (order is null)
+        {
+            return BusinessResult.Failure<RefundResult>(new Error(
+                nameof(refund.OrderId), BusinessErrorMessage.OrderNotFound));
+        }
+
+        if (!order.HasRefundableChargeSurface)
+        {
+            refund.MarkFailed();
+            return BusinessResult.Failure<RefundResult>(new Error(
+                nameof(refund.OrderId), BusinessErrorMessage.RefundOrderNotRefundable));
+        }
+
+        var consumed = await refundRepository.GetSucceededRefundTotalForOrderAsync(order.Id, cancellationToken);
+        var refundable = CardRefundCeiling(order, consumed);
+        if (refundable <= 0m)
+        {
+            refund.MarkFailed();
+            return BusinessResult.Failure<RefundResult>(new Error(
+                nameof(refund.Amount), BusinessErrorMessage.RefundNothingRefundable));
+        }
+
+        refund.ClampAmountTo(refundable);
+
+        // The row keeps only the card leg, so the slice of the sale it refunds is read back through the
+        // same proportion SplitAcrossTenders applied; a credit leg the first attempt already returned on
+        // this key is not returned again.
+        var cardCharged = CardChargedAmount(order);
+        var slice = cardCharged > 0m
+            ? Math.Round(refund.Amount * order.TotalPrice / cardCharged, 2, MidpointRounding.AwayFromZero)
+            : refund.Amount;
+        var creditAlreadyReturned = await creditAccountRepository.GetReturnedTotalForOrderAsync(
+            order.Id, cancellationToken);
+        var split = SplitAcrossTenders(order, slice, creditAlreadyReturned);
+
+        return await SettleAsync(order, refund, split.Credit, actorId, cancellationToken);
+    }
+
+    /// <summary>
+    /// A fault on the way to Stripe rather than an answer from it: a timeout, a dropped connection, an
+    /// open circuit. <see cref="IssueRefundAsync"/> lets these escape after its claim commit, so the row
+    /// stays pending; a caller that must not fail with it catches exactly these. A cancellation the
+    /// caller asked for is a genuine abort, never a fault.
+    /// </summary>
+    public static bool IsStripeTransportFailure(Exception ex, CancellationToken cancellationToken) =>
+        ex is HttpRequestException or TimeoutException or ExecutionRejectedException
+        || (ex is OperationCanceledException && !cancellationToken.IsCancellationRequested);
+
+    private async Task<BusinessResult<RefundResult>> SettleAsync(
+        Order order, Refund refund, decimal creditShare, string actorId, CancellationToken cancellationToken)
+    {
+        var refundKey = refund.RefundKey;
         var stripe = stripeClientFactory.CreateClient();
         try
         {
@@ -162,7 +234,7 @@ public sealed class RefundService(
                 "Stripe refund failed for order {OrderId} on key {RefundKey}; refund left pending for retry.",
                 order.Id, refundKey);
             return BusinessResult.Failure<RefundResult>(new Error(
-                nameof(request.Amount), BusinessErrorMessage.RefundFailed));
+                nameof(refund.Amount), BusinessErrorMessage.RefundFailed));
         }
 
         var succeededConsumed = await refundRepository.GetSucceededRefundTotalForOrderAsync(
@@ -170,7 +242,7 @@ public sealed class RefundService(
         refund.MarkSucceeded(stripeRefundId: null, confirmedOnUtc: DateTimeOffset.UtcNow);
 
         // The credit leg is independently idempotent; an erased account receives only its card refund.
-        await ReturnCreditShareAsync(order, split.Credit, refundKey, request.ActorId, cancellationToken);
+        await ReturnCreditShareAsync(order, creditShare, refundKey, actorId, cancellationToken);
 
         // FULLY REFUNDED IS A TEST ON THE CARD LEG AGAINST THE CARD TOTAL, not against TotalPrice.
         // GetSucceededRefundTotalForOrderAsync sums the Refunds table, which holds card refunds only —
@@ -186,23 +258,25 @@ public sealed class RefundService(
 
         logger.LogInformation(
             "Refund {RefundId} issued for order {OrderId}: {Amount} {Currency} ({Reason}).",
-            refund.Id, order.Id, refund.Amount, order.Currency?.Code, request.Reason);
+            refund.Id, order.Id, refund.Amount, order.Currency?.Code, refund.Reason);
 
         return BusinessResult.Success(new RefundResult(
             RefundId: refund.Id,
             RefundKey: refundKey,
             Amount: refund.Amount,
             Status: RefundStatus.Succeeded,
-            ResolvedToExisting: false));
+            ResolvedToExisting: false,
+            CreditReturned: await creditAccountRepository.GetReturnedForRefundAsync(refundKey, cancellationToken)));
     }
 
-    private static BusinessResult<RefundResult> ResolveToExisting(Refund existing) =>
+    private async Task<BusinessResult<RefundResult>> ResolveToExistingAsync(Refund existing, CancellationToken cancellationToken) =>
         BusinessResult.Success(new RefundResult(
             RefundId: existing.Id,
             RefundKey: existing.RefundKey,
             Amount: existing.Amount,
             Status: existing.Status,
-            ResolvedToExisting: true));
+            ResolvedToExisting: true,
+            CreditReturned: await creditAccountRepository.GetReturnedForRefundAsync(existing.RefundKey, cancellationToken)));
 
     /// <summary>
     /// The most that can still go back to the CARD.

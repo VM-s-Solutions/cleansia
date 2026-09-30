@@ -1,3 +1,4 @@
+using Cleansia.Config.Abstractions;
 using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Tenancy;
@@ -51,7 +52,7 @@ public sealed class SeededDatabaseHasNoOrphanTenantRowsTests : IAsyncLifetime
 
         await using var seedConnection = await _dataSource.OpenConnectionAsync();
         await using var seedCommand = seedConnection.CreateCommand();
-        seedCommand.CommandText = ReadCanonicalSeedScript();
+        seedCommand.CommandText = ReadLocalDevelopmentSeed();
         seedCommand.CommandTimeout = 120;
         await seedCommand.ExecuteNonQueryAsync();
     }
@@ -74,7 +75,8 @@ public sealed class SeededDatabaseHasNoOrphanTenantRowsTests : IAsyncLifetime
             new TestUserSessionProvider("system", "system@cleansia.test"),
             new FixedTenantProvider(TestTenants.Default));
 
-    private static string ReadCanonicalSeedScript()
+    // What a local Development boot runs: the shared fixture, then the local administrator.
+    private static string ReadLocalDevelopmentSeed()
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
         while (dir is not null && dir.GetFiles("*.sln").Length == 0)
@@ -83,8 +85,8 @@ public sealed class SeededDatabaseHasNoOrphanTenantRowsTests : IAsyncLifetime
         }
 
         Assert.True(dir is not null, "Could not locate the solution directory from the test base directory.");
-        return File.ReadAllText(
-            Path.GetFullPath(Path.Combine(dir!.FullName, "..", "sql-scripts", "insert_seed_data.sql")));
+        return string.Join('\n', DatabaseMigrationExtensions.DevelopmentSeedScripts.Select(script =>
+            File.ReadAllText(Path.GetFullPath(Path.Combine(dir!.FullName, "..", "sql-scripts", script)))));
     }
 
     /// <summary>(a) The seed applied — otherwise every zero below is the empty set agreeing with itself.</summary>

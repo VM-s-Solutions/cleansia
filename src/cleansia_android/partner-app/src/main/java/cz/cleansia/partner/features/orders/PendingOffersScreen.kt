@@ -71,6 +71,7 @@ data class OfferRefusal(
 fun PendingOffersScreen(
     onNavigateBack: () -> Unit,
     onOpenOrder: (String) -> Unit,
+    onOpenLegalDocuments: () -> Unit,
     viewModel: PendingOffersViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -101,6 +102,10 @@ fun PendingOffersScreen(
             request = request,
             onDismiss = viewModel::dismissContract,
             onOutcome = viewModel::onWorkContractOutcome,
+            onOpenLegalDocuments = {
+                viewModel.dismissContract()
+                onOpenLegalDocuments()
+            },
         )
     }
 

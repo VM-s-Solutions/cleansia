@@ -1,3 +1,5 @@
+using Cleansia.Core.Domain.Repositories;
+
 namespace Cleansia.Core.AppServices.Common;
 
 /// <summary>
@@ -34,5 +36,25 @@ public static class TimeZoneResolution
         {
             return TimeZoneInfo.Utc;
         }
+    }
+
+    /// <summary>
+    /// The clock a booking is read in: the market's configured zone, else the default market's. Server
+    /// configuration only — what is bookable must not move with a client's header.
+    /// </summary>
+    public static async Task<TimeZoneInfo> ForMarketAsync(
+        ICountryConfigurationRepository countryConfigurationRepository,
+        string? countryId,
+        CancellationToken cancellationToken)
+    {
+        var zoneId = string.IsNullOrEmpty(countryId)
+            ? null
+            : (await countryConfigurationRepository.GetByCountryIdAsync(countryId, cancellationToken))?.TimeZoneId;
+        if (string.IsNullOrWhiteSpace(zoneId))
+        {
+            zoneId = (await countryConfigurationRepository.GetDefaultMarketAsync(cancellationToken))?.TimeZoneId;
+        }
+
+        return Resolve(zoneId);
     }
 }

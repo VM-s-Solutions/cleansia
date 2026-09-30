@@ -23,7 +23,7 @@ param tenantId string = subscription().tenantId
 @description('Tags applied to every resource.')
 param tags object = {}
 
-@description('Allow Azure trusted services + public network for dev; prod tightens via main.bicep flag.')
+@description('true = the public endpoint answers any network (RBAC is the only barrier); false = public network access Disabled and the default action Deny, reached through the private endpoint main.bicep adds with privateNetworkingEnabled. The AzureServices bypass is kept in both.')
 param allowPublicNetworkAccess bool = true
 
 @description('''

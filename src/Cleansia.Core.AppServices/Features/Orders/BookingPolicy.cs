@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Shared.DTOs.Enums;
+using Cleansia.Core.Domain.Enums;
 
 namespace Cleansia.Core.AppServices.Features.Orders;
 
@@ -32,6 +33,30 @@ public static class BookingPolicy
     public const decimal ExpressSurchargeRate = 0.20m;
 
     /// <summary>
+    /// The dirtiness surcharge rates, on the whole basket, extras included (owner ruling 2026-09-28).
+    /// Normal adds nothing.
+    /// </summary>
+    public const decimal IncreasedDirtinessSurchargeRate = 0.30m;
+    public const decimal HeavyDirtinessSurchargeRate = 0.60m;
+
+    public static decimal DirtinessSurchargeRate(DirtinessLevel level) => level switch
+    {
+        DirtinessLevel.Normal => 0m,
+        DirtinessLevel.Increased => IncreasedDirtinessSurchargeRate,
+        DirtinessLevel.Heavy => HeavyDirtinessSurchargeRate,
+        _ => throw new ArgumentOutOfRangeException(nameof(level), level, null),
+    };
+
+    /// <summary>
+    /// The dirtiness surcharge on a sum of lines, in cents. It sits inside the raw subtotal: discounts
+    /// come off lines + surcharge and express compounds on top, so heavy + express is x1.92. Rounded
+    /// here, once, so the raw subtotal stays whole cents and lines + dirtiness + express - discounts
+    /// reconciles to the stored total. Shared by the calculator and <c>OrderFactory</c>.
+    /// </summary>
+    public static decimal DirtinessSurchargeFor(decimal linesSubtotal, DirtinessLevel level)
+        => Math.Round(linesSubtotal * DirtinessSurchargeRate(level), 2, MidpointRounding.AwayFromZero);
+
+    /// <summary>
     /// Largest home supported by the booking picker and every basket validator.
     /// </summary>
     public const int MaxRooms = 8;
@@ -42,6 +67,37 @@ public static class BookingPolicy
     /// </summary>
     public const int FirstWindowHour = 8;
     public const int LastWindowHour = 20;
+
+    /// <summary>Every start sits on this grid of the market's clock: 08:00, 08:15 … 19:45.</summary>
+    public const int SlotGridMinutes = 15;
+
+    /// <summary>The furthest ahead a booking, or a schedule's first date, may be.</summary>
+    public const int MaxBookingHorizonDays = 60;
+
+    /// <summary>
+    /// True if a wall-clock start in the market's zone is one the platform books: on the
+    /// <see cref="SlotGridMinutes"/> grid, from <see cref="FirstWindowHour"/> up to the last slot before
+    /// <see cref="LastWindowHour"/>. A recurring schedule's time already is that wall clock.
+    /// </summary>
+    public static bool IsBookableTimeOfDay(TimeOnly marketTime) =>
+        marketTime.Ticks % (TimeSpan.TicksPerMinute * SlotGridMinutes) == 0
+        && marketTime.Hour >= FirstWindowHour
+        && marketTime.Hour < LastWindowHour;
+
+    public static bool IsBeyondBookingHorizon(DateTime startUtc, DateTime nowUtc) =>
+        startUtc > nowUtc.AddDays(MaxBookingHorizonDays);
+
+    /// <summary>
+    /// The start-time rule every booking path answers to (owner ruling 2026-09-28): a bookable time of
+    /// day read in the service address's <paramref name="marketZone"/>, never the device's, and no further
+    /// ahead than <see cref="MaxBookingHorizonDays"/>. → /product/business-rules
+    /// </summary>
+    public static bool IsBookableStart(DateTime cleaningUtc, DateTime nowUtc, TimeZoneInfo marketZone)
+    {
+        var marketTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(cleaningUtc, DateTimeKind.Utc), marketZone);
+        return IsBookableTimeOfDay(TimeOnly.FromDateTime(marketTime))
+            && !IsBeyondBookingHorizon(cleaningUtc, nowUtc);
+    }
 
     /// <summary>
     /// How long before <c>CleaningDateTime</c> a cleaner may mark themselves on the way or start the
@@ -74,11 +130,34 @@ public static class BookingPolicy
     public const int PartialCancellationHours = 4;
 
     /// <summary>
+    /// How long past the booked start the assigned cleaner waits at the door before reporting that they
+    /// cannot get in (owner ruling 2026-09-28, decision 11) — the 15 minutes the customer FAQ promises.
+    /// </summary>
+    public const int LockoutWaitMinutes = 15;
+
+    /// <summary>A lockout an administrator confirmed is a customer cancellation at the whole price.</summary>
+    public const decimal LockoutFeeRate = 1.00m;
+
+    /// <summary>
+    /// The assigned crew's share of a late-cancellation or lockout fee, paid once the fee is collected and
+    /// split across the seats as job pay is (owner ruling 2026-09-28, decision 12).
+    /// </summary>
+    public const decimal CleanerFeeShareRate = 0.50m;
+
+    /// <summary>
     /// "Oops window" — free cancellation within N minutes of booking, even with a cleaner already on the
-    /// job. Owner ruling 2026-09-24: this for every customer, guests and first-time customers included;
+    /// job. Owner ruling 2026-09-28: this for every returning customer, guests included;
+    /// <see cref="OopsWindowMinutesFirstBooking"/> on a customer's first booking and
     /// <see cref="OopsWindowMinutesPlus"/> for an entitled Plus member.
+    /// → /product/business-rules#oops-window
     /// </summary>
     public const int OopsWindowMinutesStandard = 15;
+
+    /// <summary>
+    /// The oops window of a customer's first booking ever, account or guest — once per e-mail, phone
+    /// and account (<c>IOrderRepository.IsFirstBookingAsync</c>). Owner ruling 2026-09-28.
+    /// </summary>
+    public const int OopsWindowMinutesFirstBooking = 60;
 
     /// <summary>
     /// The oops window of an entitled, paid Plus member. MINUTES after booking — a separate benefit from
@@ -146,6 +225,12 @@ public static class BookingPolicy
     /// </summary>
     public static bool AllowsCash(bool signedIn, int requiredEmployees)
         => signedIn && requiredEmployees == 1;
+
+    /// <summary>
+    /// Owner ruling 2026-09-28: a customer holds at most this many cash bookings that are open and not yet
+    /// paid; the next one pays by card. No amount ceiling; the saved card is the rest of the guarantee.
+    /// </summary>
+    public const int MaxOpenUnpaidCashBookings = 2;
 
     /// <summary>
     /// Longest span a booking may be created with. <b>A DISCLOSURE bound, not a double-booking one</b>

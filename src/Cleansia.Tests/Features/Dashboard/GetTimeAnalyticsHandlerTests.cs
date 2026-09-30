@@ -89,6 +89,43 @@ public class GetTimeAnalyticsHandlerTests
         _orderAccessService.Verify(s => s.GetCallerEmployeeIdAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    /// <summary>
+    /// Owner ruling 2026-09-28 (D19): work minutes are kept for estimates and never grade the cleaner. The
+    /// read still answers for jobs that ran three times over their estimate, and nothing in it is a
+    /// rate or a score a cleaner could be ranked on.
+    /// </summary>
+    [Fact]
+    public async Task Jobs_That_Ran_Over_Their_Estimate_Are_Reported_Without_A_Grade()
+    {
+        SetCaller(UserProfile.Employee);
+        _orderAccessService
+            .Setup(s => s.GetCallerEmployeeIdAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CallerEmployeeId);
+        _orderRepository
+            .Setup(r => r.GetCompletedOrdersByDateRangeAsync(
+                CallerEmployeeId, It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([Overrun(_start.AddDays(3)), Overrun(_start.AddDays(4))]);
+
+        var result = await CreateHandler().Handle(QueryFor(null), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(2, result.Value.TotalOrders);
+        Assert.DoesNotContain(
+            typeof(Core.AppServices.Features.Dashboard.DTOs.TimeAnalyticsDto).GetProperties(),
+            p => p.Name.Contains("Efficiency", StringComparison.Ordinal)
+                || p.Name.Contains("Rate", StringComparison.Ordinal)
+                || p.Name.Contains("OnTime", StringComparison.Ordinal));
+    }
+
+    private static Order Overrun(DateTime cleaningDateTime)
+    {
+        var order = Cleansia.TestUtilities.MockDataFactories.Orders.OrderMockFactory.Generate(
+            new Cleansia.TestUtilities.MockDataFactories.Orders.OrderMockFactory.OrderPartial { CleaningDateTime = cleaningDateTime });
+        order.UpdateEstimatedTime(60);
+        order.CompleteOrder(actualCompletionTime: 180);
+        return order;
+    }
+
     [Fact]
     public async Task NonAdmin_With_No_Resolvable_Employee_Returns_EmployeeNotFound()
     {

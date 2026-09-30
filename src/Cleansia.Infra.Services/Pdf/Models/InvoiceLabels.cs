@@ -46,6 +46,8 @@ public record InvoiceLabels
     public string UnitPrice { get; init; } = "Unit price";
     public string LineTotal { get; init; } = "Total";
     public string LineDescription { get; init; } = "Cleaning services — order";
+    public string CancellationFeeShareLineDescription { get; init; } = "Share of the late cancellation fee — order";
+    public string LockoutFeeShareLineDescription { get; init; } = "Share of the fee for denied access — order";
 
     public string SubTotal { get; init; } = "Subtotal";
     public string Bonus { get; init; } = "Bonus";
@@ -111,6 +113,8 @@ public record InvoiceLabels
         UnitPrice = "Cena za MJ",
         LineTotal = "Celkem",
         LineDescription = "Úklidové služby — objednávka",
+        CancellationFeeShareLineDescription = "Podíl na poplatku za pozdní zrušení — objednávka",
+        LockoutFeeShareLineDescription = "Podíl na poplatku za znemožněný přístup — objednávka",
 
         SubTotal = "Mezisoučet",
         Bonus = "Bonus",

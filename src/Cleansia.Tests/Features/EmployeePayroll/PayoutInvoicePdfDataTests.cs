@@ -182,6 +182,24 @@ public class PayoutInvoicePdfDataTests
     }
 
     [Fact]
+    public void A_Fee_Share_Row_Is_Invoiced_As_A_Line_Of_Its_Own_Type_For_Its_Share()
+    {
+        var pays = new[]
+        {
+            PayrollMockFactory.OrderPay(basePay: 400m),
+            OrderEmployeePay.CreateFeeShare(
+                "order-cancelled", PayrollMockFactory.EmployeeId, PayrollMockFactory.PayPeriodId,
+                PayrollMockFactory.CurrencyId, PayLineType.LockoutFeeShare, 250m, "Collected fee: 500.00, Share: 250.00")
+        };
+
+        var data = Map(orderPays: pays);
+
+        Assert.Equal(PayLineType.Job, data.LineItems[0].LineType);
+        Assert.Equal(PayLineType.LockoutFeeShare, data.LineItems[1].LineType);
+        Assert.Equal(250m, data.LineItems[1].LineTotal);
+    }
+
+    [Fact]
     public void Line_Item_Total_Excludes_Bonus_And_Deduction_So_The_Lines_Sum_To_The_SubTotal()
     {
         var pays = new[] { PayrollMockFactory.OrderPay(basePay: 500m, bonusPay: 100m, deductionPay: 40m) };

@@ -29,7 +29,7 @@ public class GetMyMembershipCurrencyTests
         _session.Setup(s => s.GetUserId()).Returns(UserId);
         _membership = UserMembershipMockFactory.Paid(UserId);
         _membershipRepository
-            .Setup(r => r.GetActiveForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetLifecycleForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(_membership);
         _waiver
             .Setup(w => w.ResolveForUserAsync(UserId, null, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))

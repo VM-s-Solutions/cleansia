@@ -4,7 +4,8 @@
   Two states of a member's page, and the difference between them is the whole
   point: cancelling sets Stripe's `cancel_at_period_end`, so every benefit runs
   to CurrentPeriodEnd. The card says "running out", never "off" — nothing is
-  withdrawn retroactively. → /product/business-rules
+  withdrawn retroactively. A failed renewal is the exception: the benefits are
+  already off, so its cancel ends the membership now. → /product/business-rules
 -->
 @if (!embedded()) {
 <div class="cl-mbr">
@@ -30,6 +31,37 @@
     <p-skeleton width="100%" height="18rem" borderRadius="28px" styleClass="mt-3" />
     } @else if (membership(); as m) { @if (m.hasMembership) {
 
+    @if (paymentFailed()) {
+    <!-- ===================== PAYMENT FAILED ===================== -->
+    <section class="cl-mbr__ending cl-mbr__ending--failed">
+      <div class="cl-mbr__ending-text">
+        <span class="cl-mbr__ending-chip">
+          <i class="pi pi-exclamation-triangle"></i>
+          {{ 'pages.membership.past_due_chip' | translate }}
+        </span>
+        <h2 class="cl-mbr__ending-title">{{ 'pages.membership.past_due_title' | translate }}</h2>
+        <p class="cl-mbr__ending-lead">{{ 'pages.membership.past_due_lead' | translate }}</p>
+        <div class="cl-mbr__plan-actions">
+          <cleansia-button
+            [title]="'pages.membership.past_due_cancel_action' | translate"
+            [severity]="'secondary'"
+            [loading]="cancelling()"
+            [disabled]="cancelling()"
+            (clickFn)="confirmCancel()"
+          />
+        </div>
+      </div>
+      <img
+        class="cl-mbr__ending-art"
+        src="assets/images/mascot/mascot-leaning-tile.webp"
+        alt=""
+        width="300"
+        height="300"
+        aria-hidden="true"
+      />
+    </section>
+    } @else {
+
     @if (m.cancelRequested) {
     <!-- ===================== CANCELLED, STILL RUNNING ===================== -->
     <section class="cl-mbr__ending">
@@ -39,7 +71,13 @@
           {{ 'pages.membership.ends_on' | translate: { date: formatDate(m.currentPeriodEnd) } }}
         </span>
         <h2 class="cl-mbr__ending-title">{{ 'pages.membership.you_cancelled' | translate }}</h2>
-        <p class="cl-mbr__ending-lead">{{ 'pages.membership.nothing_retroactive' | translate }}</p>
+        <p class="cl-mbr__ending-lead">
+          @if (trialEndsOn()) {
+          {{ 'pages.membership.trial_cancelled_lead' | translate }}
+          } @else {
+          {{ 'pages.membership.nothing_retroactive' | translate }}
+          }
+        </p>
       </div>
       <img
         class="cl-mbr__ending-art"
@@ -94,16 +132,22 @@
     <!--
       What the membership actually buys. The same list in both states — the
       point of the "running out" state is that these are still true — with the
-      heading naming the date they stop.
+      heading naming the date they stop. A running trial carries none of them,
+      so for a trialing member the list is what a paid membership includes.
+      → /product/business-rules
     -->
     <section class="cl-mbr__card">
       <h2 class="cl-mbr__card-title">
+        @if (trialEndsOn()) {
+        {{ 'pages.membership.trial_perks_title' | translate }}
+        } @else {
         {{
           m.cancelRequested
             ? ('pages.membership.what_you_have_until'
               | translate: { date: formatDate(m.currentPeriodEnd) })
             : ('pages.membership.what_you_get' | translate)
         }}
+        }
       </h2>
 
       <ul class="cl-mbr__perks">
@@ -141,12 +185,11 @@
         </li>
       </ul>
 
-      <!--
-        The express allowance as a COUNT, not a promise. A trialing member has
-        the discount and the shorter cancellation window but no express waiver
-        yet, and that is the one perk whose availability moves.
-        → /product/business-rules
-      -->
+      @if (trialEndsOn()) {
+      <p class="cl-mbr__note">{{ 'pages.membership.trial_perks_note' | translate }}</p>
+      }
+
+      <!-- The express allowance as a COUNT, not a promise: the server's figure for this month. -->
       @if (expressWaiverAvailable()) {
       <p class="cl-mbr__credit">
         <i class="pi pi-bolt"></i>
@@ -179,7 +222,7 @@
     @if (!m.cancelRequested && plans().length > 0) {
     <section class="cl-mbr__card">
       <h2 class="cl-mbr__card-title">{{ 'pages.membership.switch_title' | translate }}</h2>
-      <p class="cl-mbr__card-lead">{{ 'pages.membership.switch_lead' | translate }}</p>
+      <p class="cl-mbr__card-lead">{{ switchLeadKey() | translate }}</p>
 
       <div class="cl-mbr__plans">
         @for (plan of plans(); track plan.code) {
@@ -211,11 +254,14 @@
         }
       </div>
 
+      @if (!trialEndsOn()) {
       <p class="cl-mbr__note">{{ 'pages.membership.proration_note' | translate }}</p>
+      }
     </section>
     }
 
-    <!-- Plus-only: the schedules this membership unlocks. -->
+    <!-- Plus-only: the schedules a paid month unlocks. The server refuses one during a trial. -->
+    @if (!trialEndsOn()) {
     <a class="cl-mbr__jump" [routerLink]="['recurring']">
       <i class="pi pi-calendar-clock"></i>
       <span class="cl-mbr__jump-text">
@@ -224,6 +270,9 @@
       </span>
       <i class="pi pi-chevron-right"></i>
     </a>
+    }
+
+    }
 
     } @else {
     <!-- ====================== NOT A MEMBER ====================== -->

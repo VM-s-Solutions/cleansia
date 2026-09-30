@@ -24,6 +24,7 @@ final class BookingCashEligibilityTests: XCTestCase {
             profileClient: FakeProfileClient(),
             orderCreateClient: create,
             countryResolver: FakeCountryResolver(),
+            savedCardClient: FakeSavedCardClient.holdingCzkCard(),
             tokenStore: tokenStore,
             isCardPaymentAvailable: false,
             quoteDebounce: .milliseconds(400),
@@ -53,6 +54,15 @@ final class BookingCashEligibilityTests: XCTestCase {
 
     private func drain() async {
         for _ in 0 ..< 5 {
+            await Task.yield()
+        }
+    }
+
+    /// Choosing cash also starts a saved-card read, so the re-quote shares the main actor with it and a
+    /// fixed number of yields can end before the quote lands; this waits for the outcome itself.
+    private func eventually(_ condition: () -> Bool) async {
+        for _ in 0 ..< 500 {
+            if condition() { return }
             await Task.yield()
         }
     }
@@ -161,11 +171,33 @@ final class BookingCashEligibilityTests: XCTestCase {
             return next
         }
         scheduler.advance(by: .milliseconds(400))
-        await drain()
+        await eventually { vm.state.paymentMethod == nil }
 
         XCTAssertEqual(quote.requests.last?.rooms, 6)
         XCTAssertNil(vm.state.paymentMethod, "cash survived a re-quote that refuses it, or was switched to card")
         XCTAssertTrue(vm.cashCleared)
+        XCTAssertEqual(received(), [.cashCleared])
+    }
+
+    /// A heavier level lengthens the job, so the crew the server quotes for it can outgrow cash.
+    func testALevelThatNeedsTwoCleanersTakesCashAwayOnTheReQuote() async {
+        let scheduler = TestScheduler.dispatch
+        let (vm, quote) = makeVM(requiredEmployees: 1, scheduler: scheduler)
+        let received = events(of: vm)
+        vm.update(readyState())
+        vm.setDirtiness(.normal)
+        scheduler.advance(by: .milliseconds(400))
+        await drain()
+        vm.selectPayment(.cash)
+        XCTAssertEqual(vm.state.paymentMethod, .cash)
+
+        quote.result = .success(Self.quote(requiredEmployees: 2))
+        vm.setDirtiness(.heavy)
+        scheduler.advance(by: .milliseconds(400))
+        await eventually { vm.state.paymentMethod == nil }
+
+        XCTAssertEqual(quote.requests.last?.dirtiness, .heavy)
+        XCTAssertNil(vm.state.paymentMethod, "cash survived a level the server crews with two cleaners")
         XCTAssertEqual(received(), [.cashCleared])
     }
 

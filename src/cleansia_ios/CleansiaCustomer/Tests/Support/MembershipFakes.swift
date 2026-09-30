@@ -84,6 +84,24 @@ enum MembershipFixtures {
         currencyCode: "CZK"
     )
 
+    static let pastDue = MyMembership(
+        hasMembership: true,
+        planCode: "plus_monthly",
+        planName: "Cleansia Plus",
+        discountPercentage: 5,
+        freeCancellationWindowHours: 4,
+        allowsExpressUpgrade: true,
+        currentPeriodEnd: Date(timeIntervalSince1970: 1_780_000_000),
+        cancelRequested: false,
+        billingInterval: 1,
+        expressUpgradesPerMonth: 2,
+        expressUpgradesRemaining: 1,
+        price: 199,
+        monthlyEquivalentPrice: 199,
+        currencyCode: "CZK",
+        benefitsPaused: true
+    )
+
     static let setup = SubscriptionSetup(
         membershipId: "",
         setupIntentClientSecret: "seti_secret_abc",
@@ -108,6 +126,7 @@ enum MembershipFixtures {
             discountPercentage: 5,
             freeCancellationWindowHours: 4,
             allowsExpressUpgrade: true,
+            expressUpgradesPerMonth: 2,
             trialPeriodDays: 14,
             savingsPercentVsMonthly: 0,
             currencyCode: "CZK"
@@ -121,6 +140,7 @@ enum MembershipFixtures {
             discountPercentage: 5,
             freeCancellationWindowHours: 4,
             allowsExpressUpgrade: true,
+            expressUpgradesPerMonth: 2,
             trialPeriodDays: 14,
             savingsPercentVsMonthly: 15,
             currencyCode: "CZK"
@@ -138,6 +158,7 @@ enum MembershipFixtures {
             discountPercentage: plan.discountPercentage,
             freeCancellationWindowHours: plan.freeCancellationWindowHours,
             allowsExpressUpgrade: plan.allowsExpressUpgrade,
+            expressUpgradesPerMonth: plan.expressUpgradesPerMonth,
             trialPeriodDays: plan.trialPeriodDays,
             savingsPercentVsMonthly: plan.savingsPercentVsMonthly,
             currencyCode: "EUR"

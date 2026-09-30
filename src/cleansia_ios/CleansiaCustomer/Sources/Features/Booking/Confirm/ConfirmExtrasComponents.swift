@@ -31,19 +31,19 @@ struct InstructionsField: View {
 }
 
 struct PreferredCleanerPicker: View {
-    @ObservedObject var viewModel: PreferredCleanerViewModel
+    let cleaners: [ServingCleaner]
     let selectedId: String?
     let onSelect: (String?) -> Void
 
     @State private var showDialog = false
 
     private var selected: ServingCleaner? {
-        viewModel.cleaners.first { $0.id == selectedId }
+        cleaners.first { $0.id == selectedId }
     }
 
     var body: some View {
         Group {
-            if viewModel.isVisible {
+            if !cleaners.isEmpty {
                 pickerRow
             }
         }
@@ -101,7 +101,7 @@ struct PreferredCleanerPicker: View {
         .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium))
         .sheet(isPresented: $showDialog) {
             PreferredCleanerSheet(
-                cleaners: viewModel.cleaners,
+                cleaners: cleaners,
                 selectedId: selectedId,
                 onSelect: { id in
                     onSelect(id)

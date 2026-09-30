@@ -7,6 +7,8 @@ enum ProfileRoute: Hashable {
     case bank(onboarding: Bool)
     case emergency
     case documents
+    /// The contract documents the cleaner reads and accepts, not the papers `documents` uploads.
+    case legalDocuments
     case jobRadius
     case language
     case theme

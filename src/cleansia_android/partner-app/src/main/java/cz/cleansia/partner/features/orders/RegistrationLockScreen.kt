@@ -31,6 +31,7 @@ import androidx.compose.material.icons.outlined.Cancel
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.ErrorOutline
+import androidx.compose.material.icons.outlined.Gavel
 import androidx.compose.material.icons.outlined.HourglassEmpty
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Mail
@@ -76,8 +77,8 @@ import cz.cleansia.partner.features.settings.LanguageChooser
 import cz.cleansia.partner.navigation.NavRoute
 
 /**
- * App-wide gate for cleaners who have not finished onboarding or are not approved. Three category rows,
- * each routing to the section that owns that step.
+ * App-wide gate for cleaners who have not finished onboarding or are not approved. One category row per
+ * step, each routing to the section that owns that step.
  *
  * Auto-refreshes on resume, so saving a section and coming back flips the row; once all are done the
  * parent pops this destination. -> /partner-app/onboarding
@@ -110,8 +111,8 @@ fun RegistrationLockScreen(
         if (uiState.status?.isRegistrationComplete() == true) onCompleted()
     }
 
-    val steps = remember(uiState.status) {
-        RegistrationLockViewModel.buildSteps(uiState.status)
+    val steps = remember(uiState.status, uiState.legalDocuments) {
+        RegistrationLockViewModel.buildSteps(uiState.status, uiState.legalDocuments)
     }
     val completedSteps = steps.count { it.status == StepStatus.Done }
     val totalSteps = steps.size
@@ -421,6 +422,11 @@ private fun StepRowView(step: StepRow, onFixStep: (NavRoute) -> Unit) {
             Icons.Outlined.Description,
             R.string.registration_lock_category_documents,
             R.string.registration_lock_action_upload_documents,
+        )
+        StepCategory.LegalDocuments -> Triple(
+            Icons.Outlined.Gavel,
+            R.string.registration_lock_category_legal_documents,
+            R.string.registration_lock_action_accept_documents,
         )
         StepCategory.Approval -> Triple(
             Icons.Outlined.VerifiedUser,

@@ -559,7 +559,8 @@ class InvoicesWireTest {
                   "totalPay": 810.20,
                   "payBreakdown": "base 700.10 + extras 50.00",
                   "isApproved": true,
-                  "createdOn": "2026-08-03T09:15:00Z"
+                  "createdOn": "2026-08-03T09:15:00Z",
+                  "lineType": 0
                 },
                 {
                   "id": "line-2",
@@ -577,7 +578,8 @@ class InvoicesWireTest {
                   "totalPay": 830.05,
                   "payBreakdown": "base 720.00 + extras 50.00",
                   "isApproved": false,
-                  "createdOn": "2026-08-07T14:40:00Z"
+                  "createdOn": "2026-08-07T14:40:00Z",
+                  "lineType": 0
                 }
               ]
             }
@@ -597,6 +599,8 @@ class InvoicesWireTest {
             "bonusAmount",
             "deductionAmount",
             "totalAmount",
+            "cashSetOffAmount",
+            "transferAmount",
             "currencyCode",
             "currencyId",
             "status",

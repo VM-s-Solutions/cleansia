@@ -1,5 +1,5 @@
 /**
- * The daily booking window, and the arrival times inside it.
+ * The daily booking window, the arrival times inside it, and how far ahead they run.
  *
  * Lives in a shared model rather than in the order wizard because two places
  * offer the same choice: the wizard's scheduling step, and the home page's price
@@ -10,7 +10,10 @@
  */
 export const FIRST_WINDOW_HOUR = 8;
 export const LAST_WINDOW_HOUR = 20;
-const BOOKING_SLOT_INTERVAL_MINUTES = 15;
+/** Mirrors `BookingPolicy.SlotGridMinutes`. */
+export const SLOT_GRID_MINUTES = 15;
+/** Mirrors `BookingPolicy.MaxBookingHorizonDays`. */
+export const MAX_BOOKING_HORIZON_DAYS = 60;
 
 /** Minimum hours between now and cleaning start for any booking to be accepted. */
 export const EXPRESS_LEAD_TIME_HOURS = 2;
@@ -27,6 +30,15 @@ export const STANDARD_LEAD_TIME_HOURS = 4;
  * rule it already states.
  */
 export const EXPRESS_SURCHARGE_RATE = 0.2;
+
+/**
+ * What the increased and heavy dirtiness levels add, as fractions. Mirror
+ * `BookingPolicy.IncreasedDirtinessSurchargeRate` and `HeavyDirtinessSurchargeRate`, and are
+ * displayed only, like the express rate: the surcharge itself arrives on the quote as
+ * `dirtinessSurchargeAmount`.
+ */
+export const INCREASED_DIRTINESS_SURCHARGE_RATE = 0.3;
+export const HEAVY_DIRTINESS_SURCHARGE_RATE = 0.6;
 
 export type SlotAvailability = 'available' | 'express' | 'unavailable';
 
@@ -48,7 +60,7 @@ export function generateTimeOptions(): TimeOption[] {
   for (
     let minute = FIRST_WINDOW_HOUR * 60;
     minute < LAST_WINDOW_HOUR * 60;
-    minute += BOOKING_SLOT_INTERVAL_MINUTES
+    minute += SLOT_GRID_MINUTES
   ) {
     const hour = Math.floor(minute / 60);
     const start = `${hour.toString().padStart(2, '0')}:${(minute % 60)
@@ -59,4 +71,13 @@ export function generateTimeOptions(): TimeOption[] {
     options.push({ label: start, value: start, availability: 'available' });
   }
   return options;
+}
+
+/**
+ * Midnight of the last day a picker offers: the day before the one the server's horizon
+ * (`BookingPolicy.IsBeyondBookingHorizon`) falls on, so every slot of every offered day is inside it.
+ */
+export function lastBookableDay(now: Date): Date {
+  const horizon = new Date(now.getTime() + MAX_BOOKING_HORIZON_DAYS * 24 * 60 * 60 * 1000);
+  return new Date(horizon.getFullYear(), horizon.getMonth(), horizon.getDate() - 1);
 }

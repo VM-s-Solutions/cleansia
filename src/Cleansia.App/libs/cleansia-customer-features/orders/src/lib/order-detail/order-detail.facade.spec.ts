@@ -4,16 +4,22 @@ import {
   CancelOrderCommand,
   CancelOrderResponse,
   CancellationFeeTier,
+  ConfirmRecurringOrderCommand,
+  ConfirmRecurringOrderResponse,
   CustomerAuthService,
   CustomerClient,
   GetCancellationFeePreviewResponse,
+  GetMyMembershipResponse,
+  MembershipStatus,
   OrderItem,
   OrderStatus,
+  PaymentStatus,
+  PaymentType,
   SubmitOrderReviewCommand,
 } from '@cleansia/customer-services';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { OrderDetailFacade } from './order-detail.facade';
 
 const ORDER_ID = 'ord-1';
@@ -48,6 +54,7 @@ describe('OrderDetailFacade', () => {
     submitReview: jest.Mock;
     cancellationPreview: jest.Mock;
     cancel: jest.Mock;
+    confirmRecurring: jest.Mock;
   };
   let snackbar: { showSuccess: jest.Mock; showError: jest.Mock; showApiError: jest.Mock };
   let facade: OrderDetailFacade;
@@ -59,6 +66,9 @@ describe('OrderDetailFacade', () => {
       submitReview: jest.fn().mockReturnValue(of({ rating: 5 })),
       cancellationPreview: jest.fn().mockReturnValue(of(preview)),
       cancel: jest.fn().mockReturnValue(of(cancelled)),
+      confirmRecurring: jest.fn().mockReturnValue(
+        of(ConfirmRecurringOrderResponse.fromJS({ orderId: ORDER_ID })),
+      ),
     };
     snackbar = {
       showSuccess: jest.fn(),
@@ -140,6 +150,156 @@ describe('OrderDetailFacade', () => {
     it('is withheld while the order has not loaded', () => {
       facade.order.set(null);
       expect(facade.canCancel()).toBe(false);
+    });
+  });
+
+  // Owner ruling 2026-09-28: past the booked start, with a cleaner on the job who has not started, the
+  // server refuses a self-cancel and the customer reports that the cleaner did not arrive instead.
+  describe('after the booked start', () => {
+    const HOUR_MS = 60 * 60 * 1000;
+    const startPassed = () => ({ errors: { OrderId: 'order.start_passed_cannot_cancel' } });
+    const booking = (status: OrderStatus, startsInMs: number, staffed: boolean) =>
+      OrderItem.fromJS({
+        id: ORDER_ID,
+        orderStatus: { value: status, name: OrderStatus[status] },
+        cleaningDateTime: new Date(Date.now() + startsInMs).toISOString(),
+        assignedEmployees: staffed ? [{ employeeId: 'emp-1', fullName: 'Petra S.' }] : [],
+      });
+
+    it.each([OrderStatus.Confirmed, OrderStatus.OnTheWay])(
+      'offers the no-show report in place of Cancel on a staffed order in status %s',
+      (status) => {
+        facade.order.set(booking(status, -HOUR_MS, true));
+        expect(facade.canCancel()).toBe(false);
+        expect(facade.canReportCleanerNoShow()).toBe(true);
+      },
+    );
+
+    it('keeps Cancel before the start, with the cleaner already on the way', () => {
+      facade.order.set(booking(OrderStatus.OnTheWay, HOUR_MS, true));
+      expect(facade.canCancel()).toBe(true);
+      expect(facade.canReportCleanerNoShow()).toBe(false);
+    });
+
+    it('keeps Cancel past the start while nobody is assigned', () => {
+      facade.order.set(booking(OrderStatus.New, -HOUR_MS, false));
+      expect(facade.canCancel()).toBe(true);
+      expect(facade.canReportCleanerNoShow()).toBe(false);
+    });
+
+    it.each([OrderStatus.InProgress, OrderStatus.Completed, OrderStatus.Cancelled])(
+      'offers neither once the order is in status %s',
+      (status) => {
+        facade.order.set(booking(status, -HOUR_MS, true));
+        expect(facade.canCancel()).toBe(false);
+        expect(facade.canReportCleanerNoShow()).toBe(false);
+      },
+    );
+
+    it('turns to the no-show report when the server refuses the preview because the start has passed', () => {
+      facade.order.set(orderIn(OrderStatus.Confirmed));
+      orderClient.cancellationPreview.mockReturnValue(throwError(startPassed));
+
+      facade.openCancellation();
+
+      expect(facade.cancellationOpen()).toBe(false);
+      expect(facade.cancellationPreviewFailed()).toBe(false);
+      expect(facade.canCancel()).toBe(false);
+      expect(facade.canReportCleanerNoShow()).toBe(true);
+    });
+
+    it('turns to the no-show report when the server refuses the cancel because the start has passed', () => {
+      facade.order.set(orderIn(OrderStatus.Confirmed));
+      facade.openCancellation();
+      orderClient.cancel.mockReturnValue(throwError(startPassed));
+      orderClient.getById.mockReturnValue(of(orderIn(OrderStatus.Confirmed)));
+
+      facade.cancelOrder('');
+
+      expect(facade.cancellationResult()).toBeNull();
+      expect(facade.canCancel()).toBe(false);
+      expect(facade.canReportCleanerNoShow()).toBe(true);
+    });
+
+    it('keeps the preview-failed state for any other refusal', () => {
+      facade.order.set(orderIn(OrderStatus.Confirmed));
+      orderClient.cancellationPreview.mockReturnValue(
+        throwError(() => ({ errors: { OrderId: 'order.in_progress_cannot_cancel' } })),
+      );
+
+      facade.openCancellation();
+
+      expect(facade.cancellationPreviewFailed()).toBe(true);
+      expect(facade.canReportCleanerNoShow()).toBe(false);
+    });
+  });
+
+  // With no card charge behind the booking the cancel sheet has no card refund to estimate.
+  describe('whether the booking took a card payment', () => {
+    const booking = (type: PaymentType, status: PaymentStatus) =>
+      OrderItem.fromJS({
+        id: ORDER_ID,
+        paymentType: { value: type, name: PaymentType[type] },
+        paymentStatus: { value: status, name: PaymentStatus[status] },
+      });
+
+    it.each([
+      ['a cash booking not yet collected', PaymentType.Cash, PaymentStatus.Pending],
+      ['a cash booking already marked paid', PaymentType.Cash, PaymentStatus.Paid],
+      ['a card booking never charged', PaymentType.Card, PaymentStatus.Pending],
+      ['a card booking whose charge failed', PaymentType.Card, PaymentStatus.Failed],
+    ])('took none on %s', (_, type, status) => {
+      facade.order.set(booking(type, status));
+      expect(facade.tookNoCardPayment()).toBe(true);
+    });
+
+    it('took one on a charged card booking, and says nothing before the order has loaded', () => {
+      facade.order.set(booking(PaymentType.Card, PaymentStatus.Paid));
+      expect(facade.tookNoCardPayment()).toBe(false);
+
+      facade.order.set(null);
+      expect(facade.tookNoCardPayment()).toBe(false);
+    });
+  });
+
+  // The server charges by the paid entitlement, which `hasMembership` is not: it counts a running
+  // trial too, and a trialing member cancels on the standard window.
+  describe('the free-cancellation window the page states', () => {
+    const DAY_MS = 24 * 60 * 60 * 1000;
+    const plus = (trialEndsAtUtc?: Date, status = MembershipStatus.Active) =>
+      GetMyMembershipResponse.fromJS({
+        hasMembership: true,
+        status,
+        freeCancellationWindowHours: 12,
+        trialEndsAtUtc: trialEndsAtUtc?.toISOString(),
+      });
+
+    it("is the plan's window for a paid member", () => {
+      facade.membership.set(plus());
+      expect(facade.freeCancellationHours()).toBe(12);
+    });
+
+    it('is the standard 24 hours during a running trial', () => {
+      facade.membership.set(plus(new Date(Date.now() + 7 * DAY_MS)));
+      expect(facade.freeCancellationHours()).toBe(24);
+    });
+
+    it("is the plan's window once the trial has ended", () => {
+      facade.membership.set(plus(new Date(Date.now() - DAY_MS)));
+      expect(facade.freeCancellationHours()).toBe(12);
+    });
+
+    it('is the standard 24 hours while a renewal payment has failed', () => {
+      facade.membership.set(plus(undefined, MembershipStatus.PastDue));
+      expect(facade.freeCancellationHours()).toBe(24);
+    });
+
+    it('is the standard 24 hours without a membership', () => {
+      facade.membership.set(GetMyMembershipResponse.fromJS({ hasMembership: false }));
+      expect(facade.freeCancellationHours()).toBe(24);
+
+      facade.membership.set(null);
+      expect(facade.freeCancellationHours()).toBe(24);
     });
   });
 
@@ -237,6 +397,129 @@ describe('OrderDetailFacade', () => {
     });
   });
 
+  // Cash is the plain confirm; card pays through the Checkout Session the server opens for the web.
+  describe('confirming a recurring occurrence', () => {
+    const occurrence = (type: PaymentType, needsConfirmation = true) =>
+      OrderItem.fromJS({
+        id: ORDER_ID,
+        orderStatus: { value: OrderStatus.New, name: OrderStatus[OrderStatus.New] },
+        paymentType: { value: type, name: PaymentType[type] },
+        paymentStatus: { value: PaymentStatus.Pending, name: PaymentStatus[PaymentStatus.Pending] },
+        needsConfirmation,
+      });
+    const refusal = (field: string, key: string) => () => ({ errors: { [field]: key } });
+
+    afterEach(() => {
+      window.location.hash = '';
+    });
+
+    it('is offered only while the server says the occurrence awaits confirmation', () => {
+      facade.order.set(occurrence(PaymentType.Cash));
+      expect(facade.canConfirmRecurring()).toBe(true);
+
+      facade.order.set(occurrence(PaymentType.Cash, false));
+      expect(facade.canConfirmRecurring()).toBe(false);
+
+      facade.order.set(null);
+      expect(facade.canConfirmRecurring()).toBe(false);
+    });
+
+    it('does not call the server when nothing awaits confirmation', () => {
+      facade.order.set(occurrence(PaymentType.Cash, false));
+
+      facade.confirmRecurring();
+
+      expect(orderClient.confirmRecurring).not.toHaveBeenCalled();
+    });
+
+    it('confirms a cash occurrence, says so and re-reads the order', () => {
+      facade.order.set(occurrence(PaymentType.Cash));
+      orderClient.getById.mockReturnValue(of(occurrence(PaymentType.Cash, false)));
+
+      facade.confirmRecurring();
+
+      expect(snackbar.showSuccess).toHaveBeenCalledWith('pages.order_detail.recurring_confirm.success');
+      expect(facade.confirmingRecurring()).toBe(false);
+      expect(orderClient.getById).toHaveBeenLastCalledWith(ORDER_ID);
+      expect(facade.canConfirmRecurring()).toBe(false);
+    });
+
+    it('hands the browser to the Checkout Session the server opened for a card occurrence', () => {
+      facade.order.set(occurrence(PaymentType.Card));
+      const { origin, pathname } = window.location;
+      orderClient.confirmRecurring.mockReturnValue(
+        of(ConfirmRecurringOrderResponse.fromJS({
+          orderId: ORDER_ID,
+          checkoutUrl: `${origin}${pathname}#checkout-session`,
+        })),
+      );
+
+      facade.confirmRecurring();
+
+      expect(window.location.hash).toBe('#checkout-session');
+      expect(facade.confirmingRecurring()).toBe(true);
+      expect(snackbar.showSuccess).not.toHaveBeenCalled();
+      expect(orderClient.getById).not.toHaveBeenCalled();
+    });
+
+    it('sends one confirm while the first is still in flight', () => {
+      facade.order.set(occurrence(PaymentType.Cash));
+      orderClient.confirmRecurring.mockReturnValue(new Subject<ConfirmRecurringOrderResponse>());
+
+      facade.confirmRecurring();
+      facade.confirmRecurring();
+
+      expect(orderClient.confirmRecurring).toHaveBeenCalledTimes(1);
+      expect(facade.confirmingRecurring()).toBe(true);
+    });
+
+    it('re-reads an occurrence the server says is already confirmed', () => {
+      facade.order.set(occurrence(PaymentType.Cash));
+      orderClient.confirmRecurring.mockReturnValue(
+        throwError(refusal('OrderId', 'order.recurring_already_confirmed')),
+      );
+      orderClient.getById.mockReturnValue(of(occurrence(PaymentType.Cash, false)));
+
+      facade.confirmRecurring();
+
+      expect(snackbar.showSuccess).not.toHaveBeenCalled();
+      expect(facade.confirmingRecurring()).toBe(false);
+      expect(orderClient.getById).toHaveBeenLastCalledWith(ORDER_ID);
+      expect(facade.canConfirmRecurring()).toBe(false);
+      expect(facade.recurringPaymentBegunInApp()).toBe(false);
+    });
+
+    it('points a card occurrence begun in the mobile app back there instead of offering Confirm again', () => {
+      facade.order.set(occurrence(PaymentType.Card));
+      orderClient.confirmRecurring.mockReturnValue(
+        throwError(refusal('Id', 'order.invalid_status_transition')),
+      );
+      orderClient.getById.mockReturnValue(of(occurrence(PaymentType.Card)));
+
+      facade.confirmRecurring();
+
+      expect(snackbar.showSuccess).not.toHaveBeenCalled();
+      expect(facade.confirmingRecurring()).toBe(false);
+      expect(orderClient.getById).toHaveBeenLastCalledWith(ORDER_ID);
+      expect(facade.canConfirmRecurring()).toBe(false);
+      expect(facade.recurringPaymentBegunInApp()).toBe(true);
+    });
+
+    it('keeps Confirm on offer after any other refusal', () => {
+      facade.order.set(occurrence(PaymentType.Card));
+      orderClient.confirmRecurring.mockReturnValue(
+        throwError(refusal('Id', 'order.payment_gateway_unavailable')),
+      );
+      orderClient.getById.mockReturnValue(of(occurrence(PaymentType.Card)));
+
+      facade.confirmRecurring();
+
+      expect(facade.confirmingRecurring()).toBe(false);
+      expect(facade.canConfirmRecurring()).toBe(true);
+      expect(facade.recurringPaymentBegunInApp()).toBe(false);
+    });
+  });
+
   // Every member of a generated command is optional, so a dropped assignment type-checks.
   // These pin the serialized body instead (ADR-0031).
   describe('command bodies on the wire', () => {
@@ -259,6 +542,16 @@ describe('OrderDetailFacade', () => {
 
       const command: CancelOrderCommand = orderClient.cancel.mock.calls[0][0];
       expect(command.toJSON()).toEqual({ orderId: ORDER_ID, reason: undefined });
+    });
+
+    it('serializes the recurring confirm with the order id', () => {
+      facade.order.set(OrderItem.fromJS({ id: ORDER_ID, needsConfirmation: true }));
+
+      facade.confirmRecurring();
+
+      const command: ConfirmRecurringOrderCommand = orderClient.confirmRecurring.mock.calls[0][0];
+      expect(command).toBeInstanceOf(ConfirmRecurringOrderCommand);
+      expect(command.toJSON()).toEqual({ orderId: ORDER_ID });
     });
 
     it('serializes the review with the order id, the rating and the comment', () => {

@@ -40,7 +40,10 @@ public class AdminGetLegalDocument
                     new Error(nameof(request.Id), BusinessErrorMessage.LegalDocumentNotFound));
             }
 
-            return BusinessResult.Success(document.MapToAdminDto(text, DateOnly.FromDateTime(DateTime.UtcNow)));
+            var current = await legalDocumentRepository.GetInForceAsync(
+                document.Audience, document.Type, document.CountryId, DateOnly.FromDateTime(DateTime.UtcNow), cancellationToken);
+
+            return BusinessResult.Success(document.MapToAdminDto(text, isInForce: current?.Id == document.Id));
         }
     }
 }

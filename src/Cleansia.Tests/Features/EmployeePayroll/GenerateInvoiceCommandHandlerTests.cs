@@ -2,6 +2,8 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.EmployeePayroll;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.EmployeePayroll;
+using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using Cleansia.TestUtilities.MockDataFactories.EmployeePayroll;
@@ -23,6 +25,7 @@ public class GenerateInvoiceCommandHandlerTests
     private readonly Mock<IEmployeeInvoiceRepository> _invoiceRepository = new();
     private readonly Mock<IOrderEmployeePayRepository> _orderPayRepository = new();
     private readonly Mock<IPayoutReferenceAllocator> _payoutReferenceAllocator = new();
+    private readonly Mock<ICashLedgerRepository> _cashLedger = new();
 
     public GenerateInvoiceCommandHandlerTests()
     {
@@ -37,7 +40,8 @@ public class GenerateInvoiceCommandHandlerTests
     private GenerateInvoice.Handler CreateHandler() => new(
         _invoiceRepository.Object,
         _orderPayRepository.Object,
-        _payoutReferenceAllocator.Object);
+        _payoutReferenceAllocator.Object,
+        _cashLedger.Object);
 
     private void ArrangeOrderPays(params OrderEmployeePay[] pays) =>
         _orderPayRepository
@@ -160,6 +164,49 @@ public class GenerateInvoiceCommandHandlerTests
         Assert.Equal(BusinessErrorMessage.InvoiceReferenceCapacityExhausted, result.Error.Message);
         _invoiceRepository.Verify(r => r.Add(It.IsAny<EmployeeInvoice>()), Times.Never);
         Assert.All(pays, p => Assert.Null(p.EmployeeInvoiceId));
+    }
+
+    /// <summary>
+    /// Owner ruling 2026-09-28, decision 23: an invoice issued by hand sets the cash the cleaner holds in
+    /// its currency off against it exactly as the close does, and leaves its own amounts alone.
+    /// </summary>
+    [Fact]
+    public async Task The_Cash_The_Cleaner_Holds_Is_Set_Off_Against_The_Invoice_Up_To_Its_Total()
+    {
+        ArrangeOrderPays(PayrollMockFactory.OrderPay(basePay: 400m));
+        _cashLedger
+            .Setup(r => r.GetHeldUnderLockAsync(EmployeeId, PayrollMockFactory.CurrencyId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(650m);
+        EmployeeInvoice? added = null;
+        _invoiceRepository.Setup(r => r.Add(It.IsAny<EmployeeInvoice>())).Callback<EmployeeInvoice>(i => added = i);
+        CashLedgerEntry? entry = null;
+        _cashLedger.Setup(r => r.Add(It.IsAny<CashLedgerEntry>())).Callback<CashLedgerEntry>(e => entry = e);
+
+        var result = await CreateHandler().Handle(
+            new GenerateInvoice.Command(EmployeeId, PayPeriodId), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(400m, added!.TotalAmount);
+        Assert.Equal(400m, added.CashSetOffAmount);
+        Assert.Equal(0m, added.TransferAmount);
+        Assert.NotNull(entry);
+        Assert.Equal(CashLedgerEntryKind.SetOff, entry!.Kind);
+        Assert.Equal(-400m, entry.Amount);
+        Assert.Equal(added.InvoiceNumber, entry.Note);
+    }
+
+    [Fact]
+    public async Task A_Cleaner_Who_Holds_No_Cash_Gets_No_Set_Off()
+    {
+        ArrangeOrderPays(PayrollMockFactory.OrderPay(basePay: 400m));
+        EmployeeInvoice? added = null;
+        _invoiceRepository.Setup(r => r.Add(It.IsAny<EmployeeInvoice>())).Callback<EmployeeInvoice>(i => added = i);
+
+        await CreateHandler().Handle(new GenerateInvoice.Command(EmployeeId, PayPeriodId), CancellationToken.None);
+
+        Assert.Equal(0m, added!.CashSetOffAmount);
+        Assert.Equal(400m, added.TransferAmount);
+        _cashLedger.Verify(r => r.Add(It.IsAny<CashLedgerEntry>()), Times.Never);
     }
 
     // PayrollMockFactory derives TotalPay from the components, so a pay where the min/max clamp

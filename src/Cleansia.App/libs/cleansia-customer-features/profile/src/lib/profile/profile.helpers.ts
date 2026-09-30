@@ -16,6 +16,7 @@ export interface SectionDef {
 export const PROFILE_SECTIONS: SectionDef[] = [
   { id: 'personal', icon: 'pi pi-user', labelKey: 'pages.profile.personal_info' },
   { id: 'addresses', icon: 'pi pi-map-marker', labelKey: 'pages.profile.addresses_title' },
+  { id: 'cards', icon: 'pi pi-credit-card', labelKey: 'pages.profile.saved_cards.title' },
   { id: 'security', icon: 'pi pi-lock', labelKey: 'pages.profile.security_title' },
   { id: 'notifications', icon: 'pi pi-bell', labelKey: 'pages.profile.notifications.title' },
   { id: 'preferences', icon: 'pi pi-sliders-h', labelKey: 'pages.profile.preferences_title' },

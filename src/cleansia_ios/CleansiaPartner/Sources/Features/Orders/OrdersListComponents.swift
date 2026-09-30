@@ -87,8 +87,10 @@ struct OrderChipsRow: View {
         let rooms = order.rooms ?? 0
         let baths = order.bathrooms ?? 0
         let extras = order.extras?.values.filter { $0 }.count ?? 0
-        if rooms > 0 || baths > 0 || extras > 0 || isHotDeal || isStartingSoon {
+        let dirtiness = OrdersFormat.dirtinessChip(order.dirtinessLevel)
+        if rooms > 0 || baths > 0 || extras > 0 || dirtiness != nil || isHotDeal || isStartingSoon {
             ChipFlow(spacing: Spacing.xxs) {
+                if let dirtiness { ScopeChip(text: dirtiness) }
                 if rooms > 0 { ScopeChip(text: OrdersFormat.rooms(rooms)) }
                 if baths > 0 { ScopeChip(text: OrdersFormat.baths(baths)) }
                 if extras > 0 { ScopeChip(text: OrdersFormat.extras(extras)) }

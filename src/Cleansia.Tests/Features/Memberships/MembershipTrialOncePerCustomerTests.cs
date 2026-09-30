@@ -72,7 +72,7 @@ public class MembershipTrialOncePerCustomerTests
         _priceRepository.PriceIn(_plan.Id, MembershipPricingMockFactory.CzkCurrencyId, StripePriceId);
 
         _membershipRepository
-            .Setup(r => r.GetActiveForUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetLifecycleForUserAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
     }
 
@@ -188,7 +188,7 @@ public class MembershipTrialOncePerCustomerTests
     {
         HasAlreadyTrialed(true);
         _membershipRepository
-            .Setup(r => r.GetActiveForUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetLifecycleForUserAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
 
         var trial = await Resolver().ResolveForUserAsync(UserId, _plan, CancellationToken.None);

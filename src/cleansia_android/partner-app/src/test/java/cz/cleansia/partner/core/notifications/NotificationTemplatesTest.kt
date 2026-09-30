@@ -402,9 +402,9 @@ class NotificationTemplatesTest {
     }
 
     @Test
-    fun `deep link resolves the revocation to the order detail`() {
+    fun `deep link resolves the revocation to the order detail, asking for the removal reason`() {
         assertEquals(
-            NavRoute.OrderDetail(orderId = "ord-7"),
+            NavRoute.OrderDetail(orderId = "ord-7", showRemovalReason = true),
             NotificationDeepLink.resolve("order.assignment_revoked", "ord-7", null),
         )
     }

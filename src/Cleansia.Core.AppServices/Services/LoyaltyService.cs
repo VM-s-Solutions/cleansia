@@ -431,11 +431,7 @@ public sealed class LoyaltyService(
 
     private async Task<LoyaltyTierThresholds> ResolveThresholdsAsync(CancellationToken cancellationToken)
     {
-        var configs = await loyaltyTierConfigRepository.GetAllForTenantAsync(cancellationToken);
-        return new LoyaltyTierThresholds(
-            Silver: configs.FirstOrDefault(c => c.Tier == LoyaltyTier.SilverMopper)?.LifetimePointsThreshold ?? int.MaxValue,
-            Gold: configs.FirstOrDefault(c => c.Tier == LoyaltyTier.GoldPolisher)?.LifetimePointsThreshold ?? int.MaxValue,
-            Platinum: configs.FirstOrDefault(c => c.Tier == LoyaltyTier.PlatinumSparkler)?.LifetimePointsThreshold ?? int.MaxValue);
+        return LoyaltyTierThresholds.From(await loyaltyTierConfigRepository.GetAllForTenantAsync(cancellationToken));
     }
 
     /// <summary>

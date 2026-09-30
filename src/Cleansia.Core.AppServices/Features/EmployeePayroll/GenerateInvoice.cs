@@ -2,6 +2,7 @@ using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.EmployeePayroll;
+using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
@@ -73,7 +74,8 @@ public class GenerateInvoice
     public class Handler(
         IEmployeeInvoiceRepository invoiceRepository,
         IOrderEmployeePayRepository orderEmployeePayRepository,
-        IPayoutReferenceAllocator payoutReferenceAllocator)
+        IPayoutReferenceAllocator payoutReferenceAllocator,
+        ICashLedgerRepository cashLedgerRepository)
         : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -125,6 +127,7 @@ public class GenerateInvoice
             }
 
             var invoices = new List<EmployeeInvoice>(groups.Count);
+            var setOffs = new List<CashLedgerEntry>(groups.Count);
             for (var i = 0; i < groups.Count; i++)
             {
                 var rows = groups[i].ToList();
@@ -141,6 +144,14 @@ public class GenerateInvoice
                     orderPay.AssignToInvoice(invoice.Id);
                 }
                 invoices.Add(invoice);
+
+                var cashHeld = await cashLedgerRepository.GetHeldUnderLockAsync(command.EmployeeId, invoice.CurrencyId, cancellationToken);
+                if (invoice.SetOffCash(cashHeld) > 0m)
+                {
+                    var setOff = CashLedgerEntry.ForSetOff(invoice);
+                    cashLedgerRepository.Add(setOff);
+                    setOffs.Add(setOff);
+                }
             }
 
             // This handler does NOT own its own commit — UnitOfWorkPipelineBehavior commits after it
@@ -162,6 +173,11 @@ public class GenerateInvoice
                 foreach (var invoice in invoices)
                 {
                     invoiceRepository.Remove(invoice);
+                }
+
+                foreach (var setOff in setOffs)
+                {
+                    cashLedgerRepository.Remove(setOff);
                 }
 
                 // Named after the variable symbol for either per-company reference index (symbol or

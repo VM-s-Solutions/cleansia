@@ -70,6 +70,8 @@ final class BookingPriceSummaryTests: XCTestCase {
         let summary = BookingPriceSummary.resolve(quote: nil, discount: 250)
         XCTAssertEqual(summary, BookingPriceSummary(
             subtotal: 0,
+            dirtiness: .normal,
+            dirtinessSurcharge: 0,
             expressSurcharge: 0,
             expressLine: .notExpress,
             total: 0
@@ -115,6 +117,31 @@ final class BookingPriceSummaryTests: XCTestCase {
             discount: 0
         )
         XCTAssertEqual(summary.expressLine, .waived)
+    }
+
+    /// The surcharge sits inside the base the server prices from, so it is lifted out of the subtotal
+    /// onto its own row: subtotal + dirtiness - discount + express adds up to the total on screen.
+    func testTheDirtinessSurchargeIsItsOwnRowAndTheRowsAddUpToTheTotal() {
+        let heavyExpress = BookingQuote(
+            totalPrice: 1920,
+            currencyCode: "CZK",
+            expressSurchargeApplied: true,
+            expressSurchargeAmount: 320,
+            dirtiness: .heavy,
+            dirtinessSurchargeAmount: 600
+        )
+
+        let summary = BookingPriceSummary.resolve(quote: heavyExpress, discount: 0)
+
+        XCTAssertEqual(summary.dirtiness, .heavy)
+        XCTAssertEqual(summary.dirtinessSurcharge, 600, accuracy: 0.0001)
+        XCTAssertEqual(summary.subtotal, 1000, accuracy: 0.0001)
+        XCTAssertEqual(
+            summary.subtotal + summary.dirtinessSurcharge + summary.expressSurcharge,
+            summary.total,
+            accuracy: 0.0001
+        )
+        XCTAssertEqual(heavyExpress.preSurchargeSubtotal, 1600, accuracy: 0.0001, "the discount base keeps the level")
     }
 
     func testTheDiscountComesOffTheServerTotal() {

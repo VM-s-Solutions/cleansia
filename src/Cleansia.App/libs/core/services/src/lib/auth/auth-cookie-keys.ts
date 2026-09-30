@@ -11,11 +11,12 @@ export interface AuthCookieKeys {
   // on state-changing requests so the server can verify it matches the
   // session derived from the HttpOnly auth cookie.
   csrfToken: string;
-  // The administrator's role beside the profile, and the account id the picker refuses as
-  // "self". Only the admin app's session writes them; the partner and customer apps carry
-  // neither, which is why both are optional here.
+  // The administrator's role beside the profile, the account id the picker refuses as "self",
+  // and whether the password must be changed before anything else. Only the admin app's session
+  // writes them; the partner and customer apps carry none, which is why all three are optional.
   adminRole?: string;
   userId?: string;
+  mustChangePassword?: string;
 }
 
 /**

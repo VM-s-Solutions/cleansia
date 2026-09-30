@@ -100,7 +100,7 @@
             <div>
               <div class="cl-rec__label">{{ 'recurring_booking.rooms_label' | translate }}</div>
               <div class="cl-rec__count-chips">
-                @for (n of COUNTS; track n) {
+                @for (n of roomChoices; track n) {
                   <button
                     type="button"
                     class="cl-rec__chip cl-rec__chip--count"
@@ -114,7 +114,7 @@
             <div>
               <div class="cl-rec__label">{{ 'recurring_booking.bathrooms_label' | translate }}</div>
               <div class="cl-rec__count-chips">
-                @for (n of COUNTS; track n) {
+                @for (n of bathroomChoices; track n) {
                   <button
                     type="button"
                     class="cl-rec__chip cl-rec__chip--count"
@@ -131,6 +131,66 @@
             <p class="cl-rec__error">
               <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
               {{ 'recurring_booking.error_services' | translate }}
+            </p>
+          }
+        </section>
+
+        <!-- ── How clean the home is ─────────────────────────────────── -->
+        <section class="cl-rec__section">
+          <h2 class="cl-rec__section-title">{{ 'pages.order.dirtiness.title' | translate }}</h2>
+          <p class="cl-rec__section-hint">{{ 'pages.order.dirtiness.lead' | translate }}</p>
+          <p class="cl-wiz__level-hint">
+            <i class="pi pi-info-circle" aria-hidden="true"></i>
+            <span>{{ 'pages.order.dirtiness.hint' | translate }}</span>
+          </p>
+
+          <div
+            class="cl-wiz__levels"
+            role="group"
+            [attr.aria-label]="'pages.order.dirtiness.title' | translate"
+          >
+            @for (option of dirtinessLevels; track option.level) {
+              <button
+                type="button"
+                class="cl-wiz__level"
+                data-spec-level
+                [class.cl-wiz__level--on]="facade.formData().dirtinessLevel === option.level"
+                [attr.aria-pressed]="facade.formData().dirtinessLevel === option.level"
+                (click)="selectDirtinessLevel(option.level)"
+              >
+                <span class="cl-wiz__level-head">
+                  <span class="cl-h3 cl-wiz__level-name">{{
+                    'pages.order.dirtiness.' + option.key + '.name' | translate
+                  }}</span>
+                  <span class="cl-wiz__level-rate">
+                    @if (option.ratePercent > 0) {
+                      {{ 'pages.order.dirtiness.surcharge' | translate: { rate: option.ratePercent } }}
+                    } @else {
+                      {{ 'pages.order.dirtiness.no_surcharge' | translate }}
+                    }
+                  </span>
+                </span>
+                <span class="cl-wiz__level-lead">{{
+                  'pages.order.dirtiness.' + option.key + '.lead' | translate
+                }}</span>
+                <span class="cl-wiz__level-signs">
+                  @for (sign of dirtinessSigns; track sign) {
+                    <span class="cl-wiz__level-sign">
+                      <i class="pi pi-check" aria-hidden="true"></i>
+                      <span>{{
+                        'pages.order.dirtiness.' + option.key + '.sign_' + sign | translate
+                      }}</span>
+                    </span>
+                  }
+                </span>
+              </button>
+            }
+          </div>
+
+          @if (showError('dirtiness')) {
+            <p class="cl-rec__error" data-spec-dirtiness-error>
+              <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
+              {{ 'recurring_booking.error_dirtiness' | translate }}
             </p>
           }
         </section>
@@ -198,6 +258,7 @@
                 [ngModel]="facade.formData().startsOn"
                 (ngModelChange)="onStartsOnChange($event)"
                 [minDate]="minStartsOn"
+                [maxDate]="facade.latestStartsOn()"
                 dateFormat="dd. mm. yy"
                 [showIcon]="true"
                 [appendTo]="'body'"
@@ -324,6 +385,54 @@
           }
         </section>
 
+        @if (facade.servingCleanersLoading()) {
+          <section class="cl-rec__section">
+            <p class="cl-rec__hint">
+              <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>
+              {{ 'preferred_cleaner.loading' | translate }}
+            </p>
+          </section>
+        } @else if (facade.preferredCleanerVisible()) {
+          <section class="cl-rec__section" data-spec-preferred-picker>
+            <h2 class="cl-rec__section-title">{{ 'preferred_cleaner.title' | translate }}</h2>
+            <p class="cl-rec__section-hint">
+              {{ 'preferred_cleaner.schedule_explainer' | translate }}
+            </p>
+            <div class="cl-rec__field">
+              <cleansia-select
+                [options]="facade.preferredCleanerOptions()"
+                [ngModel]="facade.formData().preferredEmployeeId"
+                (ngModelChange)="selectPreferredCleaner($event)"
+                [placeholder]="'preferred_cleaner.placeholder' | translate"
+                [showClear]="true"
+                [floatVariant]="null"
+                [appendTo]="'body'"
+                [showErrors]="false"
+              />
+            </div>
+          </section>
+        }
+
+        @if (!isEditing()) {
+          <section class="cl-rec__section">
+            <label class="cl-wiz__consent" data-spec-early-performance>
+              <p-checkbox
+                [ngModel]="facade.formData().earlyPerformanceRequested"
+                (ngModelChange)="facade.updateFormData({ earlyPerformanceRequested: $event })"
+                [binary]="true"
+                inputId="recurring-early-performance"
+              />
+              <span>{{ 'pages.order.early_performance.early-performance-draft-2026-09-29' | translate }}</span>
+            </label>
+            @if (showError('earlyPerformance')) {
+              <p class="cl-rec__error" data-spec-early-performance-error>
+                <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
+                {{ 'recurring_booking.error_early_performance' | translate }}
+              </p>
+            }
+          </section>
+        }
+
         <!-- ── What it costs, and the two ways out ───────────────────── -->
         <div class="cl-rec__summary">
           <div class="cl-rec__summary-main">
@@ -336,12 +445,33 @@
                 <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
                 {{ 'recurring_booking.error_summary' | translate: { fields: missingLabels() } }}
               </p>
+            } @else if (facade.preferredCleanerRefused()) {
+              <p class="cl-rec__error cl-rec__error--summary" role="alert" data-spec-preferred-refused>
+                <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
+                {{
+                  (isEditing()
+                    ? 'preferred_cleaner.schedule_refused'
+                    : 'preferred_cleaner.schedule_refused_new'
+                  ) | translate
+                }}
+              </p>
             } @else {
               <p class="cl-rec__summary-note">{{ 'recurring_booking.price_note' | translate }}</p>
             }
           </div>
           <div class="cl-rec__summary-actions">
             <a class="cl-link" [routerLink]="listRoute">{{ 'global.cancel' | translate }}</a>
+            @if (facade.preferredCleanerRefused()) {
+              <button
+                type="button"
+                class="cl-rec__ghost"
+                data-spec-save-without-preferred
+                [disabled]="facade.submitting()"
+                (click)="saveWithoutPreferredCleaner()"
+              >
+                {{ 'preferred_cleaner.schedule_save_without' | translate }}
+              </button>
+            }
             <!--
               NOT disabled on an incomplete form. A dead button is why pressing
               save appeared to do nothing; this one always responds, and an
@@ -402,3 +532,44 @@
 </div>
 
 <p-confirmDialog />
+
+<p-dialog
+  [header]="'pages.order.card_capture.title' | translate"
+  [visible]="facade.cardCaptureVisible()"
+  (visibleChange)="!$event && facade.closeCardCapture()"
+  [modal]="true"
+  [closable]="true"
+  [style]="{ width: '480px' }"
+  [breakpoints]="{ '500px': '95vw' }"
+  styleClass="cleansia-dialog"
+>
+  <div class="cleansia-dialog__body">
+    <div class="cleansia-dialog__icon cleansia-dialog__icon--info">
+      <i class="pi pi-credit-card"></i>
+    </div>
+    <p class="cleansia-dialog__text">{{ 'pages.order.card_capture.intro' | translate }}</p>
+    <label class="cl-wiz__consent">
+      <p-checkbox
+        [ngModel]="facade.cardCaptureConsent()"
+        (ngModelChange)="facade.setCardCaptureConsent($event)"
+        [binary]="true"
+        inputId="recurring-card-consent"
+      />
+      <span>{{ 'pages.order.card_capture.consent.card-guarantee-draft-2026-09-28' | translate }}</span>
+    </label>
+  </div>
+  <ng-template #footer>
+    <cleansia-button
+      [title]="'pages.order.card_capture.cancel' | translate"
+      [severity]="'secondary'"
+      (clickFn)="facade.closeCardCapture()"
+    />
+    <cleansia-button
+      [title]="'pages.order.card_capture.continue' | translate"
+      [severity]="'primary'"
+      [loading]="facade.cardCaptureStarting()"
+      [disabled]="!facade.cardCaptureConsent()"
+      (clickFn)="facade.startCardCapture()"
+    />
+  </ng-template>
+</p-dialog>

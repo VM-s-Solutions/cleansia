@@ -1,9 +1,11 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Cleansia.Core.Domain.Common;
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
 using Cleansia.Core.Queue.Abstractions;
@@ -13,12 +15,13 @@ using Microsoft.Extensions.Logging;
 namespace Cleansia.Functions.Core.Handlers;
 
 /// <summary>
-/// Realizes every e-mail the send-email queue carries, off the request path. The queue holds three
+/// Realizes every e-mail the send-email queue carries, off the request path. The queue holds seven
 /// payload shapes told apart by their <c>messageType</c> discriminator: the bare
 /// <see cref="SendEmailMessage"/> (no discriminator; confirmation, reset, promo and the two wind-down
-/// notices, resolved by <see cref="EmailType"/>), the guest order cancellation, and the admin
-/// notification. Each is sent via the existing <see cref="IEmailService"/> in the language the
-/// producer chose.
+/// notices, resolved by <see cref="EmailType"/>), the guest order cancellation, the booking
+/// confirmation, the admin notification, the receivable pay link, the lockout cancellation and the
+/// cleaner's copy of a contract for work. Each is sent via the existing
+/// <see cref="IEmailService"/> in the language the producer chose.
 ///
 /// Idempotent via <see cref="IIdempotencyGuard"/> in ACT-THEN-CLAIM mode (at-least-once): non-claiming
 /// check on the deterministic key → send → claim. A FAILED send leaves the key unclaimed so the queue
@@ -39,7 +42,12 @@ public class SendEmailHandler(
     ILogger<SendEmailHandler> logger,
     IOrderRepository orderRepository,
     GuestOrderAccessTokenIssuer guestAccessTokenIssuer,
-    IUnitOfWork unitOfWork)
+    IUnitOfWork unitOfWork,
+    ICancellationPolicyResolver cancellationPolicyResolver,
+    IReceivableRepository receivableRepository,
+    IContractConfirmationService contractConfirmations,
+    IWorkContractAcceptanceRepository workContractAcceptanceRepository,
+    IEmployeeRepository employeeRepository)
 {
     private static readonly JsonSerializerOptions JsonOptions =
         new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
@@ -47,7 +55,11 @@ public class SendEmailHandler(
     public async Task HandleAsync(string messageText, CancellationToken ct)
     {
         SendGuestOrderCancellationEmailMessage? guestMessage;
+        SendOrderBookedEmailMessage? bookedMessage;
         SendAdminNotificationEmailMessage? adminMessage;
+        SendReceivablePayLinkEmailMessage? payLinkMessage;
+        SendOrderLockoutEmailMessage? lockoutMessage;
+        SendWorkContractEmailMessage? workContractMessage;
         string? discriminatedTenantId;
         try
         {
@@ -59,8 +71,16 @@ public class SendEmailHandler(
                 && kind.ValueKind == JsonValueKind.String ? kind.GetString() : null;
             guestMessage = messageType == "guest-order-cancelled"
                 ? payload.Deserialize<SendGuestOrderCancellationEmailMessage>(JsonOptions) : null;
+            bookedMessage = messageType == SendOrderBookedEmailMessage.Discriminator
+                ? payload.Deserialize<SendOrderBookedEmailMessage>(JsonOptions) : null;
             adminMessage = messageType == SendAdminNotificationEmailMessage.Discriminator
                 ? payload.Deserialize<SendAdminNotificationEmailMessage>(JsonOptions) : null;
+            payLinkMessage = messageType == SendReceivablePayLinkEmailMessage.Discriminator
+                ? payload.Deserialize<SendReceivablePayLinkEmailMessage>(JsonOptions) : null;
+            lockoutMessage = messageType == SendOrderLockoutEmailMessage.Discriminator
+                ? payload.Deserialize<SendOrderLockoutEmailMessage>(JsonOptions) : null;
+            workContractMessage = messageType == SendWorkContractEmailMessage.Discriminator
+                ? payload.Deserialize<SendWorkContractEmailMessage>(JsonOptions) : null;
             discriminatedTenantId = root.TryGetProperty("tenantId", out var tenant) && tenant.ValueKind == JsonValueKind.String ? tenant.GetString() : null;
         }
         catch (JsonException ex)
@@ -73,9 +93,29 @@ public class SendEmailHandler(
             await SendGuestCancellationAsync(guestMessage, discriminatedTenantId, ct);
             return;
         }
+        if (bookedMessage is not null)
+        {
+            await SendOrderBookedAsync(bookedMessage, discriminatedTenantId, ct);
+            return;
+        }
         if (adminMessage is not null)
         {
             await SendAdminNotificationAsync(adminMessage, discriminatedTenantId, ct);
+            return;
+        }
+        if (payLinkMessage is not null)
+        {
+            await SendReceivablePayLinkAsync(payLinkMessage, discriminatedTenantId, ct);
+            return;
+        }
+        if (lockoutMessage is not null)
+        {
+            await SendOrderLockoutAsync(lockoutMessage, discriminatedTenantId, ct);
+            return;
+        }
+        if (workContractMessage is not null)
+        {
+            await SendWorkContractAsync(workContractMessage, discriminatedTenantId, ct);
             return;
         }
 
@@ -178,7 +218,9 @@ public class SendEmailHandler(
             .Include(o => o.Currency).Include(o => o.CustomerAddress)
             .AsNoTracking()
             .FirstOrDefaultAsync(o => o.Id == message.OrderId && o.UserId == null
-                && o.CurrentStatus == OrderStatus.Cancelled && o.CancelledBy == CancelledBy.Customer, ct);
+                && o.CurrentStatus == OrderStatus.Cancelled
+                && (o.CancelledBy == CancelledBy.Customer || o.CancelledBy == CancelledBy.Admin
+                    || o.CancelledBy == CancelledBy.System), ct);
         if (order is null || string.IsNullOrWhiteSpace(order.CustomerEmail)
             || order.CustomerEmail == AnonymizationMarker.Value)
         {
@@ -209,7 +251,193 @@ public class SendEmailHandler(
         }
     }
 
-    // Act-then-claim like the two shapes beside it: the send is the only thing that may throw, and it
+    // Act-then-claim like the guest cancellation beside it. A booking cancelled before the message was
+    // read is not confirmed to anyone.
+    private async Task SendOrderBookedAsync(
+        SendOrderBookedEmailMessage message, string? envelopeTenantId, CancellationToken ct)
+    {
+        var tenantId = envelopeTenantId ?? message.TenantId;
+        if (string.IsNullOrWhiteSpace(message.OrderId) || string.IsNullOrWhiteSpace(tenantId))
+        {
+            logger.LogWarning("Discarding booking e-mail with no order or operator");
+            return;
+        }
+        var key = MessageKeys.OrderBookedEmail(message.OrderId);
+        if (await idempotencyGuard.HasProcessedAsync(key, ct)) return;
+
+        tenantProvider.SetTenantOverride(tenantId);
+        var order = await orderRepository.GetQueryable()
+            .Include(o => o.Currency).Include(o => o.CustomerAddress).Include(o => o.User)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(o => o.Id == message.OrderId
+                && o.CurrentStatus != OrderStatus.Cancelled, ct);
+        if (order is null || string.IsNullOrWhiteSpace(order.CustomerEmail)
+            || order.CustomerEmail == AnonymizationMarker.Value)
+        {
+            logger.LogWarning("Discarding booking e-mail: order {OrderId} has no eligible destination", message.OrderId);
+            return;
+        }
+
+        var policy = await cancellationPolicyResolver.ResolveForOrderAsync(order, ct);
+        var languageCode = EmailLocale.Resolve(
+            order.LanguageCode ?? order.User?.PreferredLanguageCode ?? message.LanguageCode);
+        var confirmation = await contractConfirmations.ForBookingAsync(
+            order, message.ContractConcludedOn ?? order.CreatedOn, languageCode, ct);
+
+        // The guest's link to the booking, committed before the send so an e-mailed token always has
+        // its row — the receipt that used to carry it now comes after the clean.
+        var guestAccessToken = guestAccessTokenIssuer.IssueForGuest(order);
+        if (guestAccessToken is not null)
+        {
+            await unitOfWork.CommitAsync(ct);
+        }
+
+        await emailService.SendOrderBookedEmailAsync(order.CustomerEmail, order, policy.FreeCancellationHours,
+            languageCode, ct, guestAccessToken, confirmation.Bytes, confirmation.FileName);
+        try
+        {
+            await idempotencyGuard.MarkProcessedAsync(key, ct);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Booking e-mail sent for order {OrderId}, but its delivery claim failed", order.Id);
+        }
+    }
+
+    // Act-then-claim like the shapes beside it.
+    private async Task SendWorkContractAsync(
+        SendWorkContractEmailMessage message, string? envelopeTenantId, CancellationToken ct)
+    {
+        var tenantId = envelopeTenantId ?? message.TenantId;
+        if (string.IsNullOrWhiteSpace(message.AcceptanceId) || string.IsNullOrWhiteSpace(tenantId))
+        {
+            logger.LogWarning("Discarding work-contract e-mail with no acceptance or operator");
+            return;
+        }
+        var key = MessageKeys.WorkContractEmail(message.AcceptanceId);
+        if (await idempotencyGuard.HasProcessedAsync(key, ct)) return;
+
+        tenantProvider.SetTenantOverride(tenantId);
+        var acceptance = await workContractAcceptanceRepository.GetByIdAsync(message.AcceptanceId, ct);
+        var cleaner = acceptance is null ? null : await employeeRepository.GetByIdAsync(acceptance.EmployeeId, ct);
+        if (acceptance is null || cleaner?.User is not { Email.Length: > 0 } user)
+        {
+            logger.LogWarning("Discarding work-contract e-mail: acceptance {AcceptanceId} has no eligible destination", message.AcceptanceId);
+            return;
+        }
+
+        var languageCode = EmailLocale.Resolve(user.PreferredLanguageCode);
+        var contract = await contractConfirmations.ForWorkContractAsync(acceptance, cleaner, languageCode, ct);
+        await emailService.SendWorkContractEmailAsync(
+            user.Email, $"{user.FirstName} {user.LastName}".Trim(), WorkContractFacts.FromJson(acceptance.FactsJson).OrderNumber,
+            contract.Bytes, contract.FileName, languageCode, ct);
+        try
+        {
+            await idempotencyGuard.MarkProcessedAsync(key, ct);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Work-contract e-mail sent for acceptance {AcceptanceId}, but its delivery claim failed", acceptance.Id);
+        }
+    }
+
+    // Act-then-claim like the shapes beside it.
+    private async Task SendOrderLockoutAsync(
+        SendOrderLockoutEmailMessage message, string? envelopeTenantId, CancellationToken ct)
+    {
+        var tenantId = envelopeTenantId ?? message.TenantId;
+        if (string.IsNullOrWhiteSpace(message.OrderId) || string.IsNullOrWhiteSpace(tenantId))
+        {
+            logger.LogWarning("Discarding lockout e-mail with no order or operator");
+            return;
+        }
+        var key = MessageKeys.OrderLockoutEmail(message.OrderId);
+        if (await idempotencyGuard.HasProcessedAsync(key, ct)) return;
+
+        tenantProvider.SetTenantOverride(tenantId);
+        var order = await orderRepository.GetQueryable()
+            .Include(o => o.Currency).Include(o => o.CustomerAddress).Include(o => o.User)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(o => o.Id == message.OrderId
+                && o.CurrentStatus == OrderStatus.Cancelled
+                && o.CancellationReason == OrderCancellationReasons.CustomerLockout, ct);
+        if (order is null || string.IsNullOrWhiteSpace(order.CustomerEmail)
+            || order.CustomerEmail == AnonymizationMarker.Value)
+        {
+            logger.LogWarning("Discarding lockout e-mail: order {OrderId} has no eligible destination", message.OrderId);
+            return;
+        }
+
+        var languageCode = EmailLocale.Resolve(
+            order.LanguageCode ?? order.User?.PreferredLanguageCode ?? message.LanguageCode);
+
+        // Null for the account booking this message is sent for; a guest's link is committed before the send
+        // so an e-mailed token always has its row.
+        var guestAccessToken = guestAccessTokenIssuer.IssueForGuest(order);
+        if (guestAccessToken is not null)
+        {
+            await unitOfWork.CommitAsync(ct);
+        }
+
+        await emailService.SendOrderStatusUpdateEmailAsync(order.CustomerEmail, order, "Cancelled", languageCode, ct,
+            guestAccessToken: guestAccessToken);
+        try
+        {
+            await idempotencyGuard.MarkProcessedAsync(key, ct);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Lockout e-mail sent for order {OrderId}, but its delivery claim failed", order.Id);
+        }
+    }
+
+    // Act-then-claim like the shapes beside it. A receivable settled or written off before the send is not
+    // chased: the link would take money no longer owed.
+    private async Task SendReceivablePayLinkAsync(
+        SendReceivablePayLinkEmailMessage message, string? envelopeTenantId, CancellationToken ct)
+    {
+        var tenantId = envelopeTenantId ?? message.TenantId;
+        if (string.IsNullOrWhiteSpace(message.ReceivableId) || string.IsNullOrWhiteSpace(message.PayUrl)
+            || string.IsNullOrWhiteSpace(tenantId))
+        {
+            logger.LogWarning("Discarding pay-link e-mail with no receivable, link or operator");
+            return;
+        }
+        var key = MessageKeys.ReceivablePayLinkEmail(message.ReceivableId, message.Attempt);
+        if (await idempotencyGuard.HasProcessedAsync(key, ct)) return;
+
+        tenantProvider.SetTenantOverride(tenantId);
+        var receivable = await receivableRepository.GetByIdAsync(message.ReceivableId, ct);
+        if (receivable is not { IsOpen: true })
+        {
+            logger.LogInformation("Pay-link e-mail for receivable {ReceivableId} not sent: it is no longer open", message.ReceivableId);
+            return;
+        }
+
+        var order = await orderRepository.GetQueryable()
+            .Include(o => o.Currency).Include(o => o.CustomerAddress).Include(o => o.User)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(o => o.Id == receivable.OrderId, ct);
+        if (order is null || string.IsNullOrWhiteSpace(order.CustomerEmail)
+            || order.CustomerEmail == AnonymizationMarker.Value)
+        {
+            logger.LogWarning("Discarding pay-link e-mail: order {OrderId} has no eligible destination", receivable.OrderId);
+            return;
+        }
+
+        var languageCode = EmailLocale.Resolve(order.LanguageCode ?? order.User?.PreferredLanguageCode ?? Constants.Language.English);
+        await emailService.SendReceivablePayLinkEmailAsync(order.CustomerEmail, order, receivable, message.PayUrl, languageCode, ct);
+        try
+        {
+            await idempotencyGuard.MarkProcessedAsync(key, ct);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Pay-link e-mail sent for receivable {ReceivableId}, but its delivery claim failed", receivable.Id);
+        }
+    }
+
+    // Act-then-claim like the shapes beside it: the send is the only thing that may throw, and it
     // throws so the runtime retries and dead-letters; a body the producer could never have written acks.
     private async Task SendAdminNotificationAsync(
         SendAdminNotificationEmailMessage message, string? envelopeTenantId, CancellationToken ct)

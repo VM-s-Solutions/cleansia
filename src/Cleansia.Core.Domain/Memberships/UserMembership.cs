@@ -10,14 +10,12 @@ namespace Cleansia.Core.Domain.Memberships;
 /// subscription — the local row is a mirror, with Stripe as the authoritative
 /// source for billing state. Webhooks keep this in sync.
 ///
-/// One user can have at most one active membership at a time. This invariant
-/// is asserted in handler code (the request path's GetActiveForUserAsync guard
-/// and the webhook's ProvisionFromCreatedEventAsync active-check) AND
-/// backstopped at the database by a FILTERED partial unique
-/// index on (TenantId, UserId) WHERE Status = Active
-/// (UserMembershipEntityConfiguration). The index is filtered to Active so a
-/// cancelled/expired membership plus a new active subscription is still
-/// allowed — a full unique index would wrongly block that legitimate
+/// One user can have at most one live membership at a time — Active, PastDue or Paused, a
+/// subscription Stripe still holds open. This invariant is asserted in handler code (the request
+/// path's GetLifecycleForUserAsync guard and the webhook's ProvisionFromCreatedEventAsync check) AND
+/// backstopped at the database by a FILTERED partial unique index on (TenantId, UserId) over those
+/// statuses (UserMembershipEntityConfiguration). The index is filtered so a cancelled membership plus
+/// a new subscription is still allowed — a full unique index would wrongly block that legitimate
 /// re-subscribe-after-cancel case.
 /// </summary>
 public class UserMembership : TenantAuditable
@@ -283,6 +281,18 @@ public class UserMembership : TenantAuditable
     public UserMembership MarkCancellationRequested()
     {
         CancelledAt = DateTime.UtcNow;
+        return this;
+    }
+
+    /// <summary>
+    /// A cancel that takes effect now, for a live enrolment that is not paid up (owner ruling 2026-09-28):
+    /// Stripe has already cancelled the subscription and voided its open invoice, and there is no paid
+    /// period left to run out. The webhook that follows confirms the same state.
+    /// </summary>
+    public UserMembership MarkCancelledNow(DateTime nowUtc)
+    {
+        Status = MembershipStatus.Cancelled;
+        CancelledAt = nowUtc;
         return this;
     }
 

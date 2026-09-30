@@ -18,6 +18,9 @@ protocol PartnerPayrollClient: AnyObject {
     func getPagedInvoices(employeeId: String) async -> ApiResult<[Invoice]>
     func getInvoice(id: String) async -> ApiResult<InvoiceDetail>
     func downloadInvoicePdf(id: String) async -> ApiResult<URL>
+    /// One row per currency the cleaner holds company cash in; none when they hold none. The server
+    /// scopes it to the caller.
+    func getCashHeld() async -> ApiResult<[CashHeld]>
 }
 
 final class LivePartnerPayrollClient: PartnerPayrollClient {
@@ -62,6 +65,12 @@ final class LivePartnerPayrollClient: PartnerPayrollClient {
     func downloadInvoicePdf(id: String) async -> ApiResult<URL> {
         await apiResult(mapError: ApiError.fromGenerated) {
             try await PartnerEmployeePayrollAPI.employeePayrollDownloadInvoice(invoiceId: id)
+        }
+    }
+
+    func getCashHeld() async -> ApiResult<[CashHeld]> {
+        await apiResult(mapError: ApiError.fromGenerated) {
+            try await PartnerEmployeePayrollAPI.employeePayrollGetCashHeld().map(CashHeld.init)
         }
     }
 }

@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Features.Currencies.DTOs;
 using Cleansia.Core.AppServices.Shared.DTOs.Enums;
+using Cleansia.Core.Domain.Enums;
 
 namespace Cleansia.Core.AppServices.Features.Disputes.DTOs;
 
@@ -13,7 +14,14 @@ public record DisputeDetails(
     string Description,
     Code Status,
     string? ResolutionNotes,
+    /// <summary>
+    /// The refund the resolution asked for, then what it moved: the card refund Stripe confirmed and
+    /// the credit returned to the balance. The two can fall short of the request when the card had
+    /// less left to give back. Null where the dispute was resolved without a refund.
+    /// </summary>
     decimal? RefundAmount,
+    decimal? CardRefundedAmount,
+    decimal? CreditReturnedAmount,
     /// <summary>
     /// The currency the agreed refund is in — the ORDER's, since that is what is being refunded.
     /// Null only when the dispute's order could not be loaded.
@@ -45,5 +53,9 @@ public record DisputeDetails(
     /// The order items the customer said were not done properly. Empty is ordinary — a dispute about
     /// the whole job, or about a charge, names none.
     /// </summary>
-    IEnumerable<DisputeLineDto> Lines
+    IEnumerable<DisputeLineDto> Lines,
+    /// <summary>
+    /// The customer's choice on filing: a card refund, or credit. A justified complaint is settled by it.
+    /// </summary>
+    DisputeSettlementPreference SettlementPreference = DisputeSettlementPreference.CardRefund
 );

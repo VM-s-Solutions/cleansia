@@ -11,10 +11,9 @@ namespace Cleansia.Core.AppServices.Features.Credit.Admin;
 /// <summary>
 /// An admin puts money on a customer's credit balance.
 ///
-/// <para><b>This is the only way credit is created, and it is deliberately human-only.</b> Owner
-/// ruling 2026-09-05: "person in loop 100%" — no dispute resolution, no cancellation and no job of
-/// any kind issues credit on its own. A dispute that deserves compensation ends with a person
-/// deciding the number and calling this.</para>
+/// <para><b>Deliberately human-only.</b> Owner ruling 2026-09-05: "person in loop 100%". A dispute's
+/// settlement is not issued here: <c>ResolveDispute</c> settles it, in credit only when the customer
+/// chose credit on filing.</para>
 /// </summary>
 [AuditAction("credit.issue", Sensitive = true, ResourceType = "CreditAccount")]
 public class IssueCustomerCredit
@@ -116,7 +115,12 @@ public class IssueCustomerCredit
                 // (a refund that failed to give the credit back, say) needs to write the same reason
                 // rather than filing it as Goodwill and losing the provenance.
                 .Must(reason => reason != CreditTransactionReason.OrderPayment)
-                .WithMessage(BusinessErrorMessage.CreditReasonNotIssuable);
+                .WithMessage(BusinessErrorMessage.CreditReasonNotIssuable)
+                // A complaint is settled by ResolveDispute, in credit only when the customer chose it on
+                // filing (owner ruling 2026-09-28). A settlement credit issued here would be exactly the
+                // credit-instead-of-refund the customer did not ask for.
+                .Must(reason => reason != CreditTransactionReason.DisputeSettlement)
+                .WithMessage(BusinessErrorMessage.CreditDisputeSettlementNotIssuable);
 
             // Free text, and the ONLY record of why a person decided this. Required for the same
             // reason GrantPointsManually requires one.

@@ -84,7 +84,9 @@ public class CleanerCurrencyGateSurfaceTests(PostgresContainerFixture fixture) :
                     provider.GetRequiredService<IEmployeeRepository>(),
                     accessService,
                     currencyResolution,
-                    provider.GetRequiredService<ILegalDocumentRepository>());
+                    provider.GetRequiredService<ILegalDocumentRepository>(),
+                    provider.GetRequiredService<ILegalDocumentResolver>(),
+                    provider.GetRequiredService<IUserConsentRepository>());
 
                 var browsable = new Dictionary<string, bool>();
                 var takeVerdicts = new Dictionary<string, string?>();

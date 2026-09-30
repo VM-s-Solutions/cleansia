@@ -91,12 +91,20 @@ struct RewardsContentView: View {
         LoyaltyTier(value: content.account.currentTier) ?? .bronzeCleaner
     }
 
+    private var perkLabels: [String] {
+        LoyaltyPresentation.perkLabels(
+            content.account.currentPerks,
+            discount: LoyaltyPresentation.currentDiscountSummary(content.account, floorApplies: tierFloor.applies),
+            currencyCode: tierFloor.currencyCode
+        )
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Spacing.m) {
                 TierHeroCard(tier: currentTier, account: content.account)
                 ProgressCard(account: content.account)
-                CurrentPerksCard(perks: content.account.currentPerks)
+                CurrentPerksCard(labels: perkLabels)
                 TierLadderCard(tiers: content.tiers, current: currentTier, floor: tierFloor)
 
                 if let referral = content.referral, !referral.code.isEmpty {
@@ -184,19 +192,19 @@ private struct ProgressCard: View {
 }
 
 private struct CurrentPerksCard: View {
-    let perks: [TierPerk]
+    let labels: [String]
 
     var body: some View {
         RewardsCard {
             Text(L10n.Rewards.currentPerksTitle)
                 .font(CleansiaTypography.titleMedium)
                 .foregroundColor(CleansiaColors.onBackground)
-            ForEach(Array(LoyaltyPresentation.effectivePerks(perks).enumerated()), id: \.offset) { _, perk in
+            ForEach(Array(labels.enumerated()), id: \.offset) { _, label in
                 HStack(spacing: Spacing.s) {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 18))
                         .foregroundColor(CleansiaColors.primary)
-                    Text(L10n.Rewards.perkLabel(perk.labelKey))
+                    Text(label)
                         .font(CleansiaTypography.bodyMedium)
                         .foregroundColor(CleansiaColors.onSurface)
                 }

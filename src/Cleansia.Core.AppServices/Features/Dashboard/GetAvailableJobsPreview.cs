@@ -58,7 +58,8 @@ public class GetAvailableJobsPreview
 
             // The spec admits only the cleaner's currency; the currency-first key stays in front of
             // the price sort so the top-N can never be chosen across currencies should that change.
-            var spec = DashboardSpecifications.CreateAvailableOrdersSpec(employeeId, currency.Id, DateTime.UtcNow);
+            var cashJobsHidden = await orderAccessService.CashJobsHiddenFromAsync(employeeId, currency.Id, cancellationToken);
+            var spec = DashboardSpecifications.CreateAvailableOrdersSpec(employeeId, currency.Id, DateTime.UtcNow, cashJobsHidden);
             var totalCount = await orderRepository.GetCountAsync(spec.SatisfiedBy(), cancellationToken);
             var orders = await orderRepository.GetQueryable()
                 .Where(spec.SatisfiedBy())
@@ -75,6 +76,8 @@ public class GetAvailableJobsPreview
                     // selected.
                     o.Rooms,
                     o.Bathrooms,
+                    o.RequiredEmployees,
+                    o.DirtinessLevel,
                     // Carried for the pay estimate too: a rate is denominated, so the estimate has to
                     // know which of the caller's rates applies to THIS job.
                     o.CurrencyId,
@@ -127,6 +130,8 @@ public class GetAvailableJobsPreview
                 o.PackageIds.ToHashSet(),
                 o.Rooms,
                 o.Bathrooms,
+                o.RequiredEmployees,
+                o.DirtinessLevel,
                 o.CurrencyId,
                 employeeId,
                 serviceConfigs,

@@ -60,6 +60,7 @@ import cz.cleansia.partner.features.profile.DocumentsSectionScreen
 import cz.cleansia.partner.features.profile.EmergencySectionScreen
 import cz.cleansia.partner.features.profile.IdentificationSectionScreen
 import cz.cleansia.partner.features.profile.JobRadiusScreen
+import cz.cleansia.partner.features.profile.LegalDocumentsScreen
 import cz.cleansia.partner.features.profile.PersonalSectionScreen
 import cz.cleansia.partner.features.profile.ProfileScreen
 import cz.cleansia.partner.features.settings.LanguagePickerScreen
@@ -240,6 +241,7 @@ fun PartnerNavHost(navController: NavHostController) {
                         popUpTo(NavRoute.PendingOffers) { inclusive = true }
                     }
                 },
+                onOpenLegalDocuments = { navController.navigate(NavRoute.LegalDocuments) },
             )
         }
 
@@ -298,7 +300,10 @@ fun PartnerNavHost(navController: NavHostController) {
                 ) + fadeOut(animationSpec = tween(durationMillis = 260))
             },
         ) {
-            OrderDetailScreen(onNavigateBack = { navController.popBackStack() })
+            OrderDetailScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onOpenLegalDocuments = { navController.navigate(NavRoute.LegalDocuments) },
+            )
         }
 
         composable<NavRoute.InvoiceDetail> {
@@ -363,6 +368,7 @@ fun PartnerNavHost(navController: NavHostController) {
                 onNavigateToBank = { navController.navigate(NavRoute.ProfileBank()) },
                 onNavigateToEmergency = { navController.navigate(NavRoute.ProfileEmergency) },
                 onNavigateToDocuments = { navController.navigate(NavRoute.ProfileDocuments) },
+                onNavigateToLegalDocuments = { navController.navigate(NavRoute.LegalDocuments) },
                 onNavigateToLanguage = { navController.navigate(NavRoute.PreferenceLanguage) },
                 onNavigateToTheme = { navController.navigate(NavRoute.PreferenceTheme) },
                 onNavigateToJobRadius = { navController.navigate(NavRoute.PreferenceJobRadius) },
@@ -475,6 +481,9 @@ fun PartnerNavHost(navController: NavHostController) {
             DocumentsSectionScreen(
                 onNavigateBack = { navController.popBackStack() },
             )
+        }
+        composable<NavRoute.LegalDocuments> {
+            LegalDocumentsScreen(onNavigateBack = { navController.popBackStack() })
         }
 
         composable<NavRoute.PreferenceLanguage> {

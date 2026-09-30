@@ -14,7 +14,8 @@ final class CreateRecurringViewModelTests: XCTestCase {
         recurringClient: FakeRecurringBookingClient = FakeRecurringBookingClient(),
         catalog: FakeCatalogClient = FakeCatalogClient(result: .success(CatalogFixtures.populated)),
         addressClient: FakeRecurringSavedAddressClient = FakeRecurringSavedAddressClient(),
-        orderClient: FakeOrderClient = FakeOrderClient()
+        orderClient: FakeOrderClient = FakeOrderClient(),
+        snackbar: SnackbarController? = nil
     ) -> (CreateRecurringViewModel, FakeRecurringBookingClient) {
         let repo = RecurringBookingRepository(client: recurringClient)
         let vm = CreateRecurringViewModel(
@@ -25,7 +26,8 @@ final class CreateRecurringViewModelTests: XCTestCase {
             addressClient: addressClient,
             orderClient: orderClient,
             quoteClient: FakeQuoteClient(),
-            snackbar: SnackbarController(),
+            cleanersClient: FakeServingCleanersClient(),
+            snackbar: snackbar ?? SnackbarController(),
             scheduler: TestScheduler.dispatch.eraseToAnyScheduler()
         )
         return (vm, recurringClient)
@@ -34,7 +36,9 @@ final class CreateRecurringViewModelTests: XCTestCase {
     private func fillValid(_ vm: CreateRecurringViewModel) {
         vm.setSavedAddressId("addr-1")
         vm.toggleService("s-1")
+        vm.setDirtiness(.normal)
         vm.setStartsOn(Date(timeIntervalSince1970: 1_780_000_000))
+        vm.setEarlyPerformanceRequested(true)
     }
 
     func testStartsIdleAndInvalid() {
@@ -43,7 +47,7 @@ final class CreateRecurringViewModelTests: XCTestCase {
         XCTAssertFalse(vm.isValid)
     }
 
-    func testIsValidRequiresAddressServiceAndStart() async {
+    func testIsValidRequiresAddressServiceLevelAndStart() async {
         let (vm, _) = makeVM()
         await vm.load()
         vm.setSavedAddressId("addr-1")
@@ -51,6 +55,10 @@ final class CreateRecurringViewModelTests: XCTestCase {
         vm.toggleService("s-1")
         XCTAssertFalse(vm.isValid)
         vm.setStartsOn(Date(timeIntervalSince1970: 1_780_000_000))
+        XCTAssertFalse(vm.isValid, "a new schedule is submittable without a level")
+        vm.setDirtiness(.normal)
+        XCTAssertFalse(vm.isValid, "a new schedule is submittable without the early-performance request")
+        vm.setEarlyPerformanceRequested(true)
         XCTAssertTrue(vm.isValid)
     }
 
@@ -74,6 +82,8 @@ final class CreateRecurringViewModelTests: XCTestCase {
         XCTAssertTrue(vm.canAdvance(step: 1))
 
         vm.togglePackage("p-1")
+        XCTAssertFalse(vm.canAdvance(step: 2), "a selection without a level advances")
+        vm.setDirtiness(.increased)
         XCTAssertTrue(vm.canAdvance(step: 2))
         vm.togglePackage("p-1")
         vm.toggleService("s-1")
@@ -83,6 +93,7 @@ final class CreateRecurringViewModelTests: XCTestCase {
         XCTAssertFalse(vm.canAdvance(step: 3), "an address without a start date does not advance")
         vm.setStartsOn(Date(timeIntervalSince1970: 1_780_000_000))
         XCTAssertTrue(vm.canAdvance(step: 3))
+        vm.setEarlyPerformanceRequested(true)
         XCTAssertTrue(vm.isValid)
     }
 
@@ -90,6 +101,7 @@ final class CreateRecurringViewModelTests: XCTestCase {
         var state = CreateRecurringFormState()
         state.savedAddressId = "addr-1"
         state.selectedServiceIds = ["s-1"]
+        state.dirtiness = .normal
         state.startsOn = Date(timeIntervalSince1970: 1_780_000_000)
         XCTAssertTrue(state.isValid)
 
@@ -122,6 +134,45 @@ final class CreateRecurringViewModelTests: XCTestCase {
 
         XCTAssertFalse(ok)
         if case .error = vm.submitState {} else { XCTFail("expected submit error") }
+    }
+
+    // MARK: - The request to start within the withdrawal period
+
+    /// One tick covers every occurrence the schedule creates, and the server refuses a schedule without it.
+    func testANewScheduleWithoutTheEarlyPerformanceRequestIsNeitherSubmittableNorSent() async {
+        let (vm, client) = makeVM()
+        await vm.load()
+        fillValid(vm)
+        vm.setEarlyPerformanceRequested(false)
+
+        XCTAssertFalse(vm.isValid)
+        let saved = await vm.submit()
+
+        XCTAssertFalse(saved)
+        XCTAssertTrue(client.createInputs.isEmpty)
+    }
+
+    func testTheRequestRidesTheNewSchedule() async {
+        let (vm, client) = makeVM()
+        await vm.load()
+        fillValid(vm)
+
+        _ = await vm.submit()
+
+        XCTAssertEqual(client.createInputs.first?.earlyPerformanceRequested, true)
+    }
+
+    /// The schedule's act was recorded when it was created and survives the edit; the update carries none.
+    func testAnEditAsksForNoRequest() async {
+        let (vm, client) = makeVM(editing: RecurringFixtures.template())
+        await vm.load()
+
+        XCTAssertFalse(vm.formState.earlyPerformanceRequested)
+        XCTAssertTrue(vm.isValid)
+        let saved = await vm.submit()
+
+        XCTAssertTrue(saved)
+        XCTAssertEqual(client.updateInputs.count, 1)
     }
 
     func testIncompleteFormDoesNotSubmit() async {
@@ -175,6 +226,8 @@ final class CreateRecurringViewModelTests: XCTestCase {
         XCTAssertEqual(vm.formState.selectedPackageIds, [])
         XCTAssertEqual(events, [.selectionPrunedForMarket])
         vm.setStartsOn(Date(timeIntervalSince1970: 1_780_000_000))
+        vm.setDirtiness(.normal)
+        vm.setEarlyPerformanceRequested(true)
         XCTAssertTrue(vm.isValid)
     }
 
@@ -527,6 +580,50 @@ final class CreateRecurringViewModelTests: XCTestCase {
         XCTAssertEqual(client.createInputs.first?.bathrooms, 2)
     }
 
+    // MARK: - Dirtiness level
+
+    /// A new schedule asks for the level the way a booking does; nothing is preselected.
+    func testANewScheduleStartsWithoutALevelAndBooksTheLevelPicked() async {
+        let (vm, client) = makeVM()
+        XCTAssertNil(vm.formState.dirtiness)
+        await vm.load()
+        fillValid(vm)
+
+        vm.setDirtiness(.increased)
+        _ = await vm.submit()
+
+        XCTAssertEqual(client.createInputs.first?.dirtiness, .increased)
+    }
+
+    /// Repeating an order does not carry its level over: how soiled the home was then says little
+    /// about a home cleaned on a schedule.
+    func testAScheduleFromAnOrderStillAsksForTheLevel() async {
+        let orderClient = FakeOrderClient()
+        orderClient.detailResults = [.success(OrderFixtures.detail(
+            id: "ord-7",
+            dirtiness: .heavy,
+            dirtinessSurchargeAmount: 600,
+            services: [OrderFixtures.service(id: "s-1")]
+        ))]
+        let (vm, _) = makeVM(sourceOrderId: "ord-7", orderClient: orderClient)
+
+        await vm.load()
+
+        XCTAssertEqual(vm.formState.selectedServiceIds, ["s-1"])
+        XCTAssertNil(vm.formState.dirtiness)
+    }
+
+    /// An edit replaces every field it sends, so the schedule's own level is seeded and sent back.
+    func testAnEditKeepsTheSchedulesLevel() async {
+        let (vm, client) = makeVM(editing: RecurringFixtures.template(dirtiness: .heavy))
+        await vm.load()
+        XCTAssertEqual(vm.formState.dirtiness, .heavy)
+
+        _ = await vm.submit()
+
+        XCTAssertEqual(client.updateInputs.first?.dirtiness, .heavy)
+    }
+
     func testPropertySizeNeverGoesNegative() {
         let (vm, _) = makeVM()
 
@@ -535,6 +632,65 @@ final class CreateRecurringViewModelTests: XCTestCase {
 
         XCTAssertEqual(vm.formState.rooms, 0)
         XCTAssertEqual(vm.formState.bathrooms, 0)
+    }
+
+    /// Every basket validator refuses a home above `BookingPolicy.MaxRooms` / `MaxBathrooms`.
+    func testPropertySizeStopsAtTheLargestHomeTheServerAccepts() {
+        let (vm, _) = makeVM()
+
+        vm.setRooms(PropertySize.maxRooms + 1)
+        vm.setBathrooms(PropertySize.maxBathrooms + 1)
+
+        XCTAssertEqual(vm.formState.rooms, PropertySize.maxRooms)
+        XCTAssertEqual(vm.formState.bathrooms, PropertySize.maxBathrooms)
+    }
+
+    func testAScheduleFromALargerPastOrderStartsAtTheLargestHomeTheServerAccepts() async {
+        let orderClient = FakeOrderClient()
+        orderClient.detailResults = [.success(OrderFixtures.detail(
+            id: "ord-7",
+            rooms: PropertySize.maxRooms + 3,
+            bathrooms: PropertySize.maxBathrooms + 2,
+            services: [OrderFixtures.service(id: "s-1")]
+        ))]
+        let (vm, _) = makeVM(sourceOrderId: "ord-7", orderClient: orderClient)
+
+        await vm.load()
+
+        XCTAssertEqual(vm.formState.rooms, PropertySize.maxRooms)
+        XCTAssertEqual(vm.formState.bathrooms, PropertySize.maxBathrooms)
+    }
+
+    // MARK: - The start date
+
+    /// The server refuses a start on or after the end date (`recurring_template.ends_on_before_start`),
+    /// and this form cannot move the end date, so the picker stops the day before it, as the web does.
+    func testAnEditOffersNoStartOnOrAfterTheStoredEndDate() throws {
+        let endsOn = Date(timeIntervalSince1970: 1_800_000_000)
+        let (vm, _) = makeVM(editing: RecurringFixtures.template(endsOn: endsOn))
+
+        let dayBefore = try XCTUnwrap(Calendar.current.date(byAdding: .day, value: -1, to: endsOn))
+        XCTAssertEqual(vm.latestStart, dayBefore)
+        XCTAssertEqual(vm.startRange.upperBound, dayBefore)
+        XCTAssertFalse(vm.startRange.contains(endsOn))
+    }
+
+    func testAStartWithNoEndDateIsOpenEnded() {
+        let (create, _) = makeVM()
+        let (edit, _) = makeVM(editing: RecurringFixtures.template())
+
+        XCTAssertNil(create.latestStart)
+        XCTAssertNil(edit.latestStart)
+        XCTAssertEqual(edit.startRange.upperBound, .distantFuture)
+    }
+
+    /// An end date less than a day after the start leaves no day to offer but the earliest one, and a
+    /// range whose bounds cross would trap.
+    func testAnEndDateInsideTheFirstDayCollapsesTheRangeInsteadOfCrossingIt() {
+        let startsOn = RecurringFixtures.template().startsOn
+        let (vm, _) = makeVM(editing: RecurringFixtures.template(endsOn: startsOn.addingTimeInterval(3600)))
+
+        XCTAssertEqual(vm.startRange.lowerBound, vm.startRange.upperBound)
     }
 
     // MARK: - Addresses added from inside the form
@@ -721,6 +877,78 @@ final class CreateRecurringViewModelTests: XCTestCase {
         XCTAssertEqual(vm.catalogState.loadedValue, CatalogFixtures.slovak)
     }
 
+    // MARK: - The start is one the server books: a quarter-hour from 08:00 to 19:45
+
+    func testANewScheduleStartsAtABookableTime() {
+        let (vm, _) = makeVM()
+
+        XCTAssertTrue(RecurringTime.bookableTimes.contains(vm.formState.timeOfDay))
+    }
+
+    func testAStartTheServerRefusesDoesNotAdvanceAndIsNeverSent() async {
+        let (vm, client) = makeVM()
+        await vm.load()
+        fillValid(vm)
+
+        for refused in ["10:08", "07:45", "20:00", "03:07"] {
+            vm.setTimeOfDay(refused)
+            XCTAssertFalse(vm.canAdvance(step: 1), "\(refused) advances")
+            XCTAssertFalse(vm.isValid, "\(refused) is submittable")
+        }
+        let saved = await vm.submit()
+
+        XCTAssertFalse(saved)
+        XCTAssertTrue(client.createInputs.isEmpty)
+
+        vm.setTimeOfDay("19:45")
+        XCTAssertTrue(vm.isValid)
+    }
+
+    /// The server refuses an edit that keeps a start outside the window, and the wheel cannot show one.
+    func testEditingAScheduleOutsideTheWindowSeedsAndSendsTheNearestBookableTime() async {
+        let (vm, client) = makeVM(editing: RecurringFixtures.template(timeOfDay: "21:10"))
+        await vm.load()
+
+        XCTAssertEqual(vm.formState.timeOfDay, "19:45")
+
+        _ = await vm.submit()
+
+        XCTAssertEqual(client.updateInputs.first?.timeOfDay, "19:45")
+    }
+
+    func testAScheduleFromAnOrderOffTheGridStartsAtTheNearestBookableTime() async throws {
+        let cleaningDate = try XCTUnwrap(Calendar.current.date(from: DateComponents(
+            year: 2026, month: 10, day: 5, hour: 7, minute: 20
+        )))
+        let orderClient = FakeOrderClient()
+        orderClient.detailResults = [.success(OrderFixtures.detail(
+            id: "ord-7",
+            cleaningDateTime: cleaningDate,
+            services: [OrderFixtures.service(id: "s-1")]
+        ))]
+        let (vm, _) = makeVM(sourceOrderId: "ord-7", orderClient: orderClient)
+
+        await vm.load()
+
+        XCTAssertEqual(vm.formState.timeOfDay, "08:00")
+    }
+
+    func testARefusalForTheBookingWindowIsShownInTheCustomersLanguage() async {
+        let refusal = ApiError(code: "order.cleaning_date.outside_booking_window", httpStatus: 400)
+        let client = FakeRecurringBookingClient()
+        client.createResult = .failure(refusal)
+        let snackbar = SnackbarController()
+        let (vm, _) = makeVM(recurringClient: client, snackbar: snackbar)
+        await vm.load()
+        fillValid(vm)
+
+        let saved = await vm.submit()
+
+        XCTAssertFalse(saved)
+        XCTAssertEqual(snackbar.current?.text, ApiErrorLocalizer().message(for: refusal))
+        XCTAssertNotEqual(snackbar.current?.text, refusal.code, "the catalog entry is missing")
+    }
+
     private func twoMarkets() -> FakeRecurringSavedAddressClient {
         let addressClient = FakeRecurringSavedAddressClient()
         addressClient.result = .success([
@@ -734,5 +962,35 @@ final class CreateRecurringViewModelTests: XCTestCase {
         for _ in 0 ..< 5 {
             await Task.yield()
         }
+    }
+}
+
+final class RecurringTimeTests: XCTestCase {
+    func testTheWheelOffersEveryQuarterHourFromEightToQuarterToEight() {
+        let times = RecurringTime.bookableTimes
+
+        XCTAssertEqual(times.count, 48)
+        XCTAssertEqual(times.first, "08:00")
+        XCTAssertEqual(times.last, "19:45")
+        XCTAssertTrue(times.contains("12:15"))
+        XCTAssertFalse(times.contains("12:10"))
+        XCTAssertFalse(times.contains("20:00"))
+    }
+
+    func testTheNearestBookableTimeRoundsToTheQuarterHourAndStaysInTheWindow() {
+        XCTAssertEqual(RecurringTime.nearestBookable("11:30"), "11:30")
+        XCTAssertEqual(RecurringTime.nearestBookable("10:07"), "10:00")
+        XCTAssertEqual(RecurringTime.nearestBookable("10:08"), "10:15")
+        XCTAssertEqual(RecurringTime.nearestBookable("07:59"), "08:00")
+        XCTAssertEqual(RecurringTime.nearestBookable("00:00"), "08:00")
+        XCTAssertEqual(RecurringTime.nearestBookable("19:53"), "19:45")
+        XCTAssertEqual(RecurringTime.nearestBookable("23:59"), "19:45")
+        XCTAssertEqual(RecurringTime.nearestBookable("09:30:00"), "09:30")
+    }
+
+    func testAnUnreadableTimeFallsBackToTheDefaultStart() {
+        XCTAssertEqual(RecurringTime.nearestBookable(""), RecurringTime.defaultTime)
+        XCTAssertEqual(RecurringTime.nearestBookable("soon"), RecurringTime.defaultTime)
+        XCTAssertTrue(RecurringTime.bookableTimes.contains(RecurringTime.defaultTime))
     }
 }

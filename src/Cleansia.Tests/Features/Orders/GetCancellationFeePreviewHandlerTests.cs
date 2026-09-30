@@ -43,7 +43,7 @@ public class GetCancellationFeePreviewHandlerTests
         new(
             OrderAccessDoubles.Over(_orderRepository, _session),
             _session.Object,
-            new CancellationPolicyResolver(_membershipRepository.Object),
+            new CancellationPolicyResolver(_membershipRepository.Object, Mock.Of<IOrderRepository>()),
             _expressWaiverConsumer.Object,
             TimeProvider.System);
 
@@ -149,6 +149,26 @@ public class GetCancellationFeePreviewHandlerTests
 
         Assert.False(result.IsSuccess);
         Assert.Equal(expectedError, result.Error!.Message);
+    }
+
+    // ── The start time (owner ruling 2026-09-28) ──
+
+    /// <summary>
+    /// On the way before the start the customer may still cancel at the normal tier; once the start has
+    /// passed with nobody started, the preview points at the no-show report instead.
+    /// </summary>
+    [Fact]
+    public async Task On_The_Way_The_Tier_Stands_Until_The_Start_Then_The_Preview_Refuses()
+    {
+        ArrangeOrder(cleaningInHours: 0.5, statuses: [OrderStatus.New, OrderStatus.Confirmed, OrderStatus.OnTheWay]);
+        var beforeStart = await PreviewAsync();
+
+        ArrangeOrder(cleaningInHours: -0.25, statuses: [OrderStatus.New, OrderStatus.Confirmed, OrderStatus.OnTheWay]);
+        var afterStart = await PreviewAsync();
+
+        Assert.Equal(CancellationFeeTier.LastMinute, beforeStart.Value!.Tier);
+        Assert.False(afterStart.IsSuccess);
+        Assert.Equal(BusinessErrorMessage.OrderStartPassedCannotCancel, afterStart.Error!.Message);
     }
 
     // ── ADR-0035 AM-13: the express-waiver forfeiture ──

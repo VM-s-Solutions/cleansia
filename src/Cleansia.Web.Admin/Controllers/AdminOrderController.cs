@@ -93,6 +93,34 @@ public class AdminOrderController(IMediator mediator) : ApiController(mediator)
         return HandleResult<AdminCancelOrder.Response>(result);
     }
 
+    [HttpPost("cancel-no-show")]
+    [Permission(Policy.CanAdminCancelOrder)]
+    [EnableRateLimiting("auth")]
+    [ProducesResponseType(typeof(AdminCancelOrderAsNoShow.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> CancelOrderAsNoShow(
+        [FromBody] AdminCancelOrderAsNoShow.Command command, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<AdminCancelOrderAsNoShow.Response>(result);
+    }
+
+    [HttpPost("cancel-lockout")]
+    [Permission(Policy.CanAdminCancelOrder)]
+    [EnableRateLimiting("auth")]
+    [ProducesResponseType(typeof(AdminCancelOrderAsLockout.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> CancelOrderAsLockout(
+        [FromBody] AdminCancelOrderAsLockout.Command command, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<AdminCancelOrderAsLockout.Response>(result);
+    }
+
     [HttpPost("override-status")]
     [Permission(Policy.CanOverrideOrderStatus)]
     [EnableRateLimiting("auth")]
@@ -104,6 +132,19 @@ public class AdminOrderController(IMediator mediator) : ApiController(mediator)
     {
         var result = await Mediator.Send(command, cancellationToken);
         return HandleResult<AdminOverrideOrderStatus.Response>(result);
+    }
+
+    [HttpPost("record-cash")]
+    [Permission(Policy.CanOverrideOrderStatus)]
+    [EnableRateLimiting("auth")]
+    [ProducesResponseType(typeof(AdminRecordCashReceived.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> RecordCashReceived([FromBody] AdminRecordCashReceived.Command command, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<AdminRecordCashReceived.Response>(result);
     }
 
     [HttpPost("reassign")]
@@ -132,8 +173,8 @@ public class AdminOrderController(IMediator mediator) : ApiController(mediator)
         return HandleResult<AdminRefundOrder.Response>(result);
     }
 
-    // The accepted contract for work, keyed on the acceptance (ADR-0068 D4): the order's customer, the
-    // cleaner who accepted it and an administrator read it; anyone else answers order.not_found.
+    // The accepted contract for work, keyed on the acceptance (ADR-0068 D4): the cleaner who accepted it
+    // and an administrator read it; anyone else answers order.not_found.
     [HttpGet("GetWorkContract")]
     [Permission(Policy.CanViewOrderDetailAdmin)]
     [EnableRateLimiting("interactive")]

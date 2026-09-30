@@ -29,8 +29,12 @@ public class GetCancellationFeePreview
     /// → /product/business-rules#cancellation
     /// </param>
     /// <param name="FeeAmount">
-    /// The charge, in the order's currency. Always <c>TotalPrice - RefundAmount</c>, so the two halves the
-    /// customer is shown sum to what they paid.
+    /// The charge, in the order's currency. On an order that took payment it is always
+    /// <c>TotalPrice - RefundAmount</c>, so the two halves the customer is shown sum to what they paid.
+    /// </param>
+    /// <param name="RefundAmount">
+    /// What would go back. Zero on an order that took no payment — cash not yet collected, a card never
+    /// charged — exactly as the cancellation reports it.
     /// </param>
     /// <param name="ExpressWaiverForfeitedOnCancel">
     /// Cancelling would consume one of this month's free express bookings. Disclosed here because the
@@ -38,7 +42,8 @@ public class GetCancellationFeePreview
     /// </param>
     /// <param name="OopsWindowMinutes">
     /// The minutes after booking this customer could cancel free, from the same resolution the tier used:
-    /// 15, or 60 for an entitled Plus member — so the sheet can state the customer's own number.
+    /// 15, or 60 on the customer's first booking or for an entitled Plus member — so the sheet can state
+    /// the customer's own number.
     /// </param>
     public record Response(
         string OrderId,
@@ -88,15 +93,16 @@ public class GetCancellationFeePreview
                     BusinessErrorMessage.OrderNotFound));
             }
 
-            if (CancellationAssessor.BlockedReason(order) is { } blockedReason)
+            var nowUtc = timeProvider.GetUtcNow().UtcDateTime;
+            if (CancellationAssessor.BlockedReason(order, nowUtc) is { } blockedReason)
             {
                 return BusinessResult.Failure<Response>(new Error(
                     nameof(query.OrderId),
                     blockedReason));
             }
 
-            var policy = await cancellationPolicyResolver.ResolveForUserAsync(userId, cancellationToken);
-            var assessment = CancellationAssessor.Assess(order, policy, timeProvider.GetUtcNow().UtcDateTime);
+            var policy = await cancellationPolicyResolver.ResolveForOrderAsync(order, cancellationToken);
+            var assessment = CancellationAssessor.Assess(order, policy, nowUtc);
 
             var expressWaiverForfeited = await expressWaiverConsumer.WouldForfeitOnCustomerCancelAsync(
                 order.Id, assessment.HasBeenAccepted, cancellationToken);
@@ -106,7 +112,7 @@ public class GetCancellationFeePreview
                 Tier: assessment.Tier,
                 FeeRate: assessment.FeeRate,
                 FeeAmount: assessment.FeeAmount,
-                RefundAmount: assessment.RefundAmount,
+                RefundAmount: order.TookNoPayment ? 0m : assessment.RefundAmount,
                 TotalPrice: order.TotalPrice,
                 CurrencyCode: order.Currency!.Code,
                 ExpressWaiverForfeitedOnCancel: expressWaiverForfeited,

@@ -32,7 +32,7 @@ public class MembershipB5ContractLockTests
     {
         _session.Setup(s => s.GetUserId()).Returns(UserId);
         _membershipRepository
-            .Setup(r => r.GetActiveForUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetLifecycleForUserAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
     }
 

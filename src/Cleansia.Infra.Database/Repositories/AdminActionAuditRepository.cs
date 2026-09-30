@@ -34,4 +34,14 @@ public class AdminActionAuditRepository(CleansiaDbContext context)
 
         return total;
     }
+
+    public async Task<IReadOnlyList<AdminActionAudit>> GetSucceededForResourceAsync(
+        string action, string resourceType, string resourceId, CancellationToken cancellationToken)
+    {
+        return await GetQueryable()
+            .AsNoTracking()
+            .Where(a => a.Action == action && a.ResourceType == resourceType && a.ResourceId == resourceId && a.Success)
+            .OrderByDescending(a => a.OccurredOn)
+            .ToListAsync(cancellationToken);
+    }
 }

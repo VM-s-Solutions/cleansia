@@ -158,7 +158,7 @@ final class WorkContractWireTests: XCTestCase {
         let contract = try WorkContract(fullPayload())
 
         XCTAssertEqual(contract.title, "Smlouva o dílo")
-        XCTAssertEqual(contract.facts.totalPrice, 1850)
+        XCTAssertEqual(contract.facts.reward, 1850)
         XCTAssertEqual(contract.facts.estimatedMinutes, 180)
         XCTAssertEqual(contract.facts.rooms, 3)
         XCTAssertEqual(contract.facts.bathrooms, 1)

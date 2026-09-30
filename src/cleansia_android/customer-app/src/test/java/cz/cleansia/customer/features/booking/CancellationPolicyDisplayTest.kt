@@ -1,6 +1,8 @@
 package cz.cleansia.customer.features.booking
 
 import cz.cleansia.customer.core.memberships.GetMyMembershipResponse
+import cz.cleansia.customer.core.memberships.MembershipStatus
+import kotlinx.datetime.Instant
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -45,6 +47,18 @@ class CancellationPolicyDisplayTest {
 
         assertEquals(24, policy.freeHours)
         assertNull(policy.plusFreeHours)
+    }
+
+    @Test
+    fun `a past-due or paused membership cancels on the standard terms`() {
+        listOf(MembershipStatus.PastDue, MembershipStatus.Paused).forEach { status ->
+            val policy = cancellationPolicyFor(
+                GetMyMembershipResponse(hasMembership = true, freeCancellationWindowHours = 4, status = status.code),
+            )
+
+            assertEquals("$status", 24, policy.freeHours)
+            assertNull("$status", policy.plusFreeHours)
+        }
     }
 
     /** The real shape: the seeded plans carry 4 against a standard 24. */
@@ -97,5 +111,34 @@ class CancellationPolicyDisplayTest {
         assertNull(cancellationPolicyFor(membership(true, 0)).plusFreeHours)
         assertNull(cancellationPolicyFor(membership(true, null)).plusFreeHours)
         assertEquals(24, cancellationPolicyFor(membership(true, 0)).freeHours)
+    }
+
+    // No Plus benefit runs during the free trial: the server prices a cancellation from the paid
+    // entitlement, so a trialing member is quoted the standard window until the first paid month.
+
+    private val now = Instant.parse("2026-09-27T10:00:00Z")
+
+    @Test
+    fun `a trialing member is quoted the standard window`() {
+        val trialing = membership(hasMembership = true, freeHours = 4)
+            .copy(trialEndsAtUtc = Instant.parse("2026-10-04T10:00:00Z"))
+
+        val policy = cancellationPolicyFor(trialing, now = now)
+
+        assertEquals(24, policy.freeHours)
+        assertNull(policy.plusFreeHours)
+        assertFalse(policy.hasPlusPerk)
+        assertTrue(policy.showMidTier)
+    }
+
+    @Test
+    fun `the Plus window applies once the trial has ended`() {
+        val paid = membership(hasMembership = true, freeHours = 4)
+            .copy(trialEndsAtUtc = Instant.parse("2026-09-20T10:00:00Z"))
+
+        val policy = cancellationPolicyFor(paid, now = now)
+
+        assertEquals(4, policy.freeHours)
+        assertTrue(policy.hasPlusPerk)
     }
 }

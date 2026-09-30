@@ -55,6 +55,16 @@ public class DevCorsOriginsConfigTests
     }
 
     [Theory]
+    [InlineData("Cleansia.Web.Mobile.Partner")]
+    [InlineData("Cleansia.Web.Mobile.Customer")]
+    public void Mobile_Hosts_Allow_No_Origin_In_Production(string hostProject)
+    {
+        // A native app sends no Origin, so a mobile host has no browser caller to admit. Any entry here
+        // is credentialed CORS for nobody — including one the index merge leaks from the base file.
+        Assert.Empty(LoadComposedCorsOrigins(hostProject, "Production"));
+    }
+
+    [Theory]
     [InlineData("Cleansia.Web.Partner")]
     [InlineData("Cleansia.Web.Admin")]
     [InlineData("Cleansia.Web.Customer")]

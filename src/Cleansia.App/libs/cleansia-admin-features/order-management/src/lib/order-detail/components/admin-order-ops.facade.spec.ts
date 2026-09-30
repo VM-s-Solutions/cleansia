@@ -1,5 +1,9 @@
 import { TestBed } from '@angular/core/testing';
 import {
+  AdminCancelOrderAsLockoutCommand,
+  AdminCancelOrderAsLockoutResponse,
+  AdminCancelOrderAsNoShowCommand,
+  AdminCancelOrderAsNoShowResponse,
   AdminCancelOrderCommand,
   AdminCancelOrderResponse,
   AdminClient,
@@ -7,22 +11,39 @@ import {
   AdminOverrideOrderStatusResponse,
   AdminReassignOrderCommand,
   AdminReassignOrderResponse,
+  AdminRecordCashReceivedCommand,
+  AdminRecordCashReceivedResponse,
   AdminRefundOrderCommand,
   AdminRefundOrderResponse,
   OrderStatus,
   PaymentStatus,
 } from '@cleansia/admin-services';
 import { SnackbarService } from '@cleansia/services';
+import { formatMoney } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
 import { AdminOrderOpsFacade } from './admin-order-ops.facade';
+import { NO_SHOW_OUTCOME_TOAST_MS } from './admin-order-ops.models';
 
 // The keys a refusal resolves to; anything else falls back, as an untranslated code does in the app.
 const TRANSLATED = new Set([
   'api.order.invalid_status_transition',
   'api.order.no_available_spots',
   'api.refund.order_not_refundable',
+  'api.order.cleaner_already_started',
+  'api.order.cash_received_at_before_clean',
+  'api.order.status.force_complete_reason_required',
+  'api.order.lockout.not_reported',
 ]);
+
+function translated(key: string, params?: Record<string, unknown>): string {
+  if (TRANSLATED.has(key)) return `${key} (translated)`;
+  return params ? `${key} ${JSON.stringify(params)}` : key;
+}
+
+function czk(amount: number): string {
+  return formatMoney(amount, 'CZK', 'en-US', { fractionDigits: 2 });
+}
 
 describe('AdminOrderOpsFacade', () => {
   let facade: AdminOrderOpsFacade;
@@ -31,6 +52,9 @@ describe('AdminOrderOpsFacade', () => {
     overrideStatus: jest.Mock;
     reassign: jest.Mock;
     refund: jest.Mock;
+    cancelNoShow: jest.Mock;
+    cancelLockout: jest.Mock;
+    recordCash: jest.Mock;
   };
   let snackbar: {
     showSuccess: jest.Mock;
@@ -59,6 +83,26 @@ describe('AdminOrderOpsFacade', () => {
     paymentStatus: PaymentStatus.Refunded,
     refundInitiated: true,
   });
+  const noShowResponse = (
+    outcome: Partial<{ refundedAmount: number; refundPending: boolean; apologyCredit: number }>
+  ) =>
+    AdminCancelOrderAsNoShowResponse.fromJS({
+      orderId: 'order-1',
+      refundedAmount: null,
+      refundPending: false,
+      apologyCredit: null,
+      ...outcome,
+    });
+  const lockoutResponse = (receivableAmount: number | null) =>
+    AdminCancelOrderAsLockoutResponse.fromJS({
+      orderId: 'order-1',
+      feeAmount: 1800,
+      receivableAmount,
+    });
+  const recordCashResponse = AdminRecordCashReceivedResponse.fromJS({
+    orderId: 'order-1',
+    paymentStatus: PaymentStatus.Paid,
+  });
 
   beforeEach(() => {
     orderClient = {
@@ -66,6 +110,9 @@ describe('AdminOrderOpsFacade', () => {
       overrideStatus: jest.fn(),
       reassign: jest.fn(),
       refund: jest.fn(),
+      cancelNoShow: jest.fn(),
+      cancelLockout: jest.fn(),
+      recordCash: jest.fn(),
     };
     snackbar = {
       showSuccess: jest.fn(),
@@ -84,9 +131,7 @@ describe('AdminOrderOpsFacade', () => {
         { provide: SnackbarService, useValue: snackbar },
         {
           provide: TranslateService,
-          useValue: {
-            instant: (k: string) => (TRANSLATED.has(k) ? `${k} (translated)` : k),
-          },
+          useValue: { instant: translated },
         },
       ],
     });
@@ -156,12 +201,65 @@ describe('AdminOrderOpsFacade', () => {
     expect(orderClient.overrideStatus).not.toHaveBeenCalled();
   });
 
-  it('builds a typed reassign command with from/to employee ids', () => {
+  it('sends the trimmed override reason, which the server requires to complete without an after photo', () => {
+    orderClient.overrideStatus.mockReturnValue(of(overrideResponse));
+    facade.setTargetStatus(OrderStatus.Completed);
+    facade.setOverrideReason('  cleaner unreachable, customer confirmed the clean  ');
+
+    facade.overrideStatus('order-1', jest.fn());
+
+    const command: AdminOverrideOrderStatusCommand =
+      orderClient.overrideStatus.mock.calls[0][0];
+    expect(command.toJSON()).toEqual({
+      orderId: 'order-1',
+      targetStatus: OrderStatus.Completed,
+      reason: 'cleaner unreachable, customer confirmed the clean',
+    });
+  });
+
+  it('omits a blank override reason and leaves the photo rule to the server', () => {
+    orderClient.overrideStatus.mockReturnValue(of(overrideResponse));
+    facade.setTargetStatus(OrderStatus.Completed);
+    facade.setOverrideReason('   ');
+    expect(facade.canSubmitOverrideStatus()).toBe(true);
+
+    facade.overrideStatus('order-1', jest.fn());
+
+    const command: AdminOverrideOrderStatusCommand =
+      orderClient.overrideStatus.mock.calls[0][0];
+    expect(command.reason).toBeUndefined();
+  });
+
+  it('shows the force-complete refusal inline and keeps the panel open', () => {
+    orderClient.overrideStatus.mockReturnValue(
+      throwError(() => ({
+        result: { detail: 'order.status.force_complete_reason_required' },
+      }))
+    );
+    facade.openPanel('overrideStatus');
+    facade.setTargetStatus(OrderStatus.Completed);
+    const onSuccess = jest.fn();
+
+    facade.overrideStatus('order-1', onSuccess);
+
+    expect(facade.errorKey()).toBe('api.order.status.force_complete_reason_required');
+    expect(facade.activePanel()).toBe('overrideStatus');
+    expect(onSuccess).not.toHaveBeenCalled();
+  });
+
+  it('requires a removal reason before a cleaner can be taken off, and sends it trimmed', () => {
     orderClient.reassign.mockReturnValue(of(reassignResponse));
     expect(facade.canSubmitReassign()).toBe(false);
 
     facade.setFromEmployeeId('employee-1');
     facade.setToEmployeeId('  employee-2  ');
+    expect(facade.removesCleaner()).toBe(true);
+    expect(facade.canSubmitReassign()).toBe(false);
+
+    facade.setRemovalReason('   ');
+    expect(facade.canSubmitReassign()).toBe(false);
+
+    facade.setRemovalReason('  customer asked for another cleaner  ');
     expect(facade.canSubmitReassign()).toBe(true);
 
     facade.reassignOrder('order-1', jest.fn());
@@ -173,13 +271,51 @@ describe('AdminOrderOpsFacade', () => {
       orderId: 'order-1',
       fromEmployeeId: 'employee-1',
       toEmployeeId: 'employee-2',
+      removalReason: 'customer asked for another cleaner',
     });
+  });
+
+  it('adds a cleaner without a removal reason, and drops one typed before the removal was cleared', () => {
+    orderClient.reassign.mockReturnValue(of(reassignResponse));
+    facade.setFromEmployeeId('employee-1');
+    facade.setRemovalReason('changed my mind');
+    facade.setFromEmployeeId(null);
+    facade.setToEmployeeId('employee-2');
+    expect(facade.removesCleaner()).toBe(false);
+    expect(facade.canSubmitReassign()).toBe(true);
+
+    facade.reassignOrder('order-1', jest.fn());
+
+    const command: AdminReassignOrderCommand =
+      orderClient.reassign.mock.calls[0][0];
+    expect(command.fromEmployeeId).toBeUndefined();
+    expect(command.removalReason).toBeUndefined();
   });
 
   it('does not call reassign when an employee id is missing', () => {
     facade.setFromEmployeeId('employee-1');
+    facade.setRemovalReason('reason');
     facade.reassignOrder('order-1', jest.fn());
     expect(orderClient.reassign).not.toHaveBeenCalled();
+  });
+
+  it('does not call reassign when a cleaner is taken off without a reason', () => {
+    facade.setFromEmployeeId('employee-1');
+    facade.setToEmployeeId('employee-2');
+    facade.reassignOrder('order-1', jest.fn());
+    expect(orderClient.reassign).not.toHaveBeenCalled();
+  });
+
+  it('clears both reasons when another panel is opened', () => {
+    facade.openPanel('overrideStatus');
+    facade.setOverrideReason('no photo, confirmed by phone');
+    facade.openPanel('reassign');
+    facade.setRemovalReason('did not show up');
+
+    facade.openPanel('refund');
+
+    expect(facade.overrideReason()).toBe('');
+    expect(facade.removalReason()).toBe('');
   });
 
   it('builds a typed refund-only command carrying just the order id', () => {
@@ -250,6 +386,7 @@ describe('AdminOrderOpsFacade', () => {
     );
     facade.setFromEmployeeId('employee-1');
     facade.setToEmployeeId('employee-2');
+    facade.setRemovalReason('did not show up');
 
     facade.reassignOrder('order-1', jest.fn());
 
@@ -277,5 +414,255 @@ describe('AdminOrderOpsFacade', () => {
     expect(facade.errorKey()).toBe('api.common.error_occurred');
     expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
     expect(onSuccess).not.toHaveBeenCalled();
+  });
+  describe('cancel as cleaner no-show', () => {
+    it('builds a typed no-show command carrying just the order id', () => {
+      orderClient.cancelNoShow.mockReturnValue(of(noShowResponse({})));
+
+      facade.cancelAsNoShow('order-1', 'CZK', jest.fn());
+
+      const command: AdminCancelOrderAsNoShowCommand = orderClient.cancelNoShow.mock.calls[0][0];
+      expect(command).toBeInstanceOf(AdminCancelOrderAsNoShowCommand);
+      expect(command.toJSON()).toEqual({ orderId: 'order-1' });
+    });
+
+    it('does not call the endpoint without an order id', () => {
+      facade.cancelAsNoShow('', 'CZK', jest.fn());
+      expect(orderClient.cancelNoShow).not.toHaveBeenCalled();
+    });
+
+    it('announces the card refund and the apology credit, closes the panel and re-loads', () => {
+      orderClient.cancelNoShow.mockReturnValue(
+        of(noShowResponse({ refundedAmount: 1200, apologyCredit: 250 }))
+      );
+      facade.openPanel('noShow');
+      const onSuccess = jest.fn();
+
+      facade.cancelAsNoShow('order-1', 'CZK', onSuccess);
+
+      expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
+        'pages.order_management.ops.no_show.success',
+        {
+          refund: translated('pages.order_management.ops.no_show.refunded', { amount: czk(1200) }),
+          credit: translated('pages.order_management.ops.no_show.credit_granted', { amount: czk(250) }),
+        },
+        NO_SHOW_OUTCOME_TOAST_MS
+      );
+      expect(facade.activePanel()).toBeNull();
+      expect(onSuccess).toHaveBeenCalledTimes(1);
+    });
+
+    it('says the card refund is still pending when it did not go through', () => {
+      orderClient.cancelNoShow.mockReturnValue(
+        of(noShowResponse({ refundPending: true, apologyCredit: 250 }))
+      );
+
+      facade.cancelAsNoShow('order-1', 'CZK', jest.fn());
+
+      const params = snackbar.showSuccessTranslated.mock.calls[0][1];
+      expect(params.refund).toBe('pages.order_management.ops.no_show.refund_pending');
+      expect(params.credit).toBe(
+        translated('pages.order_management.ops.no_show.credit_granted', { amount: czk(250) })
+      );
+    });
+
+    it('says nothing was refunded and no credit issued when neither happened', () => {
+      orderClient.cancelNoShow.mockReturnValue(of(noShowResponse({})));
+
+      facade.cancelAsNoShow('order-1', 'CZK', jest.fn());
+
+      const params = snackbar.showSuccessTranslated.mock.calls[0][1];
+      expect(params).toEqual({
+        refund: 'pages.order_management.ops.no_show.nothing_refunded',
+        credit: 'pages.order_management.ops.no_show.no_credit',
+      });
+    });
+
+    it('shows the refusal inline and does not re-load when the cleaner already started', () => {
+      orderClient.cancelNoShow.mockReturnValue(
+        throwError(() => ({ result: { detail: 'order.cleaner_already_started' } }))
+      );
+      facade.openPanel('noShow');
+      const onSuccess = jest.fn();
+
+      facade.cancelAsNoShow('order-1', 'CZK', onSuccess);
+
+      expect(facade.errorKey()).toBe('api.order.cleaner_already_started');
+      expect(facade.activePanel()).toBe('noShow');
+      expect(facade.submitting()).toBe(false);
+      expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
+      expect(onSuccess).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('confirm a customer lockout', () => {
+    it('builds a typed lockout command carrying just the order id', () => {
+      orderClient.cancelLockout.mockReturnValue(of(lockoutResponse(null)));
+
+      facade.cancelAsLockout('order-1', 'CZK', jest.fn());
+
+      const command: AdminCancelOrderAsLockoutCommand = orderClient.cancelLockout.mock.calls[0][0];
+      expect(command).toBeInstanceOf(AdminCancelOrderAsLockoutCommand);
+      expect(command.toJSON()).toEqual({ orderId: 'order-1' });
+    });
+
+    it('does not call the endpoint without an order id', () => {
+      facade.cancelAsLockout('', 'CZK', jest.fn());
+      expect(orderClient.cancelLockout).not.toHaveBeenCalled();
+    });
+
+    it('announces the whole-price fee and the receivable a cash booking now owes, closes the panel and re-loads', () => {
+      orderClient.cancelLockout.mockReturnValue(of(lockoutResponse(1800)));
+      facade.openPanel('lockout');
+      const onSuccess = jest.fn();
+
+      facade.cancelAsLockout('order-1', 'CZK', onSuccess);
+
+      expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
+        'pages.order_management.ops.lockout.success',
+        {
+          fee: czk(1800),
+          receivable: translated('pages.order_management.ops.lockout.receivable_opened', {
+            amount: czk(1800),
+          }),
+        },
+        NO_SHOW_OUTCOME_TOAST_MS
+      );
+      expect(facade.activePanel()).toBeNull();
+      expect(onSuccess).toHaveBeenCalledTimes(1);
+    });
+
+    it('says nothing more is charged when the order owes no receivable', () => {
+      orderClient.cancelLockout.mockReturnValue(of(lockoutResponse(null)));
+
+      facade.cancelAsLockout('order-1', 'CZK', jest.fn());
+
+      expect(snackbar.showSuccessTranslated.mock.calls[0][1]).toEqual({
+        fee: czk(1800),
+        receivable: 'pages.order_management.ops.lockout.no_receivable',
+      });
+    });
+
+    it('shows the refusal inline and does not re-load when no lockout was reported', () => {
+      orderClient.cancelLockout.mockReturnValue(
+        throwError(() => ({ result: { detail: 'order.lockout.not_reported' } }))
+      );
+      facade.openPanel('lockout');
+      const onSuccess = jest.fn();
+
+      facade.cancelAsLockout('order-1', 'CZK', onSuccess);
+
+      expect(facade.errorKey()).toBe('api.order.lockout.not_reported');
+      expect(facade.activePanel()).toBe('lockout');
+      expect(facade.submitting()).toBe(false);
+      expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
+      expect(onSuccess).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('record cash received', () => {
+    const receivedAt = new Date('2026-09-28T09:30:00Z');
+
+    function fillRecordCash(amount = ' 1200.50 '): void {
+      facade.setCashEmployeeId('employee-1');
+      facade.setCashReceivedAt(receivedAt);
+      facade.setCashAmount(amount);
+    }
+
+    it('enables submit only once the cleaner, the time and the amount are all given', () => {
+      expect(facade.canSubmitRecordCash()).toBe(false);
+
+      facade.setCashEmployeeId('employee-1');
+      expect(facade.canSubmitRecordCash()).toBe(false);
+
+      facade.setCashReceivedAt(receivedAt);
+      expect(facade.canSubmitRecordCash()).toBe(false);
+
+      facade.setCashAmount('1200.50');
+      expect(facade.canSubmitRecordCash()).toBe(true);
+    });
+
+    it('does not enable submit on an amount that is not a number', () => {
+      fillRecordCash('twelve');
+      expect(facade.canSubmitRecordCash()).toBe(false);
+    });
+
+    it('builds a typed command with who took the cash, when and how much', () => {
+      orderClient.recordCash.mockReturnValue(of(recordCashResponse));
+      fillRecordCash();
+
+      facade.recordCashReceived('order-1', jest.fn());
+
+      const command: AdminRecordCashReceivedCommand = orderClient.recordCash.mock.calls[0][0];
+      expect(command).toBeInstanceOf(AdminRecordCashReceivedCommand);
+      expect(command.toJSON()).toEqual({
+        orderId: 'order-1',
+        employeeId: 'employee-1',
+        receivedAt: '2026-09-28T09:30:00.000Z',
+        amount: 1200.5,
+      });
+    });
+
+    it('does not call the endpoint while any field is missing', () => {
+      facade.setCashEmployeeId('employee-1');
+      facade.setCashAmount('1200');
+      facade.recordCashReceived('order-1', jest.fn());
+
+      facade.setCashEmployeeId(null);
+      facade.setCashReceivedAt(receivedAt);
+      facade.recordCashReceived('order-1', jest.fn());
+
+      fillRecordCash();
+      facade.recordCashReceived('', jest.fn());
+
+      expect(orderClient.recordCash).not.toHaveBeenCalled();
+    });
+
+    it('confirms, closes the panel, clears the form and re-loads on success', () => {
+      orderClient.recordCash.mockReturnValue(of(recordCashResponse));
+      facade.openPanel('recordCash');
+      fillRecordCash();
+      const onSuccess = jest.fn();
+
+      facade.recordCashReceived('order-1', onSuccess);
+
+      expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
+        'pages.order_management.ops.record_cash.success'
+      );
+      expect(facade.activePanel()).toBeNull();
+      expect(facade.cashEmployeeId()).toBeNull();
+      expect(facade.cashReceivedAt()).toBeNull();
+      expect(facade.cashAmount()).toBe('');
+      expect(onSuccess).toHaveBeenCalledTimes(1);
+    });
+
+    it('shows the refusal inline, keeps what was typed and does not re-load', () => {
+      orderClient.recordCash.mockReturnValue(
+        throwError(() => ({ result: { detail: 'order.cash_received_at_before_clean' } }))
+      );
+      facade.openPanel('recordCash');
+      fillRecordCash();
+      const onSuccess = jest.fn();
+
+      facade.recordCashReceived('order-1', onSuccess);
+
+      expect(facade.errorKey()).toBe('api.order.cash_received_at_before_clean');
+      expect(facade.activePanel()).toBe('recordCash');
+      expect(facade.cashAmount()).toBe(' 1200.50 ');
+      expect(facade.submitting()).toBe(false);
+      expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
+      expect(onSuccess).not.toHaveBeenCalled();
+    });
+
+    it('clears the record-cash form when another panel is opened', () => {
+      facade.openPanel('recordCash');
+      fillRecordCash();
+
+      facade.openPanel('refund');
+
+      expect(facade.cashEmployeeId()).toBeNull();
+      expect(facade.cashReceivedAt()).toBeNull();
+      expect(facade.cashAmount()).toBe('');
+    });
   });
 });

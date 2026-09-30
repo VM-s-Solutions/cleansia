@@ -1,0 +1,52 @@
+<div class="customer-saved-cards">
+  @if (facade.loading()) {
+  <div class="customer-saved-cards__skeleton">
+    <p-skeleton width="100%" height="3.5rem" borderRadius="16px" />
+  </div>
+  } @else if (facade.hasError()) {
+  <div class="customer-saved-cards__error">
+    <i class="pi pi-exclamation-circle"></i>
+    <p>{{ 'pages.profile.saved_cards.load_error' | translate }}</p>
+    <cleansia-button
+      [title]="'global.actions.retry' | translate"
+      [severity]="'secondary'"
+      [icon]="'pi pi-refresh'"
+      [iconPosition]="'left'"
+      (clickFn)="facade.load()"
+    />
+  </div>
+  } @else if (facade.cards().length === 0) {
+  <div class="customer-profile__empty-addresses">
+    <div class="customer-profile__empty-icon"><i class="pi pi-credit-card"></i></div>
+    <p>{{ 'pages.profile.saved_cards.empty' | translate }}</p>
+  </div>
+  } @else {
+  <ul class="customer-profile__address-list">
+    @for (card of facade.cards(); track card.id) {
+    <li class="customer-profile__address-row">
+      <span class="customer-profile__address-pin"><i class="pi pi-credit-card"></i></span>
+      <div class="customer-profile__address-info">
+        <div class="customer-profile__address-label">
+          {{ 'pages.profile.saved_cards.card_label' | translate: { brand: card.brand, last4: card.last4 } }}
+        </div>
+        <div class="customer-profile__address-line">
+          {{ 'pages.profile.saved_cards.expires' | translate: { expiry: card.expiry, currency: card.currencyCode } }}
+        </div>
+      </div>
+      <div class="customer-profile__address-actions">
+        <cleansia-button
+          [title]="'global.actions.remove' | translate"
+          [severity]="'danger'"
+          [icon]="'pi pi-trash'"
+          [iconPosition]="'left'"
+          [outlined]="true"
+          [loading]="facade.removingId() === card.id"
+          [disabled]="facade.removingId() !== null"
+          (clickFn)="remove(card)"
+        />
+      </div>
+    </li>
+    }
+  </ul>
+  }
+</div>

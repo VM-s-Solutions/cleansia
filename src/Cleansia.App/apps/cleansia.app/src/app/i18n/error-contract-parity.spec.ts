@@ -434,6 +434,9 @@ const CUSTOMER_SURFACE_ERROR_KEYS: readonly string[] = [
   // arms of the ChangePassword validator are reachable from the customer app.
   'auth.invalid_reset_token',
   'auth.same_reset_password',
+  // The reset is keyed on the address, so an administrator can complete one here too and is
+  // refused a password under 12 characters once the code checks out.
+  'auth.admin_password_too_short',
   // Refresh: RefreshToken splits its failures in two — the reuse/theft signal
   // gets its own key, and expiry, an unknown token or an audience mismatch all
   // land on invalid_refresh_token.
@@ -487,9 +490,15 @@ const CUSTOMER_SURFACE_ERROR_KEYS: readonly string[] = [
   // Order — booking / cancel / review / lifecycle the customer can hit
   'order.cleaning_date.future',
   'order.cleaning_date.below_lead_time',
+  // CreateOrder and Create/UpdateRecurringBooking: a start off the quarter-hour, outside 08:00-19:45 in
+  // the market's clock, or more than 60 days ahead (owner ruling 2026-09-28).
+  'order.cleaning_date.outside_booking_window',
   'order.already_cancelled',
   'order.already_completed',
   'order.in_progress_cannot_cancel',
+  'order.start_passed_cannot_cancel',
+  'order.cleaner_already_started',
+  'order.start_time_not_reached',
   'order.invalid_status_transition',
   'order.address_exactly_one_required',
   'order.empty',
@@ -507,6 +516,12 @@ const CUSTOMER_SURFACE_ERROR_KEYS: readonly string[] = [
   // Cash only for a signed-in customer whose booking needs one cleaner (owner ruling 2026-09-24):
   // CreateOrder, CreateRecurringBooking, UpdateRecurringBooking and ConfirmRecurringOrder.
   'order.cash_not_available',
+  // A usable saved card in the booking's currency, and at most two open unpaid cash bookings (owner
+  // ruling 2026-09-28): the same four commands.
+  'order.cash_requires_saved_card',
+  'order.cash_open_bookings_limit_reached',
+  // No open receivable owed to any company (owner ruling 2026-09-28): the same four commands.
+  'order.cash_unpaid_receivable',
   'currency.invalid',
   // The ambient tenant (the claim, or the market's operator for a guest) must be the operator of the
   // address country; a booking in another operating company's country is refused (ADR-0061 D6).
@@ -524,6 +539,9 @@ const CUSTOMER_SURFACE_ERROR_KEYS: readonly string[] = [
   // auth.invalid_apple_token does: on the money path, the string must never be
   // the thing that is missing when the button lands.
   'order.payment.already_paid',
+  // ConfirmRecurringOrder: a cash occurrence the customer already confirmed stays unpaid until the
+  // cleaner records the cash, so confirming it again is its own refusal (owner ruling 2026-09-28).
+  'order.recurring_already_confirmed',
   'order.not_completed',
   'order.review.duplicate_tag',
   'order.review.rating_invalid',
@@ -579,9 +597,14 @@ const CUSTOMER_SURFACE_ERROR_KEYS: readonly string[] = [
   'gdpr.deletion_blocked_by_invoice',
   'gdpr.consent_not_found',
   'gdpr.consent_already_granted',
+  // Only the terms and the privacy policy are accepted there, and no accepted document is withdrawn.
+  'gdpr.consent_not_editable',
   // Consent — the terms gate on Register and CreateOrder: a registration, or a booking by a guest or
   // by a customer whose account does not already hold both legal consents, that asserts no tick.
   'consent.terms_not_accepted',
+  // The request to start within the 14-day withdrawal period, asked on every CreateOrder and
+  // CreateRecurringBooking, a consented customer's included.
+  'consent.early_performance_not_requested',
   // Promo — request a first-clean code, and CreateOrder refusing a promo the
   // server will not honour (one key per PromoCodeError reason, plus a code on
   // an anonymous booking, which the applier would otherwise drop silently)
@@ -607,6 +630,12 @@ const CUSTOMER_SURFACE_ERROR_KEYS: readonly string[] = [
   // The CreateOrder waiver rule runs BEFORE the price rule and has its own code
   // precisely so this never renders as the generic "the price changed".
   'membership.express_waiver.no_longer_available',
+  // Saved card — the guarantee for cash bookings
+  'saved_card.consent_not_accepted',
+  'saved_card.not_found',
+  // What the customer owes on an order, read and paid through its pay link
+  'receivable.not_found',
+  'receivable.not_open',
   // Recurring booking — create / manage
   'recurring_booking.not_found',
   'recurring_booking.not_owned_by_user',

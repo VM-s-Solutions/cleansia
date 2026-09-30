@@ -2,7 +2,9 @@ using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Company;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Legal;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.TestUtilities;
@@ -13,8 +15,9 @@ namespace Cleansia.Tests.Features.Orders;
 
 /// <summary>
 /// ADR-0068 D3 — the preview renders the ORDER's document (never the one in force today), in the
-/// requested language or the fallback, with the order's currency in the copy and the facts the
-/// acceptance will freeze; an order with no document is refused as a missing legal document; and the
+/// requested language or the fallback, with the order's currency and the operating company in the copy
+/// and the facts the acceptance will freeze, built for the caller since the price is their seat's reward;
+/// an order with no document is refused as a missing legal document; and the
 /// order must be readable by the caller as the board's floor defines it, so a stranger to a held order
 /// is told nothing, and neither is anyone not on the crew of a cancelled, finished, full or unpaid-card
 /// job — the facts the preview discloses are the job's, and the browse gate refuses those orders.
@@ -24,6 +27,7 @@ public sealed class GetWorkContractPreviewHandlerTests
     private const string OrderId = "order-preview-1";
     private const string EmployeeId = "emp-preview-1";
     private const string StrangerId = "emp-preview-stranger";
+    private const string OrderTenant = "cleansia-cz";
 
     private static readonly WorkContractFacts Facts = new(
         "ORD-PREVIEW", new DateTime(2026, 9, 22, 9, 0, 0, DateTimeKind.Utc), 120, 1000m, "CZK", "Prague · 110 xx", "cz", 1, 1, [], [], []);
@@ -31,9 +35,15 @@ public sealed class GetWorkContractPreviewHandlerTests
     private readonly Mock<IOrderRepository> _orderRepository = new();
     private readonly Mock<IOrderAccessService> _accessService = new();
     private readonly Mock<IWorkContractFactsBuilder> _factsBuilder = new();
+    private readonly Mock<ICompanyInfoRepository> _companyInfoRepository = new();
 
-    private GetWorkContractPreview.Handler CreateHandler() =>
-        new(_orderRepository.Object, WorkContractTestData.LegalDocumentRepository().Object, _factsBuilder.Object);
+    private GetWorkContractPreview.Handler CreateHandler(Mock<ILegalDocumentRepository>? legalDocumentRepository = null) =>
+        new(
+            _orderRepository.Object,
+            (legalDocumentRepository ?? WorkContractTestData.LegalDocumentRepository()).Object,
+            _factsBuilder.Object,
+            _accessService.Object,
+            _companyInfoRepository.Object);
 
     private GetWorkContractPreview.Validator CreateValidator() =>
         new(_orderRepository.Object, _accessService.Object, ValidatorTestHelpers.CurrencyResolver());
@@ -42,7 +52,7 @@ public sealed class GetWorkContractPreviewHandlerTests
     {
         _orderRepository.Setup(r => r.GetQueryable()).Returns(new[] { order }.AsQueryable().BuildMock());
         _accessService.Setup(s => s.GetCallerEmployeeIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(caller);
-        _factsBuilder.Setup(b => b.BuildAsync(OrderId, It.IsAny<CancellationToken>())).ReturnsAsync(Facts);
+        _factsBuilder.Setup(b => b.BuildAsync(OrderId, EmployeeId, It.IsAny<CancellationToken>())).ReturnsAsync(Facts);
     }
 
     [Fact]
@@ -65,6 +75,27 @@ public sealed class GetWorkContractPreviewHandlerTests
         Assert.Contains("<h2>", dto.ContentHtml);
         Assert.Same(Facts, dto.Facts);
         Assert.Null(dto.Acceptance);
+    }
+
+    [Fact]
+    public async Task The_Preview_Names_The_Company_That_Operates_The_Order_As_The_Client()
+    {
+        var contract = LegalDocument.Create(LegalDocumentAudience.Employee, LegalDocumentType.WorkContract, null, WorkContractTestData.EffectiveFrom);
+        contract.AddText("en", "Contract for Work", "The client is {{companyLegalName}}, company ID {{companyRegistrationNumber}}.");
+        var legalDocuments = new Mock<ILegalDocumentRepository>();
+        legalDocuments.Setup(r => r.GetWithTextsAsync(contract.Id, It.IsAny<CancellationToken>())).ReturnsAsync(contract);
+        var order = ValidatorTestHelpers.BuildEmptyOrder(OrderId, OrderStatus.New);
+        order.SetWorkContractDocument(contract);
+        order.TenantId = OrderTenant;
+        Arrange(order);
+        _companyInfoRepository
+            .Setup(r => r.GetActiveForOperatorAsync(OrderTenant, "cz", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CompanyInfo.Create("Cleansia CZ s.r.o.", "Cleansia", "12345678", "Na Příkopě 1", "Praha", "11000", "cz"));
+
+        var result = await CreateHandler(legalDocuments).Handle(new GetWorkContractPreview.Query(OrderId, "en"), CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Contains("The client is Cleansia CZ s.r.o., company ID 12345678.", result.Value!.ContentHtml);
     }
 
     [Fact]

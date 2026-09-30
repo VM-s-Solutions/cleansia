@@ -90,14 +90,14 @@ function contract(overrides: Record<string, unknown> = {}): WorkContractDto {
     effectiveFrom: '2026-09-20',
     language: 'en',
     title: 'Contract for work',
-    contentHtml: '<h2>1. Parties</h2><p>The customer and the cleaner.</p>',
+    contentHtml: '<h2>The client</h2><p>Cleansia CZ s.r.o.</p>',
     ...overrides,
   });
 }
 
 const FACT_ROWS: WorkContractFactRow[] = [
   { labelKey: 'pages.orders.work_contract.facts.order_number', value: 'CLS-42' },
-  { labelKey: 'pages.orders.work_contract.facts.price', value: 'CZK 1,250' },
+  { labelKey: 'pages.orders.work_contract.facts.reward', value: 'CZK 1,250' },
 ];
 
 describe('WorkContractDialogComponent', () => {
@@ -160,6 +160,7 @@ describe('WorkContractDialogComponent', () => {
 
     expect(fixture.nativeElement.querySelector('[aria-busy="true"]')).not.toBeNull();
     expect(checkbox()).toBeNull();
+    expect(fixture.nativeElement.querySelector('.work-contract-dialog__parties')).toBeNull();
   });
 
   describe('take mode', () => {
@@ -177,7 +178,13 @@ describe('WorkContractDialogComponent', () => {
       expect(text()).toContain('CLS-42');
       expect(text()).toContain('CZK 1,250');
       const content = fixture.nativeElement.querySelector('.work-contract-dialog__content') as HTMLElement;
-      expect(content.innerHTML).toContain('<h2>1. Parties</h2>');
+      expect(content.innerHTML).toContain('<h2>The client</h2>');
+    });
+
+    it('names the operating company as the client and the partner as the contractor', () => {
+      const parties = fixture.nativeElement.querySelector('.work-contract-dialog__parties') as HTMLElement;
+
+      expect(parties.textContent).toContain('pages.orders.work_contract.parties');
     });
 
     it('offers the tick and a disabled "accept and take" button until ticked', () => {

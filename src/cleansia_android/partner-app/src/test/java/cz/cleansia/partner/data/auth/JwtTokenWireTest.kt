@@ -247,6 +247,7 @@ class JwtTokenWireTest {
             "csrfToken",
             "role",
             "adminRole",
+            "mustChangePassword",
         )
 
         val REQUIRED_FLAGS = listOf("isEmailConfirmed", "hasAdminAccess")

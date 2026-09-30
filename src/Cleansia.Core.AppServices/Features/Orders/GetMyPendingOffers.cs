@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Orders.DTOs;
 using Cleansia.Core.AppServices.Mappers;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
@@ -23,7 +24,9 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 /// property of the order alone; "is it reserved for me right now" is the (order, cleaner) pair. Had this
 /// needed a new arm in <c>OrderAvailability</c>, that would have been the signal the design was wrong.
 /// The one (order, cleaner) term it does carry is <c>OrderVisibility.PayableTo</c>: a hold on an order
-/// the beneficiary cannot be paid for is not an offer they can answer.</para>
+/// the beneficiary cannot be paid for is not an offer they can answer, and neither is a cash order held for
+/// a cleaner above the company's cash float cap, which the take refuses (owner ruling 2026-09-28,
+/// decision 25).</para>
 ///
 /// <para>The assignment conjunct is the one both siblings already carry — <c>NewJobsDigestService</c>'s
 /// <c>AssignedEmployees.All(...)</c> and the available board's <c>excludeEmployeeId</c> — and it is what
@@ -69,6 +72,8 @@ public class GetMyPendingOffers
 
             var currency = await currencyResolutionService
                 .ResolveCurrencyForEmployeeAsync(employeeId, cancellationToken);
+            var cashJobsHidden = await orderAccessService
+                .CashJobsHiddenFromAsync(employeeId, currency.Id, cancellationToken);
 
             var rows = await orderRepository
                 .GetQueryable()
@@ -79,6 +84,7 @@ public class GetMyPendingOffers
                 .Where(o => o.AssignedEmployees.All(ae => ae.EmployeeId != employeeId))
                 .Where(OrderAvailability.IsOfferableSql)
                 .Where(OrderVisibility.PayableTo(employeeId, currency.Id))
+                .Where(o => !cashJobsHidden || o.PaymentType != PaymentType.Cash)
                 .OrderBy(o => o.PreferredHoldUntilUtc)
                 .Take(MaxOffers)
                 .Select(o => new PendingOfferRow(

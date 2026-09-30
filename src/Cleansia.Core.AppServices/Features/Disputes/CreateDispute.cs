@@ -2,6 +2,7 @@ using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Disputes;
 using Cleansia.Core.Domain.Enums;
@@ -31,6 +32,10 @@ public class CreateDispute
                 .WithMessage(BusinessErrorMessage.OrderNotFound);
 
             RuleFor(x => x.Reason)
+                .IsInEnum()
+                .WithMessage(BusinessErrorMessage.InvalidEnumValue);
+
+            RuleFor(x => x.SettlementPreference)
                 .IsInEnum()
                 .WithMessage(BusinessErrorMessage.InvalidEnumValue);
 
@@ -78,7 +83,11 @@ public class CreateDispute
         /// Which items were unsatisfactory. Optional and empty by default — a dispute about the whole
         /// job, or about a charge, names no lines at all.
         /// </summary>
-        IReadOnlyList<DisputeLineSelection>? Lines = null
+        IReadOnlyList<DisputeLineSelection>? Lines = null,
+        /// <summary>
+        /// How to settle the complaint if it is justified: a card refund unless the customer chooses credit.
+        /// </summary>
+        DisputeSettlementPreference SettlementPreference = DisputeSettlementPreference.CardRefund
     ) : ICommand<Response>;
 
     public record Response(string DisputeId);
@@ -105,7 +114,8 @@ public class CreateDispute
         IUserSessionProvider userSessionProvider,
         ITenantProvider tenantProvider,
         IAuditContext auditContext,
-        IAdminNotifier adminNotifier) : ICommandHandler<Command, Response>
+        IAdminNotifier adminNotifier,
+        IUserNotificationRepository userNotificationRepository) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command request, CancellationToken cancellationToken)
         {
@@ -173,7 +183,8 @@ public class CreateDispute
                 userId: userId,
                 reason: request.Reason,
                 description: request.Description,
-                createdBy: userId
+                createdBy: userId,
+                settlementPreference: request.SettlementPreference
             );
 
             if (selected.Count > 0)
@@ -198,6 +209,15 @@ public class CreateDispute
                             ["orderId"] = order.Id,
                         }),
                     cancellationToken);
+            }
+
+            // "The cleaner did not arrive" on a staffed job nobody has started is the no-show report: the
+            // administrators get the same alert the reminder sweep raises at start + 30 minutes.
+            if (request.Reason == DisputeReason.ServiceNotProvided
+                && order.AssignedEmployees.Count > 0
+                && CleanerNoShow.RefusalFor(order, DateTime.UtcNow) is null)
+            {
+                await CleanerNoShow.AlertAsync(order, adminNotifier, userNotificationRepository, cancellationToken);
             }
 
             var cleanEndedAt = order.CompletedAt ?? order.CleaningDateTime;

@@ -61,14 +61,14 @@ public sealed class CancellationFeePreviewRouteTests(HostTestPostgresFixture db)
         using var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync());
         var body = doc.RootElement;
         Assert.Equal(a.OrderId, body.GetProperty("orderId").GetString());
-        // Seeded three days out with nobody assigned: free, full refund of the 1500 the order carries.
+        // Seeded three days out with nobody assigned, as an unpaid cash order: free, and nothing to
+        // refund because nothing was taken - the preview quotes what the cancel does.
         Assert.Equal(0m, body.GetProperty("feeRate").GetDecimal());
         Assert.Equal(0m, body.GetProperty("feeAmount").GetDecimal());
-        Assert.Equal(
-            body.GetProperty("totalPrice").GetDecimal(),
-            body.GetProperty("refundAmount").GetDecimal());
+        Assert.Equal(0m, body.GetProperty("refundAmount").GetDecimal());
         Assert.Equal("CZK", body.GetProperty("currencyCode").GetString());
-        Assert.Equal(15, body.GetProperty("oopsWindowMinutes").GetInt32());
+        // The owner's only order is their first booking (owner ruling 2026-09-28).
+        Assert.Equal(60, body.GetProperty("oopsWindowMinutes").GetInt32());
     }
 
     [Fact]

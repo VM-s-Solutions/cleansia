@@ -1,8 +1,18 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { RecurringBookingTemplateDto } from '@cleansia/customer-services';
-import { TranslateModule } from '@ngx-translate/core';
+import { CustomerClient, RecurringBookingTemplateDto } from '@cleansia/customer-services';
+import {
+  SavedAddressStore,
+  selectCustomerPackages,
+  selectCustomerPackagesCatalogue,
+  selectCustomerServices,
+  selectCustomerServicesCatalogue,
+  selectMarketCountryId,
+} from '@cleansia/customer-stores';
+import { SnackbarService } from '@cleansia/services';
+import { provideMockStore } from '@ngrx/store/testing';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { RecurringBookingsFacade } from '../recurring-bookings.facade';
 import { RecurringBookingsListComponent } from './recurring-bookings-list.component';
 
@@ -99,5 +109,77 @@ describe('RecurringBookingsListComponent — a schedule that can no longer be pa
     const pill = card.querySelector('.cl-rec__pill') as HTMLElement;
     expect(pill.textContent?.trim()).toBe('recurring_booking.status_active');
     expect(pill.classList).toContain('cl-rec__pill--on');
+  });
+});
+
+describe('RecurringBookingsListComponent — the next cleaning date', () => {
+  let fixture: ComponentFixture<RecurringBookingsListComponent>;
+  let facade: FakeRecurringBookingsFacade;
+
+  beforeEach(async () => {
+    facade = new FakeRecurringBookingsFacade();
+    await TestBed.configureTestingModule({
+      imports: [RecurringBookingsListComponent, TranslateModule.forRoot()],
+      providers: [provideRouter([])],
+    })
+      .overrideComponent(RecurringBookingsListComponent, {
+        set: { providers: [{ provide: RecurringBookingsFacade, useValue: facade }] },
+      })
+      .compileComponents();
+    const translate = TestBed.inject(TranslateService);
+    translate.setTranslation('en', { recurring_booking: { next_on: 'next {{date}}' } }, true);
+    translate.use('en');
+    fixture = TestBed.createComponent(RecurringBookingsListComponent);
+  });
+
+  it('is the date in the market the schedule names, the same day as its weekday', () => {
+    // Wednesday 7 October, 08:00 at UTC+14, is still 6 October in UTC and in Prague.
+    facade.nextRun.mockReturnValue(new Date('2026-10-06T18:00:00Z'));
+    facade.templates.set([
+      RecurringBookingTemplateDto.fromJS({
+        id: 't-kiritimati',
+        frequency: 3,
+        dayOfWeek: 3,
+        timeOfDay: '08:00',
+        rooms: 2,
+        bathrooms: 1,
+        paymentType: 1,
+        isActive: true,
+        requiresPaymentMethodChange: false,
+        timeZoneId: 'Pacific/Kiritimati',
+      }),
+    ]);
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).querySelector('.cl-rec__card')?.textContent;
+    expect(text).toContain('next October 7');
+    expect(text).not.toContain('October 6');
+  });
+});
+
+// The specs above hand the screen a fake facade, so only this one sees whether the providers the screen
+// declares can build the real one; a missing provider is an error the moment the list opens.
+describe('RecurringBookingsListComponent — its own facade', () => {
+  it('builds the facade from the providers the screen declares', async () => {
+    await TestBed.configureTestingModule({
+      imports: [RecurringBookingsListComponent, TranslateModule.forRoot()],
+      providers: [
+        provideRouter([]),
+        provideMockStore({
+          selectors: [
+            { selector: selectCustomerServices, value: [] },
+            { selector: selectCustomerPackages, value: [] },
+            { selector: selectCustomerServicesCatalogue, value: { services: [], countryId: null } },
+            { selector: selectCustomerPackagesCatalogue, value: { packages: [], countryId: null } },
+            { selector: selectMarketCountryId, value: null },
+          ],
+        }),
+        { provide: CustomerClient, useValue: {} },
+        { provide: SavedAddressStore, useValue: { addresses: signal([]), loaded: signal(true) } },
+        { provide: SnackbarService, useValue: {} },
+      ],
+    }).compileComponents();
+
+    expect(() => TestBed.createComponent(RecurringBookingsListComponent)).not.toThrow();
   });
 });

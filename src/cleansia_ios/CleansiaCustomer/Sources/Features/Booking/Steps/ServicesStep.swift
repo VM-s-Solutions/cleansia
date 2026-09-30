@@ -31,7 +31,9 @@ struct ServicesStep: View {
                 CatalogContentView(
                     catalog: catalog,
                     state: viewModel.state,
-                    onUpdate: { transform in viewModel.update(transform) }
+                    onUpdate: { transform in viewModel.update(transform) },
+                    onRoomsChange: viewModel.setRooms,
+                    onBathroomsChange: viewModel.setBathrooms
                 )
             }
         }
@@ -44,6 +46,8 @@ private struct CatalogContentView: View {
     let catalog: Catalog
     let state: BookingState
     let onUpdate: ((BookingState) -> BookingState) -> Void
+    let onRoomsChange: (Int) -> Void
+    let onBathroomsChange: (Int) -> Void
 
     @State private var activeCategorySlug: String?
     @State private var detailPackage: CatalogPackage?
@@ -67,8 +71,8 @@ private struct CatalogContentView: View {
                 PropertyRow(
                     rooms: state.rooms,
                     bathrooms: state.bathrooms,
-                    onRoomsChange: { value in onUpdate { mutate($0) { $0.rooms = max(value, 1) } } },
-                    onBathroomsChange: { value in onUpdate { mutate($0) { $0.bathrooms = max(value, 1) } } }
+                    onRoomsChange: onRoomsChange,
+                    onBathroomsChange: onBathroomsChange
                 )
                 .padding(.horizontal, Spacing.ml)
 
@@ -200,8 +204,18 @@ private struct PropertyRow: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.75)
                 .frame(maxWidth: .infinity, alignment: .leading)
-            PropertyStepper(label: L10n.Booking.roomsShort(rooms), value: rooms, onChange: onRoomsChange)
-            PropertyStepper(label: L10n.Booking.bathShort(bathrooms), value: bathrooms, onChange: onBathroomsChange)
+            PropertyStepper(
+                label: L10n.Booking.roomsShort(rooms),
+                value: rooms,
+                maximum: PropertySize.maxRooms,
+                onChange: onRoomsChange
+            )
+            PropertyStepper(
+                label: L10n.Booking.bathShort(bathrooms),
+                value: bathrooms,
+                maximum: PropertySize.maxBathrooms,
+                onChange: onBathroomsChange
+            )
         }
         .padding(.horizontal, Spacing.s)
         .padding(.vertical, Spacing.xs)
@@ -238,9 +252,13 @@ private struct PropertyRow: View {
         @State private var state = BookingState()
 
         var body: some View {
-            CatalogContentView(catalog: catalog, state: state) { transform in
-                state = transform(state)
-            }
+            CatalogContentView(
+                catalog: catalog,
+                state: state,
+                onUpdate: { transform in state = transform(state) },
+                onRoomsChange: { state.rooms = $0 },
+                onBathroomsChange: { state.bathrooms = $0 }
+            )
             .background(CleansiaColors.background)
         }
     }

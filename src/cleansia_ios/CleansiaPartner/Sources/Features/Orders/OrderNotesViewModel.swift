@@ -132,6 +132,10 @@ final class OrderNotesViewModel: ViewModel {
             .success(.preview)
         }
 
+        func getMyAssignmentRemovalReason(orderId _: String) async -> ApiResult<String> {
+            .success("")
+        }
+
         func myPendingOffers() async -> ApiResult<[CleansiaPartnerApi.PendingOfferItem]> {
             .success([])
         }
@@ -193,6 +197,10 @@ final class OrderNotesViewModel: ViewModel {
         }
 
         func deleteIssue(orderId _: String, issueId _: String) async -> ApiResult<Void> {
+            .success(())
+        }
+
+        func reportLockout(orderId _: String, callAttempts _: String) async -> ApiResult<Void> {
             .success(())
         }
 

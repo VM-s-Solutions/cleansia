@@ -17,7 +17,8 @@ public class CreateService
         string Description,
         int EstimatedTime,
         Dictionary<string, ServicePriceInput>? Prices,
-        Dictionary<string, TranslationInput>? Translations) : ICommand<Response>;
+        Dictionary<string, TranslationInput>? Translations,
+        int MinutesPerRoom = 0) : ICommand<Response>;
 
     public record Response(string ServiceId);
 
@@ -63,6 +64,10 @@ public class CreateService
                 .GreaterThanOrEqualTo(0)
                 .WithMessage(BusinessErrorMessage.MustBePositive);
 
+            RuleFor(x => x.MinutesPerRoom)
+                .GreaterThanOrEqualTo(0)
+                .WithMessage(BusinessErrorMessage.MustBePositive);
+
             RuleFor(x => x.Translations)
                 .MustCoverAllActiveLanguages(languageRepository);
 
@@ -95,7 +100,8 @@ public class CreateService
                 command.CategoryId,
                 command.Name,
                 command.Description,
-                command.EstimatedTime);
+                command.EstimatedTime,
+                command.MinutesPerRoom);
 
             if (command.Translations != null)
             {

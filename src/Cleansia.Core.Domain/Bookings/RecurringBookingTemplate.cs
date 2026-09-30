@@ -23,10 +23,13 @@ public class RecurringBookingTemplate : TenantAuditable
     [Required]
     public RecurrenceFrequency Frequency { get; private set; }
 
-    /// <summary>Day of the week the cleaning happens.</summary>
+    /// <summary>Day of the week the cleaning happens, in the saved address's market calendar.</summary>
     public System.DayOfWeek DayOfWeek { get; private set; }
 
-    /// <summary>Time of day the cleaning starts (in the user's local time, UTC stored).</summary>
+    /// <summary>
+    /// Wall-clock time the cleaning starts in the saved address's market zone, not UTC: each occurrence is
+    /// converted on its own date, so 10:00 stays 10:00 across a daylight-saving change.
+    /// </summary>
     public TimeOnly TimeOfDay { get; private set; }
 
     public int Rooms { get; private set; }
@@ -43,6 +46,9 @@ public class RecurringBookingTemplate : TenantAuditable
     public IReadOnlyCollection<string> SelectedPackageIds => _selectedPackageIds.AsReadOnly();
 
     public PaymentType PaymentType { get; private set; }
+
+    /// <summary>The level every occurrence is priced, timed and crewed at.</summary>
+    public DirtinessLevel DirtinessLevel { get; private set; }
 
     /// <summary>
     /// ADR-0036 D8 — the customer's preferred cleaner for every occurrence this template spawns. A
@@ -79,6 +85,25 @@ public class RecurringBookingTemplate : TenantAuditable
     /// </summary>
     public DateTime? LastMaterializedFor { get; private set; }
 
+    /// <summary>
+    /// The early-performance request given once for the whole series (decision 61), in the shape
+    /// <see cref="Orders.Order"/> records it; the materializer copies it onto every occurrence, so the act
+    /// survives on the orders when the schedule is deleted.
+    /// </summary>
+    [MaxLength(64)]
+    public string? EarlyPerformanceConsentTextVersion { get; private set; }
+
+    public DateTimeOffset? EarlyPerformanceConsentedOn { get; private set; }
+
+    [MaxLength(40)]
+    public string? EarlyPerformanceConsentClient { get; private set; }
+
+    [MaxLength(45)]
+    public string? EarlyPerformanceConsentIpAddress { get; private set; }
+
+    [MaxLength(120)]
+    public string? EarlyPerformanceConsentDeviceLabel { get; private set; }
+
     private RecurringBookingTemplate() { }
 
     public static RecurringBookingTemplate Create(
@@ -94,7 +119,8 @@ public class RecurringBookingTemplate : TenantAuditable
         PaymentType paymentType,
         DateTime startsOn,
         DateTime? endsOn = null,
-        string? preferredEmployeeId = null)
+        string? preferredEmployeeId = null,
+        DirtinessLevel dirtinessLevel = DirtinessLevel.Normal)
         => new()
         {
             UserId = userId,
@@ -110,6 +136,7 @@ public class RecurringBookingTemplate : TenantAuditable
             StartsOn = startsOn,
             EndsOn = endsOn,
             PreferredEmployeeId = string.IsNullOrEmpty(preferredEmployeeId) ? null : preferredEmployeeId,
+            DirtinessLevel = dirtinessLevel,
         };
 
     /// <summary>
@@ -133,7 +160,8 @@ public class RecurringBookingTemplate : TenantAuditable
         PaymentType paymentType,
         DateTime startsOn,
         DateTime? endsOn,
-        string? preferredEmployeeId)
+        string? preferredEmployeeId,
+        DirtinessLevel dirtinessLevel)
     {
         Frequency = frequency;
         DayOfWeek = dayOfWeek;
@@ -148,6 +176,7 @@ public class RecurringBookingTemplate : TenantAuditable
         EndsOn = endsOn;
         // Empty and null mean the same thing here as they do at creation: no preference.
         PreferredEmployeeId = string.IsNullOrEmpty(preferredEmployeeId) ? null : preferredEmployeeId;
+        DirtinessLevel = dirtinessLevel;
         LastMaterializedFor = null;
         return this;
     }
@@ -167,6 +196,17 @@ public class RecurringBookingTemplate : TenantAuditable
     public RecurringBookingTemplate MarkMaterializedFor(DateTime occurrenceUtc)
     {
         LastMaterializedFor = occurrenceUtc;
+        return this;
+    }
+
+    public RecurringBookingTemplate RecordEarlyPerformanceConsent(
+        string textVersion, DateTimeOffset consentedOn, string client, string? ipAddress, string? deviceLabel)
+    {
+        EarlyPerformanceConsentTextVersion = textVersion;
+        EarlyPerformanceConsentedOn = consentedOn;
+        EarlyPerformanceConsentClient = client;
+        EarlyPerformanceConsentIpAddress = ipAddress;
+        EarlyPerformanceConsentDeviceLabel = deviceLabel;
         return this;
     }
 }

@@ -275,7 +275,8 @@ public class PayPeriodInvoicePdfFailureRecordingTests
         _blobContainerClientFactory.Object,
         _tenantProvider.Object,
         _payoutReferenceAllocator.Object,
-        new Mock<ITenantRepository>().Object)
+        new Mock<ITenantRepository>().Object,
+        new Mock<ICashLedgerRepository>().Object)
         .CloseExpiredPeriodsAndOpenNewAsync(CancellationToken.None);
 
     private static Employee Cleaner()

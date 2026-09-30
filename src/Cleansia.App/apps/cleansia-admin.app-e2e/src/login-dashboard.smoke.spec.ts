@@ -128,7 +128,7 @@ test('admin can log in and land on the admin home with a seeded data row', async
   // The real admin home renders its heading — the oversight surface is reached,
   // not a blank route, the /unauthorized bounce, or a login loop.
   await expect(
-    page.getByRole('heading', { name: 'Employee Management' })
+    page.getByRole('heading', { name: 'Partner Management' })
   ).toBeVisible();
 
   // ── Seeded-row assertion: the employee-management table renders

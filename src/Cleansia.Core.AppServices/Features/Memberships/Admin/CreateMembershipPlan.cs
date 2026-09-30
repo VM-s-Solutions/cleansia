@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Memberships.Admin.DTOs;
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
@@ -76,8 +77,11 @@ public class CreateMembershipPlan
                 .WithMessage(BusinessErrorMessage.MembershipPlanDiscountOutOfRange);
 
             RuleFor(x => x.FreeCancellationWindowHours)
+                .Cascade(CascadeMode.Stop)
                 .GreaterThanOrEqualTo(0)
-                .WithMessage(BusinessErrorMessage.MustBePositive);
+                .WithMessage(BusinessErrorMessage.MustBePositive)
+                .LessThanOrEqualTo(BookingPolicy.FreeCancellationHours)
+                .WithMessage(BusinessErrorMessage.MembershipPlanFreeCancellationWindowTooLong);
 
             // A trial grants Cleansia Plus benefits to somebody who has not paid, which the owner ruling
             // of 2026-09-08 (T-0690) forbids. Refused here rather than merely defaulted to 0, because a

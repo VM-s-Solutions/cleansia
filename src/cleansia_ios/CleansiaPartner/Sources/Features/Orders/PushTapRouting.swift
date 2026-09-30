@@ -6,12 +6,21 @@ enum PushTapRouting {
         let orderId: String?
         let selectEarningsTab: Bool
         let invoiceId: String?
+        var showRemovalReason = false
     }
 
     static func plan(for destination: PartnerNotificationDestination) -> Plan {
         switch destination {
         case let .order(orderId):
             Plan(selectOrdersTab: true, orderId: orderId, selectEarningsTab: false, invoiceId: nil)
+        case let .removedFromOrder(orderId):
+            Plan(
+                selectOrdersTab: true,
+                orderId: orderId,
+                selectEarningsTab: false,
+                invoiceId: nil,
+                showRemovalReason: true
+            )
         case .ordersTab:
             Plan(selectOrdersTab: true, orderId: nil, selectEarningsTab: false, invoiceId: nil)
         case let .invoice(invoiceId):
@@ -21,7 +30,7 @@ enum PushTapRouting {
         }
     }
 
-    static func deepLinkRoute(_ orderId: String?) -> OrderRoute? {
-        orderId.map { .detail(orderId: $0) }
+    static func deepLinkRoute(_ orderId: String?, showRemovalReason: Bool = false) -> OrderRoute? {
+        orderId.map { .detail(orderId: $0, showRemovalReason: showRemovalReason) }
     }
 }

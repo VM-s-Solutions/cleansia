@@ -88,3 +88,94 @@ describe('deleting an account warns that unused credit is forfeited', () => {
     }
   });
 });
+
+/**
+ * Deletion anonymises in place: the bookings, receipts, consent records, the action log and any
+ * dispute text outlive the account on purpose (→ /flows/gdpr-and-audit). The page says so, and no
+ * deletion text promises that every piece of data goes.
+ */
+const KEPT: Record<Locale, readonly RegExp[]> = {
+  en: [/bookings/i, /receipts/i, /consent/i, /log of actions/i, /dispute/i],
+  cs: [/objednávk/i, /účtenk/i, /souhlas/i, /úkon/i, /reklamac/i],
+  sk: [/objednávk/i, /účtenk/i, /súhlas/i, /úkon/i, /reklamáci/i],
+  uk: [/замовлен/i, /чек/i, /згод/i, /журнал/i, /скарг/i],
+  ru: [/заказ/i, /чек/i, /соглас/i, /журнал/i, /обращени/i],
+};
+
+const RETENTION_DEFAULTS = join(
+  SOLUTION_DIR,
+  'Cleansia.Core.AppServices/Features/DataRetention/RetentionDefaults.cs'
+);
+
+function retentionDefault(name: string): number {
+  const match = new RegExp(`public\\s+const\\s+int\\s+${name}\\s*=\\s*(\\d+)\\s*;`).exec(
+    readFileSync(RETENTION_DEFAULTS, 'utf8')
+  );
+  if (!match) throw new Error(`RetentionDefaults.${name} not found — the parser needs updating`);
+  return Number(match[1]);
+}
+
+/** The consent records, the action log and the dispute text, in the order the notice names them. */
+const KEPT_FOR_YEARS = [
+  retentionDefault('DefaultWithdrawnConsentsYears'),
+  retentionDefault('DefaultCustomerAuditRetentionYears'),
+  retentionDefault('DefaultDisputeTextRetentionYears'),
+];
+
+const YEARS: Record<Locale, string> = {
+  en: 'year',
+  cs: '(?:let|rok)',
+  sk: 'rok',
+  uk: '(?:рок|рік)',
+  ru: '(?:год|лет)',
+};
+
+const ALL_DATA: Record<Locale, RegExp> = {
+  en: /all (?:associated |your )?data/i,
+  cs: /všechn[aá] (?:související |vaše )?data/i,
+  sk: /všetky (?:súvisiace |vaše )?údaje/i,
+  uk: /(?:всі|усі) (?:пов'язані |ваші )?дані/i,
+  ru: /все (?:связанные |ваши )?данные/i,
+};
+
+const DELETION_COPY = [...RENDERED.map(({ key }) => key), 'pages.profile.delete_account_desc'];
+
+const RETIRED_KEYS = [
+  'pages.gdpr.delete_desc',
+  'pages.gdpr.delete_confirm',
+  'gdpr.delete.description',
+  'gdpr.delete.confirm',
+];
+
+describe('deleting an account says what is kept, and for how long', () => {
+  it.each(LOCALES)('names every record kept, in %s', (locale) => {
+    const description = resolveKey(readLocale(locale), 'pages.gdpr.delete_description');
+
+    expect(KEPT[locale].filter((stem) => !stem.test(description))).toEqual([]);
+  });
+
+  it.each(LOCALES)('keeps each dated record for the server default number of years, in %s', (locale) => {
+    const description = resolveKey(readLocale(locale), 'pages.gdpr.delete_description');
+    const stated = [...description.matchAll(new RegExp(`(\\d+)\\s${YEARS[locale]}`, 'gi'))].map(
+      (match) => Number(match[1])
+    );
+
+    expect(stated).toEqual(KEPT_FOR_YEARS);
+  });
+
+  it.each(LOCALES)('never promises that all data is deleted, in %s', (locale) => {
+    const bundle = readLocale(locale);
+
+    for (const key of DELETION_COPY) {
+      const value = resolveKey(bundle, key);
+      expect(value.trim().length).toBeGreaterThan(0);
+      expect({ key, allData: ALL_DATA[locale].test(value) }).toEqual({ key, allData: false });
+    }
+  });
+
+  it.each(LOCALES)('carries none of the retired deletion keys, in %s', (locale) => {
+    const bundle = readLocale(locale);
+
+    expect(RETIRED_KEYS.filter((key) => resolveKey(bundle, key) !== '')).toEqual([]);
+  });
+});

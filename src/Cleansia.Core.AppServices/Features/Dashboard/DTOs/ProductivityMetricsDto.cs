@@ -4,8 +4,6 @@ public record ProductivityMetricsDto(
     int OrdersCompleted,
     int OrdersTarget,
     double CompletionPercentage,
-    double AverageCompletionTimeMinutes,
-    double OnTimeCompletionRate,
     double EfficiencyScore,
     PersonalBests PersonalBests);
 

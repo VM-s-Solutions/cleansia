@@ -43,6 +43,8 @@ public class SharedAddressAnonymisationTests(PostgresContainerFixture fixture) :
     private const string SharedStreet = "Sdilena 5";
     private const string SoleAddressId = "address-sole-street";
     private const string SoleStreet = "Samotna 9";
+    private const string FormerAddressId = "address-former-street";
+    private const string FormerStreet = "Stara 7";
     private const string City = "Praha";
     private const string ZipCode = "11000";
     private const double Latitude = 50.0755;
@@ -234,8 +236,12 @@ public class SharedAddressAnonymisationTests(PostgresContainerFixture fixture) :
             });
     }
 
+    /// <summary>
+    /// A removed address-book entry still names the subject's home, so it goes with the active ones, and the
+    /// address it points at goes too once nothing but the subject's own rows needed it.
+    /// </summary>
     [Fact]
-    public async Task Erasure_Only_Excludes_Saved_Addresses_It_Actually_Removes_From_The_Source_Reference_Check()
+    public async Task Erasure_Removes_An_Inactive_Saved_Address_And_The_Original_Only_The_Subject_Used()
     {
         await TestMethod(
             setup: WithoutBlobStorage,
@@ -252,12 +258,93 @@ public class SharedAddressAnonymisationTests(PostgresContainerFixture fixture) :
             assert: async (CleansiaDbContext context, BusinessResult result) =>
             {
                 Assert.True(result.IsSuccess, result.Error?.Message);
+                var order = await context.Orders.IgnoreQueryFilters().Include(o => o.CustomerAddress).SingleAsync();
+                AssertOnItsOwnAnonymisedCopy(order);
+                Assert.Empty(await context.SavedAddresses.IgnoreQueryFilters().ToListAsync());
+                var address = Assert.Single(await context.Addresses.IgnoreQueryFilters().ToListAsync());
+                Assert.Equal(order.CustomerAddressId, address.Id);
+            });
+    }
+
+    /// <summary>
+    /// An address only the address book ever named, never booked, is the subject's home all the same. It
+    /// goes with the erasure unless another customer uses it, whose rows are never touched.
+    /// </summary>
+    [Fact]
+    public async Task Erasure_Deletes_A_Saved_Address_Only_Original_Unless_Another_Customer_Uses_It()
+    {
+        await TestMethod(
+            setup: WithoutBlobStorage,
+            arrange: async context =>
+            {
+                var shared = await SeedCatalogueAndPeopleAsync(context, SharedAddressId, SharedStreet);
+                var sole = Address.Create(SoleStreet, City, ZipCode, CountryId);
+                sole.Id = SoleAddressId;
+                var former = Address.Create(FormerStreet, City, ZipCode, CountryId);
+                former.Id = FormerAddressId;
+                var inactive = SavedAddress.Create(SubjectId, FormerAddressId, "Former home", isDefault: false);
+                inactive.Deactivated(SubjectId, DateTimeOffset.UtcNow.AddDays(-1));
+                context.Addresses.AddRange(shared, sole, former);
+                context.SavedAddresses.AddRange(
+                    SavedAddress.Create(SubjectId, SoleAddressId, "Home", isDefault: true, floor: "3", apartment: "12B"),
+                    inactive,
+                    SavedAddress.Create(SubjectId, SharedAddressId, "Mum", isDefault: false),
+                    SavedAddress.Create(NeighbourId, SharedAddressId, "Home", isDefault: true));
+                await context.CommitAsync(CancellationToken.None);
+            },
+            act: async provider => await provider.GetRequiredService<IMediator>().Send(new DeleteUserAccount.Command()),
+            assert: async (CleansiaDbContext context, BusinessResult result) =>
+            {
+                Assert.True(result.IsSuccess, result.Error?.Message);
                 await AssertSharedRowUntouchedAsync(context);
-                AssertOnItsOwnAnonymisedCopy(await context.Orders.IgnoreQueryFilters()
-                    .Include(o => o.CustomerAddress).SingleAsync());
-                var saved = await context.SavedAddresses.IgnoreQueryFilters().SingleAsync();
-                Assert.False(saved.IsActive);
+                var saved = Assert.Single(await context.SavedAddresses.IgnoreQueryFilters().ToListAsync());
+                Assert.Equal(NeighbourId, saved.UserId);
                 Assert.Equal(SharedAddressId, saved.AddressId);
+                var address = Assert.Single(await context.Addresses.IgnoreQueryFilters().ToListAsync());
+                Assert.Equal(SharedAddressId, address.Id);
+            });
+    }
+
+    [Fact]
+    public async Task Erasure_Clears_Floor_Flat_Access_Mode_And_The_Customers_Cancellation_Words_On_Their_Order()
+    {
+        await TestMethod(
+            setup: WithoutBlobStorage,
+            arrange: async context =>
+            {
+                var sole = await SeedCatalogueAndPeopleAsync(context, SoleAddressId, SoleStreet);
+                var order = Order.Create(
+                    customerName: "Subject Customer",
+                    customerEmail: TestConstants.TestUserSession.TestUserEmail,
+                    customerPhone: "+420777111333",
+                    customerAddress: sole,
+                    rooms: 2,
+                    bathrooms: 1,
+                    cleaningDateTime: DateTime.UtcNow.AddDays(-30),
+                    paymentType: PaymentType.Cash,
+                    totalPrice: 1250m,
+                    currencyId: CurrencyId,
+                    paymentStatus: PaymentStatus.Pending,
+                    userId: SubjectId,
+                    customerFloor: "3",
+                    customerApartment: "12B",
+                    accessMode: "door_code");
+                order.Id = SubjectPastOrderId;
+                order.Cancel(DateTime.UtcNow.AddDays(-31), CancelledBy.Customer, 0m, 0m, "Moving out of Dlouha 14");
+                order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Cancelled, order));
+                context.Orders.Add(order);
+                await context.CommitAsync(CancellationToken.None);
+            },
+            act: async provider => await provider.GetRequiredService<IMediator>().Send(new DeleteUserAccount.Command()),
+            assert: async (CleansiaDbContext context, BusinessResult result) =>
+            {
+                Assert.True(result.IsSuccess, result.Error?.Message);
+                var order = await context.Orders.IgnoreQueryFilters().SingleAsync();
+                Assert.Equal(AnonymizationMarker.Value, order.CustomerName);
+                Assert.Null(order.CustomerFloor);
+                Assert.Null(order.CustomerApartment);
+                Assert.Null(order.AccessMode);
+                Assert.Null(order.CancellationReason);
             });
     }
 

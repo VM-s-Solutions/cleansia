@@ -4,7 +4,8 @@ namespace Cleansia.Core.Domain.Tenancy;
 /// The live facts of the ambient company's books that must be zero before it can be sealed
 /// (ADR-0064 D3), plus what the lifecycle page shows beside them. <see cref="LatestCardPaidCleaningDateTime"/>
 /// is null when the company never took a card payment; the chargeback horizon is counted from it by
-/// the caller, which holds the company's setting.
+/// the caller, which holds the company's setting. <see cref="CleanersHoldingCash"/> counts the cleaners
+/// who still hold the company's cash, once per currency.
 /// </summary>
 public sealed record CompanySettlementFacts(
     int OpenOrders,
@@ -20,4 +21,5 @@ public sealed record CompanySettlementFacts(
     int UnpaidInvoices,
     int UninvoicedPayRows,
     int OpenDisputes,
+    int CleanersHoldingCash,
     DateTime? LatestCardPaidCleaningDateTime);

@@ -50,8 +50,8 @@ with thirteen company settings (`TenantConfiguration`, set on the admin's *Compa
 `WorkContractAcceptanceMetadata` blanks the IP address, device label and device id
 on the company's contract-for-work acceptances older than `retention.work_contract_metadata.years`
 (default 3), in batches through the filter, and **never deletes a row** — the acceptance is books
-([ADR-0068](/decisions/adr-0068) D5). Since 2026-09-23, the tasks also delete completed-order photos
-after seven days unless a dispute holds them, admin and cleaner audit rows after their own three-year
+([ADR-0068](/decisions/adr-0068) D5). Since 2026-09-23, the tasks also delete order photos seven days
+after completion — or, since 2026-09-28, after cancellation — unless a dispute holds them, admin and cleaner audit rows after their own three-year
 defaults, and expired or revoked guest access tokens. The token task needs no separate window: it
 reads each token's own expiry and revocation. They loop the **registry** instead of grouping rows:
 
@@ -145,7 +145,8 @@ the command because the command never sends one. **The subject rule is the calle
 collapses a repeated `(queue, key)` in-request only, and across requests the unique index fails the
 business commit — for a webhook that also un-stamps the Stripe event — so a subject must be unique
 per logical event across requests (an order id for "became offerable", a released assignment id for
-"lost its crew", a Stripe dispute id for a chargeback, the request id plus the day for a failed
+"lost its crew", a Stripe dispute id for a chargeback — plus the company id when a chargeback that matches
+no order is announced to every company in turn — the request id plus the day for a failed
 erasure retry, the run instant to the tick for a wind-down run). The two sites that can raise one
 logical event twice — a repeated card decline on one order, two overlapping archive builds of one
 frozen company — read the feed first (`AnyForEventAsync`, a jsonb containment on the row's args by

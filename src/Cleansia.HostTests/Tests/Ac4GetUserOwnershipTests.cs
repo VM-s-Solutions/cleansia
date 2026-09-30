@@ -60,6 +60,32 @@ public sealed class Ac4GetUserOwnershipTests(HostTestPostgresFixture db) : Authz
         HttpAssert.IsOk(resp);
     }
 
+    /// <summary>
+    /// The partner host's account list carries every customer's name, e-mail and phone. A cleaner who
+    /// could read it would find a customer by name long after the job, whatever the order detail hides.
+    /// </summary>
+    [Fact]
+    public async Task Employee_cannot_list_the_companys_accounts()
+    {
+        var u = await ArrangeTwoUsersAsync();
+        var token = TestJwtFactory.Mint(PartnerAudience, u.SelfId, u.SelfEmail, UserProfile.Employee);
+
+        var resp = await PartnerClient(token).GetAsync("/api/User/GetPaged?Filter.FirstName=Cust&Limit=100");
+
+        HttpAssert.IsForbidden(resp);
+    }
+
+    [Fact]
+    public async Task Admin_lists_the_companys_accounts()
+    {
+        await ArrangeTwoUsersAsync();
+        var adminToken = TestJwtFactory.Mint(PartnerAudience, "admin-1", "admin@hosttests.local", UserProfile.Administrator);
+
+        var resp = await PartnerClient(adminToken).GetAsync("/api/User/GetPaged");
+
+        HttpAssert.IsOk(resp);
+    }
+
     [Fact]
     public async Task Admin_may_view_any_users_detail()
     {

@@ -44,7 +44,10 @@ public class CreateAdminUser
                     !await userRepository.ExistsWithEmailIgnoringTenantAsync(email, ct))
                 .WithMessage(BusinessErrorMessage.AdminUserEmailExists);
 
-            RuleFor(x => x.Password).ValidatePassword();
+            RuleFor(x => x.Password)
+                .ValidatePassword()
+                .MinimumLength(AdminPasswordMinLength)
+                .WithMessage(BusinessErrorMessage.AdminPasswordTooShort);
 
             RuleFor(x => x.FirstName)
                 .Cascade(CascadeMode.Stop)
@@ -102,6 +105,7 @@ public class CreateAdminUser
                 adminRole: command.Role);
 
             user.ConfirmEmail();
+            user.RequirePasswordChange();
             user.UpdateBirthDate(command.BirthDate);
 
             if (!string.IsNullOrWhiteSpace(command.PhoneNumber))

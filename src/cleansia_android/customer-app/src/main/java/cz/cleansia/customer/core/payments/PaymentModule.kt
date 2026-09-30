@@ -1,6 +1,8 @@
 package cz.cleansia.customer.core.payments
 
 import cz.cleansia.customer.api.client.PaymentApi as GenPaymentApi
+import cz.cleansia.customer.api.client.ReceivableApi as GenReceivableApi
+import cz.cleansia.customer.api.client.SavedCardApi as GenSavedCardApi
 import cz.cleansia.customer.core.auth.AuthRetrofit
 import dagger.Module
 import dagger.Provides
@@ -20,4 +22,14 @@ object PaymentModule {
     @Provides
     @Singleton
     fun providePaymentApi(genPaymentApi: GenPaymentApi): PaymentApi = PaymentApi(genPaymentApi)
+
+    @Provides
+    @Singleton
+    fun provideSavedCardApi(@AuthRetrofit retrofit: Retrofit): SavedCardApi =
+        SavedCardApi(retrofit.create(GenSavedCardApi::class.java))
+
+    @Provides
+    @Singleton
+    fun provideReceivableApi(@AuthRetrofit retrofit: Retrofit): ReceivableApi =
+        ReceivableApi(retrofit.create(GenReceivableApi::class.java))
 }

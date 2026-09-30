@@ -59,7 +59,8 @@ internal static class ValidatorTestHelpers
         PaymentType paymentType = PaymentType.Cash,
         PaymentStatus paymentStatus = PaymentStatus.Pending,
         int maxEmployees = 1,
-        DateTime? cleaningDateTime = null)
+        DateTime? cleaningDateTime = null,
+        string? userId = null)
     {
         var address = Address.Create("123 Main St", "Prague", "11000", "cz");
         var order = Order.Create(
@@ -73,7 +74,8 @@ internal static class ValidatorTestHelpers
             paymentType: paymentType,
             totalPrice: 1000m,
             currencyId: CurrencyId,
-            paymentStatus: paymentStatus);
+            paymentStatus: paymentStatus,
+            userId: userId);
 
         order.Id = orderId;
         order.SetMaxEmployees(maxEmployees);

@@ -5,10 +5,15 @@ import { provideHttpClient } from '@angular/common/http';
 import { By } from '@angular/platform-browser';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { CleansiaSelectComponent } from '@cleansia/components';
+import { lastBookableDay } from '@cleansia/models';
 import { SnackbarService } from '@cleansia/services';
 import {
+  CreateReceivablePayLinkResponse,
+  CustomerClient,
+  DirtinessLevel,
   GetMembershipPlansResponse,
   GetMyMembershipResponse,
+  MyReceivableDto,
   PackageListItem,
   PaymentType,
   QuoteOrderResponse,
@@ -18,6 +23,7 @@ import {
   ServiceListItem,
 } from '@cleansia/customer-services';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { of } from 'rxjs';
 import { OrderWizardComponent } from './order-wizard.component';
 import { OrderWizardFacade } from './order-wizard.facade';
 import { ORDER_WIZARD_INITIAL_DATA, OrderWizardFormData, createAddressDto } from './order-wizard.models';
@@ -88,6 +94,7 @@ class FakeOrderWizardFacade {
   tierDiscount = signal(0);
   effectivePromoDiscount = signal(0);
   expressSurcharge = signal(0);
+  dirtinessSurcharge = signal(0);
   expressSurchargeApplied = signal(false);
   expressSurchargeWaived = signal(false);
   expressUpgradesRemaining = signal(0);
@@ -146,22 +153,49 @@ class FakeOrderWizardFacade {
   cashReason = signal<{ key: string; params: Record<string, number> } | null>(null);
   cashNeedsAccount = signal(false);
   cashClearedNotice = signal(false);
+  cashOwed = signal(false);
   selectPaymentType = jest.fn((paymentType: PaymentType) => this.updateFormData({ paymentType }));
+  cardCaptureVisible = signal(false);
+  cardCaptureConsent = signal(false);
+  cardCaptureStarting = signal(false);
+  setCardCaptureConsent = jest.fn((accepted: boolean) => this.cardCaptureConsent.set(accepted));
+  closeCardCapture = jest.fn(() => this.cardCaptureVisible.set(false));
+  startCardCapture = jest.fn();
 }
 
 describe('OrderWizardComponent (a11y)', () => {
   let fixture: ComponentFixture<OrderWizardComponent>;
   let facade: FakeOrderWizardFacade;
   let el: HTMLElement;
+  let receivableClient: { getMine: jest.Mock; createPayLink: jest.Mock };
 
   async function setup(beforeCreate?: () => void): Promise<void> {
     facade = new FakeOrderWizardFacade();
+    const { origin, pathname } = window.location;
+    receivableClient = {
+      getMine: jest.fn().mockReturnValue(
+        of([
+          MyReceivableDto.fromJS({
+            id: 'rcv-1',
+            orderId: 'ord-1',
+            displayOrderNumber: 'CL-1001',
+            kind: { value: 1 },
+            amount: 450,
+            currencyCode: 'CZK',
+          }),
+        ]),
+      ),
+      createPayLink: jest.fn().mockReturnValue(
+        of(CreateReceivablePayLinkResponse.fromJS({ receivableId: 'rcv-1', checkoutUrl: `${origin}${pathname}#pay` })),
+      ),
+    };
     await TestBed.configureTestingModule({
       imports: [OrderWizardComponent, TranslateModule.forRoot()],
       providers: [
         provideHttpClient(),
         provideNoopAnimations(),
         { provide: SnackbarService, useValue: { showError: jest.fn(), showSuccess: jest.fn() } },
+        { provide: CustomerClient, useValue: { receivableClient } },
         {
           provide: ActivatedRoute,
           useValue: { snapshot: { queryParamMap: { get: () => null } } },
@@ -250,6 +284,60 @@ describe('OrderWizardComponent (a11y)', () => {
     });
   });
 
+  describe('the booking horizon on the calendar', () => {
+    const now = new Date(2026, 8, 10, 12, 0);
+    const lastDay = lastBookableDay(now);
+    const monthsAhead =
+      (lastDay.getFullYear() - now.getFullYear()) * 12 + lastDay.getMonth() - now.getMonth();
+
+    afterEach(() => jest.useRealTimers());
+
+    async function openWhenStep(): Promise<void> {
+      await setup(() => jest.useFakeTimers().setSystemTime(now));
+      facade.activeStep.set(3);
+      fixture.detectChanges();
+    }
+
+    const nextMonth = () => el.querySelectorAll<HTMLButtonElement>('.cl-wiz__cal-nav')[1];
+
+    function showNextMonth(): void {
+      nextMonth().click();
+      fixture.detectChanges();
+    }
+
+    const dayCell = (day: number) =>
+      Array.from(el.querySelectorAll<HTMLButtonElement>('button.cl-wiz__cal-day')).find(
+        (cell) => cell.textContent?.trim() === String(day)
+      );
+
+    it('moves forward only until the month of the last bookable day', async () => {
+      expect(monthsAhead).toBeGreaterThan(0);
+      await openWhenStep();
+
+      for (let month = 0; month < monthsAhead; month += 1) {
+        expect(nextMonth().disabled).toBe(false);
+        showNextMonth();
+      }
+
+      expect(nextMonth().disabled).toBe(true);
+    });
+
+    it('offers the last bookable day and not the day after it', async () => {
+      await openWhenStep();
+      for (let month = 0; month < monthsAhead; month += 1) {
+        showNextMonth();
+      }
+
+      const last = dayCell(lastDay.getDate());
+      const after = dayCell(lastDay.getDate() + 1);
+
+      expect(last?.disabled).toBe(false);
+      expect(last?.classList.contains('cl-wiz__cal-day--off')).toBe(false);
+      expect(after?.disabled).toBe(true);
+      expect(after?.classList.contains('cl-wiz__cal-day--off')).toBe(true);
+    });
+  });
+
   describe('selection cards (AC1, AC2)', () => {
     it('renders service cards as focusable buttons with aria-pressed reflecting selection', async () => {
       await setup();
@@ -317,7 +405,7 @@ describe('OrderWizardComponent (a11y)', () => {
   describe('contact step labels + errors (AC3, AC4)', () => {
     it('associates each contact label with its input via for/id', async () => {
       await setup();
-      facade.activeStep.set(1);
+      facade.activeStep.set(2);
       fixture.detectChanges();
 
       // `labels` covers both associations — a wrapping <label> and a for/id
@@ -330,7 +418,7 @@ describe('OrderWizardComponent (a11y)', () => {
 
     it('sets aria-invalid + aria-describedby when a contact field has a touched error', async () => {
       await setup();
-      facade.activeStep.set(1);
+      facade.activeStep.set(2);
       fixture.detectChanges();
 
       fixture.componentInstance.markTouched('customerFirstName');
@@ -345,7 +433,7 @@ describe('OrderWizardComponent (a11y)', () => {
 
     it('clears aria-invalid once the field becomes valid', async () => {
       await setup();
-      facade.activeStep.set(1);
+      facade.activeStep.set(2);
       facade.updateFormData({ customerFirstName: 'Jane' });
       fixture.detectChanges();
       fixture.componentInstance.markTouched('customerFirstName');
@@ -359,7 +447,7 @@ describe('OrderWizardComponent (a11y)', () => {
   describe('the address country picker', () => {
     it('offers the market directory and shows the country the booking is priced for', async () => {
       await setup();
-      facade.activeStep.set(1);
+      facade.activeStep.set(2);
       facade.countryOptions.set([
         { label: 'Czechia', value: 'cze-id' },
         { label: 'Slovakia', value: 'svk-id' },
@@ -386,7 +474,7 @@ describe('OrderWizardComponent (a11y)', () => {
 
     it('writes a pick made in the rendered select onto the address country', async () => {
       await setup();
-      facade.activeStep.set(1);
+      facade.activeStep.set(2);
       facade.countryOptions.set([
         { label: 'Czechia', value: 'cze-id' },
         { label: 'Slovakia', value: 'svk-id' },
@@ -430,7 +518,7 @@ describe('OrderWizardComponent (a11y)', () => {
         }),
       ]);
       facade.addressCountryId.set('cze-id');
-      facade.activeStep.set(4);
+      facade.activeStep.set(5);
       fixture.detectChanges();
 
       expect(facade.formData().address.countryId).toBe('');
@@ -439,12 +527,88 @@ describe('OrderWizardComponent (a11y)', () => {
       expect(query).toBeInstanceOf(QuotePlusSavingsQuery);
       expect(query.countryId).toBe('cze-id');
     });
+
+    it('is priced at the dirtiness level the customer picked', async () => {
+      await setup();
+      facade.plans.set([
+        GetMembershipPlansResponse.fromJS({
+          code: 'plus-monthly',
+          name: 'Plus',
+          price: 199,
+          billingInterval: 0,
+          discountPercentage: 12,
+          freeCancellationWindowHours: 24,
+          expressUpgradesPerMonth: 0,
+          trialPeriodDays: 0,
+          savingsPercentVsMonthly: 0,
+          currencyCode: 'CZK',
+        }),
+      ]);
+      facade.formData.update((data) => ({ ...data, dirtinessLevel: DirtinessLevel.Heavy }));
+      facade.activeStep.set(5);
+      fixture.detectChanges();
+
+      const query = facade.loadPlusSavings.mock.calls.at(-1)?.[0] as QuotePlusSavingsQuery;
+      expect(query.dirtinessLevel).toBe(DirtinessLevel.Heavy);
+    });
+  });
+
+  describe('the dirtiness level step', () => {
+    it('offers the three levels with none chosen, and records the one tapped', async () => {
+      await setup();
+      facade.activeStep.set(1);
+      fixture.detectChanges();
+
+      const levels = Array.from(el.querySelectorAll<HTMLButtonElement>('[data-spec-level]'));
+      expect(levels.length).toBe(3);
+      expect(levels.map((level) => level.getAttribute('aria-pressed'))).toEqual(['false', 'false', 'false']);
+
+      levels[2].click();
+      fixture.detectChanges();
+
+      expect(facade.updateFormData).toHaveBeenCalledWith({ dirtinessLevel: DirtinessLevel.Heavy });
+      expect(levels[2].getAttribute('aria-pressed')).toBe('true');
+    });
+  });
+
+  describe(`the summary rail's dirtiness line`, () => {
+    const priced = (dirtinessLevel: DirtinessLevel, dirtinessSurchargeAmount: number) => {
+      facade.quote.set(
+        QuoteOrderResponse.fromJS({
+          dirtinessLevel,
+          dirtinessSurchargeAmount,
+          lines: [{ kind: 'service', itemId: 's-1', baseAmount: 1000, unitAmount: 0, units: 0, amount: 1000 }],
+        }),
+      );
+      facade.dirtinessSurcharge.set(dirtinessSurchargeAmount);
+      fixture.detectChanges();
+    };
+
+    const rows = () =>
+      Array.from(el.querySelectorAll('.cl-wiz__summary-line')).map((row) =>
+        (row.textContent ?? '').replace(/\s+/g, ' ').trim(),
+      );
+
+    it('names the level the quote priced and the surcharge it stored', async () => {
+      await setup();
+      priced(DirtinessLevel.Increased, 300);
+
+      const line = rows().find((row) => row.includes('dirtiness.increased.surcharge_line'));
+      expect(line).toContain('300');
+    });
+
+    it('is absent when the level adds nothing', async () => {
+      await setup();
+      priced(DirtinessLevel.Normal, 0);
+
+      expect(rows().some((row) => row.includes('surcharge_line'))).toBe(false);
+    });
   });
 
   describe('saved address rows (AC1, AC2)', () => {
     it('renders saved address rows as focusable buttons with aria-pressed', async () => {
       await setup();
-      facade.activeStep.set(1);
+      facade.activeStep.set(2);
       facade.isAuthenticated.set(true);
       facade.savedAddresses.set([makeAddress('a-1', 'Home')]);
       facade.selectedSavedAddressId.set('a-1');
@@ -460,7 +624,7 @@ describe('OrderWizardComponent (a11y)', () => {
   describe('payment cards (AC1, AC2)', () => {
     it('renders payment cards as focusable buttons with aria-pressed reflecting the chosen method', async () => {
       await setup();
-      facade.activeStep.set(3);
+      facade.activeStep.set(4);
       facade.formData.update((d) => ({ ...d, paymentType: PaymentType.Card }));
       fixture.detectChanges();
 
@@ -475,7 +639,7 @@ describe('OrderWizardComponent (a11y)', () => {
 
     it('disables cash and says why when the booking needs more than one cleaner', async () => {
       await setup();
-      facade.activeStep.set(3);
+      facade.activeStep.set(4);
       facade.cashSelectable.set(false);
       facade.cashReason.set({ key: 'pages.order.cash_needs_card', params: { count: 2 } });
       fixture.detectChanges();
@@ -491,7 +655,7 @@ describe('OrderWizardComponent (a11y)', () => {
 
     it('disables cash for a guest and offers the way to sign in beside the reason', async () => {
       await setup();
-      facade.activeStep.set(3);
+      facade.activeStep.set(4);
       facade.cashSelectable.set(false);
       facade.cashReason.set({ key: 'pages.order.cash_needs_account', params: {} });
       facade.cashNeedsAccount.set(true);
@@ -505,7 +669,7 @@ describe('OrderWizardComponent (a11y)', () => {
 
     it('leaves both ways open, with no reason, when cash is allowed', async () => {
       await setup();
-      facade.activeStep.set(3);
+      facade.activeStep.set(4);
       fixture.detectChanges();
 
       expect(cashCard().disabled).toBe(false);
@@ -515,7 +679,7 @@ describe('OrderWizardComponent (a11y)', () => {
 
     it('says cash was taken away only while the facade says so', async () => {
       await setup();
-      facade.activeStep.set(3);
+      facade.activeStep.set(4);
       facade.cashClearedNotice.set(true);
       fixture.detectChanges();
       expect(el.textContent).toContain('pages.order.cash_cleared');
@@ -523,6 +687,36 @@ describe('OrderWizardComponent (a11y)', () => {
       facade.cashClearedNotice.set(false);
       fixture.detectChanges();
       expect(el.textContent).not.toContain('pages.order.cash_cleared');
+    });
+  });
+
+  describe('cash refused for an unpaid amount', () => {
+    afterEach(() => sessionStorage.clear());
+
+    it('says nothing about an unpaid amount until the server refuses cash for one', async () => {
+      await setup();
+      facade.activeStep.set(4);
+      fixture.detectChanges();
+
+      expect(el.textContent).not.toContain('pages.order.cash_owed');
+      expect(el.querySelector('cleansia-customer-amount-due')).toBeNull();
+      expect(receivableClient.getMine).not.toHaveBeenCalled();
+    });
+
+    it('says why and lists what is owed, and parks the booking before the pay link opens', async () => {
+      await setup();
+      facade.activeStep.set(4);
+      facade.cashOwed.set(true);
+      fixture.detectChanges();
+
+      expect(el.textContent).toContain('pages.order.cash_owed');
+      const row = fixture.debugElement.query(By.css('.customer-amount-due__row'));
+      expect(row.nativeElement.textContent).toContain('CL-1001');
+
+      row.query(By.css('cleansia-button')).triggerEventHandler('onClick', new MouseEvent('click'));
+
+      expect(receivableClient.createPayLink).toHaveBeenCalledWith('rcv-1');
+      expect(sessionStorage.getItem('cleansia_order_draft')).not.toBeNull();
     });
   });
 
@@ -569,7 +763,7 @@ describe('OrderWizardComponent (a11y)', () => {
 
     it('marks the contact fields touched so their own errors show too', async () => {
       await setup();
-      facade.activeStep.set(1);
+      facade.activeStep.set(2);
       facade.missingReasonsValue.set(['pages.order.missing.first_name']);
       fixture.detectChanges();
 
@@ -676,45 +870,32 @@ describe('OrderWizardComponent (a11y)', () => {
     });
   });
 
-  describe('the contract for work on the confirm step', () => {
-    const CONFIRM_STEP = 5;
+  describe('who the contract is with, on the confirm step', () => {
+    const CONFIRM_STEP = 6;
 
     function contractNote(): HTMLElement | null {
       return el.querySelector('.cl-wiz__contract-note');
     }
 
-    /**
-     * The customer's half of the contract for work is stated at the offer as a sentence, never as
-     * a second tick, and it is not part of the consent block: an account that already consented
-     * still concludes a contract with every booking.
-     */
-    it('names the contract and links to its public text while the consent tick is asked', async () => {
+    it('states it whether or not the tick for the terms is asked', async () => {
       await setup();
       facade.activeStep.set(CONFIRM_STEP);
       fixture.detectChanges();
+      expect(contractNote()?.textContent).toContain('pages.order.contract_notice');
 
-      expect(contractNote()).not.toBeNull();
-      expect(contractNote()?.textContent).toContain('pages.order.work_contract_notice');
-      expect(el.querySelector('.cl-wiz__consent')).not.toBeNull();
-    });
-
-    it('still names the contract when the account has already consented', async () => {
-      await setup();
       facade.alreadyConsented.set(true);
-      facade.activeStep.set(CONFIRM_STEP);
       fixture.detectChanges();
-
-      expect(contractNote()).not.toBeNull();
-      expect(el.querySelector('.cl-wiz__consent')).toBeNull();
+      expect(contractNote()?.textContent).toContain('pages.order.contract_notice');
+      expect(el.querySelector('.cl-wiz__consent #wizard-terms')).toBeNull();
     });
 
-    it('renders the translated sentence as markup, so its link to /work-contract survives', async () => {
+    it('renders the translated sentence as markup, so its link to the terms survives', async () => {
       await setup();
       TestBed.inject(TranslateService).setTranslation('en', {
         pages: {
           order: {
-            work_contract_notice:
-              "By confirming the order you conclude a contract for work with the cleaner on <a href='/work-contract'>these terms</a>.",
+            contract_notice:
+              "You buy the cleaning from the company on <a href='/terms'>its terms of service</a>.",
           },
         },
       });
@@ -723,8 +904,55 @@ describe('OrderWizardComponent (a11y)', () => {
       fixture.detectChanges();
 
       const link = contractNote()?.querySelector<HTMLAnchorElement>('a');
-      expect(link?.getAttribute('href')).toBe('/work-contract');
-      expect(link?.textContent).toBe('these terms');
+      expect(link?.getAttribute('href')).toBe('/terms');
+      expect(link?.textContent).toBe('its terms of service');
+    });
+  });
+
+  describe('the request to start within the withdrawal period', () => {
+    const CONFIRM_STEP = 6;
+    const TICK_KEY = 'pages.order.early_performance.early-performance-draft-2026-09-29';
+
+    function earlyStartTick(): HTMLElement | null {
+      return el.querySelector('[data-spec-early-performance]');
+    }
+
+    it('is asked on every booking, an account that already consented included', async () => {
+      await setup();
+      facade.activeStep.set(CONFIRM_STEP);
+      fixture.detectChanges();
+      expect(earlyStartTick()?.textContent).toContain(TICK_KEY);
+
+      facade.alreadyConsented.set(true);
+      fixture.detectChanges();
+      expect(earlyStartTick()?.textContent).toContain(TICK_KEY);
+    });
+
+    it('holds the order and names what is missing until it is ticked', async () => {
+      await setup();
+      facade.alreadyConsented.set(true);
+      facade.activeStep.set(CONFIRM_STEP);
+      fixture.detectChanges();
+
+      await fixture.componentInstance.onPlaceOrder();
+      fixture.detectChanges();
+
+      expect(facade.submitOrder).not.toHaveBeenCalled();
+      expect(el.querySelector('.cl-wiz__blocked')?.textContent).toContain(
+        'pages.order.missing.early_performance',
+      );
+    });
+
+    it('places the order with the request once it is ticked', async () => {
+      await setup();
+      facade.alreadyConsented.set(true);
+      facade.activeStep.set(CONFIRM_STEP);
+      fixture.detectChanges();
+
+      fixture.componentInstance.requestedEarlyStart.set(true);
+      await fixture.componentInstance.onPlaceOrder();
+
+      expect(facade.submitOrder).toHaveBeenCalledWith(null, false, true);
     });
   });
 

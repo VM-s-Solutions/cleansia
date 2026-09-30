@@ -11,13 +11,15 @@ namespace Cleansia.HostTests.Tests;
 /// <summary>
 /// ADR-0068 (Verification #9) — the contract routes end to end on the real hosts: the two partner
 /// routes and the read answer 401 anonymous; a customer-profile token is 403d on the partner routes
-/// behind <c>CanTakeOrder</c>; an approved cleaner previews the order's contract and, once placed on
-/// the crew, accepts it and reads it back; the read keyed on the acceptance answers the order's
-/// customer on the Customer host and an administrator on the Admin host, and refuses another
-/// customer and another cleaner with the same not-found the order itself would give.
+/// behind <c>CanTakeOrder</c>; an approved cleaner previews the order's contract, priced at their seat's
+/// reward rather than the order total, and, once placed on the crew, accepts it and reads it back; the
+/// read keyed on the acceptance answers an administrator on the Admin host and refuses another cleaner
+/// with the same not-found the order itself would give. The contract binds the operating company and
+/// the cleaner (decision 45), so the Customer host's read refuses the order's own customer with that
+/// not-found too.
 ///
 /// <para>Host coverage is Partner, Mobile.Partner, Customer and Admin — the four the harness boots;
-/// <c>Web.Mobile.Customer</c>'s controller is a byte-identical sibling over the same handler.</para>
+/// <c>Web.Mobile.Customer</c>'s controller is a byte-identical sibling of the Customer host's.</para>
 /// </summary>
 public sealed class WorkContractRouteTests(HostTestPostgresFixture db) : AuthzHostTestBase(db)
 {
@@ -26,16 +28,15 @@ public sealed class WorkContractRouteTests(HostTestPostgresFixture db) : AuthzHo
     private const string OtherCleanerId = "u-wc-other-cleaner";
     private const string OtherCleanerEmail = "wc-other-cleaner@hosttests.local";
     private const string CustomerEmail = "wc-customer@hosttests.local";
-    private const string StrangerEmail = "wc-stranger@hosttests.local";
     private const string AdminId = "u-wc-admin";
     private const string AdminEmail = "wc-admin@hosttests.local";
 
     private sealed record Arranged(
-        string OrderId, string TextEnId, string CleanerEmployeeId, string OtherEmployeeId, string CustomerUserId, string StrangerUserId);
+        string OrderId, string TextEnId, string CleanerEmployeeId, string OtherEmployeeId, string CustomerUserId);
 
     private async Task<Arranged> ArrangeAsync(bool assigned)
     {
-        string orderId = "", textId = "", cleanerEmployeeId = "", otherEmployeeId = "", customerUserId = "", strangerUserId = "";
+        string orderId = "", textId = "", cleanerEmployeeId = "", otherEmployeeId = "", customerUserId = "";
 
         await SeedAsync(async ctx =>
         {
@@ -44,10 +45,9 @@ public sealed class WorkContractRouteTests(HostTestPostgresFixture db) : AuthzHo
             textId = textEnId;
 
             var customer = DomainSeed.Customer(CustomerEmail);
-            var stranger = DomainSeed.Customer(StrangerEmail);
             var cleanerUser = DomainSeed.EmployeeUser(CleanerEmail);
             var otherUser = DomainSeed.EmployeeUser(OtherCleanerEmail);
-            ctx.Users.AddRange(customer, stranger, cleanerUser, otherUser);
+            ctx.Users.AddRange(customer, cleanerUser, otherUser);
 
             var cleaner = DomainSeed.ApprovedEmployee(cleanerUser);
             var other = DomainSeed.ApprovedEmployee(otherUser);
@@ -66,10 +66,9 @@ public sealed class WorkContractRouteTests(HostTestPostgresFixture db) : AuthzHo
             cleanerEmployeeId = cleaner.Id;
             otherEmployeeId = other.Id;
             customerUserId = customer.Id;
-            strangerUserId = stranger.Id;
         });
 
-        return new Arranged(orderId, textId, cleanerEmployeeId, otherEmployeeId, customerUserId, strangerUserId);
+        return new Arranged(orderId, textId, cleanerEmployeeId, otherEmployeeId, customerUserId);
     }
 
     private static string CleanerToken(string audience, string employeeId) =>
@@ -138,12 +137,14 @@ public sealed class WorkContractRouteTests(HostTestPostgresFixture db) : AuthzHo
         Assert.Equal("Contract for Work", body.GetProperty("title").GetString());
         Assert.Contains("CZK", body.GetProperty("contentHtml").GetString());
         Assert.Equal("Brno · 602 xx", body.GetProperty("facts").GetProperty("locationApproximate").GetString());
-        Assert.Equal(1500m, body.GetProperty("facts").GetProperty("totalPrice").GetDecimal());
+        // The price is the caller's reward for a seat: this order carries no service a rate covers, so
+        // the reward is nothing, and the customer's 1500 never reaches the cleaner's contract.
+        Assert.Equal(0m, body.GetProperty("facts").GetProperty("totalPrice").GetDecimal());
         Assert.Equal(JsonValueKind.Null, body.GetProperty("acceptance").ValueKind);
     }
 
     [Fact]
-    public async Task A_placed_cleaner_accepts_the_contract_and_the_three_parties_read_it_while_strangers_are_refused()
+    public async Task A_placed_cleaner_accepts_the_contract_and_the_cleaner_and_an_administrator_read_it_while_another_cleaner_is_refused()
     {
         var a = await ArrangeAsync(assigned: true);
         var cleaner = PartnerClient(CleanerToken(PartnerAudience, a.CleanerEmployeeId));
@@ -168,26 +169,26 @@ public sealed class WorkContractRouteTests(HostTestPostgresFixture db) : AuthzHo
         Assert.Equal(acceptanceId, acceptedAgain.RootElement.GetProperty("acceptanceId").GetString());
         Assert.Equal(1, await QueryAsync(ctx => ctx.Set<WorkContractAcceptance>().IgnoreQueryFilters().CountAsync(x => x.OrderId == a.OrderId)));
 
-        // The accepting cleaner, the order's customer and an administrator read it.
+        // The accepting cleaner and an administrator read it.
         var byCleaner = await cleaner.GetAsync(ReadRoute(acceptanceId));
-        var byCustomer = await CustomerClient(CustomerToken(CustomerAudience, a.CustomerUserId, CustomerEmail)).GetAsync(ReadRoute(acceptanceId));
         var byAdmin = await AdminClient(AdminToken()).GetAsync(AdminReadRoute(acceptanceId));
         HttpAssert.IsOk(byCleaner);
-        HttpAssert.IsOk(byCustomer);
         HttpAssert.IsOk(byAdmin);
-        using var read = JsonDocument.Parse(await byCustomer.Content.ReadAsStringAsync());
+        using var read = JsonDocument.Parse(await byCleaner.Content.ReadAsStringAsync());
         Assert.Equal(a.TextEnId, read.RootElement.GetProperty("legalDocumentTextId").GetString());
         Assert.Equal("en", read.RootElement.GetProperty("acceptance").GetProperty("acceptedLanguage").GetString());
         Assert.Equal(a.CleanerEmployeeId, read.RootElement.GetProperty("acceptance").GetProperty("employeeId").GetString());
         Assert.Equal("Brno · 602 xx", read.RootElement.GetProperty("facts").GetProperty("locationApproximate").GetString());
 
-        // Another customer and another cleaner are refused with the order's own not-found.
-        var byStranger = await CustomerClient(CustomerToken(CustomerAudience, a.StrangerUserId, StrangerEmail)).GetAsync(ReadRoute(acceptanceId));
+        // Another cleaner is refused with the order's own not-found.
         var byOtherCleaner = await PartnerClient(OtherCleanerToken(PartnerAudience, a.OtherEmployeeId)).GetAsync(ReadRoute(acceptanceId));
-        await HttpAssert.RejectedAsync(byStranger, BusinessErrorMessage.OrderNotFound);
         await HttpAssert.RejectedAsync(byOtherCleaner, BusinessErrorMessage.OrderNotFound);
-        HttpAssert.ClearedTheGate(byStranger);
         HttpAssert.ClearedTheGate(byOtherCleaner);
+
+        // The order's own customer is refused with the same not-found.
+        var byCustomer = await CustomerClient(CustomerToken(CustomerAudience, a.CustomerUserId, CustomerEmail)).GetAsync(ReadRoute(acceptanceId));
+        await HttpAssert.RejectedAsync(byCustomer, BusinessErrorMessage.OrderNotFound);
+        HttpAssert.ClearedTheGate(byCustomer);
     }
 
     [Fact]

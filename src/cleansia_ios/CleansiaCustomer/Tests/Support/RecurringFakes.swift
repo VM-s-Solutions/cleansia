@@ -76,18 +76,22 @@ enum RecurringFixtures {
         id: String = "tpl-1",
         isActive: Bool = true,
         frequency: Int = 1,
+        timeOfDay: String = "10:00",
         endsOn: Date? = nil,
+        preferredEmployeeId: String? = nil,
         selectedServiceIds: [String] = ["s-1"],
         paymentType: Int = RecurringPaymentType.cash,
-        requiresPaymentMethodChange: Bool = false
+        requiresPaymentMethodChange: Bool = false,
+        dirtiness: Dirtiness = .normal
     ) -> RecurringTemplate {
         RecurringTemplate(
             id: id,
             frequency: frequency,
             dayOfWeek: 4,
-            timeOfDay: "10:00",
+            timeOfDay: timeOfDay,
             rooms: 2,
             bathrooms: 1,
+            dirtiness: dirtiness,
             savedAddressId: "addr-1",
             addressLine: "Zenklova 6, Praha",
             selectedServiceIds: selectedServiceIds,
@@ -95,6 +99,7 @@ enum RecurringFixtures {
             paymentType: paymentType,
             startsOn: Date(timeIntervalSince1970: 1_780_000_000),
             endsOn: endsOn,
+            preferredEmployeeId: preferredEmployeeId,
             isActive: isActive,
             requiresPaymentMethodChange: requiresPaymentMethodChange
         )

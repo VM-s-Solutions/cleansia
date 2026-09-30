@@ -1,0 +1,33 @@
+# Secret scan configuration for .github/workflows/secret-scan.yml.
+#
+# gitleaks' default rules, plus two allow-lists for committed values that are not credentials. Both
+# are scoped to the heuristic generic-api-key rule only: a provider-specific rule (Stripe, SendGrid,
+# AWS, ...) still fires anywhere, test code included.
+#
+# Findings already in history are listed by fingerprint in .gitleaksignore, the known-history
+# baseline. A new finding fails the scan; the answer is to remove the secret (and rotate it), never
+# to append its fingerprint.
+
+title = "Cleansia secret scan"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Test fakes: the published test JWT key, sandbox-shaped Stripe ids, tokens and passwords in test code (backend, Android, iOS and web specs)"
+targetRules = ["generic-api-key"]
+paths = [
+  '''^src/Cleansia\.(Tests|IntegrationTests|HostTests|TestUtilities)/''',
+  '''^src/cleansia_android/[^/]+/src/test/''',
+  '''^src/cleansia_ios/[^/]+/Tests/''',
+  '''^src/cleansia_ios/CleansiaCore/Tests/''',
+  '''^src/Cleansia\.App/.+\.spec\.ts$''',
+]
+
+[[allowlists]]
+description = "Dotted translation keys such as loyalty.perk.priority_support are not credentials"
+targetRules = ["generic-api-key"]
+regexTarget = "secret"
+regexes = [
+  '''^[a-z]+(\.[a-z0-9_]+)+$''',
+]

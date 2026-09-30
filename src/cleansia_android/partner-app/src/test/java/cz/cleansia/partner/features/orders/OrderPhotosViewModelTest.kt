@@ -18,6 +18,7 @@ import cz.cleansia.partner.data.orders.OrdersRepository
 import cz.cleansia.partner.testing.MainDispatcherRule
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.coVerifyOrder
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
@@ -44,6 +45,7 @@ class OrderPhotosViewModelTest {
     private lateinit var errorTranslator: ApiErrorTranslator
     private lateinit var snackbar: SnackbarController
     private lateinit var appContext: Context
+    private lateinit var contentResolver: ContentResolver
 
     private val orderId = "order-1"
     private val pickedUri = mockk<Uri>()
@@ -58,8 +60,9 @@ class OrderPhotosViewModelTest {
         errorTranslator = mockk()
         snackbar = mockk(relaxed = true)
         appContext = mockk(relaxed = true)
+        contentResolver = mockk(relaxed = true)
         every { errorTranslator.translate(any()) } returns "translated error"
-        every { appContext.contentResolver } returns mockk<ContentResolver>(relaxed = true)
+        every { appContext.contentResolver } returns contentResolver
         every { appContext.getString(R.string.photo_encode_failed) } returns "encode failed"
 
         // The bitmap pipeline itself is not exercisable on a plain JVM (no
@@ -211,6 +214,60 @@ class OrderPhotosViewModelTest {
         assertEquals(0, vm.mutationVersion.value)
         assertEquals(false, vm.mutation.value.isUploading)
         verify { snackbar.showError("translated error") }
+    }
+
+    /**
+     * A job photo must not outlive its upload on the device, and nothing retries from the capture,
+     * so it goes whatever the outcome — but only once the upload has been sent.
+     */
+    @Test
+    fun `the capture is deleted after a successful upload`() = runTest {
+        coEvery { ordersRepository.getPhotos(orderId) } returns ApiResult.Success(responseWith(photo))
+        coEvery {
+            ordersRepository.uploadPhoto(any(), any(), any(), any(), any())
+        } returns ApiResult.Success(Unit)
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.compressAndUpload(PhotoType._1, pickedUri)
+        advanceUntilIdle()
+
+        coVerifyOrder {
+            ordersRepository.uploadPhoto(orderId, PhotoType._1, "photo.jpg", "image/jpeg", "data")
+            contentResolver.delete(pickedUri, null, null)
+        }
+        verify(exactly = 1) { contentResolver.delete(pickedUri, null, null) }
+    }
+
+    @Test
+    fun `the capture is deleted when the upload is refused`() = runTest {
+        coEvery { ordersRepository.getPhotos(orderId) } returns ApiResult.Success(responseWith(photo))
+        coEvery {
+            ordersRepository.uploadPhoto(any(), any(), any(), any(), any())
+        } returns ApiResult.Error(ApiError.Network("down"))
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.compressAndUpload(PhotoType._2, pickedUri)
+        advanceUntilIdle()
+
+        verify(exactly = 1) { contentResolver.delete(pickedUri, null, null) }
+    }
+
+    @Test
+    fun `the capture is deleted when it cannot be encoded`() = runTest {
+        coEvery { ordersRepository.getPhotos(orderId) } returns ApiResult.Success(responseWith(photo))
+        coEvery { ImageCompressor.compressToBase64(any(), any(), any(), any()) } returns null
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.compressAndUpload(PhotoType._1, pickedUri)
+        advanceUntilIdle()
+
+        verify(exactly = 1) { contentResolver.delete(pickedUri, null, null) }
     }
 
     @Test

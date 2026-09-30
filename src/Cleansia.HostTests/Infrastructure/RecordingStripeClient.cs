@@ -40,12 +40,39 @@ public sealed class RecordingStripeClient : IStripeClient
     public Task<string> CreateEphemeralKeyAsync(string stripeCustomerId, CancellationToken cancellationToken)
         => Task.FromResult($"ek_{stripeCustomerId}");
 
+    public List<(string StripeCustomerId, string SavedCardId)> CardSetupCheckouts { get; } = [];
+
+    public Task<string> CreateCardSetupCheckoutSessionAsync(string stripeCustomerId, string savedCardId, CancellationToken cancellationToken)
+    {
+        CardSetupCheckouts.Add((stripeCustomerId, savedCardId));
+        return Task.FromResult($"https://checkout.stripe.test/setup/{savedCardId}");
+    }
+
+    public Task<SetupIntentResult> CreateCardSetupIntentAsync(string stripeCustomerId, string savedCardId, CancellationToken cancellationToken)
+        => Task.FromResult(new SetupIntentResult($"seti_{savedCardId}", $"seti_secret_{savedCardId}"));
+
+    public Task<SavedCardDetails?> GetSetupIntentCardAsync(string setupIntentId, CancellationToken cancellationToken) => throw new NotSupportedException();
+
+    public List<(string ReceivableId, decimal Amount, string Currency)> ReceivableCheckouts { get; } = [];
+
+    public Task<CheckoutSessionResult> CreateReceivableCheckoutSessionAsync(string receivableId, string? currentSessionId, string orderId, string displayOrderNumber, decimal amount, string currency, CancellationToken cancellationToken)
+    {
+        ReceivableCheckouts.Add((receivableId, amount, currency));
+        return Task.FromResult(new CheckoutSessionResult($"cs_receivable_{receivableId}", $"https://checkout.stripe.test/pay/{receivableId}"));
+    }
+
+    public Task<string> ChargeReceivableOffSessionAsync(string receivableId, decimal amount, string currency, string stripeCustomerId, string paymentMethodId, int attempt, CancellationToken cancellationToken) => throw new NotSupportedException();
+    public Task<bool> ExpireReceivableCheckoutSessionAsync(string sessionId, CancellationToken cancellationToken) => throw new NotSupportedException();
+
     public Task<CheckoutSessionResult> CreateCheckoutSessionAsync(Order order, CancellationToken cancellationToken) => throw new NotSupportedException();
+    public Task<CheckoutSessionResult> CreateCheckoutSessionAsync(Order order, DateTime expiresAtUtc, CancellationToken cancellationToken) => throw new NotSupportedException();
     public Task RefundCheckoutSessionAsync(string stripeSessionId, decimal amount, string idempotencyKey, CancellationToken cancellationToken) => throw new NotSupportedException();
     public Task RefundPaymentIntentAsync(string paymentIntentId, decimal amount, string idempotencyKey, CancellationToken cancellationToken) => throw new NotSupportedException();
     public Task<PaymentIntentResult> CreatePaymentIntentAsync(decimal amount, string currency, string stripeCustomerId, string orderId, string displayOrderNumber, CancellationToken cancellationToken) => throw new NotSupportedException();
     public Task CancelPaymentIntentAsync(string paymentIntentId, CancellationToken cancellationToken) => throw new NotSupportedException();
     public Task<StripePaymentSnapshot> GetPaymentSnapshotAsync(string? stripeSessionId, string? stripePaymentIntentId, CancellationToken cancellationToken) => throw new NotSupportedException();
+    public Task<string?> FindCheckoutSessionOrderIdAsync(string paymentIntentId, CancellationToken cancellationToken) => throw new NotSupportedException();
     public Task<SubscriptionResult> SwapSubscriptionPriceAsync(string stripeSubscriptionId, string newStripePriceId, string idempotencyAttemptId, CancellationToken cancellationToken) => throw new NotSupportedException();
     public Task CancelSubscriptionAtPeriodEndAsync(string stripeSubscriptionId, CancellationToken cancellationToken) => throw new NotSupportedException();
+    public Task CancelSubscriptionNowAsync(string stripeSubscriptionId, CancellationToken cancellationToken) => throw new NotSupportedException();
 }

@@ -54,7 +54,13 @@ class RecurringManagementReachabilityTest {
     @Test
     fun `the list screen branches on the empty state, never on membership`() {
         assertEquals(
-            listOf("loading && !loaded", "affordances.showPlusUpsell", "templates.isEmpty()", "else"),
+            listOf(
+                "loading && !loaded",
+                "affordances.showPlusUpsell",
+                "affordances.showPausedNotice && templates.isEmpty()",
+                "templates.isEmpty()",
+                "else",
+            ),
             contentWhenConditions(),
         )
     }

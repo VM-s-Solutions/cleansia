@@ -62,8 +62,16 @@ export class AdminOrderPhotosComponent {
     );
   });
 
+  readonly entrancePhotos = computed(() => {
+    return (
+      this.photosData()?.photos?.filter(
+        (p) => p.photoType === PhotoType.Entrance
+      ) || []
+    );
+  });
+
   readonly galleryPhotos = computed<GalleryPhoto[]>(() => {
-    const photos = this.photosData()?.photos || [];
+    const photos = [...this.beforePhotos(), ...this.afterPhotos(), ...this.entrancePhotos()];
     return photos.map((p) => ({
       id: p.id,
       url: p.blobUrl ?? '',

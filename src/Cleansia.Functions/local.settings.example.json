@@ -1,0 +1,31 @@
+{
+    "IsEncrypted": false,
+    "Values": {
+        "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+        "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+        "_comment_TimerCron": "Dev override for the recurring/notification timer crons. Production defaults (0 0 2, 0 30 2, 0 0 3, 0 0 *, 0 30 3) ship in appsettings.json; promotion is config-only. These dev Values override appsettings.json so local runs fire on a fast cadence without a code change.",
+        "MaterializeRecurringBookingsCron": "0 */2 * * * *",
+        "SendRecurringOrderRemindersCron": "0 */2 * * * *",
+        "SendMembershipLifecycleNotificationsCron": "0 */2 * * * *",
+        "SendNewJobsDigestCron": "0 0/2 * * * *",
+        "ExpireStaleReferralsCron": "0 */2 * * * *",
+        "BlobContainerConfiguration__ConnectionStringName": "BlobContainerConfigurationConnectionString",
+        "SendGrid__ApiKey": "SET_VIA_USER_SECRETS",
+        "SendGrid__AddressFrom": "it@cleansia.cz",
+        "SendGrid__ResetPasswordUrl": "http://localhost:4200/forgot-password",
+        "SendGrid__OrderStatusUrl": "http://localhost:4200/orders",
+        "Fiscal__CzechEet2__ApiUrl": "",
+        "Fiscal__CzechEet2__ApiKey": "",
+        "Fiscal__CzechEet2__CertificatePath": "",
+        "Fiscal__CzechEet2__CertificatePassword": "",
+        "Fiscal__CzechEet2__TaxpayerIdentifier": "",
+        "Fiscal__CzechEet2__BusinessPremiseId": "",
+        "Fiscal__CzechEet2__CashRegisterId": "",
+        "Fiscal__CzechEet2__Enabled": "false"
+    },
+    "ConnectionStrings": {
+        "ConnectionString": "Host=localhost;Port=5432;Username=postgres;Password=YOUR_LOCAL_POSTGRES_PASSWORD;Database=Cleansia",
+        "QueueStorageConnectionString": "UseDevelopmentStorage=true",
+        "BlobContainerConfigurationConnectionString": "UseDevelopmentStorage=true"
+    }
+}

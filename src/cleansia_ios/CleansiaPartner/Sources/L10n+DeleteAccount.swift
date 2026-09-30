@@ -54,10 +54,6 @@ extension L10n {
             localized("delete_account_kept_pay")
         }
 
-        static var keptAgreement: String {
-            localized("delete_account_kept_agreement")
-        }
-
         static var cta: String {
             localized("delete_account_cta")
         }

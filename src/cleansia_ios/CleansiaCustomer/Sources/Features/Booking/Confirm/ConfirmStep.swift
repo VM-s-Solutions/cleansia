@@ -45,13 +45,14 @@ struct ConfirmStep: View {
                 specialInstructionsSection
                 accessInstructionsSection
                 PreferredCleanerPicker(
-                    viewModel: extras,
+                    cleaners: extras.isVisible ? extras.cleaners : [],
                     selectedId: viewModel.state.preferredEmployeeId,
                     onSelect: setPreferredCleaner
                 )
                 CancellationPolicyCard(policy: extras.cancellationPolicy)
                 termsRow
-                WorkContractNotice()
+                earlyPerformanceRow
+                ContractNotice()
                 TrustBadges(insurance: viewModel.insurance)
             }
             .padding(Spacing.l)
@@ -140,6 +141,12 @@ struct ConfirmStep: View {
             if let reason = L10n.Booking.cashReason(cash) {
                 PaymentNote(systemImage: "info.circle", text: reason)
             }
+            if viewModel.needsCardGuarantee {
+                CardGuaranteeConsent(accepted: Binding(
+                    get: { viewModel.state.cardGuaranteeAccepted },
+                    set: viewModel.setCardGuaranteeAccepted
+                ))
+            }
         }
     }
 
@@ -194,13 +201,63 @@ struct ConfirmStep: View {
             return next
         }
     }
+
+    /// Asked on every booking, whatever the account already consented to: the request belongs to this
+    /// contract, not to the account. Gates the slide-to-confirm and rides `earlyPerformanceRequested`.
+    private var earlyPerformanceRow: some View {
+        CleansiaConsentCheckbox(
+            checked: Binding(
+                get: { viewModel.state.earlyPerformanceRequested },
+                set: setEarlyPerformanceRequested
+            ),
+            markdown: L10n.Booking.earlyPerformanceRequest,
+            toggleAccessibilityLabel: L10n.Booking.earlyPerformanceRequestToggle
+        )
+    }
+
+    private func setEarlyPerformanceRequested(_ requested: Bool) {
+        viewModel.update { current in
+            var next = current
+            next.earlyPerformanceRequested = requested
+            return next
+        }
+    }
 }
 
-/// The contract for work the confirmation concludes, named at the offer whether or not the account
-/// already consented: an information line with the public text behind it, never a tick.
-private struct WorkContractNotice: View {
+/// Cash is guaranteed by a saved card; the first cash booking asks for the consent before PaymentSheet
+/// saves one.
+private struct CardGuaranteeConsent: View {
+    @Binding var accepted: Bool
+
     var body: some View {
-        Text(ConsentMarkdown.styled(L10n.Booking.workContractNotice))
+        VStack(alignment: .leading, spacing: Spacing.xs) {
+            Text(L10n.Booking.cardGuaranteeTitle)
+                .font(CleansiaTypography.titleMedium)
+                .foregroundColor(CleansiaColors.onSurface)
+            Text(L10n.Booking.cardGuaranteeBody)
+                .font(CleansiaTypography.bodyMedium)
+                .foregroundColor(CleansiaColors.onSurfaceVariant)
+                .fixedSize(horizontal: false, vertical: true)
+            CleansiaConsentCheckbox(
+                checked: $accepted,
+                markdown: L10n.Booking.cardGuaranteeConsent,
+                toggleAccessibilityLabel: L10n.Booking.cardGuaranteeTitle
+            )
+        }
+        .padding(Spacing.s)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .overlay(
+            RoundedRectangle(cornerRadius: CornerRadius.medium)
+                .stroke(CleansiaColors.outlineVariant, lineWidth: 1)
+        )
+    }
+}
+
+/// The contract the confirmation concludes with the operating company, named at the offer whether or not
+/// the account already consented: an information line with the terms behind it, never a tick.
+private struct ContractNotice: View {
+    var body: some View {
+        Text(ConsentMarkdown.styled(L10n.Booking.contractNotice))
             .font(CleansiaTypography.bodyMedium)
             .foregroundColor(CleansiaColors.onSurfaceVariant)
             .tint(CleansiaColors.primary)

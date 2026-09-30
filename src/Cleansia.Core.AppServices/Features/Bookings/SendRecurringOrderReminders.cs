@@ -46,11 +46,13 @@ public class SendRecurringOrderReminders
 
             // Cross-tenant query — the sweep runs system-level (no JWT). The
             // queue dispatch carries each order's TenantId so the dispatcher
-            // routes it correctly downstream.
+            // routes it correctly downstream. The confirmation term is
+            // Order.AwaitsCustomerConfirmation's, as in AutoCancelStaleRecurringOrders.
             var due = await orderRepository.GetQueryableIgnoringTenant()
                 .Where(o => o.RecurringTemplateId != null
                     && o.RecurringReminderSentAt == null
                     && o.PaymentStatus == PaymentStatus.Pending
+                    && (o.PaymentType != PaymentType.Cash || o.CustomerConfirmedAt == null)
                     && o.CleaningDateTime >= windowStart
                     && o.CleaningDateTime <= windowEnd
                     && o.UserId != null)

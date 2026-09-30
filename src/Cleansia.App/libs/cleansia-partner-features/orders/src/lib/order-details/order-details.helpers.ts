@@ -1,9 +1,13 @@
 import { TranslateService } from '@ngx-translate/core';
+import { cashIsRefused, resolveCashEligibility } from '@cleansia/models';
 import { formatDate as formatSharedDate, formatMoney, localeFor, toSnakeCase } from '@cleansia/utils';
 import {
   AssignedEmployeeDto,
+  DirtinessLevel,
+  OrderItem,
   OrderStatus,
   PaymentStatus,
+  PaymentType,
   WorkContractAcceptanceDto,
 } from '@cleansia/partner-services';
 
@@ -36,6 +40,16 @@ export function formatAddress(address: {
 }
 
 // --- Translation helpers ---
+
+const DIRTINESS_LEVEL_LABEL_KEYS: Readonly<Record<DirtinessLevel, string>> = {
+  [DirtinessLevel.Normal]: 'enums.dirtiness_level.normal',
+  [DirtinessLevel.Increased]: 'enums.dirtiness_level.increased',
+  [DirtinessLevel.Heavy]: 'enums.dirtiness_level.heavy',
+};
+
+export function dirtinessLevelLabelKey(level: DirtinessLevel | undefined): string {
+  return DIRTINESS_LEVEL_LABEL_KEYS[level ?? DirtinessLevel.Normal];
+}
 
 export function translateEnum(
   translateService: TranslateService,
@@ -145,24 +159,35 @@ export function canManagePhotos(
   return isPhotoEligibleStatus && isEmployeeAssigned(assignedEmployees, employeeId);
 }
 
-// Before photos: allowed during Confirmed or OnTheWay (preparation phase).
+// Mirrors OrderPhoto.MayBeAddedAt: a before photo from the take until the work is done, an after
+// photo only while it is in progress.
 export function canUploadBeforePhotos(
   orderStatusValue: number,
   assignedEmployees: AssignedEmployeeDto[] | undefined,
   employeeId: string
 ): boolean {
-  const isPreparationPhase =
-    orderStatusValue === OrderStatus.Confirmed || orderStatusValue === OrderStatus.OnTheWay;
-  return isPreparationPhase && isEmployeeAssigned(assignedEmployees, employeeId);
+  const isBeforeWindow =
+    orderStatusValue === OrderStatus.Confirmed ||
+    orderStatusValue === OrderStatus.OnTheWay ||
+    orderStatusValue === OrderStatus.InProgress;
+  return isBeforeWindow && isEmployeeAssigned(assignedEmployees, employeeId);
 }
 
-// After photos: allowed only during InProgress (active work phase).
 export function canUploadAfterPhotos(
   orderStatusValue: number,
   assignedEmployees: AssignedEmployeeDto[] | undefined,
   employeeId: string
 ): boolean {
   return orderStatusValue === OrderStatus.InProgress && isEmployeeAssigned(assignedEmployees, employeeId);
+}
+
+// The server answers a crew member with no customer and no address once their access has ended: 24
+// hours after completion, at once on cancellation. A live job always carries its address.
+export function customerDetailsClosedNoticeKey(order: OrderItem, employeeId: string): string | null {
+  if (order.address || !isEmployeeAssigned(order.assignedEmployees, employeeId)) return null;
+  return order.orderStatus?.value === OrderStatus.Cancelled
+    ? 'pages.order_details.customer_details_closed_cancelled'
+    : 'pages.order_details.customer_details_closed_completed';
 }
 
 // Notes / issues: allowed for any active order status (Confirmed, OnTheWay, InProgress),
@@ -179,22 +204,40 @@ export function canAddNoteOrIssue(
   return isActive && isEmployeeAssigned(assignedEmployees, employeeId);
 }
 
-// Cash collection mirrors MarkCashCollected.Validator exactly: the order must be InProgress
-// (cash only changes hands while the cleaner is on site), must not already be Paid, and the
-// caller must be assigned to it.
-// Deliberately NOT gated on paymentType — the backend accepts a CARD booking too, because a card
-// order whose Stripe webhook never arrived would otherwise be impossible to complete in the field.
-// The handler reconciles against live Stripe before recording the cash.
-export function canMarkCashCollected(
-  orderStatusValue: number,
-  paymentStatusValue: number,
-  assignedEmployees: AssignedEmployeeDto[] | undefined,
-  employeeId: string
+// A card order is refused cash unless its booking could have been paid in cash. The crew is on the
+// job sheet; whether the customer was a guest is not, so that half of the rule is the server's alone.
+// An order booked as cash stays collectable whatever its crew.
+export function cashRefusedOnCardOrder(
+  paymentTypeValue: number | undefined,
+  requiredEmployees: number | undefined
 ): boolean {
   return (
-    orderStatusValue === OrderStatus.InProgress &&
-    paymentStatusValue !== PaymentStatus.Paid &&
-    isEmployeeAssigned(assignedEmployees, employeeId)
+    paymentTypeValue !== PaymentType.Cash &&
+    cashIsRefused(resolveCashEligibility(true, requiredEmployees ?? null))
+  );
+}
+
+// The server's refusals the job sheet already shows, as the sentence the cleaner is given. A
+// credit-bearing order owes less than the total the confirmation would ask the cleaner to take.
+export function cashCollectionRefusal(order: OrderItem): string | null {
+  if (order.creditAppliedAmount > 0) return 'api.credit.cash_not_collectable_on_credit_order';
+  if (cashRefusedOnCardOrder(order.paymentType?.value, order.requiredEmployees)) {
+    return 'api.order.cash_not_allowed_on_card_order';
+  }
+  return null;
+}
+
+// Cash changes hands only while the cleaner is on site (InProgress), on an order still awaiting
+// payment (a refunded or disputed one is not), to a cleaner on its crew. A one-cleaner card order
+// stays offered: the server first checks Stripe, so one whose webhook never arrived is repaired to
+// Paid, and refuses a guest's itself.
+export function canMarkCashCollected(order: OrderItem, employeeId: string): boolean {
+  const paymentStatus = order.paymentStatus?.value;
+  return (
+    order.orderStatus?.value === OrderStatus.InProgress &&
+    (paymentStatus === PaymentStatus.Pending || paymentStatus === PaymentStatus.Failed) &&
+    cashCollectionRefusal(order) === null &&
+    isEmployeeAssigned(order.assignedEmployees, employeeId)
   );
 }
 
@@ -225,6 +268,34 @@ export function canAcceptWorkContract(
     isEmployeeAssigned(assignedEmployees, employeeId) &&
     findCallerWorkContractAcceptance(assignedEmployees, workContractAcceptances, employeeId) === null
   );
+}
+
+// BookingPolicy.LockoutWaitMinutes: how long past the booked start the crew waits before reporting.
+export const LOCKOUT_WAIT_MINUTES = 15;
+
+export enum LockoutStanding {
+  Hidden,
+  NotYet,
+  Open,
+  Reported,
+}
+
+export function lockoutOpensAt(cleaningDateTime: Date | string | undefined): Date | null {
+  if (!cleaningDateTime) return null;
+  const start = new Date(cleaningDateTime).getTime();
+  return Number.isNaN(start) ? null : new Date(start + LOCKOUT_WAIT_MINUTES * 60_000);
+}
+
+// Mirrors ReportOrderLockout: the crew of a job being worked reports once, from the wait past the start.
+export function lockoutStanding(order: OrderItem, employeeId: string, now: number): LockoutStanding {
+  const status = order.orderStatus?.value;
+  const isWorked =
+    status === OrderStatus.Confirmed || status === OrderStatus.OnTheWay || status === OrderStatus.InProgress;
+  if (!isWorked || !isEmployeeAssigned(order.assignedEmployees, employeeId)) return LockoutStanding.Hidden;
+  if (order.lockoutReportedAt) return LockoutStanding.Reported;
+  const opensAt = lockoutOpensAt(order.cleaningDateTime);
+  if (!opensAt) return LockoutStanding.Hidden;
+  return now < opensAt.getTime() ? LockoutStanding.NotYet : LockoutStanding.Open;
 }
 
 export function computeElapsedTime(

@@ -87,7 +87,6 @@ public class GetTimeAnalytics
             var totalOrders = orders.Count;
 
             var (totalMinutesWorked, averageMinutesPerOrder) = CalculateActualTimeMetrics(orders);
-            var efficiencyRate = CalculateEfficiencyRate(orders);
 
             return new TimeAnalyticsDto(
                 DailyBreakdown: dailyBreakdown,
@@ -95,7 +94,6 @@ public class GetTimeAnalytics
                 ByServiceType: serviceBreakdown,
                 TotalMinutesWorked: totalMinutesWorked,
                 AverageMinutesPerOrder: averageMinutesPerOrder,
-                EfficiencyRate: efficiencyRate,
                 TotalOrders: totalOrders
             );
         }
@@ -121,31 +119,6 @@ public class GetTimeAnalytics
             var totalEstimatedMinutes = orders.Sum(o => o.EstimatedTime);
             var averageEstimatedMinutes = totalEstimatedMinutes / orders.Count;
             return (totalEstimatedMinutes, averageEstimatedMinutes);
-        }
-
-        /// <summary>
-        /// Calculates efficiency rate as the ratio of estimated time to actual time.
-        /// A rate of 100% means completing exactly on time.
-        /// A rate above 100% means completing faster than estimated.
-        /// A rate below 100% means taking longer than estimated.
-        /// </summary>
-        private static double CalculateEfficiencyRate(IReadOnlyList<Order> orders)
-        {
-            var ordersWithActualTime = orders
-                .Where(o => o.ActualCompletionTime.HasValue && o.ActualCompletionTime.Value > 0)
-                .ToList();
-
-            if (ordersWithActualTime.Count == 0)
-                return 100.0; // Default to 100% if no actual times recorded
-
-            var totalEstimated = ordersWithActualTime.Sum(o => o.EstimatedTime);
-            var totalActual = ordersWithActualTime.Sum(o => o.ActualCompletionTime!.Value);
-
-            if (totalActual == 0)
-                return 100.0;
-
-            // Efficiency = (Estimated / Actual) * 100
-            return (double)totalEstimated / totalActual * 100;
         }
     }
 }

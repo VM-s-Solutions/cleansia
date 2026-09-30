@@ -15,6 +15,14 @@ namespace Cleansia.Core.AppServices.Services.Interfaces;
 public interface IRefundService
 {
     Task<BusinessResult<RefundResult>> IssueRefundAsync(RefundRequest request, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Re-drive a refund Stripe refused or could not be reached for, on the idempotency key it was
+    /// created with, so a refund Stripe did take is never taken twice. Clamped to the live ceiling, as a
+    /// retried <see cref="IssueRefundAsync"/> is; a refund with nothing left to give back is closed as
+    /// <see cref="RefundStatus.Failed"/> for the caller to commit.
+    /// </summary>
+    Task<BusinessResult<RefundResult>> RedriveAsync(string refundId, string actorId, CancellationToken cancellationToken);
 }
 
 /// <summary>
@@ -38,11 +46,13 @@ public sealed record RefundRequest(
 /// amount), which on a resolve-to-existing is the already-recorded refund's amount.
 /// <see cref="ResolvedToExisting"/> is true when the call collapsed onto an existing refund for the
 /// same key (a retry/redelivery or the loser of a concurrent double-issue) — no second Stripe refund
-/// was issued.
+/// was issued. <see cref="CreditReturned"/> is the credit leg the same refund put back on the
+/// customer's balance, read from its ledger row; the card and credit legs together are what moved.
 /// </summary>
 public sealed record RefundResult(
     string RefundId,
     string RefundKey,
     decimal Amount,
     RefundStatus Status,
-    bool ResolvedToExisting);
+    bool ResolvedToExisting,
+    decimal CreditReturned = 0m);

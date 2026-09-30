@@ -19,8 +19,12 @@ public static class DashboardSpecifications
     /// <para><paramref name="cleanerCurrencyId"/> is the currency the cleaner is paid in
     /// (<c>ICurrencyResolutionService.ResolveCurrencyForEmployeeAsync</c>); an order priced in any
     /// other is not on their board. → <see cref="OrderVisibility.PayableTo(string?, string?)"/></para>
+    ///
+    /// <para><paramref name="cashJobsHidden"/> takes cash jobs off the board of a cleaner above the
+    /// company's cash float cap (owner ruling 2026-09-28, decision 25).</para>
     /// </summary>
-    public static OrderSpecification CreateAvailableOrdersSpec(string employeeId, string cleanerCurrencyId, DateTime nowUtc)
+    public static OrderSpecification CreateAvailableOrdersSpec(
+        string employeeId, string cleanerCurrencyId, DateTime nowUtc, bool cashJobsHidden = false)
     {
         return OrderSpecification.Create(
             id: null,
@@ -48,7 +52,8 @@ public static class DashboardSpecifications
             offerableOnly: true,
             notHeldFromEmployeeId: employeeId,
             nowUtc: nowUtc,
-            cleanerCurrencyId: cleanerCurrencyId
+            cleanerCurrencyId: cleanerCurrencyId,
+            hideCashFromEmployeeId: cashJobsHidden ? employeeId : null
         );
     }
 

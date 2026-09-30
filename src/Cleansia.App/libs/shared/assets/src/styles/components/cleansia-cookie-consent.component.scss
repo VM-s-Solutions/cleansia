@@ -1,5 +1,4 @@
-// Cleansia Cookie Consent Component Styles
-// A GDPR-compliant cookie consent banner with customizable preferences
+// Cleansia cookie notice: what the site stores, and one button to dismiss it
 
 .cleansia-cookie-consent {
   position: fixed;
@@ -107,108 +106,15 @@
     }
   }
 
-  // ─── Settings panel ───
-  &__settings {
-    margin-top: 1.25rem;
-    padding-top: 1.25rem;
-    border-top: 1px solid #e5e7eb;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    animation: fadeIn 0.3s ease;
-  }
-
-  &__category {
-    border: 1px solid #e5e7eb;
-    border-radius: 10px;
-    padding: 0.875rem 1rem;
-    transition: border-color 0.2s;
-
-    &:hover {
-      border-color: rgba(var(--cleansia-primary-rgb), 0.3);
-    }
-  }
-
-  &__category-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-  }
-
-  &__category-info {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    flex: 1;
-    min-width: 0;
-  }
-
-  &__category-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    border-radius: 8px;
-    background: var(--cleansia-primary-50, #f0f9ff);
-    flex-shrink: 0;
-
-    i {
-      font-size: 1rem;
-      color: var(--cleansia-primary-600);
-    }
-  }
-
-  &__category-name {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: var(--cleansia-text-primary);
-    line-height: 1.3;
-  }
-
-  &__category-desc {
-    font-size: 0.75rem;
-    color: var(--cleansia-text-secondary);
-    line-height: 1.4;
-    margin-top: 0.15rem;
-  }
-
-  &__category-toggle {
-    flex-shrink: 0;
-  }
-
-  &__always-on {
-    display: inline-block;
-    padding: 0.25rem 0.625rem;
-    border-radius: 6px;
-    font-size: 0.7rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-    color: var(--cleansia-primary-600);
-    background: var(--cleansia-primary-50, #f0f9ff);
-  }
-
   // ─── Actions ───
   &__actions {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-end;
     gap: 0.75rem;
     margin-top: 1.25rem;
     padding-top: 1.25rem;
     border-top: 1px solid #e5e7eb;
-
-    @media (max-width: 768px) {
-      flex-direction: column;
-      width: 100%;
-    }
-  }
-
-  &__actions-main {
-    display: flex;
-    gap: 0.5rem;
 
     @media (max-width: 768px) {
       flex-direction: column;
@@ -258,43 +164,6 @@
         transform: translateY(0);
       }
     }
-
-    &--decline {
-      background: transparent;
-      color: var(--cleansia-text-secondary);
-      border: 1.5px solid #e5e7eb;
-
-      &:hover {
-        background: #f3f4f6;
-        border-color: #d1d5db;
-        color: var(--cleansia-text-primary);
-      }
-    }
-
-    &--save {
-      background: var(--cleansia-primary-50, #f0f9ff);
-      color: var(--cleansia-primary-600);
-      border: 1.5px solid rgba(var(--cleansia-primary-rgb), 0.2);
-
-      &:hover {
-        background: var(--cleansia-primary-100, #e0f2fe);
-        border-color: rgba(var(--cleansia-primary-rgb), 0.3);
-      }
-    }
-
-    &--settings {
-      background: transparent;
-      color: var(--cleansia-text-secondary);
-      padding: 0.7rem 0.75rem;
-
-      i {
-        font-size: 0.85rem;
-      }
-
-      &:hover {
-        color: var(--cleansia-primary-600);
-      }
-    }
   }
 }
 
@@ -321,11 +190,6 @@
   }
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
 // ─── Dark Mode ───
 :root.dark-mode {
   .cleansia-cookie-consent {
@@ -335,47 +199,11 @@
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
     }
 
-    &__settings {
-      border-top-color: #334155;
-    }
-
-    &__category {
-      border-color: #334155;
-      &:hover {
-        border-color: rgba(56, 189, 248, 0.3);
-      }
-    }
-
-    &__category-icon {
-      background: rgba(56, 189, 248, 0.1);
-      i { color: #38bdf8; }
-    }
-
-    &__always-on {
-      background: rgba(56, 189, 248, 0.1);
-      color: #38bdf8;
-    }
-
     &__actions {
       border-top-color: #334155;
     }
 
     &__btn {
-      &--decline {
-        border-color: #334155;
-        &:hover {
-          background: #1e293b;
-          border-color: #475569;
-        }
-      }
-      &--save {
-        background: rgba(56, 189, 248, 0.1);
-        color: #38bdf8;
-        border-color: rgba(56, 189, 248, 0.2);
-        &:hover {
-          background: rgba(56, 189, 248, 0.15);
-        }
-      }
       &--accept {
         background: linear-gradient(135deg, #38bdf8 0%, #0ea5e9 100%);
         &:hover {

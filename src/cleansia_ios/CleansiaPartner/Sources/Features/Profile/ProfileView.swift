@@ -157,6 +157,8 @@ struct ProfileView: View {
             EmergencySectionView(client: client, snackbar: snackbar, onSaved: { popLast() })
         case .documents:
             DocumentsSectionView(client: client, snackbar: snackbar)
+        case .legalDocuments:
+            LegalDocumentsView(client: client, snackbar: snackbar)
         case .jobRadius:
             JobRadiusSectionView(
                 client: client,

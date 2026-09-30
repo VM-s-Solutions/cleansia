@@ -55,8 +55,9 @@ enum AppConfig {
 
 :::
 
-Both platforms default to the Azure DEV host so a fresh clone of either one hits the same backend
-with no local setup. Full table of defaults per build type: [Overview](/mobile-app/overview#android).
+Both platforms' debug builds default to the Azure DEV host, so a fresh clone of either one hits the
+same backend with no local setup; release builds call the production domains. Full table of defaults
+per build type: [Overview](/mobile-app/overview#build-types-and-where-the-base-url-comes-from).
 
 ## The generated clients
 
@@ -194,14 +195,18 @@ the Bearer is withheld by path match. The device and time-zone headers are still
 | Where | one shared constant, `ANON_ENDPOINTS` in `:core`'s `AuthInterceptor` | `CleansiaCore/Auth/AnonymousAllowList`, with `.partner` and `.customer` values |
 | Match | `path.contains(...)`, case-insensitive | `path.lowercased().contains(...)` |
 
-iOS carries a per-app list because the **customer host's anonymous surface is wider**: a guest can
-price and place an order before signing in, and can track and cancel it afterwards, so
-`/api/Order/Quote`, `/api/Order/CreateOrder`, `/api/Payment/CreateOrder`, the catalogue `GetOverview`
-endpoints, `/api/Membership/GetPlans`, `/api/Order/Lookup(Batch)`,
-`/api/Order/GuestCancellationPreview`, `/api/Order/CancelGuest` and `/api/Referral/Validate` are
-anonymous there and on no other host. Of those, `Quote`, `CreateOrder` and `Payment/CreateOrder` are
-**dual-use** — anonymous *and* meaningful for a signed-in user — so the customer allow-list marks them
+iOS carries a per-app list because the **customer host's anonymous surface is wider**: a visitor can
+price a booking before signing in, and a guest who booked on the web can track and cancel it in the
+app, so `/api/Order/Quote`, the catalogue `GetOverview` endpoints, `/api/Membership/GetPlans`,
+`/api/Order/Lookup(Batch)`, `/api/Order/GuestCancellationPreview`, `/api/Order/CancelGuest` and
+`/api/Referral/Validate` are anonymous there and on no other host. Of those, only `Quote` is
+**dual-use** — anonymous *and* meaningful for a signed-in user — so the customer allow-list marks it
 and the Bearer is attached when one exists.
+
+**Placing an order is not anonymous on mobile.** The customer mobile host's `Order/CreateOrder` is
+`[Authorize]`, and the host has no `Payment/CreateOrder` route: guest *booking* is web-only. Neither
+path is on either allow-list, so the Bearer always rides the create, and a `401` on it is an ordinary
+session expiry. → [Orders — CreateOrder](/api/orders#createorder)
 
 The guest-order paths are **not** dual-use, and that is the point: they authorise on the booking's
 access token, so a stale Bearer from a session that does not own the booking must not ride along.

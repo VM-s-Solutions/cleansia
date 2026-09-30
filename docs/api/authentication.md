@@ -8,7 +8,7 @@ Cleansia uses JWT bearer tokens for API authentication with role-based access co
 |-----------|---------|
 | Token type | JWT (HS256) |
 | Token storage | HttpOnly cookie on the web hosts; `Authorization: Bearer` on the two mobile hosts |
-| Access-token lifetime | **Per host** — Admin 15 min, Partner 1440 min, Mobile Customer 30 min |
+| Access-token lifetime | **Per host** — Admin 15 min; Partner web, Customer web and both mobile hosts 30 min |
 | Remember me | Selects the **refresh** lifetime, 30 days (Mobile Customer 90) versus 1 day — it does not change the access token |
 | Rate limiting | `auth` policy on all auth endpoints |
 | Identity | Custom user model with `UserProfile` enum |
@@ -252,7 +252,7 @@ JWT settings are defined in `appsettings.json` under the `JwtSettings` section:
 | Setting | Description |
 |---------|-------------|
 | `Secret` | HMAC-SHA256 signing key (min 32 chars). Key Vault for deployed environments; the same value across every host in an environment. |
-| `AccessTokenExpMinutes` | Access-token lifetime. **Per host, and deliberately different:** Admin **15**, Partner **1440**, Mobile Customer **30**. Admin's 15 is ADR-0030 and is pinned by a test — see [ADR-0030](/decisions/adr-0030). |
+| `AccessTokenExpMinutes` | Access-token lifetime. **Per host:** Admin **15**; Partner web, Customer web and the two mobile hosts **30**. Admin's 15 is [ADR-0030](/decisions/adr-0030), the mobile hosts' 30 is [ADR-0024](/decisions/adr-0024), and the two web hosts moved from 1440 to 30 on 2026-09-28; `AccessTokenTtlConfigPinTests` pins every host's value in both config files. A web session outlives the token through the silent refresh on `401`. |
 | `RefreshTokenExpDays` | Refresh lifetime when the user chose *remember me* — **30** (Mobile Customer **90**). |
 | `RefreshTokenShortExpDays` | Refresh lifetime when they did not — **1**. |
 
@@ -329,19 +329,9 @@ Protected endpoint groups:
 
 ## CORS Configuration
 
-CORS origins are set per environment in `appsettings.json`:
-
-```json
-{
-  "CorsOrigins": [
-    "http://localhost:4200",
-    "http://localhost:4201",
-    "https://partner.cleansia.cz"
-  ]
-}
-```
-
-Production origins (`appsettings.Production.json`):
+CORS origins are set per host and per environment. The base `appsettings.json` carries none, the
+localhost origins are in `appsettings.Development.json`, and the production origins are in
+`appsettings.Production.json` — for example the partner web host:
 
 ```json
 {
@@ -351,6 +341,9 @@ Production origins (`appsettings.Production.json`):
   ]
 }
 ```
+
+The two mobile hosts allow **no** browser origin in production. → [Environment configuration — CORS
+origins](/deployment/environment-config#cors-origins)
 
 ## Error Responses
 

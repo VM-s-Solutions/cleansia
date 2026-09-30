@@ -1,9 +1,19 @@
-import { signal } from '@angular/core';
+import { Component, input, output, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { Router } from '@angular/router';
-import { CustomerAuthService, CustomerClient } from '@cleansia/customer-services';
-import { TranslateService } from '@ngx-translate/core';
-import { of } from 'rxjs';
+import { By } from '@angular/platform-browser';
+import { provideRouter, Router } from '@angular/router';
+import { MembershipManagementComponent } from '@cleansia-customer/profile';
+import {
+  CustomerAuthService,
+  CustomerClient,
+  GetMyMembershipResponse,
+  MembershipStatus,
+} from '@cleansia/customer-services';
+import { selectMarketCountryId } from '@cleansia/customer-stores';
+import { SnackbarService } from '@cleansia/services';
+import { provideMockStore } from '@ngrx/store/testing';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { NEVER, of } from 'rxjs';
 import { PlusPageComponent } from './plus-page.component';
 import { PlusPageFacade } from './plus-page.facade';
 
@@ -143,5 +153,75 @@ describe('PlusPageComponent', () => {
 
   it('offers booking without a membership, which needs no account decision', () => {
     expect(build().orderLink).toBe('/order');
+  });
+});
+
+@Component({ selector: 'cleansia-customer-membership-management', standalone: true, template: '' })
+class MembershipPanelStub {
+  readonly embedded = input(false);
+  readonly cancelled = output<void>();
+}
+
+function membership(hasMembership: boolean, status: MembershipStatus): GetMyMembershipResponse {
+  const response = new GetMyMembershipResponse();
+  response.hasMembership = hasMembership;
+  response.status = status;
+  return response;
+}
+
+/**
+ * Cancelling a failed renewal ends the membership now, and with no card update on the web, buying
+ * Plus again is the only way back. Rendered with the page's own template, so the panel's binding
+ * is what is under test; the panel itself is a stand-in.
+ */
+describe('PlusPageComponent — after a failed renewal is cancelled in the panel', () => {
+  afterEach(() => TestBed.resetTestingModule());
+
+  it('re-reads the membership, so a plan button starts checkout again', async () => {
+    const getMine = jest
+      .fn()
+      .mockReturnValueOnce(of(membership(true, MembershipStatus.PastDue)))
+      .mockReturnValue(of(membership(false, MembershipStatus.Cancelled)));
+    const createCheckoutSession = jest.fn().mockReturnValue(NEVER);
+
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [PlusPageComponent, TranslateModule.forRoot()],
+      providers: [
+        provideRouter([]),
+        provideMockStore({ selectors: [{ selector: selectMarketCountryId, value: 'cze-id' }] }),
+        { provide: CustomerAuthService, useValue: { isLoggedIn: signal(true) } },
+        {
+          provide: CustomerClient,
+          useValue: {
+            membershipClient: { getPlans: () => of([]), getMine, createCheckoutSession },
+          },
+        },
+        { provide: SnackbarService, useValue: { showError: jest.fn() } },
+      ],
+    })
+      .overrideComponent(PlusPageComponent, {
+        remove: { imports: [MembershipManagementComponent] },
+        add: { imports: [MembershipPanelStub] },
+      })
+      .compileComponents();
+
+    const fixture = TestBed.createComponent(PlusPageComponent);
+    fixture.detectChanges();
+    const panel = () => fixture.debugElement.query(By.directive(MembershipPanelStub));
+
+    fixture.componentInstance.startTrial('PLUS_MONTHLY');
+    expect(createCheckoutSession).not.toHaveBeenCalled();
+
+    (panel().componentInstance as MembershipPanelStub).cancelled.emit();
+    fixture.detectChanges();
+
+    expect(getMine).toHaveBeenCalledTimes(2);
+    expect(panel()).toBeNull();
+
+    fixture.componentInstance.startTrial('PLUS_MONTHLY');
+    expect(createCheckoutSession).toHaveBeenCalledWith(
+      expect.objectContaining({ planCode: 'PLUS_MONTHLY' }),
+    );
   });
 });

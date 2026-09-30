@@ -47,6 +47,10 @@ public class Policy
     // and "what's my Plus status?" reads. Same role gate as saved addresses.
     public const string CanManageMembership = nameof(CanManageMembership); // Customer
 
+    // The saved card, the guarantee for cash bookings (Customer) — capture, read own, remove own, and read
+    // and pay through a pay link what it guarantees: the customer's own receivables.
+    public const string CanManageSavedCard = nameof(CanManageSavedCard); // Customer
+
     // Recurring booking templates (Customer) — Plus perk; same role gate.
     // Backend doesn't enforce Plus here, just the customer role: the picker
     // is hidden in the UI for non-Plus, but the endpoint accepts any customer
@@ -54,7 +58,7 @@ public class Policy
     public const string CanManageRecurringBookings = nameof(CanManageRecurringBookings); // Customer
 
     // User
-    public const string CanViewPagedUser = nameof(CanViewPagedUser); // Admin + Employee
+    public const string CanViewPagedUser = nameof(CanViewPagedUser); // SupportOrAbove (every account of the company, with contact details)
     public const string CanViewUserDetail = nameof(CanViewUserDetail); // Authenticated (All roles) + Admin + Employee
     public const string CanGetCurrentUser = nameof(CanGetCurrentUser); // Authenticated (All roles)
     public const string CanRequestPasswordChange = nameof(CanRequestPasswordChange); // Authenticated (All roles)
@@ -188,9 +192,9 @@ public class Policy
 
     // Company Info
     public const string CanViewCompanyInfo = nameof(CanViewCompanyInfo); // Admin
-    public const string CanCreateCompanyInfo = nameof(CanCreateCompanyInfo); // ManagerOrAbove
-    public const string CanUpdateCompanyInfo = nameof(CanUpdateCompanyInfo); // ManagerOrAbove
-    public const string CanDeleteCompanyInfo = nameof(CanDeleteCompanyInfo); // ManagerOrAbove
+    public const string CanCreateCompanyInfo = nameof(CanCreateCompanyInfo); // AdministratorOnly
+    public const string CanUpdateCompanyInfo = nameof(CanUpdateCompanyInfo); // AdministratorOnly
+    public const string CanDeleteCompanyInfo = nameof(CanDeleteCompanyInfo); // AdministratorOnly
 
     // Email Templates
     public const string CanViewEmailTemplates = nameof(CanViewEmailTemplates); // Admin
@@ -271,6 +275,15 @@ public class Policy
 
     // Refunds (admin-issued partial refund — money-out + privileged)
     public const string CanIssueRefund = nameof(CanIssueRefund); // SupportOrAbove
+
+    // Receivables (what customers owe the company)
+    public const string CanViewReceivables = nameof(CanViewReceivables); // Admin
+    public const string CanWriteOffReceivable = nameof(CanWriteOffReceivable); // ManagerOrAbove
+
+    // Cash held by cleaners (the company's cash in a cleaner's hands)
+    public const string CanViewCashHeld = nameof(CanViewCashHeld); // AccountantOrAbove
+    public const string CanRecordCashRemittance = nameof(CanRecordCashRemittance); // AccountantOrAbove
+    public const string CanWriteOffCashHeld = nameof(CanWriteOffCashHeld); // ManagerOrAbove
 
     // Admin Action Audit Log (read surface — ADR-0012 D7)
     public const string CanViewAuditLog = nameof(CanViewAuditLog); // SupportOrAbove

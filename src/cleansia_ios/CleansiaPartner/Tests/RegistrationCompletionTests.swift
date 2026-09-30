@@ -122,6 +122,38 @@ final class RegistrationCompletionTests: XCTestCase {
         XCTAssertTrue(missing.details.contains(.documentsRequired))
     }
 
+    // MARK: contract documents
+
+    func testWithNothingInForceThereIsNoDocumentsStepAndApprovalWaitsOnNothing() {
+        for documents in [nil, [CleanerLegalDocument]()] {
+            let steps = buildSteps(complete(contract: .pending), legalDocuments: documents)
+            XCTAssertEqual(steps.map(\.category), [.profile, .documents, .approval])
+            XCTAssertEqual(step(steps, .approval).status, .pending)
+        }
+    }
+
+    func testAnUnacceptedDocumentIsAMissingStepThatHoldsApprovalBack() {
+        let steps = buildSteps(
+            complete(contract: .pending),
+            legalDocuments: [.sample(type: ._3, isAccepted: true), .sample(type: ._5)]
+        )
+
+        XCTAssertEqual(steps.map(\.category), [.profile, .documents, .legalDocuments, .approval])
+        XCTAssertEqual(step(steps, .legalDocuments).status, .missing)
+        XCTAssertEqual(step(steps, .approval).status, .missing)
+        XCTAssertEqual(step(steps, .approval).details, [.approvalCompleteProfileFirst])
+    }
+
+    func testEveryDocumentAcceptedIsADoneStepAndTheApplicationWaitsForReview() {
+        let steps = buildSteps(
+            complete(contract: .pending),
+            legalDocuments: [.sample(type: ._3, isAccepted: true), .sample(type: ._5, isAccepted: true)]
+        )
+
+        XCTAssertEqual(step(steps, .legalDocuments).status, .done)
+        XCTAssertEqual(step(steps, .approval).status, .pending)
+    }
+
     private func step(_ steps: [RegistrationStep], _ category: RegistrationStepCategory) -> RegistrationStep {
         guard let match = steps.first(where: { $0.category == category }) else {
             XCTFail("missing \(category) step")

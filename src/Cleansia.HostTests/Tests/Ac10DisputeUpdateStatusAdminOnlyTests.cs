@@ -1,4 +1,6 @@
+using System.Net;
 using System.Net.Http.Json;
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Disputes;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.HostTests.Infrastructure;
@@ -110,6 +112,28 @@ public sealed class Ac10DisputeUpdateStatusAdminOnlyTests(HostTestPostgresFixtur
 
         // The admin token is NOT denied at the auth/authz layer — it reaches the handler.
         HttpAssert.IsOk(resp);
+    }
+
+    /// <summary>
+    /// A charge to a cleaner sent without its reason reaches the validator and comes back under the key
+    /// the admin client translates, not as MVC's own implicit-required refusal.
+    /// </summary>
+    [Fact]
+    public async Task A_cleaner_charge_without_a_reason_is_refused_with_the_validators_key()
+    {
+        var a = await ArrangeDisputeAsync();
+        var token = TestJwtFactory.Mint(AdminAudience, "admin-disp-charge", "admin-disp-charge@hosttests.local", UserProfile.Administrator);
+
+        var resp = await AdminClient(token).PostAsync("/api/AdminDispute/resolve", JsonContent.Create(new
+        {
+            DisputeId = a.DisputeId,
+            RefundAmount = (decimal?)null,
+            ResolutionNotes = "host-test resolution",
+            ChargeToCleaner = new { EmployeeId = "employee-host-charge", Amount = 10m, Reason = (string?)null },
+        }));
+
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+        await HttpAssert.AssertBusinessErrorAsync(resp, BusinessErrorMessage.Required);
     }
 
     [Fact]

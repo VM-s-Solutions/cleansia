@@ -46,6 +46,27 @@ final class CreateDisputeViewModelTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(client.pageRequests.count, 1) // refresh fired
     }
 
+    /// A card refund unless the customer explicitly chooses credit, which expires and is never paid out.
+    func testAComplaintAsksForACardRefundUnlessCreditIsChosen() async {
+        let client = FakeDisputeClient()
+        let (vm, _) = makeVM(client: client)
+        XCTAssertEqual(vm.settlement, .cardRefund)
+
+        await vm.submit(reason: 3, description: validDescription)
+
+        XCTAssertEqual(client.lastCreateSettlement, .cardRefund)
+    }
+
+    func testAChosenCreditTravelsWithTheComplaint() async {
+        let client = FakeDisputeClient()
+        let (vm, _) = makeVM(client: client)
+        vm.settlement = .credit
+
+        await vm.submit(reason: 1, description: validDescription)
+
+        XCTAssertEqual(client.lastCreateSettlement, .credit)
+    }
+
     func testSubmitTrimsDescription() async {
         let client = FakeDisputeClient()
         let (vm, _) = makeVM(client: client)

@@ -2,7 +2,10 @@ import { Injectable, inject, signal } from '@angular/core';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
   AddOrderNoteCommand,
+  APIBASEURL,
+  GetMyAssignmentRemovalResponse,
   MarkCashCollectedCommand,
+  OrderClient,
   OrderItem,
   OrderStatus,
   PartnerClient,
@@ -10,7 +13,11 @@ import {
   StartOrderCommand,
 } from '@cleansia/partner-services';
 import * as OrderActions from '@cleansia/partner-stores';
-import { extractApiErrorCode, SnackbarService } from '@cleansia/services';
+import {
+  errorToastSuppressingHttpClient,
+  extractApiErrorCode,
+  SnackbarService,
+} from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { Actions, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
@@ -35,9 +42,14 @@ import {
   WorkContractDialogOutcome,
   WorkContractDialogResult,
 } from '../components/work-contract-dialog';
-import { canMarkCashCollected, formatCurrency } from './order-details.helpers';
+import {
+  canMarkCashCollected,
+  cashCollectionRefusal,
+  formatCurrency,
+} from './order-details.helpers';
 
 const ACCEPTANCE_REQUIRED = 'contract.acceptance_required';
+const ORDER_NOT_FOUND = 'order.not_found';
 
 @Injectable()
 export class OrderDetailsFacade extends UnsubscribeControlDirective {
@@ -47,11 +59,17 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
   private readonly dialogService = inject(DialogService);
   private readonly store = inject(Store);
   private readonly actions$ = inject(Actions);
+  // A cleaner who was never taken off the order answers order.not_found here, which is no error to them.
+  private readonly removalClient = new OrderClient(
+    errorToastSuppressingHttpClient(),
+    inject(APIBASEURL, { optional: true }) ?? undefined
+  );
 
   // Signals for reactive state management
   readonly orderDetails = signal<OrderItem | null>(null);
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
+  readonly removal = signal<GetMyAssignmentRemovalResponse | null>(null);
   readonly currentEmployeeId = signal<string | null>(null);
   readonly takeInFlight = signal(false);
 
@@ -63,6 +81,7 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
 
     this.loading.set(true);
     this.error.set(null);
+    this.removal.set(null);
 
     this.partnerClient.orderClient
       .getById(orderId)
@@ -71,6 +90,9 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
         tap((orderDetails) => {
           if (orderDetails) {
             this.orderDetails.set(orderDetails);
+            if (orderDetails.isAssignedToCurrentUser === false) {
+              this.loadRemoval(orderId);
+            }
           } else {
             this.error.set(this.translateService.instant('pages.order_details.not_found_message'));
           }
@@ -80,11 +102,24 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
             ? this.translateService.instant('pages.order_details.not_found_message')
             : this.translateService.instant('pages.order_details.load_failed');
           this.error.set(errorMessage);
+          if (extractApiErrorCode(error) === ORDER_NOT_FOUND) {
+            this.loadRemoval(orderId);
+          }
           return of(null);
         }),
         finalize(() => this.loading.set(false))
       )
       .subscribe();
+  }
+
+  private loadRemoval(orderId: string): void {
+    this.removalClient
+      .getMyAssignmentRemoval(orderId)
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError(() => of(null))
+      )
+      .subscribe((removal) => this.removal.set(removal));
   }
 
   downloadInvoice(): void {
@@ -481,18 +516,10 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
       return;
     }
 
-    // Pre-flight gate mirroring MarkCashCollected.Validator: InProgress, not already Paid,
-    // caller assigned. Defence in depth — the trigger is already hidden outside this window.
-    if (
-      !canMarkCashCollected(
-        order.orderStatus.value,
-        order.paymentStatus.value,
-        order.assignedEmployees,
-        employeeId
-      )
-    ) {
+    // Defence in depth — the trigger is already hidden whenever this refuses.
+    if (!canMarkCashCollected(order, employeeId)) {
       this.snackbarService.showErrorTranslated(
-        'pages.order_details.mark_cash_collected_gating_error'
+        cashCollectionRefusal(order) ?? 'pages.order_details.mark_cash_collected_gating_error'
       );
       return;
     }
@@ -547,11 +574,13 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
           // Reload so the payment status reflects the collection.
           this.loadOrderDetails(orderId);
         }),
+        // The interceptor has already shown the refusal. Re-read after a server refusal: it can
+        // follow a repair (a card payment Stripe had already settled is now Paid). Without an
+        // answer from the server a re-read would most likely fail too and blank the sheet.
         catchError((error) => {
-          this.snackbarService.showApiError(
-            error,
-            'global.messages.orders.cash_collect_failed'
-          );
+          if (extractApiErrorCode(error)) {
+            this.loadOrderDetails(orderId);
+          }
           return of(null);
         }),
         finalize(() => this.loading.set(false))

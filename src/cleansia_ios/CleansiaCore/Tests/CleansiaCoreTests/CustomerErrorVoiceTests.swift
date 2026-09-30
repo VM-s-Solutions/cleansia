@@ -13,6 +13,7 @@ final class CustomerErrorVoiceTests: XCTestCase {
     /// renders — either way the booking voice is the only voice they are read in.
     private static let customerOnly = [
         CustomerOnlyKey("membership.express_waiver.no_longer_available", emitters: "CreateOrder"),
+        CustomerOnlyKey("consent.early_performance_not_requested", emitters: "CreateOrder, CreateRecurringBooking"),
         CustomerOnlyKey(
             "order.already_cancelled",
             emitters: "CancelOrder, CancelGuestOrder, GetGuestCancellationFeePreview, AdminCancelOrder, "
@@ -33,6 +34,10 @@ final class CustomerErrorVoiceTests: XCTestCase {
         CustomerOnlyKey("order.country_operator_mismatch", emitters: "CreateOrder"),
         CustomerOnlyKey("order.cleaning_date.future", emitters: "CreateOrder"),
         CustomerOnlyKey("order.cleaning_date.below_lead_time", emitters: "CreateOrder"),
+        CustomerOnlyKey(
+            "order.cleaning_date.outside_booking_window",
+            emitters: "CreateOrder, QuoteOrder, CreateRecurringBooking, UpdateRecurringBooking"
+        ),
         CustomerOnlyKey("order.selected_services.invalid", emitters: "CreateOrder, QuoteOrder"),
         CustomerOnlyKey("order.selected_package.invalid", emitters: "CreateOrder, QuoteOrder"),
         CustomerOnlyKey("order.preferred_employee.not_eligible", emitters: "CreateOrder"),
@@ -40,6 +45,35 @@ final class CustomerErrorVoiceTests: XCTestCase {
         CustomerOnlyKey(
             "order.cash_not_available",
             emitters: "CreateOrder, CreateRecurringBooking, UpdateRecurringBooking, ConfirmRecurringOrder"
+        ),
+        CustomerOnlyKey(
+            "order.cash_unpaid_receivable",
+            emitters: "CreateOrder, CreateRecurringBooking, UpdateRecurringBooking, ConfirmRecurringOrder"
+        ),
+        CustomerOnlyKey(
+            "order.cash_open_bookings_limit_reached",
+            emitters: "CreateOrder, CreateRecurringBooking, UpdateRecurringBooking, ConfirmRecurringOrder"
+        ),
+        CustomerOnlyKey(
+            "order.cash_requires_saved_card",
+            emitters: "CreateOrder, CreateRecurringBooking, UpdateRecurringBooking, ConfirmRecurringOrder"
+        ),
+        CustomerOnlyKey(
+            "order.start_passed_cannot_cancel",
+            emitters: "CancelOrder, CancelGuestOrder, GetCancellationFeePreview, GetGuestCancellationFeePreview"
+        ),
+        CustomerOnlyKey(
+            "order.cleaner_already_started",
+            emitters: "ReportGuestCleanerNoShow, AdminCancelOrderAsNoShow"
+        ),
+        CustomerOnlyKey(
+            "order.start_time_not_reached",
+            emitters: "ReportGuestCleanerNoShow, AdminCancelOrderAsNoShow"
+        ),
+        CustomerOnlyKey("order.recurring_already_confirmed", emitters: "ConfirmRecurringOrder"),
+        CustomerOnlyKey(
+            "order.invalid_status_transition",
+            emitters: "ConfirmRecurringOrder, ResumeOrderCheckout, AdminOverrideOrderStatus"
         ),
         CustomerOnlyKey(
             "recurring_booking.not_found",
@@ -102,6 +136,7 @@ final class CustomerErrorVoiceTests: XCTestCase {
         "common.required": "AddDisputeMessage, AddSavedAddress, AppleAuth, CancelGuestOrder, "
             + "GetGuestCancellationFeePreview +38 more",
         "company.not_found": "ReceiptService",
+        "consent.early_performance_not_requested": "CreateOrder, CreateRecurringBooking",
         "consent.terms_not_accepted": "CreateOrder, Register",
         "country.not_existing_id": "AddSavedAddress, UpdateSavedAddress",
         "country.not_serviced":
@@ -120,6 +155,7 @@ final class CustomerErrorVoiceTests: XCTestCase {
         "file.required": "UploadDisputeEvidence",
         "file.size_exceeded": "ImageFileValidator, UploadDisputeEvidence",
         "gdpr.consent_already_granted": "GrantConsent",
+        "gdpr.consent_not_editable": "GrantConsent, WithdrawConsent",
         "gdpr.consent_not_found": "WithdrawConsent",
         "gdpr.deletion_already_pending": "GdprDeletionService",
         "gdpr.deletion_blocked_by_invoice": "GdprDeletionService",
@@ -142,24 +178,38 @@ final class CustomerErrorVoiceTests: XCTestCase {
         "order.already_completed": "CancellationAssessor",
         "order.cash_not_available":
             "CreateOrder, CreateRecurringBooking, UpdateRecurringBooking, ConfirmRecurringOrder",
+        "order.cash_open_bookings_limit_reached":
+            "CreateOrder, CreateRecurringBooking, UpdateRecurringBooking, ConfirmRecurringOrder",
+        "order.cash_requires_saved_card":
+            "CreateOrder, CreateRecurringBooking, UpdateRecurringBooking, ConfirmRecurringOrder",
+        "order.cash_unpaid_receivable":
+            "CreateOrder, CreateRecurringBooking, UpdateRecurringBooking, ConfirmRecurringOrder",
+        "order.cleaner_already_started": "ReportGuestCleanerNoShow",
         "order.cleaning_date.below_lead_time": "CreateOrder",
         "order.cleaning_date.future": "CreateOrder",
+        "order.cleaning_date.outside_booking_window":
+            "CreateOrder, CreateRecurringBooking, QuoteOrder, UpdateRecurringBooking",
         "order.country_operator_mismatch": "CreateOrder",
         "order.empty": "CreateOrder",
         "order.in_progress_cannot_cancel": "CancellationAssessor via CancelOrder, CancelGuestOrder, "
             + "GetGuestCancellationFeePreview",
+        "order.invalid_status_transition": "ConfirmRecurringOrder",
         "order.not_completed": "SubmitOrderReview",
         "order.not_found": "CancelGuestOrder, CancelOrder, ConfirmRecurringOrder, CreateDispute, "
             + "GetGuestCancellationFeePreview +10 more",
         "order.payment_gateway_unavailable":
             "CancelMembershipSubscription, CreateMembershipCheckoutSession, CreateMembershipSubscription +3 more",
         "order.preferred_employee.not_eligible": "CreateOrder, CreateRecurringBooking",
+        "order.recurring_already_confirmed": "ConfirmRecurringOrder",
         "order.review.rating_invalid": "SubmitOrderReview",
         "order.selected_package.invalid": "CreateOrder, QuoteOrder",
         "order.selected_services.invalid": "CreateOrder, QuoteOrder",
         "order.size_exceeds_maximum":
             "CreateOrder, QuoteOrder, QuotePlusSavings, CreateRecurringBooking, UpdateRecurringBooking",
         "order.span_exceeds_maximum": "CreateOrder, QuoteOrder",
+        "order.start_passed_cannot_cancel": "CancellationAssessor via CancelOrder, CancelGuestOrder, "
+            + "GetCancellationFeePreview, GetGuestCancellationFeePreview",
+        "order.start_time_not_reached": "ReportGuestCleanerNoShow",
         "order.total_price.not_match": "CreateOrder",
         "order.total_price.positive": "CreateOrder",
         "promo.below_minimum_order_amount": "CreateOrder",
@@ -172,6 +222,8 @@ final class CustomerErrorVoiceTests: XCTestCase {
         "promo.per_user_limit_reached": "CreateOrder",
         "promo.requires_account": "CreateOrder",
         "receipt.not_found": "DownloadOrderReceipt",
+        "receivable.not_found": "CreateReceivablePayLink",
+        "receivable.not_open": "CreateReceivablePayLink",
         "recurring_booking.ends_on_before_start": "CreateRecurringBooking, UpdateRecurringBooking",
         "recurring_booking.membership_required": "CreateRecurringBooking, UpdateRecurringBooking",
         "recurring_booking.no_services_or_packages": "CreateRecurringBooking, UpdateRecurringBooking",
@@ -183,6 +235,8 @@ final class CustomerErrorVoiceTests: XCTestCase {
         "refund.failed": "RefundService",
         "refund.nothing_refundable": "RefundService",
         "refund.order_not_refundable": "RefundService",
+        "saved_card.consent_not_accepted": "CreateSavedCardSetupIntent",
+        "saved_card.not_found": "RemoveSavedCard",
         "tenant.archived": "CleansiaDbContext.CommitAsync via RequestValidationExceptionFilterAttribute (409)",
         "tenant.not_found": "OperatorTenantScopeBehavior",
         "user.email_confirmed": "ResendConfirmationEmail",

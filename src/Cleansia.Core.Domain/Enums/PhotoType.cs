@@ -6,5 +6,6 @@ namespace Cleansia.Core.Domain.Enums;
 public enum PhotoType
 {
     Before = 1,
-    After = 2
+    After = 2,
+    Entrance = 3
 }

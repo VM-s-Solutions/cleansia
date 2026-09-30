@@ -73,7 +73,8 @@ public sealed class AuditSensitiveSnapshotTests
         orderRepository.Setup(r => r.GetQueryable()).Returns(new[] { order }.AsQueryable().BuildMock());
 
         var handler = new AdminOverrideOrderStatus.Handler(
-            orderRepository.Object, AdminSession(), auditContext, new Mock<ILiveActivityProducer>().Object);
+            orderRepository.Object, AdminSession(), auditContext, new Mock<ILiveActivityProducer>().Object,
+            Mock.Of<IPendingDispatch>());
         var result = await handler.Handle(
             new AdminOverrideOrderStatus.Command("order-ovr", OrderStatus.OnTheWay), CancellationToken.None);
 
@@ -196,7 +197,9 @@ public sealed class AuditSensitiveSnapshotTests
                 "refund-1", "refund:order-d:dispute:dispute-1", 250m, RefundStatus.Succeeded, false)));
 
         var handler = new ResolveDispute.Handler(
-            disputeRepository.Object, AdminSession(), refundService.Object, Mock.Of<INotificationProducer>(), auditContext);
+            disputeRepository.Object, AdminSession(), refundService.Object, Mock.Of<IRefundRepository>(),
+            Mock.Of<ICreditAccountRepository>(),
+            Mock.Of<IOrderEmployeePayRepository>(), Mock.Of<INotificationProducer>(), auditContext);
 
         var result = await handler.Handle(
             new ResolveDispute.Command("dispute-1", 250m, "approved by ops"), CancellationToken.None);
@@ -370,7 +373,7 @@ public sealed class AuditSensitiveSnapshotTests
                 new GdprExportCustomerActionDto("customer.order.cancel", DateTimeOffset.UtcNow, "Order", "order-2", false,
                     "order.in_progress_cannot_cancel", null, "203.0.113.9", "iPhone 15"),
             ],
-            new GdprExportMetadataDto(DateTimeOffset.UtcNow, "admin:admin@cleansia.test", "JSON"), []);
+            new GdprExportMetadataDto(DateTimeOffset.UtcNow, "admin:admin@cleansia.test", "JSON"), [], []);
 
     [Fact]
     public async Task GdprDelete_On_Failed_Deletion_Emits_No_Snapshot()

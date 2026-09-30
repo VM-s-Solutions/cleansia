@@ -17,10 +17,10 @@ import { catchError, distinctUntilChanged, finalize, of, switchMap, takeUntil } 
 /**
  * The wizard's one read of the signed-in customer's membership.
  *
- * Two surfaces depend on it — the wider free-cancellation window on the summary card and the
- * express-surcharge waiver on the slot grid — and they must not issue two `/Membership/Mine`
- * calls for the same answer. Every count here is the server's; the client never derives a
- * remaining quota from the customer's own orders (ADR-0035 D7).
+ * Two surfaces depend on it — the express-surcharge waiver on the slot grid and the plan named on
+ * the summary card — and they must not issue two `/Membership/Mine` calls for the same answer.
+ * Every count here is the server's; the client never derives a remaining quota from the customer's
+ * own orders (ADR-0035 D7).
  *
  * A failed read degrades to the same silence as "no membership": this is an enrichment on the
  * most valuable screen in the product, and a red toast (or a claim rendered from stale state)
@@ -36,13 +36,6 @@ export class OrderMembershipFacade extends UnsubscribeControlDirective {
   readonly loadFailed = signal(false);
   readonly membership = signal<GetMyMembershipResponse | null>(null);
   readonly expressWaiverStatus = signal<ExpressWaiverStatus>('none');
-
-  /** Plus free-cancellation window in hours; null when the customer has no active membership. */
-  readonly freeCancellationWindowHours = computed<number | null>(() => {
-    const membership = this.membership();
-    if (!membership?.hasMembership) return null;
-    return membership.freeCancellationWindowHours ?? null;
-  });
 
   /** Server-computed waivers left this calendar month, BEFORE the booking being composed. */
   readonly expressUpgradesRemaining = computed(

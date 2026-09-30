@@ -90,46 +90,6 @@
       </div>
     </div>
 
-    <div class="gauge-card">
-      <h4>
-        {{
-          'pages.dashboard.productivity_metrics.on_time_completion' | translate
-        }}
-      </h4>
-      <div class="gauge-card__wrapper">
-        <svg class="gauge-card__svg" viewBox="0 0 200 120">
-          <defs>
-            <linearGradient id="gauge3" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" style="stop-color: #f59e0b; stop-opacity: 1" />
-              <stop
-                offset="100%"
-                style="stop-color: #d97706; stop-opacity: 1"
-              />
-            </linearGradient>
-          </defs>
-          <path
-            [attr.d]="getArcPath(100)"
-            fill="none"
-            stroke="#e5e7eb"
-            stroke-width="10"
-            stroke-linecap="round"
-          />
-          <path
-            [attr.d]="getArcPath(data()!.onTimeCompletionRate)"
-            fill="none"
-            stroke="url(#gauge3)"
-            stroke-width="10"
-            stroke-linecap="round"
-          />
-          <text x="100" y="75" text-anchor="middle" class="gauge-card__value">
-            {{ data()!.onTimeCompletionRate | number : '1.0-0' }}%
-          </text>
-          <text x="100" y="95" text-anchor="middle" class="gauge-card__label">
-            {{ 'pages.dashboard.productivity_metrics.on_time_label' | translate }}
-          </text>
-        </svg>
-      </div>
-    </div>
   </div>
 
   @if (data()!.personalBests) {

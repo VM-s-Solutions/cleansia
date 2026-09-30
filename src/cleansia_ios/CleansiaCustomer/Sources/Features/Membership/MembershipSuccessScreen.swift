@@ -5,6 +5,7 @@ struct MembershipSuccessScreen: View {
     /// The one perk on this list the plan may not carry, so it comes from the server rather than
     /// from the layout.
     let showExpressPerk: Bool
+    let copy: MembershipCopy
     let onSetupRecurring: () -> Void
     let onBackHome: () -> Void
 
@@ -17,13 +18,13 @@ struct MembershipSuccessScreen: View {
                 Text(L10n.Membership.successTitle)
                     .cleansiaFont(CleansiaTypography.headlineMedium)
                     .foregroundColor(CleansiaColors.onBackground)
-                Text(L10n.Membership.successSubtitle)
+                Text(copy.successSubtitle)
                     .font(CleansiaTypography.bodyMedium)
                     .foregroundColor(CleansiaColors.onSurfaceVariant)
                     .multilineTextAlignment(.center)
 
                 VStack(alignment: .leading, spacing: Spacing.s) {
-                    Text(L10n.Membership.successPerksHeader)
+                    Text(copy.successPerksHeader)
                         .font(CleansiaTypography.labelMedium)
                         .foregroundColor(CleansiaColors.onSurfaceVariant)
                     PerkRow(text: L10n.Membership.perkDiscountTitle)
@@ -33,17 +34,25 @@ struct MembershipSuccessScreen: View {
                     if showExpressPerk {
                         PerkRow(text: L10n.Membership.successPerkExpress)
                     }
+                    if let perksNote = copy.perksNote {
+                        Text(perksNote)
+                            .font(CleansiaTypography.labelMedium)
+                            .foregroundColor(CleansiaColors.onSurfaceVariant)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(Spacing.m)
                 .background(CleansiaColors.surface, in: RoundedRectangle(cornerRadius: CornerRadius.medium))
 
                 VStack(spacing: Spacing.s) {
-                    CleansiaPrimaryButton(
-                        L10n.Membership.successCtaSetupRecurring,
-                        leadingIcon: "repeat",
-                        action: onSetupRecurring
-                    )
+                    if copy.offersRecurringSetup {
+                        CleansiaPrimaryButton(
+                            L10n.Membership.successCtaSetupRecurring,
+                            leadingIcon: "repeat",
+                            action: onSetupRecurring
+                        )
+                    }
                     CleansiaOutlinedButton(L10n.Membership.successCtaBackHome, action: onBackHome)
                 }
             }
@@ -71,8 +80,13 @@ private struct PerkRow: View {
 #if DEBUG
     struct MembershipSuccessScreen_Previews: PreviewProvider {
         static var previews: some View {
-            MembershipSuccessScreen(showExpressPerk: true, onSetupRecurring: {}, onBackHome: {})
-                .background(CleansiaColors.background)
+            MembershipSuccessScreen(
+                showExpressPerk: true,
+                copy: MembershipCopy(nil),
+                onSetupRecurring: {},
+                onBackHome: {}
+            )
+            .background(CleansiaColors.background)
         }
     }
 #endif

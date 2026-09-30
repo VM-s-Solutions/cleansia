@@ -15,6 +15,7 @@ import {
   CreateDisputeDisputeLineSelection,
   DisputeListItem,
   DisputeReason,
+  DisputeSettlementPreference,
   FileParameter,
   OrderListItem,
 } from '@cleansia/customer-services';
@@ -214,6 +215,7 @@ export class DisputesFacade extends UnsubscribeControlDirective {
     reason: DisputeReason,
     description: string,
     lines: DisputeLineSelection[],
+    settlementPreference: DisputeSettlementPreference,
     onSuccess: (disputeId: string | null) => void
   ): void {
     if (this.creatingDispute()) return;
@@ -223,6 +225,7 @@ export class DisputesFacade extends UnsubscribeControlDirective {
     command.orderId = orderId;
     command.reason = reason;
     command.description = description;
+    command.settlementPreference = settlementPreference;
     // Which items went wrong. Optional and usually empty — a dispute about the whole job, or about a
     // charge, names none — so an empty selection is sent as undefined rather than an empty array, and
     // the server treats the two the same. One description per dispute, per the owner's ruling: these

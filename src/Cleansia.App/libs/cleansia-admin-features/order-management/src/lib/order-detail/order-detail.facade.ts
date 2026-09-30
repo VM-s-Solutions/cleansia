@@ -38,6 +38,7 @@ import { AdminWorkContractDialogComponent, AdminWorkContractDialogData } from '.
 import {
   INCIDENT_SUBJECT_LOOKUP_LIMIT,
   buildCrewEntries,
+  dirtinessLevelLabelKey,
   resolveIncidentSubject,
 } from './order-detail.models';
 
@@ -67,6 +68,13 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
   readonly loading = signal<boolean>(false);
   readonly incidentFileExporting = signal<boolean>(false);
   readonly crew = computed(() => buildCrewEntries(this.order()));
+  readonly dirtinessLevelKey = computed(() => dirtinessLevelLabelKey(this.order()?.dirtinessLevel));
+
+  readonly cancellationFee = computed(() => {
+    const order = this.order();
+    if (order?.cancellationFeeRate == null) return null;
+    return { rate: order.cancellationFeeRate, owed: order.cancellationFeeOwed ?? 0 };
+  });
 
   /**
    * Entry instructions are NOT on the order payload for an admin — the server withholds them and hands
@@ -258,6 +266,13 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
     return formatMoney(price, this.order()?.currency?.code, localeFor(this.translate.currentLang), {
       fractionDigits: 2,
     });
+  }
+
+  formatRate(rate: number): string {
+    return new Intl.NumberFormat(localeFor(this.translate.currentLang), {
+      style: 'percent',
+      maximumFractionDigits: 2,
+    }).format(rate);
   }
 
   formatDuration(minutes: number | null | undefined): string {

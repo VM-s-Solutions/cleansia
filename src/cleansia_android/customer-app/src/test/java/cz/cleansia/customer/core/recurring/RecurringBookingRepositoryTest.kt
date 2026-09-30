@@ -2,6 +2,7 @@ package cz.cleansia.customer.core.recurring
 
 import android.content.Context
 import cz.cleansia.customer.R
+import cz.cleansia.customer.core.booking.DirtinessLevel
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
@@ -87,6 +88,7 @@ class RecurringBookingRepositoryTest {
         selectedPackageIds = emptyList(),
         paymentType = 1,
         startsOn = "2026-07-01T08:00:00Z",
+        dirtinessLevel = DirtinessLevel.Normal,
     )
 
     private fun updateRequest() = UpdateRecurringBookingRequest(
@@ -101,6 +103,7 @@ class RecurringBookingRepositoryTest {
         selectedPackageIds = emptyList(),
         paymentType = 1,
         startsOn = "2026-07-01T08:00:00Z",
+        dirtinessLevel = DirtinessLevel.Normal,
     )
 
     private fun errorBody() = "{}".toResponseBody("application/json".toMediaType())
@@ -197,6 +200,23 @@ class RecurringBookingRepositoryTest {
         val result = newRepo().update(updateRequest())
 
         assertEquals(updated, result.getOrNull())
+        verify(exactly = 0) { snackbar.showError(any<String>()) }
+    }
+
+    /** The edit form answers this one refusal itself, so the key has to survive the repository. */
+    @Test
+    fun update_givenNotEligibleRefusal_carriesTheBackendKey() = runTest {
+        val body = """
+            {"type":"ValidationError","title":"Validation Error","status":400,
+             "detail":"A validation problem occurred.",
+             "errors":{"PreferredEmployeeId":"order.preferred_employee.not_eligible"}}
+        """.trimIndent().toResponseBody("application/json".toMediaType())
+        coEvery { api.update(any()) } returns Response.error(400, body)
+
+        val result = newRepo().update(updateRequest())
+
+        val error = (result as ApiResult.Error).error as ApiError.BadRequest
+        assertEquals("order.preferred_employee.not_eligible", error.errorKey)
         verify(exactly = 0) { snackbar.showError(any<String>()) }
     }
 

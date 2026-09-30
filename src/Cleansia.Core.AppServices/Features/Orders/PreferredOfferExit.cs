@@ -40,8 +40,7 @@ public static class PreferredOfferExit
     public static bool IsOpen(Order order, bool callerHasActiveMembership, DateTime nowUtc)
         => callerHasActiveMembership
            && order.RecurringTemplateId is null
-           && OrderAvailability.IsOfferable(
-               order.CurrentStatus, order.PaymentType, order.PaymentStatus, order.RecurringTemplateId)
+           && OrderAvailability.IsOfferable(order)
            && order.PreferredOfferRound < BookingPolicy.MaxPreferredOfferRounds
            && order.AssignedEmployees.Count == 0
            && !PreferredOffer.HasLiveReservation(

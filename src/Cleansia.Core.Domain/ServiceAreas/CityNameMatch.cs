@@ -11,7 +11,7 @@ namespace Cleansia.Core.Domain.ServiceAreas;
 /// <c>row.Name.ToLower() == city.Trim().ToLower()</c>, which refuses a booking for any spelling the
 /// operator did not seed verbatim. That is not hypothetical: this repo's own seed puts a customer at
 /// <c>'Plzen'</c> (<c>sql-scripts/seed/insert_addresses.sql:39</c>) while the serviced row is
-/// <c>'Plzeň'</c> (<c>insert_seed_data.sql:358</c>), so that address cannot be booked. Reverse geocoders
+/// <c>'Plzeň'</c> (<c>prod-bootstrap.sql:392</c>), so that address cannot be booked. Reverse geocoders
 /// and hand-typing both drop diacritics, and both append districts.</para>
 ///
 /// <para><b>The rule is MONOTONE — it accepts a strict superset of the exact compare.</b> Nothing that

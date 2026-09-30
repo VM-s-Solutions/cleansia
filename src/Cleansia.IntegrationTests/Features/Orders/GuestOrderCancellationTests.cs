@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.AppServices.Features.Refunds;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Infra.Common.Configuration;
@@ -235,10 +236,15 @@ public class GuestOrderCancellationTests(PostgresContainerFixture fixture) : Bas
         var run = new Run();
         await TestMethod<bool>(setup: run.Setup, arrange: (CleansiaDbContext db) => Seed(db, paid: false), act: async (IServiceProvider provider) =>
         {
-            var result = await provider.GetRequiredService<IMediator>().Send(GuestCommand());
+            var mediator = provider.GetRequiredService<IMediator>();
+            var preview = await mediator.Send(new GetGuestCancellationFeePreview.Query(_guestToken));
+            Assert.True(preview.IsSuccess, preview.Error?.Message);
+            Assert.Equal(0m, preview.Value.RefundAmount);
+            var result = await mediator.Send(GuestCommand());
             Assert.True(result.IsSuccess, result.Error?.Message);
             Assert.False(result.Value.RefundInitiated);
             Assert.Null(result.Value.ActualRefundAmount);
+            Assert.Equal(preview.Value.RefundAmount, result.Value.RefundAmount);
             return true;
         }, assert: async (CleansiaDbContext db, bool _) =>
         {
@@ -396,6 +402,45 @@ public class GuestOrderCancellationTests(PostgresContainerFixture fixture) : Bas
         {
             Assert.Equal(OrderStatus.Cancelled, (await db.Orders.IgnoreQueryFilters().SingleAsync()).CurrentStatus);
             Assert.Equal(RefundStatus.Pending, (await db.Refunds.IgnoreQueryFilters().SingleAsync()).Status);
+        }, transactional: false);
+    }
+
+    /// <summary>
+    /// A guest's refund is claimed before the cancel, so a Stripe outage fails the request with the
+    /// booking still live. The hourly re-drive must not finish that claim: the clean still happens.
+    /// </summary>
+    [Fact]
+    public async Task Unreachable_Stripe_leaves_the_guest_booking_live_and_the_hourly_redrive_does_not_refund_it()
+    {
+        var run = new Run();
+        await TestMethod<bool>(setup: (IServiceCollection services) =>
+        {
+            run.Setup(services);
+            run.Stripe.SetupSequence(x => x.RefundPaymentIntentAsync("pi_guest", It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new HttpRequestException("connection reset"))
+                .Returns(Task.CompletedTask);
+            return Task.CompletedTask;
+        }, arrange: (CleansiaDbContext db) => Seed(db), act: async (IServiceProvider provider) =>
+        {
+            using (var attempt = provider.CreateScope())
+                await Assert.ThrowsAsync<HttpRequestException>(() => attempt.ServiceProvider.GetRequiredService<IMediator>().Send(GuestCommand()));
+            using (var age = provider.CreateScope())
+                await age.ServiceProvider.GetRequiredService<CleansiaDbContext>().Database.ExecuteSqlRawAsync(
+                    "UPDATE \"Refunds\" SET \"CreatedOn\" = NOW() - INTERVAL '2 hours'");
+            using (var sweep = provider.CreateScope())
+            {
+                var result = await sweep.ServiceProvider.GetRequiredService<IMediator>().Send(new RedrivePendingRefunds.Command());
+                Assert.True(result.IsSuccess, result.Error?.Message);
+                Assert.Equal(1, result.Value.Considered);
+                Assert.Equal(0, result.Value.Redriven);
+            }
+            return true;
+        }, assert: async (CleansiaDbContext db, bool _) =>
+        {
+            await AssertUncancelled(db, OrderStatus.Confirmed);
+            Assert.Equal(PaymentStatus.Paid, (await db.Orders.IgnoreQueryFilters().SingleAsync()).PaymentStatus);
+            Assert.Equal(RefundStatus.Pending, (await db.Refunds.IgnoreQueryFilters().SingleAsync()).Status);
+            run.Stripe.Verify(x => x.RefundPaymentIntentAsync("pi_guest", It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
         }, transactional: false);
     }
 

@@ -42,6 +42,7 @@ class PeriodPayViewModelTest {
         totalOrders = 3,
         totalBasePay = 3600.0,
         totalExtrasPay = 300.0,
+        totalDirtinessPay = 0.0,
         totalExpensesPay = 200.0,
         totalBonusPay = 150.0,
         totalDeductionPay = 50.0,

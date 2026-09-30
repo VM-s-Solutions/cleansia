@@ -53,6 +53,8 @@ public static class FunctionsProcessingRegistration
         services.AddScoped<AutoCancelStaleRecurringOrdersHandler>();
         services.AddScoped<CleanupStalePendingOrdersHandler>();
         services.AddScoped<ExpireStaleCreditHandler>();
+        services.AddScoped<ChargeOpenReceivablesHandler>();
+        services.AddScoped<RequestCashRemittancesHandler>();
         services.AddScoped<MaterializeRecurringBookingsHandler>();
         services.AddScoped<RefreshTokenCleanupTimerHandler>();
         services.AddScoped<RetryFailedUserDeletionsTimerHandler>();

@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using FluentValidation.Results;
@@ -50,7 +51,9 @@ public class TakeOrderOfferabilityGateTests
             _employeeRepository.Object,
             _accessService.Object,
             ValidatorTestHelpers.CurrencyResolver(),
-            WorkContractTestData.LegalDocumentRepository().Object);
+            WorkContractTestData.LegalDocumentRepository().Object,
+            Mock.Of<ILegalDocumentResolver>(),
+            Mock.Of<IUserConsentRepository>());
     }
 
     // ── The offerability gate itself ──

@@ -33,6 +33,10 @@ public sealed record LegalSeedResource(
         ["terms-of-service"] = LegalDocumentType.TermsOfService,
         ["privacy-policy"] = LegalDocumentType.PrivacyPolicy,
         ["work-contract"] = LegalDocumentType.WorkContract,
+        ["framework-contract"] = LegalDocumentType.CleanerFrameworkContract,
+        ["self-billing-agreement"] = LegalDocumentType.SelfBillingAgreement,
+        ["data-processing-agreement"] = LegalDocumentType.CleanerDataProcessingAgreement,
+        ["complaints-procedure"] = LegalDocumentType.ComplaintsProcedure,
     };
 
     public static IReadOnlyList<LegalSeedResource> ReadAll(Assembly? assembly = null)
@@ -66,7 +70,15 @@ public sealed record LegalSeedResource(
             || segments[4].Length != 5)
         {
             throw new InvalidOperationException(
-                $"Legal seed file '{logicalName}' is not at Seed/Legal/{{customer|employee}}/{{terms-of-service|privacy-policy|work-contract}}/{{ISO3|any}}/{{yyyy-MM-dd}}/{{xx}}.md.");
+                $"Legal seed file '{logicalName}' is not at Seed/Legal/{{customer|employee}}/{{{string.Join('|', Types.Keys)}}}/{{ISO3|any}}/{{yyyy-MM-dd}}/{{xx}}.md.");
+        }
+
+        // A cleaner's document seeded under customer/ would never be asked for, so the gate on it would
+        // silently never close.
+        if (LegalDocument.CleanerConsentTypeFor(type) is not null && audience != LegalDocumentAudience.Employee)
+        {
+            throw new InvalidOperationException(
+                $"Legal seed file '{logicalName}' is a cleaner document and belongs under Seed/Legal/employee/.");
         }
 
         var country = segments[2].Equals(AnyCountry, StringComparison.OrdinalIgnoreCase) ? null : segments[2].ToUpperInvariant();

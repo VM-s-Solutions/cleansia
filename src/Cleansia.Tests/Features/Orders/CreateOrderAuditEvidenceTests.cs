@@ -12,6 +12,7 @@ using Cleansia.Tests.Domain.Legal;
 using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Users;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Infra.Common.Configuration;
 using Cleansia.TestUtilities.MockDataFactories.Memberships;
@@ -53,9 +54,12 @@ public sealed class CreateOrderAuditEvidenceTests
     private readonly Mock<IOrderFactory> _orderFactory = new();
     private readonly Mock<IAddressGeocoder> _addressGeocoder = new();
     private readonly Mock<IUserMembershipRepository> _membershipRepository = new();
+    private readonly Mock<IOrderRepository> _earlierBookings = new();
     private readonly LegalDocument _terms = LegalDocumentFixtures.Terms();
     private readonly Mock<ILegalDocumentResolver> _legalDocuments;
     private readonly AuditContext _auditContext = new();
+    private readonly Mock<IConsentService> _consentService = new();
+    private readonly Mock<IUserConsentRepository> _consentRepository = new();
 
     private static readonly Currency Czk = CreateOrderTestData.DefaultCurrency();
 
@@ -71,7 +75,7 @@ public sealed class CreateOrderAuditEvidenceTests
         _pricingCalculator
             .Setup(c => c.CalculateAsync(
                 It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<IEnumerable<string>>(),
-                It.IsAny<int>(), It.IsAny<int>(), It.IsAny<string?>(), It.IsAny<DateTime?>(), It.IsAny<string?>(),
+                It.IsAny<int>(), It.IsAny<int>(), It.IsAny<DirtinessLevel>(), It.IsAny<string?>(), It.IsAny<DateTime?>(), It.IsAny<string?>(),
                 It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(CreateOrderTestData.MatchingPricing());
         _stripeClientFactory.Setup(f => f.CreateClient()).Returns(_stripeClient.Object);
@@ -101,6 +105,8 @@ public sealed class CreateOrderAuditEvidenceTests
     private CreateOrder.Handler CreateHandler() =>
         new(
             OrderMarketDoubles.Trading(Czk),
+            _consentService.Object,
+            _consentRepository.Object,
             _session.Object,
             _pricingCalculator.Object,
             _orderFactory.Object,
@@ -115,11 +121,13 @@ public sealed class CreateOrderAuditEvidenceTests
             TestGuestOrderAccessTokenIssuer.WithNoLiveTokens(),
             _expressWaiverConsumer.Object,
             _creditAccountRepository.Object,
-            new CancellationPolicyResolver(_membershipRepository.Object),
+            new CancellationPolicyResolver(_membershipRepository.Object, _earlierBookings.Object),
             _legalDocuments.Object,
             OrderMarketDoubles.OperatedBy("tenant-1"),
             Mock.Of<ITenantProvider>(),
             _auditContext,
+            new Cleansia.Core.AppServices.Authentication.HostAudienceProvider("cleansia.customer"),
+            new Cleansia.TestUtilities.TestRequestMetadataProvider(),
             NullLogger<CreateOrder.Handler>.Instance);
 
     private static JsonElement Payload(AuditSnapshot? snapshot) => JsonDocument.Parse(snapshot!.AfterJson!).RootElement;
@@ -152,7 +160,8 @@ public sealed class CreateOrderAuditEvidenceTests
     public async Task A_Guest_Booking_Records_The_Server_Figures_The_Standard_Window_And_The_Tick_As_Sent()
     {
         _session.Setup(s => s.GetUserId()).Returns((string?)null);
-        var command = CreateOrderTestData.ValidCommand(paymentType: PaymentType.Cash) with { TermsAccepted = true };
+        var command = CreateOrderTestData.ValidCommand(
+            paymentType: PaymentType.Cash, cleaningDate: DateTime.UtcNow.AddDays(3)) with { TermsAccepted = true };
 
         var result = await CreateHandler().Handle(command, CancellationToken.None);
 
@@ -196,6 +205,7 @@ public sealed class CreateOrderAuditEvidenceTests
         Assert.Equal(BookingPolicy.LastMinuteCancellationFeeRate, shown.GetProperty("lastMinuteRate").GetDecimal());
         Assert.Equal(BookingPolicy.FreeCancellationHours, shown.GetProperty("freeHoursForThisCustomer").GetInt32());
         Assert.Equal(BookingPolicy.OopsWindowMinutesStandard, shown.GetProperty("oopsMinutesForThisCustomer").GetInt32());
+        Assert.Equal("standard", shown.GetProperty("oopsRuleForThisCustomer").GetString());
 
         var members = payload.EnumerateObject().Select(p => p.Name).ToList();
         Assert.DoesNotContain("quotedTotalPrice", members);
@@ -206,6 +216,34 @@ public sealed class CreateOrderAuditEvidenceTests
         Assert.DoesNotContain(members, m => m.Contains("instructions", StringComparison.OrdinalIgnoreCase));
         Assert.DoesNotContain(command.CustomerEmail, snapshot.AfterJson!);
         Assert.DoesNotContain(command.CustomerAddress!.Street, snapshot.AfterJson!);
+    }
+
+    [Fact]
+    public async Task A_Booking_Records_The_Dirtiness_Level_And_The_Surcharge_The_Order_Stores()
+    {
+        _session.Setup(s => s.GetUserId()).Returns((string?)null);
+        _orderFactory
+            .Setup(f => f.CreateAsync(It.IsAny<CreateOrderInput>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((CreateOrderInput input, CancellationToken _) =>
+                OrderMockFactory.Generate(new OrderMockFactory.OrderPartial
+                {
+                    Id = CreatedOrderId,
+                    PaymentType = input.PaymentType,
+                    TotalPrice = input.RawSubtotal,
+                    CustomerAddress = input.Address,
+                    CleaningDateTime = input.CleaningDate,
+                    TenantId = "tenant-1",
+                }, currency: Czk).SetDirtinessSurcharge(input.DirtinessLevel, 360m));
+
+        var result = await CreateHandler().Handle(
+            CreateOrderTestData.ValidCommand(paymentType: PaymentType.Cash)
+                with { TermsAccepted = true, DirtinessLevel = DirtinessLevel.Heavy },
+            CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        var payload = Payload(_auditContext.DrainSnapshot());
+        Assert.Equal("heavy", payload.GetProperty("dirtinessLevel").GetString());
+        Assert.Equal(360m, payload.GetProperty("dirtinessSurchargeAmount").GetDecimal());
     }
 
     // A consented customer sends nothing (the validator lets that through); the handler records the
@@ -219,6 +257,67 @@ public sealed class CreateOrderAuditEvidenceTests
 
         Assert.True(result.IsSuccess);
         Assert.Equal(JsonValueKind.Null, Payload(_auditContext.DrainSnapshot()).GetProperty("termsAccepted").ValueKind);
+    }
+
+    /// <summary>
+    /// Owner ruling 2026-09-28: a signed-in customer who books without the tick books under the version
+    /// their own consent row holds — here one later than the platform text the resolver answers — never
+    /// under whatever happens to be in force.
+    /// </summary>
+    [Fact]
+    public async Task A_Signed_In_Booking_Without_The_Tick_Records_The_Version_The_Customer_Accepted()
+    {
+        _session.Setup(s => s.GetUserId()).Returns(UserId);
+        _consentRepository
+            .Setup(r => r.GetByUserIdNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(
+            [
+                UserConsent.Grant(UserId, ConsentType.TermsOfService, "203.0.113.9", "Chrome", "2026-09-20"),
+                UserConsent.Grant(UserId, ConsentType.PrivacyPolicy, "203.0.113.9", "Chrome", "2026-09-18"),
+            ]);
+
+        var result = await CreateHandler().Handle(
+            CreateOrderTestData.ValidCommand(paymentType: PaymentType.Cash, termsAccepted: null), CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        var payload = Payload(_auditContext.DrainSnapshot());
+        Assert.Equal("2026-09-20", payload.GetProperty("termsVersionAccepted").GetString());
+        Assert.Equal("2026-09-18", payload.GetProperty("privacyVersionAccepted").GetString());
+        _consentService.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task A_Signed_In_Booking_With_The_Tick_Moves_Both_Consents_To_The_Texts_In_Force_And_Records_That_Version()
+    {
+        _session.Setup(s => s.GetUserId()).Returns(UserId);
+        var privacy = LegalDocumentFixtures.Privacy();
+        _legalDocuments
+            .Setup(r => r.ResolveInForceAsync(LegalDocumentType.PrivacyPolicy, It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(privacy);
+
+        var result = await CreateHandler().Handle(
+            CreateOrderTestData.ValidCommand(paymentType: PaymentType.Cash, termsAccepted: true), CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        _consentService.Verify(
+            s => s.TryGrantAsync(UserId, ConsentType.TermsOfService, _terms, It.IsAny<CancellationToken>()), Times.Once);
+        _consentService.Verify(
+            s => s.TryGrantAsync(UserId, ConsentType.PrivacyPolicy, privacy, It.IsAny<CancellationToken>()), Times.Once);
+        var payload = Payload(_auditContext.DrainSnapshot());
+        Assert.Equal(_terms.Version, payload.GetProperty("termsVersionAccepted").GetString());
+        Assert.Equal(privacy.Version, payload.GetProperty("privacyVersionAccepted").GetString());
+    }
+
+    [Fact]
+    public async Task A_Guest_Tick_Writes_No_Consent_Row()
+    {
+        _session.Setup(s => s.GetUserId()).Returns((string?)null);
+
+        var result = await CreateHandler().Handle(
+            CreateOrderTestData.ValidCommand(paymentType: PaymentType.Cash, termsAccepted: true), CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        _consentService.VerifyNoOtherCalls();
     }
 
     [Fact]
@@ -244,8 +343,31 @@ public sealed class CreateOrderAuditEvidenceTests
         Assert.Equal(
             BookingPolicy.OopsWindowMinutesPlus,
             payload.GetProperty("cancellationPolicyShown").GetProperty("oopsMinutesForThisCustomer").GetInt32());
+        Assert.Equal("plus", payload.GetProperty("cancellationPolicyShown").GetProperty("oopsRuleForThisCustomer").GetString());
         Assert.Equal("card", payload.GetProperty("paymentType").GetString());
         Assert.DoesNotContain("emp-favourite", snapshot!.AfterJson!);
+    }
+
+    /// <summary>
+    /// Owner ruling 2026-09-28: a customer's first booking ever carries the 60-minute window, and the
+    /// booking evidence records which rule gave it.
+    /// </summary>
+    [Fact]
+    public async Task A_First_Booking_Records_Sixty_Minutes_And_The_First_Booking_Rule()
+    {
+        _session.Setup(s => s.GetUserId()).Returns((string?)null);
+        _earlierBookings
+            .Setup(r => r.IsFirstBookingAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        var result = await CreateHandler().Handle(
+            CreateOrderTestData.ValidCommand(paymentType: PaymentType.Cash) with { TermsAccepted = true },
+            CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        var shown = Payload(_auditContext.DrainSnapshot()).GetProperty("cancellationPolicyShown");
+        Assert.Equal(BookingPolicy.OopsWindowMinutesFirstBooking, shown.GetProperty("oopsMinutesForThisCustomer").GetInt32());
+        Assert.Equal("firstBooking", shown.GetProperty("oopsRuleForThisCustomer").GetString());
     }
 
     [Fact]

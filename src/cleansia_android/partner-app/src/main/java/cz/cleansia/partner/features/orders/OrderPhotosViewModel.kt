@@ -87,43 +87,54 @@ class OrderPhotosViewModel @Inject constructor(
     }
 
     /**
-     * Downscale, strip metadata from and upload the picked photo.
+     * Downscale, strip metadata from and upload the captured photo, then delete the capture.
      *
      * **The picker callback is dispatched on the MAIN thread**, so reading and encoding inline froze the
      * UI on a multi-megabyte photo. The uploading flag is set BEFORE compression, not at the network
      * call — set later the cleaner gets a second of dead tap. Single-flight guarded, matching iOS.
      * -> /mobile-app/patterns#image-upload
+     *
+     * The capture is deleted whatever the outcome: nothing retries from it, and a job photo must not
+     * outlive its upload on the device.
      */
     fun compressAndUpload(type: PhotoType, uri: Uri) {
         if (_mutation.value.isUploading) return
         _mutation.update { it.copy(isUploading = true) }
         viewModelScope.launch {
-            val encoded = ImageCompressor.compressToBase64(appContext.contentResolver, uri)
-            if (encoded == null) {
-                // Unreadable, corrupt, or a format this API level can't decode
-                // (HEIC below API 28). Must be visible: the tile has been
-                // spinning, and a silent reset reads as the app ignoring the tap.
-                snackbar.showError(appContext.getString(R.string.photo_encode_failed))
-                _mutation.update { it.copy(isUploading = false) }
-                return@launch
+            try {
+                upload(type, uri)
+            } finally {
+                runCatching { appContext.contentResolver.delete(uri, null, null) }
             }
-            val result = ordersRepository.uploadPhoto(
-                orderId = orderId,
-                photoType = type,
-                fileName = encoded.fileName,
-                contentType = encoded.contentType,
-                base64Content = encoded.base64,
-            )
-            when (result) {
-                is ApiResult.Success -> {
-                    _mutation.update { it.copy(isUploading = false) }
-                    _mutationVersion.update { it + 1 }
-                    refresh()
-                }
-                is ApiResult.Error -> {
-                    snackbar.showError(errorTranslator.translate(result.error))
-                    _mutation.update { it.copy(isUploading = false) }
-                }
+        }
+    }
+
+    private suspend fun upload(type: PhotoType, uri: Uri) {
+        val encoded = ImageCompressor.compressToBase64(appContext.contentResolver, uri)
+        if (encoded == null) {
+            // Unreadable, corrupt, or a format this API level can't decode
+            // (HEIC below API 28). Must be visible: the tile has been
+            // spinning, and a silent reset reads as the app ignoring the tap.
+            snackbar.showError(appContext.getString(R.string.photo_encode_failed))
+            _mutation.update { it.copy(isUploading = false) }
+            return
+        }
+        val result = ordersRepository.uploadPhoto(
+            orderId = orderId,
+            photoType = type,
+            fileName = encoded.fileName,
+            contentType = encoded.contentType,
+            base64Content = encoded.base64,
+        )
+        when (result) {
+            is ApiResult.Success -> {
+                _mutation.update { it.copy(isUploading = false) }
+                _mutationVersion.update { it + 1 }
+                refresh()
+            }
+            is ApiResult.Error -> {
+                snackbar.showError(errorTranslator.translate(result.error))
+                _mutation.update { it.copy(isUploading = false) }
             }
         }
     }

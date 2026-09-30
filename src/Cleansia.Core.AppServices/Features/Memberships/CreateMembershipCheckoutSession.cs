@@ -84,7 +84,7 @@ public class CreateMembershipCheckoutSession
                     nameof(command.PlanCode), BusinessErrorMessage.MembershipPlanNotFound));
             }
 
-            var existing = await userMembershipRepository.GetActiveForUserAsync(user.Id, cancellationToken);
+            var existing = await userMembershipRepository.GetLifecycleForUserAsync(user.Id, cancellationToken);
             if (existing != null)
             {
                 return BusinessResult.Failure<Response>(new Error(

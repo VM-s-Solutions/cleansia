@@ -109,6 +109,7 @@ struct PeriodPaySummary: Equatable {
     let totalOrders: Int
     let totalBasePay: Double
     let totalExtrasPay: Double
+    let totalDirtinessPay: Double
     let totalExpensesPay: Double
     let totalBonusPay: Double
     let totalDeductionPay: Double
@@ -126,6 +127,7 @@ extension PeriodPaySummary {
         totalOrders = try dto.totalOrders.require("totalOrders")
         totalBasePay = try dto.totalBasePay.require("totalBasePay")
         totalExtrasPay = try dto.totalExtrasPay.require("totalExtrasPay")
+        totalDirtinessPay = try dto.totalDirtinessPay.require("totalDirtinessPay")
         totalExpensesPay = try dto.totalExpensesPay.require("totalExpensesPay")
         totalBonusPay = try dto.totalBonusPay.require("totalBonusPay")
         totalDeductionPay = try dto.totalDeductionPay.require("totalDeductionPay")
@@ -142,6 +144,9 @@ struct OrderPayLine: Equatable, Identifiable {
     let orderNumber: String?
     let totalPay: Double
     let createdOn: Date?
+    let deductionPay: Double
+    let deductionReason: String?
+    let lineType: PayLineType
 }
 
 extension OrderPayLine {
@@ -151,5 +156,29 @@ extension OrderPayLine {
         orderNumber = dto.orderNumber
         totalPay = try dto.totalPay.require("totalPay")
         createdOn = dto.createdOn
+        deductionPay = try dto.deductionPay.require("deductionPay")
+        deductionReason = dto.deductionReason
+        lineType = try dto.lineType.require("lineType")
+    }
+}
+
+/// Cash the cleaner took at the door and has not yet handed over. `floatCap` is the company's limit, nil
+/// when it sets none; above it `cashJobsHidden` and the server keeps cash jobs off their board.
+///
+/// **Refuse the list.** Each row is a sum the cleaner owes the company, so a missing amount must not
+/// read as nothing owed, and a missing flag must not read as cash jobs still offered.
+struct CashHeld: Equatable {
+    let currencyCode: String?
+    let amount: Double
+    let floatCap: Double?
+    let cashJobsHidden: Bool
+}
+
+extension CashHeld {
+    init(_ dto: CashHeldDto) throws {
+        currencyCode = dto.currencyCode
+        amount = try dto.amount.require("amount")
+        floatCap = dto.floatCap
+        cashJobsHidden = try dto.cashJobsHidden.require("cashJobsHidden")
     }
 }

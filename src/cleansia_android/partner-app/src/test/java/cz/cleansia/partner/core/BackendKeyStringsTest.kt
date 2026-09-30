@@ -1,5 +1,6 @@
 package cz.cleansia.partner.core
 
+import cz.cleansia.partner.features.orders.LOCKOUT_WAIT_MINUTES
 import cz.cleansia.partner.features.orders.ProfileSection
 import cz.cleansia.partner.features.profile.JobRadius
 import java.io.File
@@ -89,6 +90,91 @@ class BackendKeyStringsTest {
                 .map { (key, resName) -> "$locale/$resName ($key)" }
         }
         assertTrue("these refusals render raw: $raw", raw.isEmpty())
+    }
+
+    /**
+     * `MarkCashCollected` refuses cash on a card order whose booking could not have chosen it. The
+     * apps offer the action on cash orders only, but the endpoint answers any assigned cleaner.
+     */
+    @Test
+    fun `the cash-on-card-order refusal resolves to a sentence in all five locales`() {
+        val resName = "error_order_cash_not_allowed_on_card_order"
+        val raw = locales.filterNot { resName in declared(it) }
+        assertTrue("order.cash_not_allowed_on_card_order renders raw in $raw", raw.isEmpty())
+    }
+
+    /** `MarkCashCollected` refuses an order with nothing left to pay (settled, refunded, disputed). */
+    @Test
+    fun `the nothing-outstanding refusal resolves to a sentence in all five locales`() {
+        val resName = "error_order_payment_not_outstanding"
+        val raw = locales.filterNot { resName in declared(it) }
+        assertTrue("order.payment_not_outstanding renders raw in $raw", raw.isEmpty())
+    }
+
+    /** `MarkCashCollected` refuses an order part-paid from customer credit: the job sheet's figure is not owed. */
+    @Test
+    fun `the credit-order cash refusal resolves to a sentence in all five locales`() {
+        val resName = "error_credit_cash_not_collectable_on_credit_order"
+        val raw = locales.filterNot { resName in declared(it) }
+        assertTrue("credit.cash_not_collectable_on_credit_order renders raw in $raw", raw.isEmpty())
+    }
+
+    /**
+     * `TakeOrder` and `AcceptLegalDocument` refuse on the cleaner documents, the photo endpoints
+     * outside their window, and `GrantConsent`/`WithdrawConsent` on a document-backed consent.
+     */
+    @Test
+    fun `every document, photo-window and consent refusal resolves to a sentence in all five locales`() {
+        val keys = listOf(
+            "employee.legal_documents_not_accepted",
+            "legal.document_not_in_force",
+            "order.photo.window_closed",
+            "order.photo.locked",
+            "gdpr.consent_not_editable",
+        )
+        val raw = locales.flatMap { locale ->
+            val declared = declared(locale)
+            keys
+                .map { it to "error_" + it.replace('.', '_').lowercase() }
+                .filterNot { (_, resName) -> resName in declared }
+                .map { (key, resName) -> "$locale/$resName ($key)" }
+        }
+        assertTrue("these refusals render raw: $raw", raw.isEmpty())
+    }
+
+    /**
+     * `ReportOrderLockout` refuses a report too early, without an entrance photo, a second time or on a
+     * finished job; `TakeOrder` refuses a cash job to a cleaner above the company's cash float cap.
+     */
+    @Test
+    fun `every lockout and cash float cap refusal resolves to a sentence in all five locales`() {
+        val keys = listOf(
+            "order.lockout.too_early",
+            "order.lockout.photo_required",
+            "order.lockout.already_reported",
+            "order.lockout.order_closed",
+            "order.cash_float_cap_exceeded",
+        )
+        val raw = locales.flatMap { locale ->
+            val declared = declared(locale)
+            keys
+                .map { it to "error_" + it.replace('.', '_').lowercase() }
+                .filterNot { (_, resName) -> resName in declared }
+                .map { (key, resName) -> "$locale/$resName ($key)" }
+        }
+        assertTrue("these refusals render raw: $raw", raw.isEmpty())
+    }
+
+    @Test
+    fun `the too-early lockout refusal states the wait in all five locales`() {
+        val silent = locales.filterNot { locale ->
+            Regex("<string name=\"error_order_lockout_too_early\">(.*?)</string>")
+                .find(File(resDir, "$locale/strings.xml").readText())
+                ?.groupValues
+                ?.get(1)
+                ?.contains(LOCKOUT_WAIT_MINUTES.toString()) == true
+        }
+        assertTrue("error_order_lockout_too_early does not state $LOCKOUT_WAIT_MINUTES minutes in $silent", silent.isEmpty())
     }
 
     @Test

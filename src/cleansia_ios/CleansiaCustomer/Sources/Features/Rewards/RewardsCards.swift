@@ -37,15 +37,8 @@ private struct TierLadderRow: View {
     let floor: TierFloorLabel
 
     private var discountText: String {
-        switch LoyaltyPresentation.discountSummary(tierInfo, floorApplies: floor.applies) {
-        case .noDiscount: L10n.Rewards.noDiscountYet
-        case let .basic(percent): L10n.Rewards.discountBasic(percent)
-        case let .minOrder(percent, minOrder):
-            L10n.Rewards.discountMinOrder(
-                percent,
-                OrdersFormat.price(Double(minOrder), currencyCode: floor.currencyCode)
-            )
-        }
+        LoyaltyPresentation.discountSummary(tierInfo, floorApplies: floor.applies)
+            .label(currencyCode: floor.currencyCode)
     }
 
     var body: some View {

@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Features.Legal;
 using Cleansia.Core.AppServices.Mappers;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
@@ -31,19 +32,25 @@ public class TakeOrder
         private readonly IOrderAccessService _orderAccessService;
         private readonly ICurrencyResolutionService _currencyResolutionService;
         private readonly ILegalDocumentRepository _legalDocumentRepository;
+        private readonly ILegalDocumentResolver _legalDocumentResolver;
+        private readonly IUserConsentRepository _userConsentRepository;
 
         public Validator(
             IOrderRepository orderRepository,
             IEmployeeRepository employeeRepository,
             IOrderAccessService orderAccessService,
             ICurrencyResolutionService currencyResolutionService,
-            ILegalDocumentRepository legalDocumentRepository)
+            ILegalDocumentRepository legalDocumentRepository,
+            ILegalDocumentResolver legalDocumentResolver,
+            IUserConsentRepository userConsentRepository)
         {
             _orderRepository = orderRepository;
             _employeeRepository = employeeRepository;
             _orderAccessService = orderAccessService;
             _currencyResolutionService = currencyResolutionService;
             _legalDocumentRepository = legalDocumentRepository;
+            _legalDocumentResolver = legalDocumentResolver;
+            _userConsentRepository = userConsentRepository;
 
             // ONE ordered chain, deliberately (ADR-0037 D6). Cascade.Stop is rule-LEVEL and
             // FluentValidation's class-level default is Continue, so a second chain here would run
@@ -79,10 +86,14 @@ public class TakeOrder
                 .WithMessage(BusinessErrorMessage.EmployeeProfileIncomplete)
                 .MustAsync(EmployeeIsApprovedAsync)
                 .WithMessage(BusinessErrorMessage.EmployeeNotApproved)
+                .MustAsync(HoldsCurrentCleanerDocumentsAsync)
+                .WithMessage(BusinessErrorMessage.EmployeeLegalDocumentsNotAccepted)
                 .MustAsync(NotAlreadyAssignedToEmployeeAsync)
                 .WithMessage(BusinessErrorMessage.EmployeeAlreadyAssignedToOrder)
                 .MustAsync(NotExceedWeeklyOrderLimitAsync)
                 .WithMessage(BusinessErrorMessage.WeeklyOrderLimitReached)
+                .MustAsync(NotACashJobAboveTheFloatCapAsync)
+                .WithMessage(BusinessErrorMessage.OrderCashFloatCapExceeded)
                 .MustAsync(NotHaveTimeConflictAsync)
                 .WithMessage(BusinessErrorMessage.TimeConflict)
                 .MustAsync(TextBelongsToOrderContractAsync)
@@ -132,10 +143,11 @@ public class TakeOrder
         {
             var probe = await LoadOfferabilityProbeAsync(command.OrderId, cancellationToken);
             return probe is not null && OrderAvailability.IsOfferable(
-                probe.CurrentStatus, probe.PaymentType, probe.PaymentStatus, probe.RecurringTemplateId);
+                probe.CurrentStatus, probe.PaymentType, probe.PaymentStatus, probe.RecurringTemplateId,
+                probe.CustomerConfirmedAt);
         }
 
-        /// <summary>The four columns <see cref="OrderAvailability"/> reads.</summary>
+        /// <summary>The five columns <see cref="OrderAvailability"/> reads.</summary>
         private Task<OfferabilityProbe?> LoadOfferabilityProbeAsync(string orderId, CancellationToken cancellationToken) =>
             _orderRepository
                 .GetQueryable()
@@ -144,14 +156,16 @@ public class TakeOrder
                     o.CurrentStatus,
                     o.PaymentType,
                     o.PaymentStatus,
-                    o.RecurringTemplateId))
+                    o.RecurringTemplateId,
+                    o.CustomerConfirmedAt))
                 .FirstOrDefaultAsync(cancellationToken)!;
 
         private sealed record OfferabilityProbe(
             OrderStatus CurrentStatus,
             PaymentType PaymentType,
             PaymentStatus PaymentStatus,
-            string? RecurringTemplateId);
+            string? RecurringTemplateId,
+            DateTime? CustomerConfirmedAt);
 
         private async Task<bool> HasAvailableSpotsAsync(Command command, CancellationToken cancellationToken)
         {
@@ -214,6 +228,18 @@ public class TakeOrder
             return employee?.ContractStatus == ContractStatus.Approved;
         }
 
+        private async Task<bool> HoldsCurrentCleanerDocumentsAsync(Command command, CancellationToken cancellationToken)
+        {
+            var employeeId = await _orderAccessService.GetCallerEmployeeIdAsync(cancellationToken);
+            if (string.IsNullOrEmpty(employeeId)) return false;
+
+            var employee = await _employeeRepository.GetByIdAsync(employeeId, cancellationToken);
+            if (employee is null) return false;
+
+            return await CleanerLegalDocuments.AllAcceptedAsync(
+                _legalDocumentResolver, _userConsentRepository, employee.UserId, employee.WorkCountryId, cancellationToken);
+        }
+
         /// <summary>
         /// The weekly cap, which is now OFF for everyone unless an admin turned it on for one person.
         ///
@@ -239,6 +265,27 @@ public class TakeOrder
             var weeklyCount = await _orderRepository.GetEmployeeOrderCountThisWeekAsync(employeeId, cancellationToken);
 
             return weeklyCount < limit;
+        }
+
+        /// <summary>
+        /// A cleaner who holds more of the company's cash than its float cap does not see cash jobs on the
+        /// board (owner ruling 2026-09-28, decision 25); one reached another way is refused with that reason.
+        /// </summary>
+        private async Task<bool> NotACashJobAboveTheFloatCapAsync(Command command, CancellationToken cancellationToken)
+        {
+            var order = await _orderRepository
+                .GetQueryable()
+                .Where(o => o.Id == command.OrderId)
+                .Select(o => new { o.PaymentType, o.CurrencyId })
+                .FirstOrDefaultAsync(cancellationToken);
+            if (order is not { PaymentType: PaymentType.Cash })
+            {
+                return true;
+            }
+
+            var employeeId = await _orderAccessService.GetCallerEmployeeIdAsync(cancellationToken);
+            return string.IsNullOrEmpty(employeeId)
+                || !await _orderAccessService.CashJobsHiddenFromAsync(employeeId, order.CurrencyId, cancellationToken);
         }
 
         /// <summary>

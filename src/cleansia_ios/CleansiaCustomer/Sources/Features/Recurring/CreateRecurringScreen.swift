@@ -31,6 +31,7 @@ struct CreateRecurringScreen: View {
             addressClient: LiveRecurringSavedAddressClient(),
             orderClient: LiveOrderClient(),
             quoteClient: LiveQuoteClient(),
+            cleanersClient: LiveServingCleanersClient(),
             snackbar: snackbar
         ))
         self.savedAddressRepository = savedAddressRepository
@@ -72,6 +73,10 @@ struct CreateRecurringScreen: View {
                     onRoomsChange: vm.setRooms,
                     onBathroomsChange: vm.setBathrooms
                 )
+                VStack(alignment: .leading, spacing: Spacing.s) {
+                    SectionLabel(text: L10n.Booking.dirtinessQuestion)
+                    DirtinessPicker(selected: vm.formState.dirtiness, onSelect: vm.setDirtiness)
+                }
                 PaymentSection(
                     selected: vm.formState.paymentType,
                     cash: vm.cashEligibility,
@@ -80,12 +85,35 @@ struct CreateRecurringScreen: View {
                 )
                 StartsSection(
                     startsOn: vm.formState.startsOn,
-                    earliest: vm.earliestStart,
+                    range: vm.startRange,
                     onChange: vm.setStartsOn
                 )
+                PreferredCleanerPicker(
+                    cleaners: vm.servingCleaners,
+                    selectedId: vm.formState.preferredEmployeeId,
+                    onSelect: vm.setPreferredEmployeeId
+                )
+
+                if !vm.isEditing {
+                    earlyPerformanceRow
+                }
 
                 if let appliesNotice = vm.appliesNotice {
                     AppliesNotice(text: appliesNotice)
+                }
+
+                if vm.preferredCleanerRefused {
+                    PaymentNote(
+                        systemImage: "exclamationmark.circle",
+                        text: L10n.Recurring.preferredCleanerRefused,
+                        warns: true
+                    )
+                    CleansiaOutlinedButton(
+                        L10n.Recurring.saveWithoutPreferredCleaner,
+                        enabled: vm.isValid && !vm.submitState.isSubmitting
+                    ) {
+                        Task { if await vm.saveWithoutPreferredCleaner() { onCreated() } }
+                    }
                 }
 
                 CleansiaPrimaryButton(
@@ -114,6 +142,18 @@ struct CreateRecurringScreen: View {
             isPresented: $showAddressManager,
             onDismiss: { Task { await vm.reloadAddresses() } },
             content: { addressManager }
+        )
+    }
+
+    /// One tick covers every occurrence the schedule creates; an edit asks nothing, the schedule's act stands.
+    private var earlyPerformanceRow: some View {
+        CleansiaConsentCheckbox(
+            checked: Binding(
+                get: { vm.formState.earlyPerformanceRequested },
+                set: vm.setEarlyPerformanceRequested
+            ),
+            markdown: L10n.Booking.earlyPerformanceRequest,
+            toggleAccessibilityLabel: L10n.Booking.earlyPerformanceRequestToggle
         )
     }
 
@@ -240,20 +280,17 @@ private struct TimeSection: View {
     let time: String
     let onChange: (String) -> Void
 
-    private var binding: Binding<Date> {
-        Binding(
-            get: { RecurringTimeParse.date(from: time) },
-            set: { onChange(RecurringTime.format($0)) }
-        )
-    }
-
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.s) {
             SectionLabel(text: L10n.Recurring.createTimeLabel)
-            DatePicker("", selection: binding, displayedComponents: .hourAndMinute)
-                .labelsHidden()
-                .datePickerStyle(.wheel)
-                .frame(maxWidth: .infinity)
+            Picker(L10n.Recurring.createTimeLabel, selection: Binding(get: { time }, set: onChange)) {
+                ForEach(RecurringTime.bookableTimes, id: \.self) { slot in
+                    Text(slot).tag(slot)
+                }
+            }
+            .labelsHidden()
+            .pickerStyle(.wheel)
+            .frame(maxWidth: .infinity)
         }
     }
 }
@@ -313,15 +350,25 @@ private struct PropertySizeSection: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: Spacing.s) {
-            counter(label: L10n.Recurring.createRoomsLabel, value: rooms, onChange: onRoomsChange)
-            counter(label: L10n.Recurring.createBathroomsLabel, value: bathrooms, onChange: onBathroomsChange)
+            counter(
+                label: L10n.Recurring.createRoomsLabel,
+                value: rooms,
+                maximum: PropertySize.maxRooms,
+                onChange: onRoomsChange
+            )
+            counter(
+                label: L10n.Recurring.createBathroomsLabel,
+                value: bathrooms,
+                maximum: PropertySize.maxBathrooms,
+                onChange: onBathroomsChange
+            )
         }
     }
 
-    private func counter(label: String, value: Int, onChange: @escaping (Int) -> Void) -> some View {
+    private func counter(label: String, value: Int, maximum: Int, onChange: @escaping (Int) -> Void) -> some View {
         VStack(alignment: .leading, spacing: Spacing.s) {
             SectionLabel(text: label)
-            PropertyStepper(label: "\(value)", value: value, minimum: 0, onChange: onChange)
+            PropertyStepper(label: "\(value)", value: value, minimum: 0, maximum: maximum, onChange: onChange)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -426,12 +473,12 @@ private struct PaymentSection: View {
 
 private struct StartsSection: View {
     let startsOn: Date?
-    let earliest: Date
+    let range: ClosedRange<Date>
     let onChange: (Date) -> Void
 
     private var binding: Binding<Date> {
         Binding(
-            get: { startsOn ?? earliest },
+            get: { startsOn ?? range.lowerBound },
             set: onChange
         )
     }
@@ -439,7 +486,7 @@ private struct StartsSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.s) {
             SectionLabel(text: L10n.Recurring.createStartsLabel)
-            DatePicker("", selection: binding, in: earliest..., displayedComponents: .date)
+            DatePicker("", selection: binding, in: range, displayedComponents: .date)
                 .labelsHidden()
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -482,15 +529,5 @@ private struct SelectableRow: View {
         .buttonStyle(.plain)
         .disabled(!enabled)
         .opacity(enabled ? 1 : 0.5)
-    }
-}
-
-enum RecurringTimeParse {
-    static func date(from hhmm: String) -> Date {
-        let parts = hhmm.split(separator: ":")
-        var components = DateComponents()
-        components.hour = parts.first.flatMap { Int($0) } ?? 10
-        components.minute = parts.count > 1 ? Int(parts[1]) ?? 0 : 0
-        return Calendar.current.date(from: components) ?? Date()
     }
 }

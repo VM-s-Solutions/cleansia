@@ -3,8 +3,10 @@
 > Introduced by **ADR-0065** (`docs/decisions/adr-0065.md`, **`accepted`** 2026-09-19; owner ruling on
 > D5, 2026-09-19: *"both in-app and email"*). Shipped as T-0768 (the notifier's feed half, the admin feed
 > routes, the first event), T-0774 (the e-mail channel, the template, the mailbox key), T-0775 (the seven
-> remaining sites) and T-0769 (the admin web bell and page); the ninth event rides T-0770 (ADR-0067). The
-> files that are the role: `Core.Domain/Notifications/AdminNotificationEventCatalog.cs` (the nine keys) ·
+> remaining sites) and T-0769 (the admin web bell and page); the ninth event rides T-0770 (ADR-0067), the
+> tenth — a chargeback that matches no order — shipped 2026-09-28, and the eleventh to thirteenth — a job
+> not started, a refund stuck, a refund to retry — with the owner rulings of 2026-09-28. The
+> files that are the role: `Core.Domain/Notifications/AdminNotificationEventCatalog.cs` (the thirteen keys) ·
 > `Core.AppServices/Features/AdminNotifications/AdminEventCatalog.cs` (per key: the audience and the exact
 > arg set, in e-mail order) · `Core.AppServices/Services/{IAdminNotifier,AdminNotifier}.cs` ·
 > `Core.AppServices/Services/EmailService.AdminNotification.cs` (the copy, five locales) ·
@@ -22,7 +24,7 @@ failing e-mail can never fail the command, and nothing the notifier reads depend
 
 ## Collaborators
 
-- **`AdminNotificationEventCatalog`** (Domain) — the nine `admin.*` keys and `All`; `NotificationFeedEventKeys.Admin`
+- **`AdminNotificationEventCatalog`** (Domain) — the thirteen `admin.*` keys and `All`; `NotificationFeedEventKeys.Admin`
   **is** `All`, so the feed audience `NotificationFeedAudience.Admin = 2` serves the catalogue by
   construction. Disjoint from the customer and partner keysets; `IsFeedEvent` does not know them, so the
   push seam cannot write an admin row. Every key maps to `null` in `GetCategoryFor`: no category, nothing
@@ -31,10 +33,12 @@ failing e-mail can never fail the command, and nothing the notifier reads depend
   is the **exact** set of arg names a site passes, in the order the copy substitutes `{n}`; the notifier
   throws on an undeclared or a missing arg, so the copy and the site cannot disagree on what `{1}` is and a
   site cannot smuggle a name in. `Audience` is the **name of an administrator set** (ADR-0066 D8) — never a
-  policy, because the notifier filters rows, not principals: order events, disputes, payment failures and
-  crew lost → `SupportOrAbove`; erasure failures → `ManagerOrAbove`; the three company milestones →
-  `AdministratorOnly`; **`admin.dispute.chargeback` → `AdminOnly`, every role** — Support answers the bank,
-  the Accountant reconciles the money that left, so the Accountant's bell is not empty by construction.
+  policy, because the notifier filters rows, not principals: order events, disputes, payment failures,
+  crew lost and a cleaner not started → `SupportOrAbove`; erasure failures → `ManagerOrAbove`; the three
+  company milestones → `AdministratorOnly`; **`admin.dispute.chargeback`, `admin.dispute.chargeback_unmatched`,
+  `admin.payment.refund_stuck` and `admin.payment.refund_needs_retry` → `AdminOnly`, every role** — Support
+  answers the customer or the bank, the Accountant reconciles the money, so the Accountant's bell is not
+  empty by construction.
 - **`AdminEvent(Key, TenantId, Subject, Args)`** — the call. `TenantId` is an **argument**; `Subject` is the
   dedup subject, unique per logical event across requests (below); `Args` never carries a person.
 - **`IUserRepository.GetActiveAdministratorsAsync(tenantId)`** — `IgnoreQueryFilters()` with an explicit
@@ -72,14 +76,24 @@ failing e-mail can never fail the command, and nothing the notifier reads depend
   `.BodyUnderWay` for a crew lost `OnTheWay`/`InProgress`; `cause` through `{key}.Cause.{value}`; an ISO
   instant as `dd.MM.yyyy HH:mm UTC`, a `yyyy-MM-dd` day as `d. M. yyyy`) — in-code defaults per locale under
   admin `EmailTemplateTranslation` rows for `EmailType.AdminNotification = 10`.
-- **The nine sites** — each names the company from the subject it already holds, never from the override:
+- **The sites** — each names the company from the subject it already holds, never from the override:
   `NewOrderAdminNotifier.NotifyIfOfferableAsync` (shared by `OrderFactory`, `HandlePaymentNotification`'s
   paid arm and `ConfirmRecurringOrder`; the same `OrderAvailability.IsOfferable` read as the preferred
   cleaner's offer; a null `TenantId` is a warning and nothing written) · `OrderCrewLostNotifier.NotifyAsync`
   (shared by `DropOrder` and `RejectEmployee`, whenever the crew emptied, subject `{orderId}:{releasedAssignmentId}`)
   · `CreateDispute` (subject the dispute id) · `HandlePaymentNotification`'s chargeback arms (subject the Stripe
-  dispute id; the open customer dispute's id in the args when one exists) and its `payment_intent.payment_failed`
+  dispute id; the open customer dispute's id in the args when one exists), its unmatched-chargeback arm
+  (a `charge.dispute.created` no order carries, found neither by stored intent nor through its Checkout
+  Session: **one event per company** in `ITenantRepository.GetAllIdsAsync()`, because the Stripe account is
+  shared, subject `{stripeDisputeId}:{tenantId}` so the companies' rows never collide on the outbox key,
+  args `amount` and `stripeDisputeId`) and its `payment_intent.payment_failed`
   arm (subject the order id, guarded by `PaymentStatus == Pending && CurrentStatus != Cancelled && !AnyForEventAsync`)
+  · `CleanerNoShow.AlertAsync` (`admin.order.cleaner_not_started`, shared by `SendCleanerJobReminders`' third arm,
+  `ReportGuestCleanerNoShow` and `CreateDispute`'s *service not provided* filing on a staffed job nobody
+  started; subject the order id, guarded by `AnyForEventAsync` on `orderId`, so whichever comes first raises it
+  and the order's e-mail outbox key is written once) · `RedrivePendingRefunds` (`admin.payment.refund_stuck` /
+  `refund_needs_retry` once a refund is 24 h old; subject the refund id, guarded by `AnyForEventAsync` on
+  `orderId`, inside the per-company loop and its per-row commit)
   · `RetryFailedUserDeletions` (subject `{requestId}:{day}`, in a fresh scope with the override set and its own
   commit — the failing walk's scope is discarded by design) · `WindDownCompany` (only when a date is set;
   subject `{tenantId}:{requestInstant}`) · `CompanyWindDownService` (only when `cancelled + refunded +
@@ -96,7 +110,7 @@ failing e-mail can never fail the command, and nothing the notifier reads depend
 - **The admin web** — `AdminNotificationBadgeService` polls `unread-count` every 60 s while the document is
   visible and stamps the badge on the sidebar's *Notifications* entry (first in the list); the
   `/notifications` page renders each row from `pages.notifications.events.<key>.*`, deep-links by event
-  family (order/payment → order detail, dispute → dispute detail, erasure → data protection, company →
+  family (order/payment — the refund alerts included → order detail, dispute → dispute detail, erasure → data protection, company →
   company lifecycle), marks read on click, and marks all read up to the newest row's `createdOn` plus one
   millisecond (the column is microsecond-resolution).
 
@@ -131,7 +145,8 @@ failing e-mail can never fail the command, and nothing the notifier reads depend
    exactly `EmailArgOrder` and the notifier throws otherwise.
 5. **Each site calls once, inside the business write's unit of work, and a redelivery adds nothing**: the
    Stripe short-circuit for the webhook arms; the candidate predicate for the daily retry; the counts guard
-   for the wind-down run; `AnyForEventAsync` for the decline and the archive.
+   for the wind-down run; `AnyForEventAsync` for the decline, the archive, the not-started alert and the
+   two refund alerts.
 6. **The four admin routes answer 401 anonymous, 403 to an Employee token, 200 to an administrator**; a
    mark-read on another administrator's row is refused; a mark-read writes **no** `AdminActionAudits` row.
 7. **The settings page's `Email` branch** refuses a malformed address client-side with the server's

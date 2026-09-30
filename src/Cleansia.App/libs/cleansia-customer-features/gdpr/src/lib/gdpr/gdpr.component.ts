@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
 import { CleansiaButtonComponent, CleansiaTitleComponent } from '@cleansia/components';
-import { ConsentType } from '@cleansia/customer-services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { FormsModule } from '@angular/forms';
@@ -30,15 +29,6 @@ export class GdprComponent implements OnInit {
   private readonly confirmService = inject(ConfirmationService);
   protected readonly facade = inject(GdprFacade);
 
-  readonly ConsentType = ConsentType;
-
-  consentLabels: Record<number, string> = {
-    [ConsentType.TermsOfService]: 'pages.gdpr.consent_types.terms_of_service',
-    [ConsentType.PrivacyPolicy]: 'pages.gdpr.consent_types.privacy_policy',
-    [ConsentType.MarketingEmails]: 'pages.gdpr.consent_types.marketing_emails',
-    [ConsentType.DataProcessing]: 'pages.gdpr.consent_types.data_processing',
-  };
-
   // Re-expose facade signals/methods for template usage without refactoring the markup.
   readonly isAuthenticated = this.facade.isAuthenticated;
   readonly loadingConsents = this.facade.loadingConsents;
@@ -51,14 +41,6 @@ export class GdprComponent implements OnInit {
     } else {
       this.facade.loadingConsents.set(false);
     }
-  }
-
-  toggleConsent(consentType: ConsentType, granted: boolean): void {
-    this.facade.toggleConsent(consentType, granted);
-  }
-
-  isConsentGranted(type: ConsentType): boolean {
-    return this.facade.isConsentGranted(type);
   }
 
   exportData(): void {

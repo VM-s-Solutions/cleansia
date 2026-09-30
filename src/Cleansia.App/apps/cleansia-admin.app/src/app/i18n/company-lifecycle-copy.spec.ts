@@ -79,10 +79,10 @@ const countFacts = [...dtoMembers.entries()].filter(([, type]) => type === 'numb
 const factIds = [...countFacts, ...DATED_FACTS];
 
 describe('company lifecycle copy', () => {
-  it('reads the five states and sixteen facts off the generated client', () => {
+  it('reads the five states and seventeen facts off the generated client', () => {
     expect(stateNames).toEqual(['Operating', 'WindingDown', 'Deactivated', 'Frozen', 'Archived']);
     expect([...dtoMembers.keys()]).toEqual(Object.keys(CompanyLifecycleDto.fromJS({})));
-    expect(countFacts).toHaveLength(13);
+    expect(countFacts).toHaveLength(14);
     expect(DATED_FACTS.filter((id) => dtoMembers.get(id) !== 'Date | undefined')).toEqual([]);
   });
 

@@ -1,3 +1,4 @@
+using Azure.Identity;
 using Azure.Storage.Queues;
 using Cleansia.Core.Queue.Abstractions;
 using Microsoft.Extensions.Configuration;
@@ -7,9 +8,15 @@ namespace Cleansia.Infra.Azure.Storage.Queues;
 
 public static class QueueExtensions
 {
+    private const string ConnectionName = "QueueStorageConnectionString";
+
     public static IServiceCollection AddAzureStorageQueues(this IServiceCollection services, IConfiguration configuration)
     {
-        var connectionString = configuration.GetConnectionString("QueueStorageConnectionString");
+        // The Functions host binds every [QueueTrigger(Connection = ConnectionName)] identity-based from
+        // `<ConnectionName>__queueServiceUri`, so this process reads the same setting: one app setting
+        // moves the triggers and the senders to managed identity together. It wins over the connection
+        // string because the API hosts' appsettings.json carries a UseDevelopmentStorage one.
+        var serviceUri = configuration[$"{ConnectionName}:queueServiceUri"];
 
         // Configure the SDK client itself to base64-encode every outgoing
         // message and base64-decode every received one. The Azure Functions
@@ -19,9 +26,10 @@ public static class QueueExtensions
         // application code. This was previously done by hand in
         // AzureStorageQueueClient — fragile because a future SDK or
         // extension default flip would silently break.
-        services.AddSingleton(_ => new QueueServiceClient(
-            connectionString,
-            new QueueClientOptions { MessageEncoding = QueueMessageEncoding.Base64 }));
+        var options = new QueueClientOptions { MessageEncoding = QueueMessageEncoding.Base64 };
+        services.AddSingleton(_ => string.IsNullOrWhiteSpace(serviceUri)
+            ? new QueueServiceClient(configuration.GetConnectionString(ConnectionName), options)
+            : new QueueServiceClient(new Uri(serviceUri), new DefaultAzureCredential(), options));
         services.AddSingleton<IQueueClient, AzureStorageQueueClient>();
 
         // The IPendingDispatch seam is SCOPED (per request): a command handler records intent on the

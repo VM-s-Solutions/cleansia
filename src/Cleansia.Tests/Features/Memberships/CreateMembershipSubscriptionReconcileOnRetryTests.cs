@@ -102,9 +102,9 @@ public class CreateMembershipSubscriptionReconcileOnRetryTests
     public async Task Phase2Retry_AfterCommitFail_StripeReplays_ReconcilesToExistingSubscription_NoSecondRow()
     {
         // The active-membership guard never trips: the failed attempt left no committed active row, so the
-        // retry proceeds past every GetActiveForUserAsync to the Stripe call again.
+        // retry proceeds past every GetLifecycleForUserAsync to the Stripe call again.
         _membershipRepository
-            .Setup(r => r.GetActiveForUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetLifecycleForUserAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
 
         var added = new List<UserMembership>();
@@ -138,7 +138,7 @@ public class CreateMembershipSubscriptionReconcileOnRetryTests
     {
         UserMembership? tracked = null;
         _membershipRepository
-            .Setup(r => r.GetActiveForUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetLifecycleForUserAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
         _membershipRepository
             .Setup(r => r.GetByStripeSubscriptionIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))

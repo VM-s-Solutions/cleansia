@@ -148,16 +148,12 @@ final class HeaderAdapterTests: XCTestCase {
         return request.value(forHTTPHeaderField: "Authorization")
     }
 
-    func testSignedInDualUseBookingPathsCarryBearer() throws {
-        for path in ["/api/Order/Quote", "/api/Order/CreateOrder", "/api/Payment/CreateOrder"] {
-            XCTAssertEqual(try customerBearer(for: path, token: "t-1"), "Bearer t-1", "signed-in \(path)")
-        }
+    func testSignedInQuoteCarriesBearer() throws {
+        XCTAssertEqual(try customerBearer(for: "/api/Order/Quote", token: "t-1"), "Bearer t-1")
     }
 
-    func testGuestDualUseBookingPathsStayTokenless() throws {
-        for path in ["/api/Order/Quote", "/api/Order/CreateOrder", "/api/Payment/CreateOrder"] {
-            XCTAssertNil(try customerBearer(for: path, token: nil), "guest \(path) must be tokenless")
-        }
+    func testGuestQuoteStaysTokenless() throws {
+        XCTAssertNil(try customerBearer(for: "/api/Order/Quote", token: nil))
     }
 
     func testSignedInPureAnonPathsStayTokenless() throws {
@@ -181,6 +177,10 @@ final class HeaderAdapterTests: XCTestCase {
 
     func testCreatePaymentIntentAlwaysCarriesBearer() throws {
         XCTAssertEqual(try customerBearer(for: "/api/Payment/CreatePaymentIntent", token: "t-1"), "Bearer t-1")
+    }
+
+    func testSignedInCreateOrderCarriesBearer() throws {
+        XCTAssertEqual(try customerBearer(for: "/api/Order/CreateOrder", token: "t-1"), "Bearer t-1")
     }
 
     /// The partner register form reads the market directory with no session and must not be sent a

@@ -38,8 +38,15 @@ public sealed class FunctionsHealthCheck(
                     throw new InvalidOperationException("CanConnect returned false");
                 }
             }, cancellationToken),
-            await ProbeAsync("queue-storage", ct => queueServiceClient.GetPropertiesAsync(ct),
-                cancellationToken),
+            // Lists queues rather than reading the service properties: under managed identity the host
+            // holds Storage Queue Data Contributor, which covers listing but not the service properties.
+            await ProbeAsync("queue-storage", async ct =>
+            {
+                await foreach (var _ in queueServiceClient.GetQueuesAsync(cancellationToken: ct).AsPages(pageSizeHint: 1))
+                {
+                    break;
+                }
+            }, cancellationToken),
         };
 
         var healthy = Array.TrueForAll(probes, p => p.Ok);

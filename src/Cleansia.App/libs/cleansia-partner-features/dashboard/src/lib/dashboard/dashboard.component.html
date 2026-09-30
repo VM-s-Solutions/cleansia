@@ -151,9 +151,15 @@
               <i class="pi pi-map-marker"></i>
               <span>{{ order.customerAddress }}</span>
             </div>
+            <div class="detail-row">
+              <i class="pi pi-sparkles"></i>
+              <span>{{ 'pages.orders.dirtiness_level' | translate }}: {{ order.dirtinessLevelKey | translate }}</span>
+            </div>
           </div>
           <div class="order-card__footer">
-            <div class="order-card__price">{{ order.totalPrice }}</div>
+            @if (order.yourPay) {
+            <div class="order-card__price">{{ 'pages.orders.your_pay' | translate }}: {{ order.yourPay }}</div>
+            }
             <i class="pi pi-chevron-right"></i>
           </div>
         </div>

@@ -138,7 +138,8 @@ targets:
         GID_REVERSED_CLIENT_ID: "com.googleusercontent.apps.834394881207-4um0ikpfpavpl0usplaqpul413d8mvqq"
       configs:
         # The production custom domain, matching the Android release build. The TestFlight lanes
-        # archive Release, so this is also the host a TestFlight upload calls by default. Owner step
+        # archive Release, so this is also the host a TestFlight upload calls by default (a lane's
+        # api_base_url: overrides it for one build — fastlane/README.md). Owner step
         # before the first one: the CNAME + asuid TXT records (deploy/AZURE-DEV-RUNBOOK.md §12.1),
         # then an `api-customer-mobile` key in weu.prod.bicepparam's customDomains, which main.bicep
         # binds to the prod Customer Mobile host.

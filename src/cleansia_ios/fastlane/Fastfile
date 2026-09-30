@@ -7,6 +7,10 @@
 #   bundle exec fastlane partner    # build + upload the Partner app
 #   bundle exec fastlane all        # both, in sequence
 #
+# Release calls the production API. To point one TestFlight build at another
+# host — the Azure DEV one, while production has no DNS — pass it per app:
+#   bundle exec fastlane customer api_base_url:https://api-cleansia-customer-mobile-weu-dev.azurewebsites.net
+#
 # These run on the OWNER'S MAC, on purpose: it already has Config/Local.xcconfig
 # + GoogleService-Info.plist (both gitignored) and the Xcode-managed signing
 # identity, so nothing secret ever has to live in CI.
@@ -39,27 +43,32 @@ APPS = {
 }.freeze
 
 platform :ios do
-  desc "Build + upload the Customer app to TestFlight"
-  lane :customer do
-    ship(:customer)
+  desc "Build + upload the Customer app to TestFlight (optional api_base_url:)"
+  lane :customer do |options|
+    ship(:customer, options)
   end
 
-  desc "Build + upload the Partner app to TestFlight"
-  lane :partner do
-    ship(:partner)
+  desc "Build + upload the Partner app to TestFlight (optional api_base_url:)"
+  lane :partner do |options|
+    ship(:partner, options)
   end
 
   desc "Build + upload BOTH apps to TestFlight"
-  lane :all do
+  lane :all do |options|
+    # The two apps call different hosts, so one URL cannot be right for both.
+    if options[:api_base_url]
+      UI.user_error!("api_base_url is per app: run the customer and partner lanes one at a time")
+    end
     ship(:customer)
     ship(:partner)
   end
 end
 
 # Regenerate → bump → archive → upload for one app.
-def ship(key)
+def ship(key, options = {})
   app = APPS.fetch(key)
   team_id = ENV.fetch("ASC_TEAM_ID")
+  api_base_url = options[:api_base_url]
 
   api_key = app_store_connect_api_key(
     key_id: ENV.fetch("ASC_KEY_ID"),
@@ -90,7 +99,14 @@ def ship(key)
   # 3. Archive (Release, device) with Xcode-managed automatic signing. The build
   #    number is injected as an xcarg — never edited into project.yml — so it
   #    survives the xcodegen regen above and applies to the app + its Live
-  #    Activity extension together (they must share a version).
+  #    Activity extension together (they must share a version). An api_base_url
+  #    is injected the same way: a command-line build setting outranks the
+  #    Release value in project.yml, which is otherwise the production host.
+  xcargs = "CURRENT_PROJECT_VERSION=#{build_number} DEVELOPMENT_TEAM=#{team_id} -allowProvisioningUpdates"
+  if api_base_url
+    UI.important("🌐 #{app[:bundle_id]} build ##{build_number} calls #{api_base_url}, not the Release host")
+    xcargs += " API_BASE_URL=#{api_base_url.shellescape}"
+  end
   build_app(
     workspace: WORKSPACE,
     scheme: app[:scheme],
@@ -99,7 +115,7 @@ def ship(key)
     output_directory: File.join(IOS_ROOT, "build"),
     output_name: "#{app[:scheme]}.ipa",
     clean: true,
-    xcargs: "CURRENT_PROJECT_VERSION=#{build_number} DEVELOPMENT_TEAM=#{team_id} -allowProvisioningUpdates",
+    xcargs: xcargs,
     # Let Xcode create/download the App Store profile at export time too (not
     # just archive), so a first non-interactive run can provision the app + the
     # Live Activity extension.

@@ -107,16 +107,19 @@ Neither app has product flavors. Each build type bakes `API_BASE_URL` into `Buil
 **A release build calls production; every other build calls the Azure DEV host** (E-7 of the
 2026-09-27 meeting plan). iOS matches it: both `project.yml` files give the Debug configuration the
 DEV host and the Release configuration the same production domain, and the TestFlight lanes archive
-Release, so a TestFlight upload calls production too. A fresh clone of either platform still reaches
-DEV with no local setup.
+Release, so a TestFlight upload calls production too unless the lane is given `api_base_url:` — the
+iOS counterpart of Android's `-PAPI_BASE_URL`. A fresh clone of either platform still reaches DEV
+with no local setup.
 
 > **Neither production domain resolves yet — an owner step before the first release upload.**
 > `api-partner-mobile.cleansia.cz` and `api-customer-mobile.cleansia.cz` need their CNAME and
 > `asuid` TXT records (`deploy/AZURE-DEV-RUNBOOK.md` §12.1), then an `api-partner-mobile` and an
 > `api-customer-mobile` key in the `customDomains` of `weu.prod.bicepparam`, which `main.bicep`
 > binds to the two production mobile hosts. Until then an Android release build that must reach DEV
-> passes the DEV host with `-PAPI_BASE_URL`. No iOS lane forwards an override, so a TestFlight build
-> made before the domains exist calls a host that does not answer.
+> passes the DEV host with `-PAPI_BASE_URL`, and a TestFlight build passes it to its lane —
+> `bundle exec fastlane customer api_base_url:https://api-cleansia-customer-mobile-weu-dev.azurewebsites.net`
+> (and the partner host to `partner`). Without it, a TestFlight build made before the domains exist
+> calls a host that does not answer.
 
 > The partner app's `staging` type is a minified build of the DEV backend: `staging-api.cleansia.cz`
 > never existed, and no staging host is provisioned. Nor is the partner release host
@@ -546,9 +549,12 @@ The workspace matters: it builds against the committed `Package.resolved` pins, 
 builds, where an app's `.xcodeproj` alone re-resolves its packages past them. See
 `src/cleansia_ios/fastlane/README.md`.
 
-An upload is a **production** build: Release calls `api-partner-mobile.cleansia.cz` or
+By default an upload is a **production** build: Release calls `api-partner-mobile.cleansia.cz` or
 `api-customer-mobile.cleansia.cz` ([Build types](#build-types-and-where-the-base-url-comes-from)), so the
-`GoogleService-Info.plist` on the Mac must be the production Firebase project's. iOS has no gate like
+`GoogleService-Info.plist` on the Mac must be the production Firebase project's. A lane given
+`api_base_url:` calls that host instead (`src/cleansia_ios/fastlane/README.md`); the export still signs
+in the production APNs entitlement, so Live Activity pushes that the DEV backend sends through the APNs
+sandbox do not reach such a build. iOS has no gate like
 Android's: an app built without the plist runs, without push (`GoogleServicePlist.isPresent`).
 
 ---

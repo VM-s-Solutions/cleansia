@@ -49,6 +49,15 @@ final class MembershipViewModel: ViewModel {
         MembershipCopy(current)
     }
 
+    func offeredTrialDays(_ plan: MembershipPlan?) -> Int {
+        plan?.trialDays(for: current) ?? 0
+    }
+
+    /// The trial the not-subscribed card offers.
+    var headlineTrialDays: Int {
+        offeredTrialDays(MembershipPlan.headline(of: plans))
+    }
+
     func load() async {
         await repository.refresh()
         await repository.refreshPlans()

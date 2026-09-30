@@ -49,6 +49,19 @@ final class UpsellSlideTests: XCTestCase {
         XCTAssertEqual(slide.cta, L10n.Home.upsellPlusCta)
     }
 
+    func testThePlusSlideOffersTheTrialOnlyWhenThereIsOneToOffer() throws {
+        let offered = UpsellSlide.slides(isPlus: false, plusTrialDays: 14, showSetupRecurring: false)
+        let trial = try slide(.plus, in: offered)
+        XCTAssertEqual(trial.title, L10n.Home.upsellPlusTitleTrial(14))
+        XCTAssertEqual(trial.cta, L10n.Home.upsellPlusCtaTrial)
+        XCTAssertEqual(trial.action, .subscribePlus)
+
+        let withheld = UpsellSlide.slides(isPlus: false, plusTrialDays: 0, showSetupRecurring: false)
+        let none = try slide(.plus, in: withheld)
+        XCTAssertEqual(none.title, L10n.Home.upsellPlusTitle)
+        XCTAssertEqual(none.cta, L10n.Home.upsellPlusCta)
+    }
+
     func testSetupRecurringSlideContentMatchesAndroid() throws {
         let slides = UpsellSlide.slides(isPlus: true, showSetupRecurring: true)
         let slide = try slide(.setupRecurring, in: slides)

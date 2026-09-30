@@ -65,6 +65,86 @@ final class HomeTabViewModelTests: XCTestCase {
         )
     }
 
+    // MARK: The Plus slide's trial — the chosen market's monthly plan, once per account
+
+    func testThePlusSlideOffersTheMonthlyTrialToACustomerWhoNeverHadOne() async {
+        membershipClient.mineResults = [.success(nonMember(trialEligible: true))]
+        membershipClient.plansResult = .success(plans(monthlyTrialDays: 14, yearlyTrialDays: 30))
+        let vm = makeViewModel()
+        await membershipRepository.refresh()
+
+        await vm.refreshPlusPlans()
+
+        XCTAssertEqual(vm.plusTrialDays, 14)
+    }
+
+    func testThePlusSlideOffersNoTrialToACustomerWhoHasHadTheirs() async {
+        membershipClient.mineResults = [.success(nonMember(trialEligible: false))]
+        membershipClient.plansResult = .success(plans(monthlyTrialDays: 14, yearlyTrialDays: 14))
+        let vm = makeViewModel()
+        await membershipRepository.refresh()
+
+        await vm.refreshPlusPlans()
+
+        XCTAssertEqual(vm.plusTrialDays, 0)
+    }
+
+    func testThePlusSlideOffersNoTrialWhenThePlansCannotBeRead() async {
+        membershipClient.mineResults = [.success(nonMember(trialEligible: true))]
+        membershipClient.plansResult = .failure(ApiError(httpStatus: 500))
+        let vm = makeViewModel()
+        await membershipRepository.refresh()
+
+        await vm.refreshPlusPlans()
+
+        XCTAssertEqual(vm.plusTrialDays, 0)
+    }
+
+    func testAMemberIsNeverSentForThePlans() async {
+        membershipClient.mineResults = [.success(MembershipFixtures.active)]
+        let vm = makeViewModel()
+        await membershipRepository.refresh()
+
+        await vm.refreshPlusPlans()
+
+        XCTAssertEqual(membershipClient.plansCallCount, 0)
+    }
+
+    private func nonMember(trialEligible: Bool) -> MyMembership {
+        MyMembership(
+            hasMembership: false,
+            planCode: nil,
+            planName: nil,
+            discountPercentage: nil,
+            freeCancellationWindowHours: nil,
+            allowsExpressUpgrade: nil,
+            currentPeriodEnd: nil,
+            cancelRequested: false,
+            billingInterval: nil,
+            trialEligible: trialEligible
+        )
+    }
+
+    /// The yearly plan listed first, so the monthly one is found rather than taken by position.
+    private func plans(monthlyTrialDays: Int, yearlyTrialDays: Int) -> [MembershipPlan] {
+        MembershipFixtures.plans.reversed().map { plan in
+            MembershipPlan(
+                code: plan.code,
+                name: plan.name,
+                price: plan.price,
+                monthlyEquivalentPrice: plan.monthlyEquivalentPrice,
+                billingInterval: plan.billingInterval,
+                discountPercentage: plan.discountPercentage,
+                freeCancellationWindowHours: plan.freeCancellationWindowHours,
+                allowsExpressUpgrade: plan.allowsExpressUpgrade,
+                expressUpgradesPerMonth: plan.expressUpgradesPerMonth,
+                trialPeriodDays: plan.isAnnual ? yearlyTrialDays : monthlyTrialDays,
+                savingsPercentVsMonthly: plan.savingsPercentVsMonthly,
+                currencyCode: plan.currencyCode
+            )
+        }
+    }
+
     // MARK: The market chip
 
     func testTheChipShowsTheChosenMarketOnlyWhenThereIsAChoice() async {

@@ -17,7 +17,6 @@ final class MembershipExpressClaimTests: XCTestCase {
         "membership_perk_express_desc",
         "membership_perk_pill_express",
         "membership_perk_pill_express_used",
-        "membership_perk_pill_express_trial",
         "membership_success_perk_express"
     ]
 
@@ -25,8 +24,7 @@ final class MembershipExpressClaimTests: XCTestCase {
         "booking_slot_express_waived",
         "booking_summary_express_surcharge_waived",
         "booking_express_waiver_available",
-        "booking_express_waiver_used",
-        "booking_express_waiver_trial"
+        "booking_express_waiver_used"
     ]
 
     /// Every string in the catalog that names the perk, including the ones that predate it — the scans

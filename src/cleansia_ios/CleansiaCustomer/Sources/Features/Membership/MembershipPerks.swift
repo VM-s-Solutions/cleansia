@@ -1,14 +1,9 @@
 import Foundation
 
-/// What a customer surface may say about the express surcharge waiver.
-///
-/// `expressUpgradesRemaining` is `0` for a member still inside the trial **and** for one who has used
-/// the month's allowance up, so `trialEndsAtUtc` is the only field that separates them — no Plus benefit
-/// runs during a trial, the waiver included, and telling a trialing member they used theirs up would be a
-/// fresh false claim.
+/// What a customer surface may say about the express surcharge waiver. A member inside the free trial
+/// is entitled like a paying one, so the server's count is theirs to read.
 enum ExpressWaiverStatus: Equatable {
     case none
-    case trial
     case available
     case exhausted
 
@@ -19,58 +14,48 @@ enum ExpressWaiverStatus: Equatable {
     static func resolve(
         hasMembership: Bool,
         upgradesPerMonth: Int?,
-        upgradesRemaining: Int?,
-        trialEndsAtUtc: Date?,
-        now: Date
+        upgradesRemaining: Int?
     ) -> ExpressWaiverStatus {
         // `upgradesPerMonth` null IS the non-member state by the server's own definition, so folding
         // it onto zero here lands on exactly the answer it means.
         guard hasMembership, (upgradesPerMonth ?? 0) > 0 else { return .none }
-        // `upgradesRemaining` is not the same: null means *no membership* and zero means *used up or
-        // trialing*, so collapsing the two tells a member on a quota plan they spent a benefit they
-        // paid for. Nothing here can tell which it is, and silence is the only answer that is not a
-        // claim.
+        // `upgradesRemaining` is not the same: null means *no membership* and zero means *used up*, so
+        // collapsing the two tells a member on a quota plan they spent a benefit they paid for. Nothing
+        // here can tell which it is, and silence is the only answer that is not a claim.
         guard let upgradesRemaining else { return .none }
-        if let trialEndsAtUtc, trialEndsAtUtc > now { return .trial }
         return upgradesRemaining > 0 ? .available : .exhausted
     }
 
-    static func resolve(_ membership: MyMembership?, now: Date = Date()) -> ExpressWaiverStatus {
+    static func resolve(_ membership: MyMembership?) -> ExpressWaiverStatus {
         guard let membership else { return .none }
         return resolve(
             hasMembership: membership.hasMembership && !membership.benefitsPaused,
             upgradesPerMonth: membership.expressUpgradesPerMonth,
-            upgradesRemaining: membership.expressUpgradesRemaining,
-            trialEndsAtUtc: membership.trialEndsAtUtc,
-            now: now
+            upgradesRemaining: membership.expressUpgradesRemaining
         )
     }
 
-    static func resolve(_ snapshot: MembershipSnapshot?, now: Date = Date()) -> ExpressWaiverStatus {
+    static func resolve(_ snapshot: MembershipSnapshot?) -> ExpressWaiverStatus {
         guard let snapshot else { return .none }
         return resolve(
             hasMembership: snapshot.hasMembership && !snapshot.benefitsPaused,
             upgradesPerMonth: snapshot.expressUpgradesPerMonth,
-            upgradesRemaining: snapshot.expressUpgradesRemaining,
-            trialEndsAtUtc: snapshot.trialEndsAtUtc,
-            now: now
+            upgradesRemaining: snapshot.expressUpgradesRemaining
         )
     }
 }
 
-/// The three express states a perk row can actually render, so the label switch stays total —
+/// The express states a perk row can actually render, so the label switch stays total —
 /// `ExpressWaiverStatus.none` is an absent perk, not a perk with nothing to say.
 enum MembershipExpressPerk: Equatable {
     case available(remaining: Int)
     case exhausted
-    case pendingTrial
 
     init?(status: ExpressWaiverStatus, remaining: Int) {
         switch status {
         case .none: return nil
         case .available: self = .available(remaining: remaining)
         case .exhausted: self = .exhausted
-        case .trial: self = .pendingTrial
         }
     }
 }
@@ -110,14 +95,13 @@ enum MembershipPerk: Equatable, Identifiable {
             switch state {
             case let .available(remaining): L10n.Membership.perkPillExpress(remaining)
             case .exhausted: L10n.Membership.perkPillExpressUsed
-            case .pendingTrial: L10n.Membership.perkPillExpressTrial
             }
         }
     }
 }
 
 enum MembershipPerks {
-    static func resolve(_ membership: MyMembership, now: Date = Date()) -> [MembershipPerk] {
+    static func resolve(_ membership: MyMembership) -> [MembershipPerk] {
         guard membership.hasMembership, !membership.benefitsPaused else { return [] }
         var perks: [MembershipPerk] = []
         if let percent = membership.discountPercentage.map({ Int($0) }), percent > 0 {
@@ -130,7 +114,7 @@ enum MembershipPerks {
         // is the backing condition — there is no per-plan flag to read.
         perks.append(.recurring)
         if let express = MembershipExpressPerk(
-            status: ExpressWaiverStatus.resolve(membership, now: now),
+            status: ExpressWaiverStatus.resolve(membership),
             remaining: membership.expressUpgradesRemaining ?? 0
         ) {
             perks.append(.express(express))

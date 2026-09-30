@@ -24,7 +24,7 @@ struct MembershipSuccessScreen: View {
                     .multilineTextAlignment(.center)
 
                 VStack(alignment: .leading, spacing: Spacing.s) {
-                    Text(copy.successPerksHeader)
+                    Text(L10n.Membership.successPerksHeader)
                         .font(CleansiaTypography.labelMedium)
                         .foregroundColor(CleansiaColors.onSurfaceVariant)
                     PerkRow(text: L10n.Membership.perkDiscountTitle)
@@ -34,25 +34,17 @@ struct MembershipSuccessScreen: View {
                     if showExpressPerk {
                         PerkRow(text: L10n.Membership.successPerkExpress)
                     }
-                    if let perksNote = copy.perksNote {
-                        Text(perksNote)
-                            .font(CleansiaTypography.labelMedium)
-                            .foregroundColor(CleansiaColors.onSurfaceVariant)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(Spacing.m)
                 .background(CleansiaColors.surface, in: RoundedRectangle(cornerRadius: CornerRadius.medium))
 
                 VStack(spacing: Spacing.s) {
-                    if copy.offersRecurringSetup {
-                        CleansiaPrimaryButton(
-                            L10n.Membership.successCtaSetupRecurring,
-                            leadingIcon: "repeat",
-                            action: onSetupRecurring
-                        )
-                    }
+                    CleansiaPrimaryButton(
+                        L10n.Membership.successCtaSetupRecurring,
+                        leadingIcon: "repeat",
+                        action: onSetupRecurring
+                    )
                     CleansiaOutlinedButton(L10n.Membership.successCtaBackHome, action: onBackHome)
                 }
             }

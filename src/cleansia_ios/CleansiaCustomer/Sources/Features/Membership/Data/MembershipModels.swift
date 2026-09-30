@@ -37,6 +37,17 @@ struct MembershipPlan: Equatable, Identifiable {
     var expressPerkPerMonth: Int? {
         allowsExpressUpgrade && expressUpgradesPerMonth > 0 ? expressUpgradesPerMonth : nil
     }
+
+    /// The free-trial days this customer gets on this plan: its own length while they have never had a
+    /// trial, else none — one trial per account, and an unread membership confirms nothing.
+    func trialDays(for membership: MyMembership?) -> Int {
+        membership?.trialEligible == true ? trialPeriodDays : 0
+    }
+
+    /// The plan a surface without a plan picker leads with: the monthly one, else the first.
+    static func headline(of plans: [MembershipPlan]) -> MembershipPlan? {
+        plans.first { $0.billingInterval == 1 } ?? plans.first
+    }
 }
 
 struct MyMembership: Equatable {
@@ -60,6 +71,9 @@ struct MyMembership: Equatable {
     /// Past due or paused: the enrolment is live, so no second subscription, but no benefit runs and a
     /// cancel ends it at once.
     let benefitsPaused: Bool
+    /// False once this customer has had their one free trial, on any plan. The server refuses a second
+    /// either way; this is what keeps the subscribe screen from advertising one.
+    let trialEligible: Bool
 
     init(
         hasMembership: Bool,
@@ -77,7 +91,8 @@ struct MyMembership: Equatable {
         price: Double? = nil,
         monthlyEquivalentPrice: Double? = nil,
         currencyCode: String? = nil,
-        benefitsPaused: Bool = false
+        benefitsPaused: Bool = false,
+        trialEligible: Bool = false
     ) {
         self.hasMembership = hasMembership
         self.planCode = planCode
@@ -95,6 +110,7 @@ struct MyMembership: Equatable {
         self.monthlyEquivalentPrice = monthlyEquivalentPrice
         self.currencyCode = currencyCode
         self.benefitsPaused = benefitsPaused
+        self.trialEligible = trialEligible
     }
 }
 

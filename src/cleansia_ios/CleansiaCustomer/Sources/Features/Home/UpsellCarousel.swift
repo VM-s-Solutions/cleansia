@@ -10,6 +10,7 @@ private let upsellCardHeight: CGFloat = 180
 struct UpsellCarousel: View {
     @Environment(\.locale) private var locale
     let isPlus: Bool
+    let plusTrialDays: Int
     let showSetupRecurring: Bool
     let onAction: (UpsellSlide.Action) -> Void
 
@@ -22,7 +23,7 @@ struct UpsellCarousel: View {
     /// the parent's first paint (the trust-strip/loyalty live-i18n fix, applied
     /// to the carousel — the `.id(locale.identifier)` below drives the re-run).
     private var slides: [UpsellSlide] {
-        UpsellSlide.slides(isPlus: isPlus, showSetupRecurring: showSetupRecurring)
+        UpsellSlide.slides(isPlus: isPlus, plusTrialDays: plusTrialDays, showSetupRecurring: showSetupRecurring)
     }
 
     var body: some View {
@@ -137,12 +138,14 @@ private struct UpsellSlideCard: View {
             Group {
                 UpsellCarousel(
                     isPlus: false,
+                    plusTrialDays: 14,
                     showSetupRecurring: false,
                     onAction: { _ in }
                 )
                 .previewDisplayName("Free")
                 UpsellCarousel(
                     isPlus: true,
+                    plusTrialDays: 0,
                     showSetupRecurring: true,
                     onAction: { _ in }
                 )

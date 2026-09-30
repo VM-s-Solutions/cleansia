@@ -70,8 +70,11 @@ struct LiveMembershipManagementClient: MembershipManagementClient {
 /// someone who is paying for them.
 ///
 /// The quota pair stays optional all the way to `ExpressWaiverStatus`. The server states three
-/// shapes — *null = no membership, 0 = exhausted or trialing* — and a resolver that cannot tell
-/// which says nothing rather than picking one.
+/// shapes — *null = no membership, 0 = exhausted or benefits paused* — and a resolver that cannot
+/// tell which says nothing rather than picking one.
+///
+/// `trialEligible` absent folds to `false`: a free trial the server has not confirmed is never
+/// advertised.
 ///
 /// The money trio stays optional too: `price` is null without a membership and when the plan's row
 /// in the membership's currency has been deleted, and a figure this screen never prints beside its
@@ -94,7 +97,8 @@ extension GetMyMembershipResponse {
             price: price,
             monthlyEquivalentPrice: monthlyEquivalentPrice,
             currencyCode: currencyCode,
-            benefitsPaused: benefitsPaused
+            benefitsPaused: benefitsPaused,
+            trialEligible: trialEligible ?? false
         )
     }
 

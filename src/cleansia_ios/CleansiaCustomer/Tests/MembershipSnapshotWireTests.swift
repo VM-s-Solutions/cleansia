@@ -6,6 +6,7 @@ import XCTest
 /// The booking flow's membership read over the app's REAL generated `CustomerMembershipAPI`. A past-due
 /// or paused enrolment still answers `hasMembership: true` with the plan's cancellation window, while the
 /// server charges on the standard window, so the status has to reach the snapshot the quote is built from.
+/// A running trial is entitled like a paid month, so its end date changes nothing the booking flow quotes.
 @MainActor
 final class MembershipSnapshotWireTests: XCTestCase {
     private static let getMinePath = "/api/Membership/GetMine"
@@ -78,9 +79,20 @@ final class MembershipSnapshotWireTests: XCTestCase {
         XCTAssertEqual(policy.plusFreeHours, 4)
     }
 
-    private func readMembership(status: Int) async throws -> MembershipSnapshot {
+    func testATrialingMemberIsQuotedThePlanWindowAndTheExpressWaiver() async throws {
+        let snapshot = try await readMembership(
+            status: 1,
+            extra: ",\"expressUpgradesPerMonth\":2,\"expressUpgradesRemaining\":2,"
+                + "\"trialEndsAtUtc\":\"2099-01-01T00:00:00\""
+        )
+
+        XCTAssertEqual(CancellationPolicyBuilder.make(membership: snapshot).plusFreeHours, 4)
+        XCTAssertEqual(ExpressWaiverStatus.resolve(snapshot), .available)
+    }
+
+    private func readMembership(status: Int, extra: String = "") async throws -> MembershipSnapshot {
         let body = "{\"hasMembership\":true,\"freeCancellationWindowHours\":4,"
-            + "\"status\":\(status),\"cancelRequested\":false}"
+            + "\"status\":\(status),\"cancelRequested\":false\(extra)}"
         MembershipReadStub.response = (200, Data(body.utf8))
         return try await LiveMembershipClient().currentMembership().get()
     }

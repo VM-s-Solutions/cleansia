@@ -34,6 +34,14 @@ extension L10n {
             localized("home_upsell_plus_cta")
         }
 
+        static func upsellPlusTitleTrial(_ days: Int) -> String {
+            format("home_upsell_plus_title_trial", days)
+        }
+
+        static var upsellPlusCtaTrial: String {
+            localized("home_upsell_plus_cta_trial")
+        }
+
         static var upsellSetupRecurringTop: String {
             localized("home_upsell_setup_recurring_top")
         }

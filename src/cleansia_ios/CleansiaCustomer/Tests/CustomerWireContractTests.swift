@@ -443,6 +443,19 @@ final class CustomerWireContractTests: XCTestCase {
         }
     }
 
+    /// One free trial per account: a trial the server has not confirmed is never advertised.
+    func testTrialEligibilityMapsAndAnUnstatedAnswerOffersNoTrial() throws {
+        let cases: [(stated: Bool?, expected: Bool)] = [(true, true), (false, false), (nil, false)]
+        for (stated, expected) in cases {
+            let membership = try GetMyMembershipResponse(
+                hasMembership: false,
+                cancelRequested: false,
+                trialEligible: stated
+            ).toDomain()
+            XCTAssertEqual(membership.trialEligible, expected, "trialEligible \(String(describing: stated))")
+        }
+    }
+
     func testAnActiveMembershipRunsItsBenefits() throws {
         let membership = try GetMyMembershipResponse(
             hasMembership: true,
@@ -461,9 +474,7 @@ final class CustomerWireContractTests: XCTestCase {
             ExpressWaiverStatus.resolve(
                 hasMembership: true,
                 upgradesPerMonth: 2,
-                upgradesRemaining: nil,
-                trialEndsAtUtc: nil,
-                now: Date()
+                upgradesRemaining: nil
             ),
             .none
         )

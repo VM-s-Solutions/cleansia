@@ -64,7 +64,16 @@
     "brace-expansion@1": "^1.1.16",
     "brace-expansion@2": "^2.1.2",
     "@module-federation/enhanced": "^2.9.0",
-    "chokidar": "^4.0.3"
+    "chokidar": "^4.0.3",
+    "@verdaccio/config": {
+      "js-yaml": "^5.4.1"
+    },
+    "nx": {
+      "smol-toml": "~1.7.1"
+    },
+    "sockjs": {
+      "uuid": "^11.1.1"
+    }
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "~20.3.35",

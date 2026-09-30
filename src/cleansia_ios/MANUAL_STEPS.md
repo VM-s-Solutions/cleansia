@@ -2,11 +2,34 @@
 
 These steps require a Mac, Xcode, and/or an Apple Developer account. Agents do not run them.
 
-## 1. Install the project generator (once)
+## 1. Install the toolchain (once)
 
 ```sh
-brew install xcodegen
+brew install xcodegen xcbeautify
 ```
+
+`openapi-generator` must be **exactly 7.10.0** — the version CI and Android pin — and
+`scripts/generate-api-clients.sh` refuses any other. **Not** `brew install openapi-generator`: that is
+the latest release. Install the jar CI installs (the checksum is in `.github/workflows/ios-ci.yml`) and
+put a wrapper ahead of `/opt/homebrew/bin` on `PATH`. It needs a JDK 11+; macOS ships none, and
+Homebrew's `openjdk@21` is keg-only, so the wrapper calls its `java` directly:
+
+```sh
+brew install openjdk@21
+curl -fsSL -o ~/openapi-generator-cli-7.10.0.jar \
+  https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/7.10.0/openapi-generator-cli-7.10.0.jar
+echo "615e014705af34861e789e0b2a11075d3c80db134f881e937265479a4a83996e  $HOME/openapi-generator-cli-7.10.0.jar" \
+  | shasum -a 256 -c -
+mkdir -p ~/.local/bin
+printf '#!/usr/bin/env bash\nexec /opt/homebrew/opt/openjdk@21/bin/java -jar "$HOME/openapi-generator-cli-7.10.0.jar" "$@"\n' \
+  > ~/.local/bin/openapi-generator
+chmod +x ~/.local/bin/openapi-generator
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zprofile    # a NEW shell, then:
+openapi-generator version                                     # must print 7.10.0
+```
+
+If a Homebrew copy is already installed, `brew unlink openapi-generator` takes it off `PATH`
+(`brew link` puts it back). The fastlane lanes run the same script, so they need the wrapper too.
 
 ## 1b. Create the local build config (once, and only once)
 
@@ -172,9 +195,8 @@ In Xcode the equivalent is **File → Packages → Reset Package Caches**, then 
 Folder. If the two `grep`s above find nothing, the generator genuinely did not run — check that
 `openapi-generator` is on PATH and is 7.10.0.
 
-`openapi-generator` must be **7.10.0** — see the pinned install in `.github/workflows/ios-ci.yml`.
-`brew install openapi-generator` now gives 7.15+, and the hand-written request spine subclasses
-generator internals.
+`openapi-generator` must be **7.10.0** (§1) — the hand-written request spine subclasses generator
+internals, and the script now stops with the version it found rather than generating with another.
 
 After the first generation, wire each generated package into its app: uncomment the
 `Cleansia{Partner,Customer}Api` entry under `packages:` **and** under the target's `dependencies:` in

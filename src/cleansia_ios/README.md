@@ -102,7 +102,8 @@ that Android also reads (`src/cleansia_android/openapi/{partner,customer}-mobile
 backend contract, three clients (web NSwag, Android kotlin, iOS swift5), so the platforms can't drift.
 
 - Config + the never-hand-edit discipline: `openapi/README.md` and `openapi/openapi-generator-config.*.yaml`.
-- Regenerate: `scripts/generate-api-clients.sh [partner|customer]` (needs `openapi-generator` 7.x).
+- Regenerate: `scripts/generate-api-clients.sh [partner|customer]` (needs `openapi-generator` **exactly
+  7.10.0** — the script refuses any other; install it as `MANUAL_STEPS.md` §1 describes).
 - Output (`CleansiaPartnerApi/`, `CleansiaCustomerApi/`) is **gitignored and machine-owned** — change the
   spec or the config and regenerate; never hand-edit it.
 - The **auth/session/header spine is hand-written** (`CleansiaCore/Auth`) and **excluded from codegen** —

@@ -370,7 +370,17 @@ public class SendEmailHandler(
 
         var languageCode = EmailLocale.Resolve(
             order.LanguageCode ?? order.User?.PreferredLanguageCode ?? message.LanguageCode);
-        await emailService.SendOrderStatusUpdateEmailAsync(order.CustomerEmail, order, "Cancelled", languageCode, ct);
+
+        // Null for the account booking this message is sent for; a guest's link is committed before the send
+        // so an e-mailed token always has its row.
+        var guestAccessToken = guestAccessTokenIssuer.IssueForGuest(order);
+        if (guestAccessToken is not null)
+        {
+            await unitOfWork.CommitAsync(ct);
+        }
+
+        await emailService.SendOrderStatusUpdateEmailAsync(order.CustomerEmail, order, "Cancelled", languageCode, ct,
+            guestAccessToken: guestAccessToken);
         try
         {
             await idempotencyGuard.MarkProcessedAsync(key, ct);

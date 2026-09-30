@@ -161,8 +161,9 @@ public sealed class LegalDocumentRouteTests(HostTestPostgresFixture db) : AuthzH
 
         HttpAssert.IsOk(versions);
         using var list = JsonDocument.Parse(await versions.Content.ReadAsStringAsync());
-        var version = Assert.Single(list.RootElement.EnumerateArray());
-        Assert.True(version.GetProperty("isInForce").GetBoolean());
+        // Two privacy versions are seeded (2026-09-14 and 2026-09-29); exactly one of them is in force.
+        Assert.Equal(2, list.RootElement.GetArrayLength());
+        var version = Assert.Single(list.RootElement.EnumerateArray(), v => v.GetProperty("isInForce").GetBoolean());
         Assert.Equal(5, version.GetProperty("texts").GetArrayLength());
 
         var document = await client.GetAsync($"/api/AdminLegal/get-document/{version.GetProperty("id").GetString()}?language=uk");

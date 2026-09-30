@@ -45,19 +45,15 @@ public struct AnonymousAllowList: Sendable {
         "/api/currency/getoverview",
         "/api/membership/getplans",
         "/api/order/quote",
-        "/api/order/createorder",
         "/api/order/lookup",
         "/api/order/lookupbatch",
         "/api/order/guestcancellationpreview",
         "/api/order/cancelguest",
-        "/api/payment/createorder",
         "/api/referral/validate"
     ]
 
     private static let customerDualUse = [
-        "/api/order/quote",
-        "/api/order/createorder",
-        "/api/payment/createorder"
+        "/api/order/quote"
     ]
 
     public static let partner = AnonymousAllowList(paths: sharedAuth + marketDirectory)

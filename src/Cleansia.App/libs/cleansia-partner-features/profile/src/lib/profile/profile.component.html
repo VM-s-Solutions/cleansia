@@ -28,12 +28,27 @@
     <!-- Employee Documents Management Section -->
     <cleansia-partner-profile-documents [facade]="facade.documentsFacade" />
 
+    <cleansia-partner-profile-legal-documents [facade]="facade.legalDocumentsFacade" />
+
 
     <!-- Job alert distance — its own endpoint, so its own save -->
     <cleansia-partner-profile-job-radius
       [facade]="facade.jobRadiusFacade"
       (retry)="facade.refreshProfile()"
     />
+
+    @if (facade.weeklyOrderLimit()) {
+    <cleansia-section [title]="'pages.profile.weekly_limit' | translate">
+      <p class="cleansia-profile__description">
+        {{ 'pages.profile.weekly_limit_text' | translate: { count: facade.weeklyOrderLimit() } }}
+      </p>
+      @if (facade.weeklyOrderLimitReason()) {
+      <p class="cleansia-profile__description">
+        {{ 'pages.profile.weekly_limit_reason' | translate: { reason: facade.weeklyOrderLimitReason() } }}
+      </p>
+      }
+    </cleansia-section>
+    }
 
     <!-- Bank Details Section — its own endpoint, so its own form and save -->
     <cleansia-partner-profile-bank [facade]="facade.bankFacade" />

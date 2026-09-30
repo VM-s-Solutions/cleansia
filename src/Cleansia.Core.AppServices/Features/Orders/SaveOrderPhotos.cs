@@ -84,6 +84,14 @@ public class SaveOrderPhotos
             // Without this the per-item rules still walk every item of a list already refused for being
             // too long, which is the cost the count cap exists to refuse.
             .When(x => x.Photos is not null && x.Photos.Count() <= MaxPhotosPerRequest);
+
+            // A missing order is the OrderId rule's answer, not this one's.
+            RuleFor(x => x.Photos)
+                .MustAsync(async (command, photos, cancellationToken) =>
+                    await orderRepository.GetCurrentStatusAsync(command.OrderId, cancellationToken) is not { } status
+                    || photos.All(photo => OrderPhoto.MayBeAddedAt(photo.PhotoType, status)))
+                .WithMessage(BusinessErrorMessage.OrderPhotoWindowClosed)
+                .When(x => !string.IsNullOrEmpty(x.OrderId) && x.Photos is not null && x.Photos.Any());
         }
     }
 

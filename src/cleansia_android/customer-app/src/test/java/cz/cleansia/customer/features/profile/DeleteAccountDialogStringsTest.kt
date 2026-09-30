@@ -1,6 +1,7 @@
 package cz.cleansia.customer.features.profile
 
 import java.io.File
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
@@ -102,6 +103,54 @@ class DeleteAccountDialogStringsTest {
                     assertTrue("$locale/$key does not say \"$word\": $value", value.contains(word, ignoreCase = true))
                 }
             }
+        }
+    }
+
+    /**
+     * Orders, receipts, the consent record, the action log and dispute text all outlive the account
+     * by design (→ /flows/gdpr-and-audit), so "everything is deleted" is a promise the erasure does
+     * not keep. The web's delete page states what is kept; this screen states the same list.
+     */
+    private val everythingDeletedClaim = Regex(
+        "all associated data|account and data|and all data|všechna související data|účet a data|" +
+            "všetky súvisiace údaje|účet a údaje|всі пов’язані дані|запис і дані|" +
+            "все связанные данные|запись и все|аккаунт и данные",
+        RegexOption.IGNORE_CASE,
+    )
+
+    private val keptKeys = listOf(
+        "delete_account_what_is_kept",
+        "delete_account_kept_bookings",
+        "delete_account_kept_receipts",
+        "delete_account_kept_consents",
+        "delete_account_kept_audit",
+        "delete_account_kept_disputes",
+    )
+
+    @Test
+    fun `no locale says every piece of data is deleted`() {
+        val claims = locales.flatMap { locale ->
+            Regex("<string name=\"(delete_account_[^\"]+)\"[^>]*>(.*?)</string>", RegexOption.DOT_MATCHES_ALL)
+                .findAll(stringsXml(locale))
+                .filter { everythingDeletedClaim.containsMatchIn(it.groupValues[2]) }
+                .map { "$locale/${it.groupValues[1]}: ${it.groupValues[2]}" }
+                .toList()
+        }
+        assertEquals(emptyList<String>(), claims)
+    }
+
+    @Test
+    fun `the screen lists what is kept, in every locale`() {
+        locales.forEach { locale ->
+            val xml = stringsXml(locale)
+            keptKeys.forEach { key ->
+                assertTrue("$locale/$key is blank", valueOf(xml, key).isNotBlank())
+            }
+        }
+        val screen = File(resDir.parentFile, "java/cz/cleansia/customer/features/profile/DeleteAccountScreen.kt")
+        val source = screen.readText()
+        keptKeys.forEach { key ->
+            assertTrue("DeleteAccountScreen.kt does not render $key", source.contains("R.string.$key"))
         }
     }
 

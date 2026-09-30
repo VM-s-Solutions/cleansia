@@ -34,9 +34,21 @@ export const ADMIN_MENU_ITEMS: readonly SidebarMenuItem[] = [
     permission: Policy.CanViewPayPeriodsAdmin,
   },
   {
+    label: 'sidebar.cash_held',
+    icon: 'pi pi-wallet',
+    route: `/${CleansiaAdminRoute.PAY_PERIODS}/cash-held`,
+    permission: Policy.CanViewPayPeriodsAdmin,
+  },
+  {
     label: 'sidebar.orders',
     icon: 'pi pi-shopping-cart',
     route: `/${CleansiaAdminRoute.ORDER_MANAGEMENT}`,
+    permission: Policy.CanViewPagedOrderAdmin,
+  },
+  {
+    label: 'sidebar.receivables',
+    icon: 'pi pi-exclamation-circle',
+    route: `/${CleansiaAdminRoute.ORDER_MANAGEMENT}/receivables`,
     permission: Policy.CanViewPagedOrderAdmin,
   },
   {

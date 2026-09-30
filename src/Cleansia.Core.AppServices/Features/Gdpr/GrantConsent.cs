@@ -23,7 +23,14 @@ public static class GrantConsent
     {
         public Validator()
         {
-            RuleFor(c => c.ConsentType).IsInEnum().WithMessage(BusinessErrorMessage.InvalidEnumValue);
+            // The terms and the privacy policy only: the cookie banner's two categories record nothing,
+            // the promo push preference is the marketing consent, and a cleaner accepts their own
+            // documents through AcceptLegalDocument, which echoes the text they were shown.
+            RuleFor(c => c.ConsentType)
+                .Cascade(CascadeMode.Stop)
+                .IsInEnum().WithMessage(BusinessErrorMessage.InvalidEnumValue)
+                .Must(type => type is ConsentType.TermsOfService or ConsentType.PrivacyPolicy)
+                .WithMessage(BusinessErrorMessage.ConsentNotEditable);
         }
     }
 

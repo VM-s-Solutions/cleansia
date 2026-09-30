@@ -9,6 +9,7 @@ using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Infra.Common.Validations;
 using Cleansia.Tests.Common;
+using Cleansia.Tests.Infrastructure;
 using Moq;
 
 namespace Cleansia.Tests.Services;
@@ -42,7 +43,9 @@ public class PlatformOrderCancellationTests
             _loyaltyService.Object,
             _producer.Object,
             _liveActivityProducer.Object,
-            _expressWaiverConsumer.Object);
+            _expressWaiverConsumer.Object,
+            TestGuestOrderAccessTokenIssuer.WithNoLiveTokens(),
+            Mock.Of<IPendingDispatch>());
 
     private static Order ArrangeOrder(
         OrderStatus latestStatus,
@@ -240,6 +243,21 @@ public class PlatformOrderCancellationTests
                 OwnerUserId, order.CurrencyId, 300m, $"credit-return:order-ended-unpaid:{OrderId}", ActorId,
                 It.IsAny<CancellationToken>(), OrderId, null),
             Times.Once);
+    }
+
+    [Theory]
+    [InlineData(PaymentType.Cash, PaymentStatus.Pending)]
+    [InlineData(PaymentType.Card, PaymentStatus.Failed)]
+    public async Task An_Order_That_Took_No_Payment_Reports_The_Stored_Refund_Of_Nothing(
+        PaymentType paymentType, PaymentStatus paymentStatus)
+    {
+        var order = ArrangeOrder(OrderStatus.Confirmed, paymentType: paymentType, paymentStatus: paymentStatus);
+
+        var result = await CreateService().CancelAsync(
+            order, ActorId, CancelledBy.Admin, null, RefundReason.CustomerCancellation, CancellationToken.None);
+
+        Assert.Equal(0m, order.CancellationRefundAmount);
+        Assert.Equal(0m, result.RefundAmount);
     }
 
     [Fact]

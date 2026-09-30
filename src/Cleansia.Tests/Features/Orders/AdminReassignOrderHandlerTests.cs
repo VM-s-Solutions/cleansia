@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
@@ -28,6 +29,7 @@ public class AdminReassignOrderHandlerTests
     private readonly Mock<IEmployeeRepository> _employeeRepository = new();
     private readonly Mock<IUserSessionProvider> _session = new();
     private readonly Mock<INotificationProducer> _notificationProducer = new();
+    private readonly Mock<IAuditContext> _auditContext = new();
 
     public AdminReassignOrderHandlerTests()
     {
@@ -35,7 +37,7 @@ public class AdminReassignOrderHandlerTests
     }
 
     private AdminReassignOrder.Handler CreateHandler() =>
-        new(_orderRepository.Object, _employeeRepository.Object, _session.Object, _notificationProducer.Object);
+        new(_orderRepository.Object, _employeeRepository.Object, _session.Object, _notificationProducer.Object, _auditContext.Object);
 
     private static Employee BuildEmployee(string employeeId)
     {

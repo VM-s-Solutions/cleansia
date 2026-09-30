@@ -11,6 +11,15 @@ enum DiscountSummary: Equatable {
     case noDiscount
     case basic(percent: Int)
     case minOrder(percent: Int, minOrder: Int)
+
+    func label(currencyCode: String?) -> String {
+        switch self {
+        case .noDiscount: L10n.Rewards.noDiscountYet
+        case let .basic(percent): L10n.Rewards.discountBasic(percent)
+        case let .minOrder(percent, minOrder):
+            L10n.Rewards.discountMinOrder(percent, OrdersFormat.price(Double(minOrder), currencyCode: currencyCode))
+        }
+    }
 }
 
 /// Whether the tier floor line is stated, and with which unit. The floor is a platform-default-
@@ -61,9 +70,29 @@ enum LoyaltyPresentation {
     }
 
     static func discountSummary(_ tier: TierInfo, floorApplies: Bool = true) -> DiscountSummary {
-        let percent = Int(tier.discountPercent * 100)
+        discountSummary(
+            fraction: tier.discountPercent,
+            minimumOrder: tier.minimumOrderAmountForDiscount,
+            floorApplies: floorApplies
+        )
+    }
+
+    static func currentDiscountSummary(_ account: LoyaltyAccount, floorApplies: Bool = true) -> DiscountSummary {
+        discountSummary(
+            fraction: account.currentDiscountPercent,
+            minimumOrder: account.currentDiscountMinOrderAmount,
+            floorApplies: floorApplies
+        )
+    }
+
+    private static func discountSummary(
+        fraction: Double,
+        minimumOrder: Double?,
+        floorApplies: Bool
+    ) -> DiscountSummary {
+        let percent = Int(fraction * 100)
         guard percent > 0 else { return .noDiscount }
-        let minOrder = floorApplies ? Int(tier.minimumOrderAmountForDiscount ?? 0) : 0
+        let minOrder = floorApplies ? Int(minimumOrder ?? 0) : 0
         return minOrder > 0 ? .minOrder(percent: percent, minOrder: minOrder) : .basic(percent: percent)
     }
 
@@ -87,6 +116,19 @@ enum LoyaltyPresentation {
     /// section never renders empty (`CurrentPerksCard` parity).
     static func effectivePerks(_ perks: [TierPerk]) -> [TierPerk] {
         perks.isEmpty ? [TierPerk(icon: "badge", labelKey: "loyalty.perks.welcome_badge")] : perks
+    }
+
+    /// A discount perk's key spells a percentage an admin can change, so the live discount is shown in its
+    /// place, and nothing while none runs.
+    static func perkLabels(_ perks: [TierPerk], discount: DiscountSummary, currencyCode: String?) -> [String] {
+        effectivePerks(perks).compactMap { (perk: TierPerk) -> String? in
+            guard isDiscountPerk(perk) else { return L10n.Rewards.perkLabel(perk.labelKey) }
+            return discount == .noDiscount ? nil : discount.label(currencyCode: currencyCode)
+        }
+    }
+
+    static func isDiscountPerk(_ perk: TierPerk) -> Bool {
+        perk.labelKey?.hasPrefix("loyalty.perks.discount") == true
     }
 
     static func transactionKind(_ item: LoyaltyActivityItem) -> LoyaltyTransactionKind {

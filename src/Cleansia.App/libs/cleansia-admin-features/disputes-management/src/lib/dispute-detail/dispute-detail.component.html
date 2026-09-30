@@ -67,8 +67,20 @@
         </div>
         @if (hasRefundAmount()) {
         <div class="detail-grid__item">
-          <span class="detail-grid__label">{{ 'pages.disputes_management.columns.refund_amount' | translate }}</span>
+          <span class="detail-grid__label">{{ 'pages.disputes_management.detail.refund_requested' | translate }}</span>
           <span class="detail-grid__value">{{ facade.refundAmountLabel() }}</span>
+        </div>
+        }
+        @if (facade.cardRefundedLabel(); as cardRefunded) {
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.disputes_management.detail.card_refunded' | translate }}</span>
+          <span class="detail-grid__value">{{ cardRefunded }}</span>
+        </div>
+        }
+        @if (facade.creditReturnedLabel(); as creditReturned) {
+        <div class="detail-grid__item">
+          <span class="detail-grid__label">{{ 'pages.disputes_management.detail.credit_returned' | translate }}</span>
+          <span class="detail-grid__value">{{ creditReturned }}</span>
         </div>
         }
         <div class="detail-grid__item cleansia-dispute-detail__prose-item">
@@ -166,6 +178,18 @@
       </p>
       } @else {
       <form [formGroup]="resolveForm" class="cleansia-dispute-detail__form">
+        <div class="detail-grid">
+          <div class="detail-grid__item">
+            <span class="detail-grid__label">{{ 'pages.disputes_management.resolve.settlement_preference' | translate }}</span>
+            <span class="detail-grid__value">
+              @if (facade.settlesInCredit()) {
+              {{ 'pages.disputes_management.resolve.settlement.credit' | translate }}
+              } @else {
+              {{ 'pages.disputes_management.resolve.settlement.card_refund' | translate }}
+              }
+            </span>
+          </div>
+        </div>
         <cleansia-text-input
           formControlName="refundAmount"
           dataType="number"
@@ -174,7 +198,11 @@
         />
         <p class="cleansia-dispute-detail__disclaimer">
           <i class="pi pi-info-circle"></i>
+          @if (facade.settlesInCredit()) {
+          {{ 'pages.disputes_management.resolve.credit_disclaimer' | translate }}
+          } @else {
           {{ 'pages.disputes_management.resolve.refund_disclaimer' | translate }}
+          }
         </p>
         <cleansia-textarea
           formControlName="resolutionNotes"
@@ -182,6 +210,36 @@
           [placeholder]="'pages.disputes_management.resolve.notes_placeholder' | translate"
           [rows]="3"
         />
+        @if (canChargeCleaner()) {
+        <cleansia-checkbox
+          [label]="'pages.disputes_management.resolve.charge.toggle' | translate"
+          (valueChanges)="onChargeCleanerToggled($event)"
+        />
+        @if (chargingCleaner()) {
+        <p class="cleansia-dispute-detail__hint">
+          {{ 'pages.disputes_management.resolve.charge.hint' | translate }}
+        </p>
+        <ng-container formGroupName="charge">
+          <cleansia-select
+            formControlName="employeeId"
+            [options]="crewOptions()"
+            [label]="'pages.disputes_management.resolve.charge.cleaner' | translate"
+            [showClear]="false"
+          />
+          <cleansia-text-input
+            formControlName="amount"
+            dataType="number"
+            [label]="'pages.disputes_management.resolve.charge.amount' | translate"
+          />
+          <cleansia-textarea
+            formControlName="reason"
+            [label]="'pages.disputes_management.resolve.charge.reason' | translate"
+            [placeholder]="'pages.disputes_management.resolve.charge.reason_placeholder' | translate"
+            [rows]="2"
+          />
+        </ng-container>
+        }
+        }
         <div class="detail-actions">
           <cleansia-button
             icon="pi pi-check"

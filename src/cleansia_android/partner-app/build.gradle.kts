@@ -95,10 +95,10 @@ android {
             isMinifyEnabled = false
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
-            // Defaults to the Azure DEV host, matching what iOS ships in CleansiaPartner/project.yml
-            // so both platforms hit the same backend out of the box. Trailing slash, no `/api`
-            // suffix — the generated OpenAPI client's method paths already start with
-            // `api/Auth/Login`. NetworkModule normalises a missing slash anyway.
+            // Defaults to the Azure DEV host, matching the Debug configuration in
+            // CleansiaPartner/project.yml so both platforms hit the same backend out of the box.
+            // Trailing slash, no `/api` suffix — the generated OpenAPI client's method paths already
+            // start with `api/Auth/Login`. NetworkModule normalises a missing slash anyway.
             val url = apiBaseUrlOverride
                 ?: "https://api-cleansia-partner-mobile-weu-dev.azurewebsites.net/"
             buildConfigField("String", "API_BASE_URL", "\"$url\"")
@@ -122,14 +122,14 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            // Was `https://api.cleansia.cz/`, which has never resolved — there is no prod resource
-            // group, no binding, no certificate, and the only other mentions in the tree are a
-            // commented-out line in a bicepparam whose own header says "AUTHORED, NOT DEPLOYED".
-            // A release build shipped against it failed every request at DNS. The Azure DEV host is
-            // what debug uses and what iOS TestFlight already ships; `-PAPI_BASE_URL` redirects it
-            // to a real prod host later without editing this file.
-            val url = apiBaseUrlOverride
-                ?: "https://api-cleansia-partner-mobile-weu-dev.azurewebsites.net/"
+            // The production custom domain, matching the Release configuration in
+            // CleansiaPartner/project.yml. Not `api.cleansia.cz`: that name is planned for the partner
+            // WEB API. Owner step before a release build ships: the CNAME + asuid TXT records
+            // (deploy/AZURE-DEV-RUNBOOK.md §12.1), then an `api-partner-mobile` key in
+            // weu.prod.bicepparam's customDomains, which main.bicep binds to the prod Partner Mobile
+            // host. Until then a release build that must reach DEV passes
+            // -PAPI_BASE_URL=https://api-cleansia-partner-mobile-weu-dev.azurewebsites.net/
+            val url = apiBaseUrlOverride ?: "https://api-partner-mobile.cleansia.cz/"
             buildConfigField("String", "API_BASE_URL", "\"$url\"")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -172,15 +172,20 @@ android {
     }
 }
 
-// Copy guards read every locale's strings.xml straight off disk. A copy-only edit changes no compiled
-// class, so undeclared, this task stays UP-TO-DATE or FROM-CACHE and reports the old verdict.
+// Copy guards read every locale's strings.xml, and the location guard reads the manifest, straight off
+// disk. Neither edit changes a compiled class, so undeclared, this task stays UP-TO-DATE or
+// FROM-CACHE and reports the old verdict.
 tasks.withType<Test>().configureEach {
     inputs.files(fileTree("src/main/res") { include("values*/strings.xml") })
         .withPropertyName("localeStrings")
         .withPathSensitivity(PathSensitivity.RELATIVE)
+
+    inputs.file("src/main/AndroidManifest.xml")
+        .withPropertyName("manifest")
+        .withPathSensitivity(PathSensitivity.RELATIVE)
 }
 
-// ─── Release signing assertion ──────────────────────────────────────
+// ─── Release assertions: Firebase config, signing ───────────────────
 // AGP treats an incomplete signingConfig as "package it unsigned" and emits the artifact with
 // no error at all, so the first signal that the keystore or a password was missing is Play
 // rejecting the upload — after a 50 MB round trip. Assert instead.
@@ -206,6 +211,22 @@ run {
     val wantsRelease = gradle.startParameter.taskNames.any { name ->
         releaseTask.containsMatchIn(name) &&
             (!name.startsWith(":") || name.startsWith("${project.path}:"))
+    }
+    // The fallback at the top of this file copies the placeholder in whenever the real config is
+    // absent, so without this a release build ships with push dead and nothing says so. The
+    // google-services plugin reads src/release/ ahead of the module root for a release build.
+    if (wantsRelease) {
+        val firebaseConfig = listOf("src/release/google-services.json", "google-services.json")
+            .firstNotNullOfOrNull { providers.fileContents(layout.projectDirectory.file(it)).asText.orNull }
+        if (firebaseConfig == null || firebaseConfig.contains("PLACEHOLDER_REPLACE_WITH_REAL_API_KEY")) {
+            throw GradleException(
+                "The release build's google-services.json is the committed placeholder, so it would " +
+                    "ship with push notifications dead. Owner step: download the config of the " +
+                    "production Firebase project's Android app cz.cleansia.partner from the Firebase " +
+                    "console into partner-app/src/release/google-services.json (gitignored), which " +
+                    "release builds read ahead of partner-app/google-services.json."
+            )
+        }
     }
     // Android Studio's "Generate Signed Bundle / APK" wizard passes the keystore as
     // -Pandroid.injected.signing.*, which AGP honours over the DSL. Signing IS configured on that

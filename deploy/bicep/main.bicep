@@ -202,17 +202,47 @@ param acrImageRetentionEnabled bool = false
 param acrImageRetentionDays int = 30
 
 @description('''
-The Q-INFRA-03 hardening seam: VNet + private endpoints for Postgres and Storage. When true it
-deploys modules/privateNetworking.bicep, VNet-integrates every App Service/Functions host, flips
-Postgres publicNetworkAccess to Disabled (the dev-accepted 0.0.0.0 allow-Azure-services rule and the
-admin-IP rule disappear with it), and sets the Storage network ACL default to Deny.
+The Q-INFRA-03 hardening seam: VNet + private endpoints for Postgres, Storage and Key Vault. When
+true it deploys modules/privateNetworking.bicep, VNet-integrates every App Service/Functions host,
+flips Postgres publicNetworkAccess to Disabled (the dev-accepted 0.0.0.0 allow-Azure-services rule and
+the admin-IP rule are not created) and flips Key Vault public network access to Disabled. Storage is
+not made private: the hosts reach it through its private endpoints, but its network ACL default stays
+Allow, because browsers and the apps load the photo and evidence SAS links on its public endpoint.
 
-DELIBERATELY LEFT false EVEN IN THE PROD PARAM FILE — a documented flag, not a default: flipping it
-breaks the CI migration path (the GitHub runner's temporary firewall rule needs public access) and
-direct admin psql until the owner provides a private path. Prerequisites + sequence:
-deploy/AZURE-PROD-POSTURE.md.
+The prod param file sets it true; dev keeps false. Nothing outside the VNet reaches the database or
+the vault, so deploy-azure.yml opens a temporary public window for the GitHub runner's IP around the
+Key Vault secret push and the migration and closes it after, and an admin's psql does the same by
+hand. deploy/AZURE-PROD-POSTURE.md §6.
 ''')
 param privateNetworkingEnabled bool = false
+
+@description('''
+Put the admin API behind the admin console's Microsoft (Entra) sign-in: link the admin App Service as
+the backend of the admin Static Web App. The SWA route rule admits only the admin_console role, the
+SWA proxies /api/* to the host, and the host answers 401 to anything the SWA did not proxy — its
+*.azurewebsites.net hostname and its staging slot included. The admin SPA's production build calls
+same-origin /api to match. Needs the Standard SWA tier, so dev (Free) stays false and keeps calling
+its API host directly. deploy/AZURE-DEV-RUNBOOK.md §11.
+''')
+param adminApiLinkedToAdminSpa bool = false
+
+@description('''
+Storage on managed identity (E-4). Every host reaches blobs and queues with its own identity (the
+Storage Blob/Queue Data Contributor grants below), the SAS links it mints are user-delegation SAS, the
+Functions queue triggers bind identity-based, the account refuses shared-key requests, and no storage
+connection string is written to Key Vault. Dev keeps false and its connection string.
+deploy/AZURE-PROD-POSTURE.md §7.
+''')
+param storageManagedIdentityEnabled bool = false
+
+@description('''
+The hosts connect to Postgres as a least-privilege application login, data read/write only, and verify
+the server certificate (E-4). deploy-azure.yml writes that login's connection string to Key Vault from
+the POSTGRES_APP_PASSWORD secret and creates the login and its grants after every migration
+(deploy/db/grant-app-login.sql); the migration keeps the administrator login, which then never enters
+Key Vault. Dev keeps false. deploy/AZURE-PROD-POSTURE.md §7.
+''')
+param postgresAppLoginEnabled bool = false
 
 @description('Resource tags applied to every resource.')
 param tags object = {}
@@ -315,7 +345,7 @@ module keyVault 'modules/keyVault.bicep' = {
     location: location
     region: region
     env: env
-    allowPublicNetworkAccess: true
+    allowPublicNetworkAccess: !privateNetworkingEnabled
     tags: commonTags
   }
 }
@@ -327,7 +357,11 @@ module storage 'modules/storage.bicep' = {
     region: region
     stage: env
     skuName: storageSku
-    networkDefaultAction: privateNetworkingEnabled ? 'Deny' : 'Allow'
+    // Allow in every stage: the photo and evidence links are SAS URLs on the public blob endpoint that
+    // browsers and the apps load directly, and a Deny ACL refuses them before the SAS is checked.
+    // deploy/AZURE-PROD-POSTURE.md §6.
+    networkDefaultAction: 'Allow'
+    allowSharedKeyAccess: !storageManagedIdentityEnabled
     tags: commonTags
   }
 }
@@ -364,7 +398,7 @@ module postgres 'modules/postgres.bicep' = {
 }
 
 // The Q-INFRA-03 seam, materialized only when the flag is on: VNet + private endpoints + private DNS
-// for Postgres/Storage. The app subnet id it outputs is what VNet-integrates every host below.
+// for Postgres/Storage/Key Vault. The app subnet id it outputs is what VNet-integrates every host below.
 module privateNetworking 'modules/privateNetworking.bicep' = if (privateNetworkingEnabled) {
   name: 'privateNetworking'
   params: {
@@ -373,6 +407,7 @@ module privateNetworking 'modules/privateNetworking.bicep' = if (privateNetworki
     env: env
     postgresServerId: postgres.outputs.serverId
     storageAccountId: storage.outputs.storageAccountId
+    keyVaultId: keyVault.outputs.keyVaultId
     tags: commonTags
   }
 }
@@ -502,10 +537,24 @@ var cronSettings = {
   ExpireStaleReferralsCron: '0 30 3 * * *'
 }
 
+// How every host (the five APIs and the Functions app) reaches blobs and queues. With the key: the
+// Storage--ConnectionString secret. With managed identity: BlobContainerConfiguration:AccountUrl (the
+// blob client factory's identity path) and the QueueStorageConnectionString identity-based connection
+// the Functions host binds its queue triggers from, which the queue client reads too. The key-based
+// settings must be ABSENT then, not empty: the Functions host prefers a ConnectionStrings__ entry.
+var storageSettings = storageManagedIdentityEnabled
+  ? {
+      BlobContainerConfiguration__AccountUrl: storage.outputs.blobEndpoint
+      QueueStorageConnectionString__queueServiceUri: storage.outputs.queueEndpoint
+      QueueStorageConnectionString__credential: 'managedidentity'
+    }
+  : {
+      ConnectionStrings__BlobContainerConfigurationConnectionString: kvRef(keyVaultUri, 'Storage--ConnectionString')
+      ConnectionStrings__QueueStorageConnectionString: kvRef(keyVaultUri, 'Storage--ConnectionString')
+    }
+
 var apiBaseSettings = union({
   ConnectionStrings__ConnectionString: kvRef(keyVaultUri, 'ConnectionStrings--cleansia-db')
-  ConnectionStrings__BlobContainerConfigurationConnectionString: kvRef(keyVaultUri, 'Storage--ConnectionString')
-  ConnectionStrings__QueueStorageConnectionString: kvRef(keyVaultUri, 'Storage--ConnectionString')
   JwtSettings__Secret: kvRef(keyVaultUri, 'Jwt--Key')
   // CSRF secret — a true secret pushed by CI (like the other externals). The app throws on an empty
   // secret only when Csrf:Enabled=true; dev runs disabled, but we still supply it so enabling CSRF is
@@ -539,7 +588,7 @@ var apiBaseSettings = union({
   // /architecture/request-logging documents that as load-bearing in both directions. Prod stays at
   // Warning regardless.
   Logging__LogLevel__Cleansia: env == 'prod' ? 'Warning' : 'Information'
-}, sendGridSettings)
+}, storageSettings, sendGridSettings)
 
 // FCM push dispatch — the Functions queue consumer is the ONLY dispatcher; FcmPushDispatcher is a
 // deliberate no-op while this is unset, so pushes are silently ACKed until the secret exists. Value:
@@ -640,6 +689,7 @@ module apiAppServices 'modules/appService.bicep' = [
       alwaysOn: true
       stagingSlotEnabled: deploymentSlotsEnabled
       virtualNetworkSubnetId: privateNetworkingEnabled ? privateNetworking!.outputs.appSubnetId : ''
+      linkedStaticWebAppName: host.audience == 'admin' && adminApiLinkedToAdminSpa ? staticWebApps[1].outputs.name : ''
       tags: commonTags
     }
   }
@@ -840,6 +890,7 @@ module functionApp 'modules/functionApp.bicep' = {
     storageAccountId: storage.outputs.storageAccountId
     appInsightsConnectionString: appInsights.outputs.connectionString
     virtualNetworkSubnetId: privateNetworkingEnabled ? privateNetworking!.outputs.appSubnetId : ''
+    storageAppSettings: storageSettings
     // Sentry__Dsn IS read (ac2243d2): Program.cs calls ConfigureLogging(AddSentryMonitoring), so an
     // ILogger.LogError in this worker becomes a Sentry event — which is what PoisonHandlerBase step 2
     // and FunctionInvocationErrorMiddleware depend on. It is a SECOND, unsampled path alongside the
@@ -894,6 +945,8 @@ module derivedSecrets 'modules/derivedSecrets.bicep' = {
     postgresFqdn: postgres.outputs.fullyQualifiedDomainName
     postgresAdministratorLogin: postgresAdministratorLogin
     postgresAdministratorPassword: postgresAdministratorPassword
+    writeStorageConnectionString: !storageManagedIdentityEnabled
+    writeDbConnectionString: !postgresAppLoginEnabled
   }
 }
 

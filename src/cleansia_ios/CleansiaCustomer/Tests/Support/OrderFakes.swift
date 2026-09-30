@@ -36,9 +36,6 @@ final class FakeOrderClient: OrderClient, @unchecked Sendable {
     var cancellationQuoteResults: [ApiResult<CancellationQuote>] = []
     private(set) var cancellationQuoteCallCount = 0
 
-    var workContractResults: [ApiResult<WorkContract>] = []
-    private(set) var workContractRequests: [(acceptanceId: String, language: String)] = []
-
     func getMyOrders(offset: Int, limit: Int) async -> ApiResult<OrdersPage> {
         pageRequests.append((offset, limit))
         if let pageError { return .failure(pageError) }
@@ -97,13 +94,6 @@ final class FakeOrderClient: OrderClient, @unchecked Sendable {
         guard index >= 0 else { return .failure(ApiError(httpStatus: 500)) }
         return cancellationQuoteResults[index]
     }
-
-    func getWorkContract(acceptanceId: String, language: String) async -> ApiResult<WorkContract> {
-        workContractRequests.append((acceptanceId, language))
-        let index = min(workContractRequests.count - 1, workContractResults.count - 1)
-        guard index >= 0 else { return .failure(ApiError(httpStatus: 500)) }
-        return workContractResults[index]
-    }
 }
 
 /// Domain fixtures, built through the memberwise initializers rather than through the wire mappers.
@@ -158,11 +148,14 @@ enum OrderFixtures {
         completedAt: Date? = nil,
         receiptNumber: String? = nil,
         recurringTemplateId: String? = nil,
+        needsConfirmation: Bool = false,
         address: OrderAddress? = nil,
         rooms: Int = 0,
         bathrooms: Int = 0,
         estimatedMinutes: Int = 0,
         extras: [String: Bool] = [:],
+        dirtiness: Dirtiness = .normal,
+        dirtinessSurchargeAmount: Double = 0,
         services: [CustomerOrderService] = [],
         packages: [CustomerOrderPackage] = [],
         notes: String? = nil,
@@ -181,8 +174,7 @@ enum OrderFixtures {
         statusHistory: [OrderStatusTrackDto] = [],
         review: CustomerOrderReview? = nil,
         preferredOffer: PreferredOfferDetails? = nil,
-        systemCancellationReason: String? = nil,
-        workContractAcceptances: [WorkContractAcceptance] = []
+        systemCancellationReason: String? = nil
     ) -> CustomerOrderDetail {
         CustomerOrderDetail(
             id: id,
@@ -193,11 +185,14 @@ enum OrderFixtures {
             completedAt: completedAt,
             receiptNumber: receiptNumber,
             recurringTemplateId: recurringTemplateId,
+            needsConfirmation: needsConfirmation,
             address: address,
             rooms: rooms,
             bathrooms: bathrooms,
             estimatedMinutes: estimatedMinutes,
             extras: extras,
+            dirtiness: dirtiness,
+            dirtinessSurchargeAmount: dirtinessSurchargeAmount,
             services: services,
             packages: packages,
             notes: notes,
@@ -216,32 +211,7 @@ enum OrderFixtures {
             assignedEmployees: assignedEmployees,
             statusHistory: statusHistory,
             review: review,
-            preferredOffer: preferredOffer,
-            workContractAcceptances: workContractAcceptances
-        )
-    }
-
-    static func workContract(language: String? = "cs", acceptance: WorkContractAcceptanceFacts? = nil) -> WorkContract {
-        WorkContract(
-            legalDocumentTextId: "text-1",
-            version: "2026-09-20",
-            language: language,
-            title: "Smlouva o dílo",
-            contentHtml: "<p>Smlouva.</p>",
-            facts: WorkContractJobFacts(
-                orderNumber: "CL-2026-0042",
-                cleaningDateTimeUtc: Date(timeIntervalSince1970: 1_786_200_000),
-                estimatedMinutes: 180,
-                totalPrice: 1850,
-                currencyCode: "CZK",
-                locationApproximate: "Praha 4 · 14000",
-                rooms: 3,
-                bathrooms: 1,
-                services: ["Standard cleaning"],
-                packages: [],
-                extraSlugs: ["inside-oven"]
-            ),
-            acceptance: acceptance
+            preferredOffer: preferredOffer
         )
     }
 

@@ -58,6 +58,8 @@ object NotificationDeepLink {
         "order.cancelled",
         "order.refunded",
         "order.no_cleaner_refunded",
+        "order.no_cleaner_refund_pending",
+        "order.no_cleaner_nothing_charged",
         "order.on_the_way",
         // recurring.scheduled also carries an orderId — the materialized
         // Pending order the customer needs to confirm + pay for. Route to
@@ -74,7 +76,8 @@ object NotificationDeepLink {
         // they had. MembershipManagementCard lives on the Profile tab and renders both states.
         "recurring.paused",
         "membership.expiring_soon",
-        "membership.cancellation_effective" -> Routes.Home(tab = MainTab.Profile.name)
+        "membership.cancellation_effective",
+        "membership.payment_failed" -> Routes.Home(tab = MainTab.Profile.name)
         "loyalty.tier_upgrade" -> Routes.RewardsActivity
         // promo.new_sitewide intentionally lands on Home — there's no
         // single screen that's right for "see the new offer".

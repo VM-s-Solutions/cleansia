@@ -67,6 +67,15 @@ public class CreateAdminUserPasswordHashingTests
         Assert.Equal(RawPassword, captured.Password);
     }
 
+    // The creator typed this password and knows it, so the new administrator replaces it at first sign-in.
+    [Fact]
+    public async Task Created_Admin_Must_Change_The_Password_At_First_Sign_In()
+    {
+        var captured = await CreateAdminAndCaptureUser();
+
+        Assert.True(captured.MustChangePassword);
+    }
+
     private static async Task<User> CreateAdminAndCaptureUser()
     {
         var userRepository = new Mock<IUserRepository>();

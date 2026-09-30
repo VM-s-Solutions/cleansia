@@ -82,16 +82,8 @@
     <string name="rewards_next_milestone">Ще %1$d для відкриття %2$s</string>
     <string name="rewards_all_tiers_unlocked">Ви відкрили всі рівні — дякуємо!</string>
     <string name="rewards_tiers_title">Етапи</string>
-    <string name="rewards_tier_unlocked">Відкрито</string>
-    <string name="rewards_tier_regular">Постійний</string>
-    <string name="rewards_tier_regular_perk">Пріоритетна зміна термінів &amp; гайд із порадами щодо прибирання</string>
-    <string name="rewards_tier_vip">VIP-учасник</string>
-    <string name="rewards_tier_vip_perk">Пріоритетна підтримка &amp; безкоштовне еко-оновлення</string>
-    <string name="rewards_tier_hero">Cleansia Hero</string>
-    <string name="rewards_tier_hero_perk">Гарантовані слоти у той самий день &amp; ранній доступ до нових послуг</string>
 
     <string name="rewards_referral_title">Запросити друга</string>
-    <string name="rewards_referral_subtitle">Вони отримають вітальний бонус, ви — додаток безкоштовно.</string>
     <string name="rewards_referral_your_code">Ваш код</string>
     <string name="rewards_referral_share">Поділитися кодом</string>
     <string name="rewards_referral_no_joins">Будьте першим — поділіться своїм кодом</string>
@@ -117,13 +109,10 @@
 
     <!-- Smart upsell carousel slides -->
     <string name="home_upsell_plus_top">Cleansia Plus</string>
-    <string name="home_upsell_plus_title">Економте на кожному прибиранні. 14 днів безкоштовно.</string>
-    <string name="home_upsell_plus_cta">Спробувати Plus безкоштовно</string>
-    <string name="home_upsell_welcome_top">Вітальна пропозиція</string>
-    <string name="home_upsell_welcome_title">Знижка 15% на перше прибирання з кодом WELCOME15</string>
-    <string name="home_upsell_welcome_cta">Замовити перше прибирання</string>
+    <string name="home_upsell_plus_title">Економте на кожному прибиранні.</string>
+    <string name="home_upsell_plus_cta">Отримати Plus</string>
     <string name="home_upsell_referral_top">Запросіть друга</string>
-    <string name="home_upsell_referral_title">Обидва отримаєте 150 балів після їхнього бронювання</string>
+    <string name="home_upsell_referral_title">По 150 балів після першого завершеного прибирання друга</string>
     <string name="home_upsell_referral_cta">Поділитися кодом</string>
     <string name="home_upsell_setup_recurring_top">Перевага Plus</string>
     <string name="home_upsell_setup_recurring_title">Налаштуйте регулярне прибирання — замов один раз, працює завжди</string>
@@ -132,13 +121,8 @@
     <string name="home_hero2_top">Весна вже тут</string>
     <string name="home_hero2_title">Глибоке прибирання + вікна разом</string>
 
-    <string name="home_hero3_top">Запросіть друга</string>
-    <string name="home_hero3_title">Подаруйте бонус, отримайте додаток безкоштовно</string>
-    <string name="home_hero3_cta">Поділитися кодом</string>
-
     <!-- Home — trust strip -->
     <string name="home_trust_insured">Застраховано</string>
-    <string name="home_trust_vetted">Перевірено</string>
     <string name="home_trust_same_day">Сьогодні</string>
 
     <!-- Home — popular packages -->
@@ -186,16 +170,11 @@
     <string name="home_promo_title">Для вас</string>
 
     <string name="home_hero_slide1_title">Бездоганно за кілька годин</string>
-    <string name="home_hero_slide1_subtitle">Замовте перевіреного клінера. Прозорі ціни, без дзвінків.</string>
     <string name="home_hero_book_now">Замовити</string>
 
     <string name="home_hero_slide2_title">Глибоке прибирання, легкий тиждень</string>
     <string name="home_hero_slide2_subtitle">Килими, оббивка, вікна — все за один візит.</string>
     <string name="home_hero_slide2_cta">Дослідити</string>
-
-    <string name="home_hero_slide3_title">100% задоволення</string>
-    <string name="home_hero_slide3_subtitle">Не задоволені? Ми повернемося і виправимо це.</string>
-    <string name="home_hero_slide3_cta">Дізнатися більше</string>
 
     <!-- Orders tab -->
     <string name="orders_title">Мої замовлення</string>
@@ -299,6 +278,7 @@
     <string name="order_cancel_fee_last_minute">Це скасування в останню хвилину, тому комісія вища.</string>
     <string name="order_cancel_fee_none">Комісії за скасування немає.</string>
     <string name="order_cancel_fee_split">Комісія за скасування %1$s — вам повернемо %2$s.</string>
+    <string name="order_cancel_fee_only">Комісія за скасування %1$s.</string>
     <string name="order_cancel_fee_checking">Перевіряємо, скільки коштує скасування цього бронювання…</string>
     <string name="order_cancel_fee_unavailable">Зараз не вдалося перевірити комісію за скасування. Ви все одно можете скасувати — суму підтвердимо під час скасування.</string>
     <string name="order_cancel_fee_retry">Спробувати ще раз</string>
@@ -388,20 +368,9 @@
     <string name="order_photos_metadata_by">Від %1$s</string>
     <string name="common_close">Закрити</string>
 
-    <!-- Contract for work: the wizard sentence at the offer, the detail line per accepting crew member, the contract screen -->
-    <string name="booking_work_contract_notice"><![CDATA[Підтверджуючи замовлення, ви укладаєте з прибиральником чи прибиральницею договір підряду на <a href="cleansia://work-contract">цих умовах</a>.]]></string>
-    <string name="work_contract_title">Договір підряду</string>
-    <string name="work_contract_accepted_line">Договір підряду прийняв(ла) %1$s %2$s, версія %3$s</string>
-    <string name="work_contract_read">Читати договір</string>
-    <string name="work_contract_version">Версія %1$s</string>
-    <string name="work_contract_facts_title">Замовлення, як його було прийнято</string>
-    <string name="work_contract_order_number">Номер замовлення</string>
-    <string name="work_contract_window">Дата й час</string>
-    <string name="work_contract_price">Ціна</string>
-    <string name="work_contract_location">Місце</string>
-    <string name="work_contract_accepted_on">Прийнято прибиральником чи прибиральницею %1$s, версія %2$s</string>
-    <string name="work_contract_accepted_in_language">Прийнято мовою: %1$s</string>
-    <string name="work_contract_load_error">Не вдалося завантажити договір. Спробуйте ще раз.</string>
+    <!-- Booking review: the contract sentence and the request to start within the withdrawal period -->
+    <string name="booking_contract_notice"><![CDATA[Підтверджуючи замовлення, ви укладаєте договір про прибирання з операційною компанією ринку, на якому розташоване ваше житло, відповідно до її <a href="cleansia://terms">Умов використання</a>. Прибирання виконує прибиральник як субпідрядник компанії, і він не є стороною вашого договору.]]></string>
+    <string name="consent_early_performance_draft_2026_09_29">Я прошу розпочати прибирання протягом 14-денного строку для відмови від договору та визнаю, що після повного виконання прибирання втрачаю право на відмову.</string>
 
     <!-- Profile tab -->
     <string name="profile_greeting">Привіт!</string>
@@ -526,17 +495,17 @@
     <string name="help_call">Зателефонувати в підтримку</string>
     <string name="help_call_desc">Пн–Нд · 8:00–20:00</string>
     <string name="help_email">Написати email</string>
-    <string name="help_email_desc">support@cleansia.cz</string>
+    <string name="help_email_desc">info@cleansia.cz</string>
     <string name="help_faq_title">Поширені запитання</string>
     <string name="help_faq_q1">Як скасувати бронювання?</string>
-    <string name="help_faq_a1">Відкрийте бронювання у вкладці Замовлення та натисніть \"Скасувати\". Безкоштовне скасування за 24 години до початку прибирання. Протягом 15 хвилин після замовлення ви не платите нічого — з Cleansia Plus протягом 60 хвилин.</string>
+    <string name="help_faq_a1">Відкрийте бронювання у вкладці Замовлення та натисніть \"Скасувати\". Безкоштовне скасування за 24 години до початку прибирання. Протягом 15 хвилин після замовлення ви не платите нічого — для першого замовлення або з Cleansia Plus протягом 60 хвилин.</string>
     <string name="help_faq_q2">Що робити, якщо мене не буде вдома, коли прийде клінер?</string>
-    <string name="help_faq_a2">Додайте інструкції щодо доступу при бронюванні (напр. код від дверей, місце ключа). Клінери чекають до 15 хвилин; якщо ми не можемо зв’язатися з вами, бронювання може бути скасовано.</string>
-    <string name="help_faq_q3">Чи застраховані та перевірені клінери?</string>
-    <string name="help_faq_a3">Так. Усі клінери Cleansia пройшли перевірку та застраховані до %1$s на бронювання.</string>
-    <string name="help_faq_a3_no_figure">Так. Усі клінери Cleansia пройшли перевірку та застраховані.</string>
-    <string name="help_faq_q4">Як перенести час?</string>
-    <string name="help_faq_a4">У вкладці Замовлення відкрийте майбутнє бронювання та натисніть \"Перенести\". Безкоштовне перенесення за 12 годин до прибирання.</string>
+    <string name="help_faq_a2">Додайте інструкції щодо доступу при бронюванні (напр. код від дверей, місце ключа). Клінер чекає 15 хвилин після початку прибирання і намагається вам зателефонувати. Якщо й тоді не вдасться потрапити всередину, бронювання скасовується і стягується повна вартість.</string>
+    <string name="help_faq_q3">Чи застраховані клінери?</string>
+    <string name="help_faq_a3">Так. Усі клінери Cleansia застраховані до %1$s на бронювання.</string>
+    <string name="help_faq_a3_no_figure">Так. Усі клінери Cleansia застраховані.</string>
+    <string name="help_faq_q4">Чи можна змінити час?</string>
+    <string name="help_faq_a4">Поки що ні — перенести бронювання не можна. Скасуйте його у вкладці Замовлення та забронюйте новий час; поки жоден клінер не взяв бронювання, скасування безкоштовне.</string>
     <string name="help_faq_q5">Що включено у стандартне прибирання?</string>
     <string name="help_faq_a5">Кухня (стільниці, мийка, зовнішня частина техніки), ванні (унітаз, душ, плитка), всі підлоги, витирання пилу, загальне прибирання. Додатки, як-от чищення духовки, доступні окремо.</string>
 
@@ -612,14 +581,13 @@
     <string name="booking_cancel_tier3_value">50% комісія</string>
     <string name="booking_cancel_plus_badge">ПЕРЕВАГА PLUS</string>
     <string name="booking_cancel_plus_subtitle">Як учасник Plus ви можете скасувати безкоштовно всього за %1$d години до початку.</string>
-    <string name="booking_cancel_grace_note">Протягом 15 хвилин після замовлення ви не платите нічого — з Cleansia Plus протягом 60 хвилин.</string>
+    <string name="booking_cancel_grace_note">Протягом 15 хвилин після замовлення ви не платите нічого — для першого замовлення або з Cleansia Plus протягом 60 хвилин.</string>
 
     <!-- Booking — save address -->
     <string name="booking_save_address">Зберегти цю адресу</string>
     <string name="booking_set_as_default">Встановити за замовчуванням</string>
     <string name="booking_trust_insured">Застраховано до %1$s</string>
     <string name="booking_trust_insured_no_figure">Застраховано</string>
-    <string name="booking_trust_vetted">Перевірені клінери</string>
 
     <string name="booking_pick_service">Виберіть послугу</string>
     <string name="booking_or_package">Або виберіть пакет</string>
@@ -708,6 +676,36 @@
     <string name="booking_summary_subtotal">Проміжний підсумок</string>
     <string name="booking_summary_express_surcharge">Експрес-надбавка (+20%)</string>
     <string name="booking_summary_express_surcharge_waived">Експрес-слот — скасовано з Plus</string>
+
+    <!-- Dirtiness level: booking step, recurring wizard, summaries -->
+    <string name="dirtiness_title">Наскільки у вас прибрано?</string>
+    <string name="dirtiness_intro">Оберіть стан, який найкраще відповідає всьому помешканню.</string>
+    <string name="dirtiness_hint">Якщо вагаєтеся між двома рівнями, оберіть вищий. Тоді прибиральник матиме достатньо часу, і результат буде таким, як слід.</string>
+    <string name="dirtiness_level_label">Рівень забруднення</string>
+    <string name="dirtiness_normal_title">Звичайний</string>
+    <string name="dirtiness_normal_price">Без доплати</string>
+    <string name="dirtiness_normal_when">Помешкання прибирають регулярно, востаннє приблизно 1–2 тижні тому.</string>
+    <string name="dirtiness_normal_detail_1">Пил на меблях і полицях, крихти й волосся на підлозі</string>
+    <string name="dirtiness_normal_detail_2">У ванній звичайні плями від води, унітаз без нальоту</string>
+    <string name="dirtiness_normal_detail_3">Кухня після звичайного готування: протерти стільницю й плиту, без пригорілого</string>
+    <string name="dirtiness_normal_detail_4">Посуд помитий або в посудомийній машині</string>
+    <string name="dirtiness_increased_title">Підвищений</string>
+    <string name="dirtiness_increased_price" formatted="false">+30%</string>
+    <string name="dirtiness_increased_when">Останнє прибирання 3–6 тижнів тому або помешкання з тваринами чи маленькими дітьми.</string>
+    <string name="dirtiness_increased_detail_1">Помітний шар пилу, плями та затерті місця на підлозі</string>
+    <string name="dirtiness_increased_detail_2">Вапняний наліт на змішувачах, у душовій кабіні та на ванні, потемнілі шви</string>
+    <string name="dirtiness_increased_detail_3">Жир на кухонній стільниці, плитці та витяжці, забруднена духовка або мікрохвильовка ззовні</string>
+    <string name="dirtiness_increased_detail_4">Шерсть тварин на дивані, килимах і в кутах</string>
+    <string name="dirtiness_heavy_title">Сильний</string>
+    <string name="dirtiness_heavy_price" formatted="false">+60%</string>
+    <string name="dirtiness_heavy_when">Понад 2 місяці без прибирання або довго занедбане помешкання.</string>
+    <string name="dirtiness_heavy_detail_1">Сильний вапняний наліт і відкладення, які не зникають з одного протирання</string>
+    <string name="dirtiness_heavy_detail_2">Пригорілий жир на плиті, витяжці та шафках</string>
+    <string name="dirtiness_heavy_detail_3">Чорні плями (цвіль) на силіконі або у швах</string>
+    <string name="dirtiness_heavy_detail_4">Засохлий бруд на підлозі, липкі поверхні, сильний запах</string>
+    <string name="dirtiness_surcharge_increased" formatted="false">Доплата за підвищене забруднення (+30%)</string>
+    <string name="dirtiness_surcharge_heavy" formatted="false">Доплата за сильне забруднення (+60%)</string>
+
     <string name="booking_summary_promo_discount">Промокод (-%1$s)</string>
     <string name="booking_summary_membership_discount">Знижка Cleansia Plus</string>
     <string name="booking_summary_tier_discount">Знижка за лояльність</string>
@@ -745,18 +743,18 @@
     <string name="booking_referral_code_row_applied">%1$s застосовано</string>
     <string name="booking_referral_code_row_clear">Видалити</string>
     <string name="booking_referral_code_dialog_title">Введіть реферальний код</string>
-    <string name="booking_referral_code_dialog_helper">Маєте код від друга? Обидва отримаєте 150 бонусних балів після першого прибирання.</string>
+    <string name="booking_referral_code_dialog_helper">Маєте код від друга? Обидва отримаєте 150 бонусних балів після вашого першого завершеного прибирання.</string>
     <string name="booking_referral_code_dialog_apply">Застосувати</string>
     <string name="booking_referral_code_dialog_cancel">Скасувати</string>
     <string name="booking_referral_code_dialog_done">Готово</string>
-    <string name="booking_referral_code_dialog_success_named">Код від %1$s прийнято — обидва отримаєте 150 бонусних балів.</string>
+    <string name="booking_referral_code_dialog_success_named">Код від %1$s прийнято — обидва отримаєте 150 бонусних балів після вашого першого завершеного прибирання.</string>
 
     <!-- Plus: pre-request a favorite cleaner -->
     <string name="booking_preferred_cleaner_title">Запросити улюбленого клінера</string>
     <string name="booking_preferred_cleaner_subtitle">Перевага Plus · виберіть когось, хто вже у вас прибирав</string>
     <string name="booking_preferred_cleaner_dialog_title">Виберіть клінера</string>
     <string name="booking_preferred_cleaner_clear">Скасувати вибір клінера</string>
-    <string name="booking_referral_code_dialog_success">Код прийнято — обидва отримаєте 150 бонусних балів.</string>
+    <string name="booking_referral_code_dialog_success">Код прийнято — обидва отримаєте 150 бонусних балів після вашого першого завершеного прибирання.</string>
 
     <string name="booking_payment_method">Як хочете платити?</string>
     <string name="booking_pay_card">Карткою</string>
@@ -767,6 +765,12 @@
     <string name="booking_cash_needs_card">Кількість прибиральників для цього замовлення: %1$d. Готівкою можна платити лише за замовлення, з якими впорається один прибиральник, тож це замовлення сплачується карткою.</string>
     <string name="booking_cash_pending">Чи можна платити готівкою, ми підтвердимо, щойно буде відома ціна.</string>
     <string name="booking_cash_cleared">Оплата готівкою для цього замовлення більше недоступна, тому спосіб оплати не обрано. Оберіть, як ви хочете платити.</string>
+    <string name="booking_card_guarantee_title">Картка як гарантія для оплати готівкою</string>
+    <string name="booking_card_guarantee_body">Під час першого замовлення з оплатою готівкою ви зберігаєте картку. Зараз нічого не списується: за прибирання ви платите готівкою, як завжди.</string>
+    <string name="consent_card_guarantee_draft_2026_09_28">Я погоджуюся, що за моїми замовленнями з оплатою готівкою Cleansia може списати з цієї картки плату за скасування, плату за ненадання доступу, неоплачену готівку та схвалену мною доплату.</string>
+    <string name="booking_card_guarantee_consent_required">Щоб платити готівкою, погодьтеся на гарантію карткою або оберіть оплату карткою.</string>
+    <string name="booking_card_guarantee_pending">Ми ще підтверджуємо вашу картку. За мить підтвердьте замовлення ще раз.</string>
+    <string name="booking_card_guarantee_cancelled">Картку не збережено, тому нічого не заброньовано. Збережіть картку, щоб платити готівкою, або оберіть оплату карткою.</string>
     <string name="booking_special_instructions_hint">Особливі побажання? (необов’язково)</string>
     <string name="booking_access_instructions_hint">Як увійти? (необов’язково)</string>
 
@@ -808,20 +812,25 @@
     <!-- Account deletion -->
     <string name="profile_delete_account">Видалити обліковий запис</string>
     <string name="delete_account_title">Видалити ваш обліковий запис</string>
-    <string name="delete_account_subtitle">Це назавжди видалить ваш обліковий запис і всі пов’язані дані. Невикористані бонуси після видалення облікового запису анулюються — їх не можна виплатити чи відновити. Цю дію неможливо скасувати.</string>
+    <string name="delete_account_subtitle">Під час видалення облікового запису ми видалимо ваші персональні дані. Ми зберігаємо лише те, чого вимагає закон або захист правових вимог, — перелік нижче. Невикористані бонуси після видалення облікового запису анулюються — їх не можна виплатити чи відновити. Цю дію неможливо скасувати.</string>
     <string name="delete_account_what_happens">Що буде видалено</string>
     <string name="delete_account_item_profile">• Ваш профіль (ім’я, email, телефон, фото)</string>
     <string name="delete_account_item_addresses">• Усі збережені адреси</string>
-    <string name="delete_account_item_history">• Історію бронювань буде анонімізовано</string>
+    <string name="delete_account_item_history">• Ваше ім’я, контактні дані, адреса й фотографії з ваших замовлень</string>
     <string name="delete_account_item_devices">• Вихід на всіх ваших пристроях</string>
-    <string name="delete_account_item_consents">• Усі маркетингові згоди</string>
+    <string name="delete_account_what_is_kept">Що ми зберігаємо</string>
+    <string name="delete_account_kept_bookings">• Ваші замовлення як запис про кожен договір, без ваших персональних даних</string>
+    <string name="delete_account_kept_receipts">• Чеки — стільки, скільки вимагає бухгалтерське законодавство</string>
+    <string name="delete_account_kept_consents">• Запис про надані згоди — 3 роки</string>
+    <string name="delete_account_kept_audit">• Журнал дій у вашому обліковому записі — 3 роки, без IP-адрес і даних про пристрій</string>
+    <string name="delete_account_kept_disputes">• Текст ваших скарг, якщо вони були, — 3 роки</string>
     <string name="delete_account_confirm_label">Для підтвердження введіть свій email</string>
     <string name="delete_account_confirm_hint">your@email.com</string>
     <string name="delete_account_confirm_mismatch">Email не збігається з вашим обліковим записом</string>
     <string name="delete_account_confirm_button">Назавжди видалити обліковий запис</string>
     <string name="delete_account_success">Ваш обліковий запис видалено.</string>
     <string name="delete_account_dialog_title">Видалити обліковий запис?</string>
-    <string name="delete_account_dialog_message">Це назавжди видалить ваш обліковий запис і дані. Це не можна скасувати. Невикористані бонуси на рахунку анулюються, щойно видалення завершиться, — їх не можна виплатити чи відновити.</string>
+    <string name="delete_account_dialog_message">Ваші персональні дані буде видалено, і цю дію неможливо скасувати; записи, перелічені на цьому екрані, ми зберігаємо протягом зазначених на ньому строків. Невикористані бонуси на рахунку анулюються, щойно видалення завершиться, — їх не можна виплатити чи відновити.</string>
     <string name="delete_account_dialog_confirm">Видалити</string>
 
     <!-- Error handling — generics -->
@@ -834,8 +843,7 @@
     <!-- Cleansia Plus subscription -->
     <string name="membership_plus_title">Cleansia Plus</string>
     <string name="membership_plus_subtitle">Кращий спосіб тримати дім чистим</string>
-    <string name="membership_subscribe_cta">Спробувати Cleansia Plus</string>
-    <string name="membership_disclosure">Можна скасувати будь-коли. Підписка автоматично продовжується до скасування.</string>
+    <string name="membership_disclosure">Підписка автоматично продовжується до скасування. Після скасування переваги діють до кінця оплаченого періоду. Якщо оплату за продовження не вдається списати, переваги призупиняються, а скасування тоді діє одразу.</string>
     <string name="plus_not_available_in_market">Plus поки що недоступний на вашому ринку</string>
 
     <!-- Plus subscribe page redesign -->
@@ -858,13 +866,12 @@
     <string name="membership_plan_per_month_billed_annually">%1$s / місяць — оплата щорічно %2$s</string>
     <string name="membership_plan_per_month">%1$s / місяць</string>
     <string name="membership_plan_per_year">%1$s / рік</string>
-    <string name="membership_trial_badge">%1$d днів безкоштовно</string>
-    <string name="membership_trial_disclosure">Перші %1$d днів безкоштовно. Потім картку буде автоматично списано. Скасуйте будь-коли до кінця пробного періоду.</string>
 
     <!-- Switch to annual flow -->
     <string name="membership_switch_to_annual_cta">Перейти на річний — економія %1$d%%</string>
     <string name="membership_switch_dialog_title">Перейти на річний?</string>
     <string name="membership_switch_dialog_message">Сьогодні буде списано пропорційну різницю, потім %1$s на рік. Ваші переваги залишаються.</string>
+    <string name="membership_switch_dialog_message_trial">Пробний період триває до %1$s. Новий план (%2$s) застосовується з першого оплаченого періоду, і лише тоді почнуть діяти переваги Plus.</string>
     <string name="membership_switch_dialog_confirm">Перейти</string>
     <string name="membership_switch_success">Ласкаво просимо до річного плану!</string>
     <string name="membership_perk_favorite_cleaner_title">Ваш улюблений клінер</string>
@@ -872,13 +879,13 @@
     <string name="membership_perk_recurring_title">Регулярні бронювання</string>
     <string name="membership_perk_recurring_desc">Налаштуйте один раз — кожен другий вівторок о 10:00, автоматично.</string>
     <string name="membership_perk_cancellation_title">Безкоштовне скасування</string>
-    <string name="membership_perk_cancellation_desc">Скасуйте за 4 години до прибирання без комісій.</string>
+    <string name="membership_perk_cancellation_desc">Скасуйте без комісій за %1$d год до прибирання.</string>
     <string name="membership_perk_grace_title">Безкоштовне скасування після замовлення</string>
-    <string name="membership_perk_grace_desc">60 хвилин після замовлення на безкоштовне скасування замість 15 хвилин</string>
-    <string name="membership_perk_discount_title" formatted="false">5% знижка для учасників</string>
+    <string name="membership_perk_grace_desc">60 хвилин після кожного замовлення на безкоштовне скасування замість 15 хвилин</string>
+    <string name="membership_perk_discount_title">%1$d%% знижка для учасників</string>
     <string name="membership_perk_discount_desc" formatted="false">На кожне прибирання. У поєднанні з рівнем лояльності обмежена 12%.</string>
     <string name="membership_perk_express_title">Експрес-замовлення без доплати</string>
-    <string name="membership_perk_express_desc" formatted="false">Ми не беремо 20 % доплати за експрес-замовлення — прибирання, що починаються через 2–4 години після оформлення. Певна кількість на кожен календарний місяць, поки діє ваше оплачене членство; невикористані не переносяться.</string>
+    <string name="membership_perk_express_desc">Ми не беремо 20 %% доплати за експрес-замовлення — прибирання, що починаються через 2–4 години після оформлення. До %1$d на кожен календарний місяць, поки діє ваше оплачене членство; невикористані не переносяться.</string>
 
     <!-- Perk pills on the active management card. -->
     <string name="membership_perk_pill_discount">знижка %1$d%%</string>
@@ -890,12 +897,14 @@
 
     <!-- Membership management card on Profile -->
     <string name="membership_inactive_title">Cleansia Plus</string>
-    <string name="membership_inactive_subtitle" formatted="false">5% знижка, безкоштовне скасування, ваш улюблений клінер.</string>
     <string name="membership_inactive_badge">PLUS</string>
-    <string name="membership_inactive_perks_summary" formatted="false">Економія на кожному бронюванні · скасування будь-коли · регулярні прибирання</string>
-    <string name="membership_inactive_cta">Спробувати безкоштовно 14 днів</string>
+    <string name="membership_inactive_perks_summary" formatted="false">Економія на кожному бронюванні · регулярні прибирання</string>
+    <string name="membership_inactive_cta">Отримати Cleansia Plus</string>
     <string name="membership_success_title">Ласкаво просимо до Plus!</string>
     <string name="membership_success_subtitle">Ваші переваги активні одразу. Ось що щойно відкрилося:</string>
+    <string name="membership_success_subtitle_trial">Ваш пробний період Cleansia Plus розпочався.</string>
+    <string name="membership_trial_perks_title">Що входить у платну підписку</string>
+    <string name="membership_trial_perks_note">Під час пробного періоду нічого з цього не діє — переваги почнуть діяти лише з першого оплаченого місяця.</string>
     <string name="membership_success_perks_header">ВАШІ ПЕРЕВАГИ PLUS</string>
     <string name="membership_success_perk_express">Експрес-замовлення без доплати — з першого оплаченого місяця</string>
     <string name="membership_success_cta_setup_recurring">Налаштувати регулярне прибирання</string>
@@ -903,15 +912,23 @@
     <string name="membership_active_status">Активний</string>
     <string name="membership_renews_on">Продовжується %1$s</string>
     <string name="membership_cancelled_until">Активний до %1$s</string>
+    <string name="membership_cancel_success_trial">Членство скасовано — оплаченого місяця не буде, тож з вас нічого не спишуть.</string>
+    <string name="membership_cancel_success_now">Cleansia Plus скасовано — більше нічого не буде списано.</string>
     <string name="membership_active_until">Активний до %1$s</string>
     <string name="membership_status_ending">Запит на скасування</string>
     <string name="membership_status_ending_badge">ЗАВЕРШУЄТЬСЯ</string>
     <string name="membership_status_active_badge">PLUS · АКТИВНИЙ</string>
     <string name="membership_then_ends_hint">Переваги Plus припиняються в цю дату.</string>
-    <string name="membership_auto_renew_hint">Автоматично продовжується — скасуйте будь-коли.</string>
+    <string name="membership_trial_cancelled_lead">Оскільки ви скасували її під час пробного періоду, оплаченого місяця не буде, тож переваги Plus так і не почнуть діяти.</string>
+    <string name="membership_auto_renew_hint">Продовжується автоматично. Якщо ви скасуєте, переваги діятимуть до цієї дати.</string>
+    <string name="membership_status_past_due_badge">ОПЛАТА НЕ ВДАЛАСЯ</string>
+    <string name="membership_past_due_title">Оплата не вдалася — переваги призупинено</string>
+    <string name="membership_past_due_body">Нам не вдалося списати оплату за продовження, тому ваші переваги Plus призупинено. Якщо повторна оплата пройде, вони відновляться. Якщо ви скасуєте, членство завершиться одразу і більше нічого не буде списано.</string>
     <string name="membership_cancel_action">Скасувати підписку</string>
     <string name="membership_cancel_dialog_title">Скасувати Cleansia Plus?</string>
     <string name="membership_cancel_dialog_message">Ваші переваги залишаться до кінця поточного періоду. Списань більше не буде.</string>
+    <string name="membership_cancel_dialog_message_trial">Пробний період закінчиться %1$s. Оплаченого місяця не буде, тож з вас нічого не спишуть і жодна з переваг Plus не почне діяти.</string>
+    <string name="membership_cancel_dialog_message_now">Членство завершиться одразу. Неоплачене продовження не буде списано, і більше нічого також.</string>
     <string name="membership_cancel_dialog_confirm">Скасувати</string>
     <string name="membership_subscribed_success">Ласкаво просимо до Cleansia Plus!</string>
     <string name="membership_already_active">Ви вже учасник Plus.</string>
@@ -944,9 +961,11 @@
     <string name="recurring_bookings_create_fab">Новий розклад</string>
     <string name="recurring_plus_gate_title">Регулярні — це перевага Plus</string>
     <string name="recurring_plus_gate_subtitle">Приєднайтеся до Cleansia Plus, щоб налаштувати щотижневі або раз на два тижні прибирання, які бронюються самі.</string>
-    <string name="recurring_plus_gate_cta">Спробувати Cleansia Plus</string>
+    <string name="recurring_plus_gate_cta">Отримати Cleansia Plus</string>
     <string name="recurring_lapsed_notice_title">Cleansia Plus більше не активна</string>
     <string name="recurring_lapsed_notice_body">Ці розклади продовжують працювати, і прибирання бронюються за повною ціною без членства. Будь-який з них можна тут будь-коли призупинити або видалити. Щоб додати чи змінити розклад, поновіть підписку.</string>
+    <string name="recurring_paused_notice_title">Регулярні призупинено — оплата Plus не вдалася</string>
+    <string name="recurring_paused_notice_body">Нам не вдалося списати оплату за продовження Plus, тому ваші розклади не бронюють нових прибирань, і жоден не можна додати чи змінити. Якщо повторна оплата пройде, вони знову почнуть бронювати.</string>
 
     <!-- Recurring booking create form -->
     <string name="recurring_create_title_blank">Нове регулярне прибирання</string>
@@ -980,6 +999,8 @@
     <string name="recurring_edit_submit">Зберегти зміни</string>
     <string name="recurring_edit_success">Розклад оновлено.</string>
     <string name="recurring_edit_load_failed">Не вдалося завантажити цей розклад. Поверніться назад і спробуйте знову.</string>
+    <string name="preferred_cleaner_schedule_refused">Для цього розкладу ми більше не можемо попросити вашого улюбленого клінера першим — наприклад, тому що адреса прибирання тепер в іншій країні. Ви можете зберегти розклад без нього, і тоді кожне прибирання буде відкрите для всієї нашої команди.</string>
+    <string name="preferred_cleaner_schedule_save_without">Зберегти без улюбленого клінера</string>
     <string name="recurring_edit_notice_title">Що зміниться після збереження</string>
     <string name="recurring_edit_notice_what_changes">Прибирання, замовлені за цим розкладом надалі, використовуватимуть дані вище.</string>
     <string name="recurring_edit_notice_what_stays">Прибирання, які вже є у вашому календарі, зберігають початковий час і ціну — змінити або скасувати їх можна окремо в Замовленнях.</string>
@@ -1059,9 +1080,14 @@
     <string name="error_order_address_exactly_one_required">Будь ласка, виберіть збережену адресу або введіть нову.</string>
     <string name="error_order_cleaning_date_future">Дата має бути в майбутньому.</string>
     <string name="error_order_cleaning_date_below_lead_time">Цей час занадто близький. Виберіть пізніший слот.</string>
+    <string name="error_order_cleaning_date_outside_booking_window">Оберіть початок між 08:00 і 19:45 за місцевим часом, кратно чверті години, не більше ніж на 60 днів наперед.</string>
     <string name="error_order_already_cancelled">Це бронювання вже скасоване.</string>
     <string name="error_order_already_completed">Це бронювання вже завершене.</string>
     <string name="error_order_in_progress_cannot_cancel">Це бронювання виконується і не може бути скасоване.</string>
+    <string name="error_order_start_passed_cannot_cancel">Час початку вже минув, і прибиральника призначено, тому це бронювання більше не можна скасувати. Якщо прибиральник не прийшов, повідомте нам.</string>
+    <string name="error_order_cleaner_already_started">Прибиральник уже розпочав прибирання.</string>
+    <string name="error_order_start_time_not_reached">Замовлений час початку ще не настав.</string>
+    <string name="error_order_invalid_status_transition">Ця дія недоступна для поточного статусу замовлення.</string>
     <string name="error_order_cancellation_window_closed">Період скасування вже закінчився.</string>
     <string name="error_order_empty">Ваше замовлення порожнє. Будь ласка, додайте принаймні одну послугу.</string>
     <string name="error_order_size_exceeds_maximum">В одному замовленні може бути не більше 8 кімнат і 4 ванних кімнат.</string>
@@ -1075,8 +1101,16 @@
     <string name="error_order_total_price_not_match">Ціна змінилася. Оновіть і спробуйте знову.</string>
     <string name="error_order_payment_gateway_unavailable">Платіжна служба тимчасово недоступна.</string>
     <string name="error_order_payment_already_paid">Це замовлення вже оплачено.</string>
+    <string name="error_order_recurring_already_confirmed">Ви вже підтвердили це прибирання. Сплатіть прибиральнику готівкою в день прибирання.</string>
     <string name="error_order_creation_failed">Не вдалося створити бронювання. Спробуйте знову.</string>
     <string name="error_order_cash_not_available">Оплата готівкою можлива лише після входу в акаунт і для замовлення, з яким впорається один прибиральник.</string>
+    <string name="error_order_cash_requires_saved_card">Щоб платити готівкою, спершу збережіть картку як гарантію — або оплатіть карткою.</string>
+    <string name="error_order_cash_open_bookings_limit_reached">У вас уже максимально дозволена кількість неоплачених замовлень готівкою. Оберіть картку або знову готівку, коли одне з них буде оплачено.</string>
+    <string name="error_order_cash_unpaid_receivable">У вас є неоплачена сума, наприклад плата за скасування. Поки що оплатіть карткою; готівкою можна буде платити знову, коли ви сплатите її в профілі в розділі Платежі.</string>
+    <string name="error_saved_card_consent_not_accepted">Перш ніж зберегти картку, погодьтеся, що з неї можуть стягуватися збори та неоплачена готівка.</string>
+    <string name="error_saved_card_not_found">Ми не знайшли цю збережену картку.</string>
+    <string name="error_receivable_not_found">Ми не знайшли цю суму до сплати.</string>
+    <string name="error_receivable_not_open">Цю суму вже сплачено або списано.</string>
     <string name="error_order_review_already_exists">Ви вже залишили відгук про це бронювання.</string>
     <string name="error_order_review_rating_invalid">Оцінка має бути від 1 до 5.</string>
     <string name="error_order_not_owned_by_user">Ви не маєте доступу до цього бронювання.</string>
@@ -1102,6 +1136,7 @@
     <string name="profile_row_disputes">Спори</string>
 
     <string name="order_action_report_issue">Повідомити про проблему</string>
+    <string name="order_action_cleaner_no_show">Прибиральник не прийшов</string>
     <string name="order_action_rebook">Замовити знову</string>
     <string name="order_rebook_unavailable_items">Деякі позиції з вашого попереднього замовлення більше не доступні.</string>
     <string name="booking_market_items_unavailable">Деякі вибрані позиції за цією адресою не пропонуються, тому їх вилучено.</string>
@@ -1190,20 +1225,19 @@
     <string name="loyalty_retry">Повторити</string>
 
     <!-- Loyalty Phase C — Referrals -->
-    <string name="loyalty_referral_section_title">Запросіть друзів — отримайте 150 балів за кожного</string>
-    <string name="loyalty_referral_subtitle">Поділіться своїм кодом. Вони отримають 150 бонусних балів на перше прибирання, ви теж.</string>
+    <string name="loyalty_referral_section_title">Запросіть друзів</string>
+    <string name="loyalty_referral_subtitle">Поділіться своїм кодом. Друг і ви отримаєте по 150 бонусних балів після його першого завершеного прибирання.</string>
     <string name="loyalty_referral_code_label">Ваш код</string>
     <string name="loyalty_referral_share_button">Поділитися</string>
     <string name="loyalty_referral_copy_button">Копіювати</string>
     <string name="loyalty_referral_copied_toast">Код скопійовано</string>
-    <string name="loyalty_referral_share_text">Отримайте 150 бонусних балів на перше прибирання Cleansia! Використайте мій код %1$s при реєстрації: %2$s</string>
+    <string name="loyalty_referral_share_text">Отримайте 150 бонусних балів після першого завершеного прибирання Cleansia! Використайте мій код %1$s при реєстрації: %2$s</string>
     <string name="loyalty_referral_stats_empty">Будьте першим — поділіться кодом</string>
     <string name="loyalty_referral_stats_qualified">%1$d друг приєднався · %2$d кваліфіковані</string>
     <string name="loyalty_referral_share_failed">Не вдалося поділитися. Код скопійовано в буфер.</string>
     <string name="referral_code_field_collapsed">У мене є реферальний код</string>
     <string name="referral_code_field_label">Реферальний код</string>
     <string name="referral_code_field_placeholder">X3K9P2</string>
-    <string name="referral_code_valid">Код від %1$s — ви отримаєте 150 бонусних балів</string>
     <string name="referral_code_validating">Перевірка…</string>
     <string name="error_referral_not_found">Реферальний код не знайдено</string>
     <string name="error_referral_self_referral">Ви не можете рекомендувати себе</string>
@@ -1239,6 +1273,10 @@
     <string name="notification_order_refunded_body">Повернення коштів за замовлення #%1$s обробляється.</string>
     <string name="notification_order_no_cleaner_refunded_title">Вільних прибиральників не знайшлося</string>
     <string name="notification_order_no_cleaner_refunded_body">Замовлення #%1$s ніхто не взяв, тому ми повернули всю суму та додали бонус %2$s на наступне прибирання. Вибачте.</string>
+    <string name="notification_order_no_cleaner_refund_pending_title">Вільних прибиральників не знайшлося</string>
+    <string name="notification_order_no_cleaner_refund_pending_body">На замовлення #%1$s не зміг приїхати жоден прибиральник, тому ми його скасували. Повернення коштів обробляється, а ще ми додали бонус %2$s на наступне прибирання. Вибачте.</string>
+    <string name="notification_order_no_cleaner_nothing_charged_title">Вільних прибиральників не знайшлося</string>
+    <string name="notification_order_no_cleaner_nothing_charged_body">На замовлення #%1$s не зміг приїхати жоден прибиральник, тому ми його скасували. Ми нічого з вас не списали, а ще додали бонус %2$s на наступне прибирання. Вибачте.</string>
     <string name="notification_dispute_reply_title">Підтримка відповіла</string>
     <string name="notification_dispute_reply_body">У вас нове повідомлення щодо вашої скарги. Натисніть, щоб прочитати.</string>
     <string name="notification_recurring_scheduled_title">Підтвердіть завтрашнє прибирання</string>
@@ -1252,11 +1290,38 @@
     <string name="notification_membership_expiring_body">Ваша підписка поновиться через 3 дні. Керуйте планом у застосунку.</string>
     <string name="notification_membership_cancelled_title">Cleansia Plus завершено</string>
     <string name="notification_membership_cancelled_body">Ваша підписка завершилася. Поновіть її, щоб повернути переваги Plus.</string>
+    <string name="notification_membership_payment_failed_title">Платіж за Cleansia Plus не пройшов</string>
+    <string name="notification_membership_payment_failed_body">Останній платіж за Plus не пройшов, тому переваги Plus призупинено, доки він не пройде. Керуйте планом у застосунку.</string>
 
     <string name="notification_order_assignment_cancelled_title">Замовлення скасовано</string>
     <string name="notification_order_assignment_cancelled_body">Замовлення, яке ви прийняли, скасовано: #%1$s. Торкніться, щоб переглянути деталі.</string>
     <string name="notification_payroll_invoice_paid_title">Вам виплачено</string>
     <string name="notification_payroll_invoice_paid_body">Ваш рахунок за останній розрахунковий період оплачено. Торкніться, щоб переглянути.</string>
+    <!-- ── Payments ── -->
+    <string name="profile_row_payments">Платежі</string>
+    <string name="payments_title">Платежі</string>
+    <string name="payments_due_title">До сплати</string>
+    <string name="payments_due_intro">Сплатіть заборгованість, щоб знову платити готівкою. Замовлень з оплатою карткою це не стосується.</string>
+    <string name="payments_due_order">Замовлення %1$s</string>
+    <string name="payments_pay_action">Сплатити</string>
+    <string name="receivable_kind_cancellation_fee">Плата за скасування</string>
+    <string name="receivable_kind_lockout">Плата за ненадання доступу</string>
+    <string name="receivable_kind_unpaid_cash">Неоплачена готівка</string>
+    <string name="receivable_kind_top_up">Схвалена доплата</string>
+    <string name="receivable_kind_other">Сума до сплати</string>
+    <string name="payments_card_title">Збережена картка</string>
+    <string name="payments_card_intro">Картка, яка гарантує ваші замовлення з оплатою готівкою. З неї можуть бути списані плата за скасування, плата за ненадання доступу, неоплачена готівка або схвалена вами доплата.</string>
+    <string name="payments_card_label">%1$s •••• %2$s</string>
+    <string name="payments_card_expires">Дійсна до %1$02d/%2$02d · %3$s</string>
+    <string name="payments_card_empty">Картку не збережено. Ми попросимо її під час першого замовлення з оплатою готівкою.</string>
+    <string name="payments_card_remove_action">Видалити картку</string>
+    <string name="payments_card_remove_title">Видалити цю картку?</string>
+    <string name="payments_card_remove_message">Під час наступного замовлення з оплатою готівкою ми знову попросимо картку.</string>
+    <string name="payments_card_remove_confirm">Видалити</string>
+    <string name="payments_card_removed">Картку видалено</string>
+    <string name="payments_card_remove_retry_hint">Не вдалося видалити картку. Спробуйте ще раз.</string>
+    <string name="payments_error_message">Не вдалося завантажити платежі. Перевірте з’єднання та спробуйте ще раз.</string>
+    <string name="payments_error_retry">Спробувати ще раз</string>
     <!-- ── Ваші пристрої ── -->
     <string name="profile_row_devices">Ваші пристрої</string>
     <string name="devices_title">Ваші пристрої</string>
@@ -1287,6 +1352,7 @@
     <string name="error_auth_too_many_attempts">Забагато спроб із цим кодом. Запросіть новий код і спробуйте ще раз.</string>
     <string name="error_company_not_found">Інформацію про компанію не знайдено</string>
     <string name="error_consent_terms_not_accepted">Щоб продовжити, прийміть Умови надання послуг та Політику конфіденційності.</string>
+    <string name="error_consent_early_performance_not_requested">Щоб продовжити, підтвердьте, що ви просите розпочати надання послуги протягом 14-денного строку для відмови від договору.</string>
     <string name="error_country_not_existing_id">Країну не знайдено</string>
     <string name="error_currency_invalid">Недійсна валюта</string>
     <string name="error_country_not_serviced">У цій країні ми поки що не працюємо.</string>
@@ -1310,6 +1376,7 @@
     <string name="error_file_required">Файл є обов\'язковим</string>
     <string name="error_gdpr_consent_already_granted">Цю згоду вже надано.</string>
     <string name="error_gdpr_consent_not_found">Згоду не знайдено.</string>
+    <string name="error_gdpr_consent_not_editable">Цю згоду тут змінити не можна.</string>
     <string name="error_gdpr_deletion_blocked_by_invoice">Обліковий запис поки не можна видалити — є незакритий рахунок.</string>
     <string name="error_gdpr_deletion_blocked_by_order">Обліковий запис поки не можна видалити — є активне замовлення.</string>
     <string name="error_general_not_found">Ресурс не знайдено</string>
@@ -1370,10 +1437,10 @@
         <item quantity="other">%1$d прибирання завершено</item>
     </plurals>
     <plurals name="loyalty_referral_stats_waiting">
-        <item quantity="one">%1$d друг приєднався — чекаємо на перше бронювання</item>
-        <item quantity="few">%1$d друзі приєдналися — чекаємо на перше бронювання</item>
-        <item quantity="many">%1$d друзів приєдналися — чекаємо на перше бронювання</item>
-        <item quantity="other">%1$d друга приєдналося — чекаємо на перше бронювання</item>
+        <item quantity="one">%1$d друг приєднався — чекаємо на перше завершене прибирання</item>
+        <item quantity="few">%1$d друзі приєдналися — чекаємо на перше завершене прибирання</item>
+        <item quantity="many">%1$d друзів приєдналися — чекаємо на перше завершене прибирання</item>
+        <item quantity="other">%1$d друга приєдналося — чекаємо на перше завершене прибирання</item>
     </plurals>
     <plurals name="home_milestone_subtitle_v2">
         <item quantity="one">Ще %1$d бал до рівня %2$s</item>
@@ -1404,6 +1471,12 @@
     <string name="dispute_create_item_in_package">у пакеті %1$s</string>
     <string name="dispute_create_evidence_hint">Необов’язково. Фото або PDF до 10 МБ кожен — завантажаться під час надсилання.</string>
     <string name="dispute_create_evidence_partial">Спір надіслано, але ці файли не вдалося завантажити: %1$s. Додайте їх знову на сторінці спору.</string>
+    <string name="dispute_create_settlement_title">Якщо скаргу буде визнано</string>
+    <string name="dispute_create_settlement_hint">Оберіть, як повернути гроші. Якщо ви не оберете кредит, ми повернемо їх на картку.</string>
+    <string name="dispute_settlement_card_refund">Повернути на картку</string>
+    <string name="dispute_settlement_card_refund_desc">Гроші повернуться на картку, якою ви платили.</string>
+    <string name="dispute_settlement_credit">Кредит Cleansia</string>
+    <string name="dispute_settlement_credit_desc">Зарахуємо на ваш рахунок для наступних замовлень. Кредит не виплачується і згорає через 12 місяців після останнього руху кредиту.</string>
     <string name="dispute_evidence_remove">Видалити</string>
     <string name="dispute_evidence_uploaded">Завантажено</string>
     <string name="dispute_evidence_upload_failed">Не вдалося завантажити</string>

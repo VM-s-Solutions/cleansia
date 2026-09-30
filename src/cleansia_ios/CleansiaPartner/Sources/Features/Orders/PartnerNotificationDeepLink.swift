@@ -2,6 +2,8 @@ import Foundation
 
 enum PartnerNotificationDestination: Equatable {
     case order(orderId: String)
+    /// The order the cleaner was taken off, opened with the administrator's reason on top.
+    case removedFromOrder(orderId: String)
     case ordersTab
     case invoice(invoiceId: String)
     case earningsTab
@@ -33,9 +35,6 @@ enum PartnerNotificationDeepLink {
              "order.assignment_cancelled",
              "order.seat_open",
              "order.assigned",
-             // Still the order detail even though the cleaner is off the job: the copy says the job
-             // moved, and the detail is where they read which day just came off their schedule.
-             "order.assignment_revoked",
              // Stays on the DETAIL rather than the pending-offers surface, because the push fires on
              // a wider predicate than the reservation does: it is produced from the resolver's
              // recipient, while a hold is granted only when the resolver also returned a deadline.
@@ -51,6 +50,11 @@ enum PartnerNotificationDeepLink {
              "dispute.reply":
             guard let orderId else { return nil }
             return .order(orderId: orderId)
+        // Still the order detail even though the cleaner is off the job: the copy says the job moved,
+        // and the detail is where they read which day came off their schedule, and why.
+        case "order.assignment_revoked":
+            guard let orderId else { return nil }
+            return .removedFromOrder(orderId: orderId)
         // A count over N orders has no single order to open, so both digests land on the tab.
         case "order.new_available",
              "order.reminder_tomorrow":

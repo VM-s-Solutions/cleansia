@@ -366,6 +366,9 @@ public class RecurringPauseNotificationTests(PostgresContainerFixture fixture) :
         await TestMethod<string>(setup: run.Setup, arrange: (CleansiaDbContext db) => Seed(db), act: async (IServiceProvider provider) =>
         {
             await Skip(provider);
+            // A new subscription is refused while the past-due one is alive (owner ruling 2026-09-28), so
+            // the lapsed enrolment ends before the customer re-enrols.
+            await UpdateMembership(provider, "canceled");
             var reenrollment = await CreateEnrollment(provider, failedStatus, DateTime.UtcNow);
             await Skip(provider, TemplateA2);
             await Skip(provider);
@@ -417,6 +420,9 @@ public class RecurringPauseNotificationTests(PostgresContainerFixture fixture) :
         await TestMethod<bool>(setup: run.Setup, arrange: (CleansiaDbContext db) => Seed(db, history: true), act: async (IServiceProvider provider) =>
         {
             await Skip(provider);
+            // At most one enrolment is live at a time (owner ruling 2026-09-28): each ends before the other
+            // is reactivated.
+            await UpdateMembership(provider, "canceled");
             await UpdateMembership(provider, "active", "membership-old", DateTime.UtcNow.AddDays(-20));
             using (var swap = provider.CreateScope())
             {
@@ -435,7 +441,7 @@ public class RecurringPauseNotificationTests(PostgresContainerFixture fixture) :
                 Assert.True(result.IsSuccess, result.Error?.Message);
                 await db.CommitAsync(CancellationToken.None);
             }
-            await UpdateMembership(provider, "past_due", "membership-old");
+            await UpdateMembership(provider, "canceled", "membership-old");
             await UpdateMembership(provider, "active", occurredAt: DateTime.UtcNow.AddDays(-2));
             await UpdateMembership(provider, "past_due");
             using (var read = provider.CreateScope())

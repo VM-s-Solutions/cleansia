@@ -163,6 +163,7 @@ public class OrderBrowseGateOfferabilityTests
             .Returns(new Claim(ClaimTypes.Role, role.ToString()));
 
         return new OrderAccessService(
-            session.Object, new Mock<IEmployeeRepository>().Object, Mock.Of<IOrderRepository>(), ValidatorTestHelpers.CurrencyResolver());
+            session.Object, new Mock<IEmployeeRepository>().Object, Mock.Of<IOrderRepository>(), ValidatorTestHelpers.CurrencyResolver(),
+            Mock.Of<ICashLedgerRepository>(), Mock.Of<Cleansia.Core.Domain.Configuration.IAppConfigurationProvider>());
     }
 }

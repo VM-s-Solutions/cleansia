@@ -310,8 +310,10 @@ overrides it the moment there is one. → /product/business-rules#market
   for a non-admin caller, the browse gate and `TakeOrder` all read; the pending-offer list conjoins
   `PayableTo` alone. A foreign-currency order therefore does not exist from that cleaner's side (a take
   is `order.not_found`, like a held order), so every pay row a cleaner earns is in their currency and a
-  period closes into one invoice. `AdminReassignOrder` is deliberately **not** gated — it is the admin
-  override — and an order the cleaner is already on stays visible to them whatever its currency.
+  period closes into one invoice. `AdminReassignOrder` is the admin override and does **not** read the
+  currency; it does refuse a cleaner whose work country is not the order's market
+  (`order.reassign.employee_other_market`). An order the cleaner is already on stays visible to them
+  whatever its currency.
 - Every partner-facing money aggregate is scoped to that currency and labelled with its code: dashboard
   stats, the earnings chart, personal bests, order-distribution money columns, the available-jobs
   headline, pending earnings and My Pay. Counts stay over all orders. My Pay (`GetPeriodPays`) also
@@ -457,7 +459,7 @@ CZK-only — `MembershipPlan`, the last structurally CZK-bound entity, lost its 
 - `Country : Auditable` (NOT `ITenantEntity`) — **platform config**. Has `IsoCode`, `IsServiced`
   (operate-here flag, distinct from `IsActive` admin-catalog flag), translations
   (`Country.cs`). Seeded with ~45 countries; **only CZE has `IsServiced = true`**
-  (`insert_seed_data.sql:82`; all others `false`).
+  (`prod-bootstrap.sql:173`; all others `false`).
 - `Language : BaseEntity` (NOT `ITenantEntity`) — platform config.
 - `CountryConfiguration : Auditable` (NOT `ITenantEntity`), keyed by `CountryId`
   (`CountryConfiguration.cs`). Repo `GetByCountryIdAsync` (`CountryConfigurationRepository.cs`).
@@ -892,8 +894,10 @@ country by the same read that decides currency.
   `CurrencyResolutionService.cs`, `OrderPricingCalculator.cs`, `Country.cs`, `Language.cs`,
   `CountryConfiguration.cs`, `CountryInvoiceConfig.cs`, `CleansiaDbContext.cs:111-179`,
   `TenantProvider.cs`, `MembershipPlan.cs:24`, `Employee.cs`, `ProcessedStripeEvent.cs:11-20`,
-  `ProcessedStripeEventRepository.cs:12-19`, `insert_seed_data.sql` (countries :76+, currencies
-  :517-541, price rows :748-810, invoice configs :940+, country configs :1030+, plans :1819+).
+  `ProcessedStripeEventRepository.cs:12-19`, `prod-bootstrap.sql` (countries :107+, CZK :499-506,
+  the Czech invoice config :516+, the Czech market :564+), `insert_seed_data.sql` (the other
+  currencies :38-47, price rows :256-311, the other invoice configs :450+, the other country configs
+  :514+, plans :743+).
 
 ---
 

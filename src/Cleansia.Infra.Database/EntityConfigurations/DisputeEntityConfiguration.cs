@@ -31,10 +31,19 @@ public class DisputeEntityConfiguration : TenantAuditableEntityConfiguration<Dis
         builder.Property(d => d.Status)
             .IsRequired();
 
+        builder.Property(d => d.SettlementPreference)
+            .IsRequired();
+
         builder.Property(d => d.ResolutionNotes)
             .HasMaxLength(2000);
 
         builder.Property(d => d.RefundAmount)
+            .HasPrecision(18, 2);
+
+        builder.Property(d => d.CardRefundedAmount)
+            .HasPrecision(18, 2);
+
+        builder.Property(d => d.CreditReturnedAmount)
             .HasPrecision(18, 2);
 
         builder.Property(d => d.ResolvedBy)

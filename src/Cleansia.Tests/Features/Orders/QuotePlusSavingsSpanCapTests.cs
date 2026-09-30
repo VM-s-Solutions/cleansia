@@ -1,7 +1,9 @@
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
+using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Packages;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Services;
@@ -23,6 +25,7 @@ public class QuotePlusSavingsSpanCapTests
     private const string ServiceId = "service-span";
     private const string PackageId = "package-span";
     private const string Czechia = "country-cze";
+    private const int MinutesPerRoom = 10;
 
     private static readonly Currency Czk = CreateOrderTestData.DefaultCurrency();
 
@@ -62,6 +65,45 @@ public class QuotePlusSavingsSpanCapTests
         Assert.Equal(!accepted, result.Errors.Any(e => e.ErrorMessage == BusinessErrorMessage.OrderSpanExceedsMaximum));
     }
 
+    /// <summary>The level and the home's size count toward the preview's cap as they do toward the booking's.</summary>
+    [Theory]
+    [InlineData(DirtinessLevel.Heavy, 0, 0)]
+    [InlineData(DirtinessLevel.Increased, 8, 4)]
+    public async Task The_Preview_Counts_The_Level_And_The_Home_Size_Toward_The_Cap(
+        DirtinessLevel level, int rooms, int bathrooms)
+    {
+        var minutes = BookingPolicy.MaxBookableOrderSpanMinutes;
+        while (BookingPolicy.ExceedsMaxBookableSpan(OrderDuration.EstimateMinutes(
+                   [Service.Create(CategoryId, "Span Service", "Under test", minutes, MinutesPerRoom)],
+                   [],
+                   rooms + bathrooms,
+                   BookingPolicy.DirtinessSurchargeRate(level))))
+        {
+            minutes--;
+        }
+
+        foreach (var (serviceMinutes, accepted) in new[] { (minutes, true), (minutes + 1, false) })
+        {
+            SeedCatalog(serviceMinutes, 0, MinutesPerRoom);
+
+            var result = await Validator().ValidateAsync(
+                Query([ServiceId], []) with { Rooms = rooms, Bathrooms = bathrooms, DirtinessLevel = level });
+
+            Assert.Equal(accepted, result.IsValid);
+        }
+    }
+
+    [Fact]
+    public async Task An_Undefined_Level_Is_Refused_Rather_Than_Thrown_On()
+    {
+        SeedCatalog(60, 0);
+
+        var result = await Validator().ValidateAsync(Query([ServiceId], []) with { DirtinessLevel = (DirtinessLevel)7 });
+
+        var error = Assert.Single(result.Errors);
+        Assert.Equal(BusinessErrorMessage.InvalidEnumValue, error.ErrorMessage);
+    }
+
     /// <summary>An empty basket previews as it quotes; the cap is not an emptiness rule.</summary>
     [Fact]
     public async Task An_Empty_Selection_Still_Previews()
@@ -86,9 +128,9 @@ public class QuotePlusSavingsSpanCapTests
     private static QuotePlusSavings.Query Query(IEnumerable<string> serviceIds, IEnumerable<string> packageIds) =>
         new(serviceIds, packageIds, Rooms: 2, Bathrooms: 1, PlanCode: "plus-monthly", CurrencyId: null, CountryId: Czechia);
 
-    private void SeedCatalog(int serviceMinutes, int packageServiceMinutes)
+    private void SeedCatalog(int serviceMinutes, int packageServiceMinutes, int minutesPerRoom = 0)
     {
-        var service = Service.Create(CategoryId, "Span Service", "Under test", serviceMinutes);
+        var service = Service.Create(CategoryId, "Span Service", "Under test", serviceMinutes, minutesPerRoom);
         service.Id = ServiceId;
 
         var packagedService = Service.Create(CategoryId, "Packaged Service", "Inside the bundle", packageServiceMinutes);

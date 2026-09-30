@@ -8,6 +8,65 @@ final class MembershipPerksTests: XCTestCase {
         XCTAssertEqual(MembershipPerks.resolve(MembershipFixtures.inactive), [])
     }
 
+    /// Every benefit stops on the first failed renewal, so a past-due member is shown none of them.
+    func testAPastDueMembershipCarriesNoPerksAndNoExpressWaiver() {
+        XCTAssertEqual(MembershipPerks.resolve(MembershipFixtures.pastDue, now: Self.now), [])
+        XCTAssertEqual(ExpressWaiverStatus.resolve(MembershipFixtures.pastDue, now: Self.now), .none)
+        let snapshot = MembershipSnapshot(
+            hasMembership: true,
+            freeCancellationWindowHours: 4,
+            expressUpgradesPerMonth: 2,
+            expressUpgradesRemaining: 1,
+            benefitsPaused: true
+        )
+        XCTAssertEqual(ExpressWaiverStatus.resolve(snapshot, now: Self.now), .none)
+    }
+
+    func testTheSubscribeTilesStateThePlansOwnFigures() {
+        let monthly = MembershipFixtures.plans[0]
+        XCTAssertEqual(monthly.discountPerkPercent, 5)
+        XCTAssertEqual(monthly.cancellationPerkHours, 4)
+        XCTAssertEqual(monthly.expressPerkPerMonth, 2)
+
+        let bare = plan(discount: 0, cancellationHours: 24, allowsExpress: true, expressPerMonth: 0)
+        XCTAssertNil(bare.discountPerkPercent)
+        XCTAssertNil(bare.cancellationPerkHours, "a window no closer than the standard one is no perk")
+        XCTAssertNil(bare.expressPerkPerMonth)
+
+        let noExpress = plan(discount: 7.9, cancellationHours: 6, allowsExpress: false, expressPerMonth: 3)
+        XCTAssertEqual(noExpress.discountPerkPercent, 7)
+        XCTAssertEqual(noExpress.cancellationPerkHours, 6)
+        XCTAssertNil(noExpress.expressPerkPerMonth, "a quota the plan does not honour is not advertised")
+    }
+
+    func testEveryDynamicPerkSentenceCarriesItsFigure() {
+        XCTAssertTrue(L10n.Membership.perkDiscountDesc(7).contains("7"))
+        XCTAssertTrue(L10n.Membership.perkCancellationDesc(6).contains("6"))
+        XCTAssertTrue(L10n.Membership.perkExpressDesc(3).contains("3"))
+    }
+
+    private func plan(
+        discount: Double,
+        cancellationHours: Int,
+        allowsExpress: Bool,
+        expressPerMonth: Int
+    ) -> MembershipPlan {
+        MembershipPlan(
+            code: "plus_monthly",
+            name: "Monthly",
+            price: 199,
+            monthlyEquivalentPrice: 199,
+            billingInterval: 1,
+            discountPercentage: discount,
+            freeCancellationWindowHours: cancellationHours,
+            allowsExpressUpgrade: allowsExpress,
+            expressUpgradesPerMonth: expressPerMonth,
+            trialPeriodDays: 0,
+            savingsPercentVsMonthly: 0,
+            currencyCode: "CZK"
+        )
+    }
+
     func testActiveMembershipCarriesDiscountCancellationRecurringAndExpress() {
         XCTAssertEqual(
             MembershipPerks.resolve(MembershipFixtures.active, now: Self.now),

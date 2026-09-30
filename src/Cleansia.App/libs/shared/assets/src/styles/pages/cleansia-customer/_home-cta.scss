@@ -3,9 +3,9 @@
 // =============================
 // Ať se o úklid stará někdo jiný
 // =============================
-// One white card on a radial ground, holding two rows: the closing claim, then
-// the promo capture under a hairline. Artboard values: card radius 40, padding
-// 40/44/36, mascot 132px grounded on the card's bottom edge.
+// One white card on a radial ground holding the closing claim. Artboard values:
+// card radius 40, padding 40/44/36, mascot 132px grounded on the card's bottom
+// edge.
 
 .cl-cta {
   position: relative;
@@ -32,13 +32,6 @@
     grid-template-columns: auto 1fr auto;
     gap: 32px;
     align-items: center;
-
-    &--promo {
-      margin-top: 32px;
-      padding-top: 28px;
-      border-top: 1px solid var(--cl-border);
-      gap: 28px;
-    }
   }
 
   // Grounded on the card's bottom edge rather than floating in the middle of
@@ -67,105 +60,6 @@
     gap: 24px;
     white-space: nowrap;
   }
-
-  // ---- promo capture --------------------------------------------------------
-  &__promo-head {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  &__promo-title {
-    font-size: 19px;
-  }
-
-  &__promo-badge {
-    font-size: 12px;
-    font-weight: 800;
-    color: var(--cl-heading);
-    background: var(--cl-tint-strong);
-    padding: 6px 13px;
-    border-radius: 999px;
-    white-space: nowrap;
-  }
-
-  &__promo-note {
-    margin: 5px 0 0;
-  }
-
-  &__promo-field {
-    display: flex;
-    gap: 10px;
-    min-width: 0;
-  }
-
-  &__input {
-    flex-grow: 1;
-    min-width: 0;
-    min-height: 56px;
-    border: 1px solid var(--cl-border);
-    border-radius: 999px;
-    padding: 0 24px;
-    font: inherit;
-    font-size: 16px;
-    color: var(--cl-body);
-    background: var(--cl-surface);
-    transition: border-color 0.16s ease, box-shadow 0.16s ease;
-
-    &::placeholder {
-      color: var(--cl-muted);
-    }
-
-    &:focus-visible {
-      outline: none;
-      border-color: $primary;
-      box-shadow: 0 0 0 3px rgba($primary, 0.15);
-    }
-  }
-
-  &__send {
-    flex-shrink: 0;
-    padding: 0 28px;
-
-    &:disabled {
-      opacity: 0.6;
-      cursor: progress;
-    }
-  }
-
-  &__consent {
-    display: flex;
-    // Centred, not top-aligned: the label runs to two lines and the box sat
-    // against the first one.
-    align-items: center;
-    gap: 10px;
-    max-width: 22em;
-    cursor: pointer;
-
-    input {
-      width: 20px;
-      height: 20px;
-      flex-shrink: 0;
-      margin: 0;
-      accent-color: $primary;
-    }
-  }
-
-  &__status {
-    margin: 16px 0 0;
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--cl-muted);
-
-    // Semantic, and separate from the brand accent.
-    &--ok {
-      color: color-mix(in srgb, $green, black 6%);
-    }
-
-    &--warn {
-      color: color-mix(in srgb, $amber, black 14%);
-    }
-  }
 }
 
 // =============================
@@ -177,10 +71,6 @@
 
     &--claim .cl-cta__actions {
       grid-column: 1 / -1;
-    }
-
-    &--promo {
-      grid-template-columns: 1fr;
     }
   }
 }
@@ -211,16 +101,6 @@
       flex-direction: column;
       gap: 16px;
       width: 100%;
-    }
-
-    &__promo-field {
-      flex-direction: column;
-      width: 100%;
-    }
-
-    &__consent {
-      max-width: none;
-      text-align: left;
     }
   }
 }

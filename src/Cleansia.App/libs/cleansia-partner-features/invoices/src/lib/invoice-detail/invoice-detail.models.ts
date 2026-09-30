@@ -49,6 +49,15 @@ export function getOrderPaysTableDefinition(
           pay ? amount(pay.extrasPay) : '',
       },
       {
+        id: 'dirtinessPay',
+        field: 'dirtinessPay',
+        header: 'pages.invoice_detail.dirtiness_pay',
+        sortable: false,
+        numeric: true,
+        getValue: (pay?: OrderEmployeePayDto) =>
+          pay ? amount(pay.dirtinessPay) : '',
+      },
+      {
         id: 'expensesPay',
         field: 'expensesPay',
         header: 'pages.invoice_detail.expenses_pay',
@@ -74,6 +83,13 @@ export function getOrderPaysTableDefinition(
         numeric: true,
         getValue: (pay?: OrderEmployeePayDto) =>
           pay ? amount(pay.deductionPay) : '',
+      },
+      {
+        id: 'deductionReason',
+        field: 'deductionReason',
+        header: 'pages.invoice_detail.deduction_reason',
+        sortable: false,
+        getValue: (pay?: OrderEmployeePayDto) => pay?.deductionReason ?? '',
       },
       {
         id: 'totalPay',

@@ -255,6 +255,32 @@ public class CreditReturnTests(PostgresContainerFixture fixture) : BaseIntegrati
     }
 
     /// <summary>
+    /// What earlier complaints about the order were settled with in credit, and nothing else: a return of
+    /// the order's own credit tender is not a settlement, and neither is a settlement on another order.
+    /// </summary>
+    [Fact]
+    public async Task TheDisputeSettledTotalCountsOnlySettlementsOfThatOrder()
+    {
+        await ResetAsync();
+        var (userId, currencyId) = await SeedCustomerAsync(100m);
+        await ReturnAsync(userId, currencyId, 120m, "credit-return:one");
+
+        await using (var seed = NewContext())
+        {
+            var account = await new CreditAccountRepository(seed).EnsureForUserAsync(userId, currencyId, CancellationToken.None);
+            account!.Issue(250m, CreditTransactionReason.DisputeSettlement, "dispute-settlement:d1", ActorId, orderId: OrderId, disputeId: "d1");
+            account.Issue(40m, CreditTransactionReason.DisputeSettlement, "dispute-settlement:d2", ActorId, orderId: "other-order", disputeId: "d2");
+            await seed.CommitAsync(CancellationToken.None);
+        }
+
+        await using var ctx = NewContext();
+        var repo = new CreditAccountRepository(ctx);
+
+        Assert.Equal(250m, await repo.GetDisputeSettledTotalForOrderAsync(OrderId, CancellationToken.None));
+        Assert.Equal(0m, await repo.GetDisputeSettledTotalForOrderAsync("order-never-settled", CancellationToken.None));
+    }
+
+    /// <summary>
     /// THE ONE THAT WOULD ROT SILENTLY. Both the debit and the return are raw SQL that bypasses the
     /// entity, so neither runs <c>CreditAccount.Touch()</c> — they set <c>ExpiresOn</c> themselves.
     ///

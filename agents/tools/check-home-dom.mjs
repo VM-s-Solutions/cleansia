@@ -22,7 +22,7 @@ const facts = await p.evaluate(() => ({
 }));
 let bad = 0;
 const want = { quoteFootnote: true, sizeChipSelected: true, langGlobe: true, navNoWhiteBar: true,
-               footerDeadRows: 0, cookieBtn: true, btnHeight: 40, mascotIcon: 132,
+               footerDeadRows: 0, cookieBtn: false, btnHeight: 40, mascotIcon: 132,
                rulesGap: '24px', contactAlign: 'center' };
 for (const [k, v] of Object.entries(want)) {
   const ok = String(facts[k]) === String(v);

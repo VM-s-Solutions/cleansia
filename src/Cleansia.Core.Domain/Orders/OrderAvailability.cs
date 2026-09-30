@@ -5,7 +5,7 @@ namespace Cleansia.Core.Domain.Orders;
 
 /// <summary>
 /// ADR-0037 — the ONE rule for "may a cleaner be offered, and take, this order". Every surface reads
-/// this type; none re-derives it. A property of the ORDER alone: four columns in, a bool out, and it
+/// this type; none re-derives it. A property of the ORDER alone: five columns in, a bool out, and it
 /// knows nothing about a cleaner.
 ///
 /// <para>Spans both axes, and a plain status list cannot express it: the fulfilment term says the work
@@ -34,15 +34,19 @@ namespace Cleansia.Core.Domain.Orders;
 /// <c>Order.HasAvailableSpots</c>, and every consumer already conjoins it for itself —
 /// <c>PreferredOfferExit</c> by the stricter <c>AssignedEmployees.Count == 0</c>. Folding it in here
 /// would make this type read a collection, force a join into both evaluation forms, and break
-/// <c>TakeOrder</c>'s offerability probe, which projects exactly these four scalars.</para>
+/// <c>TakeOrder</c>'s offerability probe, which projects exactly these five scalars.</para>
+///
+/// <para><b>A recurring cash occurrence is admitted once the customer confirms it</b> (owner ruling
+/// 2026-09-28): the confirmation is its own marker, and the occurrence stays <c>Pending</c> until the
+/// cleaner records the cash, like any cash order.</para>
 /// </summary>
 public static class OrderAvailability
 {
     /// <summary>
-    /// The COARSE fulfilment-axis floor — the statuses the rule can ever admit. NOT the rule:
-    /// <c>New</c> is conditional. It exists because the clients cannot evaluate the money term
-    /// (they filter on none of the three money columns) and because it is the index-served
-    /// prefilter on <c>Orders.CurrentStatus</c>.
+    /// The COARSE fulfilment-axis floor — the statuses the rule can ever admit. NOT the rule: every
+    /// member is conditional on the money term. It exists because the clients cannot evaluate the money
+    /// term (they filter on none of the money columns) and because it is the index-served prefilter on
+    /// <c>Orders.CurrentStatus</c>.
     ///
     /// <para><b>Keep it an ARRAY.</b> <c>OrderSpecification</c> spends it as <c>Contains</c>, which EF
     /// emits as <c>= ANY (@p)</c> — the leading index condition on
@@ -64,7 +68,8 @@ public static class OrderAvailability
             || order.CurrentStatus == OrderStatus.InProgress
             || order.CurrentStatus == OrderStatus.New)
         && (order.PaymentStatus == PaymentStatus.Paid
-            || (order.PaymentType == PaymentType.Cash && order.RecurringTemplateId == null));
+            || (order.PaymentType == PaymentType.Cash
+                && (order.RecurringTemplateId == null || order.CustomerConfirmedAt != null)));
 
     /// <summary>
     /// In-memory form — the <c>TakeOrder</c> write gate. Same rule, C# semantics, and the SAME operand
@@ -74,11 +79,16 @@ public static class OrderAvailability
         OrderStatus currentStatus,
         PaymentType paymentType,
         PaymentStatus paymentStatus,
-        string? recurringTemplateId) =>
+        string? recurringTemplateId,
+        DateTime? customerConfirmedAt) =>
         (currentStatus == OrderStatus.Confirmed
             || currentStatus == OrderStatus.OnTheWay
             || currentStatus == OrderStatus.InProgress
             || currentStatus == OrderStatus.New)
         && (paymentStatus == PaymentStatus.Paid
-            || (paymentType == PaymentType.Cash && recurringTemplateId is null));
+            || (paymentType == PaymentType.Cash
+                && (recurringTemplateId is null || customerConfirmedAt is not null)));
+
+    public static bool IsOfferable(Order order) => IsOfferable(
+        order.CurrentStatus, order.PaymentType, order.PaymentStatus, order.RecurringTemplateId, order.CustomerConfirmedAt);
 }

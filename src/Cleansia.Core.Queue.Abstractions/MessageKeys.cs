@@ -20,19 +20,28 @@ public static class MessageKeys
     /// <summary>One guest cancellation email per order.</summary>
     public static string GuestOrderCancelledEmail(string orderId) => $"email:guest-order-cancelled:{orderId}";
 
+    /// <summary>One booking-confirmed email per order.</summary>
+    public static string OrderBookedEmail(string orderId) => $"email:order-booked:{orderId}";
+
+    /// <summary>One copy of the contract for work per acceptance.</summary>
+    public static string WorkContractEmail(string acceptanceId) => $"email:work-contract:{acceptanceId}";
+
+    /// <summary>One lockout cancellation email per signed-in customer's order.</summary>
+    public static string OrderLockoutEmail(string orderId) => $"email:order-lockout:{orderId}";
+
     /// <summary>generate-receipt → <c>receipt:{OrderId}</c> (one receipt per order).</summary>
     public static string Receipt(string orderId) => $"receipt:{orderId}";
 
+    /// <summary>generate-receipt → <c>receipt:fee:{ReceivableId}</c> (one fee receipt per paid receivable).</summary>
+    public static string FeeReceipt(string receivableId) => $"receipt:fee:{receivableId}";
+
     /// <summary>
-    /// generate-receipt → <c>receipt-reissue:{OrderId}</c> — the already-issued document restated on
-    /// the same number. A SEPARATE formula rather than a widened <see cref="Receipt"/>: collapsing the
-    /// two onto one key would let a re-issue dedup against the original issue and never run. One per
-    /// order: the outbox keeps a key unique for its whole retention window, so a second trigger (a
-    /// refund restating the receipt, say) needs a formula of its own. Two cash collections racing past
-    /// the validator both stage this key, and the loser's commit fails on that unique index as a server
-    /// error — accepted, since the winner already recorded the money.
+    /// send-email → <c>email:receivable-pay-link:{ReceivableId}:{Attempt}</c> — one pay link per failed
+    /// off-session charge; the attempt is the receivable's own count, so a second failed charge is a second
+    /// e-mail while a redelivered failure is not.
     /// </summary>
-    public static string ReceiptReissue(string orderId) => $"receipt-reissue:{orderId}";
+    public static string ReceivablePayLinkEmail(string receivableId, int attempt) =>
+        $"email:receivable-pay-link:{receivableId}:{attempt}";
 
     /// <summary>
     /// notifications-dispatch → <c>push:{UserId}:{EventKey}:{OrderId?}</c> (one push per user per

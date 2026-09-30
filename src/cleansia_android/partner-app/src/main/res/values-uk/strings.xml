@@ -55,6 +55,10 @@
     <string name="earnings_next_payout">Наступна виплата</string>
     <string name="earnings_view_invoices">Переглянути рахунки</string>
     <string name="earnings_view_invoices_subtitle">Історія виплат та статуси рахунків</string>
+    <string name="earnings_cash_held_title">Готівка в мене</string>
+    <string name="earnings_cash_held_subtitle">Готівка, яку ви отримали біля дверей і ще не передали. Її буде зараховано в рахунок вашої наступної виплати.</string>
+    <string name="earnings_cash_held_limit">Ліміт %1$s</string>
+    <string name="earnings_cash_held_jobs_hidden">У вас більше, ніж дозволяє ліміт, тому замовлення з оплатою готівкою приховані, доки ви не передасте готівку.</string>
     <string name="email">Електронна пошта</string>
     <string name="password">Пароль</string>
     <string name="confirm_password">Підтвердити пароль</string>
@@ -202,7 +206,6 @@
     <string name="pending_orders">Очікують</string>
     <string name="performance_score">Оцінка продуктивності</string>
     <string name="customer_rating">Оцінка клієнтів</string>
-    <string name="on_time_rate">Рівень вчасності</string>
     <string name="avg_response_time">Сер. час відповіді</string>
     <string name="minutes_short">%1$d хв</string>
     <string name="monthly_earnings_trend">Місячний тренд заробітку</string>
@@ -215,11 +218,6 @@
     <string name="booked_hours_label">Заброньовано</string>
     <string name="utilization_rate">Використання</string>
     <string name="hours_short">%1$.1fг</string>
-    <string name="completion_efficiency">Ефективність завершення</string>
-    <string name="estimated_label">Очікуваний</string>
-    <string name="actual_label">Фактичний</string>
-    <string name="faster_than_estimate">на %1$d%% швидше</string>
-    <string name="slower_than_estimate">на %1$d%% повільніше</string>
 
     <!-- Orders -->
     <string name="orders">Замовлення</string>
@@ -237,7 +235,7 @@
     <string name="swipe_to_complete">Проведіть, щоб завершити</string>
     <string name="swipe_to_notify_on_the_way">Проведіть, щоб повідомити „У дорозі"</string>
     <string name="customer_notified_on_the_way">Клієнта повідомлено · ви в дорозі</string>
-    <string name="waiting_for_other_employees">Вас призначено! Чекаємо підтвердження від інших працівників, щоб замовлення могло розпочатися.</string>
+    <string name="waiting_for_other_employees">Вас призначено! Чекаємо підтвердження від інших партнерів, щоб замовлення могло розпочатися.</string>
     <string name="order_started">Розпочато!</string>
     <string name="complete_order">Завершити замовлення</string>
     <string name="no_orders_available">Немає доступних замовлень</string>
@@ -285,7 +283,6 @@
     <string name="delete_photo_confirm">Ви впевнені, що хочете видалити це фото?</string>
     <string name="photos_none_recorded">Фотографій не записано</string>
     <string name="estimated_time">Орієнтовний час</string>
-    <string name="actual_completion_time">Фактичний час завершення (хв)</string>
     <string name="completion_notes">Нотатки до завершення (необов\'язково)</string>
     <string name="rooms">Кімнати</string>
     <string name="bathrooms">Ванні кімнати</string>
@@ -686,6 +683,19 @@
     <string name="call_customer">Зателефонувати клієнту</string>
     <string name="navigate_to_address">Навігація до адреси</string>
     <string name="report_issue">Проблема</string>
+    <string name="lockout_card_title">Не можете потрапити всередину?</string>
+    <string name="lockout_card_not_yet">Якщо вам ніхто не відчиняє, ви можете повідомити про це з %1$s, через %2$d хвилин після початку.</string>
+    <string name="lockout_card_body">Сфотографуйте вхід, запишіть, коли ви телефонували клієнту, і повідомте про це. Адміністратор підтверджує це, перш ніж буде застосовано будь-який збір.</string>
+    <string name="lockout_entrance_photo">Фото входу</string>
+    <string name="lockout_photo_needed">Спершу сфотографуйте вхід.</string>
+    <string name="lockout_report_action">Не можу потрапити всередину</string>
+    <string name="lockout_sheet_title">Повідомити, що ви не можете потрапити всередину</string>
+    <string name="lockout_sheet_description">Запишіть, коли ви телефонували або писали клієнту і що сталося. Адміністратор прочитає це разом із вашим фото.</string>
+    <string name="lockout_call_attempts_label">Ваші дзвінки</string>
+    <string name="lockout_reported_toast">Повідомлено. Адміністратор це підтвердить.</string>
+    <string name="lockout_reported_title">Ви повідомили, що не можете потрапити всередину</string>
+    <string name="lockout_reported_body">Повідомлено о %1$s. Адміністратор це підтвердить; до того замовлення залишається без змін.</string>
+    <string name="lockout_reported_calls">Дзвінки: %1$s</string>
     <string name="report_issue_desc">Опишіть проблему, яка виникла під час цього сеансу прибирання.</string>
     <string name="describe_issue">Опишіть проблему</string>
     <string name="submit">Надіслати</string>
@@ -717,7 +727,7 @@
     <string name="invoice_information">Інформація про рахунок</string>
     <string name="amount_breakdown">Розбивка суми</string>
     <string name="status_timeline">Хронологія статусів</string>
-    <string name="employee">Працівник</string>
+    <string name="employee">Партнер</string>
     <string name="variable_symbol">Варіативний символ</string>
     <string name="payment_reference">Платіжне посилання</string>
     <string name="total_orders">Усього замовлень</string>
@@ -843,7 +853,6 @@
     <string name="jobs">Замовлення</string>
     <string name="rating">Рейтинг</string>
     <string name="unscheduled">Без дати</string>
-    <string name="guest">Гість</string>
     <plurals name="scope_rooms">
         <item quantity="one">%1$d кімната</item>
         <item quantity="few">%1$d кімнати</item>
@@ -891,6 +900,19 @@
     <string name="work_contract_pending_banner">Перш ніж почати, прийміть договір підряду</string>
     <string name="work_contract_accept_cta">Прийняти договір</string>
     <string name="work_contract_read">Прочитати договір</string>
+    <string name="work_contract_reward">Ваша винагорода</string>
+    <string name="work_contract_parties">Між операційною компанією, яка продала це прибирання (замовник), і вами (підрядник)</string>
+    <string name="legal_documents_title">Договірні документи</string>
+    <string name="legal_documents_intro">Ці документи регулюють вашу роботу для операційної компанії ринку, на якому ви працюєте. Прочитайте кожен і прийміть його чинну версію — доки ви цього не зробите, вас не можуть схвалити і ви не можете брати замовлення.</string>
+    <string name="legal_documents_empty">Зараз у вас немає документів для прийняття.</string>
+    <string name="legal_documents_version">Версія %1$s</string>
+    <string name="legal_documents_accepted_on">Прийнято %1$s, версія %2$s</string>
+    <string name="legal_documents_new_version">Діє нова версія. Ви прийняли версію %1$s.</string>
+    <string name="legal_documents_awaiting">Очікує вашого прийняття</string>
+    <string name="legal_documents_accept">Прийняти документ</string>
+    <string name="legal_documents_accepted_toast">Документ прийнято.</string>
+    <string name="legal_documents_text_updated">Цей документ оновлено — будь ласка, прочитайте його ще раз.</string>
+    <string name="legal_documents_review">Переглянути документи</string>
     <string name="slide_to_start">Проведіть, щоб почати прибирання</string>
     <string name="starting_order">Починаю прибирання…</string>
     <string name="slide_to_complete">Проведіть, щоб завершити</string>
@@ -912,6 +934,9 @@
     <string name="scope_section_title">Об\'єкт та обсяг</string>
     <string name="scope_services_label">Послуги та пакети</string>
     <string name="scope_extras_label">Додатки</string>
+    <string name="dirtiness_level_normal">Звичайне забруднення</string>
+    <string name="dirtiness_level_increased">Підвищене забруднення</string>
+    <string name="dirtiness_level_heavy">Сильне забруднення</string>
 
     <!-- Extra names — the seed's own translations (insert_seed_data.sql §7b), copied verbatim. -->
     <string name="extra_name_inside_oven">Чистка духовки зсередини</string>
@@ -922,6 +947,8 @@
 
     <!-- Shown instead of the map when the order has no street address to point at. -->
     <string name="map_approximate_area">Приблизний район — точна адреса з\'явиться, щойно ви візьмете замовлення.</string>
+    <string name="order_customer_details_closed_completed">Ім\'я, адресу й номер телефону клієнта видалено через 24 години після завершення замовлення.</string>
+    <string name="order_customer_details_closed_cancelled">Ім\'я, адресу й номер телефону клієнта видалено під час скасування замовлення.</string>
 
     <string name="from_customer_section_title">Від клієнта</string>
     <string name="note_general_label">Примітка</string>
@@ -1005,6 +1032,8 @@
     <string name="registration_lock_action_complete_profile">Заповнити профіль</string>
     <string name="registration_lock_action_upload_documents">Завантажити документи</string>
     <string name="registration_lock_action_contact_support">Звернутися до підтримки</string>
+    <string name="registration_lock_category_legal_documents">Договірні документи</string>
+    <string name="registration_lock_action_accept_documents">Прочитати та прийняти</string>
     <string name="registration_lock_documents_required">Завантажте свої документи, що посвідчують особу.</string>
     <string name="registration_lock_approval_awaiting_review">Заявку розглядає адміністратор.</string>
     <string name="registration_lock_approval_complete_profile_first">Спочатку виконайте кроки вище — потім адміністратор зможе вас схвалити.</string>
@@ -1060,13 +1089,13 @@
     <string name="error_user_existing_phone_number">Цей номер телефону вже використовується.</string>
     <string name="error_user_not_found">Користувача не знайдено.</string>
 
-    <string name="error_employee_not_found">Працівника не знайдено.</string>
-    <string name="error_employee_not_existing_email">Працівника з цією е-поштою не знайдено.</string>
-    <string name="error_employee_not_allowed_to_update">Ви не можете редагувати цього працівника.</string>
+    <string name="error_employee_not_found">Партнера не знайдено.</string>
+    <string name="error_employee_not_existing_email">Партнера з цією е-поштою не знайдено.</string>
+    <string name="error_employee_not_allowed_to_update">Ви не можете редагувати цього партнера.</string>
     <string name="error_employee_profile_incomplete">Перед прийняттям замовлень заповніть свій профіль.</string>
     <string name="error_employee_documents_missing">Відсутні обов\'язкові документи. Завантажте їх у профілі.</string>
-    <string name="error_employee_already_approved">Цього працівника вже схвалено.</string>
-    <string name="error_employee_already_rejected">Цього працівника вже відхилено.</string>
+    <string name="error_employee_already_approved">Цього партнера вже схвалено.</string>
+    <string name="error_employee_already_rejected">Цього партнера вже відхилено.</string>
 
     <string name="error_employee_document_not_found">Документ не знайдено.</string>
     <string name="error_employee_document_unauthorized">У вас немає доступу до цього документа.</string>
@@ -1095,6 +1124,8 @@
     <string name="error_contract_text_mismatch">Договір оновлено \u2014 будь ласка, прочитайте його ще раз.</string>
     <string name="error_contract_acceptance_required">Перш ніж продовжити, прийміть договір підряду для цього замовлення.</string>
     <string name="error_legal_document_not_found">Це замовлення зараз неможливо взяти.</string>
+    <string name="error_employee_legal_documents_not_accepted">Перш ніж брати замовлення, прийміть чинну версію своїх договірних документів.</string>
+    <string name="error_legal_document_not_in_force">Цей документ уже не є чинною версією. Завантажте його знову та прийміть чинну версію.</string>
 
     <string name="error_order_not_in_progress">Це замовлення не в роботі.</string>
     <string name="error_order_not_confirmed">Це замовлення ще не підтверджено.</string>
@@ -1104,13 +1135,23 @@
     <string name="error_order_completion_notes_required">Нотатки про завершення обов\'язкові.</string>
     <string name="error_order_completion_notes_too_long">Нотатки про завершення занадто довгі.</string>
     <string name="error_order_after_photos_required">Перед завершенням замовлення зробіть хоча б одне фото «після».</string>
+    <string name="error_order_photo_window_closed">Це фото зараз не можна додати: фото до прибирання — від моменту, коли ви взяли замовлення, до його завершення, фото після — під час роботи.</string>
+    <string name="error_order_photo_locked">Після завершення або скасування замовлення фото видалити не можна.</string>
     <string name="error_order_cash_not_collected">Перш ніж завершити замовлення, отримайте готівку та позначте її як прийняту.</string>
     <string name="error_order_payment_not_confirmed">Оплату за це замовлення ще не підтверджено.</string>
     <string name="error_order_not_cash_payment">Це не замовлення з оплатою готівкою.</string>
     <string name="error_order_cash_already_collected">Готівку за це замовлення вже отримано.</string>
+    <string name="error_order_lockout_too_early">Ще зарано повідомляти. Повідомити, що ви не можете потрапити всередину, можна через 15 хвилин після початку.</string>
+    <string name="error_order_lockout_photo_required">Перш ніж повідомити, що ви не можете потрапити всередину, сфотографуйте вхід.</string>
+    <string name="error_order_lockout_already_reported">Ви вже повідомили, що не можете потрапити всередину.</string>
+    <string name="error_order_lockout_order_closed">Це замовлення вже виконане або скасоване.</string>
+    <string name="error_order_cash_float_cap_exceeded">У вас більше готівки компанії, ніж дозволяє ваш ліміт. Передайте її, перш ніж брати наступне замовлення з оплатою готівкою.</string>
     <string name="error_order_card_payment_already_settled">Це замовлення вже оплачено карткою. Не беріть готівку — статус оплати оновлено.</string>
     <string name="error_order_card_payment_in_progress">Оплата карткою за це замовлення ще обробляється. Зачекайте хвилинку та спробуйте ще раз.</string>
     <string name="error_order_card_payment_unverified">Не вдалося перевірити оплату карткою за це замовлення. Поки не беріть готівку — спробуйте ще раз за хвилину.</string>
+    <string name="error_order_cash_not_allowed_on_card_order">Це замовлення оплачується карткою, тому готівку за нього зафіксувати не можна. Не беріть готівку — зверніться до офісу.</string>
+    <string name="error_order_payment_not_outstanding">За цим замовленням уже нічого стягувати — його оплачено або кошти повернено. Не беріть готівку.</string>
+    <string name="error_credit_cash_not_collectable_on_credit_order">Частину цього замовлення вже оплачено бонусами клієнта. Зверніться до офісу — не беріть суму, вказану в додатку.</string>
 
     <string name="error_order_note_content_required">Текст нотатки обов\'язковий.</string>
     <string name="error_order_issue_description_required">Опис проблеми обов\'язковий.</string>
@@ -1260,6 +1301,7 @@
     <string name="error_employee_not_approved">Ваш обліковий запис ще не схвалено.</string>
     <string name="error_gdpr_consent_already_granted">Цю згоду вже надано.</string>
     <string name="error_gdpr_consent_not_found">Згоду не знайдено.</string>
+    <string name="error_gdpr_consent_not_editable">Цю згоду тут змінити не можна.</string>
     <string name="error_gdpr_deletion_already_pending">Видалення облікового запису вже триває.</string>
     <string name="error_gdpr_deletion_blocked_by_invoice">Обліковий запис поки не можна видалити — є незакритий рахунок.</string>
     <string name="error_gdpr_deletion_blocked_by_order">Обліковий запис поки не можна видалити — є активне замовлення.</string>
@@ -1276,10 +1318,15 @@
     <string name="period_pay_breakdown_section">Розбивка оплати</string>
     <string name="period_pay_base">Базова оплата</string>
     <string name="period_pay_extras">Додаткові послуги</string>
+    <string name="period_pay_dirtiness">Доплата за забруднення</string>
     <string name="period_pay_expenses">Компенсація витрат</string>
     <string name="period_pay_jobs_section">Замовлення за цей період</string>
     <string name="period_pay_empty">У цьому періоді поки немає замовлень.</string>
     <string name="period_pay_error">Не вдалося завантажити оплату за цей період.</string>
+    <string name="period_pay_line_deduction">Утримання %1$s</string>
+    <string name="period_pay_line_deduction_reason">Утримання %1$s: %2$s</string>
+    <string name="period_pay_line_cancellation_fee_share">Ваша частка збору за пізнє скасування</string>
+    <string name="period_pay_line_lockout_fee_share">Ваша частка збору за ненаданий доступ</string>
     <string name="invoice_view_period_pay">Переглянути оплату за період</string>
     <string name="photo_encode_failed">Не вдалося обробити це фото. Спробуйте інше.</string>
     <string name="document_read_failed">Не вдалося прочитати цей файл. Спробуйте інший.</string>
@@ -1309,6 +1356,8 @@
     <string name="offer_decline_body">Воно одразу повернеться до всіх прибиральників. Це ніяк не зараховується вам у мінус, і поки воно вільне, ви можете взяти його зі списку.</string>
     <string name="offer_decline_cta">Звільнити</string>
     <string name="offer_declined_toast">Звільнено \u2014 замовлення тепер відкрите для всіх.</string>
+    <string name="order_removal_title">Вас знято з цього замовлення</string>
+    <string name="order_removal_message">Адміністратор зняв вас із цього замовлення і вказав причину:\n\n%1$s</string>
     <string name="offer_empty">Зараз нічого не чекає на вашу відповідь.</string>
     <string name="offer_blocked_title">Ми не змогли передати вам це замовлення</string>
     <string name="offer_blocked_body">%1$s\n\nЦе наша провина \u2014 ми зарезервували замовлення на ваше ім\'я без перевірки, тож це ніяк не зараховується вам у мінус.</string>
@@ -1332,7 +1381,6 @@
     <string name="delete_account_kept_label">Що ми маємо зберегти</string>
     <string name="delete_account_kept_invoices">Ваші рахунки як фінансові документи</string>
     <string name="delete_account_kept_pay">Записи про оплату за виконані замовлення</string>
-    <string name="delete_account_kept_agreement">Угоду про самовиставлення рахунків до них</string>
     <string name="delete_account_cta">Надіслати запит</string>
     <string name="delete_account_confirm_title">Надіслати запит на видалення?</string>
     <string name="delete_account_confirm_message">Ми зв\'яжемося з вами та офіційно завершимо співпрацю. Сьогодні нічого не видаляється.</string>
@@ -1347,6 +1395,11 @@
     <string name="profile_terms_summary">Відкриється у браузері</string>
     <string name="profile_privacy">Політика конфіденційності</string>
     <string name="profile_privacy_summary">Як ми обробляємо ваші дані</string>
+    <string name="profile_weekly_limit">Тижневий ліміт замовлень: %1$d</string>
+    <string name="profile_weekly_limit_reason">Причина: %1$s</string>
+    <string name="profile_how_jobs_are_offered">Як ми пропонуємо замовлення</string>
+    <string name="profile_how_jobs_are_offered_summary">Правила списку замовлень</string>
+    <string name="profile_legal_documents_summary">Прочитайте та прийміть документи, за якими ви працюєте</string>
 
     <!-- Profile photo. Copy shared verbatim with the customer app. -->
     <string name="profile_avatar_change">Змінити фото</string>
@@ -1362,6 +1415,7 @@
     <string name="open_settings">Відкрити налаштування</string>
     <string name="photo_source_title">Додати фото</string>
     <string name="camera_unavailable">На цьому пристрої немає камери.</string>
+    <string name="job_photos_camera_only">Фото до замовлення можна зробити лише камерою, вибрати їх із галереї не можна. Щоб додати їх, скористайтеся телефоном із камерою.</string>
     <string name="notification_recurring_paused_title">Розклад регулярних прибирань призупинено</string>
     <string name="notification_recurring_paused_body">Ваш розклад регулярних прибирань призупинено, оскільки Plus неактивний. Поновіть Plus, щоб відновити планування прибирань.</string>
 </resources>

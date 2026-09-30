@@ -1,5 +1,6 @@
 package cz.cleansia.partner.features.orders
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -80,6 +81,7 @@ import cz.cleansia.partner.data.orders.PendingOffer
 import cz.cleansia.partner.api.model.OrderStatus
 import cz.cleansia.partner.api.model.PaymentStatus
 import cz.cleansia.partner.api.model.PaymentType
+import cz.cleansia.partner.api.model.PhotoType
 import java.util.Locale
 
 /**
@@ -94,6 +96,7 @@ import java.util.Locale
 @Composable
 fun OrderDetailScreen(
     onNavigateBack: () -> Unit,
+    onOpenLegalDocuments: () -> Unit,
     viewModel: OrderDetailViewModel = hiltViewModel(),
     checklistViewModel: CleaningChecklistViewModel = hiltViewModel(),
 ) {
@@ -103,6 +106,7 @@ fun OrderDetailScreen(
     val preferredOffer by viewModel.preferredOffer.collectAsStateWithLifecycle()
     val contractRequest by viewModel.contractRequest.collectAsStateWithLifecycle()
     val contractStanding by viewModel.contractStanding.collectAsStateWithLifecycle()
+    val removalReason by viewModel.removalReason.collectAsStateWithLifecycle()
     val checkedIds by checklistViewModel.checkedIds.collectAsStateWithLifecycle()
 
     // No local SnackbarHostState — all VMs push directly to the
@@ -166,6 +170,7 @@ fun OrderDetailScreen(
                     // invalidates its watermark on mutation success, so the
                     // gate always lets this through.
                     onPhotosChanged = viewModel::onContentMutated,
+                    onReportLockout = viewModel::reportLockout,
                     onNavigateBack = onNavigateBack,
                 )
 
@@ -193,6 +198,10 @@ fun OrderDetailScreen(
                         request = request,
                         onDismiss = viewModel::dismissContract,
                         onOutcome = viewModel::onWorkContractOutcome,
+                        onOpenLegalDocuments = {
+                            viewModel.dismissContract()
+                            onOpenLegalDocuments()
+                        },
                     )
                 }
 
@@ -260,6 +269,16 @@ fun OrderDetailScreen(
                 .background(MaterialTheme.colorScheme.background),
         )
     }
+
+    removalReason?.let { reason ->
+        CleansiaDialog(
+            onDismiss = viewModel::dismissRemovalReason,
+            title = stringResource(R.string.order_removal_title),
+            message = stringResource(R.string.order_removal_message, reason),
+            confirmLabel = stringResource(R.string.ok),
+            onConfirm = viewModel::dismissRemovalReason,
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -279,6 +298,7 @@ private fun OrderDetailBottomSheetLayout(
     onCashConfirmRequested: () -> Unit,
     onDeclineOffer: () -> Unit,
     onPhotosChanged: () -> Unit,
+    onReportLockout: (String) -> Unit,
     onNavigateBack: () -> Unit,
 ) {
     val status = order.orderStatus.toOrderStatus()
@@ -288,6 +308,7 @@ private fun OrderDetailBottomSheetLayout(
 
     val location = order.orderLocation()
     val mapPoint = location.mapPoint()
+    val customerDetailsClosedNote = order.customerDetailsClosedNote()
 
     val screenHeight = LocalConfiguration.current.screenHeightDp.dp
     // Sheet peek = 75% of screen so the map shrinks to ~25% — just
@@ -328,6 +349,7 @@ private fun OrderDetailBottomSheetLayout(
                     status = status,
                     contentScroll = contentScroll,
                     location = location,
+                    customerDetailsClosedNote = customerDetailsClosedNote,
                     isMine = isMine,
                     isInProgress = isInProgress,
                     inFlight = inFlight,
@@ -343,6 +365,7 @@ private fun OrderDetailBottomSheetLayout(
                     onCashConfirmRequested = onCashConfirmRequested,
                     onDeclineOffer = onDeclineOffer,
                     onPhotosChanged = onPhotosChanged,
+                    onReportLockout = onReportLockout,
                 )
             },
         ) { _ ->
@@ -357,6 +380,7 @@ private fun OrderDetailBottomSheetLayout(
                 } else {
                     ApproximateAreaBackdrop(
                         location = location,
+                        customerDetailsClosed = customerDetailsClosedNote != null,
                         sheetCoverHeight = sheetPeekHeight,
                     )
                 }
@@ -453,6 +477,7 @@ private fun MapBackdrop(
 @Composable
 private fun ApproximateAreaBackdrop(
     location: OrderLocation,
+    customerDetailsClosed: Boolean,
     sheetCoverHeight: Dp,
 ) {
     Box(
@@ -488,8 +513,8 @@ private fun ApproximateAreaBackdrop(
             }
             // A precise address that simply has no coordinates is the other way into this branch —
             // there the address is already on the sheet and promising it "once you take the order"
-            // would be a lie.
-            if (location !is OrderLocation.Precise) {
+            // would be a lie. So would it on a job the partner worked whose details have been removed.
+            if (location !is OrderLocation.Precise && !customerDetailsClosed) {
                 Spacer(Modifier.height(Spacing.XXS))
                 Text(
                     text = stringResource(R.string.map_approximate_area),
@@ -548,6 +573,7 @@ private fun OrderDetailSheetContent(
     status: OrderStatus?,
     contentScroll: ScrollState,
     location: OrderLocation,
+    @StringRes customerDetailsClosedNote: Int?,
     isMine: Boolean,
     isInProgress: Boolean,
     inFlight: OrderAction?,
@@ -563,6 +589,7 @@ private fun OrderDetailSheetContent(
     onCashConfirmRequested: () -> Unit,
     onDeclineOffer: () -> Unit,
     onPhotosChanged: () -> Unit,
+    onReportLockout: (String) -> Unit,
 ) {
     val disclosure = order.orderDisclosure()
 
@@ -665,6 +692,14 @@ private fun OrderDetailSheetContent(
                 customerName = order.customerName,
                 disclosure = disclosure,
                 location = location,
+                closedNote = customerDetailsClosedNote?.let { stringResource(it) },
+            )
+
+            LockoutCard(
+                order = order,
+                isReporting = inFlight == OrderAction.ReportLockout,
+                actionsEnabled = inFlight == null,
+                onReport = onReportLockout,
             )
 
             ScopeCard(order = order)
@@ -714,23 +749,14 @@ private fun OrderDetailSheetContent(
             }
 
             if (showWorkSections) {
-                // Per-rail gating: Before photos are uploadable once
-                // the cleaner is OnTheWay or InProgress (no pre-arrival
-                // uploads while merely Confirmed). After photos are
-                // only uploadable once work is InProgress. Existing
-                // photos still render read-only outside their upload
-                // window.
-                val canUploadBefore =
-                    status == OrderStatus._3 || status == OrderStatus._4
-                val canUploadAfter = status == OrderStatus._4
                 PhotosSection(
                     // Refresh the surrounding OrderItem after each
                     // upload / delete so `hasAfterPhotos` stays live
                     // and the Complete slide unlocks the moment the
                     // cleaner adds an "after" photo.
                     onPhotosChanged = onPhotosChanged,
-                    canUploadBefore = canUploadBefore,
-                    canUploadAfter = canUploadAfter,
+                    canUploadBefore = photoWindowOpen(PhotoType._1, status),
+                    canUploadAfter = photoWindowOpen(PhotoType._2, status),
                 )
             }
 
@@ -744,19 +770,12 @@ private fun OrderDetailSheetContent(
             Spacer(Modifier.height(Spacing.S))
         }
 
-        // Cash orders reach the door still Pending; the server blocks
-        // CompleteOrder until the cleaner records the cash (PaymentType._1
-        // = Cash, PaymentStatus._2 = Paid — Code.value carries the enum
-        // ordinal, same as OrderStatus above).
-        val needsCashCollection = order.paymentType?.value == PaymentType._1.value &&
-            order.paymentStatus?.value != PaymentStatus._2.value
-
         StickyActionFooter(
             status = status,
             isMine = isMine,
             inFlight = inFlight,
             canComplete = order.hasAfterPhotos == true,
-            needsCashCollection = needsCashCollection,
+            needsCashCollection = order.needsCashCollection(),
             preferredOffer = preferredOffer,
             onTake = onTake,
             onStart = onStart,
@@ -857,3 +876,10 @@ internal fun cashDueLabel(
 ): String? = totalPrice
     ?.takeIf { it > 0 }
     ?.let { formatOrderPrice(it, currencyCode, locale) }
+
+/**
+ * A cash order reaches the door unpaid, a recurring occurrence the customer confirmed included, and the
+ * server refuses CompleteOrder until the partner records the cash.
+ */
+internal fun OrderItem.needsCashCollection(): Boolean =
+    paymentType?.value == PaymentType._1.value && paymentStatus?.value != PaymentStatus._2.value

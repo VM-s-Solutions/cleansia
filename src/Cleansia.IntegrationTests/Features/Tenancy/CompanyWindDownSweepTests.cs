@@ -189,14 +189,15 @@ public sealed class CompanyWindDownSweepTests(PostgresContainerFixture fixture) 
                 Assert.False(templates[seeded.PausedTemplateId].IsActive);
                 Assert.True(templates[seeded.ATemplateId].IsActive);
 
-                // Plus: both currencies cancelled at period end, once each, A's untouched.
+                // Plus: the paid-up one cancelled at period end, the past-due one now, once each, A's untouched.
                 var memberships = await ctx.UserMemberships.IgnoreQueryFilters().ToDictionaryAsync(m => m.Id);
                 Assert.NotNull(memberships[seeded.EurMembershipId].CancelledAt);
+                Assert.Equal(MembershipStatus.Active, memberships[seeded.EurMembershipId].Status);
                 Assert.NotNull(memberships[seeded.CzkMembershipId].CancelledAt);
+                Assert.Equal(MembershipStatus.Cancelled, memberships[seeded.CzkMembershipId].Status);
                 Assert.Null(memberships[seeded.AMembershipId].CancelledAt);
-                Assert.Equal(
-                    new[] { memberships[seeded.CzkMembershipId].StripeSubscriptionId, memberships[seeded.EurMembershipId].StripeSubscriptionId }.Order().ToList(),
-                    _stripe.CancelledSubscriptions.Order().ToList());
+                Assert.Equal([memberships[seeded.EurMembershipId].StripeSubscriptionId], _stripe.CancelledSubscriptions);
+                Assert.Equal([memberships[seeded.CzkMembershipId].StripeSubscriptionId], _stripe.CancelledNowSubscriptions);
 
                 // Credit: untouched while the company still operates.
                 var credit = await ctx.CreditAccounts.IgnoreQueryFilters().SingleAsync(a => a.Id == seeded.CreditAccountId);
@@ -216,7 +217,8 @@ public sealed class CompanyWindDownSweepTests(PostgresContainerFixture fixture) 
                 Assert.Equal(0, runs.Second.MembershipsCancelled);
                 Assert.Equal(2, _queue.Sent.Count);
                 Assert.Equal(1, _stripe.RefundCalls);
-                Assert.Equal(2, _stripe.CancelledSubscriptions.Count);
+                Assert.Single(_stripe.CancelledSubscriptions);
+                Assert.Single(_stripe.CancelledNowSubscriptions);
                 Assert.Single(await ctx.Refunds.IgnoreQueryFilters().ToListAsync());
                 Assert.Equal(2, (await ctx.Set<OrderStatusTrack>().IgnoreQueryFilters().CountAsync(t => t.Status == OrderStatus.Cancelled)));
                 Assert.NotNull(runs.LastRunAfterFirst);
@@ -575,6 +577,7 @@ public sealed class CompanyWindDownSweepTests(PostgresContainerFixture fixture) 
 
         var eurMembership = Stamped(UserMembership.Create(confirmedCustomer.Id, PlanId, EurId, "sub_wd_eur", DateTime.UtcNow.AddDays(-3), DateTime.UtcNow.AddDays(27)), B);
         var czkMembership = Stamped(UserMembership.Create(plusCustomer.Id, PlanId, CzkId, "sub_wd_czk", DateTime.UtcNow.AddDays(-3), DateTime.UtcNow.AddDays(27)), B);
+        czkMembership.UpdateFromStripeWebhook("past_due", czkMembership.CurrentPeriodStart, czkMembership.CurrentPeriodEnd, trialEndsAtUtc: null);
         var aMembership = Stamped(UserMembership.Create(aCustomer.Id, PlanId, CzkId, "sub_wd_a", DateTime.UtcNow.AddDays(-3), DateTime.UtcNow.AddDays(27)), A);
         ctx.UserMemberships.AddRange(eurMembership, czkMembership, aMembership);
 
@@ -789,6 +792,10 @@ public sealed class CompanyWindDownSweepTests(PostgresContainerFixture fixture) 
         public Task<string> SendPeriodEndReminderEmailAsync(string email, string employeeName, DateOnly startDate, DateOnly endDate, int daysRemaining, string periodLabel, string languageCode = "en", CancellationToken ct = default) => Sent();
         public Task<string> SendPromoCodeEmailAsync(string email, string promoCode, string discountLabel, DateTime? expiresOn, string languageCode = "en", CancellationToken ct = default) => Sent();
         public Task<string> SendOrderStatusUpdateEmailAsync(string email, Order order, string newStatus, string languageCode = "en", CancellationToken ct = default, decimal? refundedAmount = null, string? guestAccessToken = null) => Sent();
+        public Task<string> SendOrderBookedEmailAsync(string email, Order order, int freeCancellationHours, string languageCode = "en", CancellationToken ct = default, string? guestAccessToken = null, byte[]? confirmationPdf = null, string? confirmationFileName = null) => Sent();
+        public Task<string> SendWorkContractEmailAsync(string email, string cleanerName, string jobNumber, byte[] contractPdf, string contractFileName, string languageCode = "en", CancellationToken ct = default) => Sent();
+        public Task<string> SendReceivablePayLinkEmailAsync(string email, Order order, Cleansia.Core.Domain.Payments.Receivable receivable, string payUrl, string languageCode = "en", CancellationToken ct = default) => Sent();
+        public Task<string> SendCashRemittanceRequestEmailAsync(string email, string employeeName, decimal amount, string currencySymbol, DateTime carriedSince, string languageCode = "en", CancellationToken ct = default) => Sent();
         public Task<string> SendCompanyWindDownCustomerNoticeAsync(string email, string userName, IReadOnlyList<string> companyNames, DateOnly windDownFrom, string languageCode = "en", CancellationToken ct = default) => Sent();
         public Task<string> SendCompanyWindDownCleanerNoticeAsync(string email, string userName, IReadOnlyList<string> companyNames, DateOnly windDownFrom, string languageCode = "en", CancellationToken ct = default) => Sent();
         public Task<string> SendAdminNotificationEmailAsync(string email, string eventKey, IReadOnlyDictionary<string, string> args, string languageCode = "en", CancellationToken ct = default) => Sent();
@@ -803,6 +810,7 @@ public sealed class CompanyWindDownSweepTests(PostgresContainerFixture fixture) 
         public string? LastRefundKey { get; private set; }
         public bool RefuseRefunds { get; set; }
         public List<string> CancelledSubscriptions { get; } = [];
+        public List<string> CancelledNowSubscriptions { get; } = [];
         public bool AllRefundKeysIdentical => _refundKeys.Distinct().Count() <= 1;
 
         public Task RefundCheckoutSessionAsync(string stripeSessionId, decimal amount, string idempotencyKey, CancellationToken cancellationToken)
@@ -830,13 +838,27 @@ public sealed class CompanyWindDownSweepTests(PostgresContainerFixture fixture) 
             return Task.CompletedTask;
         }
 
+        public Task CancelSubscriptionNowAsync(string stripeSubscriptionId, CancellationToken cancellationToken)
+        {
+            CancelledNowSubscriptions.Add(stripeSubscriptionId);
+            return Task.CompletedTask;
+        }
+
         public Task<CheckoutSessionResult> CreateCheckoutSessionAsync(Order order, CancellationToken cancellationToken) => throw new NotSupportedException();
+        public Task<CheckoutSessionResult> CreateCheckoutSessionAsync(Order order, DateTime expiresAtUtc, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task<string> CreateCustomerAsync(string userId, string email, string fullName, string? phone, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task<PaymentIntentResult> CreatePaymentIntentAsync(decimal amount, string currency, string stripeCustomerId, string orderId, string displayOrderNumber, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task CancelPaymentIntentAsync(string paymentIntentId, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task<StripePaymentSnapshot> GetPaymentSnapshotAsync(string? stripeSessionId, string? stripePaymentIntentId, CancellationToken cancellationToken) => throw new NotSupportedException();
+        public Task<string?> FindCheckoutSessionOrderIdAsync(string paymentIntentId, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task<string> CreateEphemeralKeyAsync(string stripeCustomerId, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task<SetupIntentResult> CreateSetupIntentAsync(string stripeCustomerId, CancellationToken cancellationToken) => throw new NotSupportedException();
+        public Task<SetupIntentResult> CreateCardSetupIntentAsync(string stripeCustomerId, string savedCardId, CancellationToken cancellationToken) => throw new NotSupportedException();
+        public Task<string> CreateCardSetupCheckoutSessionAsync(string stripeCustomerId, string savedCardId, CancellationToken cancellationToken) => throw new NotSupportedException();
+        public Task<SavedCardDetails?> GetSetupIntentCardAsync(string setupIntentId, CancellationToken cancellationToken) => throw new NotSupportedException();
+        public Task<string> ChargeReceivableOffSessionAsync(string receivableId, decimal amount, string currency, string stripeCustomerId, string paymentMethodId, int attempt, CancellationToken cancellationToken) => throw new NotSupportedException();
+        public Task<CheckoutSessionResult> CreateReceivableCheckoutSessionAsync(string receivableId, string? currentSessionId, string orderId, string displayOrderNumber, decimal amount, string currency, CancellationToken cancellationToken) => throw new NotSupportedException();
+        public Task<bool> ExpireReceivableCheckoutSessionAsync(string sessionId, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task<SubscriptionResult> CreateSubscriptionAsync(string stripeCustomerId, string stripePriceId, int trialPeriodDays, string idempotencyAttemptId, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task<SubscriptionResult> SwapSubscriptionPriceAsync(string stripeSubscriptionId, string newStripePriceId, string idempotencyAttemptId, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task<string> CreateMembershipCheckoutSessionAsync(string stripeCustomerId, string stripePriceId, string userId, string membershipPlanCode, int trialPeriodDays, string idempotencyAttemptId, CancellationToken cancellationToken) => throw new NotSupportedException();

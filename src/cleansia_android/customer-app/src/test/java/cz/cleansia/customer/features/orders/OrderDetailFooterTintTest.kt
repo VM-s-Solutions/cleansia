@@ -52,6 +52,14 @@ class OrderDetailFooterTintTest {
         assertNotEquals(icon("showCancel"), icon("showReportIssue"))
     }
 
+    @Test
+    fun `the no-show report takes Cancel's slot and palette with its own glyph and label`() {
+        assertEquals(setOf("error"), roles("showCleanerNoShow"))
+        assertNotEquals(icon("showCleanerNoShow"), icon("showCancel"))
+        assertNotEquals(icon("showCleanerNoShow"), icon("showReportIssue"))
+        assertEquals(listOf("order_action_cleaner_no_show"), stringKeys("showCleanerNoShow"))
+    }
+
     /** A colour ticket must not quietly relabel the action. */
     @Test
     fun `report issue still reads from the label it always had`() {

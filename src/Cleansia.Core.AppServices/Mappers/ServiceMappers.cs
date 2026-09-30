@@ -63,6 +63,7 @@ public static class ServiceMappers
             CategoryId: service.CategoryId,
             Prices: prices,
             EstimatedTime: service.EstimatedTime,
+            MinutesPerRoom: service.MinutesPerRoom,
             Translations: service.Translations.ToDictionary(),
             CreatedOn: service.CreatedOn,
             UpdatedOn: service.UpdatedOn);

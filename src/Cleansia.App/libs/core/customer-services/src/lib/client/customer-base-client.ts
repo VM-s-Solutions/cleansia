@@ -41,12 +41,16 @@ import {
   PaymentClient,
   IPromoCodeClient,
   PromoCodeClient,
+  IReceivableClient,
+  ReceivableClient,
   IRecurringBookingClient,
   RecurringBookingClient,
   IReferralClient,
   ReferralClient,
   ISavedAddressClient,
   SavedAddressClient,
+  ISavedCardClient,
+  SavedCardClient,
   IServiceClient,
   ServiceClient,
   IUserClient,
@@ -76,6 +80,8 @@ interface ICustomerClient {
   consentsClient: IConsentsClient;
   disputeClient: IDisputeClient;
   savedAddressClient: ISavedAddressClient;
+  savedCardClient: ISavedCardClient;
+  receivableClient: IReceivableClient;
   loyaltyClient: ILoyaltyClient;
   marketClient: IMarketClient;
   creditClient: ICreditClient;
@@ -148,6 +154,14 @@ export class CustomerClient implements ICustomerClient {
     this.apiBaseUrl
   );
   savedAddressClient: ISavedAddressClient = new SavedAddressClient(
+    this.httpClient,
+    this.apiBaseUrl
+  );
+  savedCardClient: ISavedCardClient = new SavedCardClient(
+    this.httpClient,
+    this.apiBaseUrl
+  );
+  receivableClient: IReceivableClient = new ReceivableClient(
     this.httpClient,
     this.apiBaseUrl
   );

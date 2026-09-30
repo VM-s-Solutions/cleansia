@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Features.Bookings;
+using Cleansia.Core.AppServices.Features.Refunds;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -14,6 +15,8 @@ namespace Cleansia.Functions.Core.Handlers;
 /// freed for someone else" short enough that it doesn't affect cleaner
 /// scheduling expectations. Idempotent: a cancelled order's PaymentStatus
 /// stops matching the sweep's filter, so re-running mid-hour is a no-op.
+///
+/// <para>The same tick re-drives pending card refunds (<c>RedrivePendingRefunds</c>).</para>
 /// </summary>
 public class AutoCancelStaleRecurringOrdersHandler(
     IMediator mediator,
@@ -35,6 +38,24 @@ public class AutoCancelStaleRecurringOrdersHandler(
             logger.LogError(
                 "AutoCancelStaleRecurringOrders failed: {Error}",
                 result.Error?.Message ?? "unknown");
+        }
+
+        // A SECOND command on this hourly schedule rather than a timer of its own (the argument
+        // CleanupStalePendingOrdersHandler records), sent separately so neither failure hides the other.
+        var refunds = await mediator.Send(new RedrivePendingRefunds.Command(), ct);
+        if (refunds.IsSuccess && refunds.Value != null)
+        {
+            logger.LogInformation(
+                "RedrivePendingRefunds completed; re-drove {Redriven} of {Considered}, alerted {Alerted}",
+                refunds.Value.Redriven,
+                refunds.Value.Considered,
+                refunds.Value.Alerted);
+        }
+        else
+        {
+            logger.LogError(
+                "RedrivePendingRefunds failed: {Error}",
+                refunds.Error?.Message ?? "unknown");
         }
     }
 }

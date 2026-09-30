@@ -39,6 +39,8 @@ enum CustomerNotificationDeepLink {
              "order.cancelled",
              "order.refunded",
              "order.no_cleaner_refunded",
+             "order.no_cleaner_refund_pending",
+             "order.no_cleaner_nothing_charged",
              "order.starting_soon",
              "order.preferred_offer_closed",
              "recurring.scheduled":
@@ -49,7 +51,8 @@ enum CustomerNotificationDeepLink {
             return .dispute(disputeId: disputeId)
         case "recurring.paused",
              "membership.expiring_soon",
-             "membership.cancellation_effective":
+             "membership.cancellation_effective",
+             "membership.payment_failed":
             return .membershipManagement
         case "loyalty.tier_upgrade":
             return .rewardsActivity

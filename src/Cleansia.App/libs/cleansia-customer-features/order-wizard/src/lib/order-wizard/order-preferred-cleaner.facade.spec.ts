@@ -2,6 +2,7 @@ import { PLATFORM_ID } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import {
   CustomerClient,
+  DirtinessLevel,
   GetMyServingCleanersResponse,
 } from '@cleansia/customer-services';
 import { TranslateService } from '@ngx-translate/core';
@@ -114,6 +115,25 @@ describe('OrderPreferredCleanerFacade', () => {
     expect(packageIds).toEqual(['pkg-1']);
     expect(cleaningDateTimeUtc).toBeInstanceOf(Date);
     expect((cleaningDateTimeUtc as Date).getHours()).toBe(10);
+  });
+
+  it('asks about a job as long as the home size and the picked level make it', () => {
+    formData = { ...formData, rooms: 4, bathrooms: 2, dirtinessLevel: DirtinessLevel.Heavy };
+
+    facade.refresh();
+
+    const [, , , rooms, bathrooms, dirtinessLevel] = orderClient.myServingCleaners.mock.calls[0];
+    expect(rooms).toBe(4);
+    expect(bathrooms).toBe(2);
+    expect(dirtinessLevel).toBe(DirtinessLevel.Heavy);
+  });
+
+  it('asks about a Normal-length job while no level is picked', () => {
+    formData = { ...formData, dirtinessLevel: null };
+
+    facade.refresh();
+
+    expect(orderClient.myServingCleaners.mock.calls[0][5]).toBe(DirtinessLevel.Normal);
   });
 
   it('leaves the slot unasked until the customer has picked a date', () => {

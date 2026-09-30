@@ -29,20 +29,22 @@ public class NotificationFeedEventKeysTests
     }
 
     [Fact]
-    public void The_Non_Mutable_Feed_Keys_Are_Exactly_The_Three_A_Cleaner_Must_Not_Silence()
+    public void The_Non_Mutable_Feed_Keys_Are_Exactly_The_Ones_Nobody_May_Silence()
     {
         // A job cancellation, a payment confirmation, and the day-ahead schedule must not be
-        // silenceable, so they map to no category (the producer's mute gate is skipped). Every OTHER
-        // feed key stays mutable.
+        // silenceable by a cleaner, so they map to no category (the producer's mute gate is skipped).
+        // Every OTHER feed key stays mutable.
         //
         // The digest joined them because a cleaner who can turn off "tomorrow you have 2 jobs" can
         // turn off the thing that stops them forgetting — the same argument the catalog already makes
-        // about a job appearing on their own schedule.
+        // about a job appearing on their own schedule. The failed Plus renewal is the customer's one:
+        // a charge that keeps being retried while its benefits are paused is not a notice to mute.
         string[] nonMutable =
         [
             NotificationEventCatalog.OrderAssignmentCancelled,
             NotificationEventCatalog.InvoicePaid,
             NotificationEventCatalog.ReminderTomorrow,
+            NotificationEventCatalog.MembershipPaymentFailed,
         ];
         foreach (var key in nonMutable)
         {
@@ -73,11 +75,14 @@ public class NotificationFeedEventKeysTests
                 NotificationEventCatalog.OrderCancelled,
                 NotificationEventCatalog.OrderRefunded,
                 NotificationEventCatalog.OrderNoCleanerRefunded,
+                NotificationEventCatalog.OrderNoCleanerRefundPending,
+                NotificationEventCatalog.OrderNoCleanerNothingCharged,
                 NotificationEventCatalog.DisputeReply,
                 NotificationEventCatalog.RecurringScheduled,
                 NotificationEventCatalog.RecurringPaused,
                 NotificationEventCatalog.MembershipExpiringSoon,
                 NotificationEventCatalog.MembershipCancellationEffective,
+                NotificationEventCatalog.MembershipPaymentFailed,
                 NotificationEventCatalog.LoyaltyTierUpgrade,
             ],
             NotificationFeedEventKeys.Customer);

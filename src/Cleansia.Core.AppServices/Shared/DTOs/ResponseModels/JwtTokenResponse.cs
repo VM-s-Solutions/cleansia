@@ -11,6 +11,8 @@
 // the JWT — which becomes impossible once the access token is HttpOnly.
 // `AdminRole` is the administrator's role beside it, for the same reason and
 // only for that profile. Source-of-truth is still server-side; both are UI hints.
+// `MustChangePassword` tells the admin console to hold the administrator on the
+// password change until the password another administrator typed is replaced.
 public record JwtTokenResponse(
     string Token,
     bool IsEmailConfirmed,
@@ -21,4 +23,5 @@ public record JwtTokenResponse(
     DateTimeOffset? RefreshTokenExpiresAt = null,
     string? CsrfToken = null,
     string? Role = null,
-    string? AdminRole = null);
+    string? AdminRole = null,
+    bool MustChangePassword = false);

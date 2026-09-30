@@ -4,6 +4,7 @@ import { CanActivateFn, Router, UrlTree } from '@angular/router';
 import { CleansiaCustomerRoute } from '@cleansia/services';
 import { catchError, map, Observable, of } from 'rxjs';
 import { CustomerClient } from '../client/customer-base-client';
+import { MembershipStatus } from '../client/customer-client';
 import { CustomerAuthService } from '../services';
 
 /**
@@ -46,7 +47,7 @@ export const customerMembershipGuard: CanActivateFn = ():
 
   return inject(CustomerClient).membershipClient.getMine().pipe(
     map((membership) =>
-      membership?.hasMembership === true
+      membership?.status === MembershipStatus.Active
         ? true
         : router.createUrlTree(['/' + CleansiaCustomerRoute.PLUS]),
     ),

@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
@@ -54,7 +55,7 @@ public class UpdateInvoiceAmounts
         }
     }
 
-    public class Handler(IEmployeeInvoiceRepository invoiceRepository)
+    public class Handler(IEmployeeInvoiceRepository invoiceRepository, ICashLedgerRepository cashLedgerRepository)
         : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -72,7 +73,11 @@ public class UpdateInvoiceAmounts
                     nameof(command.InvoiceId), BusinessErrorMessage.InvoiceAlreadyPaid));
             }
 
-            invoice.UpdateAmounts(command.BonusAmount, command.DeductionAmount, command.AdminNotes);
+            var released = invoice.UpdateAmounts(command.BonusAmount, command.DeductionAmount, command.AdminNotes);
+            if (released > 0m)
+            {
+                cashLedgerRepository.Add(CashLedgerEntry.ForSetOffReversal(invoice, released, DateTime.UtcNow));
+            }
 
             return BusinessResult.Success(new Response(invoice.Id));
         }

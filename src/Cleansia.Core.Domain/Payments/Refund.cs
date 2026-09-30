@@ -103,6 +103,16 @@ public class Refund : TenantAuditable
     }
 
     /// <summary>
+    /// Close a refund there is nothing left to give back for, so the hourly re-drive stops selecting it.
+    /// The action that asked for it can still retry; a retry re-checks the ceiling first.
+    /// </summary>
+    public Refund MarkFailed()
+    {
+        Status = RefundStatus.Failed;
+        return this;
+    }
+
+    /// <summary>
     /// Lower this refund's amount to at most <paramref name="maxAmount"/> before a re-drive, so a stale
     /// frozen amount can never exceed the live refundable ceiling (the cross-key over-refund guard,
     /// T-0354). Only ever decreases the amount, and only meaningful while the refund has not yet

@@ -69,6 +69,22 @@ detail shows the seat as *contract pending* until then.
 → [Business rules — the contract for work](/product/business-rules#work-contract),
 [WorkContractAcceptance](/domain/roles/work-contract-acceptance)
 
+**A placement is an offer, and a removal has a reason** (owner ruling 2026-09-28). The placed cleaner may
+drop the job at no cost. An administrator who takes a cleaner off a job must give a reason
+(`removalReason`, else `order.reassign.removal_reason_required`); the cleaner's notice carries only the
+order, and the job detail shows them the reason (`GetMyAssignmentRemoval`). A weekly job limit carries a
+reason the cleaner sees on their profile. → [Business rules — placement is an offer](/product/business-rules#placement-is-an-offer)
+
+## The cleaner's own documents gate the take {#cleaner-documents-gate}
+
+Beside the per-job contract, a cleaner holds three documents of their own — the framework contract, the
+self-billing agreement and the data-processing agreement (owner ruling 2026-09-28). While one is in force
+for their market and they have not accepted its current version, `TakeOrder`, `ApproveEmployee` and an
+administrator's placement refuse with `employee.legal_documents_not_accepted`, and the apps lead the
+cleaner to the documents to read and accept (`GetMyLegalDocuments`, `AcceptLegalDocument`, echoing the
+text id they were shown). No text is seeded yet, so nothing is refused today.
+→ [Business rules — a cleaner's own documents](/product/business-rules#cleaner-documents)
+
 ## Two synchronised broadcasts
 
 Both arrows into the board wake **many cleaners at the same instant**: the new-job push, and
@@ -76,8 +92,8 @@ Both arrows into the board wake **many cleaners at the same instant**: the new-j
 seat, and it is why the seat needs a real arbiter rather than a check.
 
 **The same transition tells the company.** The three sites that make an order offerable — a cash
-one-off at creation, a card order on its payment, a recurring occurrence on the customer's confirm —
-are the three that raise `admin.order.new` to the company's administrators, beside the preferred
+one-off at creation, a card order (one-off or recurring) on its payment, a recurring cash occurrence on
+the customer's confirm — are the three that raise `admin.order.new` to the company's administrators, beside the preferred
 cleaner's offer and under the same offerability read; an unpaid card checkout, which the stale sweep
 cancels an hour later, announces nothing. A seat that empties again is a second notice: a drop or an
 admin rejection that leaves nobody on the order raises `admin.order.crew_lost` at any status, and
@@ -106,7 +122,8 @@ would derive 1, which is taken — the seat would be permanently unusable while 
 | Two cleaners, **multi-seat** order, same instant | Both derive the same ordinal from the same stale read, so the loser is refused *while a seat is free*. Their next tap succeeds. Known and accepted — a retry loop is real complexity for a self-healing window. |
 | Order held for someone else | Indistinguishable from a missing order. The refusal must not reveal that someone else was named. |
 | Cleaner already on a conflicting job | Refused by the time-conflict check, last in the cascade. |
-| Cleaner over the weekly cap | Refused. |
+| Cleaner over the weekly cap | Refused. The cap, when an administrator sets one, carries a reason the cleaner sees on their profile. |
+| Cleaner has not accepted a cleaner document in force | Refused, `employee.legal_documents_not_accepted`; the app points to the documents. |
 | Profile incomplete, or contract not approved | Refused before the seat is even considered. |
 | Order cancelled but with a free seat | "This job is gone", not "this job is full" — those checks sit *before* offerability on purpose. |
 | Take sent without a contract text id | `contract.not_accepted`, judged before existence — a held and a missing order answer the same; no seat. |

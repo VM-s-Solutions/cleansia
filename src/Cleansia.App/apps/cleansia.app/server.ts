@@ -11,6 +11,18 @@ const browserDistFolder = resolve(serverDistFolder, '../browser');
 const app = express();
 app.use(compression());
 
+// First, so every response carries them: static files, the health probe, a fresh render and the
+// landing-page micro-cache alike. This is where customers pay, so it must never render inside
+// another site's frame.
+app.use((_req, res, next) => {
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Content-Security-Policy', "frame-ancestors 'none'");
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000');
+  next();
+});
+
 let angularApp: AngularNodeAppEngine | undefined;
 let manifestLoaded = false;
 

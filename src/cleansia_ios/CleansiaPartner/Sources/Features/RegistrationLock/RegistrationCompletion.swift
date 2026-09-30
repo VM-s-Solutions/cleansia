@@ -18,6 +18,7 @@ func isRegistrationComplete(_ status: RegistrationCompletionStatus) -> Bool {
 enum RegistrationStepCategory {
     case profile
     case documents
+    case legalDocuments
     case approval
 }
 
@@ -41,12 +42,18 @@ struct RegistrationStep: Equatable {
     let details: [RegistrationStepDetail]
 }
 
-func buildSteps(_ status: RegistrationCompletionStatus?) -> [RegistrationStep] {
+/// The contract-documents step appears only while a document is in force; until then approval does
+/// not wait on it.
+func buildSteps(
+    _ status: RegistrationCompletionStatus?,
+    legalDocuments: [CleanerLegalDocument]? = nil
+) -> [RegistrationStep] {
     let profileDone = status?.hasCompletedProfile == true
     let documentsDone = status?.areDocumentsUploaded == true
+    let legalDone = (legalDocuments ?? []).allSatisfy(\.isAccepted)
     let contract = status?.contractStatus
 
-    return [
+    var steps = [
         RegistrationStep(
             category: .profile,
             status: profileDone ? .done : .missing,
@@ -56,14 +63,24 @@ func buildSteps(_ status: RegistrationCompletionStatus?) -> [RegistrationStep] {
             category: .documents,
             status: documentsDone ? .done : .missing,
             details: documentsDone ? [] : [.documentsRequired]
-        ),
-        approvalStep(profileDone: profileDone, documentsDone: documentsDone, contract: contract)
+        )
     ]
+    if let legalDocuments, !legalDocuments.isEmpty {
+        steps.append(RegistrationStep(category: .legalDocuments, status: legalDone ? .done : .missing, details: []))
+    }
+    steps.append(approvalStep(
+        profileDone: profileDone,
+        documentsDone: documentsDone,
+        legalDone: legalDone,
+        contract: contract
+    ))
+    return steps
 }
 
 private func approvalStep(
     profileDone: Bool,
     documentsDone: Bool,
+    legalDone: Bool,
     contract: ContractStatus?
 ) -> RegistrationStep {
     if contract == .approved || contract == .active {
@@ -72,7 +89,7 @@ private func approvalStep(
     if contract == .rejected {
         return RegistrationStep(category: .approval, status: .missing, details: [.approvalRejected])
     }
-    if profileDone, documentsDone, contract == .pending {
+    if profileDone, documentsDone, legalDone, contract == .pending {
         return RegistrationStep(category: .approval, status: .pending, details: [.approvalAwaitingReview])
     }
     return RegistrationStep(category: .approval, status: .missing, details: [.approvalCompleteProfileFirst])

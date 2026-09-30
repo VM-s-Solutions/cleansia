@@ -35,4 +35,5 @@ public record PeriodPaySummaryDto(
     /// view leads so the switch always contains the value it shows. Nullable + defaulted so it is
     /// additive on the wire.
     /// </summary>
-    IReadOnlyList<PeriodCurrencyDto>? AvailableCurrencies = null);
+    IReadOnlyList<PeriodCurrencyDto>? AvailableCurrencies = null,
+    decimal TotalDirtinessPay = 0m);

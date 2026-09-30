@@ -108,7 +108,10 @@
 -->
 @if (facade.isMember()) {
   <section class="cl-plusp__member" id="membership">
-    <cleansia-customer-membership-management [embedded]="true" />
+    <cleansia-customer-membership-management
+      [embedded]="true"
+      (cancelled)="facade.refreshMembership()"
+    />
   </section>
 }
 

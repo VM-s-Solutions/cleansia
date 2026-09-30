@@ -1,25 +1,30 @@
 using System.Text.RegularExpressions;
+using Cleansia.Config.Abstractions;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Extensions;
 
 namespace Cleansia.Tests.Configuration;
 
 /// <summary>
-/// The development administrator that <c>sql-scripts/insert_seed_data.sql</c> creates.
+/// The local development administrator that <c>sql-scripts/insert_local_dev_admin.sql</c> creates.
 ///
-/// A fresh dev database used to cost three manual steps before anyone could open the admin app —
-/// register, confirm the email, then run <c>set-admin-role.sql</c>. The seed does it now, which
-/// means a precomputed password hash sits in a SQL file where nothing type-checks it.
+/// Its password is written in README.md, so it lives apart from <c>prod-bootstrap.sql</c> and the shared
+/// fixture <c>insert_seed_data.sql</c>, which also seed the shared DEV database through execute-sql.yml
+/// (and the first, production). Only a local Development boot runs all three files; named DEV
+/// administrators come from set-admin-role.sql.
 ///
-/// Postgres cannot compute that hash itself: it is PBKDF2-SHA256 at 600 000 iterations and pgcrypto
-/// is deliberately unavailable (Azure blocks it unless allow-listed — the same reason
-/// <c>generate_ulid()</c> uses <c>md5(random())</c>). So the literal is read straight back out of
-/// the seed file and run through the REAL <see cref="PasswordExtensions.VerifyPassword"/>. Change
-/// the version prefix, the iteration count or the hash size and this fails here, rather than as a
-/// login that silently refuses the only account that can reach the admin app.
+/// Postgres cannot compute the password hash itself: it is PBKDF2-SHA256 at 600 000 iterations and
+/// pgcrypto is deliberately unavailable (Azure blocks it unless allow-listed — the same reason
+/// <c>generate_ulid()</c> uses <c>md5(random())</c>). So the literal is read straight back out of the
+/// admin file and run through the REAL <see cref="PasswordExtensions.VerifyPassword"/>. Change the
+/// version prefix, the iteration count or the hash size and this fails here, rather than as a login
+/// that silently refuses the only account that can reach the admin app.
 /// </summary>
 public class SeededAdminCredentialsTests
 {
+    private const string BootstrapFile = "prod-bootstrap.sql";
+    private const string SharedFixtureFile = "insert_seed_data.sql";
+    private const string AdminFile = "insert_local_dev_admin.sql";
     private const string SeededEmail = "admin@cleansia.local";
     private const string SeededPassword = "Admin123!";
 
@@ -28,7 +33,7 @@ public class SeededAdminCredentialsTests
     {
         Assert.True(
             SeededPassword.VerifyPassword(SeededHashFromSeedFile()),
-            $"The hash in insert_seed_data.sql no longer verifies '{SeededPassword}'. " +
+            $"The hash in {AdminFile} no longer verifies '{SeededPassword}'. " +
             "Regenerate it with the current PasswordExtensions parameters.");
     }
 
@@ -52,8 +57,7 @@ public class SeededAdminCredentialsTests
     [Fact]
     public void The_Seeded_Row_Is_An_Administrator_Who_Can_Sign_In()
     {
-        var insert = SeedFile();
-        var block = insert[insert.IndexOf("DEVELOPMENT ADMINISTRATOR", StringComparison.Ordinal)..];
+        var block = SqlScript(AdminFile);
 
         // Profile 100 is the only value that reaches the admin app, and an unconfirmed email is
         // refused at login — the two things set-admin-role.sql used to do by hand. The seeded
@@ -64,6 +68,24 @@ public class SeededAdminCredentialsTests
         // Reserved suffix: it cannot resolve to a real mailbox, so this fixture can never receive
         // real mail or be mistaken for a live account.
         Assert.EndsWith(".local", SeededEmail);
+    }
+
+    [Theory]
+    [InlineData(BootstrapFile)]
+    [InlineData(SharedFixtureFile)]
+    public void The_Shared_Scripts_Create_No_User(string fileName)
+    {
+        var script = SqlScript(fileName);
+
+        Assert.DoesNotContain(SeededEmail, script, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotMatch(@"'v2\$[A-Za-z0-9+/=]+'", script);
+        Assert.DoesNotMatch(@"INSERT\s+INTO\s+public\.""Users""", script);
+    }
+
+    [Fact]
+    public void A_Local_Development_Boot_Seeds_The_Bootstrap_Then_The_Fixture_Then_The_Administrator()
+    {
+        Assert.Equal([BootstrapFile, SharedFixtureFile, AdminFile], DatabaseMigrationExtensions.DevelopmentSeedScripts);
     }
 
     /// <summary>
@@ -89,17 +111,17 @@ public class SeededAdminCredentialsTests
     /// <summary>Reads the literal out of the seed file, so the test cannot drift from what ships.</summary>
     private static string SeededHashFromSeedFile()
     {
-        var match = Regex.Match(SeedFile(), @"'(?<hash>v2\$[A-Za-z0-9+/=]+)'");
-        Assert.True(match.Success, "No v2$ password hash found in insert_seed_data.sql.");
+        var match = Regex.Match(SqlScript(AdminFile), @"'(?<hash>v2\$[A-Za-z0-9+/=]+)'");
+        Assert.True(match.Success, $"No v2$ password hash found in {AdminFile}.");
         return match.Groups["hash"].Value;
     }
 
-    private static string SeedFile()
+    private static string SqlScript(string fileName)
     {
         var solutionDir = FindSolutionDirectory(AppContext.BaseDirectory);
         Assert.False(solutionDir is null, "Could not locate the solution directory.");
 
-        var path = Path.GetFullPath(Path.Combine(solutionDir!, "..", "sql-scripts", "insert_seed_data.sql"));
+        var path = Path.GetFullPath(Path.Combine(solutionDir!, "..", "sql-scripts", fileName));
         Assert.True(File.Exists(path), $"Seed file not found: {path}");
         return File.ReadAllText(path);
     }

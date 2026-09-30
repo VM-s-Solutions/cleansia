@@ -8,19 +8,26 @@ struct MembershipSnapshot: Equatable {
     let expressUpgradesPerMonth: Int?
     let expressUpgradesRemaining: Int?
     let trialEndsAtUtc: Date?
+    let benefitsPaused: Bool
 
     init(
         hasMembership: Bool,
         freeCancellationWindowHours: Int?,
         expressUpgradesPerMonth: Int? = nil,
         expressUpgradesRemaining: Int? = nil,
-        trialEndsAtUtc: Date? = nil
+        trialEndsAtUtc: Date? = nil,
+        benefitsPaused: Bool = false
     ) {
         self.hasMembership = hasMembership
         self.freeCancellationWindowHours = freeCancellationWindowHours
         self.expressUpgradesPerMonth = expressUpgradesPerMonth
         self.expressUpgradesRemaining = expressUpgradesRemaining
         self.trialEndsAtUtc = trialEndsAtUtc
+        self.benefitsPaused = benefitsPaused
+    }
+
+    func isInTrial(at now: Date) -> Bool {
+        trialEndsAtUtc.map { $0 > now } ?? false
     }
 }
 
@@ -39,7 +46,8 @@ struct LiveMembershipClient: MembershipClient {
                 freeCancellationWindowHours: response.freeCancellationWindowHours,
                 expressUpgradesPerMonth: response.expressUpgradesPerMonth,
                 expressUpgradesRemaining: response.expressUpgradesRemaining,
-                trialEndsAtUtc: response.trialEndsAtUtc
+                trialEndsAtUtc: response.trialEndsAtUtc,
+                benefitsPaused: response.benefitsPaused
             )
         }
     }

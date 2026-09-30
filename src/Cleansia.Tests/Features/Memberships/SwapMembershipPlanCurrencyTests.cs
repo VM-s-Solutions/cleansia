@@ -45,7 +45,7 @@ public class SwapMembershipPlanCurrencyTests
             UserId, monthly.Id, MembershipPricingMockFactory.CzkCurrencyId, SubscriptionId,
             DateTime.UtcNow.AddDays(-10), DateTime.UtcNow.AddDays(20));
         _membershipRepository
-            .Setup(r => r.GetActiveForUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetLifecycleForUserAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(membership);
 
         _stripe
@@ -77,7 +77,7 @@ public class SwapMembershipPlanCurrencyTests
             SubscriptionId, now.AddMonths(-1), now.AddHours(-1));
         membership.RecordRecurringPauseState("active", now.AddMonths(-1), now.AddMonths(-1));
         Assert.True(membership.TryMarkRecurringPauseNotificationSent(now.AddMinutes(-1)));
-        _membershipRepository.Setup(r => r.GetActiveForUserAsync(UserId, It.IsAny<CancellationToken>())).ReturnsAsync(membership);
+        _membershipRepository.Setup(r => r.GetLifecycleForUserAsync(UserId, It.IsAny<CancellationToken>())).ReturnsAsync(membership);
         _priceRepository.PriceIn(_yearly.Id, MembershipPricingMockFactory.CzkCurrencyId, "price_yearly_czk", 2030m);
         _stripe.Setup(c => c.SwapSubscriptionPriceAsync(SubscriptionId, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new SubscriptionResult(SubscriptionId, now, now.AddYears(1), trial ? now.AddDays(7) : null, status));

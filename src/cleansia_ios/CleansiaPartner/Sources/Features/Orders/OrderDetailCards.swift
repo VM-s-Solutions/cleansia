@@ -96,6 +96,11 @@ struct CustomerCard: View {
                         .font(CleansiaTypography.bodyMedium)
                         .foregroundColor(CleansiaColors.onSurfaceVariant)
                 }
+                if let closedNote = order.customerDetailsClosedNote {
+                    Text(closedNote)
+                        .font(CleansiaTypography.bodyMedium)
+                        .foregroundColor(CleansiaColors.onSurfaceVariant)
+                }
                 contactActions
             }
         }
@@ -184,6 +189,12 @@ struct ScopeCard: View {
                     Text(roomsLine)
                         .font(CleansiaTypography.bodyLarge)
                         .foregroundColor(CleansiaColors.onSurface)
+
+                    if let dirtiness = L10n.Orders.dirtinessLevel(order.dirtinessLevel) {
+                        Text(dirtiness)
+                            .font(CleansiaTypography.bodyMedium)
+                            .foregroundColor(CleansiaColors.onSurfaceVariant)
+                    }
 
                     if let crew = order.crew {
                         Text(OrdersFormat.crewLine(crew))

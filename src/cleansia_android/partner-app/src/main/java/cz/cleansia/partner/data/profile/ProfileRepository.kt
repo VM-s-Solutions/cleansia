@@ -1,6 +1,7 @@
 package cz.cleansia.partner.data.profile
 
 import cz.cleansia.partner.api.client.EmployeeApi
+import cz.cleansia.partner.api.model.AcceptLegalDocumentCommand
 import cz.cleansia.partner.api.model.EmployeeEntityType
 import cz.cleansia.partner.api.model.EmployeeItem
 import cz.cleansia.partner.api.model.BlobFileDto
@@ -22,6 +23,7 @@ import cz.cleansia.core.auth.SessionScopedCache
 import cz.cleansia.core.freshness.Staleness
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
+import cz.cleansia.core.network.mapWire
 import cz.cleansia.core.network.safeApiCall
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
@@ -187,6 +189,15 @@ interface ProfileRepository {
      * no dialog, and a cleaner had lost their access to work.
      */
     suspend fun requestDocumentDeletion(documentId: String, reason: String): ApiResult<Unit>
+
+    /**
+     * The contract documents in force for the cleaner's market, in [language] where a text has it.
+     * Empty while none is in force: then nothing is owed and neither approval nor a take is gated.
+     */
+    suspend fun getLegalDocuments(language: String): ApiResult<List<CleanerLegalDocument>>
+
+    /** Echoes the text row the cleaner read. Accepting the version already accepted is a success. */
+    suspend fun acceptLegalDocument(legalDocumentTextId: String): ApiResult<Unit>
 }
 
 @Singleton
@@ -373,6 +384,17 @@ class ProfileRepositoryImpl @Inject constructor(
             requestMyDocumentDeletionRequest = RequestMyDocumentDeletionRequest(reason = reason),
         )
     }.map { }
+
+    /** Refuses the whole list on one broken row: dropping it would hide a document the cleaner owes. */
+    override suspend fun getLegalDocuments(language: String): ApiResult<List<CleanerLegalDocument>> =
+        safeApiCall(json) { employeeApi.employeeGetMyLegalDocuments(language = language) }
+            .mapWire { documents -> documents.map { it.toDomain() } }
+
+    /** An acceptance changes what the registration lock shows, so its watermark no longer holds. */
+    override suspend fun acceptLegalDocument(legalDocumentTextId: String): ApiResult<Unit> =
+        safeApiCall(json) {
+            employeeApi.employeeAcceptLegalDocument(AcceptLegalDocumentCommand(acceptedTextId = legalDocumentTextId))
+        }.map { }.also { if (it is ApiResult.Success) registrationStatusStaleness.reset() }
 }
 
 private const val PAYOUT_NOT_FOUND_KEY = "payout.not_found"

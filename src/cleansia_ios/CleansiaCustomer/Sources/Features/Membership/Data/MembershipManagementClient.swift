@@ -93,8 +93,14 @@ extension GetMyMembershipResponse {
             trialEndsAtUtc: trialEndsAtUtc,
             price: price,
             monthlyEquivalentPrice: monthlyEquivalentPrice,
-            currencyCode: currencyCode
+            currencyCode: currencyCode,
+            benefitsPaused: benefitsPaused
         )
+    }
+
+    /// `._2` is PastDue and `._4` is Paused: the enrolment is live, but no benefit runs.
+    var benefitsPaused: Bool {
+        status.map { $0 == ._2 || $0 == ._4 } ?? false
     }
 }
 
@@ -115,6 +121,7 @@ extension GetMembershipPlansResponse {
             discountPercentage: discountPercentage.require("discountPercentage"),
             freeCancellationWindowHours: freeCancellationWindowHours.require("freeCancellationWindowHours"),
             allowsExpressUpgrade: allowsExpressUpgrade.require("allowsExpressUpgrade"),
+            expressUpgradesPerMonth: expressUpgradesPerMonth.require("expressUpgradesPerMonth"),
             trialPeriodDays: trialPeriodDays.require("trialPeriodDays"),
             savingsPercentVsMonthly: savingsPercentVsMonthly.require("savingsPercentVsMonthly"),
             currencyCode: currencyCode.requireNonBlank("currencyCode")

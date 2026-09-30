@@ -19,9 +19,11 @@ internal static class StripeWebhookTestPayloads
     /// <summary>A secret the host is NOT configured with — used to forge an attacker-signed event.</summary>
     public const string WrongWebhookSecret = "whsec_attacker_minted_secret";
 
-    public static string CheckoutSessionCompletedBody(string eventId, string orderId, string sessionId = "cs_test_session")
+    public static string CheckoutSessionCompletedBody(
+        string eventId, string orderId, string sessionId = "cs_test_session", string? paymentIntentId = null)
     {
         var created = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        var paymentIntent = paymentIntentId is null ? "null" : $"\"{paymentIntentId}\"";
         return $$"""
         {
           "id": "{{eventId}}",
@@ -39,6 +41,7 @@ internal static class StripeWebhookTestPayloads
               "payment_status": "paid",
               "status": "complete",
               "mode": "payment",
+              "payment_intent": {{paymentIntent}},
               "metadata": {
                 "OrderId": "{{orderId}}"
               }

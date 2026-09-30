@@ -2,6 +2,7 @@ using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
+using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Core.Queue.Abstractions;
@@ -75,6 +76,45 @@ public class GenerateInvoiceQueueConsumeTests(PostgresContainerFixture fixture) 
                 Assert.Equal(2, assignedPays.Count);
                 Assert.All(assignedPays, p => Assert.Equal(invoice.Id, p.EmployeeInvoiceId));
                 Assert.All(assignedPays, p => Assert.Equal(TenantId, p.TenantId));
+            });
+    }
+
+    /// <summary>
+    /// Owner ruling 2026-09-28, decision 23: the invoice the queue writes sets the cash the cleaner holds off
+    /// against it, under the cleaner's company, and the invoice's own total is unchanged.
+    /// </summary>
+    [Fact]
+    public async Task Consume_Sets_The_Cash_The_Cleaner_Holds_Off_Against_The_Invoice_Under_Their_Company()
+    {
+        await TestMethod(
+            arrange: async context =>
+            {
+                await SeedEmployeeWithUnpaidPays(context);
+                var employee = await context.Employees.IgnoreQueryFilters().SingleAsync(e => e.Id == _employeeId);
+                var cashOrder = NewOrder(employee.UserId, "cash-buyer@cleansia.test");
+                cashOrder.MarkCashCollected(_employeeId, DateTime.UtcNow.AddDays(-3), 400m);
+                context.Add(cashOrder);
+                var collection = CashLedgerEntry.ForCollection(cashOrder);
+                collection.TenantId = TenantId;
+                context.Add(collection);
+                await context.CommitAsync(CancellationToken.None);
+            },
+            act: async provider =>
+            {
+                await NewConsumer(provider).HandleAsync(Enveloped(_employeeId, _payPeriodId, TenantId), CancellationToken.None);
+                return true;
+            },
+            assert: async (CleansiaDbContext context, bool _) =>
+            {
+                var invoice = await context.Set<EmployeeInvoice>().IgnoreQueryFilters()
+                    .SingleAsync(i => i.EmployeeId == _employeeId && i.PayPeriodId == _payPeriodId);
+                Assert.Equal((1000m, 400m, 600m), (invoice.TotalAmount, invoice.CashSetOffAmount, invoice.TransferAmount));
+
+                var setOff = await context.CashLedgerEntries.IgnoreQueryFilters()
+                    .SingleAsync(e => e.EmployeeId == _employeeId && e.Kind == CashLedgerEntryKind.SetOff);
+                Assert.Equal((-400m, TenantId, invoice.InvoiceNumber), (setOff.Amount, setOff.TenantId, setOff.Note));
+                Assert.Equal(0m, await context.CashLedgerEntries.IgnoreQueryFilters()
+                    .Where(e => e.EmployeeId == _employeeId).SumAsync(e => e.Amount));
             });
     }
 

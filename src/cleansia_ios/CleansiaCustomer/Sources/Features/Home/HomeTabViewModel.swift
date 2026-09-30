@@ -89,10 +89,6 @@ final class HomeTabViewModel: ViewModel {
         await marketStore.refreshIfStale()
     }
 
-    var hasAnyOrders: Bool {
-        !recentOrders.isEmpty
-    }
-
     var displayedAddress: SavedAddress? {
         HomeSections.displayedAddress(addresses, selectedId: selectedAddressId)
     }
@@ -129,7 +125,7 @@ final class HomeTabViewModel: ViewModel {
 
     var showSetupRecurringSlide: Bool {
         Self.showSetupRecurringSlide(
-            isPlus: isPlus,
+            isPlus: isPlus && membership?.benefitsPaused != true,
             hasRecurringSource: true,
             templatesEmpty: recurringTemplates.isEmpty
         )

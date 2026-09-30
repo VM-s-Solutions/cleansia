@@ -243,6 +243,17 @@ class DisputeRepositoryTest {
     }
 
     @Test
+    fun create_carriesTheSettlementChoiceAndDefaultsToACardRefund() = runTest {
+        coEvery { api.create(any()) } returns Response.success("d-9")
+
+        newRepo().create("o-1", 3, "desc")
+        newRepo().create("o-1", 3, "desc", settlement = DisputeSettlement.Credit)
+
+        coVerify(exactly = 1) { api.create(match { it.settlementPreference == DisputeSettlement.CardRefund }) }
+        coVerify(exactly = 1) { api.create(match { it.settlementPreference == DisputeSettlement.Credit }) }
+    }
+
+    @Test
     fun create_givenHttpError_carriesParsedServerMessage() = runTest {
         coEvery { api.create(any()) } returns Response.error(500, errBody())
 

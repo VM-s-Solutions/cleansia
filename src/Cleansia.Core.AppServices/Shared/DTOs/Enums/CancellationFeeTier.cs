@@ -19,8 +19,9 @@ public enum CancellationFeeTier
     FreeNotAccepted = 0,
 
     /// <summary>
-    /// Cancelled within the customer's "oops window" after booking — 15 minutes, or 60 for an entitled
-    /// Plus member (<c>CancellationPolicy.OopsWindowMinutes</c>). The name is persisted in audit evidence.
+    /// Cancelled within the customer's "oops window" after booking — 15 minutes, or 60 on the customer's
+    /// first booking or for an entitled Plus member (<c>CancellationPolicy.OopsWindowMinutes</c>). The
+    /// name is persisted in audit evidence.
     /// </summary>
     FreeOopsWindow = 1,
 

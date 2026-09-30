@@ -147,6 +147,50 @@ public class GetProductivityMetricsHandlerTests
         _orderAccessService.Verify(s => s.GetCallerEmployeeIdAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    /// <summary>
+    /// Owner ruling 2026-09-28: nothing grades a cleaner on time. Jobs that ran three
+    /// times over their estimate leave the score exactly where the job count puts it, and the response
+    /// carries no time figure at all.
+    /// </summary>
+    [Fact]
+    public async Task The_Score_Counts_Jobs_Against_The_Target_And_Ignores_How_Long_They_Took()
+    {
+        SetCaller(UserProfile.Employee);
+        _orderAccessService
+            .Setup(s => s.GetCallerEmployeeIdAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CallerEmployeeId);
+        _orderRepository
+            .Setup(r => r.GetCountAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Order, bool>>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(10);
+        var january = new DateTime(2026, 1, 10, 9, 0, 0, DateTimeKind.Utc);
+        _orderRepository
+            .Setup(r => r.GetCompletedOrdersByDateRangeAsync(
+                CallerEmployeeId, It.IsAny<DateTime>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(
+            [
+                Overrun(january), Overrun(january.AddDays(1)), Overrun(january.AddDays(2)),
+                Overrun(january.AddMonths(1)),
+            ]);
+
+        var result = await CreateHandler().Handle(QueryFor(null), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(50d, result.Value.EfficiencyScore);
+        Assert.Equal(15d, result.Value.PersonalBests.BestEfficiencyScore);
+        Assert.DoesNotContain(
+            typeof(Core.AppServices.Features.Dashboard.DTOs.ProductivityMetricsDto).GetProperties(),
+            p => p.Name.Contains("Time", StringComparison.Ordinal));
+    }
+
+    private static Order Overrun(DateTime cleaningDateTime)
+    {
+        var order = Cleansia.TestUtilities.MockDataFactories.Orders.OrderMockFactory.Generate(
+            new Cleansia.TestUtilities.MockDataFactories.Orders.OrderMockFactory.OrderPartial { CleaningDateTime = cleaningDateTime });
+        order.UpdateEstimatedTime(60);
+        order.CompleteOrder(actualCompletionTime: 180);
+        return order;
+    }
+
     [Fact]
     public async Task NonAdmin_With_No_Resolvable_Employee_Returns_EmployeeNotFound()
     {

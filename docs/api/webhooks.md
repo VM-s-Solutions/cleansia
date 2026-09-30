@@ -70,13 +70,13 @@ Eleven event types, in three groups (`Constants.StripeEventType` — `IsOrderEve
 | `customer.subscription.updated` | `SubscriptionUpdated` | Mirrors Stripe's status and the current period onto the membership; a renewal is recorded here |
 | `customer.subscription.deleted` | `SubscriptionDeleted` | Mirrors the cancellation |
 | `invoice.payment_failed` | `InvoicePaymentFailed` | Marks the membership `PastDue` |
-| **Chargeback** — found by the order's stored payment intent | | |
-| `charge.dispute.created` | `ChargeDisputeCreated` | Links the order's open dispute, or creates an escalated `Chargeback` one; the administrators are told. A web card booking stores no payment intent, so its chargeback is not found — see [Cancellation, refund and dispute](/flows/cancellation-refund-dispute#dispute) |
+| **Chargeback** — found by the order's stored payment intent, else through Stripe's Checkout Session for that intent | | |
+| `charge.dispute.created` | `ChargeDisputeCreated` | Links the order's open dispute, or creates an escalated `Chargeback` one; the administrators are told. A chargeback that matches no order tells the administrators of every company (`admin.dispute.chargeback_unmatched`) — see [Cancellation, refund and dispute](/flows/cancellation-refund-dispute#dispute) |
 | `charge.dispute.updated`, `charge.dispute.closed` | `ChargeDisputeUpdated`, `ChargeDisputeClosed` | Reflects Stripe's status onto the linked dispute |
 
 All other event types are **ignored** and return `200 OK` with an empty response. So is a
-subscription or chargeback event that resolves to no local row: it is logged and acknowledged, never
-retried.
+subscription event, or a chargeback update or close, that resolves to no local row: it is logged and
+acknowledged, never retried.
 
 ## Event Processing
 
@@ -86,13 +86,15 @@ retried.
 
 1. Extract `OrderId` from the session's (or intent's) metadata
 2. Look up the order past the tenant filter and pin its tenant
-3. **Cash check first:** an order a cleaner already settled in cash escalates a double-settlement
+3. On `checkout.session.completed`, record the session's `payment_intent` on the order — before any of
+   the branches below, so every web card order carries the intent a chargeback will name
+4. **Cash check first:** an order a cleaner already settled in cash escalates a double-settlement
    dispute instead, and nothing else happens
-4. **Idempotency check:** if the order is already `Paid` or `Refunded`, skip processing
-5. Update `PaymentStatus` to `Paid`. `OrderStatus` is not touched: the order rests at `New` until a
+5. **Idempotency check:** if the order is already `Paid` or `Refunded`, skip processing
+6. Update `PaymentStatus` to `Paid`. `OrderStatus` is not touched: the order rests at `New` until a
    cleaner takes it ([ADR-0057](/decisions/adr-0057))
-6. Stage the receipt (`generate-receipt`, key `receipt:{orderId}`), put on the wire only after the commit
-7. Push `order.payment_confirmed` to a customer with an account; tell the preferred cleaner and the
+7. Stage the receipt (`generate-receipt`, key `receipt:{orderId}`), put on the wire only after the commit
+8. Push `order.payment_confirmed` to a customer with an account; tell the preferred cleaner and the
    administrators that the order is now offerable
 
 ```csharp
@@ -163,7 +165,7 @@ its **own** `whsec_`, and a payload signed by one will never verify against the 
 so they need one endpoint; the table puts them on web. If both endpoints carry one, the second delivery
 of the same event id is a no-op. **Left off both, nothing records them.** A web Plus checkout never
 gets its `UserMembership` row, renewals and lapses are never mirrored, and no chargeback reaches a
-dispute.
+dispute or an administrator.
 
 Steps, per environment (`dev-weu`, then `prod-weu`):
 
@@ -208,5 +210,5 @@ wait for Stripe's own 3-day retry.
 | Missing OrderId in metadata | `400` | `OrderIdMissing` |
 | Order not found | `400` | `OrderNotFound` |
 | Unhandled event type | `200` | (empty -- acknowledged) |
-| A chargeback (`charge.dispute.created`) on a web card booking, **guest** or account | `200` | (empty -- acknowledged and logged; the order is looked up by its stored payment intent, a Checkout Session order stores none, so no dispute is recorded; see [Cancellation, refund and dispute](/flows/cancellation-refund-dispute#dispute)) |
+| A chargeback (`charge.dispute.created`) that matches no order, by stored intent or through its Checkout Session | `200` | (empty -- acknowledged and logged; no dispute is recorded, and the administrators of every company are told with the amount and the Stripe dispute id; see [Cancellation, refund and dispute](/flows/cancellation-refund-dispute#dispute)) |
 | The event's write lands on a company **frozen for archive** (a late chargeback, a settlement on an archived company's order) | `200` | (empty -- acknowledged; the verbatim body is recorded as a `DeadLetter` with source `stripe-webhook` and error `tenant.archived:<tenantId>`, and an Error is logged for operations — the write is never applied. Stripe is never asked to retry against a frozen company; see [ADR-0064](/decisions/adr-0064) D3) |

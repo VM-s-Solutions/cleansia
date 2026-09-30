@@ -252,6 +252,14 @@ extension L10n {
             localized("recurring_edit_applies_notice")
         }
 
+        static var preferredCleanerRefused: String {
+            localized("recurring_preferred_cleaner_refused")
+        }
+
+        static var saveWithoutPreferredCleaner: String {
+            localized("recurring_preferred_cleaner_save_without")
+        }
+
         static var freqWeeklyLabel: String {
             localized("recurring_freq_weekly_label")
         }

@@ -127,7 +127,7 @@ public class CardPaymentsKillSwitchTests
         Assert.Null(result.Failure);
         _pending.Verify(p => p.Enqueue(
             It.IsAny<string>(),
-            It.IsAny<QueueEnvelope<GenerateReceiptMessage>>(),
+            It.IsAny<QueueEnvelope<SendOrderBookedEmailMessage>>(),
             It.IsAny<string>()),
             Times.Once);
     }

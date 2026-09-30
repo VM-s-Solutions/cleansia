@@ -232,6 +232,9 @@ public class PartialRefundFeeRoundingTests
 
     private sealed class RecordingRefundService : IRefundService
     {
+        public Task<BusinessResult<RefundResult>> RedriveAsync(string refundId, string actorId, CancellationToken cancellationToken)
+            => throw new NotSupportedException();
+
         public RefundRequest? LastRequest { get; private set; }
 
         public Task<BusinessResult<RefundResult>> IssueRefundAsync(

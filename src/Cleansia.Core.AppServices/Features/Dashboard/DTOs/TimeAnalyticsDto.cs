@@ -6,7 +6,6 @@ public record TimeAnalyticsDto(
     IEnumerable<ServiceTimeBreakdown> ByServiceType,
     int TotalMinutesWorked,
     int AverageMinutesPerOrder,
-    double EfficiencyRate,
     int TotalOrders);
 
 public record DailyTimeSpent(

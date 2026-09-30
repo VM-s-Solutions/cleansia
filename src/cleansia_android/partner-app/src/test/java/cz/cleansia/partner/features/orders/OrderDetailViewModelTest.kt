@@ -3,6 +3,7 @@ package cz.cleansia.partner.features.orders
 import androidx.lifecycle.SavedStateHandle
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.core.ui.state.ActionState
+import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.AssignedEmployeeDto
 import cz.cleansia.partner.api.model.Code
 import cz.cleansia.partner.api.model.OrderItem
@@ -342,6 +343,59 @@ class OrderDetailViewModelTest {
     }
 
     @Test
+    fun `a lockout report sends the trimmed note, confirms it and refetches the order`() = runTest {
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returns ApiResult.Success(order)
+        coEvery { ordersRepository.reportLockout(orderId, any()) } returns ApiResult.Success(Unit)
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.reportLockout("  Called at 10:05 and 10:15, no answer \n")
+        advanceUntilIdle()
+
+        io.mockk.coVerify { ordersRepository.reportLockout(orderId, "Called at 10:05 and 10:15, no answer") }
+        verify { snackbar.showSuccessKey(R.string.lockout_reported_toast) }
+        io.mockk.coVerify(exactly = 2) { ordersRepository.getById(orderId) }
+        assertEquals(ActionState.Idle, vm.actionState.value)
+        assertNull(vm.inFlightAction.value)
+    }
+
+    @Test
+    fun `a lockout report with no note of the calls sends nothing`() = runTest {
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returns ApiResult.Success(order)
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.reportLockout("   ")
+        advanceUntilIdle()
+
+        io.mockk.coVerify(exactly = 0) { ordersRepository.reportLockout(any(), any()) }
+        assertEquals(ActionState.Idle, vm.actionState.value)
+    }
+
+    @Test
+    fun `a refused lockout report snackbars the reason and confirms nothing`() = runTest {
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returns ApiResult.Success(order)
+        coEvery { ordersRepository.reportLockout(orderId, any()) } returns
+            ApiResult.Error(refusal("order.lockout.photo_required"))
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.reportLockout("Called twice")
+        advanceUntilIdle()
+
+        verify { snackbar.showError("translated error") }
+        verify(exactly = 0) { snackbar.showSuccessKey(R.string.lockout_reported_toast) }
+        assertTrue(vm.actionState.value is ActionState.Error)
+        assertNull(vm.inFlightAction.value)
+    }
+
+    @Test
     fun `action failure surfaces ActionState Error and snackbars`() = runTest {
         every { ordersRepository.isOrderStale(orderId) } returns true
         coEvery { ordersRepository.getById(orderId) } returns ApiResult.Success(order)
@@ -437,5 +491,80 @@ class OrderDetailViewModelTest {
         advanceUntilIdle()
 
         assertEquals(1, startCalls)
+    }
+
+    private fun openedFromRemovalNotice() = OrderDetailViewModel(
+        SavedStateHandle(mapOf("orderId" to orderId, "showRemovalReason" to true)),
+        ordersRepository,
+        errorTranslator,
+        snackbar,
+        employeeIdResolver,
+    )
+
+    @Test
+    fun `opened from the removal notice, the administrator's reason is fetched and shown`() = runTest {
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returns ApiResult.Success(order)
+        coEvery { ordersRepository.getMyAssignmentRemovalReason(orderId) } returns
+            ApiResult.Success("The customer asked for another cleaner.")
+
+        val vm = openedFromRemovalNotice()
+        advanceUntilIdle()
+
+        assertEquals("The customer asked for another cleaner.", vm.removalReason.value)
+    }
+
+    @Test
+    fun `the reason is shown even when the job is no longer visible to the removed cleaner`() = runTest {
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returns ApiResult.Error(refusal("order.not_found"))
+        coEvery { ordersRepository.getMyAssignmentRemovalReason(orderId) } returns
+            ApiResult.Success("The customer asked for another cleaner.")
+
+        val vm = openedFromRemovalNotice()
+        advanceUntilIdle()
+
+        assertTrue(vm.uiState.value is OrderDetailUiState.Error)
+        assertEquals("The customer asked for another cleaner.", vm.removalReason.value)
+    }
+
+    @Test
+    fun `dismissing the reason closes it`() = runTest {
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returns ApiResult.Success(order)
+        coEvery { ordersRepository.getMyAssignmentRemovalReason(orderId) } returns ApiResult.Success("Reason.")
+
+        val vm = openedFromRemovalNotice()
+        advanceUntilIdle()
+        vm.dismissRemovalReason()
+
+        assertNull(vm.removalReason.value)
+    }
+
+    @Test
+    fun `a removal the server cannot find shows nothing and raises nothing`() = runTest {
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returns ApiResult.Success(order)
+        coEvery { ordersRepository.getMyAssignmentRemovalReason(orderId) } returns
+            ApiResult.Error(refusal("order.not_found"))
+
+        val vm = openedFromRemovalNotice()
+        advanceUntilIdle()
+
+        assertNull(vm.removalReason.value)
+        verify(exactly = 0) { snackbar.showError(any<String>()) }
+        verify(exactly = 0) { snackbar.showError(any<ApiError>()) }
+    }
+
+    @Test
+    fun `an ordinary open never asks why the cleaner was removed`() = runTest {
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returns ApiResult.Success(order)
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        assertNull(vm.removalReason.value)
+        io.mockk.coVerify(exactly = 0) { ordersRepository.getMyAssignmentRemovalReason(any()) }
     }
 }

@@ -16,7 +16,6 @@ import cz.cleansia.core.config.CleansiaWeb
 enum class ConsentLink(val placeholder: String, val url: String) {
     TERMS("cleansia://terms", CleansiaWeb.TERMS_URL),
     PRIVACY("cleansia://privacy", CleansiaWeb.PRIVACY_URL),
-    WORK_CONTRACT("cleansia://work-contract", CleansiaWeb.WORK_CONTRACT_URL),
 }
 
 /**

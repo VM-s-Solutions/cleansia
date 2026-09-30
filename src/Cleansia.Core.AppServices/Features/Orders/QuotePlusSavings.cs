@@ -3,6 +3,8 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Catalog;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Tenancy;
+using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
@@ -41,7 +43,8 @@ public static class QuotePlusSavings
         IEnumerable<string>? SelectedExtraSlugs = null,
         DateTime? CleaningDate = null,
         /// <summary>The service address's country -- see <see cref="QuoteOrder.Command.CountryId"/>.</summary>
-        string? CountryId = null) : IQuery<Response>, IOperatorScopedRequest;
+        string? CountryId = null,
+        DirtinessLevel DirtinessLevel = DirtinessLevel.Normal) : IQuery<Response>, IOperatorScopedRequest;
 
     public record Response(
         /// <summary>What the plan's discount is worth on this basket, in the charge currency.</summary>
@@ -83,6 +86,10 @@ public static class QuotePlusSavings
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required);
 
+            RuleFor(x => x.DirtinessLevel)
+                .IsInEnum()
+                .WithMessage(BusinessErrorMessage.InvalidEnumValue);
+
             RuleFor(x => x.Rooms).GreaterThanOrEqualTo(0)
                 .LessThanOrEqualTo(BookingPolicy.MaxRooms)
                 .WithMessage(BusinessErrorMessage.OrderSizeExceedsMaximum);
@@ -118,7 +125,8 @@ public static class QuotePlusSavings
                 .WithMessage(BusinessErrorMessage.InvalidCurrency)
                 .WithErrorCode(nameof(Query.CurrencyId))
                 .MustAsync(SpanWithinCapAsync)
-                .WithMessage(BusinessErrorMessage.OrderSpanExceedsMaximum);
+                .WithMessage(BusinessErrorMessage.OrderSpanExceedsMaximum)
+                .When(x => Enum.IsDefined(x.DirtinessLevel), ApplyConditionTo.CurrentValidator);
         }
 
         private const string CountryServicedKey = "quotePlusSavings.countryServiced";
@@ -147,16 +155,19 @@ public static class QuotePlusSavings
         /// </summary>
         private async Task<bool> SpanWithinCapAsync(Query query, CancellationToken cancellationToken)
         {
+            var unitCount = query.Rooms + query.Bathrooms;
+
             var serviceMinutes = await _serviceRepository
                 .GetByIds(query.SelectedServiceIds)
-                .SumAsync(s => s.EstimatedTime, cancellationToken);
+                .SumAsync(s => s.EstimatedTime + s.MinutesPerRoom * unitCount, cancellationToken);
 
             var packagedServiceMinutes = await _packageRepository
                 .GetByIds(query.SelectedPackageIds)
                 .SelectMany(p => p.IncludedServices)
-                .SumAsync(ps => ps.Service!.EstimatedTime, cancellationToken);
+                .SumAsync(ps => ps.Service!.EstimatedTime + ps.Service!.MinutesPerRoom * unitCount, cancellationToken);
 
-            return !BookingPolicy.ExceedsMaxBookableSpan(serviceMinutes + packagedServiceMinutes);
+            return !BookingPolicy.ExceedsMaxBookableSpan(OrderDuration.ScaleForDirtiness(
+                serviceMinutes + packagedServiceMinutes, BookingPolicy.DirtinessSurchargeRate(query.DirtinessLevel)));
         }
 
         private async Task<bool> CurrencyIsOfferableAsync(
@@ -249,6 +260,7 @@ public static class QuotePlusSavings
                 query.SelectedExtraSlugs ?? [],
                 query.Rooms,
                 query.Bathrooms,
+                query.DirtinessLevel,
                 // The same resolution as QuoteOrder, validated offerable; null is the platform default.
                 await QuoteOrder.ResolveQuoteCurrencyId(
                     query.CurrencyId, query.CountryId, currencyResolutionService, cancellationToken),

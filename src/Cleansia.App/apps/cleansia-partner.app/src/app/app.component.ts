@@ -10,6 +10,7 @@ import {
   isMobileViewport,
   SidebarMenuItem,
 } from '@cleansia/components';
+import { HOW_JOBS_ARE_OFFERED_PATH } from './app.routes';
 import { CleansiaRegistrationLockComponent } from './components/registration-lock/registration-lock.component';
 import {
   PartnerAuthService,
@@ -149,6 +150,7 @@ export class AppComponent implements OnInit, OnDestroy {
     const excludedRoutes = [
       `/${CleansiaPartnerRoute.PROFILE}`,
       `/${CleansiaPartnerRoute.GDPR}`,
+      `/${HOW_JOBS_ARE_OFFERED_PATH}`,
       `/${CommonRoute.NOT_FOUND}`,
       `/${CleansiaPartnerRoute.LOGIN}`,
       `/${CleansiaPartnerRoute.REGISTER}`,
@@ -183,6 +185,11 @@ export class AppComponent implements OnInit, OnDestroy {
       label: 'sidebar.my_pay',
       icon: 'pi pi-wallet',
       route: `/${CleansiaPartnerRoute.MY_PAY}`,
+    },
+    {
+      label: 'sidebar.how_jobs_are_offered',
+      icon: 'pi pi-info-circle',
+      route: `/${HOW_JOBS_ARE_OFFERED_PATH}`,
     },
     {
       label: 'sidebar.logout',

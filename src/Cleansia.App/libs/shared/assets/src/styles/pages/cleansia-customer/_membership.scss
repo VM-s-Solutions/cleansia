@@ -150,6 +150,17 @@
   border: 1px solid var(--cl-warn-line);
 }
 
+// A failed renewal is the one state where the benefits ARE gone, so it is red.
+.cl-mbr__ending--failed {
+  background: var(--cl-danger-soft);
+  border-color: var(--cl-danger-line);
+
+  .cl-mbr__ending-chip {
+    background: color-mix(in srgb, var(--cl-danger) 12%, transparent);
+    color: var(--cl-danger);
+  }
+}
+
 .cl-mbr__ending-text {
   min-width: 0;
 }

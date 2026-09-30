@@ -51,7 +51,7 @@ public class MembershipSubscribeUsesPerCurrencyCustomerTests
         _userRepository.Setup(r => r.GetByIdAsync(UserId, It.IsAny<CancellationToken>())).ReturnsAsync(_user);
 
         _membershipRepository
-            .Setup(r => r.GetActiveForUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetLifecycleForUserAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
 
         var plan = MembershipPlan.Create(PlanCode, "Plus Monthly", 5m, 4, true, BillingInterval.Monthly, 0);

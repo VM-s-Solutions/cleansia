@@ -55,7 +55,7 @@ export function buildWorkContractFactRows(
       value: formatCleaningWindow(facts.cleaningDateTimeUtc, facts.estimatedMinutes, lang),
     },
     {
-      labelKey: `${FACTS_KEY}.price`,
+      labelKey: `${FACTS_KEY}.reward`,
       value: formatMoney(facts.totalPrice, facts.currencyCode, localeFor(lang)),
     },
     { labelKey: `${FACTS_KEY}.location`, value: facts.locationApproximate ?? '' },

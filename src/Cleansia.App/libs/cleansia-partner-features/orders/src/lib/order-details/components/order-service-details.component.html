@@ -29,6 +29,15 @@
     </div>
     <div class="cleansia-order-details__field">
       <cleansia-text-input
+        [label]="'pages.order_details.dirtiness_level' | translate"
+        [floatVariant]="'on'"
+        formControlName="dirtinessLevel"
+        dataType="text"
+        [disabled]="true"
+      />
+    </div>
+    <div class="cleansia-order-details__field">
+      <cleansia-text-input
         [label]="'pages.order_details.estimated_time' | translate"
         [floatVariant]="'on'"
         formControlName="estimatedTime"

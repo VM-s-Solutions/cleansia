@@ -3,27 +3,24 @@ using System.Text.Json;
 namespace Cleansia.Tests.Configuration;
 
 /// <summary>
-/// ADR-0024 (TC-REVOKE-TTL-4) — the access-token TTL is the device-revocation latency bound, so it
-/// is a security bound, not a tuning knob. The two mobile hosts carry 30 minutes; the three web
-/// hosts deliberately stay at 1440 until their own follow-up ADR (web sessions carry no DeviceId
-/// and are structurally device-unrevocable, so a web flip would be scope creep, not a fix).
+/// ADR-0024 (TC-REVOKE-TTL-4) — the access-token TTL is the revocation latency bound, so it is a
+/// security bound, not a tuning knob. The web hosts check no revocation directory per request, so a
+/// stolen web session cookie lives exactly as long as its access token; the customer and partner
+/// web hosts carry 30 minutes and refresh silently on a 401, the admin web host 15, and the two
+/// mobile hosts 30.
 ///
 /// This pin parses the RAW appsettings files from the repo — deliberately NOT a bound-config
 /// assertion through a booted host: the HostTests harness layers appsettings.HostTests.json last
-/// and its own AccessTokenExpMinutes would mask a silent revert of the real files. Both a mobile
-/// revert to 1440 and a silent web-host flip away from 1440 fail here until a superseding ADR
-/// moves the pin.
+/// and its own AccessTokenExpMinutes would mask a silent revert of the real files.
 /// </summary>
 public class AccessTokenTtlConfigPinTests
 {
     [Theory]
     [InlineData("Cleansia.Web.Mobile.Partner", 30d)]
     [InlineData("Cleansia.Web.Mobile.Customer", 30d)]
-    [InlineData("Cleansia.Web.Partner", 1440d)]
-    // Web.Admin is a short-TTL SPA — the web revocation bound (no device directory reaches
-    // cookie sessions); the value is ADR-0030-governed, not the generic web 1440 (T-0409).
+    [InlineData("Cleansia.Web.Partner", 30d)]
     [InlineData("Cleansia.Web.Admin", 15d)]
-    [InlineData("Cleansia.Web.Customer", 1440d)]
+    [InlineData("Cleansia.Web.Customer", 30d)]
     public void AccessTokenExpMinutes_Is_Pinned_Per_Host(string hostProject, double expectedMinutes)
     {
         var solutionDir = FindSolutionDirectory(AppContext.BaseDirectory);
@@ -38,7 +35,7 @@ public class AccessTokenTtlConfigPinTests
             Assert.True(
                 actual == expectedMinutes,
                 $"{hostProject}/{fileName}: JwtSettings:AccessTokenExpMinutes is {actual}, expected " +
-                $"{expectedMinutes}. This value is the device-revocation latency bound (ADR-0024) — " +
+                $"{expectedMinutes}. This value is the revocation latency bound (ADR-0024) — " +
                 "changing it requires a superseding ADR, which then moves this pin.");
         }
     }

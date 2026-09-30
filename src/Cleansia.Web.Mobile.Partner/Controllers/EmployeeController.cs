@@ -3,6 +3,8 @@ using Cleansia.Core.AppServices.Features.EmployeeDocuments;
 using Cleansia.Core.AppServices.Features.EmployeeDocuments.DTOs;
 using Cleansia.Core.AppServices.Features.Employees;
 using Cleansia.Core.AppServices.Features.Employees.DTOs;
+using Cleansia.Core.AppServices.Features.Legal;
+using Cleansia.Core.AppServices.Features.Legal.DTOs;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Web.Mobile.Partner.Abstractions;
 using Cleansia.Web.Mobile.Partner.Attributes;
@@ -231,5 +233,33 @@ public class EmployeeController(IMediator mediator) : MobileApiController(mediat
         CancellationToken cancellationToken)
     {
         return await Mediator.Send(new GetMyDocumentRequirements.Request(), cancellationToken);
+    }
+
+    /// <summary>
+    /// The cleaner's own contract documents in force for their market, rendered, each with the text-row
+    /// id an acceptance echoes and whether its current version is accepted. Empty while none is seeded.
+    /// </summary>
+    [HttpGet("GetMyLegalDocuments")]
+    [Permission(Policy.CanGetCurrentEmployee)]
+    [EnableRateLimiting("interactive")]
+    [ProducesResponseType(typeof(IReadOnlyList<CleanerLegalDocumentDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> GetMyLegalDocuments([FromQuery] GetMyLegalDocuments.Query query, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(query, cancellationToken);
+        return HandleResult<IReadOnlyList<CleanerLegalDocumentDto>>(result);
+    }
+
+    [HttpPost("AcceptLegalDocument")]
+    [Permission(Policy.CanUpdateCurrentEmployee)]
+    [EnableRateLimiting("interactive")]
+    [ProducesResponseType(typeof(AcceptLegalDocument.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> AcceptLegalDocument([FromBody] AcceptLegalDocument.Command command, CancellationToken cancellationToken)
+    {
+        var result = await Mediator.Send(command, cancellationToken);
+        return HandleResult<AcceptLegalDocument.Response>(result);
     }
 }

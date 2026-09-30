@@ -105,6 +105,47 @@ final class LoyaltyPresentationTests: XCTestCase {
         XCTAssertEqual(supplied.first?.labelKey, "loyalty.perks.discount_5_above_1000")
     }
 
+    /// The seeded discount perk keys spell a fixed percentage an admin can change, so the row states the
+    /// account's live discount instead, and is dropped while none runs.
+    func testADiscountPerkStatesTheLiveDiscountNotItsKey() {
+        let perks = [
+            TierPerk(icon: "badge", labelKey: "loyalty.perks.welcome_badge"),
+            TierPerk(icon: "percent", labelKey: "loyalty.perks.discount_10")
+        ]
+        let account = LoyaltyFixtures.account(discountPercent: 0.08, perks: perks)
+
+        let labels = LoyaltyPresentation.perkLabels(
+            account.currentPerks,
+            discount: LoyaltyPresentation.currentDiscountSummary(account),
+            currencyCode: "CZK"
+        )
+
+        XCTAssertEqual(labels, [L10n.Rewards.perkLabel("loyalty.perks.welcome_badge"), L10n.Rewards.discountBasic(8)])
+        XCTAssertFalse(labels.contains { $0.contains("loyalty.perks.discount") }, "a raw key reached the screen")
+
+        let none = LoyaltyPresentation.perkLabels(perks, discount: .noDiscount, currencyCode: "CZK")
+        XCTAssertEqual(none, [L10n.Rewards.perkLabel("loyalty.perks.welcome_badge")])
+    }
+
+    func testTheCurrentDiscountFollowsTheAccountAndItsFloor() {
+        let account = LoyaltyAccount(
+            currentTier: 2,
+            lifetimePoints: 600,
+            completedBookingsCount: 6,
+            tierAchievedOn: nil,
+            pointsToNextTier: 400,
+            nextTier: 3,
+            currentDiscountPercent: 0.05,
+            currentDiscountMinOrderAmount: 1000,
+            currentPerks: []
+        )
+        XCTAssertEqual(
+            LoyaltyPresentation.currentDiscountSummary(account),
+            .minOrder(percent: 5, minOrder: 1000)
+        )
+        XCTAssertEqual(LoyaltyPresentation.currentDiscountSummary(account, floorApplies: false), .basic(percent: 5))
+    }
+
     func testTransactionDescriptionPerSource() {
         let earn = LoyaltyFixtures.activityItem(points: 100, source: 1, orderNumber: "1042")
         XCTAssertEqual(LoyaltyPresentation.transactionKind(earn), .earnOrder(points: 100, order: "1042"))

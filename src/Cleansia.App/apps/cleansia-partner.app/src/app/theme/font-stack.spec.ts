@@ -35,9 +35,24 @@ interface CompiledStylesheet {
   css: string;
 }
 
-interface ProjectConfiguration {
-  targets: { build: { options: { styles: string[] } } };
+interface AssetGlob {
+  glob: string;
+  input: string;
+  output: string;
 }
+
+interface ProjectConfiguration {
+  targets: { build: { options: { styles: string[]; assets: (string | AssetGlob)[] } } };
+}
+
+interface FontFace {
+  family: string;
+  urls: string[];
+}
+
+const SELF_HOSTED_FONT_PATH = '/assets/fonts/';
+
+const GOOGLE_FONT_HOSTS = /fonts\.googleapis\.com|fonts\.gstatic\.com/;
 
 function findSolutionDir(): string {
   let dir = process.cwd();
@@ -55,11 +70,15 @@ const APP_DIR = join(FRONTEND_DIR, 'apps', APP_NAME);
 // The build resolves bare package paths in the stylesheets; the plain compiler needs telling where.
 const NODE_MODULES_DIR = join(FRONTEND_DIR, 'node_modules');
 
-function buildStylesheets(): string[] {
+function buildOptions(): ProjectConfiguration['targets']['build']['options'] {
   const project = JSON.parse(
     readFileSync(join(APP_DIR, 'project.json'), 'utf8')
   ) as ProjectConfiguration;
-  return project.targets.build.options.styles;
+  return project.targets.build.options;
+}
+
+function buildStylesheets(): string[] {
+  return buildOptions().styles;
 }
 
 function compiledStylesheets(): CompiledStylesheet[] {
@@ -73,6 +92,11 @@ const COMPILED_STYLESHEETS = compiledStylesheets();
 
 function indexHtml(): string {
   return readFileSync(join(APP_DIR, 'src', 'index.html'), 'utf8');
+}
+
+/** An @font-face names the face it declares, which is not a use of it. */
+function withoutFontFaces(css: string): string {
+  return css.replace(/@font-face\s*\{[^}]*\}/g, '');
 }
 
 function fontFamilyValues(source: string): string[] {
@@ -97,7 +121,7 @@ function splitFamilies(value: string): string[] {
 function collectFontFamilyDeclarations(): FontFamilyDeclaration[] {
   const declarations: FontFamilyDeclaration[] = [];
   for (const { stylesheet, css } of COMPILED_STYLESHEETS) {
-    for (const value of fontFamilyValues(css)) {
+    for (const value of fontFamilyValues(withoutFontFaces(css))) {
       if (value.includes('var(')) continue;
       declarations.push({
         stylesheet,
@@ -111,7 +135,7 @@ function collectFontFamilyDeclarations(): FontFamilyDeclaration[] {
 
 function referencedFamilies(): Set<string> {
   const sources = [
-    ...COMPILED_STYLESHEETS.map((entry) => entry.css),
+    ...COMPILED_STYLESHEETS.map((entry) => withoutFontFaces(entry.css)),
     indexHtml(),
   ];
   const families = new Set<string>();
@@ -126,21 +150,36 @@ function referencedFamilies(): Set<string> {
   return families;
 }
 
+function fontFaces(): FontFace[] {
+  return COMPILED_STYLESHEETS.flatMap(({ css }) =>
+    (css.match(/@font-face\s*\{[^}]*\}/g) ?? []).flatMap((block) => {
+      const family = /font-family\s*:\s*([^;}]+)/.exec(block)?.[1];
+      return family
+        ? [
+            {
+              family: splitFamilies(family)[0],
+              urls: [...block.matchAll(/url\(\s*['"]?([^'")]+)['"]?\s*\)/g)].map((match) => match[1]),
+            },
+          ]
+        : [];
+    })
+  );
+}
+
 function loadedWebFontFamilies(): Set<string> {
-  const html = indexHtml();
-  const families = new Set<string>();
-  for (const request of html.match(/fonts\.googleapis\.com\/css2\?[^"']+/g) ??
-    []) {
-    for (const param of request.match(/family=([^&"']+)/g) ?? []) {
-      families.add(
-        decodeURIComponent(param.slice('family='.length))
-          .split(':')[0]
-          .replace(/\+/g, ' ')
-          .toLowerCase()
-      );
-    }
-  }
-  return families;
+  return new Set(
+    fontFaces()
+      .filter((face) => face.urls.some((url) => url.startsWith(SELF_HOSTED_FONT_PATH)))
+      .map((face) => face.family)
+  );
+}
+
+/** Where the build copies each file served under /assets/fonts/ from. */
+function fontAssetInputs(): string[] {
+  return buildOptions()
+    .assets.filter((asset): asset is AssetGlob => typeof asset !== 'string')
+    .filter((asset) => `/${asset.output.replace(/^\/|\/$/g, '')}/` === SELF_HOSTED_FONT_PATH)
+    .map((asset) => join(FRONTEND_DIR, asset.input));
 }
 
 function unique(values: string[]): string[] {
@@ -197,6 +236,26 @@ describe(`font stack — Cyrillic-capable fallback (${APP_NAME})`, () => {
     expect(loaded.size).toBeGreaterThan(0);
     expect(relied.length).toBeGreaterThan(0);
     expect(relied.filter((family) => !loaded.has(family))).toEqual([]);
+  });
+});
+
+describe(`web fonts are self-hosted (${APP_NAME})`, () => {
+  it('loads nothing from Google Fonts, which would hand each visitor\'s IP address to Google', () => {
+    const sources = [indexHtml(), ...COMPILED_STYLESHEETS.map((entry) => entry.css)];
+
+    expect(sources.filter((source) => GOOGLE_FONT_HOSTS.test(source))).toEqual([]);
+  });
+
+  it('ships every font file a self-hosted face names', () => {
+    const inputs = fontAssetInputs();
+    const files = fontFaces()
+      .flatMap((face) => face.urls)
+      .filter((url) => url.startsWith(SELF_HOSTED_FONT_PATH))
+      .map((url) => url.slice(SELF_HOSTED_FONT_PATH.length));
+
+    expect(inputs.length).toBeGreaterThan(0);
+    expect(files.length).toBeGreaterThan(0);
+    expect(files.filter((file) => !inputs.some((input) => existsSync(join(input, file))))).toEqual([]);
   });
 });
 

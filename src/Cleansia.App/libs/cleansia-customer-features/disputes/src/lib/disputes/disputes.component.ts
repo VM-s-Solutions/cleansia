@@ -27,6 +27,8 @@ import {
   Code,
   DisputeListItem,
   DisputeReason,
+  DisputeSettlementPreference,
+  PaymentType,
 } from '@cleansia/customer-services';
 import { FoamEdgeComponent } from '@cleansia-customer/home';
 import { CleansiaCustomerRoute } from '@cleansia/services';
@@ -44,6 +46,7 @@ import {
   DISPUTE_STATUS_LABEL_KEYS,
   getDisputeReasonLabelKey,
   getDisputeStatusSeverity,
+  initialDisputeReason,
   isDisputeOpen,
 } from './disputes.models';
 import {
@@ -126,6 +129,7 @@ export class DisputesComponent implements OnInit {
         Validators.maxLength(DISPUTE_DESCRIPTION_MAX_LENGTH),
       ],
     ],
+    settlementPreference: [DisputeSettlementPreference.CardRefund, Validators.required],
   });
 
   /**
@@ -136,6 +140,19 @@ export class DisputesComponent implements OnInit {
   private readonly selectedOrderId = toSignal(
     this.createForm.controls.orderId.valueChanges,
     { initialValue: '' },
+  );
+
+  private readonly selectedOrder = computed(() => {
+    const orderId = this.selectedOrderId();
+    return orderId ? this.facade.orders().find((o) => o.id === orderId) : undefined;
+  });
+
+  /**
+   * A cash order has no card to refund to; its money comes back by hand. It keeps the same stored
+   * preference, which to the server means "not credit", under wording that promises no card.
+   */
+  private readonly selectedOrderPaidInCash = computed(
+    () => this.selectedOrder()?.paymentType?.value === PaymentType.Cash,
   );
 
   /**
@@ -149,10 +166,7 @@ export class DisputesComponent implements OnInit {
    * hides itself rather than showing an empty box.</p>
    */
   readonly disputeLineOptions = computed<DisputeLineOption[]>(() => {
-    const orderId = this.selectedOrderId();
-    if (!orderId) return [];
-
-    const order = this.facade.orders().find((o) => o.id === orderId);
+    const order = this.selectedOrder();
     if (!order) return [];
 
     const options: DisputeLineOption[] = [];
@@ -201,6 +215,24 @@ export class DisputesComponent implements OnInit {
     { label: this.translate.instant('pages.disputes.reasons.other'), value: DisputeReason.Other },
   ];
 
+  private readonly cardSettlementOptions: ICleansiaSelectOption[] = [
+    { label: this.translate.instant('pages.disputes.settlement_card_refund'), value: DisputeSettlementPreference.CardRefund },
+    { label: this.translate.instant('pages.disputes.settlement_credit'), value: DisputeSettlementPreference.Credit },
+  ];
+
+  private readonly cashSettlementOptions: ICleansiaSelectOption[] = [
+    { label: this.translate.instant('pages.disputes.settlement_cash_refund'), value: DisputeSettlementPreference.CardRefund },
+    { label: this.translate.instant('pages.disputes.settlement_credit'), value: DisputeSettlementPreference.Credit },
+  ];
+
+  readonly settlementOptions = computed(() =>
+    this.selectedOrderPaidInCash() ? this.cashSettlementOptions : this.cardSettlementOptions,
+  );
+
+  readonly settlementHintKey = computed(() =>
+    this.selectedOrderPaidInCash() ? 'pages.disputes.settlement_hint_cash' : 'pages.disputes.settlement_hint',
+  );
+
   /**
    * One page, no paginator. The board draws a short list of one customer's own
    * disputes beside the thread, and a customer with fifty of them is not a
@@ -228,9 +260,11 @@ export class DisputesComponent implements OnInit {
     this.facade.loadOrdersForSelect();
     // Arriving from an order's "something was wrong": straight into the form,
     // with the order it is about already chosen.
-    const orderId = this.route.snapshot.queryParamMap.get('orderId');
+    const query = this.route.snapshot.queryParamMap;
+    const orderId = query.get('orderId');
     if (orderId) {
       this.createForm.patchValue({ orderId });
+      this.pickReason(initialDisputeReason(query.get('reason')));
       this.mode.set('new');
     }
   }
@@ -273,6 +307,7 @@ export class DisputesComponent implements OnInit {
       orderId: '',
       reason: DisputeReason.QualityIssue,
       description: '',
+      settlementPreference: DisputeSettlementPreference.CardRefund,
     });
     this.pickedReason.set(DisputeReason.QualityIssue);
     this.pickedLineKeys.set(new Set());
@@ -326,7 +361,7 @@ export class DisputesComponent implements OnInit {
       return;
     }
 
-    const { orderId, reason, description } = this.createForm.getRawValue();
+    const { orderId, reason, description, settlementPreference } = this.createForm.getRawValue();
     // Only the rows still on the CURRENT order. Switching order after ticking something would
     // otherwise send an item the server would reject as not-on-this-order, and the customer would see
     // a validation error about a box they cannot see any more.
@@ -339,7 +374,7 @@ export class DisputesComponent implements OnInit {
     // form is the whole point — the reset empties the control.
     const evidence = [...this.evidenceControl.value];
 
-    this.facade.createDispute(orderId, reason, description, lines, (disputeId) => {
+    this.facade.createDispute(orderId, reason, description, lines, settlementPreference, (disputeId) => {
       this.cancelNew();
       // A brand-new dispute is the one to be looking at.
       this.selectedId.set(null);

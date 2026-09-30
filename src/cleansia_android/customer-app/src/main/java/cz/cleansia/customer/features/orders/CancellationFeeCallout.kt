@@ -41,6 +41,7 @@ data class CancellationFeeCallout(
 fun cancellationFeeCallout(
     preview: CancellationFeePreviewDto,
     refundIsEstimate: Boolean = false,
+    tookNoCardPayment: Boolean = false,
 ): CancellationFeeCallout? =
     when (cancellationFeeTierFromValue(preview.tier)) {
         CancellationFeeTier.FreeNotAccepted -> preview.free(R.string.order_cancel_fee_not_accepted)
@@ -50,14 +51,29 @@ fun cancellationFeeCallout(
             R.string.order_cancel_fee_partial,
             CancellationFeeSeverity.Fee,
             refundIsEstimate,
+            tookNoCardPayment,
         )
         CancellationFeeTier.LastMinute -> preview.charged(
             R.string.order_cancel_fee_last_minute,
             CancellationFeeSeverity.LastMinute,
             refundIsEstimate,
+            tookNoCardPayment,
         )
         null -> null
     }
+
+/**
+ * No card charge for the sheet to promise back: a cash booking, or a card one whose payment is Pending
+ * or Failed. The preview quotes its policy refund on these too, and nothing is returned.
+ */
+fun noCardPaymentTaken(paymentTypeValue: Int?, paymentStatusValue: Int?): Boolean =
+    paymentTypeValue == PAYMENT_TYPE_CASH ||
+        paymentStatusValue == PAYMENT_STATUS_PENDING ||
+        paymentStatusValue == PAYMENT_STATUS_FAILED
+
+private const val PAYMENT_TYPE_CASH = 1
+private const val PAYMENT_STATUS_PENDING = 1
+private const val PAYMENT_STATUS_FAILED = 3
 
 /**
  * Confirm goes live once a reason is picked and the quote has either arrived or
@@ -94,10 +110,15 @@ private fun CancellationFeePreviewDto.charged(
     @StringRes titleRes: Int,
     severity: CancellationFeeSeverity,
     refundIsEstimate: Boolean,
+    tookNoCardPayment: Boolean,
 ) = CancellationFeeCallout(
     titleRes = titleRes,
-    amountRes = if (refundIsEstimate) R.string.guest_order_fee_estimate else R.string.order_cancel_fee_split,
-    amounts = listOf(feeAmount, refundAmount),
+    amountRes = when {
+        tookNoCardPayment -> R.string.order_cancel_fee_only
+        refundIsEstimate -> R.string.guest_order_fee_estimate
+        else -> R.string.order_cancel_fee_split
+    },
+    amounts = if (tookNoCardPayment) listOf(feeAmount) else listOf(feeAmount, refundAmount),
     severity = severity,
     warnsExpressWaiverForfeited = expressWaiverForfeitedOnCancel,
     graceMinutes = oopsWindowMinutes,

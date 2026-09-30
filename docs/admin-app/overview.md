@@ -78,7 +78,7 @@ lifecycle* or *Marketing* (`admin-role-visibility.spec.ts` pins both lists):
 | `/country-management`     | Countries    | Country configuration                         |
 | `/currency-management`    | Currencies   | Currency configuration                        |
 | `/company-info`           | Company Info | Company details                               |
-| `/company-settings`       | Company settings | The admin's own operating company's overrides of fifteen catalogued platform settings (thirteen retention settings, the chargeback horizon, and the administrator notification mailbox); entry gated by `CanViewTenantConfigurations` |
+| `/company-settings`       | Company settings | The admin's own operating company's overrides of sixteen catalogued platform settings (fourteen retention settings — the receipt-PDF window among them — the chargeback horizon, and the administrator notification mailbox); entry gated by `CanViewTenantConfigurations` |
 | `/company-lifecycle`      | Company lifecycle | The admin's own operating company's state (operating, winding down, deactivated, frozen, archived) with every stamp and actor, the sixteen settlement facts with links to the lists that settle them and the date the archive becomes admissible, and the four acts — Deactivate, Reactivate, Wind down from a date, Archive — each behind a confirmation; entry gated by `CanViewCompanyLifecycle` (ADR-0064) |
 | `/template-management`    | Templates    | Email/notification templates                  |
 | `/fiscal-failures`        | Fiscal Failures | Action queue for failed fiscal registrations (retry / acknowledge) |
@@ -207,9 +207,9 @@ The admin app provides CRUD interfaces for platform-wide configuration:
 | Languages    | Supported platform languages                            |
 | Countries    | Supported countries for operations                      |
 | Currencies   | Supported payment currencies                            |
-| Company Info | Company legal and contact details                       |
+| Company Info | Company legal and contact details — every administrator reads it; only an **Administrator** creates, edits or deletes it |
 | Templates    | Email and notification templates                        |
-| Legal documents | Every version of the terms and the privacy policy, read-only (ADR-0063) |
+| Legal documents | Every version of the terms and the privacy policy, read-only (ADR-0063). *In force* is *yes* on one version per audience, type and market — the newest already in effect; a superseded or future-dated version reads *no* |
 
 Per-employee pay overrides are managed on the Employee Detail page (see [User Management](./user-management)), not via Global Rates.
 
@@ -223,7 +223,9 @@ Three of those forms author what a customer's **market** shows:
   both fields are filled, a half-filled block is a per-block error, and a currency the plan is not
   priced in stays blank on populate (never `0`). The list shows the platform-default-currency price
   with its code and prints "—" when the plan has none. Refusals rendered: `currency.not_found`,
-  `membership.plan.stripe_price_already_used`.
+  `membership.plan.stripe_price_already_used`, and `membership.plan.free_cancellation_window_too_long`
+  for a free-cancellation window above 24 h — a longer window would give a member less than everyone
+  else ([Business rules — Cleansia Plus](/product/business-rules#cleansia-plus)).
 - **Currencies** — `No-show apology credit` beside the loyalty divisor: the amount `CancelUnfilledOrders`
   pays on an order in that currency; blank means none is paid.
 - **Countries** — the `Two-letter code` (required on create, pattern-checked on edit; the market chip

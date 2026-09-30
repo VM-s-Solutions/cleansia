@@ -166,6 +166,7 @@ public sealed class OperatorTenantScopeBehaviorOrderTests
             "Cleansia.Core.AppServices.Features.Orders.LookupOrder+Query",
             "Cleansia.Core.AppServices.Features.Orders.QuoteOrder+Command",
             "Cleansia.Core.AppServices.Features.Orders.QuotePlusSavings+Query",
+            "Cleansia.Core.AppServices.Features.Orders.ReportGuestCleanerNoShow+Command",
             "Cleansia.Core.AppServices.Features.PromoCodes.RequestPromoCode+Command",
             "Cleansia.Core.AppServices.Features.Referrals.ValidateReferral+Query",
             "Cleansia.Core.AppServices.Features.Users.ChangePassword+Command",

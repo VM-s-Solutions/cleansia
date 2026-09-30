@@ -37,5 +37,7 @@ function isOurApi(url: string, apiBaseUrl: string | null): boolean {
   if (!/^https?:\/\//i.test(url)) {
     return url.includes('/api/');
   }
-  return apiBaseUrl ? url.startsWith(apiBaseUrl) : false;
+  // The boundary slash keeps a lookalike host such as `https://api.cleansia.test.evil.example` out.
+  const base = apiBaseUrl?.replace(/\/+$/, '');
+  return base ? url.startsWith(`${base}/`) : false;
 }

@@ -4,6 +4,16 @@ import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 
+/**
+ * How dirty the home is, chosen by the customer at booking. The wire values are the backend's
+ * `DirtinessLevel`; the surcharge rates live in `BookingPolicy` and the client never applies them.
+ */
+enum class DirtinessLevel(val code: Int) {
+    Normal(0),
+    Increased(1),
+    Heavy(2),
+}
+
 @Serializable
 data class QuoteOrderCommand(
     val selectedServiceIds: List<String>,
@@ -32,6 +42,8 @@ data class QuoteOrderCommand(
      * step has yielded one — the platform default, exactly as before.
      */
     val countryId: String? = null,
+    /** Null until the customer has chosen; the server then prices at Normal. */
+    val dirtinessLevel: DirtinessLevel? = null,
 )
 
 @Serializable
@@ -86,6 +98,9 @@ data class QuoteOrderResponse(
     val creditMaxShareOfOrder: Double = 0.0,
     /** The rows the subtotals are made of, so a breakdown can say WHERE a number came from. */
     val lines: List<QuoteLineDto>? = null,
+    /** Already inside [totalPrice]; the level it was priced at is [dirtinessLevel]. */
+    val dirtinessSurchargeAmount: Double = 0.0,
+    val dirtinessLevel: DirtinessLevel = DirtinessLevel.Normal,
 )
 
 /** Mirrors backend `QuoteOrder.QuoteLine` — one row of the price breakdown. */
@@ -173,6 +188,8 @@ data class CreateOrderCommand(
      * already holds both consents saw no box, so it asserts nothing new.
      */
     val termsAccepted: Boolean? = null,
+    val dirtinessLevel: DirtinessLevel? = null,
+    val earlyPerformanceRequested: Boolean? = null,
 )
 
 @Serializable

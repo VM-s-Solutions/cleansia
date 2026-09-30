@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Memberships;
+using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Configuration.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -22,6 +23,7 @@ public class StripeSubscriptionWebhookHandler(
     IMembershipPlanRepository membershipPlanRepository,
     ICurrencyRepository currencyRepository,
     ITenantProvider tenantProvider,
+    INotificationProducer notificationProducer,
     ILogger<StripeSubscriptionWebhookHandler> logger) : IStripeSubscriptionWebhookHandler
 {
     public async Task<string> HandleAsync(Event stripeEvent, CancellationToken cancellationToken)
@@ -54,6 +56,18 @@ public class StripeSubscriptionWebhookHandler(
             }
         }
 
+        // Stripe does not order its events and retries a failed delivery for days: a payment failure that
+        // lands after the member cancelled must not make the enrolment live again, where it would block
+        // every new subscription, nor tell them a card they no longer pay with failed.
+        if (stripeEvent.Type == Constants.StripeEventType.InvoicePaymentFailed
+            && membership.Status == MembershipStatus.Cancelled)
+        {
+            logger.LogInformation(
+                "Ignored {EventType} for cancelled membership {MembershipId} (sub {SubscriptionId})",
+                stripeEvent.Type, membership.Id, subscriptionId);
+            return subscriptionId;
+        }
+
         // For invoice.payment_failed we don't have fresh period bounds —
         // pass the existing ones so the row's CurrentPeriod* stays as-is.
         // trial_end gets the same treatment inside UpdateFromStripeWebhook (ADR-0035 AM-18).
@@ -63,6 +77,20 @@ public class StripeSubscriptionWebhookHandler(
         membership.UpdateFromStripeWebhook(stripeStatus, startToWrite, endToWrite, trialEnd);
         if (membership.StripeSubscriptionId == subscriptionId)
             membership.RecordRecurringPauseState(stripeStatus, stripeEvent.Created, DateTime.UtcNow);
+
+        // Keyed on the Stripe EVENT: each failed attempt is its own notice, and the processed-event stamp
+        // already stops a redelivery of the same one.
+        if (stripeEvent.Type == Constants.StripeEventType.InvoicePaymentFailed
+            && membership.StripeSubscriptionId == subscriptionId)
+        {
+            await notificationProducer.NotifyAsync(
+                membership.UserId,
+                NotificationEventCatalog.MembershipPaymentFailed,
+                new Dictionary<string, string> { ["membershipId"] = membership.Id },
+                membership.TenantId,
+                stripeEvent.Id,
+                cancellationToken);
+        }
 
         logger.LogInformation(
             "Synced membership {MembershipId} (sub {SubscriptionId}) from {EventType}: status now {Status}",
@@ -175,11 +203,11 @@ public class StripeSubscriptionWebhookHandler(
         // who already has one and reaches Stripe again (stale tab / Dashboard / two near-simultaneous
         // checkouts — the request-side guard only blocks session-CREATION, not Stripe-side reality) got a
         // SECOND active row → double benefits + reconciliation drift. The tenant override is set above
-        // (owningUser.TenantId), so GetActiveForUserAsync resolves in the right tenant scope (S8). If an
+        // (owningUser.TenantId), so GetLifecycleForUserAsync resolves in the right tenant scope (S8). If an
         // active membership already exists, a duplicate provision is an idempotent no-op SUCCESS: log a
         // reconcile/skip and return the existing row WITHOUT Create/Add. The outer
         // HandlePaymentNotification handler still stamps the event processed either way.
-        var existingActive = await userMembershipRepository.GetActiveForUserAsync(userId, cancellationToken);
+        var existingActive = await userMembershipRepository.GetLifecycleForUserAsync(userId, cancellationToken);
         if (existingActive != null)
         {
             logger.LogWarning(
@@ -218,7 +246,7 @@ public class StripeSubscriptionWebhookHandler(
             // commit. The event is still marked processed — a duplicate provision is an idempotent no-op.
             userMembershipRepository.Remove(membership);
 
-            var winner = await userMembershipRepository.GetActiveForUserAsync(userId, cancellationToken);
+            var winner = await userMembershipRepository.GetLifecycleForUserAsync(userId, cancellationToken);
             logger.LogWarning(
                 "subscription.created webhook for sub {SubscriptionId}, user {UserId} lost the active-membership race (unique-violation); resolved to winning membership {MembershipId} (reconcile no-op)",
                 subscriptionId, userId, winner?.Id);
@@ -234,8 +262,8 @@ public class StripeSubscriptionWebhookHandler(
 
     /// <summary>
     /// True when the <see cref="DbUpdateException"/> was caused by a Postgres unique-constraint violation
-    /// (SQLSTATE 23505) — the filtered (TenantId, UserId) WHERE Status=Active unique index (or the
-    /// StripeSubscriptionId unique index) rejecting a concurrent loser's insert. Detected
+    /// (SQLSTATE 23505) — the filtered (TenantId, UserId) unique index over the live statuses (Active,
+    /// PastDue, Paused), or the StripeSubscriptionId unique index, rejecting a concurrent loser's insert. Detected
     /// provider-agnostically by duck-typing the inner exception's public <c>SqlState</c> string property:
     /// the AppServices layer deliberately carries no hard Npgsql reference, so we read Npgsql's
     /// <c>PostgresException.SqlState</c> reflectively rather than type-binding it. Walks the whole inner

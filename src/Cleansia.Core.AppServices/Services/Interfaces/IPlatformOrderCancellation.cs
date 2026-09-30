@@ -33,7 +33,8 @@ public interface IPlatformOrderCancellation
 
 public sealed record PlatformOrderCancellationResult(decimal RefundAmount, PlatformRefundOutcome Refund);
 
-public sealed record PlatformRefundOutcome(bool Attempted, bool Initiated, string? FailureMessage)
+/// <param name="RefundedAmount">What the refund actually returned, set only on a refund that went through.</param>
+public sealed record PlatformRefundOutcome(bool Attempted, bool Initiated, string? FailureMessage, decimal? RefundedAmount = null)
 {
     public static readonly PlatformRefundOutcome NotAttempted = new(false, false, null);
     public static readonly PlatformRefundOutcome Issued = new(true, true, null);

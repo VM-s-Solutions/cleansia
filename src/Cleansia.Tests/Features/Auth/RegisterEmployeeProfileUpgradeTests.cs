@@ -26,8 +26,7 @@ public class RegisterEmployeeProfileUpgradeTests
     private readonly Mock<IPendingDispatch> _pending = new();
 
     private RegisterEmployee.Handler CreateHandler() => new(
-        _userRepository.Object, _employeeRepository.Object, _pending.Object,
-        new Mock<IConsentService>().Object);
+        _userRepository.Object, _employeeRepository.Object, _pending.Object);
 
     private static RegisterEmployee.Command Command() =>
         new(Email, Password, "John", "Doe", Language);

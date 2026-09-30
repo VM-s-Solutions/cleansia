@@ -57,6 +57,7 @@ public sealed class AdminNotificationEmailRenderingTests
             "statusAtLoss" => nameof(OrderStatus.Confirmed),
             "cleaningDateTime" => new DateTime(2026, 10, 1, 9, 30, 0, DateTimeKind.Utc).ToString("O", CultureInfo.InvariantCulture),
             "disputeId" => "dispute-1",
+            "stripeDisputeId" => "dp_1ABC",
             "reason" => nameof(DisputeReason.QualityIssue),
             "requestId" => "request-1",
             "day" => "2026-10-01",
@@ -90,7 +91,12 @@ public sealed class AdminNotificationEmailRenderingTests
         Assert.DoesNotContain("{0}", capture.Subject, StringComparison.Ordinal);
         Assert.DoesNotContain("{{", capture.Subject, StringComparison.Ordinal);
         Assert.Contains(capture.Subject, html, StringComparison.Ordinal);
-        if (eventKey.StartsWith("admin.order.", StringComparison.Ordinal) || eventKey.StartsWith("admin.dispute.", StringComparison.Ordinal) || eventKey.StartsWith("admin.payment.", StringComparison.Ordinal))
+        if (eventKey == AdminNotificationEventCatalog.DisputeChargebackUnmatched)
+        {
+            Assert.Contains("1 250 Kč", capture.Subject, StringComparison.Ordinal);
+            Assert.Contains("dp_1ABC", html, StringComparison.Ordinal);
+        }
+        else if (eventKey.StartsWith("admin.order.", StringComparison.Ordinal) || eventKey.StartsWith("admin.dispute.", StringComparison.Ordinal) || eventKey.StartsWith("admin.payment.", StringComparison.Ordinal))
         {
             Assert.Contains("ORD-1A2B3C4D", capture.Subject, StringComparison.Ordinal);
         }
@@ -134,6 +140,24 @@ public sealed class AdminNotificationEmailRenderingTests
 
         Assert.Contains(expected, capture.HtmlContent, StringComparison.Ordinal);
         Assert.Contains("the cleaner's account was rejected", capture.HtmlContent, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Only a cancellation's own refund is re-driven every hour; any other is the administrators' to
+    /// retry. An administrator told a dispute's refund is being retried waits for a retry that never comes.
+    /// </summary>
+    [Theory]
+    [InlineData(AdminNotificationEventCatalog.RefundStuck, "It is retried every hour", "retry it from")]
+    [InlineData(AdminNotificationEventCatalog.RefundNeedsRetry, "retry it from the dispute or the order", "retried every hour")]
+    public async Task Each_Stuck_Refund_Email_Says_Who_Retries_It(string eventKey, string says, string doesNotSay)
+    {
+        var (service, capture) = BuildService([]);
+
+        await service.SendAdminNotificationEmailAsync(Recipient, eventKey, SampleArgs(eventKey), "en", CancellationToken.None);
+
+        Assert.Contains("1 250 Kč", capture.HtmlContent, StringComparison.Ordinal);
+        Assert.Contains(says, capture.HtmlContent, StringComparison.Ordinal);
+        Assert.DoesNotContain(doesNotSay, capture.HtmlContent, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -210,7 +234,9 @@ public sealed class AdminNotificationEmailRenderingTests
             NullLogger<EmailService>.Instance,
             httpClientFactory.Object,
             translationRepository.Object,
-            new EmailTemplateRenderer());
+            new EmailTemplateRenderer(),
+            Mock.Of<ICountryConfigurationRepository>(),
+            Mock.Of<ICompanyInfoRepository>());
 
         return (service, capture);
     }

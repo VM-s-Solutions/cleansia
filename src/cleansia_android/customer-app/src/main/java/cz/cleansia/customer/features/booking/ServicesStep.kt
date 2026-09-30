@@ -63,6 +63,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.customer.R
+import cz.cleansia.customer.core.booking.PropertySize
 import cz.cleansia.customer.core.catalog.CategoryDto
 import cz.cleansia.customer.core.catalog.PackageListItem
 import cz.cleansia.customer.core.catalog.ServiceListItem
@@ -147,6 +148,8 @@ internal fun localizedDescription(
 fun ServicesStep(
     state: BookingState,
     onUpdate: (BookingState) -> Unit,
+    onRoomsChange: (Int) -> Unit,
+    onBathroomsChange: (Int) -> Unit,
     viewModel: ServicesStepViewModel = androidx.hilt.navigation.compose.hiltViewModel(),
 ) {
     val catalogRepo = viewModel.catalogRepository
@@ -186,6 +189,8 @@ fun ServicesStep(
         else -> CatalogContent(
             state = state,
             onUpdate = onUpdate,
+            onRoomsChange = onRoomsChange,
+            onBathroomsChange = onBathroomsChange,
             services = services,
             packages = packages,
             currencyCode = currencyCode,
@@ -226,6 +231,8 @@ fun ServicesStep(
 private fun CatalogContent(
     state: BookingState,
     onUpdate: (BookingState) -> Unit,
+    onRoomsChange: (Int) -> Unit,
+    onBathroomsChange: (Int) -> Unit,
     services: List<ServiceListItem>,
     packages: List<PackageListItem>,
     currencyCode: String?,
@@ -245,8 +252,8 @@ private fun CatalogContent(
                 PropertyCompactRow(
                     rooms = state.rooms,
                     bathrooms = state.bathrooms,
-                    onRoomsChange = { onUpdate(state.copy(rooms = it.coerceAtLeast(1))) },
-                    onBathroomsChange = { onUpdate(state.copy(bathrooms = it.coerceAtLeast(1))) },
+                    onRoomsChange = onRoomsChange,
+                    onBathroomsChange = onBathroomsChange,
                 )
             }
             Spacer(Modifier.height(20.dp))
@@ -658,18 +665,20 @@ private fun PropertyCompactRow(
             label = pluralStringResource(R.plurals.booking_rooms_short, rooms, rooms),
             onMinus = { onRoomsChange(rooms - 1) },
             onPlus = { onRoomsChange(rooms + 1) },
+            canAdd = rooms < PropertySize.MAX_ROOMS,
         )
         Spacer(Modifier.width(8.dp))
         CompactCounter(
             label = pluralStringResource(R.plurals.booking_bath_short, bathrooms, bathrooms),
             onMinus = { onBathroomsChange(bathrooms - 1) },
             onPlus = { onBathroomsChange(bathrooms + 1) },
+            canAdd = bathrooms < PropertySize.MAX_BATHROOMS,
         )
     }
 }
 
 @Composable
-private fun CompactCounter(label: String, onMinus: () -> Unit, onPlus: () -> Unit) {
+private fun CompactCounter(label: String, onMinus: () -> Unit, onPlus: () -> Unit, canAdd: Boolean) {
     Row(
         modifier = Modifier
             .clip(RoundedCornerShape(999.dp))
@@ -687,9 +696,16 @@ private fun CompactCounter(label: String, onMinus: () -> Unit, onPlus: () -> Uni
             modifier = Modifier.padding(horizontal = 4.dp),
         )
         Box(
-            Modifier.size(28.dp).clickable(onClick = onPlus),
+            Modifier.size(28.dp).clickable(enabled = canAdd, onClick = onPlus),
             contentAlignment = Alignment.Center,
-        ) { Icon(Icons.Outlined.Add, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp)) }
+        ) {
+            Icon(
+                Icons.Outlined.Add,
+                null,
+                tint = MaterialTheme.colorScheme.primary.copy(alpha = if (canAdd) 1f else 0.38f),
+                modifier = Modifier.size(14.dp),
+            )
+        }
     }
 }
 

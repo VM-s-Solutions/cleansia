@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Cleansia.Core.Domain.Common;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Extensions;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
@@ -23,7 +24,7 @@ public class OrderEmployeePay : TenantAuditable
 
     [Required]
     /// <summary>
-    /// THE UNIT THE EIGHT MONEY COLUMNS ARE IN. The row recorded BasePay, ExtrasPay, ExpensesPay,
+    /// THE UNIT THE MONEY COLUMNS ARE IN. The row recorded BasePay, ExtrasPay, ExpensesPay,
     /// BonusPay, DeductionPay, TotalPay, MinPay and MaxPay with nothing saying what any of them were
     /// denominated in — the amount was a number and the currency was inferred downstream, from the
     /// EMPLOYEE, by two derivations that disagreed with each other and neither of which read these rows.
@@ -35,18 +36,26 @@ public class OrderEmployeePay : TenantAuditable
     public string CurrencyId { get; private set; }
     public Currency? Currency { get; private set; }
 
+    public PayLineType LineType { get; private set; } = PayLineType.Job;
+
     public decimal BasePay { get; private set; }
 
     public decimal ExtrasPay { get; private set; } = 0;
 
     public decimal ExpensesPay { get; private set; } = 0;
 
+    /// <summary>
+    /// What the dirtiness level added to this seat's pay. Added after the clamp, so it sits outside
+    /// [MinPay, MaxPay] here exactly as it did in the calculator.
+    /// </summary>
+    public decimal DirtinessPay { get; private set; } = 0;
+
     public decimal BonusPay { get; private set; } = 0;
 
     public decimal DeductionPay { get; private set; } = 0;
 
     // The pay-config min/max bounds captured at calculation time. TotalPay is the CLAMPED core
-    // (base+extras+expenses bounded to [MinPay, MaxPay]) plus bonus minus deduction. Persisting the
+    // (base+extras+expenses bounded to [MinPay, MaxPay]) plus dirtiness plus bonus minus deduction. Persisting the
     // bounds is what lets the mutators below re-apply the clamp — recomputing TotalPay purely from the
     // raw components would silently undo it (T-0362). 0 == unbounded on that edge (mirrors the
     // calculator's `> 0` guard in PayCalculatorExtensions.ApplyMinMaxClamp).
@@ -62,6 +71,17 @@ public class OrderEmployeePay : TenantAuditable
 
     [MaxLength(2000)]
     public string? PayBreakdown { get; private set; }
+
+    /// <summary>
+    /// The dispute an administrator found this cleaner at fault on, and the finding they wrote for the
+    /// cleaner to read on this pay record. Null unless such a deduction was made — a refund never
+    /// deducts on its own (owner ruling 2026-09-28).
+    /// </summary>
+    [MaxLength(26)]
+    public string? DeductionDisputeId { get; private set; }
+
+    [MaxLength(500)]
+    public string? DeductionReason { get; private set; }
 
     public bool IsApproved { get; private set; } = false;
 
@@ -80,6 +100,7 @@ public class OrderEmployeePay : TenantAuditable
         decimal basePay,
         decimal extrasPay = 0,
         decimal expensesPay = 0,
+        decimal dirtinessPay = 0,
         decimal bonusPay = 0,
         decimal deductionPay = 0,
         decimal totalPay = 0,
@@ -103,6 +124,11 @@ public class OrderEmployeePay : TenantAuditable
             throw new ArgumentException("Expenses pay cannot be negative", nameof(expensesPay));
         }
 
+        if (dirtinessPay < 0)
+        {
+            throw new ArgumentException("Dirtiness pay cannot be negative", nameof(dirtinessPay));
+        }
+
         if (totalPay < 0)
         {
             totalPay = 0;
@@ -117,6 +143,7 @@ public class OrderEmployeePay : TenantAuditable
             BasePay = basePay,
             ExtrasPay = extrasPay,
             ExpensesPay = expensesPay,
+            DirtinessPay = dirtinessPay,
             BonusPay = bonusPay,
             DeductionPay = deductionPay,
             MinPay = minPay,
@@ -125,6 +152,24 @@ public class OrderEmployeePay : TenantAuditable
             Notes = notes,
             PayBreakdown = payBreakdown
         };
+    }
+
+    /// <summary>
+    /// The seat's share of a fee the company collected on a cancelled job. The share is the whole line,
+    /// held as its base and unbounded, so a later bonus or deduction moves it like any other row's.
+    /// </summary>
+    public static OrderEmployeePay CreateFeeShare(
+        string orderId,
+        string employeeId,
+        string payPeriodId,
+        string currencyId,
+        PayLineType lineType,
+        decimal share,
+        string payBreakdown)
+    {
+        var pay = Create(orderId, employeeId, payPeriodId, currencyId, share, totalPay: share, payBreakdown: payBreakdown);
+        pay.LineType = lineType;
+        return pay;
     }
 
     public OrderEmployeePay UpdatePay(
@@ -191,18 +236,34 @@ public class OrderEmployeePay : TenantAuditable
         return this;
     }
 
+    public bool CanTakeDisputeCharge(decimal amount) =>
+        EmployeeInvoiceId is null && DeductionDisputeId is null && amount <= TotalPay;
+
+    public OrderEmployeePay ChargeForDispute(string disputeId, decimal amount, string reason)
+    {
+        if (!CanTakeDisputeCharge(amount))
+        {
+            throw new InvalidOperationException(
+                $"Pay {Id} cannot take a dispute charge: already invoiced, already charged, or smaller than {amount}.");
+        }
+
+        DeductionDisputeId = disputeId;
+        DeductionReason = reason;
+        return AddDeduction(amount);
+    }
+
     /// <summary>
     /// The single source of truth for TotalPay once components change: clamp the core
     /// (base+extras+expenses) to the persisted [MinPay, MaxPay] bounds — the SAME clamp the calculator
-    /// applied at creation — then add bonus and subtract deduction, floored at 0. Reuses
-    /// <see cref="PayCalculatorExtensions.ApplyMinMaxClamp"/> so the &gt;0-guard and min&gt;max-throw
+    /// applied at creation — then add the dirtiness term and bonus and subtract deduction, floored at 0.
+    /// Reuses <see cref="PayCalculatorExtensions.ApplyMinMaxClamp"/> so the &gt;0-guard and min&gt;max-throw
     /// semantics stay identical to calc time (T-0362).
     /// </summary>
     private void RecomputeTotalPay()
     {
         var clampedCore = PayCalculatorExtensions.ApplyMinMaxClamp(
             BasePay + ExtrasPay + ExpensesPay, MinPay, MaxPay);
-        TotalPay = Math.Max(0m, clampedCore + BonusPay - DeductionPay);
+        TotalPay = Math.Max(0m, clampedCore + DirtinessPay + BonusPay - DeductionPay);
     }
 
     public OrderEmployeePay Approve(string approvedBy)
@@ -228,6 +289,7 @@ public class OrderEmployeePay : TenantAuditable
     public OrderEmployeePay Anonymize()
     {
         Notes = Notes is null ? null : AnonymizationMarker.Value;
+        DeductionReason = DeductionReason is null ? null : AnonymizationMarker.Value;
         return this;
     }
 }

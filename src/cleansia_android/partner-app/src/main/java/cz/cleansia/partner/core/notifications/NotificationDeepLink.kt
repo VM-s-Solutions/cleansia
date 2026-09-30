@@ -63,9 +63,6 @@ object NotificationDeepLink {
         "dispute.reply",
         "order.assignment_cancelled",
         "order.assigned",
-        // Still the order detail even though the cleaner is off the job: the copy says the job
-        // moved, and the detail is where they can read which day just came off their schedule.
-        "order.assignment_revoked",
         // Straight to the job so the cleaner can take it without hunting the board.
         "order.seat_open",
         // The targeted offer stays on the DETAIL rather than moving to the pending-offers surface.
@@ -83,6 +80,10 @@ object NotificationDeepLink {
         "order.reminder_soon",
         "order.reminder_not_started",
         -> orderId?.takeIf { it.isNotBlank() }?.let { NavRoute.OrderDetail(orderId = it) }
+        // Still the order detail even though the cleaner is off the job: the copy says the job
+        // moved, and the detail is where they can read which day just came off their schedule.
+        "order.assignment_revoked" ->
+            orderId?.takeIf { it.isNotBlank() }?.let { NavRoute.OrderDetail(orderId = it, showRemovalReason = true) }
         // Payroll payout — open the paid invoice; fall back to the Earnings
         // summary when the payload carries no invoiceId. Both are root
         // destinations in PartnerNavHost.

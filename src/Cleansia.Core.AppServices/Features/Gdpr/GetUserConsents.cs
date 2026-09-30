@@ -1,6 +1,8 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Gdpr.DTOs;
+using Cleansia.Core.AppServices.Mappers;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 
@@ -12,7 +14,8 @@ public static class GetUserConsents
 
     internal class Handler(
         IUserSessionProvider userSessionProvider,
-        IUserConsentRepository userConsentRepository)
+        IUserConsentRepository userConsentRepository,
+        ILegalDocumentResolver legalDocumentResolver)
         : IQueryHandler<Query, List<UserConsentDto>>
     {
         public async Task<BusinessResult<List<UserConsentDto>>> Handle(Query request, CancellationToken cancellationToken)
@@ -20,11 +23,8 @@ public static class GetUserConsents
             // userId is non-null past the controller's [Permission] gate.
             var userId = userSessionProvider.GetUserId()!;
             var consents = await userConsentRepository.GetByUserIdNoTrackingAsync(userId, cancellationToken);
-            var dtos = consents.Select(c => new UserConsentDto(
-                c.Id, c.ConsentType, c.IsGranted,
-                c.GrantedAt, c.WithdrawnAt, c.CreatedOn)).ToList();
 
-            return BusinessResult.Success(dtos);
+            return BusinessResult.Success(await consents.MapToDtosAsync(legalDocumentResolver, cancellationToken));
         }
     }
 }

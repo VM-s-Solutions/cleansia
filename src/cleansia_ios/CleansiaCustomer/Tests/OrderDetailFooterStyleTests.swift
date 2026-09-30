@@ -35,4 +35,12 @@ final class OrderDetailFooterStyleTests: XCTestCase {
         XCTAssertEqual(OrderDetailFooterStyle.reportIssue.tint, OrderDetailFooterStyle.cancel.tint)
         XCTAssertNotEqual(OrderDetailFooterStyle.reportIssue.icon, OrderDetailFooterStyle.cancel.icon)
     }
+
+    /// Past the start the no-show report sits where Cancel was, directly above Report issue in the same
+    /// tint, so its glyph is what tells the two complaints apart.
+    func testTheNoShowReportHasAGlyphOfItsOwn() {
+        XCTAssertEqual(OrderDetailFooterStyle.cleanerDidNotArrive.tint, CleansiaColors.error)
+        XCTAssertNotEqual(OrderDetailFooterStyle.cleanerDidNotArrive.icon, OrderDetailFooterStyle.reportIssue.icon)
+        XCTAssertNotEqual(OrderDetailFooterStyle.cleanerDidNotArrive.icon, OrderDetailFooterStyle.cancel.icon)
+    }
 }

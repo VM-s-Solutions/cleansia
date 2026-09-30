@@ -23,7 +23,7 @@ public static class NewOrderAdminNotifier
         ILogger logger,
         CancellationToken cancellationToken)
     {
-        if (!OrderAvailability.IsOfferable(order.CurrentStatus, order.PaymentType, order.PaymentStatus, order.RecurringTemplateId))
+        if (!OrderAvailability.IsOfferable(order))
         {
             return Task.CompletedTask;
         }

@@ -7,17 +7,20 @@ struct PendingOffersView: View {
     @State private var pendingDecline: PendingOfferItem?
     private let client: PartnerOrderClient
     private let onOpenOrder: (String) -> Void
+    private let onOpenLegalDocuments: () -> Void
 
     init(
         store: PendingOffersStore,
         client: PartnerOrderClient,
         staleness: OrdersStaleness,
         snackbar: SnackbarController,
-        onOpenOrder: @escaping (String) -> Void
+        onOpenOrder: @escaping (String) -> Void,
+        onOpenLegalDocuments: @escaping () -> Void
     ) {
         _vm = StateObject(wrappedValue: PendingOffersViewModel(store: store, staleness: staleness, snackbar: snackbar))
         self.client = client
         self.onOpenOrder = onOpenOrder
+        self.onOpenLegalDocuments = onOpenLegalDocuments
     }
 
     var body: some View {
@@ -52,7 +55,11 @@ struct PendingOffersView: View {
                 request: request,
                 client: client,
                 onDismiss: vm.dismissContract,
-                onOutcome: { outcome in Task { await vm.onWorkContractOutcome(outcome) } }
+                onOutcome: { outcome in Task { await vm.onWorkContractOutcome(outcome) } },
+                onOpenLegalDocuments: {
+                    vm.dismissContract()
+                    onOpenLegalDocuments()
+                }
             )
         }
         .task { await vm.load() }

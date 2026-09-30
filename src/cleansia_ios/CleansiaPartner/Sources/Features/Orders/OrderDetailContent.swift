@@ -14,6 +14,7 @@ struct OrderDetailContent: View {
     var onOpenContract: (WorkContractRequest) -> Void = { _ in }
     var onDeclineOffer: () -> Void = {}
     var onDismissRefusal: () -> Void = {}
+    var onReportLockout: (String) -> Void = { _ in }
     @ObservedObject var checklistVM: CleaningChecklistViewModel
     @ObservedObject var notesVM: OrderNotesViewModel
     @ObservedObject var photosVM: OrderPhotosViewModel
@@ -29,16 +30,6 @@ struct OrderDetailContent: View {
 
     private var isTerminal: Bool {
         order.status == ._5 || order.status == ._6
-    }
-
-    /// Before photos upload once OnTheWay/InProgress; after photos only once
-    /// InProgress (OrderDetailScreen.kt:530-532 parity).
-    private var canUploadBefore: Bool {
-        order.status == ._3 || order.status == ._4
-    }
-
-    private var canUploadAfter: Bool {
-        order.status == ._4
     }
 
     @State private var confirmingCash = false
@@ -105,6 +96,13 @@ struct OrderDetailContent: View {
                         onAccept: { onOpenContract(.accept(orderId: order.id)) },
                         onRead: { onOpenContract(.read(acceptanceId: $0)) }
                     )
+                    LockoutCard(
+                        order: order,
+                        isReporting: inFlightAction == .reportLockout,
+                        actionsEnabled: inFlightAction == nil,
+                        photosVM: photosVM,
+                        onReport: onReportLockout
+                    )
                     ScopeCard(order: order)
                     if showFromCustomerCard {
                         FromCustomerNotesCard(order: order)
@@ -129,8 +127,8 @@ struct OrderDetailContent: View {
                     if order.showsWorkSections {
                         PhotosSection(
                             vm: photosVM,
-                            canUploadBefore: canUploadBefore,
-                            canUploadAfter: canUploadAfter
+                            canUploadBefore: order.photoWindowOpen(for: ._1),
+                            canUploadAfter: order.photoWindowOpen(for: ._2)
                         )
                     }
                     PaymentCard(order: order)
@@ -305,6 +303,7 @@ private struct OrderMetadataRow: View {
             customerPhone: "+420 777 123 456",
             rooms: 3,
             bathrooms: 2,
+            dirtinessLevel: ._1,
             crew: .spotsOpen(crewSize: 2, openSpots: 1),
             seats: [OrderSeat(id: "seat-1", employeeId: "emp-1")],
             workContractAcceptances: [
@@ -335,6 +334,8 @@ private struct OrderMetadataRow: View {
             ),
             isAssignedToCurrentUser: true,
             hasAfterPhotos: false,
+            lockoutReportedAt: nil,
+            lockoutCallAttempts: nil,
             orderNotes: [],
             orderIssues: [],
             // An hour-old InProgress stamp so the preview renders the live clock.

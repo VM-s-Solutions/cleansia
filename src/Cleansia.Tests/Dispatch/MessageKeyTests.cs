@@ -11,7 +11,7 @@ namespace Cleansia.Tests.Dispatch;
 ///
 /// Frozen formulas (ADR-0002 D2.1 table):
 ///   generate-receipt        → receipt:{OrderId}
-///   generate-receipt        → receipt-reissue:{OrderId} (the issued document restated)
+///   send-email              → email:order-booked:{OrderId}
 ///   notifications-dispatch   → push:{UserId}:{EventKey}:{OrderId?}
 ///   calculate-order-pay      → pay:{OrderId}:{EmployeeId}
 ///   generate-invoice         → invoice:{PayPeriodId}:{EmployeeId}
@@ -34,25 +34,21 @@ public class MessageKeyTests
     }
 
     [Fact]
-    public void ReceiptReissue_Key_Follows_Frozen_Formula()
+    public void OrderBookedEmail_Key_Follows_Frozen_Formula()
     {
-        Assert.Equal("receipt-reissue:ORDER-1", MessageKeys.ReceiptReissue("ORDER-1"));
+        Assert.Equal("email:order-booked:ORDER-1", MessageKeys.OrderBookedEmail("ORDER-1"));
     }
 
     [Fact]
-    public void ReceiptReissue_Key_Is_Deterministic_For_Same_Inputs()
+    public void WorkContractEmail_Key_Follows_Frozen_Formula()
     {
-        Assert.Equal(MessageKeys.ReceiptReissue("ORDER-1"), MessageKeys.ReceiptReissue("ORDER-1"));
+        Assert.Equal("email:work-contract:ACCEPTANCE-1", MessageKeys.WorkContractEmail("ACCEPTANCE-1"));
     }
 
-    /// <summary>
-    /// The cash booking already wrote <c>receipt:{id}</c> to the outbox, which holds a key unique for its
-    /// retention window. A restate on the same key would fail the collection's commit on that index.
-    /// </summary>
     [Fact]
-    public void ReceiptReissue_Key_Never_Collides_With_The_Issue_Key()
+    public void OrderLockoutEmail_Key_Follows_Frozen_Formula()
     {
-        Assert.NotEqual(MessageKeys.Receipt("ORDER-1"), MessageKeys.ReceiptReissue("ORDER-1"));
+        Assert.Equal("email:order-lockout:ORDER-1", MessageKeys.OrderLockoutEmail("ORDER-1"));
     }
 
     [Fact]

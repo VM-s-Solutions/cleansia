@@ -68,6 +68,18 @@ public class GetOrderPhotos
             var photos = orderAccessService.IsCustomerCaller()
                 ? await photoRepository.GetPhotosByOrderIdForOwnerAsync(order.Id, order.UserId!, cancellationToken)
                 : await photoRepository.GetPhotosByOrderIdAsync(order.Id, cancellationToken);
+
+            // Past the crew's window a cleaner keeps only the photos they took.
+            var callerEmployeeId = orderAccessService.IsCustomerCaller()
+                ? null
+                : await orderAccessService.GetCallerEmployeeIdAsync(cancellationToken);
+            if (callerEmployeeId is not null
+                && order.AssignedEmployees.Any(ae => ae.EmployeeId == callerEmployeeId)
+                && !Order.CustomerDetailsOpenToCrew(order.CurrentStatus, order.CompletedAt, DateTime.UtcNow))
+            {
+                photos = photos.Where(p => p.CapturedByEmployeeId == callerEmployeeId).ToList();
+            }
+
             var blobClient = blobClientFactory.GetBlobContainerClient(Constants.BlobContainers.OrderPhotos);
             var hideEmployeeIds = orderAccessService.IsCustomerCaller();
 
@@ -113,7 +125,10 @@ public class GetOrderPhotos
                 Notes: photo.Notes);
         }
 
+        /// <summary>A link that works outside Cleansia's auth, so it lives only as long as a screen is open.</summary>
+        private static readonly TimeSpan PhotoLinkLifetime = TimeSpan.FromMinutes(15);
+
         private static string GenerateSasUrl(IBlobContainerClient blobClient, string blobUrl, ServedContentType servedAs) =>
-            blobClient.GenerateSasUri(OrderPhotoBlobName.FromUrl(blobUrl), TimeSpan.FromHours(1), servedAs).ToString();
+            blobClient.GenerateSasUri(OrderPhotoBlobName.FromUrl(blobUrl), PhotoLinkLifetime, servedAs).ToString();
     }
 }

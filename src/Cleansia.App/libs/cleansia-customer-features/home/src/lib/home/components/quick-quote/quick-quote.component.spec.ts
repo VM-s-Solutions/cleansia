@@ -1,6 +1,12 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { TranslateService } from '@ngx-translate/core';
+import { By } from '@angular/platform-browser';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import { provideRouter } from '@angular/router';
+import { DirtinessLevel } from '@cleansia/customer-services';
+import { lastBookableDay } from '@cleansia/models';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { DatePicker } from 'primeng/datepicker';
 import { EMPTY } from 'rxjs';
 import { QuickQuoteComponent } from './quick-quote.component';
 import { QuickQuoteFacade } from './quick-quote.facade';
@@ -61,5 +67,55 @@ describe('home calculator arrival times', () => {
 
     expect(options).toHaveLength(48);
     expect(options.every((option) => !option.disabled)).toBe(true);
+  });
+});
+
+describe('home calculator dates', () => {
+  const now = new Date(2026, 8, 10, 10, 15);
+
+  afterEach(() => jest.useRealTimers());
+
+  it('offers no day past the last one inside the booking horizon', async () => {
+    await TestBed.configureTestingModule({
+      imports: [QuickQuoteComponent, TranslateModule.forRoot()],
+      providers: [provideRouter([]), provideNoopAnimations()],
+    })
+      .overrideComponent(QuickQuoteComponent, {
+        set: {
+          providers: [
+            {
+              provide: QuickQuoteFacade,
+              useValue: {
+                cleaningDate: signal<string | null>(null),
+                cleaningTime: signal<string | null>(null),
+                selectedServiceId: signal<string | null>(null),
+                sizes: signal([]),
+                dirtinessLevel: signal(DirtinessLevel.Normal),
+                dirtinessSurcharge: signal(null),
+                isLoading: signal(false),
+                priceLabelKey: signal('pages.home.quote.pick_service'),
+                amountLabel: signal<string | null>(null),
+                markets: signal([]),
+                selectedMarketCode: signal<string | null>(null),
+                crewMinutes: signal<number | null>(null),
+                continueQueryParams: signal({}),
+                selectService: jest.fn(),
+                selectDate: jest.fn(),
+                selectTime: jest.fn(),
+                selectDirtinessLevel: jest.fn(),
+                chooseMarket: jest.fn(),
+              },
+            },
+          ],
+        },
+      })
+      .compileComponents();
+    jest.useFakeTimers().setSystemTime(now);
+
+    const fixture = TestBed.createComponent(QuickQuoteComponent);
+    fixture.detectChanges();
+    const picker = fixture.debugElement.query(By.directive(DatePicker)).componentInstance as DatePicker;
+
+    expect(picker.maxDate).toEqual(lastBookableDay(now));
   });
 });

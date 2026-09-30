@@ -88,7 +88,7 @@
         <i class="pi pi-envelope"></i>
         <span>
           {{ 'legal.ask_lead' | translate }}
-          <a href="mailto:info@cleansia.cz">info&#64;cleansia.cz</a>
+          <a [href]="contactHref()">{{ contactEmail() }}</a>
           {{ 'legal.ask_tail' | translate }}
         </span>
       </p>

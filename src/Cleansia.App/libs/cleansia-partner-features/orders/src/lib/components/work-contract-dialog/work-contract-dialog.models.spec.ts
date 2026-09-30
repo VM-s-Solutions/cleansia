@@ -57,7 +57,7 @@ describe('buildWorkContractFactRows', () => {
     expect(rows.map((row) => row.labelKey)).toEqual([
       'pages.orders.work_contract.facts.order_number',
       'pages.orders.work_contract.facts.window',
-      'pages.orders.work_contract.facts.price',
+      'pages.orders.work_contract.facts.reward',
       'pages.orders.work_contract.facts.location',
       'pages.orders.work_contract.facts.rooms_bathrooms',
       'pages.orders.work_contract.facts.services',
@@ -73,7 +73,7 @@ describe('buildWorkContractFactRows', () => {
     expect(rows[7].value).toBe('fridge, oven');
   });
 
-  it('formats the price in the UI language', () => {
+  it('formats the reward for the spot in the UI language', () => {
     const rows = buildWorkContractFactRows(facts(), 'cs');
 
     expect(rows[2].value).toBe('1 250 Kč');

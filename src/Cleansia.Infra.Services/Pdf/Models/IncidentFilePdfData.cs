@@ -55,7 +55,19 @@ public sealed record IncidentFileOrder(
     IReadOnlyList<IncidentFileRefund> Refunds,
     IReadOnlyList<IncidentFileCleaner> AssignedCleaners,
     string? CancelledBy,
-    string? CancellationReason);
+    string? CancellationReason,
+    IncidentFileEarlyPerformanceConsent? EarlyPerformanceConsent = null);
+
+/// <summary>
+/// The customer's request that the service start within the 14-day withdrawal period, as recorded on the
+/// order. The two request members are null once the customer's erasure has blanked them.
+/// </summary>
+public sealed record IncidentFileEarlyPerformanceConsent(
+    DateTimeOffset ConsentedOn,
+    string TextVersion,
+    string Client,
+    string? IpAddress,
+    string? DeviceLabel);
 
 public sealed record IncidentFileOrderLine(string Kind, string Name, decimal Amount);
 

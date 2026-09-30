@@ -150,6 +150,20 @@ final class OrderDetailViewModelTests: XCTestCase {
         XCTAssertEqual(vm.primaryAction, .collectCash)
     }
 
+    /// The customer's confirm of a recurring cash occurrence no longer marks it Paid, so it reaches the
+    /// door owing cash like a one-off booking and the partner records it the same way.
+    func testAConfirmedRecurringCashOccurrenceAsksForTheCash() async {
+        var occurrence = loadedItem(
+            status: 4, isMine: true, hasAfterPhotos: true, paymentType: 1, paymentStatus: 1
+        )
+        occurrence.recurringTemplateId = "tpl-1"
+        occurrence.needsConfirmation = false
+        client.byIdResult = .success(occurrence)
+        let vm = makeVM()
+        await vm.load()
+        XCTAssertEqual(vm.primaryAction, .collectCash)
+    }
+
     func testPrimaryActionCompleteOnceCashCollected() async {
         client.byIdResult = .success(loadedItem(
             status: 4, isMine: true, hasAfterPhotos: true, paymentType: 1, paymentStatus: 2
@@ -371,6 +385,64 @@ final class OrderDetailViewModelTests: XCTestCase {
 
         client.resumeCommand()
         await first.value
+    }
+
+    // MARK: cannot get in
+
+    func testALockoutReportSendsTheTrimmedNoteConfirmsItAndRefetches() async {
+        client.byIdResult = .success(loadedItem(status: 4))
+        let vm = makeVM()
+        await vm.load()
+        let fetchesBefore = client.getByIdCallCount
+
+        await vm.reportLockout("  Called at 10:05 and 10:15, no answer \n")
+
+        XCTAssertEqual(client.lockoutReports.map(\.orderId), ["order-1"])
+        XCTAssertEqual(client.lockoutReports.map(\.callAttempts), ["Called at 10:05 and 10:15, no answer"])
+        XCTAssertEqual(snackbar.current?.severity, .success)
+        XCTAssertEqual(snackbar.current?.text, L10n.Orders.lockoutReportedToast)
+        XCTAssertEqual(client.getByIdCallCount, fetchesBefore + 1)
+        XCTAssertEqual(vm.actionState, .idle)
+        XCTAssertNil(vm.inFlightAction)
+    }
+
+    func testALockoutReportWithNoNoteOfTheCallsSendsNothing() async {
+        client.byIdResult = .success(loadedItem(status: 4))
+        let vm = makeVM()
+        await vm.load()
+
+        await vm.reportLockout("   \n")
+
+        XCTAssertTrue(client.lockoutReports.isEmpty)
+        XCTAssertEqual(vm.actionState, .idle)
+    }
+
+    func testARefusedLockoutReportSnackbarsTheReasonAndConfirmsNothing() async {
+        client.byIdResult = .success(loadedItem(status: 4))
+        let vm = makeVM()
+        await vm.load()
+        client.commandResult = .failure(ApiError(code: "order.lockout.photo_required", httpStatus: 400))
+
+        await vm.reportLockout("Called twice")
+
+        XCTAssertEqual(snackbar.current?.severity, .error)
+        XCTAssertNotEqual(snackbar.current?.text, L10n.Orders.lockoutReportedToast)
+        guard case .error = vm.actionState else { return XCTFail("expected action error") }
+        XCTAssertNil(vm.inFlightAction)
+    }
+
+    /// The job stays as it is until an administrator confirms the report, so no list pane is stale.
+    func testALockoutReportLeavesEveryPaneWarm() async {
+        client.byIdResult = .success(loadedItem(status: 4))
+        let vm = makeVM()
+        await vm.load()
+        for pane in OrdersPane.allCases {
+            staleness.markPaneFresh(pane)
+        }
+
+        await vm.reportLockout("Called twice")
+
+        XCTAssertEqual(OrdersPane.allCases.filter { staleness.isPaneStale($0) }, [])
     }
 
     // MARK: TC-IOS-ORDERS-OWNERSHIP (O1 / O2)

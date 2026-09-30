@@ -13,8 +13,9 @@ namespace Cleansia.Tests.Features.Orders;
 /// MarkCashCollected lets the assigned cleaner record a cash collection on ANY order that is not yet
 /// settled — including a card order whose Stripe webhook never arrived, which otherwise could not be
 /// completed in the field at all. It is gated so that only an Approved, assigned cleaner may collect,
-/// only while the order is InProgress (the cleaner is on site — matching both mobile UIs), and it is
-/// idempotent (an already-Paid order can't be re-collected).
+/// only while the order is InProgress (the cleaner is on site — matching both mobile UIs), and only while
+/// money is still owed: an already-Paid order can't be re-collected, and a refunded or disputed one is
+/// refused outright.
 /// </summary>
 public class MarkCashCollectedValidatorTests
 {
@@ -90,6 +91,37 @@ public class MarkCashCollectedValidatorTests
 
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.OrderCashAlreadyCollected);
+        Assert.DoesNotContain(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.OrderPaymentNotOutstanding);
+    }
+
+    // A failed card attempt is still money owed, so the cleaner may settle it in cash on site.
+    [Fact]
+    public async Task When_Card_Payment_Failed_Then_Valid()
+    {
+        Arrange(PaymentType.Card, PaymentStatus.Failed, ContractStatus.Approved, assigned: true);
+
+        var result = await _validator.ValidateAsync(new MarkCashCollected.Command(OrderId));
+
+        Assert.True(result.IsValid);
+    }
+
+    // Refunded, part-refunded or disputed money is not owed: recording cash would mark the order Paid
+    // over the refund. "Already collected" would be false here, so the refusal has its own key.
+    [Theory]
+    [InlineData(PaymentType.Card, PaymentStatus.Refunded)]
+    [InlineData(PaymentType.Card, PaymentStatus.PartiallyRefunded)]
+    [InlineData(PaymentType.Card, PaymentStatus.Disputed)]
+    [InlineData(PaymentType.Cash, PaymentStatus.Refunded)]
+    public async Task When_Nothing_Is_Outstanding_Then_OrderPaymentNotOutstanding(
+        PaymentType paymentType, PaymentStatus paymentStatus)
+    {
+        Arrange(paymentType, paymentStatus, ContractStatus.Approved, assigned: true);
+
+        var result = await _validator.ValidateAsync(new MarkCashCollected.Command(OrderId));
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.OrderPaymentNotOutstanding);
+        Assert.DoesNotContain(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.OrderCashAlreadyCollected);
     }
 
     // Cash can only change hands while the cleaner is on site. The gate applies to cash orders too, so

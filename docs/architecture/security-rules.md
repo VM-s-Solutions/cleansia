@@ -895,6 +895,70 @@ parameter anywhere on that path is the defect, not a convenience. Full context a
 
 ---
 
+## The production perimeter — what the deployment adds, and what code must not lean on {#production-perimeter}
+
+Not an S-rule: the posture the production Bicep sets up, from engineering defaults E-1, E-3 and E-4 of
+the 2026-09-27 meeting plan (owner ruling 2026-09-28). It is **authored, not deployed** — production
+does not exist yet — and **DEV has none of it**, so a change that works on DEV and in every test suite
+proves nothing about the places below where production is stricter. The resource-level table is
+[Azure setup — production posture](/deployment/azure-setup#production-posture), the flags and the CI
+window are `deploy/AZURE-PROD-POSTURE.md`, and the owner steps are `deploy/AZURE-DEV-RUNBOOK.md` §11.
+
+**The admin API sits behind the admin console's Microsoft sign-in (E-1).** In production the admin App
+Service is the linked backend of the admin Static Web App, so `admin.cleansia.cz/api` passes the SWA's
+`admin_console` route rule first: every call needs an Entra sign-in with an accepted invitation, and
+MFA on that identity is the owner's Conditional Access policy (runbook §11, P0 checklist item 8). The
+App Service answers 401 to anything the SWA did not proxy, its own hostname included, and its staging
+slot answers 401 to everything but `/health`. On DEV the admin API is still public at its own hostname.
+
+- **It is a second factor, not an authorization.** The Cleansia e-mail and password still apply behind
+  it, and S2 holds unchanged: every admin action carries its `[Permission]`.
+- **The anonymous admin calls may share one rate-limit bucket.** Login and refresh are partitioned per
+  client IP (S5), and behind the proxy that IP may be the SWA's rather than the administrator's.
+  Signed-in calls stay per account, and so does the lockout.
+- **An administrator's password is at least 12 characters** — on create (`CreateAdminUser`), on the
+  admin host's own change (`ChangeOwnPassword`) and on a reset, which refuses only once the e-mailed
+  code checks out — under `auth.admin_password_too_short`; every other account keeps the 8-character
+  rule. An administrator created in the console is marked `MustChangePassword`, any later password
+  write clears it, and the token mint and every refresh report `mustChangePassword`. The admin console
+  does not act on that flag yet.
+- **No sign-in says whether an address is registered.** Password sign-in on every host answers an
+  unknown address, and an address that belongs to a Google or Apple account, exactly as a wrong
+  password: `validation.invalid_password` on `Password`.
+
+**The hosts cannot change the schema (E-4), and the database is private (E-3).** In production the API
+hosts and the Functions app connect as `cleansia_app`, which may `SELECT`, `INSERT`, `UPDATE` and
+`DELETE` rows in `public` and use its sequences — no `CREATE`, `ALTER`, `DROP` or `TRUNCATE` — over
+`Ssl Mode=VerifyFull`. The server administrator is used by the migration alone and never enters Key
+Vault; `deploy/db/grant-app-login.sql` grants the login again after every migration. The server takes
+no public traffic: the hosts reach it through a private endpoint, and CI opens it to the runner's IP
+for the length of the migration. The Key Vault is private the same way.
+
+- **Anything a host runs beyond row reads and writes fails in production with `42501`** — a
+  `TRUNCATE`, a table or index created at runtime, an extension, a role — while it passes on DEV and in
+  the test suites, which connect as the administrator. Schema belongs to the migration.
+  `AppLoginGrantScriptTests` (integration suite) runs the grant against a Testcontainers Postgres and
+  proves the writes the hosts make today — an EF commit, the outbox claim, the fiscal counter upsert —
+  and the refusals.
+
+**Storage is reached by managed identity, and shared keys are refused (E-4).** Every API host and the
+Functions app use their system-assigned identity for blobs and queues; the storage account refuses an
+account key and any account or service SAS, and production has no storage secret. The order-photo,
+profile-photo and dispute-evidence links are **user-delegation SAS**, minted under that identity by
+`IBlobContainerClient.GenerateSasUri` — the one mint, which picks the signing path from configuration.
+
+- **A SAS signed any other way, or a client built from a connection string, works on DEV and is
+  refused in production.** Mint through the one method.
+- **The blob endpoint stays public** in every stage, because browsers and the apps load those links
+  straight from it. What guards a blob is its signature — S12's point that a link is a bearer
+  capability for as long as it lives.
+
+The first production administrator is made by hand, after a reference-data bootstrap that is not yet
+built — [CI/CD — the first production deploy](/deployment/ci-cd#first-production-deploy).
+**Retires when:** `sql-scripts/prod-bootstrap.sql` exists.
+
+---
+
 ## Audit checklist for an existing endpoint
 
 1. `[Permission]` or `[AllowAnonymous]` present (S2)

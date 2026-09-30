@@ -121,6 +121,14 @@ export function getMembershipPlanTableDefinition(
         width: '7%',
       },
       {
+        id: 'trialPeriodDays',
+        numeric: true,
+        field: 'trialPeriodDays',
+        header: translate.instant('pages.membership_plans.columns.trial'),
+        getValue: (row) => `${row.trialPeriodDays ?? 0}`,
+        width: '7%',
+      },
+      {
         id: 'allowsExpressUpgrade',
         field: 'allowsExpressUpgrade',
         header: translate.instant('pages.membership_plans.columns.express'),

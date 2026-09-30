@@ -193,6 +193,45 @@ describe('MembershipPlanFormComponent', () => {
       expect(facade.create).not.toHaveBeenCalled();
       expect(component.form.controls.expressUpgradesPerMonth.errors?.['min']).toBeTruthy();
     });
+
+    it('renders an input bound to the free-trial length', () => {
+      const trialInput = fixture.debugElement.query(
+        By.css('[formControlName="trialPeriodDays"]')
+      );
+
+      expect(trialInput).toBeTruthy();
+    });
+
+    it('offers a new plan a 14-day trial and sends it', () => {
+      fillValidPlan();
+
+      component.onSave();
+
+      expect(facade.create).toHaveBeenCalledWith(
+        expect.objectContaining({ trialPeriodDays: 14 })
+      );
+    });
+
+    it('sends a zero trial when the admin turns it off', () => {
+      fillValidPlan();
+      component.form.controls.trialPeriodDays.setValue(0);
+
+      component.onSave();
+
+      expect(facade.create).toHaveBeenCalledWith(
+        expect.objectContaining({ trialPeriodDays: 0 })
+      );
+    });
+
+    it('refuses to save a negative trial', () => {
+      fillValidPlan();
+      component.form.controls.trialPeriodDays.setValue(-1);
+
+      component.onSave();
+
+      expect(facade.create).not.toHaveBeenCalled();
+      expect(component.form.controls.trialPeriodDays.errors?.['min']).toBeTruthy();
+    });
   });
 
   describe('edit mode', () => {
@@ -205,7 +244,7 @@ describe('MembershipPlanFormComponent', () => {
         CZK: { price: 199, monthlyEquivalentPrice: 199, stripePriceId: 'price_czk' },
       },
       discountPercentage: 10,
-      trialPeriodDays: 0,
+      trialPeriodDays: 30,
       freeCancellationWindowHours: 24,
       allowsExpressUpgrade: true,
       expressUpgradesPerMonth: 2,
@@ -255,6 +294,20 @@ describe('MembershipPlanFormComponent', () => {
           name: 'Cleansia Plus',
           prices: { CZK: { price: 199, stripePriceId: 'price_czk' } },
         })
+      );
+    });
+
+    it('shows the trial length the plan carries, not the new-plan default, and sends it back', () => {
+      facade.plan.set(detail);
+      fixture.detectChanges();
+
+      expect(component.form.controls.trialPeriodDays.value).toBe(30);
+
+      component.onSave();
+
+      expect(facade.update).toHaveBeenCalledWith(
+        'plan-1',
+        expect.objectContaining({ trialPeriodDays: 30 })
       );
     });
   });

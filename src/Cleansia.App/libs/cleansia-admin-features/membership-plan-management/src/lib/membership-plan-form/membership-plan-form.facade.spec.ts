@@ -59,6 +59,7 @@ describe('MembershipPlanFormFacade', () => {
     prices: { CZK: { price: 2030, stripePriceId: ' price_456 ' } },
     discountPercentage: 15,
     freeCancellationWindowHours: 24,
+    trialPeriodDays: 14,
     allowsExpressUpgrade: true,
     expressUpgradesPerMonth: 2,
   };
@@ -68,6 +69,7 @@ describe('MembershipPlanFormFacade', () => {
     prices: { CZK: { price: 249, stripePriceId: 'price_real' } },
     discountPercentage: 12,
     freeCancellationWindowHours: 48,
+    trialPeriodDays: 7,
     allowsExpressUpgrade: false,
     expressUpgradesPerMonth: 5,
   };
@@ -220,8 +222,15 @@ describe('MembershipPlanFormFacade', () => {
       expect('stripePriceId' in command.toJSON()).toBe(false);
     });
 
-    it('sends a zero trial, the only length the server accepts, without offering the field', () => {
+    it('sends the trial length the admin set', () => {
       facade.create(createInput);
+
+      const command: CreateMembershipPlanCommand = membershipClient.create.mock.calls[0][0];
+      expect(command.toJSON()['trialPeriodDays']).toBe(14);
+    });
+
+    it('sends a zero trial when the admin turns the trial off', () => {
+      facade.create({ ...createInput, trialPeriodDays: 0 });
 
       const command: CreateMembershipPlanCommand = membershipClient.create.mock.calls[0][0];
       expect(command.toJSON()['trialPeriodDays']).toBe(0);
@@ -332,11 +341,11 @@ describe('MembershipPlanFormFacade', () => {
       });
     });
 
-    it('sends a zero trial on update as well', () => {
+    it('sends the trial length the admin set on update', () => {
       facade.update('plan-1', updateInput);
 
       const [, command] = membershipClient.update.mock.calls[0];
-      expect(command.toJSON()['trialPeriodDays']).toBe(0);
+      expect(command.toJSON()['trialPeriodDays']).toBe(7);
     });
 
     it('sends the express-waiver quota it was given rather than defaulting it away', () => {

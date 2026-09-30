@@ -47,6 +47,7 @@ import {
 } from '../membership-plan-list/membership-plan-list.models';
 
 const CODE_PATTERN = /^[A-Z0-9_]{2,50}$/i;
+const NEW_PLAN_TRIAL_DAYS = 14;
 
 type PriceBlockGroup = FormGroup<{
   price: FormControl<number | string | null>;
@@ -110,6 +111,10 @@ export class MembershipPlanFormComponent implements OnInit, OnDestroy {
       Validators.max(100),
     ]),
     freeCancellationWindowHours: this.fb.nonNullable.control<number>(0, [
+      Validators.required,
+      Validators.min(0),
+    ]),
+    trialPeriodDays: this.fb.nonNullable.control<number>(NEW_PLAN_TRIAL_DAYS, [
       Validators.required,
       Validators.min(0),
     ]),
@@ -194,6 +199,7 @@ export class MembershipPlanFormComponent implements OnInit, OnDestroy {
         prices,
         discountPercentage: v.discountPercentage,
         freeCancellationWindowHours: v.freeCancellationWindowHours,
+        trialPeriodDays: v.trialPeriodDays,
         allowsExpressUpgrade: v.allowsExpressUpgrade,
         expressUpgradesPerMonth: v.expressUpgradesPerMonth,
       });
@@ -205,6 +211,7 @@ export class MembershipPlanFormComponent implements OnInit, OnDestroy {
         prices,
         discountPercentage: v.discountPercentage,
         freeCancellationWindowHours: v.freeCancellationWindowHours,
+        trialPeriodDays: v.trialPeriodDays,
         allowsExpressUpgrade: v.allowsExpressUpgrade,
         expressUpgradesPerMonth: v.expressUpgradesPerMonth,
       });
@@ -259,6 +266,7 @@ export class MembershipPlanFormComponent implements OnInit, OnDestroy {
       billingInterval: toBillingIntervalWireValue(detail.billingInterval),
       discountPercentage: detail.discountPercentage ?? 0,
       freeCancellationWindowHours: detail.freeCancellationWindowHours ?? 0,
+      trialPeriodDays: detail.trialPeriodDays ?? 0,
       allowsExpressUpgrade: detail.allowsExpressUpgrade ?? false,
       expressUpgradesPerMonth: detail.expressUpgradesPerMonth ?? 0,
     });

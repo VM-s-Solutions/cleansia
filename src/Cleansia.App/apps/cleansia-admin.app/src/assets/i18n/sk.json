@@ -2638,6 +2638,7 @@
         "monthly_equivalent": "Mesačný ekvivalent",
         "discount": "Zľava",
         "free_cancel_window": "Bezplatné storno (h)",
+        "trial": "Skúšobná doba (dni)",
         "express": "Expres",
         "status": "Stav",
         "currency": "Mena"
@@ -2676,6 +2677,8 @@
           "stripe_price_id_help": "Skopírujte zo Stripe dashboardu (price_...). Platforma ceny v Stripe nevytvára.",
           "discount": "Zľava (%)",
           "free_cancel_window": "Lehota na bezplatné storno (hodiny)",
+          "trial_days": "Skúšobná doba zadarmo (dni)",
+          "trial_days_help": "Počet dní, počas ktorých má nový člen všetky výhody Plus ešte pred prvou platbou. Jedna skúšobná doba na účet; 0 znamená bez skúšobnej doby.",
           "express_upgrade": "Umožňuje expresný upgrade",
           "express_upgrades_per_month": "Zahrnuté expresné upgrady za mesiac",
           "express_upgrades_per_month_help": "Koľko expresných rezervácií dostane člen každý mesiac bez expresného príplatku. Nula znamená žiadne."

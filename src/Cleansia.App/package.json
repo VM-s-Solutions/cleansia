@@ -61,19 +61,21 @@
     "zone.js": "~0.15.0"
   },
   "overrides": {
-    "brace-expansion@1": "^1.1.16",
-    "brace-expansion@2": "^2.1.2",
+    "brace-expansion@1": "^1.1.21",
+    "brace-expansion@2": "^2.1.7",
     "@module-federation/enhanced": "^2.9.0",
     "chokidar": "^4.0.3",
     "@verdaccio/config": {
       "js-yaml": "^5.4.1"
     },
     "nx": {
-      "smol-toml": "~1.7.1"
+      "smol-toml": "~1.7.1",
+      "brace-expansion": "^5.0.12"
     },
     "sockjs": {
       "uuid": "^11.1.1"
-    }
+    },
+    "webpack-dev-middleware@7.4.2": "^7.4.6"
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "~20.3.35",

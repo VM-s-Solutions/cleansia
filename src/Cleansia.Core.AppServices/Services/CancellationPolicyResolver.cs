@@ -6,7 +6,7 @@ using Cleansia.Core.Domain.Repositories;
 namespace Cleansia.Core.AppServices.Services;
 
 /// <summary>
-/// The standard <see cref="BookingPolicy"/> figures, adjusted for an ENTITLED (paid, current) Plus
+/// The standard <see cref="BookingPolicy"/> figures, adjusted for an ENTITLED (paid or trialing, current) Plus
 /// membership — the Plus oops window always, and the plan's free-cancellation hours when it sets any —
 /// or else for the customer's first booking, whose oops window is the longer one too.
 /// Read live on every call — a membership that lapsed since the preview is judged as it stands now.

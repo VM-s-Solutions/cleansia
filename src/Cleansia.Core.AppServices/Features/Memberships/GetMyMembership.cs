@@ -30,14 +30,13 @@ public class GetMyMembership
         int? ExpressUpgradesPerMonth = null,
         /// <summary>
         /// Live waivers left this calendar month, the single "before any booking under consideration"
-        /// definition. Null = no membership (the client renders the non-member state); 0 = exhausted, OR
-        /// still inside the trial. The two zeros are told apart by <see cref="TrialEndsAtUtc"/>, because a
-        /// trialing member is neither a non-member nor someone who used theirs up.
+        /// definition. Null = no membership (the client renders the non-member state); 0 = exhausted, or a
+        /// live enrolment that is not entitled (past due or paused).
         /// </summary>
         int? ExpressUpgradesRemaining = null,
         /// <summary>
-        /// End of the Stripe free trial. Non-null and in the future means metered benefits have not
-        /// started yet, so the client can say when they do instead of rendering a bare zero.
+        /// End of the Stripe free trial. Non-null and in the future means the member is inside the trial:
+        /// every benefit applies, and the first charge falls on this date unless they cancel before it.
         /// </summary>
         DateTime? TrialEndsAtUtc = null,
         /// <summary>

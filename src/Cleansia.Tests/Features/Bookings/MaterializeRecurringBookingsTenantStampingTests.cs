@@ -233,7 +233,7 @@ public sealed class MaterializeRecurringBookingsTenantStampingTests : IDisposabl
             sp => new OrderRepository(sp.GetRequiredService<CleansiaDbContext>()));
         services.AddSingleton(PricingCalculator());
         services.AddScoped(sp => RealOrderFactory(sp.GetRequiredService<IOrderRepository>()));
-        // The sweep requires a PAID membership (T-0690). These classes are about tenant stamping,
+        // The sweep requires an entitled membership. These classes are about tenant stamping,
         // dedupe and per-template isolation, so the owner is simply entitled — otherwise the sweep
         // correctly generates nothing and their real subject never runs.
         services.AddScoped(_ => EntitledMemberships());
@@ -294,7 +294,7 @@ public sealed class MaterializeRecurringBookingsTenantStampingTests : IDisposabl
             new Mock<ICountryConfigurationRepository>().Object,
             new Mock<IVatCalculator>().Object,
             loyalty.Object,
-            // The sweep now requires a PAID membership (T-0690). This class is not about
+            // The sweep requires an entitled membership. This class is not about
             // membership, so the owner is simply entitled and the real subject runs.
             EntitledMemberships(),
             holdResolver.Object,

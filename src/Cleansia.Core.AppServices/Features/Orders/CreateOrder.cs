@@ -385,12 +385,8 @@ public class CreateOrder
         /// ADR-0039 D12.1 already gates the picker's availability flag on this same answer). The predicate
         /// is <c>UserMembershipRepository.EntitledForUserQuery</c> — the ONE ENTITLEMENT predicate, shared
         /// by all six Plus benefits — so <c>PastDue</c>, <c>Paused</c>, <c>Cancelled</c> and an elapsed
-        /// period are all refused.
-        ///
-        /// <para>A trialing member is now refused too (owner ruling 2026-09-08, T-0690). That reverses the
-        /// earlier position, under which a trial withheld only the METERED benefits (ADR-0035 AM-18) and
-        /// this unmetered one was allowed. No Plus benefit is granted before payment, so there is no longer
-        /// a metered/unmetered distinction to draw.</para>
+        /// period are all refused, and a member inside the free trial is allowed like a paying one (owner
+        /// ruling 2026-09-30).
         /// </summary>
         private async Task<bool> CallerHasActiveMembershipAsync(
             Command command,

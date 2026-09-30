@@ -56,7 +56,7 @@ public class RecurringPreferredCleanerCarryThroughTests
 
     public RecurringPreferredCleanerCarryThroughTests()
     {
-        // The sweep requires a PAID membership (T-0690). This class is about the preferred cleaner
+        // The sweep requires an entitled membership. This class is about the preferred cleaner
         // carrying through to each occurrence, so the owner is simply entitled.
         _memberships
             .Setup(r => r.GetEntitledForUserNoTrackingAsync(

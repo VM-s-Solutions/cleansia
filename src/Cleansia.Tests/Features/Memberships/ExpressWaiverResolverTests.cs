@@ -10,11 +10,11 @@ namespace Cleansia.Tests.Features.Memberships;
 /// <summary>
 /// ADR-0035 D6 — the pure resolver's decision table.
 ///
-/// <para>Includes <c>TC-BENEFIT-GATE-0</c>'s plan legs (the flag off, a zero quota, a guest) and
-/// <c>TC-BENEFIT-TRIAL-0</c> (owner ruling 2026-08-03: no metered waivers during the 14-day trial).
-/// The <c>PastDue</c> leg lives in <c>ExpressWaiverMembershipPredicateTests</c> because it is a property
-/// of the shared membership predicate, not of this class — asserting it against a mock here would prove
-/// only that the mock returned null.</para>
+/// <para>Includes <c>TC-BENEFIT-GATE-0</c>'s plan legs (the flag off, a zero quota, a guest) and the
+/// trialing member, who is waived like a paying one (owner ruling 2026-09-30). The <c>PastDue</c> and
+/// trialing entitlement legs live in <c>ExpressWaiverMembershipPredicateTests</c> because they are
+/// properties of the shared membership predicate, not of this class — asserting them against a mock here
+/// would prove only what the mock returned.</para>
 /// </summary>
 public class ExpressWaiverResolverTests
 {
@@ -63,14 +63,9 @@ public class ExpressWaiverResolverTests
             .GetSetMethod(nonPublic: true)!
             .Invoke(membership, [plan]);
 
-        // The ENTITLEMENT read excludes a trialing enrolment — that conjunct lives in the repository
-        // query now (T-0690), not in the resolver. Mirroring it here is what keeps this a test of the
-        // resolver rather than a test of a mock that answers more generously than the database would.
-        var entitled = membership.IsInTrialAt(NowUtc) ? null : membership;
-
         _memberships
             .Setup(r => r.GetEntitledForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(entitled);
+            .ReturnsAsync(membership);
     }
 
     [Fact]
@@ -184,33 +179,21 @@ public class ExpressWaiverResolverTests
     }
 
     /// <summary>
-    /// Owner ruling 2026-08-03 withheld the METERED waiver during a trial; owner ruling 2026-09-08
-    /// (T-0690) withholds EVERY Plus benefit until the customer pays, and removes the trial outright.
-    /// So a trialing enrolment is no longer entitled at all.
-    ///
-    /// <para><b>The assertion changed with the ruling.</b> This used to expect <c>Quota = 2</c> — the
-    /// resolver reported the plan's number so a client could say "your waivers start on DATE" rather
-    /// than render a bare zero. That three-way state has no producer now: the entitlement read returns
-    /// nothing for a trialing member, so the answer is the same one a non-member gets. The case is kept
-    /// rather than deleted because <c>TrialEndsAtUtc</c> is never cleared once set and historical rows
-    /// may still carry one.</para>
+    /// A trialing member gets the waiver from day one, like a paying one (owner ruling 2026-09-30). The
+    /// resolver draws no trial line of its own over the shared entitlement predicate — the 2026-08-03
+    /// narrowing that withheld the metered waiver during a trial is not coming back through here.
     /// </summary>
     [Fact]
-    public async Task TrialingMember_GetsNothingAtAll()
+    public async Task TrialingMember_GetsTheWaiver()
     {
         ArrangeMembership(trialEndsAtUtc: NowUtc.AddDays(5));
 
         var waiver = await CreateResolver()
             .ResolveForUserAsync(UserId, ExpressCleaningUtc, NowUtc, CancellationToken.None);
 
-        Assert.False(waiver.Waived);
-        Assert.Equal(0, waiver.RemainingBeforeThisBooking);
-        Assert.Equal(0, waiver.Quota);
-        _usage.Verify(
-            u => u.CountLiveInPeriodAsync(
-                It.IsAny<string>(), It.IsAny<MembershipBenefitKind>(), It.IsAny<string>(),
-                It.IsAny<CancellationToken>()),
-            Times.Never);
+        Assert.True(waiver.Waived);
+        Assert.Equal(2, waiver.Quota);
+        Assert.Equal(2, waiver.RemainingBeforeThisBooking);
     }
 
     [Fact]

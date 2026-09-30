@@ -25,9 +25,10 @@ namespace Cleansia.Tests.Features.Memberships;
 /// <para><b>This class previously asserted the opposite</b>, under owner ruling 4 of 2026-08-03 — "a
 /// lapsed membership does not stop a recurring schedule; occurrences keep generating, at full price".
 /// It was named <c>RecurringMaterializationIsMembershipIndependentTests</c> and it was right at the
-/// time. The newer ruling is that no Plus benefit is granted without payment, and a schedule that
-/// outlives the subscription is the largest thing the old position gave away: one paid month bought a
-/// permanently re-specifiable scheduling engine.</para>
+/// time. The newer ruling is that no Plus benefit outlives the membership, and a schedule that outlives
+/// the subscription is the largest thing the old position gave away: one paid month bought a permanently
+/// re-specifiable scheduling engine. A member inside the free trial is entitled and generates like a
+/// paying one (owner ruling 2026-09-30).</para>
 ///
 /// <para><b>The positive leg is the load-bearing one.</b> "Lapsed generates nothing" passes for any
 /// reason the sweep produced nothing — a broken query, a bad horizon, an exception swallowed upstream.
@@ -189,8 +190,7 @@ public class RecurringMaterializationRequiresPaidMembershipTests
     public async Task A_lapsed_member_generates_nothing()
     {
         // The entitlement read answers null, which is what a lapsed, past-due, paused or cancelled
-        // membership all produce. Deliberately not stubbed to a trialing row: there are no trialing rows
-        // any more (T-0690 removed the trial and the admin commands refuse to set one).
+        // membership all produce.
         _memberships
             .Setup(r => r.GetEntitledForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);

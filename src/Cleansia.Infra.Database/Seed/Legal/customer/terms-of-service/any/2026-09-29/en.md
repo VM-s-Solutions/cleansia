@@ -81,11 +81,11 @@ Credit is a balance in your account that the company grants, for example as an a
 
 ## 10. Cleansia Plus
 
-Cleansia Plus is a paid membership, monthly or annual, sold at the price shown for your market; where no price is shown, it is not offered. The membership renews automatically at the end of each period and is charged to your card until you cancel it. It keeps the currency in which you bought it. There is no free trial.
+Cleansia Plus is a paid membership, monthly or annual, sold at the price shown for your market; where no price is shown, it is not offered. The first membership on your account starts with a free trial of 14 days, on either plan; each account gets one free trial only. Your card is first charged when the trial ends, unless you cancel before then. The membership then renews automatically at the end of each period and is charged to your card until you cancel it. It keeps the currency in which you bought it.
 
-The benefits apply only while the membership is paid and current: a discount on every cleaning; free cancellation until 4 hours before the start instead of 24 hours; free cancellation within 60 minutes of booking; a number of express surcharges waived in each calendar month; recurring schedules; and choosing a preferred cleaner. The discount and the number of waivers are stated for your plan when you subscribe.
+The benefits apply from the first day, free trial included, for as long as the membership is current: a discount on every cleaning; free cancellation until 4 hours before the start instead of 24 hours; free cancellation within 60 minutes of booking; a number of express surcharges waived in each calendar month; recurring schedules; and choosing a preferred cleaner. The discount and the number of waivers are stated for your plan when you subscribe.
 
-If a renewal payment fails, the benefits pause until the payment goes through. You can cancel at any time: the membership then ends at the end of the period you paid for, or immediately if a renewal payment failed.
+If a payment fails, whether the first one after the trial or a renewal, the benefits pause until the payment goes through. You can cancel at any time. If you cancel during the free trial, the membership ends when the trial ends and you are not charged; otherwise it ends at the end of the period you paid for, or immediately if a payment failed.
 
 ## 11. Loyalty points
 
@@ -102,8 +102,8 @@ The Cleansia Plus discount and the tier discount add up to at most 12 % of the p
 You cancel a booking in the app or on the website; as a guest, through the link in the booking e-mail. The cancellation fee is a share of the price:
 
 - Free while no cleaner has accepted the booking.
-- Free within 60 minutes of booking on your first booking or with a paid Cleansia Plus membership, and within 15 minutes of booking otherwise — even if a cleaner has already accepted it. Your first booking is recognised by your account, e-mail or phone, guest bookings included.
-- Otherwise, once a cleaner has accepted: free until 24 hours before the start, 25 % between 24 and 4 hours before the start, and 50 % less than 4 hours before the start. With a paid Cleansia Plus membership: free until 4 hours before the start and 50 % after that.
+- Free within 60 minutes of booking on your first booking or while you have the Cleansia Plus benefits (section 10), and within 15 minutes of booking otherwise — even if a cleaner has already accepted it. Your first booking is recognised by your account, e-mail or phone, guest bookings included.
+- Otherwise, once a cleaner has accepted: free until 24 hours before the start, 25 % between 24 and 4 hours before the start, and 50 % less than 4 hours before the start. While you have the Cleansia Plus benefits: free until 4 hours before the start and 50 % after that.
 - Once the start time has passed with a cleaner assigned, you cannot cancel; if the cleaner has not arrived, report it (section 14). A cleaning in progress cannot be cancelled.
 
 On a card booking the company keeps the fee from what you paid by card and in credit, in the same proportion as you paid the price, and returns the rest the same way: the card share to your card and the credit share to your balance. On a cash booking the fee is owed and is paid as described in section 8.

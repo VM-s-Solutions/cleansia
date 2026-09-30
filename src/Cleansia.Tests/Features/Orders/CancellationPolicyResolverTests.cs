@@ -341,12 +341,17 @@ public sealed class CancellationPolicyResolverTests : IDisposable
         AssertStandard(await ResolveReturningAsync());
     }
 
+    /// <summary>Owner ruling 2026-09-30: the free trial carries both cancellation benefits from day one.</summary>
     [Fact]
-    public async Task A_Trialing_Membership_Gets_The_Standard_Policy()
+    public async Task A_Trialing_Member_Gets_Sixty_Minutes_And_The_Plans_Free_Hours()
     {
         await SeedAsync(stripeStatus: "trialing", trialEndsAtUtc: DateTime.UtcNow.AddDays(5));
 
-        AssertStandard(await ResolveReturningAsync());
+        var policy = await ResolveReturningAsync();
+
+        Assert.Equal(BookingPolicy.OopsWindowMinutesPlus, policy.OopsWindowMinutes);
+        Assert.Equal(OopsWindowRule.Plus, policy.OopsWindowRule);
+        Assert.Equal(4, policy.FreeCancellationHours);
     }
 
     [Fact]

@@ -23,13 +23,10 @@ namespace Cleansia.HostTests.Tests;
 /// leg its meaning is that the byte-identical request succeeds once a PAID Active membership row exists
 /// (<see cref="An_active_member_posting_the_same_bytes_is_served"/>).</para>
 ///
-/// <para><b>The trialing leg flipped, exactly as this class predicted it would.</b> It used to assert a
-/// trialing member IS served, and warned that the leg "dies in the opposite direction if anyone ever
-/// harmonizes this gate with the express resolver's trial conjunct". Owner ruling 2026-09-08 (T-0690)
-/// did precisely that and went further: no Cleansia Plus benefit is granted before payment, the trial is
-/// removed outright, and all ten benefit sites now read one shared ENTITLEMENT predicate. So
-/// <see cref="A_trialing_member_is_refused"/> is the same claim inverted, and it is kept rather than
-/// deleted because <c>TrialEndsAtUtc</c> is never cleared once set and historical rows may carry one.</para>
+/// <para><b>A trialing member is served.</b> Owner ruling 2026-09-30 restored the free trial with every
+/// Plus benefit from day one, and all the benefit sites read one shared ENTITLEMENT predicate, so
+/// <see cref="A_trialing_member_posting_the_same_bytes_is_served"/> dies the moment anyone narrows that
+/// predicate, or this gate, to paid enrolments only.</para>
 ///
 /// <para>Every leg posts the SAME request bytes, built once into <see cref="CreateBodyJson"/>; the only
 /// thing that varies between them is the membership row.</para>
@@ -125,19 +122,17 @@ public sealed class RecurringBookingMembershipGateRouteTests(HostTestPostgresFix
         Assert.Equal(0, await CountTemplatesAsync(CustomerId));
     }
 
-    // ── L4 — a trial is benefits without payment, so it buys nothing. ─────────────────────────────
+    // ── L4 — the free trial carries every Plus benefit, recurring schedules included. ─────────────
 
     [Fact]
-    public async Task A_trialing_member_is_refused()
+    public async Task A_trialing_member_posting_the_same_bytes_is_served()
     {
         await ArrangeAsync(Membership.Trialing);
 
         var response = await PostAsync(CreateRoute, CreateBodyJson);
 
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        await HttpAssert.AssertBusinessErrorAsync(
-            response, BusinessErrorMessage.RecurringTemplateMembershipRequired);
-        Assert.Equal(0, await CountTemplatesAsync(CustomerId));
+        HttpAssert.IsOk(response);
+        Assert.Equal(1, await CountTemplatesAsync(CustomerId));
     }
 
     // ── L5 — the escape hatch stays open. Gating these would make pause a one-way door. ───────────

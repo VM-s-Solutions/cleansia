@@ -220,6 +220,7 @@ struct CustomerShellView: View {
                 // resolver, the same routing plan (FD-AC9).
                 onNotificationDestination: { model.applyPushTap(CustomerPushTapRouting.plan(for: $0)) }
             )
+            .bookFabClearance()
             .tabItem { tabLabel(.home) }
             .tag(CustomerShellTab.home)
 
@@ -230,6 +231,7 @@ struct CustomerShellView: View {
                 onOrderClick: { model.path.append(ShellRoute.orderDetail($0)) },
                 onBookCleaning: openBooking
             )
+            .bookFabClearance()
             .tabItem { tabLabel(.orders) }
             .tag(CustomerShellTab.orders)
 
@@ -246,6 +248,7 @@ struct CustomerShellView: View {
                 snackbar: snackbar,
                 onOpenActivity: { model.path.append(ShellRoute.rewardsActivity) }
             )
+            .bookFabClearance()
             .tabItem { tabLabel(.rewards) }
             .tag(CustomerShellTab.rewards)
 
@@ -258,6 +261,7 @@ struct CustomerShellView: View {
                 onOpen: { model.path.append($0) },
                 onSignOut: signOut
             )
+            .bookFabClearance()
             .tabItem { tabLabel(.profile) }
             .tag(CustomerShellTab.profile)
         }
@@ -276,6 +280,18 @@ struct CustomerShellView: View {
         Task {
             await container.authClient.logout()
             onSignedOut()
+        }
+    }
+}
+
+private extension View {
+    /// The tab bar insets each tab root by its own height only; the Book FAB rises above it by half its
+    /// size, so every tab root reserves that overhang too or its last item ends under the disc.
+    func bookFabClearance() -> some View {
+        safeAreaInset(edge: .bottom, spacing: 0) {
+            Color.clear
+                .frame(height: BookFabMetrics.scrollClearance)
+                .allowsHitTesting(false)
         }
     }
 }

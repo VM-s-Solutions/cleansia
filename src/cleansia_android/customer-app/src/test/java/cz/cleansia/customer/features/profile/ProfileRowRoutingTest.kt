@@ -66,9 +66,19 @@ class ProfileRowRoutingTest {
         assertTrue("no routing branches found — the parser is stale", routedKeys.isNotEmpty())
     }
 
+    /**
+     * Rows the tab answers itself rather than handing to the host — the Credit row opens the credit
+     * explainer sheet in place. They go somewhere too, so they count as routed here.
+     */
+    private val handledInTab: Set<String> by lazy {
+        Regex("key == \"([^\"]+)\"").findAll(source("features/profile/ProfileTab.kt"))
+            .map { it.groupValues[1] }
+            .toSet()
+    }
+
     @Test
     fun `every profile row a user can tap goes somewhere`() {
-        val dead = (renderedKeys - routedKeys).sorted()
+        val dead = (renderedKeys - routedKeys - handledInTab).sorted()
         if (dead.isNotEmpty()) {
             fail(
                 "these profile rows render but have no branch in CleansiaNavHost's " +

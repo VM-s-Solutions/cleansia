@@ -265,12 +265,13 @@ fun MainShell(
     }
 
     // Warm the loyalty cache so the Rewards tab is instant on first tap. The
-    // repo gates the network call on its own `loading` flag — and we additionally
-    // gate on `loaded` here so navigating back to the shell from a child screen
-    // doesn't re-fetch what's already cached.
+    // repo gates the network call on its own `loading` flag. Coming back to the
+    // shell from a child screen re-fetches only a stale cache: a booking or a
+    // cancel marks it stale because both move the credit balance, and Rewards and
+    // Profile read that balance from here — Home is not composed behind them.
     val loyaltyRepo = shellViewModel.loyaltyRepository
     LaunchedEffect(Unit) {
-        if (!loyaltyRepo.loaded.value) {
+        if (!loyaltyRepo.loaded.value || loyaltyRepo.staleness.isStale()) {
             loyaltyRepo.refresh()
         }
     }
@@ -393,7 +394,9 @@ fun MainShell(
                 // user needing to pull-to-refresh. Fire-and-forget — the
                 // BookingSuccess screen is what they're navigating to first.
                 scope.launch { orderRepo.refresh() }
-                // A card booking may have spent credit, so the next screen that reads it refetches.
+                // A card booking may have spent credit. Marked stale here rather than fetched: this
+                // scope ends as the shell leaves for BookingSuccess, and the shell's loyalty warm-up
+                // re-reads a stale cache when the customer comes back.
                 loyaltyRepo.staleness.reset()
                 onBookingComplete(confirmationCode, orderId)
             },

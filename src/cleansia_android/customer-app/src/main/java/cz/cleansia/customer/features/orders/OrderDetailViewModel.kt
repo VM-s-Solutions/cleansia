@@ -410,9 +410,11 @@ class OrderDetailViewModel @Inject constructor(
                 // Cancelled status on its next composition. Silent on failure —
                 // the user can pull-to-refresh if the list is stale.
                 orderRepository.refresh()
-                // A cancelled card order returns the credit it spent, so the next screen that
-                // shows the balance refetches it.
+                // A cancelled card order returns the credit it spent, so the balance is re-read now,
+                // as iOS does; stale first, so a read that fails or is cut short is retried by the
+                // next screen that shows it.
                 loyaltyRepository.staleness.reset()
+                launch { loyaltyRepository.refresh() }
                 // Re-fetch the current detail so this screen also reflects the
                 // new status (status pill, timeline, footer visibility).
                 load()

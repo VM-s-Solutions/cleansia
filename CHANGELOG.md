@@ -748,6 +748,14 @@ need backfilling.
 
 ### Removed
 
+- **Customer Android and iOS — the sign-in screen no longer offers *Find a guest booking*.** The apps
+  are for customers with an account. A guest booking is made, tracked and cancelled on the web, from
+  the link in its e-mail, which already opened the web page with the whole flow, including the no-show
+  report the apps never had. A guest who later installs the app cannot open that booking there, and
+  registering does not attach it either. **API consumer:** nothing changes yet. The customer mobile
+  host still serves the six guest routes, because an installed build still calls three of them, and a
+  follow-up removes them. (Owner ruling 2026-10-01, reversing the 2026-09-28 meeting default E-13.)
+
 - **Cleaner, admin — the weekly availability schedule is gone.** Nothing ever read it: dispatch is a
   first-come board, and a cleaner's days and hours gated no offer, no take and no approval. The admin's
   employee detail loses its *Availability* section and its per-day editor, and the registration lock's

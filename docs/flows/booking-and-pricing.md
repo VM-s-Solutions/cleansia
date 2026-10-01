@@ -437,6 +437,16 @@ Both reads sit in the `interactive` rate-limit window, and the request logger su
 `accessToken` the way it suppresses a password.
 → [Rate-limit policy](/domain/roles/rate-limit-policy)
 
+**The lookup is web-only; the mobile host still serves it** (owner ruling 2026-10-01). The guest's
+link opens the web `/track-order`, and neither the Android nor the iOS customer app has a guest screen
+any more: *Find a guest booking*, where the guest pasted the link into the app, is gone, and no guest
+path is on either app's anonymous allow-list. That reverses the 2026-09-28 meeting default that the
+apps keep the lookup because it creates nothing. The customer mobile host keeps all six guest routes
+for now — `Lookup` (POST and GET), `LookupBatch`, and the three in
+[Guest cancellation](#guest-cancellation) — because an app build installed before the change still
+calls `Lookup`, `GuestCancellationPreview` and `CancelGuest`. They answer as they do on the web host
+until a follow-up removes them. → [The anonymous allow-list](/mobile-app/api-integration#the-anonymous-allow-list)
+
 The guest projection carries no address and no crew: the token opens the **booking**, not the
 household. It does carry the `confirmationCode`, now purely as the short human reference printed on
 the booking — nothing authenticates on it, and it is served on the guest's own order only.

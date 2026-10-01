@@ -95,6 +95,18 @@ text is accepted before the next booking (`UserConsent.Covers`)
 `AcceptLegalDocument` → [A cleaner's own documents](/product/business-rules#cleaner-documents).
 Employee registration is not gated. → [ADR-0062](/decisions/adr-0062) D4 as amended
 
+## The native customer apps need an account {#native-account-only}
+
+A signed-out person who opens the Android or iOS customer app goes from the splash screen to sign-in,
+and everything past it needs an account. Sign-in offers the password, *Forgot password*, Google (and
+Apple on iOS) and *Register*, and nothing else. Since 2026-09-28 the customer mobile host takes an
+order only from a signed-in customer, and since 2026-10-01 the apps no longer offer *Find a guest
+booking* either (owner ruling, reversing the 2026-09-28 default that kept it). A guest booking is
+made, tracked and cancelled on the web, from the link in its e-mail. What stays anonymous on the
+mobile host is what the sign-up form and the reads made with or without a session need.
+→ [The anonymous allow-list](/mobile-app/api-integration#the-anonymous-allow-list),
+[Guest order lookup](/flows/booking-and-pricing#guest-order-lookup)
+
 ## Sign-in and session acts leave a row {#session-rows}
 
 Since the owner overruled the "no login history" default (2026-09-14, Q-AUD-L5), every session act

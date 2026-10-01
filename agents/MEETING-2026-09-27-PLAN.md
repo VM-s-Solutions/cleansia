@@ -602,6 +602,10 @@ Each gives the situation, the options, what follows, and my recommendation in **
 **Records and policy housekeeping**
 
 - **E-13** Mobile keeps "Find a guest booking", since it creates nothing. The rule is recorded as "guest *booking* only on the web".
+  > **Reversed by the owner 2026-10-01.** The apps keep no guest surface at all: "Find a guest booking" and its lookup,
+  > preview and cancel are gone from Android and iOS, so guest booking *and* lookup are web-only. The six guest routes
+  > stay on the customer mobile host for now, because an installed build still calls three of them, and a follow-up
+  > removes them. → `docs/flows/booking-and-pricing.md#guest-order-lookup`
 - **E-14** F7, F9 and F11 are closed as unreachable. The 2026-09-15 cross-market rule and the 12-month credit expiry stay.
 
 **Photos** (Phase 1)

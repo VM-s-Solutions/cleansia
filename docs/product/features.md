@@ -13,8 +13,9 @@ stays hidden and the chip is a plain label. → [Business rules — the market](
 
 **Booking** — browse the service catalogue and packages, pick rooms, bathrooms and extras, choose a
 date and a 60-minute window between 08:00 and 20:00, and pay by card — or in cash, when signed in and
-the booking is a job one cleaner does alone ([the cash rule](/product/business-rules#cash)). Book as a
-guest with no account, paying by card. Get a live price quote before committing, including whether an
+the booking is a job one cleaner does alone ([the cash rule](/product/business-rules#cash)). On the
+web, book as a guest with no account, paying by card; the Android and iOS apps book for a signed-in
+customer only. Get a live price quote before committing, including whether an
 express surcharge applies and whether a membership waives it. Before the address step the catalogue and the quote are in the chosen
 market's currency; from the address step on, the address's country decides.
 
@@ -46,9 +47,10 @@ notifications and a Live Activity on iOS.
 
 **Tracking without an account** — a guest opens their booking from **the link in their e-mail**, and
 cancels it from there under the same policy a signed-in customer gets. The link carries a per-order
-access token: on the web, opening it *is* the lookup — nothing to type, no reference number to
-remember; in the mobile apps the guest pastes the link and the app takes the token out of it. There is
-no longer any form asking for an order number, an e-mail and a code.
+access token, and opening it *is* the lookup — nothing to type, no reference number to remember.
+There is no longer any form asking for an order number, an e-mail and a code. **This is web-only:**
+the Android and iOS apps are for customers with an account and have no guest screen at all (owner
+ruling 2026-10-01; until then the apps offered *Find a guest booking*, where the guest pasted the link).
 
 Every message about the booking — the receipt, *a cleaner has taken your job*, *we're on our way*,
 *all done*, the cancellation — carries a fresh working link, and a browser remembers the bookings it

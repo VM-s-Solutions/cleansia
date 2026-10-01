@@ -197,27 +197,28 @@ the Bearer is withheld by path match. The device and time-zone headers are still
 | Where | one shared constant, `ANON_ENDPOINTS` in `:core`'s `AuthInterceptor` | `CleansiaCore/Auth/AnonymousAllowList`, with `.partner` and `.customer` values |
 | Match | `path.contains(...)`, case-insensitive | `path.lowercased().contains(...)` |
 
-iOS carries a per-app list because the **customer host's anonymous surface is wider**: a visitor can
-price a booking before signing in, and a guest who booked on the web can track and cancel it in the
-app, so `/api/Order/Quote`, the catalogue `GetOverview` endpoints, `/api/Membership/GetPlans`,
-`/api/Order/Lookup(Batch)`, `/api/Order/GuestCancellationPreview`, `/api/Order/CancelGuest` and
-`/api/Referral/Validate` are anonymous there and on no other host. Of those, only `Quote` is
-**dual-use** — anonymous *and* meaningful for a signed-in user — so the customer allow-list marks it
-and the Bearer is attached when one exists.
+iOS carries a per-app list because the **customer host's anonymous surface is wider**: the sign-up
+form checks a referral code before the account exists, and the catalogue, quote and plan reads are
+served with or without a session, so `/api/Order/Quote`, the catalogue `GetOverview` endpoints
+(service, package, extra, currency), `/api/Membership/GetPlans` and `/api/Referral/Validate` are
+anonymous there and on no other host. Of those, only `Quote` is **dual-use** — anonymous *and*
+meaningful for a signed-in user — so the customer allow-list marks it and the Bearer is attached when
+one exists.
 
 **Placing an order is not anonymous on mobile.** The customer mobile host's `Order/CreateOrder` is
 `[Authorize]`, and the host has no `Payment/CreateOrder` route: guest *booking* is web-only. Neither
 path is on either allow-list, so the Bearer always rides the create, and a `401` on it is an ordinary
 session expiry. → [Orders — CreateOrder](/api/orders#createorder)
 
-The guest-order paths are **not** dual-use, and that is the point: they authorise on the booking's
-access token, so a stale Bearer from a session that does not own the booking must not ride along.
-Both clients drop it by path match, and both pin it —
-`AuthInterceptorAuthorizationTest.guest order endpoints omit stale bearer while signed in
-cancellation keeps it` and
-`AnonymousAllowListTests.testGuestOrderPathsStayTokenlessWhileTheAccountCancelStaysAuthed` assert the
-same pair: no Bearer on `Lookup` / `GuestCancellationPreview` / `CancelGuest`, a Bearer on the
-signed-in `/api/Order/Cancel` and `/api/Order/CancellationPreview`, which are different routes.
+**Neither app has a guest surface, so no guest path is on either list** (owner ruling 2026-10-01).
+A guest booking is tracked and cancelled from its e-mail link on the web; *Find a guest booking*, with
+its token-keyed `Lookup`, `GuestCancellationPreview` and `CancelGuest` calls, is gone from both apps.
+The customer mobile host still serves those routes until a follow-up removes them, but no current
+build calls them. The signed-in `/api/Order/Cancel` and `/api/Order/CancellationPreview` — different
+routes — always carry the Bearer: Android pins that
+(`AuthInterceptorAuthorizationTest.order cancellation and its preview carry the bearer`), and iOS pins
+it together with no guest path being anonymous
+(`AnonymousAllowListTests.testNoGuestOrderPathIsAnonymousAndTheAccountCancelStaysAuthed`).
 → [Guest order lookup](/flows/booking-and-pricing#guest-order-lookup)
 
 > `/api/Auth/Logout` is **`[Authorize]`**, not anonymous: it needs the Bearer to identify the session

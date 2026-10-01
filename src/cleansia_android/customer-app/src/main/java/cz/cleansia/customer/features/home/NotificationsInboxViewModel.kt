@@ -5,12 +5,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
+import cz.cleansia.core.settings.AppLocale
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.core.auth.ApiErrorParser
 import cz.cleansia.customer.core.notifications.NotificationDeepLink
 import cz.cleansia.customer.core.notifications.NotificationFeedRepository
 import cz.cleansia.customer.core.notifications.NotificationTemplates
 import cz.cleansia.customer.core.notifications.UserNotificationDto
+import cz.cleansia.customer.core.settings.AppSettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -19,6 +21,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -32,7 +35,7 @@ sealed interface NotificationsInboxUiState {
     ) : NotificationsInboxUiState
 }
 
-/** A feed row with its template already rendered in the device locale. */
+/** A feed row with its template already rendered in the in-app language. */
 data class NotificationFeedItem(
     val id: String,
     val eventKey: String,
@@ -49,6 +52,7 @@ class NotificationsInboxViewModel @Inject constructor(
     private val repository: NotificationFeedRepository,
     private val snackbar: SnackbarController,
     @ApplicationContext private val appContext: Context,
+    private val appSettingsRepository: AppSettingsRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<NotificationsInboxUiState>(NotificationsInboxUiState.Loading)
@@ -79,7 +83,7 @@ class NotificationsInboxViewModel @Inject constructor(
                     fetchedCount = page.data.size
                     total = page.total
                     _state.value = NotificationsInboxUiState.Loaded(
-                        items = page.data.mapNotNull { it.toFeedItem() },
+                        items = page.data.toFeedItems(),
                         canLoadMore = fetchedCount < total,
                     )
                     markFetchedSeen(page.data)
@@ -104,7 +108,7 @@ class NotificationsInboxViewModel @Inject constructor(
                     total = page.total
                     val latest = _state.value as? NotificationsInboxUiState.Loaded ?: return@launch
                     _state.value = latest.copy(
-                        items = latest.items + page.data.mapNotNull { it.toFeedItem() },
+                        items = latest.items + page.data.toFeedItems(),
                         canLoadMore = page.data.isNotEmpty() && fetchedCount < total,
                         loadingMore = false,
                     )
@@ -144,13 +148,19 @@ class NotificationsInboxViewModel @Inject constructor(
         }
     }
 
-    private fun UserNotificationDto.toFeedItem(): NotificationFeedItem? {
+    /** The rows render in the in-app language; on API 26–32 the Application context is the device's. */
+    private suspend fun List<UserNotificationDto>.toFeedItems(): List<NotificationFeedItem> {
+        val strings = AppLocale.localizedContext(appContext, appSettingsRepository.settings.first().language.tag)
+        return mapNotNull { it.toFeedItem(strings) }
+    }
+
+    private fun UserNotificationDto.toFeedItem(strings: Context): NotificationFeedItem? {
         val template = NotificationTemplates.templateFor(eventKey) ?: return null
         return NotificationFeedItem(
             id = id,
             eventKey = eventKey,
-            title = appContext.getString(template.titleRes),
-            body = NotificationTemplates.formatBody(appContext, eventKey, template.bodyRes, args),
+            title = strings.getString(template.titleRes),
+            body = NotificationTemplates.formatBody(strings, eventKey, template.bodyRes, args),
             createdOn = createdOn,
             unread = readOn == null,
             args = args,

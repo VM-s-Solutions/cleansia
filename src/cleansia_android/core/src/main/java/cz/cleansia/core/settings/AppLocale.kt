@@ -1,5 +1,9 @@
 package cz.cleansia.core.settings
 
+import android.content.Context
+import android.content.res.Configuration
+import android.os.Build
+import android.os.LocaleList
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 
@@ -64,6 +68,26 @@ object AppLocale {
             return
         }
         AppCompatDelegate.setApplicationLocales(desired)
+    }
+
+    /**
+     * [base], resolving resources in the in-app language [tag] (null = follow the device).
+     *
+     * For the contexts AppCompat does not localize. On API 26–32 its backport reaches only
+     * `AppCompatActivity` contexts, so a Service and the `@ApplicationContext` a ViewModel holds still
+     * resolve in the DEVICE language — the push banner and the notification feed came out in English
+     * for a Czech app on an English phone, in every app state. On API 33+ the framework's per-app
+     * locale already covers every context in the process, so [base] comes back untouched.
+     *
+     * Callers pass the persisted choice (DataStore), not `AppCompatDelegate.getApplicationLocales()`:
+     * on 26–32 that is a process static only `MainActivity` fills, and a process FCM cold-starts never
+     * runs it. -> /architecture/push-notifications
+     */
+    fun localizedContext(base: Context, tag: String?, sdkInt: Int = Build.VERSION.SDK_INT): Context {
+        if (tag == null || sdkInt >= Build.VERSION_CODES.TIRAMISU) return base
+        val configuration = Configuration(base.resources.configuration)
+        configuration.setLocales(LocaleList.forLanguageTags(tag))
+        return base.createConfigurationContext(configuration)
     }
 
     private fun localeList(tag: String?): LocaleListCompat =

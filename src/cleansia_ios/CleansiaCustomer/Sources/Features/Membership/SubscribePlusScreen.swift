@@ -187,6 +187,9 @@ struct SubscribePlusScreen: View {
     }
 }
 
+/// How far the offer hero's background paints above its frame — past the status bar and any overscroll.
+private let heroBleed: CGFloat = 600
+
 /// The character perched on the plan switcher: his size, and how much of him sits below the control's
 /// top edge so he reads as resting on it rather than hovering.
 private let mascotSize: CGFloat = 84
@@ -268,7 +271,15 @@ private struct HeroBlock: View {
         .padding(.bottom, Spacing.ml)
         .padding(.top, Spacing.ml)
         .frame(maxWidth: .infinity)
-        .background(MembershipPalette.heroGradient.ignoresSafeArea(.container, edges: .top))
+        // Inside the offer's scroll view, so it paints its own status-bar strip: the gradient keeps the
+        // hero's bounds and a block of its first stop rises above them (the ProfileTab hero's form).
+        .background(alignment: .bottom) {
+            VStack(spacing: 0) {
+                MembershipPalette.sky950.frame(height: heroBleed)
+                MembershipPalette.heroGradient
+            }
+            .padding(.top, -heroBleed)
+        }
     }
 
     @ViewBuilder

@@ -12,6 +12,17 @@ where content can escape its viewport; it does not establish rendered behavior o
 | SubscribePlusScreen | Offer content could scroll into the status-bar area; reduced states used separate manual inset handling | Safe viewport for every state, background-only extension, no duplicate content inset |
 | OrderDetailView / shared SnapSheet | The edge-following mascot extended above the safe viewport at expanded/dragged positions | Clip its full-height overlay to the safe viewport while preserving its position relative to the sheet and controls |
 
+### 2026-10-01 — the scrolling heroes paint their own status-bar strip
+
+Moving `.ignoresSafeArea(.container, edges: .top)` onto the ProfileTab and offer hero backgrounds did
+nothing: the hero sits inside a scroll view, which turns the top safe area into a content inset, so its
+background had no safe area left to ignore. Both heroes stopped at the status-bar line with a
+background-coloured strip above them. They now bleed their background 600pt above their own frame — a
+block of the gradient's first stop above the unchanged gradient — which fills the status-bar strip and
+the rubber-band overscroll. Content still stays in the safe viewport and still passes under the status
+bar once scrolled. Checked on the iPhone 17 Pro (iOS 26.3) simulator at rest and overscrolled. The
+non-scrolling reduced Plus states keep `ignoresSafeArea`, which does work there.
+
 The map backdrop remains full bleed. No navigation flow, generated API member, text or membership
 behavior changes. The decision follows SwiftUI's documented [safe-area expansion](https://developer.apple.com/documentation/swiftui/view/ignoressafearea(_:edges:)) and [clipping](https://developer.apple.com/documentation/swiftui/view/clipped(antialiased:)) behavior.
 
@@ -88,7 +99,7 @@ Shared containers: SnapSheet geometry/content are safe with the ornament now cli
 | CleansiaCustomer/Sources/Features/Home/UpsellCarousel.swift | UpsellCarousel, UpsellSlideCard | Inherits safe host; no direct top-content escape |
 | CleansiaCustomer/Sources/Features/Membership/MembershipManagementCard.swift | MembershipManagementCard, InactiveCard, ActiveCard, PerkPill | Inherits safe host; no direct top-content escape |
 | CleansiaCustomer/Sources/Features/Membership/MembershipSuccessScreen.swift | MembershipSuccessScreen, PerkRow | Background/media/UIKit-only escape; controls inherit safe host |
-| CleansiaCustomer/Sources/Features/Membership/SubscribePlusScreen.swift | SubscribePlusScreen, HeroTopRow, HeroBlock, PlanSwitcher, SocialProofTile, PerksSection, PerkTile, StickyCtaBar | Repaired: offer content stays inside the safe viewport |
+| CleansiaCustomer/Sources/Features/Membership/SubscribePlusScreen.swift | SubscribePlusScreen, HeroTopRow, HeroBlock, PlanSwitcher, SocialProofTile, PerksSection, PerkTile, StickyCtaBar | Repaired: offer content stays inside the safe viewport; the hero background bleeds above its frame |
 | CleansiaCustomer/Sources/Features/Orders/CancellationFeeCard.swift | CancellationFeeCard, ExpressWaiverWarning, FeeCardRow | Inherits safe host; no direct top-content escape |
 | CleansiaCustomer/Sources/Features/Orders/CancelOrderSheet.swift | CancelOrderSheet, ReasonChips, FlexibleReasonGrid, NotesField | Background/media/UIKit-only escape; controls inherit safe host |
 | CleansiaCustomer/Sources/Features/Orders/OrderComponents.swift | OrderCardSurface, OrderSectionHeaderRow, OrderInfoRow, OrderStatusPill | Inherits safe host; no direct top-content escape |
@@ -113,7 +124,7 @@ Shared containers: SnapSheet geometry/content are safe with the ornament now cli
 | CleansiaCustomer/Sources/Features/Profile/NotificationsView.swift | NotificationsView, NotificationToggleRow | Background/media/UIKit-only escape; controls inherit safe host |
 | CleansiaCustomer/Sources/Features/Profile/PreferencePickerViews.swift | LanguagePickerView, MarketPickerView, AppearancePickerView, PreferencePickerList, PreferenceRow | Background/media/UIKit-only escape; controls inherit safe host |
 | CleansiaCustomer/Sources/Features/Profile/ProfileOnboardingView.swift | ProfileOnboardingView, ProfileOnboardingContent, ProfileOnboardingPreviewHost | Background/media/UIKit-only escape; controls inherit safe host |
-| CleansiaCustomer/Sources/Features/Profile/ProfileTab.swift | ProfileTab, ProfileRow, ProfileHeader, ProfileStatsCard, HeroGradient, TierBadge, EditProfileChip, DeleteAccountRow | Repaired: profile content stays inside the safe viewport |
+| CleansiaCustomer/Sources/Features/Profile/ProfileTab.swift | ProfileTab, ProfileRow, ProfileHeader, ProfileStatsCard, HeroGradient, TierBadge, EditProfileChip, DeleteAccountRow | Repaired: profile content stays inside the safe viewport; the hero background bleeds above its frame |
 | CleansiaCustomer/Sources/Features/Profile/RecurringEntryRow.swift | RecurringEntryRow | Inherits safe host; no direct top-content escape |
 | CleansiaCustomer/Sources/Features/Profile/SecurityView.swift | SecurityView | Background/media/UIKit-only escape; controls inherit safe host |
 | CleansiaCustomer/Sources/Features/Recurring/CreateRecurringScreen.swift | CreateRecurringScreen, SectionLabel, AppliesNotice, FrequencySection, DayOfWeekSection, DayChip, TimeSection, AddressSection, AddAddressRow, PropertySizeSection, ServicesSection, PaymentSection, StartsSection, SelectableRow | Background/media/UIKit-only escape; controls inherit safe host |

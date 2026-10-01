@@ -345,12 +345,23 @@ private struct HeroGradient: View {
         .padding(.top, 48)
         .padding(.bottom, 40)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            LinearGradient(colors: BrandGradient.blue.colors, startPoint: .top, endPoint: .bottom)
-                .ignoresSafeArea(.container, edges: .top)
-        )
+        // The hero sits in a scroll view, which turns the top safe area into a content inset — an
+        // `ignoresSafeArea` here has nothing left to ignore, and the gradient stopped at the status-bar
+        // line. So the background paints upward past the hero's own frame instead: the gradient keeps
+        // exactly the hero's bounds (its colours unchanged) and a block of its first stop fills the
+        // status-bar strip and the rubber-band overscroll above it.
+        .background(alignment: .bottom) {
+            VStack(spacing: 0) {
+                BrandGradient.blue.colors[0].frame(height: heroBleed)
+                LinearGradient(colors: BrandGradient.blue.colors, startPoint: .top, endPoint: .bottom)
+            }
+            .padding(.top, -heroBleed)
+        }
     }
 }
+
+/// How far the hero background paints above its frame — past the status bar and any overscroll.
+private let heroBleed: CGFloat = 600
 
 private struct TierBadge: View {
     let tier: String

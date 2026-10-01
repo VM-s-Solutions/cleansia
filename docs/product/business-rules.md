@@ -2072,9 +2072,13 @@ conditional update, then records on the order what it actually took. Two checkou
 balance cannot both spend it: the loser simply pays in full, which is what it would have seen a second
 later.
 
-**The customer is told the figures, never a sentence that bakes them in.** `GET /api/Credit/GetMy` returns
-every balance with its expiry date, and the share as a number (`maxShareOfOrder`), so no client's copy
-states *70 %* or *12 months* of its own. The quote returns the balance in the quote's currency and the
+**The credit surfaces show the server's figures, not a sentence that bakes them in.** `GET /api/Credit/GetMy`
+returns every balance with its expiry date, and the share as a number (`maxShareOfOrder`), so no client
+states *70 %* of its own and the credit surfaces show the server's date. **One literal remains:** the
+dispute-settlement choice still names the 12-month rule as text — `pages.disputes.settlement_hint` and
+`settlement_hint_cash` on the web, `dispute_settlement_credit_desc` on Android and iOS, in all five
+locales — and no gate ties those strings to `CreditAccount.ExpiryMonths`, so changing the constant means
+changing them by hand. The quote returns the balance in the quote's currency and the
 share (`creditBalance`, `creditMaxShareOfOrder`), the two *inputs* to the cap and not its answer,
 because a promo code entered at checkout still moves the price. Each client applies the same cap to the
 total it is displaying. That figure is a preview: the order's `creditAppliedAmount` and

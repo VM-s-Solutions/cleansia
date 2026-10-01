@@ -45,18 +45,25 @@ struct OrdersTab: View {
         switch vm.state {
         case .loading:
             OrdersLoadingView()
+        // A scroll view proposes no height, so the state is sized to the viewport it sits in — the
+        // space between the title and the Book FAB's top — and centres there, not in a fixed band
+        // under the title. The scroll view stays for pull-to-refresh.
         case .error:
-            ScrollView {
-                OrdersErrorView { Task { await vm.retry() } }
-                    .frame(maxWidth: .infinity, minHeight: 360)
+            GeometryReader { proxy in
+                ScrollView {
+                    OrdersErrorView { Task { await vm.retry() } }
+                        .frame(maxWidth: .infinity, minHeight: proxy.size.height)
+                }
+                .refreshable { await vm.pullToRefresh() }
             }
-            .refreshable { await vm.pullToRefresh() }
         case let .loaded(orders) where orders.isEmpty:
-            ScrollView {
-                OrdersEmptyView(onBookCleaning: onBookCleaning)
-                    .frame(maxWidth: .infinity, minHeight: 420)
+            GeometryReader { proxy in
+                ScrollView {
+                    OrdersEmptyView(onBookCleaning: onBookCleaning)
+                        .frame(maxWidth: .infinity, minHeight: proxy.size.height)
+                }
+                .refreshable { await vm.pullToRefresh() }
             }
-            .refreshable { await vm.pullToRefresh() }
         case .loaded:
             OrdersListContent(
                 vm: vm,

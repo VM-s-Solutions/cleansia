@@ -95,12 +95,12 @@ fun CleansiaBankAccountInput(
 
     // A paste that reads as a whole account fills the segments it names; anything else is clamped into
     // the segment it went into, exactly as typing is.
-    fun segmentChange(current: String, maxLength: Int, onChange: (String) -> Unit): (String) -> Unit = { raw ->
-        val split = splitPastedAccount(raw, current)
+    fun segmentChange(maxLength: Int, onChange: (String) -> Unit): (String) -> Unit = { raw ->
+        val split = splitPastedAccount(raw)
         if (split == null) {
             onChange(raw.filter(Char::isDigit).take(maxLength))
         } else {
-            split.first?.let(onPrefixChange)
+            onPrefixChange(split.first)
             onNumberChange(split.second)
             split.third?.let(onBankCodeChange)
         }
@@ -132,7 +132,7 @@ fun CleansiaBankAccountInput(
             // longest placeholder we ship ("Predčíslie"), not by its six digits.
             AccountSegment(
                 value = prefix,
-                onValueChange = segmentChange(prefix, PrefixMaxLength, onPrefixChange),
+                onValueChange = segmentChange(PrefixMaxLength, onPrefixChange),
                 interactionSource = prefixInteraction,
                 enabled = enabled,
                 placeholder = prefixPlaceholder,
@@ -141,7 +141,7 @@ fun CleansiaBankAccountInput(
             Separator("–")
             AccountSegment(
                 value = number,
-                onValueChange = segmentChange(number, NumberMaxLength, onNumberChange),
+                onValueChange = segmentChange(NumberMaxLength, onNumberChange),
                 interactionSource = numberInteraction,
                 enabled = enabled,
                 placeholder = numberPlaceholder,
@@ -150,7 +150,7 @@ fun CleansiaBankAccountInput(
             Separator("/")
             AccountSegment(
                 value = bankCode,
-                onValueChange = segmentChange(bankCode, BankCodeMaxLength, onBankCodeChange),
+                onValueChange = segmentChange(BankCodeMaxLength, onBankCodeChange),
                 interactionSource = bankCodeInteraction,
                 enabled = enabled,
                 placeholder = bankCodePlaceholder,
@@ -173,33 +173,36 @@ private val domesticAccount = Regex("""^(?:(\d{1,6})-)?(\d{1,10})(?:/(\d{1,4}))?
 private val czSkIban = Regex("""^(?:CZ|SK)\d{2}(\d{20})$""")
 
 /**
- * Reads a whole Czech/Slovak account out of pasted text, as (prefix, number, bank code); a null part
- * means "leave that segment as it is", and a null result means the change is not a pasted account.
+ * A Czech or Slovak account pasted (or typed on a hardware keyboard) in one go, split into its three
+ * fields as (prefix, number, bank code). `null` means the text is an ordinary entry for the segment it
+ * landed in, and the digit clamp takes it — a bare number included: pasted into the number box, it is
+ * the number.
  *
- * - Only a change that lands two or more characters over [current] at once is a paste — a number pad
- *   types one at a time, and typing must never jump segments.
- * - Whitespace of every kind (NBSP included) is dropped, en and em dashes count as `-`.
- * - `[prefix-]number[/bank code]` with a separator is an account written out: the parts it names are
- *   taken and a missing prefix means none (cleared); a missing bank code keeps the one already entered.
- * - A bare number goes to the number segment and leaves prefix and bank code alone.
- * - A CZ or SK IBAN is decomposed from its BBAN — bank code, prefix, number — with the leading zeros
- *   the IBAN pads them with removed.
+ * Recognised: `[prefix-]number/bankcode` and `prefix-number` — a number pad types neither separator,
+ * and the clamp drops a typed one at once, so their presence is what marks a paste — and a CZ or SK
+ * IBAN, whose BBAN is `bankcode(4) prefix(6) number(10)` with the zero padding dropped. Whitespace of
+ * every kind (NBSP included) is dropped and an en or em dash reads as a hyphen, because that is what
+ * banking apps put on the clipboard. A missing prefix clears the old one; a missing bank code (null)
+ * keeps it. Nothing is validated beyond shape: the server owns mod-11, the bank code and the IBAN
+ * cross-check.
  *
- * It only splits text. Whether the account is valid (mod-11, the bank code) stays with the server.
- * The iOS twin is `CleansiaBankAccountField`; keep the rules identical. -> /partner-app/onboarding
+ * The iOS twin is `CleansiaBankAccountField.splitPastedAccount`; the two are held to one case list.
+ * -> /partner-app/onboarding
  */
-internal fun splitPastedAccount(raw: String, current: String = ""): Triple<String?, String, String?>? {
-    if (raw.length - current.length < 2) return null
-    val text = raw.filterNot(Char::isWhitespace).replace('\u2013', '-').replace('\u2014', '-').uppercase()
-    czSkIban.matchEntire(text)?.let { iban ->
-        val bban = iban.groupValues[1]
-        return Triple(bban.substring(4, 10).trimStart('0'), bban.substring(10).trimStart('0'), bban.substring(0, 4))
-    }
+internal fun splitPastedAccount(raw: String): Triple<String, String, String?>? {
+    val pasted = raw.filterNot(Char::isWhitespace).replace('\u2013', '-').replace('\u2014', '-')
+    val text = domesticFormOfIban(pasted) ?: pasted
+    if ('-' !in text && '/' !in text) return null
     val account = domesticAccount.matchEntire(text) ?: return null
-    val prefix = account.groups[1]?.value
-    val bankCode = account.groups[3]?.value
-    val writtenOut = prefix != null || bankCode != null
-    return Triple(if (writtenOut) prefix.orEmpty() else null, account.groupValues[2], bankCode)
+    return Triple(account.groups[1]?.value.orEmpty(), account.groupValues[2], account.groups[3]?.value)
+}
+
+/** `CZ65 0800 0000 1920 0014 5399` reads as `19-2000145399/0800`; null for any other text. */
+private fun domesticFormOfIban(text: String): String? {
+    val bban = czSkIban.matchEntire(text.uppercase())?.groupValues?.get(1) ?: return null
+    val prefix = bban.substring(4, 10).trimStart('0')
+    val number = bban.substring(10).trimStart('0')
+    return (if (prefix.isEmpty()) "" else "$prefix-") + "$number/${bban.substring(0, 4)}"
 }
 
 /**

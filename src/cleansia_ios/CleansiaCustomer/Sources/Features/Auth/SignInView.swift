@@ -67,10 +67,6 @@ private struct SignInContent: View {
     var body: some View {
         CenteredAuthScroll {
             VStack(spacing: 0) {
-                AuthHeaderImage(size: 160)
-
-                Spacer().frame(height: Spacing.l)
-
                 Text(L10n.Auth.signInTitle)
                     .cleansiaFont(CleansiaTypography.displayMedium)
                     .foregroundColor(CleansiaColors.onBackground)

@@ -105,6 +105,23 @@ announces each card's place, *Offer 2 of 4*. On iOS a swipe up or down changes t
 the *Next offer* and *Previous offer* actions do. Every card draws its own mascot, the same one on both
 platforms, so no two cards repeat a drawing: the Plus card carries the web's Plus mascot.
 
+Which cards show, most relevant first:
+
+- *Stay in the loop*, while the phone does not allow the app's notifications. *Turn on* asks for
+  permission, or opens the system settings once the phone will not ask again. It is re-checked each
+  time the app returns to the foreground, so the card goes once notifications are allowed.
+- The customer's credit, when they hold a balance in the currency Home prices in. It opens booking.
+- *No express surcharge on N more bookings this month*, for a Plus member with waivers left whose
+  benefits are not paused. It opens booking.
+- Setting up a recurring cleaning, for a Plus member with no schedule whose benefits are not paused.
+- Cleansia Plus, for a customer who is not a member.
+- The referral card. *Share my code* opens the share sheet with the customer's code once it has
+  loaded, and Rewards until then.
+
+The first four that apply show, and *How big is your home?* always closes the row, so there are never
+more than five cards. Its two steppers run 1–8 rooms and 1–4 bathrooms, and *See my price* opens booking
+at that size. It replaced the plain *Book* card, which repeated the Book button.
+
 **Honest copy** — the money figures in the customer copy (the apology credit when a cleaner never
 comes, the insurance ceiling on the mobile trust badge and FAQ, the currency named in the terms) come
 from the market, not from the translation; a market with no figure gets the sentence without one — and
@@ -114,7 +131,10 @@ supplies are eco products; the cleaner brings the supplies, included in the pric
 copy promises only what the platform does (since 2026-09-28): the web catalogue's trust chip says
 *24 h to report a problem* — the dispute window — instead of *100 % Satisfaction*; the web order
 detail has no *Track live* button, which only went back; the mobile referral slide says both sides
-earn their points after the friend's **first completed cleaning**; and strings that promised a free
+earn their points after the friend's **first completed cleaning**; the mobile credit slide states the
+server's balance and share (*{balance} comes off your next card booking, up to {share} % of it*), and
+the express slide the member's own waiver count and the 2–4 h window from `BookingPolicy` (since
+2026-10-01); and strings that promised a free
 add-on, tier perks or a satisfaction guarantee the platform does not give are deleted. Each retired
 claim is pinned absent by a test in every locale.
 → [Business rules — disputes](/product/business-rules#disputes)

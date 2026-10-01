@@ -41,6 +41,10 @@
   .cleansia-language-switcher__language-item {
     gap: 0;
   }
+}
+
+.cleansia-language-switcher__list--globe {
+  @include pref-pill-list;
 
   .cleansia-language-switcher__code {
     font-size: 13px;

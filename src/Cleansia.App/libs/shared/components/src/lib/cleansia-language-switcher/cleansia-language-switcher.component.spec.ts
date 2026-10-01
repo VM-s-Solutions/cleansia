@@ -46,6 +46,23 @@ describe('CleansiaLanguageSwitcherComponent', () => {
     expect(document.documentElement.lang).toBe('sk');
   });
 
+  it('hands its select the attach point, the overlay options and the list class of its variant', () => {
+    const fixture = TestBed.createComponent(CleansiaLanguageSwitcherComponent);
+    fixture.componentRef.setInput('variant', 'globe');
+    fixture.detectChanges();
+    const select = fixture.debugElement.query(By.directive(Select)).componentInstance as Select;
+
+    expect(select.appendTo()).toBeNull();
+    expect(select.panelStyleClass).toBe('cleansia-language-switcher__list--globe');
+
+    fixture.componentRef.setInput('appendTo', 'body');
+    fixture.componentRef.setInput('overlayOptions', { baseZIndex: 100 });
+    fixture.detectChanges();
+
+    expect(select.appendTo()).toBe('body');
+    expect(select.overlayOptions).toEqual({ baseZIndex: 100 });
+  });
+
   describe('globe variant, list open', () => {
     let fixture: ComponentFixture<CleansiaLanguageSwitcherComponent>;
 

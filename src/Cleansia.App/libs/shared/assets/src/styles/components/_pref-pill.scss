@@ -53,11 +53,14 @@
     font-size: 16px;
     margin-right: 8px;
   }
+}
 
-  // The open list renders inside the host, so every trigger rule above stays on
-  // `.p-select-label` and the list is styled here once, for both pills wherever
-  // they sit. 208px fits the longest native name, "Українська", with its code.
-  .p-select-overlay {
+// The open list, included on the class each pill puts on its own list rather
+// than under the host: from the navbar sheet the list is attached to `body`,
+// where host-scoped rules cannot reach it. 208px fits the longest native name,
+// "Українська", with its code.
+@mixin pref-pill-list {
+  &.p-select-overlay {
     min-width: 208px;
   }
 

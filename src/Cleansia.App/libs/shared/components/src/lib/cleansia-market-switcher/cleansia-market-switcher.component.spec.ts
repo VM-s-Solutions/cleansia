@@ -111,6 +111,24 @@ describe('CleansiaMarketSwitcherComponent', () => {
     expect(ticked[0].textContent).toContain('Czechia · CZK');
   });
 
+  it('hands its select the attach point, the overlay options and the list class of its variant', () => {
+    const pill = TestBed.createComponent(CleansiaMarketSwitcherComponent);
+    pill.componentRef.setInput('markets', [CZE, SVK]);
+    pill.componentRef.setInput('selected', 'CZE');
+    pill.detectChanges();
+    const select = pill.debugElement.query(By.directive(Select)).componentInstance as Select;
+
+    expect(select.appendTo()).toBeNull();
+    expect(select.panelStyleClass).toBe('cleansia-market-switcher__list--pill');
+
+    pill.componentRef.setInput('appendTo', 'body');
+    pill.componentRef.setInput('overlayOptions', { baseZIndex: 100 });
+    pill.detectChanges();
+
+    expect(select.appendTo()).toBe('body');
+    expect(select.overlayOptions).toEqual({ baseZIndex: 100 });
+  });
+
   it('emits the picked code and persists nothing itself', () => {
     component().onPick('SVK');
 

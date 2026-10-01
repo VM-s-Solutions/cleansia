@@ -1,6 +1,7 @@
 import { Component, input, output, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { By } from '@angular/platform-browser';
+import { provideRouter, Router } from '@angular/router';
 import { CleansiaBrandNameComponent } from '@cleansia/components/cleansia-brand-name';
 import { CleansiaLanguageSwitcherComponent } from '@cleansia/components/cleansia-language-switcher';
 import { CleansiaMarketSwitcherComponent } from '@cleansia/components/cleansia-market-switcher';
@@ -14,6 +15,7 @@ import {
 import { DialogService, ThemeService } from '@cleansia/services';
 import { MockStore, provideMockStore } from '@ngrx/store/testing';
 import { TranslateModule } from '@ngx-translate/core';
+import { OverlayOptions } from 'primeng/api';
 import { of } from 'rxjs';
 import { CleansiaCustomerNavbarComponent } from './customer-navbar.component';
 
@@ -25,6 +27,8 @@ class BrandNameStubComponent {
 @Component({ selector: 'cleansia-language-switcher', template: '' })
 class LanguageSwitcherStubComponent {
   readonly variant = input('');
+  readonly appendTo = input<'body' | null>(null);
+  readonly overlayOptions = input<OverlayOptions>();
 }
 
 @Component({ selector: 'cleansia-market-switcher', template: '' })
@@ -32,8 +36,13 @@ class MarketSwitcherStubComponent {
   readonly variant = input('');
   readonly markets = input<readonly unknown[]>([]);
   readonly selected = input<string | null>(null);
+  readonly appendTo = input<'body' | null>(null);
+  readonly overlayOptions = input<OverlayOptions>();
   readonly marketChange = output<string>();
 }
+
+@Component({ template: '' })
+class BlankPageStubComponent {}
 
 function market(isoCode: string): MarketListItem {
   return MarketListItem.fromJS({ countryId: `${isoCode}-id`, isoCode, currencyCode: 'CZK' });
@@ -233,5 +242,33 @@ describe('CleansiaCustomerNavbarComponent (mobile sheet)', () => {
     useMarkets([market('CZE'), market('SVK')]);
 
     expect(prefs()?.querySelector('cleansia-market-switcher')).toBeTruthy();
+  });
+
+  it('opens the language and market lists over the bar, outside the scrolling sheet', () => {
+    useMarkets([market('CZE'), market('SVK')]);
+    open();
+    const switcher = <T>(selector: string): T =>
+      fixture.debugElement.query(By.css(selector)).componentInstance as T;
+
+    for (const pill of [
+      switcher<LanguageSwitcherStubComponent>('.customer-navbar__prefs cleansia-language-switcher'),
+      switcher<MarketSwitcherStubComponent>('.customer-navbar__prefs cleansia-market-switcher'),
+    ]) {
+      expect(pill.appendTo()).toBe('body');
+      expect(pill.overlayOptions()?.baseZIndex).toBe(100);
+    }
+    expect(switcher<LanguageSwitcherStubComponent>('.customer-navbar__right cleansia-language-switcher').appendTo()).toBeNull();
+  });
+
+  it('on a recurring-bookings page, lights only the recurring row, not Cleansia Plus', async () => {
+    const router = TestBed.inject(Router);
+    router.resetConfig([{ path: 'membership/recurring', component: BlankPageStubComponent }]);
+    expect(await router.navigateByUrl('/membership/recurring')).toBe(true);
+    open();
+    // RouterLinkActive paints its class in a microtask after the sheet renders.
+    await fixture.whenStable();
+
+    const active = Array.from(sheet()?.querySelectorAll('.customer-navbar__mobile-link--active') ?? []);
+    expect(active.map((link) => link.getAttribute('href'))).toEqual(['/membership/recurring']);
   });
 });

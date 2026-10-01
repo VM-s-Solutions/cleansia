@@ -37,6 +37,7 @@ import { DialogService, ThemeService } from '@cleansia/services';
 import { TranslateModule } from '@ngx-translate/core';
 import { Store } from '@ngrx/store';
 import { AvatarModule } from 'primeng/avatar';
+import { OverlayOptions } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { Subject, takeUntil } from 'rxjs';
 
@@ -306,6 +307,10 @@ export class CleansiaCustomerNavbarComponent implements OnInit, OnDestroy {
    */
   readonly plusLink = computed(() => (this.isLoggedIn() ? '/membership' : '/plus'));
   readonly ordersLabel = computed(() => (this.isLoggedIn() ? 'nav.my_orders' : 'nav.track_order'));
+
+  // The sheet scrolls and clips, so its lists attach to body; there PrimeNG stacks them from
+  // 1000, under the open bar's 1050 (cleansia-customer-navbar.component.scss).
+  readonly sheetListOverlay: OverlayOptions = { baseZIndex: 100 };
 
   closeMenus(): void {
     this.userMenuOpen.set(false);

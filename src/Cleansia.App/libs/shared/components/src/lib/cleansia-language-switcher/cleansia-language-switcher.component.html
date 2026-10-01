@@ -4,6 +4,9 @@
     [(ngModel)]="selectedLanguage"
     optionLabel="short"
     optionValue="value"
+    [appendTo]="appendTo()"
+    [overlayOptions]="overlayOptions()"
+    [panelStyleClass]="listClass()"
     (onChange)="changeLanguage($event.value)"
   >
     <ng-template let-lang pTemplate="item">

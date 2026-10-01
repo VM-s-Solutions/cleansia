@@ -246,7 +246,13 @@
           <i class="pi pi-list" aria-hidden="true"></i>
           {{ 'nav.services' | translate }}
         </a>
-        <a class="customer-navbar__mobile-link" [routerLink]="plusLink()" routerLinkActive="customer-navbar__mobile-link--active" (click)="closeMenus()">
+        <a
+          class="customer-navbar__mobile-link"
+          [routerLink]="plusLink()"
+          routerLinkActive="customer-navbar__mobile-link--active"
+          [routerLinkActiveOptions]="{ exact: true }"
+          (click)="closeMenus()"
+        >
           <i class="pi pi-bookmark-fill" aria-hidden="true"></i>
           {{ 'nav.plus' | translate }}
         </a>
@@ -301,10 +307,12 @@
           [ariaLabel]="(isDarkMode() ? 'nav.theme_light' : 'nav.theme_dark') | translate"
           (onClick)="toggleTheme()"
         />
-        <cleansia-language-switcher variant="globe" />
+        <cleansia-language-switcher variant="globe" appendTo="body" [overlayOptions]="sheetListOverlay" />
         @if (hasMarketChoice()) {
           <cleansia-market-switcher
             variant="pill"
+            appendTo="body"
+            [overlayOptions]="sheetListOverlay"
             [markets]="markets()"
             [selected]="selectedMarketCode()"
             (marketChange)="onMarketChange($event)"

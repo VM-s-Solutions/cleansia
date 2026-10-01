@@ -9,6 +9,9 @@
       [ngModel]="current()?.value ?? null"
       optionLabel="short"
       optionValue="value"
+      [appendTo]="appendTo()"
+      [overlayOptions]="overlayOptions()"
+      [panelStyleClass]="listClass()"
       (onChange)="onPick($event.value)"
     >
       <ng-template let-market pTemplate="item">

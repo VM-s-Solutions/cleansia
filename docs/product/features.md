@@ -197,7 +197,10 @@ years.
 
 **Onboarding** — register, upload the documents your country asks for, add payout details, wait for
 approval. An incomplete profile or an unapproved contract blocks work, deliberately, and approval now
-requires the required documents to exist and be accepted rather than just a button press.
+requires the required documents to exist and be accepted rather than just a button press. While the
+apps' lock screen waits for that approval, every finished section stays open from it — to correct a
+detail or add the second document the country asks for — and an edit does not resubmit the
+application. → [The registration lock](/partner-app/onboarding#registration-lock-screen)
 
 **Their own documents** — a checklist of what the country expects, replace a file with a newer one
 without waiting for anybody, and ask an admin to remove one. Removing is the only one that needs a

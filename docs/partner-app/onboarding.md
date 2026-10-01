@@ -243,17 +243,35 @@ Until approved, the partner can log in and access their profile, but their abili
 
 ### Registration Lock Screen
 
-Partners who have not yet been approved see a registration lock screen that displays a **progress bar** and three requirement categories:
+Partners who have not yet been approved see a registration lock screen that displays a **progress
+bar** and the requirements still between them and work — three rows on the web, and on the Android
+and iOS apps a fourth, **Contract documents**:
 
 1. **Profile Information** -- lists the names of any missing required fields (translated to the partner's language)
 2. **Required Documents** -- whether at least one active (uploaded) document exists. The
    documents screen behind it lists what the country actually asks for, per
    [document requirements](#document-requirements)
-3. **Admin Approval** -- shows one of the following distinct states:
+3. **Contract documents** (mobile) -- shown only while a partner document is in force for the market,
+   and done once every one is accepted at its current version; until one is in force, approval does
+   not wait on it
+4. **Admin Approval** -- shows one of the following distinct states:
    - _"Complete profile first"_ -- profile is not yet complete
    - _"Awaiting review"_ -- profile is complete and pending admin decision
    - _"Rejected: {reason}"_ -- admin has rejected the application with a reason
    - _"Approved"_ -- admin has approved the partner
+
+**On the mobile apps a finished row still opens its section, until approval** (owner ruling
+2026-10-01). The lock replaces the whole app until an admin approves, so a row that went inert at
+*Done* left a cleaner who had filled everything in with no way back to correct it — and
+*Documents: Done* means one active document, not every type the country requires, so a cleaner who had
+uploaded only an ID could not get back to add the insurance certificate approval needs. A *Done* row
+keeps its *Done* label and gains a chevron: Profile opens Personal at the start of the onboarding
+chain, from which every section is one step-dot away; Documents opens the documents screen; Contract
+documents opens the documents to read and accept. This holds for a **rejected** cleaner too, and **an
+edit does not resubmit anything** — the application stays where the admin left it. With a complete
+profile the Personal, Address and Identification buttons read **Save** rather than *Next*, because
+saving returns to the lock instead of moving on. Partner web already left the profile open behind the lock (see
+*Excluded Routes* below), so this brings the apps to parity.
 
 Signing out from this screen is confirmed on both mobile platforms. It is the one destructive thing
 the screen offers and the control sat one tap away from it.

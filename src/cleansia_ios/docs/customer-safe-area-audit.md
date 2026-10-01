@@ -23,6 +23,19 @@ the rubber-band overscroll. Content still stays in the safe viewport and still p
 bar once scrolled. Checked on the iPhone 17 Pro (iOS 26.3) simulator at rest and overscrolled. The
 non-scrolling reduced Plus states keep `ignoresSafeArea`, which does work there.
 
+### 2026-10-01 — content fades under the status bar
+
+The 2026-09-16 audit treated the safe viewport as keeping content out of the status bar; it never did.
+A scroll view that touches the top edge scrolls its content under the clock and the Dynamic Island,
+and Home, Profile and the Plus offer hide the navigation bar, so nothing gave that content an edge
+treatment. All three now scroll through `StatusBarFadeScrollView`: once the content has scrolled up, a
+band of the screen background covers the status bar and fades out 24pt below it; at rest and during a
+pull-to-refresh the band is hidden, so the full-bleed heroes are untouched. iOS 26's native soft scroll
+edge (`scrollEdgeEffectStyle(.soft, for: .top)`, with or without a zero-height `safeAreaBar`) drew
+nothing with the navigation bar hidden on the iPhone 17 Pro (iOS 26.3) simulator, so the band is used
+on every version. Checked with real drags on that simulator (light and dark) and on the iPhone 14 Pro
+(iOS 16.4) simulator. Orders and Rewards keep a static title above their scroll view and need none.
+
 The map backdrop remains full bleed. No navigation flow, generated API member, text or membership
 behavior changes. The decision follows SwiftUI's documented [safe-area expansion](https://developer.apple.com/documentation/swiftui/view/ignoressafearea(_:edges:)) and [clipping](https://developer.apple.com/documentation/swiftui/view/clipped(antialiased:)) behavior.
 
@@ -62,6 +75,7 @@ Shared containers: SnapSheet geometry/content are safe with the ornament now cli
 | File | View declarations | Source classification |
 |---|---|---|
 | CleansiaCustomer/Sources/Components/BusyMascotOverlay.swift | BusyMascotOverlay | Background/media/UIKit-only escape; controls inherit safe host |
+| CleansiaCustomer/Sources/Components/StatusBarFadeScrollView.swift | StatusBarFadeScrollView | Decorative band drawn above the safe viewport; content inherits safe host |
 | CleansiaCustomer/Sources/CustomerRootView.swift | CustomerRootView | Background/media/UIKit-only escape; controls inherit safe host |
 | CleansiaCustomer/Sources/Features/Addresses/AddressManagerView.swift | AddressManagerView, AddressManagerHeader, AddressListPane, RenameAlertButtons, SavedAddressRow, AddressReviewPane | Background/media/UIKit-only escape; controls inherit safe host |
 | CleansiaCustomer/Sources/Features/Auth/CenteredAuthScroll.swift | CenteredAuthScroll | Inherits safe host; no direct top-content escape |

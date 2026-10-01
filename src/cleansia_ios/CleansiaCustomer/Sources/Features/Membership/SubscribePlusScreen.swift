@@ -97,7 +97,7 @@ struct SubscribePlusScreen: View {
     }
 
     private func offer(_ plans: [MembershipPlan]) -> some View {
-        ScrollView {
+        StatusBarFadeScrollView {
             VStack(alignment: .leading, spacing: Spacing.l) {
                 HeroBlock(
                     plans: plans,

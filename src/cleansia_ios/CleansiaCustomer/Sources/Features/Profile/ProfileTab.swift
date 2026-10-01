@@ -31,7 +31,7 @@ struct ProfileTab: View {
     var body: some View {
         ZStack {
             CleansiaColors.background.ignoresSafeArea()
-            ScrollView {
+            StatusBarFadeScrollView {
                 VStack(spacing: Spacing.l) {
                     ProfileHeader(
                         user: profileVM.currentUser,

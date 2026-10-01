@@ -124,7 +124,7 @@ struct HomeTab: View {
     }
 
     private var content: some View {
-        ScrollView {
+        StatusBarFadeScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 AddressTopBar(
                     displayedAddress: vm.displayedAddress?.oneLine,

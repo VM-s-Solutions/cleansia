@@ -39,6 +39,28 @@ final class ContentSafeAreaBindingTests: XCTestCase {
         XCTAssertFalse(plus.contains("Color.clear.frame(height:140)"))
     }
 
+    /// These three hide the navigation bar, so nothing else gives their content an edge treatment and
+    /// it would run under the clock and the Dynamic Island; each scrolls through the fading container.
+    func testTheBarlessScreensFadeTheirContentUnderTheStatusBar() throws {
+        for path in [
+            "CleansiaCustomer/Sources/Features/Home/HomeTab.swift",
+            "CleansiaCustomer/Sources/Features/Profile/ProfileTab.swift",
+            "CleansiaCustomer/Sources/Features/Membership/SubscribePlusScreen.swift"
+        ] {
+            XCTAssertTrue(try compactSource(path).contains("StatusBarFadeScrollView{"), path)
+        }
+    }
+
+    /// At rest the heroes reach the top untouched and a pull-to-refresh moves the content down, so only
+    /// content that has scrolled up raises the band.
+    func testTheFadeShowsOnlyOnceTheContentHasScrolledUp() {
+        XCTAssertFalse(StatusBarFade.isScrolled(contentMinY: 0))
+        XCTAssertFalse(StatusBarFade.isScrolled(contentMinY: 80), "a pull-to-refresh raised the band")
+        XCTAssertFalse(StatusBarFade.isScrolled(contentMinY: -0.5))
+        XCTAssertTrue(StatusBarFade.isScrolled(contentMinY: -2))
+        XCTAssertTrue(StatusBarFade.isScrolled(contentMinY: -400))
+    }
+
     private func assertOnlyBackgroundsExtendUnderTheStatusBar(_ path: String) throws {
         var content = try compactSource(path)
         XCTAssertTrue(content.contains("ScrollView{"), "No scrolling surface was inspected")

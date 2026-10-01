@@ -1,13 +1,15 @@
 import {
+  AfterViewInit,
   ChangeDetectionStrategy,
   Component,
   HostListener,
   inject,
   input,
+  OnDestroy,
   PLATFORM_ID,
   signal,
 } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -61,14 +63,30 @@ import { CommonModule } from '@angular/common';
     }
   `,
 })
-export class CleansiaScrollTopComponent {
+export class CleansiaScrollTopComponent implements AfterViewInit, OnDestroy {
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  private readonly document = inject(DOCUMENT);
+  private heroObserver?: IntersectionObserver;
   readonly visible = signal(false);
   readonly ariaLabel = input<string>('Scroll to top');
 
+  ngAfterViewInit(): void {
+    if (!this.isBrowser) return;
+    const hero = this.document.getElementById('hero');
+    if (!hero) return;
+    this.heroObserver = new IntersectionObserver((entries) => {
+      for (const entry of entries) this.visible.set(!entry.isIntersecting);
+    });
+    this.heroObserver.observe(hero);
+  }
+
+  ngOnDestroy(): void {
+    this.heroObserver?.disconnect();
+  }
+
   @HostListener('window:scroll')
   onScroll(): void {
-    if (!this.isBrowser) return;
+    if (!this.isBrowser || this.heroObserver) return;
     this.visible.set(window.scrollY > 300);
   }
 

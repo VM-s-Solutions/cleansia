@@ -124,3 +124,27 @@ block sat low. Both keep pull-to-refresh.
 
 The snackbar has its own lift above the same chrome (→ [Snackbar insets](#snackbar-inset)), and this
 does not change it.
+
+## A hero inside a scroll view paints its own status-bar strip {#full-bleed-hero}
+
+On both platforms, the customer Profile hero and the Plus offer hero reach the top edge of the
+screen, behind the clock. The two platforms get there differently, and the iOS route has a trap.
+
+- **Android** paints the hero's gradient first and insets its content by the status bar afterwards:
+  the Plus hero applies `background(…)` before `windowInsetsPadding(WindowInsets.statusBars)`, and the
+  Profile hero pads its content by `statusBarTop + 48dp`. The window is edge-to-edge, so the gradient
+  starts at the top of the screen.
+- **iOS** keeps its scroll views inside the safe area, with no `.ignoresSafeArea` on the scroll view
+  and no measured top inset (T-0766, 2026-09-16). **An `.ignoresSafeArea` on a background inside a
+  `ScrollView` does nothing.** The scroll view turns the top safe area into a content inset, so its
+  content has no safe area left to ignore. Until 2026-10-01 that form stopped both gradients at the
+  status-bar line and left a band of page background behind the clock. Now the hero's background
+  paints upward past its own frame. A 600pt block of the gradient's first colour sits directly above
+  the unchanged gradient (`.background(alignment: .bottom) { VStack(spacing: 0) { … } .padding(.top,
+  -bleed) }`), and it fills both the status-bar strip and the rubber-band overscroll. A negative top
+  padding on the gradient itself would stretch its colours, which is why the solid block goes above
+  it. Screens that do not scroll, such as the reduced Plus states, keep `.ignoresSafeArea`, which
+  works there.
+
+Content in these scroll views passes under the status bar once it scrolls, so these screens also use
+the fade below.

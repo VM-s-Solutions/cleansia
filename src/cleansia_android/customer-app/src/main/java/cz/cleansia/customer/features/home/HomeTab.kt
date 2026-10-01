@@ -1006,8 +1006,9 @@ private fun UpsellCtaPill(text: String, modifier: Modifier = Modifier) {
 /**
  * "How big is your home?" — two −/+ capsules and a "See my price" button that opens booking with the
  * size already set. Taps only (a drag would fight the pager), and the card itself is not a button, so
- * a stepper tap never opens booking. The mascot sits top-right, smaller, to leave the steppers the
- * card's full width.
+ * a stepper tap never opens booking. The mascot sits bottom-right beside the price button, under the
+ * steppers rather than behind them, so the steppers keep the card's full width (as on iOS). Top-right
+ * it shared its 72 dp band with the capsules and drew under the bathrooms "+".
  */
 @Composable
 private fun QuickSizeSlideCard(
@@ -1032,17 +1033,19 @@ private fun QuickSizeSlideCard(
             painter = painterResource(slide.kind.mascotRes()),
             contentDescription = null,
             modifier = Modifier
-                .align(Alignment.TopEnd)
+                .align(Alignment.BottomEnd)
                 .size(72.dp),
         )
         Column(modifier = Modifier.fillMaxWidth()) {
+            // Full width now that nothing sits beside it: a title that wraps pushes the steppers down
+            // into the mascot's band.
             Text(
                 slide.title,
                 style = MaterialTheme.typography.headlineSmall.copy(fontFamily = Poppins, fontWeight = FontWeight.Bold),
                 color = Color.White,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.fillMaxWidth(0.72f),
+                modifier = Modifier.fillMaxWidth(),
             )
             // The steppers and the price button are 48 dp touch rows around 36 dp capsules: this
             // spacer is 6 dp short of the 8 dp gap it draws, and the 12 dp between the steppers and

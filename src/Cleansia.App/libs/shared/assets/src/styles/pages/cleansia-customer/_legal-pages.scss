@@ -12,7 +12,8 @@
 // reader, and numbers each one so a support reply can cite "point 4". The text
 // itself arrives as HTML the server rendered from the stored document, so the
 // section shape is styled on the elements it carries — an h2 is a section, a
-// blockquote is the review notice — and the numbers are CSS counters.
+// blockquote is the review notice. The section numbers are the document's own:
+// support and the lawyers cite them, so the page shows them rather than counting.
 //
 // The document ground is WHITE, not --cl-page. Everything else in this app is a
 // card on a wash; this is a document, and it should read like one.
@@ -115,7 +116,9 @@
 }
 
 .cl-lgl__toc-item {
-  display: block;
+  display: flex;
+  align-items: baseline;
+  gap: calc(0.5 * var(--cl-u));
   width: 100%;
   padding: calc(0.5625 * var(--cl-u)) calc(0.875 * var(--cl-u));
   border: 0;
@@ -147,6 +150,10 @@
   }
 }
 
+.cl-lgl__toc-num {
+  flex-shrink: 0;
+}
+
 // ---- The document ----------------------------------------------------------------
 .cl-lgl__doc {
   min-width: 0;
@@ -155,8 +162,6 @@
 // The served text. Its elements are the server's markdown rendering, so the
 // selectors are element selectors scoped to the content box.
 .cl-lgl__content {
-  counter-reset: cl-lgl-section;
-
   // A page still being reviewed by a lawyer says so, once, at the top.
   blockquote {
     display: flex;
@@ -209,9 +214,7 @@
     // heading it just jumped to.
     scroll-margin-top: calc(var(--cl-nav-h) + var(--cl-u));
 
-    &::before {
-      counter-increment: cl-lgl-section;
-      content: counter(cl-lgl-section, decimal-leading-zero);
+    .cl-lgl__num {
       flex-shrink: 0;
       font-weight: 700;
       font-size: calc(1.0625 * var(--cl-u));

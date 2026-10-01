@@ -18,7 +18,7 @@ const SERVED = LegalDocumentDto.fromJS({
   language: 'en',
   title: 'Served Terms',
   contentHtml:
-    '<p>Welcome.</p>\n<h2>Acceptance of Terms</h2>\n<p>A.</p>\n<h2>Ordering &amp; Payment</h2>\n<p>B.</p>\n',
+    '<p>Welcome.</p>\n<h2>1. Acceptance of Terms</h2>\n<p>A.</p>\n<h2>2. Ordering &amp; Payment</h2>\n<p>B.</p>\n',
   contentHash: 'abc',
 });
 
@@ -95,22 +95,43 @@ describe('LegalDocumentComponent', () => {
       const content = host().querySelector('.cl-lgl__content');
       const sections = Array.from(content?.querySelectorAll('h2') ?? []).map((h) => h.textContent);
 
-      expect(sections).toEqual(['Acceptance of Terms', 'Ordering & Payment']);
+      expect(sections).toEqual(['1 Acceptance of Terms', '2 Ordering & Payment']);
       expect(content?.querySelector('p')?.textContent).toBe('Welcome.');
     });
 
-    it('lists the served sections, numbered, on the contents rail', () => {
-      const items = Array.from(host().querySelectorAll('.cl-lgl__toc-item')).map((b) =>
-        b.textContent?.replace(/\s+/g, ' ').trim(),
+    it("sets each section heading's own number apart, past the sanitizer", () => {
+      const numbers = Array.from(host().querySelectorAll('.cl-lgl__content h2 .cl-lgl__num')).map(
+        (n) => n.textContent,
       );
 
-      expect(items).toEqual(['1. Acceptance of Terms', '2. Ordering & Payment']);
+      expect(numbers).toEqual(['1', '2']);
+    });
+
+    it("lists the served sections on the contents rail under the document's own numbers, each once", () => {
+      const items = Array.from(host().querySelectorAll('.cl-lgl__toc-item')).map((b) => ({
+        num: b.querySelector('.cl-lgl__toc-num')?.textContent?.trim(),
+        title: b.lastElementChild?.textContent?.trim(),
+        numbers: b.textContent?.match(/\d+/g),
+      }));
+
+      expect(items).toEqual([
+        { num: '1', title: 'Acceptance of Terms', numbers: ['1'] },
+        { num: '2', title: 'Ordering & Payment', numbers: ['2'] },
+      ]);
     });
 
     it('shows neither the skeleton nor the error', () => {
       expect(host().querySelector('p-skeleton')).toBeNull();
       expect(host().querySelector('.cl-lgl__error')).toBeNull();
     });
+  });
+
+  it('numbers the sections of an unnumbered document by position', async () => {
+    await render(of(LegalDocumentDto.fromJS({ ...SERVED.toJSON(), contentHtml: '<h2>Scope</h2><h2>Contact</h2>' })));
+
+    const numbers = Array.from(host().querySelectorAll('.cl-lgl__toc-num')).map((n) => n.textContent?.trim());
+
+    expect(numbers).toEqual(['1', '2']);
   });
 
   describe('while the server has not answered', () => {

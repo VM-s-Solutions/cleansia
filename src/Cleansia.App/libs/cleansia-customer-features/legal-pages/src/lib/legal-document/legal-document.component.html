@@ -54,7 +54,7 @@
       />
     </div>
   </div>
-  } @else if (facade.document(); as doc) {
+  } @else if (facade.document()) {
   <div class="cl-lgl__page">
     <!--
       The contents rail. These pages are SEARCHED rather than read — somebody arrives wanting the
@@ -71,14 +71,15 @@
         [attr.aria-current]="activeSection() === i ? 'true' : null"
         (click)="jumpTo(i)"
       >
-        {{ i + 1 }}. {{ heading }}
+        <span class="cl-lgl__toc-num">{{ heading.num ?? i + 1 }}</span>
+        <span>{{ heading.title }}</span>
       </button>
       }
     </nav>
 
     <div class="cl-lgl__doc">
       <!-- The server rendered our own markdown; Angular's sanitizer still walks it before it lands. -->
-      <div class="cl-lgl__content" [innerHTML]="doc.contentHtml"></div>
+      <div class="cl-lgl__content" [innerHTML]="facade.contentHtml()"></div>
 
       <!--
         The way out of a legal page. Somebody who did not find their answer should not have to go

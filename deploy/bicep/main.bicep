@@ -777,6 +777,7 @@ module ssr 'modules/appService.bicep' = {
     location: location
     appServicePlanId: appServicePlan.outputs.id
     linuxFxVersion: ssrLinuxFxVersion
+    appCommandLine: 'node server/server.mjs'
     appSettings: {
       // DEAD CONFIG on this host, deliberately kept — unlike the five .NET APIs, nothing here reads it.
       // The SSR app is Node and ships no telemetry client, and the App Service Node auto-instrumentation

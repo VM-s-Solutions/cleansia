@@ -1371,10 +1371,6 @@ jobs:
             --resource-group rg-cleansia-${{ matrix.region }}-${{ inputs.env }} \
             --image "${{ secrets.ACR_NAME }}.azurecr.io/cleansia-functions:${{ github.sha }}"
 
-      - name: Restart Functions App
-        run: |
-          az functionapp restart --name func-cleansia-${{ matrix.region }}-${{ inputs.env }} --resource-group rg-cleansia-${{ matrix.region }}-${{ inputs.env }}
-
   # ===========================================================================================
   # Customer SSR — Node App Service. Parallel with the APIs (build-angular + provision + migrate).
   # ===========================================================================================
@@ -1403,11 +1399,6 @@ jobs:
         with:
           name: customer-app
           path: ./customer-app
-
-      # For prod the startup command is set on the STAGING slot — appCommandLine swaps with the slot,
-      # so the swap carries it into production together with the artifact.
-      - name: Configure startup command
-        run: az webapp config set --name web-cleansia-customer-${{ matrix.region }}-${{ inputs.env }} --resource-group rg-cleansia-${{ matrix.region }}-${{ inputs.env }} --startup-file "node server/server.mjs" ${{ inputs.env == 'prod' && '--slot staging' || '' }}
 
       # The prod slot flow below mirrors deploy-partner-api, except the warm probe hits '/' instead of
       # '/health'. The SSR host does serve /health (server.ts registers it ahead of the Angular

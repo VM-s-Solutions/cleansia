@@ -1,6 +1,5 @@
 package cz.cleansia.customer.features.profile
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -43,7 +42,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -160,12 +158,6 @@ private fun Hero(firstName: String) {
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Image(
-            painter = painterResource(R.drawable.mascot_waving),
-            contentDescription = null,
-            modifier = Modifier.size(160.dp),
-        )
-        Spacer(Modifier.height(16.dp))
         Text(
             text = if (firstName.isNotBlank()) {
                 stringResource(R.string.onboarding_greeting_named, firstName)

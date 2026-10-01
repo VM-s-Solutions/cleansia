@@ -1,6 +1,5 @@
 package cz.cleansia.partner.features.auth
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -10,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -24,7 +22,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -42,7 +39,7 @@ import cz.cleansia.partner.R
 import cz.cleansia.partner.core.market.localizedName
 
 /**
- * Partner sign-up screen — mascot → title → market picker (when there is a choice) → first/last
+ * Partner sign-up screen — title → market picker (when there is a choice) → first/last
  * name row → email → password + rule list → confirm password + match rule → terms checkbox →
  * register button → footer link. No Google OAuth, no referral code.
  *
@@ -93,14 +90,6 @@ fun RegisterScreen(
                 .padding(top = 64.dp, bottom = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Image(
-                painter = painterResource(R.drawable.mascot_waving),
-                contentDescription = null,
-                modifier = Modifier.size(140.dp),
-            )
-
-            Spacer(Modifier.height(20.dp))
-
             Text(
                 text = stringResource(R.string.create_account),
                 style = MaterialTheme.typography.displayMedium,

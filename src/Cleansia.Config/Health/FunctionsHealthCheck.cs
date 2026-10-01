@@ -1,4 +1,5 @@
 using Azure.Storage.Queues;
+using Cleansia.Config.Services;
 using Cleansia.Infra.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -19,8 +20,9 @@ public sealed record HealthReport(bool Healthy, IReadOnlyList<HealthProbe> Probe
 /// dies) → this returns 503; the worker <b>process itself</b> is down (the 2026-07-18 outage) → the
 /// endpoint is unreachable and App Service's own health monitor trips. The <b>queue-storage</b> probe
 /// catches the middle case (host up, storage/identity broken) that would otherwise silently stall every
-/// trigger. Every probe is best-effort and self-naming: one failing dependency names itself and flips
-/// the verdict, but the check never throws.
+/// trigger. Every probe is bounded, best-effort and self-naming: a dependency that fails or does not answer
+/// within <see cref="ReadinessHealthChecks.ReadinessCheckTimeout"/> names itself and flips the verdict, but
+/// the check never throws.
 /// </summary>
 public sealed class FunctionsHealthCheck(
     CleansiaDbContext dbContext,
@@ -67,9 +69,11 @@ public sealed class FunctionsHealthCheck(
         Func<CancellationToken, Task> probe,
         CancellationToken cancellationToken)
     {
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        cts.CancelAfter(ReadinessHealthChecks.ReadinessCheckTimeout);
         try
         {
-            await probe(cancellationToken);
+            await probe(cts.Token);
             return new HealthProbe(name, Ok: true, Detail: null);
         }
         catch (Exception ex)

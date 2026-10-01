@@ -2,6 +2,7 @@ using Azure;
 using Azure.Storage.Queues;
 using Azure.Storage.Queues.Models;
 using Cleansia.Config.Health;
+using Cleansia.Config.Services;
 using Cleansia.Infra.Database;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -60,5 +61,30 @@ public sealed class FunctionsHealthCheckQueueProbeTests : IDisposable
 
         Assert.False(probe.Ok);
         Assert.Equal(nameof(RequestFailedException), probe.Detail);
+    }
+
+    [Fact]
+    public async Task Answers_unhealthy_within_the_bound_when_the_queue_service_never_answers()
+    {
+        var queues = new Mock<QueueServiceClient>(MockBehavior.Strict);
+        queues.Setup(q => q.GetQueuesAsync(It.IsAny<QueueTraits>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Returns((QueueTraits _, string? _, CancellationToken ct) => new NeverAnsweringPageable(ct));
+
+        var probe = await QueueProbe(queues).WaitAsync(ReadinessHealthChecks.ReadinessCheckTimeout * 3);
+
+        Assert.False(probe.Ok);
+        Assert.Equal(nameof(TaskCanceledException), probe.Detail);
+    }
+
+    private sealed class NeverAnsweringPageable(CancellationToken cancellationToken)
+        : AsyncPageable<QueueItem>(cancellationToken)
+    {
+        public override async IAsyncEnumerable<Page<QueueItem>> AsPages(
+            string? continuationToken = null,
+            int? pageSizeHint = null)
+        {
+            await Task.Delay(Timeout.Infinite, CancellationToken);
+            yield break;
+        }
     }
 }

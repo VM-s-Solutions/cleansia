@@ -774,7 +774,9 @@
 }
 
 .cl-wiz__level {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
   width: 100%;
   box-sizing: border-box;
   text-align: left;
@@ -801,6 +803,18 @@
     border: 2px solid $primary;
     padding: 21px 23px;
     box-shadow: 0 10px 30px rgba(12, 74, 110, 0.1);
+  }
+}
+
+// Each card subgrids the head, lead and signs rows, so every title, lead and divider sits on one
+// line across the cards whatever its neighbours wrap to.
+@supports (grid-template-rows: subgrid) {
+  .cl-wiz__level {
+    display: grid;
+    grid-row: span 3;
+    grid-template-rows: subgrid;
+    row-gap: 0;
+    align-content: start;
   }
 }
 
@@ -859,6 +873,11 @@
 @media (max-width: 960px) {
   .cl-wiz__levels {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cl-wiz__level {
+    display: flex;
+    grid-row: auto;
   }
 }
 

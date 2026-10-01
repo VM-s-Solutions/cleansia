@@ -102,8 +102,10 @@ and everything past it needs an account. Sign-in offers the password, *Forgot pa
 Apple on iOS) and *Register*, and nothing else. Since 2026-09-28 the customer mobile host takes an
 order only from a signed-in customer, and since 2026-10-01 the apps no longer offer *Find a guest
 booking* either (owner ruling, reversing the 2026-09-28 default that kept it). A guest booking is
-made, tracked and cancelled on the web, from the link in its e-mail. What stays anonymous on the
-mobile host is what the sign-up form and the reads made with or without a session need.
+made, tracked and cancelled on the web, from the link in its e-mail. What the apps still call
+anonymously is what the sign-up form and the reads made with or without a session need. The mobile
+host also still serves the six token-keyed guest routes, for app builds installed before the change,
+until a follow-up removes them.
 → [The anonymous allow-list](/mobile-app/api-integration#the-anonymous-allow-list),
 [Guest order lookup](/flows/booking-and-pricing#guest-order-lookup)
 

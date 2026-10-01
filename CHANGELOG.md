@@ -668,6 +668,11 @@ need backfilling.
 
 ### Fixed
 
+- **Customer Android and iOS — the Book button no longer covers the end of a page.** Scrolled to the
+  bottom, the last card on Home, Orders, Rewards and Profile now stops clear of the round Book button
+  instead of sliding under it. On Android this holds with either gesture or 3-button navigation.
+  (Owner remark 2026-10-01.)
+
 - **Customer Android and iOS — sign-in fits on one screen.** The page no longer scrolls to reach
   *Don't have an account? Register*, which was cut off below the fold on a 6.1" iPhone. On iOS a page
   that fits no longer rubber-bands. On Android the form keeps clear of the navigation bar and the

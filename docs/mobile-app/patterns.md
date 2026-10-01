@@ -91,3 +91,26 @@ navigation bar or the keyboard.
 ruling 2026-10-01). Even without it, the form is about 220pt taller than a 6.1" iPhone, and it is
 taller again on an SE. The one layout that fits every phone is a two-step sign-up (social buttons,
 e-mail and the terms tick first; name, password and referral second). It was offered and not taken.
+
+## Tab roots clear the Book FAB, not just the bar {#bottom-chrome-clearance}
+
+The customer Book FAB sits centred on the top edge of the bottom bar, so half of it rises above the
+bar. Content scrolled to the end must clear the **FAB's top**, not the bar's. Only the four tab roots
+(Home, Orders, Rewards, Profile) need this, because a pushed screen or a sheet covers the whole shell,
+FAB included.
+
+- **iOS.** The native `TabView` insets each tab's scroll content by its own bar (49pt) and nothing
+  else, so the FAB's 33pt overhang covered the last card on every tab. The shell gives each of the
+  four roots a `safeAreaInset(edge: .bottom)` of `BookFabMetrics.scrollClearance`: the overhang
+  (`chromeEnvelope − systemTabBarHeight`) plus 12pt, which is 45pt. The clearance is derived from the
+  same constants that place the FAB, so the two cannot drift apart. `contentMargins` would do the same
+  job but needs iOS 17, which is above the floor.
+- **Android.** The bar box is 12dp + a 64dp pill + 12dp = 88dp above the navigation-bar inset, and the
+  FAB's top sits on the box's top edge. Each tab root ends with
+  `Spacer(Modifier.navigationBarsPadding().height(MainShellBottomClearance))`, where the clearance is
+  `88.dp + 16.dp`. The navigation-bar inset is therefore added at runtime, and a 3-button bar is about
+  twice as tall as the gesture handle. The fixed `108.dp` it replaced ignored the inset and left the
+  last item under the FAB in either mode.
+
+The snackbar has its own lift above the same chrome (→ [Snackbar insets](#snackbar-inset)), and this
+does not change it.

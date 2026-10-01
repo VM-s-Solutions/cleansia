@@ -172,20 +172,24 @@ final class UserProfileClientMappingTests: XCTestCase {
         XCTAssertNil(try blank.toDomain(id: "user-1").profilePhoto)
     }
 
-    func testUpdateCommandBlanksPhoneToNil() {
-        let update = ProfileUpdate(
-            id: "user-1",
-            firstName: "Grace",
-            lastName: "Hopper",
-            phoneNumber: "  ",
-            birthDate: nil,
-            languageCode: nil
-        )
+    /// A nil member is left off the wire, and the binder refuses a missing PhoneNumber outright — so a
+    /// customer with no phone could save nothing, the language included. A blank is "nothing to say".
+    func testUpdateCommandSendsAMissingOrBlankPhoneAsEmptyRatherThanOmittingIt() {
+        for phone in [nil, "", "  "] {
+            let update = ProfileUpdate(
+                id: "user-1",
+                firstName: "Grace",
+                lastName: "Hopper",
+                phoneNumber: phone,
+                birthDate: nil,
+                languageCode: nil
+            )
 
-        let command = UpdateCurrentUserCommand(update)
+            let command = UpdateCurrentUserCommand(update)
 
-        XCTAssertNil(command.phoneNumber)
-        XCTAssertNil(command.birthDate)
+            XCTAssertEqual(command.phoneNumber, "", "\(String(describing: phone))")
+            XCTAssertNil(command.birthDate)
+        }
     }
 }
 

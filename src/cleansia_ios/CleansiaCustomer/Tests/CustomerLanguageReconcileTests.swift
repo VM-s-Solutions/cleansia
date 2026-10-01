@@ -44,6 +44,20 @@ final class CustomerLanguageReconcileTests: XCTestCase {
         XCTAssertEqual(client.lastUpdate?.firstName, "Olena", "the language rides a full profile replay")
     }
 
+    /// The session start is what corrects the 'en' an Apple or Google sign-up was stamped with, and
+    /// those are the accounts most likely to have no phone.
+    func testASessionBeginningPushesForACustomerWithNoPhone() async {
+        client.currentUserResult = .success(profile(language: "en", phone: nil))
+        let (reconciler, hasSession, _) = makeReconciler(chosen: "cs")
+        reconciler.attach(hasSession: hasSession.eraseToAnyPublisher())
+
+        hasSession.send(true)
+
+        await settle()
+        XCTAssertEqual(client.updateCallCount, 1)
+        XCTAssertEqual(client.lastUpdate?.languageCode, "cs")
+    }
+
     /// The remedy is a reconcile, not a write: the server is asked, and agreement ends it. An
     /// unconditional push would replay a locally cached profile over the server's on every launch.
     func testAServerThatAlreadyAgreesIsAskedAndNotWritten() async {
@@ -137,13 +151,13 @@ final class CustomerLanguageReconcileTests: XCTestCase {
         return (reconciler, CurrentValueSubject(false), repository)
     }
 
-    private func profile(language: String?) -> CurrentUserProfile {
+    private func profile(language: String?, phone: String? = "+420777111222") -> CurrentUserProfile {
         CurrentUserProfile(
             id: "user-1",
             email: "olena@example.com",
             firstName: "Olena",
             lastName: "Kovalenko",
-            phoneNumber: "+420777111222",
+            phoneNumber: phone,
             birthDate: nil,
             preferredLanguageCode: language,
             isEmailConfirmed: true

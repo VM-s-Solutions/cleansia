@@ -1,4 +1,5 @@
 import CleansiaCore
+import CleansiaCustomerApi
 import XCTest
 @testable import CleansiaCustomer
 
@@ -23,12 +24,21 @@ final class LanguagePreferenceSyncTests: XCTestCase {
         XCTAssertNil(LanguagePreferencePush.update(for: profile(language: "uk"), languageCode: "uk"))
     }
 
-    /// `UpdateCurrentUser` blindly replaces first/last/phone and its validators reject blanks, so replaying
-    /// an incomplete profile would either 400 or overwrite good data with nothing.
-    func testNoPushWhenTheProfileIsIncomplete() {
+    /// `UpdateCurrentUser` replaces first and last name outright and its validators reject blanks, so
+    /// replaying a profile without them would either 400 or overwrite good data with nothing.
+    func testNoPushWhenANameIsMissing() {
         XCTAssertNil(LanguagePreferencePush.update(for: profile(firstName: ""), languageCode: "uk"))
-        XCTAssertNil(LanguagePreferencePush.update(for: profile(lastName: ""), languageCode: "uk"))
-        XCTAssertNil(LanguagePreferencePush.update(for: profile(phone: nil), languageCode: "uk"))
+        XCTAssertNil(LanguagePreferencePush.update(for: profile(lastName: " "), languageCode: "uk"))
+    }
+
+    /// The customer an Apple or Google sign-up leaves without a phone is the one the gate used to strand
+    /// on the server's 'en' stamp. The phone is not the server's to require here: a blank keeps it.
+    func testAProfileWithoutAPhoneStillPushes() throws {
+        for phone in [nil, ""] {
+            let update = try XCTUnwrap(LanguagePreferencePush.update(for: profile(phone: phone), languageCode: "uk"))
+            XCTAssertEqual(update.languageCode, "uk")
+            XCTAssertEqual(UpdateCurrentUserCommand(update).phoneNumber, "", "the push must not omit the phone")
+        }
     }
 
     func testPushesWhenTheServerHasNoLanguageYet() {

@@ -160,6 +160,18 @@ describe('AdminNotificationsLauncherComponent', () => {
     expect(popover().overlayVisible).toBe(false);
   });
 
+  it('closes the panel when the notification opened is the page already shown', async () => {
+    await render('/dispute-management/d-1');
+    await openPanel();
+
+    rows()[0].click();
+    await settle();
+
+    expect(markRead).toHaveBeenCalledTimes(1);
+    expect(router.url).toBe('/dispute-management/d-1');
+    expect(popover().overlayVisible).toBe(false);
+  });
+
   it('marks everything read from the panel and links to the whole feed', async () => {
     await render();
     await openPanel();

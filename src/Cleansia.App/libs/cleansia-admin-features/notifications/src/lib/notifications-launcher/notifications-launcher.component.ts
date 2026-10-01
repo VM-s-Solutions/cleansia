@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, OnDestroy, signal, viewChild } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { IsActiveMatchOptions, NavigationEnd, Router } from '@angular/router';
+import { IsActiveMatchOptions, NavigationEnd, NavigationSkipped, Router } from '@angular/router';
 import { AdminNotificationBadgeService } from '@cleansia/admin-services';
 import { CleansiaButtonComponent, CleansiaLoaderComponent } from '@cleansia/components';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
@@ -37,16 +37,25 @@ export class AdminNotificationsLauncherComponent extends UnsubscribeControlDirec
   protected readonly panelId = 'cleansia-notifications-panel';
   readonly panelOpen = signal(false);
 
-  private readonly navigationEnds = this.router.events.pipe(filter((event) => event instanceof NavigationEnd));
-  protected readonly onFeedPage = toSignal(this.navigationEnds.pipe(map(() => this.isOnFeedPage())), {
-    initialValue: this.isOnFeedPage(),
-  });
+  protected readonly onFeedPage = toSignal(
+    this.router.events.pipe(
+      filter((event) => event instanceof NavigationEnd),
+      map(() => this.isOnFeedPage())
+    ),
+    { initialValue: this.isOnFeedPage() }
+  );
 
   private panelResize?: ResizeObserver;
 
   constructor() {
     super();
-    this.navigationEnds.pipe(takeUntil(this.destroyed$)).subscribe(() => this.panel()?.hide());
+    // A notification for the page already shown navigates nowhere: the router skips it, never ends it.
+    this.router.events
+      .pipe(
+        filter((event) => event instanceof NavigationEnd || event instanceof NavigationSkipped),
+        takeUntil(this.destroyed$)
+      )
+      .subscribe(() => this.panel()?.hide());
   }
 
   toggle(event: Event): void {

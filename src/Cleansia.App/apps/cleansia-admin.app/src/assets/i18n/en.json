@@ -101,7 +101,13 @@
       "go_home": "Go to the home page",
       "error_code": "Error {{code}}"
     },
-    "brand_mark_alt": "Cleansia"
+    "brand_mark_alt": "Cleansia",
+    "notifications_panel": {
+      "open": "Open notifications",
+      "title": "Notifications",
+      "view_all": "View all notifications",
+      "empty": "No notifications yet"
+    }
   },
   "global": {
     "yes": "Yes",

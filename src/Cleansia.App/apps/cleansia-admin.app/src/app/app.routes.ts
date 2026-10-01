@@ -1,5 +1,6 @@
 import { inject } from '@angular/core';
 import { Route } from '@angular/router';
+import { notificationsRoutes } from '@cleansia/admin-features/notifications';
 import { adminGuard, guestGuard, permissionGuard } from '@cleansia/admin-services';
 import { CleansiaNotFoundComponent } from '@cleansia/components';
 import { CleansiaAdminRoute, CommonRoute, PermissionService, Policy } from '@cleansia/services';
@@ -298,10 +299,7 @@ export const appRoutes: Route[] = [
     path: CleansiaAdminRoute.NOTIFICATIONS,
     canActivate: [adminGuard, permissionGuard],
     data: { permission: Policy.CanViewAdminNotifications },
-    loadChildren: () =>
-      import('@cleansia/admin-features/notifications').then(
-        (m) => m.notificationsRoutes
-      ),
+    children: notificationsRoutes,
   },
   {
     path: CleansiaAdminRoute.PROFILE,

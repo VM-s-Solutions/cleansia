@@ -1,0 +1,159 @@
+// The bell every admin page carries: a fixed circle at the bottom right, on the fixed-page band of
+// the z-index scale, under the mobile rail, the filter drawer, dialogs and toasts. A phone reaches
+// the same panel from the toolbar bell, so the circle is not drawn there. -> common/z-index.scss
+$launcher-gap: 1.5rem;
+// The cookie notice's band at the foot of the screen at desktop widths, where its card is capped at
+// 720px; measured in Chromium in all five locales, the tallest is ru at 276px.
+$cookie-notice-band: 20rem;
+
+.cleansia-notifications-launcher {
+  position: fixed;
+  right: $launcher-gap;
+  bottom: $launcher-gap;
+  z-index: 110;
+  transition: bottom 0.2s ease;
+
+  .cleansia-button button.p-button {
+    border: 1px solid var(--cleansia-primary-200);
+    background: var(--cleansia-white);
+    color: var(--cleansia-primary-700);
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
+    transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease,
+      transform 0.15s ease;
+
+    .p-button-icon {
+      font-size: 1.25rem;
+    }
+
+    &:hover:not(:disabled) {
+      background: var(--cleansia-primary-50);
+      border-color: var(--cleansia-primary-300);
+      color: var(--cleansia-primary-700);
+      box-shadow: var(--cleansia-shadow-2);
+      transform: translateY(-1px);
+    }
+
+    &:active:not(:disabled) {
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
+      transform: scale(0.96);
+    }
+
+    &[aria-expanded='true'] {
+      background: var(--cleansia-primary-50);
+      border-color: var(--cleansia-primary-600);
+    }
+  }
+
+  &__count {
+    position: absolute;
+    top: -0.25rem;
+    right: -0.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.375rem;
+    height: 1.375rem;
+    padding: 0 0.375rem;
+    border: 2px solid var(--cleansia-white);
+    border-radius: 9999px;
+    background: var(--cleansia-red);
+    color: var(--cleansia-white);
+    font-size: 0.75rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    pointer-events: none;
+  }
+
+  @media (max-width: 768px) {
+    display: none;
+  }
+
+  @media print {
+    display: none;
+  }
+}
+
+.app-layout:has(.cleansia-cookie-consent--bottom) .cleansia-notifications-launcher {
+  bottom: calc(#{$cookie-notice-band} + 0.75rem);
+}
+
+// The page scrolls its last row clear of the circle instead of ending under it.
+@media (min-width: 769px) {
+  .app-layout:has(.cleansia-notifications-launcher) .main-content {
+    padding-bottom: 2.5rem;
+  }
+}
+
+// Above the page, the rail and the filter drawer; under tooltips, dialogs and toasts, so nothing
+// the panel leads to opens beneath it. -> common/z-index.scss
+.cleansia-notifications-panel.p-popover {
+  z-index: 500;
+  width: min(380px, calc(100vw - 1.5rem));
+  border-color: var(--cleansia-border);
+  border-radius: var(--cleansia-radius-lg);
+  overflow: hidden;
+
+  // PrimeNG draws its arrow for a target at the panel's left edge; this panel sits flush on a bell
+  // at its right edge, so the arrow would point at nothing.
+  &::before,
+  &::after {
+    display: none;
+  }
+
+  .p-popover-content {
+    padding: 0;
+  }
+}
+
+.cleansia-notifications-panel {
+  &__frame {
+    display: flex;
+    flex-direction: column;
+    max-height: 70vh;
+  }
+
+  &__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.25rem 0.75rem;
+    padding: 1rem 0.75rem 0.75rem 1.25rem;
+    border-bottom: 1px solid var(--cleansia-border);
+  }
+
+  &__title {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 700;
+    line-height: 1.25;
+    color: var(--cleansia-primary-700);
+  }
+
+  &__body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+
+    .cleansia-loader {
+      min-height: 10rem;
+      border: 0;
+      box-shadow: none;
+    }
+
+    .empty-state {
+      margin: 0.75rem;
+      padding: 2rem 1.25rem;
+    }
+  }
+
+  &__foot {
+    display: flex;
+    justify-content: flex-end;
+    padding: 0.5rem 0.75rem;
+    border-top: 1px solid var(--cleansia-border);
+  }
+}

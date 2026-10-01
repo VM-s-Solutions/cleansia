@@ -1,7 +1,18 @@
 import { isPlatformBrowser, NgClass } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, HostListener, inject, OnInit, PLATFORM_ID, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  HostListener,
+  inject,
+  OnInit,
+  PLATFORM_ID,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { RouterModule } from '@angular/router';
+import { AdminNotificationsLauncherComponent } from '@cleansia/admin-features/notifications';
 import { AdminAuthService, AdminNotificationBadgeService } from '@cleansia/admin-services';
 import { loadAdminCodes } from '@cleansia/admin-stores';
 import {
@@ -35,6 +46,7 @@ import { ToastModule } from 'primeng/toast';
     CleansiaDevBannerComponent,
     CleansiaMobileToolbarComponent,
     CleansiaPermissionDirective,
+    AdminNotificationsLauncherComponent,
   ],
   selector: 'app-root',
   templateUrl: './app.component.html',
@@ -50,7 +62,8 @@ export class AppComponent implements OnInit {
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   protected readonly notificationBadge = inject(AdminNotificationBadgeService);
   protected readonly Policy = Policy;
-  protected readonly notificationsRoute = NOTIFICATIONS_ROUTE;
+  private readonly notificationsLauncher = viewChild(AdminNotificationsLauncherComponent);
+  protected readonly notificationsPanelOpen = computed(() => this.notificationsLauncher()?.panelOpen() ?? false);
 
   readonly bugReportUrl = environment.bugReportUrl;
   sidebarCollapsed = signal(false);
@@ -93,6 +106,10 @@ export class AppComponent implements OnInit {
 
   openSidebar(): void {
     this.mobileSidebarExpanded.set(true);
+  }
+
+  toggleNotifications(event: MouseEvent): void {
+    this.notificationsLauncher()?.toggle(event);
   }
 
   onSidebarCollapsedChange(collapsed: boolean): void {

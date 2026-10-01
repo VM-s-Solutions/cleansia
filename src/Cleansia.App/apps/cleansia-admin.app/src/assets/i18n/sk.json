@@ -101,7 +101,13 @@
       "go_home": "Na úvodnú stránku",
       "error_code": "Chyba {{code}}"
     },
-    "brand_mark_alt": "Cleansia"
+    "brand_mark_alt": "Cleansia",
+    "notifications_panel": {
+      "open": "Otvoriť upozornenia",
+      "title": "Upozornenia",
+      "view_all": "Zobraziť všetky upozornenia",
+      "empty": "Zatiaľ žiadne upozornenia"
+    }
   },
   "global": {
     "yes": "Áno",

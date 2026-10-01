@@ -101,7 +101,13 @@
       "go_home": "На головну",
       "error_code": "Помилка {{code}}"
     },
-    "brand_mark_alt": "Cleansia"
+    "brand_mark_alt": "Cleansia",
+    "notifications_panel": {
+      "open": "Відкрити сповіщення",
+      "title": "Сповіщення",
+      "view_all": "Переглянути всі сповіщення",
+      "empty": "Поки що немає сповіщень"
+    }
   },
   "global": {
     "yes": "Так",

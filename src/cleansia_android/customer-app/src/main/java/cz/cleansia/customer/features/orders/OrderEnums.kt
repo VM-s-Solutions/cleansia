@@ -45,8 +45,7 @@ fun orderStatusFromValue(value: Int?): OrderStatus? = when (value) {
 
 /**
  * The statuses a customer may cancel from — everything the server's `CancellationAssessor` does not
- * refuse, which is every status before a cleaner has started work. One function for the signed-in
- * and the guest surface: the two used to stop at different statuses. The assessor also refuses a
+ * refuse, which is every status before a cleaner has started work. The assessor also refuses a
  * staffed order past its start; [customerAwaitsCleanerPastStart] is that half.
  */
 fun customerCanCancelOrder(statusValue: Int?): Boolean = when (orderStatusFromValue(statusValue)) {

@@ -266,8 +266,7 @@ class OrderWireTest {
     }
 
     /**
-     * The grace only adds a sentence; refusing the quote over it would take the fee away from a guest,
-     * who cannot cancel without one.
+     * The grace only adds a sentence; refusing the quote over it would take the fee away from the sheet.
      */
     @Test
     fun aMissingGraceStatesNoneAndKeepsTheQuote() = runTest {

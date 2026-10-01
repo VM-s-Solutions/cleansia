@@ -162,7 +162,7 @@ class OrderDetailCancelGateTest {
         vm.viewModelScope.cancel()
     }
 
-    /** The one function both the signed-in and the guest surface read, so the two cannot drift. */
+    /** The gate is the server's set of cancellable statuses, and nothing outside it. */
     @Test
     fun `the shared gate is the server's set`() {
         assertEquals(listOf(0, 1, 2, 3), (0..6).filter { customerCanCancelOrder(it) })

@@ -1490,16 +1490,4 @@
     <string name="order_market_label">%1$s · %2$s</string>
     <string name="notification_recurring_paused_title">Plán opakovaných upratovaní pozastavený</string>
     <string name="notification_recurring_paused_body">Váš plán opakovaných upratovaní je pozastavený, pretože Plus nie je aktívne. Obnovte Plus a plánovanie upratovaní bude pokračovať.</string>
-    <string name="guest_order_entry">Nájsť rezerváciu bez účtu</string>
-    <string name="guest_order_title">Rezervácia bez účtu</string>
-    <string name="guest_order_intro">Vložte odkaz na sledovanie z potvrdzovacieho e-mailu. Otvorí vašu rezerváciu — nič ďalšie zadávať nemusíte.</string>
-    <string name="guest_order_link">Odkaz na sledovanie z e-mailu</string>
-    <string name="guest_order_lookup">Nájsť rezerváciu</string>
-    <string name="guest_order_required">Vložte odkaz na sledovanie z potvrdzovacieho e-mailu.</string>
-    <string name="guest_order_empty">Po vyhľadaní sa tu zobrazia podrobnosti rezervácie.</string>
-    <string name="guest_order_loading">Hľadáme vašu rezerváciu…</string>
-    <string name="guest_order_cancel">Zrušiť rezerváciu</string>
-    <string name="guest_order_cannot_cancel">Túto rezerváciu nemožno zrušiť.</string>
-    <string name="guest_order_preview_required">Poplatok za zrušenie sa nepodarilo overiť. Pred potvrdením zrušenia to skúste znova.</string>
-    <string name="guest_order_fee_estimate">Storno poplatok: %1$s. Maximálne vrátenie platby kartou: %2$s. Vrátiť možno iba prijaté platby kartou; v potvrdení uvidíte skutočne vrátenú sumu.</string>
 </resources>

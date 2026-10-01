@@ -379,7 +379,7 @@ internal fun GenCancelOrderResponse?.toAppDto(): CancelOrderResponse {
  * too, so ordinal 0 would quote a free cancellation on the strength of a field the server never sent.
  *
  * `oopsWindowMinutes` is dropped rather than refused when absent: it only adds a sentence, and refusing
- * it would take the whole quote away from a guest, who cannot cancel without one.
+ * it would take the whole quote away over it.
  */
 internal fun GenGetCancellationFeePreviewResponse?.toAppDto(): CancellationFeePreviewDto {
     val quote = required("GetCancellationFeePreviewResponse")

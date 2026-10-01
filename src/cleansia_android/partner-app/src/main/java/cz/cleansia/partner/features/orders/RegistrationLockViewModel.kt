@@ -98,9 +98,10 @@ data class StepRow(
      */
     val detailKeys: List<String>,
     /**
-     * Destination the "Fix" CTA should route to. `null` when the row has no
-     * actionable fix (e.g. the Approval row when admin is reviewing or has
-     * rejected — cleaner can't unblock that themselves).
+     * Where tapping the row goes. Profile, Documents and Contract documents keep theirs after they are
+     * Done, because the lock replaces the whole app until approval and is the cleaner's only way back
+     * to correct their data or add a document. `null` only on the Approval row, which the cleaner
+     * cannot act on (a rejected one opens a support e-mail instead). -> /partner-app/onboarding
      */
     val fixDestination: NavRoute?,
 )
@@ -324,22 +325,23 @@ class RegistrationLockViewModel @Inject constructor(
                     // cleaner doesn't have to bounce through the lock
                     // between sections. `onboarding=true` tells the saved
                     // section to navigate forward instead of popping back.
-                    fixDestination = if (profileDone) null
-                    else firstMissingProfileSection(profileMissing, forOnboarding = true),
+                    // A complete profile opens on Personal, and saving any
+                    // section returns to the lock.
+                    fixDestination = firstMissingProfileSection(profileMissing, forOnboarding = true),
                 ),
                 StepRow(
                     category = StepCategory.Documents,
                     status = if (docsDone) StepStatus.Done else StepStatus.Missing,
                     detailKeys = if (docsDone) emptyList()
                     else listOf("registration_lock.documents_required"),
-                    fixDestination = if (docsDone) null else NavRoute.ProfileDocuments,
+                    fixDestination = NavRoute.ProfileDocuments,
                 ),
                 legalDocuments?.takeIf { it.isNotEmpty() }?.let {
                     StepRow(
                         category = StepCategory.LegalDocuments,
                         status = if (legalDone) StepStatus.Done else StepStatus.Missing,
                         detailKeys = emptyList(),
-                        fixDestination = if (legalDone) null else NavRoute.LegalDocuments,
+                        fixDestination = NavRoute.LegalDocuments,
                     )
                 },
                 StepRow(

@@ -442,10 +442,10 @@ private fun StepRowView(step: StepRow, onFixStep: (NavRoute) -> Unit) {
         StepStatus.Missing ->
             Icons.Outlined.Cancel to MaterialTheme.colorScheme.error
     }
-    val isActionable = step.status != StepStatus.Done &&
-        (step.fixDestination != null ||
-            // Rejected approval gets a mailto: support intent.
-            step.detailKeys.contains("registration_lock.approval_rejected"))
+    // A Done row stays tappable: until approval this screen is the cleaner's only way back to their
+    // data and documents. Rejected approval gets a mailto: support intent.
+    val isActionable = step.fixDestination != null ||
+        step.detailKeys.contains("registration_lock.approval_rejected")
 
     val context = LocalContext.current
     val rowClick = if (!isActionable) null else {
@@ -507,6 +507,12 @@ private fun StepRowView(step: StepRow, onFixStep: (NavRoute) -> Unit) {
                 color = MaterialTheme.colorScheme.onSurface,
             )
             when {
+                // Done first: a completed row is still tappable, and it must say Done, not repeat its CTA.
+                step.status == StepStatus.Done -> Text(
+                    text = stringResource(R.string.registration_lock_step_complete),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary,
+                )
                 isActionable -> Text(
                     text = stringResource(ctaLabelRes),
                     style = MaterialTheme.typography.bodySmall,
@@ -517,11 +523,6 @@ private fun StepRowView(step: StepRow, onFixStep: (NavRoute) -> Unit) {
                     text = stringResource(R.string.registration_lock_approval_awaiting_review),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.tertiary,
-                )
-                step.status == StepStatus.Done -> Text(
-                    text = stringResource(R.string.registration_lock_step_complete),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary,
                 )
             }
 

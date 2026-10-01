@@ -173,8 +173,11 @@ fun PersonalSectionScreen(
             Spacer(Modifier.height(Spacing.L))
 
             SectionSaveRow(
+                // Next only while the chain has somewhere to go: a cleaner editing a complete profile from the
+                // lock returns to it on save. -> /partner-app/onboarding
                 primaryText = stringResource(
-                    if (onboarding) R.string.onboarding_next else R.string.save,
+                    if (onboarding && chainState.completedSteps < chainState.totalSteps) R.string.onboarding_next
+                    else R.string.save,
                 ),
                 onBack = onboardingBackFor(cz.cleansia.partner.features.orders.ProfileSection.Personal, onboarding, onJumpToSection),
                 onSave = { viewModel.save() },

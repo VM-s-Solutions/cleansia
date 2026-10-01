@@ -80,11 +80,11 @@ class RegistrationLockLegalDocumentsTest {
     }
 
     @Test
-    fun `every document accepted is a done step and the application waits for review`() {
+    fun `every document accepted is a done step that still opens the documents, and the application waits for review`() {
         val steps = RegistrationLockViewModel.buildSteps(readyForReview, listOf(document(accepted = true)))
 
         assertEquals(StepStatus.Done, steps.row(StepCategory.LegalDocuments)?.status)
-        assertNull(steps.row(StepCategory.LegalDocuments)?.fixDestination)
+        assertEquals(NavRoute.LegalDocuments, steps.row(StepCategory.LegalDocuments)?.fixDestination)
         assertEquals(StepStatus.Pending, steps.row(StepCategory.Approval)?.status)
     }
 

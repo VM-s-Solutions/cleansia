@@ -781,6 +781,12 @@
       "date_time": "Дата и время",
       "datetime_note": "Мы согласуем с Вами точное время",
       "datetime_section_title": "Когда нам приехать?",
+      "day_part": {
+        "morning": "Утро",
+        "afternoon": "День",
+        "evening": "Вечер"
+      },
+      "day_part_label": "Время суток",
       "draft_partially_restored": "Ваш заказ восстановлен. Кое-что из него больше не предлагается и было убрано.",
       "entry_instructions_label": "Инструкции по доступу",
       "entry_instructions_placeholder": "Как попасть к Вам? (напр., домофон, ключ под ковриком...)",

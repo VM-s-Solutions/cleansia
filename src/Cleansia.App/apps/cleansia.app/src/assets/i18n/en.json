@@ -781,6 +781,12 @@
       "date_time": "Date & Time",
       "datetime_note": "We'll confirm the exact time with you",
       "datetime_section_title": "When Should We Come?",
+      "day_part": {
+        "morning": "Morning",
+        "afternoon": "Afternoon",
+        "evening": "Evening"
+      },
+      "day_part_label": "Part of day",
       "draft_partially_restored": "Your order is back. Something in it is no longer offered, so it was removed.",
       "entry_instructions_label": "Entry Instructions",
       "entry_instructions_placeholder": "How should we access your property? (e.g., doorbell, key under mat...)",

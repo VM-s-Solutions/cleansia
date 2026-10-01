@@ -5,7 +5,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { By } from '@angular/platform-browser';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { CleansiaSelectComponent } from '@cleansia/components';
-import { lastBookableDay } from '@cleansia/models';
+import { generateTimeOptions, lastBookableDay } from '@cleansia/models';
 import { SnackbarService } from '@cleansia/services';
 import {
   CreateReceivablePayLinkResponse,
@@ -267,6 +267,74 @@ describe('OrderWizardComponent (a11y)', () => {
       expect(fixture.componentInstance.minDate().getDate()).toBe(firstBookableDay);
       expect(fixture.componentInstance.timeOptions().some((option) => option.availability !== 'unavailable'))
         .toBe(todayAvailable);
+    });
+  });
+
+  describe('the part of day before the arrival times', () => {
+    afterEach(() => jest.useRealTimers());
+
+    async function openWhenStep(beforeCreate?: () => void): Promise<void> {
+      await setup(beforeCreate);
+      facade.activeStep.set(3);
+      fixture.detectChanges();
+    }
+
+    const partChips = () => Array.from(el.querySelectorAll<HTMLButtonElement>('button.cl-wiz__daypart'));
+    const pressedPart = () => partChips().find((chip) => chip.getAttribute('aria-pressed') === 'true');
+    const shownTimes = () =>
+      Array.from(el.querySelectorAll('button.cl-wiz__time')).map((chip) => chip.textContent?.trim());
+
+    it('puts every arrival time in exactly one part, sixteen to a part', async () => {
+      await setup();
+      const parts = fixture.componentInstance.dayPartSlots();
+
+      expect(parts.flatMap((part) => part.slots.map((slot) => slot.value)))
+        .toEqual(generateTimeOptions().map((option) => option.value));
+      expect(parts.map((part) => part.slots.length)).toEqual([16, 16, 16]);
+    });
+
+    it('opens the default 09:00 on Morning, showing 08:00 to 11:45', async () => {
+      await openWhenStep();
+
+      expect(facade.formData().cleaningTime).toBe('09:00');
+      expect(partChips()).toHaveLength(3);
+      expect(pressedPart()?.textContent).toContain('pages.order.day_part.morning');
+      expect(pressedPart()?.textContent).toContain('08:00–11:45');
+      expect(shownTimes()).toHaveLength(16);
+      expect(shownTimes()[0]).toBe('08:00');
+      expect(shownTimes()[15]).toBe('11:45');
+    });
+
+    it('shows the afternoon on choosing it, without moving the booked time', async () => {
+      await openWhenStep();
+
+      partChips()[1].click();
+      fixture.detectChanges();
+
+      expect(pressedPart()?.textContent).toContain('pages.order.day_part.afternoon');
+      expect(shownTimes()[0]).toBe('12:00');
+      expect(shownTimes()[15]).toBe('15:45');
+      expect(facade.formData().cleaningTime).toBe('09:00');
+      expect(partChips()[0].querySelector('.cl-wiz__daypart-dot')).not.toBeNull();
+      expect(partChips()[1].querySelector('.cl-wiz__daypart-dot')).toBeNull();
+
+      fixture.componentInstance.setAccessMode('keys_handover');
+      fixture.detectChanges();
+
+      expect(pressedPart()?.textContent).toContain('pages.order.day_part.afternoon');
+    });
+
+    it('follows the snap to 15:00 at 13:00 today, with the morning closed', async () => {
+      const now = new Date(2026, 8, 10, 13, 0);
+      await openWhenStep(() => jest.useFakeTimers().setSystemTime(now));
+
+      fixture.componentInstance.onDateChange(new Date(2026, 8, 10));
+      fixture.detectChanges();
+
+      expect(facade.formData().cleaningTime).toBe('15:00');
+      expect(pressedPart()?.textContent).toContain('pages.order.day_part.afternoon');
+      expect(partChips()[0].disabled).toBe(true);
+      expect(partChips()[1].disabled).toBe(false);
     });
   });
 

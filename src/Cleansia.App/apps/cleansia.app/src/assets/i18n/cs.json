@@ -781,6 +781,12 @@
       "date_time": "Datum a čas",
       "datetime_note": "Přesný čas s vámi potvrdíme",
       "datetime_section_title": "Kdy máme přijít?",
+      "day_part": {
+        "morning": "Dopoledne",
+        "afternoon": "Odpoledne",
+        "evening": "Večer"
+      },
+      "day_part_label": "Část dne",
       "draft_partially_restored": "Vrátili jsme vaši objednávku. Něco z ní už bohužel nenabízíme.",
       "entry_instructions_label": "Pokyny pro vstup",
       "entry_instructions_placeholder": "Jak se dostaneme do nemovitosti? (např. zvonek, klíč pod rohožkou...)",

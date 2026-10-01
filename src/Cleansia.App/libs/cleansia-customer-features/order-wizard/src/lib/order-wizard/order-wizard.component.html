@@ -635,8 +635,28 @@
 
           <div>
             <div class="cl-lbl cl-wiz__time-label">{{ 'pages.order.arrival_time_label' | translate }}</div>
+            <div class="cl-wiz__dayparts" role="group" [attr.aria-label]="'pages.order.day_part_label' | translate">
+              @for (part of dayPartSlots(); track part.key) {
+              <button
+                type="button"
+                class="cl-chip cl-wiz__daypart"
+                [class.cl-chip--on]="activeDayPart() === part.key"
+                [disabled]="!part.bookable"
+                [attr.aria-pressed]="activeDayPart() === part.key"
+                (click)="activeDayPart.set(part.key)"
+              >
+                <span class="cl-wiz__daypart-name">
+                  {{ 'pages.order.day_part.' + part.key | translate }}
+                  @if (part.holdsSelection) {
+                  <span class="cl-wiz__daypart-dot" aria-hidden="true"></span>
+                  }
+                </span>
+                <span class="cl-wiz__daypart-range">{{ part.firstLabel }}–{{ part.lastLabel }}</span>
+              </button>
+              }
+            </div>
             <div class="cl-wiz__times">
-              @for (opt of timeOptions(); track opt.value) {
+              @for (opt of visibleTimeOptions(); track opt.value) {
               <button
                 type="button"
                 class="cl-chip cl-wiz__time"

@@ -28,18 +28,24 @@ struct BookingSuccessView: View {
         ))
     }
 
+    /// Android's compact rhythm (`BookingSuccessScreen.kt`): no mascot — at 220 pt it pushed the
+    /// sequence into a scroll — but a 48 pt check, the at-a-glance success cue in a fifth of the height,
+    /// and the tighter section gaps, so the whole confirmation fits a 6.1" phone without scrolling.
     var body: some View {
-        ScrollView {
-            VStack(spacing: Spacing.m) {
-                AnimatedMascotView(.welcoming, loop: false, fallback: .waving)
-                    .frame(width: 220, height: 220)
-                VStack(spacing: Spacing.xs) {
+        bounceOnlyWhenScrolling(ScrollView {
+            VStack(spacing: Spacing.s) {
+                // Decorative: the title under it says the same thing.
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 48))
+                    .foregroundColor(CleansiaColors.successText)
+                    .accessibilityHidden(true)
+                VStack(spacing: Spacing.xxs) {
                     Text(L10n.Booking.successTitle)
                         .cleansiaFont(CleansiaTypography.headlineSmall)
                         .foregroundColor(CleansiaColors.onBackground)
                         .multilineTextAlignment(.center)
                     Text(L10n.Booking.successSubtitle)
-                        .font(CleansiaTypography.bodyLarge)
+                        .font(CleansiaTypography.bodyMedium)
                         .foregroundColor(CleansiaColors.onSurfaceVariant)
                         .multilineTextAlignment(.center)
                 }
@@ -52,7 +58,7 @@ struct BookingSuccessView: View {
                     .font(CleansiaTypography.labelMedium)
                     .foregroundColor(CleansiaColors.onSurfaceVariant)
                     .multilineTextAlignment(.center)
-                VStack(spacing: Spacing.s) {
+                VStack(spacing: Spacing.xs) {
                     if let onViewOrder {
                         CleansiaPrimaryButton(L10n.Orders.viewOrder, action: onViewOrder)
                         CleansiaOutlinedButton(L10n.Booking.successGoHome, action: onDone)
@@ -61,11 +67,23 @@ struct BookingSuccessView: View {
                     }
                 }
             }
-            .padding(Spacing.l)
-        }
+            .padding(.horizontal, Spacing.ml)
+            .padding(.vertical, Spacing.m)
+        })
         .frame(maxWidth: .infinity)
         .background(CleansiaColors.background.ignoresSafeArea())
         .task { await orderVM.load() }
+    }
+
+    /// A confirmation that fits neither rubber-bands nor shows an indicator (iOS 16.4+); the scroll view
+    /// stays for the SE and large Dynamic Type.
+    @ViewBuilder
+    private func bounceOnlyWhenScrolling(_ scroll: some View) -> some View {
+        if #available(iOS 16.4, *) {
+            scroll.scrollBounceBehavior(.basedOnSize)
+        } else {
+            scroll
+        }
     }
 
     private func confirmationCard(_ code: String) -> some View {
@@ -79,7 +97,8 @@ struct BookingSuccessView: View {
                 .foregroundColor(CleansiaColors.primary)
                 .textSelection(.enabled)
         }
-        .padding(Spacing.m)
+        .padding(.vertical, 10)
+        .padding(.horizontal, Spacing.m)
         .frame(maxWidth: .infinity)
         .successCard()
     }
@@ -140,7 +159,7 @@ struct BookingSuccessView: View {
     }
 
     private func summaryCard(_ rows: [SummaryRow]) -> some View {
-        VStack(alignment: .leading, spacing: Spacing.xs) {
+        VStack(alignment: .leading, spacing: 6) {
             ForEach(rows) { row in
                 HStack(alignment: .top, spacing: Spacing.s) {
                     Text(row.label)
@@ -155,7 +174,7 @@ struct BookingSuccessView: View {
                 }
             }
         }
-        .padding(Spacing.m)
+        .padding(Spacing.s)
         .frame(maxWidth: .infinity, alignment: .leading)
         .successCard()
     }
@@ -173,7 +192,7 @@ struct BookingSuccessView: View {
             status: orderVM.order?.status,
             cleanerAssigned: !(orderVM.order?.assignedEmployees.isEmpty ?? true)
         )
-        return VStack(alignment: .leading, spacing: Spacing.s) {
+        return VStack(alignment: .leading, spacing: Spacing.xs) {
             Text(L10n.Booking.successProgress)
                 .font(CleansiaTypography.titleMedium)
                 .foregroundColor(CleansiaColors.onBackground)
@@ -183,7 +202,7 @@ struct BookingSuccessView: View {
                 }
             }
         }
-        .padding(Spacing.m)
+        .padding(Spacing.s)
         .frame(maxWidth: .infinity, alignment: .leading)
         .successCard()
     }

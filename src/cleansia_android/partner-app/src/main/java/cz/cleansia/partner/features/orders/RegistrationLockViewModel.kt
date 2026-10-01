@@ -104,6 +104,11 @@ data class StepRow(
      * cannot act on (a rejected one opens a support e-mail instead). -> /partner-app/onboarding
      */
     val fixDestination: NavRoute?,
+    /**
+     * The administrator's own words on a rejected application, shown verbatim. Free text in the
+     * admin's language, so it never goes through [detailKeys]' resource lookup.
+     */
+    val note: String? = null,
 )
 
 /**
@@ -151,6 +156,11 @@ class RegistrationLockViewModel @Inject constructor(
         // never the user-pull path. Otherwise the first paint would flash
         // a spurious suds spinner before we've even shown anything.
         ensureFreshOrCachedAsync()
+        // An approval or rejection pushed while the lock is on screen: no resume follows, so re-read
+        // now (silently, past the stale window) instead of leaving "under review" up.
+        viewModelScope.launch {
+            profileRepository.registrationDecisions.collect { fetchRegistrationStatus(userInitiated = false) }
+        }
     }
 
     /**
@@ -289,6 +299,7 @@ class RegistrationLockViewModel @Inject constructor(
             val approvalStatus: StepStatus
             val approvalDetails: List<String>
             val approvalFixDestination: NavRoute?
+            var approvalNote: String? = null
             when {
                 contract == ContractStatus._4 || contract == ContractStatus._2 -> {
                     approvalStatus = StepStatus.Done
@@ -301,6 +312,7 @@ class RegistrationLockViewModel @Inject constructor(
                     // Rejected cleaners need to talk to support; render the
                     // mailto link directly in the row, not a NavRoute.
                     approvalFixDestination = null
+                    approvalNote = status?.rejectionReason?.trim()?.takeIf { it.isNotEmpty() }
                 }
                 profileDone && docsDone && legalDone &&
                     contract == ContractStatus._1 -> {
@@ -349,6 +361,7 @@ class RegistrationLockViewModel @Inject constructor(
                     status = approvalStatus,
                     detailKeys = approvalDetails,
                     fixDestination = approvalFixDestination,
+                    note = approvalNote,
                 ),
             )
         }

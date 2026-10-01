@@ -25,6 +25,9 @@ import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.network.mapWire
 import cz.cleansia.core.network.safeApiCall
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -61,6 +64,15 @@ interface ProfileRepository {
      * for the lifetime of the singleton repo (no per-screen reset).
      */
     fun getRegistrationStatusStaleness(): Staleness
+
+    /**
+     * Fires when a push says an administrator approved or rejected this cleaner's application. The
+     * registration lock re-reads on it, because a lock already on screen gets no resume to do so.
+     */
+    val registrationDecisions: Flow<Unit>
+
+    /** Called by the messaging service on `employee.registration_approved` / `_rejected`. */
+    fun onRegistrationDecisionPushed()
 
     /**
      * Carries no email: the login address is the session's identity and the
@@ -230,6 +242,13 @@ class ProfileRepositoryImpl @Inject constructor(
             }
 
     override fun getRegistrationStatusStaleness(): Staleness = registrationStatusStaleness
+
+    private val _registrationDecisions = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    override val registrationDecisions: Flow<Unit> = _registrationDecisions.asSharedFlow()
+
+    override fun onRegistrationDecisionPushed() {
+        _registrationDecisions.tryEmit(Unit)
+    }
 
     override suspend fun clear() {
         registrationStatusStaleness.reset()

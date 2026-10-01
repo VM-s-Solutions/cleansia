@@ -1295,6 +1295,10 @@
     <string name="notification_order_seat_open_body">A cleaner has come off booking #%1$s. Tap to take it.</string>
     <string name="notification_employee_weekly_limit_set_title">Weekly job limit updated</string>
     <string name="notification_employee_weekly_limit_set_body">You can now take up to %1$d jobs per week.</string>
+    <string name="notification_employee_registration_approved_title">Application approved</string>
+    <string name="notification_employee_registration_approved_body">You\'re approved. Open the app to start taking jobs.</string>
+    <string name="notification_employee_registration_rejected_title">Application rejected</string>
+    <string name="notification_employee_registration_rejected_body">Your application was rejected. Open the app to see why, or contact support.</string>
     <string name="notification_payroll_invoice_paid_title">You\'ve been paid</string>
     <string name="notification_payroll_invoice_paid_body">Your invoice for the latest pay period has been paid. Tap to view.</string>
     <string name="notification_preferred_offer_title">A customer asked for you</string>

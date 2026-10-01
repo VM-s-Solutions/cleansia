@@ -80,8 +80,9 @@ import cz.cleansia.partner.navigation.NavRoute
  * App-wide gate for cleaners who have not finished onboarding or are not approved. One category row per
  * step, each routing to the section that owns that step.
  *
- * Auto-refreshes on resume, so saving a section and coming back flips the row; once all are done the
- * parent pops this destination. -> /partner-app/onboarding
+ * Auto-refreshes on resume, so saving a section and coming back flips the row, and when an approval or
+ * rejection push arrives while it is on screen; once all are done the parent pops this destination.
+ * -> /partner-app/onboarding
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -562,6 +563,14 @@ private fun StepRowView(step: StepRow, onFixStep: (NavRoute) -> Unit) {
                         text = stringResource(R.string.registration_lock_approval_rejected),
                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp),
                         color = MaterialTheme.colorScheme.error,
+                    )
+                }
+                step.note?.let { reason ->
+                    Spacer(Modifier.height(Spacing.XXS))
+                    Text(
+                        text = reason,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }

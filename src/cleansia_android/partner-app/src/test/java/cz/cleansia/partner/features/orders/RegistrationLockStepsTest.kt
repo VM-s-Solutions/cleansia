@@ -62,6 +62,31 @@ class RegistrationLockStepsTest {
     }
 
     @Test
+    fun `a rejected application carries the administrator's reason, trimmed`() {
+        val row = RegistrationLockViewModel.buildSteps(
+            status(ContractStatus._5).copy(rejectionReason = "  The ID photo is unreadable.\n"),
+        ).row(StepCategory.Approval)
+
+        assertEquals(StepStatus.Missing, row.status)
+        assertEquals(listOf("registration_lock.approval_rejected"), row.detailKeys)
+        assertEquals("The ID photo is unreadable.", row.note)
+    }
+
+    @Test
+    fun `no reason, a blank one, or a decision other than rejection carries no note`() {
+        listOf(null, "", "   ").forEach { reason ->
+            val row = RegistrationLockViewModel.buildSteps(status(ContractStatus._5).copy(rejectionReason = reason))
+                .row(StepCategory.Approval)
+            assertNull(row.note)
+        }
+        // A stale reason left on a cleaner who has since been approved, or is pending again, is not shown.
+        listOf(ContractStatus._1, ContractStatus._4).forEach { contract ->
+            val steps = RegistrationLockViewModel.buildSteps(status(contract).copy(rejectionReason = "old"))
+            steps.forEach { assertNull(it.note) }
+        }
+    }
+
+    @Test
     fun `the approval row never routes anywhere`() {
         listOf(ContractStatus._1, ContractStatus._5).forEach { contract ->
             assertNull(RegistrationLockViewModel.buildSteps(status(contract)).row(StepCategory.Approval).fixDestination)

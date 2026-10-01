@@ -1281,6 +1281,10 @@
     <string name="notification_order_seat_open_body">Z objednávky #%1$s odstoupil uklízeč. Klepnutím ji převezmete.</string>
     <string name="notification_employee_weekly_limit_set_title">Týdenní limit zakázek změněn</string>
     <string name="notification_employee_weekly_limit_set_body">Nyní si můžete vzít nejvýše %1$d zakázek týdně.</string>
+    <string name="notification_employee_registration_approved_title">Žádost schválena</string>
+    <string name="notification_employee_registration_approved_body">Byli jste schváleni. Otevřete aplikaci a začněte přijímat zakázky.</string>
+    <string name="notification_employee_registration_rejected_title">Žádost zamítnuta</string>
+    <string name="notification_employee_registration_rejected_body">Vaše žádost byla zamítnuta. Otevřete aplikaci a zjistěte proč, nebo kontaktujte podporu.</string>
     <string name="notification_payroll_invoice_paid_title">Byli jste vyplaceni</string>
     <string name="notification_payroll_invoice_paid_body">Vaše faktura za poslední výplatní období byla proplacena. Klepnutím zobrazíte.</string>
     <string name="notification_preferred_offer_title">Zákazník si vás vyžádal</string>

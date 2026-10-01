@@ -1265,6 +1265,10 @@
     <string name="notification_order_seat_open_body">Прибиральник відмовився від замовлення #%1$s. Натисніть, щоб взяти його.</string>
     <string name="notification_employee_weekly_limit_set_title">Тижневий ліміт замовлень оновлено</string>
     <string name="notification_employee_weekly_limit_set_body">Тепер ви можете брати щонайбільше %1$d замовлень на тиждень.</string>
+    <string name="notification_employee_registration_approved_title">Заявку схвалено</string>
+    <string name="notification_employee_registration_approved_body">Вас схвалено. Відкрийте застосунок, щоб почати брати замовлення.</string>
+    <string name="notification_employee_registration_rejected_title">Заявку відхилено</string>
+    <string name="notification_employee_registration_rejected_body">Вашу заявку відхилено. Відкрийте застосунок, щоб дізнатися причину, або зверніться до підтримки.</string>
     <string name="notification_payroll_invoice_paid_title">Вам виплачено</string>
     <string name="notification_payroll_invoice_paid_body">Ваш рахунок за останній розрахунковий період оплачено. Торкніться, щоб переглянути.</string>
     <string name="notification_preferred_offer_title">Клієнт попросив саме вас</string>

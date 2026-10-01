@@ -11,6 +11,7 @@ import com.google.firebase.messaging.RemoteMessage
 import cz.cleansia.core.notifications.PushTokenRepository
 import cz.cleansia.partner.MainActivity
 import cz.cleansia.partner.R
+import cz.cleansia.partner.data.profile.ProfileRepository
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -26,6 +27,7 @@ class CleansiaFirebaseMessagingService : FirebaseMessagingService() {
 
     @Inject lateinit var pushTokenRepository: PushTokenRepository
     @Inject lateinit var notificationFeedRepository: NotificationFeedRepository
+    @Inject lateinit var profileRepository: ProfileRepository
 
     override fun onNewToken(token: String) {
         // FCM rotated the token; push the new value into the repository's
@@ -45,6 +47,9 @@ class CleansiaFirebaseMessagingService : FirebaseMessagingService() {
         // counts rows — so bump it off the keyset, never off "this key has a template".
         if (PartnerFeedEventKeys.contains(eventKey)) {
             notificationFeedRepository.onPushReceived()
+        }
+        if (eventKey == "employee.registration_approved" || eventKey == "employee.registration_rejected") {
+            profileRepository.onRegistrationDecisionPushed()
         }
 
         val orderId = data["orderId"]?.takeIf { it.isNotBlank() }

@@ -5,7 +5,11 @@
     public struct PreviewMapProvider: MapProvider {
         public init() {}
 
-        public func pickerMap(region _: Binding<MKCoordinateRegion>, showsUserLocation _: Bool) -> AnyView {
+        public func pickerMap(
+            region _: Binding<MKCoordinateRegion>,
+            showsUserLocation _: Bool,
+            bottomInset _: CGFloat
+        ) -> AnyView {
             AnyView(CleansiaColors.surfaceVariant)
         }
 

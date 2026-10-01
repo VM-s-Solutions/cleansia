@@ -6,8 +6,12 @@ public struct MapKitMapProvider: MapProvider {
 
     /// An `MKMapView` rather than SwiftUI's `Map`: the iOS-16 `Map(coordinateRegion:)` takes no
     /// configuration, so it could not hide Apple's points of interest on the floor this app supports.
-    public func pickerMap(region: Binding<MKCoordinateRegion>, showsUserLocation: Bool) -> AnyView {
-        AnyView(PickerMapView(region: region, showsUserLocation: showsUserLocation))
+    public func pickerMap(
+        region: Binding<MKCoordinateRegion>,
+        showsUserLocation: Bool,
+        bottomInset: CGFloat
+    ) -> AnyView {
+        AnyView(PickerMapView(region: region, showsUserLocation: showsUserLocation, bottomInset: bottomInset))
     }
 
     public func fullBleedMap(coordinate: Coordinate) -> AnyView {
@@ -38,27 +42,35 @@ enum CleansiaMapStyle {
 struct PickerMapView: UIViewRepresentable {
     @Binding var region: MKCoordinateRegion
     let showsUserLocation: Bool
+    let bottomInset: CGFloat
 
     func makeCoordinator() -> Coordinator {
         Coordinator(region: $region)
     }
 
     func makeUIView(context: Context) -> MKMapView {
-        Self.makeMapView(region: region, showsUserLocation: showsUserLocation, coordinator: context.coordinator)
+        Self.makeMapView(
+            region: region,
+            showsUserLocation: showsUserLocation,
+            bottomInset: bottomInset,
+            coordinator: context.coordinator
+        )
     }
 
     static func makeMapView(
         region: MKCoordinateRegion,
         showsUserLocation: Bool,
+        bottomInset: CGFloat,
         coordinator: Coordinator
     ) -> MKMapView {
         let mapView = MKMapView()
         CleansiaMapStyle.apply(to: mapView)
         mapView.showsUserLocation = showsUserLocation
         mapView.delegate = coordinator
-        // Apple's logo and "Legal" link sit inside the bottom margin; both pickers lay their confirm
-        // card over the map's bottom edge, which would hide them.
-        mapView.layoutMargins.bottom = confirmCardClearance
+        // Apple's logo and "Legal" link sit inside the bottom margin; both pickers lay their location
+        // button and confirm card over the map's bottom edge, which would hide them.
+        mapView.layoutMargins = margins(bottomInset: bottomInset)
+        coordinator.bottomInset = bottomInset
         addCenterPin(to: mapView)
         coordinator.reported = region.center
         mapView.setRegion(region, animated: false)
@@ -68,13 +80,27 @@ struct PickerMapView: UIViewRepresentable {
     func updateUIView(_ mapView: MKMapView, context: Context) {
         context.coordinator.region = $region
         mapView.showsUserLocation = showsUserLocation
+        Self.apply(bottomInset: bottomInset, to: mapView, coordinator: context.coordinator)
         guard Self.needsRegionUpdate(binding: region.center, reported: context.coordinator.reported) else { return }
         context.coordinator.reported = region.center
         mapView.setRegion(region, animated: true)
     }
 
-    /// How far the confirm card both pickers lay over the map's bottom edge reaches up it.
-    static let confirmCardClearance: CGFloat = 196
+    /// The screen's measurement changes with the text size. A new inset moves the margins' centre, and
+    /// the pin with it, so the point being picked is set back under the pin's tip.
+    static func apply(bottomInset: CGFloat, to mapView: MKMapView, coordinator: Coordinator) {
+        guard bottomInset != coordinator.bottomInset else { return }
+        coordinator.bottomInset = bottomInset
+        let picked = coordinator.reported ?? mapView.centerCoordinate
+        mapView.layoutMargins = margins(bottomInset: bottomInset)
+        mapView.setCenter(picked, animated: false)
+    }
+
+    /// Set whole, never `layoutMargins.bottom = …`: the getter adds the safe area, so writing one edge
+    /// back also writes the safe area into the others, and the top margin grows on every change.
+    static func margins(bottomInset: CGFloat) -> UIEdgeInsets {
+        UIEdgeInsets(top: 0, left: 0, bottom: bottomInset, right: 0)
+    }
 
     /// Close enough to be the same point — a metre's tenth — so the region the map just reported is
     /// never set back on it.
@@ -108,6 +134,8 @@ struct PickerMapView: UIViewRepresentable {
         var region: Binding<MKCoordinateRegion>
         /// The centre last exchanged with the binding, in either direction.
         var reported: CLLocationCoordinate2D?
+        /// The bottom inset the map's margin was last given.
+        var bottomInset: CGFloat = 0
 
         init(region: Binding<MKCoordinateRegion>) {
             self.region = region

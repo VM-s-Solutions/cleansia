@@ -98,7 +98,12 @@ final class CleansiaMapStyleTests: XCTestCase {
         )
         let box = RegionBox(region)
         let coordinator = PickerMapView.Coordinator(region: box.binding)
-        let mapView = PickerMapView.makeMapView(region: region, showsUserLocation: false, coordinator: coordinator)
+        let mapView = PickerMapView.makeMapView(
+            region: region,
+            showsUserLocation: false,
+            bottomInset: 0,
+            coordinator: coordinator
+        )
 
         try assertQuiet(mapView)
         XCTAssertTrue(mapView.delegate === coordinator)
@@ -108,35 +113,111 @@ final class CleansiaMapStyleTests: XCTestCase {
         XCTAssertEqual(pins.count, 1, "one centre pin, drawn by the map itself")
     }
 
-    /// The bottom margin lifts Apple's logo and "Legal" above the confirm card, and the map centres its
-    /// region inside its margins — so the centre pin's tip has to land on the region's centre, the
-    /// point being picked, in a window with the safe area a notched phone gives the full-bleed map.
+    /// The bottom margin lifts Apple's logo and "Legal" above what the screen lays over the map, and
+    /// the map centres its region inside its margins — so the centre pin's tip has to land on the
+    /// region's centre, the point being picked, in a window with the safe area a notched phone gives
+    /// the full-bleed map. 278 is the location button and confirm card at the largest accessibility
+    /// text size, measured on an iPhone 17 Pro Max.
     @MainActor
     func testTheCentrePinsTipIsThePickedPoint() throws {
-        let center = CLLocationCoordinate2D(latitude: prague.latitude, longitude: prague.longitude)
         let region = MKCoordinateRegion(
-            center: center,
+            center: CLLocationCoordinate2D(latitude: prague.latitude, longitude: prague.longitude),
             span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
         )
         let coordinator = PickerMapView.Coordinator(region: RegionBox(region).binding)
-        let mapView = PickerMapView.makeMapView(region: region, showsUserLocation: false, coordinator: coordinator)
+        let mapView = PickerMapView.makeMapView(
+            region: region,
+            showsUserLocation: false,
+            bottomInset: 278,
+            coordinator: coordinator
+        )
+        let window = Self.hostOnANotchedPhone(mapView)
+        defer { window.isHidden = true }
+        mapView.setRegion(region, animated: false)
+
+        assertTheMarginsAreTheSafeAreaPlus(bottomInset: 278, on: mapView)
+        try assertThePinsTipIsTheRegionCentre(of: mapView)
+    }
+
+    /// The screen measures its cover after the map is made, and again whenever the text size changes.
+    /// A new inset moves the pin with the margins' centre, so the map has to bring the point being
+    /// picked back under the pin's tip, or the card would name an address the pin no longer points at.
+    @MainActor
+    func testANewBottomInsetKeepsThePickedPointUnderThePin() throws {
+        let picked = CLLocationCoordinate2D(latitude: prague.latitude, longitude: prague.longitude)
+        let region = MKCoordinateRegion(
+            center: picked,
+            span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+        )
+        let coordinator = PickerMapView.Coordinator(region: RegionBox(region).binding)
+        let mapView = PickerMapView.makeMapView(
+            region: region,
+            showsUserLocation: false,
+            bottomInset: 0,
+            coordinator: coordinator
+        )
+        let window = Self.hostOnANotchedPhone(mapView)
+        defer { window.isHidden = true }
+        mapView.setRegion(region, animated: false)
+
+        // The card with an address, the same card at the largest text size, then the card while it
+        // looks the address up (no second line).
+        for inset: CGFloat in [206, 278, 186] {
+            PickerMapView.apply(bottomInset: inset, to: mapView, coordinator: coordinator)
+            mapView.layoutIfNeeded()
+
+            assertTheMarginsAreTheSafeAreaPlus(bottomInset: inset, on: mapView)
+            XCTAssertEqual(mapView.region.center.latitude, picked.latitude, accuracy: 0.000_01)
+            XCTAssertEqual(mapView.region.center.longitude, picked.longitude, accuracy: 0.000_01)
+            try assertThePinsTipIsTheRegionCentre(of: mapView)
+        }
+    }
+
+    @MainActor
+    private static func hostOnANotchedPhone(_ mapView: MKMapView) -> UIWindow {
         let host = UIViewController()
         host.view = mapView
         host.additionalSafeAreaInsets = UIEdgeInsets(top: 59, left: 0, bottom: 34, right: 0)
         let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
         window.rootViewController = host
         window.makeKeyAndVisible()
-        defer { window.isHidden = true }
         mapView.layoutIfNeeded()
-        mapView.setRegion(region, animated: false)
+        return window
+    }
 
-        XCTAssertGreaterThanOrEqual(mapView.layoutMargins.bottom, PickerMapView.confirmCardClearance)
-        let pin = try XCTUnwrap(mapView.subviews.compactMap { $0 as? UIImageView }.first {
-            $0.image?.size == CleansiaMapMarker.pinSize
-        })
+    /// The safe area and the screen's cover, nothing more: a top margin that kept a previous safe area
+    /// would push the pin a little further down on every change.
+    @MainActor
+    private func assertTheMarginsAreTheSafeAreaPlus(
+        bottomInset: CGFloat,
+        on mapView: MKMapView,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        XCTAssertEqual(mapView.layoutMargins.top, mapView.safeAreaInsets.top, accuracy: 0.5, file: file, line: line)
+        XCTAssertEqual(
+            mapView.layoutMargins.bottom,
+            mapView.safeAreaInsets.bottom + bottomInset,
+            accuracy: 0.5,
+            file: file,
+            line: line
+        )
+    }
+
+    @MainActor
+    private func assertThePinsTipIsTheRegionCentre(
+        of mapView: MKMapView,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) throws {
+        let pin = try XCTUnwrap(
+            mapView.subviews.compactMap { $0 as? UIImageView }.first { $0.image?.size == CleansiaMapMarker.pinSize },
+            file: file,
+            line: line
+        )
         let picked = mapView.convert(mapView.region.center, toPointTo: mapView)
-        XCTAssertEqual(pin.frame.midX, picked.x, accuracy: 1)
-        XCTAssertEqual(pin.frame.maxY, picked.y, accuracy: 1)
+        XCTAssertEqual(pin.frame.midX, picked.x, accuracy: 1, file: file, line: line)
+        XCTAssertEqual(pin.frame.maxY, picked.y, accuracy: 1, file: file, line: line)
     }
 
     @MainActor

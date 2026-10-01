@@ -625,6 +625,7 @@
     <string name="details_add_to_booking">Add to booking</string>
     <string name="details_remove_from_booking">Remove from booking</string>
     <string name="booking_your_home">Your home</string>
+    <string name="booking_size_limit_caption">Up to %1$d rooms and %2$d bathrooms</string>
     <string name="booking_search_services">Search services</string>
     <string name="booking_no_results">No services match your search</string>
     <string name="booking_cat_all">All</string>

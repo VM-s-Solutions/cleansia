@@ -564,6 +564,13 @@ private fun WhatStep(
             Stepper(value = state.bathrooms, max = PropertySize.MAX_BATHROOMS, onChange = viewModel::setBathrooms)
         }
     }
+    // The cap stated up front, as on the one-off booking's size row.
+    Spacer(Modifier.height(6.dp))
+    Text(
+        stringResource(R.string.booking_size_limit_caption, PropertySize.MAX_ROOMS, PropertySize.MAX_BATHROOMS),
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
 
     Spacer(Modifier.height(24.dp))
 

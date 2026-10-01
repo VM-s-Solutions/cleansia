@@ -619,6 +619,7 @@
     <string name="details_add_to_booking">Pridať do rezervácie</string>
     <string name="details_remove_from_booking">Odobrať z rezervácie</string>
     <string name="booking_your_home">Váš domov</string>
+    <string name="booking_size_limit_caption">Najviac %1$d izieb a %2$d kúpeľne</string>
     <string name="booking_search_services">Hľadať služby</string>
     <string name="booking_no_results">Žiadne služby nezodpovedajú vášmu hľadaniu</string>
     <string name="booking_cat_all">Všetko</string>

@@ -619,6 +619,7 @@
     <string name="details_add_to_booking">Додати до бронювання</string>
     <string name="details_remove_from_booking">Видалити з бронювання</string>
     <string name="booking_your_home">Ваш дім</string>
+    <string name="booking_size_limit_caption">Не більше %1$d кімнат і %2$d ванних кімнат</string>
     <string name="booking_search_services">Шукати послуги</string>
     <string name="booking_no_results">Немає послуг, що відповідають вашому пошуку</string>
     <string name="booking_cat_all">Усі</string>

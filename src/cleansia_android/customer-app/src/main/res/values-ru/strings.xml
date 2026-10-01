@@ -619,6 +619,7 @@
     <string name="details_add_to_booking">Добавить в бронирование</string>
     <string name="details_remove_from_booking">Убрать из бронирования</string>
     <string name="booking_your_home">Ваш дом</string>
+    <string name="booking_size_limit_caption">Не более %1$d комнат и %2$d ванных комнат</string>
     <string name="booking_search_services">Поиск услуг</string>
     <string name="booking_no_results">Нет услуг по вашему запросу</string>
     <string name="booking_cat_all">Все</string>

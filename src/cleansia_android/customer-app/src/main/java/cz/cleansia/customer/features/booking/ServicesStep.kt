@@ -647,38 +647,56 @@ private fun PropertyCompactRow(
     onRoomsChange: (Int) -> Unit,
     onBathroomsChange: (Int) -> Unit,
 ) {
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
             .background(selectionTint())
             .padding(horizontal = 14.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
     ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                stringResource(R.string.booking_your_home),
+                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.weight(1f),
+            )
+            // Both ends of each stepper stop at the bounds, so a tap that cannot move the number never
+            // looks like one that can.
+            CompactCounter(
+                label = pluralStringResource(R.plurals.booking_rooms_short, rooms, rooms),
+                onMinus = { onRoomsChange(rooms - 1) },
+                onPlus = { onRoomsChange(rooms + 1) },
+                canRemove = rooms > 1,
+                canAdd = rooms < PropertySize.MAX_ROOMS,
+            )
+            Spacer(Modifier.width(8.dp))
+            CompactCounter(
+                label = pluralStringResource(R.plurals.booking_bath_short, bathrooms, bathrooms),
+                onMinus = { onBathroomsChange(bathrooms - 1) },
+                onPlus = { onBathroomsChange(bathrooms + 1) },
+                canRemove = bathrooms > 1,
+                canAdd = bathrooms < PropertySize.MAX_BATHROOMS,
+            )
+        }
+        // The cap stated up front, so the plus stopping at it reads as the rule rather than a bug.
+        Spacer(Modifier.height(4.dp))
         Text(
-            stringResource(R.string.booking_your_home),
-            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.weight(1f),
-        )
-        CompactCounter(
-            label = pluralStringResource(R.plurals.booking_rooms_short, rooms, rooms),
-            onMinus = { onRoomsChange(rooms - 1) },
-            onPlus = { onRoomsChange(rooms + 1) },
-            canAdd = rooms < PropertySize.MAX_ROOMS,
-        )
-        Spacer(Modifier.width(8.dp))
-        CompactCounter(
-            label = pluralStringResource(R.plurals.booking_bath_short, bathrooms, bathrooms),
-            onMinus = { onBathroomsChange(bathrooms - 1) },
-            onPlus = { onBathroomsChange(bathrooms + 1) },
-            canAdd = bathrooms < PropertySize.MAX_BATHROOMS,
+            stringResource(R.string.booking_size_limit_caption, PropertySize.MAX_ROOMS, PropertySize.MAX_BATHROOMS),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }
 
 @Composable
-private fun CompactCounter(label: String, onMinus: () -> Unit, onPlus: () -> Unit, canAdd: Boolean) {
+private fun CompactCounter(
+    label: String,
+    onMinus: () -> Unit,
+    onPlus: () -> Unit,
+    canRemove: Boolean,
+    canAdd: Boolean,
+) {
     Row(
         modifier = Modifier
             .clip(RoundedCornerShape(999.dp))
@@ -686,9 +704,16 @@ private fun CompactCounter(label: String, onMinus: () -> Unit, onPlus: () -> Uni
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
-            Modifier.size(28.dp).clickable(onClick = onMinus),
+            Modifier.size(28.dp).clickable(enabled = canRemove, onClick = onMinus),
             contentAlignment = Alignment.Center,
-        ) { Icon(Icons.Outlined.Remove, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp)) }
+        ) {
+            Icon(
+                Icons.Outlined.Remove,
+                null,
+                tint = MaterialTheme.colorScheme.primary.copy(alpha = if (canRemove) 1f else 0.38f),
+                modifier = Modifier.size(14.dp),
+            )
+        }
         Text(
             label,
             style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),

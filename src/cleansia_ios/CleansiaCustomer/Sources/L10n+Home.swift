@@ -66,6 +66,11 @@ extension L10n {
             localized("home_upsell_referral_cta")
         }
 
+        /// "Offer 2 of 3" — the card's VoiceOver value; swipe up/down moves between offers.
+        static func upsellPageA11y(_ position: Int, _ count: Int) -> String {
+            format("home_upsell_page_a11y", position, count)
+        }
+
         static var trustInsured: String {
             localized("home_trust_insured")
         }

@@ -3,20 +3,52 @@ import SwiftUI
 
 private let upsellCardHeight: CGFloat = 180
 
-/// The smart-upsell pager (`SmartUpsellCarousel`, `HomeTab.kt:399-568`) — an
-/// inner `TabView(.page)` per the ADR-0018 D3 HorizontalPager mapping, with the
-/// Android custom dot row below (active dot grows wide) rather than the stock
-/// overlaid `UIPageControl`.
+/// The smart-upsell pager (`SmartUpsellCarousel`, `HomeTab.kt`) — an inner `TabView(.page)` per the
+/// ADR-0018 D3 HorizontalPager mapping, with the Android custom dot row below (active dot grows wide)
+/// rather than the stock overlaid `UIPageControl`.
+///
+/// It loops. Sentinel clones (see `UpsellSlide.pageCount(slides:)`) sit past both ends, and a page that
+/// settles on one jumps, unanimated, to the real slide it copies. The page list never changes during a
+/// scroll — mutating a page TabView's source mid-scroll is the iOS 17.4 page-skip bug.
 struct UpsellCarousel: View {
     @Environment(\.locale) private var locale
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let isPlus: Bool
     let plusTrialDays: Int
     let showSetupRecurring: Bool
     let onAction: (UpsellSlide.Action) -> Void
 
-    @State private var selection = 0
+    @State private var page: Int
+    /// The slide count `page` was laid out for, so a count change can keep the slide on screen.
+    @State private var anchoredCount: Int
+    /// A page change this view made itself (auto-advance, a re-anchor); any other change is the customer.
+    @State private var programmaticPage: Int?
+    /// Set by the first swipe, tap or VoiceOver page action; auto-advance then stops for this visit.
+    @State private var userInteracted = false
 
     private static let autoRotateSeconds: UInt64 = 6
+    /// Long enough for the page to finish settling before a clone is swapped for its real slide.
+    private static let reanchorDelayNanoseconds: UInt64 = 350_000_000
+
+    init(
+        isPlus: Bool,
+        plusTrialDays: Int,
+        showSetupRecurring: Bool,
+        onAction: @escaping (UpsellSlide.Action) -> Void
+    ) {
+        self.isPlus = isPlus
+        self.plusTrialDays = plusTrialDays
+        self.showSetupRecurring = showSetupRecurring
+        self.onAction = onAction
+        let count = UpsellSlide.slides(
+            isPlus: isPlus,
+            plusTrialDays: plusTrialDays,
+            showSetupRecurring: showSetupRecurring
+        ).count
+        _page = State(initialValue: UpsellSlide.page(logical: 0, count: count))
+        _anchoredCount = State(initialValue: count)
+    }
 
     /// Rebuilt each render so the per-slide `L10n` strings re-resolve against the
     /// live `L10n.bundle` on an in-app language switch, rather than freezing at
@@ -27,57 +59,119 @@ struct UpsellCarousel: View {
     }
 
     var body: some View {
+        let slides = slides
+        let count = slides.count
         VStack(spacing: 0) {
-            TabView(selection: $selection) {
-                ForEach(Array(slides.enumerated()), id: \.element.id) { index, slide in
-                    UpsellSlideCard(slide: slide) { onAction(slide.action) }
-                        .tag(index)
+            TabView(selection: $page) {
+                ForEach(0 ..< UpsellSlide.pageCount(slides: count), id: \.self) { index in
+                    let logical = UpsellSlide.logicalIndex(page: index, count: count)
+                    let slide = slides[logical]
+                    UpsellSlideCard(slide: slide) {
+                        userInteracted = true
+                        onAction(slide.action)
+                    }
+                    .accessibilityValue(Text(L10n.Home.upsellPageA11y(logical + 1, count)))
+                    .accessibilityAdjustableAction { direction in
+                        guard count > 1 else { return }
+                        userInteracted = true
+                        switch direction {
+                        case .increment: show(page: page + 1)
+                        case .decrement: show(page: page - 1)
+                        @unknown default: break
+                        }
+                    }
+                    // A clone repeats a real slide; VoiceOver reads each offer once.
+                    .accessibilityHidden(UpsellSlide.reanchor(page: index, count: count) != nil)
+                    .tag(index)
                 }
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
             .frame(height: upsellCardHeight)
 
-            if slides.count > 1 {
-                dotRow(count: slides.count)
+            if count > 1 {
+                dotRow(count: count, selected: UpsellSlide.logicalIndex(page: page, count: count))
                     .padding(.top, 10)
+                    .accessibilityHidden(true)
             }
         }
         .id(locale.identifier)
-        .onChange(of: slides.count) { count in
-            selection = min(selection, max(count - 1, 0))
+        .onChange(of: count) { newCount in
+            let target = UpsellSlide.page(afterCountChangeFrom: page, oldCount: anchoredCount, newCount: newCount)
+            anchoredCount = newCount
+            jump(to: target)
         }
-        .task(id: AutoRotateKey(count: slides.count, page: selection)) {
-            await autoAdvance(count: slides.count)
+        .onChange(of: page) { newPage in
+            if programmaticPage == newPage {
+                programmaticPage = nil
+            } else {
+                userInteracted = true
+            }
+            scheduleReanchor(from: newPage, count: count)
+        }
+        .onDisappear { userInteracted = false }
+        .task(id: AutoRotateKey(
+            count: count,
+            page: page,
+            stopped: userInteracted || voiceOverEnabled || reduceMotion
+        )) {
+            await autoAdvance(count: count)
         }
     }
 
-    private func dotRow(count: Int) -> some View {
+    private func dotRow(count: Int, selected: Int) -> some View {
         HStack(spacing: 0) {
             ForEach(0 ..< count, id: \.self) { index in
                 Capsule()
-                    .fill(index == selection ? CleansiaColors.primary : CleansiaColors.outlineVariant)
-                    .frame(width: index == selection ? 24 : 8, height: 8)
+                    .fill(index == selected ? CleansiaColors.primary : CleansiaColors.outlineVariant)
+                    .frame(width: index == selected ? 24 : 8, height: 8)
                     .padding(.horizontal, 3)
             }
         }
         .frame(maxWidth: .infinity)
-        .animation(.default, value: selection)
+        .animation(.default, value: selected)
     }
 
-    /// The 6s auto-rotate (`HomeTab.kt:513-526`). Keying the task on the
-    /// current page restarts the countdown after any page change, so a user
-    /// swipe earns a fresh 6s before the next advance (the Android
-    /// pause-while-touching intent, without a drag-state hook TabView lacks).
+    /// The 6 s auto-advance, always forward: past the last slide it lands on the first slide's clone,
+    /// which then re-anchors, so it never rewinds across every slide. It is moving content, so it stops
+    /// for the rest of the visit once the customer swipes or taps (WCAG 2.2.2) and never runs under
+    /// VoiceOver or Reduce Motion. Keying the task on the page restarts the countdown after any change.
     private func autoAdvance(count: Int) async {
-        guard count > 1 else { return }
+        guard count > 1, !userInteracted, !voiceOverEnabled, !reduceMotion else { return }
         try? await Task.sleep(nanoseconds: Self.autoRotateSeconds * 1_000_000_000)
-        guard !Task.isCancelled else { return }
-        withAnimation { selection = (selection + 1) % count }
+        guard !Task.isCancelled, UpsellSlide.reanchor(page: page, count: count) == nil else { return }
+        programmaticPage = page + 1
+        withAnimation { page += 1 }
+    }
+
+    private func show(page target: Int) {
+        let pages = UpsellSlide.pageCount(slides: anchoredCount)
+        guard (0 ..< pages).contains(target) else { return }
+        withAnimation { page = target }
+    }
+
+    /// A clone stands in for its real slide only until the page has settled on it.
+    private func scheduleReanchor(from settled: Int, count: Int) {
+        guard let target = UpsellSlide.reanchor(page: settled, count: count) else { return }
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: Self.reanchorDelayNanoseconds)
+            guard page == settled else { return }
+            jump(to: target)
+        }
+    }
+
+    /// Unanimated, so the swap from a clone to the slide it copies is invisible.
+    private func jump(to target: Int) {
+        guard target != page else { return }
+        programmaticPage = target
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) { page = target }
     }
 
     private struct AutoRotateKey: Equatable {
         let count: Int
         let page: Int
+        let stopped: Bool
     }
 }
 
@@ -96,6 +190,7 @@ private struct UpsellSlideCard: View {
                         .resizable()
                         .scaledToFit()
                         .frame(width: 110, height: 110)
+                        .accessibilityHidden(true)
                 }
             }
             .padding(Spacing.ml)
@@ -123,6 +218,7 @@ private struct UpsellSlideCard: View {
                 Image(systemName: "arrow.right")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(.white)
+                    .accessibilityHidden(true)
             }
             .padding(.horizontal, 14)
             .padding(.vertical, Spacing.xs)

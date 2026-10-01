@@ -80,3 +80,39 @@ struct UpsellSlide: Equatable, Identifiable {
         return slides
     }
 }
+
+/// The loop's page arithmetic. With n > 1 slides the pager shows n + 2 pages — a clone of the last slide
+/// before the first and a clone of the first after the last — so a swipe past either end lands on a
+/// clone that is pixel-identical to where it then jumps. Android loops over a bounded run of virtual
+/// pages instead; TabView's page style is not lazy, so hundreds of pages would all be built.
+extension UpsellSlide {
+    static func pageCount(slides count: Int) -> Int {
+        count > 1 ? count + 2 : count
+    }
+
+    /// The slide a page shows: page 0 is the last slide's clone, page n + 1 the first's.
+    static func logicalIndex(page: Int, count: Int) -> Int {
+        guard count > 1 else { return 0 }
+        return ((page - 1) % count + count) % count
+    }
+
+    /// The page showing slide `logical`.
+    static func page(logical: Int, count: Int) -> Int {
+        count > 1 ? logical + 1 : 0
+    }
+
+    /// The real page a settled clone stands for; nil on a real page, which stays where it is.
+    static func reanchor(page: Int, count: Int) -> Int? {
+        guard count > 1 else { return nil }
+        if page <= 0 { return count }
+        if page >= count + 1 { return 1 }
+        return nil
+    }
+
+    /// The page to show when the slide count changes, keeping the slide on screen — or the last one,
+    /// when the slide on screen is the one that left.
+    static func page(afterCountChangeFrom page: Int, oldCount: Int, newCount: Int) -> Int {
+        let logical = logicalIndex(page: page, count: oldCount)
+        return self.page(logical: min(logical, max(newCount - 1, 0)), count: newCount)
+    }
+}

@@ -111,6 +111,61 @@ final class UpsellSlideTests: XCTestCase {
         )
     }
 
+    // MARK: - The loop
+
+    func testTheLoopAddsOneCloneAtEachEnd() {
+        XCTAssertEqual(UpsellSlide.pageCount(slides: 3), 5)
+        XCTAssertEqual(UpsellSlide.pageCount(slides: 2), 4)
+    }
+
+    func testASingleSlideHasNothingToLoop() {
+        XCTAssertEqual(UpsellSlide.pageCount(slides: 1), 1)
+        XCTAssertEqual(UpsellSlide.logicalIndex(page: 0, count: 1), 0)
+        XCTAssertEqual(UpsellSlide.page(logical: 0, count: 1), 0)
+        XCTAssertNil(UpsellSlide.reanchor(page: 0, count: 1))
+    }
+
+    func testTheClonesShowTheSlidesTheyCopy() {
+        XCTAssertEqual(UpsellSlide.logicalIndex(page: 0, count: 3), 2, "the leading clone is the last slide")
+        XCTAssertEqual(UpsellSlide.logicalIndex(page: 4, count: 3), 0, "the trailing clone is the first slide")
+        XCTAssertEqual((1 ... 3).map { UpsellSlide.logicalIndex(page: $0, count: 3) }, [0, 1, 2])
+    }
+
+    func testASettledCloneJumpsToTheSlideItCopiesAndARealPageStays() {
+        XCTAssertEqual(UpsellSlide.reanchor(page: 0, count: 3), 3)
+        XCTAssertEqual(UpsellSlide.reanchor(page: 4, count: 3), 1)
+        for page in 1 ... 3 {
+            XCTAssertNil(UpsellSlide.reanchor(page: page, count: 3), "page \(page)")
+        }
+    }
+
+    /// Swiping forward from the last slide lands on the first; back from the first lands on the last.
+    func testTheLoopClosesInBothDirections() throws {
+        for count in 2 ... 5 {
+            let pastLast = UpsellSlide.page(logical: count - 1, count: count) + 1
+            let landed = try XCTUnwrap(UpsellSlide.reanchor(page: pastLast, count: count))
+            XCTAssertEqual(UpsellSlide.logicalIndex(page: landed, count: count), 0, "n=\(count)")
+
+            let beforeFirst = UpsellSlide.page(logical: 0, count: count) - 1
+            let back = try XCTUnwrap(UpsellSlide.reanchor(page: beforeFirst, count: count))
+            XCTAssertEqual(UpsellSlide.logicalIndex(page: back, count: count), count - 1, "n=\(count)")
+        }
+    }
+
+    /// A slide arriving after first paint keeps the slide on screen; one leaving falls back to the last.
+    func testACountChangeKeepsTheSlideOnScreen() {
+        let onSecond = UpsellSlide.page(logical: 1, count: 3)
+        let grown = UpsellSlide.page(afterCountChangeFrom: onSecond, oldCount: 3, newCount: 4)
+        XCTAssertEqual(UpsellSlide.logicalIndex(page: grown, count: 4), 1)
+
+        let onThird = UpsellSlide.page(logical: 2, count: 3)
+        let shrunk = UpsellSlide.page(afterCountChangeFrom: onThird, oldCount: 3, newCount: 2)
+        XCTAssertEqual(UpsellSlide.logicalIndex(page: shrunk, count: 2), 1)
+
+        let fromClone = UpsellSlide.page(afterCountChangeFrom: 4, oldCount: 3, newCount: 3)
+        XCTAssertEqual(UpsellSlide.logicalIndex(page: fromClone, count: 3), 0)
+    }
+
     private func slide(_ kind: UpsellSlide.Kind, in slides: [UpsellSlide]) throws -> UpsellSlide {
         try XCTUnwrap(slides.first { $0.kind == kind }, "missing \(kind) slide")
     }

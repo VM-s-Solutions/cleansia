@@ -13274,6 +13274,41 @@
         }
       }
     },
+    "home_upsell_page_a11y": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Offer %1$lld of %2$lld"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nabídka %1$lld z %2$lld"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ponuka %1$lld z %2$lld"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пропозиція %1$lld з %2$lld"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Предложение %1$lld из %2$lld"
+          }
+        }
+      }
+    },
     "home_upsell_plus_cta": {
       "extractionState": "stale",
       "localizations": {

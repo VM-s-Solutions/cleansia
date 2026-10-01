@@ -1206,8 +1206,13 @@
       </section>
       }
 
-      <!-- Price Sidebar (Desktop) -->
-      <aside class="cl-wiz__summary">
+      <aside
+        class="cl-wiz__summary"
+        [class.cl-wiz__summary--open]="summaryOpen()"
+        (keydown.escape)="summaryOpen.set(false)"
+      >
+        <div class="cl-wiz__summary-details" id="wizard-summary-details">
+        <div class="cl-wiz__summary-fold">
         <h2 class="cl-h3">{{ 'pages.order.summary_heading' | translate }}</h2>
 
         <!--
@@ -1355,7 +1360,20 @@
         }
 
         <div class="cl-wiz__rule"></div>
+        </div>
+        </div>
 
+        <div class="cl-wiz__price">
+        <button
+          type="button"
+          class="cl-wiz__summary-toggle"
+          [attr.aria-expanded]="summaryOpen()"
+          aria-controls="wizard-summary-details wizard-summary-after wizard-summary-foot"
+          [attr.aria-label]="(summaryOpen() ? 'pages.order.summary_hide' : 'pages.order.summary_show') | translate"
+          (click)="toggleSummary()"
+        >
+          <i class="pi pi-chevron-up" aria-hidden="true"></i>
+        </button>
         @if (priceLines().length > 0) {
         <div class="cl-lbl">{{ 'pages.order.price_fixed' | translate }}</div>
         <!--
@@ -1379,6 +1397,9 @@
         }
         <div class="cl-num cl-wiz__total">{{ formatPrice(facade.displayedTotalPrice()) }}</div>
         }
+        </div>
+        <div class="cl-wiz__summary-after" id="wizard-summary-after">
+        <div class="cl-wiz__summary-fold">
         <!--
           Credit applies automatically (owner ruling 2026-09-05), so the customer is told here rather
           than left to discover a smaller charge on the Stripe page. Two lines, because the number
@@ -1409,6 +1430,8 @@
           {{ 'pages.order.summary_estimate' | translate: { hours: estimateHours() } }}
         </div>
         }
+        </div>
+        </div>
 
         <!--
           The forward action lives with the price it commits to. Back is a link
@@ -1473,6 +1496,8 @@
           headline: this is the screen where the customer commits, so the "you
           can still undo this" is worth its extra line.
         -->
+        <div class="cl-wiz__summary-foot" id="wizard-summary-foot">
+        <div class="cl-wiz__summary-fold">
         @if (facade.activeStep() === facade.steps.length - 1) {
         <p class="cl-muted cl-wiz__summary-policy">{{ 'pages.order.cancel_policy_note' | translate }}</p>
         } @else {
@@ -1481,11 +1506,17 @@
           {{ 'pages.order.summary_free_cancel' | translate }}
         </div>
         }
+        </div>
+        </div>
       </aside>
     </div>
   </div>
+
+  @if (summaryOpen()) {
+  <div class="cl-wiz__scrim" aria-hidden="true" (click)="summaryOpen.set(false)"></div>
+  }
+  <cleansia-scroll-top [ariaLabel]="'global.scroll_to_top' | translate" />
 </div>
-<cleansia-scroll-top [ariaLabel]="'global.scroll_to_top' | translate" />
 
 <!-- Rebook Warning Dialog -->
 <p-dialog

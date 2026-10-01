@@ -205,8 +205,8 @@
 }
 
 // Sticky, because it is the answer to "what am I paying" and that question is
-// live on every step. It replaced a bar pinned to the bottom of the viewport,
-// which put the number furthest from the choices that change it.
+// live on every step. At 1100px and below the same element is the bar pinned to
+// the bottom of the screen (see Responsive) — moved by CSS, never copied.
 .cl-wiz__summary {
   position: sticky;
   // Below the fixed navbar, not below the viewport top: the bar reappears on
@@ -224,13 +224,30 @@
   padding: 24px 26px;
   box-shadow: 0 10px 30px rgba(12, 74, 110, 0.1);
 
-  > :not(.cl-wiz__summary-lines) {
+  > :not(.cl-wiz__summary-lines),
+  .cl-wiz__summary-fold > :not(.cl-wiz__summary-lines),
+  .cl-wiz__price > * {
     flex-shrink: 0;
   }
 
   .cl-wiz__rule {
     margin: 16px 0;
   }
+}
+
+// The bottom sheet's rows. On the rail they generate no box, so it lays out as
+// if they were not there.
+.cl-wiz__summary-details,
+.cl-wiz__summary-after,
+.cl-wiz__summary-foot,
+.cl-wiz__summary-fold,
+.cl-wiz__price {
+  display: contents;
+}
+
+.cl-wiz__summary-toggle,
+.cl-wiz__scrim {
+  display: none;
 }
 
 .cl-wiz__summary-lines {
@@ -368,21 +385,189 @@
 // Responsive
 // =============================================================================
 @media (max-width: 1100px) {
-  // The summary stops being a rail and becomes the last card in the column. It
-  // keeps its place in the reading order either way — after the choices, before
-  // the action.
+  // The summary becomes a sheet pinned to the bottom of the screen: collapsed,
+  // it is the total, a chevron and the button; the chevron opens the rest above
+  // them. As the last card in the column it put the only Continue button under
+  // the whole step. It is still the one summary, moved by CSS — a bottom price
+  // bar was removed on 2026-09-01 because it was a SECOND copy of the total, and
+  // a copy must not come back. The grid areas move rows on screen only; the
+  // reading order stays the DOM's, choices before the button.
+  .cl-wiz {
+    padding-bottom: calc(96px + env(safe-area-inset-bottom));
+    --cl-scroll-top-bottom: calc(104px + env(safe-area-inset-bottom));
+  }
+
   .cl-wiz__body {
     grid-template-columns: minmax(0, 1fr);
   }
 
+  // The side carries the pinning and the fade rather than the summary itself:
+  // the summary scrolls when open, and a scroll box clips its own ::before.
   .cl-wiz__side {
+    position: fixed;
+    inset: auto 0 0 0;
+    z-index: 950;
     display: block;
+
+    &::before {
+      content: '';
+      position: absolute;
+      inset: auto 0 100% 0;
+      height: 24px;
+      background: linear-gradient(to bottom, transparent, var(--cl-wiz-ground));
+      pointer-events: none;
+    }
   }
 
   .cl-wiz__summary {
     position: static;
-    max-height: none;
-    overflow-y: visible;
+    max-height: calc(100dvh - 80px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border-radius: 32px 32px 0 0;
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+    box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.12);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'details details'
+      'after after'
+      'foot foot'
+      'blocked blocked'
+      'price action';
+    column-gap: 12px;
+    align-items: center;
+
+    .cl-wiz__blocked {
+      grid-area: blocked;
+      margin: 0 0 12px;
+    }
+
+    .cl-wiz__advance {
+      grid-area: action;
+      width: auto;
+      margin: 0;
+    }
+
+    .cl-wiz__total-was {
+      margin-top: 0;
+    }
+  }
+
+  .cl-wiz__summary-details,
+  .cl-wiz__summary-after,
+  .cl-wiz__summary-foot {
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    // Hidden, not just folded: the collapsed rows leave the tab order with it.
+    visibility: hidden;
+    transition: grid-template-rows 0.28s ease, opacity 0.2s ease, visibility 0s 0.28s;
+  }
+
+  .cl-wiz__summary-details {
+    grid-area: details;
+  }
+
+  .cl-wiz__summary-after {
+    grid-area: after;
+  }
+
+  .cl-wiz__summary-foot {
+    grid-area: foot;
+  }
+
+  // The inline margin makes room for the remove buttons, which overhang their
+  // rows by 10px and would otherwise be clipped at the fold's edge.
+  .cl-wiz__summary-fold {
+    display: block;
+    min-height: 0;
+    overflow: hidden;
+    margin-inline: -10px;
+    padding-inline: 10px;
+
+    > :last-child {
+      margin-bottom: 12px;
+    }
+  }
+
+  .cl-wiz__summary--open {
+    .cl-wiz__summary-details,
+    .cl-wiz__summary-after,
+    .cl-wiz__summary-foot {
+      grid-template-rows: 1fr;
+      opacity: 1;
+      visibility: visible;
+      transition: grid-template-rows 0.28s ease, opacity 0.2s ease, visibility 0s;
+    }
+  }
+
+  .cl-wiz__price {
+    grid-area: price;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    column-gap: 10px;
+    min-width: 0;
+
+    > :not(.cl-wiz__summary-toggle) {
+      grid-column: 2;
+    }
+
+    .cl-wiz__total {
+      margin-top: 0;
+      font-size: 22px;
+    }
+  }
+
+  .cl-wiz__summary-toggle {
+    grid-row: 1 / span 3;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 1px solid var(--cl-border);
+    border-radius: 999px;
+    background: var(--cl-surface);
+    color: var(--cl-heading);
+    font: inherit;
+    cursor: pointer;
+
+    i {
+      transition: transform 0.2s ease;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--cl-accent);
+      outline-offset: 2px;
+    }
+
+    .cl-wiz__summary--open & i {
+      transform: rotate(180deg);
+    }
+  }
+
+  .cl-wiz__scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 940;
+    background: rgba(15, 23, 42, 0.32);
+  }
+
+  body:has(.cl-wiz) .cleansia-dev-banner.cleansia-dev-banner.cleansia-dev-banner {
+    bottom: calc(96px + env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-width: 1100px) and (prefers-reduced-motion: reduce) {
+  .cl-wiz__summary .cl-wiz__summary-details,
+  .cl-wiz__summary .cl-wiz__summary-after,
+  .cl-wiz__summary .cl-wiz__summary-foot,
+  .cl-wiz__summary-toggle i {
+    transition: none;
   }
 }
 

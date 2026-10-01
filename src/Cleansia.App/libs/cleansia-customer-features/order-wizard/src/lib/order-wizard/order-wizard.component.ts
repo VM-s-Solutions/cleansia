@@ -106,7 +106,7 @@ export class OrderWizardComponent implements OnInit {
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   protected readonly PaymentType = PaymentType;
 
-  mobileBreakdownExpanded = signal(false);
+  readonly summaryOpen = signal(false);
   showRebookWarning = signal(false);
   unavailableItems = signal<string[]>([]);
   private pendingRebook = signal<RebookParams | null>(null);
@@ -114,6 +114,15 @@ export class OrderWizardComponent implements OnInit {
   newAddressLabel = signal('');
   labelError = signal<string | null>(null);
   touched = signal<Record<string, boolean>>({});
+
+  private readonly collapseSummaryOnStep = effect(() => {
+    void this.facade.activeStep();
+    this.summaryOpen.set(false);
+  });
+
+  toggleSummary(): void {
+    this.summaryOpen.update((open) => !open);
+  }
 
   markTouched(field: string): void {
     this.touched.update((t) => ({ ...t, [field]: true }));

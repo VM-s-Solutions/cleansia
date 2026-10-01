@@ -19,7 +19,7 @@ import { CommonModule } from '@angular/common';
   styles: `
     .scroll-top-btn {
       position: fixed;
-      bottom: 5rem;
+      bottom: var(--cl-scroll-top-bottom, 5rem);
       right: 1.5rem;
       width: 44px;
       height: 44px;

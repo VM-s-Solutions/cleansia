@@ -867,14 +867,14 @@ describe('OrderWizardComponent (a11y)', () => {
   describe('running total (AC1)', () => {
     it('keeps the summary in the document and after the step in reading order', async () => {
       await setup();
-      // The bottom price bar is gone. It was a second copy of the summary,
-      // pinned over the form on the widths where the summary rail already
-      // stacks into the column. The guarantee that matters is unchanged: the
-      // total is on the page without a toggle, and a screen reader meets it
+      // One summary at every width. On a phone CSS pins this same element to
+      // the bottom of the screen; the price bar removed on 2026-09-01 was a
+      // SECOND copy of the total, and a copy must not come back. The total is
+      // on the page without a toggle, and a screen reader meets the summary
       // after the choices that produce it rather than before them.
       const panel = el.querySelector('.cl-wiz__panel');
       const summary = el.querySelector('.cl-wiz__summary');
-      expect(summary).toBeTruthy();
+      expect(el.querySelectorAll('.cl-wiz__summary').length).toBe(1);
       expect(el.querySelector('.order-wizard__mobile-price')).toBeNull();
       expect(
         panel && summary && panel.compareDocumentPosition(summary) & Node.DOCUMENT_POSITION_FOLLOWING
@@ -899,6 +899,95 @@ describe('OrderWizardComponent (a11y)', () => {
 
       expect(el.querySelector('.cl-wiz__total')?.textContent).toMatch(/1[\s .,]?000/);
       expect(el.textContent).toContain('pages.order.price_fixed');
+    });
+  });
+
+  describe('the summary as a bottom sheet', () => {
+    const toggle = () => el.querySelector('.cl-wiz__summary-toggle') as HTMLButtonElement;
+    const summary = () => el.querySelector('.cl-wiz__summary') as HTMLElement;
+    const isOpen = () =>
+      toggle().getAttribute('aria-expanded') === 'true' &&
+      summary().classList.contains('cl-wiz__summary--open');
+    const isClosed = () =>
+      toggle().getAttribute('aria-expanded') === 'false' &&
+      !summary().classList.contains('cl-wiz__summary--open') &&
+      el.querySelector('.cl-wiz__scrim') === null;
+
+    async function setupOpen(): Promise<void> {
+      await setup();
+      toggle().click();
+      fixture.detectChanges();
+      expect(isOpen()).toBe(true);
+    }
+
+    it('starts collapsed, and the chevron opens and closes it', async () => {
+      await setup();
+      expect(isClosed()).toBe(true);
+      expect(toggle().getAttribute('aria-label')).toBe('pages.order.summary_show');
+
+      toggle().click();
+      fixture.detectChanges();
+      expect(isOpen()).toBe(true);
+      expect(toggle().getAttribute('aria-label')).toBe('pages.order.summary_hide');
+      expect(el.querySelector('.cl-wiz__scrim')).not.toBeNull();
+
+      toggle().click();
+      fixture.detectChanges();
+      expect(isClosed()).toBe(true);
+    });
+
+    it('controls the three rows it folds', async () => {
+      await setup();
+
+      const ids = toggle().getAttribute('aria-controls')?.split(' ') ?? [];
+      expect(ids).toEqual(['wizard-summary-details', 'wizard-summary-after', 'wizard-summary-foot']);
+      for (const id of ids) {
+        expect(summary().querySelector(`#${id}`)).not.toBeNull();
+      }
+    });
+
+    it('keeps the chevron and Continue with nothing picked and no price yet', async () => {
+      await setup();
+
+      expect(el.querySelector('.cl-wiz__total')).toBeNull();
+      expect(el.querySelector('.cl-wiz__price .cl-wiz__summary-toggle')).not.toBeNull();
+      expect(el.querySelector('[data-spec-advance]')).not.toBeNull();
+    });
+
+    it('collapses on a step change', async () => {
+      await setupOpen();
+
+      facade.activeStep.set(1);
+      fixture.detectChanges();
+
+      expect(isClosed()).toBe(true);
+    });
+
+    it('collapses on Escape', async () => {
+      await setupOpen();
+
+      toggle().dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      fixture.detectChanges();
+
+      expect(isClosed()).toBe(true);
+    });
+
+    it('collapses on a tap on the scrim', async () => {
+      await setupOpen();
+
+      (el.querySelector('.cl-wiz__scrim') as HTMLElement).click();
+      fixture.detectChanges();
+
+      expect(isClosed()).toBe(true);
+    });
+
+    it('keeps the free-cancel note after the button, in the folded foot', async () => {
+      await setup();
+
+      const advance = el.querySelector('[data-spec-advance]');
+      const note = el.querySelector('.cl-wiz__summary-note');
+      expect(note?.closest('#wizard-summary-foot')).not.toBeNull();
+      expect(advance && note && advance.compareDocumentPosition(note) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     });
   });
 

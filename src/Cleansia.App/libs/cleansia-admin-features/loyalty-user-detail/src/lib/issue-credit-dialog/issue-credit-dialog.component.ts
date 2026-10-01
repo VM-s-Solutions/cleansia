@@ -7,6 +7,7 @@ import {
   input,
   output,
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
   CleansiaButtonComponent,
@@ -122,6 +123,17 @@ export class IssueCreditDialogComponent {
       nonNullable: true,
       validators: [Validators.required, Validators.maxLength(NOTE_MAX)],
     }),
+  });
+
+  private readonly chosenCurrencyId = toSignal(this.form.controls.currencyId.valueChanges, {
+    initialValue: this.form.controls.currencyId.value,
+  });
+
+  readonly amountLabel = computed(() => {
+    const code = this.currencies().find((c) => c.id === this.chosenCurrencyId())?.code;
+    return code
+      ? { key: 'pages.loyalty_user_detail.credit.dialog.field.amount_in', params: { currency: code } }
+      : { key: 'pages.loyalty_user_detail.credit.dialog.field.amount', params: {} };
   });
 
   reset(): void {

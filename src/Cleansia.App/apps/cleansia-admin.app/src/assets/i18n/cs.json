@@ -2470,6 +2470,7 @@
           "field": {
             "currency": "Měna",
             "amount": "Částka",
+            "amount_in": "Částka v {{currency}}",
             "reason": "Důvod",
             "note": "Co se stalo",
             "note_help": "Zaznamenáno pod vaším jménem. Napište to, co byste sami chtěli číst, než tomuto zákazníkovi znovu něco přidělíte."

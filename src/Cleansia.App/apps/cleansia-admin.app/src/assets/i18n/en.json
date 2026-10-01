@@ -2470,6 +2470,7 @@
           "field": {
             "currency": "Currency",
             "amount": "Amount",
+            "amount_in": "Amount in {{currency}}",
             "reason": "Reason",
             "note": "What happened",
             "note_help": "Recorded against your name. Write what you would want a colleague to read before compensating this customer again."

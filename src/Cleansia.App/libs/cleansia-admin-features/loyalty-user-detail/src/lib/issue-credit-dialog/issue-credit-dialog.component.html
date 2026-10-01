@@ -30,7 +30,7 @@
 
       <div class="form-field form-field--full">
         <cleansia-text-input
-          [label]="'pages.loyalty_user_detail.credit.dialog.field.amount' | translate"
+          [label]="amountLabel().key | translate: amountLabel().params"
           formControlName="amount"
           dataType="number"
           [required]="true"

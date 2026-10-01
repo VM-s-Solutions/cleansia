@@ -3,6 +3,7 @@ import {
   AdminClient,
   AdminCountryControllerSetCountryServicedRequest,
   CreateServiceCityCommand,
+  ServiceAreaCountryDto,
   ServiceCityDto,
   UpdateServiceCityCommand,
 } from '@cleansia/admin-services';
@@ -14,6 +15,7 @@ import { ServiceAreaManagementFacade } from './service-area-management.facade';
 describe('ServiceAreaManagementFacade', () => {
   let facade: ServiceAreaManagementFacade;
   let getOverviewMock: jest.Mock;
+  let serviceAreaOverviewMock: jest.Mock;
   let detailsMock: jest.Mock;
   let servicedMock: jest.Mock;
   let cityGetMock: jest.Mock;
@@ -31,6 +33,7 @@ describe('ServiceAreaManagementFacade', () => {
   beforeEach(() => {
     TestBed.resetTestingModule();
     getOverviewMock = jest.fn().mockReturnValue(of([]));
+    serviceAreaOverviewMock = jest.fn().mockReturnValue(of([]));
     detailsMock = jest.fn().mockReturnValue(of(null));
     servicedMock = jest.fn().mockReturnValue(of({ isServiced: true }));
     cityGetMock = jest.fn().mockReturnValue(of([]));
@@ -53,6 +56,7 @@ describe('ServiceAreaManagementFacade', () => {
           useValue: {
             adminCountryClient: {
               getOverview: getOverviewMock,
+              serviceAreaOverview: serviceAreaOverviewMock,
               details: detailsMock,
               serviced: servicedMock,
             },
@@ -80,32 +84,53 @@ describe('ServiceAreaManagementFacade', () => {
     expect(facade.initialLoading()).toBe(true);
   });
 
-  it('settles both loading flags on an empty catalog without asking for any detail', () => {
+  const country = (id: string, isServiced: boolean) =>
+    ServiceAreaCountryDto.fromJS({ id, name: id, isServiced });
+
+  it('reads the whole service area in one overview call and no per-country call', () => {
+    const list = [country('c-1', true), country('c-2', false), country('c-3', true)];
+    serviceAreaOverviewMock.mockReturnValue(of(list));
+
     facade.loadCountries();
 
+    expect(serviceAreaOverviewMock).toHaveBeenCalledTimes(1);
     expect(detailsMock).not.toHaveBeenCalled();
+    expect(getOverviewMock).not.toHaveBeenCalled();
+    expect(facade.countries()).toEqual(list);
     expect(facade.loading()).toBe(false);
     expect(facade.initialLoading()).toBe(false);
   });
 
-  it('settles loading and keeps the catalog empty when the overview read fails', () => {
-    getOverviewMock.mockReturnValue(throwError(() => new Error('boom')));
-
-    facade.loadCountries();
-
-    expect(facade.countries()).toEqual([]);
-    expect(facade.initialLoading()).toBe(false);
-  });
-
-  it('collects only the serviced country ids from the per-country details', () => {
-    getOverviewMock.mockReturnValue(of([{ id: 'c-1' }, { id: 'c-2' }]));
-    detailsMock.mockImplementation((id: string) =>
-      of({ id, isServiced: id === 'c-1' })
+  it('derives the serviced country ids from each country flag', () => {
+    serviceAreaOverviewMock.mockReturnValue(
+      of([country('c-1', true), country('c-2', false), country('c-3', true)])
     );
 
     facade.loadCountries();
 
+    expect([...facade.servicedCountryIds()]).toEqual(['c-1', 'c-3']);
+  });
+
+  it('settles loading and keeps the catalog empty when the overview read fails', () => {
+    serviceAreaOverviewMock.mockReturnValue(throwError(() => new Error('boom')));
+
+    facade.loadCountries();
+
+    expect(facade.countries()).toEqual([]);
+    expect(facade.loading()).toBe(false);
+    expect(facade.initialLoading()).toBe(false);
+  });
+
+  it('keeps serviced countries serviced when a reload of the overview fails', () => {
+    const list = [country('c-1', true), country('c-2', false)];
+    serviceAreaOverviewMock.mockReturnValue(of(list));
+    facade.loadCountries();
+
+    serviceAreaOverviewMock.mockReturnValue(throwError(() => new Error('boom')));
+    facade.loadCountries();
+
     expect([...facade.servicedCountryIds()]).toEqual(['c-1']);
+    expect(facade.countries()).toEqual(list);
     expect(facade.loading()).toBe(false);
   });
 
@@ -180,12 +205,12 @@ describe('ServiceAreaManagementFacade', () => {
   // and a 204 with NULL. → service-form.facade.spec.ts
   describe('a null list from the generated client', () => {
     it('leaves the country catalog an empty array and settles both loading flags', () => {
-      getOverviewMock.mockReturnValue(of(null));
+      serviceAreaOverviewMock.mockReturnValue(of(null));
 
       facade.loadCountries();
 
       expect(facade.countries()).toEqual([]);
-      expect(detailsMock).not.toHaveBeenCalled();
+      expect(facade.servicedCountryIds().size).toBe(0);
       expect(facade.initialLoading()).toBe(false);
     });
 

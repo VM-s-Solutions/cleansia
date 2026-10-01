@@ -117,7 +117,9 @@ public sealed class CreateOrderAuditEvidenceTests
             new OrderLateReferralAcceptor(_referralService.Object, _referralRepository.Object, NullLogger<OrderLateReferralAcceptor>.Instance),
             new OrderPaymentDispatcher(
                 _stripeClientFactory.Object, _pending.Object, new OrderChannelProvider(OrderChannel.Web),
-                new StripeConfig(new ConfigurationBuilder().Build()), NullLogger<OrderPaymentDispatcher>.Instance),
+                new StripeConfig(new ConfigurationBuilder().Build()),
+                Mock.Of<IUserRepository>(), Mock.Of<IStripeCustomerResolver>(), Mock.Of<ISavedCardRepository>(), Mock.Of<IRequestMetadataProvider>(),
+                NullLogger<OrderPaymentDispatcher>.Instance),
             TestGuestOrderAccessTokenIssuer.WithNoLiveTokens(),
             _expressWaiverConsumer.Object,
             _creditAccountRepository.Object,

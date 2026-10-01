@@ -41,12 +41,36 @@ public class StripeClient : IStripeClient
     public static long ToMinorUnits(decimal amount) =>
         (long)Math.Round(amount * 100m, MidpointRounding.AwayFromZero);
 
-    public Task<CheckoutSessionResult> CreateCheckoutSessionAsync(Order order, CancellationToken cancellationToken) =>
+    public async Task<CheckoutSessionResult> CreateCheckoutSessionAsync(Order order, CancellationToken cancellationToken)
+    {
+        if (order.StripeSessionId is { Length: > 0 } currentSessionId)
+        {
+            var current = await ClassifyAsync(
+                nameof(CreateCheckoutSessionAsync),
+                () => new SessionService(stripe).GetAsync(currentSessionId, cancellationToken: cancellationToken));
+            if (current.Status == "open")
+            {
+                return new CheckoutSessionResult(current.Id, current.Url);
+            }
+        }
+
+        return await CreateCheckoutSessionAsync(
+            order,
+            expiresAtUtc: null,
+            $"checkout-{order.Id}",
+            $"{config.CancelUrlBase}?orderId={order.Id}",
+            cardToSave: null,
+            cancellationToken);
+    }
+
+    public Task<CheckoutSessionResult> CreateCardSavingCheckoutSessionAsync(
+        Order order, string stripeCustomerId, string savedCardId, CancellationToken cancellationToken) =>
         CreateCheckoutSessionAsync(
             order,
             expiresAtUtc: null,
             $"checkout-{order.Id}",
             $"{config.CancelUrlBase}?orderId={order.Id}",
+            (stripeCustomerId, savedCardId),
             cancellationToken);
 
     public Task<CheckoutSessionResult> CreateCheckoutSessionAsync(
@@ -58,11 +82,17 @@ public class StripeClient : IStripeClient
             expiresAt,
             $"checkout-{order.Id}-{new DateTimeOffset(expiresAt).ToUnixTimeSeconds()}",
             new Uri(config.SuccessUrlBase).GetLeftPart(UriPartial.Authority) + $"{OrdersPagePath}/{order.Id}",
+            cardToSave: null,
             cancellationToken);
     }
 
     private async Task<CheckoutSessionResult> CreateCheckoutSessionAsync(
-        Order order, DateTime? expiresAtUtc, string idempotencyKey, string cancelUrl, CancellationToken cancellationToken)
+        Order order,
+        DateTime? expiresAtUtc,
+        string idempotencyKey,
+        string cancelUrl,
+        (string StripeCustomerId, string SavedCardId)? cardToSave,
+        CancellationToken cancellationToken)
     {
         // AmountDueOnCard, not TotalPrice: credit is a tender, so the sale keeps its size and only
         // the figure the card is asked for moves. Charging TotalPrice here would take the credit AND
@@ -111,6 +141,17 @@ public class StripeClient : IStripeClient
             Metadata = new Dictionary<string, string> { { "OrderId", order.Id } },
             ExpiresAt = expiresAtUtc,
         };
+
+        if (cardToSave is { } saving)
+        {
+            options.Customer = saving.StripeCustomerId;
+            options.Metadata[SavedCardMetadataKey] = saving.SavedCardId;
+            options.PaymentIntentData = new SessionPaymentIntentDataOptions
+            {
+                SetupFutureUsage = "off_session",
+                Metadata = new Dictionary<string, string> { { SavedCardMetadataKey, saving.SavedCardId } },
+            };
+        }
 
         var requestOptions = new RequestOptions { IdempotencyKey = idempotencyKey };
         var service = new SessionService(stripe);
@@ -200,6 +241,7 @@ public class StripeClient : IStripeClient
         string stripeCustomerId,
         string orderId,
         string displayOrderNumber,
+        string? savedCardId,
         CancellationToken cancellationToken)
     {
         var service = new PaymentIntentService(stripe);
@@ -208,7 +250,6 @@ public class StripeClient : IStripeClient
             Amount = ToMinorUnits(amount),
             Currency = currency.ToLowerInvariant(),
             Customer = stripeCustomerId,
-            SetupFutureUsage = "off_session",
             AutomaticPaymentMethods = new PaymentIntentAutomaticPaymentMethodsOptions
             {
                 Enabled = true,
@@ -219,13 +260,23 @@ public class StripeClient : IStripeClient
                 { "DisplayOrderNumber", displayOrderNumber },
             },
         };
+        if (!string.IsNullOrEmpty(savedCardId))
+        {
+            options.SetupFutureUsage = "off_session";
+            options.Metadata[SavedCardMetadataKey] = savedCardId;
+        }
+
         // Include amount in the key so a customer who edits the order
         // (extras/services change → amount differs) can re-open PaymentSheet
         // without Stripe rejecting on idempotency-replay-with-different-params.
         // Same-amount retries still collide and Stripe returns the original
-        // intent (the desired idempotent behavior).
+        // intent (the desired idempotent behavior). A card-saving intent is keyed
+        // on its own saved-card row, since its parameters differ from the plain one's.
         var amountCents = ToMinorUnits(amount);
-        var requestOptions = new RequestOptions { IdempotencyKey = $"pi-{orderId}-{amountCents}" };
+        var idempotencyKey = string.IsNullOrEmpty(savedCardId)
+            ? $"pi-{orderId}-{amountCents}"
+            : $"pi-{orderId}-{amountCents}-card-{savedCardId}";
+        var requestOptions = new RequestOptions { IdempotencyKey = idempotencyKey };
         var intent = await ClassifyAsync(
             nameof(CreatePaymentIntentAsync),
             () => service.CreateAsync(options, requestOptions, cancellationToken));
@@ -398,6 +449,26 @@ public class StripeClient : IStripeClient
             () => service.GetAsync(setupIntentId, options, cancellationToken: cancellationToken));
 
         if (intent.Status != "succeeded" || intent.PaymentMethod is not { Card: { } card } paymentMethod)
+        {
+            return null;
+        }
+
+        return new SavedCardDetails(paymentMethod.Id, card.Brand, card.Last4, (int)card.ExpMonth, (int)card.ExpYear);
+    }
+
+    public async Task<SavedCardDetails?> GetPaymentIntentCardAsync(
+        string paymentIntentId,
+        CancellationToken cancellationToken)
+    {
+        var service = new PaymentIntentService(stripe);
+        var options = new PaymentIntentGetOptions { Expand = ["payment_method"] };
+        var intent = await ClassifyAsync(
+            nameof(GetPaymentIntentCardAsync),
+            () => service.GetAsync(paymentIntentId, options, cancellationToken: cancellationToken));
+
+        if (intent.Status != "succeeded"
+            || intent.SetupFutureUsage != "off_session"
+            || intent.PaymentMethod is not { Card: { } card } paymentMethod)
         {
             return null;
         }

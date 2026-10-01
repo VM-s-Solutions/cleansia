@@ -19,6 +19,7 @@ using Microsoft.Extensions.Logging;
 using Stripe;
 using Stripe.Checkout;
 using BusinessResult = Cleansia.Infra.Common.Validations.BusinessResult;
+using IStripeClient = Cleansia.Core.Clients.Abstractions.Stripe.IStripeClient;
 
 namespace Cleansia.Core.AppServices.Features.Payments;
 
@@ -194,10 +195,25 @@ public class HandlePaymentNotification
             {
                 case SetupIntent intent when stripeEvent.Type == Constants.StripeEventType.SetupIntentSucceeded:
                     return await CaptureSavedCard(
-                        intent.Metadata?.GetValueOrDefault(SavedCardMetadataKey), intent.Id, cancellationToken);
+                        intent.Metadata?.GetValueOrDefault(SavedCardMetadataKey), intent.Id, ReadSetupCard, cancellationToken);
                 case Session { Mode: "setup" } session when stripeEvent.Type == Constants.StripeEventType.CompletedSession:
                     return await CaptureSavedCard(
-                        session.Metadata?.GetValueOrDefault(SavedCardMetadataKey), session.SetupIntentId, cancellationToken);
+                        session.Metadata?.GetValueOrDefault(SavedCardMetadataKey), session.SetupIntentId, ReadSetupCard, cancellationToken);
+            }
+
+            // A card the customer asked to keep while paying lands on its row here, and the payment itself
+            // still goes on to the order below. A web payment raises both events; the second finds the card
+            // already captured.
+            switch (stripeEvent.Data.Object)
+            {
+                case Session { Mode: "payment" } session when stripeEvent.Type == Constants.StripeEventType.CompletedSession
+                    && session.Metadata?.GetValueOrDefault(SavedCardMetadataKey) is { Length: > 0 } savedAtCheckout:
+                    await CaptureSavedCard(savedAtCheckout, session.PaymentIntentId, ReadPaymentCard, cancellationToken);
+                    break;
+                case PaymentIntent intent when stripeEvent.Type == Constants.StripeEventType.PaymentIntentSucceeded
+                    && intent.Metadata?.GetValueOrDefault(SavedCardMetadataKey) is { Length: > 0 } savedAtPayment:
+                    await CaptureSavedCard(savedAtPayment, intent.Id, ReadPaymentCard, cancellationToken);
+                    break;
             }
 
             // What a customer owes on an order is paid through its pay link or an off-session charge, and
@@ -484,18 +500,30 @@ public class HandlePaymentNotification
 
         private const string SavedCardMetadataKey = "SavedCardId";
 
+        private static Task<SavedCardDetails?> ReadSetupCard(
+            IStripeClient stripeClient, string setupIntentId, CancellationToken cancellationToken) =>
+            stripeClient.GetSetupIntentCardAsync(setupIntentId, cancellationToken);
+
+        private static Task<SavedCardDetails?> ReadPaymentCard(
+            IStripeClient stripeClient, string paymentIntentId, CancellationToken cancellationToken) =>
+            stripeClient.GetPaymentIntentCardAsync(paymentIntentId, cancellationToken);
+
         /// <summary>
-        /// The card a customer saved lands on the row their capture started. A SetupIntent with no saved
-        /// card behind it — the Plus subscribe flow's — is not this flow's and is ignored. The card is read
-        /// from Stripe, so an unreachable Stripe throws, the processed-event stamp rolls back and Stripe
+        /// The card a customer saved lands on the row their capture started: a SetupIntent's from the
+        /// profile, a PaymentIntent's when they ticked "save this card" while paying. A SetupIntent with no
+        /// saved card behind it — the Plus subscribe flow's — is not this flow's and is ignored. The card is
+        /// read from Stripe, so an unreachable Stripe throws, the processed-event stamp rolls back and Stripe
         /// retries. A new card replaces the customer's earlier one in the same currency.
         /// </summary>
         private async Task<BusinessResult> CaptureSavedCard(
-            string? savedCardId, string? setupIntentId, CancellationToken cancellationToken)
+            string? savedCardId,
+            string? intentId,
+            Func<IStripeClient, string, CancellationToken, Task<SavedCardDetails?>> readCard,
+            CancellationToken cancellationToken)
         {
-            if (string.IsNullOrEmpty(savedCardId) || string.IsNullOrEmpty(setupIntentId))
+            if (string.IsNullOrEmpty(savedCardId) || string.IsNullOrEmpty(intentId))
             {
-                logger.LogInformation("Setup event {SetupIntentId} carries no saved card; ignoring", setupIntentId);
+                logger.LogInformation("Card event for intent {IntentId} carries no saved card; ignoring", intentId);
                 return BusinessResult.Success();
             }
 
@@ -503,8 +531,8 @@ public class HandlePaymentNotification
             if (card is null || card.IsCaptured || !card.IsActive)
             {
                 logger.LogInformation(
-                    "Saved card {SavedCardId} is unknown, already captured or removed; setup event {SetupIntentId} ignored",
-                    savedCardId, setupIntentId);
+                    "Saved card {SavedCardId} is unknown, already captured or removed; event for intent {IntentId} ignored",
+                    savedCardId, intentId);
                 return BusinessResult.Success();
             }
 
@@ -513,12 +541,12 @@ public class HandlePaymentNotification
                 tenantProvider.SetTenantOverride(card.TenantId);
             }
 
-            var details = await stripeClientFactory.CreateClient().GetSetupIntentCardAsync(setupIntentId, cancellationToken);
+            var details = await readCard(stripeClientFactory.CreateClient(), intentId, cancellationToken);
             if (details is null)
             {
                 logger.LogWarning(
-                    "Setup intent {SetupIntentId} for saved card {SavedCardId} saved no card; nothing captured",
-                    setupIntentId, card.Id);
+                    "Intent {IntentId} for saved card {SavedCardId} kept no card; nothing captured",
+                    intentId, card.Id);
                 return BusinessResult.Success();
             }
 

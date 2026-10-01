@@ -195,6 +195,7 @@ public class CreateOrderHandlerCharacterizationTests
                 _pending.Object,
                 new OrderChannelProvider(channel),
                 new StripeConfig(new ConfigurationBuilder().Build()),
+                Mock.Of<IUserRepository>(), Mock.Of<IStripeCustomerResolver>(), Mock.Of<ISavedCardRepository>(), Mock.Of<IRequestMetadataProvider>(),
                 NullLogger<OrderPaymentDispatcher>.Instance),
             TestGuestOrderAccessTokenIssuer.WithNoLiveTokens(),
             _expressWaiverConsumer.Object,

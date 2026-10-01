@@ -232,6 +232,8 @@ public static class BusinessErrorMessage
     public const string SavedCardConsentNotAccepted = "saved_card.consent_not_accepted";
     /// <summary>No active card of the caller's has this id; another customer's card answers the same, so its existence is not revealed.</summary>
     public const string SavedCardNotFound = "saved_card.not_found";
+    /// <summary>A guest booking asked to save its card: a saved card belongs to an account, so a guest is never offered the tick.</summary>
+    public const string SavedCardRequiresAccount = "saved_card.requires_account";
 
     // Receivables, the money a customer owes the company on an order
     public const string ReceivableNotFound = "receivable.not_found";

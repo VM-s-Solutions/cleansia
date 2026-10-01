@@ -1,9 +1,11 @@
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
+using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Infra.Common.Configuration;
@@ -58,7 +60,9 @@ public class CardPaymentsKillSwitchTests
 
     private OrderPaymentDispatcher Dispatcher(bool? enabled, OrderChannel channel = OrderChannel.Web) =>
         new(_stripeClientFactory.Object, _pending.Object, new OrderChannelProvider(channel),
-            Config(enabled), NullLogger<OrderPaymentDispatcher>.Instance);
+            Config(enabled),
+            Mock.Of<IUserRepository>(), Mock.Of<IStripeCustomerResolver>(), Mock.Of<ISavedCardRepository>(), Mock.Of<IRequestMetadataProvider>(),
+            NullLogger<OrderPaymentDispatcher>.Instance);
 
     private static Order BuildOrder(PaymentType paymentType) =>
         OrderMockFactory.Generate(new OrderMockFactory.OrderPartial
@@ -82,7 +86,7 @@ public class CardPaymentsKillSwitchTests
             .ReturnsAsync(new CheckoutSessionResult("cs_on", "https://checkout.stripe.com/c/pay/cs_on"));
 
         var result = await Dispatcher(enabled: null)
-            .DispatchAsync(BuildOrder(PaymentType.Card), LanguageCode, CancellationToken.None);
+            .DispatchAsync(BuildOrder(PaymentType.Card), LanguageCode, saveCard: false, CancellationToken.None);
 
         Assert.Null(result.Failure);
         Assert.Equal("https://checkout.stripe.com/c/pay/cs_on", result.CheckoutUrl);
@@ -93,7 +97,7 @@ public class CardPaymentsKillSwitchTests
     public async Task Disabled_Refuses_The_Web_Card_Path_Without_Calling_Stripe()
     {
         var result = await Dispatcher(enabled: false)
-            .DispatchAsync(BuildOrder(PaymentType.Card), LanguageCode, CancellationToken.None);
+            .DispatchAsync(BuildOrder(PaymentType.Card), LanguageCode, saveCard: false, CancellationToken.None);
 
         Assert.NotNull(result.Failure);
         Assert.Equal(BusinessErrorMessage.PaymentGatewayUnavailable, result.Failure!.Message);
@@ -108,7 +112,7 @@ public class CardPaymentsKillSwitchTests
     public async Task Disabled_Refuses_The_Mobile_Channel_Too()
     {
         var result = await Dispatcher(enabled: false, channel: OrderChannel.Mobile)
-            .DispatchAsync(BuildOrder(PaymentType.Card), LanguageCode, CancellationToken.None);
+            .DispatchAsync(BuildOrder(PaymentType.Card), LanguageCode, saveCard: false, CancellationToken.None);
 
         Assert.NotNull(result.Failure);
         Assert.Equal(BusinessErrorMessage.PaymentGatewayUnavailable, result.Failure!.Message);
@@ -122,7 +126,7 @@ public class CardPaymentsKillSwitchTests
     public async Task Disabled_Leaves_Cash_Orders_Working()
     {
         var result = await Dispatcher(enabled: false)
-            .DispatchAsync(BuildOrder(PaymentType.Cash), LanguageCode, CancellationToken.None);
+            .DispatchAsync(BuildOrder(PaymentType.Cash), LanguageCode, saveCard: false, CancellationToken.None);
 
         Assert.Null(result.Failure);
         _pending.Verify(p => p.Enqueue(

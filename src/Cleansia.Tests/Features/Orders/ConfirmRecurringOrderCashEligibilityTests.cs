@@ -155,7 +155,7 @@ public sealed class ConfirmRecurringOrderCashEligibilityTests
         _users.Setup(r => r.GetByIdAsync(CustomerUserId, It.IsAny<CancellationToken>())).ReturnsAsync(user);
         _stripe
             .Setup(s => s.CreatePaymentIntentAsync(
-                It.IsAny<decimal>(), It.IsAny<string>(), "cus_existing", OrderId, It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                It.IsAny<decimal>(), It.IsAny<string>(), "cus_existing", OrderId, It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new PaymentIntentResult("pi_1", "pi_1_secret"));
         _stripe
             .Setup(s => s.CreateEphemeralKeyAsync("cus_existing", It.IsAny<CancellationToken>()))

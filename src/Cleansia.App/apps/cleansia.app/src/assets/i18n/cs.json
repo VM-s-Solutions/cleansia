@@ -2093,7 +2093,8 @@
     },
     "saved_card": {
       "consent_not_accepted": "Před uložením karty prosím potvrďte souhlas, že na ni mohou být účtovány poplatky a nezaplacená hotovost.",
-      "not_found": "Tuto uloženou kartu jsme nenašli."
+      "not_found": "Tuto uloženou kartu jsme nenašli.",
+      "requires_account": "Pro uložení karty k dalším objednávkám se přihlaste."
     },
     "receivable": {
       "not_found": "Tuto dlužnou částku jsme nenašli.",

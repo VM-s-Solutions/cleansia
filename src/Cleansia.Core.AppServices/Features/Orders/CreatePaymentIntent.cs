@@ -1,9 +1,11 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
@@ -15,7 +17,12 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 
 public class CreatePaymentIntent
 {
-    public record Command(string OrderId) : ICommand<Response>;
+    /// <param name="SaveCard">
+    /// The customer ticked "save this card for my next bookings": Stripe keeps the card for off-session use
+    /// and a saved card is recorded under the consent, completed when the payment succeeds. Unticked, nothing
+    /// is kept.
+    /// </param>
+    public record Command(string OrderId, bool SaveCard = false) : ICommand<Response>;
 
     public record Response(
         string ClientSecret,
@@ -84,6 +91,9 @@ public class CreatePaymentIntent
         IUserSessionProvider userSessionProvider,
         IStripeClient stripeClient,
         IStripeConfig stripeConfig,
+        IStripeCustomerResolver stripeCustomerResolver,
+        ISavedCardRepository savedCardRepository,
+        IRequestMetadataProvider requestMetadataProvider,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -113,17 +123,34 @@ public class CreatePaymentIntent
                     BusinessErrorMessage.UserNotFound));
             }
 
-            var stripeCustomerId = user.StripeCustomerId;
-            if (string.IsNullOrEmpty(stripeCustomerId))
+            var currency = order.Currency
+                           ?? throw new InvalidOperationException(
+                               $"Order {order.Id} has no resolved currency; a payment intent cannot be denominated.");
+
+            string stripeCustomerId;
+            SavedCard? cardToSave = null;
+            if (command.SaveCard)
             {
-                stripeCustomerId = await stripeClient.CreateCustomerAsync(
-                    user.Id,
-                    user.Email,
-                    $"{user.FirstName} {user.LastName}".Trim(),
-                    user.PhoneNumber,
-                    cancellationToken);
-                user.AssignStripeCustomerId(stripeCustomerId);
-                logger.LogInformation("Created Stripe customer for user {UserId}", user.Id);
+                // A card kept for later sits on the customer's Stripe Customer for its currency, where the
+                // profile's card capture puts one too.
+                stripeCustomerId = await stripeCustomerResolver.ResolveForCurrencyAsync(user, currency, cancellationToken);
+                cardToSave = SavedCard.Start(
+                    user.Id, currency.Id, stripeCustomerId, requestMetadataProvider.IpAddress, requestMetadataProvider.DeviceLabel);
+            }
+            else
+            {
+                stripeCustomerId = user.StripeCustomerId ?? string.Empty;
+                if (string.IsNullOrEmpty(stripeCustomerId))
+                {
+                    stripeCustomerId = await stripeClient.CreateCustomerAsync(
+                        user.Id,
+                        user.Email,
+                        $"{user.FirstName} {user.LastName}".Trim(),
+                        user.PhoneNumber,
+                        cancellationToken);
+                    user.AssignStripeCustomerId(stripeCustomerId);
+                    logger.LogInformation("Created Stripe customer for user {UserId}", user.Id);
+                }
             }
 
             // AmountDueOnCard, not TotalPrice - see StripeClient.CreateCheckoutSessionAsync. The
@@ -132,13 +159,17 @@ public class CreatePaymentIntent
             // one through the branch below.
             var intent = await stripeClient.CreatePaymentIntentAsync(
                 amount: order.AmountDueOnCard,
-                currency: order.Currency?.Code
-                          ?? throw new InvalidOperationException(
-                              $"Order {order.Id} has no resolved currency; a payment intent cannot be denominated."),
+                currency: currency.Code,
                 stripeCustomerId: stripeCustomerId,
                 orderId: order.Id,
                 displayOrderNumber: order.DisplayOrderNumber,
+                savedCardId: cardToSave?.Id,
                 cancellationToken: cancellationToken);
+
+            if (cardToSave is not null)
+            {
+                savedCardRepository.Add(cardToSave);
+            }
 
             if (string.IsNullOrEmpty(order.StripePaymentIntentId))
             {

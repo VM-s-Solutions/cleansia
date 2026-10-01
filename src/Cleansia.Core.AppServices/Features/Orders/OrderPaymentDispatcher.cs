@@ -1,8 +1,11 @@
 ﻿using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
+using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Users;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Validations;
@@ -26,10 +29,14 @@ public sealed class OrderPaymentDispatcher(
     IPendingDispatch pending,
     IOrderChannelProvider channelProvider,
     IStripeConfig stripeConfig,
+    IUserRepository userRepository,
+    IStripeCustomerResolver stripeCustomerResolver,
+    ISavedCardRepository savedCardRepository,
+    IRequestMetadataProvider requestMetadataProvider,
     ILogger<OrderPaymentDispatcher> logger) : IOrderPaymentDispatcher
 {
     public async Task<OrderPaymentDispatchResult> DispatchAsync(
-        Order order, string languageCode, CancellationToken cancellationToken)
+        Order order, string languageCode, bool saveCard, CancellationToken cancellationToken)
     {
         switch (order.PaymentType)
         {
@@ -56,7 +63,9 @@ public sealed class OrderPaymentDispatcher(
                 try
                 {
                     var stripeClient = stripeClientFactory.CreateClient();
-                    var session = await stripeClient.CreateCheckoutSessionAsync(order, cancellationToken);
+                    var session = saveCard
+                        ? await CreateCardSavingCheckoutSessionAsync(stripeClient, order, cancellationToken)
+                        : await stripeClient.CreateCheckoutSessionAsync(order, cancellationToken);
                     // The order has to REMEMBER its charge surface. RefundService routes a web order
                     // through RefundCheckoutSessionAsync, which looks the session up by id — and
                     // until this line nothing in production ever called AssignStripeSessionId, so
@@ -88,5 +97,27 @@ public sealed class OrderPaymentDispatcher(
             default:
                 throw new ArgumentOutOfRangeException(nameof(order));
         }
+    }
+
+    /// <summary>
+    /// The saved card is recorded with the consent before the redirect, as the profile's card capture
+    /// records it, and the card lands on it when the payment webhook arrives. The validator admits the
+    /// tick only from a signed-in customer.
+    /// </summary>
+    private async Task<CheckoutSessionResult> CreateCardSavingCheckoutSessionAsync(
+        IStripeClient stripeClient, Order order, CancellationToken cancellationToken)
+    {
+        var user = await userRepository.GetByIdAsync(order.UserId!, cancellationToken)
+                   ?? throw new InvalidOperationException($"Order {order.Id} names no customer to save a card for.");
+        var currency = order.Currency
+                       ?? throw new InvalidOperationException($"Order {order.Id} has no resolved currency to save a card in.");
+
+        var stripeCustomerId = await stripeCustomerResolver.ResolveForCurrencyAsync(user, currency, cancellationToken);
+        var card = SavedCard.Start(
+            user.Id, currency.Id, stripeCustomerId, requestMetadataProvider.IpAddress, requestMetadataProvider.DeviceLabel);
+        var session = await stripeClient.CreateCardSavingCheckoutSessionAsync(
+            order, stripeCustomerId, card.Id, cancellationToken);
+        savedCardRepository.Add(card);
+        return session;
     }
 }

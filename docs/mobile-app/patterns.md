@@ -112,5 +112,15 @@ FAB included.
   twice as tall as the gesture handle. The fixed `108.dp` it replaced ignored the inset and left the
   last item under the FAB in either mode.
 
+**A state that fills an empty tab centres between the title and the FAB's top**, the area that is
+actually visible. Orders is the only tab that does this today. On iOS, a `ScrollView` proposes no
+height, so a centring stack inside it collapses. The empty and error states therefore take their
+minimum height from a `GeometryReader` around the scroll view (`containerRelativeFrame` is iOS 17+).
+With the clearance above in place, that height runs from the title to the FAB's top. Before this, a
+fixed `minHeight` band started under the title and the block sat high. On Android, the
+`ScrollableStateContainer` box keeps the viewport height but pads off the navigation-bar inset and
+`MainShellBottomClearance`. Before this, it centred over the area under the floating bar too, and the
+block sat low. Both keep pull-to-refresh.
+
 The snackbar has its own lift above the same chrome (→ [Snackbar insets](#snackbar-inset)), and this
 does not change it.

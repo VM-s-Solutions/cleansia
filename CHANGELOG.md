@@ -668,6 +668,10 @@ need backfilling.
 
 ### Fixed
 
+- **Customer Android and iOS — *No orders yet* sits in the middle of the screen.** The empty and
+  error states on the Orders tab are centred between the title and the Book button. They used to sit
+  high on iOS and slightly low on Android. (Owner remark 2026-10-01.)
+
 - **Customer Android and iOS — the Book button no longer covers the end of a page.** Scrolled to the
   bottom, the last card on Home, Orders, Rewards and Profile now stops clear of the round Book button
   instead of sliding under it. On Android this holds with either gesture or 3-button navigation.

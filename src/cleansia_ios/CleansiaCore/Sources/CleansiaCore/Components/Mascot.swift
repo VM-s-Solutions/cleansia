@@ -16,6 +16,9 @@ public enum Mascot: String, CaseIterable {
     case mopping = "mascot_mopping"
     case sprayAndCloth = "mascot_spray_and_cloth"
     case thumbsUp = "mascot_thumbs_up"
+    /// The web's dedicated Plus drawing (holding a star card), decoded from `mascot-plus.webp` — the
+    /// web's `.png` copy carries a baked halo.
+    case plus = "mascot_plus"
 
     public var image: Image {
         Image(rawValue, bundle: MascotAssets.bundle)

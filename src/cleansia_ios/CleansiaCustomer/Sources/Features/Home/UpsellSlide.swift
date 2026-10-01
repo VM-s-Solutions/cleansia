@@ -33,6 +33,7 @@ struct UpsellSlide: Equatable, Identifiable {
 
     /// The Android `buildList` — order matters: most-relevant first so the
     /// slide on screen at t=0 is the one the user is most likely to act on.
+    /// Every slide draws its own mascot, so no two visible slides repeat one.
     /// `plusTrialDays` is the free trial this customer can still get, 0 for none.
     static func slides(isPlus: Bool, plusTrialDays: Int = 0, showSetupRecurring: Bool) -> [UpsellSlide] {
         var slides: [UpsellSlide] = []
@@ -44,7 +45,7 @@ struct UpsellSlide: Equatable, Identifiable {
                 title: offersTrial ? L10n.Home.upsellPlusTitleTrial(plusTrialDays) : L10n.Home.upsellPlusTitle,
                 cta: offersTrial ? L10n.Home.upsellPlusCtaTrial : L10n.Home.upsellPlusCta,
                 gradient: .plusHero,
-                mascot: .ready,
+                mascot: .plus,
                 action: .subscribePlus
             ))
         }
@@ -65,7 +66,7 @@ struct UpsellSlide: Equatable, Identifiable {
             title: L10n.Home.upsellReferralTitle,
             cta: L10n.Home.upsellReferralCta,
             gradient: .cyan,
-            mascot: .cleaning,
+            mascot: .thumbsUp,
             action: .openReferral
         ))
         slides.append(UpsellSlide(

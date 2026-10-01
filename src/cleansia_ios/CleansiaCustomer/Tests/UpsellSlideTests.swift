@@ -31,6 +31,19 @@ final class UpsellSlideTests: XCTestCase {
         }
     }
 
+    func testEveryVisibleSlideDrawsItsOwnMascot() {
+        for isPlus in [false, true] {
+            for showSetupRecurring in [false, true] {
+                let mascots = UpsellSlide.slides(isPlus: isPlus, showSetupRecurring: showSetupRecurring).map(\.mascot)
+                XCTAssertEqual(
+                    Set(mascots).count,
+                    mascots.count,
+                    "isPlus=\(isPlus) showSetupRecurring=\(showSetupRecurring) repeats a mascot"
+                )
+            }
+        }
+    }
+
     /// No welcome offer at launch: the slide advertised a code that exists only in DEV.
     func testTheWelcomeOfferCopyIsGone() {
         for key in ["home_upsell_welcome_top", "home_upsell_welcome_title", "home_upsell_welcome_cta"] {
@@ -41,7 +54,7 @@ final class UpsellSlideTests: XCTestCase {
     func testPlusSlideContentMatchesAndroid() throws {
         let slides = UpsellSlide.slides(isPlus: false, showSetupRecurring: false)
         let slide = try slide(.plus, in: slides)
-        XCTAssertEqual(slide.mascot, .ready)
+        XCTAssertEqual(slide.mascot, .plus)
         XCTAssertEqual(slide.gradient, .plusHero)
         XCTAssertEqual(slide.action, .subscribePlus)
         XCTAssertEqual(slide.top, L10n.Home.upsellPlusTop)
@@ -76,7 +89,7 @@ final class UpsellSlideTests: XCTestCase {
     func testReferralSlideContentMatchesAndroid() throws {
         let slides = UpsellSlide.slides(isPlus: true, showSetupRecurring: false)
         let slide = try slide(.referral, in: slides)
-        XCTAssertEqual(slide.mascot, .cleaning)
+        XCTAssertEqual(slide.mascot, .thumbsUp)
         XCTAssertEqual(slide.gradient, .cyan)
         XCTAssertEqual(slide.action, .openReferral)
         XCTAssertEqual(slide.top, L10n.Home.upsellReferralTop)

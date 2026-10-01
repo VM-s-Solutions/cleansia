@@ -668,6 +668,12 @@ need backfilling.
 
 ### Fixed
 
+- **Customer Android and iOS — sign-in fits on one screen.** The page no longer scrolls to reach
+  *Don't have an account? Register*, which was cut off below the fold on a 6.1" iPhone. On iOS a page
+  that fits no longer rubber-bands. On Android the form keeps clear of the navigation bar and the
+  keyboard in either navigation mode. Very small screens and very large text still scroll.
+  (Owner remark 2026-10-01.)
+
 - **Cleaner — the My Pay currency switch follows the period's pay, not its invoices.** A period holding
   pay in more than one currency (reachable only through an admin reassignment) now offers the switch on
   the partner web as soon as the rows exist — an open period used to show none until it was invoiced, so

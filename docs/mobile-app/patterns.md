@@ -74,3 +74,15 @@ The partner app's pre-sign-in intro carousel keeps its two mascots, because it i
 rather than asking for anything. Nothing replaced the mascot: its height went to the form. Both
 platforms changed together, so the branding parity of [ADR-0018](/decisions/adr-0018) still holds,
 and the mascot is unchanged everywhere else.
+
+**The customer sign-in fits one screen.** Without the mascot and the guest link the form fits every
+supported iPhone, the SE included, and ordinary Android phones; only the legacy 360×640dp size still
+scrolls. The scroll view stays on both platforms, because the keyboard, field errors and large text
+still need it. On iOS, `CenteredAuthScroll` (the one container the centred auth forms share) sets
+`scrollBounceBehavior(.basedOnSize)` from iOS 16.4, so a form that fits neither rubber-bands nor shows
+a scroll indicator. Do not reach for `ViewThatFits` here: when the keyboard changes the available
+space the view switches branch, the focused field is recreated, the keyboard drops, and the cycle
+repeats. Android keeps the form top-anchored and pads it by the real system bars and keyboard
+(`systemBarsPadding().imePadding()` ahead of `verticalScroll`) instead of a fixed 64dp. The activity is
+edge-to-edge, so once the form fits there is no scroll range left to bring a field out from under the
+navigation bar or the keyboard.

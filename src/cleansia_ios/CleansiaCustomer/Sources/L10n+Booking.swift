@@ -68,6 +68,11 @@ extension L10n {
             plural("booking_bath_short", count)
         }
 
+        /// "Up to 8 rooms and 4 bathrooms" — the numbers are `PropertySize`'s, pinned to the server's caps.
+        static var sizeLimitCaption: String {
+            format("booking_size_limit_caption", PropertySize.maxRooms, PropertySize.maxBathrooms)
+        }
+
         static var noResults: String {
             localized("booking_no_results")
         }

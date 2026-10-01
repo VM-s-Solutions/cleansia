@@ -2418,6 +2418,41 @@
         }
       }
     },
+    "booking_size_limit_caption": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Up to %1$lld rooms and %2$lld bathrooms"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nejvýše %1$lld pokojů a %2$lld koupelny"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Najviac %1$lld izieb a %2$lld kúpeľne"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не більше %1$lld кімнат і %2$lld ванних кімнат"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не более %1$lld комнат и %2$lld ванных комнат"
+          }
+        }
+      }
+    },
     "booking_summary_credit_card_only": {
       "extractionState": "manual",
       "localizations": {

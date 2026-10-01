@@ -196,26 +196,34 @@ private struct PropertyRow: View {
     let onRoomsChange: (Int) -> Void
     let onBathroomsChange: (Int) -> Void
 
+    /// The caption states the caps up front, so the plus greying at them reads as the limit it is.
     var body: some View {
-        HStack(spacing: Spacing.xs) {
-            Text(L10n.Booking.yourHome)
-                .font(CleansiaTypography.labelLarge)
-                .foregroundColor(CleansiaColors.primary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.75)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            PropertyStepper(
-                label: L10n.Booking.roomsShort(rooms),
-                value: rooms,
-                maximum: PropertySize.maxRooms,
-                onChange: onRoomsChange
-            )
-            PropertyStepper(
-                label: L10n.Booking.bathShort(bathrooms),
-                value: bathrooms,
-                maximum: PropertySize.maxBathrooms,
-                onChange: onBathroomsChange
-            )
+        VStack(alignment: .leading, spacing: Spacing.xxs) {
+            HStack(spacing: Spacing.xs) {
+                Text(L10n.Booking.yourHome)
+                    .font(CleansiaTypography.labelLarge)
+                    .foregroundColor(CleansiaColors.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                PropertyStepper(
+                    label: L10n.Booking.roomsShort(rooms),
+                    value: rooms,
+                    minimum: 1,
+                    maximum: PropertySize.maxRooms,
+                    onChange: onRoomsChange
+                )
+                PropertyStepper(
+                    label: L10n.Booking.bathShort(bathrooms),
+                    value: bathrooms,
+                    minimum: 1,
+                    maximum: PropertySize.maxBathrooms,
+                    onChange: onBathroomsChange
+                )
+            }
+            Text(L10n.Booking.sizeLimitCaption)
+                .font(CleansiaTypography.labelSmall)
+                .foregroundColor(CleansiaColors.onSurfaceVariant)
         }
         .padding(.horizontal, Spacing.s)
         .padding(.vertical, Spacing.xs)

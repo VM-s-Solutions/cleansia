@@ -349,19 +349,24 @@ private struct PropertySizeSection: View {
     let onBathroomsChange: (Int) -> Void
 
     var body: some View {
-        HStack(alignment: .top, spacing: Spacing.s) {
-            counter(
-                label: L10n.Recurring.createRoomsLabel,
-                value: rooms,
-                maximum: PropertySize.maxRooms,
-                onChange: onRoomsChange
-            )
-            counter(
-                label: L10n.Recurring.createBathroomsLabel,
-                value: bathrooms,
-                maximum: PropertySize.maxBathrooms,
-                onChange: onBathroomsChange
-            )
+        VStack(alignment: .leading, spacing: Spacing.xs) {
+            HStack(alignment: .top, spacing: Spacing.s) {
+                counter(
+                    label: L10n.Recurring.createRoomsLabel,
+                    value: rooms,
+                    maximum: PropertySize.maxRooms,
+                    onChange: onRoomsChange
+                )
+                counter(
+                    label: L10n.Recurring.createBathroomsLabel,
+                    value: bathrooms,
+                    maximum: PropertySize.maxBathrooms,
+                    onChange: onBathroomsChange
+                )
+            }
+            Text(L10n.Booking.sizeLimitCaption)
+                .font(CleansiaTypography.labelSmall)
+                .foregroundColor(CleansiaColors.onSurfaceVariant)
         }
     }
 

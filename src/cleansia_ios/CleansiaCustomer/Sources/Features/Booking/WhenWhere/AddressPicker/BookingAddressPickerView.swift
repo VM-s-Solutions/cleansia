@@ -74,8 +74,6 @@ struct BookingAddressPickerView: View {
                 .onChange(of: region.center.latitude) { _ in pushCenter() }
                 .onChange(of: region.center.longitude) { _ in pushCenter() }
 
-            CenterPin()
-
             VStack(spacing: 0) {
                 topBar
                 Spacer()
@@ -176,25 +174,6 @@ struct BookingAddressPickerView: View {
 
     private func pushCenter() {
         vm.centerChanged(Coordinate(latitude: region.center.latitude, longitude: region.center.longitude))
-    }
-}
-
-private struct CenterPin: View {
-    var body: some View {
-        VStack(spacing: 0) {
-            ZStack {
-                Circle()
-                    .fill(CleansiaColors.primary)
-                    .frame(width: 28, height: 28)
-                Circle()
-                    .fill(CleansiaColors.onPrimary)
-                    .frame(width: 10, height: 10)
-            }
-            Rectangle()
-                .fill(CleansiaColors.primary)
-                .frame(width: 2, height: 14)
-            Spacer().frame(height: 24)
-        }
     }
 }
 

@@ -43,8 +43,6 @@ struct AddressPickerView: View {
                 .onChange(of: region.center.latitude) { _ in pushCenter() }
                 .onChange(of: region.center.longitude) { _ in pushCenter() }
 
-            CenterPin()
-
             VStack(spacing: 0) {
                 topBar
                 Spacer()
@@ -114,25 +112,6 @@ struct AddressPickerView: View {
 
     private func pushCenter() {
         vm.centerChanged(Coordinate(latitude: region.center.latitude, longitude: region.center.longitude))
-    }
-}
-
-private struct CenterPin: View {
-    var body: some View {
-        VStack(spacing: 0) {
-            ZStack {
-                Circle()
-                    .fill(CleansiaColors.primary)
-                    .frame(width: 28, height: 28)
-                Circle()
-                    .fill(CleansiaColors.onPrimary)
-                    .frame(width: 10, height: 10)
-            }
-            Rectangle()
-                .fill(CleansiaColors.primary)
-                .frame(width: 2, height: 14)
-            Spacer().frame(height: 24)
-        }
     }
 }
 
@@ -351,7 +330,6 @@ private struct ConfirmCard: View {
                 ZStack {
                     PreviewMapProvider().pickerMap(region: .constant(sampleRegion), showsUserLocation: false)
                         .ignoresSafeArea()
-                    CenterPin()
                     VStack {
                         Spacer()
                         ConfirmCard(resolved: nil, lookingUp: false, enabled: false, onConfirm: {})
@@ -362,7 +340,6 @@ private struct ConfirmCard: View {
                 ZStack {
                     PreviewMapProvider().pickerMap(region: .constant(sampleRegion), showsUserLocation: false)
                         .ignoresSafeArea()
-                    CenterPin()
                     VStack {
                         Spacer()
                         ConfirmCard(resolved: previewAddress(), lookingUp: false, enabled: true, onConfirm: {})

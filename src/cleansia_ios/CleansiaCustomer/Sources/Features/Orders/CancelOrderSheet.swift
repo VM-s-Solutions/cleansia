@@ -47,18 +47,10 @@ enum CancelOrderConfirmGate {
         guard hasReason, !quoteIsLoading, !isSubmitting else { return false }
         return !needsNotes || notes.trimmingCharacters(in: .whitespaces).count >= 3
     }
-
-    /// The guest half of the rule. A guest has no account for a surprise fee to be reconciled against
-    /// afterwards, so a guest commits only to a quote the server has actually priced for this booking —
-    /// a preview outage holds the button instead of degrading, and the card says so.
-    static func quoteIsUsable(_ quote: UiState<CancellationQuote>) -> Bool {
-        guard let quote = quote.loadedValue else { return false }
-        return !(quote.currencyCode?.isBlank ?? true)
-    }
 }
 
-/// Mirrors `CancelOrder.Validator`'s `RuleFor(x => x.Reason).MaximumLength(500)`; the guest command
-/// refuses the same figure, and a refusal after the sheet is filled in is the worst moment to learn it.
+/// Mirrors `CancelOrder.Validator`'s `RuleFor(x => x.Reason).MaximumLength(500)`; a refusal after the
+/// sheet is filled in is the worst moment to learn it.
 ///
 /// Counted in UTF-16, as the server counts it — see `String.cappedToUtf16`. A `count` cap would let
 /// 300 emoji through the field and have them refused at submit.
@@ -86,7 +78,6 @@ struct CancelOrderSheet: View {
     let onRetryQuote: () -> Void
     let onConfirm: (String?) -> Void
     let onDismiss: () -> Void
-    var requiresQuote = false
     var tookNoCardPayment = false
 
     @State private var selectedReason: CancelReasonOption?
@@ -99,7 +90,7 @@ struct CancelOrderSheet: View {
             notes: notes,
             quoteIsLoading: quote.isLoading,
             isSubmitting: isSubmitting
-        ) && (!requiresQuote || CancelOrderConfirmGate.quoteIsUsable(quote))
+        )
     }
 
     var body: some View {
@@ -110,13 +101,8 @@ struct CancelOrderSheet: View {
                     .foregroundColor(CleansiaColors.onSurface)
 
                 CancellationFeeCard(
-                    model: CancellationFeeCardModel(
-                        quote,
-                        refundIsEstimate: requiresQuote,
-                        tookNoCardPayment: tookNoCardPayment
-                    ),
+                    model: CancellationFeeCardModel(quote, tookNoCardPayment: tookNoCardPayment),
                     currencyCode: currencyCode,
-                    requiresQuote: requiresQuote,
                     onRetry: onRetryQuote
                 )
 

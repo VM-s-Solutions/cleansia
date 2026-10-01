@@ -373,17 +373,6 @@ final class CancellationFeeCardModelTests: XCTestCase {
         XCTAssertFalse(Self.callout(.lastMinute).warnsExpressWaiverForfeited)
     }
 
-    /// A guest's charged tier calls the policy refund a maximum; the signed-in sentence is untouched.
-    func testAGuestChargedTierNamesTheRefundAnEstimateWithoutChangingTheSignedInCopy() {
-        for tier in [CancellationTier.partial, .lastMinute] {
-            let guest = Self.callout(tier, fee: 22.5, refund: 67.5, refundIsEstimate: true)
-            XCTAssertEqual(guest.amountKey, "guest_order_fee_estimate")
-            XCTAssertEqual(guest.amounts, [22.5, 67.5])
-            XCTAssertEqual(Self.callout(tier, fee: 22.5, refund: 67.5).amountKey, "order_cancel_fee_split")
-        }
-        XCTAssertEqual(Self.callout(.freeOopsWindow, refundIsEstimate: true).amountKey, "order_cancel_fee_none")
-    }
-
     /// An order that took no card payment gets no refund from the server, so a charged tier states the
     /// fee alone and the free tiers are unchanged.
     func testAnOrderThatTookNoCardPaymentStatesTheFeeAndNoRefund() {
@@ -405,7 +394,7 @@ final class CancellationFeeCardModelTests: XCTestCase {
         XCTAssertEqual(Self.callout(.partial, fee: 250, refund: 750, oopsWindowMinutes: 15).graceMinutes, 15)
         XCTAssertEqual(Self.callout(.lastMinute, fee: 500, refund: 500, oopsWindowMinutes: 60).graceMinutes, 60)
         XCTAssertEqual(Self.callout(.freeNotAccepted, oopsWindowMinutes: 60).graceMinutes, 60)
-        XCTAssertEqual(Self.callout(.freeOopsWindow, refundIsEstimate: true, oopsWindowMinutes: 15).graceMinutes, 15)
+        XCTAssertEqual(Self.callout(.freeOopsWindow, oopsWindowMinutes: 15).graceMinutes, 15)
     }
 
     func testANonPositiveGraceStatesNothing() {
@@ -417,7 +406,6 @@ final class CancellationFeeCardModelTests: XCTestCase {
         fee: Double = 0,
         refund: Double = 1000,
         forfeitsExpressWaiver: Bool = false,
-        refundIsEstimate: Bool = false,
         tookNoCardPayment: Bool = false,
         oopsWindowMinutes: Int = 15
     ) -> CancellationFeeCallout {
@@ -429,11 +417,7 @@ final class CancellationFeeCardModelTests: XCTestCase {
             forfeitsExpressWaiver: forfeitsExpressWaiver,
             oopsWindowMinutes: oopsWindowMinutes
         )
-        let model = CancellationFeeCardModel(
-            .loaded(quote),
-            refundIsEstimate: refundIsEstimate,
-            tookNoCardPayment: tookNoCardPayment
-        )
+        let model = CancellationFeeCardModel(.loaded(quote), tookNoCardPayment: tookNoCardPayment)
         guard case let .quoted(callout) = model else {
             return CancellationFeeCallout(
                 titleKey: "",
@@ -503,32 +487,6 @@ final class CancelOrderConfirmGateTests: XCTestCase {
             quoteIsLoading: false,
             isSubmitting: true
         ))
-    }
-
-    /// The guest half: only a priced quote in a known currency is usable, so a preview outage holds the
-    /// guest's button where it lets a signed-in customer through.
-    func testAGuestConfirmationRequiresAPricedQuoteInAKnownCurrency() {
-        let priced = CancellationQuote(
-            tier: .partial,
-            feeAmount: 250,
-            refundAmount: 750,
-            currencyCode: "CZK",
-            forfeitsExpressWaiver: false,
-            oopsWindowMinutes: 15
-        )
-        let unpriced = CancellationQuote(
-            tier: .partial,
-            feeAmount: 250,
-            refundAmount: 750,
-            currencyCode: " ",
-            forfeitsExpressWaiver: false,
-            oopsWindowMinutes: 15
-        )
-
-        XCTAssertFalse(CancelOrderConfirmGate.quoteIsUsable(.loading))
-        XCTAssertFalse(CancelOrderConfirmGate.quoteIsUsable(.error(ApiError(httpStatus: 500))))
-        XCTAssertFalse(CancelOrderConfirmGate.quoteIsUsable(.loaded(unpriced)))
-        XCTAssertTrue(CancelOrderConfirmGate.quoteIsUsable(.loaded(priced)))
     }
 }
 

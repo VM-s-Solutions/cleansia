@@ -27,33 +27,21 @@ enum CancellationFeeCardModel: Equatable {
     case unavailable
     case quoted(CancellationFeeCallout)
 
-    init(_ state: UiState<CancellationQuote>, refundIsEstimate: Bool = false, tookNoCardPayment: Bool = false) {
+    init(_ state: UiState<CancellationQuote>, tookNoCardPayment: Bool = false) {
         switch state {
         case .loading: self = .checking
         case .error: self = .unavailable
         case let .loaded(quote):
-            self = .quoted(CancellationFeeCallout(
-                quote,
-                refundIsEstimate: refundIsEstimate,
-                tookNoCardPayment: tookNoCardPayment
-            ))
+            self = .quoted(CancellationFeeCallout(quote, tookNoCardPayment: tookNoCardPayment))
         }
     }
 }
 
 extension CancellationFeeCallout {
-    /// `refundIsEstimate` is the guest's reading of a charged tier: the policy refund is a ceiling on a
-    /// card refund that only a collected payment can produce, so the guest copy calls it a maximum and
-    /// points at the confirmation for the actual figure. `tookNoCardPayment` states the fee alone: the
-    /// server refunds nothing on an order that took no payment.
-    init(_ quote: CancellationQuote, refundIsEstimate: Bool = false, tookNoCardPayment: Bool = false) {
-        let amountKey = if tookNoCardPayment {
-            "order_cancel_fee_only"
-        } else if refundIsEstimate {
-            "guest_order_fee_estimate"
-        } else {
-            "order_cancel_fee_split"
-        }
+    /// `tookNoCardPayment` states the fee alone: the server refunds nothing on an order that took no
+    /// payment.
+    init(_ quote: CancellationQuote, tookNoCardPayment: Bool = false) {
+        let amountKey = tookNoCardPayment ? "order_cancel_fee_only" : "order_cancel_fee_split"
         let amounts = tookNoCardPayment ? [quote.feeAmount] : [quote.feeAmount, quote.refundAmount]
         switch quote.tier {
         case .freeNotAccepted:
@@ -136,7 +124,6 @@ extension CancellationFeeSeverity {
 struct CancellationFeeCard: View {
     let model: CancellationFeeCardModel
     let currencyCode: String?
-    var requiresQuote = false
     let onRetry: () -> Void
 
     var body: some View {
@@ -149,7 +136,7 @@ struct CancellationFeeCard: View {
                     tint: CleansiaColors.onSurfaceVariant,
                     symbol: "exclamationmark.triangle",
                     title: L10n.OrderCancel.feeNeutral,
-                    subtitle: requiresQuote ? L10n.GuestOrder.quoteRequired : L10n.OrderCancel.feeUnavailable
+                    subtitle: L10n.OrderCancel.feeUnavailable
                 )
                 CleansiaTextLink(L10n.OrderCancel.feeRetry, action: onRetry)
             }

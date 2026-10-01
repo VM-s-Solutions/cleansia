@@ -121,9 +121,9 @@ belt-and-braces: either alone keeps the Bearer off the refresh call, but keep bo
 The allow-list is **host-specific**. Match these by path (case-insensitive), mirroring the backend's
 `[AllowAnonymous]` attributes. The partner mobile host's anonymous surface is **auth plus the market
 directory** (the register form picks the market the cleaner is registered with); the customer mobile
-host additionally exposes the **pre-account booking flow** as anonymous (a guest can price a booking
-before signing in; placing the order needs a session, since guest booking is web-only), so its
-allow-list is larger.
+host additionally exposes the **pre-session catalogue reads** as anonymous (the catalogue, the quote,
+the plans and the sign-up form's referral check; placing an order needs a session, since guest booking
+is web-only), so its allow-list is larger.
 
 **Both hosts — `/api/Auth/*` (+ password reset on `/api/User/*`) and the market directory:**
 
@@ -143,7 +143,7 @@ allow-list is larger.
 > `/api/Auth/Logout` is **`[Authorize]`** (NOT anonymous) on both hosts — it needs the Bearer to identify
 > the session, and it carries the refresh token in the body to revoke. Do **not** add it to the allow-list.
 
-**Customer host ONLY — the anonymous guest-booking surface (in addition to the above):**
+**Customer host ONLY — the anonymous pre-session surface (in addition to the above):**
 
 | Path | Method | Purpose |
 |---|---|---|
@@ -152,9 +152,12 @@ allow-list is larger.
 | `/api/Extra/GetOverview` | GET | extras catalogue |
 | `/api/Membership/GetPlans` | GET | membership/Plus plans |
 | `/api/Order/Quote` | POST | server-side price quote before account |
-| `/api/Order/Lookup` | GET | look up a guest order |
-| `/api/Order/LookupBatch` | POST | batch guest-order lookup |
 | `/api/Referral/Validate` | POST | validate a referral code at signup |
+
+> The customer mobile host still serves the guest-order routes (`Lookup`, `LookupBatch`,
+> `GuestCancellationPreview`, `CancelGuest`, `ReportGuestNoShow`) anonymously, but the app has **no guest
+> surface** — a guest booking is tracked and cancelled from its e-mail link on the web — so none of them
+> is on the client allow-list.
 
 > `/api/Payment/webhook` is also `[AllowAnonymous]` (Stripe is unauthenticated; the signature is its auth)
 > but it is **server-to-server only** — the iOS app never calls it, so it is not part of the client
@@ -164,7 +167,7 @@ allow-list is larger.
 
 - Encode the allow-list as a **path-contains, case-insensitive** match (Android uses `contains`), keyed
   per app target (the partner adapter carries only the auth list; the customer adapter carries the auth
-  list **plus** the guest-booking list).
+  list **plus** the pre-session list).
 - A mismatch is a security bug in **both directions**: omitting an auth path leaks a stale Bearer to an
   endpoint that may reject it (breaking login/refresh); over-broadly skipping an authed endpoint drops the
   Bearer and 401s a real call. The security gate on the auth-spine ticket checks this list is complete and
@@ -272,7 +275,7 @@ return the access + refresh tokens **in the JSON body** for the client to store 
       device-registration read it. `X-Device-Id` (header) == `deviceId` (Device/Register body). (§2)
 - [ ] `HeaderAdapter` attaches `X-Device-Id` (64, ASCII), `X-Device-Label` (120, ASCII),
       `X-Time-Zone` (read fresh per request) on **every** request, on **both** sessions. (§1)
-- [ ] No-`Bearer`-on-anon path skip; host-specific allow-list (customer adds the guest-booking surface);
+- [ ] No-`Bearer`-on-anon path skip; host-specific allow-list (customer adds the pre-session reads);
       `Logout` stays authed. (§3)
 - [ ] Separate no-auth session for refresh; `actor SessionRefresher` single-flight; **replace** the stored
       refresh token every refresh; theft/expiry/reject → forced sign-out, no retry. (§4)

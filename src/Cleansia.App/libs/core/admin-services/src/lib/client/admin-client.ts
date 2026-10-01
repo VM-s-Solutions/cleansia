@@ -25343,7 +25343,6 @@ export class EmployeeDocumentFilter implements IEmployeeDocumentFilter {
     employeeId!: string | undefined;
     documentType!: DocumentType;
     status!: DocumentStatus;
-    latestVersionOnly!: boolean | undefined;
 
     constructor(data?: IEmployeeDocumentFilter) {
         if (data) {
@@ -25360,7 +25359,6 @@ export class EmployeeDocumentFilter implements IEmployeeDocumentFilter {
             this.employeeId = Data["employeeId"];
             this.documentType = Data["documentType"];
             this.status = Data["status"];
-            this.latestVersionOnly = Data["latestVersionOnly"];
         }
     }
 
@@ -25377,7 +25375,6 @@ export class EmployeeDocumentFilter implements IEmployeeDocumentFilter {
         data["employeeId"] = this.employeeId;
         data["documentType"] = this.documentType;
         data["status"] = this.status;
-        data["latestVersionOnly"] = this.latestVersionOnly;
         return data;
     }
 }
@@ -25387,7 +25384,6 @@ export interface IEmployeeDocumentFilter {
     employeeId: string | undefined;
     documentType: DocumentType;
     status: DocumentStatus;
-    latestVersionOnly: boolean | undefined;
 }
 
 export class EmployeeDocumentItem implements IEmployeeDocumentItem {

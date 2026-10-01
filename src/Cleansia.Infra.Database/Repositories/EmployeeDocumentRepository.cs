@@ -61,14 +61,6 @@ public class EmployeeDocumentRepository(CleansiaDbContext context) : BaseReposit
         return versions.OrderBy(v => v.Version).ToList();
     }
 
-    public Task<EmployeeDocument?> GetLatestByFileNameAsync(string employeeId, string fileName, CancellationToken cancellationToken = default)
-    {
-        return GetDbSet()
-            .Where(d => d.EmployeeId == employeeId && d.FileName == fileName && d.IsActive)
-            .OrderByDescending(d => d.Version)
-            .FirstOrDefaultAsync(cancellationToken);
-    }
-
     public override Task<EmployeeDocument?> GetByIdAsync(string id, CancellationToken cancellationToken)
     {
         return GetDbSet()

@@ -145,40 +145,16 @@ public class SaveMyDocuments
                 await client.UploadAsync(fullBlobPath, stream, metadata, cancellationToken);
                 var blobUrl = client.GetBlobUri(fullBlobPath).ToString();
 
-                // Check for existing document with same filename (auto-versioning)
-                var existingDocument = await documentRepository.GetLatestByFileNameAsync(
-                    employee.Id,
-                    doc.File.FileName,
-                    cancellationToken);
-
-                EmployeeDocument employeeDocument;
-                if (existingDocument is not null)
-                {
-                    employeeDocument = EmployeeDocument.CreateNewVersion(
-                        previousVersion: existingDocument,
-                        fileName: doc.File.FileName,
-                        filePath: fullBlobPath,
-                        contentType: contentType,
-                        fileSizeBytes: stream.Length,
-                        documentType: doc.DocumentType,
-                        description: doc.Description,
-                        createdBy: user.Id
-                    );
-                }
-                else
-                {
-                    // Create new document (V1)
-                    employeeDocument = EmployeeDocument.Create(
-                        employeeId: employee.Id,
-                        fileName: doc.File.FileName,
-                        filePath: fullBlobPath,
-                        contentType: contentType,
-                        fileSizeBytes: stream.Length,
-                        documentType: doc.DocumentType,
-                        description: doc.Description,
-                        createdBy: user.Id
-                    );
-                }
+                var employeeDocument = EmployeeDocument.Create(
+                    employeeId: employee.Id,
+                    fileName: doc.File.FileName,
+                    filePath: fullBlobPath,
+                    contentType: contentType,
+                    fileSizeBytes: stream.Length,
+                    documentType: doc.DocumentType,
+                    description: doc.Description,
+                    createdBy: user.Id
+                );
 
                 documentRepository.Add(employeeDocument);
 

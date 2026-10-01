@@ -107,4 +107,33 @@ public class GetEmployeeDocumentsHandlerTests
         inactive.IsActive = false;
         Assert.False(predicate(inactive));
     }
+
+    [Fact]
+    public async Task Active_Filter_Lists_A_Replacement_And_Not_The_Version_It_Retired()
+    {
+        Expression<Func<EmployeeDocument, bool>>? captured = null;
+        _repository
+            .Setup(r => r.GetCountAsync(It.IsAny<Expression<Func<EmployeeDocument, bool>>>(), It.IsAny<CancellationToken>()))
+            .Callback<Expression<Func<EmployeeDocument, bool>>?, CancellationToken>((f, _) => captured = f)
+            .ReturnsAsync(0);
+        _repository
+            .Setup(r => r.GetPagedSort<Cleansia.Core.Domain.Sorting.EmployeeDocumentSort>(
+                It.IsAny<int>(), It.IsAny<int>(), It.IsAny<Expression<Func<EmployeeDocument, bool>>>(), It.IsAny<IEnumerable<SortDefinition>>()))
+            .Returns(Array.Empty<EmployeeDocument>().AsQueryable().BuildMock());
+
+        await Handle(new GetEmployeeDocuments.Request
+        {
+            Filter = new EmployeeDocumentFilter { EmployeeId = EmployeeId, IsActive = true }
+        });
+
+        var retired = Document();
+        var replacement = EmployeeDocument.CreateNewVersion(
+            retired, "passport-new.pdf", "docs/passport-new.pdf", "application/pdf", 2048,
+            DocumentType.Passport, null, "user-1");
+        retired.SoftDelete("user-1");
+
+        var predicate = captured!.Compile();
+        Assert.True(predicate(replacement));
+        Assert.False(predicate(retired));
+    }
 }

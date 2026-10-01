@@ -8,5 +8,4 @@ public class EmployeeDocumentFilter
     public string? EmployeeId { get; init; }
     public DocumentType? DocumentType { get; init; }
     public DocumentStatus? Status { get; init; }
-    public bool? LatestVersionOnly { get; init; }
 }

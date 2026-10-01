@@ -24,7 +24,7 @@ public class SaveMyDocumentsHandlerTests
     private const string UserEmail = "cleaner@cleansia.cz";
 
     private readonly Mock<IEmployeeRepository> _employeeRepository = new();
-    private readonly Mock<IEmployeeDocumentRepository> _documentRepository = new();
+    private readonly Mock<IEmployeeDocumentRepository> _documentRepository = new(MockBehavior.Strict);
     private readonly Mock<IUserRepository> _userRepository = new();
     private readonly Mock<IUserSessionProvider> _session = new();
     private readonly Mock<IBlobContainerClientFactory> _blobFactory = new();
@@ -45,9 +45,6 @@ public class SaveMyDocumentsHandlerTests
         _employeeRepository
             .Setup(r => r.GetByUserEmailAsync(UserEmail, It.IsAny<CancellationToken>()))
             .ReturnsAsync(employee);
-        _documentRepository
-            .Setup(r => r.GetLatestByFileNameAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((EmployeeDocument?)null);
         _documentRepository
             .Setup(r => r.Add(It.IsAny<EmployeeDocument>()))
             .Callback<EmployeeDocument>(_added.Add);
@@ -102,5 +99,44 @@ public class SaveMyDocumentsHandlerTests
 
         Assert.True(result.IsSuccess);
         Assert.Equal("image/jpeg", Assert.Single(_added).ContentType);
+    }
+
+    /// <summary>
+    /// Phones name every pick <c>image.jpg</c>. The repository mock is strict, so a handler that went
+    /// looking for an earlier upload of the same name to chain onto fails here rather than passing on
+    /// a lookup the mock answers with nothing.
+    /// </summary>
+    [Fact]
+    public async Task Two_Uploads_With_The_Same_File_Name_Are_Two_First_Version_Documents_Each_With_Its_Own_Type()
+    {
+        var command = new SaveMyDocuments.Command
+        {
+            Documents =
+            [
+                new SaveMyDocuments.DocumentToSave
+                {
+                    DocumentType = DocumentType.IdentityCard,
+                    File = new BlobFileDto("image.jpg", Convert.ToBase64String(Jpeg(2048)), "image/jpeg")
+                },
+                new SaveMyDocuments.DocumentToSave
+                {
+                    DocumentType = DocumentType.WorkPermit,
+                    File = new BlobFileDto("image.jpg", Convert.ToBase64String(Jpeg(2048)), "image/jpeg")
+                }
+            ]
+        };
+
+        var result = await CreateHandler().Handle(command, CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(2, _added.Count);
+        Assert.All(_added, document =>
+        {
+            Assert.Equal(1, document.Version);
+            Assert.Null(document.PreviousVersionId);
+        });
+        Assert.Equal([DocumentType.IdentityCard, DocumentType.WorkPermit], _added.Select(d => d.DocumentType));
+        Assert.NotEqual(_added[0].Id, _added[1].Id);
+        Assert.All(result.Value.Documents, saved => Assert.Equal(1, saved.Version));
     }
 }

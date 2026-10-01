@@ -133,9 +133,15 @@ describe('EmployeeDocumentsFacade', () => {
           employeeId: 'emp-1',
           documentType: undefined,
           status: undefined,
-          latestVersionOnly: true,
         },
       });
+    });
+
+    it('asks for every active document, not only the first version of each', () => {
+      facade.loadEmployeeDocuments('emp-1');
+
+      const request: GetEmployeeDocumentsRequest = getPagedMock.mock.calls[0][0];
+      expect(request.toJSON().filter).not.toHaveProperty('latestVersionOnly');
     });
 
     it('serializes a document rejection with the id and the reason as notes', () => {

@@ -27,7 +27,11 @@
     "how_it_works": "Як це працює",
     "plus": "Cleansia Plus",
     "login_short": "Увійти",
-    "my_recurring": "Повторювані прибирання"
+    "my_recurring": "Повторювані прибирання",
+    "open_menu": "Відкрити меню",
+    "close_menu": "Закрити меню",
+    "user_menu": "Меню облікового запису",
+    "section_menu": "Меню"
   },
   "cookies": {
     "title": "Файли cookie на цьому сайті",

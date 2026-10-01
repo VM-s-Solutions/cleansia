@@ -27,7 +27,11 @@
     "how_it_works": "Jak to chodí",
     "plus": "Cleansia Plus",
     "login_short": "Přihlásit",
-    "my_recurring": "Opakované termíny"
+    "my_recurring": "Opakované termíny",
+    "open_menu": "Otevřít menu",
+    "close_menu": "Zavřít menu",
+    "user_menu": "Nabídka účtu",
+    "section_menu": "Menu"
   },
   "cookies": {
     "title": "Cookies na tomto webu",

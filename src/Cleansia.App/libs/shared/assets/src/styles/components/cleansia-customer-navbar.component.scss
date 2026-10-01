@@ -25,6 +25,7 @@ $nav-band: 96px;
   top: 0;
   left: 0;
   width: 100%;
+  z-index: 100;
   background: var(--surface-overlay, #ffffff);
   box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.06), 0 4px 5px 0 rgba(0, 0, 0, 0.04);
   transition: transform 0.3s ease;
@@ -461,10 +462,6 @@ $nav-band: 96px;
   // =============================
   // Mobile menu
   // =============================
-  &__mobile-menu {
-    top: 64px;
-  }
-
   &__mobile-link {
     color: var(--text-color-secondary, #64748b);
     font-weight: 500;
@@ -490,28 +487,6 @@ $nav-band: 96px;
   // =============================
   // Language switcher override
   // =============================
-  cleansia-language-switcher {
-    display: inline-flex;
-    align-items: center;
-
-    .cleansia-language-switcher {
-      position: static;
-      top: auto;
-      right: auto;
-      z-index: auto;
-      display: inline-flex;
-      align-items: center;
-    }
-
-    .p-select {
-      width: auto;
-      min-width: auto;
-    }
-  }
-}
-
-// Language switcher inside mobile menu (outside .customer-navbar scope)
-.customer-navbar__mobile-menu {
   cleansia-language-switcher {
     display: inline-flex;
     align-items: center;
@@ -830,6 +805,78 @@ body:has(.customer-navbar) .cleansia-dev-banner.cleansia-dev-banner.cleansia-dev
   display: flex;
   align-items: center;
   min-height: 44px;
+}
+
+// =============================================================================
+// The mobile sheet
+// =============================================================================
+// A signed-in menu is about 19 rows, taller than a phone, so the sheet is
+// bounded by the screen and scrolls inside itself while the page stays locked.
+html.cl-menu-open,
+body.cl-menu-open {
+  overflow: hidden;
+}
+
+// Over the booking bar (950), the scroll-top button and the DEV pill (1000);
+// under PrimeNG dialogs (~1100) and the cookie banner (9999).
+html.cl-menu-open .customer-navbar {
+  z-index: 1050;
+}
+
+// -1 inside the navbar's own stacking context: under the pill and the sheet,
+// over the whole page.
+.customer-navbar__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: rgba(15, 23, 42, 0.35);
+  animation: customer-navbar-fade 160ms ease-out;
+}
+
+.customer-navbar__sheet {
+  position: absolute;
+  top: calc(100% - 6px);
+  left: 16px;
+  right: 16px;
+  max-height: calc(100dvh - var(--cl-nav-h) - 12px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-radius: 32px;
+  background: var(--cl-surface);
+  border: 1px solid var(--cl-border);
+  box-shadow: 0 10px 30px rgba(12, 74, 110, 0.1);
+  padding: 16px;
+  animation: customer-navbar-sheet 160ms ease-out;
+
+  @media (min-width: 640px) {
+    left: auto;
+    width: 380px;
+  }
+
+  // Under the burger: the pill's own inset grows from 16px to 40px past 900.
+  @media (min-width: 900.02px) {
+    right: 40px;
+  }
+}
+
+@keyframes customer-navbar-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes customer-navbar-sheet {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .customer-navbar__backdrop,
+  .customer-navbar__sheet {
+    animation: none;
+  }
 }
 
 // =============================================================================

@@ -567,13 +567,6 @@
   body:has(.cl-wiz) .cl-footer {
     padding-bottom: calc(96px + env(safe-area-inset-bottom));
   }
-
-  // The navbar drawer is z-index 4 and reaches the bottom of the screen; the
-  // sheet steps aside while it is open instead of covering its last rows.
-  body:has(.customer-navbar__mobile-menu) .cl-wiz__side,
-  body:has(.customer-navbar__mobile-menu) .cl-wiz__scrim {
-    display: none;
-  }
 }
 
 @media (max-width: 1100px) and (prefers-reduced-motion: reduce) {

@@ -27,7 +27,11 @@
     "how_it_works": "How it works",
     "plus": "Cleansia Plus",
     "login_short": "Log in",
-    "my_recurring": "Recurring cleanings"
+    "my_recurring": "Recurring cleanings",
+    "open_menu": "Open menu",
+    "close_menu": "Close menu",
+    "user_menu": "Account menu",
+    "section_menu": "Menu"
   },
   "cookies": {
     "title": "Cookies on this site",

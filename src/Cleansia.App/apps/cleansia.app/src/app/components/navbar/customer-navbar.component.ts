@@ -1,4 +1,5 @@
 import {
+  afterNextRender,
   ChangeDetectionStrategy,
   Component,
   computed,
@@ -6,10 +7,12 @@ import {
   ElementRef,
   HostListener,
   inject,
+  Injector,
   OnDestroy,
   OnInit,
   PLATFORM_ID,
   signal,
+  viewChild,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -86,6 +89,7 @@ export class CleansiaCustomerNavbarComponent implements OnInit, OnDestroy {
   private readonly themeService = inject(ThemeService);
   private readonly store = inject(Store);
   private readonly elRef = inject(ElementRef);
+  private readonly injector = inject(Injector);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
   private readonly destroy$ = new Subject<void>();
@@ -95,6 +99,9 @@ export class CleansiaCustomerNavbarComponent implements OnInit, OnDestroy {
   readonly userMenuOpen = signal(false);
   readonly settingsMenuOpen = signal(false);
   readonly navbarHidden = signal(false);
+
+  private readonly burger = viewChild<CleansiaButtonComponent>('burger');
+  private readonly sheet = viewChild<ElementRef<HTMLElement>>('sheet');
 
   /**
    * Mirrors {@link navbarHidden} onto the root element so a PAGE can lay itself
@@ -110,6 +117,15 @@ export class CleansiaCustomerNavbarComponent implements OnInit, OnDestroy {
     if (!this.isBrowser) return;
     document.documentElement.classList.toggle('cl-nav-hidden', hidden);
   });
+
+  // On body as well as html: iOS Safari scrolls the page under an overflow-hidden html.
+  private readonly syncMenuOpenClass = effect(() => {
+    const open = this.mobileMenuOpen() && this.isMobile();
+    if (!this.isBrowser) return;
+    document.documentElement.classList.toggle('cl-menu-open', open);
+    document.body.classList.toggle('cl-menu-open', open);
+  });
+
   readonly navigating = signal(false);
   private lastScrollY = 0;
   private readonly scrollThreshold = 10;
@@ -212,7 +228,6 @@ export class CleansiaCustomerNavbarComponent implements OnInit, OnDestroy {
     if (currentScrollY > this.lastScrollY && currentScrollY > 64) {
       // Scrolling down & past the navbar height — hide
       this.navbarHidden.set(true);
-      this.mobileMenuOpen.set(false);
       this.userMenuOpen.set(false);
       this.settingsMenuOpen.set(false);
     } else {
@@ -220,6 +235,11 @@ export class CleansiaCustomerNavbarComponent implements OnInit, OnDestroy {
       this.navbarHidden.set(false);
     }
     this.lastScrollY = currentScrollY;
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    this.closeMobileMenu();
   }
 
   @HostListener('document:click', ['$event'])
@@ -231,9 +251,22 @@ export class CleansiaCustomerNavbarComponent implements OnInit, OnDestroy {
   }
 
   toggleMobileMenu(): void {
-    this.mobileMenuOpen.update((v) => !v);
     this.userMenuOpen.set(false);
     this.settingsMenuOpen.set(false);
+    if (this.mobileMenuOpen()) {
+      this.closeMobileMenu();
+      return;
+    }
+    this.mobileMenuOpen.set(true);
+    afterNextRender(() => this.sheet()?.nativeElement.querySelector('a')?.focus(), {
+      injector: this.injector,
+    });
+  }
+
+  closeMobileMenu(): void {
+    if (!this.mobileMenuOpen()) return;
+    this.mobileMenuOpen.set(false);
+    this.burger()?.focus();
   }
 
   toggleUserMenu(event: MouseEvent): void {
@@ -279,9 +312,9 @@ export class CleansiaCustomerNavbarComponent implements OnInit, OnDestroy {
   readonly ordersLabel = computed(() => (this.isLoggedIn() ? 'nav.my_orders' : 'nav.track_order'));
 
   closeMenus(): void {
-    this.mobileMenuOpen.set(false);
     this.userMenuOpen.set(false);
     this.settingsMenuOpen.set(false);
+    this.closeMobileMenu();
   }
 
   logout(): void {

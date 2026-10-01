@@ -1,5 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  ElementRef,
+  input,
+  output,
+  viewChild,
+} from '@angular/core';
 import { Params, RouterModule } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { ButtonModule, ButtonSeverity } from 'primeng/button';
@@ -112,6 +120,10 @@ export class CleansiaButtonComponent {
   tooltip = input<string>(''); // Tooltip text
   tooltipPosition = input<'top' | 'bottom' | 'left' | 'right'>('top');
   ariaLabel = input<string>('');
+  ariaExpanded = input<boolean | null>(null);
+  ariaControls = input<string | null>(null);
+
+  private readonly control = viewChild('control', { read: ElementRef });
 
   isLink = computed(() => this.routerLink() !== undefined || this.href() !== undefined);
 
@@ -139,6 +151,17 @@ export class CleansiaButtonComponent {
     this.isIconOnly() && this.ariaLabel() ? this.ariaLabel() : undefined,
   );
 
+  // p-button has no aria-expanded or aria-controls input; its pass-through is the only way onto
+  // the inner <button>. Undefined when neither is set, so every other usage renders as before.
+  // Left to inference: [pt] also reaches pTooltip on the same element, whose type is not
+  // ButtonPassThrough, and this literal satisfies both.
+  disclosurePt = computed(() => {
+    const expanded = this.ariaExpanded();
+    const controls = this.ariaControls();
+    if (expanded === null && controls === null) return undefined;
+    return { root: { 'aria-expanded': expanded, 'aria-controls': controls } };
+  });
+
   /**
    * The class list shared by both renderings, so an anchor and a button styled
    * `brand` are the same button.
@@ -160,5 +183,10 @@ export class CleansiaButtonComponent {
   handleClick(event: MouseEvent): void {
     this.clickFn.emit(event);
     this.onClick.emit(event);
+  }
+
+  focus(): void {
+    const host: HTMLElement | undefined = this.control()?.nativeElement;
+    (host?.querySelector('button') ?? host)?.focus();
   }
 }

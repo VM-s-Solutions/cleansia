@@ -668,6 +668,11 @@ need backfilling.
 
 ### Fixed
 
+- **Customer Android and iOS — less empty space under the Cleansia Plus button.** The button bar at
+  the bottom of the Plus offer is tighter on iOS, where an empty band of about 54pt sat under the
+  billing line. On both platforms, the last perk now stops just above the bar at any text size and
+  disclosure length. (Owner remark 2026-10-01.)
+
 - **Customer iOS — the Profile and Cleansia Plus headers reach the top of the screen again.** Their
   colour now runs behind the clock and the camera cut-out instead of stopping just below them, which
   read as a cut-off band. It also fills the space revealed when the page is pulled down. Android

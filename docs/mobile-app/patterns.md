@@ -122,6 +122,14 @@ fixed `minHeight` band started under the title and the block sat high. On Androi
 `MainShellBottomClearance`. Before this, it centred over the area under the floating bar too, and the
 block sat low. Both keep pull-to-refresh.
 
+**A sticky bottom bar reserves its measured height, never a literal.** The Plus offer's button bar
+(the button and its billing disclosure) changes height with the disclosure's length, the text size
+and, on Android, the navigation mode. A fixed 140 reservation left a blank band in some cases and let
+the bar cover the last perk in others. On iOS the bar is mounted with `safeAreaInset(edge: .bottom)`
+on the offer's scroll view, not overlaid in a `ZStack`, so the content reserves exactly its height. On
+Android the bar reports its height through `onSizeChanged`, and the scroll column pads by that height.
+On both platforms the bar keeps 12 under the disclosure, above the home indicator or navigation bar.
+
 The snackbar has its own lift above the same chrome (→ [Snackbar insets](#snackbar-inset)), and this
 does not change it.
 

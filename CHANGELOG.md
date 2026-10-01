@@ -70,6 +70,13 @@ need backfilling.
 
 ### Added
 
+- **Customer Android and iOS — content fades out under the clock as it scrolls.** On Home, Profile
+  and the Cleansia Plus offer, content scrolled to the top of the screen fades out under the status
+  bar instead of running into the clock and the camera cut-out. At rest, and while pulling down to
+  refresh, nothing is drawn, so the Profile and Plus headers still reach the top edge. On iOS this is
+  the app's own fade on every version, because iOS 26's built-in scroll-edge effect does not draw on
+  these screens. (Owner remark 2026-10-01.)
+
 - **A contract for work between the customer and the cleaner, per job.** Every booking is now made
   under the platform's *contract for work* text — published at `/work-contract` beside the terms and the
   privacy policy, in five languages — in the version in force for the address's market on the booking

@@ -156,3 +156,34 @@ screen, behind the clock. The two platforms get there differently, and the iOS r
 
 Content in these scroll views passes under the status bar once it scrolls, so these screens also use
 the fade below.
+
+## Content fades under the status bar {#status-bar-fade}
+
+Home, Profile and the Plus offer draw to the top edge with no navigation bar, so once their content
+scrolls up it passes under the clock and the camera cut-out. On those three screens, once the content
+has left its top, a band of the page background covers the status bar and fades to clear 24pt (24dp)
+below it. Orders and Rewards keep a fixed title above their scroll view, so nothing passes under the
+status bar there.
+
+**It is scroll-driven, never static.** At rest the band is hidden, so the full-bleed Profile and Plus
+heroes (above) paint the strip themselves. A pull-to-refresh never raises it either. It is decoration
+only: it takes no touches and is hidden from VoiceOver and TalkBack. Both platforms show it from the
+first point of scroll and fade it in and out.
+
+- **iOS** wraps the scroll view in `StatusBarFadeScrollView` (customer `Components/`). A
+  `GeometryReader` behind the content reads the content's top in a named coordinate space, and state
+  is written only when it crosses the threshold, not on every scrolled frame. A `PreferenceKey` reader
+  does not work here, because the scroll view does not pass its content's preference changes to an
+  `onPreferenceChange` outside it. The band's own reader keeps the safe area on purpose: one that
+  ignores it reports a top inset of 0, which collapses the band to its fade.
+- **iOS 26's native soft scroll edge is not used.** The owner's first choice was
+  `scrollEdgeEffectStyle(.soft, for: .top)`, alone or with a zero-height `safeAreaBar`, but it draws
+  nothing when the navigation bar is hidden. On the iOS 26.3 simulator with real drags, scrolled frames
+  were byte-identical to frames with no treatment. So the band runs on every iOS version. It has not
+  been checked on a physical iPhone 17. When checking a scroll-driven effect, use real drags:
+  `UIScrollView.setContentOffset` does not update SwiftUI geometry.
+- **Android** applies `Modifier.statusBarFade(scrollState)` (customer `ui/components/StatusBarFade.kt`)
+  directly before `verticalScroll(scrollState)`, so it draws over the viewport and not over the
+  scrolled content. It is visible while `scrollState.value > 0`. Home moved its status-bar padding
+  inside the scroll, so the address bar starts below the status bar at rest and then scrolls under the
+  band.

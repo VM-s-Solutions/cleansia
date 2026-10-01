@@ -31,6 +31,14 @@ final class ContentSafeAreaBindingTests: XCTestCase {
         ))
     }
 
+    /// The sticky Plus CTA is mounted as a bottom inset, so the offer reserves the bar's real height;
+    /// a fixed spacer under the perks drifted from the bar as soon as its padding changed.
+    func testThePlusOfferReservesTheStickyBarThroughItsInset() throws {
+        let plus = try compactSource("CleansiaCustomer/Sources/Features/Membership/SubscribePlusScreen.swift")
+        XCTAssertTrue(plus.contains(".safeAreaInset(edge:.bottom,spacing:0){ifvm.canSubscribe{StickyCtaBar("))
+        XCTAssertFalse(plus.contains("Color.clear.frame(height:140)"))
+    }
+
     private func assertOnlyBackgroundsExtendUnderTheStatusBar(_ path: String) throws {
         var content = try compactSource(path)
         XCTAssertTrue(content.contains("ScrollView{"), "No scrolling surface was inspected")

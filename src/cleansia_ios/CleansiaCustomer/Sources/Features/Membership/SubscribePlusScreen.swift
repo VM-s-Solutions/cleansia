@@ -97,22 +97,24 @@ struct SubscribePlusScreen: View {
     }
 
     private func offer(_ plans: [MembershipPlan]) -> some View {
-        Group {
-            ScrollView {
-                VStack(alignment: .leading, spacing: Spacing.l) {
-                    HeroBlock(
-                        plans: plans,
-                        selectedPlanCode: selectedPlanCode,
-                        selectedPlan: selectedPlan,
-                        trialDays: trialDays,
-                        onSelectPlan: { selectedPlanCode = $0 },
-                        onBack: onBack
-                    )
-                    SocialProofTile()
-                    PerksSection(plan: selectedPlan)
-                    Color.clear.frame(height: 140)
-                }
+        ScrollView {
+            VStack(alignment: .leading, spacing: Spacing.l) {
+                HeroBlock(
+                    plans: plans,
+                    selectedPlanCode: selectedPlanCode,
+                    selectedPlan: selectedPlan,
+                    trialDays: trialDays,
+                    onSelectPlan: { selectedPlanCode = $0 },
+                    onBack: onBack
+                )
+                SocialProofTile()
+                PerksSection(plan: selectedPlan)
             }
+            .padding(.bottom, Spacing.l)
+        }
+        // Mounted as an inset, not overlaid: the scroll content then reserves exactly the bar's real
+        // height at any Dynamic Type size and disclosure length, instead of a fixed guess.
+        .safeAreaInset(edge: .bottom, spacing: 0) {
             if vm.canSubscribe {
                 StickyCtaBar(
                     label: trialDays > 0 ? L10n.Membership.ctaStartTrial : L10n.Membership.ctaSubscribe,
@@ -469,14 +471,18 @@ private struct StickyCtaBar: View {
     let onTap: () -> Void
 
     var body: some View {
-        VStack(spacing: Spacing.s) {
+        VStack(spacing: Spacing.xs) {
             CleansiaPrimaryButton(label, leadingIcon: "crown", enabled: enabled, action: onTap)
             Text(disclosure)
                 .font(CleansiaTypography.bodyMedium)
                 .foregroundColor(CleansiaColors.onSurfaceVariant)
                 .multilineTextAlignment(.center)
         }
-        .padding(Spacing.ml)
+        // 12pt under the disclosure, above the home indicator's own inset — the bar used to pad 20pt
+        // on every side, which read as a band of empty surface under the text.
+        .padding(.horizontal, Spacing.ml)
+        .padding(.top, Spacing.m)
+        .padding(.bottom, Spacing.s)
         .frame(maxWidth: .infinity)
         .background(CleansiaColors.surface.ignoresSafeArea(edges: .bottom))
     }

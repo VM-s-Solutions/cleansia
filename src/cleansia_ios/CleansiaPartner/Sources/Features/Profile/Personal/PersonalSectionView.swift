@@ -91,7 +91,7 @@ struct PersonalSectionView: View {
                     enabled: false
                 )
                 SaveSectionButton(
-                    onboarding: onboarding,
+                    onboarding: onboarding && chainVM.state.completedSteps < chainVM.state.totalSteps,
                     isSubmitting: vm.action.isSubmitting,
                     action: {
                         Task {

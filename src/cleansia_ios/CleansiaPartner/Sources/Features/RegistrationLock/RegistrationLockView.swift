@@ -359,7 +359,7 @@ private struct StepRow: View {
 
     var body: some View {
         Button {
-            if canFix { onFix(step) }
+            if isFixable(step) { onFix(step) }
         } label: {
             HStack(alignment: .top, spacing: Spacing.s) {
                 Image(systemName: statusSymbol)
@@ -381,7 +381,8 @@ private struct StepRow: View {
                     Text(L10n.RegistrationLock.stepComplete)
                         .font(CleansiaTypography.labelMedium)
                         .foregroundColor(CleansiaColors.primary)
-                } else if canFix {
+                }
+                if isFixable(step) {
                     Image(systemName: "chevron.right")
                         .foregroundColor(CleansiaColors.onSurfaceVariant)
                 }
@@ -389,15 +390,7 @@ private struct StepRow: View {
             .cardPadding()
         }
         .buttonStyle(.plain)
-        .disabled(!canFix)
-    }
-
-    private var canFix: Bool {
-        guard step.status != .done else { return false }
-        switch step.category {
-        case .profile, .documents, .legalDocuments: return true
-        case .approval: return false
-        }
+        .disabled(!isFixable(step))
     }
 
     private func detailText(_ detail: RegistrationStepDetail) -> String {

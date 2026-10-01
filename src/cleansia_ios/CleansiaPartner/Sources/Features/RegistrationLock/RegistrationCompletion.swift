@@ -42,6 +42,17 @@ struct RegistrationStep: Equatable {
     let details: [RegistrationStepDetail]
 }
 
+/// A row opens whatever its status, because the lock replaces the whole app until approval: a finished
+/// section has no other way back in, and "Documents: Done" means one active document, not every type
+/// approval needs. Approval is the admin's decision, so its row has nothing to open.
+/// -> /partner-app/onboarding#registration-lock-screen
+func isFixable(_ step: RegistrationStep) -> Bool {
+    switch step.category {
+    case .profile, .documents, .legalDocuments: true
+    case .approval: false
+    }
+}
+
 /// The contract-documents step appears only while a document is in force; until then approval does
 /// not wait on it.
 func buildSteps(

@@ -154,6 +154,35 @@ final class RegistrationCompletionTests: XCTestCase {
         XCTAssertEqual(step(steps, .approval).status, .pending)
     }
 
+    // MARK: re-entry
+
+    /// The lock replaces the app until approval, so a row that stopped opening once Done left a
+    /// cleaner no way to correct a section or add the second document approval needs.
+    func testEveryCleanerOwnedRowStillOpensOnceDone() {
+        let steps = buildSteps(
+            complete(contract: .pending),
+            legalDocuments: [.sample(type: ._3, isAccepted: true)]
+        )
+        for category in [RegistrationStepCategory.profile, .documents, .legalDocuments] {
+            let done = step(steps, category)
+            XCTAssertEqual(done.status, .done, "\(category)")
+            XCTAssertTrue(isFixable(done), "\(category) must reopen when Done")
+        }
+    }
+
+    func testARejectedCleanerCanStillReopenTheirSections() {
+        let steps = buildSteps(complete(contract: .rejected))
+        XCTAssertTrue(isFixable(step(steps, .profile)))
+        XCTAssertTrue(isFixable(step(steps, .documents)))
+    }
+
+    func testTheApprovalRowOpensNothingWhileTheAdminDecides() {
+        for contract in [ContractStatus.pending, .approved, .active] {
+            XCTAssertFalse(isFixable(step(buildSteps(complete(contract: contract)), .approval)), "\(contract)")
+        }
+        XCTAssertFalse(isFixable(step(buildSteps(complete(profile: false, contract: .pending)), .approval)))
+    }
+
     private func step(_ steps: [RegistrationStep], _ category: RegistrationStepCategory) -> RegistrationStep {
         guard let match = steps.first(where: { $0.category == category }) else {
             XCTFail("missing \(category) step")

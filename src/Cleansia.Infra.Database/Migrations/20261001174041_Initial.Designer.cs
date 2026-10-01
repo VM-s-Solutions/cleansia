@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cleansia.Infra.Database.Migrations
 {
     [DbContext(typeof(CleansiaDbContext))]
-    [Migration("20260929222804_Initial")]
+    [Migration("20261001174041_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -1501,6 +1501,11 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<string>("Id")
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
+
+                    b.Property<string>("ContentSha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
 
                     b.Property<string>("ContentType")
                         .IsRequired()

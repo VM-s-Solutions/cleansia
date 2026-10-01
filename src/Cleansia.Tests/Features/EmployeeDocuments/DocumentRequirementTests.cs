@@ -192,7 +192,7 @@ public class DocumentRequirementTests
     {
         var document = EmployeeDocument.Create(
             "emp-1", $"{type}-v{version}.pdf", $"path/{type}-v{version}", "application/pdf", 1024,
-            type, null, "system");
+            new string('0', 64), type, null, "system");
 
         // Version is the aggregate's own, set by CreateNewVersion in production. Reflection puts a
         // v2 on an in-memory document without a blob round-trip; the alternative is a setter that

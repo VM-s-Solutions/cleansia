@@ -25,9 +25,11 @@ public class GetMyDocumentsHandlerTests
         employee.Id = "emp-1";
 
         var identityCard = EmployeeDocument.Create(
-            employee.Id, "image.jpg", "path/id.jpg", "image/jpeg", 2048, DocumentType.IdentityCard, null, user.Id);
+            employee.Id, "image.jpg", "path/id.jpg", "image/jpeg", 2048, new string('0', 64),
+            DocumentType.IdentityCard, null, user.Id);
         var workPermit = EmployeeDocument.Create(
-            employee.Id, "image.jpg", "path/permit.jpg", "image/jpeg", 2048, DocumentType.WorkPermit, null, user.Id);
+            employee.Id, "image.jpg", "path/permit.jpg", "image/jpeg", 2048, new string('1', 64),
+            DocumentType.WorkPermit, null, user.Id);
 
         _session.Setup(s => s.GetUserEmail()).Returns(UserEmail);
         _userRepository

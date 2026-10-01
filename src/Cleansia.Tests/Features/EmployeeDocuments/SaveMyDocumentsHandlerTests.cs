@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using Cleansia.Core.AppServices.Features.EmployeeDocuments;
 using Cleansia.Core.AppServices.Shared.DTOs.Files;
 using Cleansia.Core.Blobs.Abstractions;
@@ -101,6 +102,16 @@ public class SaveMyDocumentsHandlerTests
         Assert.Equal("image/jpeg", Assert.Single(_added).ContentType);
     }
 
+    [Fact]
+    public async Task Stored_Document_Records_The_Sha256_Of_Its_Bytes()
+    {
+        var content = Jpeg(2048);
+
+        await CreateHandler().Handle(Upload(content, "id.jpg", "image/jpeg"), CancellationToken.None);
+
+        Assert.Equal(Convert.ToHexStringLower(SHA256.HashData(content)), Assert.Single(_added).ContentSha256);
+    }
+
     /// <summary>
     /// Phones name every pick <c>image.jpg</c>. The repository mock is strict, so a handler that went
     /// looking for an earlier upload of the same name to chain onto fails here rather than passing on
@@ -121,7 +132,7 @@ public class SaveMyDocumentsHandlerTests
                 new SaveMyDocuments.DocumentToSave
                 {
                     DocumentType = DocumentType.WorkPermit,
-                    File = new BlobFileDto("image.jpg", Convert.ToBase64String(Jpeg(2048)), "image/jpeg")
+                    File = new BlobFileDto("image.jpg", Convert.ToBase64String(Jpeg(4096)), "image/jpeg")
                 }
             ]
         };

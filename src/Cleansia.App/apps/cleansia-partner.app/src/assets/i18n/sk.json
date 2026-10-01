@@ -1018,7 +1018,8 @@
       "not_found": "Dokument nenájdený",
       "unauthorized": "Nemáte oprávnenie na prístup k tomuto dokumentu",
       "not_owned": "Môžete pristupovať iba k vlastným dokumentom",
-      "deletion_already_requested": "O odstránenie tohto dokumentu ste už požiadali. Administrátor vašu žiadosť vybaví."
+      "deletion_already_requested": "O odstránenie tohto dokumentu ste už požiadali. Administrátor vašu žiadosť vybaví.",
+      "duplicate_file": "Presne tento súbor ste už nahrali. Vyberte iný súbor alebo nahraďte existujúci dokument."
     },
     "payroll": {
       "pay_period": {

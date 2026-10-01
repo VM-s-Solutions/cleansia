@@ -42,6 +42,7 @@ public class GetEmployeeDocumentsHandlerTests
             filePath: "docs/passport.pdf",
             contentType: "application/pdf",
             fileSizeBytes: 1024,
+            contentSha256: new string('0', 64),
             documentType: DocumentType.Passport,
             description: "ID doc",
             createdBy: "system");
@@ -100,7 +101,7 @@ public class GetEmployeeDocumentsHandlerTests
         Assert.True(predicate(match));
 
         var wrongEmployee = EmployeeDocument.Create(
-            "other-emp", "x.pdf", "p", "application/pdf", 1, DocumentType.Passport, null, "system");
+            "other-emp", "x.pdf", "p", "application/pdf", 1, new string('0', 64), DocumentType.Passport, null, "system");
         Assert.False(predicate(wrongEmployee));
 
         var inactive = Document();
@@ -128,7 +129,7 @@ public class GetEmployeeDocumentsHandlerTests
 
         var retired = Document();
         var replacement = EmployeeDocument.CreateNewVersion(
-            retired, "passport-new.pdf", "docs/passport-new.pdf", "application/pdf", 2048,
+            retired, "passport-new.pdf", "docs/passport-new.pdf", "application/pdf", 2048, new string('1', 64),
             DocumentType.Passport, null, "user-1");
         retired.SoftDelete("user-1");
 

@@ -329,6 +329,13 @@ public static class BusinessErrorMessage
     public const string EmployeeDocumentNotOwned = "employee_document.not_owned";
 
     /// <summary>
+    /// The same bytes as another document of this cleaner that is still active and not rejected, or as
+    /// another file in the same upload. A rejected document never blocks, because its type may be what
+    /// was wrong and replacing cannot change the type.
+    /// </summary>
+    public const string EmployeeDocumentDuplicateFile = "employee_document.duplicate_file";
+
+    /// <summary>
     /// A deletion request is already open for this document. A second is not more urgent, it is the
     /// same ask twice — and it would leave an admin two rows to answer for one decision.
     /// </summary>

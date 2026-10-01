@@ -196,6 +196,15 @@ targets:
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         CFBundleDisplayName: Cleansia
+        # The widget's strings live in CleansiaCore's resource bundle, and a non-main bundle resolves
+        # in the languages its MAIN bundle declares. Without this list the extension's only language
+        # was its development region, so the card was English on every phone.
+        CFBundleLocalizations:
+          - en
+          - cs
+          - sk
+          - uk
+          - ru
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     settings:

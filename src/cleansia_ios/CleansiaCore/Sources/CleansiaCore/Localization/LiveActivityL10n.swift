@@ -6,7 +6,8 @@ import Foundation
 ///
 /// The widget never calls `CoreL10n.apply(languageTag:)` (that is the app's launch path, and an extension
 /// has its own process and its own `UserDefaults` domain), so these resolve against the device's preferred
-/// languages rather than the in-app language override.
+/// languages rather than the in-app language override — which works only because the extension declares
+/// all five in `CFBundleLocalizations`; Core's bundle can resolve no language its host does not.
 public enum LiveActivityL10n {
     /// The leg vocabulary of the four-step journey. Terse on purpose: these sit under a quarter-width
     /// segment of the progress bar.

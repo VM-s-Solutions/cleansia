@@ -30,8 +30,8 @@ A customer holds two balances, and they do different things.
 |---|---|---|
 | What it is | a count with no currency | money the platform owes the customer, one account per currency |
 | Earned by | a completed order, a qualified referral, an administrator's grant | the no-show or no-cleaner apology, a complaint settled in credit, goodwill |
-| Spent | never; nothing redeems points | automatically, on the next card booking in the same currency, up to the server's share of it |
-| Taken back | a partial refund's clawback, a cancelled order's points, a reversed referral, an administrator's revoke | an administrator's *Expire credit*; what a booking spent returns when that booking is refunded or cancelled |
+| Spent | never; nothing redeems points | automatically, on the next card booking in the same currency, up to the server's share of it; a refunded or cancelled booking gives back what it spent |
+| Taken back | a partial refund's clawback, a cancelled order's points, a reversed referral, an administrator's revoke | account deletion, the operating company's deactivation, an administrator's *Expire credit* |
 | Expires | never | 12 months after the last movement |
 | What it changes | the tier, and through it the tier discount | what the card is asked for |
 

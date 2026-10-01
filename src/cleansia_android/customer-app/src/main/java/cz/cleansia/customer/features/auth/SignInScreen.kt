@@ -2,7 +2,6 @@ package cz.cleansia.customer.features.auth
 
 import cz.cleansia.core.ui.components.CleansiaTextLink
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -11,8 +10,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -26,7 +26,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -42,8 +41,10 @@ import cz.cleansia.customer.ui.theme.CleansiaTheme
 
 /**
  * Sign In — mirrors the web's [`login.component.html`], minus the remember-me checkbox.
- * Layout: mascot above the form → brand wordmark → title → email + password → forgot-password row →
- *         primary Log in button → OR divider → Google button → "Don't have an account? Register" footer.
+ * Layout: title → email + password → forgot-password row → primary Log in button → OR divider →
+ *         Google button → "Don't have an account? Register" footer. Top-anchored; it scrolls only
+ *         when it does not fit. The column pads by the real system bars and keyboard (the activity
+ *         is edge-to-edge): with nothing to scroll, the footer would sit under a 3-button nav bar.
  *
  * The remember-me box is deliberately absent. It defaulted to *unchecked*, so the common case
  * asked for a 24-hour refresh token — and on a personal handset the only thing that bought was
@@ -68,20 +69,13 @@ fun SignInScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+            .systemBarsPadding()
+            .imePadding()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 24.dp)
-            .padding(top = 64.dp, bottom = 32.dp),
+            .padding(top = 24.dp, bottom = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        // Mascot
-        Image(
-            painter = painterResource(R.drawable.mascot_waving),
-            contentDescription = null,
-            modifier = Modifier.size(160.dp),
-        )
-
-        Spacer(Modifier.height(24.dp))
-
         // Title + subtitle
         Text(
             text = stringResource(R.string.login_title),

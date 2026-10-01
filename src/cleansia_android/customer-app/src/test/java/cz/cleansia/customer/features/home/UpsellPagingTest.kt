@@ -44,18 +44,32 @@ class UpsellPagingTest {
         assertEquals(0, upsellVirtualCount(0))
     }
 
+    private val before = listOf(UpsellKind.Plus, UpsellKind.Referral, UpsellKind.QuickSize)
+
+    /** Slides arrive at the front, so the slide on screen moves index; the re-anchor follows it. */
     @Test
     fun `a slide arriving after first paint keeps the slide on screen`() {
-        val onSecond = upsellAnchor(3) + 1 + 3 * 7
-        val target = upsellReanchor(onSecond, oldCount = 3, newCount = 4)
-        assertEquals(1, upsellLogical(target, 4))
+        val onReferral = upsellAnchor(3) + 1 + 3 * 7
+        val after = listOf(UpsellKind.Credit) + before
+        val target = upsellReanchor(onReferral, before, after)
+        assertEquals(UpsellKind.Referral, after[upsellLogical(target, after.size)])
     }
 
     @Test
-    fun `a slide leaving while it was on screen lands on the new last slide`() {
-        val onThird = upsellAnchor(3) + 2
-        val target = upsellReanchor(onThird, oldCount = 3, newCount = 2)
-        assertEquals(1, upsellLogical(target, 2))
-        assertTrue(target in 0 until upsellVirtualCount(2))
+    fun `a slide leaving while it was on screen keeps the position`() {
+        val withNotifications = listOf(UpsellKind.Notifications) + before
+        val onNotifications = upsellAnchor(withNotifications.size)
+        val target = upsellReanchor(onNotifications, withNotifications, before)
+        assertEquals(0, upsellLogical(target, before.size))
+        assertTrue(target in 0 until upsellVirtualCount(before.size))
+    }
+
+    @Test
+    fun `a set that shrank past the slide on screen lands on its last slide`() {
+        val long = listOf(UpsellKind.Notifications, UpsellKind.Credit, UpsellKind.Plus, UpsellKind.Referral, UpsellKind.QuickSize)
+        val onReferral = upsellAnchor(long.size) + 3
+        val short = listOf(UpsellKind.Plus, UpsellKind.QuickSize)
+        val target = upsellReanchor(onReferral, long, short)
+        assertEquals(1, upsellLogical(target, short.size))
     }
 }

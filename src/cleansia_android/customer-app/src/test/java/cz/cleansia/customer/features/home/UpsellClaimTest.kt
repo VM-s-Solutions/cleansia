@@ -254,6 +254,78 @@ class UpsellClaimTest {
         assertEquals(emptyList<String>(), back)
     }
 
+    /** The newer carousel slides; every one renders, so every one is in every locale. */
+    private val carouselKeys = listOf(
+        "home_upsell_notifications_top",
+        "home_upsell_notifications_title",
+        "home_upsell_notifications_cta",
+        "home_upsell_credit_title",
+        "home_upsell_express_top",
+        "home_upsell_book_cta",
+        "home_quick_size_title",
+        "home_quick_size_cta",
+        "home_quick_size_rooms_less",
+        "home_quick_size_rooms_more",
+        "home_quick_size_baths_less",
+        "home_quick_size_baths_more",
+    )
+
+    /** Key → the placeholders it must carry; it may state no number of its own. */
+    private val carouselFigures = mapOf(
+        "home_upsell_credit_title" to listOf("%1\$s", "%2\$d"),
+        "home_upsell_express_top" to listOf("%1\$d", "%2\$d"),
+    )
+
+    @Test
+    fun `every new carousel slide is written in all five locales and promises no trial`() {
+        val english = strings("values")
+        locales.forEach { locale ->
+            val declared = strings(locale)
+            carouselKeys.forEach { key ->
+                val value = declared[key]
+                assertTrue("$locale/$key is missing or blank", value?.isNotBlank() == true)
+                assertTrue("$locale/$key promises a trial — $value", !trialClaim.containsMatchIn(value!!))
+                if (locale == "values-uk" || locale == "values-ru") {
+                    assertTrue("$locale/$key is still English", value != english[key])
+                }
+            }
+            val express = plurals(locale)["home_upsell_express_title"]
+            assertTrue("$locale/home_upsell_express_title is missing", !express.isNullOrEmpty())
+        }
+    }
+
+    /**
+     * The credit balance and its share are the server's (`GetMyCredit`), the waivers left are the
+     * membership's, and the express window is the booking policy's — so no locale states a number.
+     */
+    @Test
+    fun `the credit and express slides state the server's figures, never their own`() {
+        val placeholder = Regex("%\\d+\\$[sd]")
+        locales.forEach { locale ->
+            val declared = strings(locale)
+            carouselFigures.forEach { (key, required) ->
+                val value = declared[key] ?: error("$locale/$key is missing")
+                required.forEach { assertTrue("$locale/$key lost its $it placeholder — $value", value.contains(it)) }
+                assertTrue("$locale/$key names a number of its own — $value", placeholder.replace(value, "").none { it.isDigit() })
+            }
+            plurals(locale).getValue("home_upsell_express_title").forEach { item ->
+                assertTrue("$locale/home_upsell_express_title lost its count — $item", item.contains("%1\$d"))
+                assertTrue("$locale/home_upsell_express_title names a number of its own — $item", placeholder.replace(item, "").none { it.isDigit() })
+            }
+        }
+    }
+
+    /** The express slide states the 2–4 h window from the client's bands, so those must be the server's. */
+    @Test
+    fun `the express window the slide states is the booking policy's`() {
+        val policy = File(solutionDir, "Cleansia.Core.AppServices/Features/Orders/BookingPolicy.cs").readText()
+        fun hours(name: String): Int = Regex("public\\s+const\\s+int\\s+$name\\s*=\\s*(\\d+)\\s*;")
+            .find(policy)?.groupValues?.get(1)?.toInt()
+            ?: error("BookingPolicy.$name not found — the parser needs updating")
+        assertEquals(hours("ExpressLeadTimeHours"), cz.cleansia.customer.features.booking.BookingPricing.EXPRESS_LEAD_HOURS.toInt())
+        assertEquals(hours("StandardLeadTimeHours"), cz.cleansia.customer.features.booking.BookingPricing.STANDARD_LEAD_HOURS.toInt())
+    }
+
     private fun strings(locale: String): Map<String, String> {
         val file = File(moduleDir, "src/main/res/$locale/strings.xml")
         assertTrue("missing $locale/strings.xml", file.isFile)

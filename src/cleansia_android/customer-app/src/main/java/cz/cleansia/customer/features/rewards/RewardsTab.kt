@@ -1178,8 +1178,9 @@ private fun copyToClipboard(context: android.content.Context, code: String) {
 /**
  * Launches the system share sheet. Falls back to clipboard + snackbar when no
  * activity can handle ACTION_SEND (rare — stripped-down devices, headless tests).
+ * Shared with the Home carousel's referral slide.
  */
-private fun shareReferralOrFallback(
+internal fun shareReferralOrFallback(
     context: android.content.Context,
     code: String,
     onShareUnavailable: () -> Unit,

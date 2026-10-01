@@ -13,8 +13,8 @@ import kotlinx.datetime.Instant
  *  - Below 2h: rejected by backend validator.
  */
 object BookingPricing {
-    private const val EXPRESS_LEAD_HOURS = 2.0
-    private const val STANDARD_LEAD_HOURS = 4.0
+    internal const val EXPRESS_LEAD_HOURS = 2.0
+    internal const val STANDARD_LEAD_HOURS = 4.0
 
     /**
      * Which slots the grid may tag as express, before any quote for that slot exists. The money is

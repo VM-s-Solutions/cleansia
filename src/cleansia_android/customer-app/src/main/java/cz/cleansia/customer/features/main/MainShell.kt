@@ -126,6 +126,8 @@ fun MainShell(
     // it on dismiss/complete so a fresh booking from the FAB doesn't carry
     // a stale package over.
     var prefillPackageId by remember { mutableStateOf<String?>(null) }
+    // Set by the Home carousel's quick-size slide; cleared like the package prefill.
+    var prefillSize by remember { mutableStateOf<Pair<Int, Int>?>(null) }
     // Used by onComplete to fire-and-forget a refresh of the orders cache
     // after a successful booking (so the new order shows on the Orders tab).
     val scope = rememberCoroutineScope()
@@ -327,6 +329,10 @@ fun MainShell(
                     onSetupRecurring = onSetupRecurring,
                     onManageRecurring = onManageRecurring,
                     onOpenNotificationRoute = onOpenNotificationRoute,
+                    onBookSize = { rooms, bathrooms ->
+                        prefillSize = rooms to bathrooms
+                        bookingSheetOpen = true
+                    },
                 )
                 MainTab.Orders -> OrdersTab(
                     onOrderClick = onOrderClick,
@@ -370,15 +376,18 @@ fun MainShell(
             visible = bookingSheetOpen,
             rebookFromOrderId = rebookFromOrderId,
             prefillPackageId = prefillPackageId,
+            prefillSize = prefillSize,
             onDismiss = {
                 bookingSheetOpen = false
                 rebookFromOrderId = null
                 prefillPackageId = null
+                prefillSize = null
             },
             onComplete = { confirmationCode, orderId ->
                 bookingSheetOpen = false
                 rebookFromOrderId = null
                 prefillPackageId = null
+                prefillSize = null
                 // Refresh the orders cache the moment a booking is confirmed
                 // so the new order shows up on the Orders tab without the
                 // user needing to pull-to-refresh. Fire-and-forget — the

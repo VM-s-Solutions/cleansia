@@ -91,6 +91,9 @@ fun BookingBottomSheet(
     // the home tab — user taps a package card → sheet opens with it already chosen.
     // One-shot per id (guarded inside via lastPrefilledPackage).
     prefillPackageId: String? = null,
+    // When non-null AND `visible` flips to true, seeds rooms and bathrooms — the Home carousel's
+    // quick-size slide. Through the clamping setters, so it can never exceed the booking caps.
+    prefillSize: Pair<Int, Int>? = null,
 ) {
     // While the sheet is open, lift the snackbar above the sticky CTA (primary
     // button / swipe-to-confirm). Bigger than MainShell's 88dp because the CTA
@@ -111,6 +114,7 @@ fun BookingBottomSheet(
             onNavigateToEditProfile = onNavigateToEditProfile,
             rebookFromOrderId = rebookFromOrderId,
             prefillPackageId = prefillPackageId,
+            prefillSize = prefillSize,
         )
     }
 }
@@ -125,6 +129,7 @@ private fun SheetWithAnchors(
     onNavigateToEditProfile: () -> Unit,
     rebookFromOrderId: String? = null,
     prefillPackageId: String? = null,
+    prefillSize: Pair<Int, Int>? = null,
 ) {
     val density = LocalDensity.current
     val decay = androidx.compose.animation.rememberSplineBasedDecay<Float>()
@@ -181,6 +186,7 @@ private fun SheetWithAnchors(
         onNavigateToEditProfile = onNavigateToEditProfile,
         rebookFromOrderId = rebookFromOrderId,
         prefillPackageId = prefillPackageId,
+        prefillSize = prefillSize,
     )
 }
 
@@ -195,6 +201,7 @@ private fun SheetContent(
     onNavigateToEditProfile: () -> Unit,
     rebookFromOrderId: String? = null,
     prefillPackageId: String? = null,
+    prefillSize: Pair<Int, Int>? = null,
     sheetViewModel: BookingSheetViewModel = androidx.hilt.navigation.compose.hiltViewModel(),
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -440,6 +447,20 @@ private fun SheetContent(
     }
     LaunchedEffect(prefillPackageId) {
         if (prefillPackageId == null) lastPrefilledPackage = null
+    }
+
+    // Quick-size prefill — the same one-shot shape as the package one above.
+    var lastPrefilledSize by remember { mutableStateOf<Pair<Int, Int>?>(null) }
+    LaunchedEffect(visible, prefillSize) {
+        if (!visible) return@LaunchedEffect
+        val target = prefillSize ?: return@LaunchedEffect
+        if (target == lastPrefilledSize) return@LaunchedEffect
+        lastPrefilledSize = target
+        bookingVm.setRooms(target.first)
+        bookingVm.setBathrooms(target.second)
+    }
+    LaunchedEffect(prefillSize) {
+        if (prefillSize == null) lastPrefilledSize = null
     }
 
     val stepTitle = when (currentStep) {

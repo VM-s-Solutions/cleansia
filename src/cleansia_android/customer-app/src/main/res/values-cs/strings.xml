@@ -102,11 +102,6 @@
     <string name="home_reorder_details">2 pokoje · Naposledy 2. dubna</string>
     <string name="home_reorder_cta">Objednat znovu</string>
 
-    <!-- Home — hero carousel -->
-    <string name="home_hero_greeting">Vítejte zpět</string>
-    <string name="home_hero_prompt">Těšíte se na čistý domov?</string>
-    <string name="home_hero_cta">Rezervovat za 30 sekund</string>
-
     <!-- Smart upsell carousel slides -->
     <string name="home_upsell_plus_top">Cleansia Plus</string>
     <string name="home_upsell_plus_title">Šetřete na každém úklidu.</string>
@@ -119,6 +114,24 @@
     <string name="home_upsell_page_a11y">Nabídka %1$d z %2$d</string>
     <string name="home_upsell_next">Další nabídka</string>
     <string name="home_upsell_previous">Předchozí nabídka</string>
+    <string name="home_upsell_notifications_top">Buďte v obraze</string>
+    <string name="home_upsell_notifications_title">Dozvíte se hned, když je uklízeč na cestě</string>
+    <string name="home_upsell_notifications_cta">Zapnout</string>
+    <string name="home_upsell_credit_title">%1$s se odečte z vaší příští objednávky kartou, až %2$d %% její ceny</string>
+    <string name="home_upsell_express_top">Plus · %1$d–%2$d h předem</string>
+    <plurals name="home_upsell_express_title">
+        <item quantity="one">Bez expresního příplatku ještě %1$d objednávka tento měsíc</item>
+        <item quantity="few">Bez expresního příplatku ještě %1$d objednávky tento měsíc</item>
+        <item quantity="many">Bez expresního příplatku ještě %1$d objednávky tento měsíc</item>
+        <item quantity="other">Bez expresního příplatku ještě %1$d objednávek tento měsíc</item>
+    </plurals>
+    <string name="home_upsell_book_cta">Objednat</string>
+    <string name="home_quick_size_title">Jak velký je váš domov?</string>
+    <string name="home_quick_size_cta">Zobrazit cenu</string>
+    <string name="home_quick_size_rooms_less">Méně pokojů</string>
+    <string name="home_quick_size_rooms_more">Více pokojů</string>
+    <string name="home_quick_size_baths_less">Méně koupelen</string>
+    <string name="home_quick_size_baths_more">Více koupelen</string>
     <string name="home_upsell_setup_recurring_top">Výhoda Plus</string>
     <string name="home_upsell_setup_recurring_title">Nastavte si pravidelný úklid — jednou objednat, navždy běží</string>
     <string name="home_upsell_setup_recurring_cta">Nastavit</string>

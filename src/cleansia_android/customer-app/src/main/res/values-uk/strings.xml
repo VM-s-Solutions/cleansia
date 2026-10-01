@@ -102,11 +102,6 @@
     <string name="home_reorder_details">2 кімнати · Останнє замовлення 2 квітня</string>
     <string name="home_reorder_cta">Замовити знову</string>
 
-    <!-- Home — hero carousel -->
-    <string name="home_hero_greeting">З поверненням</string>
-    <string name="home_hero_prompt">Готові до бездоганного дому?</string>
-    <string name="home_hero_cta">Замовити за 30 секунд</string>
-
     <!-- Smart upsell carousel slides -->
     <string name="home_upsell_plus_top">Cleansia Plus</string>
     <string name="home_upsell_plus_title">Економте на кожному прибиранні.</string>
@@ -119,6 +114,24 @@
     <string name="home_upsell_page_a11y">Пропозиція %1$d з %2$d</string>
     <string name="home_upsell_next">Наступна пропозиція</string>
     <string name="home_upsell_previous">Попередня пропозиція</string>
+    <string name="home_upsell_notifications_top">Будьте в курсі</string>
+    <string name="home_upsell_notifications_title">Дізнайтеся одразу, коли прибиральник уже в дорозі</string>
+    <string name="home_upsell_notifications_cta">Увімкнути</string>
+    <string name="home_upsell_credit_title">%1$s спишуться з наступного замовлення карткою — до %2$d%% вартості</string>
+    <string name="home_upsell_express_top">Plus · за %1$d–%2$d год</string>
+    <plurals name="home_upsell_express_title">
+        <item quantity="one">Ще %1$d замовлення цього місяця без експрес-доплати</item>
+        <item quantity="few">Ще %1$d замовлення цього місяця без експрес-доплати</item>
+        <item quantity="many">Ще %1$d замовлень цього місяця без експрес-доплати</item>
+        <item quantity="other">Ще %1$d замовлення цього місяця без експрес-доплати</item>
+    </plurals>
+    <string name="home_upsell_book_cta">Замовити</string>
+    <string name="home_quick_size_title">Який розмір вашого житла?</string>
+    <string name="home_quick_size_cta">Показати ціну</string>
+    <string name="home_quick_size_rooms_less">Менше кімнат</string>
+    <string name="home_quick_size_rooms_more">Більше кімнат</string>
+    <string name="home_quick_size_baths_less">Менше ванних кімнат</string>
+    <string name="home_quick_size_baths_more">Більше ванних кімнат</string>
     <string name="home_upsell_setup_recurring_top">Перевага Plus</string>
     <string name="home_upsell_setup_recurring_title">Налаштуйте регулярне прибирання — замов один раз, працює завжди</string>
     <string name="home_upsell_setup_recurring_cta">Налаштувати</string>

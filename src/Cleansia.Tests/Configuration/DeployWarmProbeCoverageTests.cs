@@ -6,11 +6,12 @@ namespace Cleansia.Tests.Configuration;
 /// The two halves of "a deployed site is warm before anyone visits it", both of which live outside the
 /// solution and neither of which any other test can see.
 ///
-/// <para>DEV warms in ONE job (<c>warm-dev-sites</c>) after every deploy, because six sites cold-starting
-/// in parallel on one B2 plan meant whichever deployed last warmed into the worst of that contention —
-/// deterministically the two mobile APIs, which are last in <c>apiHosts</c>. PROD still warms per host,
-/// because a staging slot must be proven healthy before it is swapped and that ordering cannot move to
-/// the end.</para>
+/// <para>DEV deploys the five APIs as one matrix job (<c>deploy-api</c>) two legs at a time, and each leg
+/// warms its own <c>/health</c> before it frees its seat, because six sites cold-starting in parallel on
+/// one B2 plan meant whichever deployed last warmed into the worst of that contention — deterministically
+/// the two mobile APIs. The SSR is warmed in ONE job (<c>warm-dev-sites</c>) after every deploy. PROD
+/// warms each staging slot inside its own leg, because a slot must be proven healthy before it is
+/// swapped and that ordering cannot move to the end.</para>
 ///
 /// <para>The dangerous part of two loops is not the retry arithmetic, it is the path: the SSR probe hits
 /// <c>/</c> and every API probe hits <c>/health</c>, on purpose (<c>/</c> forces a real render, and a
@@ -26,60 +27,80 @@ namespace Cleansia.Tests.Configuration;
 public class DeployWarmProbeCoverageTests
 {
     private const string SsrSite = "web-cleansia-customer";
+    private const string ApiSite = "api-cleansia-${{ matrix.host }}";
 
     private static readonly Regex SiteProbe = new(
         @"SITE_URL=""https://(?<site>[a-z0-9-]+)-\$\{\{ matrix\.region \}\}-\$\{\{ inputs\.env \}\}\.azurewebsites\.net(?<path>[^""]*)""",
         RegexOptions.Compiled);
 
     private static readonly Regex SlotProbe = new(
-        @"SLOT_URL=""https://(?<site>[a-z0-9-]+)-\$\{\{ matrix\.region \}\}-\$\{\{ inputs\.env \}\}-staging\.azurewebsites\.net(?<path>[^""]*)""",
+        @"SLOT_URL=""https://(?<site>[a-z0-9-]+(?:\$\{\{ matrix\.host \}\})?)-\$\{\{ matrix\.region \}\}-\$\{\{ inputs\.env \}\}-staging\.azurewebsites\.net(?<path>[^""]*)""",
         RegexOptions.Compiled);
 
     /// <summary>
-    /// The dev loop is now one job that iterates the API hosts by name and warms the SSR site
-    /// separately, so the roster is a shell list rather than six copied blocks. Pin the roster: a host
-    /// dropped from it is a host nobody proves answers.
+    /// The API hosts are the legs of one matrix job, and on DEV each leg ends by warming its own
+    /// <c>/health</c> — last, so the leg holds its seat until its site answers. The SSR is warmed by
+    /// <c>warm-dev-sites</c>. Pin the roster: a host dropped from the matrix is a host nobody deploys or
+    /// proves answers.
     /// </summary>
     [Fact]
     public void EveryWebHostIsWarmedAfterADevDeploy()
     {
-        var workflow = File.ReadAllText(RepoPath(".github", "workflows", "deploy-azure.yml"));
+        var api = Job("deploy-api");
 
-        var roster = Regex.Match(workflow, @"for host in (?<hosts>[a-z\- ]+); do");
-        Assert.True(roster.Success, "warm-dev-sites no longer iterates a host roster — did the loop change shape?");
+        var roster = Regex.Match(api, @"host: \[(?<hosts>[a-z\-, ]+)\]");
+        Assert.True(roster.Success, "deploy-api no longer has a host matrix — did the job change shape?");
 
         Assert.Equal(
             ["admin", "customer", "customer-mobile", "partner", "partner-mobile"],
-            roster.Groups["hosts"].Value.Split(' ', StringSplitOptions.RemoveEmptyEntries).Order(StringComparer.Ordinal));
+            roster.Groups["hosts"].Value
+                .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+                .Order(StringComparer.Ordinal));
 
-        Assert.Contains("web-cleansia-customer", workflow, StringComparison.Ordinal);
+        Assert.EndsWith(
+            "        if: inputs.env != 'prod'\n" +
+            "        run: .github/scripts/warm-site.sh \"https://" + ApiSite +
+            "-${{ matrix.region }}-${{ inputs.env }}.azurewebsites.net/health\"",
+            api.TrimEnd(),
+            StringComparison.Ordinal);
+
+        Assert.Contains("warm-site.sh \"https://" + SsrSite + "-", Job("warm-dev-sites"), StringComparison.Ordinal);
     }
 
     /// <summary>
-    /// The whole point of moving warming to the end: it must depend on every deploy, or it runs during
-    /// the contention it was created to step out of.
+    /// The SSR is warmed at the end: it must depend on every deploy, or it runs during the contention it
+    /// was created to step out of. Needing the matrix job waits for every one of its legs.
     /// </summary>
     [Fact]
     public void TheDevWarmJobWaitsForEveryDeploy()
     {
-        var workflow = File.ReadAllText(RepoPath(".github", "workflows", "deploy-azure.yml"));
-        var job = Regex.Match(workflow, @"  warm-dev-sites:.*?\n    if:", RegexOptions.Singleline);
+        var needs = Regex.Match(Job("warm-dev-sites"), @"^    needs: \[(?<needs>[^\]]*)\]", RegexOptions.Multiline);
 
-        Assert.True(job.Success, "warm-dev-sites is gone — dev warming must not go back inside the deploy jobs.");
-        foreach (var dependency in new[]
-                 {
-                     "deploy-partner-api", "deploy-admin-api", "deploy-customer-api",
-                     "deploy-partner-mobile-api", "deploy-customer-mobile-api", "deploy-customer-ssr",
-                 })
+        Assert.True(needs.Success, "warm-dev-sites no longer lists its needs inline — did the job change shape?");
+        foreach (var dependency in new[] { "deploy-api", "deploy-customer-ssr" })
         {
-            Assert.Contains(dependency, job.Value, StringComparison.Ordinal);
+            Assert.Contains(dependency, needs.Groups["needs"].Value, StringComparison.Ordinal);
         }
     }
 
     /// <summary>
-    /// Still the sharpest edge, now on the prod side where the per-host copies remain: the SSR slot must
-    /// be warmed at <c>/</c>, because a slot answers <c>/health</c> from a host whose render path is
-    /// broken and would then be swapped into production.
+    /// The DEV throttle (ADR-0015 D5's fallback): two API legs at a time, so a leg warms beside one other
+    /// starting site instead of five, while prod keeps all five so its slot swaps still land together.
+    /// Without <c>fail-fast: false</c> one red leg would cancel the rest, which five separate jobs never did.
+    /// </summary>
+    [Fact]
+    public void DevDeploysTheApisTwoAtATimeAndProdAllFive()
+    {
+        var api = Job("deploy-api");
+
+        Assert.Contains("      fail-fast: false\n", api, StringComparison.Ordinal);
+        Assert.Contains("      max-parallel: ${{ inputs.env == 'prod' && 5 || 2 }}\n", api, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Still the sharpest edge, now on the prod side: the SSR slot must be warmed at <c>/</c>, because a
+    /// slot answers <c>/health</c> from a host whose render path is broken and would then be swapped into
+    /// production.
     /// </summary>
     [Fact]
     public void TheSsrProbeRendersAndTheApiProbesDoNot()
@@ -93,22 +114,16 @@ public class DeployWarmProbeCoverageTests
         }
     }
 
-    /// <summary>The dev loop warms the same six sites the prod slot loop does — different shape, same roster.</summary>
+    /// <summary>
+    /// The prod slot warm runs in the same <c>deploy-api</c> leg as the dev warm, so both cover the leg's
+    /// host roster; beside it only the SSR has a slot probe. A per-host copy reappearing next to the
+    /// matrix would be an API probe outside that roster.
+    /// </summary>
     [Fact]
     public void TheDevLoopAndTheProdSlotLoopCoverTheSameSites()
     {
-        var workflow = File.ReadAllText(RepoPath(".github", "workflows", "deploy-azure.yml"));
-        var slot = Probes(SlotProbe);
-
-        Assert.Equal(
-            ["api-cleansia-admin", "api-cleansia-customer", "api-cleansia-customer-mobile",
-             "api-cleansia-partner", "api-cleansia-partner-mobile", SsrSite],
-            slot.Keys.Order(StringComparer.Ordinal));
-
-        foreach (var site in slot.Keys.Where(s => s != SsrSite))
-        {
-            Assert.Contains(site.Replace("api-cleansia-", string.Empty), workflow, StringComparison.Ordinal);
-        }
+        Assert.Equal([ApiSite, SsrSite], Probes(SlotProbe).Keys.Order(StringComparer.Ordinal));
+        Assert.Contains("SLOT_URL=\"https://" + ApiSite + "-", Job("deploy-api"), StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -130,11 +145,24 @@ public class DeployWarmProbeCoverageTests
         Assert.All(settings, value => Assert.Equal("true", value));
     }
 
+    private static string Workflow() =>
+        File.ReadAllText(RepoPath(".github", "workflows", "deploy-azure.yml")).ReplaceLineEndings("\n");
+
+    // One job's block: from its key to the next line at job indentation (the next job or section rule).
+    private static string Job(string name)
+    {
+        var job = Regex.Match(
+            Workflow(),
+            $@"^  {Regex.Escape(name)}:\n.*?(?=^  \S|\z)",
+            RegexOptions.Singleline | RegexOptions.Multiline);
+
+        Assert.True(job.Success, $"deploy-azure.yml has no {name} job.");
+        return job.Value;
+    }
+
     private static Dictionary<string, string> Probes(Regex pattern)
     {
-        var workflow = File.ReadAllText(RepoPath(".github", "workflows", "deploy-azure.yml"));
-
-        return pattern.Matches(workflow).ToDictionary(
+        return pattern.Matches(Workflow()).ToDictionary(
             match => match.Groups["site"].Value,
             match => match.Groups["path"].Value,
             StringComparer.Ordinal);

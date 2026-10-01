@@ -253,8 +253,8 @@ fun ProfileTab(
 // spare — so ru ellipsizes below ~376dp by design.
 private const val EditChipMaxWidthFraction = 0.45f
 
-// The gradient runs edge to edge under the status bar and the row starts this far below it, matching
-// iOS's `.padding(.top, 48 + topInset)` on the same hero.
+// The gradient runs edge to edge under the status bar and the row starts this far below it. iOS pads
+// its hero by the same 48 inside the safe area and paints the background up through the status bar.
 private val HeroContentTopPadding = 48.dp
 
 @Composable

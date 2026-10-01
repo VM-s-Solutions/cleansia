@@ -125,35 +125,30 @@ public struct LiveActivityCompactReadout: View {
     }
 }
 
+/// The brand on the card: the vector "Cleansia" wordmark alone, tinted primary — no container and never
+/// the app icon, which is what Apple asks a Live Activity's logo to be. It replaced a mascot in a filled
+/// circle that WidgetKit could not draw: the art was a scale-less 600×600 px PNG, i.e. 600 pt, and the
+/// widget archiver swaps any image larger than its presentation for a placeholder ("Max size exceeded …
+/// using placeholder image"), which left an empty disc on the lock screen.
+///
+/// The asset probe stays: `Image(_:bundle:)` draws nothing for a name that does not resolve, and the widget
+/// is a separate process with its own bundle graph. It guards the name only — the size is pinned by
+/// `LiveActivityCardViewsTests`, because no probe can see what the archiver will refuse.
 public struct LiveActivityBrandLockup: View {
     public init() {}
 
     public var body: some View {
-        HStack(spacing: 6) {
-            ZStack {
-                Circle().fill(CleansiaColors.primaryContainer)
-                mark
-            }
-            .frame(width: 22, height: 22)
-
+        if UIImage(named: "cleansia_wordmark", in: MascotAssets.bundle, compatibleWith: nil) != nil {
+            Image("cleansia_wordmark", bundle: MascotAssets.bundle)
+                .renderingMode(.template)
+                .resizable()
+                .scaledToFit()
+                .frame(height: 12)
+                .foregroundColor(CleansiaColors.primary)
+                .accessibilityLabel(Text(verbatim: "Cleansia"))
+        } else {
             Text(verbatim: "Cleansia")
                 .font(.caption.weight(.semibold))
-                .foregroundColor(CleansiaColors.primary)
-        }
-    }
-
-    /// Probe the art before drawing it, and degrade to a symbol when it misses. `Image(_:bundle:)`
-    /// draws NOTHING when the name does not resolve — the lockup renders as a filled circle with a
-    /// dark hole in it, which is what the owner sees on the lock screen — and the widget is a
-    /// separate process with its own bundle graph, so Core's catalog resolving in the app proves
-    /// nothing about the extension. This guard is the one #189 dropped when the card moved into Core.
-    @ViewBuilder
-    private var mark: some View {
-        if UIImage(named: Mascot.waving.rawValue, in: MascotAssets.bundle, compatibleWith: nil) != nil {
-            Mascot.waving.image.resizable().scaledToFit().padding(1)
-        } else {
-            Image(systemName: "sparkles")
-                .font(.system(size: 12, weight: .semibold))
                 .foregroundColor(CleansiaColors.primary)
         }
     }

@@ -27,10 +27,9 @@ public sealed class FunctionsHealthCheckQueueProbeTests : IDisposable
 
     private async Task<HealthProbe> QueueProbe(Mock<QueueServiceClient> queues)
     {
-        await using var db = new CleansiaDbContext(
-            new DbContextOptionsBuilder<CleansiaDbContext>().UseSqlite(_connection).Options);
+        var options = new DbContextOptionsBuilder<CleansiaDbContext>().UseSqlite(_connection).Options;
 
-        var report = await new FunctionsHealthCheck(db, queues.Object, NullLogger<FunctionsHealthCheck>.Instance)
+        var report = await new FunctionsHealthCheck(options, queues.Object, NullLogger<FunctionsHealthCheck>.Instance)
             .CheckAsync(CancellationToken.None);
 
         return Assert.Single(report.Probes, probe => probe.Name == "queue-storage");

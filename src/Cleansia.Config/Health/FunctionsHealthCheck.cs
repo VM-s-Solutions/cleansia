@@ -25,7 +25,7 @@ public sealed record HealthReport(bool Healthy, IReadOnlyList<HealthProbe> Probe
 /// the check never throws.
 /// </summary>
 public sealed class FunctionsHealthCheck(
-    CleansiaDbContext dbContext,
+    DbContextOptions<CleansiaDbContext> dbContextOptions,
     QueueServiceClient queueServiceClient,
     ILogger<FunctionsHealthCheck> logger)
 {
@@ -33,9 +33,13 @@ public sealed class FunctionsHealthCheck(
     {
         var probes = new[]
         {
+            // A context the probe owns, not the request scope's: an abandoned open outlives the bound, and the
+            // scope's context would throw on dispose with its connection still Connecting. This one is disposed
+            // in the background once that open gives up.
             await ProbeAsync("database", async ct =>
             {
-                if (!await dbContext.Database.CanConnectAsync(ct))
+                await using var probeContext = new CleansiaDbContext(dbContextOptions);
+                if (!await probeContext.Database.CanConnectAsync(ct))
                 {
                     throw new InvalidOperationException("CanConnect returned false");
                 }
@@ -73,7 +77,9 @@ public sealed class FunctionsHealthCheck(
         cts.CancelAfter(ReadinessHealthChecks.ReadinessCheckTimeout);
         try
         {
-            await probe(cts.Token);
+            // Bounded on the awaiting side as well as by the token: Npgsql's open ignores the token once the peer
+            // has accepted and stalls, and would otherwise hold the probe to the connection string's own Timeout.
+            await probe(cts.Token).WaitAsync(cts.Token);
             return new HealthProbe(name, Ok: true, Detail: null);
         }
         catch (Exception ex)

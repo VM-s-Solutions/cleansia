@@ -369,6 +369,29 @@ covers telling a third party what a worker did is still open.
 The same reticence runs the other way: no surface ever says an order is held for someone else, and no
 cleaner ever learns they were passed over.
 
+### The registration decision is a push, and only a push {#registration-decided}
+
+`employee.registration_approved` (from `ApproveEmployee`) and `employee.registration_rejected` (from
+`RejectEmployee`) tell a cleaner waiting on the [registration lock](/partner-app/onboarding#registration-lock-screen)
+that an administrator decided. Before 2026-10-01 an approval sent nothing and a rejection told the
+cleaner only about each future seat it released, so the lock kept reading *Application under review*
+until the cleaner happened to reload it.
+
+- **Argless.** The administrator's rejection reason never rides the push: it is free text, outside the
+  lock-screen allowlist ([ADR-0025](/decisions/adr-0025) D3), and it may carry personal data. The lock
+  shows it from the registration status, and the copy points there — *"Your application was rejected.
+  Open the app to see why, or contact support."*
+- **Push-only.** In no feed keyset, because the inbox cannot be reached from the lock this answers. No
+  deep link: a tap opens the app, and for this cleaner the app is the lock, which re-reads the status.
+- **Non-mutable** — see [Which events a user may silence](#mutability).
+- **Its subject is the employee id plus the decision's timestamp**, so reject → approve → reject mints a
+  fresh outbox key each time instead of collapsing a second rejection into the first.
+- **The copy shipped first**: `push.employee.registration_*.title|body` in both iOS app catalogues and the
+  Android partner templates (the order-updates channel), five locales each.
+
+A rejection still releases the cleaner's future seats and sends one revocation notice per seat, as
+before.
+
 ### Which events a user may silence {#mutability}
 
 Most order events sit under the existing `OrderUpdates` category rather than getting one of their own.
@@ -412,6 +435,11 @@ hours — for work `StartOrder` would then refuse to let them start.
 And the admin-unassigned copy is deliberately **not** the assignment-cancelled copy: here the job goes
 ahead with somebody else, and a cleaner repeating "cancelled" to the customer would be telling them
 their booking was gone.
+
+**The registration decision is non-mutable too, for a different reason.** `employee.registration_approved`
+and `employee.registration_rejected` are not about a job: each is the one answer a cleaner on the
+registration lock is waiting for, and a mute would leave them on a stale *under review* screen
+([why it is a push](#registration-decided)).
 
 ### Why the day-ahead digest runs hourly {#digest-hourly}
 

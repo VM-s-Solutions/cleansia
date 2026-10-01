@@ -235,7 +235,10 @@ anyone already approved.
 
 **Approval actions:**
 - `approveEmployee()` -- Sets `ContractStatus` to `Approved`, granting full access
-- `rejectEmployee(reason)` -- Sets `ContractStatus` to `Rejected` with a reason
+- `rejectEmployee(reason)` -- Sets `ContractStatus` to `Rejected` with a reason, which the cleaner
+  reads word for word on their lock screen
+
+Either decision is pushed to the cleaner — see the [lock screen](#registration-lock-screen) below.
 
 ::: warning
 Until approved, the partner can log in and access their profile, but their ability to take and manage orders may be restricted. The `contractStatus` field determines the partner's access level.
@@ -272,6 +275,33 @@ edit does not resubmit anything** — the application stays where the admin left
 profile the Personal, Address and Identification buttons read **Save** rather than *Next*, because
 saving returns to the lock instead of moving on. Partner web already left the profile open behind the lock (see
 *Excluded Routes* below), so this brings the apps to parity.
+
+**A rejection says why, and offers a way out.** On both apps the rejected Approval row is drawn as an
+error, shows the admin's reason under its line — **verbatim and untranslated**, as partner web shows
+it, trimmed, and nothing when the admin left it blank — and offers **Contact support**, which opens an
+e-mail to `support@cleansia.cz` with the subject *"Cleansia partner — application rejected"* in the
+app's language. The reason never travels in the push (below); the lock reads it from the
+registration status.
+
+**The decision reaches the cleaner without a pull.** An admin's approval or rejection pushes the cleaner
+`employee.registration_approved` or `employee.registration_rejected` — push-only, with no feed row and
+no deep link, because a tap opens the app and for this cleaner the app *is* the lock
+([event catalogue](/architecture/push-notifications#registration-decided)). The lock re-checks:
+
+| When | Android | iOS |
+|---|---|---|
+| The lock comes back on screen — the app returns to the foreground, or a section pops back | on `ON_RESUME`, once a 15-second stale window has passed | every time (`scenePhase` → `.active`, and `onAppear`) |
+| A decision push arrives while the lock is on screen | at once, inside the stale window too | at once |
+| Pull to refresh | yes | yes |
+
+An approval found by that re-check unlocks the app; a rejection redraws the Approval row.
+
+::: warning A document the admin rejected still reads *Done*
+*Required Documents* counts any active document, whatever its review status, so a cleaner whose
+required document an admin rejected still sees *Documents: Done* and *Awaiting review*. Reading the
+per-type statuses the documents screen already loads (`GetMyDocumentRequirements`) would fix it on the
+client; that is filed as T-0801 and not built.
+:::
 
 Signing out from this screen is confirmed on both mobile platforms. It is the one destructive thing
 the screen offers and the control sat one tap away from it.

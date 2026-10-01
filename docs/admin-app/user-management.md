@@ -275,7 +275,8 @@ facade.openApproveEmployeeDialog();
 
 Sets the employee's `ContractStatus` to `Approved` and `WorkCountryId` to the country picked, granting
 full platform access. The country must exist and be serviced (`country.not_found`,
-`country.not_serviced`).
+`country.not_serviced`). The cleaner is pushed `employee.registration_approved`, and their
+registration lock lifts on its next load.
 
 The work country also decides the currency the cleaner will be paid in — and the currency of every
 order they will see on their board and be allowed to take (owner ruling 2026-09-12) — and approval is
@@ -307,6 +308,12 @@ facade.openRejectEmployeeDialog();
 ::: warning
 Rejecting an employee prevents them from accessing order management features. The rejection reason is stored and can be reviewed later.
 :::
+
+**The cleaner reads the reason word for word.** Partner web and both partner apps show it, untranslated,
+on the cleaner's registration lock under the rejection — the apps beside a *Contact support* action — so
+write it for the cleaner. It is never put in the push: the cleaner is pushed `employee.registration_rejected`,
+which only says the application was rejected.
+→ [The registration lock](/partner-app/onboarding#registration-lock-screen)
 
 ## Pay Configuration
 

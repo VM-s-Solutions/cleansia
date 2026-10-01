@@ -15,7 +15,7 @@ event is in its display map — deterministically and without I/O.
 - `FcmPushDispatcher` — its only caller; hands the factory's `MulticastMessage` to
   `FirebaseMessaging.SendEachForMulticastAsync` and owns everything after the wire (init, failure
   classification, dead-token prune signaling).
-- The **APNs display map** it owns internally: the 30 displayable event keys (ADR-0025 D2 — union
+- The **APNs display map** it owns internally: the 32 displayable event keys (ADR-0025 D2 — union
   of what the two Android apps render *from fixed client-side templates*; `promo.new_sitewide`
   excluded **by nature**: it is a literal-text event with no fixed template anywhere — panel
   finding CH-1) → derived loc-keys (`push.<event_key>.title|body`) + ordered arg names.

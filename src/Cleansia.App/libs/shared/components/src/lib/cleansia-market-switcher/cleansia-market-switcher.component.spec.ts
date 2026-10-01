@@ -1,6 +1,9 @@
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { Select } from 'primeng/select';
 import {
   CleansiaMarket,
   CleansiaMarketSwitcherComponent,
@@ -53,6 +56,7 @@ describe('CleansiaMarketSwitcherComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [HostComponent, TranslateModule.forRoot()],
+      providers: [provideNoopAnimations()],
     }).compileComponents();
     translate = TestBed.inject(TranslateService);
     translate.use('en');
@@ -82,6 +86,29 @@ describe('CleansiaMarketSwitcherComponent', () => {
     fixture.detectChanges();
 
     expect(component().options().map((o) => o.label)).toEqual(['Czechia · CZK', 'Slovakia · EUR']);
+  });
+
+  it('ticks the current market in the open list, and only that one', async () => {
+    // Opening the list asks matchMedia whether to go modal and scrolls the selected row into
+    // view; jsdom implements neither.
+    if (!window.matchMedia) {
+      window.matchMedia = (media: string) => ({ matches: false, media }) as MediaQueryList;
+    }
+    if (!Element.prototype.scrollIntoView) {
+      Element.prototype.scrollIntoView = () => undefined;
+    }
+    (fixture.debugElement.query(By.directive(Select)).componentInstance as Select).show();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const rows = Array.from(element().querySelectorAll<HTMLElement>('.p-select-option'));
+    const ticked = rows.filter((row) => row.querySelector('.pi-check'));
+
+    expect(rows).toHaveLength(2);
+    expect(ticked).toHaveLength(1);
+    expect(ticked[0].getAttribute('aria-selected')).toBe('true');
+    expect(ticked[0].textContent).toContain('Czechia · CZK');
   });
 
   it('emits the picked code and persists nothing itself', () => {

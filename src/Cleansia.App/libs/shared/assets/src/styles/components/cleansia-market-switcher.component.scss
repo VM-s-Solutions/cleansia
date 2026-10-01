@@ -12,6 +12,13 @@
     line-height: 1;
   }
 
+  &__check {
+    margin-inline-start: auto;
+    padding-inline-start: 12px;
+    font-size: 14px;
+    color: var(--cl-accent);
+  }
+
   .p-select {
     display: inline-flex;
     align-items: center;

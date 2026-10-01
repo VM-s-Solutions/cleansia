@@ -208,17 +208,19 @@
         }
       }
 
+      // Trigger only: the open list renders inside the host and keeps the
+      // header's look.
       .p-select-label,
       .p-select-dropdown,
-      .cleansia-language-switcher__globe,
-      .cleansia-market-switcher__map {
+      .p-select-label .cleansia-language-switcher__globe,
+      .p-select-label .cleansia-market-switcher__map {
         color: #bae6fd;
         font-size: 13px;
       }
 
       .p-select:not(.p-disabled):hover .p-select-label,
-      .p-select:not(.p-disabled):hover .cleansia-language-switcher__globe,
-      .p-select:not(.p-disabled):hover .cleansia-market-switcher__map {
+      .p-select:not(.p-disabled):hover .p-select-label .cleansia-language-switcher__globe,
+      .p-select:not(.p-disabled):hover .p-select-label .cleansia-market-switcher__map {
         color: #{$white};
       }
     }

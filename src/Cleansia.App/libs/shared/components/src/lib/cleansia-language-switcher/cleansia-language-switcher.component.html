@@ -7,17 +7,21 @@
     (onChange)="changeLanguage($event.value)"
   >
     <ng-template let-lang pTemplate="item">
+      @if (variant() === 'globe') {
+      <span class="cleansia-language-switcher__name">{{ lang.label }}</span>
+      <span class="cleansia-language-switcher__code">{{ lang.short }}</span>
+      @if (lang.value === selectedLanguage) {
+      <i class="pi pi-check cleansia-language-switcher__check" aria-hidden="true"></i>
+      }
+      } @else {
       <span class="cleansia-language-switcher__language-item">
-        @if (variant() === 'globe') {
-        <i class="pi pi-globe cleansia-language-switcher__globe" aria-hidden="true"></i>
-        } @else {
         <span
           [ngClass]="['fi', 'fi-' + lang.icon]"
           class="cleansia-language-switcher__flag"
         ></span>
-        }
         {{ lang.short }}
       </span>
+      }
     </ng-template>
 
     <ng-template let-lang pTemplate="selectedItem">

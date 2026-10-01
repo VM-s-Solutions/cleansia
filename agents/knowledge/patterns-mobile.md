@@ -787,6 +787,16 @@ send the **resolved** tag (`emailLanguageTag()`, never the "System" null — the
 device locale and the validator rejects a raw `de-DE`); **replay the whole cached profile**, because
 `UpdateCurrentUser` still replaces first/last name outright; and stay **silent on failure**, because
 a display-language tap is not a save anyone is waiting on.
+**Gate it on the two names only, and send a missing phone as `""`, never `null`** (B1 Stage 0b,
+2026-10-01). The customer twins used to refuse without a phone, which the server never required, and a
+Google/Apple sign-up (stamped `en`, usually phone-less) stayed English for good. `null` is worse than
+a gate: `explicitNulls = false` on Android and the generated Swift client both **omit** a nil member,
+and the binder refuses a command missing its non-nullable `PhoneNumber` — so it fails on every profile
+save, not only the language one; `""` reads as "keep the stored phone". **A sync also needs a session
+reconcile**, not just the picker hook: `LanguageSessionObserver` (Android, both apps; the token store's
+null → non-null edge, cold start included) and `LanguageReconciler` (iOS) read the server, then re-state
+the language the user **chose** if it differs — never for "System", whose resolved tag is the handset's
+ordering and must not overwrite a choice made on another client.
 
 **A backend enum reaches the screen as an ordinal → resource id; its `name` is a DEBUG-only
 diagnostic.** Every `Code` on the wire carries both a `value` and a non-localized English `name`

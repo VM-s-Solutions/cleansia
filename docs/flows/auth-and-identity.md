@@ -109,6 +109,45 @@ until a follow-up removes them (T-0800).
 → [The anonymous allow-list](/mobile-app/api-integration#the-anonymous-allow-list),
 [Guest order lookup](/flows/booking-and-pricing#guest-order-lookup)
 
+## The account's language {#account-language}
+
+`User.PreferredLanguageCode` is the language the server writes in when it has no order to ask: the
+sitewide promo push, every e-mail to a cleaner or an administrator, and a customer's e-mails that are
+not about one order. A customer's e-mails about an order follow the language it was booked in
+([the order records its language](/flows/booking-and-pricing#booking-language)).
+It is a foreign key onto `Languages.Code`, so only a seeded code is accepted.
+
+| How the account was opened | Stamped with |
+|---|---|
+| Password sign-up, customer or cleaner | the language the app or site is showing |
+| Google or Apple sign-up | `en` — neither command carries a language |
+
+All four apps keep it current afterwards, by one rule:
+
+- **A change in the app's language picker** sends the language the app now resolves to.
+- **The start of every session** — a sign-in, or a cold start into a kept session — reads what the
+  server holds and re-states the language the user **chose** in the app if it differs. A user who
+  follows the phone ("System") is never re-stated: the handset's language is not a choice, and it must
+  not overwrite one made on another client.
+- **Only the two names gate it.** The update replays the profile, because `UpdateCurrentUser` replaces
+  first and last name outright, so it waits for both names — and, since 2026-10-01, for nothing else.
+  The customer apps used to wait for a phone as well, which the server never needed: it validates a
+  phone only when one is given and keeps the stored one when the field is blank, so a missing phone now
+  goes as `""`. A customer who signed up with Google or Apple and never added a phone used to stay on
+  `en` for good.
+
+So a social sign-up is corrected the first time the customer picks a language in the app, and at every
+session start after that; one who never touches the picker keeps `en`. Sending the language with the
+Google or Apple sign-up itself needs a new field on those two commands, which the owner left out of the
+2026-10-01 change (client-only).
+
+::: info A phone-less customer's profile edit now saves
+Both customer apps send a missing phone as `""` on every profile save, not only on the language
+update. A `null` used to be dropped from the body, and the binder refuses a command without its
+non-nullable `PhoneNumber`, so a customer with no phone could not save a profile edit at all. Now the
+edit saves and the stored phone, if any, is kept.
+:::
+
 ## Sign-in and session acts leave a row {#session-rows}
 
 Since the owner overruled the "no login history" default (2026-09-14, Q-AUD-L5), every session act

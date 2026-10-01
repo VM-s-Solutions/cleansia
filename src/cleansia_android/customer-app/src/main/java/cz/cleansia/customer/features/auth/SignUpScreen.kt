@@ -4,7 +4,6 @@ import cz.cleansia.core.ui.components.CleansiaTextLink
 import cz.cleansia.core.auth.AuthInterceptor
 import cz.cleansia.core.auth.TokenStore
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -43,7 +42,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -67,7 +65,7 @@ import cz.cleansia.customer.ui.theme.ErrorText
 import cz.cleansia.customer.ui.theme.SuccessText
 /**
  * Sign Up — mirrors the web's [`register.component.html`].
- * Layout: mascot → brand → title → first/last name row → email → password + rule list →
+ * Layout: title → first/last name row → email → password + rule list →
  *         confirm password + match hint → terms checkbox → Register → OR → Google → "Have account? Log in".
  */
 @Composable
@@ -124,14 +122,6 @@ fun SignUpScreen(
             .padding(top = 64.dp, bottom = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Image(
-            painter = painterResource(R.drawable.mascot_waving),
-            contentDescription = null,
-            modifier = Modifier.size(140.dp),
-        )
-
-        Spacer(Modifier.height(20.dp))
-
         Text(
             text = stringResource(R.string.register_title),
             style = MaterialTheme.typography.displayMedium,

@@ -156,12 +156,15 @@ export class LegalDocumentComponent implements OnInit, AfterViewInit, OnDestroy 
     }
 
     // The line the heading has to cross to count as read: just under the navbar
-    // that is on screen now, which slides away on scroll-down.
-    // -> _home-design.scss --cl-nav-offset
+    // that is on screen now, which slides away on scroll-down, and never above
+    // where a jump parks a heading. A jump down hides the bar, and the reader's
+    // first scroll after it would otherwise light the section before.
+    // -> _home-design.scss --cl-nav-offset, _legal-pages.scss scroll-margin-top
     const navOffset = parseFloat(
       getComputedStyle(document.documentElement).getPropertyValue('--cl-nav-offset'),
     );
-    const line = (navOffset || 0) + 24;
+    const landing = parseFloat(getComputedStyle(headings[0]).scrollMarginTop);
+    const line = Math.max((navOffset || 0) + 24, (landing || 0) + 1);
     let current = 0;
     for (const [index, heading] of headings.entries()) {
       if (heading.getBoundingClientRect().top > line) break;

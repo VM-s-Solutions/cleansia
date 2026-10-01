@@ -196,21 +196,37 @@ describe('LegalDocumentComponent', () => {
       expect(component().activeSection()).toBe(1);
     });
 
-    it.each([
-      { offset: '96px', lit: 1 },
-      { offset: '0px', lit: 0 },
-    ])('counts a heading as read once it crosses $offset of navbar plus 24px', ({ offset, lit }) => {
+    // At 1440px the navbar is 96px tall and a jump parks a heading at 96 + 16 = 112px.
+    const layOut = (navOffset: string, secondTop: number): void => {
       Object.defineProperty(document.documentElement, 'scrollHeight', { configurable: true, value: 10_000 });
       jest.spyOn(headings()[0], 'getBoundingClientRect').mockReturnValue({ top: -400 } as DOMRect);
-      jest.spyOn(headings()[1], 'getBoundingClientRect').mockReturnValue({ top: 100 } as DOMRect);
+      jest.spyOn(headings()[1], 'getBoundingClientRect').mockReturnValue({ top: secondTop } as DOMRect);
       jest.spyOn(window, 'getComputedStyle').mockReturnValue({
-        getPropertyValue: (name: string) => (name === '--cl-nav-offset' ? offset : ''),
+        getPropertyValue: (name: string) => (name === '--cl-nav-offset' ? navOffset : ''),
+        scrollMarginTop: '112px',
       } as CSSStyleDeclaration);
+    };
+
+    it.each([
+      { navbar: 'shown', offset: '96px', lit: 1 },
+      { navbar: 'hidden', offset: '0px', lit: 0 },
+    ])('counts a heading 116px down as read only while the navbar is $navbar', ({ offset, lit }) => {
+      layOut(offset, 116);
       component().activeSection.set(0);
 
       scrollPage();
 
       expect(component().activeSection()).toBe(lit);
+    });
+
+    it('keeps a jump down lit through the first scroll after it, with the navbar slid away', () => {
+      layOut('0px', 112);
+
+      component().jumpTo(1);
+      window.dispatchEvent(new Event('scrollend'));
+      scrollPage();
+
+      expect(component().activeSection()).toBe(1);
     });
 
     it('scrolls the list, not the card, to centre the lit entry', () => {

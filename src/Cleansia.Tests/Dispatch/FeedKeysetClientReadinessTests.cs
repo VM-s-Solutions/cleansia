@@ -135,6 +135,21 @@ public class FeedKeysetClientReadinessTests
         Assert.Null(NotificationEventCatalog.GetCategoryFor(eventKey));
 
     /// <summary>
+    /// The registration decision reaches a cleaner still behind the registration lock, where no inbox is
+    /// reachable — so it is push-only by design, not held back while copy catches up. And it is
+    /// non-mutable: the cleaner is waiting for exactly this answer.
+    /// </summary>
+    [Theory]
+    [InlineData(NotificationEventCatalog.EmployeeRegistrationApproved)]
+    [InlineData(NotificationEventCatalog.EmployeeRegistrationRejected)]
+    public void The_Registration_Decisions_Render_As_Push_Only_And_Cannot_Be_Muted(string eventKey)
+    {
+        Assert.Empty(FcmMessageFactory.ApnsDisplayMap[eventKey]);
+        Assert.False(NotificationFeedEventKeys.IsFeedEvent(eventKey));
+        Assert.Null(NotificationEventCatalog.GetCategoryFor(eventKey));
+    }
+
+    /// <summary>
     /// ADR-0045 D10.2 — the one key that ADR mints is held out of both lists on the same terms: no
     /// customer client carries "your favourite didn't take it" copy yet, so the push is data-only on iOS
     /// and the inbox stays empty rather than counting a row no app can draw. The wave that ships

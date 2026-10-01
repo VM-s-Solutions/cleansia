@@ -42,6 +42,8 @@ public class FcmMessageFactoryTests
         { "loyalty.tier_upgrade", new Dictionary<string, string> { ["tier"] = "SilverMopper" }, [] },
         { "membership.expiring_soon", new Dictionary<string, string>(), [] },
         { "membership.cancellation_effective", new Dictionary<string, string>(), [] },
+        { "employee.registration_approved", new Dictionary<string, string>(), [] },
+        { "employee.registration_rejected", new Dictionary<string, string>(), [] },
     };
 
     [Theory]
@@ -332,6 +334,8 @@ public class FcmMessageFactoryTests
         string[] expected =
         [
             "dispute.reply",
+            "employee.registration_approved",
+            "employee.registration_rejected",
             "employee.weekly_limit_set",
             "loyalty.tier_upgrade",
             "membership.cancellation_effective",

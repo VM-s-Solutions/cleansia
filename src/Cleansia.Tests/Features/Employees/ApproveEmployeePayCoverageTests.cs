@@ -7,6 +7,7 @@ using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Packages;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Internationalization;
+using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Services;
 using Cleansia.Core.Domain.Users;
@@ -36,6 +37,7 @@ public class ApproveEmployeePayCoverageTests
     private const string ServiceName = "General Cleaning";
     private const string PackageId = "pkg-essential";
     private const string PackageName = "Essential Clean";
+    private const string CompanyId = "company-approve";
 
     private readonly Mock<IEmployeeRepository> _employees = new();
     private readonly Mock<ICountryRepository> _countries = new();
@@ -45,6 +47,7 @@ public class ApproveEmployeePayCoverageTests
     private readonly Mock<IUserRepository> _users = new();
     private readonly Mock<IUserSessionProvider> _session = new();
     private readonly Mock<IAuditContext> _audit = new();
+    private readonly Mock<INotificationProducer> _producer = new();
 
     private readonly Employee _employee;
 
@@ -76,6 +79,7 @@ public class ApproveEmployeePayCoverageTests
 
         var employee = Employee.CreateWithUser(user);
         employee.Id = EmployeeId;
+        employee.TenantId = CompanyId;
         employee.UpdateEmployeeDetails(
             EmployeeEntityType.NaturalPerson,
             registrationNumber: "12345678",
@@ -169,7 +173,8 @@ public class ApproveEmployeePayCoverageTests
             _services.Object,
             _packages.Object,
             _payConfigs.Object,
-            _currencyResolution.Object);
+            _currencyResolution.Object,
+            _producer.Object);
     }
 
     /// <summary>A Currency whose Id is the literal the pay configs are stamped with, so the gate and the rows agree.</summary>
@@ -294,6 +299,8 @@ public class ApproveEmployeePayCoverageTests
         Assert.False(result.IsSuccess);
         Assert.Equal(BusinessErrorMessage.EmployeePayConfigMissing, result.Error!.Message);
         Assert.NotEqual(ContractStatus.Approved, _employee.ContractStatus);
+        // A refused approval is no news: the cleaner is told only of a decision that was made.
+        _producer.VerifyNoOtherCalls();
     }
 
     [Fact]
@@ -305,6 +312,45 @@ public class ApproveEmployeePayCoverageTests
 
         Assert.True(result.IsSuccess);
         Assert.Equal(ContractStatus.Approved, _employee.ContractStatus);
+    }
+
+    // ---------------------------------------------------------------- the cleaner is told
+
+    /// <summary>
+    /// The cleaner waiting on the registration lock is told, once, argless, under their company — and
+    /// the subject is the moment of the decision, so approve → reject → approve mints a fresh outbox key
+    /// rather than rolling the second approval back on the unique index.
+    /// </summary>
+    [Fact]
+    public async Task The_Cleaner_Is_Told_Of_The_Approval_Under_The_Moment_Of_The_Decision()
+    {
+        ArrangeConfigs(ServiceConfig(), PackageConfig());
+        Dictionary<string, string>? sentArgs = null;
+        string? sentTenant = null;
+        string? sentSubject = null;
+        _producer
+            .Setup(p => p.NotifyAsync(
+                "user-1", NotificationEventCatalog.EmployeeRegistrationApproved,
+                It.IsAny<Dictionary<string, string>>(), It.IsAny<string?>(), It.IsAny<string?>(),
+                It.IsAny<CancellationToken>()))
+            .Callback<string, string, Dictionary<string, string>, string?, string?, CancellationToken>(
+                (_, _, args, tenant, subject, _) => (sentArgs, sentTenant, sentSubject) = (args, tenant, subject))
+            .Returns(Task.CompletedTask);
+
+        var result = await CreateHandler().Handle(Command(), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        _producer.Verify(p => p.NotifyAsync(
+                "user-1", NotificationEventCatalog.EmployeeRegistrationApproved,
+                It.IsAny<Dictionary<string, string>>(), It.IsAny<string?>(), It.IsAny<string?>(),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+        _producer.VerifyNoOtherCalls();
+        Assert.Empty(sentArgs!);
+        Assert.Equal(CompanyId, sentTenant);
+        Assert.Equal(
+            $"{EmployeeId}:{result.Value.ApprovedAt.ToString("O", System.Globalization.CultureInfo.InvariantCulture)}",
+            sentSubject);
     }
 
     /// <summary>

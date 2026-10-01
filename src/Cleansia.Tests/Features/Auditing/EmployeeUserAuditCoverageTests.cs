@@ -80,7 +80,7 @@ public sealed class EmployeeUserAuditCoverageTests
         var handler = new ApproveEmployee.Handler(
             employeeRepository.Object, AdminUserRepository().Object, AdminSession(), auditContext,
             CoveredCatalogue().services, CoveredCatalogue().packages, CoveredCatalogue().payConfigs,
-            CzkResolution());
+            CzkResolution(), new Mock<INotificationProducer>().Object);
         var result = await handler.Handle(
             new ApproveEmployee.Command(SubjectEmployeeId, "country-cz", "fast-track onboarding"),
             CancellationToken.None);
@@ -109,7 +109,7 @@ public sealed class EmployeeUserAuditCoverageTests
         var handler = new ApproveEmployee.Handler(
             employeeRepository.Object, AdminUserRepository().Object, AdminSession(), auditContext,
             CoveredCatalogue().services, CoveredCatalogue().packages, CoveredCatalogue().payConfigs,
-            CzkResolution());
+            CzkResolution(), new Mock<INotificationProducer>().Object);
         var result = await handler.Handle(
             new ApproveEmployee.Command("missing-emp", "country-cz"), CancellationToken.None);
 

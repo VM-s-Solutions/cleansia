@@ -1,4 +1,5 @@
-﻿using Cleansia.Core.AppServices.Abstractions;
+﻿using System.Globalization;
+using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Common;
@@ -6,6 +7,7 @@ using Cleansia.Core.AppServices.Features.Legal;
 using Cleansia.Core.AppServices.Features.PayConfig;
 using Cleansia.Core.AppServices.Tenancy;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
@@ -216,7 +218,8 @@ public class ApproveEmployee
         IServiceRepository serviceRepository,
         IPackageRepository packageRepository,
         IEmployeePayConfigRepository payConfigRepository,
-        ICurrencyResolutionService currencyResolutionService)
+        ICurrencyResolutionService currencyResolutionService,
+        INotificationProducer notificationProducer)
         : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -270,6 +273,16 @@ public class ApproveEmployee
 
             employee.AssignWorkCountry(command.WorkCountryId);
             employee.Approve(adminUser.Id, command.Notes);
+
+            // The subject is the moment of the decision, so approve -> reject -> approve mints a new
+            // outbox key each time.
+            await notificationProducer.NotifyAsync(
+                employee.UserId,
+                NotificationEventCatalog.EmployeeRegistrationApproved,
+                new Dictionary<string, string>(),
+                employee.TenantId,
+                $"{employee.Id}:{employee.ApprovedAt!.Value.ToString("O", CultureInfo.InvariantCulture)}",
+                cancellationToken);
 
             auditContext.RecordChange(
                 "User",

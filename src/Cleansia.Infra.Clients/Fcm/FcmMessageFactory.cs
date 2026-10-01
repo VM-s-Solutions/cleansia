@@ -56,6 +56,8 @@ public static class FcmMessageFactory
             [NotificationEventCatalog.PreferredOfferClosed] = OrderNumberArg,
             [NotificationEventCatalog.OrderAssignmentCancelled] = OrderNumberArg,
             [NotificationEventCatalog.EmployeeWeeklyLimitSet] = CountArg,
+            [NotificationEventCatalog.EmployeeRegistrationApproved] = NoArgs,
+            [NotificationEventCatalog.EmployeeRegistrationRejected] = NoArgs,
             [NotificationEventCatalog.InvoicePaid] = NoArgs,
             [NotificationEventCatalog.DisputeReply] = NoArgs,
             [NotificationEventCatalog.LoyaltyTierUpgrade] = NoArgs,

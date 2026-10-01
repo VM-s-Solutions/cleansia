@@ -45,7 +45,7 @@ src/cleansia_ios/                         (greenfield — created on the first i
 | 401 refresh | `actor SessionRefresher` single-flight; separate no-auth session | `AuthAuthenticator` `synchronized(this)` + `NoAuthOkHttp` |
 | Headers | `X-Device-Id` (one source = Device/Register id), `X-Device-Label`, `X-Time-Zone`; no-Bearer-on-anon allow-list — **full contract: `src/cleansia_ios/docs/header-parity-contract.md`** | `AuthInterceptor` + per-request `X-Time-Zone` |
 | Codegen | **openapi-generator swift5 + urlsession**, from the **owner-regenerated** shared spec | openapi-generator kotlin |
-| Maps | **MapKit by default**, behind a `MapProvider` protocol; Mapbox iOS SDK = scoped fallback. **iOS-16 variant:** `Map(coordinateRegion:annotationItems:)` for pickers; `MKMapView` via `UIViewRepresentable` for the full-bleed map + polygon overlays (the SwiftUI `Map {...}`/`Marker`/`MapPolygon` API is iOS-17-only) | Mapbox (no first-party map on Android) |
+| Maps | **MapKit by default**, behind a `MapProvider` protocol; Mapbox iOS SDK = scoped fallback. **iOS-16 variant:** `Map(coordinateRegion:annotationItems:)` for pickers (*since 2026-10-01 the picker is an `MKMapView` representable too — `PickerMapView`, which adds the Cleansia centre pin itself; ADR-0014 Amendment A1*); `MKMapView` via `UIViewRepresentable` for the full-bleed map + polygon overlays (the SwiftUI `Map {...}`/`Marker`/`MapPolygon` API is iOS-17-only) | Mapbox (no first-party map on Android) |
 | Stripe | `stripe-ios` **PaymentSheet** (customer target only) | Android PaymentSheet |
 | Push | APNs token → existing `/api/Device/*` with `Platform="ios"` | FCM → `/api/Device/*` |
 | Lead app | **PARTNER** (read-only Dashboard proves the architecture first) | — |
@@ -585,7 +585,10 @@ ticket's camera requirement) — an iOS ENHANCEMENT that ADDS a source affordanc
 **neither** a `UIViewControllerRepresentable` **nor** a `UIViewRepresentable`. Any claim that it established a
 representable precedent is **FALSE**; `CameraOrLibraryPicker` is genuinely the repo's **first**
 `UIViewControllerRepresentable` (the `MKMapView`/`UIViewRepresentable` `fullBleedMap`, T-0307, is the first *view*
-representable). The `patterns-mobile` harvest records this so the claim cannot re-enter.
+representable). The `patterns-mobile` harvest records this so the claim cannot re-enter. *2026-10-01 (C5):* the
+picker is now a **view** representable too — `PickerMapView` over `MKMapView` (ADR-0014 Amendment A1;
+docs/mobile-app/patterns.md#maps) — so the "neither … nor" above is T-0306 as built, not the current shape. It is
+still no controller-representable precedent, and `fullBleedMap` remains the first view representable.
 
 **D2 — the compression target = a PURE Core `ImageCompressor`: 1920px longest-side (aspect-preserved, never upscale)
 + JPEG 0.7 + `image/jpeg`, OFF the main thread.** Android ships **raw camera bytes** uncompressed

@@ -1274,7 +1274,9 @@ landing `.home`; the acquisition controller navigating or touching the Keychain/
 `MapKitMapProvider`-produced view + `CLGeocoderGeocodingService` — **feature/VM code imports neither MapKit
 nor CoreLocation** (reviewer #7/#27). The seam ships **minimally and grows additively:** T-0306 ships the
 **picker-map factory only** (iOS-16 `Map(coordinateRegion:annotationItems:[])` + a SwiftUI overlay pin the
-map pans under — NO `Map{Marker}`/`onMapCameraChange`, reviewer #12); T-0307's full-bleed `OrderDetail` map +
+map pans under — NO `Map{Marker}`/`onMapCameraChange`, reviewer #12; *since 2026-10-01 (C5) the picker is
+`PickerMapView`, a `UIViewRepresentable` over `MKMapView` that adds the Cleansia centre pin itself, because
+the iOS-16 `Map` takes no configuration and cannot hide POIs — ADR-0014 Amendment A1*); T-0307's full-bleed `OrderDetail` map +
 service-area polygon overlay are an **additive method** later (`MKMapView`/`UIViewRepresentable`), **not**
 designed ahead. `GeocodingService` is a 1:1 `ReverseGeocodingService.kt` port **minus the Mapbox token +
 network args** — **best-effort** (nil/`[]` on error, **cancel-before-refire** for `kCLErrorGeocodeCanceled`,
@@ -1406,7 +1408,10 @@ read-back, delete, the After-photo Complete-unblock) fills the §7.9 (d) precurs
   — and uses **neither** a `UIViewControllerRepresentable` **nor** a `UIViewRepresentable`. Any claim it established a
   representable precedent is **FALSE**; `CameraOrLibraryPicker` (T-0308) is the repo's **first**
   `UIViewControllerRepresentable` (the `MKMapView`/`UIViewRepresentable` `fullBleedMap`, T-0307, is the first *view*
-  representable). Do not cite the AddressPicker as a controller-representable precedent.
+  representable). Do not cite the AddressPicker as a controller-representable precedent. *Since 2026-10-01 (C5)
+  the picker is a **view** representable too — `PickerMapView` over `MKMapView`, ADR-0014 Amendment A1 — so the
+  "neither … nor" above is T-0306 as built, not the current shape; it is still no controller-representable
+  precedent, and `fullBleedMap` remains the first view representable.*
 
 **iOS partner earnings/invoices/PeriodPay — the ONE way (sprint-12 §7.12, T-0309; ADR-0020 + §7.7 D1 + the §7.10 D1
 Core-seam precedent + ADR-0018 D2/D3 + the §7.5 D4/§7.7 D4 Core-utility precedent + ADR-0013 parity + the Parity rule;

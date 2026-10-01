@@ -29735,6 +29735,146 @@
         }
       }
     },
+    "push.employee.registration_approved.body": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Byli jste schváleni. Otevřete aplikaci a začněte přijímat zakázky."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're approved. Open the app to start taking jobs."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вы одобрены. Откройте приложение, чтобы начать брать заказы."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Boli ste schválení. Otvorte aplikáciu a začnite prijímať zákazky."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вас схвалено. Відкрийте застосунок, щоб почати брати замовлення."
+          }
+        }
+      }
+    },
+    "push.employee.registration_approved.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Žádost schválena"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Application approved"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заявка одобрена"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Žiadosť schválená"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заявку схвалено"
+          }
+        }
+      }
+    },
+    "push.employee.registration_rejected.body": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaše žádost byla zamítnuta. Otevřete aplikaci a zjistěte proč, nebo kontaktujte podporu."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your application was rejected. Open the app to see why, or contact support."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваша заявка отклонена. Откройте приложение, чтобы узнать причину, или обратитесь в поддержку."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaša žiadosť bola zamietnutá. Otvorte aplikáciu a zistite prečo, alebo kontaktujte podporu."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вашу заявку відхилено. Відкрийте застосунок, щоб дізнатися причину, або зверніться до підтримки."
+          }
+        }
+      }
+    },
+    "push.employee.registration_rejected.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Žádost zamítnuta"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Application rejected"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заявка отклонена"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Žiadosť zamietnutá"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заявку відхилено"
+          }
+        }
+      }
+    },
     "push.employee.weekly_limit_set.body": {
       "extractionState": "manual",
       "localizations": {

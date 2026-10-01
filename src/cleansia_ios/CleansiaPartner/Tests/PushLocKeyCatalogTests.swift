@@ -45,7 +45,9 @@ final class PushLocKeyCatalogTests: XCTestCase {
         "order.reminder_tomorrow",
         "order.reminder_soon",
         "order.reminder_not_started",
-        "employee.weekly_limit_set"
+        "employee.weekly_limit_set",
+        "employee.registration_approved",
+        "employee.registration_rejected"
     ]
 
     /// One-slot events, despite the name — `order.reminder_tomorrow` and

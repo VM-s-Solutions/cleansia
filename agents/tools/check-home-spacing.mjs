@@ -70,7 +70,7 @@ const CHECKS = [
 
 const b = await chromium.launch();
 const p = await b.newPage({ viewport: { width: 1440, height: 1000 } });
-await p.addInitScript(() => { try { localStorage.setItem('preferred_language','cs'); } catch {} });
+await p.addInitScript((theme) => { try { localStorage.setItem('preferred_language','cs'); localStorage.setItem('cleansia-theme', theme); } catch {} }, process.env.THEME ?? 'light');
 await p.goto('http://localhost:4202/', { waitUntil: 'networkidle', timeout: 60000 });
 await p.waitForTimeout(2500);
 await p.evaluate(async () => { for (let y=0;y<document.body.scrollHeight;y+=600){window.scrollTo(0,y);await new Promise(r=>setTimeout(r,50));} window.scrollTo(0,0); });

@@ -33,14 +33,15 @@ let failures = 0;
 
 for (const locale of LOCALES) {
   const page = await browser.newPage({ viewport: { width: 1920, height: 900 } });
-  await page.addInitScript((l) => {
+  await page.addInitScript((cfg) => {
     try {
-      localStorage.setItem('preferred_language', l);
+      localStorage.setItem('preferred_language', cfg.locale);
+      localStorage.setItem('cleansia-theme', cfg.theme);
       localStorage.setItem('cleansia-customer-cookie-consent', 'accepted');
     } catch {
       /* private mode */
     }
-  }, locale);
+  }, { locale, theme: process.env.THEME ?? 'light' });
   await page.goto(TARGET, { waitUntil: 'networkidle', timeout: 90000 });
   await page.waitForSelector('.customer-navbar__center');
   await page.waitForTimeout(700);

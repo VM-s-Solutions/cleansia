@@ -332,20 +332,28 @@ export class EmployeeDetailFacade extends UnsubscribeControlDirective {
       });
   }
 
-  canApproveOrReject(): boolean {
+  canApprove(): boolean {
     const employee = this.employee();
     return (
       employee?.isProfileComplete === true &&
-      employee?.contractStatus === ContractStatus[ContractStatus.Pending]
+      (employee.contractStatus === ContractStatus[ContractStatus.Pending] ||
+        employee.contractStatus === ContractStatus[ContractStatus.Rejected])
+    );
+  }
+
+  canReject(): boolean {
+    const employee = this.employee();
+    return (
+      employee?.isProfileComplete === true &&
+      employee.contractStatus === ContractStatus[ContractStatus.Pending]
     );
   }
 
   hasEntityActions(): boolean {
     if (this.permissions.hasPolicy(Policy.CanAdminUpdateEmployee)) return true;
     return (
-      this.canApproveOrReject() &&
-      (this.permissions.hasPolicy(Policy.CanApproveEmployee) ||
-        this.permissions.hasPolicy(Policy.CanRejectEmployee))
+      (this.canApprove() && this.permissions.hasPolicy(Policy.CanApproveEmployee)) ||
+      (this.canReject() && this.permissions.hasPolicy(Policy.CanRejectEmployee))
     );
   }
 

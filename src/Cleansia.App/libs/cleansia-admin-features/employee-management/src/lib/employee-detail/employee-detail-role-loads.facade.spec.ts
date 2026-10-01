@@ -106,13 +106,26 @@ describe('EmployeeDetailFacade — reads gated by the role', () => {
       expect(facade.hasEntityActions()).toBe(true);
     });
 
-    it('is offered to an approver only while the contract awaits a decision', () => {
+    it('is offered to an approver while the contract is pending or rejected, not once approved', () => {
       setup([Policy.CanApproveEmployee]);
 
       facade.employee.set(pending());
       expect(facade.hasEntityActions()).toBe(true);
 
+      facade.employee.set(withStatus(ContractStatus.Rejected));
+      expect(facade.hasEntityActions()).toBe(true);
+
       facade.employee.set(AdminEmployeeDetail.fromJS({ id: 'emp-1', contractStatus: 'Approved' }));
+      expect(facade.hasEntityActions()).toBe(false);
+    });
+
+    it('is withheld from a rejector once the contract is rejected, since only Approve remains', () => {
+      setup([Policy.CanRejectEmployee]);
+
+      facade.employee.set(pending());
+      expect(facade.hasEntityActions()).toBe(true);
+
+      facade.employee.set(withStatus(ContractStatus.Rejected));
       expect(facade.hasEntityActions()).toBe(false);
     });
 
@@ -123,4 +136,47 @@ describe('EmployeeDetailFacade — reads gated by the role', () => {
       expect(facade.hasEntityActions()).toBe(false);
     });
   });
+
+  describe('the contract decisions', () => {
+    beforeEach(() => setup([]));
+
+    it('offers Approve and Reject on a pending contract', () => {
+      facade.employee.set(withStatus(ContractStatus.Pending));
+
+      expect(facade.canApprove()).toBe(true);
+      expect(facade.canReject()).toBe(true);
+    });
+
+    it('offers Approve again, without Reject, on a rejected contract', () => {
+      facade.employee.set(withStatus(ContractStatus.Rejected));
+
+      expect(facade.canApprove()).toBe(true);
+      expect(facade.canReject()).toBe(false);
+    });
+
+    it('offers neither on an approved contract', () => {
+      facade.employee.set(withStatus(ContractStatus.Approved));
+
+      expect(facade.canApprove()).toBe(false);
+      expect(facade.canReject()).toBe(false);
+    });
+
+    it('offers neither while the profile is incomplete', () => {
+      facade.employee.set(withStatus(ContractStatus.Rejected, false));
+      expect(facade.canApprove()).toBe(false);
+      expect(facade.canReject()).toBe(false);
+
+      facade.employee.set(withStatus(ContractStatus.Pending, false));
+      expect(facade.canApprove()).toBe(false);
+      expect(facade.canReject()).toBe(false);
+    });
+  });
 });
+
+function withStatus(status: ContractStatus, isProfileComplete = true): AdminEmployeeDetail {
+  return AdminEmployeeDetail.fromJS({
+    id: 'emp-1',
+    isProfileComplete,
+    contractStatus: ContractStatus[status],
+  });
+}

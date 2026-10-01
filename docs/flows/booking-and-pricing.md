@@ -204,6 +204,15 @@ read, gets a receipt in the language they booked in. A recurring occurrence has 
 its own: its `LanguageCode` is null and its receipt follows the account's preference.
 → [What the receipt says](/flows/payment-and-fiscal#what-the-receipt-says)
 
+**So do the order's status e-mails, since 2026-10-01.** *A cleaner has taken your job* (`TakeOrder`),
+*started* (`StartOrder`) and *all done* (`CompleteOrder`) used to read the account's preferred
+language alone, so a customer whose stored preference was stale — a Google or Apple sign-up is stamped
+`en` — got a Czech confirmation followed by English status e-mails. They now resolve the order's
+language, then the account's preference, then English, the chain the booking confirmation already
+used: **one order, one language.** A booking language with no e-mail copy falls back to English, as
+the confirmation does. A customer who changes the app's language after booking keeps getting that
+order's e-mails in the language it was booked in.
+
 ## Responsive quote previews
 
 The home calculator requests its quote immediately. Booking groups rapid selection changes into a

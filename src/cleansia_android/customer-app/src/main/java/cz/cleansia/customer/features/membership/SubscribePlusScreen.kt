@@ -74,6 +74,7 @@ import cz.cleansia.customer.ui.theme.Sky400
 import cz.cleansia.customer.ui.theme.Sky950
 import cz.cleansia.customer.ui.theme.Slate900
 import kotlinx.coroutines.launch
+import cz.cleansia.customer.ui.components.statusBarFade
 
 /**
  * Cleansia Plus subscribe page. Dark hero with the trial anchor, plan toggle inside the hero so the
@@ -153,6 +154,7 @@ fun SubscribePlusScreen(
     // two-line disclosure over 3-button navigation or left a blank band under a short one.
     var ctaBarHeight by remember { mutableStateOf(0.dp) }
     val density = LocalDensity.current
+    val scrollState = rememberScrollState()
 
     Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         // Scrollable content sits behind the sticky CTA bar and is padded by its height so the last
@@ -160,7 +162,8 @@ fun SubscribePlusScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
+                .statusBarFade(scrollState)
+                .verticalScroll(scrollState)
                 .padding(bottom = ctaBarHeight),
         ) {
             HeroBlock(

@@ -100,6 +100,7 @@ import cz.cleansia.customer.ui.theme.CleansiaTheme
 import cz.cleansia.customer.ui.theme.SuccessText
 import cz.cleansia.customer.ui.theme.WarningStar
 import cz.cleansia.customer.features.main.MainShellBottomClearance
+import cz.cleansia.customer.ui.components.statusBarFade
 
 /* ── Presentation models ── */
 
@@ -272,6 +273,7 @@ fun HomeTab(
 
     val isRefreshing by viewModel.isUserRefreshing.collectAsStateWithLifecycle()
     val pullState = rememberPullToRefreshState()
+    val scrollState = rememberScrollState()
 
     // Wrapped here rather than around the whole composable: the firstPaintReady branch above
     // returns early, and a gesture attached before it would be dead during first paint.
@@ -294,8 +296,11 @@ fun HomeTab(
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
-                .windowInsetsPadding(WindowInsets.statusBars)
-                .verticalScroll(rememberScrollState()),
+                .statusBarFade(scrollState)
+                .verticalScroll(scrollState)
+                // Inside the scroll, so the address bar starts below the status bar at rest and
+                // scrolls under it, where statusBarFade fades it out.
+                .windowInsetsPadding(WindowInsets.statusBars),
         ) {
             // 1. Address bar + market chip + bell
             AddressTopBar(

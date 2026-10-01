@@ -77,6 +77,7 @@ import cz.cleansia.customer.ui.theme.asList
 import kotlinx.datetime.toJavaLocalDateTime
 import kotlinx.datetime.toLocalDateTime
 import cz.cleansia.customer.features.main.MainShellBottomClearance
+import cz.cleansia.customer.ui.components.statusBarFade
 
 private data class ProfileRow(
     val key: String,
@@ -135,12 +136,14 @@ fun ProfileTab(
     // back to SignIn + clears tokens). The "Log out" row only flips the flag;
     // the actual `onLogout()` callback fires after the user confirms.
     var showLogoutDialog by remember { mutableStateOf(false) }
+    val scrollState = rememberScrollState()
 
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .verticalScroll(rememberScrollState()),
+            .statusBarFade(scrollState)
+            .verticalScroll(scrollState),
     ) {
         // 1. Hero + stats card (stats overlap the hero's bottom edge)
         Box {

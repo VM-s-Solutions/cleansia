@@ -116,6 +116,30 @@ administrator's revoke — can lower it, and the web rewards page says the tier 
 seeded, a tier's perks are the welcome badge and, above the first tier, its discount.
 → [Loyalty — tiers](/flows/loyalty-and-memberships#tiers)
 
+**Credit** — money the platform owes the customer: the apology when a cleaner never comes, a complaint
+they chose to settle in credit, an administrator's goodwill. It comes off their next card booking by
+itself, never the whole of it, and expires a year after it last moved; the share and the date are the
+server's, never the copy's. The web profile rail shows the balance and its expiry date, and the web
+booking summary shows *Your credit −X* and *To pay by card Y*. Since 2026-10-01 the Android and iOS apps
+show it too:
+
+- **Rewards** has a credit card between the tier and the progress card: one row per currency held,
+  with its expiry date and the share of a booking it can pay. At zero it is one line, saying credit
+  shows up here if a clean goes wrong. It opens a sheet on where credit comes from, how it is spent
+  and why it is not points.
+- **Profile** has *Credit* as the first Account row, with the largest balance (*0 Kč* at zero). It
+  opens the same sheet.
+- **The confirm step**, with card chosen and credit applying, adds *Your credit −X* and *To pay by card
+  Y* with a note, and the button at the foot of the booking shows the to-pay figure, the amount the
+  Stripe sheet then asks for. With cash chosen and a balance held, it says *Credit applies to card
+  payments only*.
+- **After booking**, the success screen and the order's price card add *Paid with credit* and *Paid by
+  card*, read from the order rather than the preview.
+
+The web order detail does not show the split yet.
+→ [Business rules — customer credit](/product/business-rules#credit),
+[Points are not credit](/flows/loyalty-and-memberships#points-vs-credit)
+
 **Account and privacy** — saved addresses, notification preferences, five languages, data export and
 account erasure. The export carries the customer's own conduct record — every booking, cancellation,
 dispute filing, membership change, sign-in and consent, with the figures the platform showed them at

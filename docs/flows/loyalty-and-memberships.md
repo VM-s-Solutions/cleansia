@@ -22,6 +22,23 @@ because nothing can be booked in it. The "earns nothing and logs" branch remains
 answer for a row that reaches that state anyway.
 → [Money constants](/product/business-rules#money-constants)
 
+## Points are not credit {#points-vs-credit}
+
+A customer holds two balances, and they do different things.
+
+| | Points (`LoyaltyAccount`) | Credit (`CreditAccount`) |
+|---|---|---|
+| What it is | a count with no currency | money the platform owes the customer, one account per currency |
+| Earned by | a completed order, a qualified referral, an administrator's grant | the no-show or no-cleaner apology, a complaint settled in credit, goodwill |
+| Spent | never; nothing redeems points | automatically, on the next card booking in the same currency, up to the server's share of it |
+| Taken back | a partial refund's clawback, a cancelled order's points, a reversed referral, an administrator's revoke | an administrator's *Expire credit*; what a booking spent returns when that booking is refunded or cancelled |
+| Expires | never | 12 months after the last movement |
+| What it changes | the tier, and through it the tier discount | what the card is asked for |
+
+The Android and iOS credit explainer sheet, opened from Rewards and from Profile, says the same in
+one line: points move the tier and its discount and are never spent, and credit is money off the
+bookings. → [Business rules — customer credit](/product/business-rules#credit)
+
 ## Tiers {#tiers}
 
 **A tier follows the points total, both ways.** `LoyaltyAccount` recomputes its tier from

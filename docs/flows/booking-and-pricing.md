@@ -27,7 +27,8 @@ sequenceDiagram
   API->>F: create
   F-->>API: New + PaymentStatus.Pending
   alt Card
-    API->>S: create checkout session for order.TotalPrice
+    API->>API: take the customer's credit (same currency, at most 70 %)
+    API->>S: create checkout session for order.AmountDueOnCard
     S-->>C: payment page
   else Cash
     API-->>C: booked; nothing to pay now
@@ -60,8 +61,11 @@ regardless of the browsing market. → [ADR-0061 D6](/decisions/adr-0061#d6-tena
 
 `CreateOrder.Command` carries a `TotalPrice`, and it is **a confirmation, not an input**. The validator
 re-prices the whole selection server-side and refuses on disagreement. The amount that reaches Stripe
-is `ToMinorUnits(order.TotalPrice)` read from the persisted, server-computed value — the client cannot
-influence it at any point, which is why the payment webhook does not need to reconcile the amount.
+is `ToMinorUnits(order.AmountDueOnCard)` — the total less the credit `CreateOrder` took for it — read
+from the persisted, server-computed values. The client cannot influence it at any point, which is why
+the payment webhook does not need to reconcile the amount. The quote carries the customer's credit
+balance and the share (`creditBalance`, `creditMaxShareOfOrder`) so the wizard can say *To pay by card*
+before Stripe does. → [Business rules — customer credit](/product/business-rules#credit)
 
 ## The customer says how dirty the home is {#dirtiness-level}
 

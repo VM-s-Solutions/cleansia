@@ -99,8 +99,27 @@ Partner, which serves the webhook and so mints the failed-charge e-mail's link.
 ## Amounts are never reconciled, and do not need to be
 
 The webhook does not compare what Stripe charged against the order total. It does not have to: the
-charge was created from the persisted server-side `order.TotalPrice`, so there is no client-supplied
-number anywhere in the chain to disagree with.
+charge was created from the persisted, server-side `order.AmountDueOnCard`, so there is no
+client-supplied number anywhere in the chain to disagree with.
+
+**The card is asked for what credit leaves.** `AmountDueOnCard` is `TotalPrice − CreditAppliedAmount`:
+the customer's credit is a tender, taken by `CreateOrder` (or by the confirm of a recurring occurrence)
+before the payment surface is built, so the Checkout Session, the PaymentSheet's PaymentIntent and a
+recurring occurrence's charge all carry the smaller figure. The sale keeps `TotalPrice`: the receipt's
+lines and the fiscal lines sum to it, and the receipt then states the credit applied and what the card
+paid. A PaymentIntent's idempotency key includes the amount in cents, so an order
+whose credit landed after a first PaymentSheet open mints a new intent and cancels the old one.
+→ [Business rules — customer credit](/product/business-rules#credit)
+
+**What the customer reads before paying is what Stripe asks for** (since 2026-10-01 on Android and
+iOS). Until then both apps showed the order total on the confirm step and the booking button while
+Stripe's sheet asked for the smaller card share, and the success screen and the order detail never
+said credit had paid part of it. Now the confirm step adds *Your credit −X* and *To pay by card Y*
+when card is chosen, and the button shows Y. Every client caps the credit with the server's share,
+floored to cents like `BookingPolicy.CapCreditForOrder`, against the total it displays, promo
+included. Both apps pin that cap with the server's own test vectors. After booking, the success screen
+and the order's price card read `creditAppliedAmount` and `amountDueOnCard` from the order. The web
+wizard showed the same two lines already.
 
 ## No guessed unit, no guessed regime
 

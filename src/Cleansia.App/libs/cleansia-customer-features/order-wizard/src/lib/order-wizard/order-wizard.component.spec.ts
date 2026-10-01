@@ -880,6 +880,47 @@ describe('OrderWizardComponent (a11y)', () => {
         panel && summary && panel.compareDocumentPosition(summary) & Node.DOCUMENT_POSITION_FOLLOWING
       ).toBeTruthy();
     });
+
+    it('shows no price until a line is priced, and the total once one is', async () => {
+      await setup();
+      facade.displayedTotalPrice.set(0);
+      fixture.detectChanges();
+
+      expect(el.querySelector('.cl-wiz__total')).toBeNull();
+      expect(el.textContent).not.toContain('pages.order.price_fixed');
+
+      facade.quote.set(
+        QuoteOrderResponse.fromJS({
+          lines: [{ kind: 'service', itemId: 's-1', baseAmount: 1000, unitAmount: 0, units: 0, amount: 1000 }],
+        }),
+      );
+      facade.displayedTotalPrice.set(1000);
+      fixture.detectChanges();
+
+      expect(el.querySelector('.cl-wiz__total')?.textContent).toMatch(/1[\s .,]?000/);
+      expect(el.textContent).toContain('pages.order.price_fixed');
+    });
+  });
+
+  describe('the room counts card', () => {
+    it('sits above the summary in its own card, on the services step only', async () => {
+      await setup();
+
+      const card = el.querySelector('.cl-wiz__counts-card');
+      const summary = el.querySelector('.cl-wiz__summary');
+      expect(card).toBeTruthy();
+      expect(card?.querySelectorAll('.cl-wiz__count-chip').length).toBe(12);
+      expect(summary?.contains(card)).toBe(false);
+      expect(summary?.querySelector('.cl-wiz__count-chip')).toBeNull();
+      expect(card?.parentElement?.classList.contains('cl-wiz__side')).toBe(true);
+      expect(summary?.parentElement).toBe(card?.parentElement);
+      expect(card && summary && card.compareDocumentPosition(summary) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+      facade.activeStep.set(1);
+      fixture.detectChanges();
+
+      expect(el.querySelector('.cl-wiz__counts-card')).toBeNull();
+    });
   });
 
   describe('the promo row', () => {
@@ -1079,13 +1120,23 @@ describe('OrderWizardComponent (a11y)', () => {
   });
 
   describe('the price before the discount', () => {
+    // The price shows only once a line is priced, so these give the rail one to show it for.
+    async function setupPriced(): Promise<void> {
+      await setup();
+      facade.quote.set(
+        QuoteOrderResponse.fromJS({
+          lines: [{ kind: 'service', itemId: 's-1', baseAmount: 2000, unitAmount: 0, units: 0, amount: 2000 }],
+        }),
+      );
+    }
+
     /**
      * Two TOTALS, never subtotal-minus-discount. The express surcharge is computed on the
      * undiscounted subtotal, so the chain does not reconcile on an express order — the pair of
      * server-quoted totals does, whatever the surcharge is doing between them.
      */
     it('strikes through the old price and names the saving', async () => {
-      await setup();
+      await setupPriced();
       facade.totalPrice.set(2000);
       facade.displayedTotalPrice.set(1700);
       fixture.detectChanges();
@@ -1097,7 +1148,7 @@ describe('OrderWizardComponent (a11y)', () => {
     });
 
     it('shows nothing when no discount applies', async () => {
-      await setup();
+      await setupPriced();
       facade.totalPrice.set(2000);
       facade.displayedTotalPrice.set(2000);
       fixture.detectChanges();
@@ -1119,7 +1170,7 @@ describe('OrderWizardComponent (a11y)', () => {
     // Every figure used to go through two module-level CZK formatters, whatever the quote said it
     // was priced in. The label is the quote's own currency now, and a EUR quote must never print Kč.
     it("prints every figure in the quote's own currency, not in crowns", async () => {
-      await setup();
+      await setupPriced();
       facade.currencyCode.set('EUR');
       facade.totalPrice.set(2000);
       facade.displayedTotalPrice.set(1700);

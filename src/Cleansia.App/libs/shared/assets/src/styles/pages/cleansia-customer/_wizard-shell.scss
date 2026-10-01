@@ -191,6 +191,19 @@
 }
 
 // ---- the summary rail -------------------------------------------------------
+// The room counts sit in their own card above the summary and scroll away with
+// the page; only the summary sticks. Both together do not fit under the navbar
+// on a 768px-tall laptop without a scroll bar inside the panel.
+.cl-wiz__side {
+  // Stretched to the whole grid row: the body aligns its items to the start,
+  // and a sticky child only travels within its parent's box.
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
 // Sticky, because it is the answer to "what am I paying" and that question is
 // live on every step. It replaced a bar pinned to the bottom of the viewport,
 // which put the number furthest from the choices that change it.
@@ -199,20 +212,39 @@
   // Below the fixed navbar, not below the viewport top: the bar reappears on
   // scroll-up and would otherwise cover the total and the button under it.
   top: calc(var(--cl-nav-h, 64px) + 24px);
+  // The last resort only. On a short window the price lines scroll inside
+  // their own box first, so the total and the button never leave the panel.
   max-height: calc(100dvh - var(--cl-nav-h, 64px) - 48px);
   overflow-y: auto;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
   background: var(--cl-surface);
   border-radius: 28px;
   padding: 24px 26px;
   box-shadow: 0 10px 30px rgba(12, 74, 110, 0.1);
+
+  > :not(.cl-wiz__summary-lines) {
+    flex-shrink: 0;
+  }
+
+  .cl-wiz__rule {
+    margin: 16px 0;
+  }
 }
 
 .cl-wiz__summary-lines {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  margin-top: 16px;
+  // The remove buttons overhang their rows by 10px. In a scroll box that
+  // overhang is a scroll bar of its own, so the padding takes it in and the
+  // negative margin keeps the rows where they were.
+  margin: 6px -10px -10px;
+  padding: 10px;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   font-size: 15px;
   color: var(--cl-body);
 }
@@ -341,6 +373,10 @@
   // the action.
   .cl-wiz__body {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cl-wiz__side {
+    display: block;
   }
 
   .cl-wiz__summary {
@@ -651,22 +687,29 @@
   display: none;
 }
 
-.cl-wiz__counts-desktop .cl-wiz__counts {
+.cl-wiz__counts-card {
+  background: var(--cl-surface);
+  border-radius: 24px;
+  padding: 20px 24px;
+  box-shadow: 0 2px 10px rgba(12, 74, 110, 0.06);
+}
+
+.cl-wiz__counts-card .cl-wiz__counts {
   grid-template-columns: minmax(0, 1fr);
   gap: 20px;
 }
 
-.cl-wiz__counts-desktop .cl-wiz__count-chips {
+.cl-wiz__counts-card .cl-wiz__count-chips {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
-.cl-wiz__counts-desktop .cl-wiz__count-chip {
+.cl-wiz__counts-card .cl-wiz__count-chip {
   min-width: 0;
 }
 
 @media (max-width: 1100px) {
-  .cl-wiz__counts-desktop {
+  .cl-wiz__counts-card {
     display: none;
   }
 

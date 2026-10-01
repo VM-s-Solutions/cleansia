@@ -1199,14 +1199,15 @@
       }
     </div>
 
-    <!-- Price Sidebar (Desktop) -->
+    <div class="cl-wiz__side">
+      @if (facade.activeStep() === 0) {
+      <section class="cl-wiz__counts-card">
+        <ng-container [ngTemplateOutlet]="roomCounts" />
+      </section>
+      }
+
+      <!-- Price Sidebar (Desktop) -->
       <aside class="cl-wiz__summary">
-        @if (facade.activeStep() === 0) {
-        <div class="cl-wiz__counts-desktop">
-          <ng-container [ngTemplateOutlet]="roomCounts" />
-          <div class="cl-wiz__rule"></div>
-        </div>
-        }
         <h2 class="cl-h3">{{ 'pages.order.summary_heading' | translate }}</h2>
 
         <!--
@@ -1355,6 +1356,7 @@
 
         <div class="cl-wiz__rule"></div>
 
+        @if (priceLines().length > 0) {
         <div class="cl-lbl">{{ 'pages.order.price_fixed' | translate }}</div>
         <!--
           The price before any discount, struck through above the one being charged. `<s>` rather
@@ -1376,6 +1378,7 @@
         </div>
         }
         <div class="cl-num cl-wiz__total">{{ formatPrice(facade.displayedTotalPrice()) }}</div>
+        }
         <!--
           Credit applies automatically (owner ruling 2026-09-05), so the customer is told here rather
           than left to discover a smaller charge on the Stripe page. Two lines, because the number
@@ -1478,7 +1481,8 @@
           {{ 'pages.order.summary_free_cancel' | translate }}
         </div>
         }
-    </aside>
+      </aside>
+    </div>
   </div>
 </div>
 <cleansia-scroll-top [ariaLabel]="'global.scroll_to_top' | translate" />

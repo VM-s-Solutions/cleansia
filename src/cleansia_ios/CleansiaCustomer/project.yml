@@ -127,9 +127,10 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         TARGETED_DEVICE_FAMILY: "1"
         API_BASE_URL: https:/$()/api-cleansia-customer-mobile-weu-dev.azurewebsites.net
-        # Push (aps-environment, T-0403) and Sign in with Apple (T-0344) both live in
-        # CleansiaCustomer.entitlements. That file is maintained by hand: this target has no
-        # `entitlements:` block, so xcodegen never writes it.
+        # Push (aps-environment, T-0403), Sign in with Apple (T-0344) and the App Group the
+        # extensions read the in-app language from all live in CleansiaCustomer.entitlements. That
+        # file is maintained by hand: this target has no `entitlements:` block, so xcodegen never
+        # writes it.
         CODE_SIGN_ENTITLEMENTS: CleansiaCustomer.entitlements
         # Owner-provisioned Google iOS OAuth client; empty until then →
         # graceful .notConfigured (no crash) and no Google button round-trip.
@@ -162,6 +163,8 @@ targets:
         product: StripePaymentSheet
       # Embeds the Live Activity widget extension into the app bundle (ADR-0029).
       - target: CleansiaCustomerLiveActivity
+      # Embeds the Notification Service Extension, which renders pushes in the in-app language.
+      - target: CleansiaCustomerNotificationService
 
   CleansiaCustomerTests:
     type: bundle.unit-test
@@ -207,6 +210,12 @@ targets:
           - ru
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    # The card reads the in-app language the app writes into this group (AppGroupLanguage).
+    entitlements:
+      path: LiveActivity/CleansiaCustomerLiveActivity.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.cz.cleansia.customer
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: cz.cleansia.customer.widgets
@@ -218,6 +227,46 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
     dependencies:
       - package: CleansiaCore
+
+  # Re-renders every loc-key push in the language picked inside the app: iOS resolves loc-keys in the
+  # app's SYSTEM language, and the server marks those alerts mutable-content so this runs for each.
+  # It reads the language from the App Group and the copy from the app's own catalog, compiled into
+  # it. It does not link CleansiaCore — its resource bundle would be copied in — and compiles the one
+  # Foundation-only file it needs instead. -> /architecture/push-notifications
+  CleansiaCustomerNotificationService:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "16.0"
+    sources:
+      - path: NotificationService
+      - path: ../CleansiaCore/Sources/CleansiaCore/Localization/AppGroupLanguage.swift
+      - path: Resources/Localizable.xcstrings
+    info:
+      path: NotificationService/Info.plist
+      properties:
+        # Must track the parent app exactly, like the widget's.
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleDisplayName: Cleansia
+        CFBundleLocalizations:
+          - en
+          - cs
+          - sk
+          - uk
+          - ru
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.usernotifications.service
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).NotificationService
+    entitlements:
+      path: NotificationService/CleansiaCustomerNotificationService.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.cz.cleansia.customer
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: cz.cleansia.customer.notificationservice
+        GENERATE_INFOPLIST_FILE: NO
+        SKIP_INSTALL: NO
 
 schemes:
   CleansiaCustomer:

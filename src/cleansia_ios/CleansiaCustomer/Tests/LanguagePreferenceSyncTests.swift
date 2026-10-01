@@ -106,6 +106,27 @@ final class LanguagePreferenceSyncTests: XCTestCase {
         XCTAssertFalse(sync.sent.contains(CustomerPreferencesLabels.systemLanguageId))
     }
 
+    /// The Notification Service Extension and the Live Activity render in whatever the app leaves in its
+    /// App Group, so the app leaves the RESOLVED tag there at launch and on every change.
+    func testTheResolvedLanguageIsLeftForTheExtensionsAtLaunchAndOnEveryChange() {
+        let group = "LanguagePreferenceSyncTests.group.\(UUID().uuidString)"
+        defer { UserDefaults().removePersistentDomain(forName: group) }
+        let settings = UserDefaultsAppSettingsStore(
+            defaults: UserDefaults(suiteName: UUID().uuidString) ?? .standard,
+            preferredLanguageTags: { ["sk"] }
+        )
+        settings.setLanguage("cs")
+
+        let model = CustomerPreferencesModel(settings: settings, languageSync: SpyLanguageSync(), appGroup: group)
+        XCTAssertEqual(AppGroupLanguage.read(appGroup: group), "cs")
+
+        model.setLanguage("uk")
+        XCTAssertEqual(AppGroupLanguage.read(appGroup: group), "uk")
+
+        model.setSystemLanguage()
+        XCTAssertEqual(AppGroupLanguage.read(appGroup: group), "sk", "the resolved tag, never the System sentinel")
+    }
+
     func testTheLocalChoiceIsAppliedBeforeAndIndependentlyOfTheSync() {
         let (model, _) = makeModel()
 

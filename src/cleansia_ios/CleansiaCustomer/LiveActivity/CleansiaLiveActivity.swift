@@ -20,10 +20,12 @@ struct CleansiaLiveActivityBundle: WidgetBundle {
 struct CleanOrderLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: CleanOrderAttributes.self) { context in
-            LiveActivityCleanCard(model: context.state.cardModel())
+            followTheAppLanguage()
+            return LiveActivityCleanCard(model: context.state.cardModel())
                 .activityBackgroundTint(CleansiaColors.primary.opacity(0.10))
                 .activitySystemActionForegroundColor(CleansiaColors.primary)
         } dynamicIsland: { context in
+            followTheAppLanguage()
             let model = context.state.cardModel()
             return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
@@ -56,6 +58,15 @@ struct CleanOrderLiveActivity: Widget {
                 Circle().fill(CleansiaColors.primary).frame(width: 8, height: 8)
             }
             .keylineTint(CleansiaColors.primary)
+        }
+    }
+
+    /// The card's copy resolves through CoreL10n, which in this process would otherwise follow the
+    /// phone. The app leaves its in-app language in the App Group; until a build that does so has
+    /// launched once there is nothing there, and the card stays in the phone's language.
+    private func followTheAppLanguage() {
+        if let tag = AppGroupLanguage.read(appGroup: AppGroupLanguage.customerAppGroup) {
+            CoreL10n.apply(languageTag: tag)
         }
     }
 }

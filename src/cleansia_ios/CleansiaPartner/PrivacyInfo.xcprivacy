@@ -113,17 +113,20 @@
 	</array>
 	<key>NSPrivacyAccessedAPITypes</key>
 	<array>
-		<!-- UserDefaults, reason CA92.1: read and written only by this app for its own settings,
-		     never shared with an app group. There is no app-group entitlement and no suiteName
-		     outside tests, which is what makes CA92.1 the correct code rather than 1C8F.1.
-		     Call sites include AppSettingsStore, PushTokenRegistrar and SignupConsentStore.
-		     This array was empty while those calls shipped. -->
+		<!-- UserDefaults, two reasons.
+		     CA92.1: the app's own settings, read and written only by this app. Call sites include
+		     AppSettingsStore, PushTokenRegistrar and SignupConsentStore. This array was empty while
+		     those calls shipped.
+		     1C8F.1: the in-app language, written into the App Group this app shares with its own
+		     extensions so they render in it (AppGroupLanguage). That is the only suiteName outside
+		     tests. -->
 		<dict>
 			<key>NSPrivacyAccessedAPIType</key>
 			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
 			<key>NSPrivacyAccessedAPITypeReasons</key>
 			<array>
 				<string>CA92.1</string>
+				<string>1C8F.1</string>
 			</array>
 		</dict>
 	</array>

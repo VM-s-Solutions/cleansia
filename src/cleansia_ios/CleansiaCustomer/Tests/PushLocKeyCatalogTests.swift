@@ -1,3 +1,4 @@
+import CleansiaCore
 import Foundation
 import XCTest
 
@@ -289,6 +290,54 @@ final class PushLocKeyCatalogTests: XCTestCase {
             }
             for word in cancellationWords {
                 XCTAssertNil("\(title) \(body)".range(of: word, options: .caseInsensitive), "\(language): \(word)")
+            }
+        }
+    }
+
+    // MARK: - The Notification Service Extension
+
+    private func notificationService() throws -> Bundle {
+        let plugIns = try XCTUnwrap(appBundle.builtInPlugInsURL, "the app bundle has no PlugIns folder")
+        let url = plugIns.appendingPathComponent("CleansiaCustomerNotificationService.appex")
+        return try XCTUnwrap(Bundle(url: url), "the Notification Service Extension is not embedded at \(url.path)")
+    }
+
+    func testTheNotificationServiceIsEmbeddedAsOne() throws {
+        let service = try notificationService()
+        let point = (service
+            .object(forInfoDictionaryKey: "NSExtension") as? [String: Any])?["NSExtensionPointIdentifier"]
+        XCTAssertEqual(point as? String, "com.apple.usernotifications.service")
+        let declared = try XCTUnwrap(service.object(forInfoDictionaryKey: "CFBundleLocalizations") as? [String])
+        XCTAssertEqual(Set(declared), Set(languages))
+    }
+
+    /// What a push looks like in the in-app language: every event, every language, rendered by the
+    /// extension from ITS OWN copy of the catalog — the table iOS would have used, the loc-args filled,
+    /// and never a raw key or a slot.
+    func testTheNotificationServiceRendersEveryEventInEveryLanguage() throws {
+        let service = try notificationService()
+        for language in languages {
+            let table = try localizableTable(for: language)
+            for event in events {
+                let slots = orderNumberAndAmountArgEvents.contains(event) ? 2
+                    : orderNumberArgEvents.contains(event) ? 1 : 0
+                let args = (0 ..< slots).map { "ARG\($0 + 1)" }
+                let userInfo: [AnyHashable: Any] = ["aps": ["alert": [
+                    "title-loc-key": "push.\(event).title",
+                    "loc-key": "push.\(event).body",
+                    "loc-args": args
+                ]]]
+                let alert = try XCTUnwrap(
+                    AppGroupLanguage.localizedAlert(userInfo: userInfo, languageTag: language, bundle: service),
+                    "the extension cannot render \(event) in \(language)"
+                )
+                var expectedBody = try XCTUnwrap(table["push.\(event).body"])
+                for (index, arg) in args.enumerated() {
+                    expectedBody = expectedBody.replacingOccurrences(of: "%\(index + 1)$@", with: arg)
+                }
+                XCTAssertEqual(alert.title, table["push.\(event).title"], "\(event) [\(language)]")
+                XCTAssertEqual(alert.body, expectedBody, "\(event) [\(language)]")
+                XCTAssertFalse(alert.body.contains("%"), "\(event) [\(language)]: \(alert.body)")
             }
         }
     }

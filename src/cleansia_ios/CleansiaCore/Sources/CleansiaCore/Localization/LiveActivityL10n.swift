@@ -4,10 +4,11 @@ import Foundation
 /// widget is a SEPARATE target/process that links CleansiaCore but not the app module, so Core's catalog is
 /// the only one both sides can read.
 ///
-/// The widget never calls `CoreL10n.apply(languageTag:)` (that is the app's launch path, and an extension
-/// has its own process and its own `UserDefaults` domain), so these resolve against the device's preferred
-/// languages rather than the in-app language override — which works only because the extension declares
-/// all five in `CFBundleLocalizations`; Core's bundle can resolve no language its host does not.
+/// The widget has its own process and its own `UserDefaults` domain, so it follows the in-app language by
+/// reading the tag the app leaves in their App Group (`AppGroupLanguage`) and calling
+/// `CoreL10n.apply(languageTag:)` with it. Before the app has written one, these resolve against the
+/// device's preferred languages — which works only because the extension declares all five in
+/// `CFBundleLocalizations`; Core's bundle can resolve no language its host does not.
 public enum LiveActivityL10n {
     /// The leg vocabulary of the four-step journey. Terse on purpose: these sit under a quarter-width
     /// segment of the progress bar.

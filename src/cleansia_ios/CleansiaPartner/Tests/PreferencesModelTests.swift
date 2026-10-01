@@ -25,6 +25,24 @@ final class PreferencesModelTests: XCTestCase {
         UserDefaultsAppSettingsStore(defaults: defaults, preferredLanguageTags: { [locale] })
     }
 
+    /// The Notification Service Extension renders pushes in whatever the app leaves in its App Group,
+    /// so the app leaves the RESOLVED tag there at launch and on every change.
+    func testTheResolvedLanguageIsLeftForTheExtensionsAtLaunchAndOnEveryChange() {
+        let group = "PreferencesModelTests.group.\(UUID().uuidString)"
+        defer { UserDefaults().removePersistentDomain(forName: group) }
+        let store = makeStore(locale: "uk")
+        store.setLanguage("cs")
+
+        let model = PreferencesModel(settings: store, languageSync: SilentLanguageSync(), appGroup: group)
+        XCTAssertEqual(AppGroupLanguage.read(appGroup: group), "cs")
+
+        model.setLanguage("sk")
+        XCTAssertEqual(AppGroupLanguage.read(appGroup: group), "sk")
+
+        model.setSystemLanguage()
+        XCTAssertEqual(AppGroupLanguage.read(appGroup: group), "uk", "the resolved tag, never the System sentinel")
+    }
+
     func testSeedsFromStore() {
         let store = makeStore()
         store.setLanguage("cs")

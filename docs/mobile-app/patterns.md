@@ -192,3 +192,39 @@ first point of scroll and fade it in and out.
   scrolled content. It is visible while `scrollState.value > 0`. Home moved its status-bar padding
   inside the scroll, so the address bar starts below the status bar at rest and then scrolls under the
   band.
+
+## Every map is quiet, with one Cleansia pin {#maps}
+
+All four map surfaces in both apps show a muted base map with **no points of interest**, and their only
+marker is **the Cleansia pin** (owner ruling 2026-10-01). The four are the customer address picker
+(booking, the saved-address chooser and the address manager), the customer order detail, the partner
+profile's address picker and the partner order detail. Street and place names stay, so a customer can
+still find their street. Neither platform can recolour the other's map tiles, so parity means three
+things: no POIs, a muted base and the same pin.
+
+- **iOS** (`CleansiaCore/Location/MapKitMapProvider.swift`). Every map is an `MKMapView` with
+  `MKStandardMapConfiguration(elevationStyle: .flat, emphasisStyle: .muted)`,
+  `pointOfInterestFilter = .excludingAll` and no traffic (`CleansiaMapStyle`). The address picker moved
+  off SwiftUI's `Map(coordinateRegion:)`, which takes no configuration on iOS 16, to an `MKMapView`
+  representable behind the unchanged `MapProvider.pickerMap` signature. The iOS 17 `.mapStyle` modifier
+  would have left iOS 16 users with every POI. The picker writes the settled region back to its
+  binding, and applies a region the binding moves to only when it differs from the one it last
+  reported, so a drag never fights the finger. A 196pt bottom layout margin keeps Apple's logo and
+  *Legal* link above the confirm card. MapKit centres its region inside the layout margins, so the
+  centre pin is pinned to the margins' centre, not the view's.
+- **Android** (`:core` `location/CleansiaMap.kt`). `CleansiaMapStyle(darkTheme)` is Mapbox Standard
+  through the pinned maps-compose 11.8.0: POI and transit labels off, the faded theme, no 3D objects,
+  and the day or night light preset from the app theme. It replaced `MapStyles`, whose classic
+  `light-v11` / `dark-v11` styles drew Mapbox's own POI and transit layers. The two order maps show the
+  Mapbox wordmark and attribution again, which Mapbox's terms require; they had been switched off.
+  Both are lifted above the resting sheet, which covers the map's bottom edge.
+
+**The pin** is a brand-sky teardrop with a white house, 40 × 50 (pt or dp): sky-600 `#0284C7` on a
+light map and sky-400 `#38BDF8` on a dark one. On iOS it is `CleansiaMapMarker` and on Android
+`CleansiaMapPin`. Its tip is the bottom centre of its bounds: an order map anchors its annotation
+there, and a picker lifts its centre pin by the pin's full height so the tip points at the coordinate
+being picked. It is decorative, because the address it marks is always written beside the map, and
+VoiceOver and TalkBack skip it. It replaced the pins each surface drew for itself, which disagreed
+across the platforms: plain discs, a disc on a stick and MapKit's balloon. `CleansiaMapUsageTest` (Android `:core`) fails a map that stops using the shared
+style or pin; `MapMarkerTests` and `MapKitMapProviderFullBleedTests` (`CleansiaCoreTests`) pin the iOS
+configuration, the single centre pin and the tip.

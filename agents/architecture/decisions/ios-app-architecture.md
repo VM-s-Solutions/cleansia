@@ -362,7 +362,11 @@ Q-IOS-02 flips the default"). **Net effect: iOS removes a secret Android carries
 rotate, one fewer leak surface. **Q-IOS-02 stays defaulted "No"** (MapKit standard style; `MapStyles.kt`'s
 custom Mapbox Studio style is **NOT ported** — the stock MapKit style is the parity baseline; a hard brand
 requirement is the only input that flips it, behind the unchanged seam). Recorded as the no-token **security
-note** (sprint-12 §7.6).
+note** (sprint-12 §7.6). *2026-10-01 (C5):* the baseline is now a flat, muted MapKit configuration with
+every point of interest hidden and one drawn Cleansia pin, the parity of Android's POI-free Mapbox Standard
+(`CleansiaMap.kt`, which replaced `MapStyles.kt`). It is still MapKit, still no token, and Q-IOS-02 still
+"No"; the picker became an `MKMapView` representable for it (ADR-0014 Amendment A1;
+docs/mobile-app/patterns.md#maps).
 
 **New CRC (added with the T-0306 wiring):** `ios-geocoding-service` — `GeocodingService` (protocol) +
 `CLGeocoderGeocodingService` (the default impl in `CleansiaCore/Location`): *responsibility:* forward/reverse

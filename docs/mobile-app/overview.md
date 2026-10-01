@@ -52,7 +52,7 @@ src/cleansia_android/
 │       ├── ui/state/            # ActionState
 │       ├── snackbar/            # global snackbar bus
 │       ├── notifications/       # FCM token lifecycle + device registration
-│       ├── location/            # FusedLocation wrapper, Mapbox geocoding, map styles
+│       ├── location/            # FusedLocation wrapper, Mapbox geocoding, the map style + pin
 │       ├── servicearea/ settings/ format/ validation/ media/ freshness/ sentry/ config/
 ├── partner-app/                 # cz.cleansia.partner
 └── customer-app/                # cz.cleansia.customer
@@ -60,7 +60,8 @@ src/cleansia_android/
 
 Both apps declare `implementation(project(":core"))`. `:core` exposes the Mapbox and
 FusedLocation stacks as `api` dependencies because the app-side pickers call `MapboxMap` and
-`UserLocation` directly.
+`UserLocation` directly. Every map draws the one style and pin in `location/CleansiaMap.kt`, the
+twin of iOS's `CleansiaCore/Location` → [Every map is quiet](/mobile-app/patterns#maps).
 
 ::: info Source files
 - `src/cleansia_android/settings.gradle.kts` — the module list

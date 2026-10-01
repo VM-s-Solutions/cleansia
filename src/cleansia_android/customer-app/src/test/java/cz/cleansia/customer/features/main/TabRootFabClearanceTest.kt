@@ -15,13 +15,17 @@ import org.junit.Test
  */
 class TabRootFabClearanceTest {
 
+    /** The box is as tall as its tallest child, and the FAB is taller than the pill. */
     @Test
     fun `the clearance is the bar box plus a 16dp gap`() {
-        val bar = source("features/main/MainShell.kt").substringAfter("private fun CustomBottomBar(")
+        val shell = source("features/main/MainShell.kt")
+        val bar = shell.substringAfter("private fun CustomBottomBar(")
         val padding = Regex("""vertical = (\d+)\.dp""").find(bar)!!.groupValues[1].toInt()
         val pill = Regex("""\.height\((\d+)\.dp\)""").find(bar)!!.groupValues[1].toInt()
+        val fab = Regex("""\.size\((\d+)\.dp\)""")
+            .find(shell.substringAfter("private fun BookFab("))!!.groupValues[1].toInt()
 
-        assertEquals((padding + pill + padding + 16).dp, MainShellBottomClearance)
+        assertEquals((padding + maxOf(pill, fab) + padding + 16).dp, MainShellBottomClearance)
     }
 
     @Test

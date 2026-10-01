@@ -406,11 +406,13 @@ fun MainShell(
 
 /**
  * Where a tab root's scroll content must end, measured up from the nav-bar inset: the bar box
- * (12dp + 64dp pill + 12dp in [CustomBottomBar]; the Book FAB's top sits on the box's top edge)
- * plus 16dp, so the last item clears the FAB instead of touching it. Tabs add the nav-bar inset
- * at runtime, which a 3-button nav bar makes twice as tall as the gesture handle.
+ * plus 16dp, so the last item clears the Book FAB instead of touching it. The box in
+ * [CustomBottomBar] is its 12dp vertical padding around its tallest child, and that child is the
+ * 74dp FAB, not the 64dp pill (an offset does not change a child's measured size), so the box is
+ * 98dp and the FAB's top sits on its top edge. Tabs add the nav-bar inset at runtime, which a
+ * 3-button nav bar makes twice as tall as the gesture handle.
  */
-internal val MainShellBottomClearance = 88.dp + 16.dp
+internal val MainShellBottomClearance = 12.dp + 74.dp + 12.dp + 16.dp
 
 /**
  * Floating island bottom bar — Wolt/Bolt style. Pill-shaped surface that

@@ -72,6 +72,9 @@ public struct CleansiaDropdown: View {
                 .padding(.horizontal, Spacing.m)
                 .padding(.vertical, 10)
                 .frame(maxWidth: .infinity)
+                // A plain-style button hit-tests only what its label draws, and this label draws no
+                // fill: without the shape only the words opened the sheet, not the field around them.
+                .contentShape(RoundedRectangle(cornerRadius: CornerRadius.small))
                 .overlay(
                     RoundedRectangle(cornerRadius: CornerRadius.small)
                         .stroke(isError ? CleansiaColors.error : CleansiaColors.outline, lineWidth: 1)

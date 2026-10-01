@@ -39,6 +39,19 @@ class TabRootFabClearanceTest {
         }
     }
 
+    /** The pager runs under the bar, so a state centred in the full height would read low. */
+    @Test
+    fun `the orders empty and error states centre above the bottom chrome`() {
+        val container = source("features/orders/OrdersTab.kt")
+            .substringAfter("private fun ScrollableStateContainer(")
+            .substringBefore("/* ── Content ── */")
+        assertTrue(
+            "ScrollableStateContainer must pad the nav inset and MainShellBottomClearance off the centred box",
+            container.contains(".navigationBarsPadding()") &&
+                container.contains(".padding(bottom = MainShellBottomClearance)"),
+        )
+    }
+
     private fun source(path: String): String = sequenceOf(
         File("."),
         File("customer-app"),

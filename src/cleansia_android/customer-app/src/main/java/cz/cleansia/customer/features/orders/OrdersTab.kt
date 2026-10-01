@@ -189,8 +189,11 @@ fun OrdersTab(
  * BoxWithConstraints is the trick that lets the inner content be vertically
  * centered: a verticalScroll Column normally collapses to its content height,
  * which would leave the centered child stuck at the top. By forcing the inner
- * Box's `minHeight` to the parent's available height, `Alignment.Center`
- * actually centers within the full screen height.
+ * Box's height to the parent's available height, `Alignment.Center` actually
+ * centers. The pager is full-screen, so that height runs on under the floating
+ * bar; the Box pads the bottom chrome back off (nav inset + the tab roots'
+ * [MainShellBottomClearance]) so the state centers between the title and the
+ * Book FAB, in the part of the screen the customer can see.
  */
 @Composable
 private fun ScrollableStateContainer(content: @Composable () -> Unit) {
@@ -211,7 +214,9 @@ private fun ScrollableStateContainer(content: @Composable () -> Unit) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(minHeight),
+                    .height(minHeight)
+                    .navigationBarsPadding()
+                    .padding(bottom = MainShellBottomClearance),
                 contentAlignment = Alignment.Center,
             ) {
                 content()
@@ -591,8 +596,8 @@ private fun OrdersError(onRetry: () -> Unit) {
 
 @Composable
 private fun OrdersEmpty(onBookCleaning: () -> Unit) {
-    // Outer Box vertically centers the content within the available tab area
-    // (which already has the bottom-bar padding stripped by the Scaffold). The
+    // Outer Box vertically centers the content within the area
+    // ScrollableStateContainer leaves above the bottom bar and its FAB. The
     // inner Column owns the actual stacking; horizontal centering happens via
     // the Box alignment so the Column doesn't need to fillMaxSize.
     Box(

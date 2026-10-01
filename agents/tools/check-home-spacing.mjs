@@ -7,7 +7,7 @@ const { chromium } = require('playwright');
 const CHECKS = [
   ['nav pill',            '.customer-navbar__inner', { padding: '10px 12px 10px 30px' }],
   ['nav links',           '.customer-navbar__center', { gap: '22px' }],
-  ['hero body',           '.cl-hero__inner', { padding: '52px 64px 0px', gap: '48px', alignItems: 'end' }],
+  ['hero body',           '.cl-hero__inner', { padding: '0px 64px', gap: '48px', alignItems: 'end' }],
   // The artboard sets 16px, measured from the bottom of the eyebrow above it.
   // The eyebrow ("Praha a okolí do 30 km · denně 8-20") was removed on owner
   // ruling, so 30px is what now puts the h1 at the same distance from the top
@@ -15,7 +15,12 @@ const CHECKS = [
   ['hero title',          '.cl-hero__title', { marginTop: '30px' }],
   ['hero sub',            '.cl-hero__subtitle', { margin: '18px 0px 0px' }],
   ['hero actions',        '.cl-hero__buttons', { gap: '26px', marginTop: '28px' }],
-  ['quote card',          '.cl-quote', { padding: '28px 30px' }],
+  ['quote card',          '.cl-quote', { padding: '22px 30px 20px' }],
+  ['quote field',         '.cl-quote__field', { marginTop: '14px' }],
+  ['quote chips',         '.cl-quote__chips', { marginTop: '8px' }],
+  ['quote when',          '.cl-quote__when', { marginTop: '8px' }],
+  ['quote result',        '.cl-quote__result', { marginTop: '16px', paddingTop: '14px' }],
+  ['quote footnote',      '.cl-quote__footnote', { marginTop: '6px' }],
   ['promises section',    '.cl-section--promises', { padding: '20px 64px 0px' }],
   ['promises grid',       '.cl-promises', { gap: '20px', marginTop: '30px' }],
   ['promise card',        '.cl-promises__card', { padding: '30px 32px' }],

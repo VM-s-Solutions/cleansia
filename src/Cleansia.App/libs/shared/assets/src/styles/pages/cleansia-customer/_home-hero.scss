@@ -64,11 +64,10 @@ cleansia-hero {
     grid-template-columns: minmax(0, 1fr) 650px;
     gap: 48px;
     align-items: end;
-    // 1.5, not 3.25. The hero sat 104px below the navbar at 1280px wide, which
-    // read as a gap rather than as breathing room and pushed the calculator
-    // card's fixed price below the fold on a laptop. The navbar payback on
+    // No top padding: every pixel here pushed the calculator card's footnote
+    // further below the fold of a 1440x772 window. The navbar payback on
     // `.cl-hero` above is untouched — that one is structural.
-    padding: calc(0.75 * var(--cl-u)) var(--cl-gutter) 0;
+    padding: 0 var(--cl-gutter) 0;
     max-width: $home-width;
     margin: 0 auto;
 
@@ -540,6 +539,32 @@ cleansia-hero {
 
 .cl-quote__footnote {
   margin: 13px 0 0;
+}
+
+// At the artboard's rhythm the card's footnote fell below a 1440x772 window.
+// Stacked below 1100px, the card is not at the fold.
+@media (min-width: 1101px) {
+  .cl-quote {
+    padding: 22px 30px 20px;
+  }
+
+  .cl-quote__field {
+    margin-top: calc(0.875 * var(--cl-u)); // 14px
+  }
+
+  .cl-quote__chips,
+  .cl-quote__when {
+    margin-top: calc(0.5 * var(--cl-u)); // 8px
+  }
+
+  .cl-quote__result {
+    margin-top: 16px;
+    padding-top: 14px;
+  }
+
+  .cl-quote__footnote {
+    margin-top: 6px;
+  }
 }
 
 @keyframes cl-quote-ghost {

@@ -2,8 +2,8 @@
 /**
  * The cross-stack booking-policy parity check.
  *
- * `BookingPolicy` decides what a cancellation costs, how late a booking is accepted and what an
- * express slot or a dirtiness level adds. Four surfaces then STATE those numbers to a customer — the web copy, the web's
+ * `BookingPolicy` decides what a cancellation costs, how late a booking is accepted, what an
+ * express slot or a dirtiness level adds and how large a home one booking may be. Four surfaces then STATE those numbers to a customer — the web copy, the web's
  * shared constants, Android's string resources and iOS's string catalog — and every one of them
  * holds its own literal. Nothing compiled them together, so nothing noticed when they stopped
  * agreeing. The legal seed is held to the same shape (§3): the market's figures reach a legal text
@@ -60,6 +60,15 @@ const WEB_MODEL = 'src/Cleansia.App/libs/shared/models/src/lib/models/booking-wi
 const WEB_I18N = 'src/Cleansia.App/apps/cleansia.app/src/assets/i18n';
 const ANDROID_RES = 'src/cleansia_android/customer-app/src/main/res';
 const IOS_CATALOG = 'src/cleansia_ios/CleansiaCustomer/Resources/Localizable.xcstrings';
+/** The shared package's catalog, where the backend error copy lives on iOS. */
+const IOS_CORE_CATALOG = 'src/cleansia_ios/CleansiaCore/Sources/CleansiaCore/Resources/Localizable.xcstrings';
+/** Where each client holds the largest home its size pickers offer (§5). */
+const IOS_PROPERTY_SIZE = 'src/cleansia_ios/CleansiaCustomer/Sources/Features/Booking/PropertySize.swift';
+const ANDROID_PROPERTY_SIZE = 'src/cleansia_android/customer-app/src/main/java/cz/cleansia/customer/core/booking/PropertySize.kt';
+const WEB_SIZE_PICKERS = [
+  'src/Cleansia.App/libs/cleansia-customer-features/order-wizard/src/lib/order-wizard/order-wizard.component.ts',
+  'src/Cleansia.App/libs/cleansia-customer-features/recurring-bookings/src/lib/create-recurring-wizard/create-recurring-wizard.component.ts',
+];
 
 const LOCALES = ['en', 'cs', 'sk', 'ru', 'uk'];
 /** res/values is the default (en); the rest carry a locale suffix. */
@@ -142,6 +151,8 @@ const policy = {
   OopsWindowMinutesPlus: readCsConst(policySource, 'OopsWindowMinutesPlus'),
   IncreasedDirtinessSurchargeRate: readCsConst(policySource, 'IncreasedDirtinessSurchargeRate'),
   HeavyDirtinessSurchargeRate: readCsConst(policySource, 'HeavyDirtinessSurchargeRate'),
+  MaxRooms: readCsConst(policySource, 'MaxRooms'),
+  MaxBathrooms: readCsConst(policySource, 'MaxBathrooms'),
 };
 
 for (const [name, value] of Object.entries(policy)) {
@@ -394,9 +405,12 @@ for (const locale of LOCALES) {
 // and no currency word rides along (the client formats the amount with its unit). A literal creeping
 // back into any of these keys is the drift this section catches.
 
-/** Every integer in a sentence once the loc-arg / interpolation slots are removed. */
+/**
+ * Every integer in a sentence once the loc-arg / interpolation slots are removed. iOS formats an `Int`
+ * as `%1$lld`, so the `ll` length modifier is a slot too, not a figure.
+ */
 export function bakedAmountsIn(text) {
-  return amountsIn(String(text).replace(/\{\{\s*\w+\s*\}\}|%\d+\$[@sd]|%[@sd]/g, ''));
+  return amountsIn(String(text).replace(/\{\{\s*\w+\s*\}\}|%\d+\$(?:ll)?[@sd]|%(?:ll)?[@sd]/g, ''));
 }
 
 const CURRENCY_WORDS = /\bCZK\b|K\u010d|\bEUR\b|\u20ac|\bPLN\b|z\u0142|\bGBP\b|\u00a3|\bUSD\b|\$(?!\S)/;
@@ -572,6 +586,137 @@ for (const known of REASONS_NOT_YET_RENDERED) {
   }
 }
 
+// ─── 5. The largest home every client offers is BookingPolicy's (owner ruling 2026-10-01, D11) ────
+// The server refuses more than `MaxRooms` rooms or `MaxBathrooms` bathrooms on every booking, quote and
+// schedule write (`order.size_exceeds_maximum`), and no endpoint serves the two caps. So each client
+// holds them once — iOS and Android as two constants, the web as the last chip of its two size pickers —
+// and then states them twice: the refusal's copy names them as literals, and the caption under the
+// mobile size steppers renders them from the constants through two placeholders.
+//
+// The caption bakes no figure in, so a policy change leaves its numbers right but not its grammar: in
+// cs, sk, uk and ru the noun agrees with the number in front of it ("8 pokojů", "4 koupelny"), and the
+// five translations were written for 8 and 4. A policy change therefore also asks for the caption to be
+// re-read, instead of shipping "4 koupelny" for 5.
+
+/** The caps the caption's noun forms were written for. Re-read every locale before moving these. */
+const SIZE_CAPTION_WRITTEN_FOR = { rooms: 8, bathrooms: 4 };
+
+/** `static let maxRooms = 8` (Swift) / `const val MAX_ROOMS = 8` (Kotlin) → 8. */
+export function readMobileConst(source, name) {
+  const match = new RegExp(
+    `(?:static\\s+let|const\\s+val)\\s+${name}\\s*(?::\\s*Int\\s*)?=\\s*([0-9]+)\\b`,
+  ).exec(source);
+  return match ? Number(match[1]) : null;
+}
+
+/** `roomChoices = [1, 2, 3, 4]` → 4, the last chip a picker offers; null when there is no such array. */
+export function largestChoice(source, name) {
+  const match = new RegExp(`\\b${name}\\s*=\\s*\\[([^\\]]*)\\]`).exec(source);
+  const choices = match ? amountsIn(match[1]) : [];
+  return choices.length ? Math.max(...choices) : null;
+}
+
+for (const [rel, roomsName, bathroomsName] of [
+  [IOS_PROPERTY_SIZE, 'maxRooms', 'maxBathrooms'],
+  [ANDROID_PROPERTY_SIZE, 'MAX_ROOMS', 'MAX_BATHROOMS'],
+]) {
+  if (!existsSync(join(REPO, rel))) {
+    note(rel, 'is missing — the size caps have no home on this platform');
+    continue;
+  }
+  const source = read(rel);
+  for (const [name, csName] of [[roomsName, 'MaxRooms'], [bathroomsName, 'MaxBathrooms']]) {
+    const actual = readMobileConst(source, name);
+    if (actual === null) {
+      note(rel, `\`${name}\` not found`);
+    } else if (actual !== policy[csName]) {
+      note(rel, `\`${name}\` is ${actual}, BookingPolicy.${csName} is ${policy[csName]}`);
+    }
+  }
+}
+
+for (const rel of WEB_SIZE_PICKERS) {
+  if (!existsSync(join(REPO, rel))) {
+    note(rel, 'is missing — the parser needs updating');
+    continue;
+  }
+  const source = read(rel);
+  for (const [name, csName] of [['roomChoices', 'MaxRooms'], ['bathroomChoices', 'MaxBathrooms']]) {
+    const largest = largestChoice(source, name);
+    if (largest === null) {
+      note(rel, `\`${name}\` not found`);
+    } else if (largest !== policy[csName]) {
+      note(rel, `\`${name}\` stops at ${largest}, BookingPolicy.${csName} is ${policy[csName]}`);
+    }
+  }
+}
+
+/** The refusal states both caps and nothing else, in whatever order the translator put them. */
+function checkSizeRefusal(where, key, value) {
+  if (value === null || value === undefined) {
+    note(where, `${key} is missing`);
+    return;
+  }
+  const stated = new Set(amountsIn(value));
+  const caps = new Set([policy.MaxRooms, policy.MaxBathrooms]);
+  for (const cap of caps) {
+    if (!stated.has(cap)) note(where, `${key} = "${value}" does not state ${cap}`);
+  }
+  for (const figure of stated) {
+    if (!caps.has(figure)) {
+      note(
+        where,
+        `${key} = "${value}" states ${figure}, which is neither BookingPolicy.MaxRooms ` +
+          `(${policy.MaxRooms}) nor MaxBathrooms (${policy.MaxBathrooms})`,
+      );
+    }
+  }
+}
+
+/** The caption renders both caps through its two slots and bakes neither in. */
+function checkSizeCaption(where, key, value, slots) {
+  if (value === null || value === undefined) {
+    note(where, `${key} is missing`);
+    return;
+  }
+  for (const slot of slots) {
+    if (!value.includes(slot)) note(where, `${key} = "${value}" does not carry the ${slot} placeholder`);
+  }
+  const baked = bakedAmountsIn(value);
+  if (baked.length) {
+    note(where, `${key} = "${value}" bakes a figure in (${baked.join(', ')}) — the caps come from PropertySize`);
+  }
+}
+
+const iosCoreCatalog = existsSync(join(REPO, IOS_CORE_CATALOG)) ? JSON.parse(read(IOS_CORE_CATALOG)) : null;
+if (iosCoreCatalog === null) note(IOS_CORE_CATALOG, 'is missing');
+
+for (const locale of LOCALES) {
+  const web = JSON.parse(read(join(WEB_I18N, `${locale}.json`)));
+  checkSizeRefusal(`web/${locale}`, 'api.order.size_exceeds_maximum', web.api?.order?.size_exceeds_maximum);
+  const dir = ANDROID_DIRS[locale];
+  checkSizeRefusal(`android/${dir}`, 'error_order_size_exceeds_maximum', androidString(dir, 'error_order_size_exceeds_maximum'));
+  if (iosCoreCatalog !== null) {
+    checkSizeRefusal(`ios-core/${locale}`, 'error.order.size_exceeds_maximum', iosString(iosCoreCatalog, 'error.order.size_exceeds_maximum', locale));
+  }
+  checkSizeCaption(`android/${dir}`, 'booking_size_limit_caption', androidString(dir, 'booking_size_limit_caption'), ['%1$d', '%2$d']);
+  checkSizeCaption(`ios/${locale}`, 'booking_size_limit_caption', iosString(iosCatalog, 'booking_size_limit_caption', locale), ['%1$lld', '%2$lld']);
+}
+
+if (
+  policy.MaxRooms !== null &&
+  policy.MaxBathrooms !== null &&
+  (policy.MaxRooms !== SIZE_CAPTION_WRITTEN_FOR.rooms || policy.MaxBathrooms !== SIZE_CAPTION_WRITTEN_FOR.bathrooms)
+) {
+  note(
+    'booking_size_limit_caption',
+    `its cs/sk/uk/ru noun forms were written for ${SIZE_CAPTION_WRITTEN_FOR.rooms} rooms and ` +
+      `${SIZE_CAPTION_WRITTEN_FOR.bathrooms} bathrooms, and BookingPolicy now says ${policy.MaxRooms} and ` +
+      `${policy.MaxBathrooms} — re-read the caption in every locale on both platforms, then move ` +
+      'SIZE_CAPTION_WRITTEN_FOR in this checker',
+  );
+}
+
 // ─── Report ─────────────────────────────────────────────────────────────────
 if (findings.length) {
   console.log('booking-policy-parity violations:');
@@ -589,6 +734,7 @@ if (findings.length) {
       `(${graceFirstBooking} on a first booking, ${gracePlus} with Plus), express +${expressPct}% ` +
       `from ${policy.ExpressLeadTimeHours} h, window ${policy.FirstWindowHour}:00–${policy.LastWindowHour}:00; ` +
       `dirtiness +${increasedDirtinessPct}%/+${heavyDirtinessPct}%; ` +
+      `a home of up to ${policy.MaxRooms} rooms and ${policy.MaxBathrooms} bathrooms on every picker, refusal and caption; ` +
       `money figures in copy come from the market; legal seed ${seedVersions} carries the placeholders; ` +
       `${reasons.length - REASONS_NOT_YET_RENDERED.size} cancellation reason(s) render on every client`,
   );

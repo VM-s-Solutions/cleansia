@@ -234,8 +234,13 @@ the crew, it can decide cash. Those minutes are **0 on every service** until the
 typed into the admin catalogue, so for now the size moves the price and not the time.
 → [Business rules — crew size](/product/business-rules#crew-size)
 
-**No client offers a size the server refuses.** Every picker stops at 8 rooms and 4 bathrooms, and on
-Android and iOS the plus button is disabled at the cap:
+**No client offers a size the server refuses, and the mobile apps say where it stops.** Every picker
+stops at 8 rooms and 4 bathrooms. On Android and iOS both stepper buttons stop at the bounds: the plus
+greys at the cap, and the minus greys at the floor, 1 on a one-off booking and 0 on a schedule. Under
+the size row of both flows the apps state the limit, *Up to 8 rooms and 4 bathrooms*
+(`booking_size_limit_caption`, rendered from the two constants rather than written into the
+translation). The steppers used to stop at the cap without saying why, and the one-off minus looked
+live at 1 (owner ruling 2026-10-01):
 
 | Picker | Rooms | Bathrooms |
 |---|---|---|
@@ -249,7 +254,13 @@ unclamped: a larger past order leaves no size chip selected, and submitting it i
 `order.size_exceeds_maximum`. Editing an existing schedule does not clamp what it stored; the server
 already refuses anything larger. Android
 (`PropertySize.kt`) and iOS (`PropertySize.swift`) each hold the two caps once, and a test on each
-reads them against `BookingPolicy.MaxRooms` and `MaxBathrooms` in `BookingPolicy.cs`.
+reads them against `BookingPolicy.MaxRooms` and `MaxBathrooms` in `BookingPolicy.cs`. The
+booking-policy parity gate (`check-booking-policy-parity.mjs`) holds every client to the same two
+numbers. It reads both constants, the last chip of the web's two size pickers, the refusal copy
+(`order.size_exceeds_maximum`) in the web, Android and iOS catalogs in all five locales, which must
+state exactly 8 and 4, and the caption, which must carry its two placeholders and no figure. The
+caption's noun forms in Czech, Slovak, Ukrainian and Russian agree with 8 and 4, so the gate also fails
+when the policy moves and asks for them to be re-read.
 
 **Starts are 08:00 – 19:45 in 15-minute steps, in the market's time zone, at most 60 days ahead — and
 the server enforces it** (owner ruling 2026-09-28). `CreateOrder` and `QuoteOrder` refuse a start off the

@@ -11,9 +11,10 @@ platform's default market, and drives the catalogue, the quick quote, the Plus p
 figures in the copy until a booking's address takes over. One market today (CZ), so the selector
 stays hidden and the chip is a plain label. → [Business rules — the market](/product/business-rules#market)
 
-**Booking** — browse the service catalogue and packages, pick rooms, bathrooms and extras, choose a
-date and a 60-minute window between 08:00 and 20:00, and pay by card — or in cash, when signed in and
-the booking is a job one cleaner does alone ([the cash rule](/product/business-rules#cash)). On the
+**Booking** — browse the service catalogue and packages, pick rooms and bathrooms (up to 8 and 4, which
+the Android and iOS apps state under the size steppers) and extras, choose a date and a 60-minute
+window between 08:00 and 20:00, and pay by card — or in cash, when signed in and the booking is a job
+one cleaner does alone ([the cash rule](/product/business-rules#cash)). On the
 web, book as a guest with no account, paying by card; the Android and iOS apps book for a signed-in
 customer only. Get a live price quote before committing, including whether an
 express surcharge applies and whether a membership waives it. Before the address step the catalogue and the quote are in the chosen

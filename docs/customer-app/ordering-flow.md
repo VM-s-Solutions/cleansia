@@ -33,8 +33,9 @@ The customer selects from available cleaning services and/or packages, and speci
 | `bathrooms` | `number` | `1` | Minimum 1 in the picker; API maximum 4 |
 
 The same upper limits apply to booking, price quotes, Plus-savings previews and recurring-template
-creation/update. The API returns `order.size_exceeds_maximum` when either is exceeded. Mobile
-steppers still permit larger values; they receive the translated refusal rather than a local clamp.
+creation/update. The API returns `order.size_exceeds_maximum` when either is exceeded. The Android and
+iOS steppers stop at the same limits and state them under the size row →
+[Room selection](/flows/booking-and-pricing#room-selection-and-start-times).
 
 Services and packages support **translations** -- the component reads the user's current locale to display translated names/descriptions.
 

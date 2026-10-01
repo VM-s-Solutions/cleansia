@@ -316,6 +316,14 @@ class UpsellClaimTest {
     }
 
     /** The express slide states the 2–4 h window from the client's bands, so those must be the server's. */
+    /** The quick-size slide showed "2 bath": English `other` had been left on the singular. */
+    @Test
+    fun `the size steppers count rooms and baths in the English plural`() {
+        val english = plurals("values")
+        assertEquals(listOf("%1\$d room", "%1\$d rooms"), english["booking_rooms_short"])
+        assertEquals(listOf("%1\$d bath", "%1\$d baths"), english["booking_bath_short"])
+    }
+
     @Test
     fun `the express window the slide states is the booking policy's`() {
         val policy = File(solutionDir, "Cleansia.Core.AppServices/Features/Orders/BookingPolicy.cs").readText()

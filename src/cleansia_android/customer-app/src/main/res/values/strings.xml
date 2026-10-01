@@ -1476,7 +1476,7 @@
     </plurals>
     <plurals name="booking_bath_short">
         <item quantity="one">%1$d bath</item>
-        <item quantity="other">%1$d bath</item>
+        <item quantity="other">%1$d baths</item>
     </plurals>
     <plurals name="order_review_star_content_desc">
         <item quantity="one">Rate %1$d star</item>

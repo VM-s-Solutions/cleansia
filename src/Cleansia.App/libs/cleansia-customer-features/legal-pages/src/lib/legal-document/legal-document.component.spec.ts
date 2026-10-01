@@ -1,4 +1,4 @@
-import { Type } from '@angular/core';
+import { PLATFORM_ID, Provider, Type } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CustomerClient, LegalDocumentDto, LegalDocumentType } from '@cleansia/customer-services';
 import { selectMarketCountryId } from '@cleansia/customer-stores';
@@ -49,6 +49,7 @@ describe('LegalDocumentComponent', () => {
   async function render(
     answer: Observable<LegalDocumentDto>,
     component: Type<unknown> = LegalDocumentComponent,
+    providers: Provider[] = [],
   ): Promise<void> {
     getDocument = jest.fn().mockReturnValue(answer);
     await TestBed.configureTestingModule({
@@ -56,6 +57,7 @@ describe('LegalDocumentComponent', () => {
       providers: [
         provideMockStore({ selectors: [{ selector: selectMarketCountryId, value: 'cze-id' }] }),
         { provide: CustomerClient, useValue: { legalClient: { getDocument } } },
+        ...providers,
       ],
     }).compileComponents();
     const translate = TestBed.inject(TranslateService);
@@ -69,6 +71,19 @@ describe('LegalDocumentComponent', () => {
     }
     fixture.detectChanges();
   }
+
+  // The rail follows the reader with scroll APIs jsdom implements none of.
+  beforeAll(() => {
+    if (!window.matchMedia) {
+      window.matchMedia = (media: string) => ({ matches: false, media }) as MediaQueryList;
+    }
+    if (!Element.prototype.scrollIntoView) {
+      Element.prototype.scrollIntoView = () => undefined;
+    }
+    if (!Element.prototype.scrollTo) {
+      Element.prototype.scrollTo = () => undefined;
+    }
+  });
 
   afterEach(() => TestBed.resetTestingModule());
 
@@ -132,6 +147,100 @@ describe('LegalDocumentComponent', () => {
     const numbers = Array.from(host().querySelectorAll('.cl-lgl__toc-num')).map((n) => n.textContent?.trim());
 
     expect(numbers).toEqual(['1', '2']);
+  });
+
+  describe('the rail following the reader', () => {
+    const component = (): LegalDocumentComponent => fixture.componentInstance as LegalDocumentComponent;
+    const headings = (): HTMLElement[] =>
+      Array.from(host().querySelectorAll<HTMLElement>('.cl-lgl__content h2'));
+    const scrollPage = (): void => {
+      window.dispatchEvent(new Event('scroll'));
+      jest.advanceTimersByTime(16);
+    };
+
+    beforeEach(async () => {
+      await render(of(SERVED));
+      jest.useFakeTimers();
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+      jest.restoreAllMocks();
+      Reflect.deleteProperty(document.documentElement, 'scrollHeight');
+    });
+
+    // jsdom has no layout, so the page always reads as scrolled to the bottom and the sync lights
+    // the last section: that is the sync a jump must hold off.
+    it('lights the clicked entry at once and holds it until the page scroll ends', () => {
+      component().jumpTo(0);
+      expect(component().activeSection()).toBe(0);
+
+      scrollPage();
+      expect(component().activeSection()).toBe(0);
+
+      window.dispatchEvent(new Event('scrollend'));
+      scrollPage();
+      expect(component().activeSection()).toBe(1);
+    });
+
+    it('lets go of the clicked entry once the page has been still for 700ms, where scrollend never comes', () => {
+      component().jumpTo(0);
+      jest.advanceTimersByTime(600);
+      scrollPage();
+      jest.advanceTimersByTime(150);
+      scrollPage();
+      expect(component().activeSection()).toBe(0);
+
+      jest.advanceTimersByTime(700);
+      scrollPage();
+      expect(component().activeSection()).toBe(1);
+    });
+
+    it.each([
+      { offset: '96px', lit: 1 },
+      { offset: '0px', lit: 0 },
+    ])('counts a heading as read once it crosses $offset of navbar plus 24px', ({ offset, lit }) => {
+      Object.defineProperty(document.documentElement, 'scrollHeight', { configurable: true, value: 10_000 });
+      jest.spyOn(headings()[0], 'getBoundingClientRect').mockReturnValue({ top: -400 } as DOMRect);
+      jest.spyOn(headings()[1], 'getBoundingClientRect').mockReturnValue({ top: 100 } as DOMRect);
+      jest.spyOn(window, 'getComputedStyle').mockReturnValue({
+        getPropertyValue: (name: string) => (name === '--cl-nav-offset' ? offset : ''),
+      } as CSSStyleDeclaration);
+      component().activeSection.set(0);
+
+      scrollPage();
+
+      expect(component().activeSection()).toBe(lit);
+    });
+
+    it('scrolls the list, not the card, to centre the lit entry', () => {
+      const scrollTo = jest.spyOn(Element.prototype, 'scrollTo');
+      const list = host().querySelector<HTMLElement>('.cl-lgl__toc-list');
+      const first = host().querySelector<HTMLElement>('.cl-lgl__toc-item');
+      if (!list || !first) throw new Error('the rail did not render');
+      Object.defineProperty(list, 'clientHeight', { configurable: true, value: 400 });
+      Object.defineProperty(first, 'offsetTop', { configurable: true, value: 300 });
+      Object.defineProperty(first, 'offsetHeight', { configurable: true, value: 40 });
+
+      component().activeSection.set(0);
+      fixture.detectChanges();
+
+      expect(scrollTo).toHaveBeenCalledTimes(1);
+      expect(scrollTo.mock.contexts[0]).toBe(list);
+      expect(scrollTo).toHaveBeenCalledWith({ top: 120, behavior: 'smooth' });
+    });
+  });
+
+  it('leaves the rail list alone when rendered on the server', async () => {
+    const scrollTo = jest.spyOn(Element.prototype, 'scrollTo');
+
+    await render(of(SERVED), LegalDocumentComponent, [{ provide: PLATFORM_ID, useValue: 'server' }]);
+    (fixture.componentInstance as LegalDocumentComponent).activeSection.set(1);
+    fixture.detectChanges();
+
+    expect(host().querySelector('.cl-lgl__toc-list')).not.toBeNull();
+    expect(scrollTo).not.toHaveBeenCalled();
+    scrollTo.mockRestore();
   });
 
   describe('while the server has not answered', () => {

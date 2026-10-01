@@ -63,18 +63,20 @@
     -->
     <nav class="cl-lgl__toc" [attr.aria-label]="'legal.contents' | translate">
       <span class="cl-lgl__toc-label">{{ 'legal.contents' | translate }}</span>
-      @for (heading of facade.headings(); track $index; let i = $index) {
-      <button
-        type="button"
-        class="cl-lgl__toc-item"
-        [class.cl-lgl__toc-item--on]="activeSection() === i"
-        [attr.aria-current]="activeSection() === i ? 'true' : null"
-        (click)="jumpTo(i)"
-      >
-        <span class="cl-lgl__toc-num">{{ heading.num ?? i + 1 }}</span>
-        <span>{{ heading.title }}</span>
-      </button>
-      }
+      <div class="cl-lgl__toc-list" #tocList>
+        @for (heading of facade.headings(); track $index; let i = $index) {
+        <button
+          type="button"
+          class="cl-lgl__toc-item"
+          [class.cl-lgl__toc-item--on]="activeSection() === i"
+          [attr.aria-current]="activeSection() === i ? 'true' : null"
+          (click)="jumpTo(i)"
+        >
+          <span class="cl-lgl__toc-num">{{ heading.num ?? i + 1 }}</span>
+          <span>{{ heading.title }}</span>
+        </button>
+        }
+      </div>
     </nav>
 
     <div class="cl-lgl__doc">

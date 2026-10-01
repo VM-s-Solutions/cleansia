@@ -20,7 +20,8 @@
 //
 // Measurements off the artboard:
 //   page 1040 wide; rail 250 fixed, gap 40
-//   rail card radius 24 padding 14; item radius 12 padding 9-14, 14px
+//   rail card radius 24 padding 14; item radius 12 padding 9-14, 14px (7-14
+//   here, so a twenty-section document fits a laptop screen)
 //   section padding 26 0 with a hairline; number Poppins 700 17px in sky-300
 //   title 19px; body 17px/1.72; the closing note radius 20 padding 18-20
 
@@ -94,20 +95,65 @@
 
 // ---- The contents rail ---------------------------------------------------------
 // Sticky, because its whole job is to stay reachable while the document under it
-// moves. It sits below the navbar, not under it.
+// moves. It sits below the navbar, not under it, and follows the bar up when it
+// slides away, on the bar's own 0.3s ease. The card never outgrows the screen:
+// its entries scroll inside it instead, so the card's whole edge stays in view.
+$toc-fade: var(--cl-u);
+
 .cl-lgl__toc {
   position: sticky;
-  top: calc(var(--cl-nav-h) + 0.75 * var(--cl-u));
+  top: calc(var(--cl-nav-offset) + 0.75 * var(--cl-u));
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100dvh - var(--cl-nav-offset) - 1.5 * var(--cl-u));
   padding: calc(0.875 * var(--cl-u));
   border-radius: calc(1.5 * var(--cl-u));
   background: var(--cl-surface);
   border: 1px solid var(--cl-border);
   box-shadow: 0 2px 10px rgba(12, 74, 110, 0.06);
+  transition: top 0.3s ease, max-height 0.3s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cl-lgl__toc {
+    transition: none;
+  }
+}
+
+// No scrollbar: the fades at its top and bottom say there is more. They sit over
+// the list's own padding, so an entry at rest is never faded, and only the list
+// is masked, never the card's border and shadow.
+.cl-lgl__toc-list {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: $toc-fade 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 $toc-fade,
+    #000 calc(100% - #{$toc-fade}),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 $toc-fade,
+    #000 calc(100% - #{$toc-fade}),
+    transparent 100%
+  );
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 .cl-lgl__toc-label {
   display: block;
-  padding: calc(0.5 * var(--cl-u)) calc(0.875 * var(--cl-u)) calc(0.625 * var(--cl-u));
+  padding: calc(0.5 * var(--cl-u)) calc(0.875 * var(--cl-u)) 0;
   font-size: calc(0.75 * var(--cl-u));
   font-weight: 800;
   letter-spacing: 0.07em;
@@ -120,7 +166,7 @@
   align-items: baseline;
   gap: calc(0.5 * var(--cl-u));
   width: 100%;
-  padding: calc(0.5625 * var(--cl-u)) calc(0.875 * var(--cl-u));
+  padding: calc(0.4375 * var(--cl-u)) calc(0.875 * var(--cl-u));
   border: 0;
   border-radius: calc(0.75 * var(--cl-u));
   background: transparent;
@@ -144,9 +190,10 @@
     color: var(--cl-heading);
   }
 
+  // Inset: the list scrolls, and a scroller clips a ring drawn outside its box.
   &:focus-visible {
     outline: 2px solid var(--cl-accent);
-    outline-offset: 2px;
+    outline-offset: -2px;
   }
 }
 
@@ -327,5 +374,12 @@
   // document it is meant to help you read.
   .cl-lgl__toc {
     position: static;
+    max-height: none;
+  }
+
+  .cl-lgl__toc-list {
+    overflow: visible;
+    -webkit-mask-image: none;
+    mask-image: none;
   }
 }

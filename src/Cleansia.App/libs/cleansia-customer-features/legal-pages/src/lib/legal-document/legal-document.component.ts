@@ -8,9 +8,11 @@ import {
   OnInit,
   PLATFORM_ID,
   computed,
+  effect,
   inject,
   input,
   signal,
+  viewChild,
 } from '@angular/core';
 import { CleansiaButtonComponent } from '@cleansia/components';
 import { LegalDocumentType } from '@cleansia/customer-services';
@@ -58,8 +60,45 @@ export class LegalDocumentComponent implements OnInit, AfterViewInit, OnDestroy 
    */
   readonly activeSection = signal(0);
 
+  private readonly tocList = viewChild<ElementRef<HTMLElement>>('tocList');
+
+  /**
+   * Keeps the lit entry in the middle of the rail's list, which scrolls inside
+   * the card once a document has more sections than the screen has room for.
+   * Not during a jump: the reader just clicked that entry, so it is in view, and
+   * Chrome lets a second programmatic smooth scroll cancel the page's own.
+   */
+  private readonly followActiveSection = effect(() => {
+    const index = this.activeSection();
+    const list = this.tocList()?.nativeElement;
+    if (!this.isBrowser || !list || this.syncHeld) return;
+    const item = list.querySelectorAll<HTMLElement>('.cl-lgl__toc-item')[index];
+    if (!item) return;
+    const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    list.scrollTo({
+      top: item.offsetTop - (list.clientHeight - item.offsetHeight) / 2,
+      behavior: still ? 'auto' : 'smooth',
+    });
+  });
+
+  /**
+   * While a click on the rail scrolls the page, the rail stays on the clicked
+   * entry instead of lighting every section the scroll passes on the way.
+   */
+  private syncHeld = false;
+  private holdTimer: ReturnType<typeof setTimeout> | undefined;
+  private readonly releaseSync = () => {
+    this.syncHeld = false;
+    clearTimeout(this.holdTimer);
+    window.removeEventListener('scrollend', this.releaseSync);
+  };
+
   private frame = 0;
   private readonly onScroll = () => {
+    if (this.syncHeld) {
+      this.armRelease();
+      return;
+    }
     // Coalesced to one read per frame: scroll fires far more often than the
     // rail can usefully change, and every call here measures the document.
     if (this.frame) return;
@@ -86,6 +125,7 @@ export class LegalDocumentComponent implements OnInit, AfterViewInit, OnDestroy 
     window.removeEventListener('scroll', this.onScroll);
     window.removeEventListener('resize', this.onScroll);
     if (this.frame) cancelAnimationFrame(this.frame);
+    this.releaseSync();
   }
 
   /**
@@ -101,6 +141,7 @@ export class LegalDocumentComponent implements OnInit, AfterViewInit, OnDestroy 
    * where no heading is crossing anything.
    */
   private syncActiveSection(): void {
+    if (this.syncHeld) return;
     const headings = this.sectionHeadings();
     if (headings.length === 0) return;
 
@@ -114,8 +155,13 @@ export class LegalDocumentComponent implements OnInit, AfterViewInit, OnDestroy 
       return;
     }
 
-    // The line the heading has to cross to count as read: just under the navbar.
-    const line = 96 + 24;
+    // The line the heading has to cross to count as read: just under the navbar
+    // that is on screen now, which slides away on scroll-down.
+    // -> _home-design.scss --cl-nav-offset
+    const navOffset = parseFloat(
+      getComputedStyle(document.documentElement).getPropertyValue('--cl-nav-offset'),
+    );
+    const line = (navOffset || 0) + 24;
     let current = 0;
     for (const [index, heading] of headings.entries()) {
       if (heading.getBoundingClientRect().top > line) break;
@@ -130,6 +176,22 @@ export class LegalDocumentComponent implements OnInit, AfterViewInit, OnDestroy 
 
   jumpTo(index: number): void {
     if (!this.isBrowser) return;
-    this.sectionHeadings()[index]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const heading = this.sectionHeadings()[index];
+    if (!heading) return;
+    this.activeSection.set(index);
+    this.syncHeld = true;
+    window.addEventListener('scrollend', this.releaseSync, { once: true });
+    this.armRelease();
+    heading.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  /**
+   * Safari fires no `scrollend`, and nothing does when the page is already
+   * there, so the hold also lets go after 700ms without a scroll event. Every
+   * scroll restarts that wait: a long smooth jump outlasts 700ms.
+   */
+  private armRelease(): void {
+    clearTimeout(this.holdTimer);
+    this.holdTimer = setTimeout(this.releaseSync, 700);
   }
 }

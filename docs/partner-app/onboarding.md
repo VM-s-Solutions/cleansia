@@ -101,6 +101,23 @@ would mark them incomplete and lock them out of the partner surface overnight.
 Admins see a **masked** view by default; the plaintext is behind a separate, audited reveal action.
 :::
 
+**A Czech or Slovak account can be pasted whole into any one of its three boxes** — prefix, number or
+bank code — on Android and iOS, and it lands in all three. Each box used to keep its own digits and
+clamp, so pasting `12321414/3545` into the number gave the number `1232141435` and an empty bank code.
+The apps read three shapes:
+
+| Pasted | Lands as |
+|---|---|
+| `19-2000145399/0800`, `2000145399/0800` | prefix, number and bank code; a missing prefix clears the old one |
+| `19-2000145399` | prefix and number; the bank code already there stays |
+| `CZ65 0800 0000 1920 0014 5399`, or an SK IBAN | the same three parts, with the IBAN's zero padding dropped |
+
+Spaces of every kind are ignored (a non-breaking one included) and an en or em dash counts as a hyphen.
+**A bare number is not split**: it stays in the box it was pasted into, so pasted into the number box it
+is the number. The apps only split text — the server keeps every rule (the mod-11 check, the bank-code
+shape, the IBAN cross-check). Partner web splits the two separator shapes as well, but not an IBAN, and
+it reads a bare number as the account number whichever box it was pasted into.
+
 ::: tip Country Configuration
 Country-specific labels and validation rules (e.g., field names, format masks) are driven by the `CountryConfiguration` table managed in the admin app.
 :::

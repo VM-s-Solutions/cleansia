@@ -3534,6 +3534,134 @@ export class AdminCurrencyClient implements IAdminCurrencyClient {
     }
 }
 
+export interface IAdminCustomerClient {
+    /**
+     * @param searchTerm (optional) 
+     * @param isActive (optional) 
+     * @param sort (optional) 
+     * @param offset (optional) 
+     * @param limit (optional) 
+     * @return OK
+     */
+    getPaged(searchTerm?: string | undefined, isActive?: boolean | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfAdminCustomerListItem>;
+}
+
+@Injectable({
+    providedIn: 'root'
+})
+export class AdminCustomerClient implements IAdminCustomerClient {
+    private http: HttpClient;
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(ADMINAPIBASEURL) baseUrl?: string) {
+        this.http = http;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    /**
+     * @param searchTerm (optional) 
+     * @param isActive (optional) 
+     * @param sort (optional) 
+     * @param offset (optional) 
+     * @param limit (optional) 
+     * @return OK
+     */
+    getPaged(searchTerm?: string | undefined, isActive?: boolean | undefined, sort?: SortDefinition[] | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfAdminCustomerListItem> {
+        let url = this.baseUrl + "/api/AdminCustomer/get-paged?";
+        if (searchTerm === null)
+            throw new globalThis.Error("The parameter 'searchTerm' cannot be null.");
+        else if (searchTerm !== undefined)
+            url += "Filter.SearchTerm=" + encodeURIComponent("" + searchTerm) + "&";
+        if (isActive === null)
+            throw new globalThis.Error("The parameter 'isActive' cannot be null.");
+        else if (isActive !== undefined)
+            url += "Filter.IsActive=" + encodeURIComponent("" + isActive) + "&";
+        if (sort === null)
+            throw new globalThis.Error("The parameter 'sort' cannot be null.");
+        else if (sort !== undefined)
+            sort && sort.forEach((item, index) => {
+                for (const attr in item)
+        			if (item.hasOwnProperty(attr)) {
+        				url += "Sort[" + index + "]." + attr + "=" + encodeURIComponent("" + (item as any)[attr]) + "&";
+        			}
+            });
+        if (offset === null)
+            throw new globalThis.Error("The parameter 'offset' cannot be null.");
+        else if (offset !== undefined)
+            url += "Offset=" + encodeURIComponent("" + offset) + "&";
+        if (limit === null)
+            throw new globalThis.Error("The parameter 'limit' cannot be null.");
+        else if (limit !== undefined)
+            url += "Limit=" + encodeURIComponent("" + limit) + "&";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processGetPaged(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processGetPaged(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<PagedDataOfAdminCustomerListItem>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<PagedDataOfAdminCustomerListItem>;
+        }));
+    }
+
+    protected processGetPaged(response: HttpResponseBase): Observable<PagedDataOfAdminCustomerListItem> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = PagedDataOfAdminCustomerListItem.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+}
+
 export interface IAdminDisputeClient {
     /**
      * @param orderId (optional) 
@@ -18813,6 +18941,70 @@ export interface IAdminCurrencyListItem {
     noShowCredit: number | undefined;
 }
 
+export class AdminCustomerListItem implements IAdminCustomerListItem {
+    id!: string | undefined;
+    firstName!: string | undefined;
+    lastName!: string | undefined;
+    email!: string | undefined;
+    phoneNumber!: string | undefined;
+    isActive!: boolean;
+    isEmailConfirmed!: boolean;
+    createdOn!: Date;
+
+    constructor(data?: IAdminCustomerListItem) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.firstName = Data["firstName"];
+            this.lastName = Data["lastName"];
+            this.email = Data["email"];
+            this.phoneNumber = Data["phoneNumber"];
+            this.isActive = Data["isActive"];
+            this.isEmailConfirmed = Data["isEmailConfirmed"];
+            this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
+        }
+    }
+
+    static fromJS(data: any): AdminCustomerListItem {
+        data = typeof data === 'object' ? data : {};
+        let result = new AdminCustomerListItem();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["firstName"] = this.firstName;
+        data["lastName"] = this.lastName;
+        data["email"] = this.email;
+        data["phoneNumber"] = this.phoneNumber;
+        data["isActive"] = this.isActive;
+        data["isEmailConfirmed"] = this.isEmailConfirmed;
+        data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
+        return data;
+    }
+}
+
+export interface IAdminCustomerListItem {
+    id: string | undefined;
+    firstName: string | undefined;
+    lastName: string | undefined;
+    email: string | undefined;
+    phoneNumber: string | undefined;
+    isActive: boolean;
+    isEmailConfirmed: boolean;
+    createdOn: Date;
+}
+
 export class AdminEmployeeDetail implements IAdminEmployeeDetail {
     id!: string | undefined;
     email!: string | undefined;
@@ -31501,6 +31693,62 @@ export interface IPagedDataOfAdminActionAuditDto {
     pageSize: number;
     total: number;
     data: AdminActionAuditDto[] | undefined;
+}
+
+export class PagedDataOfAdminCustomerListItem implements IPagedDataOfAdminCustomerListItem {
+    pageNumber!: number;
+    pageSize!: number;
+    total!: number;
+    data!: AdminCustomerListItem[] | undefined;
+
+    constructor(data?: IPagedDataOfAdminCustomerListItem) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.pageNumber = Data["pageNumber"];
+            this.pageSize = Data["pageSize"];
+            this.total = Data["total"];
+            if (Array.isArray(Data["data"])) {
+                this.data = [] as any;
+                for (let item of Data["data"])
+                    this.data!.push(AdminCustomerListItem.fromJS(item));
+            }
+        }
+    }
+
+    static fromJS(data: any): PagedDataOfAdminCustomerListItem {
+        data = typeof data === 'object' ? data : {};
+        let result = new PagedDataOfAdminCustomerListItem();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["pageNumber"] = this.pageNumber;
+        data["pageSize"] = this.pageSize;
+        data["total"] = this.total;
+        if (Array.isArray(this.data)) {
+            data["data"] = [];
+            for (let item of this.data)
+                data["data"].push(item ? item.toJSON() : undefined as any);
+        }
+        return data;
+    }
+}
+
+export interface IPagedDataOfAdminCustomerListItem {
+    pageNumber: number;
+    pageSize: number;
+    total: number;
+    data: AdminCustomerListItem[] | undefined;
 }
 
 export class PagedDataOfAdminEmployeeListItem implements IPagedDataOfAdminEmployeeListItem {

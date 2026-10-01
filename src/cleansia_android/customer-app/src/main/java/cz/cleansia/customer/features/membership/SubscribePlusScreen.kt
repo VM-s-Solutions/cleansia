@@ -55,6 +55,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -146,14 +148,20 @@ fun SubscribePlusScreen(
         return
     }
 
+    // The sticky bar's measured height, so the scroll content ends where the bar begins at any
+    // disclosure length, font scale and nav-bar mode. A fixed reservation either fell short of a
+    // two-line disclosure over 3-button navigation or left a blank band under a short one.
+    var ctaBarHeight by remember { mutableStateOf(0.dp) }
+    val density = LocalDensity.current
+
     Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        // Scrollable content sits behind the sticky CTA bar; we add bottom
-        // padding equal to the bar height so the last perk doesn't get hidden.
+        // Scrollable content sits behind the sticky CTA bar and is padded by its height so the last
+        // perk doesn't get hidden.
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(bottom = 140.dp),
+                .padding(bottom = ctaBarHeight),
         ) {
             HeroBlock(
                 onBack = onBack,
@@ -228,7 +236,9 @@ fun SubscribePlusScreen(
         // Sticky CTA bar — sits above the navigation bar, on a contrasting
         // surface so the button is always visible regardless of scroll position.
         StickyCtaBar(
-            modifier = Modifier.align(Alignment.BottomCenter),
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .onSizeChanged { ctaBarHeight = with(density) { it.height.toDp() } },
             ctaLabel = if (trialDays > 0) {
                 stringResource(R.string.membership_cta_start_trial)
             } else {
@@ -673,7 +683,7 @@ private fun StickyCtaBar(
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.surface)
             .windowInsetsPadding(WindowInsets.navigationBars)
-            .padding(horizontal = 20.dp, vertical = 14.dp),
+            .padding(start = 20.dp, top = 14.dp, end = 20.dp, bottom = 12.dp),
     ) {
         Box(
             modifier = Modifier

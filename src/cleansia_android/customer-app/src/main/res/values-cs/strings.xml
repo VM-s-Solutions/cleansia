@@ -116,6 +116,9 @@
     <string name="home_upsell_referral_top">Pozvěte kamaráda</string>
     <string name="home_upsell_referral_title">Oba získáte 150 bodů po jeho prvním dokončeném úklidu</string>
     <string name="home_upsell_referral_cta">Sdílet můj kód</string>
+    <string name="home_upsell_page_a11y">Nabídka %1$d z %2$d</string>
+    <string name="home_upsell_next">Další nabídka</string>
+    <string name="home_upsell_previous">Předchozí nabídka</string>
     <string name="home_upsell_setup_recurring_top">Výhoda Plus</string>
     <string name="home_upsell_setup_recurring_title">Nastavte si pravidelný úklid — jednou objednat, navždy běží</string>
     <string name="home_upsell_setup_recurring_cta">Nastavit</string>

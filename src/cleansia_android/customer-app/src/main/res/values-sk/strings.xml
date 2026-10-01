@@ -116,6 +116,9 @@
     <string name="home_upsell_referral_top">Pozvite kamaráta</string>
     <string name="home_upsell_referral_title">150 bodov pre oboch po dokončení jeho prvého upratovania</string>
     <string name="home_upsell_referral_cta">Zdieľať môj kód</string>
+    <string name="home_upsell_page_a11y">Ponuka %1$d z %2$d</string>
+    <string name="home_upsell_next">Ďalšia ponuka</string>
+    <string name="home_upsell_previous">Predchádzajúca ponuka</string>
     <string name="home_upsell_setup_recurring_top">Výhoda Plus</string>
     <string name="home_upsell_setup_recurring_title">Nastavte si pravidelné upratovanie — raz objednať, navždy beží</string>
     <string name="home_upsell_setup_recurring_cta">Nastaviť</string>

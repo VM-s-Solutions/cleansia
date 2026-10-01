@@ -6,6 +6,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -64,9 +65,13 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -101,6 +106,7 @@ import cz.cleansia.customer.ui.theme.SuccessText
 import cz.cleansia.customer.ui.theme.WarningStar
 import cz.cleansia.customer.features.main.MainShellBottomClearance
 import cz.cleansia.customer.ui.components.statusBarFade
+import kotlinx.coroutines.launch
 
 /* ── Presentation models ── */
 
@@ -617,32 +623,49 @@ private fun SmartUpsellCarousel(
         }
     }
 
-    val pagerState = rememberPagerState(pageCount = { slides.size })
-
-    // Auto-rotate every 6s. The previous version keyed the LaunchedEffect on
-    // `slides.size`, `currentPage`, AND `isScrollInProgress` — which meant
-    // every async state arrival (membership refresh, order prefetch, the
-    // animateScrollToPage call itself flipping isScrollInProgress) cancelled
-    // the in-flight delay and the timer never got to fire.
-    //
-    // Fix: a single long-lived loop keyed only on `slides.size`. The loop
-    // reads `currentPage` + `isScrollInProgress` from inside (snapshot reads)
-    // so they don't act as cancellation triggers. Pause is implemented by
-    // skipping the advance when the user is mid-drag — the next iteration
-    // waits another 6s and tries again.
+    // The carousel loops: a bounded run of virtual pages, each showing slides[page mod n], opened in
+    // the middle on slide 0, so a swipe past the last slide lands on the first and there is no edge to
+    // rubber-band on. Bounded rather than Int.MAX_VALUE so TalkBack's scroll range stays sane. iOS
+    // gets the same loop from sentinel clones, because TabView's page style is not lazy.
     val slideCount = slides.size
+    val pagerState = rememberPagerState(initialPage = upsellAnchor(slideCount)) { upsellVirtualCount(slideCount) }
+    val pagerScope = androidx.compose.runtime.rememberCoroutineScope()
+
+    // A slide arriving after first paint (membership, recurring) changes n; re-anchor so the slide on
+    // screen stays the one the customer was looking at.
+    var anchoredCount by remember { mutableStateOf(slideCount) }
+    androidx.compose.runtime.LaunchedEffect(slideCount) {
+        if (anchoredCount != slideCount) {
+            val target = upsellReanchor(pagerState.currentPage, anchoredCount, slideCount)
+            anchoredCount = slideCount
+            pagerState.scrollToPage(target)
+        }
+    }
+
+    // Auto-advance every 6s, always forward. It stops for the rest of this Home visit once the
+    // customer swipes or taps (WCAG 2.2.2: moving content they can stop), and never runs under
+    // TalkBack or with animations removed. One long-lived loop keyed on n alone: every input it
+    // reads is a snapshot read inside it, so a state arrival does not cancel the pending delay.
+    var userInteracted by remember { mutableStateOf(false) }
+    val dragged by pagerState.interactionSource.collectIsDraggedAsState()
+    androidx.compose.runtime.LaunchedEffect(dragged) {
+        if (dragged) userInteracted = true
+    }
+    val context = androidx.compose.ui.platform.LocalContext.current
     val autoRotateMs = 6_000L
     androidx.compose.runtime.LaunchedEffect(slideCount) {
         if (slideCount <= 1) return@LaunchedEffect
         while (true) {
             kotlinx.coroutines.delay(autoRotateMs)
-            if (!pagerState.isScrollInProgress) {
-                val next = (pagerState.currentPage + 1) % slideCount
-                pagerState.animateScrollToPage(next)
+            if (userInteracted) return@LaunchedEffect
+            if (!pagerState.isScrollInProgress && upsellAutoAdvanceAllowed(context)) {
+                pagerState.animateScrollToPage(pagerState.currentPage + 1)
             }
-            // If isScrollInProgress was true, we just skip this advance and
-            // wait another 6s — gives the user time to settle their gesture.
         }
+    }
+    val goToPage: (Int) -> Unit = { page ->
+        userInteracted = true
+        pagerScope.launch { pagerState.animateScrollToPage(page) }
     }
 
     Column {
@@ -655,18 +678,42 @@ private fun SmartUpsellCarousel(
             state = pagerState,
             pageSpacing = 0.dp,
         ) { page ->
-            UpsellSlideCard(slide = slides[page])
+            val logical = upsellLogical(page, slideCount)
+            val slide = slides[logical]
+            val position = stringResource(R.string.home_upsell_page_a11y, logical + 1, slideCount)
+            val nextLabel = stringResource(R.string.home_upsell_next)
+            val previousLabel = stringResource(R.string.home_upsell_previous)
+            UpsellSlideCard(
+                slide = slide.copy(
+                    onClick = {
+                        userInteracted = true
+                        slide.onClick()
+                    },
+                ),
+                modifier = Modifier.semantics {
+                    stateDescription = position
+                    if (slideCount > 1) {
+                        customActions = listOf(
+                            CustomAccessibilityAction(nextLabel) { goToPage(page + 1); true },
+                            CustomAccessibilityAction(previousLabel) { goToPage(page - 1); true },
+                        )
+                    }
+                },
+            )
         }
         // Dot indicator — active segment grows wider, no fill animation.
-        // Hidden when there's only one slide (no swipe affordance needed).
+        // Hidden when there's only one slide (no swipe affordance needed). Silent to TalkBack: the
+        // card states its own position.
         if (slides.size > 1) {
             Spacer(Modifier.height(10.dp))
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clearAndSetSemantics {},
                 horizontalArrangement = Arrangement.Center,
             ) {
                 repeat(slides.size) { idx ->
-                    val selected = pagerState.currentPage == idx
+                    val selected = upsellLogical(pagerState.currentPage, slideCount) == idx
                     val width by animateDpAsState(
                         targetValue = if (selected) 24.dp else 8.dp,
                         label = "upsell-dot-$idx",
@@ -687,13 +734,43 @@ private fun SmartUpsellCarousel(
     }
 }
 
+/**
+ * The loop's page arithmetic, top-level so it is testable. n slides become n × 1000 virtual pages
+ * (none when there is nothing to loop), opened on a page in the middle that shows slide 0.
+ */
+internal fun upsellVirtualCount(n: Int): Int = if (n > 1) n * 1000 else n
+
+internal fun upsellAnchor(n: Int): Int {
+    if (n <= 1) return 0
+    val middle = upsellVirtualCount(n) / 2
+    return middle - middle.mod(n)
+}
+
+internal fun upsellLogical(page: Int, n: Int): Int = if (n <= 0) 0 else page.mod(n)
+
+/** The page to jump to when n changes, keeping the slide on screen (or the last one, if it left). */
+internal fun upsellReanchor(page: Int, oldCount: Int, newCount: Int): Int =
+    upsellAnchor(newCount) + minOf(upsellLogical(page, oldCount), (newCount - 1).coerceAtLeast(0))
+
+/** Auto-advance is moving content: never under TalkBack, never with animations removed. */
+private fun upsellAutoAdvanceAllowed(context: android.content.Context): Boolean {
+    val a11y = context.getSystemService(android.view.accessibility.AccessibilityManager::class.java)
+    if (a11y?.isTouchExplorationEnabled == true) return false
+    val animatorScale = android.provider.Settings.Global.getFloat(
+        context.contentResolver,
+        android.provider.Settings.Global.ANIMATOR_DURATION_SCALE,
+        1f,
+    )
+    return animatorScale > 0f
+}
+
 @Composable
-private fun UpsellSlideCard(slide: UpsellSlide) {
+private fun UpsellSlideCard(slide: UpsellSlide, modifier: Modifier = Modifier) {
     // Outer padding lives on the slide (not the pager) so each page snaps
     // full-width with no peek-ahead from neighbors. 20dp matches the
     // horizontal gutter used elsewhere on the home tab.
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 20.dp)
             .height(180.dp)

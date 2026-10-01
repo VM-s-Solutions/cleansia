@@ -117,6 +117,9 @@
     <string name="home_upsell_referral_top">Refer a friend</string>
     <string name="home_upsell_referral_title">You both get 150 points after their first completed cleaning</string>
     <string name="home_upsell_referral_cta">Share my code</string>
+    <string name="home_upsell_page_a11y">Offer %1$d of %2$d</string>
+    <string name="home_upsell_next">Next offer</string>
+    <string name="home_upsell_previous">Previous offer</string>
     <string name="home_upsell_setup_recurring_top">Plus perk</string>
     <string name="home_upsell_setup_recurring_title">Set up a recurring cleaning — book once, run forever</string>
     <string name="home_upsell_setup_recurring_cta">Set one up</string>

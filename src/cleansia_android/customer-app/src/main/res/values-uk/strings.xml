@@ -116,6 +116,9 @@
     <string name="home_upsell_referral_top">Запросіть друга</string>
     <string name="home_upsell_referral_title">По 150 балів після першого завершеного прибирання друга</string>
     <string name="home_upsell_referral_cta">Поділитися кодом</string>
+    <string name="home_upsell_page_a11y">Пропозиція %1$d з %2$d</string>
+    <string name="home_upsell_next">Наступна пропозиція</string>
+    <string name="home_upsell_previous">Попередня пропозиція</string>
     <string name="home_upsell_setup_recurring_top">Перевага Plus</string>
     <string name="home_upsell_setup_recurring_title">Налаштуйте регулярне прибирання — замов один раз, працює завжди</string>
     <string name="home_upsell_setup_recurring_cta">Налаштувати</string>

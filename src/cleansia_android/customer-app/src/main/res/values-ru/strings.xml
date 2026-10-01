@@ -116,6 +116,9 @@
     <string name="home_upsell_referral_top">Пригласите друга</string>
     <string name="home_upsell_referral_title">Обоим по 150 баллов после его первой завершённой уборки</string>
     <string name="home_upsell_referral_cta">Поделиться кодом</string>
+    <string name="home_upsell_page_a11y">Предложение %1$d из %2$d</string>
+    <string name="home_upsell_next">Следующее предложение</string>
+    <string name="home_upsell_previous">Предыдущее предложение</string>
     <string name="home_upsell_setup_recurring_top">Преимущество Plus</string>
     <string name="home_upsell_setup_recurring_title">Настройте регулярную уборку — закажите один раз, работает всегда</string>
     <string name="home_upsell_setup_recurring_cta">Настроить</string>

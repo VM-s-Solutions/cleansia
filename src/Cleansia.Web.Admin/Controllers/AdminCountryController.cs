@@ -24,6 +24,17 @@ public class AdminCountryController(IMediator mediator) : ApiController(mediator
         return await Mediator.Send(new GetCountryOverview.Request(), cancellationToken);
     }
 
+    [HttpGet("service-area-overview")]
+    [Permission(Policy.CanViewServiceCities)]
+    [ProducesResponseType(typeof(IEnumerable<ServiceAreaCountryDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IEnumerable<ServiceAreaCountryDto>> GetServiceAreaOverview(CancellationToken cancellationToken)
+    {
+        return await Mediator.Send(new GetServiceAreaOverview.Request(), cancellationToken);
+    }
+
     [HttpGet("details/{countryId}")]
     [Permission(Policy.CanViewCountries)]
     [ProducesResponseType(typeof(CountryDetailDto), StatusCodes.Status200OK)]

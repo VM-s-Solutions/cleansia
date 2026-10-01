@@ -1783,6 +1783,10 @@ export interface IAdminCountryClient {
     /**
      * @return OK
      */
+    serviceAreaOverview(): Observable<ServiceAreaCountryDto[]>;
+    /**
+     * @return OK
+     */
     details(countryId: string): Observable<CountryDetailDto>;
     /**
      * @param body (optional) 
@@ -1875,6 +1879,85 @@ export class AdminCountryClient implements IAdminCountryClient {
                 result200 = [] as any;
                 for (let item of resultData200)
                     result200!.push(CountryListItem.fromJS(item));
+            }
+            else {
+                result200 = null as any;
+            }
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @return OK
+     */
+    serviceAreaOverview(): Observable<ServiceAreaCountryDto[]> {
+        let url = this.baseUrl + "/api/AdminCountry/service-area-overview";
+        url = url.replace(/[?&]$/, "");
+
+        let options : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processServiceAreaOverview(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processServiceAreaOverview(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<ServiceAreaCountryDto[]>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<ServiceAreaCountryDto[]>;
+        }));
+    }
+
+    protected processServiceAreaOverview(response: HttpResponseBase): Observable<ServiceAreaCountryDto[]> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(ServiceAreaCountryDto.fromJS(item));
             }
             else {
                 result200 = null as any;
@@ -35641,6 +35724,82 @@ export class SendTestEmailResponse implements ISendTestEmailResponse {
 export interface ISendTestEmailResponse {
     messageId: string | undefined;
     recipientEmail: string | undefined;
+}
+
+export class ServiceAreaCountryDto implements IServiceAreaCountryDto {
+    id!: string | undefined;
+    isoCode!: string | undefined;
+    isoAlpha2!: string | undefined;
+    name!: string | undefined;
+    translations!: { [key: string]: Translation; } | undefined;
+    isServiced!: boolean;
+    isDefaultMarket!: boolean;
+    hasConfiguration!: boolean;
+
+    constructor(data?: IServiceAreaCountryDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.id = Data["id"];
+            this.isoCode = Data["isoCode"];
+            this.isoAlpha2 = Data["isoAlpha2"];
+            this.name = Data["name"];
+            if (Data["translations"]) {
+                this.translations = {} as any;
+                for (let key in Data["translations"]) {
+                    if (Data["translations"].hasOwnProperty(key))
+                        (this.translations as any)![key] = Data["translations"][key] ? Translation.fromJS(Data["translations"][key]) : new Translation();
+                }
+            }
+            this.isServiced = Data["isServiced"];
+            this.isDefaultMarket = Data["isDefaultMarket"];
+            this.hasConfiguration = Data["hasConfiguration"];
+        }
+    }
+
+    static fromJS(data: any): ServiceAreaCountryDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new ServiceAreaCountryDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        data["isoCode"] = this.isoCode;
+        data["isoAlpha2"] = this.isoAlpha2;
+        data["name"] = this.name;
+        if (this.translations) {
+            data["translations"] = {};
+            for (let key in this.translations) {
+                if (this.translations.hasOwnProperty(key))
+                    (data["translations"] as any)[key] = this.translations[key] ? this.translations[key].toJSON() : undefined as any;
+            }
+        }
+        data["isServiced"] = this.isServiced;
+        data["isDefaultMarket"] = this.isDefaultMarket;
+        data["hasConfiguration"] = this.hasConfiguration;
+        return data;
+    }
+}
+
+export interface IServiceAreaCountryDto {
+    id: string | undefined;
+    isoCode: string | undefined;
+    isoAlpha2: string | undefined;
+    name: string | undefined;
+    translations: { [key: string]: Translation; } | undefined;
+    isServiced: boolean;
+    isDefaultMarket: boolean;
+    hasConfiguration: boolean;
 }
 
 export class ServiceCityDto implements IServiceCityDto {

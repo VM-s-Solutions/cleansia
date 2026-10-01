@@ -5,6 +5,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { CleansiaSidebarMenuComponent } from './cleansia-sidebar-menu.component';
+import { SidebarMenuItem } from './cleansia-sidebar-menu.models';
 
 describe('CleansiaSidebarMenuComponent — brand rail', () => {
   let fixture: ComponentFixture<CleansiaSidebarMenuComponent>;
@@ -243,3 +244,82 @@ describe('CleansiaSidebarMenuComponent — accessible names', () => {
   });
 });
 
+/**
+ * The admin menu nests routes inside one another (Pay periods and Cash held, Orders and Receivables,
+ * a document group whose first entry repeats the group's own route), so a prefix match lights two
+ * entries at once. The longest matching route wins across the whole tree, the URL is read without its
+ * query, and a group is never lit itself: it opens on the page it contains.
+ */
+describe('CleansiaSidebarMenuComponent — the most specific entry is active', () => {
+  let fixture: ComponentFixture<CleansiaSidebarMenuComponent>;
+
+  const menu = (): SidebarMenuItem[] => [
+    { label: 'sidebar.pay_periods', route: '/pay-periods' },
+    { label: 'sidebar.cash_held', route: '/pay-periods/cash-held' },
+    { label: 'sidebar.orders', route: '/order-management' },
+    { label: 'sidebar.receivables', route: '/order-management/receivables' },
+    {
+      label: 'sidebar.employee_documents',
+      route: '/employee-documents',
+      children: [
+        { label: 'sidebar.employee_document_requirements', route: '/employee-documents' },
+        { label: 'sidebar.employee_document_deletion_requests', route: '/employee-documents/deletion-requests' },
+      ],
+    },
+  ];
+
+  const labelOf = (li: Element) => li.querySelector('.menu-item-label')?.textContent?.trim();
+  const active = () =>
+    Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('.menu-item--active')).map(labelOf);
+
+  async function render(url: string): Promise<void> {
+    await TestBed.configureTestingModule({
+      imports: [CleansiaSidebarMenuComponent, TranslateModule.forRoot()],
+      providers: [provideRouter([])],
+    }).compileComponents();
+
+    Object.defineProperty(window, 'innerWidth', { value: 1280, configurable: true });
+    fixture = TestBed.createComponent(CleansiaSidebarMenuComponent);
+    fixture.componentInstance.onResize();
+    fixture.componentInstance.currentRoute.set(url);
+    fixture.componentRef.setInput('menuItems', menu());
+    fixture.detectChanges();
+  }
+
+  it('lights only Cash held on its page, not Pay periods as well', async () => {
+    await render('/pay-periods/cash-held');
+
+    expect(active()).toEqual(['sidebar.cash_held']);
+  });
+
+  it('lights only Receivables on its page, not Orders as well', async () => {
+    await render('/order-management/receivables');
+
+    expect(active()).toEqual(['sidebar.receivables']);
+  });
+
+  it('lights Orders on an order detail page', async () => {
+    await render('/order-management/123');
+
+    expect(active()).toEqual(['sidebar.orders']);
+  });
+
+  it('lights the entry when the URL carries a query string', async () => {
+    await render('/pay-periods?periodId=7');
+
+    expect(active()).toEqual(['sidebar.pay_periods']);
+  });
+
+  it('never lights a group, and opens the group that holds the active page', async () => {
+    await render('/employee-documents');
+
+    const group = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('.menu-item')).find(
+      (li) => labelOf(li) === 'sidebar.employee_documents'
+    ) as HTMLElement;
+
+    expect(group.classList).not.toContain('menu-item--active');
+    expect(group.getAttribute('aria-current')).toBeNull();
+    expect(group.querySelector('.sub-menu')).not.toBeNull();
+    expect(active()).toEqual(['sidebar.employee_document_requirements']);
+  });
+});

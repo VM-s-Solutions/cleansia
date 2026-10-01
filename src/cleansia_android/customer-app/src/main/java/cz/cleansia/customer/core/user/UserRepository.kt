@@ -134,7 +134,11 @@ class UserRepository @Inject constructor(
                     id = userId,
                     firstName = firstName,
                     lastName = lastName,
-                    phoneNumber = phoneNumber?.ifBlank { null },
+                    // Never null: the command's PhoneNumber is a non-nullable reference type, so an
+                    // omitted member (explicitNulls = false drops a null) is refused by the model binder
+                    // before the handler runs. A blank is what "nothing to say" looks like there, and the
+                    // handler then leaves the stored phone alone.
+                    phoneNumber = phoneNumber?.takeUnless { it.isBlank() }.orEmpty(),
                     birthDate = parsedBirthDate,
                     languageCode = languageCode,
                     photo = photo?.let {

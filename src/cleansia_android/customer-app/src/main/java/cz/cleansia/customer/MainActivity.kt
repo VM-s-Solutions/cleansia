@@ -29,6 +29,7 @@ import cz.cleansia.core.settings.AppLocale
 import cz.cleansia.customer.core.notifications.NotificationDeepLink
 import cz.cleansia.customer.core.settings.AppSettings
 import cz.cleansia.customer.core.settings.AppSettingsRepository
+import cz.cleansia.customer.core.settings.LanguageSessionObserver
 import cz.cleansia.customer.core.settings.ThemePreference
 import cz.cleansia.customer.navigation.CleansiaNavHost
 import cz.cleansia.customer.ui.theme.CleansiaTheme
@@ -54,6 +55,9 @@ class MainActivity : androidx.appcompat.app.AppCompatActivity() {
      * start; see [PushTokenSessionObserver] for full rationale.
      */
     @Inject lateinit var pushTokenSessionObserver: PushTokenSessionObserver
+
+    /** Re-states a chosen display language on the server once per session start. */
+    @Inject lateinit var languageSessionObserver: LanguageSessionObserver
 
     /**
      * Notification-tap deep link, in typed-route form (e.g.
@@ -95,6 +99,7 @@ class MainActivity : androidx.appcompat.app.AppCompatActivity() {
         // registered on every cold start with an existing session, not
         // only on discrete login / rotation events.
         pushTokenSessionObserver.attach(lifecycleScope)
+        languageSessionObserver.attach(lifecycleScope)
         setContent {
             val settings by settingsRepository.settings
                 .collectAsStateWithLifecycle(initialValue = AppSettings())

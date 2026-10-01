@@ -4,7 +4,7 @@ import { provideRouter } from '@angular/router';
 import { CleansiaBrandNameComponent } from '@cleansia/components/cleansia-brand-name';
 import { CleansiaLanguageSwitcherComponent } from '@cleansia/components/cleansia-language-switcher';
 import { CleansiaMarketSwitcherComponent } from '@cleansia/components/cleansia-market-switcher';
-import { CustomerAuthService } from '@cleansia/customer-services';
+import { CustomerAuthService, MarketListItem } from '@cleansia/customer-services';
 import {
   selectCustomerCurrentUser,
   selectHasMarketChoice,
@@ -12,7 +12,7 @@ import {
   selectMarkets,
 } from '@cleansia/customer-stores';
 import { DialogService, ThemeService } from '@cleansia/services';
-import { provideMockStore } from '@ngrx/store/testing';
+import { MockStore, provideMockStore } from '@ngrx/store/testing';
 import { TranslateModule } from '@ngx-translate/core';
 import { of } from 'rxjs';
 import { CleansiaCustomerNavbarComponent } from './customer-navbar.component';
@@ -35,6 +35,10 @@ class MarketSwitcherStubComponent {
   readonly marketChange = output<string>();
 }
 
+function market(isoCode: string): MarketListItem {
+  return MarketListItem.fromJS({ countryId: `${isoCode}-id`, isoCode, currencyCode: 'CZK' });
+}
+
 /**
  * Below 1360px the sheet is the only navigation (jsdom's window is 1024 wide). It is a disclosure
  * the burger owns: its state is announced on the burger's focusable inner button, the page is
@@ -42,8 +46,10 @@ class MarketSwitcherStubComponent {
  */
 describe('CleansiaCustomerNavbarComponent (mobile sheet)', () => {
   let fixture: ComponentFixture<CleansiaCustomerNavbarComponent>;
+  const isLoggedIn = signal(true);
 
   beforeEach(async () => {
+    isLoggedIn.set(true);
     await TestBed.configureTestingModule({
       imports: [CleansiaCustomerNavbarComponent, TranslateModule.forRoot()],
       providers: [
@@ -56,7 +62,7 @@ describe('CleansiaCustomerNavbarComponent (mobile sheet)', () => {
             { selector: selectMarket, value: null },
           ],
         }),
-        { provide: CustomerAuthService, useValue: { isLoggedIn: signal(true), logout: () => of(undefined) } },
+        { provide: CustomerAuthService, useValue: { isLoggedIn, logout: () => of(undefined) } },
         { provide: DialogService, useValue: { confirmTranslated: () => of(false) } },
         { provide: ThemeService, useValue: { currentTheme: signal('light'), toggleTheme: jest.fn() } },
       ],
@@ -95,6 +101,22 @@ describe('CleansiaCustomerNavbarComponent (mobile sheet)', () => {
 
   function open(): void {
     burger().click();
+    fixture.detectChanges();
+  }
+
+  function sheetLinks(): HTMLAnchorElement[] {
+    return Array.from(sheet()?.querySelectorAll('a') ?? []);
+  }
+
+  function linkTo(href: string): HTMLAnchorElement | undefined {
+    return sheetLinks().find((link) => link.getAttribute('href') === href);
+  }
+
+  function useMarkets(markets: MarketListItem[]): void {
+    const store = TestBed.inject(MockStore);
+    store.overrideSelector(selectMarkets, markets);
+    store.overrideSelector(selectHasMarketChoice, selectHasMarketChoice.projector(markets));
+    store.refreshState();
     fixture.detectChanges();
   }
 
@@ -170,5 +192,46 @@ describe('CleansiaCustomerNavbarComponent (mobile sheet)', () => {
 
     expect(burger().getAttribute('aria-label')).toBe('nav.close_menu');
     expect(sheet()?.getAttribute('aria-label')).toBe('nav.section_menu');
+  });
+
+  it('signed in, opens on the order button and lists Cleansia Plus once', () => {
+    open();
+
+    expect(sheetLinks()[0].getAttribute('href')).toBe('/order');
+    const plus = sheetLinks().filter((link) => ['/plus', '/membership'].includes(link.getAttribute('href') ?? ''));
+    expect(plus.map((link) => link.getAttribute('href'))).toEqual(['/membership']);
+    expect(linkTo('/profile')).toBeDefined();
+  });
+
+  it('signed out, offers sign-in and registration side by side and no account group', () => {
+    isLoggedIn.set(false);
+    fixture.detectChanges();
+    open();
+
+    const login = linkTo('/login');
+    const register = linkTo('/register');
+    expect(login?.textContent?.trim()).toBe('nav.login_short');
+    expect(register?.textContent?.trim()).toBe('nav.register');
+    expect(login?.parentElement).toBe(register?.parentElement);
+    expect(login?.parentElement?.classList).toContain('customer-navbar__group--auth');
+
+    for (const href of ['/rewards', '/membership/recurring', '/disputes', '/profile']) {
+      expect(linkTo(href)).toBeUndefined();
+    }
+    expect(sheet()?.textContent).not.toContain('nav.section_account');
+    expect(sheet()?.textContent).not.toContain('nav.logout');
+  });
+
+  it('shows the market pill beside the language pill only with two or more markets', () => {
+    useMarkets([market('CZE')]);
+    open();
+    const prefs = (): HTMLElement | null | undefined => sheet()?.querySelector('.customer-navbar__prefs');
+
+    expect(prefs()?.querySelector('cleansia-language-switcher')).toBeTruthy();
+    expect(prefs()?.querySelector('cleansia-market-switcher')).toBeNull();
+
+    useMarkets([market('CZE'), market('SVK')]);
+
+    expect(prefs()?.querySelector('cleansia-market-switcher')).toBeTruthy();
   });
 });

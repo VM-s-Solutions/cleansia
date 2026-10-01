@@ -460,31 +460,6 @@ $nav-band: 96px;
   }
 
   // =============================
-  // Mobile menu
-  // =============================
-  &__mobile-link {
-    color: var(--text-color-secondary, #64748b);
-    font-weight: 500;
-    cursor: pointer;
-    padding: 0.5rem;
-    border-radius: var(--border-radius, 6px);
-    transition: all 0.15s ease;
-    text-decoration: none;
-
-    &:hover {
-      color: var(--text-color, #1e293b);
-      background: var(--surface-hover, #f1f5f9);
-    }
-
-    &--active,
-    &--active:hover {
-      color: $primary;
-      background: var(--primary-50, #f0f9ff);
-      font-weight: 600;
-    }
-  }
-
-  // =============================
   // Language switcher override
   // =============================
   cleansia-language-switcher {
@@ -549,12 +524,6 @@ body:has(.customer-navbar) .cleansia-dev-banner.cleansia-dev-banner.cleansia-dev
     &__link--active,
     &__link--active:hover {
       color: #38bdf8;
-    }
-
-    &__mobile-link--active,
-    &__mobile-link--active:hover {
-      color: #38bdf8;
-      background: rgba(56, 189, 248, 0.1);
     }
 
     &__dropdown {
@@ -751,7 +720,8 @@ body:has(.customer-navbar) .cleansia-dev-banner.cleansia-dev-banner.cleansia-dev
 
 // Drawn like `__icon-btn`. Four classes deep because PrimeNG's outlined-secondary
 // state rules carry as many and are injected after this sheet.
-.customer-navbar .customer-navbar__hamburger .p-button.p-button-outlined {
+.customer-navbar .customer-navbar__hamburger .p-button.p-button-outlined,
+.customer-navbar .customer-navbar__prefs .p-button.p-button-outlined {
   width: 44px;
   height: 44px;
   background: transparent;
@@ -768,7 +738,8 @@ body:has(.customer-navbar) .cleansia-dev-banner.cleansia-dev-banner.cleansia-dev
   }
 }
 
-:root.dark-mode .customer-navbar .customer-navbar__hamburger .p-button.p-button-outlined {
+:root.dark-mode .customer-navbar .customer-navbar__hamburger .p-button.p-button-outlined,
+:root.dark-mode .customer-navbar .customer-navbar__prefs .p-button.p-button-outlined {
   &,
   &:not(:disabled):hover,
   &:not(:disabled):active {
@@ -798,20 +769,11 @@ body:has(.customer-navbar) .cleansia-dev-banner.cleansia-dev-banner.cleansia-dev
   }
 }
 
-// The drawer is the ONLY navigation below 1360px now, not just on phones, so
-// its rows have to be real targets rather than 33px text. `padding: 0.5rem` is
-// 7px at this root size, which is what left them short.
-.customer-navbar__mobile-link {
-  display: flex;
-  align-items: center;
-  min-height: 44px;
-}
-
 // =============================================================================
 // The mobile sheet
 // =============================================================================
-// A signed-in menu is about 19 rows, taller than a phone, so the sheet is
-// bounded by the screen and scrolls inside itself while the page stays locked.
+// A signed-in menu is taller than a small phone, so the sheet is bounded by
+// the screen and scrolls inside itself while the page stays locked.
 html.cl-menu-open,
 body.cl-menu-open {
   overflow: hidden;
@@ -846,6 +808,9 @@ html.cl-menu-open .customer-navbar {
   border: 1px solid var(--cl-border);
   box-shadow: 0 10px 30px rgba(12, 74, 110, 0.1);
   padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   animation: customer-navbar-sheet 160ms ease-out;
 
   @media (min-width: 640px) {
@@ -857,6 +822,158 @@ html.cl-menu-open .customer-navbar {
   @media (min-width: 900.02px) {
     right: 40px;
   }
+}
+
+// Two classes: `.cl-btn` is declared later in the bundle, in the page styles.
+.customer-navbar__sheet .customer-navbar__sheet-cta {
+  min-height: 48px;
+}
+
+.customer-navbar__account {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 0 4px;
+
+  // --cl-surface, not white: --cl-heading turns sky-300 after dark.
+  .customer-navbar__avatar {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    font-size: 15px;
+    color: var(--cl-surface);
+  }
+}
+
+.customer-navbar__account-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.customer-navbar__account-name,
+.customer-navbar__account-email {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.customer-navbar__account-name {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--cl-heading);
+}
+
+.customer-navbar__account-email {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--cl-muted);
+}
+
+.customer-navbar__group,
+.customer-navbar__prefs {
+  padding-top: 12px;
+  border-top: 1px solid var(--cl-border);
+}
+
+.customer-navbar__group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  &--auth {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+}
+
+.customer-navbar__group-label {
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--cl-muted);
+}
+
+.customer-navbar__mobile-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 0 12px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--cl-body);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.16s ease, color 0.16s ease;
+
+  i {
+    width: 20px;
+    flex-shrink: 0;
+    font-size: 16px;
+    color: var(--cl-heading);
+  }
+
+  &:hover {
+    background: var(--cl-tint);
+    color: var(--cl-heading);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--cl-accent);
+    outline-offset: -2px;
+  }
+
+  &--active,
+  &--active:hover {
+    background: var(--cl-tint-strong);
+    color: var(--cl-heading);
+  }
+
+  &--danger,
+  &--danger:hover {
+    color: var(--cl-danger);
+
+    i {
+      color: var(--cl-danger);
+    }
+  }
+
+  &--danger:hover {
+    background: var(--cl-danger-soft);
+  }
+}
+
+.customer-navbar__sheet .customer-navbar__auth-btn {
+  min-height: 48px;
+  padding: 0 16px;
+}
+
+// Tinted, not filled: the booking action above is the sheet's one primary.
+.customer-navbar__sheet .customer-navbar__auth-btn--soft {
+  background: var(--cl-tint-strong);
+  color: var(--cl-heading);
+  box-shadow: none;
+
+  &:hover,
+  &:active {
+    background: var(--cl-tint-strong);
+    color: var(--cl-heading);
+    box-shadow: inset 0 0 0 1px var(--cl-accent-soft);
+  }
+}
+
+.customer-navbar__prefs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
 }
 
 @keyframes customer-navbar-fade {

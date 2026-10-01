@@ -24,7 +24,6 @@ import {
   Router,
   RouterModule,
 } from '@angular/router';
-import { FormsModule } from '@angular/forms';
 import { CustomerAuthService } from '@cleansia/customer-services';
 import {
   loadCustomerUser,
@@ -39,7 +38,6 @@ import { TranslateModule } from '@ngx-translate/core';
 import { Store } from '@ngrx/store';
 import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
-import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { Subject, takeUntil } from 'rxjs';
 
 // Entry-point imports — see the note in app.ts. → T-0682
@@ -69,11 +67,9 @@ const NAV_DESKTOP_MIN_WIDTH = 1360;
   standalone: true,
   imports: [
     RouterModule,
-    FormsModule,
     TranslateModule,
     ButtonModule,
     AvatarModule,
-    ToggleSwitchModule,
     CleansiaBrandNameComponent,
     CleansiaButtonComponent,
     CleansiaLanguageSwitcherComponent,

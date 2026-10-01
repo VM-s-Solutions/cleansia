@@ -216,113 +216,99 @@
     <nav
       #sheet
       id="cl-mobile-nav"
-      class="customer-navbar__sheet flex flex-column gap-3"
+      class="customer-navbar__sheet"
       [attr.aria-label]="'nav.section_menu' | translate"
     >
-      <a class="customer-navbar__mobile-link" routerLink="/" routerLinkActive="customer-navbar__mobile-link--active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeMenus()">
-        <i class="pi pi-home mr-2"></i>
-        {{ 'nav.home' | translate }}
-      </a>
-      <a class="customer-navbar__mobile-link" routerLink="/services" routerLinkActive="customer-navbar__mobile-link--active" (click)="closeMenus()">
-        <i class="pi pi-list mr-2"></i>
-        {{ 'nav.services' | translate }}
-      </a>
-      @if (isLoggedIn()) {
-        <a class="customer-navbar__mobile-link" routerLink="/orders" routerLinkActive="customer-navbar__mobile-link--active" (click)="closeMenus()">
-          <i class="pi pi-shopping-bag mr-2"></i>
-          {{ 'nav.my_orders' | translate }}
-        </a>
-      } @else {
-        <a class="customer-navbar__mobile-link" routerLink="/track-order" routerLinkActive="customer-navbar__mobile-link--active" (click)="closeMenus()">
-          <i class="pi pi-search mr-2"></i>
-          {{ 'nav.track_order' | translate }}
-        </a>
-      }
-      <a class="customer-navbar__mobile-link" routerLink="/" fragment="why-us" (click)="closeMenus()">
-        <i class="pi pi-question-circle mr-2"></i>
-        {{ 'nav.how_it_works' | translate }}
-      </a>
-      <a class="customer-navbar__mobile-link" [routerLink]="plusLink()" routerLinkActive="customer-navbar__mobile-link--active" (click)="closeMenus()">
-        <i class="pi pi-bookmark-fill mr-2"></i>
-        {{ 'nav.plus' | translate }}
-      </a>
-      <a class="customer-navbar__mobile-link" routerLink="/order" routerLinkActive="customer-navbar__mobile-link--active" (click)="closeMenus()">
-        <i class="pi pi-calendar-plus mr-2"></i>
+      <a class="cl-btn customer-navbar__sheet-cta" routerLink="/order" (click)="closeMenus()">
         {{ 'nav.book_now' | translate }}
       </a>
 
-      <div class="border-top-1 border-300 mt-2 pt-3 flex flex-column gap-3">
-        <div class="customer-navbar__mobile-link flex align-items-center justify-content-between" style="cursor: default">
-          <span class="flex align-items-center">
-            <i [class]="isDarkMode() ? 'pi pi-moon mr-2' : 'pi pi-sun mr-2'"></i>
-            {{ (isDarkMode() ? 'nav.theme_dark' : 'nav.theme_light') | translate }}
-          </span>
-          <p-toggleswitch [ngModel]="isDarkMode()" (onChange)="toggleTheme()" />
-        </div>
-
-        <div class="customer-navbar__mobile-link flex align-items-center justify-content-between" style="cursor: default">
-          <span class="flex align-items-center">
-            <i class="pi pi-globe mr-2"></i>
-            {{ 'nav.language' | translate }}
-          </span>
-          <cleansia-language-switcher variant="globe" />
-        </div>
-
-        @if (hasMarketChoice()) {
-          <div class="customer-navbar__mobile-link flex align-items-center justify-content-between" style="cursor: default">
-            <span class="flex align-items-center">
-              <i class="pi pi-map mr-2"></i>
-              {{ 'nav.market' | translate }}
-            </span>
-            <cleansia-market-switcher
-              variant="pill"
-              [markets]="markets()"
-              [selected]="selectedMarketCode()"
-              (marketChange)="onMarketChange($event)"
-            />
+      @if (isLoggedIn()) {
+        <div class="customer-navbar__account">
+          <span class="customer-navbar__avatar" aria-hidden="true">{{ userInitials() || '?' }}</span>
+          <div class="customer-navbar__account-info">
+            @if (userDisplayName(); as name) {
+              <div class="customer-navbar__account-name">{{ name }}</div>
+            }
+            @if (userEmail(); as email) {
+              <div class="customer-navbar__account-email">{{ email }}</div>
+            }
           </div>
-        }
+        </div>
+      }
 
-        @if (isLoggedIn()) {
-          @if (userDisplayName(); as name) {
-            <div class="flex align-items-center gap-2 p-2 text-700 font-medium">
-              <i class="pi pi-user"></i>
-              <span>{{ name }}</span>
-            </div>
-          }
-          <a class="customer-navbar__mobile-link" routerLink="/profile" (click)="closeMenus()">
-            <i class="pi pi-user mr-2"></i>
-            {{ 'nav.profile' | translate }}
-          </a>
-          <a class="customer-navbar__mobile-link" routerLink="/disputes" (click)="closeMenus()">
-            <i class="pi pi-exclamation-triangle mr-2"></i>
-            {{ 'nav.my_disputes' | translate }}
-          </a>
-          <a class="customer-navbar__mobile-link" routerLink="/membership/recurring" (click)="closeMenus()">
-            <i class="pi pi-replay mr-2"></i>
-            {{ 'nav.my_recurring' | translate }}
-          </a>
-          <a class="customer-navbar__mobile-link" routerLink="/rewards" (click)="closeMenus()">
-            <i class="pi pi-star mr-2"></i>
+      <div class="customer-navbar__group">
+        <a class="customer-navbar__mobile-link" routerLink="/" fragment="why-us" (click)="closeMenus()">
+          <i class="pi pi-question-circle" aria-hidden="true"></i>
+          {{ 'nav.how_it_works' | translate }}
+        </a>
+        <a class="customer-navbar__mobile-link" routerLink="/services" routerLinkActive="customer-navbar__mobile-link--active" (click)="closeMenus()">
+          <i class="pi pi-list" aria-hidden="true"></i>
+          {{ 'nav.services' | translate }}
+        </a>
+        <a class="customer-navbar__mobile-link" [routerLink]="plusLink()" routerLinkActive="customer-navbar__mobile-link--active" (click)="closeMenus()">
+          <i class="pi pi-bookmark-fill" aria-hidden="true"></i>
+          {{ 'nav.plus' | translate }}
+        </a>
+        <a class="customer-navbar__mobile-link" [routerLink]="ordersLink()" routerLinkActive="customer-navbar__mobile-link--active" (click)="closeMenus()">
+          <i class="pi pi-shopping-bag" aria-hidden="true"></i>
+          {{ ordersLabel() | translate }}
+        </a>
+      </div>
+
+      @if (isLoggedIn()) {
+        <div class="customer-navbar__group">
+          <div class="customer-navbar__group-label">{{ 'nav.section_account' | translate }}</div>
+          <a class="customer-navbar__mobile-link" routerLink="/rewards" routerLinkActive="customer-navbar__mobile-link--active" (click)="closeMenus()">
+            <i class="pi pi-star" aria-hidden="true"></i>
             {{ 'nav.my_rewards' | translate }}
           </a>
-          <a class="customer-navbar__mobile-link" routerLink="/plus" (click)="closeMenus()">
-            <i class="pi pi-bookmark-fill mr-2"></i>
-            {{ 'nav.cleansia_plus' | translate }}
+          <a class="customer-navbar__mobile-link" routerLink="/membership/recurring" routerLinkActive="customer-navbar__mobile-link--active" (click)="closeMenus()">
+            <i class="pi pi-replay" aria-hidden="true"></i>
+            {{ 'nav.my_recurring' | translate }}
           </a>
-          <a class="customer-navbar__mobile-link" role="button" tabindex="0" (click)="logout()" (keydown.enter)="logout()">
-            <i class="pi pi-sign-out mr-2"></i>
+          <a class="customer-navbar__mobile-link" routerLink="/disputes" routerLinkActive="customer-navbar__mobile-link--active" (click)="closeMenus()">
+            <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+            {{ 'nav.my_disputes' | translate }}
+          </a>
+          <a class="customer-navbar__mobile-link" routerLink="/profile" routerLinkActive="customer-navbar__mobile-link--active" (click)="closeMenus()">
+            <i class="pi pi-user" aria-hidden="true"></i>
+            {{ 'nav.profile' | translate }}
+          </a>
+          <a class="customer-navbar__mobile-link customer-navbar__mobile-link--danger" role="button" tabindex="0" (click)="logout()" (keydown.enter)="logout()">
+            <i class="pi pi-sign-out" aria-hidden="true"></i>
             {{ 'nav.logout' | translate }}
           </a>
-        } @else {
-          <a class="customer-navbar__mobile-link" routerLink="/login" (click)="closeMenus()">
-            <i class="pi pi-sign-in mr-2"></i>
+        </div>
+      } @else {
+        <div class="customer-navbar__group customer-navbar__group--auth">
+          <a class="cl-btn cl-btn--ghost customer-navbar__auth-btn" routerLink="/login" (click)="closeMenus()">
             {{ 'nav.login_short' | translate }}
           </a>
-          <a class="customer-navbar__mobile-link" routerLink="/register" (click)="closeMenus()">
-            <i class="pi pi-user-plus mr-2"></i>
+          <a class="cl-btn customer-navbar__auth-btn customer-navbar__auth-btn--soft" routerLink="/register" (click)="closeMenus()">
             {{ 'nav.register' | translate }}
           </a>
+        </div>
+      }
+
+      <div class="customer-navbar__prefs">
+        <cleansia-button
+          [icon]="isDarkMode() ? 'pi pi-sun' : 'pi pi-moon'"
+          [style]="'basic-button'"
+          severity="secondary"
+          [outlined]="true"
+          [rounded]="true"
+          [ariaLabel]="(isDarkMode() ? 'nav.theme_light' : 'nav.theme_dark') | translate"
+          (onClick)="toggleTheme()"
+        />
+        <cleansia-language-switcher variant="globe" />
+        @if (hasMarketChoice()) {
+          <cleansia-market-switcher
+            variant="pill"
+            [markets]="markets()"
+            [selected]="selectedMarketCode()"
+            (marketChange)="onMarketChange($event)"
+          />
         }
       </div>
     </nav>

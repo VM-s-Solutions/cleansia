@@ -322,6 +322,40 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      # ── The deploy quiet window (DEV) ─────────────────────────────────────────────────────────────
+      # A DEV deploy restarts every site, and the alert rules those restarts trip would mail the owner
+      # about something the deploy did itself. This alert processing rule removes the action groups from
+      # every alert raised in the resource group while it is in effect: the alerts still fire and stay
+      # visible in Monitor > Alerts, only the mails are suppressed. It lapses on its own 120 minutes from
+      # now, so a cancelled run can never mute DEV for good; close-deploy-quiet-window shortens it once
+      # the deploy is done. The workflow owns the rule, not Bicep, because a provision would reset the
+      # window. Same version-independent `az rest` PUT as the Postgres firewall rule. Prod has none.
+      - name: Open the deploy quiet window (mute alert mails)
+        if: inputs.mode == 'deploy' && inputs.env != 'prod'
+        env:
+          RG: rg-cleansia-${{ matrix.region }}-${{ inputs.env }}
+          RULE: apr-cleansia-${{ matrix.region }}-${{ inputs.env }}-deploy
+        run: |
+          SUB_ID="$(az account show --query id -o tsv)"
+          FROM="$(date -u +%Y-%m-%dT%H:%M:%S)"
+          UNTIL="$(date -u -d '+120 minutes' +%Y-%m-%dT%H:%M:%S)"
+          BODY="$(jq . <<JSON
+          {
+            "location": "Global",
+            "properties": {
+              "scopes": ["/subscriptions/${SUB_ID}/resourceGroups/${RG}"],
+              "actions": [{ "actionType": "RemoveAllActionGroups" }],
+              "schedule": { "effectiveFrom": "${FROM}", "effectiveUntil": "${UNTIL}", "timeZone": "UTC" },
+              "enabled": true
+            }
+          }
+          JSON
+          )"
+          az rest --method put --output none \
+            --url "https://management.azure.com/subscriptions/${SUB_ID}/resourceGroups/${RG}/providers/Microsoft.AlertsManagement/actionRules/${RULE}?api-version=2021-08-08" \
+            --body "$BODY"
+          echo "$RULE: alert mails on $RG muted until $UNTIL UTC"
+
       # fcmSecretProvisioned tracks whether the FIREBASE_SERVICE_ACCOUNT_JSON GitHub secret is set for
       # this Environment. The secret-push step below writes Fcm--ServiceAccountJson to Key Vault in the
       # SAME run, so deriving the Bicep param from the secret's PRESENCE (known here, before both steps)
@@ -1276,3 +1310,55 @@ jobs:
             exit 1
           fi
           echo "all dev sites warm"
+
+  # ===========================================================================================
+  # Close the dev deploy quiet window the provision job opened — after every restarting job, whether
+  # it passed, failed or was cancelled. The rule is re-PUT to lapse 25 minutes from now rather than at
+  # once: an alert tripped during the deploy resolves up to a 15-minute window plus a 5-minute
+  # evaluation later, and its Resolved mail is the deploy's too. Prod has no window.
+  # ===========================================================================================
+
+  close-deploy-quiet-window:
+    name: Close the deploy quiet window
+    needs: [deploy-api, deploy-customer-ssr, build-and-deploy-functions, warm-dev-sites]
+    if: always() && inputs.env != 'prod' && inputs.mode == 'deploy'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    strategy:
+      matrix:
+        region: ["${{ inputs.region }}"]
+    environment: ${{ inputs.githubEnvironment }}
+    steps:
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Let the quiet window lapse in 25 minutes
+        env:
+          RG: rg-cleansia-${{ matrix.region }}-${{ inputs.env }}
+          RULE: apr-cleansia-${{ matrix.region }}-${{ inputs.env }}-deploy
+        run: |
+          SUB_ID="$(az account show --query id -o tsv)"
+          FROM="$(date -u +%Y-%m-%dT%H:%M:%S)"
+          UNTIL="$(date -u -d '+25 minutes' +%Y-%m-%dT%H:%M:%S)"
+          BODY="$(jq . <<JSON
+          {
+            "location": "Global",
+            "properties": {
+              "scopes": ["/subscriptions/${SUB_ID}/resourceGroups/${RG}"],
+              "actions": [{ "actionType": "RemoveAllActionGroups" }],
+              "schedule": { "effectiveFrom": "${FROM}", "effectiveUntil": "${UNTIL}", "timeZone": "UTC" },
+              "enabled": true
+            }
+          }
+          JSON
+          )"
+          az rest --method put --output none \
+            --url "https://management.azure.com/subscriptions/${SUB_ID}/resourceGroups/${RG}/providers/Microsoft.AlertsManagement/actionRules/${RULE}?api-version=2021-08-08" \
+            --body "$BODY"
+          echo "$RULE: alert mails on $RG resume at $UNTIL UTC"

@@ -235,11 +235,12 @@ export const appRoutes: Route[] = [
       ),
   },
   {
-    // The per-CUSTOMER screen, not a loyalty screen. It began as one and kept the name while it grew
-    // a credit balance, a credit ledger and an issue-credit action, at which point the URL an admin
-    // reads in their address bar was describing a third of the page. The Nx library behind it is
-    // still called loyalty-user-detail: renaming that touches the path alias, the project graph and
-    // every import for no reader-visible gain, so it is deliberately left where it is.
+    // The customer list and the per-CUSTOMER screen, not loyalty screens. The detail began as one and
+    // kept the name while it grew a credit balance, a credit ledger and an issue-credit action, at
+    // which point the URL an admin reads in their address bar was describing a third of the page. The
+    // Nx library behind both is still called loyalty-user-detail: renaming that touches the path
+    // alias, the project graph and every import for no reader-visible gain, so it is deliberately
+    // left where it is.
     path: CleansiaAdminRoute.CUSTOMERS,
     canActivate: [adminGuard, permissionGuard],
     data: { permission: Policy.CanViewOrderCustomer },

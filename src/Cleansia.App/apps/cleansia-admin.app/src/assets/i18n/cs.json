@@ -86,6 +86,7 @@
       "membership_plan_edit": "Upravit plán členství",
       "data_protection": "Ochrana údajů",
       "profile": "Můj profil",
+      "customers": "Zákazníci",
       "customer_detail": "Zákazník",
       "audit_log_customers": "Akce zákazníků",
       "audit_log_customer_entry": "Akce zákazníka",
@@ -315,6 +316,7 @@
     "notifications": "Upozornění",
     "profile": "Můj profil",
     "receivables": "Pohledávky",
+    "customers": "Zákazníci",
     "cash_held": "Hotovost u uklízečů"
   },
   "pages": {
@@ -2342,6 +2344,28 @@
           "apply": "Některé limity se nepodařilo uložit"
         }
       }
+    },
+    "customers": {
+      "title": "Zákazníci",
+      "description": "Zákaznické účty vaší společnosti včetně kontaktních údajů",
+      "filters": {
+        "search": "Vyhledávání",
+        "search_placeholder": "Hledat dle jména, e-mailu nebo telefonu",
+        "status": "Stav",
+        "status_active": "Aktivní",
+        "status_inactive": "Neaktivní",
+        "status_all": "Všichni"
+      },
+      "columns": {
+        "name": "Jméno",
+        "email": "E-mail",
+        "phone": "Telefon",
+        "status": "Stav",
+        "email_confirmed": "E-mail ověřen",
+        "created_on": "Vytvořeno"
+      },
+      "no_customers": "Nebyli nalezeni žádní zákazníci",
+      "load_error": "Zákazníky se nepodařilo načíst. Zkuste to prosím znovu."
     },
     "loyalty_user_detail": {
       "title": "Zákazník",

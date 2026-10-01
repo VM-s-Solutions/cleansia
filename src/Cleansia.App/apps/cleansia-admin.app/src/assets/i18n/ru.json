@@ -86,6 +86,7 @@
       "membership_plan_edit": "Редактировать план членства",
       "data_protection": "Защита данных",
       "profile": "Мой профиль",
+      "customers": "Клиенты",
       "customer_detail": "Клиент",
       "audit_log_customers": "Действия клиентов",
       "audit_log_customer_entry": "Действие клиента",
@@ -315,6 +316,7 @@
     "notifications": "Уведомления",
     "profile": "Мой профиль",
     "receivables": "Задолженности",
+    "customers": "Клиенты",
     "cash_held": "Наличные у уборщиков"
   },
   "pages": {
@@ -2342,6 +2344,28 @@
           "apply": "Некоторые пороги не удалось сохранить"
         }
       }
+    },
+    "customers": {
+      "title": "Клиенты",
+      "description": "Учётные записи клиентов вашей компании с контактными данными",
+      "filters": {
+        "search": "Поиск",
+        "search_placeholder": "Искать по имени, электронной почте или телефону",
+        "status": "Статус",
+        "status_active": "Активные",
+        "status_inactive": "Неактивные",
+        "status_all": "Все"
+      },
+      "columns": {
+        "name": "Имя",
+        "email": "Электронная почта",
+        "phone": "Телефон",
+        "status": "Статус",
+        "email_confirmed": "Почта подтверждена",
+        "created_on": "Создано"
+      },
+      "no_customers": "Клиенты не найдены",
+      "load_error": "Не удалось загрузить клиентов. Попробуйте ещё раз."
     },
     "loyalty_user_detail": {
       "title": "Клиент",

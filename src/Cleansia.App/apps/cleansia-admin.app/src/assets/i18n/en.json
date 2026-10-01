@@ -86,6 +86,7 @@
       "membership_plan_edit": "Edit Membership Plan",
       "data_protection": "Data Protection",
       "profile": "My Profile",
+      "customers": "Customers",
       "customer_detail": "Customer",
       "audit_log_customers": "Customer actions",
       "audit_log_customer_entry": "Customer action",
@@ -315,6 +316,7 @@
     "notifications": "Notifications",
     "profile": "My Profile",
     "receivables": "Receivables",
+    "customers": "Customers",
     "cash_held": "Cash held"
   },
   "pages": {
@@ -2342,6 +2344,28 @@
           "apply": "Some thresholds couldn't be saved"
         }
       }
+    },
+    "customers": {
+      "title": "Customers",
+      "description": "Your company's customer accounts with their contact details",
+      "filters": {
+        "search": "Search",
+        "search_placeholder": "Search by name, email or phone",
+        "status": "Status",
+        "status_active": "Active",
+        "status_inactive": "Inactive",
+        "status_all": "All"
+      },
+      "columns": {
+        "name": "Name",
+        "email": "Email",
+        "phone": "Phone",
+        "status": "Status",
+        "email_confirmed": "Email confirmed",
+        "created_on": "Created"
+      },
+      "no_customers": "No customers found",
+      "load_error": "Customers could not be loaded. Please try again."
     },
     "loyalty_user_detail": {
       "title": "Customer",

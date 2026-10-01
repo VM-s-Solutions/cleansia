@@ -86,6 +86,7 @@
       "membership_plan_edit": "Редагувати план членства",
       "data_protection": "Захист даних",
       "profile": "Мій профіль",
+      "customers": "Клієнти",
       "customer_detail": "Клієнт",
       "audit_log_customers": "Дії клієнтів",
       "audit_log_customer_entry": "Дія клієнта",
@@ -315,6 +316,7 @@
     "notifications": "Сповіщення",
     "profile": "Мій профіль",
     "receivables": "Заборгованості",
+    "customers": "Клієнти",
     "cash_held": "Готівка у прибиральників"
   },
   "pages": {
@@ -2342,6 +2344,28 @@
           "apply": "Деякі пороги не вдалося зберегти"
         }
       }
+    },
+    "customers": {
+      "title": "Клієнти",
+      "description": "Облікові записи клієнтів вашої компанії з контактними даними",
+      "filters": {
+        "search": "Пошук",
+        "search_placeholder": "Шукати за ім'ям, електронною поштою або телефоном",
+        "status": "Статус",
+        "status_active": "Активні",
+        "status_inactive": "Неактивні",
+        "status_all": "Усі"
+      },
+      "columns": {
+        "name": "Ім'я",
+        "email": "Електронна пошта",
+        "phone": "Телефон",
+        "status": "Статус",
+        "email_confirmed": "Пошту підтверджено",
+        "created_on": "Створено"
+      },
+      "no_customers": "Клієнтів не знайдено",
+      "load_error": "Не вдалося завантажити клієнтів. Спробуйте ще раз."
     },
     "loyalty_user_detail": {
       "title": "Клієнт",

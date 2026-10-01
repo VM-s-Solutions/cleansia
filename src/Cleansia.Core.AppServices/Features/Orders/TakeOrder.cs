@@ -475,7 +475,8 @@ public class TakeOrder
             {
                 try
                 {
-                    var languageCode = order.User?.PreferredLanguageCode ?? Constants.Language.English;
+                    var languageCode = EmailLocale.Resolve(
+                        order.LanguageCode ?? order.User?.PreferredLanguageCode ?? Constants.Language.English);
                     // A guest has no account to sign in to, so this link is only a link if it carries a
                     // credential. Its own, minted here: nothing can hand this site the one the
                     // confirmation e-mail carried, and superseding that one to reuse the row would kill

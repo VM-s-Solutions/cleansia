@@ -3,13 +3,16 @@ import Combine
 import Foundation
 
 /// Singleton cache for the signed-in user's loyalty state (the
-/// `LoyaltyRepository.kt` parity). Caches the account snapshot + the tier ladder;
-/// activity is paged on demand and not cached. Registered in the
+/// `LoyaltyRepository.kt` parity). Caches the account snapshot, the tier ladder and the credit
+/// balance; activity is paged on demand and not cached. Registered in the
 /// `SessionScopedCacheRegistry` so sign-out / forced-401 wipes it.
 @MainActor
-final class LoyaltyRepository: SessionScopedCache {
+final class LoyaltyRepository: ObservableObject, SessionScopedCache {
     @Published private(set) var account: LoyaltyAccount?
     @Published private(set) var tiers: [TierInfo] = []
+    /// Nil until read, and after a failed read — the screens hide the credit rather than state a
+    /// figure they do not have. A zero balance is a real answer and is kept.
+    @Published private(set) var credit: CustomerCredit?
     @Published private(set) var loaded = false
     @Published private(set) var loading = false
 
@@ -26,8 +29,9 @@ final class LoyaltyRepository: SessionScopedCache {
         self.staleness = staleness
     }
 
-    /// Fetch account + tier ladder in one pass. Tiers are static config — a
-    /// tiers failure leaves an empty ladder rather than failing the refresh.
+    /// Fetch account + tier ladder + credit in one pass. Tiers are static config — a
+    /// tiers failure leaves an empty ladder rather than failing the refresh. Credit is read the same
+    /// non-blocking way: a failed read clears it, so no screen goes on stating an old balance.
     @discardableResult
     func refresh() async -> ApiResult<Void> {
         if loading { return .success(()) }
@@ -39,9 +43,12 @@ final class LoyaltyRepository: SessionScopedCache {
         case let .failure(error):
             return .failure(error)
         }
-        if case let .success(tiers) = await client.getTiers() {
+        async let tiersRead = client.getTiers()
+        async let creditRead = client.getCredit()
+        if case let .success(tiers) = await tiersRead {
             self.tiers = tiers
         }
+        credit = try? await creditRead.get()
         loaded = true
         staleness.markFresh()
         return .success(())
@@ -54,6 +61,7 @@ final class LoyaltyRepository: SessionScopedCache {
     func clear() async {
         account = nil
         tiers = []
+        credit = nil
         loaded = false
         staleness.invalidate()
     }

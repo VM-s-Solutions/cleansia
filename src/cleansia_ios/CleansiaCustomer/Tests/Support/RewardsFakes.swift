@@ -7,9 +7,11 @@ final class FakeLoyaltyClient: LoyaltyClient, @unchecked Sendable {
     var tiersResult: ApiResult<[TierInfo]> = .success([])
     var activityPages: [LoyaltyActivityPage] = []
     var activityError: ApiError?
+    var creditResult: ApiResult<CustomerCredit> = .success(LoyaltyFixtures.credit())
     private(set) var activityRequests: [(offset: Int, limit: Int)] = []
     private(set) var accountCallCount = 0
     private(set) var tiersCallCount = 0
+    private(set) var creditCallCount = 0
 
     func getMy() async -> ApiResult<LoyaltyAccount> {
         accountCallCount += 1
@@ -19,6 +21,11 @@ final class FakeLoyaltyClient: LoyaltyClient, @unchecked Sendable {
     func getTiers() async -> ApiResult<[TierInfo]> {
         tiersCallCount += 1
         return tiersResult
+    }
+
+    func getCredit() async -> ApiResult<CustomerCredit> {
+        creditCallCount += 1
+        return creditResult
     }
 
     func getActivity(offset: Int, limit: Int) async -> ApiResult<LoyaltyActivityPage> {
@@ -68,6 +75,18 @@ enum LoyaltyFixtures {
             currentDiscountMinOrderAmount: nil,
             currentPerks: perks
         )
+    }
+
+    /// Zero by default — the never-credited customer, whose server answer is one zero in the platform
+    /// default currency and no rows.
+    static func credit(
+        balance: Double = 0,
+        currencyCode: String = "CZK",
+        expiresOn: Date? = nil,
+        share: Double = 0.7
+    ) -> CustomerCredit {
+        let primary = CustomerCredit.Balance(amount: balance, currencyCode: currencyCode, expiresOn: expiresOn)
+        return CustomerCredit(primary: primary, balances: balance > 0 ? [primary] : [], maxShareOfOrder: share)
     }
 
     static func tier(_ value: Int, threshold: Int, discount: Double = 0, minOrder: Double? = nil) -> TierInfo {

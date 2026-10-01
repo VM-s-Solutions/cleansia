@@ -122,6 +122,49 @@ final class RewardsViewModelTests: XCTestCase {
         XCTAssertEqual(content.referral?.code, "JOIN50")
     }
 
+    func testTheContentCarriesTheCredit() async {
+        let loyalty = FakeLoyaltyClient()
+        loyalty.creditResult = .success(LoyaltyFixtures.credit(balance: 250))
+        let (vm, _, _) = makeVM(loyalty, FakeRewardsReferralClient())
+
+        await vm.load()
+
+        guard case let .loaded(content) = vm.state else {
+            return XCTFail("expected loaded state")
+        }
+        XCTAssertEqual(content.credit?.primary.amount, 250)
+    }
+
+    /// A booking spends credit and a cancellation returns it, outside this screen; the shell re-reads
+    /// the repository then, and the card follows without a pull.
+    func testABalanceReReadElsewhereReachesTheLoadedCard() async {
+        let loyalty = FakeLoyaltyClient()
+        loyalty.creditResult = .success(LoyaltyFixtures.credit(balance: 250))
+        let (vm, repo, _) = makeVM(loyalty, FakeRewardsReferralClient())
+        await vm.load()
+
+        loyalty.creditResult = .success(LoyaltyFixtures.credit(balance: 0))
+        await repo.refresh()
+
+        guard case let .loaded(content) = vm.state else {
+            return XCTFail("expected loaded state")
+        }
+        XCTAssertEqual(content.credit?.primary.amount, 0)
+    }
+
+    func testAFailedCreditReadHidesOnlyTheCreditCard() async {
+        let loyalty = FakeLoyaltyClient()
+        loyalty.creditResult = .failure(ApiError(httpStatus: 500))
+        let (vm, _, _) = makeVM(loyalty, FakeRewardsReferralClient())
+
+        await vm.load()
+
+        guard case let .loaded(content) = vm.state else {
+            return XCTFail("expected loaded state")
+        }
+        XCTAssertNil(content.credit)
+    }
+
     func testRefreshFailureWhileLoadedStaysLoaded() async {
         let loyalty = FakeLoyaltyClient()
         let (vm, _, _) = makeVM(loyalty, FakeRewardsReferralClient())

@@ -208,10 +208,16 @@ private struct BookingSheetContent: View {
         canContinue && !isSubmitting
     }
 
+    /// On a card booking this is what the card is asked for — the figure the Stripe sheet then shows —
+    /// so credit that applies is already off it.
     private var totalDisplay: String? {
         guard let quote = viewModel.quoteState.quote else { return nil }
-        let summary = BookingPriceSummary.resolve(quote: quote, discount: viewModel.effectiveDiscount)
-        return BookingPricing.formatTotal(summary.total, currencyCode: quote.currencyCode)
+        let summary = BookingPriceSummary.resolve(
+            quote: quote,
+            discount: viewModel.effectiveDiscount,
+            payByCard: viewModel.state.paymentMethod == .card
+        )
+        return BookingPricing.formatTotal(summary.dueOnCard, currencyCode: quote.currencyCode)
     }
 
     var body: some View {

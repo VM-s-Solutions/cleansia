@@ -124,6 +124,18 @@ struct BookingSuccessView: View {
                 value: OrdersFormat.price(order.total, currencyCode: order.currencyCode)
             ))
         }
+        // The order's own figures, not the confirm step's preview: a concurrent booking can drain the
+        // balance between the two, and the card was asked for what the order says.
+        if order.creditAppliedAmount > 0 {
+            rows.append(SummaryRow(
+                label: L10n.Credit.paidWithCredit,
+                value: "−" + OrdersFormat.price(order.creditAppliedAmount, currencyCode: order.currencyCode)
+            ))
+            rows.append(SummaryRow(
+                label: L10n.Credit.paidByCard,
+                value: OrdersFormat.price(order.amountDueOnCard, currencyCode: order.currencyCode)
+            ))
+        }
         return rows
     }
 

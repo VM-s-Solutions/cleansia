@@ -62,6 +62,10 @@ struct OrderPriceBreakdown: Equatable {
     let subtotal: Double?
     let discounts: [DiscountLine]
     let total: Double
+    /// Credit is a tender, not a discount: the total keeps the size of the sale, and these two figures
+    /// say how it was paid — the card one is what the customer's statement shows. No rows at zero.
+    let paidWithCredit: Double
+    let paidByCard: Double
     let paymentMethod: OrderPaymentMethod?
     let paymentStatus: OrderPaymentStatus?
     let currencyCode: String?
@@ -80,6 +84,8 @@ struct OrderPriceBreakdown: Equatable {
                 line(.promo, order.promoDiscountAmount)
             ].compactMap { $0 },
             total: order.total,
+            paidWithCredit: order.creditAppliedAmount,
+            paidByCard: order.amountDueOnCard,
             paymentMethod: paymentMethod(order.paymentType),
             paymentStatus: paymentStatus(order.paymentStatus),
             currencyCode: order.currencyCode
@@ -171,6 +177,16 @@ struct OrderPriceBreakdownCard: View {
                     .font(CleansiaTypography.titleLarge)
                     .foregroundColor(CleansiaColors.primary)
             }
+            if breakdown.paidWithCredit > 0 {
+                OrderInfoRow(
+                    label: L10n.Credit.paidWithCredit,
+                    value: "−" + OrdersFormat.price(breakdown.paidWithCredit, currencyCode: breakdown.currencyCode)
+                )
+                OrderInfoRow(
+                    label: L10n.Credit.paidByCard,
+                    value: OrdersFormat.price(breakdown.paidByCard, currencyCode: breakdown.currencyCode)
+                )
+            }
             if let method = breakdown.paymentMethod {
                 OrderInfoRow(
                     label: L10n.OrderDetail.paymentMethod,
@@ -252,6 +268,8 @@ struct OrderDiscountChip: View {
             appliedDiscountSource: ._4,
             tierDiscountAmount: 210,
             membershipDiscountAmount: 300,
+            creditAppliedAmount: 320,
+            amountDueOnCard: 1270,
             estimatedTime: 180,
             currency: CurrencyDetailDto(code: "CZK"),
             dirtinessLevel: ._1,

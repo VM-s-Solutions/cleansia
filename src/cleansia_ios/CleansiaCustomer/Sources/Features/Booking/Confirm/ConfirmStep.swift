@@ -28,7 +28,11 @@ struct ConfirmStep: View {
     }
 
     private var priceSummary: BookingPriceSummary {
-        BookingPriceSummary.resolve(quote: quote, discount: viewModel.effectiveDiscount)
+        BookingPriceSummary.resolve(
+            quote: quote,
+            discount: viewModel.effectiveDiscount,
+            payByCard: viewModel.state.paymentMethod == .card
+        )
     }
 
     private var currencyCode: String {

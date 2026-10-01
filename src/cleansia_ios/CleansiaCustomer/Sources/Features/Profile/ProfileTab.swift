@@ -6,6 +6,8 @@ struct ProfileTab: View {
     @ObservedObject var membershipVM: MembershipViewModel
     @ObservedObject var preferences: CustomerPreferencesModel
     @ObservedObject var marketStore: MarketStore
+    /// The credit read the Rewards card shares; nil (not landed, or failed) hides the row.
+    @ObservedObject var loyalty: LoyaltyRepository
     @Environment(\.locale) private var locale
     let avatarCache: RemoteImageCache
     let onOpen: (ShellRoute) -> Void
@@ -23,6 +25,7 @@ struct ProfileTab: View {
     }
 
     @State private var showSignOutDialog = false
+    @State private var showCreditSheet = false
 
     private var tierLabel: String {
         membershipVM.current?.hasMembership == true ? L10n.Profile.tierPlus : L10n.Profile.tierRegular
@@ -78,10 +81,15 @@ struct ProfileTab: View {
             }
         }
         .overlay { signOutOverlay }
+        .sheet(isPresented: $showCreditSheet) {
+            if let credit = loyalty.credit {
+                CreditExplainerSheet(credit: credit) { showCreditSheet = false }
+            }
+        }
     }
 
     private var accountRows: [ProfileRowItem] {
-        [
+        creditRow + [
             ProfileRowItem(
                 icon: "person.crop.circle",
                 label: Self.editRowLabel,
@@ -91,6 +99,18 @@ struct ProfileTab: View {
             ProfileRowItem(icon: "creditcard", label: L10n.Payments.profileRow, route: .payments),
             ProfileRowItem(icon: "exclamationmark.bubble", label: L10n.Profile.rowDisputes, route: .disputes)
         ]
+    }
+
+    /// The same placement the web profile rail gives credit, shown at zero too ("0 Kč"). It opens the
+    /// explainer the Rewards card opens, so the two never describe credit differently.
+    private var creditRow: [ProfileRowItem] {
+        guard let credit = loyalty.credit else { return [] }
+        return [ProfileRowItem(
+            icon: "wallet.pass",
+            label: L10n.Credit.profileRow,
+            value: OrdersFormat.price(credit.primary.amount, currencyCode: credit.primary.currencyCode),
+            action: { showCreditSheet = true }
+        )]
     }
 
     private var preferenceRows: [ProfileRowItem] {
@@ -142,7 +162,7 @@ struct ProfileTab: View {
                 .padding(.horizontal, Spacing.m)
             VStack(spacing: 0) {
                 ForEach(rows.indices, id: \.self) { index in
-                    ProfileRow(item: rows[index], onTap: { onOpen(rows[index].route) })
+                    ProfileRow(item: rows[index], onTap: { open(rows[index]) })
                     if index < rows.count - 1 {
                         Divider().padding(.leading, Spacing.xl)
                     }
@@ -151,6 +171,13 @@ struct ProfileTab: View {
             .background(CleansiaColors.surface)
             .clipShape(RoundedRectangle(cornerRadius: CornerRadius.large))
             .padding(.horizontal, Spacing.m)
+        }
+    }
+
+    private func open(_ row: ProfileRowItem) {
+        switch row.target {
+        case let .route(route): onOpen(route)
+        case let .action(action): action()
         }
     }
 
@@ -175,16 +202,29 @@ struct ProfileTab: View {
 }
 
 struct ProfileRowItem {
+    /// Most rows push a screen; the credit row opens a sheet over the tab instead.
+    enum Target {
+        case route(ShellRoute)
+        case action(() -> Void)
+    }
+
     let icon: String
     let label: String
     var value: String?
-    let route: ShellRoute
+    let target: Target
 
     init(icon: String, label: String, value: String? = nil, route: ShellRoute) {
         self.icon = icon
         self.label = label
         self.value = value
-        self.route = route
+        target = .route(route)
+    }
+
+    init(icon: String, label: String, value: String?, action: @escaping () -> Void) {
+        self.icon = icon
+        self.label = label
+        self.value = value
+        target = .action(action)
     }
 }
 

@@ -7,6 +7,8 @@ struct RewardsContent: Equatable {
     let tiers: [TierInfo]
     let referral: ReferralAccount?
     let activityPreview: [LoyaltyActivityItem]
+    /// Nil hides the credit card — the read failed or has not landed. A zero balance is shown.
+    var credit: CustomerCredit?
 }
 
 /// Backs `RewardsTab`. Reads the singleton `LoyaltyRepository` (account + tiers)
@@ -24,6 +26,7 @@ final class RewardsViewModel: ViewModel {
     private let referralRepository: RewardsReferralRepository
     private let snackbar: SnackbarController
     private let activityPreviewSize: Int
+    private var cancellables: Set<AnyCancellable> = []
 
     init(
         loyaltyRepository: LoyaltyRepository,
@@ -49,6 +52,16 @@ final class RewardsViewModel: ViewModel {
         if let content = currentContent() {
             state = .loaded(content)
         }
+        // Credit moves outside this screen — a booking spends it, a cancellation returns it — and the
+        // shell re-reads it then, so a landed balance reaches the card without a pull.
+        loyaltyRepository.$credit
+            .dropFirst()
+            .sink { [weak self] credit in
+                guard let self, case var .loaded(content) = state else { return }
+                content.credit = credit
+                state = .loaded(content)
+            }
+            .store(in: &cancellables)
     }
 
     func load() async {
@@ -104,7 +117,8 @@ final class RewardsViewModel: ViewModel {
             account: account,
             tiers: loyaltyRepository.tiers,
             referral: referralRepository.account,
-            activityPreview: activityPreview
+            activityPreview: activityPreview,
+            credit: loyaltyRepository.credit
         )
     }
 }

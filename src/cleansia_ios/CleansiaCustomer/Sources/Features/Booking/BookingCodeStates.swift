@@ -22,6 +22,11 @@ struct BookingQuote: Equatable {
     let dirtiness: Dirtiness
     /// Inside ``totalPrice`` and inside the base the discounts come off; express is measured on top.
     let dirtinessSurchargeAmount: Double
+    /// The customer's credit in this quote's currency, and the most of an order it may settle. The two
+    /// INPUTS to the cap, not its answer: a promo entered at checkout moves the price the cap is taken
+    /// on, so the confirm step applies ``BookingPricing/capCreditForOrder(balance:charged:share:)``.
+    let creditBalance: Double
+    let creditMaxShareOfOrder: Double
 
     init(
         totalPrice: Double,
@@ -39,7 +44,9 @@ struct BookingQuote: Equatable {
         expressSurchargeWaivedByMembership: Bool = false,
         requiredEmployees: Int = 1,
         dirtiness: Dirtiness = .normal,
-        dirtinessSurchargeAmount: Double = 0
+        dirtinessSurchargeAmount: Double = 0,
+        creditBalance: Double = 0,
+        creditMaxShareOfOrder: Double = 0
     ) {
         self.totalPrice = totalPrice
         self.originalSubtotal = originalSubtotal
@@ -57,6 +64,8 @@ struct BookingQuote: Equatable {
         self.requiredEmployees = requiredEmployees
         self.dirtiness = dirtiness
         self.dirtinessSurchargeAmount = dirtinessSurchargeAmount
+        self.creditBalance = creditBalance
+        self.creditMaxShareOfOrder = creditMaxShareOfOrder
     }
 
     /// **Refuse.** This is the number the customer commits to, and the screen does arithmetic on it —
@@ -81,7 +90,11 @@ struct BookingQuote: Equatable {
                 .require("expressSurchargeWaivedByMembership"),
             requiredEmployees: response.requiredEmployees.require("requiredEmployees"),
             dirtiness: Dirtiness(wire: response.dirtinessLevel.require("dirtinessLevel")),
-            dirtinessSurchargeAmount: response.dirtinessSurchargeAmount.require("dirtinessSurchargeAmount")
+            dirtinessSurchargeAmount: response.dirtinessSurchargeAmount.require("dirtinessSurchargeAmount"),
+            // Defaulted, not refused: an absent balance previews no credit, and the screen then states
+            // the full price — the order's own figures still say what the card was asked for.
+            creditBalance: response.creditBalance ?? 0,
+            creditMaxShareOfOrder: response.creditMaxShareOfOrder ?? 0
         )
     }
 }

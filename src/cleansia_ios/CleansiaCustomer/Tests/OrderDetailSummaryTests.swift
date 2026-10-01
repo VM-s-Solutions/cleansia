@@ -55,6 +55,23 @@ final class OrderDetailSummaryTests: XCTestCase {
         XCTAssertEqual((breakdown.subtotal ?? 0) + breakdown.dirtinessSurcharge - discounts, breakdown.total)
     }
 
+    // MARK: - Credit tender
+
+    /// Credit is a tender: the total keeps the size of the sale, and the two figures say how it was
+    /// paid — read off the order, never re-derived from the balance.
+    func testAnOrderCreditPaidPartOfStatesBothTenders() {
+        let order = OrderFixtures.detail(total: 1500, creditAppliedAmount: 320, amountDueOnCard: 1180)
+        let breakdown = OrderPriceBreakdown.resolve(order)
+        XCTAssertEqual(breakdown.total, 1500)
+        XCTAssertEqual(breakdown.paidWithCredit, 320)
+        XCTAssertEqual(breakdown.paidByCard, 1180)
+    }
+
+    func testAnOrderNoCreditTouchedStatesNoTender() {
+        let order = OrderFixtures.detail(total: 1500)
+        XCTAssertEqual(OrderPriceBreakdown.resolve(order).paidWithCredit, 0)
+    }
+
     // MARK: - Discount lines
 
     func testEveryNonZeroSourceGetsItsOwnLineInAndroidsOrder() {

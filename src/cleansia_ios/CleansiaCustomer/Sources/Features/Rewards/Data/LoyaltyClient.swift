@@ -6,6 +6,7 @@ protocol LoyaltyClient: Sendable {
     func getMy() async -> ApiResult<LoyaltyAccount>
     func getTiers() async -> ApiResult<[TierInfo]>
     func getActivity(offset: Int, limit: Int) async -> ApiResult<LoyaltyActivityPage>
+    func getCredit() async -> ApiResult<CustomerCredit>
 }
 
 struct LiveLoyaltyClient: LoyaltyClient {
@@ -28,6 +29,12 @@ struct LiveLoyaltyClient: LoyaltyClient {
                 items: (paged.data ?? []).map { try $0.toDomain() },
                 total: paged.total.require("total")
             )
+        }
+    }
+
+    func getCredit() async -> ApiResult<CustomerCredit> {
+        await apiResult(mapError: ApiError.fromGenerated) {
+            try await CustomerCreditAPI.creditGetMy().toDomain()
         }
     }
 }
@@ -79,6 +86,34 @@ private extension GetLoyaltyActivityActivityItem {
             orderId: orderId,
             orderDisplayNumber: orderDisplayNumber,
             occurredOn: occurredOn
+        )
+    }
+}
+
+/// **Refuse.** A balance is money owed, and a coerced `0` tells a customer holding 250 Kč that they hold
+/// nothing; a blank currency states an amount in no unit. The share is refused too — the copy states it
+/// as the cap, and a `0` would say credit never applies. A refusal leaves the credit unread, so the
+/// screens hide it rather than state it wrong. → /decisions/adr-0048
+extension GetMyCreditResponse {
+    func toDomain() throws -> CustomerCredit {
+        try CustomerCredit(
+            primary: CustomerCredit.Balance(
+                amount: balance.require("balance"),
+                currencyCode: currencyCode.requireNonBlank("currencyCode"),
+                expiresOn: expiresOn
+            ),
+            balances: (balances ?? []).map { try $0.toDomain() },
+            maxShareOfOrder: maxShareOfOrder.require("maxShareOfOrder")
+        )
+    }
+}
+
+extension GetMyCreditCurrencyBalance {
+    func toDomain() throws -> CustomerCredit.Balance {
+        try CustomerCredit.Balance(
+            amount: balance.require("balance"),
+            currencyCode: currencyCode.requireNonBlank("currencyCode"),
+            expiresOn: expiresOn
         )
     }
 }

@@ -83,7 +83,12 @@ struct CustomerShellView: View {
                 serviceArea: container.serviceArea,
                 paymentSheet: StripePaymentController(),
                 orderClient: container.orderClient,
-                warmOrders: { await container.orderRepository.refresh() },
+                // A card booking may have spent credit, so the balance is re-read with the orders.
+                warmOrders: {
+                    async let orders = container.orderRepository.refresh()
+                    async let loyalty = container.loyaltyRepository.refresh()
+                    _ = await (orders, loyalty)
+                },
                 onDismiss: { model.isBookingPresented = false },
                 onViewOrder: { orderId in
                     model.isBookingPresented = false
@@ -257,6 +262,7 @@ struct CustomerShellView: View {
                 membershipVM: membershipVM,
                 preferences: preferences,
                 marketStore: container.marketStore,
+                loyalty: container.loyaltyRepository,
                 avatarCache: container.avatarCache,
                 onOpen: { model.path.append($0) },
                 onSignOut: signOut
@@ -456,6 +462,8 @@ extension CustomerShellView {
                 model.path = NavigationPath()
                 rebookOrder(orderId)
             },
+            // A cancelled card order returns the credit it spent, so the balance is re-read.
+            onCancelled: { Task { await container.loyaltyRepository.refresh() } },
             // Pre-seeded, exactly like the Home and membership-success entries:
             // the createRecurring destination pops on creation, so without the
             // list beneath it a new schedule lands on the tab root instead of on

@@ -44,6 +44,71 @@ final class LoyaltyRepositoryTests: XCTestCase {
         XCTAssertTrue(repo.loaded)
     }
 
+    // MARK: credit — read with the points, never failing them
+
+    func testCreditIsReadAlongsideTheAccount() async {
+        let client = FakeLoyaltyClient()
+        client.creditResult = .success(LoyaltyFixtures.credit(balance: 250))
+        let repo = LoyaltyRepository(client: client)
+
+        await repo.refresh()
+
+        XCTAssertEqual(client.creditCallCount, 1)
+        XCTAssertEqual(repo.credit?.primary.amount, 250)
+        XCTAssertEqual(repo.credit?.maxShareOfOrder, 0.7)
+    }
+
+    /// The points are what the Rewards tab is for; a balance read that fails hides the credit card and
+    /// leaves the rest of the tab standing.
+    func testACreditFailureDoesNotFailTheRefreshAndLeavesNoCredit() async {
+        let client = FakeLoyaltyClient()
+        client.creditResult = .failure(ApiError(httpStatus: 500))
+        let repo = LoyaltyRepository(client: client)
+
+        let result = await repo.refresh()
+
+        XCTAssertNil(result.apiErrorOrNil)
+        XCTAssertNotNil(repo.account)
+        XCTAssertNil(repo.credit)
+        XCTAssertTrue(repo.loaded)
+    }
+
+    /// A failed re-read clears an older balance rather than going on stating it.
+    func testAFailedReReadClearsTheBalanceItCannotVouchFor() async {
+        let client = FakeLoyaltyClient()
+        client.creditResult = .success(LoyaltyFixtures.credit(balance: 250))
+        let repo = LoyaltyRepository(client: client)
+        await repo.refresh()
+
+        client.creditResult = .failure(ApiError(httpStatus: 500))
+        await repo.refresh()
+
+        XCTAssertNil(repo.credit)
+    }
+
+    /// Zero is a real answer — the Profile row states "0 Kč" — so it is kept, not nulled.
+    func testAZeroBalanceIsKept() async {
+        let client = FakeLoyaltyClient()
+        client.creditResult = .success(LoyaltyFixtures.credit(balance: 0))
+        let repo = LoyaltyRepository(client: client)
+
+        await repo.refresh()
+
+        XCTAssertEqual(repo.credit?.primary.amount, 0)
+        XCTAssertEqual(repo.credit?.heldBalances, [])
+    }
+
+    func testClearWipesTheCredit() async {
+        let client = FakeLoyaltyClient()
+        client.creditResult = .success(LoyaltyFixtures.credit(balance: 250))
+        let repo = LoyaltyRepository(client: client)
+        await repo.refresh()
+
+        await repo.clear()
+
+        XCTAssertNil(repo.credit)
+    }
+
     func testLoadActivityReturnsPage() async {
         let client = FakeLoyaltyClient()
         client.activityPages = [LoyaltyActivityPage(items: [LoyaltyFixtures.activityItem()], total: 1)]

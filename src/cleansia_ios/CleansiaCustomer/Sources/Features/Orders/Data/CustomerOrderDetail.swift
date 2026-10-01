@@ -93,6 +93,11 @@ struct CustomerOrderDetail: Equatable {
     let tierDiscountAmount: Double?
     let membershipDiscountAmount: Double?
     let promoDiscountAmount: Double?
+    /// How much of ``total`` the customer's credit settled, and what the card was therefore asked for.
+    /// A tender, not a discount: ``total`` stays the size of the sale. The order's own figures — never
+    /// the confirm step's preview, which a concurrent booking can overtake.
+    let creditAppliedAmount: Double
+    let amountDueOnCard: Double
     let appliedDiscountSource: AppliedDiscountSource?
     let paymentType: Code?
     let paymentStatus: Code?
@@ -147,6 +152,9 @@ extension CustomerOrderDetail {
         tierDiscountAmount = item.tierDiscountAmount
         membershipDiscountAmount = item.membershipDiscountAmount
         promoDiscountAmount = item.promoDiscountAmount
+        // Money the screen states as "paid with credit / paid by card", so refused like the total.
+        creditAppliedAmount = try item.creditAppliedAmount.require("creditAppliedAmount")
+        amountDueOnCard = try item.amountDueOnCard.require("amountDueOnCard")
         appliedDiscountSource = item.appliedDiscountSource
         paymentType = item.paymentType
         paymentStatus = item.paymentStatus

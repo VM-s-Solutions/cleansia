@@ -34,6 +34,74 @@ final class CustomerWireContractTests: XCTestCase {
         )
     }
 
+    /// The two inputs to the confirm step's credit preview ride the quote; an absent one previews no
+    /// credit rather than refusing the quote, since the order's own figures say what the card paid.
+    func testTheQuoteCarriesTheCreditInputs() throws {
+        var payload = quotePayload()
+        payload.creditBalance = 250
+        payload.creditMaxShareOfOrder = 0.7
+        let quote = try BookingQuote(from: payload)
+        XCTAssertEqual(quote.creditBalance, 250)
+        XCTAssertEqual(quote.creditMaxShareOfOrder, 0.7)
+
+        payload.creditBalance = nil
+        payload.creditMaxShareOfOrder = nil
+        let bare = try BookingQuote(from: payload)
+        XCTAssertEqual(bare.creditBalance, 0)
+        XCTAssertEqual(bare.creditMaxShareOfOrder, 0)
+    }
+
+    // MARK: credit — money owed, so refused rather than zeroed
+
+    private func creditPayload() -> GetMyCreditResponse {
+        GetMyCreditResponse(
+            balance: 250,
+            currencyCode: "CZK",
+            maxShareOfOrder: 0.7,
+            appliesAutomatically: true,
+            expiresOn: Date(timeIntervalSince1970: 1_800_000_000),
+            balances: [GetMyCreditCurrencyBalance(
+                balance: 250,
+                currencyCode: "CZK",
+                expiresOn: Date(timeIntervalSince1970: 1_800_000_000)
+            )]
+        )
+    }
+
+    func testAFullyPopulatedCreditMaps() throws {
+        let credit = try creditPayload().toDomain()
+        XCTAssertEqual(credit.primary.amount, 250)
+        XCTAssertEqual(credit.primary.currencyCode, "CZK")
+        XCTAssertEqual(credit.maxShareOfOrder, 0.7)
+        XCTAssertEqual(credit.balances.count, 1)
+        XCTAssertEqual(credit.heldBalances.count, 1)
+    }
+
+    /// The never-credited customer: no rows, and one zero in the platform default — shown, not hidden.
+    func testANeverCreditedCustomerMapsToAZero() throws {
+        var payload = creditPayload()
+        payload.balance = 0
+        payload.expiresOn = nil
+        payload.balances = []
+        let credit = try payload.toDomain()
+        XCTAssertEqual(credit.primary.amount, 0)
+        XCTAssertTrue(credit.heldBalances.isEmpty)
+    }
+
+    func testABrokenCreditIsRefusedRatherThanReadAsNothingOwed() {
+        for (field, break_) in [
+            ("balance", { (dto: inout GetMyCreditResponse) in dto.balance = nil }),
+            ("currencyCode", { dto in dto.currencyCode = "" }),
+            ("maxShareOfOrder", { dto in dto.maxShareOfOrder = nil }),
+            ("balance", { dto in dto.balances = [GetMyCreditCurrencyBalance(currencyCode: "EUR")] }),
+            ("currencyCode", { dto in dto.balances = [GetMyCreditCurrencyBalance(balance: 10)] })
+        ] {
+            var payload = creditPayload()
+            break_(&payload)
+            assertRefused(field) { try payload.toDomain() }
+        }
+    }
+
     func testAFullyPopulatedQuoteMaps() throws {
         let quote = try BookingQuote(from: quotePayload())
         XCTAssertEqual(quote.totalPrice, 2400)
@@ -143,6 +211,8 @@ final class CustomerWireContractTests: XCTestCase {
         XCTAssertEqual(detail.currencyCode, "CZK")
         XCTAssertEqual(detail.dirtiness, .heavy)
         XCTAssertEqual(detail.dirtinessSurchargeAmount, 540)
+        XCTAssertEqual(detail.creditAppliedAmount, 0)
+        XCTAssertEqual(detail.amountDueOnCard, 1590)
     }
 
     func testABrokenOrderDetailIsRefusedRatherThanPricedAtZero() {
@@ -153,7 +223,9 @@ final class CustomerWireContractTests: XCTestCase {
             ("bathrooms", { dto in dto.bathrooms = nil }),
             ("estimatedTime", { dto in dto.estimatedTime = nil }),
             ("dirtinessLevel", { dto in dto.dirtinessLevel = nil }),
-            ("dirtinessSurchargeAmount", { dto in dto.dirtinessSurchargeAmount = nil })
+            ("dirtinessSurchargeAmount", { dto in dto.dirtinessSurchargeAmount = nil }),
+            ("creditAppliedAmount", { dto in dto.creditAppliedAmount = nil }),
+            ("amountDueOnCard", { dto in dto.amountDueOnCard = nil })
         ] {
             var payload = OrderItem.wireComplete()
             break_(&payload)

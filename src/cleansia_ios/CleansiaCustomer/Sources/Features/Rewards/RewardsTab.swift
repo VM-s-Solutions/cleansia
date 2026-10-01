@@ -99,10 +99,17 @@ struct RewardsContentView: View {
         )
     }
 
+    @State private var showCreditSheet = false
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Spacing.m) {
                 TierHeroCard(tier: currentTier, account: content.account)
+                // Credit sits beside the points because the two are confused: points move the tier,
+                // credit is money off. A failed read hides the card; a zero balance shows its one line.
+                if let credit = content.credit {
+                    CreditCard(credit: credit) { showCreditSheet = true }
+                }
                 ProgressCard(account: content.account)
                 CurrentPerksCard(labels: perkLabels)
                 TierLadderCard(tiers: content.tiers, current: currentTier, floor: tierFloor)
@@ -114,6 +121,11 @@ struct RewardsContentView: View {
                 ActivityPreviewCard(activity: content.activityPreview, onOpenActivity: onOpenActivity)
             }
             .padding(.horizontal, Spacing.ml)
+        }
+        .sheet(isPresented: $showCreditSheet) {
+            if let credit = content.credit {
+                CreditExplainerSheet(credit: credit) { showCreditSheet = false }
+            }
         }
     }
 }

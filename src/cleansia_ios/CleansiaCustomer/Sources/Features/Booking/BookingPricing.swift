@@ -21,6 +21,29 @@ enum BookingPricing {
         }
     }
 
+    /// How much of `balance` the server spends on an order charged `charged`, when `share` is the most of
+    /// an order credit may settle — the mirror of `BookingPolicy.CapCreditForOrder`, floored to whole
+    /// minor units and never the whole order, so the confirm step says what Stripe then asks for. The
+    /// share comes from the wire; only the formula is copied, and the Android twin is pinned to the same
+    /// vectors. Decimal arithmetic, not Double: 100.10 × 0.7 is 70.07 on the server and 70.069… in
+    /// binary floating point, which floors a cent short.
+    ///
+    /// A preview, not a promise: a concurrent booking can drain the balance first, so the screens after
+    /// the booking read the order's own `creditAppliedAmount`.
+    static func capCreditForOrder(balance: Double, charged: Double, share: Double) -> Double {
+        guard balance > 0, charged > 0, share > 0 else { return 0 }
+        var ceiling = exactDecimal(charged) * exactDecimal(share)
+        var floored = Decimal()
+        NSDecimalRound(&floored, &ceiling, 2, .down)
+        return NSDecimalNumber(decimal: min(exactDecimal(balance), floored)).doubleValue
+    }
+
+    /// The decimal the wire wrote, not the binary approximation `Decimal(Double)` expands it to:
+    /// Swift prints a Double as its shortest round-tripping decimal, which is the JSON literal.
+    private static func exactDecimal(_ value: Double) -> Decimal {
+        Decimal(string: "\(value)", locale: Locale(identifier: "en_US_POSIX")) ?? Decimal(value)
+    }
+
     /// A blank code renders the bare amount: an unlabelled figure over a label guessed for it.
     static func formatTotal(_ total: Double, currencyCode: String) -> String {
         let amount = String(format: "%.0f", total)
@@ -70,8 +93,20 @@ struct BookingPriceSummary: Equatable {
     let expressSurcharge: Double
     let expressLine: ExpressLine
     let total: Double
+    /// The credit this booking would spend. Zero unless it is paid by card: credit is a card-only
+    /// tender, and it comes off ``total`` only on the card — the sale keeps its size.
+    let creditApplied: Double
+    /// The customer's balance in the quote's currency, which the cash hint is read against.
+    let creditBalance: Double
 
-    static func resolve(quote: BookingQuote?, discount: Double) -> BookingPriceSummary {
+    /// What the card is asked for once credit has settled its share — the figure Stripe shows.
+    var dueOnCard: Double {
+        total - creditApplied
+    }
+
+    /// `payByCard` decides whether credit applies at all. The cap is taken on the CHARGED total —
+    /// promo included — which is why the server hands over the balance and the share, not an answer.
+    static func resolve(quote: BookingQuote?, discount: Double, payByCard: Bool = false) -> BookingPriceSummary {
         guard let quote else {
             return BookingPriceSummary(
                 subtotal: 0,
@@ -79,7 +114,9 @@ struct BookingPriceSummary: Equatable {
                 dirtinessSurcharge: 0,
                 expressSurcharge: 0,
                 expressLine: .notExpress,
-                total: 0
+                total: 0,
+                creditApplied: 0,
+                creditBalance: 0
             )
         }
         let expressLine: ExpressLine = if quote.expressSurchargeWaivedByMembership {
@@ -89,13 +126,22 @@ struct BookingPriceSummary: Equatable {
         } else {
             .notExpress
         }
+        let total = max(quote.totalPrice - discount, 0)
         return BookingPriceSummary(
             subtotal: quote.preSurchargeSubtotal - quote.dirtinessSurchargeAmount,
             dirtiness: quote.dirtiness,
             dirtinessSurcharge: quote.dirtinessSurchargeAmount,
             expressSurcharge: quote.expressSurchargeAmount,
             expressLine: expressLine,
-            total: max(quote.totalPrice - discount, 0)
+            total: total,
+            creditApplied: payByCard
+                ? BookingPricing.capCreditForOrder(
+                    balance: quote.creditBalance,
+                    charged: total,
+                    share: quote.creditMaxShareOfOrder
+                )
+                : 0,
+            creditBalance: quote.creditBalance
         )
     }
 }

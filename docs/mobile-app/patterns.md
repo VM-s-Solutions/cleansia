@@ -94,8 +94,8 @@ e-mail and the terms tick first; name, password and referral second). It was off
 
 ## Tab roots clear the Book FAB, not just the bar {#bottom-chrome-clearance}
 
-The customer Book FAB sits centred on the top edge of the bottom bar, so half of it rises above the
-bar. Content scrolled to the end must clear the **FAB's top**, not the bar's. Only the four tab roots
+The customer Book FAB is docked on the top edge of the bottom bar and rises above it. Content
+scrolled to the end must clear the **FAB's top**, not the bar's. Only the four tab roots
 (Home, Orders, Rewards, Profile) need this, because a pushed screen or a sheet covers the whole shell,
 FAB included.
 
@@ -105,12 +105,17 @@ FAB included.
   (`chromeEnvelope − systemTabBarHeight`) plus 12pt, which is 45pt. The clearance is derived from the
   same constants that place the FAB, so the two cannot drift apart. `contentMargins` would do the same
   job but needs iOS 17, which is above the floor.
-- **Android.** The bar box is 12dp + a 64dp pill + 12dp = 88dp above the navigation-bar inset, and the
-  FAB's top sits on the box's top edge. Each tab root ends with
+- **Android.** The bar box is 12dp + 74dp + 12dp = 98dp above the navigation-bar inset. The 74dp FAB
+  sets its height, not the 64dp pill: a `Box` is as tall as its tallest child, and the FAB's
+  `offset(y = (-12).dp)` moves where it is drawn without changing its measured size. The pill sits at
+  the top of the box's content, and the offset lifts the FAB 12dp above the pill, onto the box's top
+  edge. Each tab root ends with
   `Spacer(Modifier.navigationBarsPadding().height(MainShellBottomClearance))`, where the clearance is
-  `88.dp + 16.dp`. The navigation-bar inset is therefore added at runtime, and a 3-button bar is about
-  twice as tall as the gesture handle. The fixed `108.dp` it replaced ignored the inset and left the
-  last item under the FAB in either mode.
+  the box plus 16dp: `12.dp + 74.dp + 12.dp + 16.dp`, which is 114dp. The navigation-bar inset is
+  therefore added at runtime, and a 3-button bar is about twice as tall as the gesture handle. The
+  fixed `108.dp` it replaced ignored the inset and left the last item under the FAB in either mode.
+  **Count the FAB, not the pill.** A box sized from the pill comes to 88dp, and a clearance built on
+  it leaves a 6dp gap instead of 16dp.
 
 **A state that fills an empty tab centres between the title and the FAB's top**, the area that is
 actually visible. Orders is the only tab that does this today. On iOS, a `ScrollView` proposes no

@@ -147,36 +147,6 @@ cleansia-hero {
 // =============================
 
 // =============================
-// Responsive — Hero
-// =============================
-@media (max-width: 768px) {
-  .cl-hero {
-    padding: 4rem 1.5rem 6rem;
-    &__inner {
-      flex-direction: column;
-      text-align: center;
-      gap: 2.5rem;
-    }
-    &__tagline {
-      align-self: center;
-    }
-    &__subtitle {
-      margin-left: auto;
-      margin-right: auto;
-    }
-    &__buttons {
-      justify-content: center;
-    }
-    &__trust {
-      justify-content: center;
-    }
-    &__image {
-      width: min(100%, 260px);
-    }
-  }
-}
-
-// =============================
 // Quick quote — the calculator in the hero
 // =============================
 // Above the fold on purpose: "fixed price" stops being a claim and becomes a
@@ -380,20 +350,6 @@ cleansia-hero {
   .cl-hero__image img {
     width: 260px;
     margin-left: 0;
-  }
-}
-
-@media (max-width: 768px) {
-  .cl-hero {
-    &__inner {
-      padding: 32px 20px 0;
-    }
-
-    &__buttons {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 18px;
-    }
   }
 }
 
@@ -661,6 +617,83 @@ cleansia-hero {
     .cl-btn {
       width: 100%;
       white-space: normal;
+    }
+  }
+}
+
+// Phones: one left-aligned grid with the mascot small beside the actions, so
+// the calculator starts on the first screen. `__text` dissolves into the grid,
+// which places its children without a template change. Last in the file: the
+// 900px block above sizes the mascot too, and would otherwise win.
+@media (max-width: 768px) {
+  .cl-hero {
+    &__sud {
+      display: none;
+    }
+
+    &__inner {
+      grid-template-columns: minmax(0, 1fr) 112px;
+      grid-template-areas:
+        'title title'
+        'sub sub'
+        'ctas mascot'
+        'quote quote';
+      gap: 0 12px;
+      padding: 16px var(--cl-gutter) 0;
+
+      > cleansia-quick-quote {
+        grid-area: quote;
+        margin-top: 20px;
+      }
+    }
+
+    &__text {
+      display: contents;
+    }
+
+    &__title {
+      grid-area: title;
+      margin-top: 0;
+      font-size: clamp(32px, 8.6vw, 34px);
+      line-height: 1.1;
+    }
+
+    &__subtitle {
+      grid-area: sub;
+      font-size: 16px;
+      line-height: 1.6;
+      margin-top: 12px;
+    }
+
+    &__buttons {
+      grid-area: ctas;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+      margin-top: 20px;
+
+      .cl-btn {
+        align-self: stretch;
+        min-height: 48px;
+        padding: 0 24px;
+      }
+    }
+
+    &__spacer {
+      display: none;
+    }
+
+    &__image {
+      grid-area: mascot;
+      width: 112px;
+      margin: 0;
+      justify-self: end;
+      align-self: end;
+
+      img {
+        width: 100%;
+        margin-left: 0;
+      }
     }
   }
 }

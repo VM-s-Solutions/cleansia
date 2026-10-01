@@ -460,7 +460,7 @@ apps keep the lookup because it creates nothing. The customer mobile host keeps 
 for now — `Lookup` (POST and GET), `LookupBatch`, and the three in
 [Guest cancellation](#guest-cancellation) — because an app build installed before the change still
 calls `Lookup`, `GuestCancellationPreview` and `CancelGuest`. They answer as they do on the web host
-until a follow-up removes them. → [The anonymous allow-list](/mobile-app/api-integration#the-anonymous-allow-list)
+until a follow-up removes them (T-0800, once no supported build calls them). → [The anonymous allow-list](/mobile-app/api-integration#the-anonymous-allow-list)
 
 The guest projection carries no address and no crew: the token opens the **booking**, not the
 household. It does carry the `confirmationCode`, now purely as the short human reference printed on

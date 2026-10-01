@@ -213,8 +213,8 @@ session expiry. → [Orders — CreateOrder](/api/orders#createorder)
 **Neither app has a guest surface, so no guest path is on either list** (owner ruling 2026-10-01).
 A guest booking is tracked and cancelled from its e-mail link on the web; *Find a guest booking*, with
 its token-keyed `Lookup`, `GuestCancellationPreview` and `CancelGuest` calls, is gone from both apps.
-The customer mobile host still serves those routes until a follow-up removes them, but no current
-build calls them. The signed-in `/api/Order/Cancel` and `/api/Order/CancellationPreview` — different
+The customer mobile host still serves those routes until a follow-up removes them (T-0800), but no
+current build calls them. The signed-in `/api/Order/Cancel` and `/api/Order/CancellationPreview` — different
 routes — always carry the Bearer: Android pins that
 (`AuthInterceptorAuthorizationTest.order cancellation and its preview carry the bearer`), and iOS pins
 it together with no guest path being anonymous

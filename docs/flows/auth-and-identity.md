@@ -105,7 +105,7 @@ booking* either (owner ruling, reversing the 2026-09-28 default that kept it). A
 made, tracked and cancelled on the web, from the link in its e-mail. What the apps still call
 anonymously is what the sign-up form and the reads made with or without a session need. The mobile
 host also still serves the six token-keyed guest routes, for app builds installed before the change,
-until a follow-up removes them.
+until a follow-up removes them (T-0800).
 → [The anonymous allow-list](/mobile-app/api-integration#the-anonymous-allow-list),
 [Guest order lookup](/flows/booking-and-pricing#guest-order-lookup)
 

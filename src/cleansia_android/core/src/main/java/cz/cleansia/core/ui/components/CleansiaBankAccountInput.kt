@@ -52,6 +52,10 @@ private const val BankCodeMaxLength = 4
  * widths below are sized to the *placeholder*, not to the digits, for the same reason — a hint that is
  * clipped to "Předčí…" answers nothing.
  *
+ * **A whole account pasted into any segment is spread over all three** ([splitPastedAccount]), so an
+ * account copied off a statement or a banking app lands where it belongs instead of being clamped into
+ * one box.
+ *
  * The web twin is `cleansia-bank-account`; keep the two in step.
  */
 @Composable
@@ -89,6 +93,19 @@ fun CleansiaBankAccountInput(
         else -> MaterialTheme.colorScheme.outline
     }
 
+    // A paste that reads as a whole account fills the segments it names; anything else is clamped into
+    // the segment it went into, exactly as typing is.
+    fun segmentChange(current: String, maxLength: Int, onChange: (String) -> Unit): (String) -> Unit = { raw ->
+        val split = splitPastedAccount(raw, current)
+        if (split == null) {
+            onChange(raw.filter(Char::isDigit).take(maxLength))
+        } else {
+            split.first?.let(onPrefixChange)
+            onNumberChange(split.second)
+            split.third?.let(onBankCodeChange)
+        }
+    }
+
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
             text = label,
@@ -115,7 +132,7 @@ fun CleansiaBankAccountInput(
             // longest placeholder we ship ("Predčíslie"), not by its six digits.
             AccountSegment(
                 value = prefix,
-                onValueChange = { onPrefixChange(it.filter(Char::isDigit).take(PrefixMaxLength)) },
+                onValueChange = segmentChange(prefix, PrefixMaxLength, onPrefixChange),
                 interactionSource = prefixInteraction,
                 enabled = enabled,
                 placeholder = prefixPlaceholder,
@@ -124,7 +141,7 @@ fun CleansiaBankAccountInput(
             Separator("–")
             AccountSegment(
                 value = number,
-                onValueChange = { onNumberChange(it.filter(Char::isDigit).take(NumberMaxLength)) },
+                onValueChange = segmentChange(number, NumberMaxLength, onNumberChange),
                 interactionSource = numberInteraction,
                 enabled = enabled,
                 placeholder = numberPlaceholder,
@@ -133,7 +150,7 @@ fun CleansiaBankAccountInput(
             Separator("/")
             AccountSegment(
                 value = bankCode,
-                onValueChange = { onBankCodeChange(it.filter(Char::isDigit).take(BankCodeMaxLength)) },
+                onValueChange = segmentChange(bankCode, BankCodeMaxLength, onBankCodeChange),
                 interactionSource = bankCodeInteraction,
                 enabled = enabled,
                 placeholder = bankCodePlaceholder,
@@ -150,6 +167,39 @@ fun CleansiaBankAccountInput(
             )
         }
     }
+}
+
+private val domesticAccount = Regex("""^(?:(\d{1,6})-)?(\d{1,10})(?:/(\d{1,4}))?$""")
+private val czSkIban = Regex("""^(?:CZ|SK)\d{2}(\d{20})$""")
+
+/**
+ * Reads a whole Czech/Slovak account out of pasted text, as (prefix, number, bank code); a null part
+ * means "leave that segment as it is", and a null result means the change is not a pasted account.
+ *
+ * - Only a change that lands two or more characters over [current] at once is a paste — a number pad
+ *   types one at a time, and typing must never jump segments.
+ * - Whitespace of every kind (NBSP included) is dropped, en and em dashes count as `-`.
+ * - `[prefix-]number[/bank code]` with a separator is an account written out: the parts it names are
+ *   taken and a missing prefix means none (cleared); a missing bank code keeps the one already entered.
+ * - A bare number goes to the number segment and leaves prefix and bank code alone.
+ * - A CZ or SK IBAN is decomposed from its BBAN — bank code, prefix, number — with the leading zeros
+ *   the IBAN pads them with removed.
+ *
+ * It only splits text. Whether the account is valid (mod-11, the bank code) stays with the server.
+ * The iOS twin is `CleansiaBankAccountField`; keep the rules identical. -> /partner-app/onboarding
+ */
+internal fun splitPastedAccount(raw: String, current: String = ""): Triple<String?, String, String?>? {
+    if (raw.length - current.length < 2) return null
+    val text = raw.filterNot(Char::isWhitespace).replace('\u2013', '-').replace('\u2014', '-').uppercase()
+    czSkIban.matchEntire(text)?.let { iban ->
+        val bban = iban.groupValues[1]
+        return Triple(bban.substring(4, 10).trimStart('0'), bban.substring(10).trimStart('0'), bban.substring(0, 4))
+    }
+    val account = domesticAccount.matchEntire(text) ?: return null
+    val prefix = account.groups[1]?.value
+    val bankCode = account.groups[3]?.value
+    val writtenOut = prefix != null || bankCode != null
+    return Triple(if (writtenOut) prefix.orEmpty() else null, account.groupValues[2], bankCode)
 }
 
 /**

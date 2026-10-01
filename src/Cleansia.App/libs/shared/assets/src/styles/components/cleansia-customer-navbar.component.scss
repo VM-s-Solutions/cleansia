@@ -539,47 +539,26 @@ $nav-band: 96px;
   height: $nav-band;
 }
 
-// =============================
-// Dev banner stacking (dev environments only)
-// =============================
-// The shared <cleansia-dev-banner> sits above the navbar in the DOM, but the
-// navbar is fixed at top: 0 and paints in the same spot. Pin the banner to the
-// viewport top and push the navbar (and everything offset against its 64px
-// height) down by the banner height so the two stack instead of overlapping.
-// Guarded on .customer-navbar so the banner keeps its in-flow behavior in the
-// sidebar apps (partner/admin). The tripled class out-specifies the banner's
-// component-scoped (emulated-encapsulation) rules.
-$dev-banner-height: 30px;
-
+// The tripled class out-ranks the banner's emulated component styles. 1000
+// keeps the pill under the cookie banner (9999) and PrimeNG dialogs.
 body:has(.customer-navbar) .cleansia-dev-banner.cleansia-dev-banner.cleansia-dev-banner {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: $dev-banner-height;
-  padding-block: 0;
+  top: auto;
+  right: auto;
+  left: 12px;
+  bottom: 12px;
+  height: auto;
+  padding: 6px 10px;
+  border-radius: 999px;
+  gap: 8px;
+  font-size: 12px;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.2);
+  z-index: 1000;
 }
 
-body:has(.cleansia-dev-banner) {
-  // The banner sits above the navbar, so the occupied band grows by its height.
-  // The token and the spacer read $nav-band for the same reason the base case
-  // does: both were 64-based while the real bar is 96, so the spacer SHRANK by
-  // 2px when the banner appeared instead of growing by 30.
-  --cl-nav-h: #{$nav-band + $dev-banner-height};
-
-  .customer-navbar {
-    top: $dev-banner-height;
-  }
-
-  .customer-navbar-spacer {
-    height: $nav-band + $dev-banner-height;
-  }
-
-  // Left on the base rule's 64 rather than $nav-band: the mobile menu opens
-  // below 900px, where the pill's padding tightens and the band is not 96. Its
-  // offset is wrong in both branches equally — reported, not folded in here.
-  .customer-navbar__mobile-menu {
-    top: 64px + $dev-banner-height;
+@media (max-width: 600px) {
+  body:has(.customer-navbar) .cleansia-dev-banner__text {
+    display: none;
   }
 }
 

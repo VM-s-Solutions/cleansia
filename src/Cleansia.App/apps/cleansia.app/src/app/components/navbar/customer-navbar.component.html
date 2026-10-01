@@ -193,8 +193,9 @@
     <div class="customer-navbar__hamburger md:hidden flex align-items-center">
       <cleansia-button
         [icon]="mobileMenuOpen() ? 'pi pi-times' : 'pi pi-bars'"
+        [style]="'basic-button'"
         severity="secondary"
-        [text]="true"
+        [outlined]="true"
         [rounded]="true"
         ariaLabel="Toggle menu"
         (onClick)="toggleMobileMenu()"

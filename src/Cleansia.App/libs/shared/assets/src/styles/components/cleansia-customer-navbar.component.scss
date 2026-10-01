@@ -774,6 +774,35 @@ body:has(.customer-navbar) .cleansia-dev-banner.cleansia-dev-banner.cleansia-dev
   }
 }
 
+// Drawn like `__icon-btn`. Four classes deep because PrimeNG's outlined-secondary
+// state rules carry as many and are injected after this sheet.
+.customer-navbar .customer-navbar__hamburger .p-button.p-button-outlined {
+  width: 44px;
+  height: 44px;
+  background: transparent;
+  border: 1px solid #e2e8f0;
+  color: #0369a1;
+  box-shadow: none;
+  transition: border-color 0.16s ease, background 0.16s ease;
+
+  &:not(:disabled):hover,
+  &:not(:disabled):active {
+    border-color: #7dd3fc;
+    background: #f0f9ff;
+    color: #0369a1;
+  }
+}
+
+:root.dark-mode .customer-navbar .customer-navbar__hamburger .p-button.p-button-outlined {
+  &,
+  &:not(:disabled):hover,
+  &:not(:disabled):active {
+    background: transparent;
+    border-color: rgba(148, 163, 184, 0.3);
+    color: #7dd3fc;
+  }
+}
+
 // The bar needs 1331px in Ukrainian — the longest labels we ship — before the
 // brand, four links, both controls, the sign-in link and the CTA all fit inside
 // the pill. PrimeFlex's `md:flex` — self-hosted in primeflex-subset.scss with

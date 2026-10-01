@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
@@ -50,6 +51,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
+import androidx.compose.material3.ripple
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
@@ -1041,7 +1044,10 @@ private fun QuickSizeSlideCard(
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.fillMaxWidth(0.72f),
             )
-            Spacer(Modifier.height(8.dp))
+            // The steppers and the price button are 48 dp touch rows around 36 dp capsules: this
+            // spacer is 6 dp short of the 8 dp gap it draws, and the 12 dp between the steppers and
+            // the button is their two margins, so the card still fits UpsellCardHeight.
+            Spacer(Modifier.height(2.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -1067,10 +1073,10 @@ private fun QuickSizeSlideCard(
                     modifier = Modifier.weight(1f),
                 )
             }
-            Spacer(Modifier.height(10.dp))
             UpsellCtaPill(
                 slide.cta,
                 modifier = Modifier
+                    .minimumInteractiveComponentSize()
                     .clip(RoundedCornerShape(999.dp))
                     .clickable(role = Role.Button, onClick = onSeePrice),
             )
@@ -1089,17 +1095,28 @@ private fun QuickSizeStepper(
     onPlus: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // A 36 dp capsule, but each −/+ answers a 48 dp square centred on its icon: the 6 dp above and
+    // below are this row's padding, and the 4 dp either side reach into the label's margin and the
+    // gap beside the capsule, so the label keeps its width. Nothing here clips — a clip would stop
+    // the overhang taking taps — and the ripple is an 18 dp circle that stays inside the capsule.
     Row(
         modifier = modifier
+            .padding(vertical = 6.dp)
             .height(36.dp)
-            .clip(RoundedCornerShape(999.dp))
-            .background(Color.White.copy(alpha = 0.22f)),
+            .background(Color.White.copy(alpha = 0.22f), RoundedCornerShape(999.dp)),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
             Modifier
                 .size(40.dp, 36.dp)
-                .clickable(enabled = canRemove, role = Role.Button, onClick = onMinus)
+                .requiredSize(48.dp)
+                .clickable(
+                    interactionSource = null,
+                    indication = ripple(bounded = false, radius = 18.dp),
+                    enabled = canRemove,
+                    role = Role.Button,
+                    onClick = onMinus,
+                )
                 .semantics { contentDescription = lessLabel },
             contentAlignment = Alignment.Center,
         ) {
@@ -1122,7 +1139,14 @@ private fun QuickSizeStepper(
         Box(
             Modifier
                 .size(40.dp, 36.dp)
-                .clickable(enabled = canAdd, role = Role.Button, onClick = onPlus)
+                .requiredSize(48.dp)
+                .clickable(
+                    interactionSource = null,
+                    indication = ripple(bounded = false, radius = 18.dp),
+                    enabled = canAdd,
+                    role = Role.Button,
+                    onClick = onPlus,
+                )
                 .semantics { contentDescription = moreLabel },
             contentAlignment = Alignment.Center,
         ) {

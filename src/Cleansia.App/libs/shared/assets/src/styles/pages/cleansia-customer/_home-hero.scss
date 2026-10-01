@@ -696,4 +696,51 @@ cleansia-hero {
       }
     }
   }
+
+  .cl-quote {
+    padding: 20px 16px;
+    border-radius: 24px;
+    text-align: left;
+
+    // The service chips are one row that scrolls sideways, edge to edge of the
+    // card. It reserves ONE chip row, so it still holds still when the catalogue
+    // replaces the placeholders; the chips are border-box because a button is and
+    // the placeholder span is not, which made the two rows 2px apart. The 4px
+    // block padding keeps a chip's focus ring (2px at a 2px offset) out of the
+    // scroller's clip; the margins give it back. The fade is exactly the end
+    // padding, so the last chip at rest is never faded.
+    &__chips--services {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scroll-snap-type: x proximity;
+      scroll-padding-inline: 16px;
+      scrollbar-width: none;
+      margin-inline: -16px;
+      padding: 4px 16px;
+      margin-top: calc(0.625 * var(--cl-u) - 4px);
+      margin-bottom: -4px;
+      min-height: max(44px, calc(2.75 * var(--cl-u)));
+      -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 16px), transparent);
+      mask-image: linear-gradient(to right, #000 calc(100% - 16px), transparent);
+
+      &::-webkit-scrollbar {
+        display: none;
+      }
+
+      > .cl-chip {
+        flex: 0 0 auto;
+        box-sizing: border-box;
+        white-space: nowrap;
+        scroll-snap-align: start;
+      }
+    }
+
+    // Each box is about 150px at 380, room for a date and its icon; below that
+    // the 900px block's stack stands.
+    @media (min-width: 380px) {
+      &__when {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+  }
 }

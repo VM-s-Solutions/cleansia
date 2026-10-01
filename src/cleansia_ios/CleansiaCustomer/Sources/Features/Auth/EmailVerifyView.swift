@@ -65,10 +65,6 @@ private struct EmailVerifyContent: View {
 
             ScrollView {
                 VStack(spacing: 0) {
-                    AuthHeaderImage()
-
-                    Spacer().frame(height: Spacing.l)
-
                     Text(L10n.Auth.verifyTitle)
                         .cleansiaFont(CleansiaTypography.displayMedium)
                         .foregroundColor(CleansiaColors.onBackground)

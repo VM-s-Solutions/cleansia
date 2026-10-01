@@ -122,10 +122,6 @@ private struct ProfileOnboardingContent: View {
 
     private var hero: some View {
         VStack(spacing: 0) {
-            Mascot.waving.image
-                .resizable()
-                .scaledToFit()
-                .frame(width: 160, height: 160)
             Text(
                 greetingName.isBlank
                     ? L10n.Onboarding.greeting
@@ -133,7 +129,6 @@ private struct ProfileOnboardingContent: View {
             )
             .cleansiaFont(CleansiaTypography.headlineSmall)
             .foregroundColor(CleansiaColors.onBackground)
-            .padding(.top, Spacing.m)
             Text(L10n.Onboarding.subtitle)
                 .font(CleansiaTypography.bodyMedium)
                 .foregroundColor(CleansiaColors.onSurfaceVariant)

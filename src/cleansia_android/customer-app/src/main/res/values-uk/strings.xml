@@ -211,7 +211,6 @@
     <string name="order_detail_title">Замовлення №%1$s</string>
     <string name="order_detail_created">Створено %1$s</string>
     <string name="order_detail_section_details">Деталі прибирання</string>
-    <string name="order_detail_date">Дата і час</string>
     <string name="order_detail_address">Адреса</string>
     <string name="order_detail_headline_default">Бронювання отримано</string>
     <string name="order_detail_headline_confirmed">Клінер підтвердив</string>

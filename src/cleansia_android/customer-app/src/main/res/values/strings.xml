@@ -213,7 +213,6 @@
     <string name="order_detail_title">Order #%1$s</string>
     <string name="order_detail_created">Created %1$s</string>
     <string name="order_detail_section_details">Cleaning details</string>
-    <string name="order_detail_date">Date &amp; time</string>
     <string name="order_detail_address">Address</string>
     <string name="order_detail_headline_default">Booking received</string>
     <string name="order_detail_headline_confirmed">Cleaner accepted</string>

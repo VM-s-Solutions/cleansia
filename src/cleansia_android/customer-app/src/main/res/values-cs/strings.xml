@@ -211,7 +211,6 @@
     <string name="order_detail_title">Objednávka č. %1$s</string>
     <string name="order_detail_created">Vytvořeno %1$s</string>
     <string name="order_detail_section_details">Detaily úklidu</string>
-    <string name="order_detail_date">Datum a čas</string>
     <string name="order_detail_address">Adresa</string>
     <string name="order_detail_headline_default">Rezervace přijata</string>
     <string name="order_detail_headline_confirmed">Uklízeč potvrzen</string>

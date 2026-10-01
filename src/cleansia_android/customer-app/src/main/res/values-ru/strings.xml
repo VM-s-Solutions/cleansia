@@ -211,7 +211,6 @@
     <string name="order_detail_title">Заказ №%1$s</string>
     <string name="order_detail_created">Создан %1$s</string>
     <string name="order_detail_section_details">Детали уборки</string>
-    <string name="order_detail_date">Дата и время</string>
     <string name="order_detail_address">Адрес</string>
     <string name="order_detail_headline_default">Бронирование получено</string>
     <string name="order_detail_headline_confirmed">Клинер подтвердил</string>

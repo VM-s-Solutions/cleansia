@@ -34,6 +34,8 @@ enum RegistrationStepDetail: Equatable {
     case approvalAwaitingReview
     case approvalCompleteProfileFirst
     case missingField(String)
+    /// The admin's own words, shown verbatim and untranslated, the way partner web shows them.
+    case rejectionReason(String)
 }
 
 struct RegistrationStep: Equatable {
@@ -44,12 +46,12 @@ struct RegistrationStep: Equatable {
 
 /// A row opens whatever its status, because the lock replaces the whole app until approval: a finished
 /// section has no other way back in, and "Documents: Done" means one active document, not every type
-/// approval needs. Approval is the admin's decision, so its row has nothing to open.
-/// -> /partner-app/onboarding#registration-lock-screen
+/// approval needs. Approval is the admin's decision, so its row opens only once it is a rejection, and
+/// then it opens a mail to support. -> /partner-app/onboarding#registration-lock-screen
 func isFixable(_ step: RegistrationStep) -> Bool {
     switch step.category {
     case .profile, .documents, .legalDocuments: true
-    case .approval: false
+    case .approval: step.details.contains(.approvalRejected)
     }
 }
 
@@ -83,7 +85,8 @@ func buildSteps(
         profileDone: profileDone,
         documentsDone: documentsDone,
         legalDone: legalDone,
-        contract: contract
+        contract: contract,
+        rejectionReason: status?.rejectionReason
     ))
     return steps
 }
@@ -92,13 +95,19 @@ private func approvalStep(
     profileDone: Bool,
     documentsDone: Bool,
     legalDone: Bool,
-    contract: ContractStatus?
+    contract: ContractStatus?,
+    rejectionReason: String?
 ) -> RegistrationStep {
     if contract == .approved || contract == .active {
         return RegistrationStep(category: .approval, status: .done, details: [])
     }
     if contract == .rejected {
-        return RegistrationStep(category: .approval, status: .missing, details: [.approvalRejected])
+        let reason = rejectionReason?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return RegistrationStep(
+            category: .approval,
+            status: .missing,
+            details: reason.isEmpty ? [.approvalRejected] : [.approvalRejected, .rejectionReason(reason)]
+        )
     }
     if profileDone, documentsDone, legalDone, contract == .pending {
         return RegistrationStep(category: .approval, status: .pending, details: [.approvalAwaitingReview])

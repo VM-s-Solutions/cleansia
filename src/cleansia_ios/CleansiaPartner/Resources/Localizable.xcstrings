@@ -21152,6 +21152,41 @@
         }
       }
     },
+    "registration_lock_support_subject": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cleansia partner — žádost zamítnuta"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cleansia partner — application rejected"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cleansia partner — заявка отклонена"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cleansia partner — žiadosť zamietnutá"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cleansia partner — заявку відхилено"
+          }
+        }
+      }
+    },
     "registration_lock_title": {
       "extractionState": "stale",
       "localizations": {

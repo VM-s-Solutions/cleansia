@@ -81,6 +81,39 @@ final class RegistrationCompletionTests: XCTestCase {
         XCTAssertTrue(approval.details.contains(.approvalRejected))
     }
 
+    func testTheRejectedRowCarriesTheAdminsReasonTrimmed() {
+        var status = complete(contract: .rejected)
+        status.rejectionReason = "  Upload a readable ID card.\n"
+        let approval = step(buildSteps(status), .approval)
+        XCTAssertEqual(approval.details, [.approvalRejected, .rejectionReason("Upload a readable ID card.")])
+    }
+
+    func testARejectionWithoutAReasonShowsOnlyTheRejectedLine() {
+        for reason in [nil, "", "   \n"] {
+            var status = complete(contract: .rejected)
+            status.rejectionReason = reason
+            XCTAssertEqual(
+                step(buildSteps(status), .approval).details,
+                [.approvalRejected],
+                "\(String(describing: reason))"
+            )
+        }
+    }
+
+    /// The reason field outlives the decision on the server; only a rejection may show it.
+    func testAReasonIsNeverShownOnAnApplicationThatIsNotRejected() {
+        for contract in [ContractStatus.pending, .approved, .active] {
+            var status = complete(contract: contract)
+            status.rejectionReason = "stale"
+            let details = step(buildSteps(status), .approval).details
+            XCTAssertFalse(details.contains(.rejectionReason("stale")), "\(contract)")
+        }
+    }
+
+    func testOnlyARejectedApprovalRowOpensSupport() {
+        XCTAssertTrue(isFixable(step(buildSteps(complete(contract: .rejected)), .approval)))
+    }
+
     func testBuildStepsAwaitingReviewWhenProfileAndDocsDoneAndPending() {
         let approval = step(buildSteps(complete(contract: .pending)), .approval)
         XCTAssertEqual(approval.status, .pending)

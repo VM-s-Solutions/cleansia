@@ -134,7 +134,7 @@ dependencies {
 
     // Location + Mapbox stack — :core hosts LocationService (FusedLocation
     // wrapper), ReverseGeocodingService (Mapbox Geocoding v5 forward +
-    // reverse), MapStyles. Mapbox deps are `api` because the picker
+    // reverse), and the shared map style + pin (CleansiaMap.kt). Mapbox deps are `api` because the picker
     // composables that consumer apps build invoke MapboxMap directly;
     // making them `api` lets each app import the symbols without
     // re-declaring the dep. FusedLocation is `api` for the same reason —

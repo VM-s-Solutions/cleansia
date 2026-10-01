@@ -2,6 +2,7 @@ package cz.cleansia.customer.features.orders
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,7 +12,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.LocationOff
-import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -20,8 +20,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
@@ -34,11 +32,11 @@ import com.mapbox.maps.ViewAnnotationAnchor
 import com.mapbox.maps.extension.compose.MapboxMap
 import com.mapbox.maps.extension.compose.animation.viewport.rememberMapViewportState
 import com.mapbox.maps.extension.compose.annotation.ViewAnnotation
-import com.mapbox.maps.extension.compose.style.MapStyle
 import com.mapbox.maps.viewannotation.annotationAnchor
 import com.mapbox.maps.viewannotation.geometry
 import com.mapbox.maps.viewannotation.viewAnnotationOptions
-import cz.cleansia.core.location.MapStyles
+import cz.cleansia.core.location.CleansiaMapPin
+import cz.cleansia.core.location.CleansiaMapStyle
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.customer.R
 
@@ -99,33 +97,27 @@ internal fun OrderMapBackdrop(
     MapboxMap(
         modifier = Modifier.fillMaxSize(),
         mapViewportState = viewportState,
-        style = { MapStyle(style = if (darkTheme) MapStyles.DARK else MapStyles.LIGHT) },
+        style = { CleansiaMapStyle(darkTheme) },
         scaleBar = {},
         compass = {},
-        logo = {},
-        attribution = {},
+        // Mapbox's terms require the wordmark and the attribution. Lifted above the resting sheet,
+        // which covers the map's bottom edge where they sit by default.
+        logo = {
+            Logo(
+                contentPadding = PaddingValues(start = 8.dp, bottom = sheetCoverHeight + 8.dp),
+                alignment = Alignment.BottomStart,
+            )
+        },
+        attribution = {
+            Attribution(
+                contentPadding = PaddingValues(end = 8.dp, bottom = sheetCoverHeight + 8.dp),
+                alignment = Alignment.BottomEnd,
+            )
+        },
     ) {
         ViewAnnotation(options = annotationOptions) {
-            MapPin()
+            CleansiaMapPin(darkTheme = darkTheme)
         }
-    }
-}
-
-@Composable
-private fun MapPin() {
-    Box(
-        modifier = Modifier
-            .size(40.dp)
-            .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.primary),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            imageVector = Icons.Outlined.Place,
-            contentDescription = null,
-            tint = Color.White,
-            modifier = Modifier.size(22.dp),
-        )
     }
 }
 

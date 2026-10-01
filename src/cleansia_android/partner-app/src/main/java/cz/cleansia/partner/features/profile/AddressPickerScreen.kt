@@ -66,10 +66,11 @@ import com.mapbox.geojson.Point
 import com.mapbox.maps.MapboxExperimental
 import com.mapbox.maps.extension.compose.MapboxMap
 import com.mapbox.maps.extension.compose.animation.viewport.rememberMapViewportState
-import com.mapbox.maps.extension.compose.style.MapStyle
 import cz.cleansia.core.location.GeocodedAddress
 import cz.cleansia.core.location.LocationService
-import cz.cleansia.core.location.MapStyles
+import cz.cleansia.core.location.CleansiaMapPin
+import cz.cleansia.core.location.CleansiaMapPinHeight
+import cz.cleansia.core.location.CleansiaMapStyle
 import cz.cleansia.core.location.ReverseGeocodingService
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
@@ -194,16 +195,16 @@ fun AddressPickerScreen(
         MapboxMap(
             modifier = Modifier.fillMaxSize(),
             mapViewportState = viewportState,
-            style = { MapStyle(style = if (darkTheme) MapStyles.DARK else MapStyles.LIGHT) },
+            style = { CleansiaMapStyle(darkTheme) },
             scaleBar = {}, // hide default 0–300m overlay
         )
 
-        // Centre pin.
+        // Centre pin, lifted by its own height so its tip is the map's centre.
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center,
         ) {
-            CenterPin()
+            CleansiaMapPin(darkTheme = darkTheme, modifier = Modifier.padding(bottom = CleansiaMapPinHeight))
         }
 
         // Top bar: back + search.
@@ -373,33 +374,6 @@ private fun ConfirmCard(
             onClick = onConfirm,
             enabled = resolved != null && !lookingUp,
         )
-    }
-}
-
-@Composable
-private fun CenterPin() {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Box(
-            modifier = Modifier
-                .size(28.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primary),
-            contentAlignment = Alignment.Center,
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(10.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.onPrimary),
-            )
-        }
-        Box(
-            modifier = Modifier
-                .width(2.dp)
-                .height(14.dp)
-                .background(MaterialTheme.colorScheme.primary),
-        )
-        Spacer(Modifier.height(24.dp)) // visually offsets so pin tip points at center
     }
 }
 

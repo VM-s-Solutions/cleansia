@@ -64,3 +64,13 @@ The uploading flag is set **before compression rather than at the network call**
 gets a second of dead tap, which is the same freeze without the frame drops.
 
 Uploads are single-flight guarded, matching iOS.
+
+## Auth screens carry no mascot {#auth-screens}
+
+No auth screen in either app draws the mascot (owner ruling 2026-10-01). In the customer apps that
+means sign-in, sign-up, forgot password, e-mail confirmation and the profile completion after a first
+sign-in. In the partner apps it means sign-in, registration, e-mail confirmation and forgot password.
+The partner app's pre-sign-in intro carousel keeps its two mascots, because it introduces the app
+rather than asking for anything. Nothing replaced the mascot: its height went to the form. Both
+platforms changed together, so the branding parity of [ADR-0018](/decisions/adr-0018) still holds,
+and the mascot is unchanged everywhere else.

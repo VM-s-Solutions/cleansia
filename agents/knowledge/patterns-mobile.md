@@ -1829,8 +1829,8 @@ the Parity rule; Gate-SEC):** the customer settings tail over the generated `Cus
   Help/Support is static FAQ + contact. EditProfile/Onboarding share ONE `ProfileViewModel` (`userGetCurrentUser`→form→
   `userUpdateCurrentUser`; refresh/save `ActionState`s + `completeOnboarding`/`skipOnboarding` — the Slice-A Home nudge routes to the
   Profile tab → EditProfile).
-- **Brand asset (§7.15 deferral):** NO customer brand asset exists in the repo → KEEP the SF-Symbol `AuthHeaderImage` + flag an
-  owner-provide follow-up (the partner-mascot precedent — do NOT block on creating brand art). The Google "G" brand-fidelity check is a
+- **No auth header image (owner ruling 2026-10-01):** `AuthHeaderImage` is deleted, and no auth screen in either app draws a header
+  image or a mascot; do not add one back → `docs/mobile-app/patterns.md#auth-screens`. The Google "G" brand-fidelity check is a
   pre-submission OWNER note.
 - **Deviations a reviewer rejects:** a delete path that calls `logout()` (not `signOutLocal()`) or trusts a client flag; a blocked-error
   failure that wipes the session; a missing SIWA note; a Devices screen using anything but the ONE `DeviceIdProvider`, a revoke shown on

@@ -430,6 +430,11 @@ need backfilling.
 
 ### Changed
 
+- **Customer and cleaner, Android and iOS — no mascot on the sign-in and account screens.** Sign-in,
+  sign-up, forgot password and e-mail confirmation in both apps, and the customer's profile
+  completion after a first sign-in, now open straight on the form. The cleaner app's introduction
+  before sign-in keeps its two characters. (Owner ruling 2026-10-01.)
+
 - **Admin, cleaner — the admin and partner web share one look, page for page.** Every page sits in one
   white card behind one gutter (lists 1400 px wide, details and forms 1200), with the title top-left,
   its one-line subtitle under it and the page's actions on the same row to the right — *Filters* then

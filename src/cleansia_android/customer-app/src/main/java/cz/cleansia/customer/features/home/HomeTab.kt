@@ -520,7 +520,27 @@ private fun AddressTopBar(
  * -> /product/features
  */
 
-private enum class UpsellKind { Plus, Referral, Book, SetupRecurring }
+internal enum class UpsellKind { Plus, SetupRecurring, Referral, Book }
+
+/**
+ * Which slides show, in order — most relevant first, so the slide on screen at t=0 is the one the
+ * customer is most likely to act on. Plus hides for members; Referral and Book always show.
+ */
+internal fun upsellKinds(isPlus: Boolean, showSetupRecurring: Boolean): List<UpsellKind> = buildList {
+    if (!isPlus) add(UpsellKind.Plus)
+    if (showSetupRecurring) add(UpsellKind.SetupRecurring)
+    add(UpsellKind.Referral)
+    add(UpsellKind.Book)
+}
+
+/** Every slide its own drawing, so no two visible slides repeat a mascot. Same mapping as iOS. */
+@androidx.annotation.DrawableRes
+internal fun UpsellKind.mascotRes(): Int = when (this) {
+    UpsellKind.Plus -> R.drawable.mascot_plus
+    UpsellKind.SetupRecurring -> R.drawable.mascot_idea
+    UpsellKind.Referral -> R.drawable.mascot_thumbs_up
+    UpsellKind.Book -> R.drawable.mascot_cleaning
+}
 
 private data class UpsellSlide(
     val kind: UpsellKind,
@@ -529,7 +549,6 @@ private data class UpsellSlide(
     val titleArg: Int? = null,
     val ctaRes: Int,
     val gradient: List<Color>,
-    val mascotRes: Int,
     val onClick: () -> Unit,
 )
 
@@ -557,19 +576,16 @@ private fun SmartUpsellCarousel(
     val (blueA, blueB) = cz.cleansia.customer.ui.theme.BrandGradients.blue()
     val blueGradient = listOf(blueA, blueB)
 
-    // Build the slide list from current state. Order matters: most-relevant
-    // first so the slide on screen at t=0 is the one the user is most likely
-    // to act on.
     val slides = androidx.compose.runtime.remember(
         isPlus, plusTrialDays, showSetupRecurring,
         plusGradient, purpleGradient, cyanGradient, blueGradient,
     ) {
-        buildList {
-            if (!isPlus) {
-                val offersTrial = plusTrialDays > 0
-                add(
+        upsellKinds(isPlus = isPlus, showSetupRecurring = showSetupRecurring).map { kind ->
+            when (kind) {
+                UpsellKind.Plus -> {
+                    val offersTrial = plusTrialDays > 0
                     UpsellSlide(
-                        kind = UpsellKind.Plus,
+                        kind = kind,
                         topRes = R.string.home_upsell_plus_top,
                         titleRes = if (offersTrial) R.string.home_upsell_plus_title_trial else R.string.home_upsell_plus_title,
                         titleArg = plusTrialDays.takeIf { offersTrial },
@@ -577,49 +593,37 @@ private fun SmartUpsellCarousel(
                         // Same gradient as the Plus subscribe page hero — tapping
                         // the card visually previews where the user lands.
                         gradient = plusGradient,
-                        mascotRes = R.drawable.mascot_ready,
                         onClick = onSubscribePlus,
-                    ),
+                    )
+                }
+                // Setup-recurring — only for Plus subscribers who haven't yet built
+                // a schedule. Surfaces the headline Plus perk so it doesn't get
+                // stuck behind a tab.
+                UpsellKind.SetupRecurring -> UpsellSlide(
+                    kind = kind,
+                    topRes = R.string.home_upsell_setup_recurring_top,
+                    titleRes = R.string.home_upsell_setup_recurring_title,
+                    ctaRes = R.string.home_upsell_setup_recurring_cta,
+                    gradient = purpleGradient,
+                    onClick = onSetupRecurring,
                 )
-            }
-            // Setup-recurring — only for Plus subscribers who haven't yet built
-            // a schedule. Surfaces the headline Plus perk so it doesn't get
-            // stuck behind a tab.
-            if (showSetupRecurring) {
-                add(
-                    UpsellSlide(
-                        kind = UpsellKind.SetupRecurring,
-                        topRes = R.string.home_upsell_setup_recurring_top,
-                        titleRes = R.string.home_upsell_setup_recurring_title,
-                        ctaRes = R.string.home_upsell_setup_recurring_cta,
-                        gradient = purpleGradient,
-                        mascotRes = R.drawable.mascot_idea,
-                        onClick = onSetupRecurring,
-                    ),
-                )
-            }
-            add(
-                UpsellSlide(
-                    kind = UpsellKind.Referral,
+                UpsellKind.Referral -> UpsellSlide(
+                    kind = kind,
                     topRes = R.string.home_upsell_referral_top,
                     titleRes = R.string.home_upsell_referral_title,
                     ctaRes = R.string.home_upsell_referral_cta,
                     gradient = cyanGradient,
-                    mascotRes = R.drawable.mascot_cleaning,
                     onClick = onOpenReferral,
-                ),
-            )
-            add(
-                UpsellSlide(
-                    kind = UpsellKind.Book,
+                )
+                UpsellKind.Book -> UpsellSlide(
+                    kind = kind,
                     topRes = R.string.home_hero_greeting,
                     titleRes = R.string.home_hero_prompt,
                     ctaRes = R.string.home_hero_cta,
                     gradient = blueGradient,
-                    mascotRes = R.drawable.mascot_cleaning,
                     onClick = onBookCleaning,
-                ),
-            )
+                )
+            }
         }
     }
 
@@ -808,7 +812,7 @@ private fun UpsellSlideCard(slide: UpsellSlide, modifier: Modifier = Modifier) {
             }
         }
         Image(
-            painter = painterResource(slide.mascotRes),
+            painter = painterResource(slide.kind.mascotRes()),
             contentDescription = null,
             modifier = Modifier
                 .align(Alignment.BottomEnd)

@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -75,6 +76,7 @@ import cz.cleansia.customer.ui.theme.Sky600
 import cz.cleansia.customer.ui.theme.asList
 import kotlinx.datetime.toJavaLocalDateTime
 import kotlinx.datetime.toLocalDateTime
+import cz.cleansia.customer.features.main.MainShellBottomClearance
 
 private data class ProfileRow(
     val key: String,
@@ -225,8 +227,8 @@ fun ProfileTab(
                 .padding(vertical = 20.dp),
             textAlign = TextAlign.Center,
         )
-        // Reserve room for the floating island bottom nav.
-        Spacer(Modifier.height(108.dp))
+        // Clears the floating island bottom nav and its Book FAB.
+        Spacer(Modifier.navigationBarsPadding().height(MainShellBottomClearance))
     }
 
     if (showLogoutDialog) {

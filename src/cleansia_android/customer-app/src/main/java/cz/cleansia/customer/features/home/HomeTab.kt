@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
@@ -98,6 +99,7 @@ import cz.cleansia.customer.ui.format.orderStatusColor
 import cz.cleansia.customer.ui.theme.CleansiaTheme
 import cz.cleansia.customer.ui.theme.SuccessText
 import cz.cleansia.customer.ui.theme.WarningStar
+import cz.cleansia.customer.features.main.MainShellBottomClearance
 
 /* ── Presentation models ── */
 
@@ -384,9 +386,8 @@ fun HomeTab(
                 }
             }
 
-            // Trailing inset reserves room for the floating island bottom nav so
-            // the last card isn't hidden behind it. ~96dp pill height + 12dp gap.
-            Spacer(Modifier.height(108.dp))
+            // Clears the floating island bottom nav and its Book FAB.
+            Spacer(Modifier.navigationBarsPadding().height(MainShellBottomClearance))
         }
     }
 }

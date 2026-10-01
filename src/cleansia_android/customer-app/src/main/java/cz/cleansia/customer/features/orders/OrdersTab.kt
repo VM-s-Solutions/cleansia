@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -66,6 +67,7 @@ import cz.cleansia.core.ui.components.SudsRefreshIndicator
 import cz.cleansia.core.ui.theme.Poppins
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cz.cleansia.customer.features.main.MainShellBottomClearance
 
 /**
  * Orders tab — lists the signed-in user's cleaning orders with filter chips,
@@ -290,9 +292,8 @@ private fun OrdersContent(
                 item { LoadingMoreRow() }
             }
 
-            // Reserve room for the floating island bottom nav so the last
-            // card isn't hidden behind it.
-            item { Spacer(Modifier.height(108.dp)) }
+            // Clears the floating island bottom nav and its Book FAB.
+            item { Spacer(Modifier.navigationBarsPadding().height(MainShellBottomClearance)) }
         }
     }
 }

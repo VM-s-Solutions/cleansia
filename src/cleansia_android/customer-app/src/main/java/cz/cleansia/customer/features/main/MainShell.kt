@@ -296,9 +296,9 @@ fun MainShell(
         // is one continuous page background — making the pill genuinely
         // float on the page, not sit on a separate band.
         //
-        // Bottom inset for the pill is handled by `MainTab.contentBottomInset`
-        // which each tab adds as a trailing Spacer in its scroll column, so
-        // the last list item isn't hidden behind the pill.
+        // Each tab ends its scroll content with a trailing
+        // `Spacer(Modifier.navigationBarsPadding().height(MainShellBottomClearance))`,
+        // so the last item clears the pill and the Book FAB above it.
         val navInsets = WindowInsets.navigationBars.asPaddingValues()
 
         HorizontalPager(
@@ -403,6 +403,14 @@ fun MainShell(
         )
     }
 }
+
+/**
+ * Where a tab root's scroll content must end, measured up from the nav-bar inset: the bar box
+ * (12dp + 64dp pill + 12dp in [CustomBottomBar]; the Book FAB's top sits on the box's top edge)
+ * plus 16dp, so the last item clears the FAB instead of touching it. Tabs add the nav-bar inset
+ * at runtime, which a 3-button nav bar makes twice as tall as the gesture handle.
+ */
+internal val MainShellBottomClearance = 88.dp + 16.dp
 
 /**
  * Floating island bottom bar — Wolt/Bolt style. Pill-shaped surface that

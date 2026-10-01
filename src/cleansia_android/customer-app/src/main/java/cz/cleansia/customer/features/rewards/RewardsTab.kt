@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
@@ -74,6 +75,7 @@ import cz.cleansia.core.ui.theme.Poppins
 import cz.cleansia.customer.ui.theme.SuccessText
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cz.cleansia.customer.features.main.MainShellBottomClearance
 
 /**
  * Rewards tab — Loyalty Phase A (M2).
@@ -238,8 +240,8 @@ private fun LoyaltyContent(
             activity = activityPreview,
             onOpenActivity = onOpenActivity,
         )
-        // Reserve room for the floating island bottom nav.
-        Spacer(Modifier.height(108.dp))
+        // Clears the floating island bottom nav and its Book FAB.
+        Spacer(Modifier.navigationBarsPadding().height(MainShellBottomClearance))
     }
 }
 

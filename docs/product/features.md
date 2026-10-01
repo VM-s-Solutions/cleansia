@@ -102,7 +102,8 @@ by itself every 6 seconds, always forward. Once the customer swipes, taps or cha
 reader, it stops for the rest of that visit to Home. It never moves by itself while VoiceOver or
 TalkBack is on, or while Reduce Motion (iOS) or Remove animations (Android) is set. A screen reader
 announces each card's place, *Offer 2 of 4*. On iOS a swipe up or down changes the card, and on Android
-the *Next offer* and *Previous offer* actions do.
+the *Next offer* and *Previous offer* actions do. Every card draws its own mascot, the same one on both
+platforms, so no two cards repeat a drawing: the Plus card carries the web's Plus mascot.
 
 **Honest copy** — the money figures in the customer copy (the apology credit when a cleaner never
 comes, the insurance ceiling on the mobile trust badge and FAQ, the currency named in the terms) come

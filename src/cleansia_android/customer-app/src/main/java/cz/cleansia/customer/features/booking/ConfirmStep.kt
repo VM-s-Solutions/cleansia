@@ -111,7 +111,8 @@ fun ConfirmStep(
     val needsCardGuarantee by bookingVm.needsCardGuarantee.collectAsStateWithLifecycle()
     // Every money row comes from the one resolver, so this card and the sticky bar below it cannot
     // disagree with each other or with the total the order is created with.
-    val summary = BookingPriceSummary.resolve(quote, effectiveDiscount)
+    val payByCard = state.paymentMethod == BookingViewModel.PAYMENT_CARD
+    val summary = BookingPriceSummary.resolve(quote, effectiveDiscount, payByCard)
     // Catalog sum only until the first quote lands, so the card isn't blank; never a money decision.
     val subtotal = quote?.let { summary.subtotal }
         ?: (selectedServices.sumOf { it.basePrice + it.perRoomPrice * (state.rooms + state.bathrooms) } +
@@ -345,6 +346,49 @@ fun ConfirmStep(
                     formatOrderPrice(summary.total, currencyCode),
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.primary,
+                )
+            }
+            // Credit applies automatically to a card booking, so the customer is told here rather
+            // than first reading the smaller figure on the Stripe sheet. Cash takes no credit, and a
+            // customer who toggles to cash is told why the credit lines went away.
+            val creditBalance = quote?.creditBalance ?: 0.0
+            if (summary.creditApplied > 0.0) {
+                Row(Modifier.fillMaxWidth().padding(top = 6.dp, bottom = 2.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text(
+                        stringResource(R.string.credit_your_credit),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = SuccessText,
+                    )
+                    Text(
+                        "−${formatOrderPrice(summary.creditApplied, currencyCode)}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = SuccessText,
+                    )
+                }
+                Row(Modifier.fillMaxWidth().padding(vertical = 2.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text(
+                        stringResource(R.string.booking_summary_due_on_card),
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    Text(
+                        formatOrderPrice(summary.dueOnCard, currencyCode),
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+                Text(
+                    stringResource(R.string.booking_summary_credit_note, formatOrderPrice(creditBalance, currencyCode)),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+            } else if (!payByCard && creditBalance > 0.0) {
+                Text(
+                    stringResource(R.string.booking_summary_credit_card_only),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp),
                 )
             }
         }

@@ -113,6 +113,7 @@ class OrderDetailViewModelTest {
         savedStateHandle = SavedStateHandle(mapOf("orderId" to id)),
         membershipRepository = membershipRepository,
         orderEventBus = orderEventBus,
+        loyaltyRepository = io.mockk.mockk(relaxed = true),
     )
 
     /** Wire values: Confirmed=2, OnTheWay=3, InProgress=4, Completed=5, Cancelled=6. */

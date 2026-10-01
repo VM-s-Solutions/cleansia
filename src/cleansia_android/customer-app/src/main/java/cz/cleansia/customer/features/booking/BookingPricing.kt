@@ -47,6 +47,25 @@ fun QuoteOrderResponse.discountAsCharged(resolvedDiscount: Double): Double {
 }
 
 /**
+ * How much of [balance] the server will spend on an order charged [charged], when [share] is the most
+ * of an order credit may settle. A mirror of backend `BookingPolicy.CapCreditForOrder` — floored to
+ * whole minor units, never the whole order — so the confirm step says what Stripe will then ask for.
+ * The share comes from the wire; only the formula is copied, and the iOS twin is pinned to the same
+ * vectors. Decimal arithmetic, not Double: 100.10 × 0.7 is 70.07 on the server and 70.069… in binary
+ * floating point, which floors a cent short.
+ *
+ * A preview, not a promise: a concurrent booking can drain the balance first, so the screens after the
+ * booking read the order's own `creditAppliedAmount`.
+ */
+internal fun capCreditForOrder(balance: Double, charged: Double, share: Double): Double {
+    if (balance <= 0.0 || charged <= 0.0 || share <= 0.0) return 0.0
+    val ceiling = charged.toBigDecimal()
+        .multiply(share.toBigDecimal())
+        .setScale(2, java.math.RoundingMode.FLOOR)
+    return minOf(balance.toBigDecimal(), ceiling).toDouble()
+}
+
+/**
  * Every money row the booking summary and the sticky price bar draw, resolved from the server quote
  * in one place so the two can never disagree with each other or with what gets charged.
  *
@@ -66,11 +85,24 @@ data class BookingPriceSummary(
     val expressLine: ExpressLine,
     val total: Double,
     val dirtinessSurcharge: Double = 0.0,
+    /**
+     * The credit this booking would spend. Zero unless it is paid by card: credit is a card-only
+     * tender. Comes off [total] only on the card — the sale keeps its size.
+     */
+    val creditApplied: Double = 0.0,
 ) {
     enum class ExpressLine { NotExpress, Charged, Waived }
 
+    /** What the card is asked for once credit has settled its share — the figure Stripe shows. */
+    val dueOnCard: Double get() = total - creditApplied
+
     companion object {
-        fun resolve(quote: QuoteOrderResponse?, discount: Double): BookingPriceSummary {
+        /**
+         * [payByCard] decides whether credit applies at all. The cap is taken on the CHARGED total —
+         * promo included — which is why the server hands over the balance and the share rather than
+         * an answer.
+         */
+        fun resolve(quote: QuoteOrderResponse?, discount: Double, payByCard: Boolean = false): BookingPriceSummary {
             if (quote == null) {
                 return BookingPriceSummary(0.0, 0.0, ExpressLine.NotExpress, 0.0)
             }
@@ -79,12 +111,18 @@ data class BookingPriceSummary(
                 quote.expressSurchargeApplied -> ExpressLine.Charged
                 else -> ExpressLine.NotExpress
             }
+            val total = (quote.totalPrice - discount).coerceAtLeast(0.0)
             return BookingPriceSummary(
                 subtotal = quote.preSurchargeSubtotal - quote.dirtinessSurchargeAmount,
                 expressSurcharge = quote.expressSurchargeAmount,
                 expressLine = expressLine,
-                total = (quote.totalPrice - discount).coerceAtLeast(0.0),
+                total = total,
                 dirtinessSurcharge = quote.dirtinessSurchargeAmount,
+                creditApplied = if (payByCard) {
+                    capCreditForOrder(quote.creditBalance, total, quote.creditMaxShareOfOrder)
+                } else {
+                    0.0
+                },
             )
         }
     }

@@ -29,6 +29,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowForwardIos
 import androidx.compose.material.icons.automirrored.outlined.Logout
+import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.CreditCard
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.DeleteForever
@@ -66,7 +67,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import cz.cleansia.customer.R
+import cz.cleansia.core.format.formatOrderPrice
+import cz.cleansia.customer.core.loyalty.CreditDto
 import cz.cleansia.customer.core.user.CurrentUser
+import cz.cleansia.customer.features.rewards.CreditExplainerSheet
 import cz.cleansia.core.ui.components.CleansiaDialog
 import cz.cleansia.customer.ui.theme.BrandGradients
 import cz.cleansia.customer.ui.theme.CleansiaTheme
@@ -83,6 +87,8 @@ private data class ProfileRow(
     val key: String,
     val icon: ImageVector,
     val labelRes: Int,
+    /** A trailing figure the row states before it is opened — the credit balance. */
+    val value: String? = null,
 )
 
 /**
@@ -97,6 +103,8 @@ fun ProfileTab(
     isPlus: Boolean = false,
     /** The Market row renders only when the directory offers a choice (ADR-0058 D6). */
     showMarketRow: Boolean = false,
+    /** The customer's credit; null (not loaded, or the read failed) hides the row, zero shows "0 Kč". */
+    credit: CreditDto? = null,
     onLogout: () -> Unit = {},
     onRowClick: (key: String) -> Unit = {},
     onAvatarLoadFailed: () -> Unit = {},
@@ -113,7 +121,17 @@ fun ProfileTab(
     val savedDisplay = formatSaved(user?.totalSavings, user?.savingsCurrencyCode)
     val memberSince = formatMemberSince(user?.memberSince)
 
-    val accountRows = listOf(
+    val accountRows = listOfNotNull(
+        // The same placement the web profile rail gives credit, shown at zero too. It opens the
+        // explainer the Rewards card opens, so the two never describe credit differently.
+        credit?.let {
+            ProfileRow(
+                "credit",
+                Icons.Outlined.AccountBalanceWallet,
+                R.string.profile_row_credit,
+                value = formatOrderPrice(it.primary.balance, it.primary.currencyCode),
+            )
+        },
         ProfileRow("addresses", Icons.Outlined.Home, R.string.profile_row_addresses),
         ProfileRow("payments", Icons.Outlined.CreditCard, R.string.profile_row_payments),
         // "Disputes" opens the My Disputes list (Wave 2 Phase 6). Gavel is
@@ -136,6 +154,7 @@ fun ProfileTab(
     // back to SignIn + clears tokens). The "Log out" row only flips the flag;
     // the actual `onLogout()` callback fires after the user confirms.
     var showLogoutDialog by remember { mutableStateOf(false) }
+    var showCreditSheet by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
 
     Column(
@@ -193,7 +212,10 @@ fun ProfileTab(
         Spacer(Modifier.height(18.dp))
 
         // 2. Account (only saved addresses now — "Edit profile" moved into the hero)
-        SettingsSection(rows = accountRows, onClick = onRowClick)
+        SettingsSection(
+            rows = accountRows,
+            onClick = { key -> if (key == "credit") showCreditSheet = true else onRowClick(key) },
+        )
         Spacer(Modifier.height(18.dp))
 
         // 3. Preferences
@@ -232,6 +254,10 @@ fun ProfileTab(
         )
         // Clears the floating island bottom nav and its Book FAB.
         Spacer(Modifier.navigationBarsPadding().height(MainShellBottomClearance))
+    }
+
+    if (showCreditSheet && credit != null) {
+        CreditExplainerSheet(credit = credit, onDismiss = { showCreditSheet = false })
     }
 
     if (showLogoutDialog) {
@@ -557,6 +583,15 @@ private fun SettingsRow(row: ProfileRow, onClick: () -> Unit) {
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.weight(1f),
         )
+        if (row.value != null) {
+            Text(
+                row.value,
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+            )
+            Spacer(Modifier.width(8.dp))
+        }
         Icon(
             Icons.AutoMirrored.Outlined.ArrowForwardIos,
             null,

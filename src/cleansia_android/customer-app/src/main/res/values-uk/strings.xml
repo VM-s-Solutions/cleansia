@@ -235,6 +235,8 @@
     <string name="order_detail_completed_at">Завершено</string>
     <string name="order_detail_services">Розбивка ціни</string>
     <string name="order_detail_total">Усього</string>
+    <string name="order_paid_with_credit">Сплачено бонусами</string>
+    <string name="order_paid_by_card">Сплачено карткою</string>
     <string name="order_detail_confirmation">Код підтвердження</string>
     <string name="order_detail_cleaners">Ваш клінер</string>
     <string name="order_detail_instructions">Інструкції</string>
@@ -711,6 +713,9 @@
     <string name="booking_summary_tier_discount">Знижка за лояльність</string>
     <string name="booking_summary_tier_discount_min_not_met">Знижка за лояльність діє для замовлень понад %1$s</string>
     <string name="booking_summary_total">Усього</string>
+    <string name="booking_summary_due_on_card">До сплати карткою</string>
+    <string name="booking_summary_credit_note">У вас залишилося %1$s бонусів. Вони списуються автоматично, а частина кожного замовлення завжди сплачується карткою.</string>
+    <string name="booking_summary_credit_card_only">Бонуси діють лише при оплаті карткою.</string>
 
     <!-- Promo code -->
     <string name="booking_promo_code_label">Маєте промокод?</string>
@@ -1134,6 +1139,7 @@
 
     <!-- Disputes -->
     <string name="profile_row_disputes">Спори</string>
+    <string name="profile_row_credit">Бонуси</string>
 
     <string name="order_action_report_issue">Повідомити про проблему</string>
     <string name="order_action_cleaner_no_show">Прибиральник не прийшов</string>
@@ -1201,6 +1207,17 @@
     <string name="loyalty_tier_label_short_gold">Золото</string>
     <string name="loyalty_tier_label_short_platinum">Платина</string>
     <string name="loyalty_lifetime_points">Бали за весь час</string>
+    <string name="credit_your_credit">Ваші бонуси</string>
+    <string name="credit_auto_applied_share">Автоматично списуються з наступного замовлення з оплатою карткою — до %1$d%% його вартості.</string>
+    <string name="credit_expires_on">Згорає %1$s. Кожне замовлення відсуває цю дату.</string>
+    <string name="credit_none">Зараз бонусів немає. Якщо з прибиранням щось піде не так, бонуси, які ми нарахуємо, з’являться тут.</string>
+    <string name="credit_explainer_title">Як працюють бонуси</string>
+    <string name="credit_explainer_source_title">Звідки вони беруться</string>
+    <string name="credit_explainer_source_body">Вибачення, коли прибиральник не приїхав або ніхто не зміг узяти ваше замовлення, скарга, яку ви вирішили врегулювати бонусами, або жест доброї волі від нас.</string>
+    <string name="credit_explainer_spend_title">Як вони витрачаються</string>
+    <string name="credit_explainer_spend_body">Автоматично, на наступне замовлення з оплатою карткою в тій самій валюті — до %1$d%% його вартості. Решту завжди сплачує картка.</string>
+    <string name="credit_explainer_points_title">Бонуси — це не бали</string>
+    <string name="credit_explainer_points_body">Бали підвищують ваш рівень і його знижку та ніколи не витрачаються. Бонуси — це гроші, що віднімаються від ваших замовлень.</string>
     <string name="loyalty_points_unit">б.</string>
     <string name="loyalty_progress_to_next">%1$d / %2$d балів до %3$s</string>
     <string name="loyalty_max_tier_reached">Ви досягли вершини — дякуємо!</string>

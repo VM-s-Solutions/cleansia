@@ -7,6 +7,7 @@ import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.catalog.CatalogRepository
+import cz.cleansia.customer.core.loyalty.CreditDto
 import cz.cleansia.customer.core.loyalty.LoyaltyAccountDto
 import cz.cleansia.customer.core.loyalty.LoyaltyActivityItemDto
 import cz.cleansia.customer.core.loyalty.LoyaltyRepository
@@ -45,6 +46,7 @@ class RewardsTabViewModel @Inject constructor(
     val loading: StateFlow<Boolean> = loyaltyRepository.loading
     val loaded: StateFlow<Boolean> = loyaltyRepository.loaded
     val referralAccount: StateFlow<ReferralAccountDto?> = referralRepository.account
+    val credit: StateFlow<CreditDto?> = loyaltyRepository.credit
 
     /** The market's currency when one resolved, else the catalogue default the server prices in. */
     val currencyCode: StateFlow<String?> =

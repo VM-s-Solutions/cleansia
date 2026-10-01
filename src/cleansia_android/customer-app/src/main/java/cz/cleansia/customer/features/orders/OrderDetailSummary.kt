@@ -92,6 +92,20 @@ internal fun PriceBreakdownCard(order: OrderDetailDto) {
                 color = MaterialTheme.colorScheme.primary,
             )
         }
+        // Credit is a tender, not a discount: the total stays the size of the sale, and these two
+        // rows say how it was paid — the card figure is what the customer's statement shows.
+        if (order.creditAppliedAmount > 0.0) {
+            Spacer(Modifier.height(6.dp))
+            InfoRow(
+                label = stringResource(R.string.order_paid_with_credit),
+                value = "−" + formatOrderPrice(order.creditAppliedAmount, currencyCode),
+            )
+            Spacer(Modifier.height(6.dp))
+            InfoRow(
+                label = stringResource(R.string.order_paid_by_card),
+                value = formatOrderPrice(order.amountDueOnCard, currencyCode),
+            )
+        }
 
         paymentMethodLabel(order)?.let { method ->
             Spacer(Modifier.height(10.dp))

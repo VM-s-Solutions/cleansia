@@ -5,6 +5,8 @@ import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.catalog.CatalogRepository
+import cz.cleansia.customer.core.loyalty.CreditBalanceDto
+import cz.cleansia.customer.core.loyalty.CreditDto
 import cz.cleansia.customer.core.loyalty.LoyaltyAccountDto
 import cz.cleansia.customer.core.loyalty.LoyaltyActivityItemDto
 import cz.cleansia.customer.core.loyalty.LoyaltyActivityResponseDto
@@ -48,6 +50,7 @@ class RewardsTabViewModelTest {
     private val loading = MutableStateFlow(false)
     private val loaded = MutableStateFlow(false)
     private val referralAccount = MutableStateFlow<ReferralAccountDto?>(null)
+    private val credit = MutableStateFlow<CreditDto?>(null)
     private val currencyCode = MutableStateFlow<String?>(null)
 
     @Before
@@ -60,6 +63,7 @@ class RewardsTabViewModelTest {
         every { loyaltyRepository.tiers } returns tiers
         every { loyaltyRepository.loading } returns loading
         every { loyaltyRepository.loaded } returns loaded
+        every { loyaltyRepository.credit } returns credit
         every { referralRepository.account } returns referralAccount
         every { catalogRepository.currencyCode } returns currencyCode
         marketRepository = mockk(relaxed = true)
@@ -198,5 +202,16 @@ class RewardsTabViewModelTest {
 
         verify(exactly = 1) { snackbar.showSuccessKey(R.string.loyalty_referral_copied_toast) }
         verify(exactly = 1) { snackbar.showInfoKey(R.string.loyalty_referral_share_failed) }
+    }
+
+    @Test
+    fun `the tab shows the credit the repository holds`() = runTest {
+        val vm = viewModel()
+        assertEquals(null, vm.credit.value)
+
+        val held = CreditDto(listOf(CreditBalanceDto(250.0, "CZK", null)), maxShareOfOrder = 0.7)
+        credit.value = held
+
+        assertEquals(held, vm.credit.value)
     }
 }

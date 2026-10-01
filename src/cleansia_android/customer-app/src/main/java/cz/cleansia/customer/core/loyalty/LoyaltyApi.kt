@@ -1,6 +1,9 @@
 package cz.cleansia.customer.core.loyalty
 
+import cz.cleansia.customer.api.client.CreditApi as GenCreditApi
 import cz.cleansia.customer.api.client.LoyaltyApi as GenLoyaltyApi
+import cz.cleansia.customer.api.model.GetMyCreditCurrencyBalance as GenCreditBalance
+import cz.cleansia.customer.api.model.GetMyCreditResponse as GenGetMyCreditResponse
 import cz.cleansia.customer.api.model.GetLoyaltyActivityActivityItem as GenLoyaltyActivityItem
 import cz.cleansia.customer.api.model.GetLoyaltyTiersResponse as GenGetLoyaltyTiersResponse
 import cz.cleansia.customer.api.model.GetLoyaltyTiersTierInfo as GenTierInfo
@@ -19,6 +22,7 @@ import retrofit2.Response
  */
 class LoyaltyApi(
     private val loyaltyApi: GenLoyaltyApi,
+    private val creditApi: GenCreditApi,
 ) {
     suspend fun getMy(): Response<LoyaltyAccountDto> {
         val raw = loyaltyApi.loyaltyGetMy()
@@ -32,6 +36,11 @@ class LoyaltyApi(
 
     suspend fun getTiers(): Response<LoyaltyTiersResponseDto> {
         val raw = loyaltyApi.loyaltyGetTiers()
+        return raw.mapBody { it.toAppDto() }
+    }
+
+    suspend fun getCredit(): Response<CreditDto> {
+        val raw = creditApi.creditGetMy()
         return raw.mapBody { it.toAppDto() }
     }
 }
@@ -123,5 +132,36 @@ private fun GenLoyaltyActivityItem.toAppDto(): LoyaltyActivityItemDto? {
         orderId = orderId,
         orderDisplayNumber = orderDisplayNumber,
         occurredOn = occurredOn?.toString(),
+    )
+}
+
+/**
+ * Credit is money, so a balance, its currency or the share it may settle is refused rather than
+ * defaulted: a zeroed balance tells a customer the platform owes them nothing, and a zeroed share turns
+ * "up to 70 % of a booking" into "none of it". A refused row refuses the whole answer — the Profile row
+ * and the Rewards card show the largest balance, and dropping one could promote the wrong currency.
+ *
+ * An empty `balances` is the ordinary never-credited case: the server's scalars then carry one zero in
+ * the platform default currency, and that zero is what the screens show.
+ */
+private fun GenGetMyCreditResponse?.toAppDto(): CreditDto? {
+    if (this == null) return null
+    val rows = balances.orEmpty().map { it.toAppDto() ?: return null }
+    val fallback = CreditBalanceDto(
+        balance = balance ?: return null,
+        currencyCode = currencyCode?.takeIf { it.isNotBlank() } ?: return null,
+        expiresOn = expiresOn,
+    )
+    return CreditDto(
+        balances = rows.ifEmpty { listOf(fallback) },
+        maxShareOfOrder = maxShareOfOrder ?: return null,
+    )
+}
+
+private fun GenCreditBalance.toAppDto(): CreditBalanceDto? {
+    return CreditBalanceDto(
+        balance = balance ?: return null,
+        currencyCode = currencyCode?.takeIf { it.isNotBlank() } ?: return null,
+        expiresOn = expiresOn,
     )
 }

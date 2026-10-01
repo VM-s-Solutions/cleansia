@@ -302,6 +302,18 @@ private fun OrderSummaryCard(order: OrderDetailDto) {
                 value = total,
             )
         }
+        // The order's own figures, not the confirm step's preview: a concurrent booking can drain
+        // the balance between the two, and the card was charged what the order says.
+        if (order.creditAppliedAmount > 0.0) {
+            SummaryRow(
+                label = stringResource(R.string.order_paid_with_credit),
+                value = "−" + formatOrderPrice(order.creditAppliedAmount, order.currency?.code),
+            )
+            SummaryRow(
+                label = stringResource(R.string.order_paid_by_card),
+                value = formatOrderPrice(order.amountDueOnCard, order.currency?.code),
+            )
+        }
     }
 }
 

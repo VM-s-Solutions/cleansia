@@ -107,6 +107,13 @@ data class OrderDetailDto(
     val tierDiscountAmount: Double? = null,
     val membershipDiscountAmount: Double? = null,
     val promoDiscountAmount: Double? = null,
+    /**
+     * How much of this order the customer's credit settled, and what the card was therefore asked for.
+     * NOT a discount: [totalPrice] is the size of the sale. The order's own figure, never the booking
+     * preview — a concurrent booking can drain the balance between the two.
+     */
+    val creditAppliedAmount: Double = 0.0,
+    val amountDueOnCard: Double = 0.0,
     val estimatedTime: Int = 0,
     val actualCompletionTime: Int? = null,
     /**

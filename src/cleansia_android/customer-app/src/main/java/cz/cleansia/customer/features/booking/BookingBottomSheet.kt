@@ -600,8 +600,11 @@ private fun SheetContent(
             // The slide-button label and the receipt above it are the same number by construction:
             // one resolver, one discount from the view model. This bar used to redo the math with the
             // server discounts left out, so a Plus member read two different totals on one screen.
+            // On a card booking it is what the card is asked for — the figure the Stripe sheet then
+            // shows — so credit that applies is already off it.
             val totalDisplay = quote?.let { q ->
-                formatOrderPrice(BookingPriceSummary.resolve(q, effectiveDiscount).total, q.currencyCode)
+                val payByCard = state.paymentMethod == BookingViewModel.PAYMENT_CARD
+                formatOrderPrice(BookingPriceSummary.resolve(q, effectiveDiscount, payByCard).dueOnCard, q.currencyCode)
             }
             if (currentStep == TOTAL_STEPS) {
                 // Slide to confirm — Wolt-style, prevents accidental taps on the final step.

@@ -91,6 +91,7 @@ class OrderDetailCancelPreviewTest {
         savedStateHandle = SavedStateHandle(mapOf("orderId" to id)),
         membershipRepository = membershipRepository,
         orderEventBus = orderEventBus,
+        loyaltyRepository = io.mockk.mockk(relaxed = true),
     )
 
     private fun preview(tier: Int = 3) = CancellationFeePreviewDto(

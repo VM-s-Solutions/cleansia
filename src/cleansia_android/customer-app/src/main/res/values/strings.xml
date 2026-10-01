@@ -237,6 +237,8 @@
     <string name="order_detail_completed_at">Completed at</string>
     <string name="order_detail_services">Price breakdown</string>
     <string name="order_detail_total">Total</string>
+    <string name="order_paid_with_credit">Paid with credit</string>
+    <string name="order_paid_by_card">Paid by card</string>
     <string name="order_detail_confirmation">Confirmation code</string>
     <string name="order_detail_cleaners">Your cleaner</string>
     <string name="order_detail_instructions">Instructions</string>
@@ -723,6 +725,9 @@
     <string name="booking_summary_tier_discount">Loyalty tier discount</string>
     <string name="booking_summary_tier_discount_min_not_met">Loyalty discount applies on orders above %1$s</string>
     <string name="booking_summary_total">Total</string>
+    <string name="booking_summary_due_on_card">To pay by card</string>
+    <string name="booking_summary_credit_note">Your credit balance is %1$s. It comes off automatically, and part of every booking is always paid by card.</string>
+    <string name="booking_summary_credit_card_only">Credit applies to card payments only.</string>
 
     <!-- Promo code (Loyalty Phase B) — auto-validated input on Confirm step -->
     <string name="booking_promo_code_label">Have a promo code?</string>
@@ -1154,6 +1159,7 @@
     <!-- ── Disputes (Wave 2 Phase 6) ── -->
     <!-- Profile row -->
     <string name="profile_row_disputes">Disputes</string>
+    <string name="profile_row_credit">Credit</string>
 
     <!-- Order detail action -->
     <string name="order_action_report_issue">Report issue</string>
@@ -1225,6 +1231,17 @@
     <string name="loyalty_tier_label_short_gold">Gold</string>
     <string name="loyalty_tier_label_short_platinum">Platinum</string>
     <string name="loyalty_lifetime_points">Lifetime points</string>
+    <string name="credit_your_credit">Your credit</string>
+    <string name="credit_auto_applied_share">Comes off your next card booking automatically, up to %1$d%% of it.</string>
+    <string name="credit_expires_on">Expires %1$s. Every booking pushes that back.</string>
+    <string name="credit_none">No credit right now. If a clean goes wrong, credit we give you shows up here.</string>
+    <string name="credit_explainer_title">How credit works</string>
+    <string name="credit_explainer_source_title">Where it comes from</string>
+    <string name="credit_explainer_source_body">An apology when your cleaner doesn\'t arrive or nobody can take your booking, a complaint you chose to settle in credit, or a goodwill gesture from us.</string>
+    <string name="credit_explainer_spend_title">How it\'s spent</string>
+    <string name="credit_explainer_spend_body">Automatically, on your next card booking in the same currency, up to %1$d%% of it. The card always pays the rest.</string>
+    <string name="credit_explainer_points_title">Credit isn\'t points</string>
+    <string name="credit_explainer_points_body">Points move your tier and its discount, and are never spent. Credit is money off your bookings.</string>
     <string name="loyalty_points_unit">pts</string>
     <string name="loyalty_progress_to_next">%1$d / %2$d points to %3$s</string>
     <string name="loyalty_max_tier_reached">You\'ve reached the top — thank you!</string>

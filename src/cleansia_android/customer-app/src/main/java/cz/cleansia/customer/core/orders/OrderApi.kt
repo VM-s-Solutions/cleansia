@@ -211,6 +211,9 @@ private fun GenOrderItem?.toAppDto(): OrderDetailDto {
         tierDiscountAmount = order.tierDiscountAmount,
         membershipDiscountAmount = order.membershipDiscountAmount,
         promoDiscountAmount = order.promoDiscountAmount,
+        // Money the screen states as "paid with credit / paid by card", so refused like the total.
+        creditAppliedAmount = order.creditAppliedAmount.required("creditAppliedAmount"),
+        amountDueOnCard = order.amountDueOnCard.required("amountDueOnCard"),
         estimatedTime = order.estimatedTime.required("estimatedTime"),
         actualCompletionTime = order.actualCompletionTime,
         completedAt = order.completedAt?.toString(),

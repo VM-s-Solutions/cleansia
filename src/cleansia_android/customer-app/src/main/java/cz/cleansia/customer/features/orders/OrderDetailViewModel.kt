@@ -8,6 +8,7 @@ import cz.cleansia.customer.R
 import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
+import cz.cleansia.customer.core.loyalty.LoyaltyRepository
 import cz.cleansia.customer.core.memberships.MembershipRepository
 import cz.cleansia.customer.core.notifications.OrderEventBus
 import cz.cleansia.customer.core.orders.CancelOrderResponse
@@ -104,6 +105,7 @@ class OrderDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val membershipRepository: MembershipRepository,
     orderEventBus: OrderEventBus,
+    private val loyaltyRepository: LoyaltyRepository,
 ) : ViewModel() {
 
     val markets = marketRepository.state
@@ -408,6 +410,9 @@ class OrderDetailViewModel @Inject constructor(
                 // Cancelled status on its next composition. Silent on failure —
                 // the user can pull-to-refresh if the list is stale.
                 orderRepository.refresh()
+                // A cancelled card order returns the credit it spent, so the next screen that
+                // shows the balance refetches it.
+                loyaltyRepository.staleness.reset()
                 // Re-fetch the current detail so this screen also reflects the
                 // new status (status pill, timeline, footer visibility).
                 load()

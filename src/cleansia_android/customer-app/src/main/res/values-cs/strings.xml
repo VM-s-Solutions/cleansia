@@ -235,6 +235,8 @@
     <string name="order_detail_completed_at">Dokončeno</string>
     <string name="order_detail_services">Rozpis ceny</string>
     <string name="order_detail_total">Celkem</string>
+    <string name="order_paid_with_credit">Zaplaceno kreditem</string>
+    <string name="order_paid_by_card">Zaplaceno kartou</string>
     <string name="order_detail_confirmation">Potvrzovací kód</string>
     <string name="order_detail_cleaners">Váš uklízeč</string>
     <string name="order_detail_instructions">Pokyny</string>
@@ -714,6 +716,9 @@
     <string name="booking_summary_tier_discount">Věrnostní sleva</string>
     <string name="booking_summary_tier_discount_min_not_met">Věrnostní sleva platí pro objednávky nad %1$s</string>
     <string name="booking_summary_total">Celkem</string>
+    <string name="booking_summary_due_on_card">K úhradě kartou</string>
+    <string name="booking_summary_credit_note">Zbývá vám %1$s kreditu. Odečte se automaticky a část každé objednávky se vždy platí kartou.</string>
+    <string name="booking_summary_credit_card_only">Kredit se uplatní jen při platbě kartou.</string>
 
     <!-- Promo code -->
     <string name="booking_promo_code_label">Máte slevový kód?</string>
@@ -1137,6 +1142,7 @@
 
     <!-- Disputes (Wave 2 Phase 6) -->
     <string name="profile_row_disputes">Stížnosti</string>
+    <string name="profile_row_credit">Kredit</string>
 
     <string name="order_action_report_issue">Nahlásit problém</string>
     <string name="order_action_cleaner_no_show">Uklízeč nedorazil</string>
@@ -1204,6 +1210,17 @@
     <string name="loyalty_tier_label_short_gold">Zlato</string>
     <string name="loyalty_tier_label_short_platinum">Platina</string>
     <string name="loyalty_lifetime_points">Body za celou dobu</string>
+    <string name="credit_your_credit">Váš kredit</string>
+    <string name="credit_auto_applied_share">Automaticky se odečte z vaší příští objednávky placené kartou, až do výše %1$d %% její ceny.</string>
+    <string name="credit_expires_on">Vyprší %1$s. Každá objednávka lhůtu prodlouží.</string>
+    <string name="credit_none">Teď nemáte žádný kredit. Pokud se úklid nepovede, kredit, který vám dáme, uvidíte tady.</string>
+    <string name="credit_explainer_title">Jak funguje kredit</string>
+    <string name="credit_explainer_source_title">Odkud se bere</string>
+    <string name="credit_explainer_source_body">Omluva, když uklízeč nedorazí nebo vaši objednávku nikdo nepřevezme, reklamace, kterou jste se rozhodli vyřešit kreditem, nebo vstřícné gesto od nás.</string>
+    <string name="credit_explainer_spend_title">Jak se čerpá</string>
+    <string name="credit_explainer_spend_body">Automaticky, na vaši příští objednávku placenou kartou ve stejné měně, až do výše %1$d %% její ceny. Zbytek vždy zaplatíte kartou.</string>
+    <string name="credit_explainer_points_title">Kredit nejsou body</string>
+    <string name="credit_explainer_points_body">Body posouvají vaši úroveň a její slevu a nikdy se neutrácejí. Kredit jsou peníze, které se odečtou z vašich objednávek.</string>
     <string name="loyalty_points_unit">b.</string>
     <string name="loyalty_progress_to_next">%1$d / %2$d bodů do %3$s</string>
     <string name="loyalty_max_tier_reached">Dosáhli jste nejvyššího stupně — děkujeme!</string>

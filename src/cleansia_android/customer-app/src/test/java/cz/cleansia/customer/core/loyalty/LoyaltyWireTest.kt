@@ -52,12 +52,13 @@ class LoyaltyWireTest {
                     .setHeader("Content-Type", "application/json")
                     .setBody(body),
             )
+            val retrofit = Retrofit.Builder()
+                .baseUrl(server.url("/"))
+                .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
+                .build()
             val api = LoyaltyApi(
-                Retrofit.Builder()
-                    .baseUrl(server.url("/"))
-                    .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
-                    .build()
-                    .create(GenLoyaltyApi::class.java),
+                retrofit.create(GenLoyaltyApi::class.java),
+                retrofit.create(cz.cleansia.customer.api.client.CreditApi::class.java),
             )
             call(api).also { onRequest(server.takeRequest()) }
         } finally {

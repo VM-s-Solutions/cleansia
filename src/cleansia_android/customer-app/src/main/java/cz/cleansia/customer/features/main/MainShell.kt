@@ -272,6 +272,7 @@ fun MainShell(
             loyaltyRepo.refresh()
         }
     }
+    val credit by loyaltyRepo.credit.collectAsStateWithLifecycle()
 
     // Warm the referral cache (Loyalty Phase C) so the "Invite friends" card
     // on the Rewards tab is instant. Backend lazy-creates the user's code on
@@ -338,6 +339,7 @@ fun MainShell(
                     user = currentUser,
                     isPlus = isPlus,
                     showMarketRow = marketState.offersAChoice,
+                    credit = credit,
                     onLogout = onLogout,
                     onRowClick = onProfileRow,
                     onAvatarLoadFailed = profileVm::onAvatarLoadFailed,
@@ -382,6 +384,8 @@ fun MainShell(
                 // user needing to pull-to-refresh. Fire-and-forget — the
                 // BookingSuccess screen is what they're navigating to first.
                 scope.launch { orderRepo.refresh() }
+                // A card booking may have spent credit, so the next screen that reads it refetches.
+                loyaltyRepo.staleness.reset()
                 onBookingComplete(confirmationCode, orderId)
             },
             onNavigateToEditProfile = {

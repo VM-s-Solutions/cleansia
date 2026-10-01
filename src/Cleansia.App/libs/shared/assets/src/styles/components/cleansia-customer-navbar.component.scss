@@ -741,7 +741,8 @@ body:has(.customer-navbar) .cleansia-dev-banner.cleansia-dev-banner.cleansia-dev
 :root.dark-mode .customer-navbar {
   &__inner {
     background: var(--surface-card);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+    // A ring, not a border: the pill's height is pinned to the band.
+    box-shadow: 0 0 0 1px var(--cl-edge), 0 2px 10px rgba(0, 0, 0, 0.35);
   }
 
   &__link {

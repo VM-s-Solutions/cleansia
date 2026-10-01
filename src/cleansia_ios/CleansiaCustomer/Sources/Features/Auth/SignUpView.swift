@@ -74,10 +74,6 @@ private struct SignUpContent: View {
     var body: some View {
         CenteredAuthScroll {
             VStack(spacing: 0) {
-                AuthHeaderImage()
-
-                Spacer().frame(height: Spacing.l)
-
                 Text(L10n.Auth.signUpTitle)
                     .cleansiaFont(CleansiaTypography.displayMedium)
                     .foregroundColor(CleansiaColors.onBackground)

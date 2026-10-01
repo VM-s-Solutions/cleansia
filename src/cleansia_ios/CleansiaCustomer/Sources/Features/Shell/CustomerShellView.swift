@@ -200,6 +200,7 @@ struct CustomerShellView: View {
                 loyaltyRepository: container.loyaltyRepository,
                 membershipRepository: container.membershipRepository,
                 savedAddressRepository: container.savedAddressRepository,
+                referralRepository: container.referralRepository,
                 marketStore: container.marketStore,
                 notificationBadge: container.notificationBadge,
                 notificationFeedClient: container.notificationFeedClient,
@@ -213,6 +214,7 @@ struct CustomerShellView: View {
                 onSubscribePlus: { model.path.append(ShellRoute.subscribePlus) },
                 onOpenReferral: { model.select(.rewards) },
                 onBookPackage: bookPackage,
+                onBookSize: bookSize,
                 onRebookOrder: rebookOrder,
                 // Pre-seeded: the createRecurring destination pops on creation, so the
                 // wizard must sit ON TOP of the list or creation lands on the tab root

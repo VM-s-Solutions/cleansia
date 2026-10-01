@@ -164,7 +164,7 @@ struct HomeSkeleton: View {
             .padding(.top, Spacing.m)
             .padding(.bottom, Spacing.s)
 
-            block(height: 180, radius: 22)
+            block(height: upsellCardHeight, radius: 22)
             Spacer().frame(height: 28)
 
             block(height: 72, radius: CornerRadius.medium)

@@ -3,45 +3,86 @@ import XCTest
 @testable import CleansiaCustomer
 
 final class UpsellSlideTests: XCTestCase {
-    func testFreeUserGetsPlusReferralBookInOrder() {
-        let slides = UpsellSlide.slides(isPlus: false, showSetupRecurring: false)
-        XCTAssertEqual(slides.map(\.kind), [.plus, .referral, .book])
+    private typealias Inputs = UpsellSlide.Inputs
+
+    private let heldCredit = CustomerCredit.Balance(amount: 250, currencyCode: "CZK", expiresOn: nil)
+
+    /// Every combination of the five predicates that decide the set — 32 of them, the Android
+    /// `UpsellSlidesTest` sweep.
+    private var everyInputs: [Inputs] {
+        var all: [Inputs] = []
+        for mask in 0 ..< 32 {
+            all.append(Inputs(
+                isPlus: mask & 1 != 0,
+                showSetupRecurring: mask & 2 != 0,
+                notificationsOff: mask & 4 != 0,
+                credit: mask & 8 != 0 ? heldCredit : nil,
+                creditShare: 0.7,
+                expressRemaining: mask & 16 != 0 ? 2 : 0
+            ))
+        }
+        return all
     }
 
-    func testPlusUserWithTemplatesDropsThePlusAndSetupSlides() {
-        let slides = UpsellSlide.slides(isPlus: true, showSetupRecurring: false)
-        XCTAssertEqual(slides.map(\.kind), [.referral, .book])
+    // MARK: - Which slides, in which order
+
+    func testAFreeCustomerGetsPlusReferralAndQuickSize() {
+        XCTAssertEqual(UpsellSlide.kinds(Inputs()), [.plus, .referral, .quickSize])
     }
 
-    func testPlusUserWithoutTemplatesLeadsWithSetupRecurring() {
-        let slides = UpsellSlide.slides(isPlus: true, showSetupRecurring: true)
-        XCTAssertEqual(slides.map(\.kind), [.setupRecurring, .referral, .book])
+    func testAMemberWithASchedulePairsReferralWithQuickSize() {
+        XCTAssertEqual(UpsellSlide.kinds(Inputs(isPlus: true)), [.referral, .quickSize])
     }
 
-    func testReferralAndBookCloseEveryPermutation() {
-        for isPlus in [false, true] {
-            for showSetupRecurring in [false, true] {
-                let slides = UpsellSlide.slides(isPlus: isPlus, showSetupRecurring: showSetupRecurring)
-                XCTAssertEqual(
-                    slides.suffix(2).map(\.kind),
-                    [.referral, .book],
-                    "isPlus=\(isPlus) showSetupRecurring=\(showSetupRecurring)"
-                )
-            }
+    func testAMemberWithoutAScheduleLeadsWithSetupRecurring() {
+        XCTAssertEqual(
+            UpsellSlide.kinds(Inputs(isPlus: true, showSetupRecurring: true)),
+            [.setupRecurring, .referral, .quickSize]
+        )
+    }
+
+    func testTheRuledOrderIsNotificationsCreditExpressRecurringPlusReferral() {
+        let member = Inputs(
+            isPlus: true,
+            showSetupRecurring: true,
+            notificationsOff: true,
+            credit: heldCredit,
+            expressRemaining: 1
+        )
+        XCTAssertEqual(UpsellSlide.kinds(member), [.notifications, .credit, .express, .setupRecurring, .quickSize])
+
+        let free = Inputs(notificationsOff: true, credit: heldCredit)
+        XCTAssertEqual(UpsellSlide.kinds(free), [.notifications, .credit, .plus, .referral, .quickSize])
+    }
+
+    /// The first four eligible show, then quick-size always closes — never more than five.
+    func testTheSetIsCappedAtFiveAndQuickSizeAlwaysCloses() {
+        for inputs in everyInputs {
+            let kinds = UpsellSlide.kinds(inputs)
+            XCTAssertLessThanOrEqual(kinds.count, UpsellSlide.leadingCap + 1, "\(inputs)")
+            XCTAssertEqual(kinds.last, .quickSize, "\(inputs)")
+            XCTAssertEqual(kinds.filter { $0 == .quickSize }.count, 1, "\(inputs)")
+        }
+    }
+
+    func testEachSlideShowsOnlyWhileItsPredicateHolds() {
+        for inputs in everyInputs {
+            let kinds = UpsellSlide.kinds(inputs)
+            if !inputs.notificationsOff { XCTAssertFalse(kinds.contains(.notifications), "\(inputs)") }
+            if inputs.credit == nil { XCTAssertFalse(kinds.contains(.credit), "\(inputs)") }
+            if inputs.expressRemaining == 0 { XCTAssertFalse(kinds.contains(.express), "\(inputs)") }
+            if !inputs.showSetupRecurring { XCTAssertFalse(kinds.contains(.setupRecurring), "\(inputs)") }
+            if inputs.isPlus { XCTAssertFalse(kinds.contains(.plus), "\(inputs)") }
         }
     }
 
     func testEveryVisibleSlideDrawsItsOwnMascot() {
-        for isPlus in [false, true] {
-            for showSetupRecurring in [false, true] {
-                let mascots = UpsellSlide.slides(isPlus: isPlus, showSetupRecurring: showSetupRecurring).map(\.mascot)
-                XCTAssertEqual(
-                    Set(mascots).count,
-                    mascots.count,
-                    "isPlus=\(isPlus) showSetupRecurring=\(showSetupRecurring) repeats a mascot"
-                )
-            }
+        for inputs in everyInputs {
+            let mascots = UpsellSlide.slides(inputs).map(\.mascot)
+            XCTAssertEqual(Set(mascots).count, mascots.count, "\(inputs) repeats a mascot")
         }
+        let all = UpsellSlide.Kind.allCases.map(UpsellSlide.mascot)
+        XCTAssertEqual(Set(all).count, all.count, "two kinds share a drawing")
     }
 
     /// No welcome offer at launch: the slide advertised a code that exists only in DEV.
@@ -51,9 +92,17 @@ final class UpsellSlideTests: XCTestCase {
         }
     }
 
+    /// The generic Book slide is gone — quick-size replaced it — and so is its copy.
+    func testTheGenericBookSlideCopyIsGone() {
+        for key in ["home_hero_greeting", "home_hero_prompt", "home_hero_cta"] {
+            XCTAssertEqual(L10n.localized(key), key, "\(key) is back in the catalog")
+        }
+    }
+
+    // MARK: - What each slide says and does
+
     func testPlusSlideContentMatchesAndroid() throws {
-        let slides = UpsellSlide.slides(isPlus: false, showSetupRecurring: false)
-        let slide = try slide(.plus, in: slides)
+        let slide = try slide(.plus, in: UpsellSlide.slides(Inputs()))
         XCTAssertEqual(slide.mascot, .plus)
         XCTAssertEqual(slide.gradient, .plusHero)
         XCTAssertEqual(slide.action, .subscribePlus)
@@ -63,21 +112,18 @@ final class UpsellSlideTests: XCTestCase {
     }
 
     func testThePlusSlideOffersTheTrialOnlyWhenThereIsOneToOffer() throws {
-        let offered = UpsellSlide.slides(isPlus: false, plusTrialDays: 14, showSetupRecurring: false)
-        let trial = try slide(.plus, in: offered)
+        let trial = try slide(.plus, in: UpsellSlide.slides(Inputs(plusTrialDays: 14)))
         XCTAssertEqual(trial.title, L10n.Home.upsellPlusTitleTrial(14))
         XCTAssertEqual(trial.cta, L10n.Home.upsellPlusCtaTrial)
         XCTAssertEqual(trial.action, .subscribePlus)
 
-        let withheld = UpsellSlide.slides(isPlus: false, plusTrialDays: 0, showSetupRecurring: false)
-        let none = try slide(.plus, in: withheld)
+        let none = try slide(.plus, in: UpsellSlide.slides(Inputs(plusTrialDays: 0)))
         XCTAssertEqual(none.title, L10n.Home.upsellPlusTitle)
         XCTAssertEqual(none.cta, L10n.Home.upsellPlusCta)
     }
 
     func testSetupRecurringSlideContentMatchesAndroid() throws {
-        let slides = UpsellSlide.slides(isPlus: true, showSetupRecurring: true)
-        let slide = try slide(.setupRecurring, in: slides)
+        let slide = try slide(.setupRecurring, in: UpsellSlide.slides(Inputs(isPlus: true, showSetupRecurring: true)))
         XCTAssertEqual(slide.mascot, .idea)
         XCTAssertEqual(slide.gradient, .purple)
         XCTAssertEqual(slide.action, .setupRecurring)
@@ -86,26 +132,58 @@ final class UpsellSlideTests: XCTestCase {
         XCTAssertEqual(slide.cta, L10n.Home.upsellSetupRecurringCta)
     }
 
-    func testReferralSlideContentMatchesAndroid() throws {
-        let slides = UpsellSlide.slides(isPlus: true, showSetupRecurring: false)
-        let slide = try slide(.referral, in: slides)
-        XCTAssertEqual(slide.mascot, .thumbsUp)
-        XCTAssertEqual(slide.gradient, .cyan)
-        XCTAssertEqual(slide.action, .openReferral)
-        XCTAssertEqual(slide.top, L10n.Home.upsellReferralTop)
-        XCTAssertEqual(slide.title, L10n.Home.upsellReferralTitle)
-        XCTAssertEqual(slide.cta, L10n.Home.upsellReferralCta)
+    func testReferralSlideSharesTheCodeOnceItHasLoaded() throws {
+        let waiting = try slide(.referral, in: UpsellSlide.slides(Inputs(isPlus: true)))
+        XCTAssertEqual(waiting.mascot, .thumbsUp)
+        XCTAssertEqual(waiting.gradient, .cyan)
+        XCTAssertEqual(waiting.action, .openReferral, "no code yet: open Rewards, where it appears")
+        XCTAssertEqual(waiting.top, L10n.Home.upsellReferralTop)
+        XCTAssertEqual(waiting.title, L10n.Home.upsellReferralTitle)
+        XCTAssertEqual(waiting.cta, L10n.Home.upsellReferralCta)
+
+        let loaded = try slide(.referral, in: UpsellSlide.slides(Inputs(isPlus: true, referralCode: "JOIN50")))
+        XCTAssertEqual(loaded.action, .shareReferral(code: "JOIN50"))
     }
 
-    func testBookSlideContentMatchesAndroid() throws {
-        let slides = UpsellSlide.slides(isPlus: true, showSetupRecurring: false)
-        let slide = try slide(.book, in: slides)
-        XCTAssertEqual(slide.mascot, .cleaning)
-        XCTAssertEqual(slide.gradient, .blue)
+    func testNotificationsSlideTurnsThemOn() throws {
+        let slide = try slide(.notifications, in: UpsellSlide.slides(Inputs(notificationsOff: true)))
+        XCTAssertEqual(slide.mascot, .waving)
+        XCTAssertEqual(slide.gradient, .orange)
+        XCTAssertEqual(slide.action, .turnOnNotifications)
+        XCTAssertEqual(slide.title, L10n.Home.upsellNotificationsTitle)
+        XCTAssertEqual(slide.cta, L10n.Home.upsellNotificationsCta)
+    }
+
+    /// The server's balance and share, never figures of the copy's own.
+    func testCreditSlideStatesTheBalanceAndTheServersShare() throws {
+        let slide = try slide(.credit, in: UpsellSlide.slides(Inputs(credit: heldCredit, creditShare: 0.55)))
+        XCTAssertEqual(slide.mascot, .invoice)
+        XCTAssertEqual(slide.gradient, .emerald)
         XCTAssertEqual(slide.action, .book)
-        XCTAssertEqual(slide.top, L10n.Home.heroGreeting)
-        XCTAssertEqual(slide.title, L10n.Home.heroPrompt)
-        XCTAssertEqual(slide.cta, L10n.Home.heroCta)
+        XCTAssertEqual(slide.top, L10n.Credit.yourCredit)
+        XCTAssertEqual(
+            slide.title,
+            L10n.Home.upsellCreditTitle(OrdersFormat.price(250, currencyCode: "CZK"), share: 0.55)
+        )
+        XCTAssertTrue(slide.title.contains("55"))
+    }
+
+    func testExpressSlideStatesTheWaiversLeftAndTheBookingWindow() throws {
+        let slide = try slide(.express, in: UpsellSlide.slides(Inputs(isPlus: true, expressRemaining: 3)))
+        XCTAssertEqual(slide.mascot, .floorScrubber)
+        XCTAssertEqual(slide.action, .book)
+        XCTAssertEqual(slide.top, L10n.Home.upsellExpressTop(2, 4))
+        XCTAssertEqual(slide.title, L10n.Home.upsellExpressTitle(3))
+        XCTAssertTrue(slide.title.contains("3"))
+    }
+
+    func testQuickSizeClosesWithItsOwnTitleAndPriceButton() throws {
+        let slide = try slide(.quickSize, in: UpsellSlide.slides(Inputs()))
+        XCTAssertEqual(slide.mascot, .vacuuming)
+        XCTAssertEqual(slide.gradient, .blue)
+        XCTAssertEqual(slide.action, .bookSize(rooms: 1, bathrooms: 1))
+        XCTAssertEqual(slide.title, L10n.Home.quickSizeTitle)
+        XCTAssertEqual(slide.cta, L10n.Home.quickSizeCta)
     }
 
     @MainActor
@@ -165,18 +243,23 @@ final class UpsellSlideTests: XCTestCase {
         }
     }
 
-    /// A slide arriving after first paint keeps the slide on screen; one leaving falls back to the last.
-    func testACountChangeKeepsTheSlideOnScreen() {
-        let onSecond = UpsellSlide.page(logical: 1, count: 3)
-        let grown = UpsellSlide.page(afterCountChangeFrom: onSecond, oldCount: 3, newCount: 4)
-        XCTAssertEqual(UpsellSlide.logicalIndex(page: grown, count: 4), 1)
+    /// A slide arriving at the front after first paint keeps the slide on screen; one leaving falls
+    /// back to the same position, or the last slide.
+    func testASetChangeKeepsTheSlideOnScreen() {
+        let before: [UpsellSlide.Kind] = [.plus, .referral, .quickSize]
+        let onReferral = UpsellSlide.page(logical: 1, count: before.count)
 
-        let onThird = UpsellSlide.page(logical: 2, count: 3)
-        let shrunk = UpsellSlide.page(afterCountChangeFrom: onThird, oldCount: 3, newCount: 2)
-        XCTAssertEqual(UpsellSlide.logicalIndex(page: shrunk, count: 2), 1)
+        let arrived: [UpsellSlide.Kind] = [.credit, .plus, .referral, .quickSize]
+        let kept = UpsellSlide.page(afterChangeFrom: onReferral, old: before, new: arrived)
+        XCTAssertEqual(arrived[UpsellSlide.logicalIndex(page: kept, count: arrived.count)], .referral)
 
-        let fromClone = UpsellSlide.page(afterCountChangeFrom: 4, oldCount: 3, newCount: 3)
-        XCTAssertEqual(UpsellSlide.logicalIndex(page: fromClone, count: 3), 0)
+        let onPlus = UpsellSlide.page(logical: 0, count: before.count)
+        let left: [UpsellSlide.Kind] = [.referral, .quickSize]
+        let fallback = UpsellSlide.page(afterChangeFrom: onPlus, old: before, new: left)
+        XCTAssertEqual(UpsellSlide.logicalIndex(page: fallback, count: left.count), 0)
+
+        let fromClone = UpsellSlide.page(afterChangeFrom: 4, old: before, new: before)
+        XCTAssertEqual(UpsellSlide.logicalIndex(page: fromClone, count: before.count), 0)
     }
 
     private func slide(_ kind: UpsellSlide.Kind, in slides: [UpsellSlide]) throws -> UpsellSlide {

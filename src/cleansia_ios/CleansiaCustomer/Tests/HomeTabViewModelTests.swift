@@ -1,4 +1,5 @@
 import CleansiaCore
+import UserNotifications
 import XCTest
 @testable import CleansiaCustomer
 
@@ -45,9 +46,14 @@ final class HomeTabViewModelTests: XCTestCase {
         Staleness(window: 30, now: { self.clock })
     }
 
+    private var referralClient = FakeRewardsReferralClient()
+    private var notificationStatus: UNAuthorizationStatus = .authorized
+    private var notificationRequests = 0
+
     private func makeViewModel(
         marketStore: MarketStore? = nil,
-        catalog: FakeCatalogClient = FakeCatalogClient()
+        catalog: FakeCatalogClient = FakeCatalogClient(),
+        referralRepository: RewardsReferralRepository? = nil
     ) -> HomeTabViewModel {
         let marketStore = marketStore ?? MarketStore(
             client: FakeMarketClient(),
@@ -59,10 +65,98 @@ final class HomeTabViewModelTests: XCTestCase {
             loyaltyRepository: loyaltyRepository,
             membershipRepository: membershipRepository,
             savedAddressRepository: SavedAddressRepository(client: FakeSavedAddressClient()),
+            referralRepository: referralRepository ?? RewardsReferralRepository(client: referralClient),
             marketStore: marketStore,
             catalogSource: BookingViewModel(catalogClient: catalog, market: marketStore.statePublisher),
-            snackbar: SnackbarController()
+            snackbar: SnackbarController(),
+            notificationStatus: { self.notificationStatus },
+            requestNotifications: {
+                self.notificationRequests += 1
+                self.notificationStatus = .authorized
+                return true
+            }
         )
+    }
+
+    // MARK: The carousel's new slides — from state Home already holds
+
+    /// Credit only pays an order in its own currency, so the slide offers the balance held in the
+    /// currency Home prices in, and nothing for a balance held in another.
+    func testTheCreditSlideOffersOnlyTheBalanceHeldInTheMarketsCurrency() async {
+        let eur = CustomerCredit.Balance(amount: 40, currencyCode: "EUR", expiresOn: nil)
+        let czk = CustomerCredit.Balance(amount: 250, currencyCode: "CZK", expiresOn: nil)
+        loyaltyClient.creditResult = .success(CustomerCredit(primary: czk, balances: [czk, eur], maxShareOfOrder: 0.7))
+        let market = await MarketFixtures.resolved(selected: MarketFixtures.slovakia)
+        let vm = makeViewModel(marketStore: market)
+
+        await loyaltyRepository.refresh()
+
+        XCTAssertEqual(vm.upsellInputs.credit, eur)
+        XCTAssertEqual(vm.upsellInputs.creditShare, 0.7)
+        market.select(isoCode: "CZE")
+        XCTAssertEqual(vm.upsellInputs.credit, czk)
+    }
+
+    func testNoBalanceInTheMarketsCurrencyMeansNoCreditSlide() async {
+        loyaltyClient.creditResult = .success(LoyaltyFixtures.credit(balance: 250, currencyCode: "EUR"))
+        let vm = await makeViewModel(marketStore: MarketFixtures.resolved())
+
+        await loyaltyRepository.refresh()
+
+        XCTAssertNil(vm.upsellInputs.credit)
+        XCTAssertFalse(UpsellSlide.kinds(vm.upsellInputs).contains(.credit))
+    }
+
+    /// The booking wizard's own verdict: waivers left and benefits running; paused benefits offer none.
+    func testTheExpressSlideFollowsTheMembersWaiversLeft() async {
+        membershipClient.mineResults = [.success(MembershipFixtures.active)]
+        let vm = makeViewModel()
+        await membershipRepository.refresh()
+        XCTAssertEqual(vm.upsellInputs.expressRemaining, 1)
+
+        membershipClient.mineResults = [.success(MembershipFixtures.pastDue)]
+        await membershipRepository.refresh()
+        XCTAssertEqual(vm.upsellInputs.expressRemaining, 0)
+    }
+
+    func testTheReferralSlideCarriesTheCodeOnceItHasLoaded() async {
+        referralClient.accountResult = .success(ReferralFixtures.account(code: "JOIN50"))
+        let referrals = RewardsReferralRepository(client: referralClient)
+        let vm = makeViewModel(referralRepository: referrals)
+        XCTAssertNil(vm.upsellInputs.referralCode)
+
+        await referrals.refresh()
+
+        XCTAssertEqual(vm.upsellInputs.referralCode, "JOIN50")
+    }
+
+    func testTheNotificationsSlideShowsOnlyWhileAlertsAreNotAllowed() async {
+        let vm = makeViewModel()
+        for (status, off) in [
+            (UNAuthorizationStatus.authorized, false),
+            (.provisional, false),
+            (.denied, true),
+            (.notDetermined, true)
+        ] {
+            notificationStatus = status
+            await vm.refreshNotificationStatus()
+            XCTAssertEqual(vm.upsellInputs.notificationsOff, off, "\(status.rawValue)")
+        }
+    }
+
+    /// The system dialog while it can still appear; after a refusal only Settings can turn them on.
+    func testTurningOnAsksTheSystemOnlyWhileItCanStillAsk() async {
+        let vm = makeViewModel()
+        notificationStatus = .notDetermined
+        let asked = await vm.requestNotificationsIfUndetermined()
+        XCTAssertTrue(asked)
+        XCTAssertEqual(notificationRequests, 1)
+        XCTAssertFalse(vm.notificationsOff)
+
+        notificationStatus = .denied
+        let askedAgain = await vm.requestNotificationsIfUndetermined()
+        XCTAssertFalse(askedAgain, "a refusal is undone in Settings, not by asking again")
+        XCTAssertEqual(notificationRequests, 1)
     }
 
     // MARK: The Plus slide's trial — the chosen market's monthly plan, once per account

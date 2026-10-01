@@ -192,4 +192,26 @@ final class BookingPrefillTests: XCTestCase {
 
         XCTAssertEqual(result.state.savedAddressId, "saved-1")
     }
+
+    // MARK: - Quick-size
+
+    func testTheQuickSizeSlideSeedsTheSize() {
+        let next = BookingPrefill.withSize(BookingState(), rooms: 3, bathrooms: 2)
+        XCTAssertEqual(next.rooms, 3)
+        XCTAssertEqual(next.bathrooms, 2)
+    }
+
+    func testTheQuickSizeSeedIsClampedToTheBookingCaps() {
+        let over = BookingPrefill.withSize(
+            BookingState(),
+            rooms: PropertySize.maxRooms + 3,
+            bathrooms: PropertySize.maxBathrooms + 1
+        )
+        XCTAssertEqual(over.rooms, PropertySize.maxRooms)
+        XCTAssertEqual(over.bathrooms, PropertySize.maxBathrooms)
+
+        let under = BookingPrefill.withSize(BookingState(), rooms: 0, bathrooms: -1)
+        XCTAssertEqual(under.rooms, 1)
+        XCTAssertEqual(under.bathrooms, 1)
+    }
 }

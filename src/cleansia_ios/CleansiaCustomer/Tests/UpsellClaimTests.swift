@@ -130,6 +130,85 @@ final class UpsellClaimTests: XCTestCase {
         }
     }
 
+    /// The newer carousel slides; every one renders, so every one is in every language.
+    private static let carouselKeys = [
+        "home_upsell_notifications_top",
+        "home_upsell_notifications_title",
+        "home_upsell_notifications_cta",
+        "home_upsell_credit_title",
+        "home_upsell_express_top",
+        "home_upsell_book_cta",
+        "home_quick_size_title",
+        "home_quick_size_cta",
+        "home_quick_size_rooms_less",
+        "home_quick_size_rooms_more",
+        "home_quick_size_baths_less",
+        "home_quick_size_baths_more"
+    ]
+
+    func testEveryNewCarouselSlideIsWrittenInEveryLanguageAndPromisesNoTrial() throws {
+        try forEachLanguage { language in
+            for key in Self.carouselKeys {
+                let value = L10n.localized(key)
+                XCTAssertNotEqual(value, key, "\(key) is unlocalized in \(language)")
+                XCTAssertFalse(Self.matches(value, Self.trialClaim), "\(key) promises a trial in \(language): \(value)")
+            }
+            XCTAssertFalse(Self.matches(L10n.Home.upsellExpressTitle(2), Self.trialClaim), language)
+        }
+    }
+
+    /// The credit balance and its share are the server's (`GetMyCredit`), the waivers left are the
+    /// membership's, and the express window is the booking policy's — so no language states a number.
+    func testTheCreditAndExpressSlidesStateTheServersFiguresNeverTheirOwn() throws {
+        try forEachLanguage { language in
+            let credit = L10n.Home.upsellCreditTitle("§", share: 0.55)
+            XCTAssertTrue(credit.contains("§") && credit.contains("55"), "\(language): \(credit)")
+            XCTAssertNil(Self.digitsBeyond(credit, "55"), "the credit slide names a number in \(language)")
+
+            let window = L10n.Home.upsellExpressTop(7, 9)
+            XCTAssertTrue(window.contains("7") && window.contains("9"), "\(language): \(window)")
+            XCTAssertNil(Self.digitsBeyond(window, "7", "9"), "the express window names a number in \(language)")
+
+            for remaining in [1, 3, 6] {
+                let title = L10n.Home.upsellExpressTitle(remaining)
+                XCTAssertTrue(title.contains(String(remaining)), "\(language) drops the count: \(title)")
+                XCTAssertNil(Self.digitsBeyond(title, String(remaining)), "\(language) names a number: \(title)")
+            }
+        }
+    }
+
+    /// The express slide states the 2–4 h window from the client's booking bands, so those must be the
+    /// server's.
+    func testTheExpressWindowTheSlideStatesIsTheBookingPolicys() throws {
+        XCTAssertEqual(Int(BookingPricing.expressLeadHours), try Self.bookingPolicyHours("ExpressLeadTimeHours"))
+        XCTAssertEqual(Int(BookingPricing.standardLeadHours), try Self.bookingPolicyHours("StandardLeadTimeHours"))
+    }
+
+    private static func digitsBeyond(_ text: String, _ allowed: String...) -> Range<String.Index>? {
+        var residue = text
+        for figure in allowed {
+            residue = residue.replacingOccurrences(of: figure, with: "")
+        }
+        return residue.rangeOfCharacter(from: .decimalDigits)
+    }
+
+    private static func bookingPolicyHours(_ name: String) throws -> Int {
+        let policy = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appendingPathComponent("Cleansia.Core.AppServices/Features/Orders/BookingPolicy.cs")
+        let source = try String(contentsOf: policy, encoding: .utf8)
+        let regex = try NSRegularExpression(pattern: #"public\s+const\s+int\s+"# + name + #"\s*=\s*(\d+)\s*;"#)
+        let match = try XCTUnwrap(
+            regex.firstMatch(in: source, range: NSRange(source.startIndex..., in: source)),
+            "BookingPolicy.\(name) not found — the parser needs updating"
+        )
+        let digits = try XCTUnwrap(Range(match.range(at: 1), in: source))
+        return try XCTUnwrap(Int(source[digits]))
+    }
+
     func testTheScansWouldHaveCaughtTheRemovedCopy() {
         for removed in ["Save on every cleaning. 14 days free.", "Try Plus free", "Vyzkoušet zdarma na 14 dní"] {
             XCTAssertTrue(Self.matches(removed, Self.trialClaim), "the trial scan cannot see \(removed)")

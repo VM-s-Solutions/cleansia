@@ -2,6 +2,7 @@ import CleansiaCore
 import CleansiaCustomerApi
 import Combine
 import Foundation
+import UserNotifications
 
 /// Injection-seam VM for `HomeTab` (the `HomeTabViewModel.kt` parity). The home
 /// screen observes the customer singleton repositories; this VM mirrors their
@@ -27,6 +28,15 @@ final class HomeTabViewModel: ViewModel {
     /// The header chip's market — only when there is a choice to make (two or more markets); nil
     /// with one market or none, when the header is exactly as it was without a directory.
     @Published private(set) var marketChip: Market?
+    /// The credit read C10 added to the loyalty cache; the carousel offers the balance held here.
+    @Published private(set) var credit: CustomerCredit?
+    /// The currency Home prices in: the chosen market's, else the catalogue's.
+    @Published private(set) var marketCurrencyCode: String?
+    @Published private(set) var catalogCurrencyCode: String?
+    @Published private(set) var referralCode: String?
+    /// The system does not let this app alert. Re-read on Home entry and every foreground, so turning
+    /// notifications on in Settings removes the carousel's slide on return.
+    @Published private(set) var notificationsOff = false
 
     private let orderRepository: OrderRepository
     private let recurringRepository: RecurringBookingRepository
@@ -36,6 +46,8 @@ final class HomeTabViewModel: ViewModel {
     private let marketStore: MarketStore
     private let catalogSource: BookingViewModel
     private let snackbar: SnackbarController
+    private let notificationStatus: () async -> UNAuthorizationStatus
+    private let requestNotifications: () async -> Bool
     private var cancellables: Set<AnyCancellable> = []
 
     init(
@@ -44,9 +56,17 @@ final class HomeTabViewModel: ViewModel {
         loyaltyRepository: LoyaltyRepository,
         membershipRepository: MembershipRepository,
         savedAddressRepository: SavedAddressRepository,
+        referralRepository: RewardsReferralRepository,
         marketStore: MarketStore,
         catalogSource: BookingViewModel,
-        snackbar: SnackbarController
+        snackbar: SnackbarController,
+        notificationStatus: @escaping () async -> UNAuthorizationStatus = {
+            await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
+        },
+        requestNotifications: @escaping () async -> Bool = {
+            await (try? UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound])) ??
+                false
+        }
     ) {
         self.orderRepository = orderRepository
         self.recurringRepository = recurringRepository
@@ -56,6 +76,8 @@ final class HomeTabViewModel: ViewModel {
         self.marketStore = marketStore
         self.catalogSource = catalogSource
         self.snackbar = snackbar
+        self.notificationStatus = notificationStatus
+        self.requestNotifications = requestNotifications
         super.init()
         marketStore.$state
             .map { Self.marketChip($0) }
@@ -74,6 +96,16 @@ final class HomeTabViewModel: ViewModel {
         catalogSource.$catalogState
             .map { $0.loadedValue?.packages ?? [] }
             .assign(to: &$packages)
+        catalogSource.$catalogState
+            .map { $0.loadedValue?.currencyCode }
+            .assign(to: &$catalogCurrencyCode)
+        marketStore.$state
+            .map { $0.selected?.currencyCode }
+            .assign(to: &$marketCurrencyCode)
+        loyaltyRepository.$credit.assign(to: &$credit)
+        referralRepository.$account
+            .map { $0.flatMap { $0.code.isBlank ? nil : $0.code } }
+            .assign(to: &$referralCode)
         startFirstPaintWatcher()
     }
 
@@ -91,6 +123,54 @@ final class HomeTabViewModel: ViewModel {
     func refreshPlusPlans() async {
         guard !isPlus, plusPlans.isEmpty else { return }
         await membershipRepository.refreshPlans()
+    }
+
+    /// What the carousel shows, from state Home already holds.
+    var upsellInputs: UpsellSlide.Inputs {
+        UpsellSlide.Inputs(
+            isPlus: isPlus,
+            plusTrialDays: plusTrialDays,
+            showSetupRecurring: showSetupRecurringSlide,
+            notificationsOff: notificationsOff,
+            credit: creditHere,
+            creditShare: credit?.maxShareOfOrder ?? 0,
+            expressRemaining: expressRemaining,
+            referralCode: referralCode
+        )
+    }
+
+    /// Credit only pays an order in its own currency, so the slide offers the balance held in the
+    /// currency Home prices in.
+    var creditHere: CustomerCredit.Balance? {
+        guard let currency = (marketCurrencyCode ?? catalogCurrencyCode)?.nonBlankCode else { return nil }
+        return credit?.heldBalances.first { $0.currencyCode.caseInsensitiveCompare(currency) == .orderedSame }
+    }
+
+    /// The booking wizard's own verdict on the express perk, so the slide and the wizard cannot disagree.
+    var expressRemaining: Int {
+        guard ExpressWaiverStatus.resolve(membership) == .available else { return 0 }
+        return membership?.expressUpgradesRemaining ?? 0
+    }
+
+    func refreshNotificationStatus() async {
+        notificationsOff = await !Self.alertsAllowed(notificationStatus())
+    }
+
+    /// The system dialog while it can still appear; true when it was shown. False means the customer
+    /// refused before, which only the Settings page can undo.
+    func requestNotificationsIfUndetermined() async -> Bool {
+        guard await notificationStatus() == .notDetermined else { return false }
+        _ = await requestNotifications()
+        await refreshNotificationStatus()
+        return true
+    }
+
+    static func alertsAllowed(_ status: UNAuthorizationStatus) -> Bool {
+        switch status {
+        case .authorized, .provisional, .ephemeral: true
+        case .notDetermined, .denied: false
+        @unknown default: false
+        }
     }
 
     static func marketChip(_ state: MarketState) -> Market? {
@@ -289,5 +369,11 @@ final class HomeTabViewModel: ViewModel {
         .prefix(1)
         .sink { [weak self] ready in self?.firstPaintReady = ready }
         .store(in: &cancellables)
+    }
+}
+
+private extension String {
+    var nonBlankCode: String? {
+        isBlank ? nil : self
     }
 }

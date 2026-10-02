@@ -109,6 +109,14 @@ public class StripeClient : IStripeClient
                 await ClassifyAsync(
                     nameof(CreateCheckoutSessionAsync),
                     () => service.ExpireAsync(currentSessionId, cancellationToken: cancellationToken));
+            }
+
+            // An expired session may be one this client expired a moment ago, whose replacement is now asked
+            // for again at the next stride - under that stride's plain key, which the expired session may
+            // itself have been opened under. A paid session keeps the plain key, so its replay opens no second
+            // payable session before its webhook lands.
+            if (current.Status != "complete")
+            {
                 idempotencyKey += $"-after-{currentSessionId}";
             }
         }

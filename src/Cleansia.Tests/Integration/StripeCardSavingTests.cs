@@ -257,10 +257,18 @@ public class StripeCardSavingTests
         Assert.Equal("cs_new", session.Id);
     }
 
-    [Fact]
-    public async Task A_Closed_Expiring_Checkout_Is_Asked_Of_Stripe_Again_Under_The_Strides_Key()
+    /// <summary>
+    /// A closed session's replacement is keyed on it, since the stride's own key may have opened that very
+    /// session with other parameters. A paid one keeps the stride's key, so Stripe replays it rather than
+    /// opening a second payable session before its webhook lands.
+    /// </summary>
+    [Theory]
+    [InlineData("expired", "-after-cs_started")]
+    [InlineData("complete", "")]
+    public async Task A_Closed_Expiring_Checkout_Is_Asked_Of_Stripe_Again_Keyed_On_It_Unless_Paid(
+        string status, string keySuffix)
     {
-        var transport = new RecordingHandler { SessionStatus = "expired", SessionSavesCard = true };
+        var transport = new RecordingHandler { SessionStatus = status, SessionSavesCard = true };
         var order = CardOrder();
         order.AssignStripeSessionId("cs_started");
 
@@ -268,7 +276,43 @@ public class StripeCardSavingTests
 
         Assert.Equal(new[] { HttpMethod.Get, HttpMethod.Post }, transport.Requests.Select(r => r.Method));
         Assert.Equal("/v1/checkout/sessions", transport.Requests[1].Path);
-        Assert.Equal($"checkout-{order.Id}-{ExpiresAtUnix}", transport.Requests[1].IdempotencyKey);
+        Assert.Equal($"checkout-{order.Id}-{ExpiresAtUnix}{keySuffix}", transport.Requests[1].IdempotencyKey);
+    }
+
+    /// <summary>
+    /// In a stride's last half hour Stripe refuses the replacement's expiry after the open session has been
+    /// expired, and the confirm asks again at the next stride. That ask is still keyed on the session it
+    /// replaces: the next stride's plain key may already have opened it with other parameters.
+    /// </summary>
+    [Fact]
+    public async Task A_Replacement_Refused_On_Its_Expiry_Is_Asked_Again_At_The_Next_Stride_Keyed_On_The_Session_It_Replaces()
+    {
+        var transport = new RecordingHandler { SessionStatus = "open", RefuseCreateOn = "expires_at" };
+        var order = CardOrder();
+        order.AssignStripeSessionId("cs_started");
+        var client = Client(transport);
+        var nextStride = ExpiresAt.AddHours(23);
+
+        var refused = await Assert.ThrowsAsync<global::Stripe.StripeException>(() =>
+            client.CreateCardSavingCheckoutSessionAsync(order, ExpiresAt, "cus_czk", SavedCardId, CancellationToken.None));
+        var session = await client.CreateCardSavingCheckoutSessionAsync(
+            order, nextStride, "cus_czk", SavedCardId, CancellationToken.None);
+
+        Assert.Equal("expires_at", refused.StripeError?.Param);
+        Assert.Equal(
+            new[]
+            {
+                (HttpMethod.Get, "/v1/checkout/sessions/cs_started"),
+                (HttpMethod.Post, "/v1/checkout/sessions/cs_started/expire"),
+                (HttpMethod.Post, "/v1/checkout/sessions"),
+                (HttpMethod.Get, "/v1/checkout/sessions/cs_started"),
+                (HttpMethod.Post, "/v1/checkout/sessions"),
+            },
+            transport.Requests.Select(r => (r.Method, r.Path)));
+        Assert.Equal(
+            $"checkout-{order.Id}-{new DateTimeOffset(nextStride).ToUnixTimeSeconds()}-after-cs_started",
+            transport.Requests[4].IdempotencyKey);
+        Assert.Equal("cs_new", session.Id);
     }
 
     private static StripeClient Client(RecordingHandler transport) => new(
@@ -313,7 +357,9 @@ public class StripeCardSavingTests
     {
         public List<RecordedRequest> Requests { get; } = [];
 
-        public string SessionStatus { get; init; } = "open";
+        public string SessionStatus { get; set; } = "open";
+
+        public string? RefuseCreateOn { get; set; }
 
         public bool SessionSavesCard { get; init; }
 
@@ -336,6 +382,23 @@ public class StripeCardSavingTests
                 path,
                 body,
                 request.Headers.TryGetValues("Idempotency-Key", out var keys) ? keys.Single() : null));
+
+            if (request.Method == HttpMethod.Post && path == "/v1/checkout/sessions" && RefuseCreateOn is { } param)
+            {
+                RefuseCreateOn = null;
+                return new HttpResponseMessage(HttpStatusCode.BadRequest)
+                {
+                    Content = new StringContent(
+                        $$"""{"error":{"type":"invalid_request_error","param":"{{param}}","message":"refused"} }""",
+                        Encoding.UTF8,
+                        "application/json"),
+                };
+            }
+
+            if (path.EndsWith("/expire"))
+            {
+                SessionStatus = "expired";
+            }
 
             var json = path.Contains("/payment_intents")
                 ? request.Method == HttpMethod.Get && CurrentIntent is not null

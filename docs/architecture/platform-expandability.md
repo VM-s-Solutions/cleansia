@@ -379,10 +379,16 @@ per-record `CurrencyId`, and it is populated from the address country (orders), 
   figure is labelled from its payload's `currencyCode`. The Android and iOS customer apps mirror this.
 - **A whole amount prints without a fraction, any other to the currency's minor unit** — `1 200 Kč`,
   but `319,90 Kč` — with an amount within half a minor unit of a whole number counted as whole. The web's
-  `formatMoney` and, since 2026-10-02, Android's `:core` `formatOrderPrice` (both apps; the minor unit
-  from `java.util.Currency`, two digits for a blank or unknown code) follow it, so a credit share or a
-  discount that leaves haléře shows what Stripe charges. iOS does not yet: `OrdersFormat.price` and
-  `BookingPricing.formatTotal` print whole units, so the same `319.90` reads `320 Kč` there.
+  `formatMoney` follows it. Since 2026-10-02 so do Android's `:core` `formatOrderPrice` (both apps;
+  the minor unit from `java.util.Currency`, two digits for a blank or unknown code) and iOS, so a
+  credit share or a discount that leaves haléře shows what Stripe charges. In the iOS customer app the
+  rule lives in `OrdersFormat.price` (the minor unit from the currency code, two digits for a blank or
+  unknown one, none for yen). `BookingPricing.formatTotal` and `ProfileStatsFormat.saved` return it,
+  so the booking flow, the order detail, the credit rows and the Plus prices read alike. In the iOS
+  cleaner app, `OrdersFormat.money` covers a job's pay on the board, the offer, the work contract and
+  the detail; it sees only the symbol, so it takes the koruna's and the euro's two digits. The cleaner's
+  dashboard and earnings figures on iOS (`DashboardFormat`, `EarningsFormat.wholeMoney`) still print
+  whole units.
 - **Before there is an address, the surface reads the customer's chosen market** (ADR-0058). The
   Customer and Mobile.Customer hosts expose an anonymous `GET api/Market/GetOverview`
   (`MarketListItem`: the serviced country joined to its active configured currency, `isDefault`, the

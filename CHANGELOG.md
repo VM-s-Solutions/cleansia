@@ -1012,10 +1012,12 @@ need backfilling.
   passing through Home could see an old total. It now re-reads them when they are more than 30 seconds
   old, as Home does; on Android, Profile does the same for its *Credit* row.
 
-- **Customer and cleaner Android — an amount that is not whole shows its haléře.** Every price, credit
-  and discount on Android printed whole crowns, so a card share of 319.90 read *320 Kč* while Stripe's
-  sheet asked for 319.90. A whole amount still prints without decimals; any other prints to the
-  currency's smallest unit, as on the web. The iOS apps still round.
+- **Customer and cleaner, Android and iOS — an amount that is not whole shows its haléře.** Every
+  price, credit and discount in the apps printed whole crowns, so a card share of 319.90 read *320 Kč*
+  while Stripe's sheet asked for 319.90, and a 7.96 € Plus plan read *8 €* on iOS. A whole amount
+  still prints without decimals; any other prints to the currency's smallest unit, as on the web. A
+  job's pay reads the same on the cleaner's board as on its detail. On iOS the cleaner's dashboard and
+  earnings totals still show whole amounts. (2026-10-02.)
 
 - **Customer Android — Home's refresh spinner no longer hides under the clock.** Pulling Home down to
   refresh drew the spinner under the status bar, at rest and while it spun. It now rests just below

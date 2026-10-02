@@ -77,8 +77,11 @@ class PropertySizeTest {
     @Test
     fun `the one-off minus stops at one room and one bathroom`() {
         val services = source("features/booking/ServicesStep.kt")
-        assertTrue("the rooms minus no longer stops at 1", services.contains("canRemove = rooms > 1"))
-        assertTrue("the bathrooms minus no longer stops at 1", services.contains("canRemove = bathrooms > 1"))
-        assertTrue("the minus no longer obeys canRemove", services.contains("clickable(enabled = canRemove, onClick = onMinus)"))
+        assertTrue("the rooms minus no longer stops at 1", services.contains("range = 1..PropertySize.MAX_ROOMS"))
+        assertTrue("the bathrooms minus no longer stops at 1", services.contains("range = 1..PropertySize.MAX_BATHROOMS"))
+        assertTrue(
+            "the minus no longer stops at the range's floor",
+            services.contains("CounterStep(Icons.Outlined.Remove, outwardStart = true, enabled = value > range.first)"),
+        )
     }
 }

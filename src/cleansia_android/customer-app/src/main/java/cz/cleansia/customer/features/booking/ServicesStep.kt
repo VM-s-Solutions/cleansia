@@ -3,6 +3,8 @@ package cz.cleansia.customer.features.booking
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.indication
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -38,6 +41,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -54,11 +58,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cz.cleansia.core.format.formatOrderPrice
@@ -67,6 +73,8 @@ import cz.cleansia.customer.core.booking.PropertySize
 import cz.cleansia.customer.core.catalog.CategoryDto
 import cz.cleansia.customer.core.catalog.PackageListItem
 import cz.cleansia.customer.core.catalog.ServiceListItem
+import cz.cleansia.customer.ui.components.adjustableStepper
+import cz.cleansia.customer.ui.components.rememberStepperTick
 import cz.cleansia.customer.ui.theme.selectionTint
 import cz.cleansia.customer.ui.theme.Sky600
 
@@ -662,21 +670,22 @@ private fun PropertyCompactRow(
                 modifier = Modifier.weight(1f),
             )
             // Both ends of each stepper stop at the bounds, so a tap that cannot move the number never
-            // looks like one that can.
+            // looks like one that can. TalkBack reads each as "Your home" and its value, as iOS does.
+            val home = stringResource(R.string.booking_your_home)
             CompactCounter(
+                name = home,
                 label = pluralStringResource(R.plurals.booking_rooms_short, rooms, rooms),
-                onMinus = { onRoomsChange(rooms - 1) },
-                onPlus = { onRoomsChange(rooms + 1) },
-                canRemove = rooms > 1,
-                canAdd = rooms < PropertySize.MAX_ROOMS,
+                value = rooms,
+                range = 1..PropertySize.MAX_ROOMS,
+                onChange = onRoomsChange,
             )
             Spacer(Modifier.width(8.dp))
             CompactCounter(
+                name = home,
                 label = pluralStringResource(R.plurals.booking_bath_short, bathrooms, bathrooms),
-                onMinus = { onBathroomsChange(bathrooms - 1) },
-                onPlus = { onBathroomsChange(bathrooms + 1) },
-                canRemove = bathrooms > 1,
-                canAdd = bathrooms < PropertySize.MAX_BATHROOMS,
+                value = bathrooms,
+                range = 1..PropertySize.MAX_BATHROOMS,
+                onChange = onBathroomsChange,
             )
         }
         // The cap stated up front, so the plus stopping at it reads as the rule rather than a bug.
@@ -689,50 +698,81 @@ private fun PropertyCompactRow(
     }
 }
 
+/**
+ * The size row's −/+ counter, iOS `PropertyStepper`'s twin: a 28dp pill whose two steps each take a
+ * 48dp target, one TalkBack node adjusted like a slider, and a selection tick on every step.
+ */
 @Composable
 private fun CompactCounter(
+    name: String,
     label: String,
-    onMinus: () -> Unit,
-    onPlus: () -> Unit,
-    canRemove: Boolean,
-    canAdd: Boolean,
+    value: Int,
+    range: IntRange,
+    onChange: (Int) -> Unit,
 ) {
+    val tick = rememberStepperTick()
+    val change = { next: Int ->
+        tick()
+        onChange(next)
+    }
     Row(
         modifier = Modifier
-            .clip(RoundedCornerShape(999.dp))
-            .background(MaterialTheme.colorScheme.surface),
+            // Not clipped: each step's target overhangs the pill, and a clip would stop the overhang
+            // taking taps (the quick-size stepper's precedent).
+            .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(999.dp))
+            .adjustableStepper(name = name, valueText = label, value = value, range = range, onChange = change),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            Modifier.size(28.dp).clickable(enabled = canRemove, onClick = onMinus),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                Icons.Outlined.Remove,
-                null,
-                tint = MaterialTheme.colorScheme.primary.copy(alpha = if (canRemove) 1f else 0.38f),
-                modifier = Modifier.size(14.dp),
-            )
-        }
+        CounterStep(Icons.Outlined.Remove, outwardStart = true, enabled = value > range.first) { change(value - 1) }
         Text(
             label,
             style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(horizontal = 4.dp),
         )
+        CounterStep(Icons.Outlined.Add, outwardStart = false, enabled = value < range.last) { change(value + 1) }
+    }
+}
+
+/**
+ * A 28dp glyph whose target is a 48dp square without growing the pill, as on iOS: 10dp above and
+ * below (the size row's padding), 16dp toward the label and 4dp outward, so two counters sharing the
+ * row split the 8dp between them. The ripple stays on the glyph.
+ */
+@Composable
+private fun CounterStep(icon: ImageVector, outwardStart: Boolean, enabled: Boolean, onClick: () -> Unit) {
+    val interactions = remember { MutableInteractionSource() }
+    val glyphX = if (outwardStart) StepOutward else StepTarget - StepGlyph - StepOutward
+    Box(
+        Modifier
+            .layout { measurable, _ ->
+                val target = StepTarget.roundToPx()
+                val glyph = StepGlyph.roundToPx()
+                val placeable = measurable.measure(Constraints.fixed(target, target))
+                layout(glyph, glyph) { placeable.place(-glyphX.roundToPx(), (glyph - target) / 2) }
+            }
+            .clickable(interactionSource = interactions, indication = null, enabled = enabled, onClick = onClick),
+    ) {
         Box(
-            Modifier.size(28.dp).clickable(enabled = canAdd, onClick = onPlus),
+            Modifier
+                .offset(x = glyphX, y = (StepTarget - StepGlyph) / 2)
+                .size(StepGlyph)
+                .indication(interactions, ripple(bounded = false, radius = StepGlyph / 2)),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
-                Icons.Outlined.Add,
+                icon,
                 null,
-                tint = MaterialTheme.colorScheme.primary.copy(alpha = if (canAdd) 1f else 0.38f),
+                tint = MaterialTheme.colorScheme.primary.copy(alpha = if (enabled) 1f else 0.38f),
                 modifier = Modifier.size(14.dp),
             )
         }
     }
 }
+
+private val StepGlyph = 28.dp
+private val StepTarget = 48.dp
+private val StepOutward = 4.dp
 
 @Composable
 private fun EmptyResults() {

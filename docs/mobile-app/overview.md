@@ -607,9 +607,10 @@ and both `NotificationService` folders. Until 2026-10-02 the two app `Tests` tre
 were never linted, and the test trees held 87 violations. Test code meets the same rules: no force
 unwrap (fall back with `?? .standard` or fail the test), and a suite stays under the 600-line file and
 400-line type-body limits by moving its later `MARK` sections into `extension <Suite>` files, tests
-unchanged. A rule is never relaxed in the config; the one accepted exception is a narrow inline
-`swiftlint:disable:next` on a documented declaration, such as a fake's recorded-call tuple
-(`large_tuple`).
+unchanged. A rule is never relaxed in the config; the accepted exception is a narrow inline disable,
+`swiftlint:disable:next` or a `swiftlint:disable` / `swiftlint:enable` pair round a documented
+declaration or section, such as `large_tuple` on a fake's recorded-call tuple or
+`calendar_day_needs_greenwich` round a wire fixture.
 
 ### Shipping to TestFlight
 

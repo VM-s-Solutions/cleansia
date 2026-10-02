@@ -217,6 +217,26 @@ export class QuickQuoteFacade extends UnsubscribeControlDirective {
    * leaves the size row empty rather than failing the calculator.
    */
   private followMarket(): void {
+    if (isPlatformBrowser(this.platformId)) {
+      this.followSizes();
+    } else {
+      // The server draws the row as the browser's first render has it, presets in flight, for
+      // hydration to take over; a server read could only differ from it (real chips, or no row).
+      this._sizesLoading.set(true);
+    }
+
+    this.store
+      .select(selectMarket)
+      .pipe(
+        map((market) => market?.countryId ?? null),
+        distinctUntilChanged(),
+        skip(1),
+        takeUntil(this.destroyed$),
+      )
+      .subscribe(() => this.refresh());
+  }
+
+  private followSizes(): void {
     const isoCode$ = this.store
       .select(selectMarket)
       .pipe(map((market) => market?.isoCode ?? null), distinctUntilChanged());
@@ -253,16 +273,6 @@ export class QuickQuoteFacade extends UnsubscribeControlDirective {
           this._sizeCode.set(null);
         }
       });
-
-    this.store
-      .select(selectMarket)
-      .pipe(
-        map((market) => market?.countryId ?? null),
-        distinctUntilChanged(),
-        skip(1),
-        takeUntil(this.destroyed$),
-      )
-      .subscribe(() => this.refresh());
   }
 
   chooseMarket(isoCode: string): void {

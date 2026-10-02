@@ -245,6 +245,21 @@ describe('QuickQuoteFacade', () => {
     });
   });
 
+  describe('the size row in a server render', () => {
+    it.each<[string, MarketListItem | null]>([
+      ['with a market', CZE],
+      ['without one', null],
+    ])('is drawn in flight %s, as the browser first renders it, and nothing is read', (_, market) => {
+      getPropertySizes.mockClear();
+
+      build(market, 'server');
+
+      expect(getPropertySizes).not.toHaveBeenCalled();
+      expect(facade.sizes()).toEqual([]);
+      expect(facade.showSizeRow()).toBe(true);
+    });
+  });
+
   it('never quotes during a server render', () => {
     build(CZE, 'server');
 

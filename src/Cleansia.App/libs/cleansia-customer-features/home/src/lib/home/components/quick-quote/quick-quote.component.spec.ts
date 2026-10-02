@@ -142,6 +142,23 @@ describe('home calculator size row', () => {
     expect(row?.querySelectorAll('button')).toHaveLength(0);
   });
 
+  it('gives each placeholder the width of the label it stands in for, in the visitor’s language', async () => {
+    const fixture = await render(stubFacade({ showSizeRow: signal(true) }));
+    const translate = TestBed.inject(TranslateService);
+    const labelWidths = () =>
+      Array.from(
+        sizeRow(fixture.nativeElement)?.querySelectorAll<HTMLElement>('.cl-quote__chip--ghost') ?? [],
+      ).map((ghost) => ghost.style.getPropertyValue('--cl-ghost-label'));
+
+    translate.use('uk');
+    fixture.detectChanges();
+    expect(labelWidths()).toEqual(['4.3', '4.342', '4.342', '4.342', '3.917']);
+
+    translate.use('cs');
+    fixture.detectChanges();
+    expect(labelWidths()).toEqual(['2.13', '2.13', '2.13', '2.13', '2.079']);
+  });
+
   it('puts the market’s presets where the placeholders stood', async () => {
     const sizes = signal<PropertySizePreset[]>([]);
     const fixture = await render(

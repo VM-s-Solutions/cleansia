@@ -13,6 +13,14 @@ import { CleansiaMarketSwitcherComponent } from '@cleansia/components/cleansia-m
 import { QuickQuoteFacade } from './quick-quote.facade';
 import { PropertySizePreset } from './property-size-presets';
 
+const SIZE_LABEL_WIDTHS: Readonly<Record<string, readonly number[]>> = {
+  cs: [2.13, 2.13, 2.13, 2.13, 2.079],
+  sk: [2.13, 2.13, 2.13, 2.13, 2.077],
+  en: [3.079, 3.536, 3.536, 3.536, 2.773],
+  uk: [4.3, 4.342, 4.342, 4.342, 3.917],
+  ru: [4.601, 4.804, 4.804, 4.804, 1.945],
+};
+
 /** A service the visitor can price, as the home page already loads them. */
 export interface QuickQuoteService {
   readonly id: string;
@@ -73,8 +81,15 @@ export class QuickQuoteComponent {
    */
   readonly placeholderChipWidths = [104, 132, 88, 116, 76];
 
-  /** Five, the length of each market's size ladder; their width is the stylesheet's. */
-  readonly placeholderSizeChips = [0, 1, 2, 3, 4];
+  /**
+   * The label widths, in --cl-u, of the five size chips the server sends for the
+   * language: the seeded ladder measured in Nunito Bold at the phone unit, where
+   * the row wraps, so the placeholders take as many rows as the ladder that
+   * replaces them.
+   */
+  readonly placeholderSizeLabels = computed(
+    () => SIZE_LABEL_WIDTHS[this.lang()] ?? SIZE_LABEL_WIDTHS['en'],
+  );
 
   readonly dirtinessLevels = DIRTINESS_LEVELS;
 

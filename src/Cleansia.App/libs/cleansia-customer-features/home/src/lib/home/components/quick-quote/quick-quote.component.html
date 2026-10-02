@@ -51,8 +51,8 @@
         {{ size.label }}
       </button>
       } @empty {
-      @for (slot of placeholderSizeChips; track slot) {
-      <span class="cl-chip cl-quote__chip cl-quote__chip--ghost" aria-hidden="true"></span>
+      @for (label of placeholderSizeLabels(); track $index) {
+      <span class="cl-chip cl-quote__chip cl-quote__chip--ghost" [style.--cl-ghost-label]="label" aria-hidden="true"></span>
       }
       }
     </div>

@@ -236,13 +236,13 @@ cleansia-hero {
   }
 
   // The size row reserves no height of its own: it wraps to one row or two with
-  // the width, so its placeholders have to wrap where the ladder does. Each is
-  // as wide as a short ladder chip ("3+kk": two paddings, its border and ~2.13u
-  // of label) and border-box like the button it stands in for — a content-box
-  // span is 2px taller, which two rows turn into a 4px jump.
+  // the width and the language, so its placeholders have to wrap where the
+  // ladder does. Each is as wide as the chip it stands in for — two paddings,
+  // its border and the label width the component hands it — and border-box like
+  // that button: a content-box span is 2px taller, which two rows turn into 4px.
   &__chips--sizes > &__chip--ghost {
     box-sizing: border-box;
-    width: calc(4.375 * var(--cl-u) + 2px);
+    width: calc((2.25 + var(--cl-ghost-label)) * var(--cl-u) + 2px);
   }
 
   // `&__chip` used to restate the whole chip token in rem — min-height, padding,

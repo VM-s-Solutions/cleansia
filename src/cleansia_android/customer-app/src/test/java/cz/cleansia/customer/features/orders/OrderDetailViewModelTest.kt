@@ -17,7 +17,11 @@ import cz.cleansia.customer.core.notifications.OrderEvent
 import cz.cleansia.customer.core.notifications.OrderEventBus
 import cz.cleansia.customer.core.orders.OrderDetailDto
 import cz.cleansia.customer.core.orders.ConfirmRecurringOrderResponse
+import cz.cleansia.customer.core.orders.OrderCurrencyDetailDto
 import cz.cleansia.customer.core.orders.OrderRepository
+import cz.cleansia.customer.core.payments.CreatePaymentIntentResponse
+import cz.cleansia.customer.core.payments.PaymentRepository
+import cz.cleansia.customer.core.payments.PaymentSheetParams
 import cz.cleansia.customer.core.user.CodeDto
 import cz.cleansia.customer.features.recurring.RecurringAuthoringGate
 import cz.cleansia.customer.testing.MainDispatcherRule
@@ -31,11 +35,16 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -76,6 +85,7 @@ class OrderDetailViewModelTest {
     private lateinit var snackbar: SnackbarController
     private lateinit var appContext: Context
     private lateinit var orderEventBus: OrderEventBus
+    private lateinit var paymentRepository: PaymentRepository
 
     /** Mirrors the VM's private companion constant — 5 minutes. */
     private val pollIntervalMs = 5L * 60L * 1000L
@@ -91,6 +101,7 @@ class OrderDetailViewModelTest {
         snackbar = mockk(relaxed = true)
         appContext = mockk(relaxed = true)
         orderEventBus = OrderEventBus()
+        paymentRepository = mockk(relaxed = true)
 
         every { membershipRepository.current } returns membership
         every { membershipRepository.staleness } returns membershipStaleness
@@ -113,6 +124,7 @@ class OrderDetailViewModelTest {
         savedStateHandle = SavedStateHandle(mapOf("orderId" to id)),
         membershipRepository = membershipRepository,
         orderEventBus = orderEventBus,
+        paymentRepository = paymentRepository,
     )
 
     /** Wire values: Confirmed=2, OnTheWay=3, InProgress=4, Completed=5, Cancelled=6. */
@@ -420,5 +432,115 @@ class OrderDetailViewModelTest {
         assertEquals(ActionState.Idle, vm.confirmRecurringState.value)
         verify(exactly = 1) { snackbar.showSuccess("Booking confirmed") }
         coVerify(exactly = 2) { repository.getById(orderId) }
+        coVerify(exactly = 0) { paymentRepository.createPaymentIntent(any(), any()) }
+    }
+
+    /** Wire value: PaymentType Card = 2. */
+    private fun recurringCardOccurrence(needsConfirmation: Boolean = true) =
+        recurringCashOccurrence(needsConfirmation).copy(
+            paymentType = CodeDto(type = "PaymentType", name = "Card", value = 2),
+            currency = OrderCurrencyDetailDto(code = "CZK"),
+        )
+
+    /** ConfirmRecurring answers with its own intent and customer, which keep nothing and must not reach the sheet. */
+    private fun cardConfirmReady(): OrderDetailViewModel {
+        coEvery { repository.getById(orderId) } returns ApiResult.Success(recurringCardOccurrence())
+        coEvery { repository.confirmRecurring(orderId) } returns ApiResult.Success(
+            ConfirmRecurringOrderResponse(
+                orderId = orderId,
+                clientSecret = "pi_confirm_secret",
+                paymentIntentId = "pi_confirm",
+                stripeCustomerId = "cus_confirm",
+                ephemeralKey = "ek_confirm",
+            ),
+        )
+        coEvery { paymentRepository.createPaymentIntent(orderId, any()) } returns ApiResult.Success(
+            CreatePaymentIntentResponse(
+                clientSecret = "pi_secret",
+                paymentIntentId = "pi_1",
+                stripeCustomerId = "cus_1",
+                ephemeralKey = "ek_1",
+            ),
+        )
+        return viewModel()
+    }
+
+    private fun TestScope.sheetsOpened(vm: OrderDetailViewModel): List<PaymentSheetParams> {
+        val sheets = mutableListOf<PaymentSheetParams>()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.cardPayment.collect { sheets += it } }
+        return sheets
+    }
+
+    @Test
+    fun `a card confirm without the save tick opens the sheet without the customer`() = runTest {
+        val vm = cardConfirmReady()
+        val sheets = sheetsOpened(vm)
+        advanceUntilIdle()
+
+        vm.confirmRecurring()
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { paymentRepository.createPaymentIntent(orderId, false) }
+        coVerify(exactly = 0) { paymentRepository.createPaymentIntent(any(), true) }
+        val sheet = sheets.single()
+        assertEquals("pi_secret", sheet.clientSecret)
+        assertNull(sheet.customerId)
+        assertNull(sheet.ephemeralKey)
+        assertEquals(ActionState.Idle, vm.confirmRecurringState.value)
+    }
+
+    @Test
+    fun `a ticked card confirm asks the intent to save the card and opens the sheet on the customer`() = runTest {
+        val vm = cardConfirmReady()
+        val sheets = sheetsOpened(vm)
+        advanceUntilIdle()
+
+        vm.setSaveCard(true)
+        vm.confirmRecurring()
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { paymentRepository.createPaymentIntent(orderId, true) }
+        coVerify(exactly = 0) { paymentRepository.createPaymentIntent(any(), false) }
+        val sheet = sheets.single()
+        assertEquals("pi_secret", sheet.clientSecret)
+        assertEquals("cus_1", sheet.customerId)
+        assertEquals("ek_1", sheet.ephemeralKey)
+        assertEquals("CZK", sheet.currencyCode)
+    }
+
+    @Test
+    fun `a card confirm whose intent is refused opens no sheet and leaves the button live`() = runTest {
+        val vm = cardConfirmReady()
+        coEvery { paymentRepository.createPaymentIntent(orderId, any()) } returns
+            ApiResult.Error(ApiError.Network("offline"))
+        val sheets = sheetsOpened(vm)
+        advanceUntilIdle()
+
+        vm.confirmRecurring()
+        advanceUntilIdle()
+
+        assertTrue(sheets.isEmpty())
+        assertEquals(ActionState.Idle, vm.confirmRecurringState.value)
+    }
+
+    @Test
+    fun `the save tick is offered, unticked, only while a card occurrence awaits its confirmation`() = runTest {
+        coEvery { repository.getById(orderId) } returns ApiResult.Success(recurringCardOccurrence())
+        val card = viewModel()
+        advanceUntilIdle()
+        assertTrue(card.offersCardSaving.value)
+        assertFalse(card.saveCard.value)
+
+        coEvery { repository.getById(orderId) } returns
+            ApiResult.Success(recurringCardOccurrence(needsConfirmation = false))
+        val confirmed = viewModel()
+        advanceUntilIdle()
+        assertFalse(confirmed.offersCardSaving.value)
+
+        coEvery { repository.getById(orderId) } returns
+            ApiResult.Success(recurringCashOccurrence(needsConfirmation = true))
+        val cash = viewModel()
+        advanceUntilIdle()
+        assertFalse(cash.offersCardSaving.value)
     }
 }

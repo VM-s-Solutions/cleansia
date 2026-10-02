@@ -81,8 +81,10 @@ import cz.cleansia.customer.core.orders.OrderDetailDto
 import cz.cleansia.customer.core.orders.OrderStatusTrackDto
 import cz.cleansia.customer.core.orders.ReceiptOpenResult
 import cz.cleansia.customer.core.orders.openReceiptPdf
+import cz.cleansia.customer.core.payments.toConfiguration
 import cz.cleansia.customer.core.user.CodeDto
 import cz.cleansia.customer.features.recurring.RecurringAuthoringGate
+import cz.cleansia.customer.ui.components.CardSavingConsent
 import cz.cleansia.customer.ui.state.ActionState
 import cz.cleansia.customer.ui.theme.CleansiaTheme
 import kotlinx.coroutines.launch
@@ -141,6 +143,8 @@ fun OrderDetailScreen(
     val photosState by viewModel.photos.collectAsStateWithLifecycle()
     // Wave 3.3 — recurring-confirm flow state. Submitting → CTA hides + spinner.
     val confirmRecurringState by viewModel.confirmRecurringState.collectAsStateWithLifecycle()
+    val offersCardSaving by viewModel.offersCardSaving.collectAsStateWithLifecycle()
+    val saveCard by viewModel.saveCard.collectAsStateWithLifecycle()
 
     val cancelling = cancelState is ActionState.Submitting
     val cancelError = (cancelState as? ActionState.Error)?.message
@@ -188,9 +192,7 @@ fun OrderDetailScreen(
         }
     }
 
-    // Wave 3.3 — Stripe PaymentSheet for the card-path confirm. Cash responses
-    // come through the same VM channel but with a null clientSecret; we skip
-    // PaymentSheet for those (the VM already moved the order to Confirmed).
+    // Wave 3.3 — Stripe PaymentSheet for the card-path confirm.
     val paymentSheet = com.stripe.android.paymentsheet.rememberPaymentSheet { result ->
         when (result) {
             is com.stripe.android.paymentsheet.PaymentSheetResult.Completed ->
@@ -205,58 +207,10 @@ fun OrderDetailScreen(
         }
     }
     LaunchedEffect(viewModel) {
-        viewModel.confirmResult.collect { resp ->
-            val clientSecret = resp.clientSecret
-            val customerId = resp.stripeCustomerId
-            val ephemeralKey = resp.ephemeralKey
-            android.util.Log.d(
-                "OrderDetailConfirm",
-                "confirmResult collected: orderId=${resp.orderId} " +
-                    "hasClientSecret=${!clientSecret.isNullOrBlank()} " +
-                    "hasCustomerId=${!customerId.isNullOrBlank()} " +
-                    "hasEphemeralKey=${!ephemeralKey.isNullOrBlank()}",
-            )
-            // Cash response: clientSecret null → VM already pushed success +
-            // refetched. Card response: open PaymentSheet with the returned
-            // intent + ephemeral key, mirroring the booking flow's setup.
-            if (clientSecret.isNullOrBlank()
-                || customerId.isNullOrBlank()
-                || ephemeralKey.isNullOrBlank()) {
-                android.util.Log.d(
-                    "OrderDetailConfirm",
-                    "Skipping PaymentSheet — at least one Stripe field is null/blank",
-                )
-                return@collect
-            }
-            android.util.Log.d(
-                "OrderDetailConfirm",
-                "Presenting PaymentSheet for order ${resp.orderId}",
-            )
+        viewModel.cardPayment.collect { params ->
             paymentSheet.presentWithPaymentIntent(
-                paymentIntentClientSecret = clientSecret,
-                configuration = com.stripe.android.paymentsheet.PaymentSheet.Configuration(
-                    merchantDisplayName = "Cleansia",
-                    customer = com.stripe.android.paymentsheet.PaymentSheet.CustomerConfiguration(
-                        id = customerId,
-                        ephemeralKeySecret = ephemeralKey,
-                    ),
-                    googlePay = com.stripe.android.paymentsheet.PaymentSheet.GooglePayConfiguration(
-                        // Follows the Stripe key, not the build type. See build.gradle.kts where
-                        // GOOGLE_PAY_PRODUCTION is derived from the publishable-key prefix.
-                        environment = if (cz.cleansia.customer.BuildConfig.GOOGLE_PAY_PRODUCTION) {
-                            com.stripe.android.paymentsheet.PaymentSheet.GooglePayConfiguration.Environment.Production
-                        } else {
-                            com.stripe.android.paymentsheet.PaymentSheet.GooglePayConfiguration.Environment.Test
-                        },
-                        // Stripe: "The two-letter ISO 3166 code of the country of your business" —
-                        // the merchant account, not the order.
-                        countryCode = "CZ",
-                        // The PaymentIntent's own currency wins on the sheet; this is the Google Pay
-                        // availability hint.
-                        currencyCode = (viewModel.state.value as? OrderDetailUiState.Loaded)?.order?.currency?.code,
-                    ),
-                    allowsDelayedPaymentMethods = false,
-                ),
+                paymentIntentClientSecret = params.clientSecret,
+                configuration = params.toConfiguration(),
             )
         }
     }
@@ -335,6 +289,8 @@ fun OrderDetailScreen(
                 showMakeRecurring = canMakeRecurring,
                 cancelEnabled = !cancelling,
                 confirmingRecurring = confirmingRecurring,
+                offersCardSaving = offersCardSaving,
+                saveCard = saveCard,
                 isDownloadingReceipt = downloadingReceipt,
                 onBack = onBack,
                 onCancel = { showCancelSheet = true },
@@ -346,6 +302,7 @@ fun OrderDetailScreen(
                 onDownloadReceipt = { viewModel.downloadReceipt() },
                 onViewPhotos = onViewPhotos,
                 onConfirmRecurring = { viewModel.confirmRecurring() },
+                onSaveCardChange = viewModel::setSaveCard,
             )
         }
     }
@@ -436,6 +393,8 @@ private fun OrderDetailMapLayout(
     showMakeRecurring: Boolean,
     cancelEnabled: Boolean,
     confirmingRecurring: Boolean,
+    offersCardSaving: Boolean,
+    saveCard: Boolean,
     isDownloadingReceipt: Boolean,
     onBack: () -> Unit,
     onCancel: () -> Unit,
@@ -447,6 +406,7 @@ private fun OrderDetailMapLayout(
     onDownloadReceipt: () -> Unit,
     onViewPhotos: () -> Unit,
     onConfirmRecurring: () -> Unit,
+    onSaveCardChange: (Boolean) -> Unit,
 ) {
     val status = orderStatusFromValue(order.orderStatus?.value)
     val darkTheme = isSystemInDarkTheme()
@@ -520,6 +480,8 @@ private fun OrderDetailMapLayout(
             showMakeRecurring = showMakeRecurring,
             cancelEnabled = cancelEnabled,
             confirmingRecurring = confirmingRecurring,
+            offersCardSaving = offersCardSaving,
+            saveCard = saveCard,
             isDownloadingReceipt = isDownloadingReceipt,
             onCancel = onCancel,
             onReportCleanerNoShow = onReportCleanerNoShow,
@@ -530,6 +492,7 @@ private fun OrderDetailMapLayout(
             onDownloadReceipt = onDownloadReceipt,
             onViewPhotos = onViewPhotos,
             onConfirmRecurring = onConfirmRecurring,
+            onSaveCardChange = onSaveCardChange,
         )
     }
 }
@@ -566,6 +529,8 @@ private fun OrderDetailSheetContent(
     showMakeRecurring: Boolean,
     cancelEnabled: Boolean,
     confirmingRecurring: Boolean,
+    offersCardSaving: Boolean,
+    saveCard: Boolean,
     isDownloadingReceipt: Boolean,
     onCancel: () -> Unit,
     onReportCleanerNoShow: () -> Unit,
@@ -576,6 +541,7 @@ private fun OrderDetailSheetContent(
     onDownloadReceipt: () -> Unit,
     onViewPhotos: () -> Unit,
     onConfirmRecurring: () -> Unit,
+    onSaveCardChange: (Boolean) -> Unit,
 ) {
     val showConfirmRecurringCta = order.needsConfirmation
     val hasFooter = showCancel || showCleanerNoShow || showReportIssue || showRebook || showMakeRecurring
@@ -666,6 +632,9 @@ private fun OrderDetailSheetContent(
             // Sits right under the hero so it's the first thing the customer
             // sees after tapping the recurring-scheduled push.
             if (showConfirmRecurringCta) {
+                if (offersCardSaving) {
+                    CardSavingConsent(saved = saveCard, onSavedChange = onSaveCardChange)
+                }
                 ConfirmRecurringButton(
                     submitting = confirmingRecurring,
                     // "Confirm and pay" is false on a cash booking: ConfirmRecurringOrder's cash
@@ -1148,6 +1117,8 @@ private fun PreviewSheet() {
                 showMakeRecurring = false,
                 cancelEnabled = true,
                 confirmingRecurring = false,
+                offersCardSaving = false,
+                saveCard = false,
                 isDownloadingReceipt = false,
                 onCancel = {},
                 onReportCleanerNoShow = {},
@@ -1158,6 +1129,7 @@ private fun PreviewSheet() {
                 onDownloadReceipt = {},
                 onViewPhotos = {},
                 onConfirmRecurring = {},
+                onSaveCardChange = {},
             )
         }
     }

@@ -8,7 +8,15 @@ final class ProfileStatsFormatTests: XCTestCase {
     func testSavedMapsKnownCurrencyCodesToSymbols() {
         XCTAssertEqual(ProfileStatsFormat.saved(320, currencyCode: "CZK"), "320 Kč")
         XCTAssertEqual(ProfileStatsFormat.saved(45, currencyCode: "EUR"), "45 €")
-        XCTAssertEqual(ProfileStatsFormat.saved(10, currencyCode: "USD"), "10 $")
+        XCTAssertEqual(ProfileStatsFormat.saved(10, currencyCode: "USD"), "$10")
+    }
+
+    /// The figure is the order detail's: a saving that is not whole keeps its haléře.
+    func testSavedIsTheOrderDetailsFormatter() {
+        XCTAssertEqual(
+            ProfileStatsFormat.saved(137.1, currencyCode: "CZK"),
+            OrdersFormat.price(137.1, currencyCode: "CZK")
+        )
     }
 
     func testSavedPassesAnUnknownCurrencyCodeThrough() {

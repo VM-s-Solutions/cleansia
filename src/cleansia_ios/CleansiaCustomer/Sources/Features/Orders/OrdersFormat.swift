@@ -2,16 +2,27 @@ import CleansiaCustomerApi
 import Foundation
 
 enum OrdersFormat {
-    /// Price + currency suffix (grouped, no fraction digits; CZK/EUR/USD/GBP get
-    /// their symbol, others the raw code — never crashes on an unknown currency).
-    /// A blank code renders the bare amount: an unlabelled figure over a label guessed for it.
-    static func price(_ amount: Double, currencyCode: String?) -> String {
+    /// Price + currency suffix, grouped; CZK/EUR/USD/GBP get their symbol, others the raw code — never
+    /// crashes on an unknown currency. A blank code renders the bare amount: an unlabelled figure over a
+    /// label guessed for it. Every customer money row reads this, the booking flow's included.
+    ///
+    /// A whole amount prints without a fraction ("1,200 Kč") and any other to the currency's minor unit
+    /// ("319.90 Kč"), the web's `formatMoney` and Android's `formatOrderPrice` rule: a credit share or a
+    /// discount can leave haléře, and rounding them away shows a figure the card is not charged (Stripe's
+    /// sheet shows the decimals). Under half a minor unit from a whole number is whole (319.999 is
+    /// "320 Kč"); a blank or unknown code takes two digits.
+    static func price(_ amount: Double, currencyCode: String?, locale: Locale = .current) -> String {
+        let rounded = amount.rounded()
+        let isWhole = abs(amount - rounded) < 0.005
+        let digits = isWhole ? 0 : minorUnits(currencyCode)
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
-        formatter.locale = .current
-        formatter.maximumFractionDigits = 0
-        formatter.minimumFractionDigits = 0
-        let number = formatter.string(from: NSNumber(value: amount)) ?? "\(Int(amount))"
+        formatter.locale = locale
+        formatter.maximumFractionDigits = digits
+        formatter.minimumFractionDigits = digits
+        // `rounded == 0` folds -0.0 (from -0.001) into 0, which would otherwise print "-0".
+        let value = isWhole ? (rounded == 0 ? 0 : rounded) : amount
+        let number = formatter.string(from: NSNumber(value: value)) ?? "\(Int(value))"
         guard let code = currencyCode?.nonBlank else { return number }
         switch code.uppercased() {
         case "CZK": return "\(number) Kč"
@@ -20,6 +31,18 @@ enum OrdersFormat {
         case "GBP": return "£\(number)"
         default: return "\(number) \(code)"
         }
+    }
+
+    /// The currency's own minor unit — none for yen; two for a blank or unknown code.
+    private static func minorUnits(_ currencyCode: String?) -> Int {
+        guard let code = currencyCode?.nonBlank?.uppercased(), Locale.commonISOCurrencyCodes.contains(code) else {
+            return 2
+        }
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.currencyCode = code
+        return formatter.maximumFractionDigits
     }
 
     /// "Mon 1 Jul · 10:00–12:00" — date + start–end window (`estimatedMinutes`

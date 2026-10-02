@@ -353,7 +353,7 @@ final class BookingViewModelTests: XCTestCase {
 
         XCTAssertEqual(vm.quoteState, .idle)
         XCTAssertEqual(vm.displayCurrencyCode, "EUR")
-        XCTAssertEqual(BookingPricing.formatTotal(1500, currencyCode: vm.displayCurrencyCode ?? ""), "1500 €")
+        XCTAssertTrue(BookingPricing.formatTotal(1500, currencyCode: vm.displayCurrencyCode ?? "").hasSuffix(" €"))
     }
 
     func testTheQuotesOwnCurrencyWinsOverTheCatalogueDefault() async {

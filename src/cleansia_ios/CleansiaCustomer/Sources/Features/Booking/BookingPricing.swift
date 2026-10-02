@@ -12,15 +12,6 @@ enum BookingPricing {
         return leadHours >= expressLeadHours && leadHours < standardLeadHours
     }
 
-    static func currencySymbol(for code: String) -> String {
-        switch code.uppercased() {
-        case "CZK": "Kč"
-        case "EUR": "€"
-        case "USD": "$"
-        default: code
-        }
-    }
-
     /// How much of `balance` the server spends on an order charged `charged`, when `share` is the most of
     /// an order credit may settle — the mirror of `BookingPolicy.CapCreditForOrder`, floored to whole
     /// minor units and never the whole order, so the confirm step says what Stripe then asks for. The
@@ -44,11 +35,10 @@ enum BookingPricing {
         Decimal(string: "\(value)", locale: Locale(identifier: "en_US_POSIX")) ?? Decimal(value)
     }
 
-    /// A blank code renders the bare amount: an unlabelled figure over a label guessed for it.
+    /// The order detail's formatter, so the booking flow states every figure as the order then shows
+    /// it: grouped, and to the minor unit when not whole. A blank code renders the bare amount.
     static func formatTotal(_ total: Double, currencyCode: String) -> String {
-        let amount = String(format: "%.0f", total)
-        let symbol = currencySymbol(for: currencyCode)
-        return symbol.isEmpty ? amount : "\(amount) \(symbol)"
+        OrdersFormat.price(total, currencyCode: currencyCode)
     }
 }
 

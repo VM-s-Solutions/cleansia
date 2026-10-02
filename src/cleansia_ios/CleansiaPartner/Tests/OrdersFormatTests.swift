@@ -24,6 +24,39 @@ final class OrdersFormatTests: XCTestCase {
         )
     }
 
+    // MARK: money
+
+    /// Pay is booked to the haléř and a seat's share of a job need not be whole, so 412.30 was "412 Kč" on
+    /// the board while the card and Stripe said 412.30. The board, the offer, the contract and the detail
+    /// all read this one formatter, so they now agree on the minor units.
+    func testAPayThatIsNotWholeKeepsItsMinorUnitsInTheLocalesMark() {
+        let czech = Locale(identifier: "cs_CZ")
+        let american = Locale(identifier: "en_US")
+        XCTAssertEqual(OrdersFormat.money(412.30, symbol: "Kč", locale: czech), "412,30 Kč")
+        XCTAssertEqual(OrdersFormat.money(412.5, symbol: "€", locale: american), "412.50 €")
+        XCTAssertEqual(OrdersFormat.money(1412.3, symbol: "Kč", locale: czech), "1\u{202F}412,30 Kč")
+        XCTAssertEqual(OrdersFormat.money(12.05, symbol: nil, locale: czech), "12,05")
+    }
+
+    func testAWholePayStaysWholeWithinHalfAHaler() {
+        let czech = Locale(identifier: "cs_CZ")
+        XCTAssertEqual(OrdersFormat.money(412, symbol: "Kč", locale: czech), "412 Kč")
+        XCTAssertEqual(OrdersFormat.money(1274.999, symbol: "Kč", locale: czech), "1\u{202F}275 Kč")
+        XCTAssertEqual(OrdersFormat.money(-0.001, symbol: "Kč", locale: czech), "0 Kč")
+    }
+
+    func testTheBoardTotalKeepsTheMinorUnitsOfItsRows() {
+        let total = OrdersFormat.totalEarnings([
+            order(pay: 412.30, code: "CZK", symbol: "Kč"),
+            order(pay: 500, code: "CZK", symbol: "Kč")
+        ])
+        XCTAssertEqual(total, OrdersFormat.money(912.30, symbol: "Kč"))
+        XCTAssertEqual(
+            OrdersFormat.pay(order(pay: 412.30, code: "CZK", symbol: "Kč")),
+            OrdersFormat.money(412.30, symbol: "Kč")
+        )
+    }
+
     // MARK: totalEarnings
 
     private func order(pay: Double?, code: String?, symbol: String?) -> OrderListItem {

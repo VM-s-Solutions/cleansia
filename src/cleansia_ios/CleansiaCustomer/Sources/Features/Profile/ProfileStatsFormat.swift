@@ -1,18 +1,10 @@
 import Foundation
 
 enum ProfileStatsFormat {
-    /// "%.0f Kč" style, mirroring Android's profile formatter; symbol-less when
+    /// Every money row's formatter (Android's profile reads `formatOrderPrice` too); symbol-less when
     /// the user has no realized orders (currency null).
     static func saved(_ amount: Double, currencyCode: String?) -> String {
-        let number = String(format: "%.0f", amount)
-        guard let code = currencyCode else { return number }
-        let symbol = switch code.uppercased() {
-        case "CZK": "Kč"
-        case "EUR": "€"
-        case "USD": "$"
-        default: code
-        }
-        return "\(number) \(symbol)"
+        OrdersFormat.price(amount, currencyCode: currencyCode)
     }
 
     /// Account-creation date → localized "MMM yyyy" (e.g. "Feb 2025"); em dash

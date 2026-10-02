@@ -41,7 +41,10 @@ final class MembershipViewModelTests: XCTestCase {
 
         let plan = try? XCTUnwrap(vm.plans.first)
         XCTAssertEqual(plan?.currencyCode, "EUR")
-        XCTAssertEqual(MembershipFormat.price(plan?.price ?? 0, currencyCode: plan?.currencyCode), "8 €")
+        // 199 Kč / 25 is 7.96 €: shown to the cent, not rounded to "8 €".
+        let label = MembershipFormat.price(plan?.price ?? 0, currencyCode: plan?.currencyCode)
+        XCTAssertTrue(label.hasSuffix(" €"), label)
+        XCTAssertEqual(label, OrdersFormat.price(7.96, currencyCode: "EUR"))
     }
 
     func testThePlansAreRequestedForTheChosenMarket() async {

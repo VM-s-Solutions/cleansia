@@ -28,15 +28,26 @@ enum OrdersFormat {
             .joined(separator: " · ")
     }
 
-    static func money(_ amount: Double, symbol: String?) -> String {
-        let rounded = Int(amount.rounded())
+    /// Thousands grouped, the symbol after; no unit when there is none. A whole amount prints without a
+    /// fraction and any other to two decimals in the locale's mark — the customer app's and Android's
+    /// rule, so a job's pay reads the same on the board, the offer, the contract and the detail. Pay is
+    /// booked to the haléř, and a seat's share of a job need not be whole: 412.30 is "412,30 Kč", never
+    /// "412 Kč". Only the symbol reaches this function, so the minor unit is two digits: the koruna's and
+    /// the euro's. Under half a haléř from whole is whole.
+    static func money(_ amount: Double, symbol: String?, locale: Locale = .current) -> String {
+        let rounded = amount.rounded()
+        let isWhole = abs(amount - rounded) < 0.005
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
-        formatter.maximumFractionDigits = 0
+        formatter.locale = locale
+        formatter.minimumFractionDigits = isWhole ? 0 : 2
+        formatter.maximumFractionDigits = isWhole ? 0 : 2
         formatter.groupingSeparator = "\u{202F}"
-        let whole = formatter.string(from: NSNumber(value: rounded)) ?? "\(rounded)"
-        guard let symbol = symbol?.trimmingCharacters(in: .whitespaces), !symbol.isEmpty else { return whole }
-        return "\(whole) \(symbol)"
+        // `rounded == 0` folds -0.0 (from -0.001) into 0, which would otherwise print "-0".
+        let value = isWhole ? (rounded == 0 ? 0 : rounded) : amount
+        let number = formatter.string(from: NSNumber(value: value)) ?? "\(value)"
+        guard let symbol = symbol?.trimmingCharacters(in: .whitespaces), !symbol.isEmpty else { return number }
+        return "\(number) \(symbol)"
     }
 
     static func sortLabel(_ sort: AvailableSort) -> String {

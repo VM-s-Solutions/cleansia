@@ -184,7 +184,8 @@ private struct JobFactsCard: View {
                     Text(L10n.WorkContract.reward)
                         .font(CleansiaTypography.labelSmall)
                         .foregroundColor(CleansiaColors.onSurfaceVariant)
-                    Text(EarningsFormat.wholeMoney(facts.reward, currencyCode: facts.currencyCode))
+                    // The board's formatter, so the reward reads as the job's pay does there.
+                    Text(OrdersFormat.money(facts.reward, symbol: EarningsFormat.currencySymbol(facts.currencyCode)))
                         .font(CleansiaTypography.titleMedium)
                         .foregroundColor(CleansiaColors.primary)
                 }

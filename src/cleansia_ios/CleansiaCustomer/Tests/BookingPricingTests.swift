@@ -29,22 +29,22 @@ final class BookingPricingTests: XCTestCase {
         XCTAssertFalse(BookingPricing.requiresExpressSurcharge(cleaningAt: lead(hours: 1.0), now: now))
     }
 
-    func testCurrencySymbolMapping() {
-        XCTAssertEqual(BookingPricing.currencySymbol(for: "CZK"), "Kč")
-        XCTAssertEqual(BookingPricing.currencySymbol(for: "eur"), "€")
-        XCTAssertEqual(BookingPricing.currencySymbol(for: "USD"), "$")
-        XCTAssertEqual(BookingPricing.currencySymbol(for: "GBP"), "GBP")
-    }
-
-    func testFormatTotalRoundsToWholeWithSymbol() {
-        XCTAssertEqual(BookingPricing.formatTotal(1200.4, currencyCode: "CZK"), "1200 Kč")
-        XCTAssertEqual(BookingPricing.formatTotal(1000, currencyCode: "EUR"), "1000 €")
+    /// The booking flow states every figure as the order detail then shows it: a credit share that
+    /// leaves haléře was "320 Kč" on the confirm step and "319.90 Kč" on Stripe's sheet.
+    func testFormatTotalIsTheOrderDetailsFormatter() {
+        for (amount, code) in [(1200.4, "CZK"), (1000, "EUR"), (319.9, "CZK"), (57, "USD")] {
+            XCTAssertEqual(
+                BookingPricing.formatTotal(amount, currencyCode: code),
+                OrdersFormat.price(amount, currencyCode: code)
+            )
+        }
     }
 
     /// Before the catalogue has loaded there is no currency to label with, and a bare figure is
     /// the honest rendering — never a guessed suffix.
     func testFormatTotalWithNoCurrencyRendersTheBareAmount() {
-        XCTAssertEqual(BookingPricing.formatTotal(1200, currencyCode: ""), "1200")
+        XCTAssertEqual(BookingPricing.formatTotal(1200, currencyCode: ""), OrdersFormat.price(1200, currencyCode: nil))
+        XCTAssertFalse(BookingPricing.formatTotal(1200, currencyCode: "").contains(where: \.isLetter))
     }
 }
 

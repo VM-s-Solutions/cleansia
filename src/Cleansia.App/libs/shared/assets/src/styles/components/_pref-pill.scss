@@ -48,10 +48,34 @@
     color: #64748b;
   }
 
-  #{$glyph} {
+  .p-select-label #{$glyph} {
     color: #0369a1;
     font-size: 16px;
     margin-right: 8px;
+  }
+}
+
+// The open list, included on the class each pill puts on its own list rather
+// than under the host: from the navbar sheet the list is attached to `body`,
+// where host-scoped rules cannot reach it. 208px fits the longest native name,
+// "Українська", with its code.
+@mixin pref-pill-list {
+  &.p-select-overlay {
+    min-width: 208px;
+  }
+
+  .p-select-option {
+    min-height: 40px;
+    gap: 8px;
+    padding: 8px 14px;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.25;
+
+    &.p-select-option-selected,
+    &.p-select-option-selected.p-focus {
+      background: var(--cl-tint-strong);
+    }
   }
 }
 
@@ -70,7 +94,7 @@
     color: #cbd5e1;
   }
 
-  #{$glyph} {
+  .p-select-label #{$glyph} {
     color: #7dd3fc;
   }
 }

@@ -62,10 +62,7 @@ public class GetMyDocuments
             // Get only active documents (soft-deleted ones are excluded)
             var documents = await documentRepository.GetByEmployeeIdAsync(employee.Id, includeInactive: false, cancellationToken);
 
-            // Group by filename and get only latest version of each
-            var latestDocuments = documents
-                .GroupBy(d => d.FileName)
-                .Select(g => g.OrderByDescending(d => d.Version).First())
+            var activeDocuments = documents
                 .OrderByDescending(d => d.CreatedOn)
                 .Select(d => new MyDocumentDto
                 {
@@ -85,7 +82,7 @@ public class GetMyDocuments
 
             return BusinessResult.Success(new Response
             {
-                Documents = latestDocuments
+                Documents = activeDocuments
             });
         }
     }

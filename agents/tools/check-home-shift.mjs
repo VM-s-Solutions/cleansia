@@ -10,18 +10,25 @@ import { createRequire } from 'node:module';
 const { chromium } = createRequire(`${process.cwd()}/`)('playwright');
 
 const TARGET = process.env.TARGET ?? 'http://localhost:4202/';
+const WIDTH = Number(process.env.WIDTH ?? 1440);
+const HEIGHT = Number(process.env.HEIGHT ?? 1000);
 const browser = await chromium.launch();
-const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+const page = await browser.newPage({
+  viewport: { width: WIDTH, height: HEIGHT },
+  isMobile: WIDTH < 800,
+  hasTouch: WIDTH < 800,
+});
 // Pin the locale and dismiss consent, as the other home checkers do. Without
 // this the first paint is in the browser default language and the second in the
 // resolved one, so every measurement was really measuring the i18n bootstrap
 // reflowing Czech text - not whether the page itself holds still.
-await page.addInitScript((l) => {
+await page.addInitScript((cfg) => {
   try {
-    localStorage.setItem('preferred_language', l);
+    localStorage.setItem('preferred_language', cfg.lang);
+    localStorage.setItem('cleansia-theme', cfg.theme);
     localStorage.setItem('cleansia-customer-cookie-consent', 'accepted');
   } catch { /* private mode */ }
-}, process.env.LANG_CODE ?? 'cs');
+}, { lang: process.env.LANG_CODE ?? 'cs', theme: process.env.THEME ?? 'light' });
 
 const SAMPLE = `(() => {
   const out = {};

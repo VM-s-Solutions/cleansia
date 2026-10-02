@@ -294,6 +294,12 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   readonly preferredCleanerLoading = this.preferredCleaner.loading;
   readonly preferredCleanerOptions = this.preferredCleaner.options;
 
+  /** "Save this card for my next bookings": an account paying by card only, and off until ticked. */
+  readonly saveCardOffered = computed(
+    () => this.authService.isLoggedIn() && this.formData().paymentType === PaymentType.Card,
+  );
+  readonly saveCard = signal(false);
+
   readonly cardCaptureVisible = this.cardCapture.visible;
   readonly cardCaptureConsent = this.cardCapture.consentAccepted;
   readonly cardCaptureStarting = this.cardCapture.starting;
@@ -358,6 +364,10 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
     if (type === PaymentType.Cash && !this.cashSelectable()) return;
     this.cashCleared.set(false);
     this.updateFormData({ paymentType: type });
+  }
+
+  setSaveCard(save: boolean): void {
+    this.saveCard.set(save);
   }
 
   setCardCaptureConsent(accepted: boolean): void {
@@ -1027,6 +1037,7 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
     command.promoCode = promoCodeToSend;
     command.termsAccepted = termsAccepted ? true : undefined;
     command.earlyPerformanceRequested = earlyPerformanceRequested ? true : undefined;
+    command.saveCard = this.saveCardOffered() && this.saveCard();
     // Empty becomes undefined rather than '': the backend treats null and empty
     // alike, and undefined keeps the property out of the JSON entirely. Trimmed
     // because a whitespace-only note is not a note.

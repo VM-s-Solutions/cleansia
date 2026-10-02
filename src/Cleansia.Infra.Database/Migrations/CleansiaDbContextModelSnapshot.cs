@@ -1499,6 +1499,11 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
+                    b.Property<string>("ContentSha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
                     b.Property<string>("ContentType")
                         .IsRequired()
                         .HasMaxLength(100)

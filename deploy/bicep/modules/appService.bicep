@@ -21,6 +21,9 @@ param appServicePlanId string
 @description('Linux runtime stack for this host. APIs = DOTNETCORE|10.0; the customer SSR = NODE|20-lts.')
 param linuxFxVersion string
 
+@description('Startup command (appCommandLine) for the site AND its staging slot. Empty (default) = none, the runtime default — the five .NET APIs. The customer SSR passes `node server/server.mjs`. Owned here rather than by a deploy step, because a config write restarts the site and the deploy restarts it again seconds later; appCommandLine travels with the slot on a swap.')
+param appCommandLine string = ''
+
 @description('App settings as a name->value map. Secret values MUST be Key Vault reference strings; this module stores them verbatim and emits no literal secret.')
 param appSettings object = {}
 
@@ -75,6 +78,7 @@ resource appService 'Microsoft.Web/sites@2023-12-01' = {
     virtualNetworkSubnetId: empty(virtualNetworkSubnetId) ? null : virtualNetworkSubnetId
     siteConfig: {
       linuxFxVersion: linuxFxVersion
+      appCommandLine: empty(appCommandLine) ? null : appCommandLine
       alwaysOn: alwaysOn
       minTlsVersion: '1.2'
       ftpsState: 'Disabled'
@@ -111,6 +115,7 @@ resource stagingSlot 'Microsoft.Web/sites/slots@2023-12-01' = if (stagingSlotEna
     virtualNetworkSubnetId: empty(virtualNetworkSubnetId) ? null : virtualNetworkSubnetId
     siteConfig: {
       linuxFxVersion: linuxFxVersion
+      appCommandLine: empty(appCommandLine) ? null : appCommandLine
       // Deliberately NOT mirrored from the parent: Always On is on Azure's not-swapped settings
       // list (slot-sticky), so a warm slot buys zero swap benefit — the CI workflow warms the slot
       // explicitly before swapping. Mirroring it would pin every idle staging process resident

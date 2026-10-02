@@ -48,8 +48,9 @@ var host = new HostBuilder()
         services.AddSingleton<IHostAudienceProvider>(new HostAudienceProvider("cleansia.functions"));
 
         // The GET /api/health probe body (HealthFunction is its thin HTTP shell). Scoped — it resolves
-        // the scoped CleansiaDbContext for its database probe. Stays here (a Cleansia.Config type the
-        // Functions.Core registration extension deliberately doesn't reference).
+        // the scoped DbContextOptions<CleansiaDbContext> its database probe builds a context from. Stays
+        // here (a Cleansia.Config type the Functions.Core registration extension deliberately doesn't
+        // reference).
         services.AddScoped<FunctionsHealthCheck>();
 
         // The background services + every per-trigger handler — the ONE registration list, shared with

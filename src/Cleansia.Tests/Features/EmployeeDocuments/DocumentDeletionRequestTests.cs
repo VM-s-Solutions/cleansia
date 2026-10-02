@@ -49,7 +49,7 @@ public class DocumentDeletionRequestTests
         employee.Id = EmployeeId;
 
         _document = EmployeeDocument.Create(
-            EmployeeId, "id.pdf", "path/id.pdf", "application/pdf", 1024,
+            EmployeeId, "id.pdf", "path/id.pdf", "application/pdf", 1024, new string('0', 64),
             DocumentType.IdentityCard, null, _user.Id);
         _document.Id = DocumentId;
 
@@ -148,7 +148,7 @@ public class DocumentDeletionRequestTests
     public async Task A_Document_Belonging_To_Somebody_Else_Cannot_Be_Requested()
     {
         var theirs = EmployeeDocument.Create(
-            "emp-2", "id.pdf", "path/theirs.pdf", "application/pdf", 1024,
+            "emp-2", "id.pdf", "path/theirs.pdf", "application/pdf", 1024, new string('0', 64),
             DocumentType.IdentityCard, null, "user-2");
         theirs.Id = "doc-2";
 

@@ -33,6 +33,31 @@
           [outlined]="!facade.incidentPanelOpen()"
           (onClick)="toggleIncidentPanel()"
         />
+        <cleansia-button
+          *cleansiaPermission="Policy.CanGrantLoyaltyPoints"
+          class="cleansia-user-loyalty-detail__grant-points"
+          [label]="'pages.loyalty_user_detail.actions.grant' | translate"
+          icon="pi pi-plus-circle"
+          severity="secondary"
+          [outlined]="true"
+          (onClick)="openGrant()"
+        />
+        <cleansia-button
+          *cleansiaPermission="Policy.CanGrantLoyaltyPoints"
+          class="cleansia-user-loyalty-detail__revoke-points"
+          [label]="'pages.loyalty_user_detail.actions.revoke' | translate"
+          icon="pi pi-minus-circle"
+          severity="danger"
+          [outlined]="true"
+          (onClick)="openRevoke()"
+        />
+        <cleansia-button
+          *cleansiaPermission="Policy.CanIssueCustomerCredit"
+          class="cleansia-user-loyalty-detail__issue-credit"
+          [label]="'pages.loyalty_user_detail.credit.actions.issue' | translate"
+          icon="pi pi-wallet"
+          (onClick)="openIssueCredit()"
+        />
       </div>
 
       @if (facade.incidentPanelOpen()) {
@@ -100,24 +125,6 @@
       @let acc = facade.account()!;
 
       <cleansia-section [title]="'pages.loyalty_user_detail.tier_label' | translate">
-        <ng-container section-actions>
-          <cleansia-button
-            *cleansiaPermission="Policy.CanGrantLoyaltyPoints"
-            [label]="'pages.loyalty_user_detail.actions.grant' | translate"
-            icon="pi pi-plus-circle"
-            severity="secondary"
-            [outlined]="true"
-            (onClick)="openGrant()"
-          />
-          <cleansia-button
-            *cleansiaPermission="Policy.CanGrantLoyaltyPoints"
-            [label]="'pages.loyalty_user_detail.actions.revoke' | translate"
-            icon="pi pi-minus-circle"
-            severity="danger"
-            [outlined]="true"
-            (onClick)="openRevoke()"
-          />
-        </ng-container>
         <div class="detail-identity">
           <div class="detail-identity__row">
             <span class="detail-identity__name">
@@ -156,14 +163,6 @@
         cannot answer it.
       -->
       <cleansia-section [title]="'pages.loyalty_user_detail.credit.title' | translate">
-        <ng-container section-actions>
-          <cleansia-button
-            *cleansiaPermission="Policy.CanIssueCustomerCredit"
-            [label]="'pages.loyalty_user_detail.credit.actions.issue' | translate"
-            icon="pi pi-wallet"
-            (onClick)="openIssueCredit()"
-          />
-        </ng-container>
         @if (facade.creditLoading()) {
         <cleansia-loader />
         } @else {

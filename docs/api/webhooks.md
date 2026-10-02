@@ -1,6 +1,6 @@
 # Webhooks
 
-Cleansia receives Stripe webhooks for card payments, Cleansia Plus subscriptions and bank chargebacks. The webhook endpoint is unauthenticated but verified using Stripe's signature mechanism.
+Cleansia receives Stripe webhooks for card payments, the cards customers save, Cleansia Plus subscriptions and bank chargebacks. The webhook endpoint is unauthenticated but verified using Stripe's signature mechanism.
 
 ::: info Source Files
 - Webhook handler: `src/Cleansia.Core.AppServices/Features/Payments/HandlePaymentNotification.cs`
@@ -54,17 +54,20 @@ The `WebhookSecret` (`whsec_...`) must match the secret configured in the Stripe
 
 ## Handled Event Types
 
-Eleven event types, in three groups (`Constants.StripeEventType` — `IsOrderEvent`,
-`IsSubscriptionEvent`, `IsChargebackEvent`). Every host that runs the handler handles all eleven.
+Twelve event types (`Constants.StripeEventType`): eleven in three groups (`IsOrderEvent`,
+`IsSubscriptionEvent`, `IsChargebackEvent`), and `setup_intent.succeeded`, which is in none of them
+and only ever lands a saved card. Every host that runs the handler handles all twelve.
 
 | Event Type | Constant | Action |
 |------------|----------|--------|
 | **Order** — found by the `OrderId` in the session's or intent's metadata | | |
-| `checkout.session.completed` | `CompletedSession` | Web card payment settled: `PaymentStatus = Paid`. The order stays `New` ([ADR-0057](/decisions/adr-0057)). Receipt and push queued |
-| `payment_intent.succeeded` | `PaymentIntentSucceeded` | Mobile card payment settled — handled exactly as above |
+| `checkout.session.completed` | `CompletedSession` | Web card payment settled: `PaymentStatus = Paid`. The order stays `New` ([ADR-0057](/decisions/adr-0057)). Receipt and push queued. A session carrying `SavedCardId` lands the card first: a booking's, the card the customer ticked to keep; a setup-mode one, the web's cash card capture, which touches no order ([below](#checkout-session-completed)) |
+| `payment_intent.succeeded` | `PaymentIntentSucceeded` | Mobile card payment settled — handled exactly as above, an intent carrying `SavedCardId` landing the ticked card first. The intent behind a web Checkout Session carries `SavedCardId` but no `OrderId`, so its event lands the card and goes no further |
 | `checkout.session.expired` | `ExpiredSession` | `PaymentStatus = Failed`, `OrderStatus.Cancelled` appended, applied credit returned |
-| `payment_intent.canceled` | `PaymentIntentCanceled` | Handled exactly as an expired session |
+| `payment_intent.canceled` | `PaymentIntentCanceled` | Handled as an expired session — **except** an intent Stripe cancelled with the reason `duplicate`, which leaves the order as it is: `CreatePaymentIntent` cancels an order's old intent that way only when it has just handed the customer a new one to pay ([Payment and fiscal](/flows/payment-and-fiscal#saved-cards-and-receivables)) |
 | `payment_intent.payment_failed` | `PaymentIntentPaymentFailed` | Status left alone so the client can retry; the first decline on an order tells the administrators |
+| **Saved card** — found by the `SavedCardId` in the intent's metadata | | |
+| `setup_intent.succeeded` | `SetupIntentSucceeded` | The apps' cash card capture — a card-only SetupIntent confirmed in PaymentSheet — succeeded: the card lands on its `SavedCards` row and the customer's earlier card in that currency is retired. A SetupIntent with no `SavedCardId` (the Plus subscribe flow's) is ignored. A web capture raises it too, behind its setup-mode session, and whichever of the two arrives second changes nothing → [Payment and fiscal](/flows/payment-and-fiscal#saved-cards-and-receivables) |
 | **Subscription** (Cleansia Plus) — found by the Stripe subscription id | | |
 | `customer.subscription.created` | `SubscriptionCreated` | Creates the local `UserMembership` — the only writer of that row for a web Plus checkout |
 | `customer.subscription.updated` | `SubscriptionUpdated` | Mirrors Stripe's status and the current period onto the membership; a renewal is recorded here |
@@ -84,17 +87,30 @@ acknowledged, never retried.
 
 `payment_intent.succeeded` takes the same path.
 
-1. Extract `OrderId` from the session's (or intent's) metadata
-2. Look up the order past the tenant filter and pin its tenant
-3. On `checkout.session.completed`, record the session's `payment_intent` on the order — before any of
+1. **A saved card lands first**, on the `SavedCards` row the metadata's `SavedCardId` names, under
+   that row's tenant — but only while the row is active and not yet captured; an unknown, captured or
+   removed row is left as it is. The card's brand, last four and expiry are read from Stripe, and the
+   customer's earlier card in that currency is retired.
+   - **A setup-mode session** — the web's cash card capture — reads the card from its SetupIntent and
+     stops here: it carries no order.
+   - **A booking's session or intent** — the customer ticked *Save this card for my next bookings* —
+     reads the card from its PaymentIntent, and only when that succeeded with
+     `setup_future_usage=off_session`, then goes on to the order. A web payment raises both events,
+     and the second finds the card already captured.
+2. Extract `OrderId` from the session's (or intent's) metadata. An event with no `OrderId` is
+   acknowledged and goes no further — so the PaymentIntent behind a web Checkout Session, which
+   carries `SavedCardId` but no `OrderId`, lands the card in step 1 and stops, and only
+   `checkout.session.completed` settles a web order
+3. Look up the order past the tenant filter and pin its tenant
+4. On `checkout.session.completed`, record the session's `payment_intent` on the order — before any of
    the branches below, so every web card order carries the intent a chargeback will name
-4. **Cash check first:** an order a cleaner already settled in cash escalates a double-settlement
+5. **Cash check first:** an order a cleaner already settled in cash escalates a double-settlement
    dispute instead, and nothing else happens
-5. **Idempotency check:** if the order is already `Paid` or `Refunded`, skip processing
-6. Update `PaymentStatus` to `Paid`. `OrderStatus` is not touched: the order rests at `New` until a
+6. **Idempotency check:** if the order is already `Paid` or `Refunded`, skip processing
+7. Update `PaymentStatus` to `Paid`. `OrderStatus` is not touched: the order rests at `New` until a
    cleaner takes it ([ADR-0057](/decisions/adr-0057))
-7. Stage the receipt (`generate-receipt`, key `receipt:{orderId}`), put on the wire only after the commit
-8. Push `order.payment_confirmed` to a customer with an account; tell the preferred cleaner and the
+8. Stage the receipt (`generate-receipt`, key `receipt:{orderId}`), put on the wire only after the commit
+9. Push `order.payment_confirmed` to a customer with an account; tell the preferred cleaner and the
    administrators that the order is now offerable
 
 ```csharp
@@ -111,7 +127,9 @@ pending.Enqueue(
 
 ### checkout.session.expired
 
-`payment_intent.canceled` takes the same path.
+`payment_intent.canceled` takes the same path, unless Stripe cancelled the intent with the reason
+`duplicate`: that is an intent `CreatePaymentIntent` replaced with a new one, and the order is left as
+it is.
 
 1. Extract `OrderId` from the session's (or intent's) metadata
 2. Look up the order past the tenant filter and pin its tenant
@@ -132,6 +150,8 @@ Two layers handle Stripe's retry behavior:
 
 - **Every event:** its id is written to `ProcessedStripeEvents` (unique) in the same commit as the
   handler's work. A redelivery finds the row and short-circuits; a parallel one loses on the index.
+- **A saved card:** a second event for the same capture — a web capture or a ticked web payment raises
+  two — finds the row captured and changes nothing
 - **Completed / succeeded:** skips if `PaymentStatus` is `Paid` or `Refunded` (after the cash check)
 - **Expired / canceled:** skips if `PaymentStatus` is `Failed`, `Paid` or `Refunded`
 
@@ -157,7 +177,18 @@ its **own** `whsec_`, and a payload signed by one will never verify against the 
 | Channel | Endpoint URL | Events | GitHub Environment secret | Key Vault secret |
 |---|---|---|---|---|
 | Web | `https://api-cleansia-customer-<region>-<env>.azurewebsites.net/api/Payment/webhook` | `checkout.session.completed`, `checkout.session.expired`, and the seven account-wide events below | `STRIPE_WEBHOOK_SECRET_WEB` | `Stripe--WebhookSecret` |
-| Mobile | `https://api-cleansia-customer-mobile-<region>-<env>.azurewebsites.net/api/Payment/webhook` | `payment_intent.succeeded`, `payment_intent.payment_failed`, `payment_intent.canceled` | `STRIPE_WEBHOOK_SECRET_MOBILE` | `Stripe--WebhookSecretMobile` |
+| Mobile | `https://api-cleansia-customer-mobile-<region>-<env>.azurewebsites.net/api/Payment/webhook` | `payment_intent.succeeded`, `payment_intent.payment_failed`, `payment_intent.canceled`, `setup_intent.succeeded` | `STRIPE_WEBHOOK_SECRET_MOBILE` | `Stripe--WebhookSecretMobile` |
+
+**`setup_intent.succeeded` belongs on the mobile endpoint.** The apps save a cash guarantee card
+through a SetupIntent confirmed in PaymentSheet (`POST api/SavedCard/CreateSetupIntent`, served by the
+customer-mobile host), and this event is the only report of it. **Left off, a card saved in the apps is
+never captured:** its row is never listed and never counts as usable, so the customer is asked for a
+card again at their next cash booking. The web endpoint does not need it — a web capture is reported by
+its setup-mode session's `checkout.session.completed` — and if both carry it, the second delivery is a
+no-op. Stripe sends an event to every endpoint subscribed to its type, whichever channel raised it, so
+the mobile endpoint also receives the `setup_intent.succeeded` behind a web capture and the
+`payment_intent.succeeded` behind a ticked web payment; either lands the card if it arrives first and
+otherwise changes nothing.
 
 **The account-wide events belong to no channel:** `customer.subscription.created`,
 `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_failed`,

@@ -43,6 +43,22 @@
   }
 }
 
+.cleansia-language-switcher__list--globe {
+  @include pref-pill-list;
+
+  .cleansia-language-switcher__code {
+    font-size: 13px;
+    color: var(--cl-muted);
+  }
+
+  .cleansia-language-switcher__check {
+    margin-inline-start: auto;
+    padding-inline-start: 12px;
+    font-size: 14px;
+    color: var(--cl-accent);
+  }
+}
+
 :root.dark-mode .cleansia-language-switcher--globe {
   @include pref-pill-dark('.cleansia-language-switcher__globe');
 }

@@ -76,6 +76,11 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
   readonly recurringPaymentBegunInApp = computed(() =>
     this.order()?.needsConfirmation === true && this.paymentBegunInApp());
 
+  readonly saveCardOffered = computed(() =>
+    this.authService.isLoggedIn() && this.canConfirmRecurring() &&
+    this.order()?.paymentType?.value === PaymentType.Card);
+  readonly saveCard = signal(false);
+
   /**
    * Past the booked start with a cleaner on the job who has not started, the server refuses a
    * self-cancel and the customer reports that the cleaner did not arrive. The server's refusal also
@@ -306,6 +311,7 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
     if (!orderId || !this.canConfirmRecurring() || this.confirmingRecurring()) return;
     const command = new ConfirmRecurringOrderCommand();
     command.orderId = orderId;
+    command.saveCard = this.saveCardOffered() && this.saveCard();
     this.confirmingRecurring.set(true);
     this.customerClient.orderClient
       .confirmRecurring(command)
@@ -327,6 +333,10 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
         }
         this.loadOrder(orderId);
       });
+  }
+
+  setSaveCard(save: boolean): void {
+    this.saveCard.set(save);
   }
 
   showRecurringPlusRequired(): void {

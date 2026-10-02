@@ -127,6 +127,12 @@ struct ConfirmStep: View {
                     action: { viewModel.selectPayment(.card) }
                 )
             }
+            if viewModel.offersCardSaving {
+                SaveCardOption(saved: Binding(
+                    get: { viewModel.state.saveCard },
+                    set: viewModel.setSaveCard
+                ))
+            }
             PaymentOption(
                 systemImage: "banknote",
                 title: L10n.Booking.payCash,

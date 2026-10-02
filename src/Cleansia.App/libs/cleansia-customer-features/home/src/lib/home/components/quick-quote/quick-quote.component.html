@@ -34,12 +34,13 @@
   <!--
     The market's own presets, labelled by the server for the language. Not
     drawn without a market: there is no set to choose from, and the calculator
-    prices a default home instead.
+    prices a default home instead. While they are in flight the row holds
+    placeholder chips, as the service row does, so the card keeps its height.
   -->
-  @if (facade.sizes().length > 0) {
+  @if (facade.showSizeRow()) {
   <div class="cl-quote__field">
     <span class="cl-quote__label">{{ 'pages.home.quote.size_label' | translate }}</span>
-    <div class="cl-quote__chips">
+    <div class="cl-quote__chips cl-quote__chips--sizes">
       @for (size of facade.sizes(); track size.code) {
       <button
         type="button"
@@ -49,6 +50,10 @@
       >
         {{ size.label }}
       </button>
+      } @empty {
+      @for (label of placeholderSizeLabels(); track $index) {
+      <span class="cl-chip cl-quote__chip cl-quote__chip--ghost" [style.--cl-ghost-label]="label" aria-hidden="true"></span>
+      }
       }
     </div>
   </div>

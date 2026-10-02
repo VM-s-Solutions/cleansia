@@ -1,9 +1,13 @@
+using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Auditing;
 using Cleansia.Core.AppServices.Features.Auditing.Filters;
 using Cleansia.Core.AppServices.Features.Bookings;
 using Cleansia.Core.AppServices.Features.Disputes;
 using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.AppServices.Features.Payments;
+using Cleansia.Core.AppServices.Features.SavedCards;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Bookings;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Loyalty;
@@ -13,10 +17,13 @@ using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Database;
+using Cleansia.IntegrationTests.Features.Payments.Webhooks;
 using Cleansia.TestUtilities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Moq;
 
 namespace Cleansia.IntegrationTests.Features.Orders;
 
@@ -69,6 +76,56 @@ public partial class CreateOrderCallerCurrencyTests
                 Assert.Equal(CustomerUserId, audit.UserId);
                 Assert.All(await context.Set<OrderStatusTrack>().IgnoreQueryFilters().Where(t => t.OrderId == id).ToListAsync(),
                     row => Assert.Equal(TestTenants.Second, row.TenantId));
+            }, transactional: false);
+    }
+
+    /// <summary>
+    /// A card ticked while booking another company's market on the web is the account's: the booking lands in
+    /// the market's company, the card and its Stripe Customer in the account's, and once the payment lands
+    /// the card is among the account's saved cards.
+    /// </summary>
+    [Fact]
+    public async Task CrossMarket_Web_Card_Booking_Saves_The_Card_In_The_Account_Company()
+    {
+        var stripe = new Mock<IStripeClient>();
+        stripe.Setup(s => s.CreateCustomerAsync(CustomerUserId, It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync("cus_cross_eur");
+        stripe.Setup(s => s.CreateCardSavingCheckoutSessionAsync(It.IsAny<Order>(), "cus_cross_eur", It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new CheckoutSessionResult("cs_cross_saving", "https://checkout.stripe.test/cs_cross_saving"));
+        stripe.Setup(s => s.GetPaymentIntentCardAsync("pi_cross_saving", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new SavedCardDetails("pm_cross_saving", "mastercard", "5454", 12, 2031));
+        await TestMethod(setup: services =>
+            {
+                ConfigureCustomerSession(services);
+                services.Replace(ServiceDescriptor.Singleton<IOrderChannelProvider>(_ => new OrderChannelProvider(OrderChannel.Web)));
+                services.Replace(ServiceDescriptor.Transient<IStripeClient>(_ => stripe.Object));
+                var factory = new Mock<IStripeClientFactory>();
+                factory.Setup(f => f.CreateClient()).Returns(stripe.Object);
+                services.Replace(ServiceDescriptor.Singleton(factory.Object));
+                return Task.CompletedTask;
+            }, arrange: SeedWithSlovakiaOperatedBySecondCompanyAsync,
+            act: async provider =>
+            {
+                var mediator = provider.GetRequiredService<IMediator>();
+                var created = await mediator.Send(BuildCommand(Slovakia, null, 60m) with { SaveCard = true });
+                Assert.True(created.IsSuccess, created.Error?.Message);
+                var card = await provider.GetRequiredService<CleansiaDbContext>().SavedCards.IgnoreQueryFilters()
+                    .SingleAsync(c => c.UserId == CustomerUserId && c.CapturedOn == null);
+                var body = StripeWebhookTestPayloads.CheckoutSessionCompletedBody(
+                    "evt_cross_saving", created.Value.Id, "cs_cross_saving", "pi_cross_saving", card.Id);
+                var paid = await mediator.Send(new HandlePaymentNotification.Command(
+                    body, StripeWebhookTestPayloads.Sign(body, StripeWebhookTestPayloads.ConfiguredWebhookSecret)));
+                Assert.True(paid.IsSuccess, paid.Error?.Message);
+                AsAccount(provider);
+                var listed = await mediator.Send(new GetMySavedCards.Query());
+                Assert.Contains(listed.Value, c => c.Id == card.Id && c.Last4 == "5454");
+                return (OrderId: created.Value.Id, CardId: card.Id);
+            },
+            assert: async (context, ids) =>
+            {
+                Assert.Equal(TestTenants.Second, (await context.Orders.IgnoreQueryFilters().SingleAsync(o => o.Id == ids.OrderId)).TenantId);
+                Assert.Equal(TestTenants.Default, (await context.SavedCards.IgnoreQueryFilters().SingleAsync(c => c.Id == ids.CardId)).TenantId);
+                Assert.Equal(TestTenants.Default, (await context.UserStripeCustomers.IgnoreQueryFilters().SingleAsync(c => c.UserId == CustomerUserId)).TenantId);
             }, transactional: false);
     }
 

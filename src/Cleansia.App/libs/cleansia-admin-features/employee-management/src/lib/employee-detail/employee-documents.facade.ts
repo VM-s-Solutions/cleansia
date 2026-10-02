@@ -37,7 +37,6 @@ export class EmployeeDocumentsFacade extends UnsubscribeControlDirective {
 
     const filter = new EmployeeDocumentFilter();
     filter.employeeId = employeeId;
-    filter.latestVersionOnly = true;
     filter.isActive = true;
 
     const createdOnDescending = new SortDefinition();

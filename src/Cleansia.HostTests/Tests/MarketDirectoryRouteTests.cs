@@ -243,6 +243,52 @@ public sealed class MarketDirectoryRouteTests(HostTestPostgresFixture db) : Auth
         HttpAssert.IsForbidden(await customer.PutAsJsonAsync($"/api/AdminCountry/{CzeId}/default-market", new { }));
     }
 
+    /// <summary>
+    /// The Service Area page reads every active country's switch in one call. Poland reads as serviced
+    /// with no configuration behind it: the row carries the switch the page writes, not the market.
+    /// </summary>
+    [Fact]
+    public async Task The_service_area_overview_answers_every_active_country_with_its_switch_in_one_call()
+    {
+        await SeedDevShapeAsync();
+        await SeedAsync(ctx =>
+        {
+            var austria = NewCountry("country-aut-market", "Austria", "AUT", "AT", isServiced: true);
+            austria.IsActive = false;
+            ctx.Countries.AddRange(NewCountry(DeuId, "Germany", "DEU", "DE", isServiced: false), austria);
+            return Task.CompletedTask;
+        });
+
+        var response = await AdminClient(AdminToken()).GetAsync("/api/AdminCountry/service-area-overview");
+
+        HttpAssert.IsOk(response);
+        var list = (await BodyAsync(response)).EnumerateArray().ToList();
+        Assert.Equal(["Czechia", "Germany", "Poland", "Slovakia"], list.Select(r => r.GetProperty("name").GetString()));
+        var rows = list.ToDictionary(r => r.GetProperty("id").GetString()!);
+
+        Assert.True(rows[CzeId].GetProperty("isServiced").GetBoolean());
+        Assert.True(rows[CzeId].GetProperty("isDefaultMarket").GetBoolean());
+        Assert.True(rows[CzeId].GetProperty("hasConfiguration").GetBoolean());
+        Assert.Equal(JsonValueKind.Object, rows[CzeId].GetProperty("translations").ValueKind);
+
+        Assert.True(rows[SvkId].GetProperty("hasConfiguration").GetBoolean());
+        Assert.False(rows[SvkId].GetProperty("isDefaultMarket").GetBoolean());
+
+        Assert.True(rows[PolId].GetProperty("isServiced").GetBoolean());
+        Assert.False(rows[PolId].GetProperty("hasConfiguration").GetBoolean());
+
+        Assert.False(rows[DeuId].GetProperty("isServiced").GetBoolean());
+    }
+
+    [Fact]
+    public async Task The_service_area_overview_needs_the_service_area_permission()
+    {
+        await SeedDevShapeAsync();
+        var customer = AdminClient(TestJwtFactory.Mint(AdminAudience, "u-cust-market", "cust-market@hosttests.local", UserProfile.Customer));
+
+        HttpAssert.IsForbidden(await customer.GetAsync("/api/AdminCountry/service-area-overview"));
+    }
+
     [Fact]
     public async Task The_insurance_ceiling_round_trips_from_the_admin_form_to_the_market_directory()
     {

@@ -119,6 +119,14 @@ class BackendKeyStringsTest {
         assertTrue("credit.cash_not_collectable_on_credit_order renders raw in $raw", raw.isEmpty())
     }
 
+    /** `SaveMyDocuments` and `ReplaceMyDocument` refuse a file byte-identical to an active, non-rejected document. */
+    @Test
+    fun `the duplicate document upload refusal resolves to a sentence in all five locales`() {
+        val resName = "error_employee_document_duplicate_file"
+        val raw = locales.filterNot { resName in declared(it) }
+        assertTrue("employee_document.duplicate_file renders raw in $raw", raw.isEmpty())
+    }
+
     /**
      * `TakeOrder` and `AcceptLegalDocument` refuse on the cleaner documents, the photo endpoints
      * outside their window, and `GrantConsent`/`WithdrawConsent` on a document-backed consent.

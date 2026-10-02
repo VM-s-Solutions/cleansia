@@ -455,6 +455,21 @@
   margin-top: var(--cl-u);
 }
 
+.order-detail__save-card {
+  display: flex;
+  align-items: flex-start;
+  gap: calc(0.625 * var(--cl-u));
+  font-size: calc(0.875 * var(--cl-u));
+  line-height: 1.5;
+  color: var(--cl-body);
+  cursor: pointer;
+
+  p-checkbox {
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+}
+
 // Full-width outlined rows, as the board draws them: three choices of equal
 // weight, none of which is the page's primary action.
 .order-detail__action {

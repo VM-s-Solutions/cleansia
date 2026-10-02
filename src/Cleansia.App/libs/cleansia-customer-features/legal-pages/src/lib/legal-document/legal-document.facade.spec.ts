@@ -150,7 +150,10 @@ describe('LegalDocumentFacade', () => {
   it('lists the section headings of the served text', () => {
     facade.load(LegalDocumentType.TermsOfService);
 
-    expect(facade.headings()).toEqual(['Přijetí podmínek', 'Objednávka & platba']);
+    expect(facade.headings()).toEqual([
+      { num: null, title: 'Přijetí podmínek' },
+      { num: null, title: 'Objednávka & platba' },
+    ]);
   });
 
   it('lists no headings without a document', () => {

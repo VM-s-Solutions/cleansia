@@ -65,6 +65,7 @@ import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.core.ui.components.CleansiaConsentCheckbox
 import cz.cleansia.core.ui.components.CleansiaTextField
 import cz.cleansia.core.ui.components.ConsentMarkup
+import cz.cleansia.customer.ui.components.CardSavingConsent
 import cz.cleansia.customer.ui.theme.CleansiaTheme
 import cz.cleansia.customer.ui.theme.selectionTint
 import cz.cleansia.customer.ui.theme.SuccessText
@@ -109,6 +110,7 @@ fun ConfirmStep(
     val cashEligibility by bookingVm.cashEligibility.collectAsStateWithLifecycle()
     val cashClearedNotice by bookingVm.cashClearedNotice.collectAsStateWithLifecycle()
     val needsCardGuarantee by bookingVm.needsCardGuarantee.collectAsStateWithLifecycle()
+    val offersCardSaving by bookingVm.offersCardSaving.collectAsStateWithLifecycle()
     // Every money row comes from the one resolver, so this card and the sticky bar below it cannot
     // disagree with each other or with the total the order is created with.
     val summary = BookingPriceSummary.resolve(quote, effectiveDiscount)
@@ -376,6 +378,13 @@ fun ConfirmStep(
             selected = state.paymentMethod == BookingViewModel.PAYMENT_CARD,
             onClick = { bookingVm.selectPaymentMethod(BookingViewModel.PAYMENT_CARD) },
         )
+        if (offersCardSaving) {
+            Spacer(Modifier.height(8.dp))
+            CardSavingConsent(
+                saved = state.saveCard,
+                onSavedChange = { onUpdate(state.copy(saveCard = it)) },
+            )
+        }
         Spacer(Modifier.height(8.dp))
         PaymentOption(
             icon = Icons.Outlined.Payments,

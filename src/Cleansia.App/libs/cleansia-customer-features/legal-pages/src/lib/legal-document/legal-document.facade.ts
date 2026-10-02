@@ -15,7 +15,7 @@ import {
   switchMap,
   takeUntil,
 } from 'rxjs';
-import { sectionHeadingsIn } from './legal-document.models';
+import { sectionHeadingsIn, withSectionNumbers } from './legal-document.models';
 
 /**
  * The legal text in force for the chosen market, in the current language, as the server rendered
@@ -33,6 +33,7 @@ export class LegalDocumentFacade extends UnsubscribeControlDirective {
   readonly hasError = signal(false);
   readonly language = signal<string>(this.translate.currentLang);
   readonly headings = computed(() => sectionHeadingsIn(this.document()?.contentHtml ?? ''));
+  readonly contentHtml = computed(() => withSectionNumbers(this.document()?.contentHtml ?? ''));
 
   private readonly attempt$ = new BehaviorSubject(0);
 

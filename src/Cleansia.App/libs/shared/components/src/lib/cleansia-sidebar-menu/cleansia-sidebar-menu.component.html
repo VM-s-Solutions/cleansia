@@ -38,8 +38,8 @@
         @for (item of visibleItems(); track $index) {
         <li
           class="menu-item"
-          [class.menu-item--active]="isActiveRoute(item.route)"
-          [attr.aria-current]="isActiveRoute(item.route) ? 'page' : null"
+          [class.menu-item--active]="isActiveRoute(item)"
+          [attr.aria-current]="isActiveRoute(item) ? 'page' : null"
           (click)="onMenuItemClick(item, $event)"
           (keydown.enter)="onMenuItemClick(item, $event)"
           tabindex="0"
@@ -83,6 +83,7 @@
               [menuItems]="item.children ?? []"
               [isRoot]="false"
               [collapsed]="effectiveCollapsed()"
+              [activeRoute]="matchedRoute()"
             />
           </div>
           }
@@ -113,8 +114,8 @@
   @for (item of visibleItems(); track $index) {
   <li
     class="menu-item"
-    [class.menu-item--active]="isActiveRoute(item.route)"
-    [attr.aria-current]="isActiveRoute(item.route) ? 'page' : null"
+    [class.menu-item--active]="isActiveRoute(item)"
+    [attr.aria-current]="isActiveRoute(item) ? 'page' : null"
     (click)="onMenuItemClick(item, $event)"
     (keydown.enter)="onMenuItemClick(item, $event)"
     tabindex="0"
@@ -143,6 +144,7 @@
         [menuItems]="item.children ?? []"
         [isRoot]="false"
         [collapsed]="collapsed()"
+        [activeRoute]="matchedRoute()"
       />
     </div>
     }

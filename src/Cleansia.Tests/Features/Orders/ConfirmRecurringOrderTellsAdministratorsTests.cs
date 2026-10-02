@@ -56,6 +56,8 @@ public sealed class ConfirmRecurringOrderTellsAdministratorsTests
         Mock.Of<ITenantProvider>(),
         new Mock<IStripeClient>().Object,
         new StripeConfig(new ConfigurationBuilder().Build()),
+        Mock.Of<IStripeCustomerResolver>(),
+        Mock.Of<IRequestMetadataProvider>(),
         new OrderChannelProvider(OrderChannel.Mobile),
         new Mock<IPendingDispatch>().Object,
         new Mock<INotificationProducer>().Object,

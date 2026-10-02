@@ -645,6 +645,31 @@ public class CreateOrderValidatorCharacterizationTests
         Assert.True(result.IsValid, string.Join("; ", result.Errors.Select(e => e.ErrorMessage)));
     }
 
+    /// <summary>A saved card belongs to an account, so a guest booking that asks to keep its card is refused.</summary>
+    [Fact]
+    public async Task A_Guest_Asking_To_Save_The_Card_Is_Refused()
+    {
+        _session.Setup(s => s.GetUserId()).Returns((string?)null);
+
+        var result = await CreateValidator().ValidateAsync(
+            CreateOrderTestData.ValidCommand(promoCode: null) with { SaveCard = true });
+
+        var failure = Assert.Single(result.Errors);
+        Assert.Equal(BusinessErrorMessage.SavedCardRequiresAccount, failure.ErrorMessage);
+        Assert.Equal(nameof(CreateOrder.Command.SaveCard), failure.PropertyName);
+    }
+
+    [Fact]
+    public async Task A_Signed_In_Customer_May_Save_The_Card()
+    {
+        _session.Setup(s => s.GetUserId()).Returns(PromoUser);
+
+        var result = await CreateValidator().ValidateAsync(
+            CreateOrderTestData.ValidCommand(promoCode: null) with { SaveCard = true });
+
+        Assert.True(result.IsValid, string.Join("; ", result.Errors.Select(e => e.ErrorMessage)));
+    }
+
     /// <summary>
     /// Cascade.Stop: the promo is previewed only once the price the customer consented to has been
     /// confirmed, so a stale total reports the price refusal alone and never reaches the promo service.

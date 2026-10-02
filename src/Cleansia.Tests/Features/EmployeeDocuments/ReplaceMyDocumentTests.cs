@@ -1,4 +1,6 @@
+using System.Security.Cryptography;
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.EmployeeDocuments;
 using Cleansia.Core.AppServices.Shared.DTOs.Files;
 using Cleansia.Core.Blobs.Abstractions;
@@ -44,13 +46,14 @@ public class ReplaceMyDocumentTests
     public ReplaceMyDocumentTests()
     {
         var user = User.CreateWithPassword(UserEmail, "Password1", "Clea", "Ner");
+        user.ConfirmEmail();
         user.Id = "user-1";
 
         var employee = Employee.CreateWithUser(user);
         employee.Id = "emp-1";
 
         _previous = EmployeeDocument.Create(
-            employee.Id, "id.pdf", "path/id.pdf", "application/pdf", 1024,
+            employee.Id, "id.jpg", "path/id.jpg", "image/jpeg", 2048, Sha256(Jpeg()),
             DocumentType.IdentityCard, "My ID", user.Id);
         _previous.Id = DocumentId;
 
@@ -59,6 +62,10 @@ public class ReplaceMyDocumentTests
         _employees.Setup(r => r.GetByUserEmailAsync(UserEmail, It.IsAny<CancellationToken>()))
             .ReturnsAsync(employee);
         _documents.Setup(r => r.GetByIdAsync(DocumentId, It.IsAny<CancellationToken>())).ReturnsAsync(_previous);
+        _documents.Setup(r => r.ExistsAsync(DocumentId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _documents
+            .Setup(r => r.GetByEmployeeIdAsync(employee.Id, false, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() => [_previous]);
         _documents
             .Setup(r => r.Add(It.IsAny<EmployeeDocument>()))
             .Callback<EmployeeDocument>(d =>
@@ -80,11 +87,43 @@ public class ReplaceMyDocumentTests
     private static ReplaceMyDocument.Command Replacement(string? description = null) =>
         new(DocumentId, new BlobFileDto("new-id.jpg", Convert.ToBase64String(Jpeg()), "image/jpeg"), description);
 
-    private static byte[] Jpeg()
+    private static byte[] Jpeg(int size = 2048)
     {
-        var bytes = new byte[2048];
+        var bytes = new byte[size];
         new byte[] { 0xFF, 0xD8, 0xFF }.CopyTo(bytes, 0);
         return bytes;
+    }
+
+    private static string Sha256(byte[] content) => Convert.ToHexStringLower(SHA256.HashData(content));
+
+    private ReplaceMyDocument.Validator Validator() =>
+        new(_users.Object, _session.Object, _employees.Object, _documents.Object);
+
+    private static ReplaceMyDocument.Command ReplacementWith(byte[] content) =>
+        new(DocumentId, new BlobFileDto("new-id.jpg", Convert.ToBase64String(content), "image/jpeg"));
+
+    [Fact]
+    public async Task Replacing_A_Pending_Document_With_Its_Own_Bytes_Is_Refused()
+    {
+        var result = await Validator().ValidateAsync(ReplacementWith(Jpeg()));
+
+        Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.EmployeeDocumentDuplicateFile);
+    }
+
+    [Fact]
+    public async Task Replacing_A_Document_With_A_Different_File_Is_Not_A_Duplicate()
+    {
+        var result = await Validator().ValidateAsync(ReplacementWith(Jpeg(4096)));
+
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public async Task The_Replacement_Records_The_Sha256_Of_Its_Bytes()
+    {
+        await Handler().Handle(ReplacementWith(Jpeg(4096)), CancellationToken.None);
+
+        Assert.Equal(Sha256(Jpeg(4096)), Assert.Single(_added).ContentSha256);
     }
 
     /// <summary>

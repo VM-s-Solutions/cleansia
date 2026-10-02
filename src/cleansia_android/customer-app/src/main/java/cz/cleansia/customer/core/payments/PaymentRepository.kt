@@ -16,6 +16,6 @@ class PaymentRepository @Inject constructor(
     private val api: PaymentApi,
     private val json: Json,
 ) {
-    suspend fun createPaymentIntent(orderId: String): ApiResult<CreatePaymentIntentResponse> =
-        safeApiCall(json) { api.createPaymentIntent(CreatePaymentIntentRequest(orderId)) }
+    suspend fun createPaymentIntent(orderId: String, saveCard: Boolean): ApiResult<CreatePaymentIntentResponse> =
+        safeApiCall(json) { api.createPaymentIntent(CreatePaymentIntentRequest(orderId, saveCard)) }
 }

@@ -1,0 +1,77 @@
+<div class="cleansia-customers-list cleansia-page">
+  <div class="cleansia-customers-list__container page-wrapper">
+    <div class="cleansia-page-header">
+      <div class="cleansia-page-header__heading">
+        <cleansia-title [title]="'pages.customers.title' | translate" [level]="1" />
+        <p class="cleansia-page-header__description">
+          {{ 'pages.customers.description' | translate }}
+        </p>
+      </div>
+      <div class="cleansia-page-header__actions">
+        <cleansia-filter-drawer [state]="facade.filters">
+          <form [formGroup]="facade.filterForm" class="filter-form">
+            <div class="filter-section">
+              <h3 class="filter-section-title">
+                {{ 'pages.customers.filters.search' | translate }}
+              </h3>
+              <cleansia-text-input
+                formControlName="searchTerm"
+                [label]="'pages.customers.filters.search_placeholder' | translate"
+                [showErrors]="false"
+              />
+            </div>
+
+            <div class="filter-section">
+              <h3 class="filter-section-title">
+                {{ 'pages.customers.filters.status' | translate }}
+              </h3>
+              <cleansia-select
+                formControlName="status"
+                [options]="facade.statusFilterOptions()"
+                [showClear]="false"
+                [showErrors]="false"
+              />
+            </div>
+          </form>
+        </cleansia-filter-drawer>
+      </div>
+    </div>
+
+    <cleansia-filter-chips [state]="facade.filters" />
+
+    <cleansia-section>
+      @if (facade.initialLoading()) {
+      <cleansia-loader />
+      } @else if (facade.hasError()) {
+      <div class="not-found-state">
+        <div class="not-found-state__icon"><i class="pi pi-exclamation-triangle"></i></div>
+        <p class="not-found-state__message">{{ 'pages.customers.load_error' | translate }}</p>
+      </div>
+      } @else {
+      <cleansia-table
+        [data]="facade.customers()"
+        [columns]="table().columns"
+        [actions]="table().actions"
+        [config]="{
+          paginator: true,
+          rows: 20,
+          lazy: true,
+          totalRecords: facade.totalRecords(),
+          emptyMessage: 'pages.customers.no_customers',
+          hover: true
+        }"
+        [loading]="facade.loading()"
+        [clickableRows]="true"
+        (rowClick)="facade.openCustomer($event)"
+        (pageChange)="facade.onPageChange($event)"
+        (sortChange)="facade.onSortChange($event)"
+      >
+      </cleansia-table>
+      }
+    </cleansia-section>
+  </div>
+</div>
+
+<ng-template #statusTemplate let-item>
+  <cleansia-status-badge kind="active" [value]="item.isActive" />
+</ng-template>

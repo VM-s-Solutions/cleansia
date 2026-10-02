@@ -1,4 +1,4 @@
-import { PLATFORM_ID } from '@angular/core';
+import { PLATFORM_ID, signal, WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import {
   CancelOrderCommand,
@@ -57,10 +57,12 @@ describe('OrderDetailFacade', () => {
     confirmRecurring: jest.Mock;
   };
   let snackbar: { showSuccess: jest.Mock; showError: jest.Mock; showApiError: jest.Mock };
+  let signedIn: WritableSignal<boolean>;
   let facade: OrderDetailFacade;
 
   beforeEach(() => {
     TestBed.resetTestingModule();
+    signedIn = signal(true);
     orderClient = {
       getById: jest.fn().mockReturnValue(of(OrderItem.fromJS({ id: ORDER_ID }))),
       submitReview: jest.fn().mockReturnValue(of({ rating: 5 })),
@@ -87,7 +89,7 @@ describe('OrderDetailFacade', () => {
             membershipClient: { getMine: jest.fn().mockReturnValue(of(null)) },
           },
         },
-        { provide: CustomerAuthService, useValue: { isLoggedIn: () => true } },
+        { provide: CustomerAuthService, useValue: { isLoggedIn: () => signedIn() } },
         { provide: SnackbarService, useValue: snackbar },
         { provide: TranslateService, useValue: { instant: (k: string) => k } },
       ],
@@ -517,6 +519,85 @@ describe('OrderDetailFacade', () => {
       expect(facade.canConfirmRecurring()).toBe(true);
       expect(facade.recurringPaymentBegunInApp()).toBe(false);
     });
+
+    describe('keeping the card for the next bookings', () => {
+      const sentSaveCard = () =>
+        (orderClient.confirmRecurring.mock.calls[0][0] as ConfirmRecurringOrderCommand).saveCard;
+
+      it('is offered only to a signed-in customer on a card occurrence awaiting confirmation', () => {
+        facade.order.set(occurrence(PaymentType.Card));
+        expect(facade.saveCardOffered()).toBe(true);
+
+        facade.order.set(occurrence(PaymentType.Cash));
+        expect(facade.saveCardOffered()).toBe(false);
+
+        facade.order.set(occurrence(PaymentType.Card, false));
+        expect(facade.saveCardOffered()).toBe(false);
+
+        facade.order.set(occurrence(PaymentType.Card));
+        signedIn.set(false);
+        expect(facade.saveCardOffered()).toBe(false);
+      });
+
+      it('is withdrawn once the occurrence turns out to be paid for in the mobile app', () => {
+        facade.order.set(occurrence(PaymentType.Card));
+        orderClient.confirmRecurring.mockReturnValue(
+          throwError(refusal('Id', 'order.invalid_status_transition')),
+        );
+        orderClient.getById.mockReturnValue(of(occurrence(PaymentType.Card)));
+
+        facade.confirmRecurring();
+
+        expect(facade.saveCardOffered()).toBe(false);
+      });
+
+      it('keeps nothing until the customer ticks it', () => {
+        facade.order.set(occurrence(PaymentType.Card));
+
+        facade.confirmRecurring();
+
+        expect(facade.saveCard()).toBe(false);
+        expect(sentSaveCard()).toBe(false);
+      });
+
+      it('asks to keep the card the customer ticked', () => {
+        facade.order.set(occurrence(PaymentType.Card));
+        facade.setSaveCard(true);
+
+        facade.confirmRecurring();
+
+        expect(sentSaveCard()).toBe(true);
+      });
+
+      it('asks to keep nothing once the tick is taken off again', () => {
+        facade.order.set(occurrence(PaymentType.Card));
+        facade.setSaveCard(true);
+        facade.setSaveCard(false);
+
+        facade.confirmRecurring();
+
+        expect(sentSaveCard()).toBe(false);
+      });
+
+      it('asks to keep nothing on a cash occurrence, whatever the tick says', () => {
+        facade.order.set(occurrence(PaymentType.Cash));
+        facade.setSaveCard(true);
+
+        facade.confirmRecurring();
+
+        expect(sentSaveCard()).toBe(false);
+      });
+
+      it('asks to keep nothing for a guest, whatever the tick says', () => {
+        signedIn.set(false);
+        facade.order.set(occurrence(PaymentType.Card));
+        facade.setSaveCard(true);
+
+        facade.confirmRecurring();
+
+        expect(sentSaveCard()).toBe(false);
+      });
+    });
   });
 
   // Every member of a generated command is optional, so a dropped assignment type-checks.
@@ -543,14 +624,28 @@ describe('OrderDetailFacade', () => {
       expect(command.toJSON()).toEqual({ orderId: ORDER_ID, reason: undefined });
     });
 
-    it('serializes the recurring confirm with the order id', () => {
+    it('serializes the recurring confirm with the order id and an unticked save-card', () => {
       facade.order.set(OrderItem.fromJS({ id: ORDER_ID, needsConfirmation: true }));
 
       facade.confirmRecurring();
 
       const command: ConfirmRecurringOrderCommand = orderClient.confirmRecurring.mock.calls[0][0];
       expect(command).toBeInstanceOf(ConfirmRecurringOrderCommand);
-      expect(command.toJSON()).toEqual({ orderId: ORDER_ID });
+      expect(command.toJSON()).toEqual({ orderId: ORDER_ID, saveCard: false });
+    });
+
+    it('serializes a ticked save-card on a card occurrence', () => {
+      facade.order.set(OrderItem.fromJS({
+        id: ORDER_ID,
+        needsConfirmation: true,
+        paymentType: { value: PaymentType.Card, name: PaymentType[PaymentType.Card] },
+      }));
+      facade.setSaveCard(true);
+
+      facade.confirmRecurring();
+
+      const command: ConfirmRecurringOrderCommand = orderClient.confirmRecurring.mock.calls[0][0];
+      expect(command.toJSON()).toEqual({ orderId: ORDER_ID, saveCard: true });
     });
 
     it('serializes the review with the order id, the rating and the comment', () => {

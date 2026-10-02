@@ -12,6 +12,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { TranslateService } from '@ngx-translate/core';
+import { OverlayOptions } from 'primeng/api';
 import { SelectModule } from 'primeng/select';
 
 /** What one market has to carry to be listed; the customer wire's `MarketListItem` satisfies it. */
@@ -53,6 +54,8 @@ export class CleansiaMarketSwitcherComponent {
   readonly variant = input<'pill' | 'chip'>('pill');
   readonly markets = input.required<readonly CleansiaMarket[]>();
   readonly selected = input.required<string | null>();
+  readonly appendTo = input<'body' | null>(null);
+  readonly overlayOptions = input<OverlayOptions>();
   readonly marketChange = output<string>();
 
   private readonly translate = inject(TranslateService);
@@ -77,6 +80,10 @@ export class CleansiaMarketSwitcherComponent {
   });
 
   readonly hasChoice = computed(() => this.options().length >= 2);
+
+  readonly listClass = computed(
+    () => `cleansia-market-switcher__list--${this.variant()}`
+  );
 
   readonly current = computed(
     () => this.options().find((option) => option.value === this.selected()) ?? this.options()[0] ?? null,

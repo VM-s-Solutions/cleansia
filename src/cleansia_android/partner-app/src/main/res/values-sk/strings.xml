@@ -1096,6 +1096,7 @@
     <string name="error_employee_document_unauthorized">K tomuto dokumentu nemáte prístup.</string>
     <string name="error_employee_document_not_owned">Tento dokument vám nepatrí.</string>
     <string name="error_employee_document_deletion_already_requested">O odstránenie tohto dokumentu ste už požiadali. Čoskoro vašu žiadosť vybavíme.</string>
+    <string name="error_employee_document_duplicate_file">Presne tento súbor ste už nahrali. Vyberte iný súbor alebo nahraďte existujúci dokument.</string>
 
     <string name="error_order_not_found">Zákazka sa nenašla.</string>
     <string name="error_order_take_already_cancelled">Táto zákazka je už zrušená.</string>

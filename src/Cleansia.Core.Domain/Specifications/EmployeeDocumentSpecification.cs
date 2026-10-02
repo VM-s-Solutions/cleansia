@@ -13,8 +13,6 @@ public class EmployeeDocumentSpecification : BaseSpecification<string?>, ISpecif
 
     public DocumentStatus? Status { get; set; }
 
-    public bool? LatestVersionOnly { get; set; }
-
     public Expression<Func<EmployeeDocument, bool>> SatisfiedBy()
     {
         Specification<EmployeeDocument> specification = new TrueSpecification<EmployeeDocument>();
@@ -44,12 +42,6 @@ public class EmployeeDocumentSpecification : BaseSpecification<string?>, ISpecif
             specification &= new DirectSpecification<EmployeeDocument>(x => x.Status == Status.Value);
         }
 
-        if (LatestVersionOnly.HasValue && LatestVersionOnly.Value)
-        {
-            // Only get documents that don't have a newer version
-            specification &= new DirectSpecification<EmployeeDocument>(x => string.IsNullOrEmpty(x.PreviousVersionId));
-        }
-
         return specification.SatisfiedBy();
     }
 
@@ -58,15 +50,13 @@ public class EmployeeDocumentSpecification : BaseSpecification<string?>, ISpecif
         bool? isActive = null,
         string? employeeId = null,
         DocumentType? documentType = null,
-        DocumentStatus? status = null,
-        bool? latestVersionOnly = null) =>
+        DocumentStatus? status = null) =>
         new()
         {
             Id = id,
             IsActive = isActive,
             EmployeeId = employeeId,
             DocumentType = documentType,
-            Status = status,
-            LatestVersionOnly = latestVersionOnly
+            Status = status
         };
 }

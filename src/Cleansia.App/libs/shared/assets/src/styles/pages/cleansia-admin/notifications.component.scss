@@ -1,5 +1,26 @@
 @use '../../common/focus' as *;
 
+// On a phone, and in the bell's panel, the stamp and the unread mark sit under the sentence instead
+// of taking a third column from it.
+@mixin stacked-meta {
+  .cleansia-notifications__row {
+    grid-template-columns: auto minmax(0, 1fr);
+    padding-left: 0.75rem;
+  }
+
+  .cleansia-notifications__meta {
+    grid-column: 2;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.75rem;
+    padding-top: 0;
+  }
+}
+
+cleansia-admin-notification-feed {
+  display: block;
+}
+
 .cleansia-notifications {
   // The feed is a ledger of rows separated by hairlines, not a card grid: one unread row is louder
   // than the rest by ground and by a left rule, and nothing else on the page competes with it.
@@ -153,19 +174,20 @@
     display: block;
     margin-top: 1rem;
   }
+}
 
-  @media (max-width: 768px) {
-    &__row {
-      grid-template-columns: auto minmax(0, 1fr);
-      padding-left: 0.75rem;
-    }
+@media (max-width: 768px) {
+  @include stacked-meta;
+}
 
-    &__meta {
-      grid-column: 2;
-      flex-direction: row;
-      align-items: center;
-      gap: 0.75rem;
-      padding-top: 0;
-    }
+.cleansia-notifications-panel {
+  @include stacked-meta;
+
+  .cleansia-notifications__feed {
+    border-top: 0;
+  }
+
+  .cleansia-notifications__row:last-child {
+    border-bottom: 0;
   }
 }

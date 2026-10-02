@@ -337,7 +337,7 @@ public sealed class SubjectResidueErasureTests : IDisposable
 
     private static EmployeeDocument NewDocument(string employeeId, string fileName) =>
         EmployeeDocument.Create(
-            employeeId, fileName, $"documents/{employeeId}/{fileName}", "application/pdf", 2048,
+            employeeId, fileName, $"documents/{employeeId}/{fileName}", "application/pdf", 2048, new string('0', 64),
             DocumentType.IdentityCard, description: "Identity document", createdBy: "seed");
 
     private static Order NewOrder(string userId, string orderId) =>

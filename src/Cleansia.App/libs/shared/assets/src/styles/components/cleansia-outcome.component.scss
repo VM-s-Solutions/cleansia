@@ -45,8 +45,7 @@ $outcome-line: #e2e8f0;
 // that is the layout's near-white, which cuts a white stripe across the blue.
 // Pulling the band up under it puts the pill on this page's gradient, which is
 // how all three artboards draw it. Guarded on `.customer-navbar` because the
-// partner and admin shells are sidebars with no such bar, and `--cl-nav-h`
-// already grows by the dev banner's height when one is on screen.
+// partner and admin shells are sidebars with no such bar.
 body:has(.customer-navbar) .cl-out {
   margin-top: calc(-1 * var(--cl-nav-h, 0px));
   padding-top: calc(52px + var(--cl-nav-h, 0px));

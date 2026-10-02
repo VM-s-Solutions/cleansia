@@ -904,10 +904,13 @@ public class RefundServiceTests
         public Task<string> CreateCustomerAsync(string userId, string email, string fullName, string? phone, CancellationToken cancellationToken)
             => throw new NotSupportedException();
 
-        public Task<PaymentIntentResult> CreatePaymentIntentAsync(decimal amount, string currency, string stripeCustomerId, string orderId, string displayOrderNumber, CancellationToken cancellationToken)
+        public Task<PaymentIntentResult> CreatePaymentIntentAsync(decimal amount, string currency, string stripeCustomerId, string orderId, string displayOrderNumber, string? savedCardId, string? currentPaymentIntentId, CancellationToken cancellationToken)
             => throw new NotSupportedException();
 
         public Task CancelPaymentIntentAsync(string paymentIntentId, CancellationToken cancellationToken)
+            => throw new NotSupportedException();
+
+        public Task CancelReplacedPaymentIntentAsync(string paymentIntentId, CancellationToken cancellationToken)
             => throw new NotSupportedException();
 
         public Task<StripePaymentSnapshot> GetPaymentSnapshotAsync(string? stripeSessionId, string? stripePaymentIntentId, CancellationToken cancellationToken)
@@ -929,6 +932,15 @@ public class RefundServiceTests
             => throw new NotSupportedException();
 
         public Task<SavedCardDetails?> GetSetupIntentCardAsync(string setupIntentId, CancellationToken cancellationToken)
+            => throw new NotSupportedException();
+
+        public Task<SavedCardDetails?> GetPaymentIntentCardAsync(string paymentIntentId, CancellationToken cancellationToken)
+            => throw new NotSupportedException();
+
+        public Task<CheckoutSessionResult> CreateCardSavingCheckoutSessionAsync(Order order, string stripeCustomerId, string savedCardId, CancellationToken cancellationToken)
+            => throw new NotSupportedException();
+
+        public Task<CheckoutSessionResult> CreateCardSavingCheckoutSessionAsync(Order order, DateTime expiresAtUtc, string stripeCustomerId, string savedCardId, CancellationToken cancellationToken)
             => throw new NotSupportedException();
 
         public Task<string> ChargeReceivableOffSessionAsync(string receivableId, decimal amount, string currency, string stripeCustomerId, string paymentMethodId, int attempt, CancellationToken cancellationToken)

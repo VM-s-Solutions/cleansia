@@ -69,4 +69,15 @@ public static class UserMappers
                 Id: user.Id,
                 IsActive: user.IsActive);
     }
+
+    public static AdminCustomerListItem MapToAdminCustomerListItem(this User user) =>
+        new(
+            Id: user.Id,
+            FirstName: user.FirstName,
+            LastName: user.LastName,
+            Email: user.Email,
+            PhoneNumber: user.PhoneNumber,
+            IsActive: user.IsActive,
+            IsEmailConfirmed: user.IsEmailConfirmed,
+            CreatedOn: user.CreatedOn);
 }

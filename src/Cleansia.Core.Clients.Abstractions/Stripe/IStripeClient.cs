@@ -12,8 +12,22 @@ public interface IStripeClient
     /// <see cref="CheckoutSessionResult.Id"/> — <see cref="RefundCheckoutSessionAsync"/> looks the
     /// session up by id, and this method used to discard it, so no web card order carried a charge
     /// surface at all and a refund fell through to a null PaymentIntent.</para>
+    ///
+    /// <para>An order that already records a session gets that session back while Stripe still has it
+    /// open, so a resumed checkout is the one the customer started, whichever parameters it was opened
+    /// with — a card-saving session included.</para>
     /// </summary>
     Task<CheckoutSessionResult> CreateCheckoutSessionAsync(Order order, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// The booking's Checkout Session for a customer who ticked "save this card": the same session, opened
+    /// on <paramref name="stripeCustomerId"/> with <c>setup_future_usage=off_session</c>, so Stripe keeps
+    /// the card for off-session use. The session and its PaymentIntent carry <c>SavedCardId</c> metadata,
+    /// which is how the payment webhook finds the row the card lands on. Keyed on the order like the plain
+    /// session; an order is opened one way or the other, never both.
+    /// </summary>
+    Task<CheckoutSessionResult> CreateCardSavingCheckoutSessionAsync(
+        Order order, string stripeCustomerId, string savedCardId, CancellationToken cancellationToken);
 
     /// <summary>
     /// The same Checkout Session, closing at <paramref name="expiresAtUtc"/> instead of Stripe's default
@@ -22,9 +36,21 @@ public interface IStripeClient
     /// Stripe refuses an expiry under 30 minutes or over 24 hours away. Backing out returns the customer to
     /// the order's own page, not to the booking cancel page, whose resume asks without the expiry and so
     /// would open a second session beside this one.
+    /// <para>A session the order records that is still open is handed back while it asks for the same
+    /// amount and keeps the card exactly when this call does. Otherwise it is expired before the new one
+    /// opens, keyed on the one it replaces, so the order never has two sessions open.</para>
     /// </summary>
     Task<CheckoutSessionResult> CreateCheckoutSessionAsync(
         Order order, DateTime expiresAtUtc, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// The expiring Checkout Session for a customer who ticked "save this card": opened on
+    /// <paramref name="stripeCustomerId"/> with <c>setup_future_usage=off_session</c> and <c>SavedCardId</c>
+    /// metadata, as <see cref="CreateCardSavingCheckoutSessionAsync(Order, string, string, CancellationToken)"/>
+    /// opens the booking's, and expiring and handed back as the plain expiring session is.
+    /// </summary>
+    Task<CheckoutSessionResult> CreateCardSavingCheckoutSessionAsync(
+        Order order, DateTime expiresAtUtc, string stripeCustomerId, string savedCardId, CancellationToken cancellationToken);
 
     /// <summary>
     /// Refund a previously-paid checkout session. Amount is in the session's currency.
@@ -66,6 +92,14 @@ public interface IStripeClient
     /// Create a PaymentIntent for an existing order. Used by the mobile
     /// PaymentSheet flow. Returns the intent id and the client_secret the
     /// mobile SDK needs to confirm payment.
+    /// <para>Stripe keeps the card only when <paramref name="savedCardId"/> is given: the intent then asks
+    /// for <c>setup_future_usage=off_session</c> and carries <c>SavedCardId</c> metadata for the webhook.
+    /// Without it nothing is kept.</para>
+    /// <para><paramref name="currentPaymentIntentId"/> is the intent the order already records. It is handed
+    /// back while the customer can still confirm it, for the same amount, on the same Stripe Customer, and
+    /// keeping the card exactly when <paramref name="savedCardId"/> is given (on the saved card it was opened
+    /// with). Otherwise a new intent is created, keyed on the one it replaces, so Stripe can never replay an
+    /// intent the order has moved past; the caller cancels the replaced one.</para>
     /// </summary>
     Task<PaymentIntentResult> CreatePaymentIntentAsync(
         decimal amount,
@@ -73,17 +107,26 @@ public interface IStripeClient
         string stripeCustomerId,
         string orderId,
         string displayOrderNumber,
+        string? savedCardId,
+        string? currentPaymentIntentId,
         CancellationToken cancellationToken);
 
     /// <summary>
     /// Cancel a previously-created PaymentIntent that hasn't been confirmed yet.
-    /// Used when the order's amount changes mid-flow and a new intent is being
-    /// minted — the old intent must be cancelled so the customer can't end up
-    /// paying both. Safe to call on an intent in <c>requires_payment_method</c>
+    /// Safe to call on an intent in <c>requires_payment_method</c>
     /// / <c>requires_confirmation</c> / <c>processing</c> states. Throws if the
     /// intent has already succeeded.
     /// </summary>
     Task CancelPaymentIntentAsync(
+        string paymentIntentId,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Cancel the PaymentSheet intent a newer one for the same order replaces, with the reason
+    /// <c>duplicate</c>: the <c>payment_intent.canceled</c> it raises leaves the order alone, because the
+    /// customer is about to pay the newer one. Throws if the intent has already succeeded.
+    /// </summary>
+    Task CancelReplacedPaymentIntentAsync(
         string paymentIntentId,
         CancellationToken cancellationToken);
 
@@ -157,6 +200,14 @@ public interface IStripeClient
     /// </summary>
     Task<SavedCardDetails?> GetSetupIntentCardAsync(
         string setupIntentId,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// The card a payment kept for off-session use, or null when the PaymentIntent has not succeeded, did
+    /// not ask Stripe to keep its card, or was paid with no card. Read-only; an unreachable Stripe throws.
+    /// </summary>
+    Task<SavedCardDetails?> GetPaymentIntentCardAsync(
+        string paymentIntentId,
         CancellationToken cancellationToken);
 
     /// <summary>

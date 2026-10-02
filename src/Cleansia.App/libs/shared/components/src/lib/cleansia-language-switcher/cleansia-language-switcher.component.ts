@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  computed,
   DestroyRef,
   inject,
   input,
@@ -14,6 +15,7 @@ import { FormsModule } from '@angular/forms';
 // Inlined from @cleansia/services to avoid module boundary issues
 const PREFERRED_LANGUAGE_KEY = 'preferred_language';
 import { TranslateService } from '@ngx-translate/core';
+import { OverlayOptions } from 'primeng/api';
 import { SelectModule } from 'primeng/select';
 
 interface LanguageOption {
@@ -40,6 +42,13 @@ export class CleansiaLanguageSwitcherComponent implements OnInit {
    * they were built with, so this is an input rather than a change of default.
    */
   readonly variant = input<'flag' | 'globe'>('flag');
+
+  readonly appendTo = input<'body' | null>(null);
+  readonly overlayOptions = input<OverlayOptions>();
+
+  readonly listClass = computed(
+    () => `cleansia-language-switcher__list--${this.variant()}`
+  );
 
   // The last constructor-injected dependency in this lib; every sibling field
   // here already uses inject(), and the constructor now only seeds state.

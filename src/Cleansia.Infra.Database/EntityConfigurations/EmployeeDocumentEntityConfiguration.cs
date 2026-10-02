@@ -25,6 +25,10 @@ public class EmployeeDocumentEntityConfiguration : TenantAuditableEntityConfigur
         builder.Property(d => d.FileSizeBytes)
             .IsRequired();
 
+        builder.Property(d => d.ContentSha256)
+            .HasMaxLength(64)
+            .IsRequired();
+
         builder.Property(d => d.DocumentType)
             .IsRequired();
 

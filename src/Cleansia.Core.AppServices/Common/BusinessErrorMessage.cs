@@ -232,6 +232,8 @@ public static class BusinessErrorMessage
     public const string SavedCardConsentNotAccepted = "saved_card.consent_not_accepted";
     /// <summary>No active card of the caller's has this id; another customer's card answers the same, so its existence is not revealed.</summary>
     public const string SavedCardNotFound = "saved_card.not_found";
+    /// <summary>A guest booking asked to save its card: a saved card belongs to an account, so a guest is never offered the tick.</summary>
+    public const string SavedCardRequiresAccount = "saved_card.requires_account";
 
     // Receivables, the money a customer owes the company on an order
     public const string ReceivableNotFound = "receivable.not_found";
@@ -327,6 +329,13 @@ public static class BusinessErrorMessage
     public const string DocumentNotFound = "employee_document.not_found";
     public const string Unauthorized = "employee_document.unauthorized";
     public const string EmployeeDocumentNotOwned = "employee_document.not_owned";
+
+    /// <summary>
+    /// The same bytes as another document of this cleaner that is still active and not rejected, or as
+    /// another file in the same upload. A rejected document never blocks, because its type may be what
+    /// was wrong and replacing cannot change the type.
+    /// </summary>
+    public const string EmployeeDocumentDuplicateFile = "employee_document.duplicate_file";
 
     /// <summary>
     /// A deletion request is already open for this document. A second is not more urgent, it is the

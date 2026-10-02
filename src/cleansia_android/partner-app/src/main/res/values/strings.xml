@@ -1120,6 +1120,7 @@
     <string name="error_employee_document_unauthorized">You can\'t access this document.</string>
     <string name="error_employee_document_not_owned">You don\'t own this document.</string>
     <string name="error_employee_document_deletion_already_requested">You have already asked us to remove this document. We\'ll answer that request shortly.</string>
+    <string name="error_employee_document_duplicate_file">You have already uploaded this exact file. Choose a different file, or replace the existing document.</string>
 
     <!-- Order — lifecycle + assignment -->
     <string name="error_order_not_found">Order not found.</string>

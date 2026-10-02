@@ -89,6 +89,7 @@ class OrderDetailCancelGateTest {
         savedStateHandle = SavedStateHandle(mapOf("orderId" to id)),
         membershipRepository = membershipRepository,
         orderEventBus = orderEventBus,
+        paymentRepository = mockk(relaxed = true),
     )
 
     /**

@@ -9,6 +9,7 @@ using Cleansia.Core.Domain.Credit;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Users;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Validations;
@@ -35,7 +36,13 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 [AuditAction("customer.order.recurring.confirm", Audience = AuditAudience.Customer, ResourceType = "Order")]
 public class ConfirmRecurringOrder
 {
-    public record Command(string OrderId) : ICommand<Response>;
+    /// <param name="SaveCard">
+    /// The customer ticked "save this card for my next bookings" on the web: the Checkout Session asks Stripe
+    /// to keep the card and a saved card is recorded under the consent, completed when the payment succeeds.
+    /// Unticked, nothing is kept. The mobile channel takes the tick on its PaymentSheet intent
+    /// (<see cref="CreatePaymentIntent"/>) instead.
+    /// </param>
+    public record Command(string OrderId, bool SaveCard = false) : ICommand<Response>;
 
     /// <summary>
     /// The occurrence the customer confirmed, priced as the materializer stored it (ADR-0062 D3). On the
@@ -66,11 +73,15 @@ public class ConfirmRecurringOrder
 
     public class Validator : AbstractValidator<Command>
     {
-        public Validator()
+        public Validator(IUserSessionProvider userSessionProvider)
         {
             RuleFor(x => x.OrderId)
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required);
+
+            RuleFor(x => x.SaveCard)
+                .Must(saveCard => !saveCard || !string.IsNullOrEmpty(userSessionProvider.GetUserId()))
+                .WithMessage(BusinessErrorMessage.SavedCardRequiresAccount);
         }
     }
 
@@ -85,6 +96,8 @@ public class ConfirmRecurringOrder
         ITenantProvider tenantProvider,
         IStripeClient stripeClient,
         IStripeConfig stripeConfig,
+        IStripeCustomerResolver stripeCustomerResolver,
+        IRequestMetadataProvider requestMetadataProvider,
         IOrderChannelProvider channelProvider,
         IPendingDispatch pending,
         INotificationProducer notificationProducer,
@@ -176,7 +189,7 @@ public class ConfirmRecurringOrder
             var result = order.PaymentType switch
             {
                 PaymentType.Cash => await HandleCashAsync(order, cancellationToken),
-                PaymentType.Card => await HandleCardAsync(order, sessionUserId, cancellationToken),
+                PaymentType.Card => await HandleCardAsync(order, sessionUserId, command.SaveCard, cancellationToken),
                 _ => BusinessResult.Failure<Response>(new Error(
                     nameof(order.PaymentType), BusinessErrorMessage.InvalidEnumValue)),
             };
@@ -292,7 +305,7 @@ public class ConfirmRecurringOrder
         }
 
         private async Task<BusinessResult<Response>> HandleCardAsync(
-            Order order, string sessionUserId, CancellationToken cancellationToken)
+            Order order, string sessionUserId, bool saveCard, CancellationToken cancellationToken)
         {
 
             // Card payments can be switched off platform-wide. Checked before the Stripe customer is
@@ -352,7 +365,7 @@ public class ConfirmRecurringOrder
 
             if (channelProvider.Channel == OrderChannel.Web)
             {
-                return await StartCheckoutAsync(order, cancellationToken);
+                return await StartCheckoutAsync(order, user, saveCard, cancellationToken);
             }
 
             var stripeCustomerId = user.StripeCustomerId;
@@ -382,6 +395,8 @@ public class ConfirmRecurringOrder
                 stripeCustomerId: stripeCustomerId,
                 orderId: order.Id,
                 displayOrderNumber: order.DisplayOrderNumber,
+                savedCardId: null,
+                currentPaymentIntentId: null,
                 cancellationToken: cancellationToken);
 
             if (string.IsNullOrEmpty(order.StripePaymentIntentId))
@@ -411,8 +426,14 @@ public class ConfirmRecurringOrder
         /// it has closed, the next stride opens the next. In a stride's last half hour Stripe will not open
         /// a session that short, so the next stride is used — but a session already open for this stride is
         /// replayed first, because a replay is not checked against the time left.</para>
+        ///
+        /// <para>Ticked, the session keeps the card on the customer's Stripe Customer for the order's currency
+        /// and a saved card is recorded under the consent, as a web booking records one. Confirming again with
+        /// the tick changed closes the open session and opens one that follows the tick; a session handed back
+        /// keeps the saved card it was opened with, so nothing more is recorded.</para>
         /// </summary>
-        private async Task<BusinessResult<Response>> StartCheckoutAsync(Order order, CancellationToken cancellationToken)
+        private async Task<BusinessResult<Response>> StartCheckoutAsync(
+            Order order, User user, bool saveCard, CancellationToken cancellationToken)
         {
             var cutoff = DateTime.SpecifyKind(order.CleaningDateTime, DateTimeKind.Utc)
                 .AddHours(-AutoCancelStaleRecurringOrders.DefaultMissedConfirmGraceHours);
@@ -421,15 +442,38 @@ public class ConfirmRecurringOrder
 
             try
             {
+                SavedCard? cardToSave = null;
+                if (saveCard)
+                {
+                    var currency = order.Currency
+                                   ?? throw new InvalidOperationException(
+                                       $"Order {order.Id} has no resolved currency to save a card in.");
+                    var stripeCustomerId = await stripeCustomerResolver.ResolveForCurrencyAsync(
+                        user, currency, cancellationToken);
+                    cardToSave = SavedCard.Start(
+                        user.Id, currency.Id, stripeCustomerId,
+                        requestMetadataProvider.IpAddress, requestMetadataProvider.DeviceLabel);
+                    cardToSave.TenantId = user.TenantId;
+                }
+
+                Task<CheckoutSessionResult> OpenCheckoutAsync(DateTime expiry) => cardToSave is null
+                    ? stripeClient.CreateCheckoutSessionAsync(order, expiry, cancellationToken)
+                    : stripeClient.CreateCardSavingCheckoutSessionAsync(
+                        order, expiry, cardToSave.StripeCustomerId, cardToSave.Id, cancellationToken);
+
                 CheckoutSessionResult session;
                 try
                 {
-                    session = await stripeClient.CreateCheckoutSessionAsync(order, expiresAt, cancellationToken);
+                    session = await OpenCheckoutAsync(expiresAt);
                 }
                 catch (StripeException ex) when (ex.StripeError?.Param == "expires_at" && strides > 0)
                 {
-                    session = await stripeClient.CreateCheckoutSessionAsync(
-                        order, expiresAt + CheckoutStride, cancellationToken);
+                    session = await OpenCheckoutAsync(expiresAt + CheckoutStride);
+                }
+
+                if (cardToSave is not null && session.Id != order.StripeSessionId)
+                {
+                    savedCardRepository.Add(cardToSave);
                 }
 
                 order.AssignStripeSessionId(session.Id);

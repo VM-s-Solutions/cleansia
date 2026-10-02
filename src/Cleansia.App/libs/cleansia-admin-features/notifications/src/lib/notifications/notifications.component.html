@@ -50,42 +50,12 @@
     </cleansia-section>
     } @else {
     <cleansia-section>
-      <ol class="cleansia-notifications__feed" [class.cleansia-notifications__feed--refreshing]="facade.loading()">
-        @for (row of facade.rows(); track row.id) {
-        <li
-          class="cleansia-notifications__row"
-          [class.cleansia-notifications__row--unread]="row.isUnread"
-          [class.cleansia-notifications__row--inert]="!row.interactive"
-          [class.cleansia-notifications__row--busy]="facade.openingId() === row.id"
-          [attr.data-family]="row.family"
-          [attr.role]="row.interactive ? 'button' : null"
-          [attr.tabindex]="row.interactive ? 0 : null"
-          [attr.aria-label]="row.titleKey | translate: row.params"
-          (click)="facade.open(row)"
-          (keydown.enter)="onRowKeydown(row, $event)"
-          (keydown.space)="onRowKeydown(row, $event)"
-        >
-          <span class="cleansia-notifications__glyph" aria-hidden="true">
-            <i [class]="row.icon"></i>
-          </span>
-          <span class="cleansia-notifications__text">
-            <span class="cleansia-notifications__title">{{ row.titleKey | translate: row.params }}</span>
-            @if (row.bodyKey) {
-            <span class="cleansia-notifications__body">{{ row.bodyKey | translate: row.params }}</span>
-            }
-          </span>
-          <span class="cleansia-notifications__meta">
-            <time [attr.datetime]="row.createdOn.toISOString()">{{ row.createdOnLabel }}</time>
-            @if (row.isUnread) {
-            <span class="cleansia-notifications__unread">{{ 'pages.notifications.unread' | translate }}</span>
-            }
-            @if (row.route) {
-            <i class="pi pi-arrow-right cleansia-notifications__arrow" aria-hidden="true"></i>
-            }
-          </span>
-        </li>
-        }
-      </ol>
+      <cleansia-admin-notification-feed
+        [rows]="facade.rows()"
+        [openingId]="facade.openingId()"
+        [refreshing]="facade.loading()"
+        (rowOpen)="facade.open($event)"
+      />
 
       @if (facade.totalRecords() > facade.pageSize) {
       <p-paginator

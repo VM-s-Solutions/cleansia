@@ -27,7 +27,11 @@
     "how_it_works": "Jak to chodí",
     "plus": "Cleansia Plus",
     "login_short": "Přihlásit",
-    "my_recurring": "Opakované termíny"
+    "my_recurring": "Opakované termíny",
+    "open_menu": "Otevřít menu",
+    "close_menu": "Zavřít menu",
+    "user_menu": "Nabídka účtu",
+    "section_menu": "Menu"
   },
   "cookies": {
     "title": "Cookies na tomto webu",
@@ -781,6 +785,12 @@
       "date_time": "Datum a čas",
       "datetime_note": "Přesný čas s vámi potvrdíme",
       "datetime_section_title": "Kdy máme přijít?",
+      "day_part": {
+        "morning": "Dopoledne",
+        "afternoon": "Odpoledne",
+        "evening": "Večer"
+      },
+      "day_part_label": "Část dne",
       "draft_partially_restored": "Vrátili jsme vaši objednávku. Něco z ní už bohužel nenabízíme.",
       "entry_instructions_label": "Pokyny pro vstup",
       "entry_instructions_placeholder": "Jak se dostaneme do nemovitosti? (např. zvonek, klíč pod rohožkou...)",
@@ -971,6 +981,7 @@
       "summary_extras": "Doplňky",
       "summary_free_cancel": "Zrušení zdarma do 24 h",
       "summary_heading": "Souhrn",
+      "summary_hide": "Skrýt souhrn objednávky",
       "summary_instructions": "Instrukce",
       "summary_line_calc": "{{base}} + {{units}} × {{unit}}",
       "summary_no_surcharge": "bez příplatku",
@@ -985,6 +996,7 @@
       "summary_rooms_other": "{{count}} pokojů",
       "summary_section_title": "Zkontrolujte objednávku",
       "summary_services": "Služby",
+      "summary_show": "Zobrazit souhrn objednávky",
       "summary_with_plus": "S Plus byste platili",
       "terms_already_accepted": "Podmínky služby a zásady ochrany osobních údajů jste odsouhlasili se svým účtem.",
       "contract_notice": "Potvrzením objednávky uzavíráte smlouvu o úklidu s provozní společností trhu, na kterém se vaše domácnost nachází, za jejích <a href='/terms' target='_blank' rel='noopener'>obchodních podmínek</a>. Úklid provede uklízeč jako subdodavatel společnosti a stranou vaší smlouvy není.",
@@ -1048,6 +1060,9 @@
         },
         "continue": "Uložit kartu",
         "cancel": "Teď ne"
+      },
+      "save_card": {
+        "label": "Uložit tuto kartu k mým dalším objednávkám."
       }
     },
     "orders": {
@@ -2081,7 +2096,8 @@
     },
     "saved_card": {
       "consent_not_accepted": "Před uložením karty prosím potvrďte souhlas, že na ni mohou být účtovány poplatky a nezaplacená hotovost.",
-      "not_found": "Tuto uloženou kartu jsme nenašli."
+      "not_found": "Tuto uloženou kartu jsme nenašli.",
+      "requires_account": "Pro uložení karty k dalším objednávkám se přihlaste."
     },
     "receivable": {
       "not_found": "Tuto dlužnou částku jsme nenašli.",

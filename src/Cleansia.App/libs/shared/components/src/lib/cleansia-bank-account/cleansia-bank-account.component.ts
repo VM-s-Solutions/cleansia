@@ -99,6 +99,10 @@ export class CleansiaBankAccountComponent {
    * `2000145399/0800` and a bare number all work, because those are the three shapes a Czech account
    * is actually written in — and the alternative is the customer deleting the punctuation by hand,
    * which is exactly the friction the single control is meant to remove.
+   *
+   * A bare number is the account number and nothing else, so the prefix and bank code already in the
+   * control stay; an account written out with a separator but no prefix clears the old prefix. Both
+   * as in the apps' `splitPastedAccount` (owner decision D14).
    */
   protected onPaste(event: ClipboardEvent): void {
     const text = event.clipboardData?.getData('text')?.trim();
@@ -110,7 +114,7 @@ export class CleansiaBankAccountComponent {
     event.preventDefault();
     const [, prefix, number, bankCode] = match;
 
-    this.prefix().setValue(prefix ?? '');
+    if (/[-/]/.test(text)) this.prefix().setValue(prefix ?? '');
     this.number().setValue(number);
     if (bankCode) this.bankCode().setValue(bankCode);
 

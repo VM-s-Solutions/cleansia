@@ -88,14 +88,15 @@ sealed interface BookingSubmitOutcome {
 }
 
 /**
- * Bundle of values PaymentSheet needs to render: the PaymentIntent
- * client_secret it confirms against, plus the Stripe customer id +
- * ephemeral key that let it surface saved cards.
+ * Bundle of values PaymentSheet needs to render: the PaymentIntent client_secret it confirms against,
+ * plus the Stripe customer id + ephemeral key only when the card is to be saved. Given the customer,
+ * PaymentSheet draws its own save box on an intent that keeps nothing, and a card saved through it
+ * gets no SavedCards row and no consent.
  */
 data class PaymentSheetParams(
     val clientSecret: String,
-    val ephemeralKey: String,
-    val customerId: String,
+    val ephemeralKey: String?,
+    val customerId: String?,
     /** The quote's currency — the one the PaymentIntent is minted in, which Google Pay is told up front. */
     val currencyCode: String,
 )
@@ -733,8 +734,8 @@ class BookingViewModel @Inject constructor(
                 response = body,
                 paymentSheet = PaymentSheetParams(
                     clientSecret = intent.clientSecret,
-                    ephemeralKey = intent.ephemeralKey,
-                    customerId = intent.stripeCustomerId,
+                    ephemeralKey = intent.ephemeralKey.takeIf { s.saveCard },
+                    customerId = intent.stripeCustomerId.takeIf { s.saveCard },
                     currencyCode = quoted.currencyCode,
                 ),
             )

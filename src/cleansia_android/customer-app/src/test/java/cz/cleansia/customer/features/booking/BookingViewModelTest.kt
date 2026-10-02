@@ -812,8 +812,6 @@ class BookingViewModelTest {
         assertTrue("expected CardPending but was $outcome", outcome is BookingSubmitOutcome.CardPending)
         val cardPending = outcome as BookingSubmitOutcome.CardPending
         assertEquals("pi_secret", cardPending.paymentSheet.clientSecret)
-        assertEquals("ek", cardPending.paymentSheet.ephemeralKey)
-        assertEquals("cus_1", cardPending.paymentSheet.customerId)
     }
 
     // ── refreshQuote() (driven by the debounced watcher) ──
@@ -2269,13 +2267,27 @@ class BookingViewModelTest {
     }
 
     @Test
+    fun submit_byCardWithoutTheSaveTick_opensTheSheetWithoutTheCustomer() = runTest {
+        val vm = cardReady()
+
+        val sheet = (vm.submit() as BookingSubmitOutcome.CardPending).paymentSheet
+
+        assertEquals("pi_secret", sheet.clientSecret)
+        assertNull(sheet.customerId)
+        assertNull(sheet.ephemeralKey)
+    }
+
+    @Test
     fun submit_byCardWithTheSaveTick_asksTheIntentToSaveTheCard() = runTest {
         val vm = cardReady()
         vm.update { it.copy(saveCard = true) }
 
-        assertTrue(vm.submit() is BookingSubmitOutcome.CardPending)
+        val outcome = vm.submit()
 
         coVerify(exactly = 1) { paymentRepository.createPaymentIntent("o-1", true) }
+        val sheet = (outcome as BookingSubmitOutcome.CardPending).paymentSheet
+        assertEquals("cus_1", sheet.customerId)
+        assertEquals("ek_1", sheet.ephemeralKey)
     }
 
     @Test

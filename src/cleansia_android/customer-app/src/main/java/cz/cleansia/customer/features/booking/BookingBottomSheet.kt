@@ -635,10 +635,14 @@ private fun SheetContent(
                                         paymentIntentClientSecret = outcome.paymentSheet.clientSecret,
                                         configuration = com.stripe.android.paymentsheet.PaymentSheet.Configuration(
                                             merchantDisplayName = "Cleansia",
-                                            customer = com.stripe.android.paymentsheet.PaymentSheet.CustomerConfiguration(
-                                                id = outcome.paymentSheet.customerId,
-                                                ephemeralKeySecret = outcome.paymentSheet.ephemeralKey,
-                                            ),
+                                            customer = outcome.paymentSheet.customerId?.let { id ->
+                                                outcome.paymentSheet.ephemeralKey?.let { key ->
+                                                    com.stripe.android.paymentsheet.PaymentSheet.CustomerConfiguration(
+                                                        id = id,
+                                                        ephemeralKeySecret = key,
+                                                    )
+                                                }
+                                            },
                                             googlePay = com.stripe.android.paymentsheet.PaymentSheet.GooglePayConfiguration(
                                                 // Follows the Stripe key, not the build type — a
                                                 // release build on a pk_test_ key must still ask

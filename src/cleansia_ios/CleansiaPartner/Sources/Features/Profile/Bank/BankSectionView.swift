@@ -36,6 +36,15 @@ struct BankSectionView: View {
         )
     }
 
+    /// Drawn in fours as statements print it, stored as the server keeps it: the form strips the
+    /// grouping on every write.
+    private var groupedIban: Binding<String> {
+        Binding(
+            get: { BankForm.groupedIban(vm.state.loadedValue?.iban ?? "") },
+            set: { vm.update(\.iban, to: $0) }
+        )
+    }
+
     private var bankCountry: Binding<String?> {
         Binding(
             get: { vm.state.loadedValue?.bankCountryId },
@@ -72,10 +81,12 @@ struct BankSectionView: View {
                     accountPrefix: field(\.accountPrefix),
                     accountNumber: field(\.accountNumber),
                     bankCode: field(\.bankCode),
-                    iban: field(\.iban),
+                    iban: groupedIban,
                     swift: field(\.swift),
                     bankName: field(\.bankName),
                     holderName: field(\.holderName),
+                    usesDomesticAccount: form.usesDomesticAccount,
+                    ibanError: form.ibanChecked ? form.ibanProblem.map(Self.message) : nil,
                     enabled: !vm.action.isSubmitting
                 )
                 // Bank is the last step of the onboarding chain, so "Save and continue"
@@ -92,6 +103,16 @@ struct BankSectionView: View {
         .task { await vm.load() }
         .onReceive(vm.saved) { onSaved() }
     }
+
+    /// The server's own copy for the two refusals it names; the length one is the client's, because the
+    /// server folds it into `invalid_iban` and a cleaner can act on the number.
+    private static func message(_ problem: BankForm.IbanProblem) -> String {
+        switch problem {
+        case .invalid: ApiErrorLocalizer().message(for: ApiError(code: "validation.payout.invalid_iban"))
+        case .otherCountry: ApiErrorLocalizer().message(for: ApiError(code: "validation.payout.iban_country_mismatch"))
+        case let .wrongLength(expected): L10n.Profile.ibanWrongLength(expected)
+        }
+    }
 }
 
 struct BankFormFields: View {
@@ -104,6 +125,9 @@ struct BankFormFields: View {
     @Binding var swift: String
     @Binding var bankName: String
     @Binding var holderName: String
+    /// A CZ or SK bank takes the three parts; any other takes one IBAN instead.
+    var usesDomesticAccount = true
+    var ibanError: String?
     var enabled: Bool = true
 
     var body: some View {
@@ -116,24 +140,30 @@ struct BankFormFields: View {
                 enabled: enabled,
                 searchable: true
             )
-            // One control, three segments — the account is a single thing to the cleaner typing it.
-            CleansiaBankAccountField(
-                prefix: $accountPrefix,
-                number: $accountNumber,
-                bankCode: $bankCode,
-                label: L10n.Profile.bankAccount,
-                prefixPlaceholder: L10n.Profile.bankAccountPrefixPlaceholder,
-                numberPlaceholder: L10n.Profile.bankAccountNumberPlaceholder,
-                bankCodePlaceholder: L10n.Profile.bankCodePlaceholder,
-                helper: L10n.Profile.bankAccountHelper,
-                enabled: enabled
-            )
-            CleansiaTextField(
-                value: $iban,
-                label: L10n.Profile.iban,
-                helper: L10n.Profile.ibanHelper,
-                enabled: enabled
-            )
+            if usesDomesticAccount {
+                // One control, three segments — the account is a single thing to the cleaner typing it.
+                CleansiaBankAccountField(
+                    prefix: $accountPrefix,
+                    number: $accountNumber,
+                    bankCode: $bankCode,
+                    label: L10n.Profile.bankAccount,
+                    prefixPlaceholder: L10n.Profile.bankAccountPrefixPlaceholder,
+                    numberPlaceholder: L10n.Profile.bankAccountNumberPlaceholder,
+                    bankCodePlaceholder: L10n.Profile.bankCodePlaceholder,
+                    helper: L10n.Profile.bankAccountHelper,
+                    enabled: enabled
+                )
+            } else {
+                // A bank outside CZ and SK is one IBAN, drawn in groups of four as statements print it.
+                CleansiaTextField(
+                    value: $iban,
+                    label: L10n.Profile.iban,
+                    helper: L10n.Profile.ibanHelper,
+                    errorText: ibanError,
+                    keyboardType: .asciiCapable,
+                    enabled: enabled
+                )
+            }
             CleansiaTextField(
                 value: $swift,
                 label: L10n.Profile.swiftCode,

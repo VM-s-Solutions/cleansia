@@ -217,6 +217,10 @@ extension L10n {
             localized("iban_helper")
         }
 
+        static func ibanWrongLength(_ expected: Int) -> String {
+            format("iban_wrong_length", expected)
+        }
+
         static var bankCountry: String {
             localized("bank_country")
         }

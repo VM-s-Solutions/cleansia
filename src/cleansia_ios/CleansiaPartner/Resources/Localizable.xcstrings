@@ -8457,31 +8457,66 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "U českého nebo slovenského účtu ho můžete nechat prázdný — dopočítáme ho z čísel výše."
+            "value": "Celý IBAN, začíná kódem země vaší banky. Najdete ho na výpisu z účtu nebo v internetovém bankovnictví."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "You can leave this empty for a Czech or Slovak account — we work it out from the numbers above."
+            "value": "Your full IBAN, starting with your bank's country code. You'll find it on your bank statement or in your banking app."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Для чешского или словацкого счёта можно оставить пустым — мы вычислим его из чисел выше."
+            "value": "Полный IBAN, начинается с кода страны вашего банка. Его можно найти в выписке по счёту или в банковском приложении."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pri českom alebo slovenskom účte ho môžete nechať prázdny — dopočítame ho z čísel vyššie."
+            "value": "Celý IBAN, začína kódom krajiny vašej banky. Nájdete ho na výpise z účtu alebo v internetovom bankovníctve."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Для чеського або словацького рахунку можете залишити порожнім — ми обчислимо його з чисел вище."
+            "value": "Повний IBAN, що починається з коду країни вашого банку. Його можна знайти у виписці з рахунку або в банківському застосунку."
+          }
+        }
+      }
+    },
+    "iban_wrong_length": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tento IBAN nemá pro zemi vaší banky správnou délku — ta je %1$lld. Zkontrolujte, jestli nějaký znak nechybí nebo nepřebývá."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This IBAN has the wrong length for your bank's country — the length there is %1$lld. Check for a missing or extra character."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "У этого IBAN неправильная длина для страны вашего банка — там она составляет %1$lld. Проверьте, не пропущен ли символ и нет ли лишнего."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tento IBAN nemá pre krajinu vašej banky správnu dĺžku — tá je %1$lld. Skontrolujte, či nejaký znak nechýba alebo neprebýva."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Цей IBAN має неправильну довжину для країни вашого банку — там вона становить %1$lld. Перевірте, чи не бракує символу і чи немає зайвого."
           }
         }
       }

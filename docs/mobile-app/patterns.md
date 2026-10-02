@@ -206,12 +206,19 @@ things: no POIs, a muted base and the same pin.
   `MKStandardMapConfiguration(elevationStyle: .flat, emphasisStyle: .muted)`,
   `pointOfInterestFilter = .excludingAll` and no traffic (`CleansiaMapStyle`). The address picker moved
   off SwiftUI's `Map(coordinateRegion:)`, which takes no configuration on iOS 16, to an `MKMapView`
-  representable behind the unchanged `MapProvider.pickerMap` signature. The iOS 17 `.mapStyle` modifier
-  would have left iOS 16 users with every POI. The picker writes the settled region back to its
-  binding, and applies a region the binding moves to only when it differs from the one it last
-  reported, so a drag never fights the finger. A 196pt bottom layout margin keeps Apple's logo and
-  *Legal* link above the confirm card. MapKit centres its region inside the layout margins, so the
-  centre pin is pinned to the margins' centre, not the view's.
+  representable behind `MapProvider.pickerMap(region:showsUserLocation:bottomInset:)`. The iOS 17
+  `.mapStyle` modifier would have left iOS 16 users with every POI. The picker writes the settled region
+  back to its binding, and applies a region the binding moves to only when it differs from the one it
+  last reported, so a drag never fights the finger. Apple's logo and *Legal* link must stay visible, and
+  they sit inside the map's bottom layout margin. So each picker (the customer
+  `BookingAddressPickerView` and the partner `AddressPickerView`) measures what it lays over the map's
+  bottom edge, the location-button row and the confirm card, and passes that height as `bottomInset`.
+  The button row counts because on iOS 16 *Legal* sits at the bottom right, under the button. The card
+  grows with the text size, so the inset is measured rather than fixed, and the logo and *Legal* stay
+  above both up to AX5. MapKit centres its region inside the layout margins, so the centre pin is
+  pinned to the margins' centre, not the view's. When the inset changes, for example on a live
+  text-size change, the picker sets the picked point back under the pin, because MapKit holds the map
+  still while the margins move.
 - **Android** (`:core` `location/CleansiaMap.kt`). `CleansiaMapStyle(darkTheme)` is Mapbox Standard
   through the pinned maps-compose 11.8.0: POI and transit labels off, the faded theme, no 3D objects,
   and the day or night light preset from the app theme. It replaced `MapStyles`, whose classic

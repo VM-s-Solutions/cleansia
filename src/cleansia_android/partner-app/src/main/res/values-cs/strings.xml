@@ -430,7 +430,8 @@
     <string name="bank_account_number_helper">Část před lomítkem, například 5885638003.</string>
     <string name="bank_code">Kód banky</string>
     <string name="bank_code_helper">Čtyři číslice za lomítkem, například 5500.</string>
-    <string name="iban_helper">U českého nebo slovenského účtu ho můžete nechat prázdný — dopočítáme ho z čísel výše.</string>
+    <string name="iban_helper">Celý IBAN, začíná kódem země vaší banky. Najdete ho na výpisu z účtu nebo v internetovém bankovnictví.</string>
+    <string name="iban_wrong_length">Tento IBAN nemá pro zemi vaší banky správnou délku — ta je %1$d. Zkontrolujte, jestli nějaký znak nechybí nebo nepřebývá.</string>
     <string name="swift_code_helper">Potřebujeme ho jen tehdy, když je vaše banka v jiné zemi, než ve které pracujete.</string>
     <string name="bank_account_holder">Majitel účtu</string>
     <string name="bank_account_holder_helper">Nepovinné — jméno, které má banka u účtu, pokud se liší od vašeho.</string>

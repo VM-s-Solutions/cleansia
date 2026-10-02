@@ -484,7 +484,8 @@
     <string name="bank_account_number_helper">Часть перед косой чертой, например 5885638003.</string>
     <string name="bank_code">Код банка</string>
     <string name="bank_code_helper">Четыре цифры после косой черты, например 5500.</string>
-    <string name="iban_helper">Для чешского или словацкого счёта можно оставить пустым — мы вычислим его из чисел выше.</string>
+    <string name="iban_helper">Полный IBAN, начинается с кода страны вашего банка. Его можно найти в выписке по счёту или в банковском приложении.</string>
+    <string name="iban_wrong_length">У этого IBAN неправильная длина для страны вашего банка — там она составляет %1$d. Проверьте, не пропущен ли символ и нет ли лишнего.</string>
     <string name="swift_code_helper">Нужен только тогда, когда ваш банк в другой стране, чем та, где вы работаете.</string>
     <string name="bank_account_holder">Владелец счёта</string>
     <string name="bank_account_holder_helper">Необязательно — имя, которое банк указал для счёта, если оно отличается от вашего.</string>

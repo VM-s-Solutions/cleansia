@@ -484,7 +484,8 @@
     <string name="bank_account_number_helper">The part before the slash, e.g. 5885638003.</string>
     <string name="bank_code">Bank code</string>
     <string name="bank_code_helper">The four digits after the slash, e.g. 5500.</string>
-    <string name="iban_helper">You can leave this empty for a Czech or Slovak account — we work it out from the numbers above.</string>
+    <string name="iban_helper">Your full IBAN, starting with your bank\'s country code. You\'ll find it on your bank statement or in your banking app.</string>
+    <string name="iban_wrong_length">This IBAN has the wrong length for your bank\'s country — the length there is %1$d. Check for a missing or extra character.</string>
     <string name="swift_code_helper">Only needed when your bank is in a different country than the one you work in.</string>
     <string name="bank_account_holder">Account holder</string>
     <string name="bank_account_holder_helper">Optional — the name your bank has on the account, if it differs from yours.</string>

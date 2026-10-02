@@ -26,12 +26,20 @@ import kotlinx.serialization.json.Json
 import javax.inject.Inject
 
 /**
- * The payout destination is captured as the parts a Czech or Slovak cleaner reads off their
- * statement — prefix, account number, bank code — because the server derives the IBAN from
- * them. Everything the server can check (the account checksum, the bank code, whether a
- * supplied IBAN agrees, whether a card number was typed in) is left to the server: it owns
- * the rules, its answers are wired to `error_validation_payout_*`, and a second copy of a
- * checksum here would gate a cleaner's income on a client that disagrees.
+ * The bank countries whose accounts are entered as `prefix – number / bank code`: the server's
+ * CzskDomesticWithIban scheme, which derives the IBAN from those parts (ADR-0034 D5.2). A bank in any
+ * other country is entered as one IBAN (owner ruling 2026-10-02). The paste splitter in
+ * CleansiaBankAccountInput reads a CZ or SK IBAN into the parts for the same two countries.
+ */
+private val DomesticAccountCountries = setOf("CZ", "SK")
+
+/**
+ * The payout destination. A Czech or Slovak cleaner enters the parts they read off their statement —
+ * prefix, account number, bank code — and the server derives the IBAN, so everything about those
+ * parts (the account checksum, the bank code, a card number typed in) is left to it, and its answers
+ * are wired to `error_validation_payout_*`. Any other bank country takes one IBAN, checked here as
+ * the server's IbanCalculator checks it ([ibanProblem]) so a typo is named before the round trip;
+ * the server still checks it again.
  */
 data class BankForm(
     val employeeId: String = "",
@@ -44,10 +52,84 @@ data class BankForm(
     val swift: String = "",
     val bankName: String = "",
     val holderName: String = "",
+    /** Whether a save has been tried, after which the IBAN's problem shows under it as it is edited. */
+    val ibanChecked: Boolean = false,
 ) {
-    /** The bank's country plus something that identifies the account — the rest is the server's call. */
+    /** The bank country's ISO code, which its IBANs start with. */
+    val bankCountryAlpha2: String?
+        get() = countries.firstOrNull { it.id == bankCountryId }?.isoAlpha2?.trim()?.uppercase()?.ifEmpty { null }
+
+    /**
+     * Whether the account is entered as the three domestic parts rather than an IBAN: a CZ or SK
+     * bank, and a country the list cannot name (no country picked yet, or the list failed to load).
+     */
+    val usesDomesticAccount: Boolean
+        get() = bankCountryAlpha2.let { it == null || it in DomesticAccountCountries }
+
+    /** What the server would refuse about the IBAN; null when it would take it, or for a domestic account. */
+    val ibanProblem: IbanProblem?
+        get() = bankCountryAlpha2?.takeUnless { usesDomesticAccount }?.let { ibanProblem(iban, it) }
+
+    /** The bank's country plus the account in the form that country takes. */
     val canSubmit: Boolean
-        get() = !bankCountryId.isNullOrBlank() && (accountNumber.isNotBlank() || iban.isNotBlank())
+        get() = !bankCountryId.isNullOrBlank() &&
+            (if (usesDomesticAccount) accountNumber.isNotBlank() else iban.isNotBlank())
+}
+
+/** Why the server's IbanCalculator would refuse an IBAN for the bank country picked (ADR-0034 D4). */
+sealed interface IbanProblem {
+    /** Not an IBAN's shape, or its check digits do not add up: the server's `validation.payout.invalid_iban`. */
+    data object Invalid : IbanProblem
+
+    /** Another country's IBAN: the server's `validation.payout.iban_country_mismatch`. */
+    data object OtherCountry : IbanProblem
+
+    /** The country's IBANs are [expected] characters long. The server folds this into `invalid_iban`. */
+    data class WrongLength(val expected: Int) : IbanProblem
+}
+
+/**
+ * ISO 13616 registry lengths, the server's `IbanCalculator.RegistryLengths` entry for entry
+ * (BankSectionViewModelTest reads the C# table). A country absent from it takes the generic 15–34.
+ */
+internal val IbanRegistryLengths = mapOf(
+    "AT" to 20, "BE" to 16, "BG" to 22, "CH" to 21, "CY" to 28, "CZ" to 24, "DE" to 22,
+    "DK" to 18, "EE" to 20, "ES" to 24, "FI" to 18, "FR" to 27, "GB" to 22, "GR" to 27,
+    "HR" to 21, "HU" to 28, "IE" to 22, "IT" to 27, "LT" to 20, "LU" to 20, "LV" to 21,
+    "MT" to 31, "NL" to 18, "NO" to 15, "PL" to 28, "PT" to 25, "RO" to 24, "SE" to 24,
+    "SI" to 19, "SK" to 24, "UA" to 29,
+)
+
+/** The longest IBAN ISO 13616 allows, and the field's cap. */
+internal const val IbanMaxLength = 34
+
+/**
+ * What the server would refuse about [iban] for a bank in [bankCountryAlpha2], in the order a cleaner
+ * can act on it: another country's IBAN first, then a length that is not the country's, then the
+ * shape and the ISO 7064 mod-97 check digits. Null when the server's IbanCalculator would take it.
+ * The iOS and web twins are held to the same cases.
+ */
+internal fun ibanProblem(iban: String, bankCountryAlpha2: String): IbanProblem? {
+    val value = iban.asBankReference()
+    if (value.length < 2 || value[0] !in 'A'..'Z' || value[1] !in 'A'..'Z') return IbanProblem.Invalid
+    val country = value.take(2)
+    if (country != bankCountryAlpha2.uppercase()) return IbanProblem.OtherCountry
+    val expected = IbanRegistryLengths[country]
+    if (expected != null && value.length != expected) return IbanProblem.WrongLength(expected)
+    val shaped = value.length in 15..IbanMaxLength &&
+        value[2] in '0'..'9' && value[3] in '0'..'9' &&
+        value.all { it in 'A'..'Z' || it in '0'..'9' }
+    if (!shaped) return IbanProblem.Invalid
+    return if (mod97(value.drop(4) + value.take(4)) == 1) null else IbanProblem.Invalid
+}
+
+/** ISO 7064 MOD 97-10 over an IBAN rearranged to `BBAN + country + check digits`, A = 10 … Z = 35. */
+private fun mod97(value: String): Int = value.fold(0) { remainder, character ->
+    if (character in '0'..'9') {
+        (remainder * 10 + (character - '0')) % 97
+    } else {
+        (remainder * 100 + (character - 'A' + 10)) % 97
+    }
 }
 
 sealed interface BankSectionUiState {
@@ -126,7 +208,7 @@ class BankSectionViewModel @Inject constructor(
 
     fun onBankCodeChange(v: String) = updateForm { it.copy(bankCode = v.digitsOnly()) }
 
-    fun onIbanChange(v: String) = updateForm { it.copy(iban = v.asBankReference()) }
+    fun onIbanChange(v: String) = updateForm { it.copy(iban = v.asBankReference().take(IbanMaxLength)) }
 
     fun onSwiftChange(v: String) = updateForm { it.copy(swift = v.asBankReference()) }
 
@@ -142,16 +224,23 @@ class BankSectionViewModel @Inject constructor(
             return
         }
         if (!form.canSubmit) return
+        if (form.ibanProblem != null) {
+            updateForm { it.copy(ibanChecked = true) }
+            return
+        }
 
+        // Each scheme sends only its own identifier. A domestic IBAN is the server's to derive, and the
+        // stored one sent back with edited parts was refused as a mismatch; an IBAN account has no parts.
+        val domestic = form.usesDomesticAccount
         viewModelScope.launch {
             _saveState.value = ActionState.Submitting
             val result = profileRepository.updateBankDetails(
                 employeeId = form.employeeId,
                 bankCountryId = form.bankCountryId,
-                accountPrefix = form.accountPrefix.trimmedOrNull(),
-                accountNumber = form.accountNumber.trimmedOrNull(),
-                bankCode = form.bankCode.trimmedOrNull(),
-                iban = form.iban.trimmedOrNull(),
+                accountPrefix = form.accountPrefix.takeIf { domestic }?.trimmedOrNull(),
+                accountNumber = form.accountNumber.takeIf { domestic }?.trimmedOrNull(),
+                bankCode = form.bankCode.takeIf { domestic }?.trimmedOrNull(),
+                iban = form.iban.takeUnless { domestic }?.trimmedOrNull(),
                 swift = form.swift.trimmedOrNull(),
                 bankName = form.bankName.trimmedOrNull(),
                 holderName = form.holderName.trimmedOrNull(),

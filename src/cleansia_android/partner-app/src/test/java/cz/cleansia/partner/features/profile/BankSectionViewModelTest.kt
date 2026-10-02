@@ -69,7 +69,11 @@ class BankSectionViewModelTest {
         every { errorTranslator.translate(any()) } returns "translated error"
         every { appContext.getString(R.string.error_profile_not_loaded) } returns "Profile not loaded yet"
         coEvery { countryApi.countryGetOverview() } returns Response.success(
-            listOf(CountryListItem(id = "country-cz", isoCode = "CZE", name = "Czech Republic")),
+            listOf(
+                CountryListItem(id = "country-cz", isoCode = "CZE", isoAlpha2 = "CZ", name = "Czech Republic"),
+                CountryListItem(id = "country-sk", isoCode = "SVK", isoAlpha2 = "SK", name = "Slovakia"),
+                CountryListItem(id = "country-de", isoCode = "DEU", isoAlpha2 = "DE", name = "Germany"),
+            ),
         )
         coEvery { repository.getCurrentEmployee() } returns ApiResult.Success(employee)
         coEvery { repository.getPayoutDetails() } returns ApiResult.Success(null)
@@ -183,16 +187,175 @@ class BankSectionViewModelTest {
         }
     }
 
+    private fun BankSectionViewModel.form(): BankForm = (uiState.value as BankSectionUiState.Loaded).form
+
     @Test
-    fun `an iban on its own is submittable — the server decides whether the scheme needs the parts`() =
-        runTest {
-            val vm = viewModel()
-            vm.awaitForm()
+    fun `a CZ or SK bank takes the three parts and an IBAN alone does not submit`() = runTest {
+        val vm = viewModel()
+        vm.awaitForm()
 
-            vm.onIbanChange("DE89370400440532013000")
+        vm.onIbanChange("CZ6508000000192000145399")
+        assertTrue(vm.form().usesDomesticAccount)
+        assertFalse(vm.form().canSubmit)
 
-            assertTrue((vm.uiState.value as BankSectionUiState.Loaded).form.canSubmit)
+        vm.onBankCountrySelected("country-sk")
+        assertTrue(vm.form().usesDomesticAccount)
+    }
+
+    @Test
+    fun `a bank outside CZ and SK takes one IBAN instead of the parts`() = runTest {
+        val vm = viewModel()
+        vm.awaitForm()
+
+        vm.onBankCountrySelected("country-de")
+        vm.onAccountNumberChange("5885638003")
+        assertFalse(vm.form().usesDomesticAccount)
+        assertFalse("the parts are not this country's identifier", vm.form().canSubmit)
+
+        vm.onIbanChange("DE89370400440532013000")
+        assertTrue(vm.form().canSubmit)
+    }
+
+    /**
+     * The stored IBAN of a CZ account is the one the server derived from the old parts, so sending it
+     * back with edited parts was refused as `validation.payout.iban_mismatch`.
+     */
+    @Test
+    fun `a CZ save sends the parts and leaves the IBAN to the server`() = runTest {
+        coEvery { repository.getPayoutDetails() } returns ApiResult.Success(czechPayout)
+        coEvery {
+            repository.updateBankDetails(any(), any(), any(), any(), any(), any(), any(), any(), any())
+        } returns ApiResult.Success(Unit)
+        val vm = viewModel()
+        vm.awaitForm()
+
+        vm.onAccountNumberChange("5885638003")
+        vm.onBankCodeChange("5500")
+        vm.save()
+        advanceUntilIdle()
+
+        coVerify {
+            repository.updateBankDetails(
+                employeeId = "emp-1",
+                bankCountryId = "country-cz",
+                accountPrefix = "19",
+                accountNumber = "5885638003",
+                bankCode = "5500",
+                iban = null,
+                swift = null,
+                bankName = null,
+                holderName = null,
+            )
         }
+    }
+
+    @Test
+    fun `an IBAN save sends the IBAN without the parts`() = runTest {
+        coEvery { repository.getPayoutDetails() } returns ApiResult.Success(czechPayout)
+        coEvery {
+            repository.updateBankDetails(any(), any(), any(), any(), any(), any(), any(), any(), any())
+        } returns ApiResult.Success(Unit)
+        val vm = viewModel()
+        vm.awaitForm()
+
+        vm.onBankCountrySelected("country-de")
+        vm.onIbanChange("de89 3704 0044 0532 0130 00")
+        vm.onSwiftChange("cobadeff")
+        vm.save()
+        advanceUntilIdle()
+
+        coVerify {
+            repository.updateBankDetails(
+                employeeId = "emp-1",
+                bankCountryId = "country-de",
+                accountPrefix = null,
+                accountNumber = null,
+                bankCode = null,
+                iban = "DE89370400440532013000",
+                swift = "COBADEFF",
+                bankName = null,
+                holderName = null,
+            )
+        }
+    }
+
+    @Test
+    fun `an IBAN the server would refuse is named under the field instead of being sent`() = runTest {
+        val vm = viewModel()
+        vm.awaitForm()
+        vm.onBankCountrySelected("country-de")
+        vm.onIbanChange("DE89370400440532013001")
+        assertFalse("no error before a save is tried", vm.form().ibanChecked)
+
+        vm.save()
+        advanceUntilIdle()
+
+        assertTrue(vm.form().ibanChecked)
+        assertEquals(IbanProblem.Invalid, vm.form().ibanProblem)
+        coVerify(exactly = 0) {
+            repository.updateBankDetails(any(), any(), any(), any(), any(), any(), any(), any(), any())
+        }
+
+        vm.onIbanChange("DE89370400440532013000")
+        assertNull("the error clears as the IBAN is fixed", vm.form().ibanProblem)
+    }
+
+    @Test
+    fun `an IBAN is valid exactly when the server's IbanCalculator takes it`() {
+        mapOf(
+            "DE89370400440532013000" to "DE",
+            "GB82WEST12345698765432" to "GB",
+            "AT611904300234573201" to "AT",
+            "FR1420041010050500013M02606" to "FR",
+            "NL91ABNA0417164300" to "NL",
+            "PL61109010140000071219812874" to "PL",
+            "CH9300762011623852957" to "CH",
+            "UA213223130000026007233566001" to "UA",
+            // Not in the registry, so the generic 15–34 and the check digits decide, as on the server.
+            "US64SVBKUS6S3300958879" to "US",
+        ).forEach { (iban, country) -> assertNull(iban, ibanProblem(iban, country)) }
+        assertNull("spaces and lower case are a statement's, not a typo", ibanProblem("de89 3704 0044 0532 0130 00", "DE"))
+    }
+
+    @Test
+    fun `each refusal names what the cleaner can fix`() {
+        assertEquals(IbanProblem.OtherCountry, ibanProblem("CZ6508000000192000145399", "DE"))
+        assertEquals(IbanProblem.WrongLength(22), ibanProblem("DE8937040044053201300", "DE"))
+        assertEquals(IbanProblem.WrongLength(22), ibanProblem("DE893704004405320130000", "DE"))
+        assertEquals(IbanProblem.Invalid, ibanProblem("DE89370400440532013001", "DE"))
+        assertEquals(IbanProblem.Invalid, ibanProblem("0532013000", "DE"))
+        assertEquals(IbanProblem.Invalid, ibanProblem("", "DE"))
+        assertEquals("check digits are digits", IbanProblem.Invalid, ibanProblem("DEX9370400440532013000", "DE"))
+        assertEquals("outside the registry the generic bound holds", IbanProblem.Invalid, ibanProblem("US64SVBK", "US"))
+    }
+
+    /** The client's table is the server's: a length only one of them knows refuses on one side only. */
+    @Test
+    fun `the registry lengths are the server's`() {
+        val solutionDir = generateSequence(java.io.File(".").absoluteFile) { it.parentFile }
+            .firstOrNull { java.io.File(it, "Cleansia.Api.sln").isFile }
+            ?: error("Cleansia.Api.sln not found above ${java.io.File(".").absolutePath}")
+        val source = java.io.File(solutionDir, "Cleansia.Core.Domain/Payouts/IbanCalculator.cs").readText()
+        val table = source.substringAfter("RegistryLengths").substringBefore("};")
+        val server = Regex("""\["([A-Z]{2})"\]\s*=\s*(\d+)""").findAll(table)
+            .associate { it.groupValues[1] to it.groupValues[2].toInt() }
+        assertTrue("the parser found no registry entries", server.isNotEmpty())
+        assertEquals(server, IbanRegistryLengths)
+    }
+
+    @Test
+    fun `an IBAN is drawn in groups of four and the caret crosses the spaces`() {
+        val shown = IbanGroupsOfFour.filter(androidx.compose.ui.text.AnnotatedString("DE89370400440532013000"))
+        assertEquals("DE89 3704 0044 0532 0130 00", shown.text.text)
+        val mapping = shown.offsetMapping
+        assertEquals(4, mapping.originalToTransformed(4))
+        assertEquals(6, mapping.originalToTransformed(5))
+        assertEquals(27, mapping.originalToTransformed(22))
+        assertEquals(4, mapping.transformedToOriginal(5))
+        assertEquals(22, mapping.transformedToOriginal(27))
+        (0..22).forEach { assertEquals(it, mapping.transformedToOriginal(mapping.originalToTransformed(it))) }
+        assertEquals("", IbanGroupsOfFour.filter(androidx.compose.ui.text.AnnotatedString("")).text.text)
+    }
 
     @Test
     fun `an account number without a bank country cannot be submitted`() = runTest {

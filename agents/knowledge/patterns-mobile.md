@@ -1239,6 +1239,19 @@ widget/extension logic: pure decision in Core (tested), framework plumbing in th
 its last in-service state with a stale date already in the past, which the system renders as a placeholder
 (the "black box with a spinner"); the terminal write clears the phase window and passes `staleDate: nil`.
 
+**Every image a Live Activity draws fits its slot in POINTS, and a logo mark goes without a container
+(C17, 2026-10-01).** ActivityKit allows no image larger than its presentation, and WidgetKit's archiver
+replaces an oversized one with a placeholder, logging `[com.apple.chrono:archiving] … Max size exceeded …
+using placeholder image` at fault level in the widget process. A PNG with no `scale` in its imageset
+compiles at 1x, so its pixel size IS its point size: `mascot_waving` (600 × 600 px) was a 600 pt image in a
+20 pt slot, and the card showed an empty disc. Check what actually ships with
+`xcrun --sdk iphoneos assetutil --info <appex>/CleansiaCore_CleansiaCore.bundle/Assets.car`, and prefer a
+vector (SVG or PDF with `preserves-vector-representation`). Neither a name probe (`UIImage(named:in:)`
+passes for an asset that resolves but is too big) nor an in-process `ImageRenderer` test goes through the
+archiver, so pin the asset's point size in a Core test (`testTheBrandMarkIsSizedForTheSlotItIsDrawnIn`).
+The HIG asks for the logo mark with no container and never the whole app icon; the card's mark is the
+`cleansia_wordmark` vector alone.
+
 **The standing guard against untranslated strings: `StringCatalogCompletenessTests` (CleansiaCore).** It reads
 all three `.xcstrings` off disk (walking up from `#filePath` until all three resolve) and fails naming
 catalog + key + locale. It asserts (a) every key carries a non-empty value in en/cs/sk/uk/ru — plural

@@ -403,6 +403,14 @@ target `CleansiaCustomerLiveActivity`, iOS 16.1). The Live Activity's card views
 `CleansiaCore/LiveActivity/` and are linked by both the extension and the app target, so the lock
 screen and the in-app order screen cannot drift apart.
 
+**The card's brand mark is the Cleansia wordmark, alone.** The lock screen and the expanded Dynamic
+Island draw `LiveActivityBrandLockup`: the vector wordmark from Core's asset catalogue
+(`cleansia_wordmark`, the path of Android's `ic_launcher_foreground.xml`), 12 pt tall, template-tinted in
+the primary colour, with no container, and the system text "Cleansia" if the asset ever fails to
+resolve. It replaced a 22 pt disc with the waving mascot inside, a scale-less 600 × 600 px image that
+WidgetKit counted as 600 pt and swapped for a placeholder, leaving the filled circle with a dark hole
+that reinstalling never fixed. The compact and minimal presentations draw no image.
+
 | Target | Bundle id | App Group |
 |---|---|---|
 | `CleansiaCustomer` | `cz.cleansia.customer` | `group.cz.cleansia.customer` |

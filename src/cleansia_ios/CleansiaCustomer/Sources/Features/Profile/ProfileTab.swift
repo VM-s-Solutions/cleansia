@@ -272,6 +272,10 @@ private struct ProfileHeader: View {
                 saved: ProfileStatsFormat.saved(user?.totalSavings ?? 0, currencyCode: user?.savingsCurrencyCode),
                 memberSince: ProfileStatsFormat.memberSince(user?.memberSince, locale: locale)
             )
+            // Re-localize on a runtime language switch: the card takes value-type inputs that a switch
+            // rarely changes, so SwiftUI skips its body and its labels stayed in the old language. Stamping
+            // the locale identity rebuilds it (the app's pattern, see RewardsTab).
+            .id(locale.identifier)
             .padding(.horizontal, Spacing.ml)
             .offset(y: -Spacing.m)
             .padding(.bottom, -Spacing.m)

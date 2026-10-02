@@ -30,6 +30,10 @@ namespace Cleansia.Core.Clients.Abstractions.Apns;
 /// The static activity attributes carried on a remote-<c>start</c> (S6-minimal: order number only);
 /// null otherwise.
 /// </param>
+/// <param name="Alert">
+/// The alert a remote-<c>start</c> must carry — ActivityKit: "Include an alert in the JSON payload" — so
+/// the person is told the card appeared; null otherwise.
+/// </param>
 public sealed record LiveActivityPush(
     string Event,
     LiveActivityContentState ContentState,
@@ -37,10 +41,17 @@ public sealed record LiveActivityPush(
     DateTimeOffset StaleDate,
     DateTimeOffset? DismissalDate,
     string? AttributesType,
-    LiveActivityStartAttributes? Attributes);
+    LiveActivityStartAttributes? Attributes,
+    LiveActivityAlert? Alert);
 
 /// <summary>
 /// The static, non-changing attributes an activity is started with (ADR-0029 D4). S6-minimal by type:
 /// order number only — no names, addresses, or ids.
 /// </summary>
 public sealed record LiveActivityStartAttributes(string OrderNumber);
+
+/// <summary>
+/// A Live Activity alert as loc-keys the app's own catalog resolves, like an APNs alert's: the title
+/// takes no argument, the body takes <paramref name="BodyLocArgs"/> in order.
+/// </summary>
+public sealed record LiveActivityAlert(string TitleLocKey, string BodyLocKey, IReadOnlyList<string> BodyLocArgs);

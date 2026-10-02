@@ -1,5 +1,6 @@
 using Cleansia.Core.Clients.Abstractions.Apns;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Core.Queue.Abstractions.Messages;
 
@@ -80,7 +81,15 @@ public static class LiveActivityPayloadFactory
             StaleDate: staleDate,
             DismissalDate: dismissalDate,
             AttributesType: isStart ? AttributesType : null,
-            Attributes: isStart ? new LiveActivityStartAttributes(message.OrderNumber) : null);
+            Attributes: isStart ? new LiveActivityStartAttributes(message.OrderNumber) : null,
+            // A remote start must carry an alert (ActivityKit). It reuses the copy of the order.on_the_way
+            // push the same transition sends, which both iOS catalogs carry (ApnsDisplayMapIosCatalogSyncTests).
+            Alert: isStart
+                ? new LiveActivityAlert(
+                    TitleLocKey: $"push.{NotificationEventCatalog.OrderOnTheWay}.title",
+                    BodyLocKey: $"push.{NotificationEventCatalog.OrderOnTheWay}.body",
+                    BodyLocArgs: [message.OrderNumber])
+                : null);
     }
 
     /// <summary>

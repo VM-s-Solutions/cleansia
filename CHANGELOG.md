@@ -966,6 +966,11 @@ need backfilling.
   The cleaner app's profile header had the same band and is fixed the same way. Android already did
   this. (Owner remark 2026-10-01; the cleaner's header 2026-10-02.)
 
+- **Cleaner web — pasting just the account number keeps the prefix.** In the bank-account field, a
+  bare number pasted into any box goes to the number, as before, but it also emptied the prefix box.
+  The prefix and bank code now stay as they are, as in the apps; a whole account pasted without a
+  prefix still clears the old one.
+
 - **Customer Android and iOS — Rewards shows your current points when you go straight to it.** Rewards
   kept the points it last read until you pulled to refresh, so a customer who opened it without
   passing through Home could see an old total. It now re-reads them when they are more than 30 seconds

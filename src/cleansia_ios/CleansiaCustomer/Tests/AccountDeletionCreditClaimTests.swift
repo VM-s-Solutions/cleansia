@@ -11,8 +11,8 @@ final class AccountDeletionCreditClaimTests: XCTestCase {
         "en": ("credit", "forfeit", "paid out"),
         "cs": ("kredit", "propadá", "vyplatit"),
         "sk": ("kredit", "prepadá", "vyplatiť"),
-        "uk": ("бонус", "анулю", "виплатити"),
-        "ru": ("бонус", "аннулир", "выплатить")
+        "uk": ("кредит", "анулю", "виплатити"),
+        "ru": ("кредит", "аннулир", "выплатить")
     ]
 
     /// The confirmation the customer accepts, and the text above the button that opens it.

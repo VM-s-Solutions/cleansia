@@ -349,6 +349,29 @@ final class CreditCopyTests: XCTestCase {
         }
     }
 
+    /// Owner ruling 2026-10-02: the money balance is "Кредит" in Ukrainian and Russian. "Бонуси/бонусы"
+    /// read as points, which are a different thing (credit_explainer_points_*), so no credit string may
+    /// say it, and the labels that name the balance say "кредит".
+    func testUkrainianAndRussianCallTheBalanceCreditNeverBonuses() throws {
+        let named = ["credit_your_credit", "profile_row_credit", "credit_explainer_title", "order_paid_with_credit"]
+        for language in ["uk", "ru"] {
+            L10n.bundle = try localeBundle(language)
+            for key in Self.creditKeys {
+                let value = L10n.localized(key)
+                XCTAssertFalse(
+                    value.lowercased().contains("бонус"),
+                    "\(language)/\(key) calls credit bonuses: \(value)"
+                )
+            }
+            for key in named {
+                XCTAssertTrue(
+                    L10n.localized(key).lowercased().contains("кредит"),
+                    "\(language)/\(key) does not say кредит"
+                )
+            }
+        }
+    }
+
     private func localeBundle(_ tag: String) throws -> Bundle {
         let hosts = [Bundle.main, Bundle(for: Self.self)]
         let path = hosts.lazy.compactMap { $0.path(forResource: tag, ofType: "lproj") }.first

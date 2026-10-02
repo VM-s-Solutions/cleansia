@@ -154,15 +154,16 @@ Spaces of every kind are ignored (a non-breaking one included) and an en or em d
 at once (spaces ignored) into an empty box become the number, and the prefix and bank code stay as they
 are, so `2000145399` pasted into an empty prefix box no longer turns into the prefix `200014`. Typing
 never jumps, because the number pad types one digit at a time, and eleven or more bare digits are not
-an account number, so the box keeps its own clamp. **A paste into a box that already holds digits is
-read together with them**, because every shape is matched against the box's whole new text. Pasted at
-the caret, `2000145399` after a `19` in the prefix box is the twelve digits `192000145399`, which is no
-account, so the box clamps it to the prefix `192000`, and `2000145399/0800` pasted there falls back to
-the clamp the same way. A shorter paste can be routed with the box's digits in front: `2000` after `19`
-makes the number `192000`, and the prefix stays `19`. Pasted over all of the box's digits, the paste is
-read on its own, though a bare number still has to be at least two characters longer than what it
-replaces. The rule has one more cost: a real two-digit prefix such as `19` pasted into an empty prefix
-box goes to the number; typed, it stays. **After a routed paste the keyboard closes, on both apps**,
+an account number, so the box keeps its own clamp. **On the apps, a paste into a box that already
+holds digits is read together with them**, because every shape is matched against the box's whole new
+text. Partner web does not do this; see the end of this section. Pasted at the caret, `2000145399`
+after a `19` in the prefix box is the twelve digits `192000145399`, which is no account, so the box
+clamps it to the prefix `192000`, and `2000145399/0800` pasted there falls back to the clamp the same
+way. A shorter paste can be routed with the box's digits in front: `2000` after `19` makes the number
+`192000`, and the prefix stays `19`. Pasted over all of the box's digits, the paste is read on its
+own, though a bare number still has to be at least two characters longer than what it replaces. The
+rule has one more cost: a real two-digit prefix such as `19` pasted into an empty prefix box goes to
+the number; typed, it stays. **After a routed paste the keyboard closes, on both apps**,
 because both rebuild the three boxes: iOS with `.id(pasteRevision)`, so each box draws its new value,
 and Android with `key(pasteRevision)`, so pasting the same text into the same box a second time is not
 dropped as a repeat. **Each box keeps the digits `0`–`9` only**, up to its length, on both apps
@@ -173,9 +174,15 @@ since 2026-10-02: it splits a CZ or SK IBAN, ignores whitespace of every kind in
 and reads an en or em dash as a hyphen. Before, it split only the two separator shapes. It also sends
 a bare number to the number field from any box and leaves the prefix and bank code alone, as the apps
 do; until 2026-10-02 it cleared the prefix. A written-out account without a prefix still clears the
-old one there too. The web differs in one way: it sends a one-digit paste to the number field, where
-the apps need at least two characters. On the web a paste event is never typing, and telling the two
-apart is the only reason the apps have that rule.
+old one there too. The web differs in two ways. First, it sends a one-digit paste to the number
+field, where the apps need at least two characters. On the web a paste event is never typing, and
+telling the two apart is the only reason the apps have that rule. Second, it reads the paste on its
+own and never adds the digits already in the box. A recognised shape fills its fields whatever the
+box held, so the apps' clamp fallback never applies to it. `2000145399` pasted after a `19` in the
+prefix box makes the number `2000145399` and leaves the prefix `19`, where the apps clamp it to the
+prefix `192000`. `2000145399/0800` pasted there sets the number and the bank code and clears the
+prefix, where the apps clamp it the same way. A paste that matches none of the shapes is left to the
+browser, which inserts it at the caret and cuts it to the box's length.
 
 ::: tip Country Configuration
 Country-specific labels and validation rules (e.g., field names, format masks) are driven by the `CountryConfiguration` table managed in the admin app.

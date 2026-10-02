@@ -105,12 +105,13 @@ need backfilling.
   `2000145399/0800`, `19-2000145399` (the bank code already there stays) or a CZ or SK IBAN. A bare
   number pasted into any empty box goes to the number field. Each box used to keep its own digits and
   cut them to length, so `12321414/3545` pasted into the number became `1232141435` with no bank code.
-  A paste after digits already in a box is read together with them, so clear the box first. A two-digit
-  prefix pasted on its own into an empty prefix box goes to the number; type it instead. Each box keeps
-  only the digits 0–9: digits from another script, which a keyboard can type and the server refuses,
-  are dropped. The server still checks every account. Partner web takes the same pastes since
-  2026-10-02. Before that it split only a written-out account, and not an IBAN or digits with spaces
-  inside them. (Owner ruling 2026-10-01.)
+  On the apps, a paste after digits already in a box is read together with them, so clear the box
+  first. A two-digit prefix pasted on its own into an empty prefix box goes to the number; type it
+  instead. Each box keeps only the digits 0–9: digits from another script, which a keyboard can type
+  and the server refuses, are dropped. The server still checks every account. Partner web takes the
+  same pastes since 2026-10-02. Before that it split only a written-out account, and not an IBAN or
+  digits with spaces inside them. The web reads a paste on its own, whatever the box already holds, so
+  there is no box to clear first. (Owner ruling 2026-10-01.)
 
 - **Cleaner, partner web, Android and iOS — a bank outside Czechia and Slovakia takes one IBAN,
   checked before it is sent.** The bank details form now follows the bank's country. A Czech or

@@ -129,10 +129,14 @@ All four apps keep it current afterwards, by one rule:
   server holds and re-states the language the user **chose** in the app if it differs. A user who
   follows the phone ("System") is never re-stated: the handset's language is not a choice, and it must
   not overwrite one made on another client.
-- **The profile completion after a first sign-in** (the customer apps' onboarding form) follows the
-  session-start rule, because it is not a picker change. It sends the language the user chose in the
-  app, and none on "System", so the server keeps the code it holds. Until 2026-10-01 it sent the
-  phone's language: Android whatever the user had chosen, iOS on "System".
+- **The profile completion after a first sign-in** (the customer apps' onboarding form, shown at
+  sign-in while the profile has no phone, until it is completed or skipped) sends the language the app
+  resolves to, as the picker does: the language chosen in the app, or on "System" the first of the
+  phone's languages the app supports, else English. It runs right after a Google or Apple sign-up,
+  which the server stamped `en`, so it cannot send none on "System": that would leave a Czech phone on
+  English e-mails and promo pushes until the customer touched the picker. It never sends the phone's
+  language over a choice made in the app. Until 2026-10-01 Android did, because it sent the phone's own
+  locale whatever the user had chosen.
 - **Only the two names gate it.** The update replays the profile, because `UpdateCurrentUser` replaces
   first and last name outright, so it waits for both names — and, since 2026-10-01, for nothing else.
   The customer apps used to wait for a phone as well, which the server never needed: it validates a
@@ -140,10 +144,12 @@ All four apps keep it current afterwards, by one rule:
   goes as `""`. A customer who signed up with Google or Apple and never added a phone used to stay on
   `en` for good.
 
-So a social sign-up is corrected the first time the customer picks a language in the app, and at every
-session start after that; one who never touches the picker keeps `en`. Sending the language with the
-Google or Apple sign-up itself needs a new field on those two commands, which the owner left out of the
-2026-10-01 change (client-only).
+So a social sign-up is corrected when the customer completes the profile form after the first sign-in,
+or the first time they pick a language in the app, and at every session start after a choice; one who
+skips the form and never touches the picker keeps `en`. The session-start reconcile still re-states
+only an explicit choice: it runs on every session, and on "System" it would overwrite a choice made on
+another client each time. Sending the language with the Google or Apple sign-up itself needs a new
+field on those two commands, which the owner left out of the 2026-10-01 change (client-only).
 
 ::: info A phone-less customer's profile edit now saves
 Both customer apps send a missing phone as `""` on every profile save, not only on the language

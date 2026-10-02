@@ -809,13 +809,16 @@ reconcile**, not just the picker hook: `LanguageSessionObserver` (Android, both 
 null → non-null edge, cold start included) and `LanguageReconciler` (iOS) read the server, then re-state
 the language the user **chose** if it differs — never for "System", whose resolved tag is the handset's
 ordering and must not overwrite a choice made on another client.
-**After sign-up, only the picker sends the resolved tag.** A password sign-up stamps the language the app
-shows, and a picker change sends what the app now resolves to. Every other write sends the explicit choice,
-replays the server's own code, or sends `null` (omitted from the body, so `UpdateCurrentUser` keeps the stored
-code), and never the handset's language. The customer apps' post-sign-in profile completion
-(`ProfileViewModel.completeOnboarding`, both platforms) sends the persisted choice, `null` on "System", since
-2026-10-01. Android used to send `Locale.getDefault()` there and iOS the resolved tag, so a completion wrote the
-handset's language over a choice made in the app or on another client.
+**After sign-up, the picker and the profile completion send the resolved tag; nothing else does.** A
+password sign-up stamps the language the app shows, a picker change sends what the app now resolves to, and
+the customer apps' post-sign-in profile completion (`ProfileViewModel.completeOnboarding`, both platforms)
+sends the resolved tag too: the explicit choice, else the first supported device language, else `en`
+(Android `AppSettingsRepository.emailLanguageTag()`, iOS `settings.languageTag`). The completion is the write
+that replaces a Google/Apple sign-up's `en` stamp, so sending `null` on "System" there left a Czech phone
+on English e-mails and promo pushes until the picker was touched. Every other write — the session reconcile,
+the profile edit — sends the explicit choice, replays the server's own code, or sends `null` (omitted from
+the body, so `UpdateCurrentUser` keeps the stored code). **Resolved, never raw:** Android's completion used
+to send `Locale.getDefault()`, which wrote the handset's locale over a choice made in the app.
 
 **The in-app language outside an activity (Android, API 26–32) — wrap the context yourself.**
 `AppCompatDelegate.setApplicationLocales` is the framework's per-app locale on 33+ and reaches every

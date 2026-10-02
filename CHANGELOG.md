@@ -809,9 +809,10 @@ need backfilling.
   e-mail not about one order, is updated whenever you change the app's language, and re-stated at the
   start of each session if you chose one. It used to wait for a phone number on the profile, so a
   Google or Apple sign-up without one stayed English for good. The profile form after a first sign-in
-  also wrote the phone's language over it, on Android even when another language was chosen in the
-  app; it now sends the app's choice, or nothing on *System*. A side effect: a customer with no phone
-  number can now save a profile edit, which the server used to refuse. (Owner ruling 2026-10-01.)
+  sets it to the language the app is showing, so a Google or Apple sign-up on a Czech phone that fills
+  the form in is no longer left on English; on Android the form used to send the phone's own language,
+  even when another language was chosen in the app. A side effect: a customer with no phone number can
+  now save a profile edit, which the server used to refuse. (Owner ruling 2026-10-01.)
 
 - **Customer — an order's status e-mails are in the language it was booked in.** The *Confirmed*,
   *Started* and *Completed* e-mails followed the account's language, so one order could bring a Czech

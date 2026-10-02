@@ -18,7 +18,8 @@ final class OrderDetailViewModelTests: XCTestCase {
         membershipClient: FakeMembershipManagementClient = FakeMembershipManagementClient(),
         marketStore: MarketStore? = nil,
         paymentIntent: FakePaymentIntentClient = FakePaymentIntentClient(),
-        pollInterval: TimeInterval = 60
+        pollInterval: TimeInterval = 60,
+        onCreditMoved: @escaping () -> Void = {}
     ) -> OrderDetailViewModel {
         let repo = OrderRepository(client: client)
         return OrderDetailViewModel(
@@ -31,6 +32,7 @@ final class OrderDetailViewModelTests: XCTestCase {
             eventBus: OrderEventBus(),
             paymentIntentClient: paymentIntent,
             liveActivity: NoopLiveActivitySync(),
+            onCreditMoved: onCreditMoved,
             pollInterval: pollInterval
         )
     }
@@ -115,7 +117,8 @@ final class OrderDetailViewModelTests: XCTestCase {
         client.cancelResult = .success(
             OrderCancellation(refundAmount: 0, refundInitiated: false, actualRefundAmount: nil)
         )
-        let vm = makeVM(client: client)
+        var creditReads = 0
+        let vm = makeVM(client: client, onCreditMoved: { creditReads += 1 })
         await vm.load()
 
         var received: OrderCancellation?
@@ -126,6 +129,7 @@ final class OrderDetailViewModelTests: XCTestCase {
         XCTAssertNotNil(received)
         XCTAssertEqual(vm.cancelState, .idle)
         XCTAssertEqual(client.cancelCallCount, 1)
+        XCTAssertEqual(creditReads, 1, "a cancelled order returns the credit it spent")
         XCTAssertEqual(client.lastCancelReason, .some("schedule_changed"))
     }
 
@@ -370,7 +374,10 @@ final class OrderDetailViewModelTests: XCTestCase {
 
     /// ConfirmRecurring answers with its own intent and customer, which keep nothing and must not reach the
     /// sheet.
-    private func cardConfirmReady(_ intent: FakePaymentIntentClient) -> (OrderDetailViewModel, FakeOrderClient) {
+    private func cardConfirmReady(
+        _ intent: FakePaymentIntentClient,
+        onCreditMoved: @escaping () -> Void = {}
+    ) -> (OrderDetailViewModel, FakeOrderClient) {
         let client = FakeOrderClient()
         client.detailResults = [.success(recurringOccurrence(paymentType: 2))]
         client.confirmRecurringResult = .success(RecurringConfirmation(
@@ -383,7 +390,7 @@ final class OrderDetailViewModelTests: XCTestCase {
             ephemeralKey: "ek_1",
             stripeCustomerId: "cus_1"
         ))
-        return (makeVM(client: client, paymentIntent: intent), client)
+        return (makeVM(client: client, paymentIntent: intent, onCreditMoved: onCreditMoved), client)
     }
 
     private func sheetsOpened(by vm: OrderDetailViewModel) async -> [PaymentSheetPresentation] {
@@ -463,6 +470,38 @@ final class OrderDetailViewModelTests: XCTestCase {
         XCTAssertFalse(makeVM(client: FakeOrderClient()).offersCardSaving, "nothing is offered before the order loads")
     }
 
+    /// The server takes the occurrence's credit when the confirmation is POSTed, before the intent exists,
+    /// so the balance Rewards and Profile show is re-read then — whether or not the sheet is completed.
+    func testACardConfirmRereadsTheCreditItSpentBeforeTheSheetOpens() async {
+        var creditReads = 0
+        let intent = FakePaymentIntentClient()
+        let (vm, _) = cardConfirmReady(intent, onCreditMoved: { creditReads += 1 })
+        await vm.load()
+
+        _ = await sheetsOpened(by: vm)
+
+        XCTAssertEqual(creditReads, 1)
+    }
+
+    /// A cash occurrence spends no credit, and a refused confirmation spent nothing.
+    func testACashOrRefusedConfirmLeavesTheCreditAlone() async {
+        var creditReads = 0
+        for result: ApiResult<RecurringConfirmation> in [
+            .success(RecurringConfirmation(clientSecret: nil, stripeCustomerId: nil, ephemeralKey: nil)),
+            .failure(ApiError(httpStatus: 500))
+        ] {
+            let client = FakeOrderClient()
+            client.detailResults = [.success(recurringOccurrence(paymentType: 1))]
+            client.confirmRecurringResult = result
+            let vm = makeVM(client: client, onCreditMoved: { creditReads += 1 })
+            await vm.load()
+
+            await vm.confirmRecurring()
+        }
+
+        XCTAssertEqual(creditReads, 0)
+    }
+
     func testConfirmRecurringFailureStaysIdle() async {
         let client = FakeOrderClient()
         client.detailResults = [.success(OrderFixtures.detail(statusValue: 1))]
@@ -534,6 +573,7 @@ final class OrderDetailViewModelTests: XCTestCase {
             snackbar: SnackbarController(),
             eventBus: bus,
             liveActivity: NoopLiveActivitySync(),
+            onCreditMoved: {},
             pollInterval: 60
         )
         await vm.load()
@@ -612,6 +652,7 @@ final class OrderDetailViewModelTests: XCTestCase {
             snackbar: SnackbarController(),
             eventBus: OrderEventBus(),
             liveActivity: NoopLiveActivitySync(),
+            onCreditMoved: {},
             pollInterval: 60
         )
 
@@ -640,6 +681,7 @@ final class OrderDetailViewModelTests: XCTestCase {
             snackbar: SnackbarController(),
             eventBus: OrderEventBus(),
             liveActivity: NoopLiveActivitySync(),
+            onCreditMoved: {},
             pollInterval: 60
         )
 

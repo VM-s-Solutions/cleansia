@@ -19,7 +19,6 @@ struct OrderDetailView: View {
     private let onReportCleanerNoShow: (String) -> Void
     private let onRebook: (String) -> Void
     private let onMakeRecurring: (String) -> Void
-    private let onCancelled: () -> Void
     private let openReviewOnLoad: Bool
     private let onReviewPromptConsumed: () -> Void
     @State private var reviewAutoOpened = false
@@ -39,7 +38,7 @@ struct OrderDetailView: View {
         onReportIssue: @escaping (String) -> Void,
         onReportCleanerNoShow: @escaping (String) -> Void,
         onRebook: @escaping (String) -> Void,
-        onCancelled: @escaping () -> Void,
+        onCreditMoved: @escaping () -> Void,
         onMakeRecurring: @escaping (String) -> Void
     ) {
         _vm = StateObject(
@@ -50,7 +49,8 @@ struct OrderDetailView: View {
                 membershipRepository: membershipRepository,
                 marketStore: marketStore,
                 snackbar: snackbar,
-                eventBus: eventBus
+                eventBus: eventBus,
+                onCreditMoved: onCreditMoved
             )
         )
         routeOrderId = orderId
@@ -62,7 +62,6 @@ struct OrderDetailView: View {
         self.onReportCleanerNoShow = onReportCleanerNoShow
         self.onRebook = onRebook
         self.onMakeRecurring = onMakeRecurring
-        self.onCancelled = onCancelled
         self.openReviewOnLoad = openReviewOnLoad
         self.onReviewPromptConsumed = onReviewPromptConsumed
     }
@@ -84,10 +83,7 @@ struct OrderDetailView: View {
                 // screen means there is nothing left to ask for.
                 if order.review == nil { showReviewSheet = true }
             }
-            .onReceive(vm.cancelSucceeded) { _ in
-                showCancelSheet = false
-                onCancelled()
-            }
+            .onReceive(vm.cancelSucceeded) { _ in showCancelSheet = false }
             .onReceive(vm.reviewSucceeded) { _ in showReviewSheet = false }
             .onReceive(vm.receiptReady) { url in receiptURL = ReceiptFile(url: url) }
             .onReceive(vm.recurringCardPayment) { presentation in

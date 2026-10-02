@@ -482,8 +482,9 @@ extension CustomerShellView {
                 model.path = NavigationPath()
                 rebookOrder(orderId)
             },
-            // A cancelled card order returns the credit it spent, so the balance is re-read.
-            onCancelled: { Task { await container.loyaltyRepository.refresh() } },
+            // A cancelled order returns the credit it spent and a card occurrence's confirmation spends it,
+            // so the balance is re-read, as after a booking.
+            onCreditMoved: { Task { await container.loyaltyRepository.refresh() } },
             // Pre-seeded, exactly like the Home and membership-success entries:
             // the createRecurring destination pops on creation, so without the
             // list beneath it a new schedule lands on the tab root instead of on

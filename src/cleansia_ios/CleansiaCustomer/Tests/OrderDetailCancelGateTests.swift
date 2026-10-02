@@ -29,6 +29,7 @@ final class OrderDetailCancelGateTests: XCTestCase {
             snackbar: snackbar,
             eventBus: OrderEventBus(),
             liveActivity: NoopLiveActivitySync(),
+            onCreditMoved: {},
             pollInterval: 60,
             now: now
         )

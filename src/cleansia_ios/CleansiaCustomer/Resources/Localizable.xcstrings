@@ -1730,7 +1730,7 @@
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$lld bath"
+                  "value": "%1$lld baths"
                 }
               }
             }

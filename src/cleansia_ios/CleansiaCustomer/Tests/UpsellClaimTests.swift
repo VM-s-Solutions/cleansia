@@ -177,6 +177,13 @@ final class UpsellClaimTests: XCTestCase {
         }
     }
 
+    /// The quick-size slide showed "2 bath": English `other` had been left on the singular.
+    func testTheSizeSteppersCountRoomsAndBathsInTheEnglishPlural() throws {
+        L10n.bundle = try localeBundle("en")
+        XCTAssertEqual([L10n.Booking.roomsShort(1), L10n.Booking.roomsShort(2)], ["1 room", "2 rooms"])
+        XCTAssertEqual([L10n.Booking.bathShort(1), L10n.Booking.bathShort(2)], ["1 bath", "2 baths"])
+    }
+
     /// The express slide states the 2–4 h window from the client's booking bands, so those must be the
     /// server's.
     func testTheExpressWindowTheSlideStatesIsTheBookingPolicys() throws {

@@ -830,18 +830,20 @@ conditions, asked in this order after the one-cleaner rule (`CustomerCashStandin
 - **Usable** is captured, not removed, and not past the end of its expiry month
   (`SavedCard.IsUsableOn`). A card in another currency does not count.
 
-**The card is captured once, at the first cash booking, and nothing is charged.** The customer ticks a
-consent that a late-cancellation fee, a lockout fee, unpaid cash and an approved top-up may be charged
-to the card (decision 17); no tick is `saved_card.consent_not_accepted`. The server writes a
-`SavedCards` row with the consent evidence — the wording's version, the IP and the device — before the
-capture starts, on the customer's Stripe Customer for the market's currency, which is also the Customer
-Cleansia Plus bills. The version is `SavedCard.ConsentTextVersionInForce`,
+**A customer is asked for a card at any cash booking made while they hold no usable card in its
+currency, and nothing is charged.** The customer ticks a consent that a late-cancellation fee, a lockout fee, unpaid cash and an
+approved top-up may be charged to the card (decision 17); no tick is `saved_card.consent_not_accepted`.
+The server writes a `SavedCards` row with the consent evidence — the wording's version, the IP and the
+device — before the capture starts, on the customer's Stripe Customer for the market's currency, which
+is also the Customer Cleansia Plus bills. The version is `SavedCard.ConsentTextVersionInForce`,
 `card-guarantee-draft-2026-09-28`, a draft until the lawyer's wording arrives and bumped with every
 change to it, so each card records the text it was saved under. The web goes through a setup-mode Stripe
 Checkout Session (`POST api/SavedCard/CreateCheckoutSession`), the apps through a card-only SetupIntent
 in PaymentSheet (`POST api/SavedCard/CreateSetupIntent`). The card lands on the row when Stripe's
 webhook reports it → [Payment and fiscal](/flows/payment-and-fiscal#saved-cards-and-receivables), and
-the customer's earlier card in that currency is retired, so one card per currency is live.
+the customer's earlier card in that currency is retired, so one card per currency is live. A customer
+who ticked *Save this card for my next bookings* on an earlier card booking in that currency already
+holds a card there and, while it stays usable, is asked for nothing ([below](#save-card)).
 
 - **Where each client captures.** The customer web asks `CreateOrder` — or the schedule form's create
   or update — first, and opens a card-capture step on `order.cash_requires_saved_card`: it parks the
@@ -851,14 +853,79 @@ the customer's earlier card in that currency is retired, so one card per currenc
   before they book, and iOS also offers *Save a card* under Profile → Payments. The other two refusals
   take cash off and send the customer back to choose how to pay; on the web, a debt refusal lists what
   is owed with *Pay now*.
+
+#### Saving a card while paying by card {#save-card}
+
+**Owner decision 2026-10-01.** A signed-in customer who pays a booking by card may tick *Save this card
+for my next bookings*. The web offers it on the payment step and Android and iOS directly under the card
+option, **unticked by default**, each with the card-guarantee consent sentence printed with it, and it
+is the only way a card payment keeps a card:
+
+| | Ticked | Unticked |
+|---|---|---|
+| Asked of Stripe | the payment, on the customer's Stripe Customer for the booking's currency, with `setup_future_usage=off_session` and the row's `SavedCardId` | the payment alone, with no `setup_future_usage` and no `SavedCardId` — on the web on no Stripe Customer, on the apps on the account's own Stripe Customer |
+| Recorded before the redirect or the sheet | a `SavedCards` row with the consent evidence — `SavedCard.ConsentTextVersionInForce`, the IP and the device — as the cash capture records it | no `SavedCards` row; on the apps, a Stripe Customer created and recorded on the account when it had none |
+| Once the payment succeeds | the card lands on the row, the customer's earlier card in that currency is retired, and the card is listed and guarantees cash bookings in that currency | no card, here or at Stripe: Stripe attaches it to no Customer. An app payment stays in the history of the account's Stripe Customer it was made on |
+
+- **The tick is the consent.** There is no second box: the sentence printed with it is the
+  card-guarantee wording of the version the row records, so a ticked card may be charged for exactly
+  what a card saved for cash may ([What a customer owes](#receivables)). The web sends the tick as
+  `CreateOrder`'s `saveCard`, `true` only for an offered, ticked box; the apps send it as
+  `CreatePaymentIntent`'s `saveCard` (`POST api/Payment/CreatePaymentIntent`), because a mobile booking
+  has no charge surface until then. Both default to `false`.
+- **A guest never sees it.** The clients offer it only to a signed-in customer who chose card, and
+  `CreateOrder` refuses a guest's `saveCard: true` with `saved_card.requires_account`. A cash booking
+  never offers it.
+- **Unticked keeps no card, on the apps too.** The web opens the booking's Checkout Session on no
+  Stripe Customer. The apps' intent is opened on the account's own Stripe Customer, which
+  `CreatePaymentIntent` creates and records on the account when there is none, and the response still
+  carries that Customer and an ephemeral key. The booking's sheet is opened without them, because a
+  sheet given them draws Stripe's own save box on an intent that keeps nothing, and a card saved through
+  that box would stay on the Stripe Customer with no `SavedCards` row and no consent.
+- **Until the ruling every card paid in the apps was kept.** Every PaymentIntent the apps opened, a
+  booking's and a recurring occurrence's alike, asked Stripe for `setup_future_usage=off_session`
+  unconditionally, so each card paid in the apps was kept on the Stripe Customer silently, with no
+  `SavedCards` row and no consent. Since 2026-10-01 only a ticked intent asks for it.
+- **A recurring occurrence's confirmation** keeps no card of its own: `ConfirmRecurringOrder` takes no
+  `saveCard`, the web's Checkout Session names no Stripe Customer, and the apps' PaymentIntent, on the
+  account's Stripe Customer, asks for no `setup_future_usage`. The web and iOS offer no tick there, and
+  iOS opens the occurrence's sheet on the client secret alone. Android offers the tick above *Confirm
+  and pay*, off by default, and after the confirm takes the sheet's intent from `CreatePaymentIntent`
+  with it: unticked it gets the confirm's own intent back and opens the sheet without the Customer;
+  ticked, the row is recorded, the intent is replaced by a card-saving one, the old one is cancelled as
+  `duplicate`, and the sheet opens on the Customer.
+- **The card is the account's, the booking the market's.** A customer booking a home in another
+  company's market still has the card and its Stripe Customer recorded in their own account's company,
+  as their promo codes are; the booking commits in the market's.
+- **A payment that never completes saves nothing.** Its row is never captured, so it is never listed and
+  never counts as usable.
+- **Re-opening the sheet** hands back the order's open PaymentIntent while Stripe still lets the
+  customer confirm it — the same amount, the same Stripe Customer, the same tick — and records no second
+  row. Anything else opens a new intent and cancels the old one with Stripe's reason `duplicate`, which
+  the webhook reads as replaced and leaves the order as it is
+  → [Payment and fiscal](/flows/payment-and-fiscal#saved-cards-and-receivables).
+
+#### The saved cards {#saved-cards}
+
+**Kept on the web, Android and iOS by owner decision 2026-10-01.** The customer web lists the cards
+under **Saved cards** on `/profile`, Android and iOS under Profile → Payments
+(`GET api/SavedCard/GetMine`): brand, last four, expiry and currency, at most one per currency, each with
+*Remove*. A card saved either way is listed once Stripe confirms it; one still awaiting that
+confirmation is not.
+
+The section's copy did not change with the tick. On all three clients it introduces the card as the one
+that guarantees cash bookings and says what may be charged to it, and with no card it says a cash
+booking asks for one — *You will be asked to save one the next time you pay in cash* on the web, *Your
+first cash booking asks for one* on Android, *Cash bookings need one* on iOS. It does not mention the
+tick. Both lines stay true of a ticked card, which is that guarantee too.
+
 - **Removing a card** (`DELETE api/SavedCard/Remove/{id}`, the customer's own; another's is
   `saved_card.not_found`) deactivates the row and leaves the payment method on the Stripe Customer,
   because a Plus subscription may renew on the same card; the platform charges only the card its own
-  active row names. The customer web lists the cards on the profile; Android and iOS under Profile →
-  Payments.
+  active row names. It works the same whichever way the card was saved.
 - **Erasure deletes the saved cards** with the per-currency Stripe Customers they hang on.
 
-→ [ADR-0070](/decisions/adr-0070)
+→ [ADR-0070](/decisions/adr-0070), and its [amendment of 2026-10-01](/decisions/adr-0070#amended-2026-10-01)
 
 ## What a customer owes {#receivables}
 

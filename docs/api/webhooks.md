@@ -63,7 +63,7 @@ Eleven event types, in three groups (`Constants.StripeEventType` — `IsOrderEve
 | `checkout.session.completed` | `CompletedSession` | Web card payment settled: `PaymentStatus = Paid`. The order stays `New` ([ADR-0057](/decisions/adr-0057)). Receipt and push queued |
 | `payment_intent.succeeded` | `PaymentIntentSucceeded` | Mobile card payment settled — handled exactly as above |
 | `checkout.session.expired` | `ExpiredSession` | `PaymentStatus = Failed`, `OrderStatus.Cancelled` appended, applied credit returned |
-| `payment_intent.canceled` | `PaymentIntentCanceled` | Handled exactly as an expired session |
+| `payment_intent.canceled` | `PaymentIntentCanceled` | Handled as an expired session — **except** an intent Stripe cancelled with the reason `duplicate`, which leaves the order as it is: `CreatePaymentIntent` cancels an order's old intent that way only when it has just handed the customer a new one to pay ([Payment and fiscal](/flows/payment-and-fiscal#saved-cards-and-receivables)) |
 | `payment_intent.payment_failed` | `PaymentIntentPaymentFailed` | Status left alone so the client can retry; the first decline on an order tells the administrators |
 | **Subscription** (Cleansia Plus) — found by the Stripe subscription id | | |
 | `customer.subscription.created` | `SubscriptionCreated` | Creates the local `UserMembership` — the only writer of that row for a web Plus checkout |
@@ -111,7 +111,9 @@ pending.Enqueue(
 
 ### checkout.session.expired
 
-`payment_intent.canceled` takes the same path.
+`payment_intent.canceled` takes the same path, unless Stripe cancelled the intent with the reason
+`duplicate`: that is an intent `CreatePaymentIntent` replaced with a new one, and the order is left as
+it is.
 
 1. Extract `OrderId` from the session's (or intent's) metadata
 2. Look up the order past the tenant filter and pin its tenant

@@ -59,7 +59,7 @@ extension BookingViewModel {
         }
 
         if paymentMethod == .card, isCardPaymentAvailable {
-            return await cardPending(for: order)
+            return await cardPending(for: order, saveCard: current.saveCard)
         }
         // Wipe the draft at the success outcome itself, not on the success screen's
         // exit: the VM is session-lived, so a sheet swiped away over the success
@@ -70,11 +70,11 @@ extension BookingViewModel {
         return .success(orderId: order.id, confirmationCode: order.confirmationCode)
     }
 
-    private func cardPending(for order: CreatedOrder) async -> BookingSubmitOutcome {
+    private func cardPending(for order: CreatedOrder, saveCard: Bool) async -> BookingSubmitOutcome {
         // The order already exists here, so the customer is owed the real reason
         // the card step stopped. An empty secret on a 200 has no error to report
         // and correctly falls back to `nil`.
-        let intentResult = await paymentIntentClient.createPaymentIntent(orderId: order.id)
+        let intentResult = await paymentIntentClient.createPaymentIntent(orderId: order.id, saveCard: saveCard)
         guard case let .success(intent) = intentResult, !intent.clientSecret.isEmpty else {
             return .failed(intentResult.apiErrorOrNil)
         }

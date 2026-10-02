@@ -127,6 +127,12 @@ struct ConfirmStep: View {
                     action: { viewModel.selectPayment(.card) }
                 )
             }
+            if viewModel.offersCardSaving {
+                SaveCardOption(saved: Binding(
+                    get: { viewModel.state.saveCard },
+                    set: viewModel.setSaveCard
+                ))
+            }
             PaymentOption(
                 systemImage: "banknote",
                 title: L10n.Booking.payCash,
@@ -250,6 +256,27 @@ private struct CardGuaranteeConsent: View {
             RoundedRectangle(cornerRadius: CornerRadius.medium)
                 .stroke(CleansiaColors.outlineVariant, lineWidth: 1)
         )
+    }
+}
+
+/// A ticked card is saved under the card-guarantee consent the server records, so that sentence is shown
+/// with the tick.
+private struct SaveCardOption: View {
+    @Binding var saved: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.xxs) {
+            CleansiaConsentCheckbox(
+                checked: $saved,
+                markdown: L10n.Booking.saveCard,
+                toggleAccessibilityLabel: L10n.Booking.saveCard
+            )
+            Text(L10n.Booking.cardGuaranteeConsent)
+                .font(CleansiaTypography.labelMedium)
+                .foregroundColor(CleansiaColors.onSurfaceVariant)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
     }
 }
 

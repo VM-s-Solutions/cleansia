@@ -42,6 +42,9 @@ struct BookingState: Equatable {
     /// `BookingViewModel.needsCardGuarantee`. Per booking, like the terms tick.
     var cardGuaranteeAccepted = false
 
+    /// The card payment's "save this card" tick. Per booking and off by default: unticked, Stripe keeps nothing.
+    var saveCard = false
+
     /// The request to start within the 14-day withdrawal period. Asked on every booking, consented or not.
     var earlyPerformanceRequested = false
 }

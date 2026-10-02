@@ -132,4 +132,8 @@ extension L10n.Booking {
     static var cardGuaranteePending: String {
         L10n.localized("booking_card_guarantee_pending")
     }
+
+    static var saveCard: String {
+        L10n.localized("booking_save_card")
+    }
 }

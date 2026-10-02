@@ -9,14 +9,14 @@ struct PaymentIntentDetails: Equatable {
 }
 
 protocol PaymentIntentClient {
-    func createPaymentIntent(orderId: String) async -> ApiResult<PaymentIntentDetails>
+    func createPaymentIntent(orderId: String, saveCard: Bool) async -> ApiResult<PaymentIntentDetails>
 }
 
 struct LivePaymentIntentClient: PaymentIntentClient {
-    func createPaymentIntent(orderId: String) async -> ApiResult<PaymentIntentDetails> {
+    func createPaymentIntent(orderId: String, saveCard: Bool) async -> ApiResult<PaymentIntentDetails> {
         let result = await apiResult(mapError: ApiError.fromGenerated) {
             try await CustomerPaymentAPI.paymentCreatePaymentIntent(
-                createPaymentIntentCommand: CreatePaymentIntentCommand(orderId: orderId)
+                createPaymentIntentCommand: CreatePaymentIntentCommand(orderId: orderId, saveCard: saveCard)
             )
         }
         return result.map { response in

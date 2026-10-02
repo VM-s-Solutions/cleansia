@@ -69,10 +69,10 @@ final class CalendarDayTests: XCTestCase {
         XCTAssertEqual(stored, try instant(year: 1990, month: 5, day: 10, hour: 0, in: .gmt))
     }
 
-    /// The onboarding case: the field starts nil, so the picker seeds from `now` and the value that
-    /// reaches the wire is the seed's time of day unless it is dropped. Whatever hour it is here, none
-    /// of it survives.
-    func testAnUnsetFieldSeedsFromNowAndStoresThatDayWithNoTimeOfDay() throws {
+    /// The onboarding case: the field starts nil, so the picker shows a seed, and the value that reaches
+    /// the wire is the seed's time of day unless it is dropped. Whatever hour it is here, none of it
+    /// survives.
+    func testAnUnsetFieldStoresTheSeedDayWithNoTimeOfDay() throws {
         var stored: Date?
         let binding = CalendarDay.pickerBinding(Binding(get: { stored }, set: { stored = $0 }))
 
@@ -86,6 +86,31 @@ final class CalendarDayTests: XCTestCase {
         let seedDay = CalendarDay.calendar.dateComponents([.year, .month, .day], from: seed)
         XCTAssertEqual([parts.hour, parts.minute, parts.second], [0, 0, 0])
         XCTAssertEqual([parts.year, parts.month, parts.day], [seedDay.year, seedDay.month, seedDay.day])
+    }
+
+    /// The wheel opens thirty years back for an unset field, and showing it writes nothing: a customer who
+    /// opens the picker and closes it untouched still has no birth date.
+    func testAnUnsetFieldShowsADayThirtyYearsBackAndStoresNothingUntilTheWheelMoves() {
+        var stored: Date?
+        var writes = 0
+        let binding = CalendarDay.pickerBinding(Binding(
+            get: { stored },
+            set: { value in
+                stored = value
+                writes += 1
+            }
+        ))
+
+        let seed = binding.wrappedValue
+
+        XCTAssertNil(stored)
+        XCTAssertEqual(writes, 0)
+        XCTAssertEqual(CalendarDay.calendar.dateComponents([.year], from: seed, to: Date()).year, 30)
+    }
+
+    func testTheSeedIsThirtyYearsBeforeNow() throws {
+        let now = try instant(year: 2026, month: 10, day: 2, hour: 9, in: .gmt)
+        XCTAssertEqual(CalendarDay.unsetSeed(now: now), try instant(year: 1996, month: 10, day: 2, hour: 9, in: .gmt))
     }
 
     func testAStoredDayIsHandedBackToThePickerUnchanged() throws {

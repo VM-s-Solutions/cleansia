@@ -76,7 +76,10 @@ public struct BirthDateField: View {
                 in: ...Date(),
                 displayedComponents: .date
             )
-            .datePickerStyle(.graphical)
+            // Wheels, not a month grid: an adult's birth date is decades back, a few spins on a wheel
+            // and many page flips on a calendar.
+            .datePickerStyle(.wheel)
+            .labelsHidden()
             .environment(\.calendar, CalendarDay.calendar)
             .environment(\.timeZone, CalendarDay.calendar.timeZone)
             .padding()

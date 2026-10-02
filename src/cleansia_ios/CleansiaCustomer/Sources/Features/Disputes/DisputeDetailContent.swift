@@ -287,12 +287,8 @@ struct FullscreenSingleImage: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .onTapGesture(perform: onClose)
 
-            Button(action: onClose) {
-                Image(systemName: "xmark")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundColor(.white)
-                    .padding(Spacing.s)
-            }
+            MediaCloseButton(action: onClose)
+                .padding(Spacing.m)
         }
     }
 }

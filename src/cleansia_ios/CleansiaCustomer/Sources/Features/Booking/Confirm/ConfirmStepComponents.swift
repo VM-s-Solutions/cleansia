@@ -118,7 +118,7 @@ struct SummaryCard: View {
             LabeledInfoRow(
                 systemImage: "house",
                 label: L10n.Booking.summaryProperty,
-                value: L10n.Booking.summaryProperty(rooms: state.rooms, bathrooms: state.bathrooms)
+                value: L10n.OrderDetail.roomsBathrooms(state.rooms, state.bathrooms)
             )
             LabeledInfoRow(
                 systemImage: "sparkles",

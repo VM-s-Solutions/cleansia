@@ -184,6 +184,30 @@ final class UpsellClaimTests: XCTestCase {
         XCTAssertEqual([L10n.Booking.bathShort(1), L10n.Booking.bathShort(2)], ["1 bath", "2 baths"])
     }
 
+    /// The confirm step's size line read "1 rooms · 1 bath" (cs "1 pokojů · 1 koupelny"): one format with two
+    /// counts, which no plural variation can select on. It now composes the two plurals, as the order detail
+    /// does.
+    func testTheConfirmSummaryCountsRoomsAndBathsInTheirPlurals() throws {
+        let restore = L10n.bundle
+        defer { L10n.bundle = restore }
+        L10n.bundle = try localeBundle("en")
+        XCTAssertEqual(L10n.OrderDetail.roomsBathrooms(1, 1), "1 room · 1 bath")
+        XCTAssertEqual(L10n.OrderDetail.roomsBathrooms(3, 2), "3 rooms · 2 baths")
+        L10n.bundle = try localeBundle("cs")
+        XCTAssertEqual(L10n.OrderDetail.roomsBathrooms(1, 1), "1 pokoj · 1 koup.")
+        XCTAssertEqual(L10n.OrderDetail.roomsBathrooms(5, 1), "5 pokojů · 1 koup.")
+
+        let confirm = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appendingPathComponent("Sources/Features/Booking/Confirm/ConfirmStepComponents.swift")
+        XCTAssertTrue(
+            try String(contentsOf: confirm, encoding: .utf8)
+                .contains("value: L10n.OrderDetail.roomsBathrooms(state.rooms, state.bathrooms)"),
+            "the confirm summary no longer composes the two plurals"
+        )
+    }
+
     /// The express slide states the 2–4 h window from the client's booking bands, so those must be the
     /// server's.
     func testTheExpressWindowTheSlideStatesIsTheBookingPolicys() throws {

@@ -6587,41 +6587,6 @@
         }
       }
     },
-    "booking_summary_property_value": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$d pokojů · %2$d koupelny"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$d rooms · %2$d bath"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$d комнат · %2$d ванных"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$d izieb · %2$d kúpeľne"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$d кімнат · %2$d ванних"
-          }
-        }
-      }
-    },
     "booking_summary_subtotal": {
       "extractionState": "stale",
       "localizations": {

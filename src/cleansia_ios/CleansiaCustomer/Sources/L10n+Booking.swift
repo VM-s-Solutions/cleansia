@@ -229,10 +229,6 @@ extension L10n {
             localized("booking_summary_total")
         }
 
-        static func summaryProperty(rooms: Int, bathrooms: Int) -> String {
-            format("booking_summary_property_value", rooms, bathrooms)
-        }
-
         static var paymentMethod: String {
             localized("booking_payment_method")
         }

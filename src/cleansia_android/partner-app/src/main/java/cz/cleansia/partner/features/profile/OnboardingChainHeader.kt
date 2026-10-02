@@ -1,12 +1,9 @@
 package cz.cleansia.partner.features.profile
 
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -28,20 +25,18 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import cz.cleansia.core.ui.theme.Spacing
@@ -49,41 +44,42 @@ import cz.cleansia.partner.R
 import cz.cleansia.partner.features.orders.OnboardingChainState
 import cz.cleansia.partner.features.orders.ProfileSection
 
-private val DOT = 30.dp
-private val DOT_TARGET = 36.dp
-private val PILL_HEIGHT = 40.dp
-private val PILL_DISC = 26.dp
+private val NODE = 32.dp
+private val NODE_CURRENT = 36.dp
+private val NODE_ROW = 36.dp
+
+/** What a step node draws: the current step is emphasised, a finished one checked, the rest muted. */
+internal enum class StepNodeState { Current, Done, Upcoming }
+
+internal fun stepNodeState(isCurrent: Boolean, isDone: Boolean): StepNodeState = when {
+    isCurrent -> StepNodeState.Current
+    isDone -> StepNodeState.Done
+    else -> StepNodeState.Upcoming
+}
 
 /**
  * The onboarding stepper.
  *
- * **The current step is a capsule, not a dot.** It grows out of the rail carrying its own icon and
- * its own name, and every other step shrinks to a compact disc. That is the whole idea: the name
- * belongs to the step it describes instead of floating on a line of its own underneath the rail,
- * where it named nothing in particular. The separate title line this used to end with is gone — the
- * pill holds it now, and the card is about 50dp shorter for it.
+ * **Every step is named.** Four equal columns, each a node over its short name, so a cleaner can tell
+ * at a glance what each step is and where they are: the current step is a filled `primary` node with
+ * its icon and a bold `primary` name; a finished step keeps its name and swaps its icon for a check on
+ * `primaryContainer`; a step not yet done is an outlined node with a muted name. The previous design
+ * named only the current step, in a capsule, and drew the other three as unlabelled discs — three
+ * identical check circles said nothing about which steps they were.
  *
- * Three channels carry state, one bit each, so no single failure of colour perception loses the
- * whole picture:
+ * Three channels still carry state, so no single failure of colour perception loses the picture:
+ * **size and fill** say where you are (a larger filled node), **the check** says a step is finished,
+ * and **the ring** says whether you may go there — `primary` on a step you can jump to, `outline` on
+ * one you cannot. A reachable step stays tappable across its whole column, node and name (T-0607).
  *
- * - **shape** says where you are — a capsule is the current step, a disc is any other;
- * - **fill** says whether a step is finished — `primaryContainer` behind a checkmark once it is,
- *   nothing behind an icon while it is not;
- * - **ring** says whether you may go there — `primary` on a step you can jump to, `outline` on one
- *   you cannot.
+ * **It fits because the columns share the width.** At 320dp the card gives 256dp of content, 64dp a
+ * step; the longest name in the five shipped locales is eight characters (`Особисте`, `Identity`,
+ * `Личность`), about 56dp of labelMedium. A larger font wraps a name onto a second line rather than
+ * truncating it. The connector runs centre to centre behind the nodes, `primary` behind a finished step.
  *
- * **The row fits because the pill is content-sized and the connectors absorb the slack.** At 320dp
- * the card gives 256dp of content: three 36dp dots and a pill of at most 120dp leave about 9dp for
- * each connector. 120 is the real ceiling and not an estimate — the longest step name in any of the
- * five shipped locales is eight characters (`Особисте`, `Identity`, `Identita`, `Личность`), which
- * is 62dp of labelLarge plus 58dp of disc, gaps and insets.
+ * TalkBack reads each column as one element: "Step 2 of 4, Address, current step".
  *
- * **No green, and no elevation.** Reference designs for this pattern are drawn on white; the success
- * token measures 2.92:1 on this app's dark surface and a shadow is invisible against it. Progress is
- * carried by the connector tinting `primary` behind you — which is why the separate progress bar this
- * used to sit above is gone. It said the same thing twice.
- *
- * Built to the same numbers as the iOS twin: 30 dot, 36 target, 40 pill, 26 pill disc, 2 connector.
+ * Built to the same numbers as the iOS twin: 32 node, 36 current node, 2 connector, 6 under the node.
  */
 @Composable
 fun OnboardingChainHeader(
@@ -99,6 +95,11 @@ fun OnboardingChainHeader(
     // Reachable = already finished, or already walked past. Not "any step": jumping forward into a
     // section the chain has not filled yet would leave a gap the chain then has to re-find.
     fun isReachable(index: Int) = isDone(sections[index]) || index < currentIndex
+
+    // The segment behind a finished step is the progress indicator. Two tones of primary, never
+    // outlineVariant — slate700 on this card measures 1.51:1.
+    val connectorDone = MaterialTheme.colorScheme.primary
+    val connectorTodo = MaterialTheme.colorScheme.primary.copy(alpha = 0.24f)
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -135,41 +136,24 @@ fun OnboardingChainHeader(
 
             Spacer(Modifier.height(Spacing.M))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
                 sections.forEachIndexed { index, section ->
-                    if (section == currentSection) {
-                        StepPill(
-                            icon = iconFor(section),
-                            label = stringResource(labelResFor(section)),
-                        )
-                    } else {
-                        StepDot(
-                            icon = iconFor(section),
-                            isDone = isDone(section),
-                            isReachable = isReachable(index),
-                            label = stringResource(labelResFor(section)),
-                            onTap = { onSelect(section) },
-                        )
-                    }
-                    if (index < sections.lastIndex) {
-                        // The segment behind a finished step is the progress indicator. Two tones of
-                        // primary, never outlineVariant — slate700 on this card measures 1.51:1.
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(2.dp)
-                                .background(
-                                    if (isDone(section)) {
-                                        MaterialTheme.colorScheme.primary
-                                    } else {
-                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.24f)
-                                    },
-                                ),
-                        )
-                    }
+                    val nodeState = stepNodeState(isCurrent = section == currentSection, isDone = isDone(section))
+                    StepNode(
+                        icon = iconFor(section),
+                        label = stringResource(labelResFor(section)),
+                        position = stringResource(R.string.onboarding_step_progress, index + 1, sections.size),
+                        state = nodeState,
+                        isReachable = nodeState != StepNodeState.Current && isReachable(index),
+                        leadingConnector = if (index == 0) null else {
+                            if (isDone(sections[index - 1])) connectorDone else connectorTodo
+                        },
+                        trailingConnector = if (index == sections.lastIndex) null else {
+                            if (isDone(section)) connectorDone else connectorTodo
+                        },
+                        onTap = { onSelect(section) },
+                        modifier = Modifier.weight(1f),
+                    )
                 }
             }
         }
@@ -177,110 +161,84 @@ fun OnboardingChainHeader(
 }
 
 /**
- * The current step. Content-sized on purpose: it is the one element allowed to claim whatever width
- * its label needs, because the connectors either side give that width up.
+ * One step: its node over its name, and the half of each neighbouring connector that falls in its
+ * column, so adjacent halves meet between two nodes. The node's own fill hides the line behind it.
  */
 @Composable
-private fun StepPill(icon: ImageVector, label: String) {
-    val stateDescription = stringResource(R.string.onboarding_step_state_current)
-
-    Row(
-        modifier = Modifier
-            .height(PILL_HEIGHT)
-            .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.primary)
-            .padding(start = Spacing.XS, end = Spacing.M)
-            .semantics(mergeDescendants = true) {
-                contentDescription = "$label, $stateDescription"
-            },
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(
-            modifier = Modifier
-                .size(PILL_DISC)
-                .clip(CircleShape)
-                // A wash of the pill's own ink, not a second palette colour — it has to read as an
-                // inset in the capsule rather than a separate badge sitting on top of it.
-                .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.22f)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onPrimary,
-                modifier = Modifier.size(15.dp),
-            )
-        }
-        Spacer(Modifier.width(Spacing.XS))
-        // No maxLines and no autosize anywhere in this composable: the pill is sized by its text, so
-        // there is nothing for the text to be squeezed into.
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onPrimary,
-        )
-    }
-}
-
-/**
- * Any step that is not the current one. 30dp of disc inside a 36dp target — smaller than the 48 this
- * used to draw, because the pill has to fit on the same row at 320dp and something had to give.
- */
-@Composable
-private fun StepDot(
+private fun StepNode(
     icon: ImageVector,
-    isDone: Boolean,
-    isReachable: Boolean,
     label: String,
+    position: String,
+    state: StepNodeState,
+    isReachable: Boolean,
+    leadingConnector: Color?,
+    trailingConnector: Color?,
     onTap: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val pressed by interactionSource.collectIsPressedAsState()
-    val scale by animateFloatAsState(if (pressed) 0.94f else 1f, label = "dotPress")
-
-    val fill = if (isDone) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
-    val ring = if (isReachable) {
-        MaterialTheme.colorScheme.primary
-    } else {
-        MaterialTheme.colorScheme.outline
+    val colors = MaterialTheme.colorScheme
+    val (fill, glyph) = when (state) {
+        StepNodeState.Current -> colors.primary to colors.onPrimary
+        StepNodeState.Done -> colors.primaryContainer to colors.onPrimaryContainer
+        StepNodeState.Upcoming -> colors.surface to colors.onSurfaceVariant
     }
-    val glyph = if (isDone) {
-        MaterialTheme.colorScheme.onPrimaryContainer
-    } else {
-        MaterialTheme.colorScheme.onSurfaceVariant
-    }
+    val ring = if (isReachable) colors.primary else colors.outline
     val stateDescription = stringResource(
-        if (isDone) R.string.onboarding_step_state_done else R.string.onboarding_step_state_upcoming,
+        when (state) {
+            StepNodeState.Current -> R.string.onboarding_step_state_current
+            StepNodeState.Done -> R.string.onboarding_step_state_done
+            StepNodeState.Upcoming -> R.string.onboarding_step_state_upcoming
+        },
     )
 
-    Box(
-        modifier = Modifier
-            .size(DOT_TARGET)
-            .scale(scale)
-            .clickable(
-                interactionSource = interactionSource,
-                indication = ripple(bounded = false),
-                enabled = isReachable,
-                role = Role.Button,
-                onClick = onTap,
-            ),
-        contentAlignment = Alignment.Center,
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(enabled = isReachable, role = Role.Button, onClick = onTap)
+            .semantics(mergeDescendants = true) { contentDescription = "$position, $label, $stateDescription" }
+            .padding(bottom = Spacing.XXS),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Box(
-            modifier = Modifier
-                .size(DOT)
-                .clip(CircleShape)
-                .background(fill)
-                .then(if (isDone) Modifier else Modifier.border(1.5.dp, ring, CircleShape)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                imageVector = if (isDone) Icons.Outlined.Check else icon,
-                contentDescription = "$label, $stateDescription",
-                tint = glyph,
-                modifier = Modifier.size(16.dp),
-            )
+        Box(modifier = Modifier.fillMaxWidth().height(NODE_ROW)) {
+            leadingConnector?.let {
+                Box(Modifier.align(Alignment.CenterStart).fillMaxWidth(0.5f).height(2.dp).background(it))
+            }
+            trailingConnector?.let {
+                Box(Modifier.align(Alignment.CenterEnd).fillMaxWidth(0.5f).height(2.dp).background(it))
+            }
+            Box(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .size(if (state == StepNodeState.Current) NODE_CURRENT else NODE)
+                    .clip(CircleShape)
+                    .background(fill)
+                    .then(if (state == StepNodeState.Upcoming) Modifier.border(1.5.dp, ring, CircleShape) else Modifier),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = if (state == StepNodeState.Done) Icons.Outlined.Check else icon,
+                    contentDescription = null,
+                    tint = glyph,
+                    modifier = Modifier.size(if (state == StepNodeState.Current) 18.dp else 16.dp),
+                )
+            }
         }
+        Spacer(Modifier.height(6.dp))
+        // Two lines at most and never cut: a name too long for its column at a large font wraps.
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium.copy(
+                fontWeight = if (state == StepNodeState.Current) FontWeight.ExtraBold else FontWeight.SemiBold,
+            ),
+            color = when (state) {
+                StepNodeState.Current -> colors.primary
+                StepNodeState.Done -> colors.onSurface
+                StepNodeState.Upcoming -> colors.onSurfaceVariant
+            },
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+            modifier = Modifier.padding(horizontal = 2.dp),
+        )
     }
 }
 

@@ -135,8 +135,8 @@ server refuses, and the boxes used to keep them. The apps only split text — th
 shapes as well, and it also sends a bare number to the number field from any box, leaving the prefix
 and bank code alone as the apps do (since 2026-10-02; it used to clear the prefix). A written-out
 account without a prefix still clears the old one there too. The web still differs in four ways: it
-does not decompose an IBAN, does not ignore a non-breaking space inside the pasted text, does not read
-an en or em dash as a hyphen, and sends a one-digit paste to the number, where the apps need at least
+does not decompose an IBAN, does not ignore spaces (ordinary or non-breaking) inside the digits, only
+around the `-` and `/`, does not read an en or em dash as a hyphen, and sends a one-digit paste to the number, where the apps need at least
 two characters.
 
 ::: tip Country Configuration

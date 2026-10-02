@@ -6,9 +6,10 @@ import Foundation
 ///
 /// The widget has its own process and its own `UserDefaults` domain, so it follows the in-app language by
 /// reading the tag the app leaves in their App Group (`AppGroupLanguage`) and calling
-/// `CoreL10n.apply(languageTag:)` with it. Before the app has written one, these resolve against the
-/// device's preferred languages — which works only because the extension declares all five in
-/// `CFBundleLocalizations`; Core's bundle can resolve no language its host does not.
+/// `CoreL10n.apply(languageTag:)` with it. With none there — the app follows the phone, or has not
+/// launched since it started writing one — the widget applies the device's language instead, which works
+/// only because the extension declares all five in `CFBundleLocalizations`; Core's bundle can resolve no
+/// language its host does not.
 public enum LiveActivityL10n {
     /// The leg vocabulary of the four-step journey. Terse on purpose: these sit under a quarter-width
     /// segment of the progress bar.

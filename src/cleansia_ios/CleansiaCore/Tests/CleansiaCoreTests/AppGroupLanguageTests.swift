@@ -84,5 +84,9 @@ final class AppGroupLanguageTests: XCTestCase {
         AppGroupLanguage.write("sk", appGroup: group)
 
         XCTAssertEqual(AppGroupLanguage.read(appGroup: group), "sk")
+
+        AppGroupLanguage.write(nil, appGroup: group)
+
+        XCTAssertNil(AppGroupLanguage.read(appGroup: group), "following the phone removes the tag")
     }
 }

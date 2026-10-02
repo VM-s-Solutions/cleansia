@@ -107,8 +107,10 @@ final class LanguagePreferenceSyncTests: XCTestCase {
     }
 
     /// The Notification Service Extension and the Live Activity render in whatever the app leaves in its
-    /// App Group, so the app leaves the RESOLVED tag there at launch and on every change.
-    func testTheResolvedLanguageIsLeftForTheExtensionsAtLaunchAndOnEveryChange() {
+    /// App Group, so the app leaves an explicit choice there at launch and on every change. System
+    /// leaves nothing: a resolved tag would be the phone's language when the app last ran, and would
+    /// override iOS's own rendering after the phone switched while the app was not running.
+    func testTheChosenLanguageIsLeftForTheExtensionsAtLaunchAndOnEveryChange() {
         let group = "LanguagePreferenceSyncTests.group.\(UUID().uuidString)"
         defer { UserDefaults().removePersistentDomain(forName: group) }
         let settings = UserDefaultsAppSettingsStore(
@@ -124,7 +126,22 @@ final class LanguagePreferenceSyncTests: XCTestCase {
         XCTAssertEqual(AppGroupLanguage.read(appGroup: group), "uk")
 
         model.setSystemLanguage()
-        XCTAssertEqual(AppGroupLanguage.read(appGroup: group), "sk", "the resolved tag, never the System sentinel")
+        XCTAssertNil(AppGroupLanguage.read(appGroup: group), "System leaves the phone's language to iOS")
+    }
+
+    /// A build that wrote the resolved tag on System left one behind; the next launch on System clears it.
+    func testALaunchOnSystemClearsATagLeftBehind() {
+        let group = "LanguagePreferenceSyncTests.group.\(UUID().uuidString)"
+        defer { UserDefaults().removePersistentDomain(forName: group) }
+        AppGroupLanguage.write("en", appGroup: group)
+        let settings = UserDefaultsAppSettingsStore(
+            defaults: UserDefaults(suiteName: UUID().uuidString) ?? .standard,
+            preferredLanguageTags: { ["cs"] }
+        )
+
+        _ = CustomerPreferencesModel(settings: settings, languageSync: SpyLanguageSync(), appGroup: group)
+
+        XCTAssertNil(AppGroupLanguage.read(appGroup: group))
     }
 
     func testTheLocalChoiceIsAppliedBeforeAndIndependentlyOfTheSync() {

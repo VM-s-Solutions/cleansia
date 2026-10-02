@@ -62,11 +62,13 @@ struct CleanOrderLiveActivity: Widget {
     }
 
     /// The card's copy resolves through CoreL10n, which in this process would otherwise follow the
-    /// phone. The app leaves its in-app language in the App Group; until a build that does so has
-    /// launched once there is nothing there, and the card stays in the phone's language.
+    /// phone. The app leaves an explicit in-app language in the App Group; with none there (the app
+    /// follows the phone, or has not launched since it started writing one) the card takes the phone's,
+    /// re-applied every time because this process outlives a switch back to System.
     private func followTheAppLanguage() {
-        if let tag = AppGroupLanguage.read(appGroup: AppGroupLanguage.customerAppGroup) {
-            CoreL10n.apply(languageTag: tag)
-        }
+        CoreL10n.apply(
+            languageTag: AppGroupLanguage.read(appGroup: AppGroupLanguage.customerAppGroup)
+                ?? Bundle.main.preferredLocalizations.first ?? "en"
+        )
     }
 }

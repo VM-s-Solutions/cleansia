@@ -5,8 +5,10 @@ import Foundation
 ///
 /// A push alert carries loc-keys, and iOS resolves them in the app's system language — the phone's, or
 /// the per-app one in Settings — never in the in-app picker's, which only repoints the app's own
-/// bundles. Each extension runs in its own process with its own defaults, so the app mirrors the resolved
-/// tag into its App Group at launch and on every change, and the extensions read it from there.
+/// bundles. Each extension runs in its own process with its own defaults, so the app mirrors an explicit
+/// choice into its App Group at launch and on every change, and the extensions read it from there.
+/// "System" leaves nothing there: what the app resolves it to is the phone's language when the app last
+/// ran, and the phone can change while the app is not running — iOS's own rendering never goes stale.
 /// -> /architecture/push-notifications
 ///
 /// Foundation only, and compiled straight into each Notification Service Extension as well as into Core:
@@ -17,11 +19,13 @@ public enum AppGroupLanguage {
 
     static let languageKey = "inAppLanguageTag"
 
-    public static func write(_ languageTag: String, appGroup: String) {
+    /// Nil — the app follows the phone — removes the tag.
+    public static func write(_ languageTag: String?, appGroup: String) {
         UserDefaults(suiteName: appGroup)?.set(languageTag, forKey: languageKey)
     }
 
-    /// Nil until a build that writes it has launched once; the extensions then leave iOS's own rendering.
+    /// Nil while the app follows the phone, and until a build that writes it has launched once; the
+    /// extensions then leave iOS's own rendering.
     public static func read(appGroup: String) -> String? {
         UserDefaults(suiteName: appGroup)?.string(forKey: languageKey)
     }

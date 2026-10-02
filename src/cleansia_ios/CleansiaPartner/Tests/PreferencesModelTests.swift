@@ -26,8 +26,10 @@ final class PreferencesModelTests: XCTestCase {
     }
 
     /// The Notification Service Extension renders pushes in whatever the app leaves in its App Group,
-    /// so the app leaves the RESOLVED tag there at launch and on every change.
-    func testTheResolvedLanguageIsLeftForTheExtensionsAtLaunchAndOnEveryChange() {
+    /// so the app leaves an explicit choice there at launch and on every change. System leaves nothing:
+    /// a resolved tag would be the phone's language when the app last ran, and would override iOS's own
+    /// rendering after the phone switched while the app was not running.
+    func testTheChosenLanguageIsLeftForTheExtensionsAtLaunchAndOnEveryChange() {
         let group = "PreferencesModelTests.group.\(UUID().uuidString)"
         defer { UserDefaults().removePersistentDomain(forName: group) }
         let store = makeStore(locale: "uk")
@@ -40,7 +42,18 @@ final class PreferencesModelTests: XCTestCase {
         XCTAssertEqual(AppGroupLanguage.read(appGroup: group), "sk")
 
         model.setSystemLanguage()
-        XCTAssertEqual(AppGroupLanguage.read(appGroup: group), "uk", "the resolved tag, never the System sentinel")
+        XCTAssertNil(AppGroupLanguage.read(appGroup: group), "System leaves the phone's language to iOS")
+    }
+
+    /// A build that wrote the resolved tag on System left one behind; the next launch on System clears it.
+    func testALaunchOnSystemClearsATagLeftBehind() {
+        let group = "PreferencesModelTests.group.\(UUID().uuidString)"
+        defer { UserDefaults().removePersistentDomain(forName: group) }
+        AppGroupLanguage.write("en", appGroup: group)
+
+        _ = PreferencesModel(settings: makeStore(locale: "cs"), languageSync: SilentLanguageSync(), appGroup: group)
+
+        XCTAssertNil(AppGroupLanguage.read(appGroup: group))
     }
 
     func testSeedsFromStore() {

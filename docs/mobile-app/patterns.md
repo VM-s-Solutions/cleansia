@@ -289,3 +289,8 @@ What changed on iOS:
   control over media. iOS 16 and 17 keep the plain full-screen cover, closed with its X. The one
   `#available(iOS 18, *)` gate sits in the customer app's `zoomSource` / `zoomDestination`
   (`Components/ZoomTransition.swift`). Android has no twin: this is motion, not layout.
+- **Numbers roll instead of snapping.** A number that changes in place rolls digit by digit, like an
+  odometer (`.contentTransition(.numericText())`, iOS 16, so one code path): the booking and schedule
+  size steppers, the booking sheet's *Step n of 4*, the Rewards points figure and the partner
+  dashboard figures. The animation is keyed on the number itself. The roll only moves digits, so it is
+  kept to texts that are mostly a number.

@@ -772,6 +772,7 @@
     <string name="booking_card_guarantee_consent_required">Щоб платити готівкою, погодьтеся на гарантію карткою або оберіть оплату карткою.</string>
     <string name="booking_card_guarantee_pending">Ми ще підтверджуємо вашу картку. За мить підтвердьте замовлення ще раз.</string>
     <string name="booking_card_guarantee_cancelled">Картку не збережено, тому нічого не заброньовано. Збережіть картку, щоб платити готівкою, або оберіть оплату карткою.</string>
+    <string name="booking_save_card_label">Зберегти цю картку для моїх наступних замовлень</string>
     <string name="booking_special_instructions_hint">Особливі побажання? (необов’язково)</string>
     <string name="booking_access_instructions_hint">Як увійти? (необов’язково)</string>
 

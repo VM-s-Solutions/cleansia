@@ -80,6 +80,9 @@ data class BookingState(
     // The card-guarantee consent, asked only while the booking needs a card captured — see
     // BookingViewModel.needsCardGuarantee. Per booking, like the terms tick.
     val cardGuaranteeAccepted: Boolean = false,
+    // "Save this card for my next bookings", offered only to a signed-in card payment — see
+    // BookingViewModel.offersCardSaving. Per booking and off until ticked.
+    val saveCard: Boolean = false,
     // The request to start within the 14-day withdrawal period. Asked on every booking, consented or not.
     val earlyPerformanceRequested: Boolean = false,
 )

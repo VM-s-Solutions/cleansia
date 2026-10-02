@@ -787,7 +787,7 @@ class BookingViewModelTest {
         coEvery { bookingApi.create(any()) } returns Response.success(
             CreateOrderResponse(id = "o-1", confirmationCode = "X"),
         )
-        coEvery { paymentRepository.createPaymentIntent("o-1") } returns ApiResult.Success(
+        coEvery { paymentRepository.createPaymentIntent("o-1", false) } returns ApiResult.Success(
             CreatePaymentIntentResponse(
                 clientSecret = "pi_secret",
                 paymentIntentId = "pi_1",
@@ -1568,7 +1568,7 @@ class BookingViewModelTest {
         coEvery { bookingApi.create(any()) } returns Response.success(
             CreateOrderResponse(id = "o-1", confirmationCode = "X"),
         )
-        coEvery { paymentRepository.createPaymentIntent("o-1") } returns ApiResult.Success(
+        coEvery { paymentRepository.createPaymentIntent("o-1", false) } returns ApiResult.Success(
             CreatePaymentIntentResponse(
                 clientSecret = "pi_secret",
                 paymentIntentId = "pi_1",
@@ -2111,7 +2111,7 @@ class BookingViewModelTest {
         val vm = quotedFor(requiredEmployees = 1)
         vm.selectPaymentMethod(BookingViewModel.PAYMENT_CARD)
         coEvery { bookingApi.create(any()) } returns Response.success(CreateOrderResponse(id = "o-1", confirmationCode = "ABC123"))
-        coEvery { paymentRepository.createPaymentIntent("o-1") } returns ApiResult.Success(
+        coEvery { paymentRepository.createPaymentIntent("o-1", false) } returns ApiResult.Success(
             CreatePaymentIntentResponse(clientSecret = "pi_secret", paymentIntentId = "pi_1", stripeCustomerId = "cus_1", ephemeralKey = "ek_1"),
         )
         advanceUntilIdle()
@@ -2242,6 +2242,59 @@ class BookingViewModelTest {
         advanceUntilIdle()
 
         coVerify(exactly = 1) { savedCardRepository.refresh() }
+    }
+
+    // ── saving the card a booking is paid with — offered to a signed-in card payment, off until ticked ──
+
+    private suspend fun kotlinx.coroutines.test.TestScope.cardReady(): BookingViewModel {
+        currentUserFlow.value = completeUser()
+        val vm = quotedFor(requiredEmployees = 1)
+        vm.selectPaymentMethod(BookingViewModel.PAYMENT_CARD)
+        coEvery { bookingApi.create(any()) } returns Response.success(CreateOrderResponse(id = "o-1", confirmationCode = "ABC123"))
+        coEvery { paymentRepository.createPaymentIntent(any(), any()) } returns ApiResult.Success(
+            CreatePaymentIntentResponse(clientSecret = "pi_secret", paymentIntentId = "pi_1", stripeCustomerId = "cus_1", ephemeralKey = "ek_1"),
+        )
+        advanceUntilIdle()
+        return vm
+    }
+
+    @Test
+    fun submit_byCardWithoutTheSaveTick_asksTheIntentToKeepNothing() = runTest {
+        val vm = cardReady()
+
+        assertTrue(vm.submit() is BookingSubmitOutcome.CardPending)
+
+        coVerify(exactly = 1) { paymentRepository.createPaymentIntent("o-1", false) }
+        coVerify(exactly = 0) { paymentRepository.createPaymentIntent(any(), true) }
+    }
+
+    @Test
+    fun submit_byCardWithTheSaveTick_asksTheIntentToSaveTheCard() = runTest {
+        val vm = cardReady()
+        vm.update { it.copy(saveCard = true) }
+
+        assertTrue(vm.submit() is BookingSubmitOutcome.CardPending)
+
+        coVerify(exactly = 1) { paymentRepository.createPaymentIntent("o-1", true) }
+    }
+
+    @Test
+    fun offersCardSaving_onlyToASignedInCustomerPayingByCard() = runTest {
+        val vm = quotedFor(requiredEmployees = 1)
+        assertEquals(false, vm.offersCardSaving.value)
+
+        vm.selectPaymentMethod(BookingViewModel.PAYMENT_CARD)
+        advanceUntilIdle()
+        assertEquals(true, vm.offersCardSaving.value)
+
+        vm.selectPaymentMethod(BookingViewModel.PAYMENT_CASH)
+        advanceUntilIdle()
+        assertEquals(false, vm.offersCardSaving.value)
+
+        vm.selectPaymentMethod(BookingViewModel.PAYMENT_CARD)
+        tokensFlow.value = null
+        advanceUntilIdle()
+        assertEquals(false, vm.offersCardSaving.value)
     }
 
     // ── the dirtiness level — priced by the server, and the crew and cash follow it ──

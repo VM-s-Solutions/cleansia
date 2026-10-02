@@ -109,6 +109,7 @@ fun ConfirmStep(
     val cashEligibility by bookingVm.cashEligibility.collectAsStateWithLifecycle()
     val cashClearedNotice by bookingVm.cashClearedNotice.collectAsStateWithLifecycle()
     val needsCardGuarantee by bookingVm.needsCardGuarantee.collectAsStateWithLifecycle()
+    val offersCardSaving by bookingVm.offersCardSaving.collectAsStateWithLifecycle()
     // Every money row comes from the one resolver, so this card and the sticky bar below it cannot
     // disagree with each other or with the total the order is created with.
     val summary = BookingPriceSummary.resolve(quote, effectiveDiscount)
@@ -376,6 +377,13 @@ fun ConfirmStep(
             selected = state.paymentMethod == BookingViewModel.PAYMENT_CARD,
             onClick = { bookingVm.selectPaymentMethod(BookingViewModel.PAYMENT_CARD) },
         )
+        if (offersCardSaving) {
+            Spacer(Modifier.height(8.dp))
+            CardSavingConsent(
+                saved = state.saveCard,
+                onSavedChange = { onUpdate(state.copy(saveCard = it)) },
+            )
+        }
         Spacer(Modifier.height(8.dp))
         PaymentOption(
             icon = Icons.Outlined.Payments,
@@ -527,6 +535,31 @@ private fun CardGuaranteeConsent(accepted: Boolean, onAcceptedChange: (Boolean) 
             onCheckedChange = onAcceptedChange,
             html = stringResource(R.string.consent_card_guarantee_draft_2026_09_28),
             modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+/** A card kept here guarantees cash bookings too, so the guarantee wording it is saved under is shown with the tick. */
+@Composable
+private fun CardSavingConsent(saved: Boolean, onSavedChange: (Boolean) -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(14.dp))
+            .padding(14.dp),
+    ) {
+        CleansiaConsentCheckbox(
+            checked = saved,
+            onCheckedChange = onSavedChange,
+            html = stringResource(R.string.booking_save_card_label),
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            stringResource(R.string.consent_card_guarantee_draft_2026_09_28),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }

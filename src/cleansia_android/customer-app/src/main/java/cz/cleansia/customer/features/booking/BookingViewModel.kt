@@ -327,6 +327,10 @@ class BookingViewModel @Inject constructor(
                 s.earlyPerformanceRequested
         }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
+    val offersCardSaving: StateFlow<Boolean> =
+        combine(tokenStore.tokens, _state) { tokens, s -> tokens != null && s.paymentMethod == PAYMENT_CARD }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
     fun selectPaymentMethod(method: String) {
         if (method == PAYMENT_CASH && cashEligibility.value != CashEligibility.Available) return
         _cashCleared.value = false
@@ -716,7 +720,7 @@ class BookingViewModel @Inject constructor(
                 return BookingSubmitOutcome.Success(body)
             }
 
-            val intent = paymentRepository.createPaymentIntent(body.id).getOrNull()
+            val intent = paymentRepository.createPaymentIntent(body.id, saveCard = s.saveCard).getOrNull()
             if (intent == null) {
                 // Order is created but PaymentIntent failed — leave the order
                 // in Pending. The stale-pending sweeper will clean it up

@@ -608,13 +608,18 @@
     <string name="booking_total">Total</string>
     <string name="booking_arrival_window">Cleaner arrives within 1 hour</string>
     <string name="booking_slot_unavailable">Unavailable</string>
-    <string name="booking_slot_earliest">Earliest</string>
     <string name="booking_slot_express" formatted="false">Express +20%</string>
     <string name="booking_slot_express_waived">Express · no surcharge</string>
     <string name="booking_express_waiver_available">Plus covers the 20%% express surcharge — %1$d left this calendar month.</string>
     <string name="booking_express_waiver_used" formatted="false">No express waivers left this month — express slots are charged at +20% until next month.</string>
-    <string name="booking_slot_select">Select</string>
     <string name="booking_all_slots_booked">All slots booked for this day — try another date.</string>
+    <string name="booking_day_part_morning">Morning</string>
+    <string name="booking_day_part_afternoon">Afternoon</string>
+    <string name="booking_day_part_evening">Evening</string>
+    <plurals name="booking_day_part_a11y">
+        <item quantity="one">%1$s, %2$d slot available</item>
+        <item quantity="other">%1$s, %2$d slots available</item>
+    </plurals>
 
     <!-- Booking — cancellation policy -->
     <string name="booking_cancel_hint">Free cancellation up to 24 hours before</string>
@@ -1085,9 +1090,6 @@
     <string name="recurring_freq_monthly_subline">1 cleaning per month</string>
     <string name="recurring_freq_most_popular_badge">MOST POPULAR</string>
     <!-- Time period section labels -->
-    <string name="recurring_time_period_morning">Morning</string>
-    <string name="recurring_time_period_afternoon">Afternoon</string>
-    <string name="recurring_time_period_evening">Evening</string>
     <string name="common_ok">OK</string>
 
     <!-- Order detail action: Make this recurring (PA14 Path B) -->

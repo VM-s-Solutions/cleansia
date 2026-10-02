@@ -608,13 +608,20 @@
     <string name="booking_total">Celkom</string>
     <string name="booking_arrival_window">Upratovačka príde do 1 hodiny</string>
     <string name="booking_slot_unavailable">Obsadené</string>
-    <string name="booking_slot_earliest">Najskôr</string>
     <string name="booking_slot_express" formatted="false">Expres +20 %</string>
     <string name="booking_slot_express_waived">Expres · bez príplatku</string>
     <string name="booking_express_waiver_available">Plus pokrýva 20%% expresný príplatok — %1$d zostáva tento kalendárny mesiac.</string>
     <string name="booking_express_waiver_used" formatted="false">Tento mesiac už nezostáva žiadne odpustenie expresného príplatku — expresné termíny sa účtujú s +20 % až do budúceho mesiaca.</string>
-    <string name="booking_slot_select">Vybrať</string>
     <string name="booking_all_slots_booked">Pre tento deň sú všetky termíny obsadené — vyberte iný deň.</string>
+    <string name="booking_day_part_morning">Dopoludnie</string>
+    <string name="booking_day_part_afternoon">Popoludnie</string>
+    <string name="booking_day_part_evening">Večer</string>
+    <plurals name="booking_day_part_a11y">
+        <item quantity="one">%1$s, %2$d voľný termín</item>
+        <item quantity="few">%1$s, %2$d voľné termíny</item>
+        <item quantity="many">%1$s, %2$d voľného termínu</item>
+        <item quantity="other">%1$s, %2$d voľných termínov</item>
+    </plurals>
 
     <!-- Booking — cancellation policy -->
     <string name="booking_cancel_hint">Zrušenie zdarma do 24 hodín pred začiatkom</string>
@@ -1071,9 +1078,6 @@
     <string name="recurring_freq_biweekly_subline">~2 upratovania mesačne</string>
     <string name="recurring_freq_monthly_subline">1 upratovanie mesačne</string>
     <string name="recurring_freq_most_popular_badge">NAJOBĽÚBENEJŠIE</string>
-    <string name="recurring_time_period_morning">Ráno</string>
-    <string name="recurring_time_period_afternoon">Popoludnie</string>
-    <string name="recurring_time_period_evening">Večer</string>
     <string name="common_ok">OK</string>
 
     <!-- Order detail action: Make this recurring -->

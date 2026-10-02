@@ -608,13 +608,20 @@
     <string name="booking_total">Итого</string>
     <string name="booking_arrival_window">Клинер прибудет в течение 1 часа</string>
     <string name="booking_slot_unavailable">Недоступно</string>
-    <string name="booking_slot_earliest">Раньше всего</string>
     <string name="booking_slot_express" formatted="false">Экспресс +20 %</string>
     <string name="booking_slot_express_waived">Экспресс · без доплаты</string>
     <string name="booking_express_waiver_available">Plus покрывает 20%% экспресс-доплаты — %1$d осталось в этом календарном месяце.</string>
     <string name="booking_express_waiver_used" formatted="false">В этом месяце отмена экспресс-доплаты больше не действует — экспресс-слоты оплачиваются с +20 % до следующего месяца.</string>
-    <string name="booking_slot_select">Выбрать</string>
     <string name="booking_all_slots_booked">Все слоты на этот день заняты — выберите другой день.</string>
+    <string name="booking_day_part_morning">Утро</string>
+    <string name="booking_day_part_afternoon">День</string>
+    <string name="booking_day_part_evening">Вечер</string>
+    <plurals name="booking_day_part_a11y">
+        <item quantity="one">%1$s, %2$d свободный слот</item>
+        <item quantity="few">%1$s, %2$d свободных слота</item>
+        <item quantity="many">%1$s, %2$d свободных слотов</item>
+        <item quantity="other">%1$s, %2$d свободного слота</item>
+    </plurals>
 
     <!-- Booking — cancellation policy -->
     <string name="booking_cancel_hint">Бесплатная отмена за 24 часа до начала</string>
@@ -1071,9 +1078,6 @@
     <string name="recurring_freq_biweekly_subline">~2 уборки в месяц</string>
     <string name="recurring_freq_monthly_subline">1 уборка в месяц</string>
     <string name="recurring_freq_most_popular_badge">САМОЕ ПОПУЛЯРНОЕ</string>
-    <string name="recurring_time_period_morning">Утро</string>
-    <string name="recurring_time_period_afternoon">День</string>
-    <string name="recurring_time_period_evening">Вечер</string>
     <string name="common_ok">OK</string>
 
     <!-- Order detail action: Make this recurring -->

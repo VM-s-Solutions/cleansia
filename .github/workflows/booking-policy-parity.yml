@@ -35,6 +35,10 @@ on:
       - '**'
     paths:
       - 'src/Cleansia.Core.AppServices/Features/Orders/BookingPolicy.cs'
+      - 'src/Cleansia.Core.Domain/Orders/OrderCancellationReasons.cs'
+      - 'src/Cleansia.App/libs/cleansia-customer-features/orders/src/lib/order-detail/order-detail.component.ts'
+      - 'src/cleansia_android/customer-app/src/main/java/cz/cleansia/customer/features/orders/OrderDetailScreen.kt'
+      - 'src/cleansia_ios/CleansiaCustomer/Sources/Features/Orders/CancellationReasonCopy.swift'
       - 'src/Cleansia.Infra.Database/Seed/Legal/**'
       - 'src/Cleansia.App/libs/shared/models/src/lib/models/booking-window.models.ts'
       - 'src/Cleansia.App/apps/cleansia.app/src/assets/i18n/**'
@@ -53,6 +57,10 @@ on:
       - master
     paths:
       - 'src/Cleansia.Core.AppServices/Features/Orders/BookingPolicy.cs'
+      - 'src/Cleansia.Core.Domain/Orders/OrderCancellationReasons.cs'
+      - 'src/Cleansia.App/libs/cleansia-customer-features/orders/src/lib/order-detail/order-detail.component.ts'
+      - 'src/cleansia_android/customer-app/src/main/java/cz/cleansia/customer/features/orders/OrderDetailScreen.kt'
+      - 'src/cleansia_ios/CleansiaCustomer/Sources/Features/Orders/CancellationReasonCopy.swift'
       - 'src/Cleansia.Infra.Database/Seed/Legal/**'
       - 'src/Cleansia.App/libs/shared/models/src/lib/models/booking-window.models.ts'
       - 'src/Cleansia.App/apps/cleansia.app/src/assets/i18n/**'

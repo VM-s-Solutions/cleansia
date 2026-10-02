@@ -241,10 +241,10 @@ When VS ships a toolset with net10 support, switch to F5 launch instead.
 
 ## Which language a notification is in {#language}
 
-**The language picked inside the app**, on every surface that carries text, whatever the phone is set
-to (owner ruling 2026-10-01). The server does not know that language for a transactional push — it
-sends a key and its arguments, and the device writes the sentence — so each platform has to carry the
-in-app choice to wherever the text is drawn. Both used to fall short. iOS resolves a loc-key alert
+**The language picked inside the app**, on every surface that carries text but one (Android's channel
+names, below), whatever the phone is set to (owner ruling 2026-10-01). The server does not know that
+language for a transactional push — it sends a key and its arguments, and the device writes the
+sentence — so each platform has to carry the in-app choice to wherever the text is drawn. Both used to fall short. iOS resolves a loc-key alert
 itself, in the app's **system** language (the phone's, or the per-app language in iOS Settings), and
 the in-app picker deliberately never sets it, so an English phone got English banners whatever the app
 showed. On Android 26–32 AppCompat's per-app locale reaches only activity contexts, so the FCM service
@@ -257,7 +257,7 @@ and the feed rendered in the device language.
 | Live Activity (customer, iOS) | in-app | The server sends no text, only the status and the times. The widget reads the App Group language and applies it before it draws the card; until the app has written one it follows the phone, which it can because the extension declares the five languages ([ADR-0029](/decisions/adr-0029) Amendment A4). |
 | Android push banner, both apps | in-app, on every API level | Data-only: the app renders its template in `onMessageReceived`. On 33+ the framework's per-app locale covers the service; on 26–32 the text goes through `AppLocale.localizedContext` with the language persisted in DataStore. |
 | Android in-app feed, both apps | in-app | the same wrap, in both feed view models |
-| Android notification channel names | the device's on 26–32; the app's on 33+, from the next cold start | Registered in `Application.onCreate` and not re-registered after a picker change. Not changed in 2026-10-01. |
+| Android notification channel names | the device's on 26–32; the app's on 33+, from the next cold start | Registered in `Application.onCreate` and not re-registered after a picker change. Left as it was on 2026-10-01. |
 | `promo.new_sitewide` (customer) | the account's `PreferredLanguageCode`, `en` when unset | The one text the server writes: a literal alert, with no `mutable-content`. The apps keep the stamp current → [The account's language](/flows/auth-and-identity#account-language) |
 | The e-mail beside an order push | the language the order was booked in | → [The order records its language](/flows/booking-and-pricing#booking-language) |
 
@@ -266,7 +266,7 @@ extension `cz.cleansia.customer.notificationservice`) and `group.cz.cleansia.par
 and `cz.cleansia.partner.notificationservice`). The app writes the **resolved** language — never the
 "System" sentinel — at launch and on every change. → [App extensions](/mobile-app/overview#app-extensions)
 
-Three limits, each by design:
+Three limits:
 
 - **The extension needs the updated app to have launched once.** Until it has written the language, a
   banner is in the system language — exactly the [ADR-0025](/decisions/adr-0025) behaviour it replaces.

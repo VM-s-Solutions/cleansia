@@ -86,6 +86,12 @@ pixel-cloning Material or into an iOS redesign:
 | Material `Snackbar` | native toast on the same `SnackbarController` bus | same message, one-per-failure |
 | Material `AlertDialog` | `.alert` / `.confirmationDialog` | same title/body/actions/destructive semantics |
 
+**Rows marked *(D15)* are the native-polish adoptions of 2026-10-01** (owner decision D15, remarks
+B2-1…B2-12), folded in under ADR-0018 D5's living-doc rule. All of them sit inside D2/D3 as written (D2
+already names native pickers, alerts, haptics and context menus), so **no ADR changed**. The iOS-16 floor
+(ADR-0014) stands: an API above it is behind `#available`, with the old look below that version. Android
+changed only where a row says so. Reader-facing summary: `docs/mobile-app/patterns.md#native-ios`.
+
 **Gate-DP** (standing per-screen reviewer gate) checks the §G assertions (AR-DP-1/2/3 **+ the 2026-07-02
 ADR-0022 hardening: AR-DP-1a + AR-DP-4**): cite-the-Android-screen layout/flow/branding parity; native-components-only;
 conflicts-iOS-native-and-noted-touching-only-the-component; **AR-DP-1a** — every drawable/raw asset the cited

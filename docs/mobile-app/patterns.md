@@ -228,3 +228,16 @@ VoiceOver and TalkBack skip it. It replaced the pins each surface drew for itsel
 across the platforms: plain discs, a disc on a stick and MapKit's balloon. `CleansiaMapUsageTest` (Android `:core`) fails a map that stops using the shared
 style or pin; `MapMarkerTests` and `MapKitMapProviderFullBleedTests` (`CleansiaCoreTests`) pin the iOS
 configuration, the single centre pin and the tip.
+
+## iOS draws its own controls {#native-ios}
+
+The iOS apps keep Android's screens, flows and branding, and draw each control the way iOS does. That
+is [ADR-0018](/decisions/adr-0018): D1 holds the layout, flow and branding identical, and D2 and D3 let
+iOS win on the component. The adoptions below (owner decision D15, 2026-10-01) all sit inside D2 and
+D3 as written, so no ADR changed. Each one is also a row in the living mapping table that a reviewer
+checks an iOS screen against (`agents/architecture/decisions/ios-app-architecture.md`).
+
+- **Android is unchanged** unless an item says otherwise. These are component and motion changes, and
+  Android keeps its own idiom for each.
+- **The iOS floor stays 16** ([ADR-0014](/decisions/adr-0014)). An API from a later version sits behind
+  `#available`, and below that version the screen looks and works as it did.

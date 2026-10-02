@@ -111,7 +111,9 @@ FAB included.
   four roots a `safeAreaInset(edge: .bottom)` of `BookFabMetrics.scrollClearance`: the overhang
   (`chromeEnvelope − systemTabBarHeight`) plus 12pt, which is 45pt. The clearance is derived from the
   same constants that place the FAB, so the two cannot drift apart. `contentMargins` would do the same
-  job but needs iOS 17, which is above the floor.
+  job but needs iOS 17, which is above the floor. A tab root adds no bottom padding of its own on top:
+  Profile kept a 40pt one under its last buttons until 2026-10-02, which left them 52pt above the FAB
+  instead of 12pt.
 - **Android.** The bar box is 12dp + 74dp + 12dp = 98dp above the navigation-bar inset. The 74dp FAB
   sets its height, not the 64dp pill: a `Box` is as tall as its tallest child, and the FAB's
   `offset(y = (-12).dp)` moves where it is drawn without changing its measured size. The pill sits at
@@ -125,7 +127,9 @@ FAB included.
   it leaves a 6dp gap instead of 16dp.
 
 **A state that fills an empty tab centres between the title and the FAB's top**, the area that is
-actually visible. Orders is the only tab that does this today. On iOS, a `ScrollView` proposes no
+actually visible. Orders does this on both platforms. On iOS so do the Rewards error state and the
+Disputes screen's empty and error states (since 2026-10-02); Disputes is a pushed screen with no FAB, so
+its area runs from the navigation bar to the bottom edge. On iOS, a `ScrollView` proposes no
 height, so a centring stack inside it collapses. The empty and error states therefore take their
 minimum height from a `GeometryReader` around the scroll view (`containerRelativeFrame` is iOS 17+).
 With the clearance above in place, that height runs from the title to the FAB's top. Before this, a
@@ -142,8 +146,11 @@ on the offer's scroll view, not overlaid in a `ZStack`, so the content reserves 
 Android the bar reports its height through `onSizeChanged`, and the scroll column pads by that height.
 On both platforms the bar keeps 12 under the disclosure, above the home indicator or navigation bar.
 
-The snackbar has its own lift above the same chrome (→ [Snackbar insets](#snackbar-inset)), and this
-does not change it.
+The snackbar has its own lift above the same chrome (→ [Snackbar insets](#snackbar-inset)). On a tab
+root it clears the FAB's top by the same gap the content leaves: 12pt on iOS
+(`BookFabMetrics.chromeEnvelope + 12`), and on Android `MainShellBottomClearance`, the 98dp box plus
+16dp, above the navigation-bar inset the host already pads. Until 2026-10-02 Android lifted it by a fixed
+88dp, which put a tab-root snackbar 10dp over the FAB.
 
 ## A hero inside a scroll view paints its own status-bar strip {#full-bleed-hero}
 

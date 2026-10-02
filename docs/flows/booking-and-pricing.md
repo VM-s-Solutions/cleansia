@@ -65,7 +65,9 @@ is `ToMinorUnits(order.AmountDueOnCard)` — the total less the credit `CreateOr
 from the persisted, server-computed values. The client cannot influence it at any point, which is why
 the payment webhook does not need to reconcile the amount. The quote carries the customer's credit
 balance and the share (`creditBalance`, `creditMaxShareOfOrder`) so the wizard can say *To pay by card*
-before Stripe does. → [Business rules — customer credit](/product/business-rules#credit)
+before Stripe does. Every client shows that split only for a card payment, because `CreateOrder` takes
+credit only from a card booking (`TakeCreditForOrderAsync`); with cash and a balance held it says credit
+applies to card payments only. → [Business rules — customer credit](/product/business-rules#credit)
 
 ## The customer says how dirty the home is {#dirtiness-level}
 

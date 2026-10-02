@@ -893,6 +893,11 @@ need backfilling.
 
 ### Fixed
 
+- **Customer web — the booking summary no longer takes credit off a cash booking.** With a credit
+  balance, the summary showed *Your credit −X* and *To pay by card Y* whichever payment method was
+  chosen, but credit only ever comes off a card payment. The split now shows only with card chosen;
+  with cash, a customer holding a balance reads *Credit applies to card payments only*, as in the apps.
+
 - **Customer iOS — the room and bathroom steppers are easier to hit, and VoiceOver can adjust them.**
   Each plus and minus takes taps across 44 points, Apple's minimum, without the stepper growing.
   VoiceOver reads each stepper as one control, *Your home, 3 rooms*, that a swipe up or down adjusts; it

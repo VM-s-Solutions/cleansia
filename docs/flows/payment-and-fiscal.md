@@ -164,7 +164,8 @@ included. Both apps pin that cap with the server's own test vectors. After booki
 and the order's price card read `creditAppliedAmount` and `amountDueOnCard` from the order, and so,
 since 2026-10-02, does the web order detail. All three call the card share *Paid by card* only when the
 order is not `TookNoPayment`, and *To pay by card* while the payment is `Pending` or `Failed`: a card
-the sheet never charged has paid nothing. The web wizard showed the same two lines already.
+the sheet never charged has paid nothing. The web wizard showed the same two lines already, and since
+2026-10-02 shows them only with card chosen, as the apps do.
 
 ## No guessed unit, no guessed regime
 

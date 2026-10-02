@@ -156,8 +156,10 @@ seeded, a tier's perks are the welcome badge and, above the first tier, its disc
 they chose to settle in credit, an administrator's goodwill. It comes off their next card booking by
 itself, never the whole of it, and expires a year after it last moved; the share and the date are the
 server's, never the copy's. The web profile rail shows the balance and its expiry date, and the web
-booking summary shows *Your credit −X* and *To pay by card Y*. Since 2026-10-01 the Android and iOS apps
-show it too:
+booking summary shows *Your credit −X* and *To pay by card Y* with card chosen; with cash, or no method
+chosen yet, a customer holding a balance reads *Credit applies to card payments only* instead (since
+2026-10-02 — the summary used to show the split for cash too, which the booking never got). Since
+2026-10-01 the Android and iOS apps show it too:
 
 - **Rewards** has a credit card between the tier and the progress card: one row per currency held,
   with its expiry date and the share of a booking it can pay. At zero it is one line, saying credit

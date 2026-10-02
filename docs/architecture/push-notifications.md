@@ -442,22 +442,35 @@ Most order events sit under the existing `OrderUpdates` category rather than get
 A new category is a boolean **column** plus a toggle in every client, and someone who silenced order
 updates has already answered the question.
 
-Five are deliberately **non-mutable** for a **cleaner**, every one about a job they have already
-accepted. That is the line: a customer may silence almost anything, because the consequence of a missed
-message is theirs. A cleaner not turning up is somebody else's morning. The one customer exception is
-`membership.payment_failed` (owner ruling 2026-09-28): a card Stripe keeps retrying while the benefits
-are paused is not a notice the member may switch off, so it maps to no category.
+`GetCategoryFor` is the whole answer: a key it maps to a category can be switched off under that
+category, and a key it maps to **null** cannot be switched off at all. The three keys that offer a
+cleaner a job — `order.new_available`, `order.seat_open` and `order.preferred_offer` — share
+`NewJobsAvailable`, so a cleaner who mutes new jobs is not reached by a targeted route around the mute.
+The `admin.*` keys also map to null, but they never push; they are the
+[admin audience](#admin-audience).
 
-| Event | Key | Why it cannot be silenced |
-|---|---|---|
-| Admin assigned you a job | `order.admin_assigned` | A cleaner must not be able to silence a job appearing on their own schedule and then not turn up |
-| Admin took you off a job | `order.admin_unassigned` | Losing a booked day is not an optional notice |
-| You have N jobs tomorrow | `order.reminder_tomorrow` | The day-ahead plan. A cleaner who silenced it would be planning tomorrow off memory |
-| Your job starts in about two hours | `order.reminder_soon` | The last point at which a cleaner can still travel, or tell us they cannot |
-| Your job starts soon and you have not set off | `order.reminder_not_started` | The platform's last chance to prevent a no-show. Suppressed for a cleaner already out on **another** job |
+Ten keys are deliberately **non-mutable** for a **cleaner**. Six are about a job they have accepted
+or been given; the other four are about the cleaner themselves: a paid invoice, a weekly cap, and the
+registration decision either way. That is the line: a customer may silence almost anything, because the consequence
+of a missed message is theirs. A cleaner not turning up is somebody else's morning. The one customer
+exception is `membership.payment_failed` (owner ruling 2026-09-28).
+
+| Who | Event | Key | Why it cannot be silenced |
+|---|---|---|---|
+| Cleaner | An admin put you on a job | `order.assigned` | A cleaner must not be able to silence a job appearing on their own schedule and then not turn up |
+| Cleaner | An admin took you off a job | `order.assignment_revoked` | Losing a booked day is not an optional notice |
+| Cleaner | A job you accepted was cancelled | `order.assignment_cancelled` | A cancellation must not be silenceable |
+| Cleaner | You have N jobs tomorrow | `order.reminder_tomorrow` | The day-ahead plan. A cleaner who silenced it would be planning tomorrow off memory |
+| Cleaner | Your job starts in about two hours | `order.reminder_soon` | The last point at which a cleaner can still travel, or tell us they cannot |
+| Cleaner | Your job starts soon and you have not set off | `order.reminder_not_started` | The platform's last chance to prevent a no-show. Suppressed for a cleaner already out on **another** job |
+| Cleaner | Your invoice was paid | `payroll.invoice_paid` | A payment confirmation must not be silenceable |
+| Cleaner | Your weekly order cap was set or lowered | `employee.weekly_limit_set` | A cut to how much someone may earn is news they are owed. Before it, the cleaner met the cap only as a refusal when taking work, and that refusal cannot say what the cap is |
+| Cleaner | Your registration was approved | `employee.registration_approved` | The one answer a cleaner on the registration lock is waiting for; a mute would leave them on a stale *under review* screen ([why it is a push](#registration-decided)) |
+| Cleaner | Your registration was rejected | `employee.registration_rejected` | As for the approval |
+| Customer | A Plus renewal payment failed | `membership.payment_failed` | A card Stripe keeps retrying while the benefits are paused is not a notice the member may switch off |
 
 The three reminders are non-mutable **on the owner's ruling** (2026-09-15, Q-PUSH-01 — the evening
-digest included; it was the one the ADR had escalated), on the same reasoning as the two above and
+digest included; it was the one the ADR had escalated), on the same reasoning as the first two rows and
 recorded in ADR-0054: they are not marketing, they carry no offer, and each one is about work the cleaner
 already agreed to do.
 
@@ -476,14 +489,9 @@ account. Rejecting a cleaner does not take them off their live orders, so withou
 the sweep would tell somebody the platform has just barred from working that their job starts in two
 hours — for work `StartOrder` would then refuse to let them start.
 
-And the admin-unassigned copy is deliberately **not** the assignment-cancelled copy: here the job goes
-ahead with somebody else, and a cleaner repeating "cancelled" to the customer would be telling them
-their booking was gone.
-
-**The registration decision is non-mutable too, for a different reason.** `employee.registration_approved`
-and `employee.registration_rejected` are not about a job: each is the one answer a cleaner on the
-registration lock is waiting for, and a mute would leave them on a stale *under review* screen
-([why it is a push](#registration-decided)).
+And the `order.assignment_revoked` copy is deliberately **not** the `order.assignment_cancelled` copy:
+here the job goes ahead with somebody else, and a cleaner repeating "cancelled" to the customer would be
+telling them their booking was gone.
 
 ### Why the day-ahead digest runs hourly {#digest-hourly}
 

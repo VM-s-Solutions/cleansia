@@ -251,7 +251,7 @@
     <string name="order_detail_completed_at">Завершено</string>
     <string name="order_detail_services">Расчёт цены</string>
     <string name="order_detail_total">Итого</string>
-    <string name="order_paid_with_credit">Оплачено бонусами</string>
+    <string name="order_paid_with_credit">Оплачено кредитом</string>
     <string name="order_paid_by_card">Оплачено картой</string>
     <string name="order_detail_confirmation">Код подтверждения</string>
     <string name="order_detail_cleaners">Ваш клинер</string>
@@ -731,8 +731,8 @@
     <string name="booking_summary_tier_discount_min_not_met">Скидка за лояльность действует для заказов от %1$s</string>
     <string name="booking_summary_total">Итого</string>
     <string name="booking_summary_due_on_card">К оплате картой</string>
-    <string name="booking_summary_credit_note">У вас осталось %1$s бонусов. Они списываются автоматически, а часть каждого заказа всегда оплачивается картой.</string>
-    <string name="booking_summary_credit_card_only">Бонусы действуют только при оплате картой.</string>
+    <string name="booking_summary_credit_note">Ваш кредит — %1$s. Он списывается автоматически, а часть каждого заказа всегда оплачивается картой.</string>
+    <string name="booking_summary_credit_card_only">Кредит действует только при оплате картой.</string>
 
     <!-- Promo code -->
     <string name="booking_promo_code_label">Есть промокод?</string>
@@ -835,7 +835,7 @@
     <!-- Account deletion -->
     <string name="profile_delete_account">Удалить учётную запись</string>
     <string name="delete_account_title">Удалить вашу учётную запись</string>
-    <string name="delete_account_subtitle">При удалении аккаунта мы удалим ваши персональные данные. Мы храним только то, чего требует закон или защита правовых требований, — список ниже. Неиспользованные бонусы при удалении аккаунта аннулируются — их нельзя выплатить или восстановить. Это действие нельзя отменить.</string>
+    <string name="delete_account_subtitle">При удалении аккаунта мы удалим ваши персональные данные. Мы храним только то, чего требует закон или защита правовых требований, — список ниже. Неиспользованный кредит при удалении аккаунта аннулируется — его нельзя выплатить или восстановить. Это действие нельзя отменить.</string>
     <string name="delete_account_what_happens">Что будет удалено</string>
     <string name="delete_account_item_profile">• Ваш профиль (имя, email, телефон, фото)</string>
     <string name="delete_account_item_addresses">• Все сохранённые адреса</string>
@@ -853,7 +853,7 @@
     <string name="delete_account_confirm_button">Окончательно удалить учётную запись</string>
     <string name="delete_account_success">Ваша учётная запись удалена.</string>
     <string name="delete_account_dialog_title">Удалить аккаунт?</string>
-    <string name="delete_account_dialog_message">Ваши персональные данные будут удалены, и это действие нельзя отменить; записи, перечисленные на этом экране, мы храним в течение указанных на нём сроков. Неиспользованные бонусы на счёте аннулируются, как только удаление завершится, — их нельзя выплатить или восстановить.</string>
+    <string name="delete_account_dialog_message">Ваши персональные данные будут удалены, и это действие нельзя отменить; записи, перечисленные на этом экране, мы храним в течение указанных на нём сроков. Неиспользованный кредит на счёте аннулируется, как только удаление завершится, — его нельзя выплатить или восстановить.</string>
     <string name="delete_account_dialog_confirm">Удалить</string>
 
     <!-- Error handling — generics -->
@@ -1157,7 +1157,7 @@
 
     <!-- Disputes -->
     <string name="profile_row_disputes">Споры</string>
-    <string name="profile_row_credit">Бонусы</string>
+    <string name="profile_row_credit">Кредит</string>
 
     <string name="order_action_report_issue">Сообщить о проблеме</string>
     <string name="order_action_cleaner_no_show">Уборщик не пришёл</string>
@@ -1225,17 +1225,17 @@
     <string name="loyalty_tier_label_short_gold">Золото</string>
     <string name="loyalty_tier_label_short_platinum">Платина</string>
     <string name="loyalty_lifetime_points">Баллы за всё время</string>
-    <string name="credit_your_credit">Ваши бонусы</string>
-    <string name="credit_auto_applied_share">Автоматически списываются со следующего заказа с оплатой картой — до %1$d%% его стоимости.</string>
+    <string name="credit_your_credit">Ваш кредит</string>
+    <string name="credit_auto_applied_share">Автоматически списывается со следующего заказа с оплатой картой — до %1$d%% его стоимости.</string>
     <string name="credit_expires_on">Сгорает %1$s. Каждый заказ отодвигает эту дату.</string>
-    <string name="credit_none">Сейчас бонусов нет. Если с уборкой что-то пойдёт не так, бонусы, которые мы начислим, появятся здесь.</string>
-    <string name="credit_explainer_title">Как работают бонусы</string>
-    <string name="credit_explainer_source_title">Откуда они берутся</string>
-    <string name="credit_explainer_source_body">Извинение, когда уборщик не приехал или никто не смог взять ваш заказ, жалоба, которую вы решили урегулировать бонусами, или жест доброй воли от нас.</string>
-    <string name="credit_explainer_spend_title">Как они тратятся</string>
+    <string name="credit_none">Сейчас кредита нет. Если с уборкой что-то пойдёт не так, кредит, который мы начислим, появится здесь.</string>
+    <string name="credit_explainer_title">Как работает кредит</string>
+    <string name="credit_explainer_source_title">Откуда он берётся</string>
+    <string name="credit_explainer_source_body">Извинение, когда уборщик не приехал или никто не смог взять ваш заказ, жалоба, которую вы решили урегулировать кредитом, или жест доброй воли от нас.</string>
+    <string name="credit_explainer_spend_title">Как он тратится</string>
     <string name="credit_explainer_spend_body">Автоматически, на следующий заказ с оплатой картой в той же валюте — до %1$d%% его стоимости. Остаток всегда оплачивается картой.</string>
-    <string name="credit_explainer_points_title">Бонусы — это не баллы</string>
-    <string name="credit_explainer_points_body">Баллы повышают ваш уровень и его скидку и никогда не тратятся. Бонусы — это деньги, которые вычитаются из ваших заказов.</string>
+    <string name="credit_explainer_points_title">Кредит — это не баллы</string>
+    <string name="credit_explainer_points_body">Баллы повышают ваш уровень и его скидку и никогда не тратятся. Кредит — это деньги, которые вычитаются из ваших заказов.</string>
     <string name="loyalty_points_unit">б.</string>
     <string name="loyalty_progress_to_next">%1$d / %2$d баллов до %3$s</string>
     <string name="loyalty_max_tier_reached">Вы достигли вершины — спасибо!</string>
@@ -1307,11 +1307,11 @@
     <string name="notification_order_refunded_title">Возврат средств</string>
     <string name="notification_order_refunded_body">Возврат за заказ #%1$s обрабатывается.</string>
     <string name="notification_order_no_cleaner_refunded_title">Свободных уборщиков не нашлось</string>
-    <string name="notification_order_no_cleaner_refunded_body">Заказ #%1$s никто не взял, поэтому мы вернули всю сумму и добавили бонус %2$s на следующую уборку. Простите.</string>
+    <string name="notification_order_no_cleaner_refunded_body">Заказ #%1$s никто не взял, поэтому мы вернули всю сумму и начислили %2$s кредита на следующую уборку. Простите.</string>
     <string name="notification_order_no_cleaner_refund_pending_title">Свободных уборщиков не нашлось</string>
-    <string name="notification_order_no_cleaner_refund_pending_body">На заказ #%1$s не смог приехать ни один уборщик, поэтому мы его отменили. Возврат средств обрабатывается, а ещё мы добавили бонус %2$s на следующую уборку. Простите.</string>
+    <string name="notification_order_no_cleaner_refund_pending_body">На заказ #%1$s не смог приехать ни один уборщик, поэтому мы его отменили. Возврат средств обрабатывается, а ещё мы начислили %2$s кредита на следующую уборку. Простите.</string>
     <string name="notification_order_no_cleaner_nothing_charged_title">Свободных уборщиков не нашлось</string>
-    <string name="notification_order_no_cleaner_nothing_charged_body">На заказ #%1$s не смог приехать ни один уборщик, поэтому мы его отменили. Мы ничего с вас не списали, а ещё добавили бонус %2$s на следующую уборку. Простите.</string>
+    <string name="notification_order_no_cleaner_nothing_charged_body">На заказ #%1$s не смог приехать ни один уборщик, поэтому мы его отменили. Мы ничего с вас не списали, а ещё начислили %2$s кредита на следующую уборку. Простите.</string>
     <string name="notification_dispute_reply_title">Поддержка ответила</string>
     <string name="notification_dispute_reply_body">У вас новое сообщение по вашей жалобе. Нажмите, чтобы прочитать.</string>
     <string name="notification_recurring_scheduled_title">Подтвердите завтрашнюю уборку</string>

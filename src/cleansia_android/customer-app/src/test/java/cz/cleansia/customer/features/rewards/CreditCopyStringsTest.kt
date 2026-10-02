@@ -64,6 +64,26 @@ class CreditCopyStringsTest {
         }
     }
 
+    /**
+     * Owner ruling 2026-10-02: the money balance is "Кредит" in Ukrainian and Russian. "Бонуси/бонусы"
+     * read as points, which are a different thing (credit_explainer_points_*), so no credit string may
+     * say it, and the labels that name the balance say "кредит".
+     */
+    @Test
+    fun `Ukrainian and Russian call the balance credit, never bonuses`() {
+        val named = listOf("credit_your_credit", "profile_row_credit", "credit_explainer_title", "order_paid_with_credit")
+        listOf("values-uk", "values-ru").forEach { locale ->
+            val xml = stringsXml(locale)
+            keys.keys.forEach { key ->
+                val value = valueOf(xml, key)!!
+                assertTrue("$locale/$key calls credit bonuses: $value", !value.contains("бонус", ignoreCase = true))
+            }
+            named.forEach { key ->
+                assertTrue("$locale/$key does not say кредит", valueOf(xml, key)!!.contains("кредит", ignoreCase = true))
+            }
+        }
+    }
+
     @Test
     fun `the share and the date are the server's figures, never a number of the copy's own`() {
         locales.forEach { locale ->

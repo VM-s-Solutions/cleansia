@@ -108,8 +108,8 @@ class MarketCopyStringsTest {
             "values" to Regex("credit", RegexOption.IGNORE_CASE),
             "values-cs" to Regex("kredit", RegexOption.IGNORE_CASE),
             "values-sk" to Regex("kredit", RegexOption.IGNORE_CASE),
-            "values-uk" to Regex("бонус|кредит", RegexOption.IGNORE_CASE),
-            "values-ru" to Regex("бонус|кредит", RegexOption.IGNORE_CASE),
+            "values-uk" to Regex("кредит", RegexOption.IGNORE_CASE),
+            "values-ru" to Regex("кредит", RegexOption.IGNORE_CASE),
         )
     }
 }

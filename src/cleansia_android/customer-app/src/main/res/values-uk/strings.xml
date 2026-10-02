@@ -251,7 +251,7 @@
     <string name="order_detail_completed_at">Завершено</string>
     <string name="order_detail_services">Розбивка ціни</string>
     <string name="order_detail_total">Усього</string>
-    <string name="order_paid_with_credit">Сплачено бонусами</string>
+    <string name="order_paid_with_credit">Сплачено кредитом</string>
     <string name="order_paid_by_card">Сплачено карткою</string>
     <string name="order_detail_confirmation">Код підтвердження</string>
     <string name="order_detail_cleaners">Ваш клінер</string>
@@ -731,8 +731,8 @@
     <string name="booking_summary_tier_discount_min_not_met">Знижка за лояльність діє для замовлень понад %1$s</string>
     <string name="booking_summary_total">Усього</string>
     <string name="booking_summary_due_on_card">До сплати карткою</string>
-    <string name="booking_summary_credit_note">У вас залишилося %1$s бонусів. Вони списуються автоматично, а частина кожного замовлення завжди сплачується карткою.</string>
-    <string name="booking_summary_credit_card_only">Бонуси діють лише при оплаті карткою.</string>
+    <string name="booking_summary_credit_note">Ваш кредит — %1$s. Він списується автоматично, а частина кожного замовлення завжди сплачується карткою.</string>
+    <string name="booking_summary_credit_card_only">Кредит діє лише при оплаті карткою.</string>
 
     <!-- Promo code -->
     <string name="booking_promo_code_label">Маєте промокод?</string>
@@ -835,7 +835,7 @@
     <!-- Account deletion -->
     <string name="profile_delete_account">Видалити обліковий запис</string>
     <string name="delete_account_title">Видалити ваш обліковий запис</string>
-    <string name="delete_account_subtitle">Під час видалення облікового запису ми видалимо ваші персональні дані. Ми зберігаємо лише те, чого вимагає закон або захист правових вимог, — перелік нижче. Невикористані бонуси після видалення облікового запису анулюються — їх не можна виплатити чи відновити. Цю дію неможливо скасувати.</string>
+    <string name="delete_account_subtitle">Під час видалення облікового запису ми видалимо ваші персональні дані. Ми зберігаємо лише те, чого вимагає закон або захист правових вимог, — перелік нижче. Невикористаний кредит після видалення облікового запису анулюється — його не можна виплатити чи відновити. Цю дію неможливо скасувати.</string>
     <string name="delete_account_what_happens">Що буде видалено</string>
     <string name="delete_account_item_profile">• Ваш профіль (ім’я, email, телефон, фото)</string>
     <string name="delete_account_item_addresses">• Усі збережені адреси</string>
@@ -853,7 +853,7 @@
     <string name="delete_account_confirm_button">Назавжди видалити обліковий запис</string>
     <string name="delete_account_success">Ваш обліковий запис видалено.</string>
     <string name="delete_account_dialog_title">Видалити обліковий запис?</string>
-    <string name="delete_account_dialog_message">Ваші персональні дані буде видалено, і цю дію неможливо скасувати; записи, перелічені на цьому екрані, ми зберігаємо протягом зазначених на ньому строків. Невикористані бонуси на рахунку анулюються, щойно видалення завершиться, — їх не можна виплатити чи відновити.</string>
+    <string name="delete_account_dialog_message">Ваші персональні дані буде видалено, і цю дію неможливо скасувати; записи, перелічені на цьому екрані, ми зберігаємо протягом зазначених на ньому строків. Невикористаний кредит на рахунку анулюється, щойно видалення завершиться, — його не можна виплатити чи відновити.</string>
     <string name="delete_account_dialog_confirm">Видалити</string>
 
     <!-- Error handling — generics -->
@@ -1157,7 +1157,7 @@
 
     <!-- Disputes -->
     <string name="profile_row_disputes">Спори</string>
-    <string name="profile_row_credit">Бонуси</string>
+    <string name="profile_row_credit">Кредит</string>
 
     <string name="order_action_report_issue">Повідомити про проблему</string>
     <string name="order_action_cleaner_no_show">Прибиральник не прийшов</string>
@@ -1225,17 +1225,17 @@
     <string name="loyalty_tier_label_short_gold">Золото</string>
     <string name="loyalty_tier_label_short_platinum">Платина</string>
     <string name="loyalty_lifetime_points">Бали за весь час</string>
-    <string name="credit_your_credit">Ваші бонуси</string>
-    <string name="credit_auto_applied_share">Автоматично списуються з наступного замовлення з оплатою карткою — до %1$d%% його вартості.</string>
+    <string name="credit_your_credit">Ваш кредит</string>
+    <string name="credit_auto_applied_share">Автоматично списується з наступного замовлення з оплатою карткою — до %1$d%% його вартості.</string>
     <string name="credit_expires_on">Згорає %1$s. Кожне замовлення відсуває цю дату.</string>
-    <string name="credit_none">Зараз бонусів немає. Якщо з прибиранням щось піде не так, бонуси, які ми нарахуємо, з’являться тут.</string>
-    <string name="credit_explainer_title">Як працюють бонуси</string>
-    <string name="credit_explainer_source_title">Звідки вони беруться</string>
-    <string name="credit_explainer_source_body">Вибачення, коли прибиральник не приїхав або ніхто не зміг узяти ваше замовлення, скарга, яку ви вирішили врегулювати бонусами, або жест доброї волі від нас.</string>
-    <string name="credit_explainer_spend_title">Як вони витрачаються</string>
+    <string name="credit_none">Зараз кредиту немає. Якщо з прибиранням щось піде не так, кредит, який ми нарахуємо, з’явиться тут.</string>
+    <string name="credit_explainer_title">Як працює кредит</string>
+    <string name="credit_explainer_source_title">Звідки він береться</string>
+    <string name="credit_explainer_source_body">Вибачення, коли прибиральник не приїхав або ніхто не зміг узяти ваше замовлення, скарга, яку ви вирішили врегулювати кредитом, або жест доброї волі від нас.</string>
+    <string name="credit_explainer_spend_title">Як він витрачається</string>
     <string name="credit_explainer_spend_body">Автоматично, на наступне замовлення з оплатою карткою в тій самій валюті — до %1$d%% його вартості. Решту завжди сплачує картка.</string>
-    <string name="credit_explainer_points_title">Бонуси — це не бали</string>
-    <string name="credit_explainer_points_body">Бали підвищують ваш рівень і його знижку та ніколи не витрачаються. Бонуси — це гроші, що віднімаються від ваших замовлень.</string>
+    <string name="credit_explainer_points_title">Кредит — це не бали</string>
+    <string name="credit_explainer_points_body">Бали підвищують ваш рівень і його знижку та ніколи не витрачаються. Кредит — це гроші, що віднімаються від ваших замовлень.</string>
     <string name="loyalty_points_unit">б.</string>
     <string name="loyalty_progress_to_next">%1$d / %2$d балів до %3$s</string>
     <string name="loyalty_max_tier_reached">Ви досягли вершини — дякуємо!</string>
@@ -1307,11 +1307,11 @@
     <string name="notification_order_refunded_title">Повернення коштів</string>
     <string name="notification_order_refunded_body">Повернення коштів за замовлення #%1$s обробляється.</string>
     <string name="notification_order_no_cleaner_refunded_title">Вільних прибиральників не знайшлося</string>
-    <string name="notification_order_no_cleaner_refunded_body">Замовлення #%1$s ніхто не взяв, тому ми повернули всю суму та додали бонус %2$s на наступне прибирання. Вибачте.</string>
+    <string name="notification_order_no_cleaner_refunded_body">Замовлення #%1$s ніхто не взяв, тому ми повернули всю суму та нарахували %2$s кредиту на наступне прибирання. Вибачте.</string>
     <string name="notification_order_no_cleaner_refund_pending_title">Вільних прибиральників не знайшлося</string>
-    <string name="notification_order_no_cleaner_refund_pending_body">На замовлення #%1$s не зміг приїхати жоден прибиральник, тому ми його скасували. Повернення коштів обробляється, а ще ми додали бонус %2$s на наступне прибирання. Вибачте.</string>
+    <string name="notification_order_no_cleaner_refund_pending_body">На замовлення #%1$s не зміг приїхати жоден прибиральник, тому ми його скасували. Повернення коштів обробляється, а ще ми нарахували %2$s кредиту на наступне прибирання. Вибачте.</string>
     <string name="notification_order_no_cleaner_nothing_charged_title">Вільних прибиральників не знайшлося</string>
-    <string name="notification_order_no_cleaner_nothing_charged_body">На замовлення #%1$s не зміг приїхати жоден прибиральник, тому ми його скасували. Ми нічого з вас не списали, а ще додали бонус %2$s на наступне прибирання. Вибачте.</string>
+    <string name="notification_order_no_cleaner_nothing_charged_body">На замовлення #%1$s не зміг приїхати жоден прибиральник, тому ми його скасували. Ми нічого з вас не списали, а ще нарахували %2$s кредиту на наступне прибирання. Вибачте.</string>
     <string name="notification_dispute_reply_title">Підтримка відповіла</string>
     <string name="notification_dispute_reply_body">У вас нове повідомлення щодо вашої скарги. Натисніть, щоб прочитати.</string>
     <string name="notification_recurring_scheduled_title">Підтвердіть завтрашнє прибирання</string>

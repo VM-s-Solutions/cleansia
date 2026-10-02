@@ -86,8 +86,8 @@ class DeleteAccountDialogStringsTest {
         "values" to listOf("credit", "forfeit", "paid out"),
         "values-cs" to listOf("kredit", "propadá", "vyplatit"),
         "values-sk" to listOf("kredit", "prepadá", "vyplatiť"),
-        "values-uk" to listOf("бонус", "анулю", "виплатити"),
-        "values-ru" to listOf("бонус", "аннулир", "выплатить"),
+        "values-uk" to listOf("кредит", "анулю", "виплатити"),
+        "values-ru" to listOf("кредит", "аннулир", "выплатить"),
     )
 
     /** The screen body the customer reads before typing their e-mail, and the dialog they accept. */

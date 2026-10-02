@@ -155,9 +155,10 @@ final class ProfileViewModel: ViewModel {
         !saveState.isSubmitting && !firstName.isBlank && !lastName.isBlank && !phoneNumber.isBlank
     }
 
-    /// The language rides the resolved app tag — always ∈ {en,cs,sk,uk,ru} — the
-    /// Android device-locale clamp (`ProfileViewModel.kt:105-106`) through the one
-    /// settings store.
+    /// The language sent is the one CHOSEN in this app, and none (the server keeps its own) on
+    /// "System": onboarding is not a picker change, so it keeps the session-start rule — the phone's
+    /// language is not a choice and must not overwrite one made on another client.
+    /// → /flows/auth-and-identity#account-language
     func completeOnboarding(
         firstName: String,
         lastName: String,
@@ -181,7 +182,7 @@ final class ProfileViewModel: ViewModel {
             lastName: lastName.trimmed,
             phoneNumber: phoneNumber.trimmed.nilIfEmpty,
             birthDate: birthDate,
-            languageCode: settings.languageTag
+            languageCode: settings.persistedLanguageTag
         )
         switch await repository.update(update) {
         case .success:

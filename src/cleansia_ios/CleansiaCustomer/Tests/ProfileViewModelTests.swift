@@ -240,7 +240,31 @@ final class ProfileViewModelTests: XCTestCase {
         XCTAssertFalse(vm.canCompleteOnboarding(firstName: "Ada", lastName: "Lovelace", phoneNumber: " "))
     }
 
-    func testCompleteOnboardingSendsTheResolvedAppLanguage() async {
+    /// Onboarding used to send the resolved tag, which on "System" is the phone's language, and so
+    /// overwrote on the server a language picked on another client. Android had the same defect.
+    func testCompleteOnboardingSendsTheLanguageChosenInTheAppNotTheDevices() async {
+        client.currentUserResult = .success(ProfileFixtures.user(phoneNumber: nil))
+        client.updateResult = .success(())
+        let settings = UserDefaultsAppSettingsStore(defaults: scratchDefaults(), preferredLanguageTags: { ["sk"] })
+        settings.setLanguage("cs")
+        let vm = ProfileViewModel(
+            repository: repository,
+            settings: settings,
+            snackbar: snackbar
+        )
+        await vm.refresh()
+
+        await vm.completeOnboarding(
+            firstName: "Jane",
+            lastName: "Doe",
+            phoneNumber: "+420111",
+            birthDate: nil
+        )
+
+        XCTAssertEqual(client.lastUpdate?.languageCode, "cs")
+    }
+
+    func testCompleteOnboardingOnSystemSendsNoLanguage() async {
         client.currentUserResult = .success(ProfileFixtures.user(phoneNumber: nil))
         client.updateResult = .success(())
         let settings = UserDefaultsAppSettingsStore(defaults: scratchDefaults(), preferredLanguageTags: { ["uk"] })
@@ -258,7 +282,8 @@ final class ProfileViewModelTests: XCTestCase {
             birthDate: nil
         )
 
-        XCTAssertEqual(client.lastUpdate?.languageCode, "uk")
+        XCTAssertNotNil(client.lastUpdate)
+        XCTAssertNil(client.lastUpdate?.languageCode)
     }
 
     func testCompleteOnboardingFailureLeavesTheGateUnseen() async {

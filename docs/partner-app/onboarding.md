@@ -305,7 +305,8 @@ saving returns to the lock instead of moving on. Partner web already left the pr
 error, shows the admin's reason under its line — **verbatim and untranslated**, as partner web shows
 it, trimmed, and nothing when the admin left it blank — and offers **Contact support**, which opens an
 e-mail to `support@cleansia.cz` with the subject *"Cleansia partner — application rejected"* in the
-app's language. The reason never travels in the push (below); the lock reads it from the
+app's language. Partner web offers the same link under the reason since 2026-10-02, with the subject in
+the UI language, and only while the application is rejected. The reason never travels in the push (below); the lock reads it from the
 registration status.
 
 **The decision reaches the cleaner without a pull.** An admin's approval or rejection pushes the cleaner

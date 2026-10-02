@@ -316,8 +316,8 @@ Rejecting an employee prevents them from accessing order management features. Th
 :::
 
 **The cleaner reads the reason word for word.** Partner web and both partner apps show it, untranslated,
-on the cleaner's registration lock under the rejection — the apps beside a *Contact support* action — so
-write it for the cleaner. It is never put in the push: the cleaner is pushed `employee.registration_rejected`,
+on the cleaner's registration lock under the rejection, beside a *Contact support* action — so write it
+for the cleaner. It is never put in the push: the cleaner is pushed `employee.registration_rejected`,
 which only says the application was rejected.
 → [The registration lock](/partner-app/onboarding#registration-lock-screen)
 

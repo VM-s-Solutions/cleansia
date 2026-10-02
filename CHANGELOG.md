@@ -96,7 +96,8 @@ need backfilling.
   re-reads itself when the push arrives; on iOS it also re-checks every time the app comes back. Until
   now an approval sent nothing, and the screen read *Application under review* until it was reloaded. A
   rejection shows the administrator's reason word for word, with *Contact support*, which opens an
-  e-mail to support@cleansia.cz. **Admin:** the cleaner reads the rejection reason as you write it, so
+  e-mail to support@cleansia.cz; partner web's registration screen now offers the same link under the
+  reason. **Admin:** the cleaner reads the rejection reason as you write it, so
   write it for them; it is never in the push itself. (Owner ruling 2026-10-01.)
 
 - **Cleaner, Android and iOS — a bank account can be pasted whole into any one box.** A Czech or Slovak

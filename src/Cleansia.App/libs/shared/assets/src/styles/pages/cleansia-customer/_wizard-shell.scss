@@ -417,6 +417,12 @@
       background: linear-gradient(to bottom, transparent, var(--cl-wiz-ground));
       pointer-events: none;
     }
+
+    // The fade belongs to the closed bar, where the step scrolls under it. Open,
+    // it is painted over the scrim and reads as a white band above the sheet.
+    &:has(.cl-wiz__summary--open)::before {
+      display: none;
+    }
   }
 
   .cl-wiz__summary {

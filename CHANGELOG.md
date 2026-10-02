@@ -556,9 +556,11 @@ need backfilling.
 - **Customer and cleaner, Android and iOS — every map is quiet, with one Cleansia pin.** The address
   pickers and the order maps in both apps show a muted map with no shops, restaurants or transit stops,
   and one pin, a sky-blue teardrop with a white house, where each map used to draw its own: plain discs,
-  a pin on a stick, Apple's red balloon. Street and place names stay. The two Android order maps show
-  the Mapbox logo and attribution again, which Mapbox's terms require. On iOS the address picker keeps
-  Apple's *Legal* link visible at every text size. (Owner ruling 2026-10-01.)
+  a pin on a stick, Apple's red balloon. Street and place names stay. All four Android maps show the
+  Mapbox logo and attribution, which Mapbox's terms require, above the picker's card or the order's
+  sheet; the two order maps had them switched off. On iOS Apple's logo and *Legal* link stay above the
+  address picker's card at every text size, and above the order map's sheet wherever it rests, without
+  moving the pin. (Owner ruling 2026-10-01.)
 
 - **Customer Android and iOS — the Home carousel loops, and stops once you touch it.** A swipe past the
   last card lands on the first, and back past the first on the last, and it moves on by itself every 6

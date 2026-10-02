@@ -218,13 +218,25 @@ things: no POIs, a muted base and the same pin.
   above both up to AX5. MapKit centres its region inside the layout margins, so the centre pin is
   pinned to the margins' centre, not the view's. When the inset changes, for example on a live
   text-size change, the picker sets the picked point back under the pin, because MapKit holds the map
-  still while the margins move.
+  still while the margins move. Since 2026-10-02 the two full-bleed order maps (the customer
+  `OrderDetailMap` and the partner `OrderDetailView`) keep the logo and *Legal* above their `SnapSheet`
+  the same way: `fullBleedMap(coordinate:)` measures the map and reads the sheet's top, which `SnapSheet`
+  publishes to its backdrop (`snapSheetTop`), and the bottom margin is the part of the map below it, at
+  every anchor and through a drag. The region is set once per coordinate, centred on the whole map with
+  zero margins, and only then does the margin follow the sheet, so the logo and *Legal* move and the pin
+  does not. A trailing margin of the ornament's width keeps *Legal* clear of the mascot puck on the
+  sheet's edge, where iOS 16 puts it. Because the region is no longer re-set on every update, a pan
+  survives a sheet drag or a poll; a new coordinate still re-centres.
 - **Android** (`:core` `location/CleansiaMap.kt`). `CleansiaMapStyle(darkTheme)` is Mapbox Standard
   through the pinned maps-compose 11.8.0: POI and transit labels off, the faded theme, no 3D objects,
   and the day or night light preset from the app theme. It replaced `MapStyles`, whose classic
   `light-v11` / `dark-v11` styles drew Mapbox's own POI and transit layers. The two order maps show the
   Mapbox wordmark and attribution again, which Mapbox's terms require; they had been switched off.
-  Both are lifted above the resting sheet, which covers the map's bottom edge.
+  Both are lifted above the resting sheet, which covers the map's bottom edge. Since 2026-10-02 the two
+  address pickers (the customer `AddressManagerScreen` and the partner `AddressPickerScreen`) lift them
+  above their bottom card too, by the card's measured height, keeping Mapbox's own horizontal places;
+  only the ornaments move, not the camera centre the pin marks. `CleansiaMapUsageTest` fails any of the
+  four maps that leaves either ornament on its defaults.
 
 **The pin** is a brand-sky teardrop with a white house, 40 × 50 (pt or dp): sky-600 `#0284C7` on a
 light map and sky-400 `#38BDF8` on a dark one. On iOS it is `CleansiaMapMarker` and on Android

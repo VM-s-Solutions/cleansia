@@ -113,6 +113,7 @@ final class PartnerErrorVoiceTests: XCTestCase {
         "employee.not_found": "GetAvailableJobsPreview, GetDashboardStats, GetEarningsAnalytics +14 more",
         "employee.profile_incomplete": "CompleteOrder, TakeOrder",
         "employee_document.deletion_already_requested": "RequestMyDocumentDeletion",
+        "employee_document.duplicate_file": "SaveMyDocuments, ReplaceMyDocument",
         "employee_document.not_found": "DownloadMyDocument",
         "employee_document.not_owned": "ReplaceMyDocument, RequestMyDocumentDeletion",
         "employee_document.unauthorized": "DownloadMyDocument",

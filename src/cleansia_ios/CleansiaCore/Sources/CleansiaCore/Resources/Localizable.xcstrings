@@ -2101,6 +2101,41 @@
         }
       }
     },
+    "error.employee_document.duplicate_file": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Přesně tento soubor jste již nahráli. Vyberte jiný soubor, nebo nahraďte stávající dokument."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You have already uploaded this exact file. Choose a different file, or replace the existing document."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вы уже загрузили именно этот файл. Выберите другой файл или замените существующий документ."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Presne tento súbor ste už nahrali. Vyberte iný súbor alebo nahraďte existujúci dokument."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ви вже завантажили саме цей файл. Виберіть інший файл або замініть наявний документ."
+          }
+        }
+      }
+    },
     "error.employee_document.not_found": {
       "extractionState": "stale",
       "localizations": {

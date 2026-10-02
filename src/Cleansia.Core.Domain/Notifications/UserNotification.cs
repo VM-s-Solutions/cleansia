@@ -9,7 +9,8 @@ namespace Cleansia.Core.Domain.Notifications;
 /// is deliberately at-most-once and keeps nothing, so this row is the only durable record.
 ///
 /// <see cref="ArgsJson"/> is the event's loc-args dictionary (never PII, never rendered text —
-/// clients render title/body from their bundled templates in the device locale).
+/// clients render title/body from their bundled templates in the language chosen in the app).
+/// → /decisions/adr-0025#amendment-a3
 /// <see cref="Auditable.CreatedOn"/> null-<see cref="ReadOn"/> = unread.
 /// </summary>
 public class UserNotification : TenantAuditable

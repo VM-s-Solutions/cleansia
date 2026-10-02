@@ -1002,7 +1002,12 @@ per-view `.animation` on both the label and the field — two competing transact
 one transaction. Keying the single animation on `focused` (not `floating`) is what makes a programmatic
 value change snap. Give the 56pt container a full-row tap target with `.contentShape(Rectangle())` +
 `.onTapGesture { if enabled { focused = true } }` — the bare `TextField` only captures its text glyphs,
-so the rest of the row felt dead. **AutoFill:** every call site passes an explicit
+so the rest of the row felt dead. **The same trap catches a field-shaped `Button`:** under
+`.buttonStyle(.plain)` it hit-tests only what its label draws (the texts and the chevron), and padding,
+frame and a 1pt stroke are not drawn content, so `CleansiaDropdown` opened only from a tap on its words
+(P4, 2026-10-01). It now carries `.contentShape(RoundedRectangle(cornerRadius: CornerRadius.small))` after
+its `.frame(maxWidth: .infinity)`, which changes hit-testing and draws nothing. Android's twin was never
+affected: its `.clickable` sits on the full-width box. **AutoFill:** every call site passes an explicit
 `textContentType:` (login identifier `.username` + `.password`; sign-up `.emailAddress`/`.newPassword`;
 `.givenName`/`.familyName`/`.telephoneNumber`; one-time codes `.oneTimeCode` — already baked into
 `CodeInput`). A field with no `textContentType` makes the QuickType/Keychain suggestion fill nothing

@@ -9,19 +9,27 @@ struct MembershipSuccessScreen: View {
     let onSetupRecurring: () -> Void
     let onBackHome: () -> Void
 
+    /// The booking confirmation's treatment (C16): no 200 pt mascot but a 48 pt check, in Android's compact
+    /// rhythm, centred when it fits — as Android's screen is — and scrolling when it does not.
     var body: some View {
-        ScrollView {
-            VStack(spacing: Spacing.l) {
-                AnimatedMascotView(.welcoming, loop: false, fallback: .waving)
-                    .frame(width: 200, height: 200)
-                    .padding(.top, Spacing.xl)
-                Text(L10n.Membership.successTitle)
-                    .cleansiaFont(CleansiaTypography.headlineMedium)
-                    .foregroundColor(CleansiaColors.onBackground)
-                Text(copy.successSubtitle)
-                    .font(CleansiaTypography.bodyMedium)
-                    .foregroundColor(CleansiaColors.onSurfaceVariant)
-                    .multilineTextAlignment(.center)
+        CenteredAuthScroll {
+            VStack(spacing: Spacing.s) {
+                // Decorative: the title under it says the same thing.
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 48))
+                    .foregroundColor(CleansiaColors.successText)
+                    .cleansiaBounceOnAppear()
+                    .accessibilityHidden(true)
+                VStack(spacing: Spacing.xxs) {
+                    Text(L10n.Membership.successTitle)
+                        .cleansiaFont(CleansiaTypography.headlineMedium)
+                        .foregroundColor(CleansiaColors.onBackground)
+                        .multilineTextAlignment(.center)
+                    Text(copy.successSubtitle)
+                        .font(CleansiaTypography.bodyMedium)
+                        .foregroundColor(CleansiaColors.onSurfaceVariant)
+                        .multilineTextAlignment(.center)
+                }
 
                 VStack(alignment: .leading, spacing: Spacing.s) {
                     Text(L10n.Membership.successPerksHeader)
@@ -39,7 +47,7 @@ struct MembershipSuccessScreen: View {
                 .padding(Spacing.m)
                 .background(CleansiaColors.surface, in: RoundedRectangle(cornerRadius: CornerRadius.medium))
 
-                VStack(spacing: Spacing.s) {
+                VStack(spacing: Spacing.xs) {
                     CleansiaPrimaryButton(
                         L10n.Membership.successCtaSetupRecurring,
                         leadingIcon: "repeat",
@@ -49,6 +57,7 @@ struct MembershipSuccessScreen: View {
                 }
             }
             .padding(.horizontal, Spacing.ml)
+            .padding(.vertical, Spacing.m)
         }
         .navigationBarBackButtonHidden(true)
         .background(CleansiaColors.background.ignoresSafeArea())

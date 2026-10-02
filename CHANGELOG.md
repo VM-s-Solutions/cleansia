@@ -501,6 +501,11 @@ need backfilling.
 
 ### Changed
 
+- **Customer iOS — the Live Activity's smallest Dynamic Island slot shows where the clean is.** When
+  another app's activity shares the Dynamic Island, Cleansia's slot drew a plain dot. It now shows a car
+  while the cleaner is on the way, sparkles during the clean, a seal when it is done and a cross if it
+  was cancelled, and VoiceOver reads the step. Not yet seen on a phone with two activities running.
+
 - **Customer and cleaner iOS — a plain confirmation is the iPhone's own alert.** Signing out, deleting
   the account, cancelling or switching Plus, deleting a schedule, and for a cleaner confirming cash,
   deleting a note or an issue and declining or refusing an offer now ask with the system alert (Liquid

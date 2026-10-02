@@ -410,10 +410,14 @@ Island draw `LiveActivityBrandLockup`: the vector wordmark from Core's asset cat
 the primary colour, with no container, and the system text "Cleansia" if the asset ever fails to
 resolve. It replaced a 22 pt disc with the waving mascot inside, a scale-less 600 × 600 px image that
 WidgetKit counted as 600 pt and swapped for a placeholder, leaving the filled circle with a dark hole
-that reinstalling never fixed. The compact and minimal presentations draw no image asset: the compact
-trailing slot falls back to an SF Symbol (`checkmark.seal.fill`, `xmark.circle.fill` or `sparkles`)
-when it has neither a countdown nor a clock to show, which is sized by its font and so always fits, and
-the minimal one is an 8 pt dot.
+that reinstalling never fixed. The compact and minimal presentations draw no image asset, only SF
+Symbols, which are sized by their font and so always fit. `LiveActivityCard.symbol` says where the clean
+is: `car.fill` on the way, `sparkles` while cleaning (and for a status this build does not know),
+`checkmark.seal.fill` done, `xmark.circle.fill` cancelled. The compact trailing slot falls back to it
+when it has neither a countdown nor a clock to show. The minimal slot, which iOS shows when another
+app's activity shares the Dynamic Island, draws it at 16 pt semibold in the primary colour, with the
+step position, or *Cancelled*, as its spoken label; until 2026-10-02 it was an 8 pt dot that said
+nothing.
 
 | Target | Bundle id | App Group |
 |---|---|---|

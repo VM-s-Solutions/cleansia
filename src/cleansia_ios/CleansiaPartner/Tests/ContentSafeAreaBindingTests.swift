@@ -5,15 +5,21 @@ final class ContentSafeAreaBindingTests: XCTestCase {
     func testProfileScrollKeepsTheSafeViewport() throws {
         var content = try read("CleansiaPartner/Sources/Features/Profile/ProfileHubContent.swift")
         XCTAssertTrue(content.contains("ScrollView{"), "No scrolling surface was inspected")
-        for background in [
-            "CleansiaColors.background.ignoresSafeArea()",
-            "LinearGradient(colors:BrandGradient.blue.colors,startPoint:.top,endPoint:.bottom)"
-                + ".ignoresSafeArea(.container,edges:.top)"
-        ] {
-            content = content.replacingOccurrences(of: background, with: "")
-        }
+        content = content.replacingOccurrences(of: "CleansiaColors.background.ignoresSafeArea()", with: "")
         XCTAssertFalse(content.contains(".ignoresSafeArea("), "Profile rows can escape the safe viewport")
         XCTAssertFalse(content.contains("topInset"), "Manual content insets no longer match the safe viewport")
+    }
+
+    /// A background inside a scroll view has no top safe area left to ignore, so the hero paints its own
+    /// status-bar strip by bleeding its background above its frame — the gradient keeps the hero's bounds
+    /// and a block of its first stop rises above them (the customer Profile hero's form).
+    func testTheProfileHeroPaintsItsOwnStatusBarStrip() throws {
+        let content = try read("CleansiaPartner/Sources/Features/Profile/ProfileHubContent.swift")
+        XCTAssertTrue(content.contains(
+            "VStack(spacing:0){BrandGradient.blue.colors[0].frame(height:heroBleed)"
+                + "LinearGradient(colors:BrandGradient.blue.colors,startPoint:.top,endPoint:.bottom)}"
+                + ".padding(.top,-heroBleed)"
+        ))
     }
 
     func testApproximateMapLegendFitsBetweenTheSafeTopAndTheSheet() throws {

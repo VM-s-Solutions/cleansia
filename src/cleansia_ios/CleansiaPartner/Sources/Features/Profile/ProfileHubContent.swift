@@ -276,10 +276,18 @@ private struct ProfileHero: View {
         .padding(.top, Spacing.m)
         .padding(.bottom, Spacing.m)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            LinearGradient(colors: BrandGradient.blue.colors, startPoint: .top, endPoint: .bottom)
-                .ignoresSafeArea(.container, edges: .top)
-        )
+        // The hero sits in a scroll view, which turns the top safe area into a content inset — an
+        // `ignoresSafeArea` here has nothing left to ignore, and the gradient stopped at the status-bar
+        // line. So the background paints upward past the hero's own frame instead (the customer Profile
+        // hero's form): the gradient keeps the hero's bounds and a block of its first stop fills the
+        // status-bar strip and the rubber-band overscroll above it.
+        .background(alignment: .bottom) {
+            VStack(spacing: 0) {
+                BrandGradient.blue.colors[0].frame(height: heroBleed)
+                LinearGradient(colors: BrandGradient.blue.colors, startPoint: .top, endPoint: .bottom)
+            }
+            .padding(.top, -heroBleed)
+        }
     }
 
     /// A portrait, not a control: the photo is changed on the Personal data section, where the rest of
@@ -313,6 +321,9 @@ private struct ProfileHero: View {
         return chars.isEmpty ? "?" : chars
     }
 }
+
+/// How far the hero background paints above its frame — past the status bar and any overscroll.
+private let heroBleed: CGFloat = 600
 
 /// Unlike the customer TierBadge (white translucent capsule), the chip keeps
 /// Android's semantic palette — color encodes the contract state.

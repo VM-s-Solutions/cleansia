@@ -174,8 +174,8 @@ public class PreferredCleanerSlotAgreementTests(PostgresContainerFixture fixture
         context.Add(customer);
 
         // On the wall clock, not the fixed Now: the entitlement read compares CurrentPeriodEnd with the
-        // database's now(), so a period pinned to a past date expires the membership and both answers
-        // collapse to NoMembership.
+        // database's now(), so a period pinned to a past date expires the membership: the picker then
+        // leaves the slot unevaluated (null) and the hold resolver answers NoMembership.
         context.Add(UserMembership.Create(
             userId: CustomerId,
             membershipPlanId: NewPlan(context).Id,

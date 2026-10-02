@@ -14,8 +14,12 @@ public struct MapKitMapProvider: MapProvider {
         AnyView(PickerMapView(region: region, showsUserLocation: showsUserLocation, bottomInset: bottomInset))
     }
 
+    /// Measured, so the map can tell how much of it a `SnapSheet` covers: the sheet publishes its top
+    /// edge in the backdrop's coordinates, and the map's height is the rest of that sum.
     public func fullBleedMap(coordinate: Coordinate) -> AnyView {
-        AnyView(FullBleedOrderMap(coordinate: coordinate))
+        AnyView(GeometryReader { proxy in
+            FullBleedOrderMap(coordinate: coordinate, height: proxy.size.height)
+        })
     }
 }
 
@@ -173,31 +177,84 @@ enum FullBleedMapGeometry {
 
 struct FullBleedOrderMap: UIViewRepresentable {
     let coordinate: Coordinate
+    /// The map's own height, measured by `fullBleedMap(coordinate:)`; 0 leaves the map uncovered.
+    var height: CGFloat = 0
 
-    func makeUIView(context _: Context) -> MKMapView {
-        makeMapView()
+    func makeCoordinator() -> Placement {
+        Placement()
     }
 
-    func makeMapView() -> MKMapView {
+    func makeUIView(context: Context) -> MKMapView {
+        makeMapView(
+            placement: context.coordinator,
+            coveredHeight: coveredHeight(sheetTop: context.environment.snapSheetTop)
+        )
+    }
+
+    func makeMapView(placement: Placement = Placement(), coveredHeight: CGFloat = 0) -> MKMapView {
         let mapView = MKMapView()
         mapView.showsUserLocation = false
         CleansiaMapStyle.apply(to: mapView)
-        apply(to: mapView)
+        apply(to: mapView, placement: placement, coveredHeight: coveredHeight)
         return mapView
     }
 
-    func updateUIView(_ mapView: MKMapView, context _: Context) {
-        apply(to: mapView)
+    func updateUIView(_ mapView: MKMapView, context: Context) {
+        apply(
+            to: mapView,
+            placement: context.coordinator,
+            coveredHeight: coveredHeight(sheetTop: context.environment.snapSheetTop)
+        )
     }
 
-    func apply(to mapView: MKMapView) {
-        mapView.delegate = CleansiaMapMarker.delegate
-        mapView.setRegion(FullBleedMapGeometry.region(for: coordinate), animated: false)
+    /// How far the sheet covers the map from its bottom edge. 0 outside a SnapSheet, which publishes no top.
+    func coveredHeight(sheetTop: CGFloat) -> CGFloat {
+        sheetTop > 0 ? max(height - sheetTop, 0) : 0
+    }
 
+    /// The region is centred on the map's whole bounds, as it always was, so the pin's place on screen
+    /// depends neither on the safe area nor on the sheet; it is set again only for a new coordinate, so a
+    /// sheet drag does not undo a pan. Then the bottom margin follows the sheet's edge, which lifts Apple's
+    /// logo and its *Legal* link above the sheet (MapKit's terms) and moves nothing else. The margins ignore
+    /// the safe area: the sheet's cover is measured from the map's own bottom edge.
+    func apply(to mapView: MKMapView, placement: Placement = Placement(), coveredHeight: CGFloat = 0) {
+        mapView.delegate = CleansiaMapMarker.delegate
         let pin = CLLocationCoordinate2D(latitude: coordinate.latitude, longitude: coordinate.longitude)
-        mapView.removeAnnotations(mapView.annotations)
-        let annotation = MKPointAnnotation()
-        annotation.coordinate = pin
-        mapView.addAnnotation(annotation)
+        if placement.coordinate != coordinate {
+            placement.coordinate = coordinate
+            placement.cover = 0
+            mapView.insetsLayoutMarginsFromSafeArea = false
+            mapView.layoutMargins = .zero
+            mapView.setRegion(FullBleedMapGeometry.region(for: coordinate), animated: false)
+            mapView.removeAnnotations(mapView.annotations)
+            let annotation = MKPointAnnotation()
+            annotation.coordinate = pin
+            mapView.addAnnotation(annotation)
+        }
+        guard coveredHeight != placement.cover else { return }
+        // Not laid out yet: MapKit fits the region when it is, against whatever margin it has then, so the
+        // margin waits for that first layout.
+        guard mapView.bounds.height > 0 else {
+            DispatchQueue.main.async { [weak mapView] in
+                guard let mapView, mapView.bounds.height > 0 else { return }
+                apply(to: mapView, placement: placement, coveredHeight: coveredHeight)
+            }
+            return
+        }
+        placement.cover = coveredHeight
+        // MapKit keeps the content still when the margins change (checked on iOS 16.4 and 26.3), so this
+        // moves the logo and Legal and not the pin.
+        mapView.layoutMargins = UIEdgeInsets(top: 0, left: 0, bottom: coveredHeight, right: Self.ornamentClearance)
+    }
+
+    /// The sheet's ornament rides its top edge at the trailing side (`SnapSheet`), and iOS 16 puts *Legal*
+    /// at the bottom right — under the ornament — where iOS 26 puts it beside the logo at the bottom left.
+    /// The trailing margin keeps it clear of the ornament on either.
+    static let ornamentClearance = SnapSheetOrnament.defaultSize + Spacing.m
+
+    /// What this map last applied, so an update re-applies only what changed.
+    final class Placement {
+        var coordinate: Coordinate?
+        var cover: CGFloat = 0
     }
 }

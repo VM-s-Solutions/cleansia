@@ -173,6 +173,41 @@ final class CleansiaMapStyleTests: XCTestCase {
         }
     }
 
+    /// The order sheet covers Apple's logo and *Legal* on the full-bleed map, so the map's bottom margin
+    /// follows the sheet's edge at every anchor and the trailing margin clears the ornament riding it. The
+    /// pin must not move with them: the region is laid out on the map's bounds, not its margins.
+    @MainActor
+    func testTheSheetsCoverLiftsTheAttributionAndLeavesThePinWhereItWas() {
+        let map = FullBleedOrderMap(coordinate: prague, height: 844)
+        let mapView = map.makeMapView()
+        let window = Self.hostOnANotchedPhone(mapView)
+        defer { window.isHidden = true }
+        let placement = FullBleedOrderMap.Placement()
+        map.apply(to: mapView, placement: placement)
+        let pin = CLLocationCoordinate2D(latitude: prague.latitude, longitude: prague.longitude)
+        let uncovered = mapView.convert(pin, toPointTo: mapView)
+
+        // Peek, map focus and expanded on a 6.1" phone, then back to peek.
+        for sheetTop: CGFloat in [246, 594, 96, 246] {
+            map.apply(to: mapView, placement: placement, coveredHeight: map.coveredHeight(sheetTop: sheetTop))
+            mapView.layoutIfNeeded()
+
+            XCTAssertEqual(mapView.layoutMargins.bottom, 844 - sheetTop, accuracy: 0.5)
+            XCTAssertEqual(mapView.layoutMargins.right, FullBleedOrderMap.ornamentClearance, accuracy: 0.5)
+            let point = mapView.convert(pin, toPointTo: mapView)
+            XCTAssertEqual(point.x, uncovered.x, accuracy: 1, "the pin moved with the sheet at \(sheetTop)")
+            XCTAssertEqual(point.y, uncovered.y, accuracy: 1, "the pin moved with the sheet at \(sheetTop)")
+        }
+    }
+
+    /// Outside a SnapSheet nothing is published, and nothing is covered.
+    func testTheCoverIsTheMapBelowTheSheetsTop() {
+        let map = FullBleedOrderMap(coordinate: prague, height: 844)
+        XCTAssertEqual(map.coveredHeight(sheetTop: 246), 598)
+        XCTAssertEqual(map.coveredHeight(sheetTop: 0), 0)
+        XCTAssertEqual(map.coveredHeight(sheetTop: 900), 0)
+    }
+
     @MainActor
     private static func hostOnANotchedPhone(_ mapView: MKMapView) -> UIWindow {
         let host = UIViewController()

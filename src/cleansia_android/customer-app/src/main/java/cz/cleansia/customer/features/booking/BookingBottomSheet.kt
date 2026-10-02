@@ -70,6 +70,13 @@ import kotlin.math.roundToInt
 
 private enum class SheetAnchor { Hidden, Peek, Half, Full }
 
+/**
+ * Which way a step change slides in: 1 from the right, -1 from the left. Forward comes in from the
+ * trailing edge and back from the leading one, so a right-to-left layout mirrors both; the step
+ * leaving moves the opposite way.
+ */
+internal fun stepSlideDirection(forward: Boolean, rtl: Boolean): Int = (if (forward) 1 else -1) * (if (rtl) -1 else 1)
+
 private const val TOTAL_STEPS = BookingViewModel.TOTAL_STEPS
 
 /**
@@ -567,12 +574,14 @@ private fun SheetContent(
             trackColor = MaterialTheme.colorScheme.surfaceVariant,
         )
 
+        // With animations removed in the system settings Compose runs these at zero duration, so the
+        // step simply changes.
+        val rtl = androidx.compose.ui.platform.LocalLayoutDirection.current == androidx.compose.ui.unit.LayoutDirection.Rtl
         Box(modifier = Modifier.weight(1f)) {
             androidx.compose.animation.AnimatedContent(
                 targetState = currentStep,
                 transitionSpec = {
-                    val forward = targetState > initialState
-                    val slideDistance = if (forward) 1 else -1
+                    val slideDistance = stepSlideDirection(forward = targetState > initialState, rtl = rtl)
                     (androidx.compose.animation.slideInHorizontally(
                         animationSpec = androidx.compose.animation.core.tween(280),
                     ) { it * slideDistance } + androidx.compose.animation.fadeIn(

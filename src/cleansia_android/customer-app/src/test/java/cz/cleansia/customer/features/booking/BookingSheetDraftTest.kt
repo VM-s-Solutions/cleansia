@@ -6,7 +6,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * When the booking sheet keeps the draft and when it starts afresh. The sheet has no Compose harness,
+ * The booking sheet's own rules: which way a step change slides, and when it keeps the draft and when
+ * it starts afresh. The sheet has no Compose harness,
  * so its open effects are pinned as source: a plain open (the Book FAB) resumes the draft, and each
  * open that seeds a booking — Order again, a popular package, the quick-size slide — resets it before
  * filling. The view model's half is BookingViewModelTest's `closingTheSheet_keepsTheDraftAndItsStep`.
@@ -50,5 +51,14 @@ class BookingSheetDraftTest {
             3,
             Regex("bookingVm\\.reset\\(\\)\\s*onComplete\\(").findAll(sheet).count(),
         )
+    }
+
+    /** Forward enters from the trailing edge and back from the leading one, mirrored right to left. */
+    @Test
+    fun `a step slides in from the trailing edge going forward and from the leading edge going back`() {
+        assertEquals(1, stepSlideDirection(forward = true, rtl = false))
+        assertEquals(-1, stepSlideDirection(forward = false, rtl = false))
+        assertEquals(-1, stepSlideDirection(forward = true, rtl = true))
+        assertEquals(1, stepSlideDirection(forward = false, rtl = true))
     }
 }

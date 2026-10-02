@@ -981,11 +981,12 @@ need backfilling.
   the card's edge casts a shadow now, as on Android, and so does the *Signing in…* card's. (Owner
   remark 2026-10-01; the sign-in card 2026-10-02.)
 
-- **Customer and cleaner iOS — the cleaning mascot no longer sits on a faint square.** The animated
-  mascot of a clean in progress drew a faint lighter square behind it, clearest in dark mode: on the
-  order detail in both apps, and on the customer's busy card while a booking or a Plus activation is
-  submitted. The animation's own frames carried it, and they are now transparent around the mascot.
-  (2026-10-02.)
+- **Customer and cleaner, Android and iOS — the animated mascots no longer sit on a faint square.**
+  The mascot of a clean in progress drew a faint lighter square behind it, clearest in dark mode: on
+  the order detail in both apps, and on the customer's busy card while a booking or a Plus activation
+  is submitted. The waving mascot on the customer's order detail, shown once a cleaner has taken the
+  order and while they are on the way, had the same square. The animations' own frames carried it, and
+  they are now transparent around the mascot. (2026-10-02.)
 
 - **Customer Android and iOS — less empty space under the Cleansia Plus button.** The button bar at
   the bottom of the Plus offer is tighter on iOS, where an empty band of about 54pt sat under the

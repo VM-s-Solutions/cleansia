@@ -15,7 +15,24 @@ struct MembershipManagementCard: View {
 
     var body: some View {
         content
-            .overlay { dialogs }
+            .alert(L10n.Membership.cancelDialogTitle, isPresented: $showCancelDialog) {
+                Button(L10n.Membership.cancelDialogConfirm, role: .destructive, action: confirmCancel)
+                Button(L10n.Membership.back, role: .cancel) {}
+            } message: {
+                Text(vm.copy.cancelDialogMessage)
+            }
+            .alert(
+                L10n.Membership.switchDialogTitle,
+                isPresented: $showSwitchDialog,
+                presenting: yearlyPlan
+            ) { plan in
+                Button(L10n.Membership.switchDialogConfirm) { confirmSwitch(plan) }
+                Button(L10n.Membership.back, role: .cancel) {}
+            } message: { plan in
+                Text(vm.copy.switchDialogMessage(
+                    price: MembershipFormat.price(plan.price, currencyCode: plan.currencyCode)
+                ))
+            }
     }
 
     @ViewBuilder
@@ -39,33 +56,6 @@ struct MembershipManagementCard: View {
                     onSwitch: { showSwitchDialog = true }
                 )
             }
-        }
-    }
-
-    @ViewBuilder
-    private var dialogs: some View {
-        if showCancelDialog {
-            CleansiaDialog(
-                title: L10n.Membership.cancelDialogTitle,
-                confirmLabel: L10n.Membership.cancelDialogConfirm,
-                onConfirm: confirmCancel,
-                onDismiss: { showCancelDialog = false },
-                message: vm.copy.cancelDialogMessage,
-                dismissLabel: L10n.Membership.back,
-                destructive: true
-            )
-        }
-        if showSwitchDialog, let yearlyPlan {
-            CleansiaDialog(
-                title: L10n.Membership.switchDialogTitle,
-                confirmLabel: L10n.Membership.switchDialogConfirm,
-                onConfirm: { confirmSwitch(yearlyPlan) },
-                onDismiss: { showSwitchDialog = false },
-                message: vm.copy.switchDialogMessage(
-                    price: MembershipFormat.price(yearlyPlan.price, currencyCode: yearlyPlan.currencyCode)
-                ),
-                dismissLabel: L10n.Membership.back
-            )
         }
     }
 

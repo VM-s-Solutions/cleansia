@@ -50,9 +50,14 @@ struct DeleteAccountView: View {
                     .padding(.bottom, Spacing.m)
                     .background(CleansiaColors.background)
             }
-            if showConfirmDialog {
-                confirmDialog
+        }
+        .alert(L10n.DeleteAccount.dialogTitle, isPresented: $showConfirmDialog) {
+            Button(L10n.DeleteAccount.dialogConfirm, role: .destructive) {
+                Task { await vm.confirmDelete() }
             }
+            Button(L10n.cancel, role: .cancel) {}
+        } message: {
+            Text(L10n.DeleteAccount.dialogMessage)
         }
         .navigationTitle(L10n.DeleteAccount.title)
         .navigationBarTitleDisplayMode(.inline)
@@ -150,22 +155,5 @@ struct DeleteAccountView: View {
         ) {
             showConfirmDialog = true
         }
-    }
-
-    private var confirmDialog: some View {
-        CleansiaDialog(
-            title: L10n.DeleteAccount.dialogTitle,
-            confirmLabel: L10n.DeleteAccount.dialogConfirm,
-            onConfirm: {
-                showConfirmDialog = false
-                Task { await vm.confirmDelete() }
-            },
-            onDismiss: { showConfirmDialog = false },
-            message: L10n.DeleteAccount.dialogMessage,
-            dismissLabel: L10n.cancel,
-            icon: "exclamationmark.triangle",
-            destructive: true,
-            confirmEnabled: !vm.deleteState.isSubmitting
-        )
     }
 }

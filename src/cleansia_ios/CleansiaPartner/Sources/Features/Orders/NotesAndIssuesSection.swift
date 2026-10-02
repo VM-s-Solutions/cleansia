@@ -51,7 +51,16 @@ struct NotesAndIssuesSection: View {
         .sheet(item: $entry) { context in
             TextEntrySheet(context: context, vm: vm) { entry = nil }
         }
-        .overlay { deletionDialog }
+        .alert(
+            L10n.Orders.delete,
+            isPresented: Binding(get: { deletion != nil }, set: { if !$0 { deletion = nil } }),
+            presenting: deletion
+        ) { deletion in
+            Button(L10n.Orders.delete, role: .destructive) { confirmDelete(deletion) }
+            Button(L10n.cancel, role: .cancel) {}
+        } message: { deletion in
+            Text(deletion.message)
+        }
     }
 
     private var addButtons: some View {
@@ -72,23 +81,6 @@ struct NotesAndIssuesSection: View {
         }
     }
 
-    @ViewBuilder
-    private var deletionDialog: some View {
-        if let deletion {
-            CleansiaDialog(
-                title: L10n.Orders.delete,
-                confirmLabel: L10n.Orders.delete,
-                onConfirm: { confirmDelete(deletion) },
-                onDismiss: { self.deletion = nil },
-                message: deletion.message,
-                dismissLabel: L10n.cancel,
-                icon: "trash",
-                destructive: true,
-                content: { EmptyView() }
-            )
-        }
-    }
-
     private func startEdit(noteId: String?, text: String?) {
         guard let noteId else { return }
         entry = .editNote(id: noteId, text: text ?? "")
@@ -100,7 +92,6 @@ struct NotesAndIssuesSection: View {
     }
 
     private func confirmDelete(_ deletion: DeletionContext) {
-        self.deletion = nil
         Task {
             switch deletion {
             case let .note(id): await vm.deleteNote(id)

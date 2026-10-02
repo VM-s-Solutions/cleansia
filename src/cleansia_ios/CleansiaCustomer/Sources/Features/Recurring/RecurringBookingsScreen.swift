@@ -39,7 +39,22 @@ struct RecurringBookingsScreen: View {
                         .padding(Spacing.ml)
                 }
             }
-            .overlay { deleteDialog }
+            .alert(
+                L10n.Recurring.deleteDialogTitle,
+                isPresented: Binding(get: { pendingDeleteId != nil }, set: { if !$0 { pendingDeleteId = nil } }),
+                presenting: pendingDeleteId
+            ) { id in
+                Button(L10n.Recurring.deleteDialogConfirm, role: .destructive) {
+                    Task { await vm.delete(templateId: id) }
+                }
+                Button(L10n.Recurring.back, role: .cancel) {}
+            } message: { _ in
+                Text(
+                    L10n.Recurring.deleteDialogWhatStops + "\n\n"
+                        + L10n.Recurring.deleteDialogWhatStays + "\n\n"
+                        + L10n.Recurring.deleteDialogPauseHint
+                )
+            }
     }
 
     @ViewBuilder
@@ -64,26 +79,6 @@ struct RecurringBookingsScreen: View {
                 onSubscribe: onSubscribePlus
             )
             .refreshable { await vm.load() }
-        }
-    }
-
-    @ViewBuilder
-    private var deleteDialog: some View {
-        if let id = pendingDeleteId {
-            CleansiaDialog(
-                title: L10n.Recurring.deleteDialogTitle,
-                confirmLabel: L10n.Recurring.deleteDialogConfirm,
-                onConfirm: {
-                    pendingDeleteId = nil
-                    Task { await vm.delete(templateId: id) }
-                },
-                onDismiss: { pendingDeleteId = nil },
-                message: L10n.Recurring.deleteDialogWhatStops + "\n\n"
-                    + L10n.Recurring.deleteDialogWhatStays + "\n\n"
-                    + L10n.Recurring.deleteDialogPauseHint,
-                dismissLabel: L10n.Recurring.back,
-                destructive: true
-            )
         }
     }
 }

@@ -43,36 +43,21 @@ struct OrderDetailContent: View {
     }
 
     var body: some View {
-        ZStack {
-            detail
-            if confirmingCash {
-                CleansiaDialog(
-                    title: L10n.Orders.markCashCollectedConfirmTitle,
-                    confirmLabel: L10n.Orders.markCashCollectedConfirmAction,
-                    onConfirm: {
-                        confirmingCash = false
-                        onConfirm(.collectCash)
-                    },
-                    onDismiss: { confirmingCash = false },
-                    message: cashConfirmMessage,
-                    dismissLabel: L10n.cancel,
-                    icon: "banknote",
-                    confirmEnabled: inFlightAction != .markCashCollected
-                )
+        detail
+            // The button that raises it is busy while the collection is in flight, and the view
+            // model refuses a second mutation, so the confirm needs no busy state of its own.
+            .alert(L10n.Orders.markCashCollectedConfirmTitle, isPresented: $confirmingCash) {
+                Button(L10n.Orders.markCashCollectedConfirmAction) { onConfirm(.collectCash) }
+                Button(L10n.cancel, role: .cancel) {}
+            } message: {
+                Text(cashConfirmMessage)
             }
-            if decliningOffer {
-                OfferDeclineDialog(
-                    onConfirm: {
-                        decliningOffer = false
-                        onDeclineOffer()
-                    },
-                    onDismiss: { decliningOffer = false }
-                )
-            }
-            if let refusal, inFlightAction == nil {
-                OfferRefusalDialog(refusal: refusal, onDismiss: onDismissRefusal)
-            }
-        }
+            .offerDeclineAlert(
+                decliningOffer ? preferredOffer : nil,
+                onDismiss: { decliningOffer = false },
+                onConfirm: { _ in onDeclineOffer() }
+            )
+            .offerRefusalAlert(inFlightAction == nil ? refusal : nil, onDismiss: onDismissRefusal)
     }
 
     private var detail: some View {

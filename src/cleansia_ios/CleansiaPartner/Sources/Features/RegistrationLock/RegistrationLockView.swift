@@ -60,29 +60,20 @@ struct RegistrationLockView: View {
 
     var body: some View {
         NavigationStack(path: $path) {
-            ZStack {
-                content
-                if isConfirmingSignOut {
-                    // Signing out is the one destructive thing this screen offers, and the button
-                    // sat one tap away from it on both platforms.
-                    CleansiaDialog(
-                        title: L10n.RegistrationLock.signOutConfirmTitle,
-                        confirmLabel: L10n.RegistrationLock.signOut,
-                        onConfirm: {
-                            isConfirmingSignOut = false
-                            Task { await vm.signOut() }
-                        },
-                        onDismiss: { isConfirmingSignOut = false },
-                        message: L10n.RegistrationLock.signOutConfirmMessage,
-                        dismissLabel: L10n.cancel,
-                        icon: "rectangle.portrait.and.arrow.right",
-                        destructive: true,
-                        confirmEnabled: !vm.action.isSubmitting
-                    )
+            content
+                // Signing out is the one destructive thing this screen offers, and the button sat one
+                // tap away from it on both platforms. A second sign-out while one is in flight is
+                // refused by the view model's own guard.
+                .alert(L10n.RegistrationLock.signOutConfirmTitle, isPresented: $isConfirmingSignOut) {
+                    Button(L10n.RegistrationLock.signOut, role: .destructive) {
+                        Task { await vm.signOut() }
+                    }
+                    Button(L10n.cancel, role: .cancel) {}
+                } message: {
+                    Text(L10n.RegistrationLock.signOutConfirmMessage)
                 }
-            }
-            .background(CleansiaColors.background.ignoresSafeArea())
-            .navigationDestination(for: ProfileRoute.self, destination: sectionDestination)
+                .background(CleansiaColors.background.ignoresSafeArea())
+                .navigationDestination(for: ProfileRoute.self, destination: sectionDestination)
         }
         .task {
             // Prime the chain completion snapshot so the "Step X of 4" header

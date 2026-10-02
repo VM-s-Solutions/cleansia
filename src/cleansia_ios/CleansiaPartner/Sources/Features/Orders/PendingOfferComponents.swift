@@ -72,42 +72,42 @@ struct ReservedForYouRow: View {
     }
 }
 
-/// The server's own reason is quoted verbatim inside platform-owned framing, and which framing depends
-/// on which promise broke. Shared by the offers list and the order detail so the same failure reads
-/// identically wherever it is met.
-struct OfferRefusalDialog: View {
-    let refusal: OfferRefusal
-    let onDismiss: () -> Void
-
-    var body: some View {
-        CleansiaDialog(
-            title: refusal.title,
-            confirmLabel: L10n.Offers.blockedDismiss,
-            onConfirm: onDismiss,
-            onDismiss: onDismiss,
-            message: refusal.message,
-            icon: "exclamationmark.triangle"
-        )
+/// The offers list and the order detail raise the same two alerts, so the same refusal and the same
+/// decline read identically wherever they are met.
+extension View {
+    /// The server's own reason is quoted verbatim inside platform-owned framing, and which framing
+    /// depends on which promise broke.
+    func offerRefusalAlert(_ refusal: OfferRefusal?, onDismiss: @escaping () -> Void) -> some View {
+        alert(
+            refusal?.title ?? "",
+            isPresented: Binding(get: { refusal != nil }, set: { if !$0 { onDismiss() } }),
+            presenting: refusal
+        ) { _ in
+            Button(L10n.Offers.blockedDismiss, role: .cancel) {}
+        } message: { refusal in
+            Text(refusal.message)
+        }
     }
-}
 
-/// Refusing the reservation is destructive and irreversible for this cleaner, so it asks first. The
-/// copy says what happens to the JOB and never what the customer will be told — one sentence covers a
-/// refusal and a silence on their side, and naming them here would make a claim the platform does not.
-struct OfferDeclineDialog: View {
-    let onConfirm: () -> Void
-    let onDismiss: () -> Void
-
-    var body: some View {
-        CleansiaDialog(
-            title: L10n.Offers.declineTitle,
-            confirmLabel: L10n.Offers.declineCta,
-            onConfirm: onConfirm,
-            onDismiss: onDismiss,
-            message: L10n.Offers.declineBody,
-            dismissLabel: L10n.cancel,
-            destructive: true
-        )
+    /// Refusing the reservation is destructive and irreversible for this cleaner, so it asks first. The
+    /// copy says what happens to the JOB and never what the customer will be told — one sentence covers
+    /// a refusal and a silence on their side, and naming them here would make a claim the platform does
+    /// not.
+    func offerDeclineAlert(
+        _ offer: PendingOfferItem?,
+        onDismiss: @escaping () -> Void,
+        onConfirm: @escaping (PendingOfferItem) -> Void
+    ) -> some View {
+        alert(
+            L10n.Offers.declineTitle,
+            isPresented: Binding(get: { offer != nil }, set: { if !$0 { onDismiss() } }),
+            presenting: offer
+        ) { offer in
+            Button(L10n.Offers.declineCta, role: .destructive) { onConfirm(offer) }
+            Button(L10n.cancel, role: .cancel) {}
+        } message: { _ in
+            Text(L10n.Offers.declineBody)
+        }
     }
 }
 

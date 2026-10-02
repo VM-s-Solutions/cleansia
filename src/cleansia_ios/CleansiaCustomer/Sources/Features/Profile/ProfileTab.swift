@@ -80,7 +80,12 @@ struct ProfileTab: View {
                 }
             }
         }
-        .overlay { signOutOverlay }
+        .alert(L10n.Profile.signOutDialogTitle, isPresented: $showSignOutDialog) {
+            Button(L10n.Profile.signOutDialogConfirm, role: .destructive, action: onSignOut)
+            Button(L10n.cancel, role: .cancel) {}
+        } message: {
+            Text(L10n.Profile.signOutDialogMessage)
+        }
         .sheet(isPresented: $showCreditSheet) {
             if let credit = loyalty.credit {
                 CreditExplainerSheet(credit: credit) { showCreditSheet = false }
@@ -178,25 +183,6 @@ struct ProfileTab: View {
         switch row.target {
         case let .route(route): onOpen(route)
         case let .action(action): action()
-        }
-    }
-
-    @ViewBuilder
-    private var signOutOverlay: some View {
-        if showSignOutDialog {
-            CleansiaDialog(
-                title: L10n.Profile.signOutDialogTitle,
-                confirmLabel: L10n.Profile.signOutDialogConfirm,
-                onConfirm: {
-                    showSignOutDialog = false
-                    onSignOut()
-                },
-                onDismiss: { showSignOutDialog = false },
-                message: L10n.Profile.signOutDialogMessage,
-                dismissLabel: L10n.cancel,
-                icon: "rectangle.portrait.and.arrow.right",
-                destructive: true
-            )
         }
     }
 }

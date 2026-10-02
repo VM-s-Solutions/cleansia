@@ -131,10 +131,12 @@ interface ProfileRepository {
     suspend fun getPayoutDetails(): ApiResult<MyPayoutDetails?>
 
     /**
-     * The account is identified by its local parts — the server derives the IBAN from them
-     * and rejects a supplied [iban] that disagrees, so [iban] is a cross-check the cleaner
-     * may leave empty. [swift] becomes required when the bank sits in a different country
-     * than the one the cleaner works in; the server decides that and says so.
+     * The bank country decides which fields identify the account, and only those are sent. A
+     * CZ or SK bank (the server's CzskDomesticWithIban scheme) is identified by [accountPrefix],
+     * [accountNumber] and [bankCode]; the server derives the IBAN from them, so [iban] is null.
+     * Any other bank country is identified by [iban] alone, with the three parts null.
+     * [swift] becomes required when the bank sits in a different country than the one the
+     * cleaner works in; the server decides that and says so.
      */
     suspend fun updateBankDetails(
         employeeId: String,

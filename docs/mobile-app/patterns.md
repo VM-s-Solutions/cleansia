@@ -309,3 +309,14 @@ What changed on iOS:
   From step 2 on the booking sheet refuses a swipe down, so a half-built booking cannot be swiped away,
   and only on iOS 26 has a zoom-presented sheet been checked to keep refusing it. iOS 18 to 25 keep the
   plain sheet until someone checks them on a device.
+- **A plain confirmation is the system alert; a rich one keeps the branded card.** A confirmation that
+  only asks (a title, a message, a confirm and a cancel), closes on the tap and then starts its work is
+  a native `.alert`, with a red confirm where it destroys. That covers every sign-out, deleting the
+  account (both apps), cancelling or switching Plus, deleting a schedule, and on the partner side the
+  cash-collected confirm, deleting a note or an issue, declining or refusing an offer and the
+  removal-reason notice. A confirmation that holds a field, or stays up while it submits, is still the
+  `CleansiaDialog` card: removing a saved card, revoking a device (both apps), and the partner's
+  document replace, upload and deletion request. A system alert closes on the tap, so it cannot keep a
+  disabled button up until the request lands, or show the error inside itself. The alerts use the same
+  title, message and button strings; they lose the card's icon circle and spring. Android keeps its
+  branded dialog for every confirmation, since the content is what ADR-0018 D1 holds identical.

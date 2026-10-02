@@ -679,6 +679,18 @@ raw components one-off; never duplicate a `:core` component.
 > continuous with a deep floating shadow. Severity accent = `error` / green / `primary` / amber; the
 > `SnackbarMessage`/`SnackbarSeverity` API + dismiss button + accessibility are unchanged.
 
+> **iOS `CleansiaDialog` — only for a confirm that holds a field or stays up while submitting (owner
+> decision D15, 2026-10-01).** A plain confirm (title, message, confirm/cancel; it closes on the tap and
+> then its work starts) is a native `.alert` with `role: .destructive` where it destroys. Choose by what
+> the confirm does, not by how much it destroys: an alert is gone before the request starts, so the
+> double-submit guard must be the trigger's (disabled or busy while the request runs) or the view
+> model's re-entry check. A `confirmEnabled: !isSubmitting` on a dialog that closes first guards
+> nothing, which is why five such sites were converted too. Six cards remain: customer card removal
+> (stays up, shows its error) and device revoke, partner device revoke (both stay up until `revoked`),
+> and the partner document replace, upload and deletion request (they hold fields). The card is an overlay,
+> so it draws inside whatever it is mounted on: mount it on the screen, never on a card or a section (the
+> membership card and the notes section did; both are alerts now).
+>
 > **iOS `CleansiaDialog` spring pop-in:** call sites present the dialog with a plain
 > `if flag { CleansiaDialog(…) }` (no `withAnimation` around the flag), so a bare `.transition` never
 > fires. The dialog springs itself in — `@State presented` flipped true in `.onAppear` under a
@@ -894,7 +906,7 @@ and `…/Network`; the `:core` sub-packages map by name (`auth`→`Auth`, `netwo
 | Material `colorScheme.*` (per-app `lightColorScheme`/`darkColorScheme`) | `CleansiaColors` in `Core/DesignSystem` — the **same Material slot names** (`primary`/`onPrimary`/`surface`/`outline`/`error`…) as `Color.dynamic(light:dark:)`, so components read 1:1 with the Compose source; the sky/slate ramp is `Palette` (internal). Slots the Android themes **don't override** render Compose's **Material3 BASELINE** on device — mirror that baseline hex verbatim (e.g. `tertiaryContainer`, dark `errorContainer`/`onErrorContainer` = error30/error90), never substitute a "close" ramp color |
 | `CleansiaTypography` (Poppins headings / Nunito body) | `CleansiaTypography` in `Core/DesignSystem` — same slot names returning `Font`; `CleansiaFont.{poppins,nunito}` register bundled `.ttf` (owner step) and **fall back to system font** if absent so it always builds |
 | customer `ui.theme.BrandGradients` (light/dark brand pairs) + the inline Plus `Sky950→Slate900` pair (`HomeTab.kt:412-421`) | the Core **`BrandGradient`** enum in `Core/DesignSystem` — `.blue`/`.purple`/`.cyan` as `Color.dynamic` pairs + the fixed `.plusHero`, exposing `colors` and a `linearGradient` (top-leading→bottom-trailing = Compose's default `Brush.linearGradient`). Models/views carry the semantic **token**, not resolved `Color`s, so slide/predicate tests compare gradients by case |
-| `cz.cleansia.core.ui.components.*` Composables | the same `Cleansia*` names as `View`s in `Core/Components` — **native SwiftUI, no Material re-impl** (Gate-DP): a `CleansiaDropdown` over a short closed list → a native `Menu` + inline `Picker` anchored to the field, a searchable one (the country lists) → `.sheet`+`.presentationDetents`+`.searchable` (owner decision D15, 2026-10-01; until then every dropdown was a sheet), Material Checkbox → SF-Symbol tappable row, custom Dialog → overlay card; same layout/labels/branding |
+| `cz.cleansia.core.ui.components.*` Composables | the same `Cleansia*` names as `View`s in `Core/Components` — **native SwiftUI, no Material re-impl** (Gate-DP): a `CleansiaDropdown` over a short closed list → a native `Menu` + inline `Picker` anchored to the field, a searchable one (the country lists) → `.sheet`+`.presentationDetents`+`.searchable` (owner decision D15, 2026-10-01; until then every dropdown was a sheet), Material Checkbox → SF-Symbol tappable row, custom Dialog → a native `.alert` for a plain confirm, the `CleansiaDialog` overlay card for one that holds a field or stays up while submitting (D15; until then every confirm was the card); same layout/labels/branding |
 | `@HiltViewModel` + `StateFlow` | `ObservableObject` + `@Published` state; own a VM with `@StateObject`, inject with `@ObservedObject` (the iOS-16 foot-gun, ADR-0014 #11). New VMs may subclass the `@MainActor open class ViewModel` base in `Core/State` (NOT `@Observable`) |
 | sealed `*UiState` (Loading/Error/Loaded) | an `enum State { case loading, error(canRetry: Bool), loaded(OrderDetailDto) }` |
 | `ActionState` (Idle/Submitting/Error) | an `enum ActionState` mirror |
@@ -1866,7 +1878,7 @@ the Parity rule; Gate-SEC):** the customer settings tail over the generated `Cus
   + `sessionScopedCaches.clearAll()` — **never `logout()`**, the account is gone server-side) + emit `accountDeleted` → the root resets
   to login (the existing `onSignedOut` seam); on FAILURE the deletion is BLOCKED mid-transaction → **stay signed in (NO wipe)** + show
   the localized backend error. The 3 blocked codes (`gdpr.deletion_blocked_by_order`/`_by_invoice`/`_already_pending`) map to `.xcstrings`
-  keys ×5 via a typed `GdprDeletionBlock(code:)`; the destructive flow is a typed-email confirm + a `.destructive` `CleansiaDialog` + an
+  keys ×5 via a typed `GdprDeletionBlock(code:)`; the destructive flow is a typed-email confirm + a native `.alert` with a `.destructive` confirm (a `CleansiaDialog` until D15) + an
   explicit "permanently deletes" message ×5 + the **SIWA note ×5** ("remove Cleansia in Settings → Apple ID → Sign in with Apple" —
   satisfies 5.1.1(v); Apple `/auth/revoke` owner-deferred §7.14 D4). **No client-side delete logic / no client flag.**
 - **The backend-error-code seam (harvested):** the customer generated `ApiError.fromGenerated` drops the code (`code: nil`, raw body as

@@ -685,7 +685,7 @@
       "export_request": "Vyžiadať",
       "credit": {
         "auto_applied": "Kredit — automaticky sa použije na vašu najbližšiu objednávku.",
-        "expires_on": "Vyprší {{date}} — každá objednávka lehôtu predĺži."
+        "expires_on": "Vyprší {{date}} — každá objednávka lehotu predĺži."
       },
       "saved_cards": {
         "title": "Uložené karty",

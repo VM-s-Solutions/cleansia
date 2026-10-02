@@ -2,7 +2,9 @@ package cz.cleansia.partner.features.orders
 
 import cz.cleansia.core.money.CurrencySymbols
 import cz.cleansia.partner.api.model.OrderListItem
-import kotlin.math.roundToInt
+import java.text.DecimalFormatSymbols
+import java.util.Locale
+import kotlin.math.abs
 
 /**
  * The board and the history list are not scoped to one currency — the backend keeps a EUR job on a
@@ -31,10 +33,23 @@ fun formatEarningsTotal(orders: List<OrderListItem>): String {
     }
 }
 
-/** Whole units, thousands grouped with a space, the symbol after; no unit when there is none. */
-internal fun formatMoney(amount: Double, currencySymbol: String?): String {
-    val rounded = amount.roundToInt()
-    val whole = rounded.toString().reversed().chunked(3).joinToString(" ").reversed()
+/**
+ * Thousands grouped with a space, the symbol after; no unit when there is none. A whole amount prints
+ * without a fraction and any other to two decimals in the locale's mark: the order detail's rule (core
+ * `formatOrderPrice`), so a job's pay reads the same on the board as on its detail. Pay is booked to
+ * the haléř, and a seat's share of a job need not be whole: 412.30 is "412,30 Kč" on both, never
+ * "412 Kč" here. Only the symbol reaches this function, so the minor unit is two digits: the koruna's
+ * and the euro's, and the detail's own fallback for a code it cannot look up.
+ */
+internal fun formatMoney(amount: Double, currencySymbol: String?, locale: Locale = Locale.getDefault()): String {
+    val cents = Math.round(amount * 100)
+    val whole = (cents / 100).toString().reversed().chunked(3).joinToString(" ").reversed()
+    val minor = abs(cents % 100)
+    val number = if (minor == 0L) {
+        whole
+    } else {
+        whole + DecimalFormatSymbols.getInstance(locale).decimalSeparator + minor.toString().padStart(2, '0')
+    }
     val sym = currencySymbol?.trim().orEmpty()
-    return if (sym.isEmpty()) whole else "$whole $sym"
+    return if (sym.isEmpty()) number else "$number $sym"
 }

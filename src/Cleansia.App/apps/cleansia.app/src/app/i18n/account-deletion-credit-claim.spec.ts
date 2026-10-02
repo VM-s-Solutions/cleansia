@@ -33,8 +33,8 @@ const CLAIM: Record<Locale, { credit: RegExp; forfeited: RegExp; paidOut: RegExp
   en: { credit: /credit/i, forfeited: /forfeit/i, paidOut: /paid out/i },
   cs: { credit: /kredit/i, forfeited: /propadá/i, paidOut: /vyplatit/i },
   sk: { credit: /kredit/i, forfeited: /prepadá/i, paidOut: /vyplatiť/i },
-  uk: { credit: /бонус/i, forfeited: /анулю/i, paidOut: /виплатити/i },
-  ru: { credit: /бонус/i, forfeited: /аннулир/i, paidOut: /выплатить/i },
+  uk: { credit: /кредит/i, forfeited: /анулю/i, paidOut: /виплатити/i },
+  ru: { credit: /кредит/i, forfeited: /аннулир/i, paidOut: /выплатить/i },
 };
 
 /** The confirmation the customer accepts, and the section text above its button. */

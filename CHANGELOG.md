@@ -966,6 +966,10 @@ need backfilling.
   The cleaner app's profile header had the same band and is fixed the same way. Android already did
   this. (Owner remark 2026-10-01; the cleaner's header 2026-10-02.)
 
+- **Customer Android — Home's refresh spinner no longer hides under the clock.** Pulling Home down to
+  refresh drew the spinner under the status bar, at rest and while it spun. It now rests just below
+  it, as on Orders and Rewards.
+
 - **Customer Android and iOS — *No orders yet* sits in the middle of the screen.** The empty and
   error states on the Orders tab are centred between the title and the Book button. They used to sit
   high on iOS and slightly low on Android. On iOS the Rewards error state and the Disputes screen's

@@ -206,7 +206,12 @@ first point of scroll and fade it in and out.
   directly before `verticalScroll(scrollState)`, so it draws over the viewport and not over the
   scrolled content. It is visible while `scrollState.value > 0`. Home moved its status-bar padding
   inside the scroll, so the address bar starts below the status bar at rest and then scrolls under the
-  band.
+  band. That leaves Home's `PullToRefreshBox` filling the whole screen, so its indicator pads
+  `WindowInsets.statusBars` before its 8dp and rests below the status bar, not under it. The band's
+  gradient ends on `background.copy(alpha = 0f)`, as iOS ends on `background.opacity(0)`: Android
+  interpolates gradient colours unpremultiplied, so a tail of `Color.Transparent`, which is transparent
+  black, passed through greys and tinted the light theme. `StatusBarFadeBindingTest` pins both
+  (2026-10-02).
 
 ## Every map is quiet, with one Cleansia pin {#maps}
 

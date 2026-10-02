@@ -108,7 +108,20 @@ need backfilling.
   A paste after digits already in a box is read together with them, so clear the box first. A two-digit
   prefix pasted on its own into an empty prefix box goes to the number; type it instead. Each box keeps
   only the digits 0–9: digits from another script, which a keyboard can type and the server refuses,
-  are dropped. The server still checks every account. (Owner ruling 2026-10-01.)
+  are dropped. The server still checks every account. Partner web takes the same pastes since
+  2026-10-02. Before that it split only a written-out account, and not an IBAN or digits with spaces
+  inside them. (Owner ruling 2026-10-01.)
+
+- **Cleaner, partner web, Android and iOS — a bank outside Czechia and Slovakia takes one IBAN,
+  checked before it is sent.** The bank details form now follows the bank's country. A Czech or
+  Slovak bank shows only the prefix, number and bank code. Any other bank shows only an IBAN field, in
+  groups of four. Before, every cleaner got the Czech boxes with an optional IBAN field under them.
+  The phone or browser checks the IBAN for the bank's country, the length that country's IBANs have
+  and the check digits. Pressing Save names a mistake under the field before anything is sent, and the
+  length message says how long the IBAN should be. A Czech or Slovak cleaner who changed a saved
+  account used to be refused with an IBAN mismatch, because the form sent the old IBAN back with the
+  new account. The form now sends only the account. The server still checks every account.
+  (Owner ruling 2026-10-02.)
 
 - **Customer Android and iOS — your credit is shown, from Rewards to the order.** Credit (the apology
   when a cleaner never comes, a complaint settled in credit, an administrator's goodwill) comes off the

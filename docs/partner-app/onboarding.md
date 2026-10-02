@@ -101,10 +101,47 @@ would mark them incomplete and lock them out of the partner surface overnight.
 Admins see a **masked** view by default; the plaintext is behind a separate, audited reveal action.
 :::
 
+**The bank's country decides the form**, on partner web, Android and iOS alike (owner ruling
+2026-10-02). The form shows the three boxes or one IBAN field, never both:
+
+| Bank country | The form | Sent with the bank country |
+|---|---|---|
+| CZ or SK, or one the list cannot name (none picked yet, or the country list failed to load) | the three boxes, *prefix – number / bank code* | the parts only; the server derives the IBAN |
+| any other | one IBAN field | the IBAN only |
+
+The clients decide by the country's `isoAlpha2`, because the country list does not carry
+`CountryConfiguration.PayoutScheme`. CZ and SK are the two countries of the `CzskDomesticWithIban`
+scheme ([ADR-0034](/decisions/adr-0034) D5.2). Until then every cleaner got the Czech boxes with an
+optional IBAN field under them, so a German or Austrian bank had no form of its own. That field also
+loaded the stored IBAN, which the server had derived from the old parts, and sent it back with edited
+parts, so a Czech cleaner changing their account was refused with `validation.payout.iban_mismatch`.
+
+**The IBAN field** shows the IBAN in groups of four and in capitals. It sends it without the spaces,
+and stops at 34 characters, the ISO 13616 maximum; on iOS it opens the ASCII keyboard. Its hint reads
+*Your full IBAN, starting with your bank's country code* (`iban_helper` on the apps,
+`pages.profile.iban_hint` on the web). Before anything is sent, the client checks the IBAN as the
+server's `IbanCalculator` does, in the order a cleaner can act on:
+
+1. **The country.** Its two letters must be the bank country's. The message is the copy of
+   `validation.payout.iban_country_mismatch`. An entry that does not start with two letters is not an
+   IBAN at all (step 3's message).
+2. **The length.** The IBAN must have the length that country's IBANs have. The message names that
+   length (`iban_wrong_length` on the apps, `pages.profile.iban_wrong_length` on the web). This message
+   exists only on the clients, because the server reports a wrong length as `invalid_iban`. A country
+   outside the registry takes the generic 15–34. Each client's tests read the registry table from
+   `IbanCalculator.RegistryLengths`, entry for entry.
+3. **The shape and the check digits.** The ISO 7064 mod-97 check must hold. The message is the copy of
+   `validation.payout.invalid_iban`.
+
+Save is enabled once an IBAN is typed. The first Save with a problem sends nothing and shows the
+message under the field, which then follows the edits. The server checks the IBAN again. One of its
+rules has no client twin: a card number typed into the field is refused on the device as not an IBAN,
+so the server's more specific `looks_like_card` never comes back.
+
 **A Czech or Slovak account can be pasted whole into any one of its three boxes** — prefix, number or
-bank code — on Android and iOS, and it lands in all three. Each box used to keep its own digits and
-clamp, so pasting `12321414/3545` into the number gave the number `1232141435` and an empty bank code.
-The apps read three shapes:
+bank code — on partner web, Android and iOS, and it lands in all three. Each box used to keep its own
+digits and clamp, so pasting `12321414/3545` into the number gave the number `1232141435` and an empty
+bank code. The clients read three shapes:
 
 | Pasted | Lands as |
 |---|---|
@@ -130,14 +167,15 @@ because both rebuild the three boxes: iOS with `.id(pasteRevision)`, so each box
 and Android with `key(pasteRevision)`, so pasting the same text into the same box a second time is not
 dropped as a repeat. **Each box keeps the digits `0`–`9` only**, up to its length, on both apps
 (`clampSegment`, since 2026-10-02): a keyboard can type Arabic-Indic or full-width digits, which the
-server refuses, and the boxes used to keep them. The apps only split text — the server keeps every rule
-(the mod-11 check, the bank-code shape, the IBAN cross-check). Partner web splits the two separator
-shapes as well, and it also sends a bare number to the number field from any box, leaving the prefix
-and bank code alone as the apps do (since 2026-10-02; it used to clear the prefix). A written-out
-account without a prefix still clears the old one there too. The web still differs in four ways: it
-does not decompose an IBAN, does not ignore spaces (ordinary or non-breaking) inside the digits, only
-around the `-` and `/`, does not read an en or em dash as a hyphen, and sends a one-digit paste to the number, where the apps need at least
-two characters.
+server refuses, and the boxes used to keep them. The clients only split text. The server keeps every
+rule on the parts (the mod-11 check and the bank-code shape). Partner web reads the same three shapes
+since 2026-10-02: it splits a CZ or SK IBAN, ignores whitespace of every kind inside the digits too,
+and reads an en or em dash as a hyphen. Before, it split only the two separator shapes. It also sends
+a bare number to the number field from any box and leaves the prefix and bank code alone, as the apps
+do; until 2026-10-02 it cleared the prefix. A written-out account without a prefix still clears the
+old one there too. The web differs in one way: it sends a one-digit paste to the number field, where
+the apps need at least two characters. On the web a paste event is never typing, and telling the two
+apart is the only reason the apps have that rule.
 
 ::: tip Country Configuration
 Country-specific labels and validation rules (e.g., field names, format masks) are driven by the `CountryConfiguration` table managed in the admin app.

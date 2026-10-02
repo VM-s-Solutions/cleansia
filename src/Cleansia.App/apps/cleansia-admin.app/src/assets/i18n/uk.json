@@ -518,7 +518,7 @@
       "pay_config_currency": "Валюта",
       "pay_config_base_pay": "Базова оплата",
       "pay_config_extra_room": "Доплата за кімнату",
-      "pay_config_extra_bathroom": "Доплата за ванну",
+      "pay_config_extra_bathroom": "Доплата за ванну кімнату",
       "pay_config_min_pay": "Мінімальна оплата",
       "pay_config_max_pay": "Максимальна оплата",
       "pay_config_description": "Опис",
@@ -583,7 +583,7 @@
       "weekly_order_limit_reason_hint": "Обов'язково, якщо встановлюєте ліміт. Причину буде показано прибиральнику.",
       "not_found": "Партнера не знайдено",
       "actions_section": "Дії",
-      "rate_format": "{{base}} + {{room}}/кімната + {{bath}}/ванна"
+      "rate_format": "{{base}} + {{room}}/кімната + {{bath}}/ванна кімната"
     },
     "order_management": {
       "title": "Управління замовленнями",
@@ -815,7 +815,7 @@
             "window": "Дата й час",
             "price": "Ціна",
             "location": "Місце",
-            "rooms_bathrooms": "Кімнати / ванні",
+            "rooms_bathrooms": "Кімнати / ванні кімнати",
             "services": "Послуги",
             "packages": "Пакети",
             "extras": "Додатково"
@@ -1068,7 +1068,7 @@
         "service": "Послуга / Пакет",
         "base_pay": "Базова оплата",
         "per_room": "За кімнату",
-        "per_bathroom": "За ванну",
+        "per_bathroom": "За ванну кімнату",
         "description": "Опис"
       },
       "messages": {
@@ -1086,7 +1086,7 @@
       "pay_rates": "Ставки оплати",
       "base_pay": "Базова оплата",
       "extra_per_room": "Доплата за кімнату",
-      "extra_per_bathroom": "Доплата за ванну",
+      "extra_per_bathroom": "Доплата за ванну кімнату",
       "pay_limits": "Межі оплати",
       "pay_limits_hint": "Необов'язково. Залиште 0, щоб без обмежень. Якщо встановлено, розрахована оплата буде обмежена цим діапазоном.",
       "minimum_pay": "Мінімальна оплата",
@@ -1160,7 +1160,7 @@
       "price_required": "Обов'язково",
       "price_optional": "Необов’язково",
       "estimated_time": "Орієнтовний час (хвилини)",
-      "minutes_per_room": "Хвилин на кімнату або ванну",
+      "minutes_per_room": "Хвилин на кімнату або ванну кімнату",
       "messages": {
         "load_error": "Не вдалося завантажити послугу",
         "create_success": "Послугу успішно створено",

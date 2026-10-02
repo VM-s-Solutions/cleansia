@@ -940,6 +940,9 @@ public class RefundServiceTests
         public Task<CheckoutSessionResult> CreateCardSavingCheckoutSessionAsync(Order order, string stripeCustomerId, string savedCardId, CancellationToken cancellationToken)
             => throw new NotSupportedException();
 
+        public Task<CheckoutSessionResult> CreateCardSavingCheckoutSessionAsync(Order order, DateTime expiresAtUtc, string stripeCustomerId, string savedCardId, CancellationToken cancellationToken)
+            => throw new NotSupportedException();
+
         public Task<string> ChargeReceivableOffSessionAsync(string receivableId, decimal amount, string currency, string stripeCustomerId, string paymentMethodId, int attempt, CancellationToken cancellationToken)
             => throw new NotSupportedException();
 

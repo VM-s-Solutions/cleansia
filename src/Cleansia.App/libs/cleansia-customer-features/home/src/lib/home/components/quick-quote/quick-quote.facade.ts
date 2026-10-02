@@ -23,6 +23,7 @@ import {
   startWith,
   switchMap,
   takeUntil,
+  tap,
 } from 'rxjs';
 
 import { DEFAULT_PROPERTY_SIZE, PropertySizePreset } from './property-size-presets';
@@ -57,6 +58,7 @@ export class QuickQuoteFacade extends UnsubscribeControlDirective {
 
   private readonly _serviceId = signal<string | null>(null);
   private readonly _sizes = signal<PropertySizePreset[]>([]);
+  private readonly _sizesLoading = signal(false);
   private readonly _sizeCode = signal<string | null>(null);
   private readonly _cleaningDate = signal<string | null>(null);
   private readonly _cleaningTime = signal<string | null>(null);
@@ -67,6 +69,12 @@ export class QuickQuoteFacade extends UnsubscribeControlDirective {
   readonly selectedServiceId = this._serviceId.asReadonly();
   /** The market's size presets, labelled for the current language; empty without a market. */
   readonly sizes = this._sizes.asReadonly();
+  /**
+   * The row is drawn while a market's presets are in flight, not only once they land: the generated
+   * client parses every reply asynchronously, so even a transfer-cached read arrives after the first
+   * render, and a row that appeared then pushed the rest of the card down.
+   */
+  readonly showSizeRow = computed(() => this._sizes().length > 0 || this._sizesLoading());
   /** The customer's pick, else the third preset (the artboard's default), else the first. */
   readonly selectedSize = computed<PropertySizePreset>(() => {
     const sizes = this._sizes();
@@ -209,6 +217,26 @@ export class QuickQuoteFacade extends UnsubscribeControlDirective {
    * leaves the size row empty rather than failing the calculator.
    */
   private followMarket(): void {
+    if (isPlatformBrowser(this.platformId)) {
+      this.followSizes();
+    } else {
+      // The server draws the row as the browser's first render has it, presets in flight, for
+      // hydration to take over; a server read could only differ from it (real chips, or no row).
+      this._sizesLoading.set(true);
+    }
+
+    this.store
+      .select(selectMarket)
+      .pipe(
+        map((market) => market?.countryId ?? null),
+        distinctUntilChanged(),
+        skip(1),
+        takeUntil(this.destroyed$),
+      )
+      .subscribe(() => this.refresh());
+  }
+
+  private followSizes(): void {
     const isoCode$ = this.store
       .select(selectMarket)
       .pipe(map((market) => market?.isoCode ?? null), distinctUntilChanged());
@@ -220,6 +248,7 @@ export class QuickQuoteFacade extends UnsubscribeControlDirective {
 
     combineLatest([isoCode$, lang$])
       .pipe(
+        tap(([isoCode]) => this._sizesLoading.set(isoCode !== null)),
         switchMap(([isoCode, lang]) =>
           isoCode
             ? this.client.countryClient
@@ -239,20 +268,11 @@ export class QuickQuoteFacade extends UnsubscribeControlDirective {
             bathrooms: preset.bathrooms,
           }));
         this._sizes.set(sizes);
+        this._sizesLoading.set(false);
         if (!sizes.some((size) => size.code === this._sizeCode())) {
           this._sizeCode.set(null);
         }
       });
-
-    this.store
-      .select(selectMarket)
-      .pipe(
-        map((market) => market?.countryId ?? null),
-        distinctUntilChanged(),
-        skip(1),
-        takeUntil(this.destroyed$),
-      )
-      .subscribe(() => this.refresh());
   }
 
   chooseMarket(isoCode: string): void {

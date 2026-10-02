@@ -55,6 +55,8 @@ public sealed class ConfirmRecurringOrderCashEligibilityTests
         Mock.Of<ITenantProvider>(),
         _stripe.Object,
         new StripeConfig(new ConfigurationBuilder().Build()),
+        Mock.Of<IStripeCustomerResolver>(),
+        Mock.Of<IRequestMetadataProvider>(),
         new OrderChannelProvider(OrderChannel.Mobile),
         _pending.Object,
         _notifications.Object,

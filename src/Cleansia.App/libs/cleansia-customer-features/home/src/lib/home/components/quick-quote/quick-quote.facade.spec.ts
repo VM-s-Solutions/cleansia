@@ -207,6 +207,56 @@ describe('QuickQuoteFacade', () => {
       build();
 
       expect(facade.sizes()).toEqual([]);
+      expect(facade.showSizeRow()).toBe(false);
+    });
+  });
+
+  describe('the size row while the presets are in flight', () => {
+    let presets$: Subject<GetPropertySizePresetsPropertySizePresetDto[]>;
+
+    beforeEach(() => {
+      presets$ = new Subject();
+      getPropertySizes.mockReturnValue(presets$);
+      build();
+    });
+
+    it('is shown from the first render, before the market’s presets arrive', () => {
+      expect(facade.sizes()).toEqual([]);
+      expect(facade.showSizeRow()).toBe(true);
+    });
+
+    it('stays shown when the presets arrive', () => {
+      presets$.next(CZ_SIZES);
+
+      expect(facade.sizes().map((s) => s.code)).toEqual(['CZ_1KK', 'CZ_2KK', 'CZ_3KK']);
+      expect(facade.showSizeRow()).toBe(true);
+    });
+
+    it('is withdrawn when the read fails', () => {
+      presets$.error(new Error('offline'));
+
+      expect(facade.showSizeRow()).toBe(false);
+    });
+
+    it('is never shown without a market', () => {
+      build(null);
+
+      expect(facade.showSizeRow()).toBe(false);
+    });
+  });
+
+  describe('the size row in a server render', () => {
+    it.each<[string, MarketListItem | null]>([
+      ['with a market', CZE],
+      ['without one', null],
+    ])('is drawn in flight %s, as the browser first renders it, and nothing is read', (_, market) => {
+      getPropertySizes.mockClear();
+
+      build(market, 'server');
+
+      expect(getPropertySizes).not.toHaveBeenCalled();
+      expect(facade.sizes()).toEqual([]);
+      expect(facade.showSizeRow()).toBe(true);
     });
   });
 

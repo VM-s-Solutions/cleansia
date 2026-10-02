@@ -8692,6 +8692,7 @@ export interface ICode {
 
 export class ConfirmRecurringOrderCommand implements IConfirmRecurringOrderCommand {
     orderId!: string | undefined;
+    saveCard!: boolean;
 
     constructor(data?: IConfirmRecurringOrderCommand) {
         if (data) {
@@ -8705,6 +8706,7 @@ export class ConfirmRecurringOrderCommand implements IConfirmRecurringOrderComma
     init(Data?: any) {
         if (Data) {
             this.orderId = Data["orderId"];
+            this.saveCard = Data["saveCard"];
         }
     }
 
@@ -8718,12 +8720,14 @@ export class ConfirmRecurringOrderCommand implements IConfirmRecurringOrderComma
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
         data["orderId"] = this.orderId;
+        data["saveCard"] = this.saveCard;
         return data;
     }
 }
 
 export interface IConfirmRecurringOrderCommand {
     orderId: string | undefined;
+    saveCard: boolean;
 }
 
 export class ConfirmRecurringOrderResponse implements IConfirmRecurringOrderResponse {

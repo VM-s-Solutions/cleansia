@@ -955,7 +955,9 @@ need backfilling.
 
 - **Customer iOS — the busy card's shadow sits on its edge.** While a booking or a Plus activation is
   submitted, the card with the cleaning mascot cast a grey halo around the mascot and the message. Only
-  the card's edge casts a shadow now, as on Android. (Owner remark 2026-10-01.)
+  the card's edge casts a shadow now, as on Android, and so does the *Signing in…* card's. The faint
+  square that showed behind the cleaning mascot, clearest in dark mode, is gone too: the animation's
+  own frames carried it. (Owner remark 2026-10-01; the sign-in card and the square 2026-10-02.)
 
 - **Customer Android and iOS — less empty space under the Cleansia Plus button.** The button bar at
   the bottom of the Plus offer is tighter on iOS, where an empty band of about 54pt sat under the
@@ -972,6 +974,11 @@ need backfilling.
   bare number pasted into any box goes to the number, as before, but it also emptied the prefix box.
   The prefix and bank code now stay as they are, as in the apps; a whole account pasted without a
   prefix still clears the old one.
+
+- **Customer iOS — the confirm step and Profile get their words right.** The booking's confirm step
+  said *1 rooms · 1 bath* (in Czech *1 pokojů*) whatever the counts; it now uses the same plural forms
+  as the order detail. After switching the app's language, the three labels on Profile's stats card
+  (*Bookings*, *Saved*, *Member since*) stayed in the old language; they now switch with the rest.
 
 - **Customer Android and iOS — Rewards shows your current points when you go straight to it.** Rewards
   kept the points it last read until you pulled to refresh, so a customer who opened it without

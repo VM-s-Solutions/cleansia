@@ -139,4 +139,15 @@ public enum LiveActivityCard: Sendable, Equatable {
         case .unknown: nil
         }
     }
+
+    /// The SF Symbol for where the clean is: the Dynamic Island's minimal slot shows it, and the compact
+    /// readout falls back to it once there is nothing left to time. Every one exists on iOS 16.1.
+    public var symbol: String {
+        switch self {
+        case .journey(.onTheWay): "car.fill"
+        case .journey(.done): "checkmark.seal.fill"
+        case .cancelled: "xmark.circle.fill"
+        case .journey, .unknown: "sparkles"
+        }
+    }
 }

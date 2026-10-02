@@ -112,15 +112,7 @@ public struct LiveActivityCompactReadout: View {
         } else if let caption = model.card.timeCaption {
             LiveActivityClock(caption: caption, at: model.legEnd, compact: true)
         } else {
-            Image(systemName: symbol).foregroundColor(CleansiaColors.primary)
-        }
-    }
-
-    private var symbol: String {
-        switch model.card {
-        case .journey(.done): "checkmark.seal.fill"
-        case .cancelled: "xmark.circle.fill"
-        default: "sparkles"
+            Image(systemName: model.card.symbol).foregroundColor(CleansiaColors.primary)
         }
     }
 }

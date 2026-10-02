@@ -55,10 +55,21 @@ struct CleanOrderLiveActivity: Widget {
             } compactTrailing: {
                 LiveActivityCompactReadout(model: model)
             } minimal: {
-                Circle().fill(CleansiaColors.primary).frame(width: 8, height: 8)
+                // Live information, not a bare dot (HIG): where the clean is, the compact readout's symbol.
+                Image(systemName: model.card.symbol)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(CleansiaColors.primary)
+                    .accessibilityLabel(spokenState(model.card))
             }
             .keylineTint(CleansiaColors.primary)
         }
+    }
+
+    /// The minimal slot's spoken form: the position the compact slot's dots speak, or the outcome.
+    private func spokenState(_ card: LiveActivityCard) -> String {
+        if card == .cancelled { return LiveActivityL10n.Status.cancelledTitle }
+        return card.position.map { LiveActivityL10n.stepOf($0.number, LiveActivityStep.count) }
+            ?? LiveActivityL10n.Status.genericTitle
     }
 
     /// The card's copy resolves through CoreL10n, which in this process would otherwise follow the

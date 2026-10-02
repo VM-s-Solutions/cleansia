@@ -185,7 +185,7 @@ public sealed class ApnsLiveActivityClient(
         }
 
         // Title and body are localized-string dictionaries, the shape Apple documents for a Live Activity
-        // alert. No sound: the order.on_the_way push of the same transition already plays one.
+        // alert, with no sound. → /decisions/adr-0029#amendment-a5
         if (push.Alert is { } alert)
         {
             aps["alert"] = new Dictionary<string, object>

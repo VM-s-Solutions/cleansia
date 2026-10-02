@@ -62,9 +62,9 @@ public class LiveActivityPayloadFactoryTests
 
     /// <summary>
     /// ActivityKit: a push that starts a Live Activity must "Include an alert in the JSON payload". The
-    /// alert reuses the copy of the order.on_the_way push the same transition sends — a key the APNs display
-    /// map registers with exactly one argument, so ApnsDisplayMapIosCatalogSyncTests already proves both iOS
-    /// catalogs carry its title and body in every language, with one slot in the body.
+    /// alert reuses the copy of the order.on_the_way push — a key the APNs display map registers with exactly
+    /// one argument, so ApnsDisplayMapIosCatalogSyncTests already proves both iOS catalogs carry its title and
+    /// body in every language, with one slot in the body. → /decisions/adr-0029#amendment-a5
     /// </summary>
     [Fact]
     public void Start_Carries_The_On_The_Way_Alert_With_The_Order_Number()

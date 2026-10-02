@@ -123,7 +123,7 @@ public class ApnsLiveActivityClientTests
     /// <summary>
     /// A remote start carries the alert ActivityKit requires, as the localized-string dictionaries Apple
     /// documents for a Live Activity alert: title and body each a loc-key with its loc-args, the title
-    /// taking none. No sound — the order.on_the_way push of the same transition plays one.
+    /// taking none, and no sound. → /decisions/adr-0029#amendment-a5
     /// </summary>
     [Fact]
     public async Task A_Start_Carries_The_Localized_Alert_On_The_Wire()

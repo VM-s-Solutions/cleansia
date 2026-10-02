@@ -83,7 +83,9 @@ public static class LiveActivityPayloadFactory
             AttributesType: isStart ? AttributesType : null,
             Attributes: isStart ? new LiveActivityStartAttributes(message.OrderNumber) : null,
             // A remote start must carry an alert (ActivityKit). It reuses the copy of the order.on_the_way
-            // push the same transition sends, which both iOS catalogs carry (ApnsDisplayMapIosCatalogSyncTests).
+            // push, which both iOS catalogs carry (ApnsDisplayMapIosCatalogSyncTests). Only the organic
+            // NotifyOnTheWay start also sends that push; an admin override to OnTheWay sends the start
+            // alone. → /decisions/adr-0029#amendment-a5
             Alert: isStart
                 ? new LiveActivityAlert(
                     TitleLocKey: $"push.{NotificationEventCatalog.OrderOnTheWay}.title",

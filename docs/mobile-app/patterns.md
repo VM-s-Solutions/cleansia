@@ -301,3 +301,11 @@ What changed on iOS:
   pill as one adjustable control, named by its row (*Your home*, or *Rooms* and *Bathrooms* on a
   schedule) with the count as its value, and a swipe up or down steps it within the buttons' bounds.
   Android's counters are still 28dp with no TalkBack adjust action.
+- **On iOS 26 the booking sheet grows out of the Book button.** Opened from the Book FAB, the booking
+  sheet zooms out of the button and shrinks back into it when it closes. Every other way into booking
+  (Home's book buttons, the carousel slides, *Order again*) slides the sheet up as before. The FAB looks
+  the same at rest: no glass was added, since the glass FAB was retired for rendering corrupted on an
+  iOS 26 iPhone ([ADR-0022](/decisions/adr-0022)). The gate is iOS 26, not iOS 18 where the API starts.
+  From step 2 on the booking sheet refuses a swipe down, so a half-built booking cannot be swiped away,
+  and only on iOS 26 has a zoom-presented sheet been checked to keep refusing it. iOS 18 to 25 keep the
+  plain sheet until someone checks them on a device.

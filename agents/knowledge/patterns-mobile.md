@@ -1004,8 +1004,9 @@ test, not by reading the call site.
 run by `swiftlint lint --strict` (`.github/workflows/ios-ci.yml`, blocking) — **T1-CI**. *Scope, stated
 because it is narrower than the paragraph: the rule matches the key-path call form
 (`.assign(to: \.…`) outside comments and strings; it does not decide whether a given target would
-actually have been retained, and `.swiftlint.yml`'s `included:` covers the two app `Sources` trees plus
-`CleansiaCore/Sources` and `CleansiaCore/Tests` — the app test targets are not linted.*
+actually have been retained. `.swiftlint.yml`'s `included:` covers the three `Sources` and the three
+`Tests` trees, `CleansiaCustomer/LiveActivity` and both `NotificationService` folders (the app tests and
+the extensions joined on 2026-10-02, F-I12).*
 
 **iOS jank idioms (T-0425 owner perf sweep):** (a) ship brand raster at ≤ the largest on-screen render
 size (the 1024²→600² mascot downsample — SwiftUI decodes the full asset on the MAIN thread at first

@@ -601,6 +601,16 @@ at install time so a PATH-shadowed Homebrew copy fails loudly instead of produci
 The generated API packages and `**/Generated` are excluded from both configs.
 :::
 
+**SwiftLint lints the tests and the extensions too.** `.swiftlint.yml`'s `included:` lists every Swift
+tree that ships or tests: the three `Sources` trees, the three `Tests` trees, `CleansiaCustomer/LiveActivity`
+and both `NotificationService` folders. Until 2026-10-02 the two app `Tests` trees and the extensions
+were never linted, and the test trees held 87 violations. Test code meets the same rules: no force
+unwrap (fall back with `?? .standard` or fail the test), and a suite stays under the 600-line file and
+400-line type-body limits by moving its later `MARK` sections into `extension <Suite>` files, tests
+unchanged. A rule is never relaxed in the config; the one accepted exception is a narrow inline
+`swiftlint:disable:next` on a documented declaration, such as a fake's recorded-call tuple
+(`large_tuple`).
+
 ### Shipping to TestFlight
 
 `fastlane` lanes run **on the owner's Mac** (they reuse the working-tree Stripe key,

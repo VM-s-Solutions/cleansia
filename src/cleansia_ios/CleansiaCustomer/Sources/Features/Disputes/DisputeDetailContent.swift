@@ -8,6 +8,8 @@ struct DisputeThread: View {
     let onImageTap: (DisputeEvidence) -> Void
     let onPdfTap: (DisputeEvidence) -> Void
     let onUnknownTap: (DisputeEvidence) -> Void
+    /// Where an image's full-screen view zooms out of; `nil` (the preview) zooms nothing.
+    var zoom: Namespace.ID?
 
     var body: some View {
         ScrollView {
@@ -44,7 +46,7 @@ struct DisputeThread: View {
                 .padding(.top, Spacing.xs)
 
             ForEach(detail.evidence) { evidence in
-                EvidenceRow(evidence: evidence) {
+                EvidenceRow(evidence: evidence, zoom: zoom) {
                     switch evidence.kind {
                     case .image: onImageTap(evidence)
                     case .pdf: onPdfTap(evidence)
@@ -126,6 +128,7 @@ private struct DisputeMessageBubble: View {
 
 private struct EvidenceRow: View {
     let evidence: DisputeEvidence
+    let zoom: Namespace.ID?
     let onTap: () -> Void
 
     var body: some View {
@@ -178,6 +181,8 @@ private struct EvidenceRow: View {
             }
             .frame(width: 56, height: 56)
             .clipShape(RoundedRectangle(cornerRadius: CornerRadius.small))
+            // The id `FullscreenImageURL` carries for the same URL.
+            .zoomSource(id: url.absoluteString, in: zoom)
         } else {
             iconTile(evidence.kind == .pdf ? "doc.richtext" : "paperclip")
         }

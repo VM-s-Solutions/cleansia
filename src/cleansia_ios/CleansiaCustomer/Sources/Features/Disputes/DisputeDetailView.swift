@@ -23,6 +23,7 @@ struct DisputeDetailView: View {
     @State private var showEvidencePicker = false
     @State private var fullscreenImage: FullscreenImageURL?
     @State private var pdfPreview: EvidencePdfPreview?
+    @Namespace private var zoom
 
     init(disputeId: String, repository: DisputeRepository, snackbar: SnackbarController) {
         _vm = StateObject(wrappedValue: DisputeDetailViewModel(
@@ -46,6 +47,7 @@ struct DisputeDetailView: View {
         }
         .fullScreenCover(item: $fullscreenImage) { item in
             FullscreenSingleImage(url: item.url) { fullscreenImage = nil }
+                .zoomDestination(id: item.id, in: zoom)
         }
         .sheet(item: $pdfPreview) { item in
             pdfPreviewView(item.url)
@@ -68,7 +70,8 @@ struct DisputeDetailView: View {
                 onAddEvidence: { showEvidencePicker = true },
                 onImageTap: openImage,
                 onPdfTap: openPdf,
-                onUnknownTap: { _ in snackbar.showError(L10n.Disputes.evidenceOpenError) }
+                onUnknownTap: { _ in snackbar.showError(L10n.Disputes.evidenceOpenError) },
+                zoom: zoom
             )
         }
     }

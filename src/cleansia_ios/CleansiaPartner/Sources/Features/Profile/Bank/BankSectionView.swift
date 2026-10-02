@@ -155,13 +155,16 @@ struct BankFormFields: View {
                 )
             } else {
                 // A bank outside CZ and SK is one IBAN, drawn in groups of four as statements print it.
+                // Regrouping rewrites the text on any edit before the last group, so the field keeps
+                // the caret on the character being fixed.
                 CleansiaTextField(
                     value: $iban,
                     label: L10n.Profile.iban,
                     helper: L10n.Profile.ibanHelper,
                     errorText: ibanError,
                     keyboardType: .asciiCapable,
-                    enabled: enabled
+                    enabled: enabled,
+                    keepsCaretWhenRegrouped: true
                 )
             }
             CleansiaTextField(

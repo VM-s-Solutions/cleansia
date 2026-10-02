@@ -73,7 +73,7 @@ applies to card payments only. → [Business rules — customer credit](/product
 
 Owner rulings 2026-09-28. Right after the services, every booking flow — the customer web wizard, and
 Android and iOS — asks **how clean the home is**, as a required step of its own: *Normal*,
-*Increased +30 %* or *Heavy +60 %*, each with the owner's description of the home it fits (when it was
+*Increased +15 %* or *Heavy +30 %*, each with the owner's description of the home it fits (when it was
 last cleaned, and what the cleaner will find on the floor, in the bathroom and in the kitchen), and the
 hint to pick the higher level when unsure, so the cleaner has enough time. Nothing is preselected, and
 on the web the step comes before the address. The web's home calculator offers the same three levels

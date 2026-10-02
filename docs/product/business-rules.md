@@ -591,14 +591,15 @@ its weekday and a fortnightly one on its own weeks. → [Recurring bookings](/fl
 
 ## The dirtiness level {#dirtiness}
 
-**Owner rulings 2026-09-28** (decisions 28–40 of the meeting plan). The customer says how dirty the
-home is, and that one statement moves the price, the booked time and the cleaner pay by the same rate:
+**Owner rulings 2026-09-28** (decisions 28–40 of the meeting plan); the rates are the owner's ruling of
+2026-10-03, which lowered them from +30 % and +60 %. The customer says how dirty the home is, and that one
+statement moves the price, the booked time and the cleaner pay by the same rate:
 
 | Level | On the wire | Price | Booked time | Cleaner pay |
 |---|---|---|---|---|
 | Normal | `0` | — | × 1 | × 1 |
-| Increased | `1` | **+30 %** | × 1.3 | × 1.3 |
-| Heavy | `2` | **+60 %** | × 1.6 | × 1.6 |
+| Increased | `1` | **+15 %** | × 1.15 | × 1.15 |
+| Heavy | `2` | **+30 %** | × 1.3 | × 1.3 |
 
 `DirtinessLevel` is an integer enum, append-only on the wire, and **Normal is `0`**, so a request that
 carries no level books at Normal. That default is for old clients and API callers: every shipped
@@ -617,7 +618,7 @@ the serving-cleaners picker and both recurring commands. The order stores the le
 lines     = Σ packages + Σ services (base + per-room × (rooms + bathrooms)) + Σ extras
 dirtiness = round(lines × rate(level), 2)     # BookingPolicy.DirtinessSurchargeFor, half away from zero
 raw       = lines + dirtiness                 # the base the discounts come off and the 12 % cap judges
-express   = raw × 0.20 on an express slot     # compounds on top: Heavy + express = × 1.92
+express   = raw × 0.20 on an express slot     # compounds on top: Heavy + express = × 1.56
 ```
 
 The discounts come off a price that already carries the surcharge, and the tier floor and the 12 %
@@ -628,9 +629,10 @@ at the level it carries, so the quote is the charge. `OrderFactory` stores the s
 computed from the lines it stores, so the order's terms add up
 ([the identity](#discount-express-correction)).
 
-**The rates are constants** (decision 29) — `BookingPolicy.IncreasedDirtinessSurchargeRate = 0.30` and
-`HeavyDirtinessSurchargeRate = 0.60` — the same in every market, like express, until a market needs
-others. `check-booking-policy-parity.mjs` reads both and pins every copy that states them: the web mirror
+**The rates are constants** (decision 29) — `BookingPolicy.IncreasedDirtinessSurchargeRate = 0.15` and
+`HeavyDirtinessSurchargeRate = 0.30` — the same in every market, like express, until a market needs
+others. The customer terms state them too, so a change of rate is also a new terms version: the
+2026-10-03 terms carry +15 % and +30 %, and the 2026-09-30 version keeps the rates it was accepted with. `check-booking-policy-parity.mjs` reads both and pins every copy that states them: the web mirror
 constants in `booking-window.models.ts`, the web chip that renders `{{rate}}` and bakes no percentage in,
 and the Android and iOS level chips and surcharge lines, each of which must state its own level's rate
 and no other.

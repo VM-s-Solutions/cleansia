@@ -15,10 +15,10 @@ public class OrderDurationTests
 {
     [Theory]
     [InlineData(120, DirtinessLevel.Normal, 120)]
-    [InlineData(120, DirtinessLevel.Increased, 156)]
-    [InlineData(120, DirtinessLevel.Heavy, 192)]
-    [InlineData(45, DirtinessLevel.Increased, 59)]
-    [InlineData(45, DirtinessLevel.Heavy, 72)]
+    [InlineData(120, DirtinessLevel.Increased, 138)]
+    [InlineData(120, DirtinessLevel.Heavy, 156)]
+    [InlineData(45, DirtinessLevel.Increased, 52)]
+    [InlineData(45, DirtinessLevel.Heavy, 59)]
     [InlineData(0, DirtinessLevel.Heavy, 0)]
     public void The_Level_Lengthens_The_Booked_Minutes_Rounded_Up_To_A_Whole_Minute(
         int minutes, DirtinessLevel level, int expected)
@@ -54,7 +54,7 @@ public class OrderDurationTests
     [Theory]
     [InlineData(0, DirtinessLevel.Normal, 90)]
     [InlineData(3, DirtinessLevel.Normal, 135)]
-    [InlineData(3, DirtinessLevel.Heavy, 216)]
+    [InlineData(3, DirtinessLevel.Heavy, 176)]
     public void Per_Room_Minutes_Scale_With_The_Home_Then_The_Level_Applies(
         int unitCount, DirtinessLevel level, int expected)
     {

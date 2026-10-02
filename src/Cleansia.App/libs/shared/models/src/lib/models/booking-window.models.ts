@@ -37,8 +37,8 @@ export const EXPRESS_SURCHARGE_RATE = 0.2;
  * displayed only, like the express rate: the surcharge itself arrives on the quote as
  * `dirtinessSurchargeAmount`.
  */
-export const INCREASED_DIRTINESS_SURCHARGE_RATE = 0.3;
-export const HEAVY_DIRTINESS_SURCHARGE_RATE = 0.6;
+export const INCREASED_DIRTINESS_SURCHARGE_RATE = 0.15;
+export const HEAVY_DIRTINESS_SURCHARGE_RATE = 0.3;
 
 export type SlotAvailability = 'available' | 'express' | 'unavailable';
 

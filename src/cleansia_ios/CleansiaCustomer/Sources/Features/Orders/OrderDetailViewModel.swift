@@ -405,7 +405,6 @@ final class OrderDetailViewModel: ViewModel {
         confirmRecurringState = .idle
         switch result {
         case let .success(intent):
-            guard !intent.clientSecret.isEmpty else { return }
             recurringCardPayment.send(.cardPayment(
                 clientSecret: intent.clientSecret,
                 ephemeralKey: intent.ephemeralKey,

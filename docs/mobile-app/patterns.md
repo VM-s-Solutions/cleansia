@@ -87,6 +87,13 @@ repeats. Android keeps the form top-anchored and pads it by the real system bars
 edge-to-edge, so once the form fits there is no scroll range left to bring a field out from under the
 navigation bar or the keyboard.
 
+**Every customer auth screen sits the same way** (since 2026-10-02). On iOS, e-mail confirmation sits in
+`CenteredAuthScroll` below its back row, like forgot password; it was a plain top-anchored scroll view
+that rubber-banded. On Android, sign-up, forgot password and e-mail confirmation take the same
+`systemBarsPadding().imePadding()` as sign-in: none of these routes sits in a `Scaffold`, so the latter
+two drew their back arrow under the status bar, and sign-up's fixed 64dp top and 32dp bottom (now 24dp
+each, as on sign-in) let the end of the form sit under a 3-button navigation bar or the keyboard.
+
 **The customer sign-up still scrolls, by decision.** Removing its mascot was the whole change (owner
 ruling 2026-10-01). Even without it, the form is about 220pt taller than a 6.1" iPhone, and it is
 taller again on an SE. The one layout that fits every phone is a two-step sign-up (social buttons,

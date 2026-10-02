@@ -978,7 +978,10 @@ need backfilling.
   *Don't have an account? Register*, which was cut off below the fold on a 6.1" iPhone. On iOS a page
   that fits no longer rubber-bands. On Android the form keeps clear of the navigation bar and the
   keyboard in either navigation mode. Very small screens and very large text still scroll.
-  (Owner remark 2026-10-01.)
+  The other sign-in screens now sit the same way: on Android, sign-up, forgot password and e-mail
+  confirmation keep clear of the clock, the navigation bar and the keyboard, where the back arrow of
+  the last two sat under the clock; on iOS, e-mail confirmation sits in the middle of the screen like
+  the rest. (Owner remark 2026-10-01; the other screens 2026-10-02.)
 
 - **Cleaner — the My Pay currency switch follows the period's pay, not its invoices.** A period holding
   pay in more than one currency (reachable only through an admin reassignment) now offers the switch on

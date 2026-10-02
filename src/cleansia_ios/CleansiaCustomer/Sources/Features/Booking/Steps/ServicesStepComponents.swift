@@ -10,6 +10,9 @@ struct PropertyStepper: View {
     /// number never looks like one that can (Android's `Stepper`).
     var minimum: Int?
     var maximum: Int?
+    /// Takes the width and height it is offered, the label centred between the buttons — the booking's
+    /// size row splits its width between two of these. Off, the pill is as wide as its label.
+    var fills = false
     let onChange: (Int) -> Void
 
     private var canDecrement: Bool {
@@ -35,10 +38,11 @@ struct PropertyStepper: View {
                 .contentTransition(.numericText())
                 .animation(.default, value: value)
                 // Room for both buttons' inward hit regions (12pt each) under a one-digit label.
-                .frame(minWidth: 16)
+                .frame(minWidth: 16, maxWidth: fills ? .infinity : nil)
                 .padding(.horizontal, Spacing.xxs)
             stepButton(systemImage: "plus", outward: .trailing, enabled: canIncrement) { step(+1) }
         }
+        .frame(maxWidth: fills ? .infinity : nil, maxHeight: fills ? .infinity : nil)
         .background(CleansiaColors.surface)
         .clipShape(RoundedRectangle(cornerRadius: CornerRadius.pill))
         // One adjustable element (swipe up / down), not two bare glyph buttons around an unnamed number.

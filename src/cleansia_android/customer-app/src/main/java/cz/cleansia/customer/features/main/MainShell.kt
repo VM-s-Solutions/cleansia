@@ -290,9 +290,10 @@ fun MainShell(
 
     val openBooking = { bookingSheetOpen = true }
 
-    // Lift the global snackbar above the custom bottom bar on every tab.
-    // Bar is ~76dp (60dp + FAB overhang); +12dp gives a visible gap.
-    cz.cleansia.core.snackbar.SnackbarInsetScope(88.dp)
+    // Lift the global snackbar above the custom bottom bar on every tab. The host already pads
+    // the nav-bar inset, so this is the bar box (98dp, its top is the Book FAB's top) plus the
+    // same 16dp gap the tab roots leave above the FAB.
+    SnackbarInsetScope(MainShellBottomClearance)
 
     Box(modifier = Modifier.fillMaxSize()) {
         // Pager fills the full screen; tabs paint their own background

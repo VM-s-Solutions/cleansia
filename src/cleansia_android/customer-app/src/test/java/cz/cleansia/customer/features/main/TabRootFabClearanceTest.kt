@@ -28,6 +28,15 @@ class TabRootFabClearanceTest {
         assertEquals((padding + maxOf(pill, fab) + padding + 16).dp, MainShellBottomClearance)
     }
 
+    /** The host pads the nav-bar inset itself, so the shell's inset is the same clearance. */
+    @Test
+    fun `the shell snackbar clears the Book FAB by the same gap`() {
+        assertTrue(
+            "MainShell must lift the snackbar by MainShellBottomClearance, not into the Book FAB",
+            source("features/main/MainShell.kt").contains("SnackbarInsetScope(MainShellBottomClearance)"),
+        )
+    }
+
     @Test
     fun `every tab root adds the nav-bar inset to the clearance`() {
         for (tab in TAB_ROOTS) {

@@ -337,3 +337,8 @@ What changed on iOS:
   as its ellipsis menu. Both menus are built from one list, so they cannot drift apart. A tap still
   selects the address, and *Delete* still asks first. Swipe actions on these cards need the iOS 27 SDK,
   which the toolchain does not have yet. Android keeps its row menu.
+- **The preference pickers are system lists.** The customer's Language, Market and Appearance pickers
+  and the partner's Language and Theme pickers are a native inset-grouped list with a checkmark on the
+  chosen row, on the brand surface, instead of a hand-built card of rows. They gain the system row
+  highlight, Dynamic Type row heights and the iOS 26 list look. The rows, their order and their labels
+  are unchanged, and choosing one still applies it and goes back.

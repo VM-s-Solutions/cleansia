@@ -84,7 +84,11 @@ while the no-spare-seat ruling D9 argued for stands, so there is no arrow.
 shipped as phase 3 of the 2026-09-27 meeting plan) supersedes no record: it ends the cancellation rule
 that a cash booking's fee is owed and collected by nothing, which lived in the business rules rather
 than in an ADR, and builds on ADR-0057, ADR-0061, ADR-0064, ADR-0065, ADR-0066 and ADR-0069 D4, so there
-is no arrow.
+is no arrow. **[ADR-0025](./adr-0025) was amended in place on 2026-10-01** (Amendment A3, owner ruling):
+the Option B it rejected — a Notification Service Extension per iOS app — is adopted for one purpose, so
+that a push is in the language picked inside the app; its premise that the device locale is the user's
+language is corrected there, and the rest of the record stands. [ADR-0029](./adr-0029) carries the
+matching Amendment A4 for the Live Activity widget. Neither replaces a record, so there is no arrow.
 
 ## All records
 

@@ -898,6 +898,12 @@ need backfilling.
   chosen, but credit only ever comes off a card payment. The split now shows only with card chosen;
   with cash, a customer holding a balance reads *Credit applies to card payments only*, as in the apps.
 
+- **Customer iOS 17.2 and later — the Live Activity can start while the app is closed.** When the
+  cleaner sets off, the server starts the lock-screen card itself. That start lacked the alert Apple
+  requires of it, so the card most likely never appeared unless the app started it. The start now
+  carries *Cleaner is on the way* with the booking number, without a sound, because the notification
+  for the same moment already plays one. Still to be confirmed on a phone. (ADR-0029 Amendment A5.)
+
 - **Customer iOS — the room and bathroom steppers are easier to hit, and VoiceOver can adjust them.**
   Each plus and minus takes taps across 44 points, Apple's minimum, without the stepper growing.
   VoiceOver reads each stepper as one control, *Your home, 3 rooms*, that a swipe up or down adjusts; it

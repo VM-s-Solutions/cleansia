@@ -19,7 +19,8 @@ namespace Cleansia.Tests.Features.Orders;
 /// The PaymentSheet intent keeps the card only when the customer ticked "save this card": the saved card is
 /// recorded under the consent on the customer's Stripe Customer for the order's currency and its id goes to
 /// Stripe with the intent, so the payment webhook completes it. Unticked, the intent asks Stripe to keep
-/// nothing and no card is recorded.
+/// nothing and no card is recorded. Re-opening the sheet gets the order's open intent back and records nothing
+/// more; changing the tick replaces the intent and cancels the old one as replaced.
 /// </summary>
 public class CreatePaymentIntentCardSavingTests
 {
@@ -36,6 +37,7 @@ public class CreatePaymentIntentCardSavingTests
     private readonly List<SavedCard> _addedCards = [];
     private readonly Currency _czk = Currency.Create("CZK", "Kč", "Czech koruna");
     private readonly User _user;
+    private readonly Order _order;
 
     public CreatePaymentIntentCardSavingTests()
     {
@@ -44,7 +46,7 @@ public class CreatePaymentIntentCardSavingTests
         _user.Id = UserId;
         _user.AssignStripeCustomerId("cus_legacy");
         _users.Setup(r => r.GetByIdAsync(UserId, It.IsAny<CancellationToken>())).ReturnsAsync(_user);
-        var order = OrderMockFactory.Generate(
+        _order = OrderMockFactory.Generate(
             new OrderMockFactory.OrderPartial
             {
                 Id = OrderId,
@@ -53,11 +55,11 @@ public class CreatePaymentIntentCardSavingTests
                 CustomerAddress = AddressMockFactory.Generate(),
             },
             _czk);
-        _orders.Setup(r => r.GetByIdForOwnerAsync(OrderId, UserId, It.IsAny<CancellationToken>())).ReturnsAsync(order);
+        _orders.Setup(r => r.GetByIdForOwnerAsync(OrderId, UserId, It.IsAny<CancellationToken>())).ReturnsAsync(_order);
         _stripeCustomers.Setup(r => r.ResolveForCurrencyAsync(_user, _czk, It.IsAny<CancellationToken>())).ReturnsAsync("cus_czk");
         _stripe
             .Setup(c => c.CreatePaymentIntentAsync(
-                It.IsAny<decimal>(), "CZK", It.IsAny<string>(), OrderId, It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+                It.IsAny<decimal>(), "CZK", It.IsAny<string>(), OrderId, It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new PaymentIntentResult("pi_sheet", "pi_sheet_secret"));
         _stripe.Setup(c => c.CreateEphemeralKeyAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync("ek_sheet");
         _savedCards.Setup(r => r.Add(It.IsAny<SavedCard>())).Callback<SavedCard>(_addedCards.Add);
@@ -88,7 +90,7 @@ public class CreatePaymentIntentCardSavingTests
             (card.UserId, card.CurrencyId, card.StripeCustomerId, card.ConsentTextVersion, card.ConsentIpAddress, card.ConsentDeviceLabel));
         Assert.False(card.IsCaptured);
         _stripe.Verify(c => c.CreatePaymentIntentAsync(
-            It.IsAny<decimal>(), "CZK", "cus_czk", OrderId, It.IsAny<string>(), card.Id, It.IsAny<CancellationToken>()), Times.Once);
+            It.IsAny<decimal>(), "CZK", "cus_czk", OrderId, It.IsAny<string>(), card.Id, null, It.IsAny<CancellationToken>()), Times.Once);
         Assert.Equal("cus_czk", result.Value!.StripeCustomerId);
     }
 
@@ -100,8 +102,52 @@ public class CreatePaymentIntentCardSavingTests
         Assert.True(result.IsSuccess, result.Error?.Message);
         Assert.Empty(_addedCards);
         _stripe.Verify(c => c.CreatePaymentIntentAsync(
-            It.IsAny<decimal>(), "CZK", "cus_legacy", OrderId, It.IsAny<string>(), null, It.IsAny<CancellationToken>()), Times.Once);
+            It.IsAny<decimal>(), "CZK", "cus_legacy", OrderId, It.IsAny<string>(), null, null, It.IsAny<CancellationToken>()), Times.Once);
         _stripeCustomers.Verify(
             r => r.ResolveForCurrencyAsync(It.IsAny<User>(), It.IsAny<Currency>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>
+    /// The sheet re-opened with the tick still on asks with the order's intent and gets it back: one intent,
+    /// one saved card, and nothing cancelled, so the order is never cancelled under a customer about to pay.
+    /// </summary>
+    [Fact]
+    public async Task Ticked_Twice_Keeps_One_Intent_And_One_Saved_Card_And_Cancels_Nothing()
+    {
+        var first = await Handler().Handle(new CreatePaymentIntent.Command(OrderId, SaveCard: true), CancellationToken.None);
+        var second = await Handler().Handle(new CreatePaymentIntent.Command(OrderId, SaveCard: true), CancellationToken.None);
+
+        Assert.True(first.IsSuccess, first.Error?.Message);
+        Assert.True(second.IsSuccess, second.Error?.Message);
+        Assert.Equal(("pi_sheet", "pi_sheet"), (first.Value!.PaymentIntentId, second.Value!.PaymentIntentId));
+        Assert.Single(_addedCards);
+        Assert.Equal("pi_sheet", _order.StripePaymentIntentId);
+        _stripe.Verify(c => c.CreatePaymentIntentAsync(
+            It.IsAny<decimal>(), "CZK", "cus_czk", OrderId, It.IsAny<string>(), It.IsAny<string?>(), "pi_sheet", It.IsAny<CancellationToken>()), Times.Once);
+        _stripe.Verify(c => c.CancelReplacedPaymentIntentAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _stripe.Verify(c => c.CancelPaymentIntentAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>
+    /// Ticking after an unticked open replaces the intent: the new one is recorded with its saved card and the
+    /// old one is cancelled as replaced, which the payment webhook leaves alone.
+    /// </summary>
+    [Fact]
+    public async Task Changing_The_Tick_Replaces_The_Intent_And_Cancels_The_Old_One_As_Replaced()
+    {
+        _order.AssignStripePaymentIntentId("pi_plain");
+        _stripe
+            .Setup(c => c.CreatePaymentIntentAsync(
+                It.IsAny<decimal>(), "CZK", "cus_czk", OrderId, It.IsAny<string>(), It.IsNotNull<string>(), "pi_plain", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PaymentIntentResult("pi_saving", "pi_saving_secret"));
+
+        var result = await Handler().Handle(new CreatePaymentIntent.Command(OrderId, SaveCard: true), CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Equal("pi_saving", result.Value!.PaymentIntentId);
+        Assert.Equal("pi_saving", _order.StripePaymentIntentId);
+        Assert.Single(_addedCards);
+        _stripe.Verify(c => c.CancelReplacedPaymentIntentAsync("pi_plain", It.IsAny<CancellationToken>()), Times.Once);
+        _stripe.Verify(c => c.CancelPaymentIntentAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }

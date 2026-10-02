@@ -153,10 +153,9 @@ public class CreatePaymentIntent
                 }
             }
 
-            // AmountDueOnCard, not TotalPrice - see StripeClient.CreateCheckoutSessionAsync. The
-            // intent's Stripe idempotency key includes the cents amount, so an order whose credit was
-            // applied after a first PaymentSheet open correctly mints a new intent and cancels the old
-            // one through the branch below.
+            // AmountDueOnCard, not TotalPrice - see StripeClient.CreateCheckoutSessionAsync. Re-opening the
+            // sheet gets the order's open intent back; a changed amount or tick gets a new one, and the old
+            // one is cancelled through the branch below.
             var intent = await stripeClient.CreatePaymentIntentAsync(
                 amount: order.AmountDueOnCard,
                 currency: currency.Code,
@@ -164,9 +163,10 @@ public class CreatePaymentIntent
                 orderId: order.Id,
                 displayOrderNumber: order.DisplayOrderNumber,
                 savedCardId: cardToSave?.Id,
+                currentPaymentIntentId: order.StripePaymentIntentId,
                 cancellationToken: cancellationToken);
 
-            if (cardToSave is not null)
+            if (cardToSave is not null && intent.Id != order.StripePaymentIntentId)
             {
                 savedCardRepository.Add(cardToSave);
             }
@@ -177,17 +177,14 @@ public class CreatePaymentIntent
             }
             else if (order.StripePaymentIntentId != intent.Id)
             {
-                // Amount changed (typically: customer edited extras after
-                // first PaymentSheet open). Stripe's idempotency key includes
-                // the cents amount, so a different amount → different intent.
                 // We must cancel the OLD intent so the customer can't end up
-                // paying both — best-effort, log on failure (stale intent
-                // will eventually be garbage-collected by Stripe but until
-                // then it's a double-charge risk).
+                // paying both. It is cancelled as a duplicate, which the
+                // payment_intent.canceled webhook leaves alone, since the
+                // customer is about to pay the new one.
                 var oldIntentId = order.StripePaymentIntentId;
                 try
                 {
-                    await stripeClient.CancelPaymentIntentAsync(oldIntentId, cancellationToken);
+                    await stripeClient.CancelReplacedPaymentIntentAsync(oldIntentId, cancellationToken);
                     logger.LogInformation(
                         "Cancelled stale PaymentIntent {OldIntentId} for order {OrderId}; new intent is {NewIntentId}",
                         oldIntentId, order.Id, intent.Id);

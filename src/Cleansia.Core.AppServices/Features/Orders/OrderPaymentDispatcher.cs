@@ -102,7 +102,8 @@ public sealed class OrderPaymentDispatcher(
     /// <summary>
     /// The saved card is recorded with the consent before the redirect, as the profile's card capture
     /// records it, and the card lands on it when the payment webhook arrives. The validator admits the
-    /// tick only from a signed-in customer.
+    /// tick only from a signed-in customer, and the caller runs this in the account's company. The card is
+    /// stamped with that company here, because the booking commits in the market's.
     /// </summary>
     private async Task<CheckoutSessionResult> CreateCardSavingCheckoutSessionAsync(
         IStripeClient stripeClient, Order order, CancellationToken cancellationToken)
@@ -115,6 +116,7 @@ public sealed class OrderPaymentDispatcher(
         var stripeCustomerId = await stripeCustomerResolver.ResolveForCurrencyAsync(user, currency, cancellationToken);
         var card = SavedCard.Start(
             user.Id, currency.Id, stripeCustomerId, requestMetadataProvider.IpAddress, requestMetadataProvider.DeviceLabel);
+        card.TenantId = user.TenantId;
         var session = await stripeClient.CreateCardSavingCheckoutSessionAsync(
             order, stripeCustomerId, card.Id, cancellationToken);
         savedCardRepository.Add(card);

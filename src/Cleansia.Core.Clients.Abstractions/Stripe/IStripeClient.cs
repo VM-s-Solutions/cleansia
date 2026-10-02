@@ -83,6 +83,11 @@ public interface IStripeClient
     /// <para>Stripe keeps the card only when <paramref name="savedCardId"/> is given: the intent then asks
     /// for <c>setup_future_usage=off_session</c> and carries <c>SavedCardId</c> metadata for the webhook.
     /// Without it nothing is kept.</para>
+    /// <para><paramref name="currentPaymentIntentId"/> is the intent the order already records. It is handed
+    /// back while the customer can still confirm it, for the same amount, on the same Stripe Customer, and
+    /// keeping the card exactly when <paramref name="savedCardId"/> is given (on the saved card it was opened
+    /// with). Otherwise a new intent is created, keyed on the one it replaces, so Stripe can never replay an
+    /// intent the order has moved past; the caller cancels the replaced one.</para>
     /// </summary>
     Task<PaymentIntentResult> CreatePaymentIntentAsync(
         decimal amount,
@@ -91,17 +96,25 @@ public interface IStripeClient
         string orderId,
         string displayOrderNumber,
         string? savedCardId,
+        string? currentPaymentIntentId,
         CancellationToken cancellationToken);
 
     /// <summary>
     /// Cancel a previously-created PaymentIntent that hasn't been confirmed yet.
-    /// Used when the order's amount changes mid-flow and a new intent is being
-    /// minted — the old intent must be cancelled so the customer can't end up
-    /// paying both. Safe to call on an intent in <c>requires_payment_method</c>
+    /// Safe to call on an intent in <c>requires_payment_method</c>
     /// / <c>requires_confirmation</c> / <c>processing</c> states. Throws if the
     /// intent has already succeeded.
     /// </summary>
     Task CancelPaymentIntentAsync(
+        string paymentIntentId,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Cancel the PaymentSheet intent a newer one for the same order replaces, with the reason
+    /// <c>duplicate</c>: the <c>payment_intent.canceled</c> it raises leaves the order alone, because the
+    /// customer is about to pay the newer one. Throws if the intent has already succeeded.
+    /// </summary>
+    Task CancelReplacedPaymentIntentAsync(
         string paymentIntentId,
         CancellationToken cancellationToken);
 

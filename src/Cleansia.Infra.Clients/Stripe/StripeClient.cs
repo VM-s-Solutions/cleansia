@@ -242,12 +242,29 @@ public class StripeClient : IStripeClient
         string orderId,
         string displayOrderNumber,
         string? savedCardId,
+        string? currentPaymentIntentId,
         CancellationToken cancellationToken)
     {
         var service = new PaymentIntentService(stripe);
+        var amountCents = ToMinorUnits(amount);
+        if (!string.IsNullOrEmpty(currentPaymentIntentId))
+        {
+            var current = await ClassifyAsync(
+                nameof(CreatePaymentIntentAsync),
+                () => service.GetAsync(currentPaymentIntentId, cancellationToken: cancellationToken));
+            var currentSavesCard = current.Metadata?.ContainsKey(SavedCardMetadataKey) ?? false;
+            if (current.Status is "requires_payment_method" or "requires_confirmation" or "requires_action"
+                && current.Amount == amountCents
+                && current.CustomerId == stripeCustomerId
+                && currentSavesCard == !string.IsNullOrEmpty(savedCardId))
+            {
+                return new PaymentIntentResult(current.Id, current.ClientSecret);
+            }
+        }
+
         var options = new PaymentIntentCreateOptions
         {
-            Amount = ToMinorUnits(amount),
+            Amount = amountCents,
             Currency = currency.ToLowerInvariant(),
             Customer = stripeCustomerId,
             AutomaticPaymentMethods = new PaymentIntentAutomaticPaymentMethodsOptions
@@ -266,16 +283,12 @@ public class StripeClient : IStripeClient
             options.Metadata[SavedCardMetadataKey] = savedCardId;
         }
 
-        // Include amount in the key so a customer who edits the order
-        // (extras/services change → amount differs) can re-open PaymentSheet
-        // without Stripe rejecting on idempotency-replay-with-different-params.
-        // Same-amount retries still collide and Stripe returns the original
-        // intent (the desired idempotent behavior). A card-saving intent is keyed
-        // on its own saved-card row, since its parameters differ from the plain one's.
-        var amountCents = ToMinorUnits(amount);
-        var idempotencyKey = string.IsNullOrEmpty(savedCardId)
-            ? $"pi-{orderId}-{amountCents}"
-            : $"pi-{orderId}-{amountCents}-card-{savedCardId}";
+        // A retry of this very request replays this intent. A replacement is keyed on the intent it
+        // replaces, so returning to an earlier amount or tick never replays an intent already cancelled,
+        // and a card-saving intent on its own saved-card row, since its parameters differ from the plain one's.
+        var idempotencyKey = $"pi-{orderId}-{amountCents}"
+                             + (string.IsNullOrEmpty(currentPaymentIntentId) ? string.Empty : $"-after-{currentPaymentIntentId}")
+                             + (string.IsNullOrEmpty(savedCardId) ? string.Empty : $"-card-{savedCardId}");
         var requestOptions = new RequestOptions { IdempotencyKey = idempotencyKey };
         var intent = await ClassifyAsync(
             nameof(CreatePaymentIntentAsync),
@@ -294,6 +307,17 @@ public class StripeClient : IStripeClient
         await ClassifyAsync(
             nameof(CancelPaymentIntentAsync),
             () => service.CancelAsync(paymentIntentId, cancellationToken: cancellationToken));
+    }
+
+    public async Task CancelReplacedPaymentIntentAsync(
+        string paymentIntentId,
+        CancellationToken cancellationToken)
+    {
+        var service = new PaymentIntentService(stripe);
+        var options = new PaymentIntentCancelOptions { CancellationReason = ReplacedIntentCancellationReason };
+        await ClassifyAsync(
+            nameof(CancelReplacedPaymentIntentAsync),
+            () => service.CancelAsync(paymentIntentId, options, cancellationToken: cancellationToken));
     }
 
     public async Task<StripePaymentSnapshot> GetPaymentSnapshotAsync(
@@ -781,6 +805,8 @@ public class StripeClient : IStripeClient
     private const string ProfilePagePath = "/profile";
 
     private const string SavedCardMetadataKey = "SavedCardId";
+
+    private const string ReplacedIntentCancellationReason = "duplicate";
 
     private const string ReceivableMetadataKey = "ReceivableId";
 

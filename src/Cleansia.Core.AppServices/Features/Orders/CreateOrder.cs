@@ -1206,8 +1206,12 @@ public class CreateOrder
                 order.ApplyCredit(intendedCredit, userId);
             }
 
+            // A card saved while paying is the account's, like a promo: the customer, their Stripe Customer
+            // and the saved card are read and recorded in the account's company, the booking in the operator's.
+            if (accountTenantId is not null) tenantProvider.SetTenantOverride(accountTenantId);
             var dispatch = await orderPaymentDispatcher.DispatchAsync(
                 order, command.Language, command.SaveCard, cancellationToken);
+            if (operatorTenantId is not null) tenantProvider.SetTenantOverride(operatorTenantId);
             if (dispatch.Failure is { } dispatchFailure)
             {
                 // Stripe is unreachable and this order will not exist - the pipeline commits nothing on

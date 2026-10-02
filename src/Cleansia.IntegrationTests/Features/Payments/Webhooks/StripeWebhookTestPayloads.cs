@@ -20,10 +20,12 @@ internal static class StripeWebhookTestPayloads
     public const string WrongWebhookSecret = "whsec_attacker_minted_secret";
 
     public static string CheckoutSessionCompletedBody(
-        string eventId, string orderId, string sessionId = "cs_test_session", string? paymentIntentId = null)
+        string eventId, string orderId, string sessionId = "cs_test_session", string? paymentIntentId = null,
+        string? savedCardId = null)
     {
         var created = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         var paymentIntent = paymentIntentId is null ? "null" : $"\"{paymentIntentId}\"";
+        var savedCard = savedCardId is null ? string.Empty : $", \"SavedCardId\": \"{savedCardId}\"";
         return $$"""
         {
           "id": "{{eventId}}",
@@ -43,7 +45,7 @@ internal static class StripeWebhookTestPayloads
               "mode": "payment",
               "payment_intent": {{paymentIntent}},
               "metadata": {
-                "OrderId": "{{orderId}}"
+                "OrderId": "{{orderId}}"{{savedCard}}
               }
             },
             "previous_attributes": null

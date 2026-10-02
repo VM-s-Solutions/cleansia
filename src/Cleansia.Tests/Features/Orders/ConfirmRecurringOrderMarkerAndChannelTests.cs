@@ -54,7 +54,7 @@ public sealed class ConfirmRecurringOrderMarkerAndChannelTests
         _users.Setup(r => r.GetByIdAsync(CustomerUserId, It.IsAny<CancellationToken>())).ReturnsAsync(user);
         _stripe
             .Setup(s => s.CreatePaymentIntentAsync(
-                It.IsAny<decimal>(), It.IsAny<string>(), "cus_existing", OrderId, It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+                It.IsAny<decimal>(), It.IsAny<string>(), "cus_existing", OrderId, It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new PaymentIntentResult("pi_1", "pi_1_secret"));
         _stripe
             .Setup(s => s.CreateEphemeralKeyAsync("cus_existing", It.IsAny<CancellationToken>()))
@@ -157,7 +157,7 @@ public sealed class ConfirmRecurringOrderMarkerAndChannelTests
         Assert.NotNull(order.CustomerConfirmedAt);
         _stripe.Verify(s => s.CreatePaymentIntentAsync(
             It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-            It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
+            It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     /// <summary>
@@ -204,7 +204,7 @@ public sealed class ConfirmRecurringOrderMarkerAndChannelTests
             It.IsAny<Order>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()), Times.Never);
         _stripe.Verify(s => s.CreatePaymentIntentAsync(
             It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-            It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
+            It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     /// <summary>

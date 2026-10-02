@@ -26,7 +26,8 @@ namespace Cleansia.Tests.Features.Payments;
 /// checkout.session.completed, which still pays the order. The card is read from Stripe, replaces the
 /// customer's earlier card in that currency, and a second event for the same capture changes nothing. A
 /// SetupIntent with no saved card behind it — the Plus subscribe flow's — is not this flow's, and a
-/// payment without the tick keeps no card.
+/// payment without the tick keeps no card. A PaymentSheet intent replaced because the tick changed is
+/// cancelled as a duplicate, and its cancellation leaves the order to be paid.
 /// </summary>
 public class SavedCardWebhookTests
 {
@@ -278,6 +279,17 @@ public class SavedCardWebhookTests
         Assert.Equal(PaymentStatus.Paid, order.PaymentStatus);
     }
 
+    [Fact]
+    public async Task A_Replaced_Intent_Cancelled_As_A_Duplicate_Leaves_The_Order_To_Be_Paid()
+    {
+        var order = ArrangeOrder();
+
+        var result = await DeliverAsync(PaymentIntentCanceled("evt_pi_replaced", OrderId, "duplicate"));
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal((OrderStatus.New, PaymentStatus.Pending), (order.CurrentStatus, order.PaymentStatus));
+    }
+
     private static string Metadata(string? savedCardId) =>
         savedCardId is null ? "{}" : $$"""{ "SavedCardId": "{{savedCardId}}" }""";
 
@@ -297,6 +309,18 @@ public class SavedCardWebhookTests
           "status": "succeeded",
           "setup_future_usage": "off_session",
           "metadata": {{PaymentMetadata(orderId, savedCardId)}}
+        }
+        """);
+
+    private static string PaymentIntentCanceled(string eventId, string orderId, string cancellationReason) => Event(eventId, Constants.StripeEventType.PaymentIntentCanceled, $$"""
+        {
+          "id": "pi_replaced",
+          "object": "payment_intent",
+          "amount": 150000,
+          "currency": "czk",
+          "status": "canceled",
+          "cancellation_reason": "{{cancellationReason}}",
+          "metadata": {{PaymentMetadata(orderId, savedCardId: null)}}
         }
         """);
 

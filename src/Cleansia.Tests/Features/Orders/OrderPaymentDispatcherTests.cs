@@ -31,6 +31,7 @@ public class OrderPaymentDispatcherTests
 {
     private const string OrderId = "order-1";
     private const string TenantId = "tenant-1";
+    private const string AccountTenantId = "tenant-account";
     private const string LanguageCode = "en";
 
     private readonly Mock<IStripeClientFactory> _stripeClientFactory = new();
@@ -73,6 +74,7 @@ public class OrderPaymentDispatcherTests
             currency);
         var user = User.CreateWithPassword("saving@example.com", "Passw0rd!", "Sa", "Ving");
         user.Id = "user-saving";
+        user.TenantId = AccountTenantId;
         _users.Setup(r => r.GetByIdAsync("user-saving", It.IsAny<CancellationToken>())).ReturnsAsync(user);
         _stripeCustomers
             .Setup(r => r.ResolveForCurrencyAsync(user, currency, It.IsAny<CancellationToken>()))
@@ -148,6 +150,23 @@ public class OrderPaymentDispatcherTests
             c => c.CreateCardSavingCheckoutSessionAsync(order, "cus_czk", card.Id, It.IsAny<CancellationToken>()),
             Times.Once);
         _stripeClient.Verify(c => c.CreateCheckoutSessionAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>
+    /// The booking commits in the market's company, which may not be the customer's. The card is the
+    /// account's, so it carries the customer's company rather than taking the market's at commit.
+    /// </summary>
+    [Fact]
+    public async Task WebCard_SavingTheCard_StampsTheCardWithTheCustomersCompany_NotTheMarkets()
+    {
+        var (order, _) = ArrangeSavingCustomer();
+        _stripeClient
+            .Setup(c => c.CreateCardSavingCheckoutSessionAsync(order, "cus_czk", It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new CheckoutSessionResult("cs_saving", "https://checkout.stripe.com/c/pay/cs_saving"));
+
+        await CreateDispatcher(OrderChannel.Web).DispatchAsync(order, LanguageCode, saveCard: true, CancellationToken.None);
+
+        Assert.Equal((AccountTenantId, TenantId), (Assert.Single(_addedCards).TenantId, order.TenantId));
     }
 
     /// <summary>The mobile apps save at their PaymentSheet intent; the booking itself keeps nothing.</summary>

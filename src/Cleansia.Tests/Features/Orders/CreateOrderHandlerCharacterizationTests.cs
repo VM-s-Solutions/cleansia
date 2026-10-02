@@ -56,6 +56,30 @@ public class CreateOrderHandlerCharacterizationTests
         Assert.Equal("tenant-1", ambient);
     }
 
+    /// <summary>
+    /// A card saved while paying is the account's, so the payment is dispatched in the account's company, and
+    /// the booking then commits in the market operator's.
+    /// </summary>
+    [Fact]
+    public async Task The_Payment_Is_Dispatched_In_The_Account_Company_And_The_Booking_Commits_In_The_Operators()
+    {
+        var ambient = "account-company";
+        string? atDispatch = null;
+        _tenantProvider.Setup(t => t.GetCurrentTenantId()).Returns(() => ambient);
+        _tenantProvider.Setup(t => t.SetTenantOverride(It.IsAny<string>())).Callback<string>(id => ambient = id);
+        _stripeClient
+            .Setup(c => c.CreateCheckoutSessionAsync(
+                It.IsAny<Cleansia.Core.Domain.Orders.Order>(), It.IsAny<CancellationToken>()))
+            .Callback(() => atDispatch = ambient)
+            .ReturnsAsync(new CheckoutSessionResult(
+                "cs_test_default", "https://checkout.stripe.com/c/pay/cs_test_default"));
+
+        var result = await CreateHandler().Handle(CreateOrderTestData.ValidCommand(paymentType: PaymentType.Card), CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Equal(("account-company", "tenant-1"), (atDispatch, ambient));
+    }
+
     private const string UserId = "user-1";
     private const string CreatedOrderId = "order-created-1";
     private const string RequestIp = "203.0.113.9";

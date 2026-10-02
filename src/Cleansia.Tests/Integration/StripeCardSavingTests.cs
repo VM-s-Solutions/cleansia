@@ -13,7 +13,9 @@ namespace Cleansia.Tests.Integration;
 /// Stripe keeps a card only when the customer ticked "save this card": the booking checkout and the
 /// PaymentSheet intent ask for <c>setup_future_usage</c> and carry the saved card's id then, and never
 /// otherwise. A checkout the customer walked away from is handed back while Stripe still has it open, so
-/// resuming a card-saving checkout is not refused for asking with other parameters under the same key.
+/// resuming a card-saving checkout is not refused for asking with other parameters under the same key. An
+/// order's PaymentSheet intent is handed back the same way while it can still be paid as asked, and a
+/// replacement is keyed on the intent it replaces, which is cancelled as a duplicate.
 /// </summary>
 public class StripeCardSavingTests
 {
@@ -56,7 +58,7 @@ public class StripeCardSavingTests
         var transport = new RecordingHandler();
 
         await Client(transport).CreatePaymentIntentAsync(
-            1500m, "CZK", "cus_czk", "order-sheet", "CL-1", savedCardId: null, CancellationToken.None);
+            1500m, "CZK", "cus_czk", "order-sheet", "CL-1", savedCardId: null, currentPaymentIntentId: null, CancellationToken.None);
 
         var request = Assert.Single(transport.Requests);
         Assert.DoesNotContain("setup_future_usage", request.Body);
@@ -74,13 +76,66 @@ public class StripeCardSavingTests
         var transport = new RecordingHandler();
 
         await Client(transport).CreatePaymentIntentAsync(
-            1500m, "CZK", "cus_czk", "order-sheet", "CL-1", SavedCardId, CancellationToken.None);
+            1500m, "CZK", "cus_czk", "order-sheet", "CL-1", SavedCardId, currentPaymentIntentId: null, CancellationToken.None);
 
         var request = Assert.Single(transport.Requests);
         Assert.Contains("setup_future_usage=off_session", request.Body);
         Assert.Contains($"metadata[SavedCardId]={SavedCardId}", request.Body);
         Assert.Contains("customer=cus_czk", request.Body);
         Assert.Equal($"pi-order-sheet-150000-card-{SavedCardId}", request.IdempotencyKey);
+    }
+
+    /// <summary>
+    /// The sheet re-opened with the tick still on is handed the intent the order records, with its own saved
+    /// card, and Stripe is asked to create nothing.
+    /// </summary>
+    [Fact]
+    public async Task Reopening_The_Sheet_Hands_Back_The_Intent_The_Order_Records()
+    {
+        var transport = new RecordingHandler { CurrentIntent = OpenIntent("requires_payment_method", savesCard: true) };
+
+        var intent = await Client(transport).CreatePaymentIntentAsync(
+            1500m, "CZK", "cus_czk", "order-sheet", "CL-1", "card-saving-2", "pi_open", CancellationToken.None);
+
+        var request = Assert.Single(transport.Requests);
+        Assert.Equal(HttpMethod.Get, request.Method);
+        Assert.EndsWith("/v1/payment_intents/pi_open", request.Path);
+        Assert.Equal(("pi_open", "pi_open_secret"), (intent.Id, intent.ClientSecret));
+    }
+
+    /// <summary>
+    /// An intent that can no longer be paid as asked is replaced, keyed on the one it replaces: unticking after
+    /// a ticked open never replays the first plain intent, which was cancelled when the tick went on.
+    /// </summary>
+    [Theory]
+    [InlineData("requires_payment_method", 1500, null, "pi-order-sheet-150000-after-pi_open")]
+    [InlineData("requires_payment_method", 1600, SavedCardId, $"pi-order-sheet-160000-after-pi_open-card-{SavedCardId}")]
+    [InlineData("canceled", 1500, SavedCardId, $"pi-order-sheet-150000-after-pi_open-card-{SavedCardId}")]
+    public async Task An_Intent_That_Cannot_Be_Paid_As_Asked_Is_Replaced_Under_A_Key_Of_Its_Own(
+        string status, int amount, string? savedCardId, string expectedKey)
+    {
+        var transport = new RecordingHandler { CurrentIntent = OpenIntent(status, savesCard: true) };
+
+        var intent = await Client(transport).CreatePaymentIntentAsync(
+            amount, "CZK", "cus_czk", "order-sheet", "CL-1", savedCardId, "pi_open", CancellationToken.None);
+
+        Assert.Equal(new[] { HttpMethod.Get, HttpMethod.Post }, transport.Requests.Select(r => r.Method));
+        Assert.Equal(expectedKey, transport.Requests[1].IdempotencyKey);
+        Assert.Equal(savedCardId is not null, transport.Requests[1].Body.Contains("SavedCardId"));
+        Assert.Equal("pi_sheet", intent.Id);
+    }
+
+    [Fact]
+    public async Task A_Replaced_Intent_Is_Cancelled_As_A_Duplicate()
+    {
+        var transport = new RecordingHandler();
+
+        await Client(transport).CancelReplacedPaymentIntentAsync("pi_open", CancellationToken.None);
+
+        var request = Assert.Single(transport.Requests);
+        Assert.Equal(HttpMethod.Post, request.Method);
+        Assert.EndsWith("/v1/payment_intents/pi_open/cancel", request.Path);
+        Assert.Contains("cancellation_reason=duplicate", request.Body);
     }
 
     [Fact]
@@ -136,6 +191,17 @@ public class StripeCardSavingTests
         return order;
     }
 
+    private static string OpenIntent(string status, bool savesCard)
+    {
+        var metadata = savesCard
+            ? $$"""{"OrderId":"order-sheet","SavedCardId":"{{SavedCardId}}"}"""
+            : """{"OrderId":"order-sheet"}""";
+        return $$"""
+            {"id":"pi_open","object":"payment_intent","status":"{{status}}","amount":150000,"currency":"czk",
+             "customer":"cus_czk","client_secret":"pi_open_secret","metadata":{{metadata}} }
+            """;
+    }
+
     private sealed record RecordedRequest(HttpMethod Method, string Path, string Body, string? IdempotencyKey);
 
     private sealed class RecordingHandler : HttpMessageHandler
@@ -143,6 +209,8 @@ public class StripeCardSavingTests
         public List<RecordedRequest> Requests { get; } = [];
 
         public string SessionStatus { get; init; } = "open";
+
+        public string? CurrentIntent { get; init; }
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
@@ -157,7 +225,9 @@ public class StripeCardSavingTests
                 request.Headers.TryGetValues("Idempotency-Key", out var keys) ? keys.Single() : null));
 
             var json = path.Contains("/payment_intents")
-                ? """{"id":"pi_sheet","object":"payment_intent","client_secret":"pi_sheet_secret"}"""
+                ? request.Method == HttpMethod.Get && CurrentIntent is not null
+                    ? CurrentIntent
+                    : """{"id":"pi_sheet","object":"payment_intent","client_secret":"pi_sheet_secret"}"""
                 : request.Method == HttpMethod.Get
                     ? $$"""{"id":"cs_started","object":"checkout.session","status":"{{SessionStatus}}","url":"https://checkout.stripe.test/cs_started"}"""
                     : """{"id":"cs_new","object":"checkout.session","status":"open","url":"https://checkout.stripe.test/cs_new"}""";

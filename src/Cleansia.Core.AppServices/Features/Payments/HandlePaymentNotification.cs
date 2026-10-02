@@ -293,6 +293,9 @@ public class HandlePaymentNotification
                 Constants.StripeEventType.PaymentIntentPaymentFailed
                     => await HandlePaymentIntentFailed(order, orderId, cancellationToken),
                 Constants.StripeEventType.PaymentIntentCanceled
+                    when stripeEvent.Data.Object is PaymentIntent { CancellationReason: ReplacedIntentCancellationReason } replaced
+                    => KeepOrderForReplacingIntent(order, replaced.Id),
+                Constants.StripeEventType.PaymentIntentCanceled
                     => await HandleExpiredSession(order, orderId, cancellationToken),
                 _ => BusinessResult.Success(),
             };
@@ -497,6 +500,20 @@ public class HandlePaymentNotification
                 sessionId, order.Id);
             return BusinessResult.Success();
         }
+
+        /// <summary>
+        /// The PaymentSheet intent was cancelled because a newer one for the same order replaced it, and the
+        /// customer is about to pay that one, so the order stays as it is.
+        /// </summary>
+        private BusinessResult KeepOrderForReplacingIntent(Order order, string intentId)
+        {
+            logger.LogInformation(
+                "PaymentIntent {PaymentIntentId} of order {OrderId} was cancelled as replaced; the order is unchanged",
+                intentId, order.Id);
+            return BusinessResult.Success();
+        }
+
+        private const string ReplacedIntentCancellationReason = "duplicate";
 
         private const string SavedCardMetadataKey = "SavedCardId";
 

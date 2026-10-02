@@ -965,7 +965,8 @@
         "price_before_discount": "Cena pred zľavou: {{amount}}",
         "credit_applied": "Váš kredit",
         "due_on_card": "Na úhradu kartou",
-        "credit_note": "Zostáva vám {{balance}} kreditu. Použijeme ho na vašu najbližšiu objednávku automaticky, nie je teda čo nastavovať — a časť každej objednávky sa vždy platí kartou."
+        "credit_note": "Zostáva vám {{balance}} kreditu. Použijeme ho na vašu najbližšiu objednávku automaticky, nie je teda čo nastavovať — a časť každej objednávky sa vždy platí kartou.",
+        "credit_card_only": "Kredit sa uplatní len pri platbe kartou."
       },
       "summary_address": "Adresa",
       "summary_bathrooms_few": "{{count}} kúpeľne",

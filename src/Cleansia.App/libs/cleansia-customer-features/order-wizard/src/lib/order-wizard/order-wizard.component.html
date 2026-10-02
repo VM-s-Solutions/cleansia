@@ -1440,6 +1440,11 @@
             }}
           </p>
         </div>
+        } @else if (facade.formData().paymentType !== PaymentType.Card && facade.creditBalance() > 0) {
+        <!-- Cash takes no credit; a customer who switches to cash is told why the lines went away. -->
+        <div class="cl-wiz__credit">
+          <p class="cl-muted cl-wiz__credit-note">{{ 'pages.order.summary.credit_card_only' | translate }}</p>
+        </div>
         }
         @if (facade.quote()?.estimatedDurationMinutes; as minutes) {
         <div class="cl-muted cl-wiz__summary-estimate">

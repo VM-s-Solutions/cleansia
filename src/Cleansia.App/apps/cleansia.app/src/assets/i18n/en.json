@@ -965,7 +965,8 @@
         "price_before_discount": "Price before discount: {{amount}}",
         "credit_applied": "Your credit",
         "due_on_card": "To pay by card",
-        "credit_note": "Your credit balance is {{balance}}. We apply it to your next booking automatically, so there is nothing to choose — and part of every booking is always paid by card."
+        "credit_note": "Your credit balance is {{balance}}. We apply it to your next booking automatically, so there is nothing to choose — and part of every booking is always paid by card.",
+        "credit_card_only": "Credit applies to card payments only."
       },
       "summary_address": "Address",
       "summary_bathrooms_few": "{{count}} bathrooms",

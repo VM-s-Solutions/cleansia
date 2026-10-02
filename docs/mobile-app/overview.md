@@ -409,7 +409,10 @@ Island draw `LiveActivityBrandLockup`: the vector wordmark from Core's asset cat
 the primary colour, with no container, and the system text "Cleansia" if the asset ever fails to
 resolve. It replaced a 22 pt disc with the waving mascot inside, a scale-less 600 × 600 px image that
 WidgetKit counted as 600 pt and swapped for a placeholder, leaving the filled circle with a dark hole
-that reinstalling never fixed. The compact and minimal presentations draw no image.
+that reinstalling never fixed. The compact and minimal presentations draw no image asset: the compact
+trailing slot falls back to an SF Symbol (`checkmark.seal.fill`, `xmark.circle.fill` or `sparkles`)
+when it has neither a countdown nor a clock to show, which is sized by its font and so always fits, and
+the minimal one is an 8 pt dot.
 
 | Target | Bundle id | App Group |
 |---|---|---|

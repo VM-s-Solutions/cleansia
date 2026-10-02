@@ -7,6 +7,7 @@ import cz.cleansia.core.media.Base64Image
 import cz.cleansia.core.media.ImageCompressor
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
+import cz.cleansia.core.settings.SupportedLanguages
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.memberships.GetMyMembershipResponse
@@ -25,9 +26,9 @@ import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.unmockkObject
 import io.mockk.verify
-import java.util.Locale
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -53,6 +54,9 @@ class ProfileViewModelTest {
     private val membership = MutableStateFlow<GetMyMembershipResponse?>(null)
     private val appSettings = MutableStateFlow(AppSettings())
 
+    /** The handset's preferred locales, in order: what `emailLanguageTag()` reads off the Context. */
+    private var deviceLocales = listOf("en-US")
+
     private val pickedUri = mockk<Uri>()
     private val encoded = Base64Image(base64 = "encoded", contentType = "image/jpeg", fileName = "me.jpg")
 
@@ -76,6 +80,11 @@ class ProfileViewModelTest {
         every { userRepository.currentUser } returns currentUser
         every { membershipRepository.current } returns membership
         every { settings.settings } returns appSettings
+        // The repository hands the persisted choice and the device's locale list to the shared
+        // resolver. Only the Context read is faked, so the onboarding tests run the real resolution.
+        coEvery { settings.emailLanguageTag() } coAnswers {
+            SupportedLanguages.resolve(appSettings.value.language.tag, deviceLocales)
+        }
         every { appContext.contentResolver } returns mockk<ContentResolver>(relaxed = true)
         every { appContext.getString(R.string.profile_avatar_encode_failed) } returns "encode failed"
 
@@ -217,15 +226,42 @@ class ProfileViewModelTest {
     @Test
     fun `completeOnboarding sends the language chosen in the app, not the device's`() = runTest {
         currentUser.value = sampleUser
-        appSettings.value = AppSettings(language = LanguagePreference.Czech)
+        appSettings.value = AppSettings(language = LanguagePreference.Slovak)
+        deviceLocales = listOf("cs-CZ")
+
+        assertOnboardingSends("sk")
+    }
+
+    /**
+     * Onboarding is the one write that replaces the server's sign-up stamp, `en` for every Google or
+     * Apple sign-up. Sending no language on "System" left a Czech phone on English e-mails and promo
+     * pushes for good, so it sends the language the app resolves to.
+     */
+    @Test
+    fun `completeOnboarding on System sends the device language`() = runTest {
+        currentUser.value = sampleUser
+        deviceLocales = listOf("cs-CZ")
+
+        assertOnboardingSends("cs")
+    }
+
+    /** The server accepts only a seeded code, so a German phone on "System" gets the resolver's English. */
+    @Test
+    fun `completeOnboarding on System with an unsupported device language sends the resolver's fallback`() =
+        runTest {
+            currentUser.value = sampleUser
+            deviceLocales = listOf("de-DE")
+
+            assertOnboardingSends("en")
+        }
+
+    private fun TestScope.assertOnboardingSends(languageCode: String) {
         coEvery {
             userRepository.updateCurrentUser(any(), any(), any(), any(), any(), any(), any())
         } returns ApiResult.Success(Unit)
 
-        withDeviceLocale(Locale.forLanguageTag("sk")) {
-            viewModel().completeOnboarding("+420123456789", null) {}
-            advanceUntilIdle()
-        }
+        viewModel().completeOnboarding("+420123456789", null) {}
+        advanceUntilIdle()
 
         coVerify(exactly = 1) {
             userRepository.updateCurrentUser(
@@ -233,49 +269,10 @@ class ProfileViewModelTest {
                 lastName = "Brown",
                 phoneNumber = "+420123456789",
                 birthDate = null,
-                languageCode = "cs",
+                languageCode = languageCode,
                 photo = null,
                 removePhoto = false,
             )
-        }
-    }
-
-    /**
-     * "System" is not a choice: the server keeps what it holds (null is omitted and the handler leaves
-     * the stored code alone), so a language picked on another client survives onboarding here.
-     */
-    @Test
-    fun `completeOnboarding on System sends no language`() = runTest {
-        currentUser.value = sampleUser
-        coEvery {
-            userRepository.updateCurrentUser(any(), any(), any(), any(), any(), any(), any())
-        } returns ApiResult.Success(Unit)
-
-        withDeviceLocale(Locale.forLanguageTag("cs")) {
-            viewModel().completeOnboarding("+420123456789", null) {}
-            advanceUntilIdle()
-        }
-
-        coVerify(exactly = 1) {
-            userRepository.updateCurrentUser(
-                firstName = any(),
-                lastName = any(),
-                phoneNumber = any(),
-                birthDate = any(),
-                languageCode = null,
-                photo = null,
-                removePhoto = false,
-            )
-        }
-    }
-
-    private inline fun withDeviceLocale(locale: Locale, block: () -> Unit) {
-        val original = Locale.getDefault()
-        Locale.setDefault(locale)
-        try {
-            block()
-        } finally {
-            Locale.setDefault(original)
         }
     }
 

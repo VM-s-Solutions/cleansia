@@ -23,7 +23,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -228,12 +227,14 @@ class ProfileViewModel @Inject constructor(
      * registration form already collected those). Marks onboarding seen on
      * success so the screen doesn't reappear.
      *
-     * The language sent is the one the user CHOSE in this app, and none at all
-     * (the server keeps its own) when they follow "System". It used to be the
-     * device locale, which overwrote an in-app choice with the phone's language.
-     * Onboarding is not a picker change, so it keeps the session-start rule:
-     * the handset's language is not a choice and must not overwrite one made on
-     * another client. -> /flows/auth-and-identity#account-language
+     * The language sent is the one the app resolves to: the language the user
+     * chose in this app, or on "System" the device's language narrowed to a
+     * supported one ([AppSettingsRepository.emailLanguageTag]). This is the one
+     * write that replaces the server's sign-up stamp (`en` for every Google or
+     * Apple sign-up), so sending none on "System" left a Czech phone on English
+     * e-mails and promo pushes for good. It is never the raw device locale,
+     * which used to overwrite an in-app choice with the phone's language.
+     * -> /flows/auth-and-identity#account-language
      */
     fun completeOnboarding(
         phoneNumber: String,
@@ -249,7 +250,7 @@ class ProfileViewModel @Inject constructor(
                 lastName = user.lastName,
                 phoneNumber = phoneNumber.trim(),
                 birthDate = birthDate?.trim(),
-                languageCode = settings.settings.first().language.tag,
+                languageCode = settings.emailLanguageTag(),
             )
             result
                 .onSuccess {

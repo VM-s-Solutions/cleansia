@@ -152,6 +152,8 @@ public class CancellationAcceptanceSignalTests
             _tenantProvider.Object,
             _stripeClient.Object,
             new StripeConfig(new ConfigurationBuilder().Build()),
+            Mock.Of<IStripeCustomerResolver>(),
+            Mock.Of<IRequestMetadataProvider>(),
             new OrderChannelProvider(OrderChannel.Mobile),
             _pending.Object,
             _producer.Object,

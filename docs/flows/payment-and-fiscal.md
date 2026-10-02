@@ -102,17 +102,18 @@ opened, a booking's and a recurring occurrence's alike, asked Stripe for
 `setup_future_usage=off_session` unconditionally, so each card paid in the apps was kept on the Stripe
 Customer silently, with no `SavedCards` row and no consent.
 
-**A recurring occurrence's confirmation keeps no card itself.** `ConfirmRecurringOrder` takes no
-`saveCard`: the web pays the occurrence through a Checkout Session on no Stripe Customer, the apps
-through a PaymentIntent on the account's Stripe Customer with no `setup_future_usage` and no
-`SavedCardId`, answered, as `CreatePaymentIntent`'s is, with that Customer and an ephemeral key. What
-the clients do with it is the current implementation; the 2026-10-01 decision names a booking paid by
-card and rules nothing on an occurrence. Android and iOS offer the booking's tick above *Confirm and
-pay*, off by default, and after the confirm take the sheet's intent from `CreatePaymentIntent` with it:
-unticked, that hands back the confirm's own intent and the sheet opens without the Customer; ticked, it
-records the row with the consent, replaces the intent with a card-saving one, cancels the old one as
-`duplicate`, and the sheet opens on the Customer. The web offers no tick there and keeps no card — an
-open item, not a ruling ([ADR-0070, amended 2026-10-01](/decisions/adr-0070#amended-2026-10-01)).
+**A recurring occurrence confirmed by card offers the same tick** (owner decision 2026-10-02).
+`ConfirmRecurringOrder` takes an optional `saveCard`. The web sends it: ticked, the occurrence's
+Checkout Session runs on the account's Stripe Customer with
+`payment_intent_data.setup_future_usage=off_session` and the pending row is recorded with the consent,
+completed by the payment webhook as for a booking; unticked, the session keeps nothing. An open session
+is reused when the amount and the tick match, otherwise closed and replaced. The apps pay through a
+PaymentIntent the confirm opens on the account's Stripe Customer with no `setup_future_usage` (the
+mobile confirm ignores `saveCard`); Android and iOS offer the tick above *Confirm and pay* and after the
+confirm take the sheet's intent from `CreatePaymentIntent` with it: unticked, that hands back the
+confirm's own intent and the sheet opens without the Customer; ticked, it records the row with the
+consent, replaces the intent with a card-saving one, cancels the old one as `duplicate`, and the sheet
+opens on the Customer ([ADR-0070, amended 2026-10-01](/decisions/adr-0070#amended-2026-10-01)).
 
 **Re-opening PaymentSheet does not cancel the booking.** `CreatePaymentIntent` hands back the order's
 open intent while Stripe still lets the customer confirm it, for the same amount, on the same Stripe

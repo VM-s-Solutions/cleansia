@@ -886,16 +886,14 @@ is the only way a card payment keeps a card:
   booking's and a recurring occurrence's alike, asked Stripe for `setup_future_usage=off_session`
   unconditionally, so each card paid in the apps was kept on the Stripe Customer silently, with no
   `SavedCards` row and no consent. Since 2026-10-01 only a ticked intent asks for it.
-- **A recurring occurrence confirmed by card follows the current implementation, not the decision**,
-  which names a booking paid by card and says nothing of an occurrence. `ConfirmRecurringOrder` takes no
-  `saveCard`, and the payment it opens keeps no card: the web's Checkout Session names no Stripe
-  Customer, and the apps' PaymentIntent, on the account's Stripe Customer, asks for no
-  `setup_future_usage`. Android and iOS offer the tick above *Confirm and pay*, off by default, and
-  after the confirm take the sheet's intent from `CreatePaymentIntent` with it: unticked it gets the
-  confirm's own intent back and opens the sheet without the Customer; ticked, the row is recorded, the
-  intent is replaced by a card-saving one, the old one is cancelled as `duplicate`, and the sheet opens
-  on the Customer. The web offers no tick there and keeps no card — an open item, not a ruling
-  ([ADR-0070, amended 2026-10-01](/decisions/adr-0070#amended-2026-10-01)).
+- **A recurring occurrence confirmed by card offers the same tick** (owner decision 2026-10-02), off by
+  default, on every client. The web sends `saveCard` with `ConfirmRecurringOrder`: ticked, the
+  occurrence's Checkout Session asks Stripe to keep the card on the account's Stripe Customer and the
+  row is recorded with the consent; unticked, nothing is kept. Android and iOS show the tick above
+  *Confirm and pay* and after the confirm take the sheet's intent from `CreatePaymentIntent` with it:
+  unticked it gets the confirm's own intent back and opens the sheet without the Customer; ticked, the
+  row is recorded, the intent is replaced by a card-saving one, the old one is cancelled as `duplicate`,
+  and the sheet opens on the Customer ([ADR-0070, amended 2026-10-01](/decisions/adr-0070#amended-2026-10-01)).
 - **The card is the account's, the booking the market's.** A customer booking a home in another
   company's market still has the card and its Stripe Customer recorded in their own account's company,
   as their promo codes are; the booking commits in the market's.

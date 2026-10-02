@@ -249,6 +249,8 @@ public class PreferredOfferDeferredAnnouncementTests
             Mock.Of<ITenantProvider>(),
             stripeClient.Object,
             new StripeConfig(new ConfigurationBuilder().Build()),
+            Mock.Of<IStripeCustomerResolver>(),
+            Mock.Of<IRequestMetadataProvider>(),
             new OrderChannelProvider(OrderChannel.Mobile),
             _pending.Object,
             _notificationProducer.Object,

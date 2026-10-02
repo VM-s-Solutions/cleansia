@@ -351,10 +351,15 @@ jobs:
           }
           JSON
           )"
-          az rest --method put --output none \
+          # Muting is a courtesy, never a gate: a refused PUT (for example MissingSubscriptionRegistration,
+          # when the subscription has not registered Microsoft.AlertsManagement) warns and the deploy goes on.
+          if az rest --method put --output none \
             --url "https://management.azure.com/subscriptions/${SUB_ID}/resourceGroups/${RG}/providers/Microsoft.AlertsManagement/actionRules/${RULE}?api-version=2021-08-08" \
-            --body "$BODY"
-          echo "$RULE: alert mails on $RG muted until $UNTIL UTC"
+            --body "$BODY"; then
+            echo "$RULE: alert mails on $RG muted until $UNTIL UTC"
+          else
+            echo "::warning::The deploy quiet window could not be opened, so alert mails are not muted this run. If the error above is MissingSubscriptionRegistration, register the Microsoft.AlertsManagement resource provider on the subscription (Portal: Subscriptions > Resource providers)."
+          fi
 
       # fcmSecretProvisioned tracks whether the FIREBASE_SERVICE_ACCOUNT_JSON GitHub secret is set for
       # this Environment. The secret-push step below writes Fcm--ServiceAccountJson to Key Vault in the
@@ -1358,7 +1363,10 @@ jobs:
           }
           JSON
           )"
-          az rest --method put --output none \
+          if az rest --method put --output none \
             --url "https://management.azure.com/subscriptions/${SUB_ID}/resourceGroups/${RG}/providers/Microsoft.AlertsManagement/actionRules/${RULE}?api-version=2021-08-08" \
-            --body "$BODY"
-          echo "$RULE: alert mails on $RG resume at $UNTIL UTC"
+            --body "$BODY"; then
+            echo "$RULE: alert mails on $RG resume at $UNTIL UTC"
+          else
+            echo "::warning::The deploy quiet window could not be shortened. If it was never opened there is nothing to close; otherwise it lapses on its own 120 minutes after the deploy started."
+          fi

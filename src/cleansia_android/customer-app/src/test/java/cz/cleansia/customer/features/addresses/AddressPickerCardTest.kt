@@ -24,13 +24,12 @@ class AddressPickerCardTest {
     fun `the address block reserves the resolved address's two lines in every state`() {
         val flat = pane.replace(Regex("\\s+"), " ")
         assertTrue(
-            "the invisible two-line template is gone",
+            "the two-line reservation is gone",
             flat.contains(
-                "Column(modifier = Modifier.alpha(0f).clearAndSetSemantics {}) { " +
-                    "Text(\" \", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold), maxLines = 1) " +
-                    "Text(\" \", style = MaterialTheme.typography.bodySmall, maxLines = 1) }",
+                "MaterialTheme.typography.titleSmall.lineHeight.toDp() + MaterialTheme.typography.bodySmall.lineHeight.toDp()",
             ),
         )
+        assertTrue("the address block no longer holds that height", flat.contains(".heightIn(min = addressLines)"))
     }
 
     @Test

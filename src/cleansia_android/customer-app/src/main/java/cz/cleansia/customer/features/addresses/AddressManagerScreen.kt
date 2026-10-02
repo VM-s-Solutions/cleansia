@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -74,10 +75,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.onSizeChanged
@@ -761,12 +760,16 @@ private fun AddOnMapPane(
                 // Two lines tall in every state, the street over its city line, so the lookup that
                 // starts on each camera move and ends with an address never changes the card's height:
                 // its top edge, and the Mapbox ornaments lifted above it, stay put while the map moves.
-                // The template is invisible text in the two styles, so the height follows the font scale.
-                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
-                    Column(modifier = Modifier.alpha(0f).clearAndSetSemantics {}) {
-                        Text(" ", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold), maxLines = 1)
-                        Text(" ", style = MaterialTheme.typography.bodySmall, maxLines = 1)
-                    }
+                // Measured from the two lines' heights in sp, so it follows the font scale.
+                val addressLines = with(density) {
+                    MaterialTheme.typography.titleSmall.lineHeight.toDp() + MaterialTheme.typography.bodySmall.lineHeight.toDp()
+                }
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = addressLines),
+                    contentAlignment = Alignment.CenterStart,
+                ) {
                     Column {
                         val addr = resolved
                         when {

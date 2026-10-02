@@ -1,5 +1,14 @@
 @if (bugReportUrl) {
-  <div class="cleansia-dev-banner">
+  <div class="cleansia-dev-banner" [class.cleansia-dev-banner--open]="open()">
+    <!-- Shown only where the banner folds into an edge tab (customer phones). -->
+    <button
+      type="button"
+      class="cleansia-dev-banner__toggle"
+      [attr.aria-expanded]="open()"
+      (click)="open.set(!open())"
+    >
+      DEV
+    </button>
     <span class="cleansia-dev-banner__env">DEV</span>
     <span class="cleansia-dev-banner__text">Testing environment</span>
     <a

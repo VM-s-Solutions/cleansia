@@ -563,15 +563,19 @@
     background: rgba(15, 23, 42, 0.32);
   }
 
-  body:has(.cl-wiz) .cleansia-dev-banner.cleansia-dev-banner.cleansia-dev-banner {
-    bottom: calc(96px + env(safe-area-inset-bottom));
-  }
-
   // The page ends with the site footer, not the wizard, so the bar's height is
   // reserved there too or the footer's last row (language, market, theme) stays
   // under it; the navy runs on beneath the bar.
   body:has(.cl-wiz) .cl-footer {
     padding-bottom: calc(96px + env(safe-area-inset-bottom));
+  }
+}
+
+// Above the bar on a tablet. A phone folds the banner into a tab on the left
+// edge instead, which a bottom offset would stretch from the middle down.
+@media (min-width: 601px) and (max-width: 1100px) {
+  body:has(.cl-wiz) .cleansia-dev-banner.cleansia-dev-banner.cleansia-dev-banner {
+    bottom: calc(96px + env(safe-area-inset-bottom));
   }
 }
 

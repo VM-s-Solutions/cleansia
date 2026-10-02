@@ -96,10 +96,6 @@ extension L10n {
             localized("payments_card_removed")
         }
 
-        static var cardRemoveRetryHint: String {
-            localized("payments_card_remove_retry_hint")
-        }
-
         static var errorMessage: String {
             localized("payments_error_message")
         }

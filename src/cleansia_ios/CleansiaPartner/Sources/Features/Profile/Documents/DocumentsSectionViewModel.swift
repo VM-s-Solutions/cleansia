@@ -118,7 +118,16 @@ final class DocumentsSectionViewModel: ViewModel {
     ///
     /// Confirmation is a SUCCESS message rather than a reload: the document is unchanged, so a list
     /// that looked different afterwards would be lying about what just happened.
+    ///
+    /// The reason is required here as the server requires it. The system confirm cannot hold its button
+    /// back until one is typed — iOS 16 hides a disabled alert button for good — so a blank one is
+    /// refused here, in the server's own words, and nothing is sent.
     func requestDeletion(documentId: String, reason: String) async {
+        let reason = reason.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !reason.isEmpty else {
+            snackbar.showError(localizer.message(for: ApiError(code: "common.required")))
+            return
+        }
         guard busyDocumentId == nil else { return }
         busyDocumentId = documentId
         switch await client.requestDocumentDeletion(documentId: documentId, reason: reason) {

@@ -7,7 +7,6 @@ final class CustomerDevicesViewModel: ViewModel {
     @Published private(set) var state: UiState<[UserDevice]> = .loading
     @Published private(set) var revokeAction: ActionState = .idle
 
-    let revoked = PassthroughSubject<Void, Never>()
     let signedOut = PassthroughSubject<Void, Never>()
 
     private let client: CustomerDevicesClient
@@ -37,15 +36,15 @@ final class CustomerDevicesViewModel: ViewModel {
         case .success:
             snackbar.showSuccess(L10n.Devices.revokeSuccess)
             revokeAction = .idle
-            revoked.send()
             if isCurrentDevice(device) {
                 signedOut.send()
             } else if case let .loaded(devices) = state {
                 state = .loaded(devices.filter { $0.id != device.id })
             }
         case let .failure(error):
+            // The confirm closed on the tap, so the snackbar is where a refusal is said; the row stays.
             snackbar.showError(localizer.message(for: error))
-            revokeAction = .error(L10n.Devices.revokeRetryHint)
+            revokeAction = .idle
         }
     }
 

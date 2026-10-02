@@ -9002,41 +9002,6 @@
         }
       }
     },
-    "devices_revoke_retry_hint": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nepodařilo se odebrat — zkuste to znovu."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Couldn't remove — please try again."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Не удалось удалить — попробуйте снова."
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nepodarilo sa odstrániť — skúste to znova."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Не вдалося видалити — спробуйте ще раз."
-          }
-        }
-      }
-    },
     "devices_revoke_success": {
       "extractionState": "stale",
       "localizations": {
@@ -28926,41 +28891,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Картку видалено"
-          }
-        }
-      }
-    },
-    "payments_card_remove_retry_hint": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kartu se nepodařilo odebrat. Zkuste to prosím znovu."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Couldn't remove the card. Please try again."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Не удалось удалить карту. Попробуйте ещё раз."
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kartu sa nepodarilo odstrániť. Skúste to prosím znova."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Не вдалося видалити картку. Спробуйте ще раз."
           }
         }
       }

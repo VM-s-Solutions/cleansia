@@ -4,6 +4,8 @@ import SwiftUI
 struct PaymentsView: View {
     @StateObject private var vm: PaymentsViewModel
     @State private var cardToRemove: SavedCard?
+    /// The card a confirmed removal is running for, so its row can show the spinner the dialog used to.
+    @State private var removingCardId: String?
     @Environment(\.openURL) private var openURL
     @Environment(\.scenePhase) private var scenePhase
     private let paymentSheet: PaymentSheetPresenting
@@ -28,24 +30,35 @@ struct PaymentsView: View {
     var body: some View {
         PaymentsContent(
             state: vm.state,
-            removeState: vm.removeState,
+            removingCardId: vm.removeState.isSubmitting ? removingCardId : nil,
             paying: vm.payState.isSubmitting,
-            cardToRemove: cardToRemove,
             offersCardCapture: vm.offersCardCapture,
             cardConsentAccepted: vm.cardConsentAccepted,
             addingCard: vm.addCardState.isSubmitting,
             onRetry: { Task { await vm.load() } },
             onPay: { receivable in Task { await vm.pay(receivable) } },
             onRemoveRequested: { cardToRemove = $0 },
-            onRemoveConfirmed: { card in Task { await vm.remove(card) } },
-            onRemoveDismissed: { cardToRemove = nil },
             onCardConsentChanged: vm.setCardConsentAccepted,
             onAddCard: { Task { await vm.addCard() } }
         )
         .navigationTitle(L10n.Payments.title)
         .navigationBarTitleDisplayMode(.inline)
+        // The system confirm closes on the tap; the row shows the removal running and a refusal is the
+        // snackbar's, so nothing holds a dialog open over a request.
+        .alert(
+            L10n.Payments.cardRemoveTitle,
+            isPresented: Binding(get: { cardToRemove != nil }, set: { if !$0 { cardToRemove = nil } }),
+            presenting: cardToRemove
+        ) { card in
+            Button(L10n.Payments.cardRemoveConfirm, role: .destructive) {
+                removingCardId = card.id
+                Task { await vm.remove(card) }
+            }
+            Button(L10n.cancel, role: .cancel) {}
+        } message: { _ in
+            Text(L10n.Payments.cardRemoveMessage)
+        }
         .task { await vm.load() }
-        .onReceive(vm.removed) { _ in cardToRemove = nil }
         .onReceive(vm.payLinks) { openURL($0) }
         .onReceive(vm.cardSetups) { presentation in
             Task {
@@ -63,17 +76,14 @@ struct PaymentsView: View {
 
 private struct PaymentsContent: View {
     let state: UiState<PaymentsSnapshot>
-    let removeState: ActionState
+    let removingCardId: String?
     let paying: Bool
-    let cardToRemove: SavedCard?
     let offersCardCapture: Bool
     let cardConsentAccepted: Bool
     let addingCard: Bool
     let onRetry: () -> Void
     let onPay: (Receivable) -> Void
     let onRemoveRequested: (SavedCard) -> Void
-    let onRemoveConfirmed: (SavedCard) -> Void
-    let onRemoveDismissed: () -> Void
     let onCardConsentChanged: (Bool) -> Void
     let onAddCard: () -> Void
 
@@ -81,19 +91,6 @@ private struct PaymentsContent: View {
         ZStack {
             CleansiaColors.background.ignoresSafeArea()
             content
-            if let card = cardToRemove {
-                CleansiaDialog(
-                    title: L10n.Payments.cardRemoveTitle,
-                    confirmLabel: L10n.Payments.cardRemoveConfirm,
-                    onConfirm: { onRemoveConfirmed(card) },
-                    onDismiss: onRemoveDismissed,
-                    message: removeState.errorMessage ?? L10n.Payments.cardRemoveMessage,
-                    dismissLabel: L10n.cancel,
-                    icon: "trash",
-                    destructive: true,
-                    confirmEnabled: !removeState.isSubmitting
-                )
-            }
         }
     }
 
@@ -122,7 +119,12 @@ private struct PaymentsContent: View {
                         SectionIntro(text: L10n.Payments.cardEmpty)
                     } else {
                         ForEach(snapshot.cards) { card in
-                            SavedCardRow(card: card, onRemove: { onRemoveRequested(card) })
+                            SavedCardRow(
+                                card: card,
+                                removing: removingCardId == card.id,
+                                canRemove: removingCardId == nil,
+                                onRemove: { onRemoveRequested(card) }
+                            )
                         }
                     }
                     if offersCardCapture {
@@ -199,6 +201,9 @@ private struct ReceivableCard: View {
 
 private struct SavedCardRow: View {
     let card: SavedCard
+    let removing: Bool
+    /// One removal at a time: the view model drops a second while the first is in flight.
+    let canRemove: Bool
     let onRemove: () -> Void
 
     private var expiry: String {
@@ -217,13 +222,19 @@ private struct SavedCardRow: View {
                     .foregroundColor(CleansiaColors.onSurfaceVariant)
             }
             Spacer()
-            Button(action: onRemove) {
-                Image(systemName: "trash")
-                    .foregroundColor(CleansiaColors.error)
+            if removing {
+                ProgressView()
                     .frame(width: 44, height: 44)
+            } else {
+                Button(action: onRemove) {
+                    Image(systemName: "trash")
+                        .foregroundColor(CleansiaColors.error.opacity(canRemove ? 1 : 0.4))
+                        .frame(width: 44, height: 44)
+                }
+                .buttonStyle(.plain)
+                .disabled(!canRemove)
+                .accessibilityLabel(L10n.Payments.cardRemoveAction)
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel(L10n.Payments.cardRemoveAction)
         }
         .padding(Spacing.m)
         .background(CleansiaColors.surface)
@@ -316,17 +327,14 @@ private struct PaymentsErrorState: View {
                         currencyCode: "CZK"
                     )]
                 )),
-                removeState: .idle,
+                removingCardId: nil,
                 paying: false,
-                cardToRemove: nil,
                 offersCardCapture: true,
                 cardConsentAccepted: false,
                 addingCard: false,
                 onRetry: {},
                 onPay: { _ in },
                 onRemoveRequested: { _ in },
-                onRemoveConfirmed: { _ in },
-                onRemoveDismissed: {},
                 onCardConsentChanged: { _ in },
                 onAddCard: {}
             )

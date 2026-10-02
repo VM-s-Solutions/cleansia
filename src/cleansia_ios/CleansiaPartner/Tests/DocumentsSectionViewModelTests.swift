@@ -107,6 +107,20 @@ final class DocumentsSectionViewModelTests: XCTestCase {
         XCTAssertEqual(vm.state.loadedValue?.count, 1)
     }
 
+    /// The system confirm cannot hold its button back until a reason is typed, so a blank one is refused
+    /// here, in the words the server would use, and never sent.
+    func testABlankDeletionReasonIsRefusedWithoutAskingTheServer() async {
+        client.documentsResult = .success([
+            GetMyDocumentsMyDocumentDto(documentId: "doc-1", fileName: "passport.pdf")
+        ])
+        let vm = makeVM()
+        await vm.load()
+        await vm.requestDeletion(documentId: "doc-1", reason: "  \n ")
+        XCTAssertNil(client.deletionRequestedFor)
+        XCTAssertNil(vm.busyDocumentId)
+        XCTAssertEqual(snackbar.current?.text, ApiErrorLocalizer().message(for: ApiError(code: "common.required")))
+    }
+
     func testRequestDeletionFailureSnackbarsAndClearsBusyId() async {
         client.documentsResult = .success([
             GetMyDocumentsMyDocumentDto(documentId: "doc-1", fileName: "passport.pdf")

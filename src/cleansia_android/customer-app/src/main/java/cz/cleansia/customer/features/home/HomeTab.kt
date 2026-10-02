@@ -58,6 +58,7 @@ import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -81,6 +82,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -1027,6 +1029,7 @@ private fun QuickSizeSlideCard(
     onSeePrice: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var titleLines by remember { mutableIntStateOf(1) }
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -1041,17 +1044,18 @@ private fun QuickSizeSlideCard(
             contentDescription = null,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .size(72.dp),
+                .size(quickSizeMascotSize(titleLines)),
         )
         Column(modifier = Modifier.fillMaxWidth()) {
-            // Full width now that nothing sits beside it: a title that wraps pushes the steppers down
-            // into the mascot's band.
+            // Full width now that nothing sits beside it: a title that wraps pushes the steppers down,
+            // and the mascot shrinks to stay below them (quickSizeMascotSize).
             Text(
                 slide.title,
                 style = MaterialTheme.typography.headlineSmall.copy(fontFamily = Poppins, fontWeight = FontWeight.Bold),
                 color = Color.White,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
+                onTextLayout = { titleLines = it.lineCount },
                 modifier = Modifier.fillMaxWidth(),
             )
             // The steppers and the price button are 48 dp touch rows around 36 dp capsules: this
@@ -1093,6 +1097,15 @@ private fun QuickSizeSlideCard(
         }
     }
 }
+
+/**
+ * The quick-size mascot's side, which keeps it clear of the steppers above it. The title is 18sp on
+ * 24sp lines and at most two of them; under it come a 2dp spacer and the 48dp stepper row, whose 36dp
+ * capsules sit 6dp in. On one line the capsules end 68dp down the card's 156dp inner height, above a
+ * 72dp mascot's top at 84dp. A wrapped title (uk and ru on a 360dp phone, more locales on a narrower
+ * one) ends them at 92dp, 8dp into a 72dp mascot, so the mascot is 56dp then and starts at 100dp.
+ */
+internal fun quickSizeMascotSize(titleLines: Int): Dp = if (titleLines > 1) 56.dp else 72.dp
 
 @Composable
 private fun QuickSizeStepper(

@@ -16,7 +16,7 @@ plugins {
     // field was renamed or made required. Generated client makes those
     // mismatches compile-time errors.
     //
-    // Refresh the spec with `./gradlew :app:dumpOpenApiSpec` (defined below;
+    // Refresh the spec with `./gradlew :customer-app:dumpOpenApiSpec` (defined below;
     // requires the customer-mobile-api host running on 5004). The generator
     // task then runs automatically on every Kotlin compile and emits into
     // `build/generated/openapi/`.

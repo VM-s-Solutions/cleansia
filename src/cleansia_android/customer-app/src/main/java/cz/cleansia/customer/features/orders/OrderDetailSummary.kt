@@ -102,7 +102,7 @@ internal fun PriceBreakdownCard(order: OrderDetailDto) {
             )
             Spacer(Modifier.height(6.dp))
             InfoRow(
-                label = stringResource(R.string.order_paid_by_card),
+                label = stringResource(cardShareLabelRes(order.paymentType?.value, order.paymentStatus?.value)),
                 value = formatOrderPrice(order.amountDueOnCard, currencyCode),
             )
         }
@@ -131,6 +131,16 @@ internal fun paymentMethodLabelRes(value: Int?): Int? = when (value) {
     2 -> R.string.booking_pay_card
     else -> null
 }
+
+/**
+ * The card share's label under a credit split: "Paid by card" only once the card was charged, the
+ * server's `Order.TookNoPayment` inverted (Paid, Refunded, PartiallyRefunded and Disputed were charged);
+ * while the payment is pending or failed it is still "To pay by card", the confirm step's own copy.
+ */
+@StringRes
+internal fun cardShareLabelRes(paymentTypeValue: Int?, paymentStatusValue: Int?): Int =
+    if (noCardPaymentTaken(paymentTypeValue, paymentStatusValue)) R.string.booking_summary_due_on_card
+    else R.string.order_paid_by_card
 
 /** Backend `PaymentStatus`: Pending = 1 … Disputed = 5, PartiallyRefunded = 6. */
 @StringRes

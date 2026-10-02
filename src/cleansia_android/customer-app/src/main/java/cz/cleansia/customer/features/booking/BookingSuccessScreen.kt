@@ -44,6 +44,7 @@ import cz.cleansia.customer.core.orders.OrderAddressDto
 import cz.cleansia.customer.core.orders.OrderCurrencyDetailDto
 import cz.cleansia.customer.core.orders.OrderDetailDto
 import cz.cleansia.customer.features.orders.OrderStatus
+import cz.cleansia.customer.features.orders.cardShareLabelRes
 import cz.cleansia.customer.features.orders.orderStatusFromValue
 import cz.cleansia.core.ui.components.CleansiaOutlinedButton
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
@@ -313,8 +314,9 @@ private fun OrderSummaryCard(order: OrderDetailDto) {
                 label = stringResource(R.string.order_paid_with_credit),
                 value = "−" + formatOrderPrice(order.creditAppliedAmount, order.currency?.code),
             )
+            // "Paid by card" only once the webhook has the card charged; until then it is still to pay.
             SummaryRow(
-                label = stringResource(R.string.order_paid_by_card),
+                label = stringResource(cardShareLabelRes(order.paymentType?.value, order.paymentStatus?.value)),
                 value = formatOrderPrice(order.amountDueOnCard, order.currency?.code),
             )
         }

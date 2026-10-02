@@ -45,6 +45,21 @@ class PaymentLabelTest {
         assertEquals(statusLabels.size, statusLabels.values.toSet().size)
     }
 
+    /**
+     * Under a credit split the card line claims a payment only once the card was charged: a card order
+     * whose payment is pending or failed still has its card share to pay. The server's
+     * `Order.TookNoPayment`, and the web's rule (F-W5).
+     */
+    @Test
+    fun `the card share reads paid only once the card was charged`() {
+        listOf(2, 4, 5, 6).forEach { status ->
+            assertEquals("status $status", R.string.order_paid_by_card, cardShareLabelRes(2, status))
+        }
+        listOf(1, 3).forEach { status ->
+            assertEquals("status $status", R.string.booking_summary_due_on_card, cardShareLabelRes(2, status))
+        }
+    }
+
     @Test
     fun `both payment methods resolve to a translated label`() {
         assertEquals(R.string.booking_pay_cash, paymentMethodLabelRes(1))

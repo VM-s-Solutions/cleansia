@@ -91,13 +91,21 @@ class CreditCopyStringsTest {
                 "booking_summary_credit_note",
                 "booking_summary_credit_card_only",
             ),
-            "features/orders/OrderDetailSummary.kt" to listOf("order_paid_with_credit", "order_paid_by_card"),
-            "features/booking/BookingSuccessScreen.kt" to listOf("order_paid_with_credit", "order_paid_by_card"),
+            "features/orders/OrderDetailSummary.kt" to listOf(
+                "order_paid_with_credit",
+                "order_paid_by_card",
+                "booking_summary_due_on_card",
+            ),
+            "features/booking/BookingSuccessScreen.kt" to listOf("order_paid_with_credit"),
             "features/profile/ProfileTab.kt" to listOf("profile_row_credit"),
             "features/rewards/RewardsTab.kt" to listOf("credit_none", "credit_auto_applied_share", "credit_explainer_title"),
         ).forEach { (file, rendered) ->
             val source = source(file)
             rendered.forEach { key -> assertTrue("$file no longer renders $key", source.contains("R.string.$key")) }
+        }
+        // The card line's label follows the payment status (PaymentLabelTest), on both split surfaces.
+        listOf("features/orders/OrderDetailSummary.kt", "features/booking/BookingSuccessScreen.kt").forEach { file ->
+            assertTrue("$file no longer labels the card share by its payment", source(file).contains("cardShareLabelRes("))
         }
         assertTrue(
             "the Profile row no longer opens the explainer the Rewards card opens",

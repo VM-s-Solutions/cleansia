@@ -52,36 +52,31 @@ public struct CleansiaDropdown: View {
 
     public var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xxs) {
-            Button {
-                if enabled { sheetOpen = true }
-            } label: {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(label)
-                        .font(CleansiaTypography.labelMedium)
-                        .foregroundColor(labelColor)
-                    HStack {
-                        Text(selected?.label ?? placeholder ?? "")
-                            .font(CleansiaTypography.bodyLarge)
-                            .foregroundColor(valueColor)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        Image(systemName: "chevron.down")
-                            .font(.system(size: 14))
-                            .foregroundColor(CleansiaColors.onSurfaceVariant)
-                    }
+            // A short closed list opens as a native pull-down anchored to the field (HIG Pickers:
+            // avoid switching views for a short list); a searchable one (countries) keeps the sheet.
+            if searchable {
+                Button {
+                    if enabled { sheetOpen = true }
+                } label: {
+                    field
                 }
-                .padding(.horizontal, Spacing.m)
-                .padding(.vertical, 10)
-                .frame(maxWidth: .infinity)
-                // A plain-style button hit-tests only what its label draws, and this label draws no
-                // fill: without the shape only the words opened the sheet, not the field around them.
-                .contentShape(RoundedRectangle(cornerRadius: CornerRadius.small))
-                .overlay(
-                    RoundedRectangle(cornerRadius: CornerRadius.small)
-                        .stroke(isError ? CleansiaColors.error : CleansiaColors.outline, lineWidth: 1)
-                )
+                .buttonStyle(.plain)
+                .disabled(!enabled)
+            } else {
+                Menu {
+                    Picker(selection: $selectedId) {
+                        ForEach(options) { option in
+                            Text(option.label).tag(Optional(option.id))
+                        }
+                    } label: {
+                        EmptyView()
+                    }
+                    .pickerStyle(.inline)
+                } label: {
+                    field
+                }
+                .disabled(!enabled)
             }
-            .buttonStyle(.plain)
-            .disabled(!enabled)
 
             if let supporting = errorText ?? helper {
                 Text(supporting)
@@ -103,6 +98,33 @@ public struct CleansiaDropdown: View {
             )
             .presentationDetents([.medium, .large])
         }
+    }
+
+    private var field: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(label)
+                .font(CleansiaTypography.labelMedium)
+                .foregroundColor(labelColor)
+            HStack {
+                Text(selected?.label ?? placeholder ?? "")
+                    .font(CleansiaTypography.bodyLarge)
+                    .foregroundColor(valueColor)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 14))
+                    .foregroundColor(CleansiaColors.onSurfaceVariant)
+            }
+        }
+        .padding(.horizontal, Spacing.m)
+        .padding(.vertical, 10)
+        .frame(maxWidth: .infinity)
+        // A plain-style button or a menu hit-tests only what its label draws, and this label draws
+        // no fill: without the shape only the words opened the list, not the field around them.
+        .contentShape(RoundedRectangle(cornerRadius: CornerRadius.small))
+        .overlay(
+            RoundedRectangle(cornerRadius: CornerRadius.small)
+                .stroke(isError ? CleansiaColors.error : CleansiaColors.outline, lineWidth: 1)
+        )
     }
 
     private var labelColor: Color {

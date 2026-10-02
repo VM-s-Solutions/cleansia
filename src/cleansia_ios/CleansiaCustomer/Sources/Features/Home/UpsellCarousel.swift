@@ -283,7 +283,9 @@ private struct PageAccessibility: ViewModifier {
 /// "How big is your home?" — two −/+ capsules and "See my price", which opens booking with the size
 /// already set. Taps only (a drag would fight the pager), and the card itself is not a button, so a
 /// stepper tap never opens booking. The mascot sits bottom-right beside the price button, under the
-/// steppers rather than behind them, so the steppers keep the card's full width.
+/// steppers rather than behind them, so the steppers keep the card's full width. It takes the room the
+/// steppers leave, up to 72 pt: a title that wraps (uk and ru on a narrow phone) pushes the steppers
+/// down, and the mascot shrinks rather than reaching into them — Android's twin shrinks it too.
 private struct QuickSizeSlideCard: View {
     let slide: UpsellSlide
     @Binding var rooms: Int
@@ -293,48 +295,50 @@ private struct QuickSizeSlideCard: View {
     let onSeePrice: () -> Void
 
     var body: some View {
-        ZStack(alignment: .bottomTrailing) {
-            slide.mascot.image
-                .resizable()
-                .scaledToFit()
-                .frame(width: 72, height: 72)
-                .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 0) {
-                Text(slide.title)
-                    .cleansiaFont(.poppins(.bold, size: 18))
-                    .foregroundColor(.white)
-                    .lineLimit(2)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .modifier(page)
-                HStack(spacing: Spacing.xs) {
-                    QuickSizeStepper(
-                        label: L10n.Booking.roomsShort(rooms),
-                        lessLabel: L10n.Home.quickSizeRoomsLess,
-                        moreLabel: L10n.Home.quickSizeRoomsMore,
-                        value: rooms,
-                        range: 1 ... PropertySize.maxRooms
-                    ) { next in
-                        onInteract()
-                        rooms = next
-                    }
-                    QuickSizeStepper(
-                        label: L10n.Booking.bathShort(bathrooms),
-                        lessLabel: L10n.Home.quickSizeBathsLess,
-                        moreLabel: L10n.Home.quickSizeBathsMore,
-                        value: bathrooms,
-                        range: 1 ... PropertySize.maxBathrooms
-                    ) { next in
-                        onInteract()
-                        bathrooms = next
-                    }
+        VStack(alignment: .leading, spacing: 0) {
+            Text(slide.title)
+                .cleansiaFont(.poppins(.bold, size: 18))
+                .foregroundColor(.white)
+                .lineLimit(2)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .modifier(page)
+            HStack(spacing: Spacing.xs) {
+                QuickSizeStepper(
+                    label: L10n.Booking.roomsShort(rooms),
+                    lessLabel: L10n.Home.quickSizeRoomsLess,
+                    moreLabel: L10n.Home.quickSizeRoomsMore,
+                    value: rooms,
+                    range: 1 ... PropertySize.maxRooms
+                ) { next in
+                    onInteract()
+                    rooms = next
                 }
-                .padding(.top, Spacing.xs)
+                QuickSizeStepper(
+                    label: L10n.Booking.bathShort(bathrooms),
+                    lessLabel: L10n.Home.quickSizeBathsLess,
+                    moreLabel: L10n.Home.quickSizeBathsMore,
+                    value: bathrooms,
+                    range: 1 ... PropertySize.maxBathrooms
+                ) { next in
+                    onInteract()
+                    bathrooms = next
+                }
+            }
+            .padding(.top, Spacing.xs)
+            HStack(alignment: .top, spacing: Spacing.xs) {
                 Button(action: onSeePrice) {
                     UpsellCtaPill(text: slide.cta)
                 }
                 .buttonStyle(.plain)
                 .padding(.top, 10)
                 Spacer(minLength: 0)
+                slide.mascot.image
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxWidth: 72, maxHeight: 72)
+                    .padding(.top, Spacing.xxs)
+                    .frame(maxHeight: .infinity, alignment: .bottom)
+                    .accessibilityHidden(true)
             }
         }
         .padding(Spacing.ml)

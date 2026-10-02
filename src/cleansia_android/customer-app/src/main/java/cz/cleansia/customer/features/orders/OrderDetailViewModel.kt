@@ -496,6 +496,12 @@ class OrderDetailViewModel @Inject constructor(
                 return@launch
             }
 
+            // The card confirm is where the server spends the customer's credit on the occurrence,
+            // whatever the sheet then does, so the balance is re-read now, as after a cancel; stale
+            // first, so a read that fails or is cut short is retried by the next screen that shows it.
+            loyaltyRepository.staleness.reset()
+            launch { loyaltyRepository.refresh() }
+
             // Card path's snackbars fire from the PaymentSheet result callback
             // (via [notifyCardPaymentResult]) since only the screen sees the
             // Stripe outcome.

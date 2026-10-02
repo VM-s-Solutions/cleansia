@@ -276,21 +276,18 @@ private struct DayChip: View {
     }
 }
 
+/// The schedule's arrival time, picked the way the booking's time step picks it: the part of day, then that
+/// part's sixteen quarter hours. A weekly time has no lead time, so every slot is bookable.
 private struct TimeSection: View {
     let time: String
     let onChange: (String) -> Void
 
+    private static let slots = RecurringTime.bookableTimes.map { BookingTimeSlot(time: $0, state: .available) }
+
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.s) {
             SectionLabel(text: L10n.Recurring.createTimeLabel)
-            Picker(L10n.Recurring.createTimeLabel, selection: Binding(get: { time }, set: onChange)) {
-                ForEach(RecurringTime.bookableTimes, id: \.self) { slot in
-                    Text(slot).tag(slot)
-                }
-            }
-            .labelsHidden()
-            .pickerStyle(.wheel)
-            .frame(maxWidth: .infinity)
+            DayPartTimePicker(slots: Self.slots, selectedTime: time, onSelect: onChange)
         }
     }
 }

@@ -807,6 +807,8 @@
     "description": "Pro přístup k této sekci musíte dokončit nastavení profilu a nahrát požadované dokumenty.",
     "complete_profile": "Dokončit profil",
     "progress": "{{completed}} z {{total}} kroků dokončeno",
+    "contact_support": "Kontaktovat podporu",
+    "support_subject": "Cleansia partner — žádost zamítnuta",
     "categories": {
       "profile": "Informace o profilu",
       "documents": "Požadované dokumenty",

@@ -65,6 +65,17 @@
           }
         </ul>
         }
+        @if (category.key === 'approval' && status.result.isRejected) {
+        <div class="cleansia-registration-lock__category-action">
+          <cleansia-button
+            [href]="supportMailto('registration_lock.support_subject' | translate)"
+            [label]="'registration_lock.contact_support' | translate"
+            icon="pi pi-envelope"
+            buttonSize="small"
+            [text]="true"
+          />
+        </div>
+        }
       </div>
       }
     </div>

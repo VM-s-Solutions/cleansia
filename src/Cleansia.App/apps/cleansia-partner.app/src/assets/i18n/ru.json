@@ -807,6 +807,8 @@
     "description": "Для доступа к этому разделу необходимо завершить настройку профиля и загрузить необходимые документы.",
     "complete_profile": "Завершить профиль",
     "progress": "{{completed}} из {{total}} шагов выполнено",
+    "contact_support": "Связаться с поддержкой",
+    "support_subject": "Cleansia partner — заявка отклонена",
     "categories": {
       "profile": "Информация профиля",
       "documents": "Необходимые документы",

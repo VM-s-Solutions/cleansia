@@ -807,6 +807,8 @@
     "description": "Для доступу до цього розділу необхідно завершити налаштування профілю та завантажити необхідні документи.",
     "complete_profile": "Завершити профіль",
     "progress": "{{completed}} з {{total}} кроків виконано",
+    "contact_support": "Звернутися до підтримки",
+    "support_subject": "Cleansia partner — заявку відхилено",
     "categories": {
       "profile": "Інформація профілю",
       "documents": "Необхідні документи",

@@ -807,6 +807,8 @@
     "description": "To access this section, you need to complete your profile setup and upload required documents.",
     "complete_profile": "Complete Profile",
     "progress": "{{completed}} of {{total}} steps complete",
+    "contact_support": "Contact support",
+    "support_subject": "Cleansia partner — application rejected",
     "categories": {
       "profile": "Profile Information",
       "documents": "Required Documents",

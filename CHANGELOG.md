@@ -966,6 +966,11 @@ need backfilling.
   The cleaner app's profile header had the same band and is fixed the same way. Android already did
   this. (Owner remark 2026-10-01; the cleaner's header 2026-10-02.)
 
+- **Customer and cleaner Android — an amount that is not whole shows its haléře.** Every price, credit
+  and discount on Android printed whole crowns, so a card share of 319.90 read *320 Kč* while Stripe's
+  sheet asked for 319.90. A whole amount still prints without decimals; any other prints to the
+  currency's smallest unit, as on the web. The iOS apps still round.
+
 - **Customer Android — Home's refresh spinner no longer hides under the clock.** Pulling Home down to
   refresh drew the spinner under the status bar, at rest and while it spun. It now rests just below
   it, as on Orders and Rewards.

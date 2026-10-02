@@ -377,6 +377,12 @@ per-record `CurrencyId`, and it is populated from the address country (orders), 
   named `countryId`'s currency, else the platform default), and the web app has one shared
   `formatMoney(value, currencyCode, locale)`; every quote, order, dispute, credit and membership
   figure is labelled from its payload's `currencyCode`. The Android and iOS customer apps mirror this.
+- **A whole amount prints without a fraction, any other to the currency's minor unit** — `1 200 Kč`,
+  but `319,90 Kč` — with an amount within half a minor unit of a whole number counted as whole. The web's
+  `formatMoney` and, since 2026-10-02, Android's `:core` `formatOrderPrice` (both apps; the minor unit
+  from `java.util.Currency`, two digits for a blank or unknown code) follow it, so a credit share or a
+  discount that leaves haléře shows what Stripe charges. iOS does not yet: `OrdersFormat.price` and
+  `BookingPricing.formatTotal` print whole units, so the same `319.90` reads `320 Kč` there.
 - **Before there is an address, the surface reads the customer's chosen market** (ADR-0058). The
   Customer and Mobile.Customer hosts expose an anonymous `GET api/Market/GetOverview`
   (`MarketListItem`: the serviced country joined to its active configured currency, `isDefault`, the

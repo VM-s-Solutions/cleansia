@@ -332,3 +332,8 @@ What changed on iOS:
   else moves: before iOS 17 these stay still, and Reduce Motion tones the bounce down by itself. The
   one gate is Core's `cleansiaBounce(onIncreaseOf:)` / `cleansiaBounceOnAppear()`
   (`Components/SymbolBounce.swift`).
+- **A long press on a saved address offers its actions.** In the customer's address manager, a long
+  press lifts an address card and offers *Set as default*, *Rename* and *Delete*, the same three actions
+  as its ellipsis menu. Both menus are built from one list, so they cannot drift apart. A tap still
+  selects the address, and *Delete* still asks first. Swipe actions on these cards need the iOS 27 SDK,
+  which the toolchain does not have yet. Android keeps its row menu.

@@ -52,9 +52,9 @@ private const val BankCodeMaxLength = 4
  * widths below are sized to the *placeholder*, not to the digits, for the same reason — a hint that is
  * clipped to "Předčí…" answers nothing.
  *
- * **A whole account pasted into any segment is spread over all three** ([splitPastedAccount]), so an
- * account copied off a statement or a banking app lands where it belongs instead of being clamped into
- * one box.
+ * **A whole account pasted into any segment is spread over all three, and a bare number pasted into
+ * any segment is the number** ([splitPastedAccount]), so an account copied off a statement or a banking
+ * app lands where it belongs instead of being clamped into one box.
  *
  * The web twin is `cleansia-bank-account`; keep the two in step.
  */
@@ -93,14 +93,15 @@ fun CleansiaBankAccountInput(
         else -> MaterialTheme.colorScheme.outline
     }
 
-    // A paste that reads as a whole account fills the segments it names; anything else is clamped into
-    // the segment it went into, exactly as typing is.
-    fun segmentChange(maxLength: Int, onChange: (String) -> Unit): (String) -> Unit = { raw ->
-        val split = splitPastedAccount(raw)
+    // A paste that reads as a whole account fills the segments it names, and a bare number pasted into
+    // any segment is the account number; anything else is clamped into the segment it went into,
+    // exactly as typing is. [current] is the segment's value the change replaces.
+    fun segmentChange(current: String, maxLength: Int, onChange: (String) -> Unit): (String) -> Unit = { raw ->
+        val split = splitPastedAccount(raw, current)
         if (split == null) {
             onChange(raw.filter(Char::isDigit).take(maxLength))
         } else {
-            onPrefixChange(split.first)
+            split.first?.let(onPrefixChange)
             onNumberChange(split.second)
             split.third?.let(onBankCodeChange)
         }
@@ -132,7 +133,7 @@ fun CleansiaBankAccountInput(
             // longest placeholder we ship ("Predčíslie"), not by its six digits.
             AccountSegment(
                 value = prefix,
-                onValueChange = segmentChange(PrefixMaxLength, onPrefixChange),
+                onValueChange = segmentChange(prefix, PrefixMaxLength, onPrefixChange),
                 interactionSource = prefixInteraction,
                 enabled = enabled,
                 placeholder = prefixPlaceholder,
@@ -141,7 +142,7 @@ fun CleansiaBankAccountInput(
             Separator("–")
             AccountSegment(
                 value = number,
-                onValueChange = segmentChange(NumberMaxLength, onNumberChange),
+                onValueChange = segmentChange(number, NumberMaxLength, onNumberChange),
                 interactionSource = numberInteraction,
                 enabled = enabled,
                 placeholder = numberPlaceholder,
@@ -150,7 +151,7 @@ fun CleansiaBankAccountInput(
             Separator("/")
             AccountSegment(
                 value = bankCode,
-                onValueChange = segmentChange(BankCodeMaxLength, onBankCodeChange),
+                onValueChange = segmentChange(bankCode, BankCodeMaxLength, onBankCodeChange),
                 interactionSource = bankCodeInteraction,
                 enabled = enabled,
                 placeholder = bankCodePlaceholder,
@@ -174,27 +175,32 @@ private val czSkIban = Regex("""^(?:CZ|SK)\d{2}(\d{20})$""")
 
 /**
  * A Czech or Slovak account pasted (or typed on a hardware keyboard) in one go, split into its three
- * fields as (prefix, number, bank code). `null` means the text is an ordinary entry for the segment it
- * landed in, and the digit clamp takes it — a bare number included: pasted into the number box, it is
- * the number.
+ * fields as (prefix, number, bank code); [raw] is the segment's new text and [current] the value it
+ * replaces. A null part leaves that field as it is, and a null result means the text is an ordinary
+ * entry for the segment it landed in, which the digit clamp takes.
  *
  * Recognised: `[prefix-]number/bankcode` and `prefix-number` — a number pad types neither separator,
- * and the clamp drops a typed one at once, so their presence is what marks a paste — and a CZ or SK
- * IBAN, whose BBAN is `bankcode(4) prefix(6) number(10)` with the zero padding dropped. Whitespace of
- * every kind (NBSP included) is dropped and an en or em dash reads as a hyphen, because that is what
- * banking apps put on the clipboard. A missing prefix clears the old one; a missing bank code (null)
- * keeps it. Nothing is validated beyond shape: the server owns mod-11, the bank code and the IBAN
- * cross-check.
+ * and the clamp drops a typed one at once, so their presence is what marks a paste — a CZ or SK IBAN,
+ * whose BBAN is `bankcode(4) prefix(6) number(10)` with the zero padding dropped, and a bare number,
+ * which is the account number whichever box it was pasted into (owner decision D14). A bare number
+ * counts only when it lands two or more characters at once: the number pad types one at a time, so
+ * typing a prefix or a bank code never jumps to the number. Whitespace of every kind (NBSP included)
+ * is dropped and an en or em dash reads as a hyphen, because that is what banking apps put on the
+ * clipboard. A written-out account without a prefix clears the old one; a missing bank code keeps it.
+ * Nothing is validated beyond shape: the server owns mod-11, the bank code and the IBAN cross-check.
  *
  * The iOS twin is `CleansiaBankAccountField.splitPastedAccount`; the two are held to one case list.
  * -> /partner-app/onboarding
  */
-internal fun splitPastedAccount(raw: String): Triple<String, String, String?>? {
+internal fun splitPastedAccount(raw: String, current: String = ""): Triple<String?, String, String?>? {
     val pasted = raw.filterNot(Char::isWhitespace).replace('\u2013', '-').replace('\u2014', '-')
     val text = domesticFormOfIban(pasted) ?: pasted
-    if ('-' !in text && '/' !in text) return null
     val account = domesticAccount.matchEntire(text) ?: return null
-    return Triple(account.groups[1]?.value.orEmpty(), account.groupValues[2], account.groups[3]?.value)
+    val number = account.groupValues[2]
+    if ('-' !in text && '/' !in text) {
+        return if (raw.length - current.length >= 2) Triple(null, number, null) else null
+    }
+    return Triple(account.groups[1]?.value.orEmpty(), number, account.groups[3]?.value)
 }
 
 /** `CZ65 0800 0000 1920 0014 5399` reads as `19-2000145399/0800`; null for any other text. */

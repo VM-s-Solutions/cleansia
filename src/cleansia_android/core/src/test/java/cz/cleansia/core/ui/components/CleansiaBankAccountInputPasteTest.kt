@@ -13,7 +13,7 @@ import org.junit.Test
  */
 class CleansiaBankAccountInputPasteTest {
 
-    private fun split(raw: String) = splitPastedAccount(raw)?.toList()
+    private fun split(raw: String, current: String = "") = splitPastedAccount(raw, current)?.toList()
 
     @Test
     fun `a number and bank code split and clear the prefix`() {
@@ -46,14 +46,37 @@ class CleansiaBankAccountInputPasteTest {
     }
 
     /**
-     * A bare number is not split: it stays in the segment it was pasted into, where the digit clamp
-     * takes it — in the number box, that is the number.
+     * A bare number is the account number whichever box received it, so "2000145399" pasted into the
+     * empty prefix box no longer becomes the prefix "200014". The split never learns which box it was:
+     * these are the prefix, number and bank-code boxes alike, and prefix and bank code are left alone.
      */
     @Test
-    fun `a bare number is not split`() {
-        assertNull(split("2000145399"))
-        assertNull(split("19"))
+    fun `a bare pasted number goes to the number and leaves the other two`() {
+        assertEquals(listOf(null, "2000145399", null), split("2000145399"))
+        assertEquals(listOf(null, "2000145399", null), split("2000 1453 99"))
+        assertEquals(
+            "pasted over a bank code",
+            listOf(null, "2000145399", null),
+            split("2000145399", current = "0800"),
+        )
+        // Owner decision D14 as written: two digits pasted into the empty prefix box are the number too.
+        assertEquals(listOf(null, "19", null), split("19"))
+    }
+
+    /** The number pad types one digit at a time, and a typed prefix or bank code must stay where it is. */
+    @Test
+    fun `typing never jumps to the number`() {
+        assertNull(split("5"))
+        assertNull(split("12", current = "1"))
+        assertNull(split("08001", current = "0800"))
         assertNull(split(""))
+        assertNull(split("", current = "19"))
+    }
+
+    @Test
+    fun `a bare run too long for a number is left to the clamp`() {
+        assertNull(split("20001453991"))
+        assertNull("pasted after a bank code already there", split("08002000145399", current = "0800"))
     }
 
     @Test

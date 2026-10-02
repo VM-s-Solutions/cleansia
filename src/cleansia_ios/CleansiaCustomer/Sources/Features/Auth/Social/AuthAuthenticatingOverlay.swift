@@ -20,6 +20,9 @@ struct AuthAuthenticatingOverlay: View {
             }
             .padding(Spacing.l)
             .background(CleansiaColors.surface, in: RoundedRectangle(cornerRadius: CornerRadius.large))
+            // Flatten before shadowing (the SnapSheet precedent): without it the spinner and the label each
+            // cast their own shadow onto the card. Composited first, only the card's edge does.
+            .compositingGroup()
             .shadow(color: .black.opacity(0.2), radius: 20, y: 8)
         }
         .contentShape(Rectangle())

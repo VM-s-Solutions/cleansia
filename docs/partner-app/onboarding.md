@@ -125,9 +125,10 @@ the clamp the same way. A shorter paste can be routed with the box's digits in f
 makes the number `192000`, and the prefix stays `19`. Pasted over all of the box's digits, the paste is
 read on its own, though a bare number still has to be at least two characters longer than what it
 replaces. The rule has one more cost: a real two-digit prefix such as `19` pasted into an empty prefix
-box goes to the number; typed, it stays. After a routed paste iOS closes the keyboard, because it
-rebuilds the three boxes so each one draws its new value; Android keeps the keyboard in the box that
-received the paste. The apps only split text — the server keeps every rule
+box goes to the number; typed, it stays. **After a routed paste the keyboard closes, on both apps**,
+because both rebuild the three boxes: iOS with `.id(pasteRevision)`, so each box draws its new value,
+and Android with `key(pasteRevision)`, so pasting the same text into the same box a second time is not
+dropped as a repeat. The apps only split text — the server keeps every rule
 (the mod-11 check, the bank-code shape, the IBAN cross-check). Partner web splits the two separator
 shapes as well, but not an IBAN, and it also sends a bare number to the number field from any box;
 unlike the apps, it clears the prefix when it does.

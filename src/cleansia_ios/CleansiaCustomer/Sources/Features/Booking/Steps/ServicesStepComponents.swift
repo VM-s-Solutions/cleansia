@@ -2,6 +2,8 @@ import CleansiaCore
 import SwiftUI
 
 struct PropertyStepper: View {
+    /// What VoiceOver calls the stepper; the visible label is read as its value.
+    let name: String
     let label: String
     let value: Int
     /// Greys a button once its bound is reached, so a tap that cannot move the
@@ -10,9 +12,17 @@ struct PropertyStepper: View {
     var maximum: Int?
     let onChange: (Int) -> Void
 
+    private var canDecrement: Bool {
+        minimum.map { value > $0 } ?? true
+    }
+
+    private var canIncrement: Bool {
+        maximum.map { value < $0 } ?? true
+    }
+
     var body: some View {
         HStack(spacing: 0) {
-            stepButton(systemImage: "minus", enabled: minimum.map { value > $0 } ?? true) { step(-1) }
+            stepButton(systemImage: "minus", outward: .leading, enabled: canDecrement) { step(-1) }
             // Android CompactCounter parity: the counter label keeps its
             // intrinsic width so long locales (RU "1 комнат") never break
             // mid-word — the flexible row label absorbs the squeeze instead.
@@ -23,11 +33,24 @@ struct PropertyStepper: View {
                 .fixedSize()
                 .contentTransition(.numericText())
                 .animation(.default, value: value)
+                // Room for both buttons' inward hit regions (12pt each) under a one-digit label.
+                .frame(minWidth: 16)
                 .padding(.horizontal, Spacing.xxs)
-            stepButton(systemImage: "plus", enabled: maximum.map { value < $0 } ?? true) { step(+1) }
+            stepButton(systemImage: "plus", outward: .trailing, enabled: canIncrement) { step(+1) }
         }
         .background(CleansiaColors.surface)
         .clipShape(RoundedRectangle(cornerRadius: CornerRadius.pill))
+        // One adjustable element (swipe up / down), not two bare glyph buttons around an unnamed number.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(name)
+        .accessibilityValue(label)
+        .accessibilityAdjustableAction { direction in
+            switch direction {
+            case .increment: if canIncrement { step(+1) }
+            case .decrement: if canDecrement { step(-1) }
+            @unknown default: break
+            }
+        }
     }
 
     /// Each accepted tick is felt (ADR-0018 D2); the bounded buttons are disabled, so a refused one never fires.
@@ -36,12 +59,21 @@ struct PropertyStepper: View {
         onChange(value + delta)
     }
 
-    private func stepButton(systemImage: String, enabled: Bool, action: @escaping () -> Void) -> some View {
+    /// The glyph stays 28pt (Android `CompactCounter`); the hit region is HIG's 44pt without growing the
+    /// pill: 8pt more above and below, 12pt toward the label and 4pt outward, so two steppers sharing a
+    /// row split the gap between them.
+    private func stepButton(
+        systemImage: String,
+        outward: HorizontalEdge,
+        enabled: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
         Button(action: action) {
             Image(systemName: systemImage)
                 .font(.system(size: 12, weight: .bold))
                 .foregroundColor(enabled ? CleansiaColors.primary : CleansiaColors.onSurfaceVariant.opacity(0.4))
                 .frame(width: 28, height: 28)
+                .contentShape(Rectangle().inset(by: -8).offset(x: outward == .leading ? 4 : -4))
         }
         .buttonStyle(.plain)
         .disabled(!enabled)

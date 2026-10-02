@@ -373,7 +373,14 @@ private struct PropertySizeSection: View {
     private func counter(label: String, value: Int, maximum: Int, onChange: @escaping (Int) -> Void) -> some View {
         VStack(alignment: .leading, spacing: Spacing.s) {
             SectionLabel(text: label)
-            PropertyStepper(label: "\(value)", value: value, minimum: 0, maximum: maximum, onChange: onChange)
+            PropertyStepper(
+                name: label,
+                label: "\(value)",
+                value: value,
+                minimum: 0,
+                maximum: maximum,
+                onChange: onChange
+            )
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

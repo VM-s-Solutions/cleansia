@@ -207,6 +207,7 @@ private struct PropertyRow: View {
                     .minimumScaleFactor(0.75)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 PropertyStepper(
+                    name: L10n.Booking.yourHome,
                     label: L10n.Booking.roomsShort(rooms),
                     value: rooms,
                     minimum: 1,
@@ -214,6 +215,7 @@ private struct PropertyRow: View {
                     onChange: onRoomsChange
                 )
                 PropertyStepper(
+                    name: L10n.Booking.yourHome,
                     label: L10n.Booking.bathShort(bathrooms),
                     value: bathrooms,
                     minimum: 1,

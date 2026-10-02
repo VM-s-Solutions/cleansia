@@ -229,6 +229,36 @@ across the platforms: plain discs, a disc on a stick and MapKit's balloon. `Clea
 style or pin; `MapMarkerTests` and `MapKitMapProviderFullBleedTests` (`CleansiaCoreTests`) pin the iOS
 configuration, the single centre pin and the tip.
 
+## Three moments are felt {#haptics}
+
+Both apps play a haptic at three moments and nowhere else (owner decision D15, 2026-10-01).
+[ADR-0018](/decisions/adr-0018) D2 expects haptics on the right moments, and one played everywhere
+stops meaning anything.
+
+| Moment | iOS | Android |
+|---|---|---|
+| A slide-to-confirm commits: the customer's booking, and the cleaner's contract, order-detail and orders-list slides | a medium impact, in Core `SlideToConfirm` just before its action | `LongPress`, in customer `SwipeToConfirmButton` and partner `SlideToCommit` |
+| The outcome of an action is shown | `SnackbarController.show` plays the success, error or warning notification haptic | `GlobalSnackbarHost` plays `CONFIRM` for a success and `REJECT` for an error or a warning; below API 30 all three play `LONG_PRESS` |
+| A size stepper takes a step | a selection tick in the customer `PropertyStepper`, on the booking and schedule size rows | none yet |
+
+- **Each haptic is played at the one place its callers share**, so there is no wrapper type. Every
+  outcome in both apps is shown by the shared snackbar host, and every slide goes through one
+  component per app.
+- **What plays nothing.** An info message reports no outcome. A network failure or a cancelled request
+  never reaches the snackbar host. A stepper disables its button at a bound, so a refused step never
+  ticks.
+- **Android has no warning haptic.** Every warning the apps raise is a refusal, so a warning plays
+  `REJECT`.
+- **The phone's setting wins.** System Haptics on iOS and touch feedback on Android turn all three off.
+- **No dependency moved.** iOS uses the UIKit feedback generators, which exist on the iOS 16 floor.
+  SwiftUI's `sensoryFeedback` would need iOS 17 and a second code path. Android stays on the pinned
+  Compose BOM, because `CONFIRM` and `REJECT` are `View` haptic constants from API 30.
+- **Gap.** The Android partner sign-up, forgot-password and e-mail confirmation screens show their
+  messages through their own `SnackbarHost`, so their outcomes play nothing.
+
+No test can feel a haptic. `SnackbarHapticTest` (Android `:core`) pins the constant each severity plays,
+and the fallback below API 30.
+
 ## iOS draws its own controls {#native-ios}
 
 The iOS apps keep Android's screens, flows and branding, and draw each control the way iOS does. That

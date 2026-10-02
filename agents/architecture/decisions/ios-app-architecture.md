@@ -84,6 +84,7 @@ pixel-cloning Material or into an iOS redesign:
 | Android system-back + Material top-bar back | swipe-back gesture + `NavigationStack` nav-bar back | same back-stack/destination |
 | Coil `AsyncImage` | SwiftUI `AsyncImage` (or Kingfisher) | same frame/aspect/placeholder layout |
 | Material `Snackbar` | native toast on the same `SnackbarController` bus | same message, one-per-failure |
+| *(D15)* haptics: `LongPress` on the slide commit (customer `SwipeToConfirmButton`, partner `SlideToCommit`); `GlobalSnackbarHost` plays `CONFIRM` (success) / `REJECT` (error, warning), `LONG_PRESS` below API 30, nothing for info | UIKit generators, inline at three sites, no wrapper: Core `SlideToConfirm` medium impact before `onConfirm`; Core `SnackbarController.show` `.success`/`.error`/`.warning` notification, nothing for `.info`; customer `PropertyStepper` selection tick per accepted step (no Android twin yet). Not `.sensoryFeedback` (iOS 17, a second path) | the same moments; the system haptics switch governs both. Android changed with this row (the partner slide and the snackbar host) |
 | Material `AlertDialog` | `.alert` / `.confirmationDialog` | same title/body/actions/destructive semantics |
 
 **Rows marked *(D15)* are the native-polish adoptions of 2026-10-01** (owner decision D15, remarks

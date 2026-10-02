@@ -1195,6 +1195,12 @@ hand; `String(format:)` reads past its arguments when a format names a slot that
   banner itself is a device check.
 - **Writing an App Group is a `UserDefaults` access**: every target that reads or writes it — the app, the
   widget, each extension — declares reason `1C8F.1` in its own `PrivacyInfo.xcprivacy`.
+- **A hosted test never writes the real App Group.** `CustomerPreferencesModel` and `PreferencesModel`
+  mirror the in-app language into their App Group by default, and a hosted test runs inside the installed
+  app, so a model built without `appGroup:` rewrites the language the simulator's extensions read. Pass a
+  test-only `UserDefaults` suite as `appGroup:`; the per-test suite the test already makes for its
+  settings store serves, because `inAppLanguageTag` does not collide with the `settings.*` keys (F-I13,
+  2026-10-02).
 
 **A key in the SHARED Core catalog must be voiced correctly for every persona that can receive it — and if
 two personas need different sentences for one key, the BACKEND emits two keys (ADR-0037, CH-X1).**

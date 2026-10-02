@@ -150,6 +150,7 @@ is web-only), so its allow-list is larger.
 | `/api/Service/GetOverview` | GET | service catalogue for the booking wizard |
 | `/api/Package/GetOverview` | GET | package catalogue |
 | `/api/Extra/GetOverview` | GET | extras catalogue |
+| `/api/Currency/GetOverview` | GET | the currencies, with the one the catalogue prices are quoted in flagged default |
 | `/api/Membership/GetPlans` | GET | membership/Plus plans |
 | `/api/Order/Quote` | POST | server-side price quote before account |
 | `/api/Referral/Validate` | POST | validate a referral code at signup |

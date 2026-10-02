@@ -527,6 +527,15 @@ need backfilling.
   line no longer reads the `SupportEmail` translation rows, so editing one changes nothing. (Owner
   ruling 2026-10-02.)
 
+- **Customer, cleaner and admin, in Ukrainian and Russian — credit is called *кредит*.** The credit
+  balance, the money that comes off the next card booking, was called *бонуси* / *бонусы* in Ukrainian
+  and Russian. That covered Rewards, Profile, the booking's confirm step, the order, the
+  delete-account warning and the notifications sent when no cleaner came, in the apps and on the web,
+  and the administrator's credit ledger and revenue report. The dispute settlement already said
+  *кредит*, and *бонуси* reads like the loyalty points, which are not money. It is now *кредит*
+  everywhere, as it is *kredit* in Czech and Slovak. Points and a cleaner's pay bonus keep their
+  names. (Owner ruling 2026-10-02.)
+
 - **Customer iOS — the Live Activity's smallest Dynamic Island slot shows where the clean is.** When
   another app's activity shares the Dynamic Island, Cleansia's slot drew a plain dot. It now shows a car
   while the cleaner is on the way, sparkles during the clean, a seal when it is done and a cross if it

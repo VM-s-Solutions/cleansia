@@ -362,25 +362,20 @@ final class OrderDetailViewModel: ViewModel {
     /// PaymentSheet presentation for
     /// the view to present (PaymentIntent variant). `.completed` is UX-only — the
     /// view calls `notifyRecurringPaymentResult` and we re-read the order; the
-    /// webhook remains the sole paid authority.
+    /// webhook remains the sole paid authority. The confirm takes no save-card
+    /// choice, so its intent keeps no card and the sheet is never given the customer.
     func confirmRecurring() async {
         guard !orderId.isBlank, !confirmRecurringState.isSubmitting else { return }
         confirmRecurringState = .submitting
         switch await client.confirmRecurring(orderId: orderId) {
         case let .success(confirmation):
             confirmRecurringState = .idle
-            if confirmation.needsPayment,
-               let clientSecret = confirmation.clientSecret,
-               let stripeCustomerId = confirmation.stripeCustomerId,
-               let ephemeralKey = confirmation.ephemeralKey,
-               !stripeCustomerId.isEmpty, !ephemeralKey.isEmpty
-            {
-                recurringCardPayment.send(PaymentSheetPresentation(
+            if confirmation.needsPayment, let clientSecret = confirmation.clientSecret {
+                recurringCardPayment.send(.cardPayment(
                     clientSecret: clientSecret,
-                    ephemeralKey: ephemeralKey,
-                    stripeCustomerId: stripeCustomerId,
-                    merchantDisplayName: "Cleansia",
-                    intentKind: .payment
+                    ephemeralKey: confirmation.ephemeralKey ?? "",
+                    stripeCustomerId: confirmation.stripeCustomerId ?? "",
+                    intentSavesCard: false
                 ))
             } else {
                 snackbar.showSuccess(L10n.Recurring.confirmSuccess)

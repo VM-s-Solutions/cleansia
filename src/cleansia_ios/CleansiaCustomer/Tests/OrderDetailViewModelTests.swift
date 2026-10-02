@@ -354,7 +354,7 @@ final class OrderDetailViewModelTests: XCTestCase {
         XCTAssertEqual(vm.confirmRecurringState, .idle)
     }
 
-    func testConfirmRecurringCardNonNullSecretEmitsPaymentIntentPresentation() async {
+    func testConfirmRecurringCardPresentsTheSheetWithoutTheCustomer() async {
         let client = FakeOrderClient()
         client.detailResults = [.success(OrderFixtures.detail(statusValue: 1))]
         client.confirmRecurringResult = .success(
@@ -370,8 +370,28 @@ final class OrderDetailViewModelTests: XCTestCase {
 
         XCTAssertEqual(presented?.intentKind, .payment)
         XCTAssertEqual(presented?.clientSecret, "pi_secret_1")
-        XCTAssertEqual(presented?.stripeCustomerId, "cus_1")
+        XCTAssertEqual(presented?.stripeCustomerId, "", "given the customer, PaymentSheet draws its own save box")
+        XCTAssertEqual(presented?.ephemeralKey, "", "given the customer, PaymentSheet draws its own save box")
         XCTAssertEqual(vm.confirmRecurringState, .idle)
+    }
+
+    func testConfirmRecurringCardPresentsTheSheetOnTheClientSecretAlone() async {
+        let client = FakeOrderClient()
+        client.detailResults = [.success(OrderFixtures.detail(statusValue: 1))]
+        client.confirmRecurringResult = .success(
+            RecurringConfirmation(clientSecret: "pi_secret_1", stripeCustomerId: nil, ephemeralKey: nil)
+        )
+        let vm = makeVM(client: client)
+        await vm.load()
+        let detailCallsBefore = client.detailCallCount
+
+        var presented: PaymentSheetPresentation?
+        let cancellable = vm.recurringCardPayment.sink { presented = $0 }
+        await vm.confirmRecurring()
+        cancellable.cancel()
+
+        XCTAssertEqual(presented?.clientSecret, "pi_secret_1")
+        XCTAssertEqual(client.detailCallCount, detailCallsBefore, "an unpaid card occurrence is not read as confirmed")
     }
 
     func testConfirmRecurringFailureStaysIdle() async {

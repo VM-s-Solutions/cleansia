@@ -517,6 +517,15 @@ need backfilling.
 
 ### Changed
 
+- **Customer and cleaner — one support address, support@cleansia.cz.** The customer web footer, its
+  FAQ and legal pages, the order detail's payment note, the cleaner's *How jobs are offered* page,
+  Help in the Android and iOS apps and the support line of every e-mail now name support@cleansia.cz.
+  Before, they named info@cleansia.cz, and some e-mails named the address they are sent from,
+  it@cleansia.cz, or support@cleansia.com. Privacy questions still go to privacy@cleansia.cz, and
+  receipts and invoices still print the company's own address. **Operator:** the e-mails' support
+  line no longer reads the `SupportEmail` translation rows, so editing one changes nothing. (Owner
+  ruling 2026-10-02.)
+
 - **Customer iOS — the Live Activity's smallest Dynamic Island slot shows where the clean is.** When
   another app's activity shares the Dynamic Island, Cleansia's slot drew a plain dot. It now shows a car
   while the cleaner is on the way, sparkles during the clean, a seal when it is done and a cross if it

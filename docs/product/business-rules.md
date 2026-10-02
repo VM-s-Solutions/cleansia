@@ -1030,10 +1030,22 @@ the market — or from the order, on a contract for work.
 - **Every e-mail footer** names the company its receipts name — the company of the order's market, or
   the ambient company where there is no order — instead of a fixed *Cleansia s.r.o.*; the period-end
   reminder names the company that owns the pay period.
-- **The customer web footer** prints fixed contacts — `info@cleansia.cz` and the phone — and no longer
-  the *IČO [IČO] · DIČ [DIČ]* placeholder line: a fixed footer for a one-company launch. The privacy
-  page points questions at `privacy@cleansia.cz`, every other page at `info@cleansia.cz`, and Help on
-  Android and iOS names `info@cleansia.cz` as the one contact address.
+- **The customer web footer** prints fixed contacts — `support@cleansia.cz` and the phone — and no
+  longer the *IČO [IČO] · DIČ [DIČ]* placeholder line: a fixed footer for a one-company launch. The
+  privacy page points questions at `privacy@cleansia.cz`, every other legal page at
+  `support@cleansia.cz`.
+- **`support@cleansia.cz` is the one support contact** a customer or a cleaner is shown or linked to
+  (owner ruling 2026-10-02). That covers the web footer, the FAQ's *write to us*, the order detail's
+  payment-help note, the partner *How jobs are offered* review line, and Help on Android and iOS. It
+  also covers *Contact support* on a rejected cleaner's registration lock, and the support line of
+  every e-mail. The server fills that line from one constant, whatever a template's translation row
+  says. Before, the e-mails named the SendGrid sender `it@cleansia.cz`, a `.com` address or
+  `info@cleansia.cz`, and Help named `info@cleansia.cz`. The sender (`SendGrid:AddressFrom`) only
+  delivers mail and is never shown as the contact. No Reply-To is set, so a customer who presses
+  Reply writes to the sender. Two other addresses are unchanged. `privacy@cleansia.cz` is the
+  data-protection contact on the privacy page and in the partner GDPR copy. The `companyEmail` on the
+  company record is the seller's own address (`info@cleansia.cz` in the seed), printed on receipts,
+  invoices and the legal texts.
 - **The registered name comes with the registration.** Whether the company is *Cleansia CZ s.r.o.* or
   *Cleansia s.r.o.* is written once, on the company record, and every text, receipt, confirmation and
   e-mail footer follows it; the footer's copyright line still reads *Cleansia s.r.o.*

@@ -1,5 +1,6 @@
 package cz.cleansia.customer.features.rewards
 
+import cz.cleansia.core.freshness.Staleness
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
@@ -20,6 +21,7 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -52,6 +54,7 @@ class RewardsTabViewModelTest {
     private val referralAccount = MutableStateFlow<ReferralAccountDto?>(null)
     private val credit = MutableStateFlow<CreditDto?>(null)
     private val currencyCode = MutableStateFlow<String?>(null)
+    private val staleness = Staleness()
 
     @Before
     fun setUp() {
@@ -64,6 +67,7 @@ class RewardsTabViewModelTest {
         every { loyaltyRepository.loading } returns loading
         every { loyaltyRepository.loaded } returns loaded
         every { loyaltyRepository.credit } returns credit
+        every { loyaltyRepository.staleness } returns staleness
         every { referralRepository.account } returns referralAccount
         every { catalogRepository.currencyCode } returns currencyCode
         marketRepository = mockk(relaxed = true)
@@ -191,6 +195,74 @@ class RewardsTabViewModelTest {
         coVerify(exactly = 1) { referralRepository.refresh() }
         coVerify(exactly = 1) { loyaltyRepository.loadActivity(offset = 0, limit = 5) }
         verify(exactly = 0) { snackbar.showError(any<ApiError>()) }
+    }
+
+    // ── tab entry ──
+
+    /**
+     * A booking, a cancel or a card occurrence confirm marks the cache stale, and Home, which honours
+     * the mark, is not composed behind this tab. So entering Rewards re-reads a stale cache, with the
+     * activity preview, as iOS RewardsViewModel.load() does.
+     */
+    @Test
+    fun `entering with a stale cache re-reads it and the activity preview`() = runTest {
+        loaded.value = true
+        staleness.reset()
+        coEvery { loyaltyRepository.refresh() } returns ApiResult.Success(Unit)
+
+        val vm = viewModel()
+        vm.onEnter()
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { loyaltyRepository.refresh() }
+        coVerify(exactly = 1) { loyaltyRepository.loadActivity(offset = 0, limit = 5) }
+    }
+
+    @Test
+    fun `entering with a fresh cache reads nothing`() = runTest {
+        loaded.value = true
+        staleness.markFresh()
+
+        val vm = viewModel()
+        vm.onEnter()
+        advanceUntilIdle()
+
+        coVerify(exactly = 0) { loyaltyRepository.refresh() }
+        coVerify(exactly = 0) { loyaltyRepository.loadActivity(any(), any()) }
+    }
+
+    /** The shell's warm-up is the first read, and the preview follows its `loaded` flag. */
+    @Test
+    fun `entering before the first read leaves it to the shell warm-up`() = runTest {
+        loaded.value = false
+
+        val vm = viewModel()
+        vm.onEnter()
+        advanceUntilIdle()
+
+        coVerify(exactly = 0) { loyaltyRepository.refresh() }
+    }
+
+    /** Only the pull raises the spinner; the entry re-read is silent, like Home's. */
+    @Test
+    fun `the pull spinner follows the pull, not the entry re-read`() = runTest {
+        loaded.value = true
+        staleness.reset()
+        val gate = CompletableDeferred<ApiResult<Unit>>()
+        coEvery { loyaltyRepository.refresh() } coAnswers { gate.await() }
+
+        val vm = viewModel()
+        vm.onEnter()
+        runCurrent()
+        assertEquals(false, vm.isUserRefreshing.value)
+
+        vm.refresh()
+        runCurrent()
+        assertEquals(true, vm.isUserRefreshing.value)
+
+        gate.complete(ApiResult.Success(Unit))
+        advanceUntilIdle()
+        assertEquals(false, vm.isUserRefreshing.value)
     }
 
     @Test

@@ -83,6 +83,8 @@ import cz.cleansia.core.ui.components.SudsRefreshIndicator
 import cz.cleansia.core.ui.theme.Poppins
 import cz.cleansia.customer.ui.theme.SuccessText
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.customer.features.main.MainShellBottomClearance
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
@@ -130,9 +132,14 @@ fun RewardsTab(
     val referralAccount by viewModel.referralAccount.collectAsStateWithLifecycle()
     val activityPreview by viewModel.activityPreview.collectAsStateWithLifecycle()
     val credit by viewModel.credit.collectAsStateWithLifecycle()
+    val isUserRefreshing by viewModel.isUserRefreshing.collectAsStateWithLifecycle()
 
     LaunchedEffect(loaded) {
         if (loaded) viewModel.loadActivityPreview()
+    }
+    // Tab entry and foreground: re-reads a stale loyalty cache (see onEnter).
+    LifecycleEventEffect(Lifecycle.Event.ON_START) {
+        viewModel.onEnter()
     }
 
     val pullState = rememberPullToRefreshState()
@@ -155,14 +162,14 @@ fun RewardsTab(
         )
 
         PullToRefreshBox(
-            isRefreshing = loading,
+            isRefreshing = isUserRefreshing,
             onRefresh = refresh,
             state = pullState,
             modifier = Modifier.fillMaxSize(),
             indicator = {
                 SudsRefreshIndicator(
                     state = pullState,
-                    isRefreshing = loading,
+                    isRefreshing = isUserRefreshing,
                     modifier = Modifier
                         .align(Alignment.TopCenter)
                         .padding(top = 8.dp),

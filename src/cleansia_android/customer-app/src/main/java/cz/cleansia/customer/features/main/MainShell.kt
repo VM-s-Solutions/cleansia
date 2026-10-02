@@ -45,6 +45,8 @@ import androidx.compose.runtime.setValue
 import kotlinx.coroutines.launch
 import androidx.hilt.navigation.compose.hiltViewModel
 import cz.cleansia.customer.core.market.offersAChoice
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -343,16 +345,26 @@ fun MainShell(
                 MainTab.Rewards -> RewardsTab(
                     onOpenActivity = onOpenRewardsActivity,
                 )
-                MainTab.Profile -> ProfileTab(
-                    user = currentUser,
-                    isPlus = isPlus,
-                    showMarketRow = marketState.offersAChoice,
-                    credit = credit,
-                    onLogout = onLogout,
-                    onRowClick = onProfileRow,
-                    onAvatarLoadFailed = profileVm::onAvatarLoadFailed,
-                    onAvatarLoadSucceeded = profileVm::onAvatarLoadSucceeded,
-                )
+                MainTab.Profile -> {
+                    // The credit row reads the loyalty cache, which a booking, a cancel or a card
+                    // occurrence confirm marks stale; Home re-reads it, but is not composed behind
+                    // this tab, so Profile's entry re-reads a stale cache too (Rewards' onEnter).
+                    LifecycleEventEffect(Lifecycle.Event.ON_START) {
+                        if (loyaltyRepo.loaded.value && loyaltyRepo.staleness.isStale()) {
+                            scope.launch { loyaltyRepo.refresh() }
+                        }
+                    }
+                    ProfileTab(
+                        user = currentUser,
+                        isPlus = isPlus,
+                        showMarketRow = marketState.offersAChoice,
+                        credit = credit,
+                        onLogout = onLogout,
+                        onRowClick = onProfileRow,
+                        onAvatarLoadFailed = profileVm::onAvatarLoadFailed,
+                        onAvatarLoadSucceeded = profileVm::onAvatarLoadSucceeded,
+                    )
+                }
             }
         }
 

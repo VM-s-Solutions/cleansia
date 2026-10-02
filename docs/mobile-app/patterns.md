@@ -171,7 +171,8 @@ screen, behind the clock. The two platforms get there differently, and the iOS r
   -bleed) }`), and it fills both the status-bar strip and the rubber-band overscroll. A negative top
   padding on the gradient itself would stretch its colours, which is why the solid block goes above
   it. Screens that do not scroll, such as the reduced Plus states, keep `.ignoresSafeArea`, which
-  works there.
+  works there. The partner app's profile hub hero (`ProfileHubContent`) had the same strip and has
+  used the same form since 2026-10-02; `ContentSafeAreaBindingTests` pins the bleed.
 
 Content in these scroll views passes under the status bar once it scrolls, so these screens also use
 the fade below.

@@ -960,10 +960,11 @@ need backfilling.
   billing line. On both platforms, the last perk now stops just above the bar at any text size and
   disclosure length. (Owner remark 2026-10-01.)
 
-- **Customer iOS — the Profile and Cleansia Plus headers reach the top of the screen again.** Their
-  colour now runs behind the clock and the camera cut-out instead of stopping just below them, which
-  read as a cut-off band. It also fills the space revealed when the page is pulled down. Android
-  already did this. (Owner remark 2026-10-01.)
+- **Customer and cleaner iOS — the profile and Cleansia Plus headers reach the top of the screen
+  again.** Their colour now runs behind the clock and the camera cut-out instead of stopping just below
+  them, which read as a cut-off band. It also fills the space revealed when the page is pulled down.
+  The cleaner app's profile header had the same band and is fixed the same way. Android already did
+  this. (Owner remark 2026-10-01; the cleaner's header 2026-10-02.)
 
 - **Customer Android and iOS — *No orders yet* sits in the middle of the screen.** The empty and
   error states on the Orders tab are centred between the title and the Book button. They used to sit

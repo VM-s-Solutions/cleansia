@@ -90,4 +90,89 @@ describe('CleansiaBankAccountComponent paste', () => {
     expect(event.defaultPrevented).toBe(false);
     expect(host.number.value).toBe('');
   });
+
+  function parts(): [string, string, string] {
+    return [host.prefix.value, host.number.value, host.bankCode.value];
+  }
+
+  /** Banking apps space the parts, and some use a no-break space or a narrow one. */
+  it('ignores whitespace of every kind, inside the digits too', () => {
+    paste('number', ' 19 - 2000145399 / 0800 ');
+    expect(parts()).toEqual(['19', '2000145399', '0800']);
+
+    paste('number', '19\u00A0-\u00A02000\u202F145\u00A0399\u00A0/\u00A00800');
+    expect(parts()).toEqual(['19', '2000145399', '0800']);
+
+    paste('prefix', '12321414 /\n3545');
+    expect(parts()).toEqual(['', '12321414', '3545']);
+
+    host.bankCode.setValue('0100');
+    paste('prefix', '2000 1453 99');
+    expect(parts()).toEqual(['', '2000145399', '0100']);
+  });
+
+  it('reads an en or em dash as a hyphen', () => {
+    paste('number', '19\u20132000145399/0800');
+    expect(parts()).toEqual(['19', '2000145399', '0800']);
+
+    paste('number', '35\u20142000145399/0800');
+    expect(parts()).toEqual(['35', '2000145399', '0800']);
+  });
+
+  it('breaks a Czech IBAN into its domestic parts', () => {
+    const event = paste('prefix', 'CZ65 0800 0000 1920 0014 5399');
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(parts()).toEqual(['19', '2000145399', '0800']);
+
+    paste('bank-code', 'cz6508000000192000145399');
+    expect(parts()).toEqual(['19', '2000145399', '0800']);
+  });
+
+  it('breaks a Slovak IBAN into its domestic parts', () => {
+    paste('number', 'SK31 1200 0000 1987 4263 7541');
+
+    expect(parts()).toEqual(['19', '8742637541', '1200']);
+  });
+
+  /** Leading zeros are padding in the BBAN, not part of the written account; an all-zero prefix is none. */
+  it('drops the IBAN padding and clears an old prefix when the IBAN has none', () => {
+    host.prefix.setValue('35');
+
+    paste('number', 'CZ55 0800 0000 0000 0012 3457');
+
+    expect(parts()).toEqual(['', '123457', '0800']);
+  });
+
+  it.each([
+    'DE89 3704 0044 0532 0130 00',
+    'CZ65 0800 0000 1920 0014 539',
+    'CZ65 0800 0000 1920 0014 53990',
+    'CZ6X 0800 0000 1920 0014 5399',
+    'CZ00 0800 0000 0000 0000 0000',
+  ])('leaves %s, which is no domestic account, to the segment', (text) => {
+    const event = paste('number', text);
+
+    expect(event.defaultPrevented).toBe(false);
+    expect(parts()).toEqual(['', '', '']);
+  });
+
+  it.each([
+    '1234567-1/0800',
+    '12345678901/0800',
+    '2000145399/08000',
+    '20001/45/399',
+    '19-20-2000145399/0800',
+    '-2000145399/0800',
+    '19-/0800',
+    '2000145399/',
+    '/0800',
+    '12a4/0800',
+    '١٢٣/0800',
+  ])('leaves %s, which is no account, to the segment', (text) => {
+    const event = paste('number', text);
+
+    expect(event.defaultPrevented).toBe(false);
+    expect(parts()).toEqual(['', '', '']);
+  });
 });

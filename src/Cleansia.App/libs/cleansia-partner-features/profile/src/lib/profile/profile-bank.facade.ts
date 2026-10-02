@@ -19,6 +19,8 @@ import {
   canSubmitBankDetails,
   createBankDetailsForm,
   createUpdateBankDetailsCommand,
+  ibanOnlyCountry,
+  ibanProblem,
   mapPayoutDetailsToBankForm,
 } from './profile-bank.models';
 
@@ -45,8 +47,29 @@ export class ProfileBankFacade extends UnsubscribeControlDirective {
   private readonly formValue = signal<BankDetailsFormValue>(
     this.formGroup.getRawValue()
   );
+  /** Country id → ISO alpha-2, the code an IBAN starts with. */
+  private readonly countryAlpha2 = signal<ReadonlyMap<string, string>>(new Map());
+  private readonly bankCountryAlpha2 = computed(() =>
+    this.countryAlpha2().get(this.formValue().bankCountryId)
+  );
 
-  readonly canSubmit = computed(() => canSubmitBankDetails(this.formValue()));
+  /** The country a bank paid to its IBAN alone is in; null keeps the Czech and Slovak three parts. */
+  readonly ibanCountry = computed(() => ibanOnlyCountry(this.bankCountryAlpha2()));
+
+  /**
+   * The server's key for refusing the IBAN as it stands, for a bank paid to its IBAN alone. Read here,
+   * not from a validator on the control: it changes with the bank country as well as with the IBAN,
+   * and the text input redraws its own errors only when it is edited.
+   */
+  readonly ibanError = computed(() => {
+    const country = this.ibanCountry();
+    const iban = this.formValue().iban;
+    return country && iban ? ibanProblem(iban, country) : null;
+  });
+
+  readonly canSubmit = computed(() =>
+    canSubmitBankDetails(this.formValue(), this.bankCountryAlpha2())
+  );
 
   constructor() {
     super();
@@ -94,6 +117,14 @@ export class ProfileBankFacade extends UnsubscribeControlDirective {
         this.countries.set(
           (countries ?? []).map((country) => this.toOption(country))
         );
+        this.countryAlpha2.set(
+          new Map(
+            (countries ?? []).flatMap((country) => {
+              const alpha2 = this.alpha2Of(country);
+              return country.id && alpha2 ? [[country.id, alpha2] as const] : [];
+            })
+          )
+        );
         this.formGroup.setValue(
           mapPayoutDetailsToBankForm(payoutDetails, employee.countryId)
         );
@@ -119,7 +150,11 @@ export class ProfileBankFacade extends UnsubscribeControlDirective {
 
     this.partnerClient.employeeClient
       .updateBankDetails(
-        createUpdateBankDetailsCommand(employeeId, this.formGroup.getRawValue())
+        createUpdateBankDetailsCommand(
+          employeeId,
+          this.formGroup.getRawValue(),
+          this.bankCountryAlpha2()
+        )
       )
       .pipe(
         takeUntil(this.destroyed$),
@@ -144,6 +179,12 @@ export class ProfileBankFacade extends UnsubscribeControlDirective {
         control.setValue(normalized, { emitEvent: false });
       }
     }
+  }
+
+  /** `isoAlpha2`, or an alpha-2 `isoCode` — the seed stores `isoCode` alpha-3. */
+  private alpha2Of(country: CountryListItem): string | undefined {
+    const code = (country.isoAlpha2 || country.isoCode)?.trim().toUpperCase();
+    return code && /^[A-Z]{2}$/.test(code) ? code : undefined;
   }
 
   private toOption(country: CountryListItem): ICleansiaSelectOption {

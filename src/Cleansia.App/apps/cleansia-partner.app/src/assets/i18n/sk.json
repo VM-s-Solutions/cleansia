@@ -135,6 +135,7 @@
       "bank_code_placeholder": "Kód",
       "bank_code_hint": "Štyri číslice za lomkou, napríklad 5500.",
       "iban_hint": "Pri českom alebo slovenskom účte ho môžete nechať prázdny — dopočítame ho z čísel vyššie.",
+      "iban_only_hint": "Opíšte ho z výpisu z účtu alebo z bankovej aplikácie — IBAN z krajiny vašej banky začína na {{code}}.",
       "swift_code": "SWIFT kód",
       "swift_code_hint": "Potrebujeme ho len vtedy, keď je vaša banka v inej krajine, než v ktorej pracujete.",
       "bank_name": "Názov banky",

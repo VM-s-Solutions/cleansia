@@ -135,6 +135,7 @@
       "bank_code_placeholder": "Code",
       "bank_code_hint": "The four digits after the slash, e.g. 5500.",
       "iban_hint": "You can leave this empty for a Czech or Slovak account — we work it out from the numbers above.",
+      "iban_only_hint": "Copy it from your bank statement or your banking app — an IBAN from your bank's country starts with {{code}}.",
       "swift_code": "SWIFT Code",
       "swift_code_hint": "Only needed when your bank is in a different country than the one you work in.",
       "bank_name": "Bank Name",

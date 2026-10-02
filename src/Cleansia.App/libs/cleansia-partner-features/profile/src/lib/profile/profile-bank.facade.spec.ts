@@ -35,6 +35,13 @@ describe('ProfileBankFacade', () => {
     CountryListItem.fromJS({ id: 'country-sk', name: 'Slovakia', isoCode: 'SK' }),
   ];
 
+  // As the seed serves them: `isoCode` alpha-3, `isoAlpha2` beside it.
+  const withGermany = [
+    ...countries,
+    CountryListItem.fromJS({ id: 'country-de', name: 'Germany', isoCode: 'DEU', isoAlpha2: 'DE' }),
+    CountryListItem.fromJS({ id: 'country-cze', name: 'Czechia', isoCode: 'CZE', isoAlpha2: 'CZ' }),
+  ];
+
   const savedDetails = MyPayoutDetails.fromJS({
     bankCountryId: 'country-sk',
     accountPrefix: '000019',
@@ -129,7 +136,7 @@ describe('ProfileBankFacade', () => {
         accountPrefix: '19',
         accountNumber: '2000145399',
         bankCode: '0800',
-        iban: 'CZ6508000000192000145399',
+        iban: 'CZ65 0800 0000 1920 0014 5399',
         swift: 'GIBACZPX',
         bankName: 'Ceska sporitelna',
         holderName: 'Jana Novakova',
@@ -216,14 +223,14 @@ describe('ProfileBankFacade', () => {
       );
     });
 
-    it('uppercases the IBAN and drops its spacing', () => {
+    it('uppercases the IBAN and groups it in fours, whatever spacing it came with', () => {
       const facade = createFacade();
       facade.load();
 
-      facade.formGroup.controls.iban.setValue('cz65 0800 0000 1920 0014 5399');
+      facade.formGroup.controls.iban.setValue('cz6508000000 1920-0014 5399');
 
       expect(facade.formGroup.controls.iban.value).toBe(
-        'CZ6508000000192000145399'
+        'CZ65 0800 0000 1920 0014 5399'
       );
     });
 
@@ -255,6 +262,103 @@ describe('ProfileBankFacade', () => {
       facade.formGroup.controls.iban.setValue('CZ6508000000192000145399');
 
       expect(facade.canSubmit()).toBe(true);
+    });
+  });
+
+  describe('a bank paid to its IBAN alone', () => {
+    const loadWithGermany = (): ProfileBankFacade => {
+      countryClient.getOverview.mockReturnValue(of(withGermany));
+      const facade = createFacade();
+      facade.load();
+      return facade;
+    };
+
+    it('keeps the three parts for a Czech or Slovak bank, whichever ISO form the country carries', () => {
+      const facade = loadWithGermany();
+      expect(facade.ibanCountry()).toBeNull();
+
+      facade.formGroup.controls.bankCountryId.setValue('country-cze');
+
+      expect(facade.ibanCountry()).toBeNull();
+    });
+
+    it('asks for the IBAN alone once the bank is in another country', () => {
+      const facade = loadWithGermany();
+
+      facade.formGroup.controls.bankCountryId.setValue('country-de');
+
+      expect(facade.ibanCountry()).toBe('DE');
+    });
+
+    it('keeps the three parts when the country list did not load', () => {
+      countryClient.getOverview.mockReturnValue(throwError(() => new Error('offline')));
+      const facade = createFacade();
+      facade.load();
+
+      facade.formGroup.controls.bankCountryId.setValue('country-de');
+
+      expect(facade.ibanCountry()).toBeNull();
+    });
+
+    it('says nothing about an empty IBAN, but does not let it be saved', () => {
+      const facade = loadWithGermany();
+      facade.formGroup.controls.bankCountryId.setValue('country-de');
+      facade.formGroup.controls.accountNumber.setValue('2000145399');
+
+      expect(facade.ibanError()).toBeNull();
+      expect(facade.canSubmit()).toBe(false);
+    });
+
+    it('gives the server\'s reason for an IBAN it would refuse', () => {
+      const facade = loadWithGermany();
+      facade.formGroup.controls.bankCountryId.setValue('country-de');
+
+      facade.formGroup.controls.iban.setValue('DE89370400440532013001');
+      expect(facade.ibanError()).toBe('validation.payout.invalid_iban');
+
+      facade.formGroup.controls.iban.setValue('AT611904300234573201');
+      expect(facade.ibanError()).toBe('validation.payout.iban_country_mismatch');
+      expect(facade.canSubmit()).toBe(false);
+    });
+
+    it('re-reads the IBAN when the bank country changes under it', () => {
+      const facade = loadWithGermany();
+      facade.formGroup.controls.iban.setValue('CZ6508000000192000145399');
+      expect(facade.ibanError()).toBeNull();
+
+      facade.formGroup.controls.bankCountryId.setValue('country-de');
+
+      expect(facade.ibanError()).toBe('validation.payout.iban_country_mismatch');
+    });
+
+    it('checks nothing for a Czech bank — the parts decide there', () => {
+      const facade = loadWithGermany();
+
+      facade.formGroup.controls.iban.setValue('not an iban');
+
+      expect(facade.ibanError()).toBeNull();
+    });
+
+    it('saves the IBAN and its country, and none of the parts left from a Czech account', () => {
+      const facade = loadWithGermany();
+      facade.formGroup.patchValue({
+        bankCountryId: 'country-de',
+        accountPrefix: '19',
+        accountNumber: '2000145399',
+        bankCode: '0800',
+        iban: 'de89 3704 0044 0532 0130 00',
+      });
+      expect(facade.canSubmit()).toBe(true);
+
+      facade.onSubmit();
+
+      const command = employeeClient.updateBankDetails.mock
+        .calls[0][0] as UpdateBankDetailsCommand;
+      expect(command.bankCountryId).toBe('country-de');
+      expect(command.iban).toBe('DE89370400440532013000');
+      expect(command.accountPrefix).toBeUndefined();
+      expect(command.accountNumber).toBeUndefined();
+      expect(command.bankCode).toBeUndefined();
     });
   });
 

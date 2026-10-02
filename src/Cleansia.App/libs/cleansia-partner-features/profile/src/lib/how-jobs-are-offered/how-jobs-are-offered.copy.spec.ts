@@ -9,7 +9,7 @@ const I18N_DIR = join(
 const PAGE_TEMPLATE = join(__dirname, 'how-jobs-are-offered.component.html');
 const PROFILE_TEMPLATE = join(__dirname, '../profile/profile.component.html');
 
-const REVIEW_CONTACT = 'info@cleansia.cz';
+const REVIEW_CONTACT = 'support@cleansia.cz';
 
 /** Board order, the favourite-cleaner hold, the push radius, the sweeps, no score, approval, review. */
 const SECTIONS = [

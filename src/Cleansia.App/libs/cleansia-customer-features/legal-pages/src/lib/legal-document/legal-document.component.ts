@@ -45,7 +45,7 @@ export class LegalDocumentComponent implements OnInit, AfterViewInit, OnDestroy 
   /** The page's own title, shown until the served document names its own. */
   readonly titleKey = input.required<string>();
 
-  readonly contactEmail = input('info@cleansia.cz');
+  readonly contactEmail = input('support@cleansia.cz');
   readonly contactHref = computed(() => `mailto:${this.contactEmail()}`);
 
   protected readonly facade = inject(LegalDocumentFacade);

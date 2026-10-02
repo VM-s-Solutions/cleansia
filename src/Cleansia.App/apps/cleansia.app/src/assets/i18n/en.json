@@ -1283,7 +1283,7 @@
         "fact_slot": "We're holding your slot for an hour",
         "fact_slot_note": "After that we release it and you'd have to book again. Either way, nothing is charged.",
         "fact_help": "Not working?",
-        "fact_help_note": "Write to info@cleansia.cz and we'll sort the payment out with you.",
+        "fact_help_note": "Write to support@cleansia.cz and we'll sort the payment out with you.",
         "pay_now": "Pay now",
         "resume_failed": "We couldn't reopen this payment. The booking may have already been released — please book again."
       }

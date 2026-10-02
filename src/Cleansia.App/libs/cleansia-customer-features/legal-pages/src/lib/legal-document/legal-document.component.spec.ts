@@ -309,7 +309,7 @@ describe('LegalDocumentComponent', () => {
       component: TermsComponent,
       type: LegalDocumentType.TermsOfService,
       title: 'Terms of Service',
-      contact: 'info@cleansia.cz',
+      contact: 'support@cleansia.cz',
     },
     {
       page: 'privacy',
@@ -323,7 +323,7 @@ describe('LegalDocumentComponent', () => {
       component: ComplaintsComponent,
       type: LegalDocumentType.ComplaintsProcedure,
       title: 'Complaints Procedure',
-      contact: 'info@cleansia.cz',
+      contact: 'support@cleansia.cz',
     },
   ];
   describe.each(PAGES)('the $page page', ({ component, type, title, contact }) => {

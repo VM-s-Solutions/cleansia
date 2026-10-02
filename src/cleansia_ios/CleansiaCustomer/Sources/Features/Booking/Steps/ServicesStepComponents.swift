@@ -12,7 +12,7 @@ struct PropertyStepper: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            stepButton(systemImage: "minus", enabled: minimum.map { value > $0 } ?? true) { onChange(value - 1) }
+            stepButton(systemImage: "minus", enabled: minimum.map { value > $0 } ?? true) { step(-1) }
             // Android CompactCounter parity: the counter label keeps its
             // intrinsic width so long locales (RU "1 комнат") never break
             // mid-word — the flexible row label absorbs the squeeze instead.
@@ -22,10 +22,16 @@ struct PropertyStepper: View {
                 .lineLimit(1)
                 .fixedSize()
                 .padding(.horizontal, Spacing.xxs)
-            stepButton(systemImage: "plus", enabled: maximum.map { value < $0 } ?? true) { onChange(value + 1) }
+            stepButton(systemImage: "plus", enabled: maximum.map { value < $0 } ?? true) { step(+1) }
         }
         .background(CleansiaColors.surface)
         .clipShape(RoundedRectangle(cornerRadius: CornerRadius.pill))
+    }
+
+    /// Each accepted tick is felt (ADR-0018 D2); the bounded buttons are disabled, so a refused one never fires.
+    private func step(_ delta: Int) {
+        UISelectionFeedbackGenerator().selectionChanged()
+        onChange(value + delta)
     }
 
     private func stepButton(systemImage: String, enabled: Bool, action: @escaping () -> Void) -> some View {

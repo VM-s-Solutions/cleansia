@@ -144,7 +144,10 @@ public struct SlideToConfirm: View {
                 guard enabled, !isBusy else { return }
                 var fired = false
                 withAnimation(.spring()) { fired = thumb.endDrag(maxX: maxX) }
-                if fired { onConfirm() }
+                guard fired else { return }
+                // ADR-0018 D2: the commit is felt as well as seen (Android `SwipeToConfirmButton` parity).
+                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                onConfirm()
             }
     }
 

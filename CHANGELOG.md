@@ -966,6 +966,11 @@ need backfilling.
   The cleaner app's profile header had the same band and is fixed the same way. Android already did
   this. (Owner remark 2026-10-01; the cleaner's header 2026-10-02.)
 
+- **Customer Android and iOS — Rewards shows your current points when you go straight to it.** Rewards
+  kept the points it last read until you pulled to refresh, so a customer who opened it without
+  passing through Home could see an old total. It now re-reads them when they are more than 30 seconds
+  old, as Home does; on Android, Profile does the same for its *Credit* row.
+
 - **Customer and cleaner Android — an amount that is not whole shows its haléře.** Every price, credit
   and discount on Android printed whole crowns, so a card share of 319.90 read *320 Kč* while Stripe's
   sheet asked for 319.90. A whole amount still prints without decimals; any other prints to the

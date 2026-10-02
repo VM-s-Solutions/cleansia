@@ -205,6 +205,17 @@ Two shared mechanisms decide when a screen re-fetches and when it must forget ev
 A repository may hold both, and should reset its `Staleness` from its `clear()` so the watermark
 does not survive a session swap.
 
+**The customer's loyalty cache is the case that matters most**, because it holds the points and the
+credit balance. Every action that can move the credit invalidates it. A cancellation re-reads it at
+once, and so does the card confirmation of a recurring occurrence, whose credit the server takes before
+it mints the payment intent, so the re-read runs as soon as the confirm succeeds, before the payment
+sheet opens. A booking re-reads it with the orders on iOS; on Android it marks it stale, because the
+shell's scope ends as it leaves for the success screen, and the shell re-reads it on return.
+Otherwise the cache goes stale after 30 seconds, and Home and Rewards re-read a stale cache on entry,
+as does Profile on Android for its *Credit* row, showing the cached figures meanwhile (since
+2026-10-02; Rewards used to keep whatever it held until a pull). A re-read on entry shows no spinner:
+on Android the Rewards pull indicator follows the user's own pull only, as Home's does.
+
 ## Localization
 
 Both platforms ship English, Czech, Slovak, Ukrainian and Russian — the same fixed set as the web

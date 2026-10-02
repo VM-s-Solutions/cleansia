@@ -253,8 +253,6 @@ stops meaning anything.
 - **No dependency moved.** iOS uses the UIKit feedback generators, which exist on the iOS 16 floor.
   SwiftUI's `sensoryFeedback` would need iOS 17 and a second code path. Android stays on the pinned
   Compose BOM, because `CONFIRM` and `REJECT` are `View` haptic constants from API 30.
-- **Gap.** The Android partner sign-up, forgot-password and e-mail confirmation screens show their
-  messages through their own `SnackbarHost`, so their outcomes play nothing.
 
 No test can feel a haptic. `SnackbarHapticTest` (Android `:core`) pins the constant each severity plays,
 and the fallback below API 30.

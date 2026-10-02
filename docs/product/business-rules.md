@@ -1149,6 +1149,37 @@ no text in force would gate nothing.
 - **The complaints procedure** (`ComplaintsProcedure`) is a customer-audience document, read and never
   accepted — in force since 2026-09-29 and published at `/complaints` ([The legal texts](#legal-texts)).
 
+## The papers a cleaner uploads {#employee-documents}
+
+The files a cleaner uploads for review — identity card, passport, work permit, the liability insurance
+certificate and the other `DocumentType`s — are `EmployeeDocument` rows, each approved or rejected on
+its own by an administrator; approval of the cleaner reads the ones the work country requires
+([Approval criteria](/admin-app/user-management#approval-criteria)). They are not the three agreements
+above, which are accepted in the app, never uploaded.
+
+- **Every upload is its own document.** `SaveMyDocuments` creates one row per file, version 1 and
+  `Pending`, and nothing makes a type unique per cleaner: a cleaner may hold several documents of one
+  type — both sides of an identity card, a second certificate — each reviewed on its own.
+- **The same file twice is refused** (owner remark 2026-10-01). Every document records the SHA-256 of
+  its bytes (`ContentSha256`). An upload or a replacement whose bytes are identical to one of the same
+  cleaner's documents that is **active and not rejected**, of any type, or to another file in the same
+  upload, is refused with `employee_document.duplicate_file`. A **rejected** document never blocks: its
+  type may be what was wrong (a passport filed as an identity card), and a replacement keeps the type,
+  so the cure is the same file uploaded again under the right type. A version already retired — replaced,
+  or removed on request — is not active and blocks nothing. The partner web, Android and iOS show the
+  refusal as a sentence in all five languages.
+- **A new version exists only through Replace.** `ReplaceMyDocument` writes version *n*+1 of the same
+  type, `Pending`, linked to the document it supersedes, and retires that one in the same commit, so the
+  count never dips ([Replacing and removing](/partner-app/onboarding#document-replace-and-remove)).
+  Uploading a file of a type the cleaner already holds adds a document beside the old one; it is never a
+  new version of it.
+- **A rejected cleaner can be approved again.** A cleaner whose contract was rejected is approved from
+  `Rejected` once the usual gates pass ([Approve Employee](/admin-app/user-management#approve-employee)),
+  and approving clears the rejection reason. The admin console offers **Approve** on a `Pending` or
+  `Rejected` contract and **Reject** only on a `Pending` one. **There is no automatic return to
+  `Pending`:** uploading documents or completing the profile leaves the contract `Rejected` until an
+  administrator approves it.
+
 ## Photos, and the customer's details after the job {#photos-and-access}
 
 **Owner rulings 2026-09-28.** A photo of a customer's home and the customer's address, phone and door

@@ -75,8 +75,9 @@ struct ProfileTab: View {
                             showSignOutDialog = true
                         }
                     }
+                    // No bottom padding of its own: the tab root's FAB clearance (C6) is the gap, as on
+                    // the other three tabs.
                     .padding(.horizontal, Spacing.m)
-                    .padding(.bottom, Spacing.xxl)
                 }
             }
         }

@@ -387,8 +387,9 @@ per-record `CurrencyId`, and it is populated from the address country (orders), 
   so the booking flow, the order detail, the credit rows and the Plus prices read alike. In the iOS
   cleaner app, `OrdersFormat.money` covers a job's pay on the board, the offer, the work contract and
   the detail; it sees only the symbol, so it takes the koruna's and the euro's two digits. The cleaner's
-  dashboard and earnings figures on iOS (`DashboardFormat`, `EarningsFormat.wholeMoney`) still print
-  whole units.
+  dashboard and earnings figures still print whole units on both apps: on Android the partner
+  `DashboardScreen`'s `formatMoney` and `formatMoneyWithSymbol` and `EarningsSummaryScreen`'s
+  `formatMoney`, on iOS `DashboardFormat` and `EarningsFormat.wholeMoney`.
 - **Before there is an address, the surface reads the customer's chosen market** (ADR-0058). The
   Customer and Mobile.Customer hosts expose an anonymous `GET api/Market/GetOverview`
   (`MarketListItem`: the serviced country joined to its active configured currency, `isDefault`, the

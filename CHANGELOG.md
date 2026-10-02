@@ -1039,8 +1039,8 @@ need backfilling.
   price, credit and discount in the apps printed whole crowns, so a card share of 319.90 read *320 Kč*
   while Stripe's sheet asked for 319.90, and a 7.96 € Plus plan read *8 €* on iOS. A whole amount
   still prints without decimals; any other prints to the currency's smallest unit, as on the web. A
-  job's pay reads the same on the cleaner's board as on its detail. On iOS the cleaner's dashboard and
-  earnings totals still show whole amounts. (2026-10-02.)
+  job's pay reads the same on the cleaner's board as on its detail. On both apps the cleaner's
+  dashboard and earnings totals still show whole amounts. (2026-10-02.)
 
 - **Customer Android — Home's refresh spinner no longer hides under the clock.** Pulling Home down to
   refresh drew the spinner under the status bar, at rest and while it spun. It now rests just below

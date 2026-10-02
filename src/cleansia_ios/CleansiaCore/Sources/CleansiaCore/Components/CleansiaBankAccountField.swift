@@ -196,9 +196,16 @@ public struct CleansiaBankAccountField: View {
         // Single-parameter onChange: the package floor is iOS 16 (Package.swift), where the
         // two-parameter overload does not exist yet.
         .onChange(of: text.wrappedValue) { newValue in
-            let digits = String(newValue.filter(\.isNumber).prefix(maxLength))
+            let digits = Self.clampSegment(newValue, maxLength: maxLength)
             if digits != newValue { text.wrappedValue = digits }
         }
+    }
+
+    /// What a segment keeps of an edit that is not an account: ASCII digits, up to `maxLength`. Not
+    /// `isNumber`, which also takes the Arabic-Indic and full-width digits a keyboard can type and the
+    /// server refuses; the paste splitter is ASCII-only already. Android's `clampSegment`.
+    static func clampSegment(_ raw: String, maxLength: Int) -> String {
+        String(raw.filter { $0.isASCII && $0.isNumber }.prefix(maxLength))
     }
 
     // swiftlint:disable large_tuple

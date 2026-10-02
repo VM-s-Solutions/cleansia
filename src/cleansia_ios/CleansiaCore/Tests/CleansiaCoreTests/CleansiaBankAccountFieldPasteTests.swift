@@ -8,6 +8,13 @@ final class CleansiaBankAccountFieldPasteTests: XCTestCase {
             .map { [$0.prefix, $0.number, $0.bankCode] }
     }
 
+    /// The server takes ASCII digits only; a keyboard can type Arabic-Indic or full-width ones.
+    func testASegmentKeepsASCIIDigitsOnlyUpToItsLength() {
+        XCTAssertEqual(CleansiaBankAccountField.clampSegment("١٢٣123", maxLength: 6), "123")
+        XCTAssertEqual(CleansiaBankAccountField.clampSegment("１２３", maxLength: 6), "")
+        XCTAssertEqual(CleansiaBankAccountField.clampSegment("08 00x99", maxLength: 4), "0800")
+    }
+
     func testANumberAndBankCodeSplitAndClearThePrefix() {
         XCTAssertEqual(split("12321414/3545"), ["", "12321414", "3545"])
     }

@@ -249,7 +249,8 @@ final class RegisterViewModelTests: XCTestCase {
         // A German handset: nothing supported in the device list, so the intro
         // would otherwise register "en".
         let store = UserDefaultsAppSettingsStore(defaults: defaults, preferredLanguageTags: { ["de-DE"] })
-        let preferences = PreferencesModel(settings: store, languageSync: SilentLanguageSync())
+        // The test's own suite as the App Group, not the installed test host's real one.
+        let preferences = PreferencesModel(settings: store, languageSync: SilentLanguageSync(), appGroup: suiteName)
         XCTAssertEqual(preferences.languageTag, "en")
 
         preferences.selectLanguage(id: "uk")
@@ -275,7 +276,8 @@ final class RegisterViewModelTests: XCTestCase {
         defer { defaults.removePersistentDomain(forName: suiteName) }
 
         let store = UserDefaultsAppSettingsStore(defaults: defaults, preferredLanguageTags: { ["cs-CZ"] })
-        let preferences = PreferencesModel(settings: store, languageSync: SilentLanguageSync())
+        // The test's own suite as the App Group, not the installed test host's real one.
+        let preferences = PreferencesModel(settings: store, languageSync: SilentLanguageSync(), appGroup: suiteName)
         preferences.selectLanguage(id: "de-DE")
 
         let vm = RegisterViewModel(

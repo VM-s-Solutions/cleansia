@@ -155,13 +155,16 @@ final class LanguagePreferenceSyncTests: XCTestCase {
 
     // MARK: - Support
 
+    /// The model writes the in-app language to its App Group, and the default is the installed test host's
+    /// real one, so the test's own suite stands in for it.
     private func makeModel() -> (CustomerPreferencesModel, SpyLanguageSync) {
         let sync = SpyLanguageSync()
+        let suite = "LanguagePreferenceSyncTests.\(UUID().uuidString)"
         let settings = UserDefaultsAppSettingsStore(
-            defaults: UserDefaults(suiteName: UUID().uuidString)!,
+            defaults: UserDefaults(suiteName: suite) ?? .standard,
             preferredLanguageTags: { ["en"] }
         )
-        return (CustomerPreferencesModel(settings: settings, languageSync: sync), sync)
+        return (CustomerPreferencesModel(settings: settings, languageSync: sync, appGroup: suite), sync)
     }
 
     private func profile(

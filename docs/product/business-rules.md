@@ -2164,8 +2164,9 @@ its size and only the figure the card is asked for moves (`Order.CreditAppliedAm
 order and the figure sent to Stripe are cent-identical.
 
 **Why card only.** A cash booking is settled into the cleaner's hand on the doorstep, and the job sheet
-has one figure on it. A cash booking spends no credit. The Android and iOS confirm steps say so when a
-customer who holds a balance picks cash.
+has one figure on it. A cash booking spends no credit. The Android and iOS confirm steps and, since
+2026-10-02, the web booking summary say so when a customer who holds a balance picks cash (the web also
+before a method is chosen).
 
 **The checkout takes the credit before it asks Stripe for anything.** `CreateOrder` debits through a
 conditional update, then records on the order what it actually took. Two checkouts racing for one

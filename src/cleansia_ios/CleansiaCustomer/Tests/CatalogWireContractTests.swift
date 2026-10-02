@@ -89,19 +89,19 @@ final class CatalogWireContractTests: XCTestCase {
     }
 
     func testACurrencyRowWithNoCodeRefusesTheCatalogue() {
-        for (field, break_) in [
+        for (field, corrupt) in [
             ("code", { (dto: inout CurrencyListItem) in dto.code = " " }),
             ("id", { dto in dto.id = nil }),
             ("isDefault", { dto in dto.isDefault = nil })
         ] {
             var payload = currencyPayload()
-            break_(&payload)
+            corrupt(&payload)
             assertRefused(field) { try CatalogCurrency.defaultRow(in: [payload]) }
         }
     }
 
     func testAServiceWithNoPriceRefusesRatherThanQuotingFree() {
-        for (field, break_) in [
+        for (field, corrupt) in [
             ("basePrice", { (dto: inout ServiceListItem) in dto.basePrice = nil }),
             ("perRoomPrice", { dto in dto.perRoomPrice = nil }),
             ("id", { dto in dto.id = "" }),
@@ -109,31 +109,31 @@ final class CatalogWireContractTests: XCTestCase {
             ("category", { dto in dto.category = nil })
         ] {
             var payload = servicePayload()
-            break_(&payload)
+            corrupt(&payload)
             assertRefused(field) { try CatalogService(payload) }
         }
     }
 
     func testAPackageWithNoPriceRefusesTheWholeCatalogPage() {
-        for (field, break_) in [
+        for (field, corrupt) in [
             ("price", { (dto: inout PackageListItem) in dto.price = nil }),
             ("id", { dto in dto.id = nil }),
             ("name", { dto in dto.name = "  " })
         ] {
             var payload = packagePayload()
-            break_(&payload)
+            corrupt(&payload)
             assertRefused(field) { try [payload].map(CatalogPackage.init) }
         }
     }
 
     func testAnExtraWithNoPriceRefusesRatherThanLookingFree() {
-        for (field, break_) in [
+        for (field, corrupt) in [
             ("price", { (dto: inout ExtraListItem) in dto.price = nil }),
             ("displayOrder", { dto in dto.displayOrder = nil }),
             ("slug", { dto in dto.slug = nil })
         ] {
             var payload = extraPayload()
-            break_(&payload)
+            corrupt(&payload)
             assertRefused(field) { try CatalogExtra(payload) }
         }
     }

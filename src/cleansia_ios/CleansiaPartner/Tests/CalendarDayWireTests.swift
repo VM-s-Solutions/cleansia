@@ -23,6 +23,10 @@ final class CalendarDayWireTests: XCTestCase {
 
     // MARK: - The defect, in the wrapper's own terms
 
+    // This section builds days through the generated initializer on purpose: it is the defect the
+    // calendar_day_needs_greenwich rule exists for, characterised here.
+    // swiftlint:disable calendar_day_needs_greenwich
+
     func testADayArrivesAsMidnightUtc() throws {
         let value = try decoded("1982-09-04")
 
@@ -84,6 +88,8 @@ final class CalendarDayWireTests: XCTestCase {
         XCTAssertEqual(west, greenwich)
         XCTAssertNotEqual(try encoded(west), try encoded(greenwich))
     }
+
+    // swiftlint:enable calendar_day_needs_greenwich
 
     // MARK: - The one way this app builds one
 

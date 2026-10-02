@@ -135,7 +135,7 @@ final class CustomerShellRoutingTests: XCTestCase {
             guard let object = try? JSONSerialization.jsonObject(with: Data(entry.utf8), options: .fragmentsAllowed)
             else { return entry }
             let sorted = try JSONSerialization.data(withJSONObject: object, options: [.sortedKeys, .fragmentsAllowed])
-            return String(decoding: sorted, as: UTF8.self)
+            return try XCTUnwrap(String(bytes: sorted, encoding: .utf8), file: file, line: line)
         }
     }
 }

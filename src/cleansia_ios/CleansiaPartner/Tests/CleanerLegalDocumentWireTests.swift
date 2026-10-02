@@ -113,9 +113,9 @@ final class CleanerLegalDocumentWireTests: XCTestCase {
             ("contentHtml", { $0.contentHtml = nil }),
             ("isAccepted", { $0.isAccepted = nil })
         ]
-        for (field, break_) in cases {
+        for (field, corrupt) in cases {
             var payload = try fullPayload()
-            break_(&payload)
+            corrupt(&payload)
             XCTAssertThrowsError(try CleanerLegalDocument(payload), "\(field) was defaulted instead of refused") {
                 XCTAssertEqual($0 as? WireContractViolation, WireContractViolation(field: field))
             }

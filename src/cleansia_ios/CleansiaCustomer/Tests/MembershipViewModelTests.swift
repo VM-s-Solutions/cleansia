@@ -5,6 +5,7 @@ import XCTest
 
 @MainActor
 final class MembershipViewModelTests: XCTestCase {
+    // swiftlint:disable large_tuple
     private func makeVM(
         client: FakeMembershipManagementClient = FakeMembershipManagementClient(),
         market: MarketStore? = nil,
@@ -19,6 +20,8 @@ final class MembershipViewModelTests: XCTestCase {
         )
         return (vm, repo, client)
     }
+
+    // swiftlint:enable large_tuple
 
     func testStartsIdle() {
         let (vm, _, _) = makeVM()
@@ -472,9 +475,9 @@ final class MembershipViewModelTests: XCTestCase {
         client.mineResults = [.success(MembershipFixtures.active), .success(MembershipFixtures.active)]
         let (vm, _, _) = makeVM(client: client)
 
-        let ok = await vm.swapPlan(newPlanCode: "plus_yearly")
+        let succeeded = await vm.swapPlan(newPlanCode: "plus_yearly")
 
-        XCTAssertTrue(ok)
+        XCTAssertTrue(succeeded)
         XCTAssertEqual(client.swapCodes, ["plus_yearly"])
         XCTAssertEqual(client.mineCallCount, 1, "swap re-reads membership; no PaymentSheet is involved")
     }
@@ -484,11 +487,14 @@ final class MembershipViewModelTests: XCTestCase {
         client.swapResult = .failure(ApiError(httpStatus: 500))
         let (vm, _, _) = makeVM(client: client)
 
-        let ok = await vm.swapPlan(newPlanCode: "plus_yearly")
+        let succeeded = await vm.swapPlan(newPlanCode: "plus_yearly")
 
-        XCTAssertFalse(ok)
+        XCTAssertFalse(succeeded)
     }
+}
 
+@MainActor
+extension MembershipViewModelTests {
     // MARK: Binding lifetime
 
     /// The repository is a session-lived singleton and is deliberately held past the screen:

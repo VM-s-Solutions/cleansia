@@ -53,9 +53,9 @@ final class PartnerWireContractTests: XCTestCase {
             ("currentPeriodEarnings", { $0.currentPeriodEarnings = nil }),
             ("ratingCount", { $0.ratingCount = nil })
         ]
-        for (field, break_) in cases {
+        for (field, corrupt) in cases {
             var payload = statsPayload()
-            break_(&payload)
+            corrupt(&payload)
             assertRefused(field) { try DashboardStats(payload) }
         }
     }
@@ -142,7 +142,7 @@ final class PartnerWireContractTests: XCTestCase {
     }
 
     func testEveryNonNullableInvoiceDetailFigureIsRefused() {
-        for (field, break_) in [
+        for (field, corrupt) in [
             ("totalAmount", { (dto: inout EmployeeInvoiceDetailDto) in dto.totalAmount = nil }),
             ("subTotal", { dto in dto.subTotal = nil }),
             ("bonusAmount", { dto in dto.bonusAmount = nil }),
@@ -152,21 +152,21 @@ final class PartnerWireContractTests: XCTestCase {
             ("pdfGenerationFailed", { dto in dto.pdfGenerationFailed = nil })
         ] {
             var payload = invoiceDetailPayload()
-            break_(&payload)
+            corrupt(&payload)
             assertRefused(field) { try InvoiceDetail(payload) }
         }
     }
 
     /// The rollup sums the rows, so a broken row must not be silently dropped out of the total.
     func testABrokenInvoiceRowRefusesTheWholePage() {
-        for (field, break_) in [
+        for (field, corrupt) in [
             ("totalAmount", { (dto: inout EmployeeInvoiceDto) in dto.totalAmount = nil }),
             ("totalOrders", { dto in dto.totalOrders = nil }),
             ("status", { dto in dto.status = nil }),
             ("id", { dto in dto.id = "" })
         ] {
             var payload = invoicePayload()
-            break_(&payload)
+            corrupt(&payload)
             assertRefused(field) { try [payload].map(Invoice.init) }
         }
     }
@@ -256,7 +256,7 @@ final class PartnerWireContractTests: XCTestCase {
     }
 
     func testEveryNonNullableSummaryTotalIsRefused() {
-        for (field, break_) in [
+        for (field, corrupt) in [
             ("grandTotal", { (dto: inout PeriodPaySummaryDto) in dto.grandTotal = nil }),
             ("totalBasePay", { dto in dto.totalBasePay = nil }),
             ("totalExtrasPay", { dto in dto.totalExtrasPay = nil }),
@@ -267,7 +267,7 @@ final class PartnerWireContractTests: XCTestCase {
             ("totalOrders", { dto in dto.totalOrders = nil })
         ] {
             var payload = summaryPayload()
-            break_(&payload)
+            corrupt(&payload)
             assertRefused(field) { try PeriodPaySummary(payload) }
         }
     }
@@ -339,12 +339,12 @@ final class PartnerWireContractTests: XCTestCase {
     }
 
     func testEveryNonNullableCashFieldIsRefused() {
-        for (field, break_) in [
+        for (field, corrupt) in [
             ("amount", { (dto: inout CashHeldDto) in dto.amount = nil }),
             ("cashJobsHidden", { dto in dto.cashJobsHidden = nil })
         ] {
             var payload = cashPayload()
-            break_(&payload)
+            corrupt(&payload)
             assertRefused(field) { try [payload].map(CashHeld.init) }
         }
     }
@@ -361,7 +361,7 @@ final class PartnerWireContractTests: XCTestCase {
     }
 
     func testTheOrderDetailRefusesSynthesizedIdentityQuantitiesAndFlags() {
-        for (field, break_) in [
+        for (field, corrupt) in [
             ("id", { (item: inout OrderItem) in item.id = "" }),
             ("displayOrderNumber", { item in item.displayOrderNumber = nil }),
             ("rooms", { item in item.rooms = nil }),
@@ -370,7 +370,7 @@ final class PartnerWireContractTests: XCTestCase {
             ("hasAfterPhotos", { item in item.hasAfterPhotos = nil })
         ] {
             var item = OrderItem.wireComplete()
-            break_(&item)
+            corrupt(&item)
             assertRefused(field) { try OrderDetail(item) }
         }
     }
@@ -382,7 +382,7 @@ final class PartnerWireContractTests: XCTestCase {
         absent.requiredEmployees = nil
         XCTAssertNil(try OrderCrew(absent))
 
-        for (field, break_) in [
+        for (field, corrupt) in [
             ("availableSpots", { (item: inout OrderItem) in item.availableSpots = nil }),
             ("hasAvailableSpots", { item in item.hasAvailableSpots = nil })
         ] {
@@ -390,7 +390,7 @@ final class PartnerWireContractTests: XCTestCase {
             partial.requiredEmployees = 2
             partial.availableSpots = 1
             partial.hasAvailableSpots = true
-            break_(&partial)
+            corrupt(&partial)
             assertRefused(field) { try OrderCrew(partial) }
         }
     }

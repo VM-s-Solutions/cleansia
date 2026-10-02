@@ -176,6 +176,7 @@ final class CancellationGraceClaimTests: XCTestCase {
 
     // MARK: - Reading
 
+    // swiftlint:disable:next large_tuple
     private static func policyMinutes() throws -> (standard: Int, firstBooking: Int, plus: Int) {
         let policy = repoRoot().appendingPathComponent("src/Cleansia.Core.AppServices/Features/Orders/BookingPolicy.cs")
         let source = try String(contentsOf: policy, encoding: .utf8)

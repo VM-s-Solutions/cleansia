@@ -4,6 +4,7 @@ import XCTest
 
 @MainActor
 final class RewardsViewModelTests: XCTestCase {
+    // swiftlint:disable large_tuple
     /// Default arguments are evaluated in a nonisolated context, so the two main-actor stores are
     /// built inside the body instead.
     private func makeVM(
@@ -26,6 +27,8 @@ final class RewardsViewModelTests: XCTestCase {
         )
         return (vm, loyaltyRepo, referralRepo)
     }
+
+    // swiftlint:enable large_tuple
 
     /// The tier floor is a platform-default-currency figure. Without a directory the ladder labels it
     /// with the code the catalogue overview names as the default — not the market the last booking

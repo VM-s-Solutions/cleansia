@@ -12,6 +12,7 @@ final class FakeDisputeClient: DisputeClient, @unchecked Sendable {
 
     var createResult: ApiResult<String> = .success("dispute-new")
     private(set) var createCallCount = 0
+    // swiftlint:disable:next large_tuple
     private(set) var lastCreate: (orderId: String, reason: Int, description: String)?
     private(set) var lastCreateLines: [OrderItemLine] = []
     private(set) var lastCreateSettlement: DisputeSettlement?

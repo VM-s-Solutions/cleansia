@@ -8,6 +8,7 @@ final class RegisterViewModelTests: XCTestCase {
     private final class FakeRegisterClient: RegistrationAuthClient {
         var result: ApiResult<Bool> = .success(true)
         private(set) var callCount = 0
+        // swiftlint:disable:next large_tuple
         private(set) var lastArgs: (
             email: String,
             password: String,

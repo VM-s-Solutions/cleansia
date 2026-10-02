@@ -100,6 +100,7 @@ final class FakeChangePasswordClient: ChangePasswordClient, @unchecked Sendable 
     var requestCodeResult: ApiResult<Void> = .success(())
     var changePasswordResult: ApiResult<Void> = .success(())
     private(set) var requestedEmails: [String] = []
+    // swiftlint:disable:next large_tuple
     private(set) var changeCalls: [(email: String, code: String, newPassword: String)] = []
 
     func requestCode(email: String, language _: String) async -> ApiResult<Void> {
@@ -139,7 +140,8 @@ enum ProfileFixtures {
         fileName: String = "blob-1",
         blobURL: String = "https://blobs.example/user-files/blob-1?sig=abc"
     ) -> ProfilePhoto {
-        ProfilePhoto(fileName: fileName, blobURL: URL(string: blobURL)!)
+        guard let url = URL(string: blobURL) else { preconditionFailure("\(blobURL) is not a URL") }
+        return ProfilePhoto(fileName: fileName, blobURL: url)
     }
 
     static func image(width: Int = 200, height: Int = 200) -> UIImage {

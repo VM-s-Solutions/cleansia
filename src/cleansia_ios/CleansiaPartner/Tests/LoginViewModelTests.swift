@@ -8,6 +8,7 @@ final class LoginViewModelTests: XCTestCase {
     private final class FakeLoginClient: LoginClient {
         var result: ApiResult<LoginOutcome> = .success(.authenticated)
         private(set) var callCount = 0
+        // swiftlint:disable:next large_tuple
         private(set) var lastArgs: (email: String, password: String, rememberMe: Bool)?
 
         func login(email: String, password: String, rememberMe: Bool) async -> ApiResult<LoginOutcome> {

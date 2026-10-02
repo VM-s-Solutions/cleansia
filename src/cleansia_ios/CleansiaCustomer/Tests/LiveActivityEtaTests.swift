@@ -241,9 +241,11 @@ final class CleanOrderContentStateWireTests: XCTestCase {
 final class CleanOrderCardModelTests: XCTestCase {
     private let now = Date(timeIntervalSince1970: 1_700_000_000)
 
-    private func state(_ status: String, phaseStart: Date? = nil, phaseEnd: Date? = nil) -> CleanOrderAttributes
-        .ContentState
-    {
+    private func state(
+        _ status: String,
+        phaseStart: Date? = nil,
+        phaseEnd: Date? = nil
+    ) -> CleanOrderAttributes.ContentState {
         CleanOrderAttributes.ContentState(
             v: 1,
             status: status,

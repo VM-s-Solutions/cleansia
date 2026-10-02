@@ -4,6 +4,7 @@ import XCTest
 
 @MainActor
 final class RecurringBookingsViewModelTests: XCTestCase {
+    // swiftlint:disable large_tuple
     private func makeVM(
         client: FakeRecurringBookingClient = FakeRecurringBookingClient(),
         membership: MyMembership = MembershipFixtures.active,
@@ -22,6 +23,8 @@ final class RecurringBookingsViewModelTests: XCTestCase {
         )
         return (vm, repo, memRepo)
     }
+
+    // swiftlint:enable large_tuple
 
     func testLoadPopulatesTemplates() async {
         let client = FakeRecurringBookingClient()

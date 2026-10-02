@@ -138,6 +138,7 @@ final class CustomerLanguageReconcileTests: XCTestCase {
         XCTAssertTrue(container.languageReconciler.isObservingSession)
     }
 
+    // swiftlint:disable large_tuple
     private func makeReconciler(
         chosen: String?
     ) -> (LanguageReconciler, CurrentValueSubject<Bool, Never>, UserProfileRepository) {
@@ -150,6 +151,8 @@ final class CustomerLanguageReconcileTests: XCTestCase {
         }
         return (reconciler, CurrentValueSubject(false), repository)
     }
+
+    // swiftlint:enable large_tuple
 
     private func profile(language: String?, phone: String? = "+420777111222") -> CurrentUserProfile {
         CurrentUserProfile(

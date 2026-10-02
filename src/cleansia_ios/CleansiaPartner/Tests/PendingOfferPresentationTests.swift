@@ -12,14 +12,18 @@ final class PendingOfferPresentationTests: XCTestCase {
 
     private var utc: Calendar {
         var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(identifier: "UTC")!
+        calendar.timeZone = .gmt
         return calendar
     }
 
     private func at(_ iso: String) -> Date {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime]
-        return formatter.date(from: iso)!
+        guard let date = formatter.date(from: iso) else {
+            XCTFail("\(iso) is not an ISO 8601 instant")
+            return .distantPast
+        }
+        return date
     }
 
     func testADeadlineLaterTheSameLocalDayIsTodayAndCarriesItsWallClockTime() {

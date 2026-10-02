@@ -179,9 +179,9 @@ final class WorkContractWireTests: XCTestCase {
             ("acceptance.acceptedOn", { $0.acceptance?.acceptedOn = nil }),
             ("acceptance.documentVersion", { $0.acceptance?.documentVersion = nil })
         ]
-        for (field, break_) in cases {
+        for (field, corrupt) in cases {
             var payload = try fullPayload()
-            break_(&payload)
+            corrupt(&payload)
             XCTAssertThrowsError(try WorkContract(payload), "\(field) was defaulted instead of refused") {
                 XCTAssertEqual($0 as? WireContractViolation, WireContractViolation(field: field))
             }

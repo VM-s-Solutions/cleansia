@@ -12,6 +12,7 @@ final class FakeMembershipManagementClient: MembershipManagementClient, @uncheck
 
     var phase1Result: ApiResult<SubscriptionSetup> = .success(MembershipFixtures.setup)
     var phase2Result: ApiResult<SubscriptionSetup> = .success(MembershipFixtures.subscribed)
+    // swiftlint:disable:next large_tuple
     private(set) var subscribeCalls: [(planCode: String, confirmed: Bool, countryId: String?, token: String)] = []
 
     var cancelResult: ApiResult<Date?> = .success(Date(timeIntervalSince1970: 1_780_000_000))

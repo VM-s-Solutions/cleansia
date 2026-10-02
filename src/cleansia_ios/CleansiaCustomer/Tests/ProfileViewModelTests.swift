@@ -24,7 +24,7 @@ final class ProfileViewModelTests: XCTestCase {
     }
 
     private func scratchDefaults() -> UserDefaults {
-        UserDefaults(suiteName: "test.\(UUID().uuidString)")!
+        UserDefaults(suiteName: "test.\(UUID().uuidString)") ?? .standard
     }
 
     func testRefreshLoadsCurrentUser() async {

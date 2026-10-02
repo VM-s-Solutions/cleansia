@@ -74,8 +74,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.onSizeChanged
@@ -756,36 +758,46 @@ private fun AddOnMapPane(
                     modifier = Modifier.size(22.dp),
                 )
                 Spacer(Modifier.width(8.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    val addr = resolved
-                    when {
-                        lookingUp -> Text(
-                            stringResource(R.string.address_picker_looking_up),
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        addr != null -> {
-                            Text(
-                                addr.street.ifBlank { stringResource(R.string.address_picker_unnamed) },
-                                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-                                color = MaterialTheme.colorScheme.onSurface,
-                                maxLines = 1,
-                            )
-                            Text(
-                                listOfNotNull(
-                                    addr.zipCode.takeIf { it.isNotBlank() },
-                                    addr.city.takeIf { it.isNotBlank() },
-                                ).joinToString(" "),
-                                style = MaterialTheme.typography.bodySmall,
+                // Two lines tall in every state, the street over its city line, so the lookup that
+                // starts on each camera move and ends with an address never changes the card's height:
+                // its top edge, and the Mapbox ornaments lifted above it, stay put while the map moves.
+                // The template is invisible text in the two styles, so the height follows the font scale.
+                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
+                    Column(modifier = Modifier.alpha(0f).clearAndSetSemantics {}) {
+                        Text(" ", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold), maxLines = 1)
+                        Text(" ", style = MaterialTheme.typography.bodySmall, maxLines = 1)
+                    }
+                    Column {
+                        val addr = resolved
+                        when {
+                            lookingUp -> Text(
+                                stringResource(R.string.address_picker_looking_up),
+                                style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
+                            )
+                            addr != null -> {
+                                Text(
+                                    addr.street.ifBlank { stringResource(R.string.address_picker_unnamed) },
+                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    maxLines = 1,
+                                )
+                                Text(
+                                    listOfNotNull(
+                                        addr.zipCode.takeIf { it.isNotBlank() },
+                                        addr.city.takeIf { it.isNotBlank() },
+                                    ).joinToString(" "),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                )
+                            }
+                            else -> Text(
+                                stringResource(R.string.address_picker_move_pin),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
-                        else -> Text(
-                            stringResource(R.string.address_picker_move_pin),
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
                     }
                 }
                 if (lookingUp) {

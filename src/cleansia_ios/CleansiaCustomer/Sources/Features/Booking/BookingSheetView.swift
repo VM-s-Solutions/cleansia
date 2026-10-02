@@ -98,7 +98,10 @@ struct BookingSheetView: View {
         .snackbarHost(snackbar, bottomInset: Self.footerSnackbarInset)
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
-        .interactiveDismissDisabled(vm.canStepBack)
+        // Swiping down closes the sheet on any step: the draft is the session's view model, so the Book
+        // button reopens it where it was left. Only a booking being placed holds it, so its outcome has
+        // somewhere to land.
+        .interactiveDismissDisabled(vm.submitState.isSubmitting)
     }
 
     private func submit() async {

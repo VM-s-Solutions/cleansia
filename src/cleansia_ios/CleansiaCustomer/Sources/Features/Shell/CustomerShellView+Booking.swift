@@ -15,15 +15,18 @@ extension CustomerShellView {
         )
     }
 
-    /// Every fresh booking entry (FAB, hero CTAs, Orders empty-state) hydrates
-    /// the draft's address before presenting — the sheet-internal
-    /// `LaunchedEffect(visible, preferred?.id)` parity (`BookingBottomSheet.kt:270-282`).
+    /// The plain entries (FAB, hero CTAs, Orders empty-state) reopen the draft where it was left — step
+    /// and selections — after hydrating its address — the sheet-internal
+    /// `LaunchedEffect(visible, preferred?.id)` parity (`BookingBottomSheet.kt:270-282`). The draft
+    /// lives in the session's view model; a booking placed or an entry that starts its own flow
+    /// (a package, the quick-size slide, order again) replaces it.
     func openBooking() {
         bookingVM.update { BookingPrefill.hydratedWithPreferred($0, preferred: preferredAddress) }
         model.book()
     }
 
     func bookPackage(_ packageId: String) {
+        bookingVM.reset()
         bookingVM.update {
             BookingPrefill.withPackage(
                 BookingPrefill.hydratedWithPreferred($0, preferred: preferredAddress),
@@ -35,6 +38,7 @@ extension CustomerShellView {
 
     /// The Home quick-size slide — the size it holds, on top of the usual address hydration.
     func bookSize(rooms: Int, bathrooms: Int) {
+        bookingVM.reset()
         bookingVM.update {
             BookingPrefill.withSize(
                 BookingPrefill.hydratedWithPreferred($0, preferred: preferredAddress),
@@ -50,6 +54,7 @@ extension CustomerShellView {
     /// `MainShell.kt:276-279` + `BookingBottomSheet.kt:305-374`). Rebook owns
     /// the address, so the preferred-address hydration is skipped.
     func rebookOrder(_ orderId: String) {
+        bookingVM.reset()
         model.book()
         Task { await prefillRebook(orderId) }
     }

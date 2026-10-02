@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -224,10 +225,15 @@ class ProfileViewModel @Inject constructor(
 
     /**
      * Save the onboarding fields without disturbing first/last name (the
-     * registration form already collected those). Language is auto-detected
-     * from device locale — we only send it if the device language is one we
-     * actually ship translations for, otherwise the backend default ("en") wins.
-     * Marks onboarding seen on success so the screen doesn't reappear.
+     * registration form already collected those). Marks onboarding seen on
+     * success so the screen doesn't reappear.
+     *
+     * The language sent is the one the user CHOSE in this app, and none at all
+     * (the server keeps its own) when they follow "System". It used to be the
+     * device locale, which overwrote an in-app choice with the phone's language.
+     * Onboarding is not a picker change, so it keeps the session-start rule:
+     * the handset's language is not a choice and must not overwrite one made on
+     * another client. -> /flows/auth-and-identity#account-language
      */
     fun completeOnboarding(
         phoneNumber: String,
@@ -236,8 +242,6 @@ class ProfileViewModel @Inject constructor(
     ) {
         if (_saveState.value is ActionState.Submitting) return
         val user = userRepository.currentUser.value ?: return
-        val deviceLang = java.util.Locale.getDefault().language.lowercase()
-        val languageCode = if (deviceLang in SUPPORTED_LANGUAGES) deviceLang else "en"
         _saveState.value = ActionState.Submitting
         viewModelScope.launch {
             val result = userRepository.updateCurrentUser(
@@ -245,7 +249,7 @@ class ProfileViewModel @Inject constructor(
                 lastName = user.lastName,
                 phoneNumber = phoneNumber.trim(),
                 birthDate = birthDate?.trim(),
-                languageCode = languageCode,
+                languageCode = settings.settings.first().language.tag,
             )
             result
                 .onSuccess {
@@ -258,10 +262,6 @@ class ProfileViewModel @Inject constructor(
                     if (error !is ApiError.Network) snackbar.showError(error)
                 }
         }
-    }
-
-    private companion object {
-        val SUPPORTED_LANGUAGES = setOf("en", "cs", "sk", "uk", "ru")
     }
 
     /**

@@ -11,7 +11,9 @@ import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.memberships.GetMyMembershipResponse
 import cz.cleansia.customer.core.memberships.MembershipRepository
+import cz.cleansia.customer.core.settings.AppSettings
 import cz.cleansia.customer.core.settings.AppSettingsRepository
+import cz.cleansia.customer.core.settings.LanguagePreference
 import cz.cleansia.customer.core.user.CurrentUser
 import cz.cleansia.customer.core.user.UserRepository
 import cz.cleansia.customer.testing.MainDispatcherRule
@@ -23,6 +25,7 @@ import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.unmockkObject
 import io.mockk.verify
+import java.util.Locale
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -48,6 +51,7 @@ class ProfileViewModelTest {
     private lateinit var appContext: Context
     private val currentUser = MutableStateFlow<CurrentUser?>(null)
     private val membership = MutableStateFlow<GetMyMembershipResponse?>(null)
+    private val appSettings = MutableStateFlow(AppSettings())
 
     private val pickedUri = mockk<Uri>()
     private val encoded = Base64Image(base64 = "encoded", contentType = "image/jpeg", fileName = "me.jpg")
@@ -71,6 +75,7 @@ class ProfileViewModelTest {
         appContext = mockk(relaxed = true)
         every { userRepository.currentUser } returns currentUser
         every { membershipRepository.current } returns membership
+        every { settings.settings } returns appSettings
         every { appContext.contentResolver } returns mockk<ContentResolver>(relaxed = true)
         every { appContext.getString(R.string.profile_avatar_encode_failed) } returns "encode failed"
 
@@ -203,6 +208,75 @@ class ProfileViewModelTest {
         assertTrue(completed)
         assertEquals(ActionState.Idle, vm.saveState.value)
         coVerify { settings.markOnboardingSeen("user-1") }
+    }
+
+    /**
+     * Onboarding used to send `Locale.getDefault()`, the phone's language, and so overwrote the language
+     * picked in the app (and pushed at session start) with the handset's on the server.
+     */
+    @Test
+    fun `completeOnboarding sends the language chosen in the app, not the device's`() = runTest {
+        currentUser.value = sampleUser
+        appSettings.value = AppSettings(language = LanguagePreference.Czech)
+        coEvery {
+            userRepository.updateCurrentUser(any(), any(), any(), any(), any(), any(), any())
+        } returns ApiResult.Success(Unit)
+
+        withDeviceLocale(Locale.forLanguageTag("sk")) {
+            viewModel().completeOnboarding("+420123456789", null) {}
+            advanceUntilIdle()
+        }
+
+        coVerify(exactly = 1) {
+            userRepository.updateCurrentUser(
+                firstName = "Ann",
+                lastName = "Brown",
+                phoneNumber = "+420123456789",
+                birthDate = null,
+                languageCode = "cs",
+                photo = null,
+                removePhoto = false,
+            )
+        }
+    }
+
+    /**
+     * "System" is not a choice: the server keeps what it holds (null is omitted and the handler leaves
+     * the stored code alone), so a language picked on another client survives onboarding here.
+     */
+    @Test
+    fun `completeOnboarding on System sends no language`() = runTest {
+        currentUser.value = sampleUser
+        coEvery {
+            userRepository.updateCurrentUser(any(), any(), any(), any(), any(), any(), any())
+        } returns ApiResult.Success(Unit)
+
+        withDeviceLocale(Locale.forLanguageTag("cs")) {
+            viewModel().completeOnboarding("+420123456789", null) {}
+            advanceUntilIdle()
+        }
+
+        coVerify(exactly = 1) {
+            userRepository.updateCurrentUser(
+                firstName = any(),
+                lastName = any(),
+                phoneNumber = any(),
+                birthDate = any(),
+                languageCode = null,
+                photo = null,
+                removePhoto = false,
+            )
+        }
+    }
+
+    private inline fun withDeviceLocale(locale: Locale, block: () -> Unit) {
+        val original = Locale.getDefault()
+        Locale.setDefault(locale)
+        try {
+            block()
+        } finally {
+            Locale.setDefault(original)
+        }
     }
 
     @Test

@@ -106,7 +106,7 @@ fun CleansiaBankAccountInput(
     fun segmentChange(maxLength: Int, onChange: (String) -> Unit): (String, String) -> Unit = { current, raw ->
         val split = splitPastedAccount(raw, current)
         if (split == null) {
-            onChange(raw.filter(Char::isDigit).take(maxLength))
+            onChange(clampSegment(raw, maxLength))
         } else {
             split.first?.let(onPrefixChange)
             onNumberChange(split.second)
@@ -225,6 +225,13 @@ private fun domesticFormOfIban(text: String): String? {
     val number = bban.substring(10).trimStart('0')
     return (if (prefix.isEmpty()) "" else "$prefix-") + "$number/${bban.substring(0, 4)}"
 }
+
+/**
+ * What a segment keeps of an edit that is not an account: ASCII digits, up to [maxLength]. Not
+ * `Char::isDigit`, which also takes Arabic-Indic and other Unicode digits a keyboard can type and the
+ * server refuses; the paste splitter's `\d` is ASCII-only already.
+ */
+internal fun clampSegment(raw: String, maxLength: Int): String = raw.filter { it in '0'..'9' }.take(maxLength)
 
 /**
  * For each text a segment composed with [value] reports, the text that edit replaced: the one the

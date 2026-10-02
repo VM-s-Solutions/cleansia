@@ -137,4 +137,12 @@ class CleansiaBankAccountInputPasteTest {
             "CZ00 0800 0000 0000 0000 0000",
         ).forEach { assertNull(it, split(it)) }
     }
+
+    /** The server takes ASCII digits only; a keyboard can type Arabic-Indic or full-width ones. */
+    @Test
+    fun `a segment keeps ASCII digits only, up to its length`() {
+        assertEquals("123", clampSegment("١٢٣123", 6))
+        assertEquals("", clampSegment("１２３", 6))
+        assertEquals("0800", clampSegment("08 00x99", 4))
+    }
 }

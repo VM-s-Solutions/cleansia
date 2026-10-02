@@ -1060,6 +1060,9 @@
         },
         "continue": "Uložit kartu",
         "cancel": "Teď ne"
+      },
+      "save_card": {
+        "label": "Uložit tuto kartu k mým dalším objednávkám."
       }
     },
     "orders": {

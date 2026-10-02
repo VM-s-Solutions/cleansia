@@ -157,6 +157,9 @@ class FakeOrderWizardFacade {
   cashClearedNotice = signal(false);
   cashOwed = signal(false);
   selectPaymentType = jest.fn((paymentType: PaymentType) => this.updateFormData({ paymentType }));
+  saveCardOffered = signal(false);
+  saveCard = signal(false);
+  setSaveCard = jest.fn((save: boolean) => this.saveCard.set(save));
   cardCaptureVisible = signal(false);
   cardCaptureConsent = signal(false);
   cardCaptureStarting = signal(false);
@@ -745,6 +748,44 @@ describe('OrderWizardComponent (a11y)', () => {
       expect(cashCard().disabled).toBe(false);
       expect(cashCard().getAttribute('aria-describedby')).toBeNull();
       expect(el.querySelector('#wizard-cash-reason')).toBeNull();
+    });
+
+    describe('keeping the card for the next bookings', () => {
+      const saveCardTick = () => el.querySelector<HTMLElement>('[data-spec-save-card]');
+
+      it('shows no tick unless the facade offers one', async () => {
+        await setup();
+        facade.activeStep.set(4);
+        fixture.detectChanges();
+
+        expect(saveCardTick()).toBeNull();
+      });
+
+      it('offers an unticked box with the card-guarantee consent the server records', async () => {
+        await setup();
+        facade.activeStep.set(4);
+        facade.saveCardOffered.set(true);
+        fixture.detectChanges();
+
+        expect(saveCardTick()?.textContent).toContain('pages.order.save_card.label');
+        expect(saveCardTick()?.textContent).toContain(
+          'pages.order.card_capture.consent.card-guarantee-draft-2026-09-28',
+        );
+        expect(saveCardTick()?.querySelector<HTMLInputElement>('input[type="checkbox"]')?.checked).toBe(false);
+      });
+
+      it('hands the tick to the facade', async () => {
+        await setup();
+        facade.activeStep.set(4);
+        facade.saveCardOffered.set(true);
+        fixture.detectChanges();
+
+        fixture.debugElement
+          .query(By.css('[data-spec-save-card] p-checkbox'))
+          .triggerEventHandler('ngModelChange', true);
+
+        expect(facade.setSaveCard).toHaveBeenCalledWith(true);
+      });
     });
 
     it('says cash was taken away only while the facade says so', async () => {

@@ -1060,6 +1060,9 @@
         },
         "continue": "Save card",
         "cancel": "Not now"
+      },
+      "save_card": {
+        "label": "Save this card for my next bookings."
       }
     },
     "orders": {

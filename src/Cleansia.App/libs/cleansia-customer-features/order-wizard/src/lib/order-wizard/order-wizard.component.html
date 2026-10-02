@@ -802,6 +802,22 @@
         </div>
         }
 
+        <!--
+          The consent is the card-guarantee wording, keyed by the version the server records on the
+          saved card: a card kept here also guarantees a later cash booking.
+        -->
+        @if (facade.saveCardOffered()) {
+        <label class="cl-wiz__consent" data-spec-save-card>
+          <p-checkbox
+            [ngModel]="facade.saveCard()"
+            (ngModelChange)="facade.setSaveCard($event)"
+            [binary]="true"
+            inputId="wizard-save-card"
+          />
+          <span>{{ 'pages.order.save_card.label' | translate }} {{ 'pages.order.card_capture.consent.card-guarantee-draft-2026-09-28' | translate }}</span>
+        </label>
+        }
+
         <div class="cl-wiz__rule"></div>
 
         <!--

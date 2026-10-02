@@ -40,6 +40,10 @@ public struct CleansiaBankAccountField: View {
     private let enabled: Bool
 
     @FocusState private var focusedSegment: Segment?
+    /// Bumped by every routed paste to rebuild the segments. On iOS 26 a TextField whose binding setter
+    /// rewrites the edit it is handling keeps drawing the raw text — the whole pasted account, over the
+    /// box's placeholder — until focus moves, whether or not that box's own value changed.
+    @State private var pasteRevision = 0
 
     private enum Segment: Hashable {
         case prefix, number, bankCode
@@ -163,8 +167,13 @@ public struct CleansiaBankAccountField: View {
                 if let newPrefix = pasted.prefix { prefix = newPrefix }
                 number = pasted.number
                 if let code = pasted.bankCode { bankCode = code }
+                // The rebuild ends the edit, so the keyboard goes with it: say so, rather than leave
+                // the focus state to catch up with a field that no longer exists.
+                pasteRevision += 1
+                focusedSegment = nil
             }
         ))
+        .id(pasteRevision)
         .background(alignment: .leading) {
             if text.wrappedValue.isEmpty, !placeholder.isEmpty {
                 Text(placeholder)

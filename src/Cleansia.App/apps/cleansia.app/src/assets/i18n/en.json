@@ -1131,6 +1131,8 @@
       "packages": "Packages",
       "services": "Services",
       "total": "Total",
+      "paid_with_credit": "Paid with credit",
+      "paid_by_card": "Paid by card",
       "discount_tier": "Loyalty discount",
       "discount_membership": "Cleansia Plus discount",
       "discount_promo": "Promo code",

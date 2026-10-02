@@ -1131,6 +1131,8 @@
       "packages": "Пакети",
       "services": "Послуги",
       "total": "Разом",
+      "paid_with_credit": "Сплачено бонусами",
+      "paid_by_card": "Сплачено карткою",
       "discount_tier": "Знижка за лояльність",
       "discount_membership": "Знижка Cleansia Plus",
       "discount_promo": "Промокод",

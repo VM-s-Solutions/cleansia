@@ -1131,6 +1131,8 @@
       "packages": "Balíčky",
       "services": "Služby",
       "total": "Celkem",
+      "paid_with_credit": "Zaplaceno kreditem",
+      "paid_by_card": "Zaplaceno kartou",
       "discount_tier": "Věrnostní sleva",
       "discount_membership": "Sleva Cleansia Plus",
       "discount_promo": "Slevový kód",

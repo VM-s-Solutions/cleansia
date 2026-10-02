@@ -78,13 +78,15 @@ extension BookingViewModel {
         guard case let .success(intent) = intentResult, !intent.clientSecret.isEmpty else {
             return .failed(intentResult.apiErrorOrNil)
         }
+        // Given the customer, PaymentSheet draws its own save box on an intent that keeps
+        // nothing, and a card saved through it gets no SavedCards row and no consent.
         return .cardPending(
             orderId: order.id,
             confirmationCode: order.confirmationCode,
             presentation: PaymentSheetPresentation(
                 clientSecret: intent.clientSecret,
-                ephemeralKey: intent.ephemeralKey,
-                stripeCustomerId: intent.stripeCustomerId,
+                ephemeralKey: saveCard ? intent.ephemeralKey : "",
+                stripeCustomerId: saveCard ? intent.stripeCustomerId : "",
                 merchantDisplayName: "Cleansia"
             )
         )

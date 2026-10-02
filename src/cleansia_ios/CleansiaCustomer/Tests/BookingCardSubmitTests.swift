@@ -61,8 +61,6 @@ final class BookingCardSubmitTests: XCTestCase {
         XCTAssertEqual(orderId, "o-card")
         XCTAssertEqual(confirmationCode, "CLN-C")
         XCTAssertEqual(presentation.clientSecret, "pi_secret_123")
-        XCTAssertEqual(presentation.ephemeralKey, "ek_secret_456")
-        XCTAssertEqual(presentation.stripeCustomerId, "cus_789")
         XCTAssertEqual(presentation.merchantDisplayName, "Cleansia")
     }
 
@@ -85,6 +83,34 @@ final class BookingCardSubmitTests: XCTestCase {
         _ = await vm.submit()
 
         XCTAssertEqual(intent.saveCards, [true])
+    }
+
+    func testUntickedCardPaymentPresentsTheSheetWithoutTheCustomer() async {
+        let vm = makeVM()
+        vm.update(cardReadyState)
+
+        let outcome = await vm.submit()
+
+        guard case let .cardPending(_, _, presentation) = outcome else {
+            return XCTFail("expected cardPending, got \(outcome)")
+        }
+        XCTAssertEqual(presentation.clientSecret, "pi_secret_123")
+        XCTAssertTrue(presentation.stripeCustomerId.isEmpty)
+        XCTAssertTrue(presentation.ephemeralKey.isEmpty)
+    }
+
+    func testTickedCardPaymentPresentsTheSheetWithTheCustomer() async {
+        let vm = makeVM()
+        vm.update(cardReadyState)
+        vm.setSaveCard(true)
+
+        let outcome = await vm.submit()
+
+        guard case let .cardPending(_, _, presentation) = outcome else {
+            return XCTFail("expected cardPending, got \(outcome)")
+        }
+        XCTAssertEqual(presentation.stripeCustomerId, "cus_789")
+        XCTAssertEqual(presentation.ephemeralKey, "ek_secret_456")
     }
 
     func testCardSavingIsOfferedOnlyWhilePayingByCard() {

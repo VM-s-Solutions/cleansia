@@ -70,6 +70,62 @@ need backfilling.
 
 ### Added
 
+- **Customer and cleaner, Android and iOS — the right moments are felt.** A haptic plays when a
+  slide-to-confirm commits (the customer's booking, and the cleaner's contract, job-step and order-list
+  slides) and when the result of an action is shown, success or failure. On iOS a room or bathroom
+  stepper also ticks on each step. Nothing else vibrates, and the phone's own haptics setting turns it
+  all off. Before, only the Android customer's booking slide played one. (Owner ruling 2026-10-01.)
+
+- **Customer iOS — photos zoom open and swipe away.** On iOS 18 and later an order's photo or a
+  dispute's evidence image grows out of its thumbnail into the full-screen viewer, and a swipe down
+  shrinks it back, into the photo you paged to. Earlier versions open the viewer as before, closed with
+  its X. On iOS 26 the photo viewer's close button is clear glass. (Owner ruling 2026-10-01.)
+
+- **Customer iOS 26 — the booking sheet grows out of the Book button.** Opened from the round Book
+  button, the booking sheet zooms out of it, and back into it when it closes. Home's book buttons, the
+  carousel cards and *Order again* open it as before, and so does every iOS version before 26. (Owner
+  ruling 2026-10-01.)
+
+- **Customer iOS — a long press on a saved address offers its actions.** In the address manager, a long
+  press on an address offers *Set as default*, *Rename* and *Delete*, the same as the menu behind its
+  three dots. (Owner ruling 2026-10-01.)
+
+- **Cleaner, Android and iOS — you are told when your registration is approved or rejected.** An
+  administrator's decision is now pushed to the phone, in five languages, and the registration screen
+  re-reads itself when the push arrives; on iOS it also re-checks every time the app comes back. Until
+  now an approval sent nothing, and the screen read *Application under review* until it was reloaded. A
+  rejection shows the administrator's reason word for word, with *Contact support*, which opens an
+  e-mail to support@cleansia.cz. **Admin:** the cleaner reads the rejection reason as you write it, so
+  write it for them; it is never in the push itself. (Owner ruling 2026-10-01.)
+
+- **Cleaner, Android and iOS — a bank account can be pasted whole into any one box.** A Czech or Slovak
+  account pasted into the prefix, number or bank-code box lands in all three: `19-2000145399/0800`,
+  `2000145399/0800`, `19-2000145399` (the bank code already there stays) or a CZ or SK IBAN. A bare
+  number goes to the number field from any box. Each box used to keep its own digits and cut them to
+  length, so `12321414/3545` pasted into the number became `1232141435` with no bank code. A two-digit
+  prefix pasted on its own into an empty prefix box goes to the number; type it instead. The server
+  still checks every account. (Owner ruling 2026-10-01.)
+
+- **Customer Android and iOS — your credit is shown, from Rewards to the order.** Credit (the apology
+  when a cleaner never comes, a complaint settled in credit, an administrator's goodwill) comes off the
+  next card booking by itself, and the apps never showed it. Rewards now has a *Credit* section with the
+  balance per currency, its expiry date and the share of a booking it can pay, and a sheet on where
+  credit comes from and how it is spent; at zero it is one line. Profile's first Account row is
+  *Credit*. On the confirm step, with card chosen and credit applying, the summary shows *Your credit
+  −X* and *To pay by card Y*, and the button shows the amount the card is charged; with cash chosen and
+  a balance held, it says credit applies to card payments only. After booking, the success screen and
+  the order say *Paid with credit* and *Paid by card*. How credit is earned and spent did not change.
+  (Owner ruling 2026-10-01.)
+
+- **Customer Android and iOS — new cards in the Home carousel.** *Stay in the loop* shows while the
+  phone blocks the app's notifications, and asks for them or opens the settings. A card with the
+  customer's credit balance shows when they hold one, and a Plus member sees how many
+  express-surcharge waivers are left this month; both open booking. *How big is your home?* closes the
+  row with room and bathroom steppers, and *See my price* opens booking at that size; it replaces the
+  plain *Book* card. The referral card's *Share my code* opens the share sheet with the code. The first
+  four cards that apply show, most relevant first, so there are never more than five. (Owner ruling
+  2026-10-01.)
+
 - **Customer Android and iOS — content fades out under the clock as it scrolls.** On Home, Profile
   and the Cleansia Plus offer, content scrolled to the top of the screen fades out under the status
   bar instead of running into the clock and the camera cut-out. At rest, and while pulling down to
@@ -437,6 +493,73 @@ need backfilling.
 
 ### Changed
 
+- **Customer and cleaner iOS — a plain confirmation is the iPhone's own alert.** Signing out, deleting
+  the account, cancelling or switching Plus, deleting a schedule, and for a cleaner confirming cash,
+  deleting a note or an issue and declining or refusing an offer now ask with the system alert (Liquid
+  Glass on iOS 26) instead of the app's card; the words are the same. Removing a saved card, revoking a
+  device and the document dialogs keep the app's card, because they hold a field or stay open until
+  the request finishes. Android is unchanged. (Owner ruling 2026-10-01.)
+
+- **Customer and cleaner iOS — a short list drops down from its field.** The dispute reason, the
+  cleaner's sign-up market and the document type open as a menu on the field instead of a sheet over
+  the screen. The country lists, which need search, keep the sheet. (Owner ruling 2026-10-01.)
+
+- **Customer and cleaner iOS — the birth date is picked on wheels.** The date-of-birth field opens day,
+  month and year wheels starting thirty years back, instead of a month-by-month calendar starting today.
+  Closing it without moving them leaves the field empty. (Owner ruling 2026-10-01.)
+
+- **Customer and cleaner iOS — the language, market and appearance pickers are standard iPhone
+  lists,** with a checkmark on the chosen row. The options are the same. (Owner ruling 2026-10-01.)
+
+- **Cleaner iOS 26 — the tab bar shrinks while you scroll down a tab,** and comes back when you scroll
+  up. The customer app's bar stays as it is, because the Book button sits on it. (Owner ruling
+  2026-10-01.)
+
+- **Customer and cleaner iOS — numbers roll, and the bell bounces.** The room and bathroom counts, the
+  booking step counter, the Rewards points and the cleaner's dashboard figures roll to their new value
+  instead of jumping. On iOS 17 and later the notification bell bounces once when the unread count goes
+  up, and the booking-success and *code applied* checks bounce once as they appear. (Owner ruling
+  2026-10-01.)
+
+- **Customer and cleaner, Android and iOS — notifications follow the language picked in the app.** Push
+  banners and the customer's Live Activity on iOS, and push banners and the notification feed on
+  Android 8 to 12, came out in the phone's language whatever the app was set to, and the Live Activity
+  card was English on every iPhone. They now follow the language chosen in the app: an English phone
+  with the app in Czech gets Czech banners. With the app on *System* they follow the phone, including
+  after the phone's language changes while the app is closed. The sitewide promo push and the e-mails
+  are still written by the server, in the account's language or the order's. **Operator:** each iOS app
+  gains a Notification Service Extension and an App Group (`group.cz.cleansia.customer`,
+  `group.cz.cleansia.partner`), registered by the next signed archive (`fastlane` passes
+  `-allowProvisioningUpdates`). The simulator cannot show the result, and a phone shows it once the
+  updated app has launched. **API consumer:** every loc-key APNs alert now carries `mutable-content: 1`;
+  the Android data payload is unchanged. (Owner ruling 2026-10-01; ADR-0025 Amendment A3.)
+
+- **Cleaner, Android and iOS — a finished registration step can be reopened until you are approved.**
+  On the registration screen a step marked *Done* keeps a chevron and opens its section again, so you
+  can correct your details or documents while you wait, and after a rejection. Saving an edit does not
+  resubmit the application. (Owner ruling 2026-10-01.)
+
+- **Customer and cleaner, Android and iOS — every map is quiet, with one Cleansia pin.** The address
+  pickers and the order maps in both apps show a muted map with no shops, restaurants or transit stops,
+  and one pin, a sky-blue teardrop with a white house, where each map used to draw its own: plain discs,
+  a pin on a stick, Apple's red balloon. Street and place names stay. The two Android order maps show
+  the Mapbox logo and attribution again, which Mapbox's terms require. On iOS the address picker keeps
+  Apple's *Legal* link visible at every text size. (Owner ruling 2026-10-01.)
+
+- **Customer Android and iOS — the Home carousel loops, and stops once you touch it.** A swipe past the
+  last card lands on the first, and back past the first on the last, and it moves on by itself every 6
+  seconds, always forward. After a swipe, a tap or a screen-reader card change it stops for the rest of
+  that visit to Home, and it never moves by itself with VoiceOver, TalkBack, Reduce Motion or Remove
+  animations on. Screen readers announce *Offer 2 of 4*. (Owner ruling 2026-10-01.)
+
+- **Customer Android and iOS — every Home carousel card draws its own mascot.** The referral card and
+  the Book card drew the same one, which every customer saw twice. No two cards repeat a drawing now,
+  and the Plus card carries the web's Plus mascot. (Owner ruling 2026-10-01.)
+
+- **Customer Android and iOS — the booking confirmation opens on a check.** A small success check
+  replaces the large welcoming mascot, and on iOS the screen takes Android's tighter spacing, so the
+  confirmation fits a 6.1" iPhone without scrolling. (Owner ruling 2026-10-01.)
+
 - **Customer and cleaner, Android and iOS — no mascot on the sign-in and account screens.** Sign-in,
   sign-up, forgot password and e-mail confirmation in both apps, and the customer's profile
   completion after a first sign-in, now open straight on the form. The cleaner app's introduction
@@ -674,6 +797,44 @@ need backfilling.
   never run before** — expect a burst of previously-undelivered notifications on that deploy.
 
 ### Fixed
+
+- **Customer iOS — the room and bathroom steppers are easier to hit, and VoiceOver can adjust them.**
+  Each plus and minus takes taps across 44 points, Apple's minimum, without the stepper growing.
+  VoiceOver reads each stepper as one control, *Your home, 3 rooms*, that a swipe up or down adjusts; it
+  used to find two bare buttons around an unnamed number. (Owner ruling 2026-10-01.)
+
+- **Customer Android and iOS — the phone's language no longer overwrites the language your e-mails are
+  written in.** The account's language, which the server uses for the sitewide promo push and every
+  e-mail not about one order, is updated whenever you change the app's language, and re-stated at the
+  start of each session if you chose one. It used to wait for a phone number on the profile, so a
+  Google or Apple sign-up without one stayed English for good. The profile form after a first sign-in
+  also wrote the phone's language over it, on Android even when another language was chosen in the
+  app; it now sends the app's choice, or nothing on *System*. A side effect: a customer with no phone
+  number can now save a profile edit, which the server used to refuse. (Owner ruling 2026-10-01.)
+
+- **Customer — an order's status e-mails are in the language it was booked in.** The *Confirmed*,
+  *Started* and *Completed* e-mails followed the account's language, so one order could bring a Czech
+  confirmation and English updates (a Google or Apple sign-up is stamped English). They now follow the
+  order's language, then the account's, then English, like the confirmation. (Owner ruling 2026-10-01.)
+
+- **Customer iOS — the Live Activity shows the Cleansia wordmark instead of a dark hole.** The
+  lock-screen card and the expanded Dynamic Island drew a circle with the waving mascot inside. The
+  image was too large for a Live Activity, so iOS replaced it with a placeholder, and every phone showed
+  a filled circle with a dark hole that reinstalling never fixed. They now draw the Cleansia wordmark in
+  the brand colour, with no circle. (Owner remark 2026-10-01.)
+
+- **Customer and cleaner iOS — a dropdown opens from a tap anywhere in its field.** It opened only from
+  a tap on its words, so a tap on the empty part of the field did nothing: the cleaner's market,
+  document type and country fields, and the customer's dispute reason. (Owner remark 2026-10-01.)
+
+- **Customer Android and iOS — the size steppers say where they stop.** Under the room and bathroom
+  steppers, both apps now say *Up to 8 rooms and 4 bathrooms*; the steppers used to stop at the cap
+  without saying why. On a one-off booking the minus button greys at 1, where it used to look live.
+  (Owner ruling 2026-10-01.)
+
+- **Customer iOS — the busy card's shadow sits on its edge.** While a booking or a Plus activation is
+  submitted, the card with the cleaning mascot cast a grey halo around the mascot and the message. Only
+  the card's edge casts a shadow now, as on Android. (Owner remark 2026-10-01.)
 
 - **Customer Android and iOS — less empty space under the Cleansia Plus button.** The button bar at
   the bottom of the Plus offer is tighter on iOS, where an empty band of about 54pt sat under the

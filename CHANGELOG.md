@@ -533,8 +533,9 @@ need backfilling.
   banners and the customer's Live Activity on iOS, and push banners and the notification feed on
   Android 8 to 12, came out in the phone's language whatever the app was set to, and the Live Activity
   card was English on every iPhone. They now follow the language chosen in the app: an English phone
-  with the app in Czech gets Czech banners. With the app on *System* they follow the phone, including
-  after the phone's language changes while the app is closed. The sitewide promo push and the e-mails
+  with the app in Czech gets Czech banners. On Android the notification categories listed in the phone's
+  settings are named in the app's language as well, and renamed as soon as it changes. With the app on
+  *System* they follow the phone, including after the phone's language changes while the app is closed. The sitewide promo push and the e-mails
   are still written by the server, in the account's language or the order's. **Operator:** each iOS app
   gains a Notification Service Extension and an App Group (`group.cz.cleansia.customer`,
   `group.cz.cleansia.partner`), registered by the next signed archive (`fastlane` passes

@@ -241,8 +241,8 @@ When VS ships a toolset with net10 support, switch to F5 launch instead.
 
 ## Which language a notification is in {#language}
 
-**The language picked inside the app**, for every text the device writes but one (Android's channel
-names, below), whatever the phone is set to (owner ruling 2026-10-01). The two texts the server writes
+**The language picked inside the app**, for every text the device writes, whatever the phone is set to
+(owner ruling 2026-10-01) — with one probable exception, the Live Activity's start alert (below). The two texts the server writes
 follow a stored language instead, the last two rows below: the sitewide promo push is in the account's
 language, which the apps update only from a choice made in the app's picker — a Google or Apple
 sign-up who never opens the picker keeps `en` — and an order's e-mails stay in the language it was
@@ -261,7 +261,7 @@ and the feed rendered in the device language.
 | Live Activity (customer, iOS) | in-app; the start alert probably the phone's | The server sends no literal text. Updates and the end carry only the status and the times. The widget reads the App Group language and applies it before it draws the card; with none written it follows the phone, which it can because the extension declares the five languages ([ADR-0029](/decisions/adr-0029) Amendment A4). The **start** push (iOS 17.2+, when the cleaner sets off) also carries the alert ActivityKit requires, as loc-keys: `push.order.on_the_way.title`, and `.body` with the order number, with no sound. iOS resolves those from the customer app's catalogue in the app's system language; a Live Activity push is not expected to pass through the Notification Service Extension, so that one alert likely does not follow the in-app picker. Not yet checked on a device ([ADR-0029](/decisions/adr-0029#amendment-a5) Amendment A5). |
 | Android push banner, both apps | in-app, on every API level | Data-only: the app renders its template in `onMessageReceived`. On 33+ the framework's per-app locale covers the service; on 26–32 the text goes through `AppLocale.localizedContext` with the language persisted in DataStore. |
 | Android in-app feed, both apps | in-app | the same wrap, in both feed view models |
-| Android notification channel names | the device's on 26–32; the app's on 33+, from the next cold start | Registered in `Application.onCreate` and not re-registered after a picker change. Left as it was on 2026-10-01. |
+| Android notification channel names, both apps | in-app | `MainActivity` names the channels with its own context, which carries the in-app language on every API level, in `onCreate` and again when `onConfigurationChanged` sees new locales, so a picker change renames them at once (`createNotificationChannel` on an existing id updates its name). The `Application` only creates the channels that do not exist yet (`registerMissing`), so a push can post before the first open, and a process a push cold-starts no longer renames them back into the device language. Until the app is first opened they carry the device's language on 26–32. Since 2026-10-02. |
 | `promo.new_sitewide` (customer) | the account's `PreferredLanguageCode`, `en` when unset | The one text the server writes: a literal alert, with no `mutable-content`. The apps keep the stamp current → [The account's language](/flows/auth-and-identity#account-language) |
 | The e-mail beside an order push | the language the order was booked in | → [The order records its language](/flows/booking-and-pricing#booking-language) |
 

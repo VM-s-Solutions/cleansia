@@ -252,7 +252,8 @@ that is the framework's per-app locale and reaches every context. On 26–32 App
 only activity contexts, so text drawn anywhere else — the FCM service's banners, the two notification
 feeds — goes through `AppLocale.localizedContext(base, tag)` in `:core`, with the tag read from
 DataStore: a process FCM cold-starts never runs `MainActivity`, which is the only thing that fills
-AppCompat's copy. Notification channel names are still registered in the device language on 26–32.
+AppCompat's copy. Notification channel names follow the app too: `MainActivity` names them at start and
+again on a language change, and the `Application` only creates the ones that do not exist yet.
 → [Which language a notification is in](/architecture/push-notifications#language)
 
 ### Local setup on macOS

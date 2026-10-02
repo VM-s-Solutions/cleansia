@@ -36,9 +36,21 @@ public interface IStripeClient
     /// Stripe refuses an expiry under 30 minutes or over 24 hours away. Backing out returns the customer to
     /// the order's own page, not to the booking cancel page, whose resume asks without the expiry and so
     /// would open a second session beside this one.
+    /// <para>A session the order records that is still open is handed back while it asks for the same
+    /// amount and keeps the card exactly when this call does. Otherwise it is expired before the new one
+    /// opens, keyed on the one it replaces, so the order never has two sessions open.</para>
     /// </summary>
     Task<CheckoutSessionResult> CreateCheckoutSessionAsync(
         Order order, DateTime expiresAtUtc, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// The expiring Checkout Session for a customer who ticked "save this card": opened on
+    /// <paramref name="stripeCustomerId"/> with <c>setup_future_usage=off_session</c> and <c>SavedCardId</c>
+    /// metadata, as <see cref="CreateCardSavingCheckoutSessionAsync(Order, string, string, CancellationToken)"/>
+    /// opens the booking's, and expiring and handed back as the plain expiring session is.
+    /// </summary>
+    Task<CheckoutSessionResult> CreateCardSavingCheckoutSessionAsync(
+        Order order, DateTime expiresAtUtc, string stripeCustomerId, string savedCardId, CancellationToken cancellationToken);
 
     /// <summary>
     /// Refund a previously-paid checkout session. Amount is in the session's currency.

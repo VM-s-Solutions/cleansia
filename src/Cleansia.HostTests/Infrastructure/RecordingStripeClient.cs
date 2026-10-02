@@ -68,6 +68,7 @@ public sealed class RecordingStripeClient : IStripeClient
     public Task<CheckoutSessionResult> CreateCheckoutSessionAsync(Order order, CancellationToken cancellationToken) => throw new NotSupportedException();
     public Task<CheckoutSessionResult> CreateCheckoutSessionAsync(Order order, DateTime expiresAtUtc, CancellationToken cancellationToken) => throw new NotSupportedException();
     public Task<CheckoutSessionResult> CreateCardSavingCheckoutSessionAsync(Order order, string stripeCustomerId, string savedCardId, CancellationToken cancellationToken) => throw new NotSupportedException();
+    public Task<CheckoutSessionResult> CreateCardSavingCheckoutSessionAsync(Order order, DateTime expiresAtUtc, string stripeCustomerId, string savedCardId, CancellationToken cancellationToken) => throw new NotSupportedException();
     public Task RefundCheckoutSessionAsync(string stripeSessionId, decimal amount, string idempotencyKey, CancellationToken cancellationToken) => throw new NotSupportedException();
     public Task RefundPaymentIntentAsync(string paymentIntentId, decimal amount, string idempotencyKey, CancellationToken cancellationToken) => throw new NotSupportedException();
     public Task<PaymentIntentResult> CreatePaymentIntentAsync(decimal amount, string currency, string stripeCustomerId, string orderId, string displayOrderNumber, string? savedCardId, string? currentPaymentIntentId, CancellationToken cancellationToken) => throw new NotSupportedException();

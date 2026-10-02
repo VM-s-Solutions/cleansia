@@ -327,6 +327,8 @@ public sealed class CustomerCashStandingTests
         Mock.Of<ITenantProvider>(),
         Mock.Of<IStripeClient>(),
         new StripeConfig(new ConfigurationBuilder().Build()),
+        Mock.Of<IStripeCustomerResolver>(),
+        Mock.Of<IRequestMetadataProvider>(),
         new OrderChannelProvider(OrderChannel.Mobile),
         _pending.Object,
         Mock.Of<INotificationProducer>(),

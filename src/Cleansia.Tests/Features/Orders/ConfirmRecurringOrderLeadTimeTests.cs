@@ -76,6 +76,8 @@ public sealed class ConfirmRecurringOrderLeadTimeTests
         Mock.Of<ITenantProvider>(),
         _stripe.Object,
         new StripeConfig(new ConfigurationBuilder().Build()),
+        Mock.Of<IStripeCustomerResolver>(),
+        Mock.Of<IRequestMetadataProvider>(),
         new OrderChannelProvider(OrderChannel.Mobile),
         _pending.Object,
         Mock.Of<INotificationProducer>(),

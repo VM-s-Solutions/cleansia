@@ -15,11 +15,17 @@ namespace Cleansia.Tests.Integration;
 /// otherwise. A checkout the customer walked away from is handed back while Stripe still has it open, so
 /// resuming a card-saving checkout is not refused for asking with other parameters under the same key. An
 /// order's PaymentSheet intent is handed back the same way while it can still be paid as asked, and a
-/// replacement is keyed on the intent it replaces, which is cancelled as a duplicate.
+/// replacement is keyed on the intent it replaces, which is cancelled as a duplicate. A recurring occurrence's
+/// expiring checkout follows the tick too: the open one is handed back while asked for as it was opened, and
+/// otherwise expired before a replacement keyed on it opens.
 /// </summary>
 public class StripeCardSavingTests
 {
     private const string SavedCardId = "card-saving-1";
+
+    private static readonly DateTime ExpiresAt = new(2026, 10, 3, 7, 0, 0, DateTimeKind.Utc);
+
+    private static readonly long ExpiresAtUnix = new DateTimeOffset(ExpiresAt).ToUnixTimeSeconds();
 
     [Fact]
     public async Task A_Booking_Checkout_Without_The_Tick_Asks_Stripe_To_Keep_Nothing()
@@ -166,6 +172,149 @@ public class StripeCardSavingTests
         Assert.Equal($"checkout-{order.Id}", transport.Requests[1].IdempotencyKey);
     }
 
+    [Fact]
+    public async Task An_Expiring_Checkout_Without_The_Tick_Asks_Stripe_To_Keep_Nothing()
+    {
+        var transport = new RecordingHandler();
+        var order = CardOrder();
+
+        await Client(transport).CreateCheckoutSessionAsync(order, ExpiresAt, CancellationToken.None);
+
+        var request = Assert.Single(transport.Requests);
+        Assert.DoesNotContain("setup_future_usage", request.Body);
+        Assert.DoesNotContain("customer=", request.Body);
+        Assert.DoesNotContain("SavedCardId", request.Body);
+    }
+
+    [Fact]
+    public async Task An_Expiring_Card_Saving_Checkout_Keeps_The_Card_On_The_Customer_And_Names_Its_Row()
+    {
+        var transport = new RecordingHandler();
+        var order = CardOrder();
+
+        await Client(transport).CreateCardSavingCheckoutSessionAsync(order, ExpiresAt, "cus_czk", SavedCardId, CancellationToken.None);
+
+        var request = Assert.Single(transport.Requests);
+        Assert.Contains("payment_intent_data[setup_future_usage]=off_session", request.Body);
+        Assert.Contains($"payment_intent_data[metadata][SavedCardId]={SavedCardId}", request.Body);
+        Assert.Contains($"metadata[SavedCardId]={SavedCardId}", request.Body);
+        Assert.Contains("customer=cus_czk", request.Body);
+        Assert.Contains($"expires_at={ExpiresAtUnix}", request.Body);
+        Assert.Contains($"cancel_url=https://unit.test/orders/{order.Id}", request.Body);
+        Assert.Equal($"checkout-{order.Id}-{ExpiresAtUnix}", request.IdempotencyKey);
+    }
+
+    /// <summary>
+    /// Confirming the occurrence again with the tick unchanged gets the session the order records back, and
+    /// Stripe is asked to create nothing, so the customer never holds two open sessions for one order.
+    /// </summary>
+    [Fact]
+    public async Task An_Open_Expiring_Checkout_Asked_For_As_Opened_Is_Handed_Back()
+    {
+        var transport = new RecordingHandler { SessionStatus = "open", SessionSavesCard = true };
+        var order = CardOrder();
+        order.AssignStripeSessionId("cs_started");
+
+        var session = await Client(transport).CreateCardSavingCheckoutSessionAsync(
+            order, ExpiresAt, "cus_czk", "card-saving-2", CancellationToken.None);
+
+        var request = Assert.Single(transport.Requests);
+        Assert.Equal(HttpMethod.Get, request.Method);
+        Assert.EndsWith("/v1/checkout/sessions/cs_started", request.Path);
+        Assert.Equal("cs_started", session.Id);
+    }
+
+    /// <summary>
+    /// A changed tick or amount closes the open session before its replacement opens, and the replacement is
+    /// keyed on the session it replaces, since the stride's own key already answered with other parameters.
+    /// </summary>
+    [Theory]
+    [InlineData(true, 100000, false)]
+    [InlineData(false, 100000, true)]
+    [InlineData(true, 90000, true)]
+    public async Task An_Open_Expiring_Checkout_Asked_For_Otherwise_Is_Expired_And_Replaced(
+        bool currentSavesCard, long currentAmount, bool saveCard)
+    {
+        var transport = new RecordingHandler
+        {
+            SessionStatus = "open",
+            SessionSavesCard = currentSavesCard,
+            SessionAmountTotal = currentAmount,
+        };
+        var order = CardOrder();
+        order.AssignStripeSessionId("cs_started");
+        var client = Client(transport);
+
+        var session = saveCard
+            ? await client.CreateCardSavingCheckoutSessionAsync(order, ExpiresAt, "cus_czk", SavedCardId, CancellationToken.None)
+            : await client.CreateCheckoutSessionAsync(order, ExpiresAt, CancellationToken.None);
+
+        Assert.Equal(
+            new[] { (HttpMethod.Get, "/v1/checkout/sessions/cs_started"), (HttpMethod.Post, "/v1/checkout/sessions/cs_started/expire"), (HttpMethod.Post, "/v1/checkout/sessions") },
+            transport.Requests.Select(r => (r.Method, r.Path)));
+        Assert.Equal($"checkout-{order.Id}-{ExpiresAtUnix}-after-cs_started", transport.Requests[2].IdempotencyKey);
+        Assert.Equal(saveCard, transport.Requests[2].Body.Contains("payment_intent_data[setup_future_usage]=off_session"));
+        Assert.Equal("cs_new", session.Id);
+    }
+
+    /// <summary>
+    /// A closed session's replacement is keyed on it, since the stride's own key may have opened that very
+    /// session with other parameters. A paid one keeps the stride's key, so Stripe replays it rather than
+    /// opening a second payable session before its webhook lands.
+    /// </summary>
+    [Theory]
+    [InlineData("expired", "-after-cs_started")]
+    [InlineData("complete", "")]
+    public async Task A_Closed_Expiring_Checkout_Is_Asked_Of_Stripe_Again_Keyed_On_It_Unless_Paid(
+        string status, string keySuffix)
+    {
+        var transport = new RecordingHandler { SessionStatus = status, SessionSavesCard = true };
+        var order = CardOrder();
+        order.AssignStripeSessionId("cs_started");
+
+        await Client(transport).CreateCheckoutSessionAsync(order, ExpiresAt, CancellationToken.None);
+
+        Assert.Equal(new[] { HttpMethod.Get, HttpMethod.Post }, transport.Requests.Select(r => r.Method));
+        Assert.Equal("/v1/checkout/sessions", transport.Requests[1].Path);
+        Assert.Equal($"checkout-{order.Id}-{ExpiresAtUnix}{keySuffix}", transport.Requests[1].IdempotencyKey);
+    }
+
+    /// <summary>
+    /// In a stride's last half hour Stripe refuses the replacement's expiry after the open session has been
+    /// expired, and the confirm asks again at the next stride. That ask is still keyed on the session it
+    /// replaces: the next stride's plain key may already have opened it with other parameters.
+    /// </summary>
+    [Fact]
+    public async Task A_Replacement_Refused_On_Its_Expiry_Is_Asked_Again_At_The_Next_Stride_Keyed_On_The_Session_It_Replaces()
+    {
+        var transport = new RecordingHandler { SessionStatus = "open", RefuseCreateOn = "expires_at" };
+        var order = CardOrder();
+        order.AssignStripeSessionId("cs_started");
+        var client = Client(transport);
+        var nextStride = ExpiresAt.AddHours(23);
+
+        var refused = await Assert.ThrowsAsync<global::Stripe.StripeException>(() =>
+            client.CreateCardSavingCheckoutSessionAsync(order, ExpiresAt, "cus_czk", SavedCardId, CancellationToken.None));
+        var session = await client.CreateCardSavingCheckoutSessionAsync(
+            order, nextStride, "cus_czk", SavedCardId, CancellationToken.None);
+
+        Assert.Equal("expires_at", refused.StripeError?.Param);
+        Assert.Equal(
+            new[]
+            {
+                (HttpMethod.Get, "/v1/checkout/sessions/cs_started"),
+                (HttpMethod.Post, "/v1/checkout/sessions/cs_started/expire"),
+                (HttpMethod.Post, "/v1/checkout/sessions"),
+                (HttpMethod.Get, "/v1/checkout/sessions/cs_started"),
+                (HttpMethod.Post, "/v1/checkout/sessions"),
+            },
+            transport.Requests.Select(r => (r.Method, r.Path)));
+        Assert.Equal(
+            $"checkout-{order.Id}-{new DateTimeOffset(nextStride).ToUnixTimeSeconds()}-after-cs_started",
+            transport.Requests[4].IdempotencyKey);
+        Assert.Equal("cs_new", session.Id);
+    }
+
     private static StripeClient Client(RecordingHandler transport) => new(
         new StubStripeConfig(),
         new StubHttpClientFactory(new HttpClient(transport)),
@@ -208,9 +357,19 @@ public class StripeCardSavingTests
     {
         public List<RecordedRequest> Requests { get; } = [];
 
-        public string SessionStatus { get; init; } = "open";
+        public string SessionStatus { get; set; } = "open";
+
+        public string? RefuseCreateOn { get; set; }
+
+        public bool SessionSavesCard { get; init; }
+
+        public long SessionAmountTotal { get; init; } = 100000;
 
         public string? CurrentIntent { get; init; }
+
+        private string SessionMetadata => SessionSavesCard
+            ? $$"""{"OrderId":"order-card-saving","SavedCardId":"{{SavedCardId}}"}"""
+            : """{"OrderId":"order-card-saving"}""";
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
@@ -224,12 +383,29 @@ public class StripeCardSavingTests
                 body,
                 request.Headers.TryGetValues("Idempotency-Key", out var keys) ? keys.Single() : null));
 
+            if (request.Method == HttpMethod.Post && path == "/v1/checkout/sessions" && RefuseCreateOn is { } param)
+            {
+                RefuseCreateOn = null;
+                return new HttpResponseMessage(HttpStatusCode.BadRequest)
+                {
+                    Content = new StringContent(
+                        $$"""{"error":{"type":"invalid_request_error","param":"{{param}}","message":"refused"} }""",
+                        Encoding.UTF8,
+                        "application/json"),
+                };
+            }
+
+            if (path.EndsWith("/expire"))
+            {
+                SessionStatus = "expired";
+            }
+
             var json = path.Contains("/payment_intents")
                 ? request.Method == HttpMethod.Get && CurrentIntent is not null
                     ? CurrentIntent
                     : """{"id":"pi_sheet","object":"payment_intent","client_secret":"pi_sheet_secret"}"""
                 : request.Method == HttpMethod.Get
-                    ? $$"""{"id":"cs_started","object":"checkout.session","status":"{{SessionStatus}}","url":"https://checkout.stripe.test/cs_started"}"""
+                    ? $$"""{"id":"cs_started","object":"checkout.session","status":"{{SessionStatus}}","amount_total":{{SessionAmountTotal}},"metadata":{{SessionMetadata}},"url":"https://checkout.stripe.test/cs_started"}"""
                     : """{"id":"cs_new","object":"checkout.session","status":"open","url":"https://checkout.stripe.test/cs_new"}""";
             return new HttpResponseMessage(HttpStatusCode.OK)
             {

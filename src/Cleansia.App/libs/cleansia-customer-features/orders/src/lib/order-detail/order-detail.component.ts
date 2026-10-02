@@ -27,6 +27,7 @@ import {
 import { CleansiaCustomerRoute } from '@cleansia/services';
 import { clearOnBackForwardRestore, formatMoney, localeFor } from '@cleansia/utils';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { CheckboxModule } from 'primeng/checkbox';
 import { DialogModule } from 'primeng/dialog';
 import { SkeletonModule } from 'primeng/skeleton';
 import { AmountDueComponent } from '../amount-due/amount-due.component';
@@ -85,6 +86,7 @@ interface EntryDetail {
     TranslatePipe,
     SkeletonModule,
     DialogModule,
+    CheckboxModule,
     CleansiaButtonComponent,
     CleansiaTextareaComponent,
     OrderStatusLabelPipe,
@@ -129,6 +131,8 @@ export class OrderDetailComponent implements OnInit {
   readonly canConfirmRecurring = this.facade.canConfirmRecurring;
   readonly recurringPaymentBegunInApp = this.facade.recurringPaymentBegunInApp;
   readonly confirmingRecurring = this.facade.confirmingRecurring;
+  readonly saveCardOffered = this.facade.saveCardOffered;
+  readonly saveCard = this.facade.saveCard;
 
   private readonly recurringPaysByCard = computed(
     () => this.order()?.paymentType?.value === PaymentType.Card,
@@ -506,6 +510,10 @@ export class OrderDetailComponent implements OnInit {
 
   confirmRecurring(): void {
     this.facade.confirmRecurring();
+  }
+
+  setSaveCard(save: boolean): void {
+    this.facade.setSaveCard(save);
   }
 
   reportIssue(): void {

@@ -498,6 +498,17 @@
         </h2>
 
         <div class="order-detail__actions">
+          @if (saveCardOffered()) {
+          <label class="order-detail__save-card" data-spec-save-card>
+            <p-checkbox
+              [ngModel]="saveCard()"
+              (ngModelChange)="setSaveCard($event)"
+              [binary]="true"
+              inputId="order-detail-save-card"
+            />
+            <span>{{ 'pages.order.save_card.label' | translate }} {{ 'pages.order.card_capture.consent.card-guarantee-draft-2026-09-28' | translate }}</span>
+          </label>
+          }
           @if (canConfirmRecurring()) {
           <cleansia-button
             [block]="true"

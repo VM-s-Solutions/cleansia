@@ -122,6 +122,8 @@ public class OrderPaymentConfirmedHonestProducerTests
             Mock.Of<ITenantProvider>(),
             new Mock<Core.Clients.Abstractions.Stripe.IStripeClient>().Object,
             new StripeConfig(new ConfigurationBuilder().Build()),
+            Mock.Of<IStripeCustomerResolver>(),
+            Mock.Of<IRequestMetadataProvider>(),
             new OrderChannelProvider(OrderChannel.Mobile),
             _pending.Object,
             _notificationProducer.Object,

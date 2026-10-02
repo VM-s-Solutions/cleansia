@@ -21,6 +21,8 @@ struct PropertyStepper: View {
                 .foregroundColor(CleansiaColors.onSurface)
                 .lineLimit(1)
                 .fixedSize()
+                .contentTransition(.numericText())
+                .animation(.default, value: value)
                 .padding(.horizontal, Spacing.xxs)
             stepButton(systemImage: "plus", enabled: maximum.map { value < $0 } ?? true) { step(+1) }
         }

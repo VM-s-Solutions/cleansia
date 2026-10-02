@@ -258,6 +258,8 @@ private struct BookingSheetContent: View {
                 .foregroundColor(CleansiaColors.onSurfaceVariant)
                 .lineLimit(1)
                 .fixedSize()
+                .contentTransition(.numericText())
+                .animation(.default, value: step)
         }
         .padding(.horizontal, Spacing.m)
         .padding(.top, Spacing.l)

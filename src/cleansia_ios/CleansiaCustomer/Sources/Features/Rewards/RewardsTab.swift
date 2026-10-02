@@ -155,6 +155,8 @@ private struct TierHeroCard: View {
                 Text(verbatim: "\(account.lifetimePoints)")
                     .cleansiaFont(CleansiaTypography.displayMedium)
                     .foregroundColor(.white)
+                    .contentTransition(.numericText())
+                    .animation(.default, value: account.lifetimePoints)
                 Text(L10n.Rewards.pointsUnit)
                     .font(CleansiaTypography.titleMedium)
                     .foregroundColor(.white.opacity(0.9))

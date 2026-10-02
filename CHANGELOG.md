@@ -105,8 +105,9 @@ need backfilling.
   number pasted into any empty box goes to the number field. Each box used to keep its own digits and
   cut them to length, so `12321414/3545` pasted into the number became `1232141435` with no bank code.
   A paste after digits already in a box is read together with them, so clear the box first. A two-digit
-  prefix pasted on its own into an empty prefix box goes to the number; type it instead. The server
-  still checks every account. (Owner ruling 2026-10-01.)
+  prefix pasted on its own into an empty prefix box goes to the number; type it instead. Each box keeps
+  only the digits 0–9: digits from another script, which a keyboard can type and the server refuses,
+  are dropped. The server still checks every account. (Owner ruling 2026-10-01.)
 
 - **Customer Android and iOS — your credit is shown, from Rewards to the order.** Credit (the apology
   when a cleaner never comes, a complaint settled in credit, an administrator's goodwill) comes off the

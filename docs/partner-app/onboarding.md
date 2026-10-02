@@ -128,7 +128,9 @@ replaces. The rule has one more cost: a real two-digit prefix such as `19` paste
 box goes to the number; typed, it stays. **After a routed paste the keyboard closes, on both apps**,
 because both rebuild the three boxes: iOS with `.id(pasteRevision)`, so each box draws its new value,
 and Android with `key(pasteRevision)`, so pasting the same text into the same box a second time is not
-dropped as a repeat. The apps only split text — the server keeps every rule
+dropped as a repeat. **Each box keeps the digits `0`–`9` only**, up to its length, on both apps
+(`clampSegment`, since 2026-10-02): a keyboard can type Arabic-Indic or full-width digits, which the
+server refuses, and the boxes used to keep them. The apps only split text — the server keeps every rule
 (the mod-11 check, the bank-code shape, the IBAN cross-check). Partner web splits the two separator
 shapes as well, and it also sends a bare number to the number field from any box, leaving the prefix
 and bank code alone as the apps do (since 2026-10-02; it used to clear the prefix). A written-out

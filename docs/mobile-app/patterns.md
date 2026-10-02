@@ -320,3 +320,9 @@ What changed on iOS:
   disabled button up until the request lands, or show the error inside itself. The alerts use the same
   title, message and button strings; they lose the card's icon circle and spring. Android keeps its
   branded dialog for every confirmation, since the content is what ADR-0018 D1 holds identical.
+- **The birth date is picked on wheels.** The date-of-birth field (customer profile edit and
+  completion, partner personal details) opens day, month and year wheels in a half-height sheet,
+  instead of a month-by-month calendar that started at today. An empty field's wheels open thirty
+  years back, so an adult's year is a short spin. That date is only shown: closing the sheet untouched
+  leaves the field empty, as on Android, whose picker opens with no selection. Future dates stay
+  blocked, and the stored day keeps its time-zone handling.

@@ -44,7 +44,6 @@ import cz.cleansia.customer.core.orders.OrderAddressDto
 import cz.cleansia.customer.core.orders.OrderCurrencyDetailDto
 import cz.cleansia.customer.core.orders.OrderDetailDto
 import cz.cleansia.customer.features.orders.OrderStatus
-import cz.cleansia.customer.features.orders.cardShareLabelRes
 import cz.cleansia.customer.features.orders.orderStatusFromValue
 import cz.cleansia.core.ui.components.CleansiaOutlinedButton
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
@@ -314,9 +313,15 @@ private fun OrderSummaryCard(order: OrderDetailDto) {
                 label = stringResource(R.string.order_paid_with_credit),
                 value = "−" + formatOrderPrice(order.creditAppliedAmount, order.currency?.code),
             )
-            // "Paid by card" only once the webhook has the card charged; until then it is still to pay.
+            // Not the order detail's cardShareLabelRes: a credit split is a card order, and one reaches this
+            // screen only after the PaymentSheet completed, so the card was charged. The single read here
+            // usually beats the webhook, and Pending means only that it is not in yet. Failed (3) is the one
+            // status that leaves the card share to pay.
             SummaryRow(
-                label = stringResource(cardShareLabelRes(order.paymentType?.value, order.paymentStatus?.value)),
+                label = stringResource(
+                    if (order.paymentStatus?.value == 3) R.string.booking_summary_due_on_card
+                    else R.string.order_paid_by_card,
+                ),
                 value = formatOrderPrice(order.amountDueOnCard, order.currency?.code),
             )
         }

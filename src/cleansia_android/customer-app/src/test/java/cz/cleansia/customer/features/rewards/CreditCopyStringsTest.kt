@@ -96,17 +96,29 @@ class CreditCopyStringsTest {
                 "order_paid_by_card",
                 "booking_summary_due_on_card",
             ),
-            "features/booking/BookingSuccessScreen.kt" to listOf("order_paid_with_credit"),
+            "features/booking/BookingSuccessScreen.kt" to listOf(
+                "order_paid_with_credit",
+                "order_paid_by_card",
+                "booking_summary_due_on_card",
+            ),
             "features/profile/ProfileTab.kt" to listOf("profile_row_credit"),
             "features/rewards/RewardsTab.kt" to listOf("credit_none", "credit_auto_applied_share", "credit_explainer_title"),
         ).forEach { (file, rendered) ->
             val source = source(file)
             rendered.forEach { key -> assertTrue("$file no longer renders $key", source.contains("R.string.$key")) }
         }
-        // The card line's label follows the payment status (PaymentLabelTest), on both split surfaces.
-        listOf("features/orders/OrderDetailSummary.kt", "features/booking/BookingSuccessScreen.kt").forEach { file ->
-            assertTrue("$file no longer labels the card share by its payment", source(file).contains("cardShareLabelRes("))
-        }
+        // The order detail's card line follows the payment status (PaymentLabelTest). The confirmation
+        // opens only after the PaymentSheet completed, so a Pending there is the webhook not in yet: it
+        // reads "Paid by card" unless the payment Failed.
+        assertTrue(
+            "the order detail no longer labels the card share by its payment",
+            source("features/orders/OrderDetailSummary.kt").contains("cardShareLabelRes("),
+        )
+        val success = source("features/booking/BookingSuccessScreen.kt")
+        assertTrue(
+            "the confirmation labels a card it just charged by a payment status the webhook has not set yet",
+            !success.contains("cardShareLabelRes(") && success.contains("order.paymentStatus?.value == 3"),
+        )
         assertTrue(
             "the Profile row no longer opens the explainer the Rewards card opens",
             source("features/profile/ProfileTab.kt").contains("CreditExplainerSheet("),

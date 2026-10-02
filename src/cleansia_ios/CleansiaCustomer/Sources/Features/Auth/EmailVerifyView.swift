@@ -63,7 +63,9 @@ private struct EmailVerifyContent: View {
             }
             .padding(Spacing.s)
 
-            ScrollView {
+            // The other auth screens' container: centred when it fits, scrolling (without a rubber band)
+            // when the keyboard or a large text size makes it not.
+            CenteredAuthScroll {
                 VStack(spacing: 0) {
                     Text(L10n.Auth.verifyTitle)
                         .cleansiaFont(CleansiaTypography.displayMedium)

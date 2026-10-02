@@ -74,15 +74,51 @@ public class StripeClient : IStripeClient
             cancellationToken);
 
     public Task<CheckoutSessionResult> CreateCheckoutSessionAsync(
-        Order order, DateTime expiresAtUtc, CancellationToken cancellationToken)
+        Order order, DateTime expiresAtUtc, CancellationToken cancellationToken) =>
+        CreateExpiringCheckoutSessionAsync(order, expiresAtUtc, cardToSave: null, cancellationToken);
+
+    public Task<CheckoutSessionResult> CreateCardSavingCheckoutSessionAsync(
+        Order order, DateTime expiresAtUtc, string stripeCustomerId, string savedCardId, CancellationToken cancellationToken) =>
+        CreateExpiringCheckoutSessionAsync(order, expiresAtUtc, (stripeCustomerId, savedCardId), cancellationToken);
+
+    private async Task<CheckoutSessionResult> CreateExpiringCheckoutSessionAsync(
+        Order order,
+        DateTime expiresAtUtc,
+        (string StripeCustomerId, string SavedCardId)? cardToSave,
+        CancellationToken cancellationToken)
     {
         var expiresAt = DateTime.SpecifyKind(expiresAtUtc, DateTimeKind.Utc);
-        return CreateCheckoutSessionAsync(
+        var idempotencyKey = $"checkout-{order.Id}-{new DateTimeOffset(expiresAt).ToUnixTimeSeconds()}";
+        if (order.StripeSessionId is { Length: > 0 } currentSessionId)
+        {
+            var service = new SessionService(stripe);
+            var current = await ClassifyAsync(
+                nameof(CreateCheckoutSessionAsync),
+                () => service.GetAsync(currentSessionId, cancellationToken: cancellationToken));
+            if (current.Status == "open")
+            {
+                var currentSavesCard = current.Metadata?.ContainsKey(SavedCardMetadataKey) ?? false;
+                if (current.AmountTotal == ToMinorUnits(order.AmountDueOnCard)
+                    && currentSavesCard == cardToSave.HasValue)
+                {
+                    return new CheckoutSessionResult(current.Id, current.Url);
+                }
+
+                // Closed before its replacement opens, so the customer can never pay both. A session the
+                // customer completes in between cannot be expired, and the throw refuses the replacement.
+                await ClassifyAsync(
+                    nameof(CreateCheckoutSessionAsync),
+                    () => service.ExpireAsync(currentSessionId, cancellationToken: cancellationToken));
+                idempotencyKey += $"-after-{currentSessionId}";
+            }
+        }
+
+        return await CreateCheckoutSessionAsync(
             order,
             expiresAt,
-            $"checkout-{order.Id}-{new DateTimeOffset(expiresAt).ToUnixTimeSeconds()}",
+            idempotencyKey,
             new Uri(config.SuccessUrlBase).GetLeftPart(UriPartial.Authority) + $"{OrdersPagePath}/{order.Id}",
-            cardToSave: null,
+            cardToSave,
             cancellationToken);
     }
 

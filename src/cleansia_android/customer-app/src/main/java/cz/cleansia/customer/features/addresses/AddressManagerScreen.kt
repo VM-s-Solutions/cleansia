@@ -16,6 +16,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -77,7 +78,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -622,6 +625,11 @@ private fun AddOnMapPane(
         searching = false
     }
 
+    // How much of the map's bottom edge the address card covers, nav bar included; measured, since
+    // the card grows with the address and the font scale.
+    val density = LocalDensity.current
+    var cardCoverHeight by remember { mutableStateOf(0.dp) }
+
     Box(modifier = Modifier.fillMaxSize()) {
         // ── Map ──
         MapboxMap(
@@ -629,6 +637,15 @@ private fun AddOnMapPane(
             mapViewportState = viewportState,
             style = { CleansiaMapStyle(darkTheme) },
             scaleBar = {}, // hide Mapbox's default 0–300m scale bar overlay
+            // Mapbox's terms require the wordmark and the attribution. Lifted above the address card,
+            // which covers the map's bottom edge where they sit by default. Only the ornaments move:
+            // the camera centre, which the pin marks, stays the map's centre.
+            logo = {
+                Logo(contentPadding = PaddingValues(start = 4.dp, bottom = cardCoverHeight + 4.dp))
+            },
+            attribution = {
+                Attribution(contentPadding = PaddingValues(start = 92.dp, bottom = cardCoverHeight + 4.dp))
+            },
         )
 
         // ── Centre pin ── lifted by its own height, so its tip is the map's centre: the point the
@@ -715,6 +732,7 @@ private fun AddOnMapPane(
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.BottomCenter)
+                .onSizeChanged { cardCoverHeight = with(density) { it.height.toDp() } }
                 .shadow(elevation = 24.dp, shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp), clip = false)
                 .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
                 .background(MaterialTheme.colorScheme.surface)

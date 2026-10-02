@@ -51,4 +51,20 @@ class CleansiaMapUsageTest {
             assertTrue("${file.name} hides the Mapbox attribution", !flat.contains("attribution = {}"))
         }
     }
+
+    /**
+     * Each of the four maps has a card or sheet over its bottom edge, where Mapbox puts both ornaments
+     * by default, so each places them itself. A map left on the defaults hides them under its card.
+     */
+    @Test
+    fun `every map lifts the Mapbox wordmark and attribution above what covers its bottom edge`() {
+        mapFiles.forEach { file ->
+            val flat = file.readText().replace(Regex("\\s+"), " ")
+            assertTrue("${file.name} leaves the Mapbox wordmark where its card covers it", flat.contains("logo = { Logo("))
+            assertTrue(
+                "${file.name} leaves the Mapbox attribution where its card covers it",
+                flat.contains("attribution = { Attribution("),
+            )
+        }
+    }
 }

@@ -144,7 +144,7 @@
     <string name="home_upsell_plus_cancel_title">Free cancellation up to %1$d h before</string>
     <string name="home_upsell_plus_cancel_desc">One of your Plus benefits, on every booking you make.</string>
     <string name="home_upsell_express_today_title">Book as little as %1$d h ahead</string>
-    <string name="home_upsell_express_today_desc">Same day? Under %1$d h of notice, an express surcharge applies.</string>
+    <string name="home_upsell_express_today_desc">Short notice? Under %1$d h ahead, an express surcharge applies.</string>
     <string name="home_upsell_rewards_title">Every completed cleaning earns points</string>
     <string name="home_upsell_rewards_desc">Collect them to climb the tiers and unlock their perks.</string>
     <string name="home_upsell_rewards_cta">See my rewards</string>

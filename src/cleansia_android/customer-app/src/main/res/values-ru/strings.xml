@@ -146,7 +146,7 @@
     <string name="home_upsell_plus_cancel_title">Бесплатная отмена за %1$d ч до уборки</string>
     <string name="home_upsell_plus_cancel_desc">Одно из преимуществ Plus, для каждого вашего заказа.</string>
     <string name="home_upsell_express_today_title">Заказывайте всего за %1$d ч</string>
-    <string name="home_upsell_express_today_desc">Нужно сегодня? Менее чем за %1$d ч действует экспресс-доплата.</string>
+    <string name="home_upsell_express_today_desc">В последний момент? Менее чем за %1$d ч действует экспресс-доплата.</string>
     <string name="home_upsell_rewards_title">Каждая завершённая уборка приносит баллы</string>
     <string name="home_upsell_rewards_desc">Копите их, поднимайтесь по уровням и открывайте преимущества.</string>
     <string name="home_upsell_rewards_cta">Мои награды</string>

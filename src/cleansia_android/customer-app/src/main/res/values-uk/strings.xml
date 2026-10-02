@@ -146,7 +146,7 @@
     <string name="home_upsell_plus_cancel_title">Безкоштовне скасування за %1$d год до прибирання</string>
     <string name="home_upsell_plus_cancel_desc">Одна з переваг Plus, для кожного вашого замовлення.</string>
     <string name="home_upsell_express_today_title">Замовляйте вже за %1$d год</string>
-    <string name="home_upsell_express_today_desc">Треба сьогодні? Менш ніж за %1$d год діє експрес-доплата.</string>
+    <string name="home_upsell_express_today_desc">В останню мить? Менш ніж за %1$d год діє експрес-доплата.</string>
     <string name="home_upsell_rewards_title">Кожне завершене прибирання приносить бали</string>
     <string name="home_upsell_rewards_desc">Збирайте їх, піднімайтеся рівнями й відкривайте їхні переваги.</string>
     <string name="home_upsell_rewards_cta">Мої винагороди</string>

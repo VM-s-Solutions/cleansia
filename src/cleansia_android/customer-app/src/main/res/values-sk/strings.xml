@@ -146,7 +146,7 @@
     <string name="home_upsell_plus_cancel_title">Zrušenie zadarmo až %1$d h vopred</string>
     <string name="home_upsell_plus_cancel_desc">Jedna z výhod Plus, pri každej vašej objednávke.</string>
     <string name="home_upsell_express_today_title">Objednávajte už %1$d h vopred</string>
-    <string name="home_upsell_express_today_desc">Ešte dnes? Menej než %1$d h vopred znamená expresný príplatok.</string>
+    <string name="home_upsell_express_today_desc">Na poslednú chvíľu? Menej než %1$d h vopred znamená expresný príplatok.</string>
     <string name="home_upsell_rewards_title">Každé dokončené upratovanie prináša body</string>
     <string name="home_upsell_rewards_desc">Zbierajte ich, postupujte úrovňami a odomykajte ich výhody.</string>
     <string name="home_upsell_rewards_cta">Moje odmeny</string>

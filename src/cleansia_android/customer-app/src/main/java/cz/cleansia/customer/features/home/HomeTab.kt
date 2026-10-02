@@ -185,25 +185,29 @@ fun HomeTab(
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         notificationsEnabled = androidx.core.app.NotificationManagerCompat.from(context).areNotificationsEnabled()
     }
+    val permissionScope = androidx.compose.runtime.rememberCoroutineScope()
     val notificationPermission = androidx.activity.compose.rememberLauncherForActivityResult(
         androidx.activity.result.contract.ActivityResultContracts.RequestPermission(),
-    ) {
+    ) { granted ->
         notificationsEnabled = androidx.core.app.NotificationManagerCompat.from(context).areNotificationsEnabled()
+        // Refused from the slide itself: the next tap opens the settings page, which can grant it
+        // whether this refusal was for good or the dialog was only dismissed.
+        if (!granted) permissionScope.launch { viewModel.appSettings.markNotificationPermissionRefused() }
     }
     // The system dialog only when it can still appear; a permission refused for good, or
     // notifications switched off in settings, can only be undone on the settings page.
     val onTurnOnNotifications: () -> Unit = {
-        val activity = context.findActivity()
-        val permission = android.Manifest.permission.POST_NOTIFICATIONS
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU &&
-            activity != null &&
-            androidx.core.content.ContextCompat.checkSelfPermission(context, permission) !=
-            android.content.pm.PackageManager.PERMISSION_GRANTED &&
-            androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale(activity, permission)
-        ) {
-            notificationPermission.launch(permission)
-        } else {
-            openAppNotificationSettings(context)
+        permissionScope.launch {
+            val activity = context.findActivity()
+            val permission = android.Manifest.permission.POST_NOTIFICATIONS
+            val asks = activity != null && asksForNotificationPermission(
+                sdkInt = android.os.Build.VERSION.SDK_INT,
+                granted = androidx.core.content.ContextCompat.checkSelfPermission(context, permission) ==
+                    android.content.pm.PackageManager.PERMISSION_GRANTED,
+                showsRationale = androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale(activity, permission),
+                refusedBefore = viewModel.appSettings.hasRefusedNotificationPermission(),
+            )
+            if (asks) notificationPermission.launch(permission) else openAppNotificationSettings(context)
         }
     }
 
@@ -1165,6 +1169,20 @@ private fun QuickSizeStepper(
         }
     }
 }
+
+/**
+ * Whether the notifications slide raises the system dialog rather than the settings page: only on
+ * API 33+ with the permission not granted, and only while the dialog can still appear. Android shows
+ * a rationale between the first and the second refusal; a permission never refused shows none but can
+ * still be asked, and one refused for good shows none and cannot, which [refusedBefore] tells apart.
+ * Notifications switched off in settings with the permission granted are the settings page's too.
+ */
+internal fun asksForNotificationPermission(
+    sdkInt: Int,
+    granted: Boolean,
+    showsRationale: Boolean,
+    refusedBefore: Boolean,
+): Boolean = sdkInt >= android.os.Build.VERSION_CODES.TIRAMISU && !granted && (showsRationale || !refusedBefore)
 
 /** The system's notification page for this app — where a permanently refused permission is undone. */
 private fun openAppNotificationSettings(context: android.content.Context) {

@@ -125,6 +125,7 @@ class HomeTabViewModelTest {
         marketRepository = marketRepository,
         snackbar = snackbar,
         referralRepository = io.mockk.mockk(relaxed = true),
+        appSettings = io.mockk.mockk(relaxed = true),
     )
 
     // ADR-0058 D5: the home catalogue is read for the chosen market, and the directory is read first

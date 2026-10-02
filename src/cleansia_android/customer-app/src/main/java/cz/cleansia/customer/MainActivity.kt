@@ -77,14 +77,16 @@ class MainActivity : androidx.appcompat.app.AppCompatActivity() {
      * the system silently drops the call to `NotificationManager.notify`.
      * No-op on older API levels (permission was install-time there).
      *
-     * We're not interested in the result here — the OS handles "denied"
-     * by hiding the toast, which is the correct user-facing behavior, and
-     * the NotificationsScreen lets the user toggle per-category prefs
-     * separately. If they re-enable later via system settings, we pick it
-     * up automatically without re-prompting.
+     * The OS handles "denied" by hiding the toast, and the NotificationsScreen
+     * lets the user toggle per-category prefs separately. If they re-enable
+     * later via system settings, we pick it up automatically without
+     * re-prompting. A refusal is recorded (see [recordNotificationRefusal]) so
+     * the Home notifications slide knows whether the dialog can still appear.
      */
     private val requestNotificationPermission =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { /* result ignored */ }
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            if (!granted) recordNotificationRefusal()
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
@@ -186,7 +188,20 @@ class MainActivity : androidx.appcompat.app.AppCompatActivity() {
             Manifest.permission.POST_NOTIFICATIONS,
         ) == PackageManager.PERMISSION_GRANTED
         if (!granted) {
+            // A refusal from before this was recorded still shows as a rationale now.
+            recordNotificationRefusal()
             requestNotificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
+    }
+
+    /**
+     * Records that the customer has refused the notification permission, once the rationale shows:
+     * Android shows it between the first and the second refusal, and never after a dialog that was
+     * only dismissed, which leaves the permission still askable.
+     */
+    private fun recordNotificationRefusal() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        if (!shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS)) return
+        lifecycleScope.launch { settingsRepository.markNotificationPermissionRefused() }
     }
 }

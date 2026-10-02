@@ -18,6 +18,7 @@ import cz.cleansia.customer.core.notifications.NotificationFeedRepository
 import cz.cleansia.customer.core.orders.OrderRepository
 import cz.cleansia.customer.core.recurring.RecurringBookingRepository
 import cz.cleansia.customer.core.referral.ReferralRepository
+import cz.cleansia.customer.core.settings.AppSettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -49,6 +50,8 @@ class HomeTabViewModel @Inject constructor(
     private val snackbar: SnackbarController,
     /** The carousel's referral slide shares the code from here; MainShell prefetches it. */
     val referralRepository: ReferralRepository,
+    /** Whether the notifications slide may still raise the system dialog (see [asksForNotificationPermission]). */
+    val appSettings: AppSettingsRepository,
 ) : ViewModel() {
 
     /** The referral slide's share sheet could not open, so the code was copied instead. */

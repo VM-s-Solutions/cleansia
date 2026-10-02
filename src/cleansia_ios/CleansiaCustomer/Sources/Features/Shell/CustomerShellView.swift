@@ -9,6 +9,9 @@ struct CustomerShellView: View {
     @StateObject private var profileVM: ProfileViewModel
     @ObservedObject private var preferences: CustomerPreferencesModel
     @EnvironmentObject private var pushNavigation: PushNavigationModel
+    @Namespace private var bookZoom
+    /// Whether the open booking came from the FAB, the one entry it zooms out of.
+    @State private var bookingFromFab = false
     @Environment(\.snackbarController) var snackbar
     let container: CustomerAppContainer
     private let onSignedOut: () -> Void
@@ -75,7 +78,7 @@ struct CustomerShellView: View {
             }
         }
         .tint(CleansiaColors.primary)
-        .sheet(isPresented: $model.isBookingPresented) {
+        .sheet(isPresented: $model.isBookingPresented, onDismiss: { bookingFromFab = false }, content: {
             BookingSheetView(
                 vm: bookingVM,
                 geocoding: container.geocodingService,
@@ -99,7 +102,8 @@ struct CustomerShellView: View {
                     model.openEditProfile(showBookingHint: true)
                 }
             )
-        }
+            .zoomDestination(id: Self.bookZoomID, in: bookingFromFab ? fabZoom : nil)
+        })
         .sheet(isPresented: $model.isAddressManagerPresented) {
             AddressManagerView(
                 repository: container.savedAddressRepository,
@@ -280,8 +284,22 @@ struct CustomerShellView: View {
     }
 
     private var bookFab: some View {
-        BookFab(action: openBooking)
-            .padding(.bottom, BookFabMetrics.bottomPadding)
+        BookFab {
+            bookingFromFab = true
+            openBooking()
+        }
+        .zoomSource(id: Self.bookZoomID, in: fabZoom)
+        .padding(.bottom, BookFabMetrics.bottomPadding)
+    }
+
+    private static let bookZoomID = "book"
+
+    /// The booking sheet grows out of the FAB on iOS 26+ only: that is where a zoom-presented sheet was
+    /// checked to still refuse a swipe-dismiss mid-flow (`interactiveDismissDisabled`). iOS 16-25 keep
+    /// the plain sheet, and so does every other entry (Home's book buttons, the slides, order again).
+    private var fabZoom: Namespace.ID? {
+        if #available(iOS 26, *) { return bookZoom }
+        return nil
     }
 
     private func signOut() {

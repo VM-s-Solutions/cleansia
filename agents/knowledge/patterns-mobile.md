@@ -1090,7 +1090,8 @@ iOS 26 hardware; tab-swipe given up, owner-accepted). **Customer:** exactly ONE 
 `NavigationStack` over the merged `ShellRoute` enum (its drivers are customer-specific: the iOS-16
 sibling-typed-path crash + genuine cross-tab route de-dup); the `TabView` is the stack root, so pushed
 children cover bar + FAB by construction; the Book FAB survives as a solid-primary floating disc
-(`BookFabMetrics` off the safe-area bottom) shown only while `path.isEmpty`; on iOS 26+ a booking sheet the FAB
+(`BookFabMetrics` off the safe-area bottom), centre-docked on the bar's top edge over a blank fifth `.book`
+slot (ADR-0022 Amendment A1), shown only while `path.isEmpty`; on iOS 26+ a booking sheet the FAB
 opens zooms out of it (`zoomSource`/`zoomDestination`, owner decision D15), with no glass added. **Partner (FINAL, T-0429):**
 stock `TabView` + per-tab `NavigationStack`s each over a `NavigationPath` — a merged shell enum there would
 be a god-enum without de-dup, and `ProfileRoute` is shared with the out-of-shell RegistrationLock audience.

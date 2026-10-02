@@ -1115,6 +1115,25 @@ class BookingViewModelTest {
         assertEquals(PromoCodeUiState.Idle, vm.promoCodeState.value)
     }
 
+    /** A swiped-away booking is resumed: closing the sheet changes nothing the next plain open reads. */
+    @Test
+    fun closingTheSheet_keepsTheDraftAndItsStep() = runTest {
+        val vm = newViewModel()
+        vm.update { it.copy(selectedServiceIds = setOf("s-1"), street = "X", selectedTime = "10:00") }
+        vm.nextStep()
+        vm.nextStep()
+
+        vm.setSheetVisible(false)
+        vm.setSheetVisible(true)
+
+        assertEquals(setOf("s-1"), vm.state.value.selectedServiceIds)
+        assertEquals("10:00", vm.state.value.selectedTime)
+        assertEquals(3, vm.step.value)
+
+        vm.reset()
+        assertEquals(1, vm.step.value)
+    }
+
     // ── express waiver ──
 
     @Test

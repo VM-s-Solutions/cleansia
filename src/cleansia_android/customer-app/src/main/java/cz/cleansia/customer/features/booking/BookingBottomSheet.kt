@@ -339,16 +339,15 @@ private fun SheetContent(
     // snackbar; we still pass through whatever's left.
     var lastRebookedFrom by remember { mutableStateOf<String?>(null) }
 
-    // Fresh-open reset — every time the sheet becomes visible without an
-    // active rebook target (and we haven't already pre-filled from one this
-    // session), clear any leftover state from the previous booking. The
-    // address re-hydration effect above is also keyed on `visible`, so it
-    // re-fires after this clears `state.street` and re-applies the saved
-    // default address.
+    // The booking outlives the sheet. A plain open — the Book FAB, a "Book now" card — resumes it where
+    // the customer swiped it away, on the same step with every choice kept, for as long as this
+    // ViewModel lives (the signed-in session). An open that seeds a booking (Order again, a popular
+    // package, the quick-size slide) starts that booking afresh in the draft's place: each seed effect
+    // below resets before it fills. A booking that goes through resets before navigating. The
+    // address hydration above fills a blank street once the saved addresses arrive, which is after
+    // these effects run, so a seeded open still gets the default address.
     LaunchedEffect(visible) {
         bookingVm.setSheetVisible(visible)
-        if (!visible) return@LaunchedEffect
-        if (rebookFromOrderId == null && lastRebookedFrom == null) bookingVm.reset() else bookingVm.returnToFirstStep()
     }
 
     LaunchedEffect(visible, rebookFromOrderId) {
@@ -356,6 +355,7 @@ private fun SheetContent(
         val target = rebookFromOrderId ?: return@LaunchedEffect
         if (target == lastRebookedFrom) return@LaunchedEffect
         lastRebookedFrom = target
+        bookingVm.reset()
 
         val order = orderRepo.getById(target)
             .onError { error -> if (error !is ApiError.Network) snackbarController.showError(error) }
@@ -431,17 +431,18 @@ private fun SheetContent(
     }
 
     // Pop-package prefill — separate from rebook because the source is a
-    // tap-on-popular-package, not a past-order replay. We just stuff the id
-    // into selectedPackageIds the first time the sheet becomes visible with
-    // the arg set; the rest of the wizard (rooms, address, time) defaults
-    // remain in place so the user only chooses what they actually want to
-    // change. Guarded so re-composition or sheet-reopen doesn't re-toggle.
+    // tap-on-popular-package, not a past-order replay. A fresh booking with
+    // the package chosen, the first time the sheet becomes visible with the
+    // arg set; the rest of the wizard keeps its defaults so the user only
+    // chooses what they actually want to change. Guarded so re-composition
+    // or sheet-reopen doesn't re-toggle.
     var lastPrefilledPackage by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(visible, prefillPackageId) {
         if (!visible) return@LaunchedEffect
         val target = prefillPackageId ?: return@LaunchedEffect
         if (target == lastPrefilledPackage) return@LaunchedEffect
         lastPrefilledPackage = target
+        bookingVm.reset()
         bookingVm.update { current ->
             current.copy(selectedPackageIds = current.selectedPackageIds + target)
         }
@@ -457,6 +458,7 @@ private fun SheetContent(
         val target = prefillSize ?: return@LaunchedEffect
         if (target == lastPrefilledSize) return@LaunchedEffect
         lastPrefilledSize = target
+        bookingVm.reset()
         bookingVm.setRooms(target.first)
         bookingVm.setBathrooms(target.second)
     }

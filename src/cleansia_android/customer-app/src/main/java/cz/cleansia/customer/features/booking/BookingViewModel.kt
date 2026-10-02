@@ -451,12 +451,11 @@ class BookingViewModel @Inject constructor(
     }
 
     /**
-     * Reset the entire wizard to a clean slate. Called on submit success and
-     * on every fresh open of the sheet (when not in a rebook flow). Clears
-     * services/packages/dates/address selections, the cached quote, in-flight
-     * indicators, and both code-dialog UI states so the next open starts
-     * blank — preserving rebook pre-fill, which runs in a separate effect
-     * AFTER this reset.
+     * Reset the entire wizard to a clean slate. Called on submit success and when
+     * an open seeds a new booking (Order again, a popular package, the quick-size
+     * slide) — a plain open resumes the draft instead. Clears services/packages/
+     * dates/address selections, the cached quote, in-flight indicators, and both
+     * code-dialog UI states; the seed is applied after it.
      */
     fun reset() {
         _state.value = BookingState()

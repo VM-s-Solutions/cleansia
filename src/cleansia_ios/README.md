@@ -53,7 +53,8 @@ delivers the alert exactly as iOS resolved it. The customer app also embeds its 
 
 The in-app language reaches the extensions through an **App Group** — `group.cz.cleansia.customer` on the
 customer app, its widget and its extension; `group.cz.cleansia.partner` on the partner app and its
-extension. The app writes the resolved language there at launch and on every change
+extension. The app writes the language chosen in its picker there at launch and on every change, and
+removes it on "System" so the extensions follow the phone
 (`CleansiaCore/Localization/AppGroupLanguage.swift`, which the extensions compile in directly instead of
 linking Core).
 

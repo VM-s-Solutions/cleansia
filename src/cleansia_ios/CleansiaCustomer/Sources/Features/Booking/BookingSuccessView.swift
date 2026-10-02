@@ -152,7 +152,7 @@ struct BookingSuccessView: View {
                 value: "−" + OrdersFormat.price(order.creditAppliedAmount, currencyCode: order.currencyCode)
             ))
             rows.append(SummaryRow(
-                label: L10n.Credit.paidByCard,
+                label: order.cardShareLabel,
                 value: OrdersFormat.price(order.amountDueOnCard, currencyCode: order.currencyCode)
             ))
         }

@@ -67,6 +67,27 @@ final class OrderDetailSummaryTests: XCTestCase {
         XCTAssertEqual(breakdown.paidByCard, 1180)
     }
 
+    /// Under a credit split the card line claims a payment only once the card was charged: a card order
+    /// whose payment is pending or failed still has its card share to pay. The server's
+    /// `Order.TookNoPayment`, Android's `cardShareLabelRes` and the web's rule.
+    func testTheCardShareReadsPaidOnlyOnceTheCardWasCharged() {
+        func label(_ status: Int) -> String {
+            OrderFixtures.detail(
+                creditAppliedAmount: 320,
+                amountDueOnCard: 1180,
+                paymentType: Code(type: "PaymentType", name: nil, value: 2),
+                paymentStatus: Code(type: "PaymentStatus", name: nil, value: status)
+            ).cardShareLabel
+        }
+        XCTAssertNotEqual(L10n.Credit.paidByCard, L10n.Credit.dueOnCard)
+        for charged in [2, 4, 5, 6] {
+            XCTAssertEqual(label(charged), L10n.Credit.paidByCard, "status \(charged)")
+        }
+        for uncharged in [1, 3] {
+            XCTAssertEqual(label(uncharged), L10n.Credit.dueOnCard, "status \(uncharged)")
+        }
+    }
+
     func testAnOrderNoCreditTouchedStatesNoTender() {
         let order = OrderFixtures.detail(total: 1500)
         XCTAssertEqual(OrderPriceBreakdown.resolve(order).paidWithCredit, 0)

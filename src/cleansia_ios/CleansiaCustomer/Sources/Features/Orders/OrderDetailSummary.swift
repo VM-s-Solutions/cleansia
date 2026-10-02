@@ -117,6 +117,23 @@ struct OrderPriceBreakdown: Equatable {
     }
 }
 
+extension CustomerOrderDetail {
+    /// No card charge to speak of: a cash booking — a confirmed recurring cash occurrence rests at Paid
+    /// with nothing taken — or a card one whose payment is Pending or Failed (the server's
+    /// `Order.TookNoPayment`). Read by the cancel sheet and the credit split.
+    var tookNoCardPayment: Bool {
+        let paymentStatus = paymentStatus?.value
+        return paymentType?.value == 1 || paymentStatus == 1 || paymentStatus == 3
+    }
+
+    /// The card line under a credit split: `paidByCard` only once the card was charged; while the payment
+    /// is pending or failed the card share is still to pay (`dueOnCard`, the confirm step's copy).
+    /// Android's `cardShareLabelRes`.
+    var cardShareLabel: String {
+        tookNoCardPayment ? L10n.Credit.dueOnCard : L10n.Credit.paidByCard
+    }
+}
+
 /// The headline facts about an order: the price, and the struck-through subtotal
 /// when something came off it. Read by both heroes — the static card renders them
 /// inline, the live progress card renders none of them and `OrderHeroFactsStrip`
@@ -183,7 +200,7 @@ struct OrderPriceBreakdownCard: View {
                     value: "−" + OrdersFormat.price(breakdown.paidWithCredit, currencyCode: breakdown.currencyCode)
                 )
                 OrderInfoRow(
-                    label: L10n.Credit.paidByCard,
+                    label: order.cardShareLabel,
                     value: OrdersFormat.price(breakdown.paidByCard, currencyCode: breakdown.currencyCode)
                 )
             }

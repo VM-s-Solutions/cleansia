@@ -111,12 +111,9 @@ final class OrderDetailViewModel: ViewModel {
         )
     }
 
-    /// No card charge for the cancel sheet to promise back: a cash booking — a confirmed recurring cash
-    /// occurrence rests at Paid with nothing taken — or a card one whose payment is Pending or Failed.
+    /// No card charge for the cancel sheet to promise back (`CustomerOrderDetail.tookNoCardPayment`).
     var tookNoCardPayment: Bool {
-        guard let order = state.loadedValue else { return false }
-        let paymentStatus = order.paymentStatus?.value
-        return order.paymentType?.value == 1 || paymentStatus == 1 || paymentStatus == 3
+        state.loadedValue?.tookNoCardPayment ?? false
     }
 
     /// Gates the "Make this recurring" shortcut, from the same nullable membership the

@@ -69,7 +69,7 @@ final class LiveActivityCoordinator {
 
         activityObserver = Task { [weak self] in
             for await activity in Activity<CleanOrderAttributes>.activityUpdates {
-                await self?.adopt(activity)
+                self?.adopt(activity)
             }
         }
     }
@@ -129,7 +129,7 @@ final class LiveActivityCoordinator {
         stateObservers[orderId] = Task { [weak self, registrar] in
             for await state in activity.activityStateUpdates where state == .dismissed || state == .ended {
                 await registrar.deregister(orderId: orderId)
-                await self?.forgetAdopted(orderId: orderId, activityId: activity.id)
+                self?.forgetAdopted(orderId: orderId, activityId: activity.id)
 
                 return
             }

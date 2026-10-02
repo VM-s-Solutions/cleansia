@@ -113,14 +113,21 @@ The apps read three shapes:
 | `CZ65 0800 0000 1920 0014 5399`, or an SK IBAN | the same three parts, with the IBAN's zero padding dropped |
 
 Spaces of every kind are ignored (a non-breaking one included) and an en or em dash counts as a hyphen.
-**A bare number goes to the number field, whichever box it was pasted into**: up to ten digits
-pasted at once (spaces ignored) become the number, and the prefix and bank code stay as they are, so
-`2000145399` pasted into the prefix box no longer turns into the prefix `200014`. Typing never jumps,
-because the number pad types one digit at a time, and eleven or more bare digits are not an account
-number, so the box keeps its own clamp. The rule has one cost: a real two-digit prefix such as `19`
-pasted into an empty prefix box goes to the number; typed, it stays. After a routed paste iOS closes
-the keyboard, because it rebuilds the three boxes so each one draws its new value; Android keeps the
-keyboard in the box that received the paste. The apps only split text — the server keeps every rule
+**A bare number goes to the number field, whichever box it was pasted into**: up to ten digits pasted
+at once (spaces ignored) into an empty box become the number, and the prefix and bank code stay as they
+are, so `2000145399` pasted into an empty prefix box no longer turns into the prefix `200014`. Typing
+never jumps, because the number pad types one digit at a time, and eleven or more bare digits are not
+an account number, so the box keeps its own clamp. **A paste into a box that already holds digits is
+read together with them**, because every shape is matched against the box's whole new text. Pasted at
+the caret, `2000145399` after a `19` in the prefix box is the twelve digits `192000145399`, which is no
+account, so the box clamps it to the prefix `192000`, and `2000145399/0800` pasted there falls back to
+the clamp the same way. A shorter paste can be routed with the box's digits in front: `2000` after `19`
+makes the number `192000`, and the prefix stays `19`. Pasted over all of the box's digits, the paste is
+read on its own, though a bare number still has to be at least two characters longer than what it
+replaces. The rule has one more cost: a real two-digit prefix such as `19` pasted into an empty prefix
+box goes to the number; typed, it stays. After a routed paste iOS closes the keyboard, because it
+rebuilds the three boxes so each one draws its new value; Android keeps the keyboard in the box that
+received the paste. The apps only split text — the server keeps every rule
 (the mod-11 check, the bank-code shape, the IBAN cross-check). Partner web splits the two separator
 shapes as well, but not an IBAN, and it also sends a bare number to the number field from any box;
 unlike the apps, it clears the prefix when it does.

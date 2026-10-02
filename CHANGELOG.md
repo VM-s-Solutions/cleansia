@@ -101,8 +101,9 @@ need backfilling.
 - **Cleaner, Android and iOS — a bank account can be pasted whole into any one box.** A Czech or Slovak
   account pasted into the prefix, number or bank-code box lands in all three: `19-2000145399/0800`,
   `2000145399/0800`, `19-2000145399` (the bank code already there stays) or a CZ or SK IBAN. A bare
-  number goes to the number field from any box. Each box used to keep its own digits and cut them to
-  length, so `12321414/3545` pasted into the number became `1232141435` with no bank code. A two-digit
+  number pasted into any empty box goes to the number field. Each box used to keep its own digits and
+  cut them to length, so `12321414/3545` pasted into the number became `1232141435` with no bank code.
+  A paste after digits already in a box is read together with them, so clear the box first. A two-digit
   prefix pasted on its own into an empty prefix box goes to the number; type it instead. The server
   still checks every account. (Owner ruling 2026-10-01.)
 

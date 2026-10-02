@@ -180,7 +180,7 @@ struct RegistrationLockView: View {
             // Only a rejection is fixable, and only support can say more than the reason shown.
             var mail = URLComponents()
             mail.scheme = "mailto"
-            mail.path = "support@cleansia.cz"
+            mail.path = CleansiaWeb.contactEmail
             mail.queryItems = [URLQueryItem(name: "subject", value: L10n.RegistrationLock.supportSubject)]
             if let url = mail.url { openURL(url) }
         }

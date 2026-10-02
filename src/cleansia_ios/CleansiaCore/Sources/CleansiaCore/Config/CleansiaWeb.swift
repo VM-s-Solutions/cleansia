@@ -9,8 +9,8 @@ public enum CleansiaWeb {
 
     public static let origin = "https://\(domain)"
 
-    /// The one public contact address customers and cleaners are shown.
-    public static let contactEmail = "info@\(domain)"
+    /// The one support contact customers and cleaners are shown or linked to (owner ruling 2026-10-02).
+    public static let contactEmail = "support@\(domain)"
 
     /// Routed by the customer web app (`app.routes.ts`).
     public static var termsURL: URL {

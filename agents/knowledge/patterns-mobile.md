@@ -1167,10 +1167,15 @@ resource bundle included) only in a language its host bundle declares, so a widg
 its development region, English, on every phone, and no in-process test sees it (they apply a language
 themselves; `LiveActivityExtensionLocalizationTests` reads the BUILT appex instead). **It follows the in-app
 switch through the App Group** (2026-10-01): an extension has its own `UserDefaults` domain, so the app mirrors
-the RESOLVED tag into `group.cz.cleansia.{customer,partner}` (`AppGroupLanguage.write`, at launch and on every
-change, next to `CoreL10n.apply`), and the widget reads it and calls `CoreL10n.apply` before drawing — the phone's
-language until the app has written one. Do NOT confuse this with APNs `loc-key` strings, which must stay in each
-**app** target's catalog (APNs reads only the main bundle).
+the CHOSEN tag (`settings.persistedLanguageTag`) into `group.cz.cleansia.{customer,partner}`
+(`AppGroupLanguage.write`, at launch and on every change, next to `CoreL10n.apply`) and removes it on "System"
+(`AppGroupLanguage.write(nil, appGroup:)`). The widget reads it and calls `CoreL10n.apply` before drawing;
+with none written (on "System", or before the first launch of a build that writes it) the widget applies its
+own `Bundle.main.preferredLocalizations` and the NSE leaves iOS's rendering, so both follow the phone. NEVER write the
+RESOLVED tag there: neither app runs in the background, so a resolved phone language goes stale as soon as the
+phone's language changes while the app is closed, and then overrides iOS's own, correct rendering. Do NOT
+confuse this with APNs `loc-key` strings, which must stay in each **app** target's catalog (APNs reads only the
+main bundle).
 
 **A Notification Service Extension does not link CleansiaCore.** Core's resource bundle would be copied into
 each appex. It compiles exactly what it needs by path: the Foundation-only `Localization/AppGroupLanguage.swift`

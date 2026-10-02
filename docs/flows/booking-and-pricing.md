@@ -537,7 +537,7 @@ way cannot be cancelled; nor can one whose booked start has passed with a cleane
 (`order.start_passed_cannot_cancel`), which the guest reports as a no-show instead.
 → [Cancellation rules](/product/business-rules#cancellation)
 
-The two anonymous routes are available on the customer web and customer mobile API hosts, both in
+The three anonymous routes are available on the customer web and customer mobile API hosts, all in
 the `auth` rate-limit window. Each request body carries the access token and nothing else that
 proves anything:
 

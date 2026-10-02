@@ -244,9 +244,11 @@ stops meaning anything.
 - **Each haptic is played at the one place its callers share**, so there is no wrapper type. Every
   outcome in both apps is shown by the shared snackbar host, and every slide goes through one
   component per app.
-- **What plays nothing.** An info message reports no outcome. A network failure or a cancelled request
-  never reaches the snackbar host. A stepper disables its button at a bound, so a refused step never
-  ticks.
+- **What plays nothing.** An info message reports no outcome. A cancelled request never reaches the
+  snackbar host. A stepper disables its button at a bound, so a refused step never ticks.
+- **An offline failure is an outcome like any other** and plays the error haptic. On iOS and the
+  partner Android app the screen shows it. On customer Android `NetworkErrorInterceptor` shows it and
+  the screen stays silent, so it is shown, and felt, once ([the error model](#error-model)).
 - **Android has no warning haptic.** Every warning the apps raise is a refusal, so a warning plays
   `REJECT`.
 - **The phone's setting wins.** System Haptics on iOS and touch feedback on Android turn all three off.

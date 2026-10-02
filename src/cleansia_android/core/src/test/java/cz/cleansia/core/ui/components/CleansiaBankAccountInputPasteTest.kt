@@ -73,6 +73,20 @@ class CleansiaBankAccountInputPasteTest {
         assertNull(split("", current = "19"))
     }
 
+    /**
+     * BasicTextField can report two edits before the screen recomposes, so the segment is still composed
+     * with "" when "12" arrives. Read against that, "12" was two characters at once — a bare paste — and
+     * overwrote the number while the prefix stayed "1". The second edit replaces "1", the text the
+     * segment last reported.
+     */
+    @Test
+    fun `two digits typed before a recomposition stay in their box`() {
+        // As AccountSegment passes them on, with no recomposition between the two.
+        val replaced = lastReported("")
+        assertNull(split("1", current = replaced("1")))
+        assertNull(split("12", current = replaced("12")))
+    }
+
     @Test
     fun `a bare run too long for a number is left to the clamp`() {
         assertNull(split("20001453991"))

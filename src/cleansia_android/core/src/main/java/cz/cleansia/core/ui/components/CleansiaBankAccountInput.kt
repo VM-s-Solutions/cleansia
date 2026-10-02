@@ -95,8 +95,8 @@ fun CleansiaBankAccountInput(
 
     // A paste that reads as a whole account fills the segments it names, and a bare number pasted into
     // any segment is the account number; anything else is clamped into the segment it went into,
-    // exactly as typing is. [current] is the segment's value the change replaces.
-    fun segmentChange(current: String, maxLength: Int, onChange: (String) -> Unit): (String) -> Unit = { raw ->
+    // exactly as typing is. [current] is the text the change replaces, as the segment reported it.
+    fun segmentChange(maxLength: Int, onChange: (String) -> Unit): (String, String) -> Unit = { current, raw ->
         val split = splitPastedAccount(raw, current)
         if (split == null) {
             onChange(raw.filter(Char::isDigit).take(maxLength))
@@ -133,7 +133,7 @@ fun CleansiaBankAccountInput(
             // longest placeholder we ship ("Predčíslie"), not by its six digits.
             AccountSegment(
                 value = prefix,
-                onValueChange = segmentChange(prefix, PrefixMaxLength, onPrefixChange),
+                onValueChange = segmentChange(PrefixMaxLength, onPrefixChange),
                 interactionSource = prefixInteraction,
                 enabled = enabled,
                 placeholder = prefixPlaceholder,
@@ -142,7 +142,7 @@ fun CleansiaBankAccountInput(
             Separator("–")
             AccountSegment(
                 value = number,
-                onValueChange = segmentChange(number, NumberMaxLength, onNumberChange),
+                onValueChange = segmentChange(NumberMaxLength, onNumberChange),
                 interactionSource = numberInteraction,
                 enabled = enabled,
                 placeholder = numberPlaceholder,
@@ -151,7 +151,7 @@ fun CleansiaBankAccountInput(
             Separator("/")
             AccountSegment(
                 value = bankCode,
-                onValueChange = segmentChange(bankCode, BankCodeMaxLength, onBankCodeChange),
+                onValueChange = segmentChange(BankCodeMaxLength, onBankCodeChange),
                 interactionSource = bankCodeInteraction,
                 enabled = enabled,
                 placeholder = bankCodePlaceholder,
@@ -175,7 +175,7 @@ private val czSkIban = Regex("""^(?:CZ|SK)\d{2}(\d{20})$""")
 
 /**
  * A Czech or Slovak account pasted (or typed on a hardware keyboard) in one go, split into its three
- * fields as (prefix, number, bank code); [raw] is the segment's new text and [current] the value it
+ * fields as (prefix, number, bank code); [raw] is the segment's new text and [current] the text it
  * replaces. A null part leaves that field as it is, and a null result means the text is an ordinary
  * entry for the segment it landed in, which the digit clamp takes.
  *
@@ -212,22 +212,35 @@ private fun domesticFormOfIban(text: String): String? {
 }
 
 /**
+ * For each text a segment composed with [value] reports, the text that edit replaced: the one the
+ * segment reported before it, and [value] for the first. Not [value] every time: [value] comes back
+ * through the caller's state one recomposition late, and BasicTextField can report several edits before
+ * then (it keeps its own `lastTextValue` for the same reason). Read against [value], the second of two
+ * digits typed in one frame looked like a two-digit paste and went to the number.
+ */
+internal fun lastReported(value: String): (raw: String) -> String {
+    var last = value
+    return { raw -> last.also { last = raw } }
+}
+
+/**
  * One segment. The placeholder stays on screen while the segment is empty — including while it is
  * focused — because the person is mid-way through an account number and "which box am I in" is exactly
- * the question a caret does not answer.
+ * the question a caret does not answer. [onValueChange] gets the text an edit replaced and the new text.
  */
 @Composable
 private fun AccountSegment(
     value: String,
-    onValueChange: (String) -> Unit,
+    onValueChange: (current: String, raw: String) -> Unit,
     interactionSource: MutableInteractionSource,
     enabled: Boolean,
     modifier: Modifier = Modifier,
     placeholder: String? = null,
 ) {
+    val replaced = remember(value) { lastReported(value) }
     BasicTextField(
         value = value,
-        onValueChange = onValueChange,
+        onValueChange = { raw -> onValueChange(replaced(raw), raw) },
         modifier = modifier,
         enabled = enabled,
         singleLine = true,

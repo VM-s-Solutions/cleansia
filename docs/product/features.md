@@ -116,7 +116,12 @@ Which cards show, most relevant first:
 
 - *Stay in the loop*, while the phone does not allow the app's notifications. *Turn on* asks for
   permission, or opens the system settings once the phone will not ask again. It is re-checked each
-  time the app returns to the foreground, so the card goes once notifications are allowed.
+  time the app returns to the foreground, so the card goes once notifications are allowed. Android 13
+  and later cannot be asked whether it will still ask, so the app remembers a refusal: it raises the
+  system dialog while Android offers a rationale or no refusal was recorded, and opens the settings
+  after that (since 2026-10-02; a permission never refused, such as a dismissed launch prompt, used to
+  go straight to the settings). An install from before then that was refused for good opens the
+  settings on the second tap.
 - The customer's credit, when they hold a balance in the currency Home prices in. It opens booking.
 - *No express surcharge on N more bookings this month*, for a Plus member with waivers left whose
   benefits are not paused. It opens booking.

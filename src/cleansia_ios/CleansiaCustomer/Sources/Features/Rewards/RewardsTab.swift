@@ -54,15 +54,19 @@ struct RewardsTab: View {
             ProgressView()
                 .tint(CleansiaColors.primary)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+        // Sized to the viewport between the title and the Book FAB's top, and centred there (the Orders
+        // tab's form): a scroll view proposes no height. The scroll view stays for pull-to-refresh.
         case .error:
-            ScrollView {
-                RewardsStateMessage(
-                    systemImage: "wifi.slash",
-                    message: L10n.Rewards.errorLoad
-                ) { Task { await vm.refresh() } }
-                    .frame(maxWidth: .infinity, minHeight: 360)
+            GeometryReader { proxy in
+                ScrollView {
+                    RewardsStateMessage(
+                        systemImage: "wifi.slash",
+                        message: L10n.Rewards.errorLoad
+                    ) { Task { await vm.refresh() } }
+                        .frame(maxWidth: .infinity, minHeight: proxy.size.height)
+                }
+                .refreshable { await vm.refresh() }
             }
-            .refreshable { await vm.refresh() }
         case let .loaded(content):
             RewardsContentView(
                 content: content,

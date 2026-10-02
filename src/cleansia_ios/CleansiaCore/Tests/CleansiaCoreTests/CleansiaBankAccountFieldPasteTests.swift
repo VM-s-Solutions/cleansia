@@ -3,8 +3,9 @@ import XCTest
 
 /// Android's twin (`CleansiaBankAccountInput`) is held to the same cases; keep the two lists in step.
 final class CleansiaBankAccountFieldPasteTests: XCTestCase {
-    private func split(_ raw: String) -> [String?]? {
-        CleansiaBankAccountField.splitPastedAccount(raw).map { [$0.prefix, $0.number, $0.bankCode] }
+    private func split(_ raw: String, replacing current: String = "") -> [String?]? {
+        CleansiaBankAccountField.splitPastedAccount(raw, replacing: current)
+            .map { [$0.prefix, $0.number, $0.bankCode] }
     }
 
     func testANumberAndBankCodeSplitAndClearThePrefix() {
@@ -32,12 +33,29 @@ final class CleansiaBankAccountFieldPasteTests: XCTestCase {
         XCTAssertEqual(split("19-2000145399"), ["19", "2000145399", nil])
     }
 
-    /// A bare number is not split: it stays in the segment it was pasted into, where the digit clamp
-    /// takes it — in the number box, that is the number.
-    func testABareNumberIsNotSplit() {
-        XCTAssertNil(split("2000145399"))
-        XCTAssertNil(split("19"))
+    /// A bare number is the account number whichever box received it, so "2000145399" pasted into the
+    /// empty prefix box no longer becomes the prefix "200014". The split never learns which box it was:
+    /// these are the prefix, number and bank-code boxes alike, and prefix and bank code are left alone.
+    func testABarePastedNumberGoesToTheNumberAndLeavesTheOtherTwo() {
+        XCTAssertEqual(split("2000145399"), [nil, "2000145399", nil])
+        XCTAssertEqual(split("2000 1453 99"), [nil, "2000145399", nil])
+        XCTAssertEqual(split("2000145399", replacing: "0800"), [nil, "2000145399", nil], "pasted over a bank code")
+        // Owner decision D14 as written: two digits pasted into the empty prefix box are the number too.
+        XCTAssertEqual(split("19"), [nil, "19", nil])
+    }
+
+    /// The number pad types one digit at a time, and a typed prefix or bank code must stay where it is.
+    func testTypingNeverJumpsToTheNumber() {
+        XCTAssertNil(split("5"))
+        XCTAssertNil(split("12", replacing: "1"))
+        XCTAssertNil(split("08001", replacing: "0800"))
         XCTAssertNil(split(""))
+        XCTAssertNil(split("", replacing: "19"))
+    }
+
+    func testABareRunTooLongForANumberIsLeftToTheClamp() {
+        XCTAssertNil(split("20001453991"))
+        XCTAssertNil(split("08002000145399", replacing: "0800"), "pasted after a bank code already there")
     }
 
     func testAnythingThatIsNotAnAccountIsLeftToTheClamp() {

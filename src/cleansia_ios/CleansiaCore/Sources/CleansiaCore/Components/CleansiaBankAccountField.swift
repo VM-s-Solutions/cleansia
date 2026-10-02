@@ -149,17 +149,18 @@ public struct CleansiaBankAccountField: View {
         maxLength: Int,
         focus: Segment
     ) -> some View {
-        // A whole account pasted into any one segment is split across all three. It has to be caught
-        // here, before the caller's binding sees it: callers sanitise to digits on write, so by the
-        // time onChange below runs the slash is gone and the bank code has been run into the number.
+        // A whole account pasted into any one segment is split across all three, and a bare number pasted
+        // into any of them is the account number. It has to be caught here, before the caller's binding
+        // sees it: callers sanitise to digits on write, so by the time onChange below runs the slash is
+        // gone and the bank code has been run into the number.
         TextField("", text: Binding(
             get: { text.wrappedValue },
             set: { raw in
-                guard let pasted = Self.splitPastedAccount(raw) else {
+                guard let pasted = Self.splitPastedAccount(raw, replacing: text.wrappedValue) else {
                     text.wrappedValue = raw
                     return
                 }
-                prefix = pasted.prefix
+                if let newPrefix = pasted.prefix { prefix = newPrefix }
                 number = pasted.number
                 if let code = pasted.bankCode { bankCode = code }
             }
@@ -193,21 +194,31 @@ public struct CleansiaBankAccountField: View {
 
     // swiftlint:disable large_tuple
     /// A Czech or Slovak account pasted (or typed on a hardware keyboard) in one go, split into its
-    /// three fields. `nil` means the text is an ordinary entry for the segment it landed in, and the
-    /// digit clamp takes it — a bare number included: pasted into the number box, it is the number.
+    /// three fields; `raw` is the segment's new text and `current` the value it replaces. A nil part
+    /// leaves that field as it is, and a nil result means the text is an ordinary entry for the segment
+    /// it landed in, which the digit clamp takes.
     ///
     /// Recognised: `[prefix-]number/bankcode` and `prefix-number` — the number pad types neither
-    /// separator, so their presence is what marks a paste — and a CZ or SK IBAN, whose BBAN is
-    /// `bankcode(4) prefix(6) number(10)`. Whitespace of every kind (NBSP included) is dropped and an en
-    /// or em dash reads as a hyphen, because that is what banking apps put on the clipboard. A missing
-    /// prefix clears the old one; a missing bank code keeps it. Nothing is validated beyond shape: the
-    /// server owns mod-11, the bank code and the IBAN cross-check. -> /partner-app/onboarding
-    static func splitPastedAccount(_ raw: String) -> (prefix: String, number: String, bankCode: String?)? {
+    /// separator, so their presence is what marks a paste — a CZ or SK IBAN, whose BBAN is
+    /// `bankcode(4) prefix(6) number(10)`, and a bare number, which is the account number whichever box
+    /// it was pasted into. A bare number counts only when it lands two or more characters at once: the
+    /// number pad types one at a time, so typing a prefix or a bank code never jumps to the number.
+    /// Whitespace of every kind (NBSP included) is dropped and an en or em dash reads as a hyphen,
+    /// because that is what banking apps put on the clipboard. A written-out account without a prefix
+    /// clears the old one; a missing bank code keeps it. Nothing is validated beyond shape: the server
+    /// owns mod-11, the bank code and the IBAN cross-check. -> /partner-app/onboarding
+    static func splitPastedAccount(
+        _ raw: String,
+        replacing current: String = ""
+    ) -> (prefix: String?, number: String, bankCode: String?)? {
         let pasted = String(
             raw.filter { !$0.isWhitespace }.map { $0 == "\u{2013}" || $0 == "\u{2014}" ? "-" : $0 }
         )
         let text = domesticForm(ofIban: pasted) ?? pasted
-        guard text.contains("-") || text.contains("/") else { return nil }
+        guard text.contains("-") || text.contains("/") else {
+            guard raw.count - current.count >= 2, isDigits(text, upTo: numberMaxLength) else { return nil }
+            return (nil, text, nil)
+        }
 
         let slash = text.split(separator: "/", omittingEmptySubsequences: false)
         guard slash.count <= 2 else { return nil }

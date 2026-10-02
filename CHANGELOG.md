@@ -72,8 +72,8 @@ need backfilling.
 
 - **Customer and cleaner, Android and iOS — the right moments are felt.** A haptic plays when a
   slide-to-confirm commits (the customer's booking, and the cleaner's contract, job-step and order-list
-  slides) and when the result of an action is shown, success or failure. On iOS a room or bathroom
-  stepper also ticks on each step. Nothing else vibrates, and the phone's own haptics setting turns it
+  slides) and when the result of an action is shown, success or failure. A room or bathroom stepper
+  also ticks on each step. Nothing else vibrates, and the phone's own haptics setting turns it
   all off. Before, only the Android customer's booking slide played one. (Owner ruling 2026-10-01.)
 
 - **Customer iOS — photos zoom open and swipe away.** On iOS 18 and later an order's photo or a
@@ -912,10 +912,11 @@ need backfilling.
   carries *Cleaner is on the way* with the booking number, without a sound, because the notification
   for the same moment already plays one. Still to be confirmed on a phone. (ADR-0029 Amendment A5.)
 
-- **Customer iOS — the room and bathroom steppers are easier to hit, and VoiceOver can adjust them.**
-  Each plus and minus takes taps across 44 points, Apple's minimum, without the stepper growing.
-  VoiceOver reads each stepper as one control, *Your home, 3 rooms*, that a swipe up or down adjusts; it
-  used to find two bare buttons around an unnamed number. (Owner ruling 2026-10-01.)
+- **Customer Android and iOS — the room and bathroom steppers are easier to hit, and VoiceOver and
+  TalkBack can adjust them.** Each plus and minus takes taps across 44 points on iOS, Apple's minimum,
+  and 48dp on Android, without the stepper growing. VoiceOver and TalkBack read each stepper as one
+  control, *Your home, 3 rooms*, that a swipe up or down adjusts; they used to find two bare buttons
+  around an unnamed number. (Owner ruling 2026-10-01; Android 2026-10-02.)
 
 - **Customer Android and iOS — the phone's language no longer overwrites the language your e-mails are
   written in.** The account's language, which the server uses for the sitewide promo push and every

@@ -258,7 +258,7 @@ stops meaning anything.
 |---|---|---|
 | A slide-to-confirm commits: the customer's booking, and the cleaner's contract, order-detail and orders-list slides | a medium impact, in Core `SlideToConfirm` just before its action | `LongPress`, in customer `SwipeToConfirmButton` and partner `SlideToCommit` |
 | The outcome of an action is shown | `SnackbarController.show` plays the success, error or warning notification haptic | `GlobalSnackbarHost` plays `CONFIRM` for a success and `REJECT` for an error or a warning; below API 30 all three play `LONG_PRESS` |
-| A size stepper takes a step | a selection tick in the customer `PropertyStepper`, on the booking and schedule size rows | none yet |
+| A size stepper takes a step | a selection tick in the customer `PropertyStepper`, on the booking and schedule size rows | `CLOCK_TICK`, Android's selection tick, from `rememberStepperTick` in the customer booking `CompactCounter` and the schedule `Stepper` (since 2026-10-02) |
 
 - **Each haptic is played at the one place its callers share**, so there is no wrapper type. Every
   outcome in both apps is shown by the shared snackbar host, and every slide goes through one
@@ -319,8 +319,11 @@ What changed on iOS:
   pill growing; the two steppers on the booking row split the gap between them. VoiceOver reads each
   pill as one adjustable control, named by its row (*Your home*, or *Rooms* and *Bathrooms* on a
   schedule) with the count as its value, and a swipe up or down steps it within the buttons' bounds.
-  Android is unchanged: the booking counter's buttons are 28dp, the schedule stepper's are Material's
-  48dp, and on both the buttons are unlabelled and TalkBack has no adjust action.
+  Android has matched it since 2026-10-02. The booking counter keeps its 28dp glyphs, each inside a
+  48dp target laid out as on iOS (10dp above and below, 16dp toward the label, 4dp outward); the
+  schedule stepper already had 48dp buttons. Both are one TalkBack node, named and valued as on iOS and
+  adjusted like a slider with a swipe up or down (`adjustableStepper()` in the customer app's
+  `StepperAccessibility.kt`).
 - **On iOS 26 the booking sheet grows out of the Book button.** Opened from the Book FAB, the booking
   sheet zooms out of the button and shrinks back into it when it closes. Every other way into booking
   (Home's book buttons, the carousel slides, *Order again*) slides the sheet up as before. The FAB looks

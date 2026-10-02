@@ -294,3 +294,10 @@ What changed on iOS:
   size steppers, the booking sheet's *Step n of 4*, the Rewards points figure and the partner
   dashboard figures. The animation is keyed on the number itself. The roll only moves digits, so it is
   kept to texts that are mostly a number.
+- **The size steppers have 44pt targets and are one VoiceOver control each.** The customer room and
+  bathroom steppers keep their branded pill, because two native `Stepper`s do not fit the size row
+  Android draws. Each button's glyph stays 28pt inside a 44pt hit region, HIG's minimum, without the
+  pill growing; the two steppers on the booking row split the gap between them. VoiceOver reads each
+  pill as one adjustable control, named by its row (*Your home*, or *Rooms* and *Bathrooms* on a
+  schedule) with the count as its value, and a swipe up or down steps it within the buttons' bounds.
+  Android's counters are still 28dp with no TalkBack adjust action.

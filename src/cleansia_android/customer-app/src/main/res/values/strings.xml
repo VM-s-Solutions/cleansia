@@ -109,7 +109,7 @@
     <string name="home_upsell_plus_title_trial">First %1$d days free.</string>
     <string name="home_upsell_plus_cta_trial">Try it free</string>
     <string name="home_upsell_referral_top">Refer a friend</string>
-    <string name="home_upsell_referral_title">You both get 150 points after their first completed cleaning</string>
+    <string name="home_upsell_referral_title">Share Cleansia with a friend</string>
     <string name="home_upsell_referral_cta">Share my code</string>
     <string name="home_upsell_page_a11y">Offer %1$d of %2$d</string>
     <string name="home_upsell_next">Next offer</string>
@@ -117,11 +117,11 @@
     <string name="home_upsell_notifications_top">Stay in the loop</string>
     <string name="home_upsell_notifications_title">Know the moment your cleaner is on the way</string>
     <string name="home_upsell_notifications_cta">Turn on</string>
-    <string name="home_upsell_credit_title">%1$s comes off your next card booking, up to %2$d%% of it</string>
+    <string name="home_upsell_credit_title">%1$s to spend on cleanings</string>
     <string name="home_upsell_express_top">Plus · %1$d–%2$d h notice</string>
     <plurals name="home_upsell_express_title">
-        <item quantity="one">No express surcharge on %1$d more booking this month</item>
-        <item quantity="other">No express surcharge on %1$d more bookings this month</item>
+        <item quantity="one">No surcharge on %1$d more express booking</item>
+        <item quantity="other">No surcharge on %1$d more express bookings</item>
     </plurals>
     <string name="home_upsell_book_cta">Book now</string>
     <string name="home_quick_size_title">How big is your home?</string>
@@ -131,8 +131,34 @@
     <string name="home_quick_size_baths_less">Fewer bathrooms</string>
     <string name="home_quick_size_baths_more">More bathrooms</string>
     <string name="home_upsell_setup_recurring_top">Plus perk</string>
-    <string name="home_upsell_setup_recurring_title">Set up a recurring cleaning — book once, run forever</string>
+    <string name="home_upsell_setup_recurring_title">Put your cleaning on repeat</string>
     <string name="home_upsell_setup_recurring_cta">Set one up</string>
+    <string name="home_upsell_did_you_know">Did you know?</string>
+    <string name="home_upsell_notifications_desc">We tell you when they set off, start and finish.</string>
+    <string name="home_upsell_credit_desc">Taken off your next card payment, up to %1$d%% of the order.</string>
+    <string name="home_upsell_express_desc">Your Plus waives it, and the count resets every month.</string>
+    <string name="home_upsell_setup_recurring_desc">Weekly, fortnightly or monthly, on the day and time you pick.</string>
+    <string name="home_upsell_plus_desc">Take %1$d%% off every cleaning and request your favorite cleaner.</string>
+    <string name="home_upsell_plus_desc_generic">Book recurring cleanings and request your favorite cleaner.</string>
+    <string name="home_upsell_referral_desc_generic">You both get points once their first cleaning is completed.</string>
+    <string name="home_upsell_plus_cancel_title">Free cancellation up to %1$d h before</string>
+    <string name="home_upsell_plus_cancel_desc">One of your Plus benefits, on every booking you make.</string>
+    <string name="home_upsell_express_today_title">Book as little as %1$d h ahead</string>
+    <string name="home_upsell_express_today_desc">Same day? Under %1$d h of notice, an express surcharge applies.</string>
+    <string name="home_upsell_rewards_title">Every completed cleaning earns points</string>
+    <string name="home_upsell_rewards_desc">Collect them to climb the tiers and unlock their perks.</string>
+    <string name="home_upsell_rewards_cta">See my rewards</string>
+    <string name="home_upsell_times_title">Choose your exact arrival time</string>
+    <string name="home_upsell_times_desc">Morning, afternoon or evening, any time from %1$s to %2$s.</string>
+    <string name="home_upsell_chip_percent_off">−%1$d%%</string>
+    <string name="home_upsell_chip_points">+%1$d</string>
+    <string name="home_upsell_chip_hours">%1$d h</string>
+    <string name="home_upsell_chip_minutes">%1$d min</string>
+    <string name="home_upsell_chip_times">%1$d×</string>
+    <plurals name="home_upsell_referral_desc">
+        <item quantity="one">You both get %1$d point once their first cleaning is completed.</item>
+        <item quantity="other">You both get %1$d points once their first cleaning is completed.</item>
+    </plurals>
 
     <string name="home_hero2_top">Spring is here</string>
     <string name="home_hero2_title">Deep clean + windows combo</string>

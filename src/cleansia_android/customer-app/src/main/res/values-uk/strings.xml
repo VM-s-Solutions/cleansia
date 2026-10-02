@@ -109,7 +109,7 @@
     <string name="home_upsell_plus_title_trial">Перші %1$d днів безкоштовно.</string>
     <string name="home_upsell_plus_cta_trial">Спробувати безкоштовно</string>
     <string name="home_upsell_referral_top">Запросіть друга</string>
-    <string name="home_upsell_referral_title">По 150 балів після першого завершеного прибирання друга</string>
+    <string name="home_upsell_referral_title">Порадьте Cleansia другові</string>
     <string name="home_upsell_referral_cta">Поділитися кодом</string>
     <string name="home_upsell_page_a11y">Пропозиція %1$d з %2$d</string>
     <string name="home_upsell_next">Наступна пропозиція</string>
@@ -117,13 +117,13 @@
     <string name="home_upsell_notifications_top">Будьте в курсі</string>
     <string name="home_upsell_notifications_title">Дізнайтеся одразу, коли прибиральник уже в дорозі</string>
     <string name="home_upsell_notifications_cta">Увімкнути</string>
-    <string name="home_upsell_credit_title">%1$s спишуться з наступного замовлення карткою — до %2$d%% вартості</string>
+    <string name="home_upsell_credit_title">%1$s кредиту на ваші прибирання</string>
     <string name="home_upsell_express_top">Plus · за %1$d–%2$d год</string>
     <plurals name="home_upsell_express_title">
-        <item quantity="one">Ще %1$d замовлення цього місяця без експрес-доплати</item>
-        <item quantity="few">Ще %1$d замовлення цього місяця без експрес-доплати</item>
-        <item quantity="many">Ще %1$d замовлень цього місяця без експрес-доплати</item>
-        <item quantity="other">Ще %1$d замовлення цього місяця без експрес-доплати</item>
+        <item quantity="one">Без доплати ще %1$d експрес-замовлення</item>
+        <item quantity="few">Без доплати ще %1$d експрес-замовлення</item>
+        <item quantity="many">Без доплати ще %1$d експрес-замовлень</item>
+        <item quantity="other">Без доплати ще %1$d експрес-замовлення</item>
     </plurals>
     <string name="home_upsell_book_cta">Замовити</string>
     <string name="home_quick_size_title">Який розмір вашого житла?</string>
@@ -133,8 +133,36 @@
     <string name="home_quick_size_baths_less">Менше ванних кімнат</string>
     <string name="home_quick_size_baths_more">Більше ванних кімнат</string>
     <string name="home_upsell_setup_recurring_top">Перевага Plus</string>
-    <string name="home_upsell_setup_recurring_title">Налаштуйте регулярне прибирання — замов один раз, працює завжди</string>
+    <string name="home_upsell_setup_recurring_title">Налаштуйте регулярне прибирання</string>
     <string name="home_upsell_setup_recurring_cta">Налаштувати</string>
+    <string name="home_upsell_did_you_know">Чи знали ви?</string>
+    <string name="home_upsell_notifications_desc">Повідомимо, коли він вирушить, почне й завершить.</string>
+    <string name="home_upsell_credit_desc">Спишеться з наступної оплати карткою, до %1$d%% вартості замовлення.</string>
+    <string name="home_upsell_express_desc">Plus скасовує доплату, а ліміт оновлюється щомісяця.</string>
+    <string name="home_upsell_setup_recurring_desc">Щотижня, раз на два тижні чи щомісяця, у ваш день і час.</string>
+    <string name="home_upsell_plus_desc">Знижка %1$d%% на кожне прибирання та улюблений прибиральник на запит.</string>
+    <string name="home_upsell_plus_desc_generic">Регулярні прибирання і ваш улюблений прибиральник на запит.</string>
+    <string name="home_upsell_referral_desc_generic">Обом бали після першого завершеного прибирання друга.</string>
+    <string name="home_upsell_plus_cancel_title">Безкоштовне скасування за %1$d год до прибирання</string>
+    <string name="home_upsell_plus_cancel_desc">Одна з переваг Plus, для кожного вашого замовлення.</string>
+    <string name="home_upsell_express_today_title">Замовляйте вже за %1$d год</string>
+    <string name="home_upsell_express_today_desc">Треба сьогодні? Менш ніж за %1$d год діє експрес-доплата.</string>
+    <string name="home_upsell_rewards_title">Кожне завершене прибирання приносить бали</string>
+    <string name="home_upsell_rewards_desc">Збирайте їх, піднімайтеся рівнями й відкривайте їхні переваги.</string>
+    <string name="home_upsell_rewards_cta">Мої винагороди</string>
+    <string name="home_upsell_times_title">Оберіть точний час прибуття</string>
+    <string name="home_upsell_times_desc">Ранок, день чи вечір, будь-коли з %1$s до %2$s.</string>
+    <string name="home_upsell_chip_percent_off">−%1$d%%</string>
+    <string name="home_upsell_chip_points">+%1$d</string>
+    <string name="home_upsell_chip_hours">%1$d год</string>
+    <string name="home_upsell_chip_minutes">%1$d хв</string>
+    <string name="home_upsell_chip_times">%1$d×</string>
+    <plurals name="home_upsell_referral_desc">
+        <item quantity="one">Обом по %1$d балу після першого завершеного прибирання друга.</item>
+        <item quantity="few">Обом по %1$d бали після першого завершеного прибирання друга.</item>
+        <item quantity="many">Обом по %1$d балів після першого завершеного прибирання друга.</item>
+        <item quantity="other">Обом по %1$d бала після першого завершеного прибирання друга.</item>
+    </plurals>
 
     <string name="home_hero2_top">Весна вже тут</string>
     <string name="home_hero2_title">Глибоке прибирання + вікна разом</string>

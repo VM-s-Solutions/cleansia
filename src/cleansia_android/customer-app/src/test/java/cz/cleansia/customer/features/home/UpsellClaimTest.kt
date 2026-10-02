@@ -33,6 +33,8 @@ class UpsellClaimTest {
         "home_upsell_plus_top",
         "home_upsell_plus_title",
         "home_upsell_plus_cta",
+        "home_upsell_plus_desc",
+        "home_upsell_plus_desc_generic",
         "membership_inactive_badge",
         "membership_inactive_title",
         "membership_inactive_perks_summary",
@@ -191,7 +193,6 @@ class UpsellClaimTest {
 
     /** The rows known to state the referral reward, so the sweep below cannot pass by finding none. */
     private val referralRewardKeys = listOf(
-        "home_upsell_referral_title",
         "booking_referral_code_dialog_helper",
         "booking_referral_code_dialog_success_named",
         "booking_referral_code_dialog_success",
@@ -219,6 +220,26 @@ class UpsellClaimTest {
             waiting.forEach { item ->
                 assertTrue("$locale/loyalty_referral_stats_waiting does not wait for a completed cleaning — $item", item.contains(completed, ignoreCase = true))
             }
+        }
+    }
+
+    /** The carousel states the server's `pointsPerReferral`, so its rows carry the count and no figure of their own. */
+    @Test
+    fun `the carousel's referral reward is the server's and waits for a completed cleaning`() {
+        val placeholder = Regex("%\\d+\\$[sd]")
+        locales.forEach { locale ->
+            val completed = completedStem.getValue(locale)
+            val generic = strings(locale)["home_upsell_referral_desc_generic"] ?: error("$locale/home_upsell_referral_desc_generic is missing")
+            assertTrue("$locale/home_upsell_referral_desc_generic does not wait for a completed cleaning — $generic", generic.contains(completed, ignoreCase = true))
+            assertTrue("$locale/home_upsell_referral_desc_generic names a figure — $generic", generic.none { it.isDigit() })
+            val items = plurals(locale)["home_upsell_referral_desc"] ?: error("$locale/home_upsell_referral_desc is missing")
+            items.forEach { item ->
+                assertTrue("$locale/home_upsell_referral_desc lost its count — $item", item.contains("%1\$d"))
+                assertTrue("$locale/home_upsell_referral_desc names a number of its own — $item", placeholder.replace(item, "").none { it.isDigit() })
+                assertTrue("$locale/home_upsell_referral_desc does not wait for a completed cleaning — $item", item.contains(completed, ignoreCase = true))
+            }
+            val title = strings(locale)["home_upsell_referral_title"] ?: error("$locale/home_upsell_referral_title is missing")
+            assertTrue("$locale/home_upsell_referral_title states a reward of its own — $title", title.none { it.isDigit() })
         }
     }
 
@@ -262,6 +283,23 @@ class UpsellClaimTest {
         "home_upsell_credit_title",
         "home_upsell_express_top",
         "home_upsell_book_cta",
+        "home_upsell_did_you_know",
+        "home_upsell_notifications_desc",
+        "home_upsell_credit_desc",
+        "home_upsell_express_desc",
+        "home_upsell_setup_recurring_desc",
+        "home_upsell_plus_desc",
+        "home_upsell_plus_desc_generic",
+        "home_upsell_referral_desc_generic",
+        "home_upsell_plus_cancel_title",
+        "home_upsell_plus_cancel_desc",
+        "home_upsell_express_today_title",
+        "home_upsell_express_today_desc",
+        "home_upsell_rewards_title",
+        "home_upsell_rewards_desc",
+        "home_upsell_rewards_cta",
+        "home_upsell_times_title",
+        "home_upsell_times_desc",
         "home_quick_size_title",
         "home_quick_size_cta",
         "home_quick_size_rooms_less",
@@ -272,9 +310,45 @@ class UpsellClaimTest {
 
     /** Key → the placeholders it must carry; it may state no number of its own. */
     private val carouselFigures = mapOf(
-        "home_upsell_credit_title" to listOf("%1\$s", "%2\$d"),
+        "home_upsell_credit_title" to listOf("%1\$s"),
+        "home_upsell_credit_desc" to listOf("%1\$d"),
         "home_upsell_express_top" to listOf("%1\$d", "%2\$d"),
+        "home_upsell_plus_desc" to listOf("%1\$d"),
+        "home_upsell_plus_cancel_title" to listOf("%1\$d"),
+        "home_upsell_express_today_title" to listOf("%1\$d"),
+        "home_upsell_express_today_desc" to listOf("%1\$d"),
+        "home_upsell_times_desc" to listOf("%1\$s", "%2\$s"),
+        "home_upsell_chip_percent_off" to listOf("%1\$d"),
+        "home_upsell_chip_points" to listOf("%1\$d"),
+        "home_upsell_chip_hours" to listOf("%1\$d"),
+        "home_upsell_chip_minutes" to listOf("%1\$d"),
+        "home_upsell_chip_times" to listOf("%1\$d"),
     )
+
+    /** The rows that state no figure at all: their facts are the server's or the booking's, carried elsewhere. */
+    private val carouselFigureFree = listOf(
+        "home_upsell_did_you_know",
+        "home_upsell_notifications_desc",
+        "home_upsell_express_desc",
+        "home_upsell_setup_recurring_title",
+        "home_upsell_setup_recurring_desc",
+        "home_upsell_plus_desc_generic",
+        "home_upsell_plus_cancel_desc",
+        "home_upsell_rewards_title",
+        "home_upsell_rewards_desc",
+        "home_upsell_times_title",
+    )
+
+    @Test
+    fun `the did-you-know rows without a placeholder state no figure`() {
+        locales.forEach { locale ->
+            val declared = strings(locale)
+            carouselFigureFree.forEach { key ->
+                val value = declared[key] ?: error("$locale/$key is missing")
+                assertTrue("$locale/$key names a figure of its own — $value", value.none { it.isDigit() })
+            }
+        }
+    }
 
     @Test
     fun `every new carousel slide is written in all five locales and promises no trial`() {
@@ -295,8 +369,9 @@ class UpsellClaimTest {
     }
 
     /**
-     * The credit balance and its share are the server's (`GetMyCredit`), the waivers left are the
-     * membership's, and the express window is the booking policy's — so no locale states a number.
+     * The credit balance and its share are the server's (`GetMyCredit`), the waivers left, the
+     * discount and the cancellation window are the membership's, and the express window and the
+     * arrival times are the booking policy's — so no locale states a number.
      */
     @Test
     fun `the credit and express slides state the server's figures, never their own`() {

@@ -13,6 +13,7 @@ import cz.cleansia.customer.core.market.MarketRepository
 import cz.cleansia.customer.core.market.countryId
 import cz.cleansia.customer.core.memberships.MembershipPlanDto
 import cz.cleansia.customer.core.memberships.MembershipRepository
+import cz.cleansia.customer.core.memberships.headlinePlan
 import cz.cleansia.customer.core.memberships.headlineTrialDays
 import cz.cleansia.customer.core.notifications.NotificationFeedRepository
 import cz.cleansia.customer.core.orders.OrderRepository
@@ -26,6 +27,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
@@ -79,7 +81,15 @@ class HomeTabViewModel @Inject constructor(
         membership.headlineTrialDays(plans)
     }.stateIn(viewModelScope, SharingStarted.Eagerly, 0)
 
-    /** The chosen market's plans. Silent on failure: the slide then sells Plus without a trial, which is never false. */
+    /**
+     * The discount the Plus slide names, in whole percent: the headline plan's, as the subscribe page
+     * shows it. 0 while the plans are unread or the plan carries none — the slide then names no figure.
+     */
+    val plusDiscountPercent: StateFlow<Int> = plusPlans
+        .map { plans -> plans.headlinePlan()?.discountPercentage?.toInt()?.coerceAtLeast(0) ?: 0 }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, 0)
+
+    /** The chosen market's plans. Silent on failure: the slide then sells Plus without a trial or a figure, which is never false. */
     fun refreshPlusPlans() {
         viewModelScope.launch {
             val market = marketRepository.ensureLoaded()

@@ -206,8 +206,8 @@ final class MembershipCopyTests: XCTestCase {
         for binding in [
             "} else if membership.benefitsPaused {",
             "InactiveCard(trialDays: vm.headlineTrialDays",
-            "message: vm.copy.cancelDialogMessage",
-            "message: vm.copy.switchDialogMessage(",
+            "Text(vm.copy.cancelDialogMessage)",
+            "Text(vm.copy.switchDialogMessage(",
             "copy.cancelSuccess(activeUntil: date)",
             "if let periodHeadline = copy.periodHeadline",
             "Text(copy.periodHint)"

@@ -45,6 +45,16 @@ class StatusBarFadeBindingTest {
         )
     }
 
+    /** Android interpolates a gradient unpremultiplied: a fade to transparent BLACK greys the light theme. */
+    @Test
+    fun `the band fades to the page background at zero alpha`() {
+        val fade = source("ui/components/StatusBarFade.kt").replace(Regex("""//[^\n]*"""), "")
+        assertTrue(
+            "StatusBarFade must end its gradient on color.copy(alpha = 0f), not Color.Transparent",
+            fade.contains("1f to color.copy(alpha = 0f)") && !fade.contains("Color.Transparent"),
+        )
+    }
+
     private fun source(path: String): String = sequenceOf(
         File("."),
         File("customer-app"),

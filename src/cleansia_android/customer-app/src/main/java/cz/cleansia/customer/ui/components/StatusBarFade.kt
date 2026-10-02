@@ -14,7 +14,6 @@ import androidx.compose.ui.composed
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 /**
@@ -42,7 +41,9 @@ fun Modifier.statusBarFade(scrollState: ScrollState): Modifier = composed {
                 brush = Brush.verticalGradient(
                     0f to color,
                     solid / height to color,
-                    1f to Color.Transparent,
+                    // The background at zero alpha, not Color.Transparent (transparent black): the
+                    // gradient interpolates unpremultiplied, so a fade to black greys the light theme.
+                    1f to color.copy(alpha = 0f),
                     endY = height,
                 ),
                 size = Size(size.width, height),

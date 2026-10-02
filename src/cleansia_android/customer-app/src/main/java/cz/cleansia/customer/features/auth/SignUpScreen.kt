@@ -15,8 +15,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -67,6 +69,8 @@ import cz.cleansia.customer.ui.theme.SuccessText
  * Sign Up — mirrors the web's [`register.component.html`].
  * Layout: title → first/last name row → email → password + rule list →
  *         confirm password + match hint → terms checkbox → Register → OR → Google → "Have account? Log in".
+ * The column pads by the real system bars and keyboard (the activity is edge-to-edge), as SignInScreen
+ * does: the end of the form must scroll clear of a 3-button nav bar and the keyboard.
  */
 @Composable
 fun SignUpScreen(
@@ -117,9 +121,11 @@ fun SignUpScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+            .systemBarsPadding()
+            .imePadding()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 24.dp)
-            .padding(top = 64.dp, bottom = 32.dp),
+            .padding(top = 24.dp, bottom = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(

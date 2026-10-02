@@ -10,7 +10,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -67,10 +69,14 @@ fun EmailVerifyScreen(
         if (code.length == CODE_LENGTH) onVerify(code)
     }
 
+    // The activity is edge-to-edge and this route consumes no insets: the back row pads below the
+    // status bar, and the form above a 3-button nav bar and the keyboard (as SignInScreen does).
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
+            .background(MaterialTheme.colorScheme.background)
+            .systemBarsPadding()
+            .imePadding(),
     ) {
         Row(
             modifier = Modifier

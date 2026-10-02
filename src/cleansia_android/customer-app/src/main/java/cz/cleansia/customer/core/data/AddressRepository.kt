@@ -34,10 +34,10 @@ private val Context.addressStore by preferencesDataStore(name = "user_addresses"
  *  - SELECTED_ID: id of the address currently shown in the home top-bar / used
  *    as the default in booking. Null if user has not picked one yet.
  *
- * Source of truth:
- *  - Signed-in users → the backend; DataStore is a local cache refreshed via
- *    [refreshFromServer] (call on sign-in / app resume).
- *  - Guest users (no token) → DataStore is the only store; no network calls.
+ * Source of truth: the backend. DataStore is a local cache of the signed-in
+ * customer's addresses, refreshed via [refreshFromServer] (call on sign-in /
+ * app resume). The app has no guest surface (owner decision C1, 2026-10-01),
+ * so there is no local-only store, as on iOS.
  *
  * Mutation methods return [ApiResult.Success] once the local cache reflects the
  * change and [ApiResult.Error] carrying the parsed message on failure (the
@@ -71,7 +71,8 @@ class AddressRepository @Inject constructor(
 
     /**
      * Pulls the signed-in user's saved addresses from the backend and overwrites
-     * the local cache. No-op ([ApiResult.Success]) when the user is unauthenticated.
+     * the local cache. No-op ([ApiResult.Success]) with no session, the moment a
+     * sign-out lands, rather than a request bound to come back 401.
      */
     suspend fun refreshFromServer(): ApiResult<Unit> = wireResult {
         if (tokenStore.current() == null) return ApiResult.Success(Unit)
@@ -92,8 +93,7 @@ class AddressRepository @Inject constructor(
     /**
      * Create (when [UserAddress.serverId] is null) or update an address.
      *
-     * Guests take a purely-local path and write straight to DataStore. Signed-in
-     * users hit the backend; the local cache is only updated after a 2xx so a
+     * The backend first; the local cache is only updated after a 2xx so a
      * failed mutation never leaves stale state on disk.
      *
      * When [setAsDefault] is true on a create, the server demotes every other
@@ -101,13 +101,6 @@ class AddressRepository @Inject constructor(
      * pick that up rather than mirroring the invariant in two places.
      */
     suspend fun upsert(address: UserAddress, setAsDefault: Boolean = address.isDefault): ApiResult<Unit> {
-        val isGuest = tokenStore.current() == null
-
-        if (isGuest) {
-            writeLocalUpsert(address)
-            return ApiResult.Success(Unit)
-        }
-
         return if (address.serverId == null) {
             createOnServer(address, setAsDefault)
         } else {
@@ -156,10 +149,10 @@ class AddressRepository @Inject constructor(
 
     suspend fun delete(id: String): ApiResult<Unit> {
         val cached = currentList().firstOrNull { it.id == id }
-        val isGuest = tokenStore.current() == null
         val serverId = cached?.serverId
 
-        if (isGuest || serverId == null) {
+        // A cached row the server never had is only dropped from the cache.
+        if (serverId == null) {
             writeLocalDelete(id)
             return ApiResult.Success(Unit)
         }
@@ -176,10 +169,9 @@ class AddressRepository @Inject constructor(
 
     suspend fun setDefault(id: String): ApiResult<Unit> {
         val cached = currentList().firstOrNull { it.id == id }
-        val isGuest = tokenStore.current() == null
         val serverId = cached?.serverId
 
-        if (isGuest || serverId == null) {
+        if (serverId == null) {
             writeLocalSetDefault(id)
             return ApiResult.Success(Unit)
         }
@@ -204,10 +196,9 @@ class AddressRepository @Inject constructor(
 
     suspend fun rename(id: String, newLabel: String): ApiResult<Unit> {
         val cached = currentList().firstOrNull { it.id == id } ?: return ApiResult.Success(Unit)
-        val isGuest = tokenStore.current() == null
         val serverId = cached.serverId
 
-        if (isGuest || serverId == null) {
+        if (serverId == null) {
             writeLocalRename(id, newLabel)
             return ApiResult.Success(Unit)
         }
@@ -268,16 +259,6 @@ class AddressRepository @Inject constructor(
     private suspend fun writeCache(list: List<UserAddress>) {
         context.addressStore.edit { prefs ->
             prefs[Keys.ADDRESSES] = json.encodeToString(list)
-        }
-    }
-
-    private suspend fun writeLocalUpsert(address: UserAddress) {
-        context.addressStore.edit { prefs ->
-            val current = prefs.readList()
-            val filtered = current.filterNot { it.id == address.id }
-            val demoted = if (address.isDefault) filtered.map { it.copy(isDefault = false) } else filtered
-            val updated = demoted + address
-            prefs[Keys.ADDRESSES] = json.encodeToString(updated)
         }
     }
 

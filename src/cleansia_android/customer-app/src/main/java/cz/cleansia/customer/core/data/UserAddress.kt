@@ -13,7 +13,7 @@ import kotlinx.serialization.Serializable
  * [id] is a stable local identity used by Flow diffing and the selection UI
  * (it never changes once an entry is created locally). [serverId] is populated
  * after the entry has been persisted to the backend — null means "not yet
- * synced" (guest mode, or a signed-in user whose POST has not completed).
+ * synced" (a POST that has not completed).
  */
 @Serializable
 data class UserAddress(
@@ -33,8 +33,8 @@ data class UserAddress(
      */
     val countryIsoCode: String = "",
     /**
-     * The backend's country id, as the server answered it. Null for a guest-local address and for a
-     * cache written before the field existed — the platform default market either way.
+     * The backend's country id, as the server answered it. Null for an address not yet synced and for
+     * a cache written before the field existed — the platform default market either way.
      */
     val countryId: String? = null,
     val latitude: Double? = null,

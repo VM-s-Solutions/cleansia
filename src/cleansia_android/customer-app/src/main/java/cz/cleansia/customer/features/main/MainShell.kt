@@ -215,8 +215,8 @@ fun MainShell(
     }
 
     // Warm the address cache from the server in parallel with the profile fetch.
-    // The VM surfaces a snackbar on HTTP failure; guests and connectivity
-    // failures stay silent. Safe no-op for guests.
+    // The VM surfaces a snackbar on HTTP failure; connectivity failures stay
+    // silent. A no-op with no session.
     LaunchedEffect(Unit) {
         shellViewModel.refreshAddresses()
     }

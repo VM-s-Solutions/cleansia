@@ -8,6 +8,7 @@ import cz.cleansia.customer.R
 import cz.cleansia.customer.core.user.SavedAddressApi
 import cz.cleansia.customer.core.user.SavedAddressDto
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
@@ -71,7 +72,7 @@ class AddressRepositoryTest {
         every { tokenStore.current() } returns mockk<TokenStore.Tokens>()
     }
 
-    private fun guest() {
+    private fun signedOut() {
         every { tokenStore.current() } returns null
     }
 
@@ -113,13 +114,15 @@ class AddressRepositoryTest {
 
     // ── refreshFromServer() ──
 
+    /** The moment a sign-out lands there is no session, and a request would only come back 401. */
     @Test
-    fun refreshFromServer_whenGuest_returnsSuccess() = runTest {
-        guest()
+    fun refreshFromServer_whenSignedOut_returnsSuccessWithoutARequest() = runTest {
+        signedOut()
 
         val result = newRepo().refreshFromServer()
 
-        assertTrue("guest refresh is a no-op Success but got: $result", result is ApiResult.Success)
+        assertTrue("a signed-out refresh is a no-op Success but got: $result", result is ApiResult.Success)
+        coVerify(exactly = 0) { api.getMine() }
     }
 
     @Test

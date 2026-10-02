@@ -255,13 +255,13 @@ describe('ProfileBankFacade', () => {
       expect(facade.canSubmit()).toBe(true);
     });
 
-    it('accepts an IBAN on its own', () => {
+    it('does not take an IBAN alone for a Czech bank — the server derives it from the parts', () => {
       const facade = createFacade();
       facade.load();
 
       facade.formGroup.controls.iban.setValue('CZ6508000000192000145399');
 
-      expect(facade.canSubmit()).toBe(true);
+      expect(facade.canSubmit()).toBe(false);
     });
   });
 
@@ -300,41 +300,62 @@ describe('ProfileBankFacade', () => {
       expect(facade.ibanCountry()).toBeNull();
     });
 
-    it('says nothing about an empty IBAN, but does not let it be saved', () => {
+    it('does not let an empty IBAN be saved, whatever the hidden parts hold', () => {
       const facade = loadWithGermany();
       facade.formGroup.controls.bankCountryId.setValue('country-de');
       facade.formGroup.controls.accountNumber.setValue('2000145399');
 
-      expect(facade.ibanError()).toBeNull();
       expect(facade.canSubmit()).toBe(false);
     });
 
-    it('gives the server\'s reason for an IBAN it would refuse', () => {
+    it('names an IBAN the server would refuse once a save is tried, and sends nothing', () => {
       const facade = loadWithGermany();
       facade.formGroup.controls.bankCountryId.setValue('country-de');
-
       facade.formGroup.controls.iban.setValue('DE89370400440532013001');
-      expect(facade.ibanError()).toBe('validation.payout.invalid_iban');
-
-      facade.formGroup.controls.iban.setValue('AT611904300234573201');
-      expect(facade.ibanError()).toBe('validation.payout.iban_country_mismatch');
-      expect(facade.canSubmit()).toBe(false);
-    });
-
-    it('re-reads the IBAN when the bank country changes under it', () => {
-      const facade = loadWithGermany();
-      facade.formGroup.controls.iban.setValue('CZ6508000000192000145399');
+      expect(facade.canSubmit()).toBe(true);
       expect(facade.ibanError()).toBeNull();
 
-      facade.formGroup.controls.bankCountryId.setValue('country-de');
+      facade.onSubmit();
 
-      expect(facade.ibanError()).toBe('validation.payout.iban_country_mismatch');
+      expect(employeeClient.updateBankDetails).not.toHaveBeenCalled();
+      expect(facade.ibanError()).toEqual({ key: 'api.validation.payout.invalid_iban' });
     });
 
-    it('checks nothing for a Czech bank — the parts decide there', () => {
+    it('follows the edits once a save has been tried', () => {
       const facade = loadWithGermany();
+      facade.formGroup.controls.bankCountryId.setValue('country-de');
+      facade.formGroup.controls.iban.setValue('AT611904300234573201');
+      facade.onSubmit();
+      expect(facade.ibanError()).toEqual({ key: 'api.validation.payout.iban_country_mismatch' });
 
-      facade.formGroup.controls.iban.setValue('not an iban');
+      facade.formGroup.controls.iban.setValue('DE5137040044053201300');
+      expect(facade.ibanError()).toEqual({ key: 'pages.profile.iban_wrong_length', length: 22 });
+
+      facade.formGroup.controls.iban.setValue('DE89370400440532013000');
+      expect(facade.ibanError()).toBeNull();
+    });
+
+    it('drops the IBAN check when the bank country changes to Czechia', () => {
+      const facade = loadWithGermany();
+      facade.formGroup.controls.bankCountryId.setValue('country-de');
+      facade.formGroup.controls.iban.setValue('CZ6508000000192000145399');
+      facade.onSubmit();
+      expect(facade.ibanError()).toEqual({ key: 'api.validation.payout.iban_country_mismatch' });
+
+      facade.formGroup.controls.bankCountryId.setValue('country-cze');
+
+      expect(facade.ibanCountry()).toBeNull();
+      expect(facade.ibanError()).toBeNull();
+    });
+
+    it('starts a reload with nothing named', () => {
+      const facade = loadWithGermany();
+      facade.formGroup.controls.bankCountryId.setValue('country-de');
+      facade.formGroup.controls.iban.setValue('DE89370400440532013001');
+      facade.onSubmit();
+
+      facade.retry();
+      facade.formGroup.patchValue({ bankCountryId: 'country-de', iban: 'DE89370400440532013001' });
 
       expect(facade.ibanError()).toBeNull();
     });
@@ -376,7 +397,9 @@ describe('ProfileBankFacade', () => {
       });
     };
 
-    it('sends a command carrying all nine fields', () => {
+    // The stored IBAN is the one the server derived from the stored parts; sent back with edited
+    // parts it was refused as `iban_mismatch`, so a Czech account sends its parts alone.
+    it('sends a Czech account its parts and not the IBAN in the form', () => {
       const facade = createFacade();
       facade.load();
       fill(facade);
@@ -390,7 +413,7 @@ describe('ProfileBankFacade', () => {
       // compiler — assert the wire payload field by field.
       expect(command.toJSON()).toEqual({
         employeeId: 'emp-1',
-        iban: 'CZ6508000000192000145399',
+        iban: undefined,
         bankCountryId: 'country-cz',
         accountPrefix: '19',
         accountNumber: '2000145399',

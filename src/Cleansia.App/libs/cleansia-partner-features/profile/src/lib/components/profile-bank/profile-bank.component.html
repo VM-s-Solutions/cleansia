@@ -24,9 +24,9 @@
           formControlName="bankCountryId"
         />
       </div>
-      <!-- One control, three segments. The account is a single thing to the person typing it, so the
-           three columns it is stored in are not three boxes to fill. Only for a Czech or Slovak bank:
-           a bank anywhere else is paid to its IBAN alone (owner ruling 2026-10-02). -->
+      <!-- The bank country decides the form (owner ruling 2026-10-02). A Czech or Slovak bank is one
+           control in three segments: the account is a single thing to the person typing it, so the
+           three columns it is stored in are not three boxes to fill. A bank anywhere else is one IBAN. -->
       @if (!facade.ibanCountry()) {
         <div class="cleansia-profile__field cleansia-profile__field--full">
           <cleansia-bank-account
@@ -45,28 +45,25 @@
             {{ 'pages.profile.bank_account_hint' | translate }}
           </small>
         </div>
-      }
-      <div class="cleansia-profile__field">
-        <cleansia-text-input
-          [label]="'pages.profile.iban' | translate"
-          [floatVariant]="'on'"
-          [className]="facade.ibanError() ? 'ng-invalid ng-dirty' : ''"
-          formControlName="iban"
-          dataType="text"
-        />
-        @if (facade.ibanError(); as error) {
-          <ul class="cleansia-error-message-container">
-            <li>{{ ('api.' + error) | translate }}</li>
-          </ul>
-        }
-        <small class="cleansia-profile__field-hint">
-          @if (facade.ibanCountry(); as code) {
-            {{ 'pages.profile.iban_only_hint' | translate: { code } }}
-          } @else {
-            {{ 'pages.profile.iban_hint' | translate }}
+      } @else {
+        <div class="cleansia-profile__field">
+          <cleansia-text-input
+            [label]="'pages.profile.iban' | translate"
+            [floatVariant]="'on'"
+            [className]="facade.ibanError() ? 'ng-invalid ng-dirty' : ''"
+            formControlName="iban"
+            dataType="text"
+          />
+          @if (facade.ibanError(); as error) {
+            <ul class="cleansia-error-message-container">
+              <li>{{ error.key | translate: error }}</li>
+            </ul>
           }
-        </small>
-      </div>
+          <small class="cleansia-profile__field-hint">
+            {{ 'pages.profile.iban_hint' | translate }}
+          </small>
+        </div>
+      }
       <div class="cleansia-profile__field">
         <cleansia-text-input
           [label]="'pages.profile.swift_code' | translate"

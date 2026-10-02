@@ -53,18 +53,22 @@ export class ProfileBankFacade extends UnsubscribeControlDirective {
     this.countryAlpha2().get(this.formValue().bankCountryId)
   );
 
-  /** The country a bank paid to its IBAN alone is in; null keeps the Czech and Slovak three parts. */
+  /** The country a bank entered as one IBAN is in; null keeps the Czech and Slovak three parts. */
   readonly ibanCountry = computed(() => ibanOnlyCountry(this.bankCountryAlpha2()));
 
+  /** Whether a save has been tried, after which the IBAN's problem shows under it as it is edited. */
+  private readonly ibanChecked = signal(false);
+
   /**
-   * The server's key for refusing the IBAN as it stands, for a bank paid to its IBAN alone. Read here,
-   * not from a validator on the control: it changes with the bank country as well as with the IBAN,
-   * and the text input redraws its own errors only when it is edited.
+   * What the server would refuse about the IBAN, once a save has been tried. Read here, not from a
+   * validator on the control: it changes with the bank country as well as with the IBAN, and the text
+   * input redraws its own errors only when it is edited.
    */
   readonly ibanError = computed(() => {
     const country = this.ibanCountry();
-    const iban = this.formValue().iban;
-    return country && iban ? ibanProblem(iban, country) : null;
+    return country && this.ibanChecked()
+      ? ibanProblem(this.formValue().iban, country)
+      : null;
   });
 
   readonly canSubmit = computed(() =>
@@ -84,6 +88,7 @@ export class ProfileBankFacade extends UnsubscribeControlDirective {
   load(): void {
     this.loading.set(true);
     this.loadFailed.set(false);
+    this.ibanChecked.set(false);
 
     combineLatest([
       this.partnerClient.employeeClient.getCurrentEmployee(),
@@ -140,6 +145,12 @@ export class ProfileBankFacade extends UnsubscribeControlDirective {
       return;
     }
 
+    const ibanCountry = this.ibanCountry();
+    if (ibanCountry && ibanProblem(this.formValue().iban, ibanCountry)) {
+      this.ibanChecked.set(true);
+      return;
+    }
+
     const employeeId = this.employeeId();
     if (!employeeId) {
       this.snackbarService.showErrorTranslated('global.messages.profile.not_loaded');
@@ -181,10 +192,9 @@ export class ProfileBankFacade extends UnsubscribeControlDirective {
     }
   }
 
-  /** `isoAlpha2`, or an alpha-2 `isoCode` — the seed stores `isoCode` alpha-3. */
+  /** The code the country's IBANs start with — `isoAlpha2`, since the seed stores `isoCode` alpha-3. */
   private alpha2Of(country: CountryListItem): string | undefined {
-    const code = (country.isoAlpha2 || country.isoCode)?.trim().toUpperCase();
-    return code && /^[A-Z]{2}$/.test(code) ? code : undefined;
+    return country.isoAlpha2?.trim().toUpperCase() || undefined;
   }
 
   private toOption(country: CountryListItem): ICleansiaSelectOption {

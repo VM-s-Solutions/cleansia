@@ -348,11 +348,14 @@ fun HomeTab(
         state = pullState,
         modifier = modifier.fillMaxSize(),
         indicator = {
+            // The box runs under the status bar (Home is edge-to-edge), so the indicator rests
+            // below the status-bar inset, where the other tabs' indicators rest below their title.
             SudsRefreshIndicator(
                 state = pullState,
                 isRefreshing = isRefreshing,
                 modifier = Modifier
                     .align(Alignment.TopCenter)
+                    .windowInsetsPadding(WindowInsets.statusBars)
                     .padding(top = 8.dp),
             )
         },

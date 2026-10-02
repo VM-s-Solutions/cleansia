@@ -33,6 +33,18 @@ class StatusBarFadeBindingTest {
         )
     }
 
+    /** The refresh box runs under the status bar with the content, so its indicator pads the inset too. */
+    @Test
+    fun `home's refresh indicator rests below the status bar`() {
+        val indicator = source("features/home/HomeTab.kt")
+            .substringAfter("SudsRefreshIndicator(")
+            .substringBefore("},")
+        assertTrue(
+            "HomeTab's SudsRefreshIndicator must pad WindowInsets.statusBars",
+            indicator.contains(".windowInsetsPadding(WindowInsets.statusBars)"),
+        )
+    }
+
     private fun source(path: String): String = sequenceOf(
         File("."),
         File("customer-app"),

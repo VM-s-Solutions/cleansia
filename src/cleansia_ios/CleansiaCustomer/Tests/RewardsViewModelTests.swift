@@ -175,6 +175,34 @@ final class RewardsViewModelTests: XCTestCase {
 
         if case .loaded = vm.state {} else { XCTFail("expected to stay loaded") }
     }
+
+    /// Opened straight from the tab bar, Rewards shows the cached account at once, and re-reads it only
+    /// once the watermark has lapsed — a re-entry inside the window costs no round trip.
+    func testACachedAccountIsReReadOnlyOnceItIsStale() async {
+        var now = Date(timeIntervalSince1970: 1_700_000_000)
+        let loyalty = FakeLoyaltyClient()
+        loyalty.accountResult = .success(LoyaltyFixtures.account(lifetimePoints: 600))
+        let repository = LoyaltyRepository(client: loyalty, staleness: Staleness(window: 30, now: { now }))
+        let vm = RewardsViewModel(
+            loyaltyRepository: repository,
+            referralRepository: RewardsReferralRepository(client: FakeRewardsReferralClient()),
+            catalogSource: BookingViewModel(catalogClient: FakeCatalogClient()),
+            marketStore: MarketStore(client: FakeMarketClient(), preference: FakeMarketPreferenceStore()),
+            snackbar: SnackbarController()
+        )
+        await vm.load()
+        XCTAssertEqual(loyalty.accountCallCount, 1)
+
+        now += 10
+        await vm.load()
+        XCTAssertEqual(loyalty.accountCallCount, 1, "a fresh cache is not read again")
+
+        now += 30
+        loyalty.accountResult = .success(LoyaltyFixtures.account(lifetimePoints: 750))
+        await vm.load()
+        XCTAssertEqual(loyalty.accountCallCount, 2, "a stale cache is read again")
+        XCTAssertEqual(vm.state.loadedValue?.account.lifetimePoints, 750)
+    }
 }
 
 @MainActor

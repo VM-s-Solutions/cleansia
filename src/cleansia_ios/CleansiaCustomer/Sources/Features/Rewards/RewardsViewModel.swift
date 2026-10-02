@@ -64,8 +64,14 @@ final class RewardsViewModel: ViewModel {
             .store(in: &cancellables)
     }
 
+    /// A cached account is shown at once and re-read when its watermark has lapsed: points move outside
+    /// this screen (a finished clean, a referral), and Rewards opened straight from the tab bar is not
+    /// always preceded by Home's own stale check. A failed re-read keeps the cached account, as Home does.
     func load() async {
         guard loyaltyRepository.account == nil else {
+            if loyaltyRepository.staleness.isStale {
+                await loyaltyRepository.refresh()
+            }
             await reconcile()
             return
         }

@@ -7,6 +7,7 @@ import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -672,7 +673,15 @@ private fun PropertyCompactRow(
             color = MaterialTheme.colorScheme.primary,
         )
         Spacer(Modifier.height(6.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        // Two equal capsules filling the row with the quick-size slide's 8dp gap, from the title's
+        // leading edge to the card's trailing one, and as tall as each other when one label wraps.
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(IntrinsicSize.Min),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             // Both ends of each stepper stop at the bounds, so a tap that cannot move the number never
             // looks like one that can. TalkBack reads each as "Your home" and its value, as iOS does.
             val home = stringResource(R.string.booking_your_home)
@@ -682,14 +691,19 @@ private fun PropertyCompactRow(
                 value = rooms,
                 range = 1..PropertySize.MAX_ROOMS,
                 onChange = onRoomsChange,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight(),
             )
-            Spacer(Modifier.width(8.dp))
             CompactCounter(
                 name = home,
                 label = pluralStringResource(R.plurals.booking_bath_short, bathrooms, bathrooms),
                 value = bathrooms,
                 range = 1..PropertySize.MAX_BATHROOMS,
                 onChange = onBathroomsChange,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight(),
             )
         }
         // The cap stated up front, so the plus stopping at it reads as the rule rather than a bug.
@@ -713,6 +727,7 @@ private fun CompactCounter(
     value: Int,
     range: IntRange,
     onChange: (Int) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val tick = rememberStepperTick()
     val change = { next: Int ->
@@ -720,7 +735,7 @@ private fun CompactCounter(
         onChange(next)
     }
     Row(
-        modifier = Modifier
+        modifier = modifier
             // Not clipped: each step's target overhangs the pill, and a clip would stop the overhang
             // taking taps (the quick-size stepper's precedent).
             .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(999.dp))
@@ -735,9 +750,9 @@ private fun CompactCounter(
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
             textAlign = TextAlign.Center,
-            // Weighted so both steps are measured first: a label wider than the space left wraps
-            // rather than pushing the plus out of the pill.
-            modifier = Modifier.weight(1f, fill = false).padding(horizontal = 4.dp),
+            // Weighted so both steps are measured first and the label is centred between them: a label
+            // wider than the space left wraps rather than pushing the plus out of the pill.
+            modifier = Modifier.weight(1f).padding(horizontal = 4.dp),
         )
         CounterStep(Icons.Outlined.Add, outwardStart = false, enabled = value < range.last) { change(value + 1) }
     }

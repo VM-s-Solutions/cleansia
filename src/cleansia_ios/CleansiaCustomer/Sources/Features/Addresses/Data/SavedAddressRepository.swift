@@ -3,8 +3,9 @@ import Combine
 import Foundation
 
 /// Singleton cache for the signed-in user's saved addresses (the
-/// `AddressRepository.kt` parity, minus the Android guest/DataStore offline
-/// path — the iOS port is server-scoped only). Ownership is enforced
+/// `AddressRepository.kt` parity, minus Android's DataStore copy of the list —
+/// here the list lives in memory and is refetched from the server; only the
+/// selected id persists). Ownership is enforced
 /// server-side (`BeOwnedByCaller`); there is no client ownership check.
 ///
 /// Mutations refetch the list rather than mirroring server invariants (default

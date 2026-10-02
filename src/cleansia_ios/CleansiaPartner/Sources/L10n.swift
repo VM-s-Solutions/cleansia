@@ -254,6 +254,14 @@ enum L10n {
             localized("registration_lock_approval_rejected")
         }
 
+        static var actionContactSupport: String {
+            localized("registration_lock_action_contact_support")
+        }
+
+        static var supportSubject: String {
+            localized("registration_lock_support_subject")
+        }
+
         static var retry: String {
             localized("registration_lock_retry")
         }

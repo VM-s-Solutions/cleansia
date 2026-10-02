@@ -10,14 +10,18 @@ import androidx.core.content.getSystemService
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import cz.cleansia.core.notifications.PushTokenRepository
+import cz.cleansia.core.settings.AppLocale
 import cz.cleansia.customer.MainActivity
 import cz.cleansia.customer.R
+import cz.cleansia.customer.core.settings.AppSettingsRepository
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 /**
  * Turns FCM data payloads into local notifications.
@@ -32,6 +36,7 @@ class CleansiaFirebaseMessagingService : FirebaseMessagingService() {
     @Inject lateinit var pushTokenRepository: PushTokenRepository
     @Inject lateinit var orderEventBus: OrderEventBus
     @Inject lateinit var notificationFeedRepository: NotificationFeedRepository
+    @Inject lateinit var appSettingsRepository: AppSettingsRepository
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
@@ -84,9 +89,15 @@ class CleansiaFirebaseMessagingService : FirebaseMessagingService() {
             if (CustomerFeedEventKeys.contains(eventKey)) {
                 notificationFeedRepository.onPushReceived()
             }
+            // In the in-app language: on API 26–32 a Service resolves in the device's. One blocking
+            // DataStore read is fine here — FCM calls this on its own worker thread.
+            val strings = AppLocale.localizedContext(
+                this,
+                runBlocking { appSettingsRepository.settings.first().language.tag },
+            )
             Triple(
-                getString(template.titleRes),
-                NotificationTemplates.formatBody(this, eventKey, template.bodyRes, data),
+                strings.getString(template.titleRes),
+                NotificationTemplates.formatBody(strings, eventKey, template.bodyRes, data),
                 template.category,
             )
         }

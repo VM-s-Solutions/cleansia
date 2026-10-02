@@ -3,9 +3,9 @@ import XCTest
 @testable import CleansiaCustomer
 
 final class CatalogLocalizationTests: XCTestCase {
-    private let ru = Locale(identifier: "ru")
-    private let en = Locale(identifier: "en")
-    private let sk = Locale(identifier: "sk")
+    private let russian = Locale(identifier: "ru")
+    private let english = Locale(identifier: "en")
+    private let slovak = Locale(identifier: "sk")
 
     func testServiceNameAndDescriptionSelectTheAppLanguageTranslation() {
         let service = CatalogService(
@@ -18,11 +18,11 @@ final class CatalogLocalizationTests: XCTestCase {
             translations: ["ru": CatalogTranslation(name: "Глубокая уборка", description: "Тщательная уборка")]
         )
 
-        XCTAssertEqual(service.localizedName(for: ru), "Глубокая уборка")
-        XCTAssertEqual(service.localizedName(for: en), "Deep cleaning")
-        XCTAssertEqual(service.localizedName(for: sk), "Deep cleaning")
-        XCTAssertEqual(service.localizedDescription(for: ru), "Тщательная уборка")
-        XCTAssertEqual(service.localizedDescription(for: en), "Thorough clean")
+        XCTAssertEqual(service.localizedName(for: russian), "Глубокая уборка")
+        XCTAssertEqual(service.localizedName(for: english), "Deep cleaning")
+        XCTAssertEqual(service.localizedName(for: slovak), "Deep cleaning")
+        XCTAssertEqual(service.localizedDescription(for: russian), "Тщательная уборка")
+        XCTAssertEqual(service.localizedDescription(for: english), "Thorough clean")
     }
 
     func testPackageNameAndIncludesSummaryUseTheAppLanguage() {
@@ -40,15 +40,15 @@ final class CatalogLocalizationTests: XCTestCase {
             ]
         )
 
-        XCTAssertEqual(package.localizedName(for: ru), "Уборка при переезде")
-        XCTAssertEqual(package.localizedName(for: en), "Move-out")
-        XCTAssertEqual(package.includesSummary(for: ru), "\(L10n.Booking.packageIncludesPrefix) Окна")
-        XCTAssertEqual(package.includesSummary(for: en), "\(L10n.Booking.packageIncludesPrefix) Windows")
+        XCTAssertEqual(package.localizedName(for: russian), "Уборка при переезде")
+        XCTAssertEqual(package.localizedName(for: english), "Move-out")
+        XCTAssertEqual(package.includesSummary(for: russian), "\(L10n.Booking.packageIncludesPrefix) Окна")
+        XCTAssertEqual(package.includesSummary(for: english), "\(L10n.Booking.packageIncludesPrefix) Windows")
     }
 
     func testCategoryNameUsesTheAppLanguage() {
-        XCTAssertEqual(category.localizedName(for: ru), "Дом")
-        XCTAssertEqual(category.localizedName(for: en), "Home")
+        XCTAssertEqual(category.localizedName(for: russian), "Дом")
+        XCTAssertEqual(category.localizedName(for: english), "Home")
     }
 
     func testExtraNameAndDescriptionUseTheAppLanguage() {
@@ -62,10 +62,10 @@ final class CatalogLocalizationTests: XCTestCase {
             translations: ["ru": CatalogTranslation(name: "Окна", description: "Внутреннее стекло")]
         )
 
-        XCTAssertEqual(extra.localizedName(for: ru), "Окна")
-        XCTAssertEqual(extra.localizedName(for: en), "Windows")
-        XCTAssertEqual(extra.localizedDescription(for: ru), "Внутреннее стекло")
-        XCTAssertEqual(extra.localizedDescription(for: en), "Inside glass")
+        XCTAssertEqual(extra.localizedName(for: russian), "Окна")
+        XCTAssertEqual(extra.localizedName(for: english), "Windows")
+        XCTAssertEqual(extra.localizedDescription(for: russian), "Внутреннее стекло")
+        XCTAssertEqual(extra.localizedDescription(for: english), "Inside glass")
     }
 
     private var category: CatalogCategory {

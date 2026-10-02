@@ -95,6 +95,69 @@ text is accepted before the next booking (`UserConsent.Covers`)
 `AcceptLegalDocument` → [A cleaner's own documents](/product/business-rules#cleaner-documents).
 Employee registration is not gated. → [ADR-0062](/decisions/adr-0062) D4 as amended
 
+## The native customer apps need an account {#native-account-only}
+
+A signed-out person who opens the Android or iOS customer app goes from the splash screen to sign-in,
+and everything past it needs an account. Sign-in offers the password, *Forgot password*, Google (and
+Apple on iOS) and *Register*, and nothing else. Since 2026-09-28 the customer mobile host takes an
+order only from a signed-in customer, and since 2026-10-01 the apps no longer offer *Find a guest
+booking* either (owner ruling, reversing the 2026-09-28 default that kept it). A guest booking is
+made, tracked and cancelled on the web, from the link in its e-mail. What the apps still call
+anonymously is what the sign-up form and the reads made with or without a session need. The mobile
+host also still serves the six token-keyed guest routes, for app builds installed before the change,
+until a follow-up removes them (T-0800).
+→ [The anonymous allow-list](/mobile-app/api-integration#the-anonymous-allow-list),
+[Guest order lookup](/flows/booking-and-pricing#guest-order-lookup)
+
+## The account's language {#account-language}
+
+`User.PreferredLanguageCode` is the language the server writes in when it has no order to ask: the
+sitewide promo push, every e-mail to a cleaner or an administrator, and a customer's e-mails that are
+not about one order. A customer's e-mails about an order follow the language it was booked in
+([the order records its language](/flows/booking-and-pricing#booking-language)).
+It is a foreign key onto `Languages.Code`, so only a seeded code is accepted.
+
+| How the account was opened | Stamped with |
+|---|---|
+| Password sign-up, customer or cleaner | the language the app or site is showing |
+| Google or Apple sign-up | `en` — neither command carries a language |
+
+All four apps keep it current afterwards, by one rule:
+
+- **A change in the app's language picker** sends the language the app now resolves to.
+- **The start of every session** — a sign-in, or a cold start into a kept session — reads what the
+  server holds and re-states the language the user **chose** in the app if it differs. A user who
+  follows the phone ("System") is never re-stated: the handset's language is not a choice, and it must
+  not overwrite one made on another client.
+- **The profile completion after a first sign-in** (the customer apps' onboarding form, shown at
+  sign-in while the profile has no phone, until it is completed or skipped) sends the language the app
+  resolves to, as the picker does: the language chosen in the app, or on "System" the first of the
+  phone's languages the app supports, else English. It runs right after a Google or Apple sign-up,
+  which the server stamped `en`, so it cannot send none on "System": that would leave a Czech phone on
+  English e-mails and promo pushes until the customer touched the picker. It never sends the phone's
+  language over a choice made in the app. Until 2026-10-01 Android did, because it sent the phone's own
+  locale whatever the user had chosen.
+- **Only the two names gate it.** The update replays the profile, because `UpdateCurrentUser` replaces
+  first and last name outright, so it waits for both names — and, since 2026-10-01, for nothing else.
+  The customer apps used to wait for a phone as well, which the server never needed: it validates a
+  phone only when one is given and keeps the stored one when the field is blank, so a missing phone now
+  goes as `""`. A customer who signed up with Google or Apple and never added a phone used to stay on
+  `en` for good.
+
+So a social sign-up is corrected when the customer completes the profile form after the first sign-in,
+or the first time they pick a language in the app, and at every session start after a choice; one who
+skips the form and never touches the picker keeps `en`. The session-start reconcile still re-states
+only an explicit choice: it runs on every session, and on "System" it would overwrite a choice made on
+another client each time. Sending the language with the Google or Apple sign-up itself needs a new
+field on those two commands, which the owner left out of the 2026-10-01 change (client-only).
+
+::: info A phone-less customer's profile edit now saves
+Both customer apps send a missing phone as `""` on every profile save, not only on the language
+update. A `null` used to be dropped from the body, and the binder refuses a command without its
+non-nullable `PhoneNumber`, so a customer with no phone could not save a profile edit at all. Now the
+edit saves and the stored phone, if any, is kept.
+:::
+
 ## Sign-in and session acts leave a row {#session-rows}
 
 Since the owner overruled the "no login history" default (2026-09-14, Q-AUD-L5), every session act

@@ -7,6 +7,9 @@ struct RegistrationLockView: View {
     @StateObject private var avatarVM: ProfileAvatarViewModel
     @StateObject private var avatarCache = RemoteImageCache()
     @ObservedObject private var preferences: PreferencesModel
+    @EnvironmentObject private var pushNavigation: PushNavigationModel
+    @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.openURL) private var openURL
     @State private var path = NavigationPath()
     @State private var isConfirmingSignOut = false
 
@@ -57,29 +60,20 @@ struct RegistrationLockView: View {
 
     var body: some View {
         NavigationStack(path: $path) {
-            ZStack {
-                content
-                if isConfirmingSignOut {
-                    // Signing out is the one destructive thing this screen offers, and the button
-                    // sat one tap away from it on both platforms.
-                    CleansiaDialog(
-                        title: L10n.RegistrationLock.signOutConfirmTitle,
-                        confirmLabel: L10n.RegistrationLock.signOut,
-                        onConfirm: {
-                            isConfirmingSignOut = false
-                            Task { await vm.signOut() }
-                        },
-                        onDismiss: { isConfirmingSignOut = false },
-                        message: L10n.RegistrationLock.signOutConfirmMessage,
-                        dismissLabel: L10n.cancel,
-                        icon: "rectangle.portrait.and.arrow.right",
-                        destructive: true,
-                        confirmEnabled: !vm.action.isSubmitting
-                    )
+            content
+                // Signing out is the one destructive thing this screen offers, and the button sat one
+                // tap away from it on both platforms. A second sign-out while one is in flight is
+                // refused by the view model's own guard.
+                .alert(L10n.RegistrationLock.signOutConfirmTitle, isPresented: $isConfirmingSignOut) {
+                    Button(L10n.RegistrationLock.signOut, role: .destructive) {
+                        Task { await vm.signOut() }
+                    }
+                    Button(L10n.cancel, role: .cancel) {}
+                } message: {
+                    Text(L10n.RegistrationLock.signOutConfirmMessage)
                 }
-            }
-            .background(CleansiaColors.background.ignoresSafeArea())
-            .navigationDestination(for: ProfileRoute.self, destination: sectionDestination)
+                .background(CleansiaColors.background.ignoresSafeArea())
+                .navigationDestination(for: ProfileRoute.self, destination: sectionDestination)
         }
         .task {
             // Prime the chain completion snapshot so the "Step X of 4" header
@@ -97,6 +91,16 @@ struct RegistrationLockView: View {
         }
         .onReceive(vm.completed) { onCompleted() }
         .onReceive(vm.signedOut) { onSignedOut() }
+        // The admin decides while the app sits in the background, and returning to it changes no
+        // view, so neither .task nor onAppear runs again — the lock kept saying "under review" over a
+        // rejection until a pull-to-refresh. Android re-checks on ON_RESUME.
+        .onChange(of: scenePhase) { phase in
+            if phase == .active { Task { await vm.load() } }
+        }
+        // A decision pushed while the lock is on screen leaves scenePhase where it was.
+        .onReceive(pushNavigation.foregroundPushes.filter(Self.registrationDecisionEvents.contains)) { _ in
+            Task { await vm.load() }
+        }
         .onReceive(chainVM.jumpRequested) { section in
             // Replace, don't push — exactly what an advance does. The chain is a flat sequence, so a
             // jump must not grow the stack any more than moving forward does, or system-back stops
@@ -173,9 +177,19 @@ struct RegistrationLockView: View {
         case .legalDocuments:
             path.append(ProfileRoute.legalDocuments)
         case .approval:
-            break
+            // Only a rejection is fixable, and only support can say more than the reason shown.
+            var mail = URLComponents()
+            mail.scheme = "mailto"
+            mail.path = CleansiaWeb.contactEmail
+            mail.queryItems = [URLQueryItem(name: "subject", value: L10n.RegistrationLock.supportSubject)]
+            if let url = mail.url { openURL(url) }
         }
     }
+
+    private static let registrationDecisionEvents: Set<String> = [
+        "employee.registration_approved",
+        "employee.registration_rejected"
+    ]
 
     @ViewBuilder
     private func sectionDestination(_ route: ProfileRoute) -> some View {
@@ -359,7 +373,7 @@ private struct StepRow: View {
 
     var body: some View {
         Button {
-            if canFix { onFix(step) }
+            if isFixable(step) { onFix(step) }
         } label: {
             HStack(alignment: .top, spacing: Spacing.s) {
                 Image(systemName: statusSymbol)
@@ -375,13 +389,20 @@ private struct StepRow: View {
                             .foregroundColor(CleansiaColors.onSurfaceVariant)
                             .multilineTextAlignment(.leading)
                     }
+                    if isRejected {
+                        Text(L10n.RegistrationLock.actionContactSupport)
+                            .font(CleansiaTypography.labelMedium)
+                            .foregroundColor(CleansiaColors.primary)
+                            .padding(.top, Spacing.xs)
+                    }
                 }
                 Spacer()
                 if step.status == .done {
                     Text(L10n.RegistrationLock.stepComplete)
                         .font(CleansiaTypography.labelMedium)
                         .foregroundColor(CleansiaColors.primary)
-                } else if canFix {
+                }
+                if isFixable(step) {
                     Image(systemName: "chevron.right")
                         .foregroundColor(CleansiaColors.onSurfaceVariant)
                 }
@@ -389,15 +410,7 @@ private struct StepRow: View {
             .cardPadding()
         }
         .buttonStyle(.plain)
-        .disabled(!canFix)
-    }
-
-    private var canFix: Bool {
-        guard step.status != .done else { return false }
-        switch step.category {
-        case .profile, .documents, .legalDocuments: return true
-        case .approval: return false
-        }
+        .disabled(!isFixable(step))
     }
 
     private func detailText(_ detail: RegistrationStepDetail) -> String {
@@ -407,7 +420,12 @@ private struct StepRow: View {
         case .approvalAwaitingReview: L10n.RegistrationLock.approvalAwaitingReview
         case .approvalCompleteProfileFirst: L10n.RegistrationLock.approvalCompleteProfileFirst
         case let .missingField(token): L10n.RegistrationLock.missingField(token)
+        case let .rejectionReason(reason): reason
         }
+    }
+
+    private var isRejected: Bool {
+        step.details.contains(.approvalRejected)
     }
 
     private var categoryLabel: String {
@@ -419,19 +437,22 @@ private struct StepRow: View {
         }
     }
 
+    /// A rejection is drawn as one, not as the hollow circle of a step nobody has started.
     private var statusSymbol: String {
+        if isRejected { return "xmark.circle.fill" }
         switch step.status {
-        case .done: "checkmark.circle.fill"
-        case .pending: "hourglass"
-        case .missing: "circle"
+        case .done: return "checkmark.circle.fill"
+        case .pending: return "hourglass"
+        case .missing: return "circle"
         }
     }
 
     private var statusColor: Color {
+        if isRejected { return CleansiaColors.error }
         switch step.status {
-        case .done: CleansiaColors.primary
-        case .pending: CleansiaColors.onSurfaceVariant
-        case .missing: CleansiaColors.onSurfaceVariant
+        case .done: return CleansiaColors.primary
+        case .pending: return CleansiaColors.onSurfaceVariant
+        case .missing: return CleansiaColors.onSurfaceVariant
         }
     }
 }

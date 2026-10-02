@@ -9,10 +9,14 @@ import androidx.core.content.getSystemService
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import cz.cleansia.core.notifications.PushTokenRepository
+import cz.cleansia.core.settings.AppLocale
 import cz.cleansia.partner.MainActivity
 import cz.cleansia.partner.R
+import cz.cleansia.partner.core.settings.AppSettingsRepository
+import cz.cleansia.partner.data.profile.ProfileRepository
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
+import kotlinx.coroutines.runBlocking
 
 /**
  * Turns FCM data payloads into local notifications.
@@ -26,6 +30,8 @@ class CleansiaFirebaseMessagingService : FirebaseMessagingService() {
 
     @Inject lateinit var pushTokenRepository: PushTokenRepository
     @Inject lateinit var notificationFeedRepository: NotificationFeedRepository
+    @Inject lateinit var profileRepository: ProfileRepository
+    @Inject lateinit var appSettingsRepository: AppSettingsRepository
 
     override fun onNewToken(token: String) {
         // FCM rotated the token; push the new value into the repository's
@@ -46,10 +52,16 @@ class CleansiaFirebaseMessagingService : FirebaseMessagingService() {
         if (PartnerFeedEventKeys.contains(eventKey)) {
             notificationFeedRepository.onPushReceived()
         }
+        if (eventKey == "employee.registration_approved" || eventKey == "employee.registration_rejected") {
+            profileRepository.onRegistrationDecisionPushed()
+        }
 
         val orderId = data["orderId"]?.takeIf { it.isNotBlank() }
-        val title = getString(template.titleRes)
-        val body = NotificationTemplates.formatBody(this, eventKey, template.bodyRes, data)
+        // In the in-app language: on API 26–32 a Service resolves in the device's. One blocking
+        // DataStore read is fine here — FCM calls this on its own worker thread.
+        val strings = AppLocale.localizedContext(this, runBlocking { appSettingsRepository.chosenLanguageTag() })
+        val title = strings.getString(template.titleRes)
+        val body = NotificationTemplates.formatBody(strings, eventKey, template.bodyRes, data)
 
         showNotification(eventKey, template.channelId, title, body, data, orderId)
     }

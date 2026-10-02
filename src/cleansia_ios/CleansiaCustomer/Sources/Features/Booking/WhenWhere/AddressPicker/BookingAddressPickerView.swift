@@ -11,6 +11,7 @@ struct BookingAddressPickerView: View {
     @FocusState private var searchFocused: Bool
     @State private var reviewing: GeocodedAddress?
     @State private var saving = false
+    @State private var bottomCover: CGFloat = 0
 
     @Environment(\.savedAddressRepository) private var repository
     @Environment(\.snackbarController) private var snackbar
@@ -69,32 +70,40 @@ struct BookingAddressPickerView: View {
 
     private var mapContent: some View {
         ZStack {
-            mapProvider.pickerMap(region: $region, showsUserLocation: false)
+            mapProvider.pickerMap(region: $region, showsUserLocation: false, bottomInset: bottomCover)
                 .ignoresSafeArea()
                 .onChange(of: region.center.latitude) { _ in pushCenter() }
                 .onChange(of: region.center.longitude) { _ in pushCenter() }
 
-            CenterPin()
-
             VStack(spacing: 0) {
                 topBar
                 Spacer()
-                HStack {
-                    Spacer()
-                    FloatingCircleButton(
-                        systemIcon: "location",
-                        accessibilityLabel: L10n.AddressPicker.myLocation,
-                        action: { Task { await vm.recenterOnMyLocation(location: location) } }
+                VStack(spacing: 0) {
+                    HStack {
+                        Spacer()
+                        FloatingCircleButton(
+                            systemIcon: "location",
+                            accessibilityLabel: L10n.AddressPicker.myLocation,
+                            action: { Task { await vm.recenterOnMyLocation(location: location) } }
+                        )
+                    }
+                    .padding(.horizontal, Spacing.s)
+                    .padding(.bottom, Spacing.s)
+                    ConfirmCard(
+                        resolved: vm.resolved,
+                        lookingUp: vm.lookingUp,
+                        enabled: vm.canConfirm,
+                        onConfirm: vm.confirm
                     )
                 }
-                .padding(.horizontal, Spacing.s)
-                .padding(.bottom, Spacing.s)
-                ConfirmCard(
-                    resolved: vm.resolved,
-                    lookingUp: vm.lookingUp,
-                    enabled: vm.canConfirm,
-                    onConfirm: vm.confirm
-                )
+                // The map lifts Apple's logo and Legal link above everything laid over its bottom edge,
+                // the location button included (Legal sits under it on iOS 16). The card grows with the
+                // text size, so the cover is measured, not assumed.
+                .background(GeometryReader { proxy in
+                    Color.clear
+                        .onAppear { bottomCover = proxy.size.height }
+                        .onChange(of: proxy.size.height) { bottomCover = $0 }
+                })
             }
         }
         .task { await vm.autoCenterOnOpen(location: location) }
@@ -176,25 +185,6 @@ struct BookingAddressPickerView: View {
 
     private func pushCenter() {
         vm.centerChanged(Coordinate(latitude: region.center.latitude, longitude: region.center.longitude))
-    }
-}
-
-private struct CenterPin: View {
-    var body: some View {
-        VStack(spacing: 0) {
-            ZStack {
-                Circle()
-                    .fill(CleansiaColors.primary)
-                    .frame(width: 28, height: 28)
-                Circle()
-                    .fill(CleansiaColors.onPrimary)
-                    .frame(width: 10, height: 10)
-            }
-            Rectangle()
-                .fill(CleansiaColors.primary)
-                .frame(width: 2, height: 14)
-            Spacer().frame(height: 24)
-        }
     }
 }
 

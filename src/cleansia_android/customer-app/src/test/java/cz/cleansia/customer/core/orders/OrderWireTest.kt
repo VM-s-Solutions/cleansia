@@ -170,6 +170,8 @@ class OrderWireTest {
         assertEquals(2, order.appliedDiscountSource)
         assertEquals(450.00, order.selectedPackages?.first()?.price)
         assertEquals(1095.00, order.dirtinessSurchargeAmount, 0.0)
+        assertEquals(250.00, order.creditAppliedAmount, 0.0)
+        assertEquals(4130.00, order.amountDueOnCard, 0.0)
     }
 
     @Test
@@ -266,8 +268,7 @@ class OrderWireTest {
     }
 
     /**
-     * The grace only adds a sentence; refusing the quote over it would take the fee away from a guest,
-     * who cannot cancel without one.
+     * The grace only adds a sentence; refusing the quote over it would take the fee away from the sheet.
      */
     @Test
     fun aMissingGraceStatesNoneAndKeepsTheQuote() = runTest {
@@ -572,6 +573,8 @@ class OrderWireTest {
               "tierDiscountAmount": 146.00,
               "membershipDiscountAmount": 292.00,
               "promoDiscountAmount": 88.00,
+              "creditAppliedAmount": 250.00,
+              "amountDueOnCard": 4130.00,
               "estimatedTime": 240,
               "actualCompletionTime": 235,
               "completedAt": "2026-08-12T13:55:00Z",
@@ -728,7 +731,14 @@ class OrderWireTest {
         val LIST_ROW_REQUIRED_MONEY = listOf("totalPrice", "originalSubtotal", "appliedDiscountSource")
 
         val DETAIL_REQUIRED_MONEY =
-            listOf("totalPrice", "originalSubtotal", "appliedDiscountSource", "dirtinessSurchargeAmount")
+            listOf(
+                "totalPrice",
+                "originalSubtotal",
+                "appliedDiscountSource",
+                "dirtinessSurchargeAmount",
+                "creditAppliedAmount",
+                "amountDueOnCard",
+            )
 
         val CANCEL_REQUIRED_MONEY = listOf("feeRate", "refundAmount", "totalPrice")
 

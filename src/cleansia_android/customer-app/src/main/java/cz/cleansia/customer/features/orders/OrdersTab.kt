@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -66,6 +67,7 @@ import cz.cleansia.core.ui.components.SudsRefreshIndicator
 import cz.cleansia.core.ui.theme.Poppins
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cz.cleansia.customer.features.main.MainShellBottomClearance
 
 /**
  * Orders tab — lists the signed-in user's cleaning orders with filter chips,
@@ -187,8 +189,11 @@ fun OrdersTab(
  * BoxWithConstraints is the trick that lets the inner content be vertically
  * centered: a verticalScroll Column normally collapses to its content height,
  * which would leave the centered child stuck at the top. By forcing the inner
- * Box's `minHeight` to the parent's available height, `Alignment.Center`
- * actually centers within the full screen height.
+ * Box's height to the parent's available height, `Alignment.Center` actually
+ * centers. The pager is full-screen, so that height runs on under the floating
+ * bar; the Box pads the bottom chrome back off (nav inset + the tab roots'
+ * [MainShellBottomClearance]) so the state centers between the title and the
+ * Book FAB, in the part of the screen the customer can see.
  */
 @Composable
 private fun ScrollableStateContainer(content: @Composable () -> Unit) {
@@ -209,7 +214,9 @@ private fun ScrollableStateContainer(content: @Composable () -> Unit) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(minHeight),
+                    .height(minHeight)
+                    .navigationBarsPadding()
+                    .padding(bottom = MainShellBottomClearance),
                 contentAlignment = Alignment.Center,
             ) {
                 content()
@@ -290,9 +297,8 @@ private fun OrdersContent(
                 item { LoadingMoreRow() }
             }
 
-            // Reserve room for the floating island bottom nav so the last
-            // card isn't hidden behind it.
-            item { Spacer(Modifier.height(108.dp)) }
+            // Clears the floating island bottom nav and its Book FAB.
+            item { Spacer(Modifier.navigationBarsPadding().height(MainShellBottomClearance)) }
         }
     }
 }
@@ -590,8 +596,8 @@ private fun OrdersError(onRetry: () -> Unit) {
 
 @Composable
 private fun OrdersEmpty(onBookCleaning: () -> Unit) {
-    // Outer Box vertically centers the content within the available tab area
-    // (which already has the bottom-bar padding stripped by the Scaffold). The
+    // Outer Box vertically centers the content within the area
+    // ScrollableStateContainer leaves above the bottom bar and its FAB. The
     // inner Column owns the actual stacking; horizontal centering happens via
     // the Box alignment so the Column doesn't need to fillMaxSize.
     Box(

@@ -8,6 +8,7 @@ import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.R
+import cz.cleansia.customer.core.loyalty.LoyaltyRepository
 import cz.cleansia.customer.core.market.MarketRepository
 import cz.cleansia.customer.core.market.MarketState
 import cz.cleansia.customer.core.memberships.MembershipRepository
@@ -21,6 +22,7 @@ import cz.cleansia.customer.core.orders.OrderRepository
 import cz.cleansia.customer.core.user.CodeDto
 import cz.cleansia.customer.testing.MainDispatcherRule
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -66,6 +68,7 @@ class OrderDetailCancelGateTest {
     private lateinit var snackbar: SnackbarController
     private lateinit var appContext: Context
     private lateinit var orderEventBus: OrderEventBus
+    private lateinit var loyaltyRepository: LoyaltyRepository
 
     private val orderId = "order-1"
 
@@ -73,6 +76,7 @@ class OrderDetailCancelGateTest {
     fun setUp() {
         repository = mockk(relaxed = true)
         membershipRepository = mockk(relaxed = true)
+        loyaltyRepository = mockk(relaxed = true)
         snackbar = mockk(relaxed = true)
         appContext = mockk(relaxed = true)
         orderEventBus = OrderEventBus()
@@ -89,6 +93,7 @@ class OrderDetailCancelGateTest {
         savedStateHandle = SavedStateHandle(mapOf("orderId" to id)),
         membershipRepository = membershipRepository,
         orderEventBus = orderEventBus,
+        loyaltyRepository = loyaltyRepository,
         paymentRepository = mockk(relaxed = true),
     )
 
@@ -163,7 +168,7 @@ class OrderDetailCancelGateTest {
         vm.viewModelScope.cancel()
     }
 
-    /** The one function both the signed-in and the guest surface read, so the two cannot drift. */
+    /** The gate is the server's set of cancellable statuses, and nothing outside it. */
     @Test
     fun `the shared gate is the server's set`() {
         assertEquals(listOf(0, 1, 2, 3), (0..6).filter { customerCanCancelOrder(it) })
@@ -312,6 +317,44 @@ class OrderDetailCancelGateTest {
 
         verify(exactly = 3) { snackbar.showSuccess("cancelled") }
         verify(exactly = 0) { appContext.getString(R.string.order_cancel_success_with_refund, any()) }
+        vm.viewModelScope.cancel()
+    }
+
+    // ── the credit it hands back ──
+
+    /**
+     * A cancelled card order returns its credit, and Rewards and Profile show the balance from the
+     * shared cache. Only Home honours a stale mark on its own, and Home is not composed behind the
+     * other tabs, so the balance is re-read here, as iOS does in its cancel callback.
+     */
+    @Test
+    fun `a cancel re-reads the credit balance at once`() = runTest {
+        stubOrder(2)
+        coEvery { repository.cancel(orderId, any()) } returns ApiResult.Success(
+            receipt(refundInitiated = false, actualRefundAmount = null),
+        )
+        val vm = viewModel()
+        runCurrent()
+
+        vm.cancel("schedule_changed")
+        runCurrent()
+
+        coVerify(exactly = 1) { loyaltyRepository.refresh() }
+        vm.viewModelScope.cancel()
+    }
+
+    @Test
+    fun `a refused cancel leaves the credit balance alone`() = runTest {
+        stubOrder(2)
+        coEvery { repository.cancel(orderId, any()) } returns
+            ApiResult.Error(ApiError.BadRequest("refused"))
+        val vm = viewModel()
+        runCurrent()
+
+        vm.cancel("schedule_changed")
+        runCurrent()
+
+        coVerify(exactly = 0) { loyaltyRepository.refresh() }
         vm.viewModelScope.cancel()
     }
 

@@ -349,26 +349,38 @@ private struct PropertySizeSection: View {
     let onBathroomsChange: (Int) -> Void
 
     var body: some View {
-        HStack(alignment: .top, spacing: Spacing.s) {
-            counter(
-                label: L10n.Recurring.createRoomsLabel,
-                value: rooms,
-                maximum: PropertySize.maxRooms,
-                onChange: onRoomsChange
-            )
-            counter(
-                label: L10n.Recurring.createBathroomsLabel,
-                value: bathrooms,
-                maximum: PropertySize.maxBathrooms,
-                onChange: onBathroomsChange
-            )
+        VStack(alignment: .leading, spacing: Spacing.xs) {
+            HStack(alignment: .top, spacing: Spacing.s) {
+                counter(
+                    label: L10n.Recurring.createRoomsLabel,
+                    value: rooms,
+                    maximum: PropertySize.maxRooms,
+                    onChange: onRoomsChange
+                )
+                counter(
+                    label: L10n.Recurring.createBathroomsLabel,
+                    value: bathrooms,
+                    maximum: PropertySize.maxBathrooms,
+                    onChange: onBathroomsChange
+                )
+            }
+            Text(L10n.Booking.sizeLimitCaption)
+                .font(CleansiaTypography.labelSmall)
+                .foregroundColor(CleansiaColors.onSurfaceVariant)
         }
     }
 
     private func counter(label: String, value: Int, maximum: Int, onChange: @escaping (Int) -> Void) -> some View {
         VStack(alignment: .leading, spacing: Spacing.s) {
             SectionLabel(text: label)
-            PropertyStepper(label: "\(value)", value: value, minimum: 0, maximum: maximum, onChange: onChange)
+            PropertyStepper(
+                name: label,
+                label: "\(value)",
+                value: value,
+                minimum: 0,
+                maximum: maximum,
+                onChange: onChange
+            )
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

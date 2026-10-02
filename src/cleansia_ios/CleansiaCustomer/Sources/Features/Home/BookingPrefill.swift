@@ -40,6 +40,15 @@ enum BookingPrefill {
         return next
     }
 
+    /// The Home quick-size slide's "See my price" → the size it holds, clamped to the booking caps the
+    /// one-off steppers keep, so the first step prices a booking the server accepts.
+    static func withSize(_ state: BookingState, rooms: Int, bathrooms: Int) -> BookingState {
+        var next = state
+        next.rooms = min(max(rooms, 1), PropertySize.maxRooms)
+        next.bathrooms = min(max(bathrooms, 1), PropertySize.maxBathrooms)
+        return next
+    }
+
     /// "Order again" → replay a past order into the draft. Retired catalog
     /// items are dropped (and flagged for the snackbar) only when the catalog
     /// has loaded; a cold catalog trusts the original ids and lets the create

@@ -22,6 +22,10 @@ public sealed partial class EmailService : IEmailService
     // transport is built on. Kept in sync with SendGridExtensions.HttpClientName.
     private const string SendGridHttpClientName = "SendGrid";
 
+    // The one contact every e-mail's support line names. Not the sender (AddressFrom), which is a
+    // delivery address, and not a translation row: an address is the same in every locale.
+    private const string SupportAddress = "support@cleansia.cz";
+
     private readonly ISendGridConfig sendGridConfig;
     private readonly ILogger<EmailService> logger;
     private readonly IHttpClientFactory httpClientFactory;
@@ -586,7 +590,7 @@ public sealed partial class EmailService : IEmailService
         values["Address"] = order.CustomerAddress is { } address ? $"{address.Street}, {address.City}" : string.Empty;
         values["Total"] = Money(receivable.Amount, order.Currency?.Symbol ?? string.Empty, languageCode);
         values["OrderStatusLink"] = payUrl;
-        values["SupportEmail"] = sendGridConfig.AddressFrom;
+        values["SupportEmail"] = SupportAddress;
         values["FooterText"] = await FooterTextAsync(languageCode, order.CustomerAddress?.CountryId, ct);
 
         return await SendRenderedAsync(
@@ -703,7 +707,7 @@ public sealed partial class EmailService : IEmailService
         values["Greeting"] = string.Format(culture, copy["Greeting"], employeeName);
         values["Body"] = string.Format(
             culture, copy["Body"], Money(amount, currencySymbol, locale), carriedSince.ToString("d", culture));
-        values["SupportEmail"] = sendGridConfig.AddressFrom;
+        values["SupportEmail"] = SupportAddress;
         values["FooterText"] = await FooterTextAsync(locale, countryId: null, ct);
 
         return await SendRenderedAsync(
@@ -795,7 +799,7 @@ public sealed partial class EmailService : IEmailService
         values["Subject"] = subject;
         values["Greeting"] = string.Format(culture, copy["Greeting"], cleanerName);
         values["Body"] = string.Format(culture, copy["Body"], jobNumber);
-        values["SupportEmail"] = sendGridConfig.AddressFrom;
+        values["SupportEmail"] = SupportAddress;
         values["FooterText"] = await FooterTextAsync(locale, countryId: null, ct);
 
         return await SendRenderedAsync(
@@ -1008,7 +1012,6 @@ public sealed partial class EmailService : IEmailService
             ButtonText = translations.GetValueOrDefault("ButtonText", "View Order Details"),
             QuestionsText = translations.GetValueOrDefault("QuestionsText", "If you have any questions about your order, don't hesitate to reach out."),
             SupportText = translations.GetValueOrDefault("SupportText", "Need help? Contact us at"),
-            SupportEmail = translations.GetValueOrDefault("SupportEmail", "info@cleansia.cz"),
             Closing = translations.GetValueOrDefault("Closing", "Best regards,"),
             TeamName = translations.GetValueOrDefault("TeamName", "The Cleansia Team"),
             FooterText = await FooterTextAsync(languageCode, order.CustomerAddress?.CountryId, ct)
@@ -1086,7 +1089,7 @@ public sealed partial class EmailService : IEmailService
             : $"{discountLabel} · {discountPhrase}";
         values["ExpiryNotice"] = expiryNotice;
         values["OrderLink"] = sendGridConfig.ClientDomainUrl;
-        values["SupportEmail"] = sendGridConfig.AddressFrom;
+        values["SupportEmail"] = SupportAddress;
         values["FooterText"] = await FooterTextAsync(languageCode, countryId: null, ct);
         values["Subject"] = subject;
 
@@ -1188,10 +1191,10 @@ public sealed partial class EmailService : IEmailService
     /// <para><b>Runtime data</b> overrides it: a name, an order number, an amount. These are facts
     /// about this one send and can never be translated.</para>
     ///
-    /// <para><b>Two computed defaults</b> fill in only where nothing above supplied them:
-    /// <c>lang</c>, which no translation row carries because it is the row's own language; and
-    /// <c>SupportEmail</c>, which falls back to the configured from-address so a missing row cannot
-    /// leave a customer with no way to reply. A translation row still wins if it exists.</para>
+    /// <para><b>Two computed values</b> are set last, over anything above: <c>lang</c>, which no
+    /// translation row carries because it is the row's own language; and <c>SupportEmail</c>, the one
+    /// support contact. An address is not copy, so no row can name another, and a locale missing its
+    /// row still tells the customer where to write.</para>
     ///
     /// Values are stringified here rather than at the call sites, because the renderer substitutes
     /// text and a boxed <c>decimal</c> would format by the ambient culture at an unpredictable point.
@@ -1218,11 +1221,7 @@ public sealed partial class EmailService : IEmailService
         }
 
         values["lang"] = languageCode;
-
-        if (string.IsNullOrWhiteSpace(values.GetValueOrDefault("SupportEmail")))
-        {
-            values["SupportEmail"] = sendGridConfig.AddressFrom;
-        }
+        values["SupportEmail"] = SupportAddress;
 
         return values;
     }
@@ -1393,7 +1392,7 @@ public sealed partial class EmailService : IEmailService
         values["IntroText"] = string.Format(values["IntroText"]!, company, date);
         values["WindDownDate"] = date;
         values["AppLink"] = sendGridConfig.ClientDomainUrl;
-        values["SupportEmail"] = sendGridConfig.AddressFrom;
+        values["SupportEmail"] = SupportAddress;
         values["FooterText"] = await FooterTextAsync(languageCode, countryId: null, ct);
 
         var html = templateRenderer.Render(TemplateFileFor(emailType), values);

@@ -97,7 +97,9 @@ final class PartnerLanguageCallSiteTests: XCTestCase {
             languageSync: LiveLanguagePreferenceSync(
                 tokenStore: SessionTokenStore(signedIn: signedIn),
                 client: client
-            )
+            ),
+            // The test's own suite, not the installed test host's real App Group.
+            appGroup: suiteName
         )
     }
 }

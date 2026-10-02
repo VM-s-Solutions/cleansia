@@ -8,7 +8,15 @@ final class ProfileStatsFormatTests: XCTestCase {
     func testSavedMapsKnownCurrencyCodesToSymbols() {
         XCTAssertEqual(ProfileStatsFormat.saved(320, currencyCode: "CZK"), "320 Kč")
         XCTAssertEqual(ProfileStatsFormat.saved(45, currencyCode: "EUR"), "45 €")
-        XCTAssertEqual(ProfileStatsFormat.saved(10, currencyCode: "USD"), "10 $")
+        XCTAssertEqual(ProfileStatsFormat.saved(10, currencyCode: "USD"), "$10")
+    }
+
+    /// The figure is the order detail's: a saving that is not whole keeps its haléře.
+    func testSavedIsTheOrderDetailsFormatter() {
+        XCTAssertEqual(
+            ProfileStatsFormat.saved(137.1, currencyCode: "CZK"),
+            OrdersFormat.price(137.1, currencyCode: "CZK")
+        )
     }
 
     func testSavedPassesAnUnknownCurrencyCodeThrough() {
@@ -35,5 +43,27 @@ final class ProfileStatsFormatTests: XCTestCase {
 
     func testMemberSinceFallsBackToAnEmDashWhenUnknown() {
         XCTAssertEqual(ProfileStatsFormat.memberSince(nil, locale: Locale(identifier: "en_US")), "—")
+    }
+
+    /// The card's inputs are numbers a language switch rarely changes, so SwiftUI skipped its body and the
+    /// three labels stayed in the old language while the rest of Profile switched. It is rebuilt on the
+    /// locale's identity, the app's pattern.
+    func testTheStatsCardIsRebuiltOnALanguageSwitch() throws {
+        let tab = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appendingPathComponent("Sources/Features/Profile/ProfileTab.swift")
+        let source = try String(contentsOf: tab, encoding: .utf8)
+            .components(separatedBy: .newlines)
+            .filter { !$0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
+            .joined()
+            .components(separatedBy: .whitespaces).joined()
+        XCTAssertTrue(
+            source
+                .contains(
+                    "memberSince:ProfileStatsFormat.memberSince(user?.memberSince,locale:locale)).id(locale.identifier)"
+                ),
+            "the stats card is no longer rebuilt on a language switch"
+        )
     }
 }

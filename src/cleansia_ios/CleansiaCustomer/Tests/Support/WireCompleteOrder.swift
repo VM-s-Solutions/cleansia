@@ -12,6 +12,8 @@ extension OrderItem {
         item.estimatedTime = 180
         item.totalPrice = 1590
         item.originalSubtotal = 2100
+        item.creditAppliedAmount = 0
+        item.amountDueOnCard = 1590
         item.dirtinessLevel = ._0
         item.dirtinessSurchargeAmount = 0
         return item

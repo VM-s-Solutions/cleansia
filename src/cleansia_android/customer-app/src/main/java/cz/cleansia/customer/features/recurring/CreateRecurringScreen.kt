@@ -71,6 +71,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cz.cleansia.customer.ui.components.adjustableStepper
+import cz.cleansia.customer.ui.components.rememberStepperTick
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.booking.CashEligibility
 import cz.cleansia.customer.core.booking.PropertySize
@@ -554,16 +556,30 @@ private fun WhatStep(
 
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Column(modifier = Modifier.weight(1f)) {
-            SectionLabel(stringResource(R.string.recurring_create_rooms_label))
+            val rooms = stringResource(R.string.recurring_create_rooms_label)
+            SectionLabel(rooms)
             Spacer(Modifier.height(8.dp))
-            Stepper(value = state.rooms, max = PropertySize.MAX_ROOMS, onChange = viewModel::setRooms)
+            Stepper(name = rooms, value = state.rooms, max = PropertySize.MAX_ROOMS, onChange = viewModel::setRooms)
         }
         Column(modifier = Modifier.weight(1f)) {
-            SectionLabel(stringResource(R.string.recurring_create_bathrooms_label))
+            val bathrooms = stringResource(R.string.recurring_create_bathrooms_label)
+            SectionLabel(bathrooms)
             Spacer(Modifier.height(8.dp))
-            Stepper(value = state.bathrooms, max = PropertySize.MAX_BATHROOMS, onChange = viewModel::setBathrooms)
+            Stepper(
+                name = bathrooms,
+                value = state.bathrooms,
+                max = PropertySize.MAX_BATHROOMS,
+                onChange = viewModel::setBathrooms,
+            )
         }
     }
+    // The cap stated up front, as on the one-off booking's size row.
+    Spacer(Modifier.height(6.dp))
+    Text(
+        stringResource(R.string.booking_size_limit_caption, PropertySize.MAX_ROOMS, PropertySize.MAX_BATHROOMS),
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
 
     Spacer(Modifier.height(24.dp))
 
@@ -1010,15 +1026,23 @@ private fun OutlinedSelectableChip(
 }
 
 @Composable
-private fun Stepper(value: Int, max: Int, onChange: (Int) -> Unit) {
+private fun Stepper(name: String, value: Int, max: Int, onChange: (Int) -> Unit) {
+    // One TalkBack node read as the field's name and its value, and a selection tick on every step,
+    // as iOS PropertyStepper does on this screen. The buttons are 48dp IconButtons already.
+    val tick = rememberStepperTick()
+    val change = { next: Int ->
+        tick()
+        onChange(next)
+    }
     Row(
         modifier = Modifier
             .clip(RoundedCornerShape(12.dp))
             .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp))
-            .padding(horizontal = 4.dp, vertical = 4.dp),
+            .padding(horizontal = 4.dp, vertical = 4.dp)
+            .adjustableStepper(name = name, valueText = value.toString(), value = value, range = 0..max, onChange = change),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        IconButton(onClick = { onChange(value - 1) }, enabled = value > 0) {
+        IconButton(onClick = { change(value - 1) }, enabled = value > 0) {
             Icon(Icons.Outlined.Remove, contentDescription = null)
         }
         Text(
@@ -1026,7 +1050,7 @@ private fun Stepper(value: Int, max: Int, onChange: (Int) -> Unit) {
             modifier = Modifier.padding(horizontal = 12.dp),
             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
         )
-        IconButton(onClick = { onChange(value + 1) }, enabled = value < max) {
+        IconButton(onClick = { change(value + 1) }, enabled = value < max) {
             Icon(Icons.Outlined.Add, contentDescription = null)
         }
     }

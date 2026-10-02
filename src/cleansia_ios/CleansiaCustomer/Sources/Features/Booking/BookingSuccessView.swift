@@ -28,18 +28,25 @@ struct BookingSuccessView: View {
         ))
     }
 
+    /// Android's compact rhythm (`BookingSuccessScreen.kt`): no mascot — at 220 pt it pushed the
+    /// sequence into a scroll — but a 48 pt check, the at-a-glance success cue in a fifth of the height,
+    /// and the tighter section gaps, so the whole confirmation fits a 6.1" phone without scrolling.
     var body: some View {
-        ScrollView {
-            VStack(spacing: Spacing.m) {
-                AnimatedMascotView(.welcoming, loop: false, fallback: .waving)
-                    .frame(width: 220, height: 220)
-                VStack(spacing: Spacing.xs) {
+        bounceOnlyWhenScrolling(ScrollView {
+            VStack(spacing: Spacing.s) {
+                // Decorative: the title under it says the same thing.
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 48))
+                    .foregroundColor(CleansiaColors.successText)
+                    .cleansiaBounceOnAppear()
+                    .accessibilityHidden(true)
+                VStack(spacing: Spacing.xxs) {
                     Text(L10n.Booking.successTitle)
                         .cleansiaFont(CleansiaTypography.headlineSmall)
                         .foregroundColor(CleansiaColors.onBackground)
                         .multilineTextAlignment(.center)
                     Text(L10n.Booking.successSubtitle)
-                        .font(CleansiaTypography.bodyLarge)
+                        .font(CleansiaTypography.bodyMedium)
                         .foregroundColor(CleansiaColors.onSurfaceVariant)
                         .multilineTextAlignment(.center)
                 }
@@ -52,7 +59,7 @@ struct BookingSuccessView: View {
                     .font(CleansiaTypography.labelMedium)
                     .foregroundColor(CleansiaColors.onSurfaceVariant)
                     .multilineTextAlignment(.center)
-                VStack(spacing: Spacing.s) {
+                VStack(spacing: Spacing.xs) {
                     if let onViewOrder {
                         CleansiaPrimaryButton(L10n.Orders.viewOrder, action: onViewOrder)
                         CleansiaOutlinedButton(L10n.Booking.successGoHome, action: onDone)
@@ -61,11 +68,23 @@ struct BookingSuccessView: View {
                     }
                 }
             }
-            .padding(Spacing.l)
-        }
+            .padding(.horizontal, Spacing.ml)
+            .padding(.vertical, Spacing.m)
+        })
         .frame(maxWidth: .infinity)
         .background(CleansiaColors.background.ignoresSafeArea())
         .task { await orderVM.load() }
+    }
+
+    /// A confirmation that fits neither rubber-bands nor shows an indicator (iOS 16.4+); the scroll view
+    /// stays for the SE and large Dynamic Type.
+    @ViewBuilder
+    private func bounceOnlyWhenScrolling(_ scroll: some View) -> some View {
+        if #available(iOS 16.4, *) {
+            scroll.scrollBounceBehavior(.basedOnSize)
+        } else {
+            scroll
+        }
     }
 
     private func confirmationCard(_ code: String) -> some View {
@@ -79,7 +98,8 @@ struct BookingSuccessView: View {
                 .foregroundColor(CleansiaColors.primary)
                 .textSelection(.enabled)
         }
-        .padding(Spacing.m)
+        .padding(.vertical, 10)
+        .padding(.horizontal, Spacing.m)
         .frame(maxWidth: .infinity)
         .successCard()
     }
@@ -94,7 +114,7 @@ struct BookingSuccessView: View {
             ProgressView()
                 .tint(CleansiaColors.primary)
         case let .loaded(order):
-            let rows = summaryRows(order)
+            let rows = Self.summaryRows(order, locale: locale)
             if !rows.isEmpty {
                 summaryCard(rows)
             }
@@ -103,7 +123,7 @@ struct BookingSuccessView: View {
         }
     }
 
-    private func summaryRows(_ order: CustomerOrderDetail) -> [SummaryRow] {
+    static func summaryRows(_ order: CustomerOrderDetail, locale: Locale) -> [SummaryRow] {
         var rows: [SummaryRow] = []
         if order.cleaningDateTime != nil {
             rows.append(SummaryRow(
@@ -124,11 +144,27 @@ struct BookingSuccessView: View {
                 value: OrdersFormat.price(order.total, currencyCode: order.currencyCode)
             ))
         }
+        // The order's own figures, not the confirm step's preview: a concurrent booking can drain the
+        // balance between the two, and the card was asked for what the order says. The card line is
+        // "Paid by card" outright, not the order detail's `cardShareLabel`: credit applies only to a
+        // card booking, which reaches this screen only once the PaymentSheet completed, while the
+        // order read here usually still says Pending (the webhook moves it to Paid, and this screen
+        // reads once).
+        if order.creditAppliedAmount > 0 {
+            rows.append(SummaryRow(
+                label: L10n.Credit.paidWithCredit,
+                value: "−" + OrdersFormat.price(order.creditAppliedAmount, currencyCode: order.currencyCode)
+            ))
+            rows.append(SummaryRow(
+                label: L10n.Credit.paidByCard,
+                value: OrdersFormat.price(order.amountDueOnCard, currencyCode: order.currencyCode)
+            ))
+        }
         return rows
     }
 
     private func summaryCard(_ rows: [SummaryRow]) -> some View {
-        VStack(alignment: .leading, spacing: Spacing.xs) {
+        VStack(alignment: .leading, spacing: 6) {
             ForEach(rows) { row in
                 HStack(alignment: .top, spacing: Spacing.s) {
                     Text(row.label)
@@ -143,12 +179,12 @@ struct BookingSuccessView: View {
                 }
             }
         }
-        .padding(Spacing.m)
+        .padding(Spacing.s)
         .frame(maxWidth: .infinity, alignment: .leading)
         .successCard()
     }
 
-    private func addressLine(_ address: OrderAddress?) -> String? {
+    private static func addressLine(_ address: OrderAddress?) -> String? {
         guard let address else { return nil }
         let parts = [address.street, address.city]
             .compactMap { $0 }
@@ -161,7 +197,7 @@ struct BookingSuccessView: View {
             status: orderVM.order?.status,
             cleanerAssigned: !(orderVM.order?.assignedEmployees.isEmpty ?? true)
         )
-        return VStack(alignment: .leading, spacing: Spacing.s) {
+        return VStack(alignment: .leading, spacing: Spacing.xs) {
             Text(L10n.Booking.successProgress)
                 .font(CleansiaTypography.titleMedium)
                 .foregroundColor(CleansiaColors.onBackground)
@@ -171,7 +207,7 @@ struct BookingSuccessView: View {
                 }
             }
         }
-        .padding(Spacing.m)
+        .padding(Spacing.s)
         .frame(maxWidth: .infinity, alignment: .leading)
         .successCard()
     }
@@ -213,7 +249,7 @@ struct BookingSuccessView: View {
     }
 }
 
-private struct SummaryRow: Identifiable {
+struct SummaryRow: Identifiable {
     let label: String
     let value: String
 

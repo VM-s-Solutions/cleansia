@@ -76,6 +76,32 @@ data class LoyaltyActivityItemDto(
 )
 
 /**
+ * The customer's credit — money the platform owes them, NOT points. Mirrors backend
+ * `GetMyCredit.Response`, reduced to what the app shows.
+ *
+ * [balances] is never empty: a customer who has never been credited gets the server's single zero in
+ * the platform default currency, so every screen renders one shape and a zero reads "0 Kč" rather than
+ * hiding. Largest first, one row per currency — credit only pays an order in its own currency.
+ *
+ * [maxShareOfOrder] is the fraction of an order credit may settle (0.70 today). The copy takes the
+ * number from here, never a literal: -> BookingPolicy.MaxCreditShareOfOrder
+ */
+data class CreditDto(
+    val balances: List<CreditBalanceDto>,
+    val maxShareOfOrder: Double,
+) {
+    /** The largest balance — the one the Profile row and the Home slide show. */
+    val primary: CreditBalanceDto get() = balances.first()
+}
+
+/** One currency's balance. [expiresOn] is null when there is nothing to expire. */
+data class CreditBalanceDto(
+    val balance: Double,
+    val currencyCode: String,
+    val expiresOn: kotlinx.datetime.Instant?,
+)
+
+/**
  * Local enum for branching UI on tier; mirror of backend `LoyaltyTier` int values.
  * Decoupled from the wire so we can add UI-only states (Loading/Unknown) later.
  */

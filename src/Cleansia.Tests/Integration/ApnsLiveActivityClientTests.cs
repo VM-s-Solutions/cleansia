@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text;
+using System.Text.Json;
 using Cleansia.Core.Clients.Abstractions.Apns;
 using Cleansia.Infra.Clients.Apns;
 using Cleansia.Infra.Common.Configuration.Interfaces;
@@ -23,7 +24,16 @@ public class ApnsLiveActivityClientTests
         StaleDate: DateTimeOffset.UtcNow.AddHours(4),
         DismissalDate: null,
         AttributesType: null,
-        Attributes: null);
+        Attributes: null,
+        Alert: null);
+
+    private static LiveActivityPush SampleStartPush() => SamplePush() with
+    {
+        Event = "start",
+        AttributesType = "CleanOrderAttributes",
+        Attributes = new LiveActivityStartAttributes("ORD-1"),
+        Alert = new LiveActivityAlert("push.order.on_the_way.title", "push.order.on_the_way.body", ["ORD-1"]),
+    };
 
     private static FakeApnsConfig EnabledConfig() => new()
     {
@@ -108,6 +118,42 @@ public class ApnsLiveActivityClientTests
         Assert.Equal("liveactivity", request.PushType);
         Assert.Equal("cz.cleansia.customer.push-type.liveactivity", request.Topic);
         Assert.Equal("bearer JWT-STUB", request.Authorization);
+    }
+
+    /// <summary>
+    /// A remote start carries the alert ActivityKit requires, as the localized-string dictionaries Apple
+    /// documents for a Live Activity alert: title and body each a loc-key with its loc-args, the title
+    /// taking none, and no sound. → /decisions/adr-0029#amendment-a5
+    /// </summary>
+    [Fact]
+    public async Task A_Start_Carries_The_Localized_Alert_On_The_Wire()
+    {
+        var handler = new StubHandler(_ => new HttpResponseMessage(HttpStatusCode.OK));
+        var client = CreateClient(EnabledConfig(), handler);
+
+        await client.SendAsync("T", SampleStartPush(), CancellationToken.None);
+
+        using var body = JsonDocument.Parse(Assert.Single(handler.Requests).Body);
+        var alert = body.RootElement.GetProperty("aps").GetProperty("alert");
+        Assert.Equal("push.order.on_the_way.title", alert.GetProperty("title").GetProperty("loc-key").GetString());
+        Assert.Equal(0, alert.GetProperty("title").GetProperty("loc-args").GetArrayLength());
+        Assert.Equal("push.order.on_the_way.body", alert.GetProperty("body").GetProperty("loc-key").GetString());
+        Assert.Equal(
+            new[] { "ORD-1" },
+            alert.GetProperty("body").GetProperty("loc-args").EnumerateArray().Select(a => a.GetString()).ToArray());
+        Assert.False(alert.TryGetProperty("sound", out _));
+    }
+
+    [Fact]
+    public async Task An_Update_Carries_No_Alert()
+    {
+        var handler = new StubHandler(_ => new HttpResponseMessage(HttpStatusCode.OK));
+        var client = CreateClient(EnabledConfig(), handler);
+
+        await client.SendAsync("T", SamplePush(), CancellationToken.None);
+
+        using var body = JsonDocument.Parse(Assert.Single(handler.Requests).Body);
+        Assert.False(body.RootElement.GetProperty("aps").TryGetProperty("alert", out _));
     }
 
     [Fact]
@@ -218,7 +264,7 @@ public class ApnsLiveActivityClientTests
     private static HttpResponseMessage Reason(HttpStatusCode status, string reason) =>
         new(status) { Content = new StringContent($"{{\"reason\":\"{reason}\"}}", Encoding.UTF8, "application/json") };
 
-    private sealed record CapturedRequest(string Uri, string? PushType, string? Topic, string? Authorization);
+    private sealed record CapturedRequest(string Uri, string? PushType, string? Topic, string? Authorization, string Body);
 
     private sealed class StubHandler(Func<HttpRequestMessage, HttpResponseMessage>? responder = null) : HttpMessageHandler
     {
@@ -228,15 +274,16 @@ public class ApnsLiveActivityClientTests
         public int CallCount { get; private set; }
         public List<CapturedRequest> Requests { get; } = [];
 
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             CallCount++;
             Requests.Add(new CapturedRequest(
                 request.RequestUri!.ToString(),
                 Header(request, "apns-push-type"),
                 Header(request, "apns-topic"),
-                Header(request, "authorization")));
-            return Task.FromResult(_responder(request));
+                Header(request, "authorization"),
+                await request.Content!.ReadAsStringAsync(cancellationToken)));
+            return _responder(request);
         }
 
         private static string? Header(HttpRequestMessage request, string name) =>

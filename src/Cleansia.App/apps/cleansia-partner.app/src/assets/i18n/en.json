@@ -134,7 +134,8 @@
       "bank_account_number_placeholder": "Account number",
       "bank_code_placeholder": "Code",
       "bank_code_hint": "The four digits after the slash, e.g. 5500.",
-      "iban_hint": "You can leave this empty for a Czech or Slovak account — we work it out from the numbers above.",
+      "iban_hint": "Your full IBAN, starting with your bank's country code. You'll find it on your bank statement or in your banking app.",
+      "iban_wrong_length": "This IBAN has the wrong length for your bank's country — the length there is {{length}}. Check for a missing or extra character.",
       "swift_code": "SWIFT Code",
       "swift_code_hint": "Only needed when your bank is in a different country than the one you work in.",
       "bank_name": "Bank Name",
@@ -622,7 +623,7 @@
       "approval_title": "How approval works",
       "approval_text": "Before you can take jobs, an administrator approves your account. They check that your profile is complete, that every document the country you will work in requires has been uploaded and accepted, that you have accepted the partner documents in force, and that we operate in that country. Approval and rejection are always decided by a person, never automatically.",
       "review_title": "Ask a person to review a decision",
-      "review_text": "If you disagree with a decision about your account or your jobs, such as a rejection, a removal from a job or a weekly limit, write to info@cleansia.cz. A person, not an automated system, will look at it and answer you."
+      "review_text": "If you disagree with a decision about your account or your jobs, such as a rejection, a removal from a job or a weekly limit, write to support@cleansia.cz. A person, not an automated system, will look at it and answer you."
     }
   },
   "sidebar": {
@@ -807,6 +808,8 @@
     "description": "To access this section, you need to complete your profile setup and upload required documents.",
     "complete_profile": "Complete Profile",
     "progress": "{{completed}} of {{total}} steps complete",
+    "contact_support": "Contact support",
+    "support_subject": "Cleansia partner — application rejected",
     "categories": {
       "profile": "Profile Information",
       "documents": "Required Documents",

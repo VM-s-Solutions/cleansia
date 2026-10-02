@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import UIKit
 
 @MainActor
 public final class SnackbarController: ObservableObject {
@@ -22,8 +23,16 @@ public final class SnackbarController: ObservableObject {
         self.localizer = localizer
     }
 
+    /// Every mutation outcome in both apps lands here, so this is the one place its haptic plays
+    /// (ADR-0018 D2). An `.info` message reports no outcome and stays silent.
     public func show(_ message: SnackbarMessage) {
         current = message
+        switch message.severity {
+        case .error: UINotificationFeedbackGenerator().notificationOccurred(.error)
+        case .success: UINotificationFeedbackGenerator().notificationOccurred(.success)
+        case .warning: UINotificationFeedbackGenerator().notificationOccurred(.warning)
+        case .info: break
+        }
     }
 
     public func dismiss() {

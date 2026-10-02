@@ -18,7 +18,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
@@ -52,6 +55,11 @@ private const val BankCodeMaxLength = 4
  * widths below are sized to the *placeholder*, not to the digits, for the same reason — a hint that is
  * clipped to "Předčí…" answers nothing.
  *
+ * **A whole account pasted into any segment is spread over all three, and a bare number pasted into
+ * any segment is the number** ([splitPastedAccount]), so an account copied off a statement or a banking
+ * app lands where it belongs instead of being clamped into one box. Such a paste ends the edit, so the
+ * keyboard closes, as on iOS.
+ *
  * The web twin is `cleansia-bank-account`; keep the two in step.
  */
 @Composable
@@ -82,11 +90,29 @@ fun CleansiaBankAccountInput(
     val bankCodeFocused by bankCodeInteraction.collectIsFocusedAsState()
     val focused = prefixFocused || numberFocused || bankCodeFocused
 
+    // Bumped by every paste that is spread over the segments, which rebuilds them (see the key below).
+    var pasteRevision by remember { mutableIntStateOf(0) }
+
     val isError = errorText != null
     val borderColor = when {
         isError -> MaterialTheme.colorScheme.error
         focused -> MaterialTheme.colorScheme.primary
         else -> MaterialTheme.colorScheme.outline
+    }
+
+    // A paste that reads as a whole account fills the segments it names, and a bare number pasted into
+    // any segment is the account number; anything else is clamped into the segment it went into,
+    // exactly as typing is. [current] is the text the change replaces, as the segment reported it.
+    fun segmentChange(maxLength: Int, onChange: (String) -> Unit): (String, String) -> Unit = { current, raw ->
+        val split = splitPastedAccount(raw, current)
+        if (split == null) {
+            onChange(clampSegment(raw, maxLength))
+        } else {
+            split.first?.let(onPrefixChange)
+            onNumberChange(split.second)
+            split.third?.let(onBankCodeChange)
+            pasteRevision++
+        }
     }
 
     Column(modifier = modifier.fillMaxWidth()) {
@@ -109,36 +135,43 @@ fun CleansiaBankAccountInput(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Start,
         ) {
-            // Every segment reads from the left, placeholder and digits alike. Right-aligning the
-            // prefix kept its digits against the dash, but it also right-aligned its hint, so the three
-            // labels in an empty control started at three different places. Its width is set by the
-            // longest placeholder we ship ("Predčíslie"), not by its six digits.
-            AccountSegment(
-                value = prefix,
-                onValueChange = { onPrefixChange(it.filter(Char::isDigit).take(PrefixMaxLength)) },
-                interactionSource = prefixInteraction,
-                enabled = enabled,
-                placeholder = prefixPlaceholder,
-                modifier = Modifier.width(76.dp),
-            )
-            Separator("–")
-            AccountSegment(
-                value = number,
-                onValueChange = { onNumberChange(it.filter(Char::isDigit).take(NumberMaxLength)) },
-                interactionSource = numberInteraction,
-                enabled = enabled,
-                placeholder = numberPlaceholder,
-                modifier = Modifier.weight(1f),
-            )
-            Separator("/")
-            AccountSegment(
-                value = bankCode,
-                onValueChange = { onBankCodeChange(it.filter(Char::isDigit).take(BankCodeMaxLength)) },
-                interactionSource = bankCodeInteraction,
-                enabled = enabled,
-                placeholder = bankCodePlaceholder,
-                modifier = Modifier.width(52.dp),
-            )
+            // A spread paste rebuilds the three segments. BasicTextField drops a change whose text
+            // equals the last one it reported for as long as its value is unchanged, and a paste
+            // routed out of a box leaves that box's value as it was, so the same paste into the same
+            // box a second time did nothing. The rebuild ends the edit and the keyboard goes with it,
+            // as on iOS (`.id(pasteRevision)` in CleansiaBankAccountField).
+            key(pasteRevision) {
+                // Every segment reads from the left, placeholder and digits alike. Right-aligning the
+                // prefix kept its digits against the dash, but it also right-aligned its hint, so the
+                // three labels in an empty control started at three different places. Its width is set
+                // by the longest placeholder we ship ("Predčíslie"), not by its six digits.
+                AccountSegment(
+                    value = prefix,
+                    onValueChange = segmentChange(PrefixMaxLength, onPrefixChange),
+                    interactionSource = prefixInteraction,
+                    enabled = enabled,
+                    placeholder = prefixPlaceholder,
+                    modifier = Modifier.width(76.dp),
+                )
+                Separator("–")
+                AccountSegment(
+                    value = number,
+                    onValueChange = segmentChange(NumberMaxLength, onNumberChange),
+                    interactionSource = numberInteraction,
+                    enabled = enabled,
+                    placeholder = numberPlaceholder,
+                    modifier = Modifier.weight(1f),
+                )
+                Separator("/")
+                AccountSegment(
+                    value = bankCode,
+                    onValueChange = segmentChange(BankCodeMaxLength, onBankCodeChange),
+                    interactionSource = bankCodeInteraction,
+                    enabled = enabled,
+                    placeholder = bankCodePlaceholder,
+                    modifier = Modifier.width(52.dp),
+                )
+            }
         }
 
         if (errorText != null || helper != null) {
@@ -152,23 +185,84 @@ fun CleansiaBankAccountInput(
     }
 }
 
+private val domesticAccount = Regex("""^(?:(\d{1,6})-)?(\d{1,10})(?:/(\d{1,4}))?$""")
+private val czSkIban = Regex("""^(?:CZ|SK)\d{2}(\d{20})$""")
+
+/**
+ * A Czech or Slovak account pasted (or typed on a hardware keyboard) in one go, split into its three
+ * fields as (prefix, number, bank code); [raw] is the segment's new text and [current] the text it
+ * replaces. A null part leaves that field as it is, and a null result means the text is an ordinary
+ * entry for the segment it landed in, which the digit clamp takes.
+ *
+ * Recognised: `[prefix-]number/bankcode` and `prefix-number` — a number pad types neither separator,
+ * and the clamp drops a typed one at once, so their presence is what marks a paste — a CZ or SK IBAN,
+ * whose BBAN is `bankcode(4) prefix(6) number(10)` with the zero padding dropped, and a bare number,
+ * which is the account number whichever box it was pasted into (owner decision D14). A bare number
+ * counts only when it lands two or more characters at once: the number pad types one at a time, so
+ * typing a prefix or a bank code never jumps to the number. Whitespace of every kind (NBSP included)
+ * is dropped and an en or em dash reads as a hyphen, because that is what banking apps put on the
+ * clipboard. A written-out account without a prefix clears the old one; a missing bank code keeps it.
+ * Nothing is validated beyond shape: the server owns mod-11, the bank code and the IBAN cross-check.
+ *
+ * The iOS twin is `CleansiaBankAccountField.splitPastedAccount`; the two are held to one case list.
+ * -> /partner-app/onboarding
+ */
+internal fun splitPastedAccount(raw: String, current: String = ""): Triple<String?, String, String?>? {
+    val pasted = raw.filterNot(Char::isWhitespace).replace('\u2013', '-').replace('\u2014', '-')
+    val text = domesticFormOfIban(pasted) ?: pasted
+    val account = domesticAccount.matchEntire(text) ?: return null
+    val number = account.groupValues[2]
+    if ('-' !in text && '/' !in text) {
+        return if (raw.length - current.length >= 2) Triple(null, number, null) else null
+    }
+    return Triple(account.groups[1]?.value.orEmpty(), number, account.groups[3]?.value)
+}
+
+/** `CZ65 0800 0000 1920 0014 5399` reads as `19-2000145399/0800`; null for any other text. */
+private fun domesticFormOfIban(text: String): String? {
+    val bban = czSkIban.matchEntire(text.uppercase())?.groupValues?.get(1) ?: return null
+    val prefix = bban.substring(4, 10).trimStart('0')
+    val number = bban.substring(10).trimStart('0')
+    return (if (prefix.isEmpty()) "" else "$prefix-") + "$number/${bban.substring(0, 4)}"
+}
+
+/**
+ * What a segment keeps of an edit that is not an account: ASCII digits, up to [maxLength]. Not
+ * `Char::isDigit`, which also takes Arabic-Indic and other Unicode digits a keyboard can type and the
+ * server refuses; the paste splitter's `\d` is ASCII-only already.
+ */
+internal fun clampSegment(raw: String, maxLength: Int): String = raw.filter { it in '0'..'9' }.take(maxLength)
+
+/**
+ * For each text a segment composed with [value] reports, the text that edit replaced: the one the
+ * segment reported before it, and [value] for the first. Not [value] every time: [value] comes back
+ * through the caller's state one recomposition late, and BasicTextField can report several edits before
+ * then (it keeps its own `lastTextValue` for the same reason). Read against [value], the second of two
+ * digits typed in one frame looked like a two-digit paste and went to the number.
+ */
+internal fun lastReported(value: String): (raw: String) -> String {
+    var last = value
+    return { raw -> last.also { last = raw } }
+}
+
 /**
  * One segment. The placeholder stays on screen while the segment is empty — including while it is
  * focused — because the person is mid-way through an account number and "which box am I in" is exactly
- * the question a caret does not answer.
+ * the question a caret does not answer. [onValueChange] gets the text an edit replaced and the new text.
  */
 @Composable
 private fun AccountSegment(
     value: String,
-    onValueChange: (String) -> Unit,
+    onValueChange: (current: String, raw: String) -> Unit,
     interactionSource: MutableInteractionSource,
     enabled: Boolean,
     modifier: Modifier = Modifier,
     placeholder: String? = null,
 ) {
+    val replaced = remember(value) { lastReported(value) }
     BasicTextField(
         value = value,
-        onValueChange = onValueChange,
+        onValueChange = { raw -> onValueChange(replaced(raw), raw) },
         modifier = modifier,
         enabled = enabled,
         singleLine = true,

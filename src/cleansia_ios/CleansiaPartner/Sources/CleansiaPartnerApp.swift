@@ -37,8 +37,10 @@ struct CleansiaPartnerApp: App {
                     appDelegate.pushTap.onTap = { [weak pushNavigation] destination in
                         pushNavigation?.pendingDestination = destination
                     }
-                    appDelegate.onForegroundPush = { [weak badge = container.notificationBadge] eventKey in
+                    let badge = container.notificationBadge
+                    appDelegate.onForegroundPush = { [weak badge, weak pushNavigation] eventKey in
                         badge?.notePushReceived(eventKey: eventKey)
+                        pushNavigation?.foregroundPushes.send(eventKey)
                     }
                     container.startPush()
                     container.startLanguageReconcile()

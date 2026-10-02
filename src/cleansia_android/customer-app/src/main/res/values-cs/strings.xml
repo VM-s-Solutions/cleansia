@@ -102,11 +102,6 @@
     <string name="home_reorder_details">2 pokoje · Naposledy 2. dubna</string>
     <string name="home_reorder_cta">Objednat znovu</string>
 
-    <!-- Home — hero carousel -->
-    <string name="home_hero_greeting">Vítejte zpět</string>
-    <string name="home_hero_prompt">Těšíte se na čistý domov?</string>
-    <string name="home_hero_cta">Rezervovat za 30 sekund</string>
-
     <!-- Smart upsell carousel slides -->
     <string name="home_upsell_plus_top">Cleansia Plus</string>
     <string name="home_upsell_plus_title">Šetřete na každém úklidu.</string>
@@ -116,6 +111,27 @@
     <string name="home_upsell_referral_top">Pozvěte kamaráda</string>
     <string name="home_upsell_referral_title">Oba získáte 150 bodů po jeho prvním dokončeném úklidu</string>
     <string name="home_upsell_referral_cta">Sdílet můj kód</string>
+    <string name="home_upsell_page_a11y">Nabídka %1$d z %2$d</string>
+    <string name="home_upsell_next">Další nabídka</string>
+    <string name="home_upsell_previous">Předchozí nabídka</string>
+    <string name="home_upsell_notifications_top">Buďte v obraze</string>
+    <string name="home_upsell_notifications_title">Dozvíte se hned, když je uklízeč na cestě</string>
+    <string name="home_upsell_notifications_cta">Zapnout</string>
+    <string name="home_upsell_credit_title">%1$s se odečte z vaší příští objednávky kartou, až %2$d %% její ceny</string>
+    <string name="home_upsell_express_top">Plus · %1$d–%2$d h předem</string>
+    <plurals name="home_upsell_express_title">
+        <item quantity="one">Bez expresního příplatku ještě %1$d objednávka tento měsíc</item>
+        <item quantity="few">Bez expresního příplatku ještě %1$d objednávky tento měsíc</item>
+        <item quantity="many">Bez expresního příplatku ještě %1$d objednávky tento měsíc</item>
+        <item quantity="other">Bez expresního příplatku ještě %1$d objednávek tento měsíc</item>
+    </plurals>
+    <string name="home_upsell_book_cta">Objednat</string>
+    <string name="home_quick_size_title">Jak velký je váš domov?</string>
+    <string name="home_quick_size_cta">Zobrazit cenu</string>
+    <string name="home_quick_size_rooms_less">Méně pokojů</string>
+    <string name="home_quick_size_rooms_more">Více pokojů</string>
+    <string name="home_quick_size_baths_less">Méně koupelen</string>
+    <string name="home_quick_size_baths_more">Více koupelen</string>
     <string name="home_upsell_setup_recurring_top">Výhoda Plus</string>
     <string name="home_upsell_setup_recurring_title">Nastavte si pravidelný úklid — jednou objednat, navždy běží</string>
     <string name="home_upsell_setup_recurring_cta">Nastavit</string>
@@ -211,7 +227,6 @@
     <string name="order_detail_title">Objednávka č. %1$s</string>
     <string name="order_detail_created">Vytvořeno %1$s</string>
     <string name="order_detail_section_details">Detaily úklidu</string>
-    <string name="order_detail_date">Datum a čas</string>
     <string name="order_detail_address">Adresa</string>
     <string name="order_detail_headline_default">Rezervace přijata</string>
     <string name="order_detail_headline_confirmed">Uklízeč potvrzen</string>
@@ -236,6 +251,8 @@
     <string name="order_detail_completed_at">Dokončeno</string>
     <string name="order_detail_services">Rozpis ceny</string>
     <string name="order_detail_total">Celkem</string>
+    <string name="order_paid_with_credit">Zaplaceno kreditem</string>
+    <string name="order_paid_by_card">Zaplaceno kartou</string>
     <string name="order_detail_confirmation">Potvrzovací kód</string>
     <string name="order_detail_cleaners">Váš uklízeč</string>
     <string name="order_detail_instructions">Pokyny</string>
@@ -500,7 +517,7 @@
     <string name="help_call">Zavolat na podporu</string>
     <string name="help_call_desc">Po–Ne · 8:00–20:00</string>
     <string name="help_email">Napsat e-mail</string>
-    <string name="help_email_desc">info@cleansia.cz</string>
+    <string name="help_email_desc">support@cleansia.cz</string>
     <string name="help_faq_title">Často kladené otázky</string>
     <string name="help_faq_q1">Jak mohu zrušit rezervaci?</string>
     <string name="help_faq_a1">Otevřete rezervaci v záložce Objednávky a klepněte na \"Zrušit\". Zrušení zdarma až 24 hodin před začátkem úklidu. Do 15 minut od objednání neplatíte nic — u první objednávky nebo s Cleansia Plus do 60 minut.</string>
@@ -605,6 +622,7 @@
     <string name="details_add_to_booking">Přidat do rezervace</string>
     <string name="details_remove_from_booking">Odebrat z rezervace</string>
     <string name="booking_your_home">Váš domov</string>
+    <string name="booking_size_limit_caption">Nejvýše %1$d pokojů a %2$d koupelny</string>
     <string name="booking_search_services">Hledat služby</string>
     <string name="booking_no_results">Žádné služby neodpovídají vašemu hledání</string>
     <string name="booking_cat_all">Vše</string>
@@ -715,6 +733,9 @@
     <string name="booking_summary_tier_discount">Věrnostní sleva</string>
     <string name="booking_summary_tier_discount_min_not_met">Věrnostní sleva platí pro objednávky nad %1$s</string>
     <string name="booking_summary_total">Celkem</string>
+    <string name="booking_summary_due_on_card">K úhradě kartou</string>
+    <string name="booking_summary_credit_note">Zbývá vám %1$s kreditu. Odečte se automaticky a část každé objednávky se vždy platí kartou.</string>
+    <string name="booking_summary_credit_card_only">Kredit se uplatní jen při platbě kartou.</string>
 
     <!-- Promo code -->
     <string name="booking_promo_code_label">Máte slevový kód?</string>
@@ -1139,6 +1160,7 @@
 
     <!-- Disputes (Wave 2 Phase 6) -->
     <string name="profile_row_disputes">Stížnosti</string>
+    <string name="profile_row_credit">Kredit</string>
 
     <string name="order_action_report_issue">Nahlásit problém</string>
     <string name="order_action_cleaner_no_show">Uklízeč nedorazil</string>
@@ -1206,6 +1228,17 @@
     <string name="loyalty_tier_label_short_gold">Zlato</string>
     <string name="loyalty_tier_label_short_platinum">Platina</string>
     <string name="loyalty_lifetime_points">Body za celou dobu</string>
+    <string name="credit_your_credit">Váš kredit</string>
+    <string name="credit_auto_applied_share">Automaticky se odečte z vaší příští objednávky placené kartou, až do výše %1$d %% její ceny.</string>
+    <string name="credit_expires_on">Vyprší %1$s. Každá objednávka lhůtu prodlouží.</string>
+    <string name="credit_none">Teď nemáte žádný kredit. Pokud se úklid nepovede, kredit, který vám dáme, uvidíte tady.</string>
+    <string name="credit_explainer_title">Jak funguje kredit</string>
+    <string name="credit_explainer_source_title">Odkud se bere</string>
+    <string name="credit_explainer_source_body">Omluva, když uklízeč nedorazí nebo vaši objednávku nikdo nepřevezme, reklamace, kterou jste se rozhodli vyřešit kreditem, nebo vstřícné gesto od nás.</string>
+    <string name="credit_explainer_spend_title">Jak se čerpá</string>
+    <string name="credit_explainer_spend_body">Automaticky, na vaši příští objednávku placenou kartou ve stejné měně, až do výše %1$d %% její ceny. Zbytek vždy zaplatíte kartou.</string>
+    <string name="credit_explainer_points_title">Kredit nejsou body</string>
+    <string name="credit_explainer_points_body">Body posouvají vaši úroveň a její slevu a nikdy se neutrácejí. Kredit jsou peníze, které se odečtou z vašich objednávek.</string>
     <string name="loyalty_points_unit">b.</string>
     <string name="loyalty_progress_to_next">%1$d / %2$d bodů do %3$s</string>
     <string name="loyalty_max_tier_reached">Dosáhli jste nejvyššího stupně — děkujeme!</string>
@@ -1494,16 +1527,4 @@
     <string name="order_market_label">%1$s · %2$s</string>
     <string name="notification_recurring_paused_title">Plán opakovaných úklidů pozastaven</string>
     <string name="notification_recurring_paused_body">Váš plán opakovaných úklidů je pozastaven, protože Plus není aktivní. Obnovte Plus a plánování úklidů bude pokračovat.</string>
-    <string name="guest_order_entry">Najít rezervaci bez účtu</string>
-    <string name="guest_order_title">Rezervace bez účtu</string>
-    <string name="guest_order_intro">Vložte odkaz na sledování z potvrzovacího e-mailu. Otevře vaši rezervaci — nic dalšího zadávat nemusíte.</string>
-    <string name="guest_order_link">Odkaz na sledování z e-mailu</string>
-    <string name="guest_order_lookup">Najít rezervaci</string>
-    <string name="guest_order_required">Vložte odkaz na sledování z potvrzovacího e-mailu.</string>
-    <string name="guest_order_empty">Po vyhledání se zde zobrazí podrobnosti rezervace.</string>
-    <string name="guest_order_loading">Hledáme vaši rezervaci…</string>
-    <string name="guest_order_cancel">Zrušit rezervaci</string>
-    <string name="guest_order_cannot_cancel">Tuto rezervaci nelze zrušit.</string>
-    <string name="guest_order_preview_required">Poplatek za zrušení se nepodařilo ověřit. Před potvrzením zrušení to zkuste znovu.</string>
-    <string name="guest_order_fee_estimate">Storno poplatek: %1$s. Maximální vrácení platby kartou: %2$s. Vrátit lze pouze přijaté platby kartou; v potvrzení uvidíte skutečně vrácenou částku.</string>
 </resources>

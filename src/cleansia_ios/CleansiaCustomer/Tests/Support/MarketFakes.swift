@@ -88,6 +88,7 @@ enum MarketFixtures {
     static let one = [czechia]
     static let two = [czechia, slovakia]
 
+    // swiftlint:disable large_tuple
     @MainActor
     static func store(
         _ result: ApiResult<[Market]> = .success(two),
@@ -97,6 +98,8 @@ enum MarketFixtures {
         let preference = FakeMarketPreferenceStore(marketIsoCode: stored)
         return (MarketStore(client: client, preference: preference), client, preference)
     }
+
+    // swiftlint:enable large_tuple
 
     /// A store already resolved onto `markets` with `selected` — the shape every reader test starts from.
     @MainActor

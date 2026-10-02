@@ -79,7 +79,10 @@ extension UpdateCurrentUserCommand {
             id: update.id,
             firstName: update.firstName,
             lastName: update.lastName,
-            phoneNumber: update.phoneNumber?.nilIfBlank,
+            // Never omitted: the command's PhoneNumber is a non-nullable reference type, so a missing
+            // member is refused by the model binder before the handler runs. A blank is what "nothing
+            // to say" looks like there, and the handler keeps the stored number. Android sends the same.
+            phoneNumber: update.phoneNumber?.nilIfBlank ?? "",
             birthDate: OpenAPIDateWithoutTime(day: update.birthDate),
             photo: update.photo.map(BlobFileDto.init),
             languageCode: update.languageCode,

@@ -70,6 +70,95 @@ need backfilling.
 
 ### Added
 
+- **Customer and cleaner, Android and iOS — the right moments are felt.** A haptic plays when a
+  slide-to-confirm commits (the customer's booking, and the cleaner's contract, job-step and order-list
+  slides) and when the result of an action is shown, success or failure. A room or bathroom stepper
+  also ticks on each step. Nothing else vibrates, and the phone's own haptics setting turns it
+  all off. Before, only the Android customer's booking slide played one. (Owner ruling 2026-10-01.)
+
+- **Customer iOS — photos zoom open and swipe away.** On iOS 18 and later an order's photo or a
+  dispute's evidence image grows out of its thumbnail into the full-screen viewer, and a swipe down
+  shrinks it back, into the photo you paged to. Earlier versions open the viewer as before, closed with
+  its X. On iOS 26 the close button of both viewers is clear glass, and a dark circle before that, so
+  it stays visible over a light photo. (Owner ruling 2026-10-01.)
+
+- **Customer iOS 26 — the booking sheet grows out of the Book button.** Opened from the round Book
+  button, the booking sheet zooms out of it, and back into it when it closes. Home's book buttons, the
+  carousel cards and *Order again* open it as before, and so does every iOS version before 26. (Owner
+  ruling 2026-10-01.)
+
+- **Customer iOS — a long press on a saved address offers its actions.** In the address manager, a long
+  press on an address offers *Set as default*, *Rename* and *Delete*, the same as the menu behind its
+  three dots. (Owner ruling 2026-10-01.)
+
+- **Cleaner, Android and iOS — you are told when your registration is approved or rejected.** An
+  administrator's decision is now pushed to the phone, in five languages, and the registration screen
+  re-reads itself when the push arrives; on iOS it also re-checks every time the app comes back. Until
+  now an approval sent nothing, and the screen read *Application under review* until it was reloaded. A
+  rejection shows the administrator's reason word for word, with *Contact support*, which opens an
+  e-mail to support@cleansia.cz; partner web's registration screen now offers the same link under the
+  reason. **Admin:** the cleaner reads the rejection reason as you write it, so
+  write it for them; it is never in the push itself. (Owner ruling 2026-10-01.)
+
+- **Cleaner, Android and iOS — a bank account can be pasted whole into any one box.** A Czech or Slovak
+  account pasted into the prefix, number or bank-code box lands in all three: `19-2000145399/0800`,
+  `2000145399/0800`, `19-2000145399` (the bank code already there stays) or a CZ or SK IBAN. A bare
+  number pasted into any empty box goes to the number field. Each box used to keep its own digits and
+  cut them to length, so `12321414/3545` pasted into the number became `1232141435` with no bank code.
+  On the apps, a paste after digits already in a box is read together with them, so clear the box
+  first. A two-digit prefix pasted on its own into an empty prefix box goes to the number; type it
+  instead. Each box keeps only the digits 0–9: digits from another script, which a keyboard can type
+  and the server refuses, are dropped. The server still checks every account. Partner web takes the
+  same pastes since 2026-10-02. Before that it split only a written-out account, and not an IBAN or
+  digits with spaces inside them. The web reads a paste on its own, whatever the box already holds, so
+  there is no box to clear first. (Owner ruling 2026-10-01.)
+
+- **Cleaner, partner web, Android and iOS — a bank outside Czechia and Slovakia takes one IBAN,
+  checked before it is sent.** The bank details form now follows the bank's country. A Czech or
+  Slovak bank shows only the prefix, number and bank code. Any other bank shows only an IBAN field, in
+  groups of four. Before, every cleaner got the Czech boxes with an optional IBAN field under them.
+  The phone or browser checks the IBAN for the bank's country, the length that country's IBANs have
+  and the check digits. Pressing Save names a mistake under the field before anything is sent, and the
+  length message says how long the IBAN should be. A Czech or Slovak cleaner who changed a saved
+  account used to be refused with an IBAN mismatch, because the form sent the old IBAN back with the
+  new account. The form now sends only the account. The server still checks every account.
+  (Owner ruling 2026-10-02.)
+
+- **Customer Android and iOS — your credit is shown, from Rewards to the order.** Credit (the apology
+  when a cleaner never comes, a complaint settled in credit, an administrator's goodwill) comes off the
+  next card booking by itself, and the apps never showed it. Rewards now has a *Credit* section with the
+  balance per currency, its expiry date and the share of a booking it can pay, and a sheet on where
+  credit comes from and how it is spent; at zero it is one line. Profile's first Account row is
+  *Credit*. On the confirm step, with card chosen and credit applying, the summary shows *Your credit
+  −X* and *To pay by card Y*, and the button shows the amount the card is charged; with cash chosen and
+  a balance held, it says credit applies to card payments only. After booking, the success screen and
+  the order say *Paid with credit* and *Paid by card*. On the order, the card share reads *To pay by
+  card* while the card payment is pending or failed, and *Paid by card* once the card was charged,
+  even if the payment was later refunded or disputed. How credit is earned and spent
+  did not change. (Owner ruling 2026-10-01.)
+
+- **Customer web — the order detail says how a booking that spent credit is paid.** Under the total, a
+  booking that used credit shows *Paid with credit −X* and the card's share: *Paid by card* once the card
+  was charged, *To pay by card* while the payment is pending or failed. The total stays the price of the
+  clean. The web order detail used to show the total alone, so it did not match the card statement.
+  (Matches the apps, 2026-10-02.)
+
+- **Customer Android and iOS — new cards in the Home carousel.** *Stay in the loop* shows while the
+  phone blocks the app's notifications, and asks for them or opens the settings. A card with the
+  customer's credit balance shows when they hold one, and a Plus member sees how many
+  express-surcharge waivers are left this month; both open booking. *How big is your home?* closes the
+  row with room and bathroom steppers, and *See my price* opens booking at that size; it replaces the
+  plain *Book* card. The referral card's *Share my code* opens the share sheet with the code. The first
+  four cards that apply show, most relevant first, so there are never more than five. (Owner ruling
+  2026-10-01.)
+
+- **Customer Android and iOS — content fades out under the clock as it scrolls.** On Home, Profile
+  and the Cleansia Plus offer, content scrolled to the top of the screen fades out under the status
+  bar instead of running into the clock and the camera cut-out. At rest, and while pulling down to
+  refresh, nothing is drawn, so the Profile and Plus headers still reach the top edge. On iOS this is
+  the app's own fade on every version, because iOS 26's built-in scroll-edge effect does not draw on
+  these screens. (Owner remark 2026-10-01.)
+
 - **A contract for work between the customer and the cleaner, per job.** Every booking is now made
   under the platform's *contract for work* text — published at `/work-contract` beside the terms and the
   privacy policy, in five languages — in the version in force for the address's market on the booking
@@ -430,6 +519,119 @@ need backfilling.
 
 ### Changed
 
+- **Customer and cleaner — one support address, support@cleansia.cz.** The customer web footer, its
+  FAQ and legal pages, the order detail's payment note, the cleaner's *How jobs are offered* page,
+  Help in the Android and iOS apps and the support line of every e-mail now name support@cleansia.cz.
+  Before, they named info@cleansia.cz, and some e-mails named the address they are sent from,
+  it@cleansia.cz, or support@cleansia.com. Privacy questions still go to privacy@cleansia.cz, and
+  receipts and invoices still print the company's own address. **Operator:** the e-mails' support
+  line no longer reads the `SupportEmail` translation rows, so editing one changes nothing. (Owner
+  ruling 2026-10-02.)
+
+- **Customer, cleaner and admin, in Ukrainian and Russian — credit is called *кредит*.** The credit
+  balance, the money that comes off the next card booking, was called *бонуси* / *бонусы* in Ukrainian
+  and Russian. That covered Rewards, Profile, the booking's confirm step, the order, the
+  delete-account warning and the notifications sent when no cleaner came, in the apps and on the web.
+  On the web it also covered the dispute settlement: the customer's credit option and both settlement
+  hints, and the administrator's credit option and its disclaimer. It covered the administrator's credit
+  ledger, revenue report and both erasure confirmations too. The apps' dispute settlement already said
+  *кредит*, and *бонуси* reads like the loyalty points, which are not money. It is now *кредит*
+  everywhere, as it is *kredit* in Czech and Slovak. Points and a cleaner's pay bonus keep their
+  names. (Owner ruling 2026-10-02.)
+
+- **Customer and cleaner, in Ukrainian and Russian — a bathroom is a bathroom, not a bathtub.** In the
+  apps, bathroom counts said *ванна* / *ванни* in Ukrainian and *ванна* / *ванны* in Russian, which
+  name the tub. That covered the booking steppers, Home's *How big is your home?* card, the booking
+  summary, the order and the schedule, and in Ukrainian also the cleaner's job board, offer and work
+  contract. They now say *ванна кімната* (*2 ванні кімнати*, *5 ванних кімнат*) and *ванная*
+  (*2 ванные*, *5 ванных*). Ukrainian on the customer, cleaner and admin web changed the same way;
+  Russian there already said *ванная*. The longer words did not fit, so in both apps the booking's
+  *Your home* title now sits above the two steppers. A count too long for its stepper, or for Home's
+  size card, wraps onto a second line. On Android the cleaner's job-board chips wrap too. (Owner
+  ruling 2026-10-02.)
+
+- **Customer iOS — the Live Activity's smallest Dynamic Island slot shows where the clean is.** When
+  another app's activity shares the Dynamic Island, Cleansia's slot drew a plain dot. It now shows a car
+  while the cleaner is on the way, sparkles during the clean, a seal when it is done and a cross if it
+  was cancelled, and VoiceOver reads the step. Not yet seen on a phone with two activities running.
+
+- **Customer and cleaner iOS — a plain confirmation is the iPhone's own alert.** Signing out, deleting
+  the account, cancelling or switching Plus, deleting a schedule, and for a cleaner confirming cash,
+  deleting a note or an issue and declining or refusing an offer now ask with the system alert (Liquid
+  Glass on iOS 26) instead of the app's card; the words are the same. Removing a saved card, revoking a
+  device and the document dialogs keep the app's card, because they hold a field or stay open until
+  the request finishes. Android is unchanged. (Owner ruling 2026-10-01.)
+
+- **Customer and cleaner iOS — a short list drops down from its field.** The dispute reason, the
+  cleaner's sign-up market and the document type open as a menu on the field instead of a sheet over
+  the screen. The country lists, which need search, keep the sheet. (Owner ruling 2026-10-01.)
+
+- **Customer and cleaner iOS — the birth date is picked on wheels.** The date-of-birth field opens day,
+  month and year wheels starting thirty years back, instead of a month-by-month calendar starting today.
+  Closing it without moving them leaves the field empty. (Owner ruling 2026-10-01.)
+
+- **Customer and cleaner iOS — the language, market and appearance pickers are standard iPhone
+  lists,** with a checkmark on the chosen row. The options are the same. (Owner ruling 2026-10-01.)
+
+- **Cleaner iOS 26 — the tab bar shrinks while you scroll down a tab,** and comes back when you scroll
+  up. The customer app's bar stays as it is, because the Book button sits on it. (Owner ruling
+  2026-10-01.)
+
+- **Customer and cleaner iOS — numbers roll, and the bell bounces.** The room and bathroom counts, the
+  booking step counter, the Rewards points and the cleaner's dashboard figures roll to their new value
+  instead of jumping. On iOS 17 and later the notification bell bounces once when the unread count goes
+  up, and the booking-success, Plus welcome and *code applied* checks bounce once as they appear. (Owner ruling
+  2026-10-01.)
+
+- **Customer and cleaner, Android and iOS — notifications follow the language picked in the app.** Push
+  banners and the customer's Live Activity on iOS, and push banners and the notification feed on
+  Android 8 to 12, came out in the phone's language whatever the app was set to, and the Live Activity
+  card was English on every iPhone. They now follow the language chosen in the app: an English phone
+  with the app in Czech gets Czech banners. On Android the notification categories listed in the phone's
+  settings are named in the app's language as well, and renamed as soon as it changes. With the app on
+  *System* they follow the phone, including after the phone's language changes while the app is closed. The sitewide promo push and the e-mails
+  are still written by the server, in the account's language or the order's. **Operator:** each iOS app
+  gains a Notification Service Extension and an App Group (`group.cz.cleansia.customer`,
+  `group.cz.cleansia.partner`), registered by the next signed archive (`fastlane` passes
+  `-allowProvisioningUpdates`). The simulator cannot show the result, and a phone shows it once the
+  updated app has launched. **API consumer:** every loc-key APNs alert now carries `mutable-content: 1`;
+  the Android data payload is unchanged. (Owner ruling 2026-10-01; ADR-0025 Amendment A3.)
+
+- **Cleaner, Android and iOS — a finished registration step can be reopened until you are approved.**
+  On the registration screen a step marked *Done* keeps a chevron and opens its section again, so you
+  can correct your details or documents while you wait, and after a rejection. Saving an edit does not
+  resubmit the application. (Owner ruling 2026-10-01.)
+
+- **Customer and cleaner, Android and iOS — every map is quiet, with one Cleansia pin.** The address
+  pickers and the order maps in both apps show a muted map with no shops, restaurants or transit stops,
+  and one pin, a sky-blue teardrop with a white house, where each map used to draw its own: plain discs,
+  a pin on a stick, Apple's red balloon. Street and place names stay. All four Android maps show the
+  Mapbox logo and attribution, which Mapbox's terms require, above the picker's card or the order's
+  sheet; the two order maps had them switched off. On iOS Apple's logo and *Legal* link stay above the
+  address picker's card at every text size, and above the order map's sheet wherever it rests, without
+  moving the pin. (Owner ruling 2026-10-01.)
+
+- **Customer Android and iOS — the Home carousel loops, and stops once you touch it.** A swipe past the
+  last card lands on the first, and back past the first on the last, and it moves on by itself every 6
+  seconds, always forward. After a swipe, a tap or a screen-reader card change it stops for the rest of
+  that visit to Home, and it never moves by itself with VoiceOver, TalkBack, Reduce Motion or Remove
+  animations on. Screen readers announce *Offer 2 of 4*. (Owner ruling 2026-10-01.)
+
+- **Customer Android and iOS — every Home carousel card draws its own mascot.** The referral card and
+  the Book card drew the same one, which every customer saw twice. No two cards repeat a drawing now,
+  and the Plus card carries the web's Plus mascot. (Owner ruling 2026-10-01.)
+
+- **Customer Android and iOS — the booking confirmation opens on a check.** A small success check
+  replaces the large welcoming mascot, and on iOS the screen takes Android's tighter spacing, so the
+  confirmation fits a 6.1" iPhone without scrolling. The Plus welcome screen after joining does the
+  same, and on iOS it sits in the middle of the screen as on Android. (Owner ruling 2026-10-01; Plus
+  welcome 2026-10-02.)
+
+- **Customer and cleaner, Android and iOS — no mascot on the sign-in and account screens.** Sign-in,
+  sign-up, forgot password and e-mail confirmation in both apps, and the customer's profile
+  completion after a first sign-in, now open straight on the form. The cleaner app's introduction
+  before sign-in keeps its two characters. (Owner ruling 2026-10-01.)
+
 - **Admin, cleaner — the admin and partner web share one look, page for page.** Every page sits in one
   white card behind one gutter (lists 1400 px wide, details and forms 1200), with the title top-left,
   its one-line subtitle under it and the page's actions on the same row to the right — *Filters* then
@@ -661,7 +863,211 @@ need backfilling.
   They are now set in `main.bicep`, so **the first deploy after this change starts running work that has
   never run before** — expect a burst of previously-undelivered notifications on that deploy.
 
+### Deprecated
+
+- **API — `OrderStatus.Pending` (`1`) is no longer written by anything.** The state it used to
+  describe — a card order waiting for the payment webhook — is real and still ships, but it lives on
+  the payment axis: `CurrentStatus = New`, `PaymentType = Card`, `PaymentStatus = Pending`. The
+  integer stays on the wire and legacy rows may still hold it, so clients must keep tolerating it;
+  nothing should start producing it, and no order can be moved into it. (ADR-0037)
+
+### Removed
+
+- **Customer Android and iOS — the sign-in screen no longer offers *Find a guest booking*.** The apps
+  are for customers with an account. A guest booking is made, tracked and cancelled on the web, from
+  the link in its e-mail, which already opened the web page with the whole flow, including the no-show
+  report the apps never had. A guest who later installs the app cannot open that booking there, and
+  registering does not attach it either. **API consumer:** nothing changes yet. The customer mobile
+  host still serves the six guest routes, because an installed build still calls three of them, and a
+  follow-up removes them. (Owner ruling 2026-10-01, reversing the 2026-09-28 meeting default E-13.)
+
+- **Cleaner, admin — the weekly availability schedule is gone.** Nothing ever read it: dispatch is a
+  first-come board, and a cleaner's days and hours gated no offer, no take and no approval. The admin's
+  employee detail loses its *Availability* section and its per-day editor, and the registration lock's
+  three requirements (profile, documents, approval) are the whole list — the docs used to name a
+  fourth. **API consumer:** `PUT /api/AdminEmployee/{employeeId}/update-availability` (admin host) and
+  `PUT /api/Employee/UpdateAvailability` (partner mobile host, `:5002`) are gone;
+  `EmployeeItem.availability`, `EmployeeListItem.availability` and
+  `RegistrationCompletionStatus.hasSetAvailability` (which the server had hard-coded `true`) left the
+  wire and the regenerated web clients and the partner mobile spec; the `dayOfWeek` enum left the code
+  overview. (T-0791; the module was read by nothing since the partner web dropped its editor.)
+
+- **Operator — four things the schema carried and nothing read were dropped in one migration.** The
+  `Carts`, `CartServiceItems` and `CartPackageItems` tables (written once per registration, never
+  read — the wizard builds orders directly), the `EmailTranslations` table and its seed (the renderer
+  reads `EmailTemplateTranslations`), `Employees.PreferredCurrencyCode` (its only writer had no caller;
+  a cleaner's invoice currency comes from the pay rows) and `Employees.Availability` above. The
+  `Initial` migration was regenerated as `20260920204705_Initial` — 84 tables, down from 88 — and the
+  DEV database drop before the next deploy covers it. `MembershipPlan.TrialPeriodDays` **stays**: still
+  a column and still on the plan DTOs, pinned at `0` by the server. (T-0791; Q-UI-02.)
+
+- **API consumer — routes no shipped client called are gone from the partner and admin hosts.**
+  Partner host (`:5000`): the `Dispute`, `PayConfig`, `Currency`, `Package` and `Service` controllers,
+  `PayPeriodController.GetPayPeriodById`, and `EmployeePayrollController.CalculateOrderPay` /
+  `RegenerateInvoicePdf`; the partner mobile host never had them. Admin host (`:5001`):
+  `GET api/AdminEmailTemplate/get-paged`, `GET api/AdminUser/{userId}` (the `details/{userId}` read
+  stays) and `GET api/AdminCompany/get-current`. The regenerated admin and partner clients no longer
+  carry them. Permission constants no route carried are gone as well (`CanUpdateOrder`,
+  `CanViewOrderReview`, `CanAddPhoneNumber`, the four Country Configuration ones,
+  `CanCreateTenantConfiguration`), and `CanCalculateOrderPay` and `CanViewPayPeriod` went with their
+  routes; the error keys no handler ever emitted left `BusinessErrorMessage` and the `api.*` blocks of
+  every web locale. The partner host's `POST /api/Payment/webhook` and `api/v1/Health` **stay**
+  (Q-UI-03), as do the admin pay-period `create`/`update`/`delete`/`open` routes, the document
+  `versions` read and `generate-invoice`, which have no screen yet (Q-UI-04). (T-0792, T-0793.)
+
+- **Admin — the membership plan form no longer offers a trial-days field, and the plan list has no
+  *Trial days* column.** Both survived the September ruling that there is no free trial; the field was
+  refused by the server on any value but 0, so it was a control that could only fail. The form sends
+  the zero the server accepts. (T-0793; owner ruling 2026-09-08 on the trial itself.)
+
+- **Partner API — the partner hosts no longer register customers.** `POST api/Auth/Register` is gone
+  from the Partner and Partner Mobile hosts (a cleaner's account is opened through `RegisterEmployee`,
+  which is unchanged), and a Google sign-in on a partner host **signs in an existing cleaner or
+  administrator only**: a Google identity with no account is refused `auth.social_account_not_found`
+  and nothing is created, a customer account is refused `auth.insufficient_privileges` as the password
+  sign-in already refused it. Until now a first-time Google sign-in on a partner host created a
+  customer account and handed it a partner session. No shipped client called the removed route; the
+  partner web's dead `register()` went with it and the partner mobile spec no longer lists it.
+  (Owner ruling 2026-09-15, *"remove it"*)
+
+- **`MembershipPlan.MonthlyPriceCzk` / `StripePriceId` and `BookingPolicy.NoShowCreditCzk`.** A
+  plan's price and Stripe Price id are `MembershipPlanPrice` rows, one per currency; the apology
+  credit is `Currency.NoShowCredit`. The customer and admin wires renamed `monthlyPriceCzk` to `price`
+  and gained `currencyCode`; the `Initial` migration was regenerated (DEV drop owed at deploy).
+  (ADR-0059, ADR-0060)
+
+- **Customer — the Cleansia Plus "same-day express upgrade" perk claim is gone from the web, Android
+  and iOS apps.** It promised something the pricing never delivered: "express" is a 2–4 hour lead-time
+  window, so a same-day promise waived a surcharge that would not have applied to most same-day
+  bookings anyway, and nothing in pricing read the plan's express flag at all. The web app has since
+  regained an express line — the real one, describing the metered waiver above — and it renders only
+  when the server says the waiver exists. The Android and iOS apps do not show it, so a Plus member
+  booking from a phone gets the waiver without being told. (T-0513)
+
+- **Invoices — the per-country legal notices that nobody had reviewed are gone.** The generator used
+  to print paragraphs asserting German, Austrian, Polish, Slovak, US, UK, French, Italian and Spanish
+  law under a legal-notice heading, and one asserting Czech law in English under a Czech heading. Only
+  the Czech notice survives, because the business supplies it; every other jurisdiction now prints a
+  generic English sentence that is honest about being generic, until counsel supplies each one.
+
 ### Fixed
+
+- **Customer web — the booking summary no longer takes credit off a cash booking.** With a credit
+  balance, the summary showed *Your credit −X* and *To pay by card Y* whichever payment method was
+  chosen, but credit only ever comes off a card payment. The split now shows only with card chosen;
+  with cash, a customer holding a balance reads *Credit applies to card payments only*, as in the apps.
+
+- **Customer iOS 17.2 and later — the Live Activity can start while the app is closed.** When the
+  cleaner sets off, the server starts the lock-screen card itself. That start lacked the alert Apple
+  requires of it, so the card most likely never appeared unless the app started it. The start now
+  carries *Cleaner is on the way* with the booking number, without a sound, because the notification
+  for the same moment already plays one. Still to be confirmed on a phone. (ADR-0029 Amendment A5.)
+
+- **Customer Android and iOS — the room and bathroom steppers are easier to hit, and VoiceOver and
+  TalkBack can adjust them.** Each plus and minus takes taps across 44 points on iOS, Apple's minimum,
+  and 48dp on Android, without the stepper growing. VoiceOver and TalkBack read each stepper as one
+  control, *Your home, 3 rooms*, that a swipe up or down adjusts; they used to find two bare buttons
+  around an unnamed number. (Owner ruling 2026-10-01; Android 2026-10-02.)
+
+- **Customer Android and iOS — the phone's language no longer overwrites the language your e-mails are
+  written in.** The account's language, which the server uses for the sitewide promo push and every
+  e-mail not about one order, is updated whenever you change the app's language, and re-stated at the
+  start of each session if you chose one. It used to wait for a phone number on the profile, so a
+  Google or Apple sign-up without one stayed English for good. The profile form after a first sign-in
+  sets it to the language the app is showing, so a Google or Apple sign-up on a Czech phone that fills
+  the form in is no longer left on English; on Android the form used to send the phone's own language,
+  even when another language was chosen in the app. A side effect: a customer with no phone number can
+  now save a profile edit, which the server used to refuse. (Owner ruling 2026-10-01.)
+
+- **Customer — an order's status e-mails are in the language it was booked in.** The *Confirmed*,
+  *Started* and *Completed* e-mails followed the account's language, so one order could bring a Czech
+  confirmation and English updates (a Google or Apple sign-up is stamped English). They now follow the
+  order's language, then the account's, then English, like the confirmation. (Owner ruling 2026-10-01.)
+
+- **Customer iOS — the Live Activity shows the Cleansia wordmark instead of a dark hole.** The
+  lock-screen card and the expanded Dynamic Island drew a circle with the waving mascot inside. The
+  image was too large for a Live Activity, so iOS replaced it with a placeholder, and every phone showed
+  a filled circle with a dark hole that reinstalling never fixed. They now draw the Cleansia wordmark in
+  the brand colour, with no circle. (Owner remark 2026-10-01.)
+
+- **Customer and cleaner iOS — a dropdown opens from a tap anywhere in its field.** It opened only from
+  a tap on its words, so a tap on the empty part of the field did nothing: the cleaner's market,
+  document type and country fields, and the customer's dispute reason. (Owner remark 2026-10-01.)
+
+- **Customer Android and iOS — the size steppers say where they stop.** Under the room and bathroom
+  steppers, both apps now say *Up to 8 rooms and 4 bathrooms*; the steppers used to stop at the cap
+  without saying why. On a one-off booking the minus button greys at 1, where it used to look live.
+  (Owner ruling 2026-10-01.)
+
+- **Customer iOS — the busy card's shadow sits on its edge.** While a booking or a Plus activation is
+  submitted, the card with the cleaning mascot cast a grey halo around the mascot and the message. Only
+  the card's edge casts a shadow now, as on Android, and so does the *Signing in…* card's. (Owner
+  remark 2026-10-01; the sign-in card 2026-10-02.)
+
+- **Customer and cleaner, Android and iOS — the animated mascots no longer sit on a faint square.**
+  The mascot of a clean in progress drew a faint lighter square behind it, clearest in dark mode: on
+  the order detail in both apps, and on the customer's busy card while a booking or a Plus activation
+  is submitted. The waving mascot on the customer's order detail, shown once a cleaner has taken the
+  order and while they are on the way, had the same square. The animations' own frames carried it, and
+  they are now transparent around the mascot. (2026-10-02.)
+
+- **Customer Android and iOS — less empty space under the Cleansia Plus button.** The button bar at
+  the bottom of the Plus offer is tighter on iOS, where an empty band of about 54pt sat under the
+  billing line. On both platforms, the last perk now stops just above the bar at any text size and
+  disclosure length. (Owner remark 2026-10-01.)
+
+- **Customer and cleaner iOS — the profile and Cleansia Plus headers reach the top of the screen
+  again.** Their colour now runs behind the clock and the camera cut-out instead of stopping just below
+  them, which read as a cut-off band. It also fills the space revealed when the page is pulled down.
+  The cleaner app's profile header had the same band and is fixed the same way. Android already did
+  this. (Owner remark 2026-10-01; the cleaner's header 2026-10-02.)
+
+- **Cleaner web — pasting just the account number keeps the prefix.** In the bank-account field, a
+  bare number pasted into any box goes to the number, as before, but it also emptied the prefix box.
+  The prefix and bank code now stay as they are, as in the apps; a whole account pasted without a
+  prefix still clears the old one.
+
+- **Customer iOS — the confirm step and Profile get their words right.** The booking's confirm step
+  said *1 rooms · 1 bath* (in Czech *1 pokojů*) whatever the counts; it now uses the same plural forms
+  as the order detail. After switching the app's language, the three labels on Profile's stats card
+  (*Bookings*, *Saved*, *Member since*) stayed in the old language; they now switch with the rest.
+
+- **Customer Android and iOS — Rewards shows your current points when you go straight to it.** Rewards
+  kept the points it last read until you pulled to refresh, so a customer who opened it without
+  passing through Home could see an old total. It now re-reads them when they are more than 30 seconds
+  old, as Home does; on Android, Profile does the same for its *Credit* row.
+
+- **Customer and cleaner, Android and iOS — an amount that is not whole shows its haléře.** Every
+  price, credit and discount in the apps printed whole crowns, so a card share of 319.90 read *320 Kč*
+  while Stripe's sheet asked for 319.90, and a 7.96 € Plus plan read *8 €* on iOS. A whole amount
+  still prints without decimals; any other prints to the currency's smallest unit, as on the web. A
+  job's pay reads the same on the cleaner's board as on its detail. On both apps the cleaner's
+  dashboard and earnings totals still show whole amounts. (2026-10-02.)
+
+- **Customer Android — Home's refresh spinner no longer hides under the clock.** Pulling Home down to
+  refresh drew the spinner under the status bar, at rest and while it spun. It now rests just below
+  it, as on Orders and Rewards.
+
+- **Customer Android and iOS — *No orders yet* sits in the middle of the screen.** The empty and
+  error states on the Orders tab are centred between the title and the Book button. They used to sit
+  high on iOS and slightly low on Android. On iOS the Rewards error state and the Disputes screen's
+  empty and error states are centred the same way. (Owner remark 2026-10-01; Rewards and Disputes
+  2026-10-02.)
+
+- **Customer Android and iOS — the Book button no longer covers the end of a page.** Scrolled to the
+  bottom, the last card on Home, Orders, Rewards and Profile now stops clear of the round Book button,
+  the same short distance on every tab, instead of sliding under it. On Android this holds with either
+  gesture or 3-button navigation, and a message shown on a tab now appears above the Book button
+  instead of over its top. (Owner remark 2026-10-01.)
+
+- **Customer Android and iOS — sign-in fits on one screen.** The page no longer scrolls to reach
+  *Don't have an account? Register*, which was cut off below the fold on a 6.1" iPhone. On iOS a page
+  that fits no longer rubber-bands. On Android the form keeps clear of the navigation bar and the
+  keyboard in either navigation mode. Very small screens and very large text still scroll.
+  The other sign-in screens now sit the same way: on Android, sign-up, forgot password and e-mail
+  confirmation keep clear of the clock, the navigation bar and the keyboard, where the back arrow of
+  the last two sat under the clock; on iOS, e-mail confirmation sits in the middle of the screen like
+  the rest. (Owner remark 2026-10-01; the other screens 2026-10-02.)
 
 - **Cleaner — the My Pay currency switch follows the period's pay, not its invoices.** A period holding
   pay in more than one currency (reachable only through an admin reassignment) now offers the switch on
@@ -737,87 +1143,6 @@ need backfilling.
   **Before enabling this against real data**, run `sql-scripts/check-orders-past-retention-window.sql`.
   The order-anonymisation task overwrites a shared `Address` row, and addresses are deduplicated across
   customers in the same building, so an old order can blank a live customer's saved address.
-
-### Deprecated
-
-- **API — `OrderStatus.Pending` (`1`) is no longer written by anything.** The state it used to
-  describe — a card order waiting for the payment webhook — is real and still ships, but it lives on
-  the payment axis: `CurrentStatus = New`, `PaymentType = Card`, `PaymentStatus = Pending`. The
-  integer stays on the wire and legacy rows may still hold it, so clients must keep tolerating it;
-  nothing should start producing it, and no order can be moved into it. (ADR-0037)
-
-### Removed
-
-- **Cleaner, admin — the weekly availability schedule is gone.** Nothing ever read it: dispatch is a
-  first-come board, and a cleaner's days and hours gated no offer, no take and no approval. The admin's
-  employee detail loses its *Availability* section and its per-day editor, and the registration lock's
-  three requirements (profile, documents, approval) are the whole list — the docs used to name a
-  fourth. **API consumer:** `PUT /api/AdminEmployee/{employeeId}/update-availability` (admin host) and
-  `PUT /api/Employee/UpdateAvailability` (partner mobile host, `:5002`) are gone;
-  `EmployeeItem.availability`, `EmployeeListItem.availability` and
-  `RegistrationCompletionStatus.hasSetAvailability` (which the server had hard-coded `true`) left the
-  wire and the regenerated web clients and the partner mobile spec; the `dayOfWeek` enum left the code
-  overview. (T-0791; the module was read by nothing since the partner web dropped its editor.)
-
-- **Operator — four things the schema carried and nothing read were dropped in one migration.** The
-  `Carts`, `CartServiceItems` and `CartPackageItems` tables (written once per registration, never
-  read — the wizard builds orders directly), the `EmailTranslations` table and its seed (the renderer
-  reads `EmailTemplateTranslations`), `Employees.PreferredCurrencyCode` (its only writer had no caller;
-  a cleaner's invoice currency comes from the pay rows) and `Employees.Availability` above. The
-  `Initial` migration was regenerated as `20260920204705_Initial` — 84 tables, down from 88 — and the
-  DEV database drop before the next deploy covers it. `MembershipPlan.TrialPeriodDays` **stays**: still
-  a column and still on the plan DTOs, pinned at `0` by the server. (T-0791; Q-UI-02.)
-
-- **API consumer — routes no shipped client called are gone from the partner and admin hosts.**
-  Partner host (`:5000`): the `Dispute`, `PayConfig`, `Currency`, `Package` and `Service` controllers,
-  `PayPeriodController.GetPayPeriodById`, and `EmployeePayrollController.CalculateOrderPay` /
-  `RegenerateInvoicePdf`; the partner mobile host never had them. Admin host (`:5001`):
-  `GET api/AdminEmailTemplate/get-paged`, `GET api/AdminUser/{userId}` (the `details/{userId}` read
-  stays) and `GET api/AdminCompany/get-current`. The regenerated admin and partner clients no longer
-  carry them. Permission constants no route carried are gone as well (`CanUpdateOrder`,
-  `CanViewOrderReview`, `CanAddPhoneNumber`, the four Country Configuration ones,
-  `CanCreateTenantConfiguration`), and `CanCalculateOrderPay` and `CanViewPayPeriod` went with their
-  routes; the error keys no handler ever emitted left `BusinessErrorMessage` and the `api.*` blocks of
-  every web locale. The partner host's `POST /api/Payment/webhook` and `api/v1/Health` **stay**
-  (Q-UI-03), as do the admin pay-period `create`/`update`/`delete`/`open` routes, the document
-  `versions` read and `generate-invoice`, which have no screen yet (Q-UI-04). (T-0792, T-0793.)
-
-- **Admin — the membership plan form no longer offers a trial-days field, and the plan list has no
-  *Trial days* column.** Both survived the September ruling that there is no free trial; the field was
-  refused by the server on any value but 0, so it was a control that could only fail. The form sends
-  the zero the server accepts. (T-0793; owner ruling 2026-09-08 on the trial itself.)
-
-- **Partner API — the partner hosts no longer register customers.** `POST api/Auth/Register` is gone
-  from the Partner and Partner Mobile hosts (a cleaner's account is opened through `RegisterEmployee`,
-  which is unchanged), and a Google sign-in on a partner host **signs in an existing cleaner or
-  administrator only**: a Google identity with no account is refused `auth.social_account_not_found`
-  and nothing is created, a customer account is refused `auth.insufficient_privileges` as the password
-  sign-in already refused it. Until now a first-time Google sign-in on a partner host created a
-  customer account and handed it a partner session. No shipped client called the removed route; the
-  partner web's dead `register()` went with it and the partner mobile spec no longer lists it.
-  (Owner ruling 2026-09-15, *"remove it"*)
-
-- **`MembershipPlan.MonthlyPriceCzk` / `StripePriceId` and `BookingPolicy.NoShowCreditCzk`.** A
-  plan's price and Stripe Price id are `MembershipPlanPrice` rows, one per currency; the apology
-  credit is `Currency.NoShowCredit`. The customer and admin wires renamed `monthlyPriceCzk` to `price`
-  and gained `currencyCode`; the `Initial` migration was regenerated (DEV drop owed at deploy).
-  (ADR-0059, ADR-0060)
-
-- **Customer — the Cleansia Plus "same-day express upgrade" perk claim is gone from the web, Android
-  and iOS apps.** It promised something the pricing never delivered: "express" is a 2–4 hour lead-time
-  window, so a same-day promise waived a surcharge that would not have applied to most same-day
-  bookings anyway, and nothing in pricing read the plan's express flag at all. The web app has since
-  regained an express line — the real one, describing the metered waiver above — and it renders only
-  when the server says the waiver exists. The Android and iOS apps do not show it, so a Plus member
-  booking from a phone gets the waiver without being told. (T-0513)
-
-- **Invoices — the per-country legal notices that nobody had reviewed are gone.** The generator used
-  to print paragraphs asserting German, Austrian, Polish, Slovak, US, UK, French, Italian and Spanish
-  law under a legal-notice heading, and one asserting Czech law in English under a Czech heading. Only
-  the Czech notice survives, because the business supplies it; every other jurisdiction now prints a
-  generic English sentence that is honest about being generic, until counsel supplies each one.
-
-### Fixed
 
 - **Cleaner — you can no longer start a job before it is due.** Marking yourself on the way and starting
   a clean were both possible from the moment the booking was confirmed — days ahead of the actual date,

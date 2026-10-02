@@ -19,21 +19,37 @@ final class CleansiaMapMarkerTests: XCTestCase {
         )
     }
 
-    func testMarkerViewResolvesTheTintInBothSchemes() {
-        let marker = CleansiaMarkerAnnotationView(annotation: nil, reuseIdentifier: nil)
-        XCTAssertEqual(hex(of: marker.markerTintColor, in: .light), CleansiaMapMarker.tint.light)
-        XCTAssertEqual(hex(of: marker.markerTintColor, in: .dark), CleansiaMapMarker.tint.dark)
+    func testThePinIsFilledWithTheTintInBothSchemes() {
+        XCTAssertEqual(hex(of: CleansiaMapMarker.fillColor(dark: false), in: .light), CleansiaMapMarker.tint.light)
+        XCTAssertEqual(hex(of: CleansiaMapMarker.fillColor(dark: true), in: .dark), CleansiaMapMarker.tint.dark)
     }
 
-    func testGlyphIsTheWhiteMapPinSymbol() {
-        let marker = CleansiaMarkerAnnotationView(annotation: nil, reuseIdentifier: nil)
-        // MapKit re-renders the glyph as a template, so normalise both sides before comparing.
-        XCTAssertEqual(
-            marker.glyphImage?.withRenderingMode(.alwaysTemplate),
-            UIImage(systemName: "mappin")?.withRenderingMode(.alwaysTemplate)
-        )
-        XCTAssertEqual(hex(of: marker.glyphTintColor, in: .light), 0xFFFFFF)
-        XCTAssertEqual(hex(of: marker.glyphTintColor, in: .dark), 0xFFFFFF)
+    /// One drawing on every map, the Android `CleansiaMapPin`: a white house on the brand sky.
+    func testTheGlyphIsTheWhiteHouse() {
+        XCTAssertEqual(CleansiaMapMarker.glyphSymbolName, "house.fill")
+        XCTAssertNotNil(UIImage(systemName: CleansiaMapMarker.glyphSymbolName))
+        XCTAssertEqual(hex(of: CleansiaMapMarker.glyphColor, in: .light), 0xFFFFFF)
+    }
+
+    func testThePinIsTheSharedSizeAndDrawnPerScheme() {
+        let light = CleansiaMapMarker.pinImage(for: UITraitCollection(userInterfaceStyle: .light))
+        let dark = CleansiaMapMarker.pinImage(for: UITraitCollection(userInterfaceStyle: .dark))
+        XCTAssertEqual(CleansiaMapMarker.pinSize, CGSize(width: 40, height: 50))
+        XCTAssertEqual(light.size, CleansiaMapMarker.pinSize)
+        XCTAssertEqual(dark.size, CleansiaMapMarker.pinSize)
+        XCTAssertNotEqual(light.pngData(), dark.pngData())
+    }
+
+    /// The tip is the bottom-centre of the bounds — what the annotation offset and the picker's
+    /// constraints both assume.
+    func testTheTeardropsTipIsTheBottomCentre() {
+        let rect = CGRect(origin: .zero, size: CleansiaMapMarker.pinSize)
+        let path = CleansiaMapMarker.teardrop(in: rect)
+        XCTAssertEqual(path.bounds.maxY, rect.maxY, accuracy: 0.01)
+        XCTAssertEqual(path.bounds.midX, rect.midX, accuracy: 0.01)
+        XCTAssertEqual(path.bounds.width, rect.width, accuracy: 0.01)
+        XCTAssertTrue(path.contains(CGPoint(x: rect.midX, y: rect.maxY - 2)))
+        XCTAssertFalse(path.contains(CGPoint(x: rect.minX + 1, y: rect.maxY - 1)))
     }
 }
 
@@ -54,8 +70,9 @@ final class FullBleedMarkerTests: XCTestCase {
         let pin = try XCTUnwrap(mapView.annotations.compactMap { $0 as? MKPointAnnotation }.first)
 
         let view = CleansiaMapMarker.delegate.mapView(mapView, viewFor: pin)
-        let marker = try XCTUnwrap(view as? CleansiaMarkerAnnotationView, "the stock red pin is what nil returns")
-        XCTAssertEqual(hex(of: marker.markerTintColor, in: .light), CleansiaMapMarker.tint.light)
+        let marker = try XCTUnwrap(view as? CleansiaPinAnnotationView, "the stock red pin is what nil returns")
+        XCTAssertEqual(marker.image?.size, CleansiaMapMarker.pinSize)
+        XCTAssertEqual(marker.centerOffset.y, -CleansiaMapMarker.pinSize.height / 2, "the tip sits on the coordinate")
     }
 
     @MainActor

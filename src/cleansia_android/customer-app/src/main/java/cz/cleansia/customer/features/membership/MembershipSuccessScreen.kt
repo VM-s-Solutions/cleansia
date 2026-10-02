@@ -12,12 +12,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.LocalOffer
@@ -40,7 +42,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.customer.R
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
-import cz.cleansia.customer.ui.components.MascotAnimation
+import cz.cleansia.customer.ui.theme.SuccessText
 
 /**
  * Post-purchase celebration screen — replaces the silent snackbar +
@@ -78,6 +80,9 @@ fun MembershipSuccessScreen(
                     ),
                 ),
             )
+            // The screen's own system-bar insets, as on the booking confirmation (C16): no transparent
+            // mascot top keeps the content clear of the status bar any more.
+            .systemBarsPadding()
             .verticalScroll(rememberScrollState()),
         // Center vertically — content fits on a typical viewport so it should
         // sit in the middle of the screen, not pinned to the top. The
@@ -91,13 +96,13 @@ fun MembershipSuccessScreen(
                 .padding(horizontal = 20.dp, vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            // Mascot — reuse the welcoming WebP from booking-success. One-shot
-            // play; freezing on the last frame keeps the moment from feeling
-            // needy with a loop.
-            MascotAnimation(
-                resId = R.raw.mascot_welcoming,
-                size = 200.dp,
-                loop = false,
+            // The booking confirmation's success cue (C16): a 48dp check in place of the 200dp mascot.
+            // Decorative: the title under it says the same thing.
+            Icon(
+                imageVector = Icons.Filled.CheckCircle,
+                contentDescription = null,
+                tint = SuccessText,
+                modifier = Modifier.size(48.dp),
             )
             Spacer(Modifier.height(8.dp))
 

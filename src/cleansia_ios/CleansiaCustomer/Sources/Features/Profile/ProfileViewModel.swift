@@ -155,9 +155,11 @@ final class ProfileViewModel: ViewModel {
         !saveState.isSubmitting && !firstName.isBlank && !lastName.isBlank && !phoneNumber.isBlank
     }
 
-    /// The language rides the resolved app tag — always ∈ {en,cs,sk,uk,ru} — the
-    /// Android device-locale clamp (`ProfileViewModel.kt:105-106`) through the one
-    /// settings store.
+    /// The language sent is the one the app resolves to: the language chosen in this app, or on
+    /// "System" the phone's language narrowed to a supported one (`settings.languageTag`). This is the
+    /// one write that replaces the server's sign-up stamp (`en` for every Google or Apple sign-up), so
+    /// sending none on "System" left a Czech phone on English e-mails and promo pushes for good.
+    /// → /flows/auth-and-identity#account-language
     func completeOnboarding(
         firstName: String,
         lastName: String,

@@ -9,6 +9,9 @@ namespace Cleansia.Infra.Clients.Fcm;
 /// receive today, plus an APNs-scoped <c>aps.alert</c> (derived loc-keys + allowlisted ordered
 /// args) iff the event is in <see cref="ApnsDisplayMap"/>. Platform-blind by design — FCM applies
 /// the APNs block only on the APNs route, so Android delivery is bit-identical with or without it.
+/// A loc-key alert carries <c>mutable-content: 1</c> so each iOS app's Notification Service Extension
+/// can re-localize it in the app's in-app language; the server still never knows that language.
+/// → /domain/roles/fcm-message-factory
 /// </summary>
 public static class FcmMessageFactory
 {
@@ -56,6 +59,8 @@ public static class FcmMessageFactory
             [NotificationEventCatalog.PreferredOfferClosed] = OrderNumberArg,
             [NotificationEventCatalog.OrderAssignmentCancelled] = OrderNumberArg,
             [NotificationEventCatalog.EmployeeWeeklyLimitSet] = CountArg,
+            [NotificationEventCatalog.EmployeeRegistrationApproved] = NoArgs,
+            [NotificationEventCatalog.EmployeeRegistrationRejected] = NoArgs,
             [NotificationEventCatalog.InvoicePaid] = NoArgs,
             [NotificationEventCatalog.DisputeReply] = NoArgs,
             [NotificationEventCatalog.LoyaltyTierUpgrade] = NoArgs,
@@ -134,6 +139,9 @@ public static class FcmMessageFactory
                     // Android's .orEmpty()); dropping it would silence the event on iOS.
                     LocArgs = argNames.Select(name => data.GetValueOrDefault(name, string.Empty)).ToList(),
                 },
+                // Wakes the app's Notification Service Extension, which renders the same loc-key in the
+                // in-app language; a missing or failing extension delivers this alert unchanged.
+                MutableContent = true,
                 Sound = "default",
                 ThreadId = data.GetValueOrDefault("orderId")
                            ?? data.GetValueOrDefault("disputeId")

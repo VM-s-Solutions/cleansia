@@ -603,4 +603,68 @@ class NotificationTemplatesTest {
             }
         }
     }
+
+    // -- the decision on a cleaner's application (P2) ------------------------------------------
+    //
+    // Push-only and argless: the server sends no reason (it is admin free text and may carry PII), the
+    // lock screen reads that from the API. Neither key joins the feed keyset — the inbox cannot be
+    // reached from the lock — and a tap lands wherever the app opens, which for these cleaners is the
+    // lock itself.
+
+    private val decisionKeys = mapOf(
+        "employee.registration_approved" to (
+            R.string.notification_employee_registration_approved_title to
+                R.string.notification_employee_registration_approved_body
+            ),
+        "employee.registration_rejected" to (
+            R.string.notification_employee_registration_rejected_title to
+                R.string.notification_employee_registration_rejected_body
+            ),
+    )
+
+    @Test
+    fun `both application decisions render on order updates, outside the feed, with no deep link`() {
+        decisionKeys.forEach { (key, res) ->
+            val template = NotificationTemplates.templateFor(key)
+            assertNotNull(key, template)
+            assertEquals(res.first, template?.titleRes)
+            assertEquals(res.second, template?.bodyRes)
+            assertEquals(NotificationChannels.CHANNEL_ORDER_UPDATES, template?.channelId)
+            assertFalse(PartnerFeedEventKeys.contains(key))
+            assertNull(NotificationDeepLink.resolve(key, null, null))
+        }
+    }
+
+    @Test
+    fun `both application decisions format their body without arguments`() {
+        decisionKeys.forEach { (key, res) ->
+            val context = mockk<Context>()
+            every { context.getString(res.second) } returns "decided"
+            assertEquals(
+                "decided",
+                NotificationTemplates.formatBody(context, key, res.second, mapOf("orderNumber" to "MUST-NOT-APPEAR")),
+            )
+        }
+    }
+
+    @Test
+    fun `every locale carries the application-decision copy, translated and argless`() {
+        val names = listOf(
+            "notification_employee_registration_approved_title",
+            "notification_employee_registration_approved_body",
+            "notification_employee_registration_rejected_title",
+            "notification_employee_registration_rejected_body",
+        )
+        val english = names.associateWith { valueOf(stringsXml("values"), it) }
+        locales.forEach { locale ->
+            val xml = stringsXml(locale)
+            names.forEach { name ->
+                val value = valueOf(xml, name)
+                assertNotNull("$locale/strings.xml is missing $name", value)
+                assertTrue("$locale/strings.xml has a blank $name", value!!.isNotBlank())
+                assertEquals("$locale/strings.xml gives $name a format argument", emptyList<String>(), formatSlots(value))
+                if (locale != "values") assertFalse("$locale/strings.xml left $name in English", value == english[name])
+            }
+        }
+    }
 }

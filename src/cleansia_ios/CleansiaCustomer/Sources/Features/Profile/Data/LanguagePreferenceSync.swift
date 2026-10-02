@@ -16,12 +16,18 @@ protocol LanguagePreferenceSync: AnyObject {
     func reconcile(languageCode: String) async
 }
 
-/// `UpdateCurrentUser` is a blind full replace of first name / last name / phone / birth date and only
-/// then applies the language, so a language-only push has to replay the rest of the profile verbatim —
-/// and must not run at all on a profile that has holes the validators would reject.
+/// `UpdateCurrentUser` still replaces first and last name outright — phone, birth date, photo and
+/// language treat an absent value as "nothing to say" — so a language-only push has to replay the rest
+/// of the profile verbatim, and must not run on a profile whose names the validators would reject.
+///
+/// A missing phone is NOT such a hole. A customer who signed up with Apple or Google often has none, the
+/// server validates a phone only when one is given, and a blank leaves the stored one untouched. Gating
+/// on it left exactly those customers on the sign-up stamp ('en') for every promo and status e-mail.
+/// The partner app and both Android apps gate on the names alone too.
 enum LanguagePreferencePush {
     static func update(for user: CurrentUserProfile, languageCode: String) -> ProfileUpdate? {
-        guard user.isComplete, user.preferredLanguageCode != languageCode else { return nil }
+        guard !user.firstName.isBlank, !user.lastName.isBlank,
+              user.preferredLanguageCode != languageCode else { return nil }
         return ProfileUpdate(
             id: user.id,
             firstName: user.firstName,

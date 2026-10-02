@@ -5,13 +5,20 @@ import SwiftUI
 struct FullscreenPager: View {
     let photos: [GetOrderPhotosOrderPhotoDto]
     let startIndex: Int
+    let zoom: Namespace.ID
     let onClose: () -> Void
 
     @State private var selection: Int
 
-    init(photos: [GetOrderPhotosOrderPhotoDto], startIndex: Int, onClose: @escaping () -> Void) {
+    init(
+        photos: [GetOrderPhotosOrderPhotoDto],
+        startIndex: Int,
+        zoom: Namespace.ID,
+        onClose: @escaping () -> Void
+    ) {
         self.photos = photos
         self.startIndex = startIndex
+        self.zoom = zoom
         self.onClose = onClose
         _selection = State(initialValue: startIndex)
     }
@@ -33,14 +40,11 @@ struct FullscreenPager: View {
             .tabViewStyle(.page(indexDisplayMode: .always))
             .ignoresSafeArea()
 
-            Button(action: onClose) {
-                Image(systemName: "xmark")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(.white)
-                    .frame(width: 44, height: 44)
-                    .background(Color.black.opacity(0.4), in: Circle())
-            }
-            .padding(Spacing.m)
+            MediaCloseButton(action: onClose)
+                .padding(Spacing.m)
         }
+        // Keyed on the page on screen, not the one opened: a dismiss after paging shrinks into the
+        // thumbnail of the photo being looked at.
+        .zoomDestination(id: selection, in: zoom)
     }
 }

@@ -253,13 +253,28 @@ final class LiveActivityCardViewsTests: XCTestCase {
 
     // MARK: - Brand
 
-    /// The lockup draws art out of Core's bundle. In the widget that bundle ships inside the .appex; here
-    /// it just has to produce something other than an empty frame.
+    /// The lockup draws the wordmark out of Core's bundle. In the widget that bundle ships inside the
+    /// .appex; here it just has to produce something other than an empty frame.
     func testTheBrandLockupRenders() throws {
         let image = try render(LiveActivityBrandLockup(), width: 120)
 
         XCTAssertGreaterThan(image.size.width, 22)
         XCTAssertGreaterThan(image.size.height, 0)
+    }
+
+    /// ActivityKit: an image may be no larger than the presentation it is drawn in, and WidgetKit's
+    /// archiver replaces one that is with a placeholder. The mascot this replaced compiled at scale 1,
+    /// 600×600 px — a 600 pt image in a card at most 160 pt tall — and the simulator log said so
+    /// ("[1: 600x600] Max size exceeded … using placeholder image") while the in-process render above
+    /// passed. This is the guard that render cannot be: the asset's own POINT size, against its slot.
+    func testTheBrandMarkIsSizedForTheSlotItIsDrawnIn() throws {
+        let mark = try XCTUnwrap(UIImage(named: "cleansia_wordmark", in: MascotAssets.bundle, compatibleWith: nil))
+
+        XCTAssertLessThanOrEqual(mark.size.height, 14)
+        XCTAssertLessThanOrEqual(mark.size.width, 72)
+        XCTAssertEqual(mark.size.width / mark.size.height, 57.80 / 10.48, accuracy: 0.05)
+        XCTAssertLessThanOrEqual(mark.size.width * mark.scale, 3 * 72, "no rendition may outgrow the slot at 3x")
+        XCTAssertEqual(mark.renderingMode, .alwaysTemplate, "the mark takes the card's tint, not its own colour")
     }
 
     // MARK: - Rendering

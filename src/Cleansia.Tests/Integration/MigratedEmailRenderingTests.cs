@@ -174,32 +174,38 @@ public class MigratedEmailRenderingTests
         Assert.Contains("lang=\"uk\"", wire.Html, StringComparison.Ordinal);
     }
 
-    [Fact]
-    public async Task A_missing_support_address_falls_back_to_the_configured_sender()
+    /// <summary>
+    /// The support line names support@cleansia.cz — never the configured sender, which is a delivery
+    /// address, and never a translation row, which could name another (the seed's English rows say
+    /// support@cleansia.com). The receipt is the shared builder's path; the status update used to
+    /// carry its own fallback, info@cleansia.cz.
+    /// </summary>
+    [Theory]
+    [InlineData(null)]
+    [InlineData("support@cleansia.com")]
+    public async Task The_support_line_names_the_support_address_whatever_a_row_says(string? seededAddress)
     {
-        // Without the fallback a locale missing one row leaves the customer with
-        // "mailto:" and no address to reply to.
-        var (service, wire) = Build(new Dictionary<string, string> { ["Subject"] = "Your Order Receipt" });
+        var rows = new Dictionary<string, string> { ["Subject"] = "Your Order Receipt" };
+        if (seededAddress is not null)
+        {
+            rows["SupportEmail"] = seededAddress;
+        }
+
+        var (service, wire) = Build(rows);
 
         await service.SendOrderReceiptEmailAsync(Recipient, NewOrder(), null, "r.pdf", "en", CancellationToken.None);
+        AssertSupportLine(wire.Html);
 
-        Assert.Contains("noreply@example.test", wire.Html, StringComparison.Ordinal);
-        Assert.DoesNotContain("mailto:\"", wire.Html, StringComparison.Ordinal);
+        await service.SendOrderStatusUpdateEmailAsync(Recipient, NewOrder(), "completed", "en", CancellationToken.None);
+        AssertSupportLine(wire.Html);
     }
 
-    [Fact]
-    public async Task A_seeded_support_address_beats_the_configured_sender()
+    private static void AssertSupportLine(string html)
     {
-        var (service, wire) = Build(new Dictionary<string, string>
-        {
-            ["Subject"] = "Your Order Receipt",
-            ["SupportEmail"] = "podpora@cleansia.cz",
-        });
-
-        await service.SendOrderReceiptEmailAsync(Recipient, NewOrder(), null, "r.pdf", "en", CancellationToken.None);
-
-        Assert.Contains("podpora@cleansia.cz", wire.Html, StringComparison.Ordinal);
-        Assert.DoesNotContain("noreply@example.test", wire.Html, StringComparison.Ordinal);
+        Assert.Contains("<a href=\"mailto:support@cleansia.cz\">support@cleansia.cz</a>", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("noreply@example.test", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("support@cleansia.com", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("info@cleansia.cz", html, StringComparison.Ordinal);
     }
 
     private static Order NewOrder() => Order.Create(

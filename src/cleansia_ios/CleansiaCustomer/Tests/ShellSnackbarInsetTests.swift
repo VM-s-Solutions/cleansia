@@ -37,6 +37,35 @@ final class ShellSnackbarInsetTests: XCTestCase {
         XCTAssertGreaterThan(gapToAdjacentSlotCenter, tabIconHalfWidth)
     }
 
+    /// The system bar already insets each tab root by its own height; the FAB's overhang above it is
+    /// what the tab roots must add, plus a gap, or the last item scrolls to a stop under the disc.
+    func testTabRootScrollClearanceCoversTheFabOverhangPlusAGap() {
+        let overhang = BookFabMetrics.chromeEnvelope - BookFabMetrics.systemTabBarHeight
+        XCTAssertEqual(BookFabMetrics.scrollClearance, overhang + Spacing.s)
+        XCTAssertEqual(BookFabMetrics.scrollClearance, 45)
+    }
+
+    /// Every tab root carries the clearance at the one place they are built, so a fifth tab cannot
+    /// silently skip it; the Book placeholder (a blank slot) needs none.
+    func testEveryTabRootReservesTheFabClearance() throws {
+        let root = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let source = try String(
+            contentsOf: root.appendingPathComponent("CleansiaCustomer/Sources/Features/Shell/CustomerShellView.swift"),
+            encoding: .utf8
+        )
+        let content = source.components(separatedBy: .whitespacesAndNewlines).joined()
+        for tab in ["home", "orders", "rewards", "profile"] {
+            XCTAssertTrue(
+                content.contains(").bookFabClearance().tabItem{tabLabel(.\(tab))}"),
+                "the \(tab) tab root does not reserve the FAB clearance"
+            )
+        }
+        XCTAssertEqual(content.components(separatedBy: ".bookFabClearance()").count - 1, 4)
+    }
+
     func testPushedChildrenUseTheDefaultInset() {
         XCTAssertEqual(ShellSnackbarInset.inset(pathDepth: 1), SnackbarController.defaultBottomInset)
         XCTAssertEqual(ShellSnackbarInset.inset(pathDepth: 3), SnackbarController.defaultBottomInset)

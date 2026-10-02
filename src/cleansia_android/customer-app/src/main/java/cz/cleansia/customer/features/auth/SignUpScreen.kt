@@ -4,7 +4,6 @@ import cz.cleansia.core.ui.components.CleansiaTextLink
 import cz.cleansia.core.auth.AuthInterceptor
 import cz.cleansia.core.auth.TokenStore
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -16,8 +15,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -43,7 +44,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -67,8 +67,10 @@ import cz.cleansia.customer.ui.theme.ErrorText
 import cz.cleansia.customer.ui.theme.SuccessText
 /**
  * Sign Up — mirrors the web's [`register.component.html`].
- * Layout: mascot → brand → title → first/last name row → email → password + rule list →
+ * Layout: title → first/last name row → email → password + rule list →
  *         confirm password + match hint → terms checkbox → Register → OR → Google → "Have account? Log in".
+ * The column pads by the real system bars and keyboard (the activity is edge-to-edge), as SignInScreen
+ * does: the end of the form must scroll clear of a 3-button nav bar and the keyboard.
  */
 @Composable
 fun SignUpScreen(
@@ -119,19 +121,13 @@ fun SignUpScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+            .systemBarsPadding()
+            .imePadding()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 24.dp)
-            .padding(top = 64.dp, bottom = 32.dp),
+            .padding(top = 24.dp, bottom = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Image(
-            painter = painterResource(R.drawable.mascot_waving),
-            contentDescription = null,
-            modifier = Modifier.size(140.dp),
-        )
-
-        Spacer(Modifier.height(20.dp))
-
         Text(
             text = stringResource(R.string.register_title),
             style = MaterialTheme.typography.displayMedium,

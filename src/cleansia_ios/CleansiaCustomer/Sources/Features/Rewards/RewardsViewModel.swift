@@ -7,6 +7,8 @@ struct RewardsContent: Equatable {
     let tiers: [TierInfo]
     let referral: ReferralAccount?
     let activityPreview: [LoyaltyActivityItem]
+    /// Nil hides the credit card — the read failed or has not landed. A zero balance is shown.
+    var credit: CustomerCredit?
 }
 
 /// Backs `RewardsTab`. Reads the singleton `LoyaltyRepository` (account + tiers)
@@ -24,6 +26,7 @@ final class RewardsViewModel: ViewModel {
     private let referralRepository: RewardsReferralRepository
     private let snackbar: SnackbarController
     private let activityPreviewSize: Int
+    private var cancellables: Set<AnyCancellable> = []
 
     init(
         loyaltyRepository: LoyaltyRepository,
@@ -49,10 +52,26 @@ final class RewardsViewModel: ViewModel {
         if let content = currentContent() {
             state = .loaded(content)
         }
+        // Credit moves outside this screen — a booking spends it, a cancellation returns it — and the
+        // shell re-reads it then, so a landed balance reaches the card without a pull.
+        loyaltyRepository.$credit
+            .dropFirst()
+            .sink { [weak self] credit in
+                guard let self, case var .loaded(content) = state else { return }
+                content.credit = credit
+                state = .loaded(content)
+            }
+            .store(in: &cancellables)
     }
 
+    /// A cached account is shown at once and re-read when its watermark has lapsed: points move outside
+    /// this screen (a finished clean, a referral), and Rewards opened straight from the tab bar is not
+    /// always preceded by Home's own stale check. A failed re-read keeps the cached account, as Home does.
     func load() async {
         guard loyaltyRepository.account == nil else {
+            if loyaltyRepository.staleness.isStale {
+                await loyaltyRepository.refresh()
+            }
             await reconcile()
             return
         }
@@ -104,7 +123,8 @@ final class RewardsViewModel: ViewModel {
             account: account,
             tiers: loyaltyRepository.tiers,
             referral: referralRepository.account,
-            activityPreview: activityPreview
+            activityPreview: activityPreview,
+            credit: loyaltyRepository.credit
         )
     }
 }

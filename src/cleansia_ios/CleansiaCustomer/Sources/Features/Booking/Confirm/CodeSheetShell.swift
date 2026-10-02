@@ -102,6 +102,7 @@ enum CodeSheetMessage {
         HStack(spacing: Spacing.xs) {
             Image(systemName: "checkmark.circle.fill")
                 .foregroundColor(CleansiaColors.primary)
+                .cleansiaBounceOnAppear()
             Text(text)
                 .font(CleansiaTypography.bodyMedium)
                 .fontWeight(.semibold)

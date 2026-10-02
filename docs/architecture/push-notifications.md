@@ -239,6 +239,50 @@ runtime available." Use **Debug → Attach to Process** instead:
 
 When VS ships a toolset with net10 support, switch to F5 launch instead.
 
+## Which language a notification is in {#language}
+
+**The language picked inside the app**, for every text the device writes, whatever the phone is set to
+(owner ruling 2026-10-01) — with one probable exception, the Live Activity's start alert (below). The two texts the server writes
+follow a stored language instead, the last two rows below: the sitewide promo push is in the account's
+language, which the apps update only from a choice made in the app's picker — a Google or Apple
+sign-up who never opens the picker keeps `en` — and an order's e-mails stay in the language it was
+booked in. The server does not know the in-app language for a transactional push — it sends a key and
+its arguments, and the device writes the sentence — so each platform has to carry the in-app choice to
+wherever the text is drawn. Both used to fall short. iOS resolves a loc-key alert
+itself, in the app's **system** language (the phone's, or the per-app language in iOS Settings), and
+the in-app picker deliberately never sets it, so an English phone got English banners whatever the app
+showed. On Android 26–32 AppCompat's per-app locale reaches only activity contexts, so the FCM service
+and the feed rendered in the device language.
+
+| Surface | Language | How |
+|---|---|---|
+| iOS push banner, both apps | in-app | The server marks every loc-key alert `mutable-content: 1`. Each app's **Notification Service Extension** reads the in-app language from the app's App Group and renders the same `push.<event>.title` and `.body` keys and `loc-args` from the app's own catalogue, which is compiled into the extension. On any miss — no language written (the app is on "System", or has not launched since the update), an unknown key, an argument the copy cannot fill, the time budget spent — the alert goes out as iOS resolved it, in the system language, never as a raw key. |
+| iOS in-app feed, both apps | in-app | the same `push.*` keys, through the app's own bundles |
+| Live Activity (customer, iOS) | in-app; the start alert probably the phone's | The server sends no literal text. Updates and the end carry only the status and the times. The widget reads the App Group language and applies it before it draws the card; with none written it follows the phone, which it can because the extension declares the five languages ([ADR-0029](/decisions/adr-0029) Amendment A4). The **start** push (iOS 17.2+, when the cleaner sets off) also carries the alert ActivityKit requires, as loc-keys: `push.order.on_the_way.title`, and `.body` with the order number, with no sound. iOS resolves those from the customer app's catalogue in the app's system language; a Live Activity push is not expected to pass through the Notification Service Extension, so that one alert likely does not follow the in-app picker. Not yet checked on a device ([ADR-0029](/decisions/adr-0029#amendment-a5) Amendment A5). |
+| Android push banner, both apps | in-app, on every API level | Data-only: the app renders its template in `onMessageReceived`. On 33+ the framework's per-app locale covers the service; on 26–32 the text goes through `AppLocale.localizedContext` with the language persisted in DataStore. |
+| Android in-app feed, both apps | in-app | the same wrap, in both feed view models |
+| Android notification channel names, both apps | in-app | `MainActivity` names the channels with its own context, which carries the in-app language on every API level, in `onCreate` and again when `onConfigurationChanged` sees new locales, so a picker change renames them at once (`createNotificationChannel` on an existing id updates its name). The `Application` only creates the channels that do not exist yet (`registerMissing`), so a push can post before the first open, and a process a push cold-starts no longer renames them back into the device language. Until the app is first opened they carry the device's language on 26–32. Since 2026-10-02. |
+| `promo.new_sitewide` (customer) | the account's `PreferredLanguageCode`, `en` when unset | The one text the server writes: a literal alert, with no `mutable-content`. The apps keep the stamp current → [The account's language](/flows/auth-and-identity#account-language) |
+| The e-mail beside an order push | the language the order was booked in | → [The order records its language](/flows/booking-and-pricing#booking-language) |
+
+The App Groups are `group.cz.cleansia.customer` (the customer app, its Live Activity widget and its
+extension `cz.cleansia.customer.notificationservice`) and `group.cz.cleansia.partner` (the partner app
+and `cz.cleansia.partner.notificationservice`). The app writes the language **chosen** in its picker at
+launch and on every change, and on "System" it removes it, so the extensions follow the phone. Neither app
+runs in the background, so a resolved phone language written there went stale as soon as the phone's
+language changed while the app was closed. → [App extensions](/mobile-app/overview#app-extensions)
+
+Three limits:
+
+- **The extension needs the updated app to have launched once.** Until it has written the language, a
+  banner is in the system language — exactly the [ADR-0025](/decisions/adr-0025) behaviour it replaces.
+- **`xcrun simctl push` never runs a Notification Service Extension.** The simulator always shows the
+  system-language banner; the in-app one can only be seen on a device or a TestFlight build.
+- **A language change reaches a Live Activity already on screen at its next update**, from the server
+  or from the app.
+
+The decision and its trade-offs are [ADR-0025 Amendment A3](/decisions/adr-0025#amendment-a3).
+
 ## The event catalogue {#event-catalogue}
 
 `NotificationEventCatalog` maps every event key — the strings that flow on the queue and into the FCM
@@ -369,28 +413,64 @@ covers telling a third party what a worker did is still open.
 The same reticence runs the other way: no surface ever says an order is held for someone else, and no
 cleaner ever learns they were passed over.
 
+### The registration decision is a push, and only a push {#registration-decided}
+
+`employee.registration_approved` (from `ApproveEmployee`) and `employee.registration_rejected` (from
+`RejectEmployee`) tell a cleaner waiting on the [registration lock](/partner-app/onboarding#registration-lock-screen)
+that an administrator decided. Before 2026-10-01 an approval sent nothing and a rejection told the
+cleaner only about each future seat it released, so the lock kept reading *Application under review*
+until the cleaner happened to reload it.
+
+- **Argless.** The administrator's rejection reason never rides the push: it is free text, outside the
+  lock-screen allowlist ([ADR-0025](/decisions/adr-0025) D3), and it may carry personal data. The lock
+  shows it from the registration status, and the copy points there — *"Your application was rejected.
+  Open the app to see why, or contact support."*
+- **Push-only.** In no feed keyset, because the inbox cannot be reached from the lock this answers. No
+  deep link: a tap opens the app, and for this cleaner the app is the lock, which re-reads the status.
+- **Non-mutable** — see [Which events a user may silence](#mutability).
+- **Its subject is the employee id plus the decision's timestamp**, so reject → approve → reject mints a
+  fresh outbox key each time instead of collapsing a second rejection into the first.
+- **The copy shipped first**: `push.employee.registration_*.title|body` in both iOS app catalogues and the
+  Android partner templates (the order-updates channel), five locales each.
+
+A rejection still releases the cleaner's future seats and sends one revocation notice per seat, as
+before.
+
 ### Which events a user may silence {#mutability}
 
 Most order events sit under the existing `OrderUpdates` category rather than getting one of their own.
 A new category is a boolean **column** plus a toggle in every client, and someone who silenced order
 updates has already answered the question.
 
-Five are deliberately **non-mutable** for a **cleaner**, every one about a job they have already
-accepted. That is the line: a customer may silence almost anything, because the consequence of a missed
-message is theirs. A cleaner not turning up is somebody else's morning. The one customer exception is
-`membership.payment_failed` (owner ruling 2026-09-28): a card Stripe keeps retrying while the benefits
-are paused is not a notice the member may switch off, so it maps to no category.
+`GetCategoryFor` is the whole answer: a key it maps to a category can be switched off under that
+category, and a key it maps to **null** cannot be switched off at all. The three keys that offer a
+cleaner a job — `order.new_available`, `order.seat_open` and `order.preferred_offer` — share
+`NewJobsAvailable`, so a cleaner who mutes new jobs is not reached by a targeted route around the mute.
+The `admin.*` keys also map to null, but they never push; they are the
+[admin audience](#admin-audience).
 
-| Event | Key | Why it cannot be silenced |
-|---|---|---|
-| Admin assigned you a job | `order.admin_assigned` | A cleaner must not be able to silence a job appearing on their own schedule and then not turn up |
-| Admin took you off a job | `order.admin_unassigned` | Losing a booked day is not an optional notice |
-| You have N jobs tomorrow | `order.reminder_tomorrow` | The day-ahead plan. A cleaner who silenced it would be planning tomorrow off memory |
-| Your job starts in about two hours | `order.reminder_soon` | The last point at which a cleaner can still travel, or tell us they cannot |
-| Your job starts soon and you have not set off | `order.reminder_not_started` | The platform's last chance to prevent a no-show. Suppressed for a cleaner already out on **another** job |
+Ten keys are deliberately **non-mutable** for a **cleaner**. Six are about a job they have accepted
+or been given; the other four are about the cleaner themselves: a paid invoice, a weekly cap, and the
+registration decision either way. That is the line: a customer may silence almost anything, because the consequence
+of a missed message is theirs. A cleaner not turning up is somebody else's morning. The one customer
+exception is `membership.payment_failed` (owner ruling 2026-09-28).
+
+| Who | Event | Key | Why it cannot be silenced |
+|---|---|---|---|
+| Cleaner | An admin put you on a job | `order.assigned` | A cleaner must not be able to silence a job appearing on their own schedule and then not turn up |
+| Cleaner | An admin took you off a job | `order.assignment_revoked` | Losing a booked day is not an optional notice |
+| Cleaner | A job you accepted was cancelled | `order.assignment_cancelled` | A cancellation must not be silenceable |
+| Cleaner | You have N jobs tomorrow | `order.reminder_tomorrow` | The day-ahead plan. A cleaner who silenced it would be planning tomorrow off memory |
+| Cleaner | Your job starts in about two hours | `order.reminder_soon` | The last point at which a cleaner can still travel, or tell us they cannot |
+| Cleaner | Your job starts soon and you have not set off | `order.reminder_not_started` | The platform's last chance to prevent a no-show. Suppressed for a cleaner already out on **another** job |
+| Cleaner | Your invoice was paid | `payroll.invoice_paid` | A payment confirmation must not be silenceable |
+| Cleaner | Your weekly order cap was set or lowered | `employee.weekly_limit_set` | A cut to how much someone may earn is news they are owed. Before it, the cleaner met the cap only as a refusal when taking work, and that refusal cannot say what the cap is |
+| Cleaner | Your registration was approved | `employee.registration_approved` | The one answer a cleaner on the registration lock is waiting for; a mute would leave them on a stale *under review* screen ([why it is a push](#registration-decided)) |
+| Cleaner | Your registration was rejected | `employee.registration_rejected` | As for the approval |
+| Customer | A Plus renewal payment failed | `membership.payment_failed` | A card Stripe keeps retrying while the benefits are paused is not a notice the member may switch off |
 
 The three reminders are non-mutable **on the owner's ruling** (2026-09-15, Q-PUSH-01 — the evening
-digest included; it was the one the ADR had escalated), on the same reasoning as the two above and
+digest included; it was the one the ADR had escalated), on the same reasoning as the first two rows and
 recorded in ADR-0054: they are not marketing, they carry no offer, and each one is about work the cleaner
 already agreed to do.
 
@@ -409,9 +489,9 @@ account. Rejecting a cleaner does not take them off their live orders, so withou
 the sweep would tell somebody the platform has just barred from working that their job starts in two
 hours — for work `StartOrder` would then refuse to let them start.
 
-And the admin-unassigned copy is deliberately **not** the assignment-cancelled copy: here the job goes
-ahead with somebody else, and a cleaner repeating "cancelled" to the customer would be telling them
-their booking was gone.
+And the `order.assignment_revoked` copy is deliberately **not** the `order.assignment_cancelled` copy:
+here the job goes ahead with somebody else, and a cleaner repeating "cancelled" to the customer would be
+telling them their booking was gone.
 
 ### Why the day-ahead digest runs hourly {#digest-hourly}
 

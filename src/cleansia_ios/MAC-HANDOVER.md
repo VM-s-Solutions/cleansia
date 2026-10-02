@@ -149,8 +149,11 @@ porting (`src/cleansia_android/{partner,customer}-app/.../features/<screen>`).
 
 ## 7. Owner-only / blocked items (quick reference)
 
-- **Apple Developer signing** — Team + provisioning profiles for `cz.cleansia.{partner,customer}`
-  (MANUAL_STEPS §4). Needed to run on a device / TestFlight.
+- **Apple Developer signing** — Team + provisioning profiles for `cz.cleansia.{partner,customer}`, the
+  customer Live Activity extension `cz.cleansia.customer.widgets`, both Notification Service Extensions
+  `cz.cleansia.{partner,customer}.notificationservice`, and the App Groups
+  `group.cz.cleansia.{partner,customer}` (MANUAL_STEPS §4). Needed to run on a device / TestFlight;
+  automatic signing with `-allowProvisioningUpdates` registers the extensions and groups.
 - **APNs auth key** — for push (T-0311).
 - **Sign in with Apple** — required on the customer app (Guideline 4.8, it offers Google Sign-In); built
   with the customer auth wave via a backend `appleauth` endpoint (ADR-0016).

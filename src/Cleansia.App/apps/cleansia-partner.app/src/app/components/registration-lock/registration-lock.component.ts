@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { CleansiaButtonComponent } from '@cleansia/components';
 import {
   RegistrationCompletionResult,
   RegistrationCompletionService,
@@ -32,7 +33,7 @@ export interface EnhancedRegistrationStatus {
 
 @Component({
   selector: 'cleansia-registration-lock',
-  imports: [CommonModule, TranslateModule],
+  imports: [CommonModule, TranslateModule, CleansiaButtonComponent],
   templateUrl: './registration-lock.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -59,6 +60,15 @@ export class CleansiaRegistrationLockComponent implements OnInit {
 
   goToProfile() {
     this.router.navigate([CleansiaPartnerRoute.PROFILE]);
+  }
+
+  /**
+   * A rejected cleaner can fix nothing here, and only support can say more than the reason shown, so
+   * the rejected approval row opens a mail to support — the same address and subject as both apps'
+   * rejected row (owner decision D13).
+   */
+  supportMailto(subject: string): string {
+    return `mailto:support@cleansia.cz?subject=${encodeURIComponent(subject)}`;
   }
 
   getStatusIcon(status: 'done' | 'pending' | 'missing'): string {

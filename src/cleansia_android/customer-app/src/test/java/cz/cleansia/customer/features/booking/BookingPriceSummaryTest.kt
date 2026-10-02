@@ -2,6 +2,7 @@ package cz.cleansia.customer.features.booking
 
 import cz.cleansia.customer.core.booking.QuoteOrderResponse
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -190,12 +191,96 @@ class BookingPriceSummaryTest {
         assertEquals(50.0, quote(totalPrice = 0.0).discountAsCharged(50.0), 0.001)
     }
 
+    // ── credit: the client preview of BookingPolicy.CapCreditForOrder ──
+    //
+    // The vectors are the server's own (CreditAtCheckoutTests) at the 70 % share the wire carries; the
+    // iOS twin runs the same ones, so the four copies of the formula cannot drift apart unnoticed.
+
+    @Test
+    fun `the cap spends the whole balance when it fits under the share`() {
+        assertEquals(500.0, capCreditForOrder(balance = 500.0, charged = 2000.0, share = 0.7), 0.0)
+    }
+
+    @Test
+    fun `the cap stops at the share when the balance is larger`() {
+        assertEquals(700.0, capCreditForOrder(balance = 2000.0, charged = 1000.0, share = 0.7), 0.0)
+        assertEquals(700.0, capCreditForOrder(balance = 700.0, charged = 1000.0, share = 0.7), 0.0)
+    }
+
+    /** 70 % of 33.33 is 23.331, and Stripe takes whole cents. */
+    @Test
+    fun `the cap floors to whole cents`() {
+        assertEquals(23.33, capCreditForOrder(balance = 1000.0, charged = 33.33, share = 0.7), 0.0)
+    }
+
+    /** 100.10 × 0.7 is 70.07 in decimal and 70.0699… in binary floating point, which floors a cent short. */
+    @Test
+    fun `the cap is decimal arithmetic, so a price binary floats cannot represent keeps its cent`() {
+        assertEquals(70.07, capCreditForOrder(balance = 1000.0, charged = 100.10, share = 0.7), 0.0)
+    }
+
+    @Test
+    fun `the card always pays something`() {
+        listOf(1.0, 7.0, 99.99, 1000.0, 13333.33).forEach { price ->
+            val applied = capCreditForOrder(balance = 1_000_000.0, charged = price, share = 0.7)
+            assertTrue("$applied of credit would settle all of a $price order", applied < price)
+        }
+    }
+
+    @Test
+    fun `no balance, no order, no share or negative nonsense spends nothing`() {
+        assertEquals(0.0, capCreditForOrder(balance = 0.0, charged = 1000.0, share = 0.7), 0.0)
+        assertEquals(0.0, capCreditForOrder(balance = 500.0, charged = 0.0, share = 0.7), 0.0)
+        assertEquals(0.0, capCreditForOrder(balance = -100.0, charged = 1000.0, share = 0.7), 0.0)
+        assertEquals(0.0, capCreditForOrder(balance = 500.0, charged = 1000.0, share = 0.0), 0.0)
+    }
+
+    @Test
+    fun `a card booking takes the credit off what the card is asked for, not off the total`() {
+        val summary = BookingPriceSummary.resolve(
+            quote(totalPrice = 1000.0, creditBalance = 250.0, creditShare = 0.7),
+            discount = 0.0,
+            payByCard = true,
+        )
+
+        assertEquals(1000.0, summary.total, 0.001)
+        assertEquals(250.0, summary.creditApplied, 0.001)
+        assertEquals(750.0, summary.dueOnCard, 0.001)
+    }
+
+    /** Credit is capped on the price being charged, promo included, as the server caps the order's. */
+    @Test
+    fun `the cap is taken on the discounted total`() {
+        val summary = BookingPriceSummary.resolve(
+            quote(totalPrice = 1000.0, creditBalance = 5000.0, creditShare = 0.7),
+            discount = 200.0,
+            payByCard = true,
+        )
+
+        assertEquals(560.0, summary.creditApplied, 0.001)
+        assertEquals(240.0, summary.dueOnCard, 0.001)
+    }
+
+    @Test
+    fun `cash takes no credit, so what is due is the whole total`() {
+        val summary = BookingPriceSummary.resolve(
+            quote(totalPrice = 1000.0, creditBalance = 250.0, creditShare = 0.7),
+            discount = 0.0,
+            payByCard = false,
+        )
+
+        assertEquals(0.0, summary.creditApplied, 0.0)
+        assertEquals(1000.0, summary.dueOnCard, 0.001)
+    }
+
     private fun quote(
         totalPrice: Double,
         surchargeApplied: Boolean = false,
         surcharge: Double = 0.0,
         waived: Boolean = false,
         dirtiness: Double = 0.0,
+        creditBalance: Double = 0.0,
+        creditShare: Double = 0.0,
     ) = QuoteOrderResponse(
         requiredEmployees = 1,
         finalPriceAfterDiscount = 0.0,
@@ -211,5 +296,7 @@ class BookingPriceSummaryTest {
         expressSurchargeAmount = surcharge,
         expressSurchargeWaivedByMembership = waived,
         dirtinessSurchargeAmount = dirtiness,
+        creditBalance = creditBalance,
+        creditMaxShareOfOrder = creditShare,
     )
 }

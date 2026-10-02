@@ -84,7 +84,7 @@ public sealed class GuestPlatformCancellationEmailCopyTests
         var message = await StatusMessageAsync(order, "en", refundedAmount: 1000m);
 
         Assert.Contains("We had to cancel this booking.", message);
-        Assert.Contains($"Refund issued: €{1000m:N2}.", message);
+        Assert.Contains("Refund issued: €1,000.00.", message);
         Assert.DoesNotContain("being processed", message);
         Assert.DoesNotContain("Nothing was charged", message);
     }

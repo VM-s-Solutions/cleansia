@@ -48,7 +48,18 @@ struct OrderDetailView: View {
 
     var body: some View {
         content
-            .overlay { removalReasonDialog }
+            .alert(
+                L10n.Orders.removalTitle,
+                isPresented: Binding(
+                    get: { vm.removalReason != nil },
+                    set: { if !$0 { vm.dismissRemovalReason() } }
+                ),
+                presenting: vm.removalReason
+            ) { _ in
+                Button(L10n.close, role: .cancel) {}
+            } message: { reason in
+                Text(L10n.Orders.removalMessage(reason))
+            }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar(.hidden, for: .tabBar)
             .sheet(item: contractRequest) { request in
@@ -74,19 +85,6 @@ struct OrderDetailView: View {
             get: { vm.contractRequest },
             set: { if $0 == nil { vm.dismissContract() } }
         )
-    }
-
-    @ViewBuilder
-    private var removalReasonDialog: some View {
-        if let reason = vm.removalReason {
-            CleansiaDialog(
-                title: L10n.Orders.removalTitle,
-                confirmLabel: L10n.close,
-                onConfirm: { vm.dismissRemovalReason() },
-                onDismiss: { vm.dismissRemovalReason() },
-                message: L10n.Orders.removalMessage(reason)
-            )
-        }
     }
 
     @ViewBuilder

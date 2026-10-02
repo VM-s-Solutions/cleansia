@@ -8457,31 +8457,66 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "U českého nebo slovenského účtu ho můžete nechat prázdný — dopočítáme ho z čísel výše."
+            "value": "Celý IBAN, začíná kódem země vaší banky. Najdete ho na výpisu z účtu nebo v internetovém bankovnictví."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "You can leave this empty for a Czech or Slovak account — we work it out from the numbers above."
+            "value": "Your full IBAN, starting with your bank's country code. You'll find it on your bank statement or in your banking app."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Для чешского или словацкого счёта можно оставить пустым — мы вычислим его из чисел выше."
+            "value": "Полный IBAN, начинается с кода страны вашего банка. Его можно найти в выписке по счёту или в банковском приложении."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pri českom alebo slovenskom účte ho môžete nechať prázdny — dopočítame ho z čísel vyššie."
+            "value": "Celý IBAN, začína kódom krajiny vašej banky. Nájdete ho na výpise z účtu alebo v internetovom bankovníctve."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Для чеського або словацького рахунку можете залишити порожнім — ми обчислимо його з чисел вище."
+            "value": "Повний IBAN, що починається з коду країни вашого банку. Його можна знайти у виписці з рахунку або в банківському застосунку."
+          }
+        }
+      }
+    },
+    "iban_wrong_length": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tento IBAN nemá pro zemi vaší banky správnou délku — ta je %1$lld. Zkontrolujte, jestli nějaký znak nechybí nebo nepřebývá."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This IBAN has the wrong length for your bank's country — the length there is %1$lld. Check for a missing or extra character."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "У этого IBAN неправильная длина для страны вашего банка — там она составляет %1$lld. Проверьте, не пропущен ли символ и нет ли лишнего."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tento IBAN nemá pre krajinu vašej banky správnu dĺžku — tá je %1$lld. Skontrolujte, či nejaký znak nechýba alebo neprebýva."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Цей IBAN має неправильну довжину для країни вашого банку — там вона становить %1$lld. Перевірте, чи не бракує символу і чи немає зайвого."
           }
         }
       }
@@ -17831,6 +17866,146 @@
         }
       }
     },
+    "push.employee.registration_approved.body": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Byli jste schváleni. Otevřete aplikaci a začněte přijímat zakázky."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're approved. Open the app to start taking jobs."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вы одобрены. Откройте приложение, чтобы начать брать заказы."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Boli ste schválení. Otvorte aplikáciu a začnite prijímať zákazky."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вас схвалено. Відкрийте застосунок, щоб почати брати замовлення."
+          }
+        }
+      }
+    },
+    "push.employee.registration_approved.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Žádost schválena"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Application approved"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заявка одобрена"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Žiadosť schválená"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заявку схвалено"
+          }
+        }
+      }
+    },
+    "push.employee.registration_rejected.body": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaše žádost byla zamítnuta. Otevřete aplikaci a zjistěte proč, nebo kontaktujte podporu."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your application was rejected. Open the app to see why, or contact support."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваша заявка отклонена. Откройте приложение, чтобы узнать причину, или обратитесь в поддержку."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaša žiadosť bola zamietnutá. Otvorte aplikáciu a zistite prečo, alebo kontaktujte podporu."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вашу заявку відхилено. Відкрийте застосунок, щоб дізнатися причину, або зверніться до підтримки."
+          }
+        }
+      }
+    },
+    "push.employee.registration_rejected.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Žádost zamítnuta"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Application rejected"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заявка отклонена"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Žiadosť zamietnutá"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заявку відхилено"
+          }
+        }
+      }
+    },
     "push.employee.weekly_limit_set.body": {
       "extractionState": "manual",
       "localizations": {
@@ -18829,7 +19004,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "На заказ #%1$@ не смог приехать ни один уборщик, поэтому мы его отменили. Мы ничего с вас не списали, а ещё добавили бонус %2$@ на следующую уборку. Простите."
+            "value": "На заказ #%1$@ не смог приехать ни один уборщик, поэтому мы его отменили. Мы ничего с вас не списали, а ещё начислили %2$@ кредита на следующую уборку. Простите."
           }
         },
         "sk": {
@@ -18841,7 +19016,7 @@
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "На замовлення #%1$@ не зміг приїхати жоден прибиральник, тому ми його скасували. Ми нічого з вас не списали, а ще додали бонус %2$@ на наступне прибирання. Вибачте."
+            "value": "На замовлення #%1$@ не зміг приїхати жоден прибиральник, тому ми його скасували. Ми нічого з вас не списали, а ще нарахували %2$@ кредиту на наступне прибирання. Вибачте."
           }
         }
       }
@@ -18899,7 +19074,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "На заказ #%1$@ не смог приехать ни один уборщик, поэтому мы его отменили. Возврат средств обрабатывается, а ещё мы добавили бонус %2$@ на следующую уборку. Простите."
+            "value": "На заказ #%1$@ не смог приехать ни один уборщик, поэтому мы его отменили. Возврат средств обрабатывается, а ещё мы начислили %2$@ кредита на следующую уборку. Простите."
           }
         },
         "sk": {
@@ -18911,7 +19086,7 @@
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "На замовлення #%1$@ не зміг приїхати жоден прибиральник, тому ми його скасували. Повернення коштів обробляється, а ще ми додали бонус %2$@ на наступне прибирання. Вибачте."
+            "value": "На замовлення #%1$@ не зміг приїхати жоден прибиральник, тому ми його скасували. Повернення коштів обробляється, а ще ми нарахували %2$@ кредиту на наступне прибирання. Вибачте."
           }
         }
       }
@@ -18974,13 +19149,13 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Заказ #%1$@ никто не взял, поэтому мы вернули всю сумму и добавили бонус %2$@ на следующую уборку. Простите."
+            "value": "Заказ #%1$@ никто не взял, поэтому мы вернули всю сумму и начислили %2$@ кредита на следующую уборку. Простите."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Замовлення #%1$@ ніхто не взяв, тому ми повернули всю суму та додали бонус %2$@ на наступне прибирання. Вибачте."
+            "value": "Замовлення #%1$@ ніхто не взяв, тому ми повернули всю суму та нарахували %2$@ кредиту на наступне прибирання. Вибачте."
           }
         }
       }
@@ -21012,6 +21187,41 @@
         }
       }
     },
+    "registration_lock_support_subject": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cleansia partner — žádost zamítnuta"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cleansia partner — application rejected"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cleansia partner — заявка отклонена"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cleansia partner — žiadosť zamietnutá"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cleansia partner — заявку відхилено"
+          }
+        }
+      }
+    },
     "registration_lock_title": {
       "extractionState": "stale",
       "localizations": {
@@ -21362,25 +21572,25 @@
               "few": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$ld ванні"
+                  "value": "%1$ld ванні кімнати"
                 }
               },
               "many": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$ld ванних"
+                  "value": "%1$ld ванних кімнат"
                 }
               },
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$ld ванна"
+                  "value": "%1$ld ванна кімната"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$ld ванні"
+                  "value": "%1$ld ванні кімнати"
                 }
               }
             }

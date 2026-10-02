@@ -9,6 +9,9 @@ struct CustomerShellView: View {
     @StateObject private var profileVM: ProfileViewModel
     @ObservedObject private var preferences: CustomerPreferencesModel
     @EnvironmentObject private var pushNavigation: PushNavigationModel
+    @Namespace private var bookZoom
+    /// Whether the open booking came from the FAB, the one entry it zooms out of.
+    @State private var bookingFromFab = false
     @Environment(\.snackbarController) var snackbar
     let container: CustomerAppContainer
     private let onSignedOut: () -> Void
@@ -75,7 +78,7 @@ struct CustomerShellView: View {
             }
         }
         .tint(CleansiaColors.primary)
-        .sheet(isPresented: $model.isBookingPresented) {
+        .sheet(isPresented: $model.isBookingPresented, onDismiss: { bookingFromFab = false }, content: {
             BookingSheetView(
                 vm: bookingVM,
                 geocoding: container.geocodingService,
@@ -83,7 +86,12 @@ struct CustomerShellView: View {
                 serviceArea: container.serviceArea,
                 paymentSheet: StripePaymentController(),
                 orderClient: container.orderClient,
-                warmOrders: { await container.orderRepository.refresh() },
+                // A card booking may have spent credit, so the balance is re-read with the orders.
+                warmOrders: {
+                    async let orders = container.orderRepository.refresh()
+                    async let loyalty = container.loyaltyRepository.refresh()
+                    _ = await (orders, loyalty)
+                },
                 onDismiss: { model.isBookingPresented = false },
                 onViewOrder: { orderId in
                     model.isBookingPresented = false
@@ -94,7 +102,8 @@ struct CustomerShellView: View {
                     model.openEditProfile(showBookingHint: true)
                 }
             )
-        }
+            .zoomDestination(id: Self.bookZoomID, in: bookingFromFab ? fabZoom : nil)
+        })
         .sheet(isPresented: $model.isAddressManagerPresented) {
             AddressManagerView(
                 repository: container.savedAddressRepository,
@@ -195,6 +204,7 @@ struct CustomerShellView: View {
                 loyaltyRepository: container.loyaltyRepository,
                 membershipRepository: container.membershipRepository,
                 savedAddressRepository: container.savedAddressRepository,
+                referralRepository: container.referralRepository,
                 marketStore: container.marketStore,
                 notificationBadge: container.notificationBadge,
                 notificationFeedClient: container.notificationFeedClient,
@@ -208,6 +218,7 @@ struct CustomerShellView: View {
                 onSubscribePlus: { model.path.append(ShellRoute.subscribePlus) },
                 onOpenReferral: { model.select(.rewards) },
                 onBookPackage: bookPackage,
+                onBookSize: bookSize,
                 onRebookOrder: rebookOrder,
                 // Pre-seeded: the createRecurring destination pops on creation, so the
                 // wizard must sit ON TOP of the list or creation lands on the tab root
@@ -220,6 +231,7 @@ struct CustomerShellView: View {
                 // resolver, the same routing plan (FD-AC9).
                 onNotificationDestination: { model.applyPushTap(CustomerPushTapRouting.plan(for: $0)) }
             )
+            .bookFabClearance()
             .tabItem { tabLabel(.home) }
             .tag(CustomerShellTab.home)
 
@@ -230,6 +242,7 @@ struct CustomerShellView: View {
                 onOrderClick: { model.path.append(ShellRoute.orderDetail($0)) },
                 onBookCleaning: openBooking
             )
+            .bookFabClearance()
             .tabItem { tabLabel(.orders) }
             .tag(CustomerShellTab.orders)
 
@@ -246,6 +259,7 @@ struct CustomerShellView: View {
                 snackbar: snackbar,
                 onOpenActivity: { model.path.append(ShellRoute.rewardsActivity) }
             )
+            .bookFabClearance()
             .tabItem { tabLabel(.rewards) }
             .tag(CustomerShellTab.rewards)
 
@@ -254,10 +268,12 @@ struct CustomerShellView: View {
                 membershipVM: membershipVM,
                 preferences: preferences,
                 marketStore: container.marketStore,
+                loyalty: container.loyaltyRepository,
                 avatarCache: container.avatarCache,
                 onOpen: { model.path.append($0) },
                 onSignOut: signOut
             )
+            .bookFabClearance()
             .tabItem { tabLabel(.profile) }
             .tag(CustomerShellTab.profile)
         }
@@ -268,14 +284,40 @@ struct CustomerShellView: View {
     }
 
     private var bookFab: some View {
-        BookFab(action: openBooking)
-            .padding(.bottom, BookFabMetrics.bottomPadding)
+        BookFab {
+            bookingFromFab = true
+            openBooking()
+        }
+        .zoomSource(id: Self.bookZoomID, in: fabZoom)
+        .padding(.bottom, BookFabMetrics.bottomPadding)
+    }
+
+    private static let bookZoomID = "book"
+
+    /// The booking sheet grows out of the FAB on iOS 26+ only: that is where a zoom-presented sheet was
+    /// checked to still refuse a swipe-dismiss mid-flow (`interactiveDismissDisabled`). iOS 16-25 keep
+    /// the plain sheet, and so does every other entry (Home's book buttons, the slides, order again).
+    private var fabZoom: Namespace.ID? {
+        if #available(iOS 26, *) { return bookZoom }
+        return nil
     }
 
     private func signOut() {
         Task {
             await container.authClient.logout()
             onSignedOut()
+        }
+    }
+}
+
+private extension View {
+    /// The tab bar insets each tab root by its own height only; the Book FAB rises above it by half its
+    /// size, so every tab root reserves that overhang too or its last item ends under the disc.
+    func bookFabClearance() -> some View {
+        safeAreaInset(edge: .bottom, spacing: 0) {
+            Color.clear
+                .frame(height: BookFabMetrics.scrollClearance)
+                .allowsHitTesting(false)
         }
     }
 }
@@ -440,6 +482,9 @@ extension CustomerShellView {
                 model.path = NavigationPath()
                 rebookOrder(orderId)
             },
+            // A cancelled order returns the credit it spent and a card occurrence's confirmation spends it,
+            // so the balance is re-read, as after a booking.
+            onCreditMoved: { Task { await container.loyaltyRepository.refresh() } },
             // Pre-seeded, exactly like the Home and membership-success entries:
             // the createRecurring destination pops on creation, so without the
             // list beneath it a new schedule lands on the tab root instead of on

@@ -18,12 +18,14 @@ struct HomeTab: View {
     let onSubscribePlus: () -> Void
     let onOpenReferral: () -> Void
     let onBookPackage: (String) -> Void
+    let onBookSize: (Int, Int) -> Void
     let onRebookOrder: (String) -> Void
     let onSetupRecurring: () -> Void
     let onManageRecurring: () -> Void
     let onNotificationDestination: (CustomerNotificationDestination) -> Void
     @Environment(\.snackbarController) private var snackbar
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.openURL) private var openURL
     @State private var showNotifications = false
 
     /// All callbacks + sources are REQUIRED: an optional-defaulted callback
@@ -34,6 +36,7 @@ struct HomeTab: View {
         loyaltyRepository: LoyaltyRepository,
         membershipRepository: MembershipRepository,
         savedAddressRepository: SavedAddressRepository,
+        referralRepository: RewardsReferralRepository,
         marketStore: MarketStore,
         notificationBadge: NotificationBadgeModel,
         notificationFeedClient: NotificationFeedClient,
@@ -47,6 +50,7 @@ struct HomeTab: View {
         onSubscribePlus: @escaping () -> Void,
         onOpenReferral: @escaping () -> Void,
         onBookPackage: @escaping (String) -> Void,
+        onBookSize: @escaping (Int, Int) -> Void,
         onRebookOrder: @escaping (String) -> Void,
         onSetupRecurring: @escaping () -> Void,
         onManageRecurring: @escaping () -> Void,
@@ -58,6 +62,7 @@ struct HomeTab: View {
             loyaltyRepository: loyaltyRepository,
             membershipRepository: membershipRepository,
             savedAddressRepository: savedAddressRepository,
+            referralRepository: referralRepository,
             marketStore: marketStore,
             catalogSource: bookingVM,
             snackbar: snackbar
@@ -72,6 +77,7 @@ struct HomeTab: View {
         self.onSubscribePlus = onSubscribePlus
         self.onOpenReferral = onOpenReferral
         self.onBookPackage = onBookPackage
+        self.onBookSize = onBookSize
         self.onRebookOrder = onRebookOrder
         self.onSetupRecurring = onSetupRecurring
         self.onManageRecurring = onManageRecurring
@@ -112,6 +118,7 @@ struct HomeTab: View {
         .task { await vm.refreshCatalogIfNeeded() }
         .task { await notificationBadge.refresh() }
         .task { await vm.refreshRecurring() }
+        .task { await vm.refreshNotificationStatus() }
         .task(id: vm.isPlus) { await vm.refreshPlusPlans() }
         .onChange(of: scenePhase) { phase in
             if phase == .active {
@@ -119,29 +126,26 @@ struct HomeTab: View {
                 // three cached sources are not, hence the staleness gate.
                 Task { await notificationBadge.refresh() }
                 Task { await vm.refreshStaleSources() }
+                // Back from Settings with notifications on, the carousel's slide goes.
+                Task { await vm.refreshNotificationStatus() }
             }
         }
     }
 
     private var content: some View {
-        ScrollView {
+        StatusBarFadeScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 AddressTopBar(
                     displayedAddress: vm.displayedAddress?.oneLine,
                     market: vm.marketChip,
-                    unreadBadge: notificationBadge.badgeLabel,
+                    unreadCount: notificationBadge.unreadCount,
                     onAddressTap: onOpenAddressManager,
                     onMarketTap: onOpenMarket,
                     onNotificationTap: { showNotifications = true }
                 )
                 Spacer().frame(height: Spacing.xs)
 
-                UpsellCarousel(
-                    isPlus: vm.isPlus,
-                    plusTrialDays: vm.plusTrialDays,
-                    showSetupRecurring: vm.showSetupRecurringSlide,
-                    onAction: handleUpsell
-                )
+                UpsellCarousel(inputs: vm.upsellInputs, onAction: handleUpsell)
                 Spacer().frame(height: Spacing.ml)
 
                 Group {
@@ -208,14 +212,32 @@ struct HomeTab: View {
     /// Slide CTA → callback mapping (`MainShell.kt:265-280`).
     private func handleUpsell(_ action: UpsellSlide.Action) {
         switch action {
+        case .turnOnNotifications:
+            turnOnNotifications()
         case .subscribePlus:
             onSubscribePlus()
         case .book:
             onBookCleaning()
+        case let .bookSize(rooms, bathrooms):
+            onBookSize(rooms, bathrooms)
         case .openReferral:
             onOpenReferral()
+        case .shareReferral:
+            // The card is a ShareLink; the share sheet opens without a round trip through here.
+            break
         case .setupRecurring:
             onSetupRecurring()
+        }
+    }
+
+    /// The system dialog while it can still appear; once refused, only the app's Settings page can
+    /// turn notifications on.
+    private func turnOnNotifications() {
+        Task {
+            guard await !(vm.requestNotificationsIfUndetermined()),
+                  let settings = URL(string: UIApplication.openNotificationSettingsURLString)
+            else { return }
+            openURL(settings)
         }
     }
 }
@@ -235,10 +257,14 @@ private struct AddressTopBar: View {
     @Environment(\.locale) private var locale
     let displayedAddress: String?
     let market: Market?
-    let unreadBadge: String?
+    let unreadCount: Int
     let onAddressTap: () -> Void
     let onMarketTap: () -> Void
     let onNotificationTap: () -> Void
+
+    private var unreadBadge: String? {
+        NotificationBadgeModel.label(for: unreadCount)
+    }
 
     var body: some View {
         HStack(alignment: .center, spacing: Spacing.xs) {
@@ -274,6 +300,7 @@ private struct AddressTopBar: View {
 
             Button(action: onNotificationTap) {
                 Image(systemName: "bell")
+                    .cleansiaBounce(onIncreaseOf: unreadCount)
                     .font(.system(size: 18))
                     .foregroundColor(CleansiaColors.onSurface)
                     .frame(width: 40, height: 40)
@@ -354,7 +381,7 @@ private struct MarketChip: View {
                         noShowCredit: 250,
                         insuranceCoverageAmount: nil
                     ),
-                    unreadBadge: "3",
+                    unreadCount: 3,
                     onAddressTap: {},
                     onMarketTap: {},
                     onNotificationTap: {}
@@ -362,7 +389,7 @@ private struct MarketChip: View {
                 AddressTopBar(
                     displayedAddress: nil,
                     market: nil,
-                    unreadBadge: nil,
+                    unreadCount: 0,
                     onAddressTap: {},
                     onMarketTap: {},
                     onNotificationTap: {}

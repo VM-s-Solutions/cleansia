@@ -30,8 +30,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
@@ -55,6 +57,7 @@ fun SlideToCommit(
     modifier: Modifier = Modifier,
     isBusy: Boolean = false,
 ) {
+    val haptics = LocalHapticFeedback.current
     val density = LocalDensity.current
     val scope = rememberCoroutineScope()
 
@@ -138,6 +141,9 @@ fun SlideToCommit(
                                         spring(dampingRatio = 0.7f, stiffness = 400f),
                                     )
                                     consumed = true
+                                    // The commit is felt as well as seen (ADR-0018 D2): the customer
+                                    // SwipeToConfirmButton's haptic, where iOS SlideToConfirm plays an impact.
+                                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                                     onCommit()
                                 } else {
                                     thumbOffset.animateTo(0f, tween(220))

@@ -42,6 +42,8 @@ public class FcmMessageFactoryTests
         { "loyalty.tier_upgrade", new Dictionary<string, string> { ["tier"] = "SilverMopper" }, [] },
         { "membership.expiring_soon", new Dictionary<string, string>(), [] },
         { "membership.cancellation_effective", new Dictionary<string, string>(), [] },
+        { "employee.registration_approved", new Dictionary<string, string>(), [] },
+        { "employee.registration_rejected", new Dictionary<string, string>(), [] },
     };
 
     [Theory]
@@ -102,8 +104,44 @@ public class FcmMessageFactoryTests
         if (message.Apns is not null)
         {
             Assert.False(message.Apns.Aps.ContentAvailable);
-            Assert.False(message.Apns.Aps.MutableContent);
+            // Mutable exactly when the alert is a loc-key alert (B1); promo's literal text is not.
+            Assert.Equal(FcmMessageFactory.ApnsDisplayMap.ContainsKey(eventKey), message.Apns.Aps.MutableContent);
         }
+    }
+
+    // ── mutable-content — the iOS Notification Service Extension re-localizes loc-key alerts ─────
+
+    /// <summary>
+    /// Every loc-key alert carries <c>mutable-content: 1</c>, or iOS never runs the app's Notification
+    /// Service Extension and the banner stays in the phone's language instead of the in-app one.
+    /// </summary>
+    [Fact]
+    public void Every_Loc_Key_Alert_Is_Mutable_So_The_iOS_Extension_Can_Relocalize_It()
+    {
+        foreach (var eventKey in FcmMessageFactory.ApnsDisplayMap.Keys)
+        {
+            var message = FcmMessageFactory.Build(Tokens, eventKey, OrderArgs());
+
+            Assert.NotNull(message.Apns);
+            Assert.NotNull(message.Apns.Aps.Alert.LocKey);
+            Assert.True(message.Apns.Aps.MutableContent, $"{eventKey} is not mutable-content");
+        }
+    }
+
+    /// <summary>
+    /// The promo is literal text the server already wrote in the user's language, so there is nothing
+    /// for the extension to re-localize.
+    /// </summary>
+    [Fact]
+    public void Promo_Is_Not_Mutable_Content()
+    {
+        var message = FcmMessageFactory.Build(
+            Tokens,
+            "promo.new_sitewide",
+            new Dictionary<string, string> { ["title"] = "Spring sale", ["body"] = "20% off this week" });
+
+        Assert.NotNull(message.Apns);
+        Assert.False(message.Apns.Aps.MutableContent);
     }
 
     [Fact]
@@ -332,6 +370,8 @@ public class FcmMessageFactoryTests
         string[] expected =
         [
             "dispute.reply",
+            "employee.registration_approved",
+            "employee.registration_rejected",
             "employee.weekly_limit_set",
             "loyalty.tier_upgrade",
             "membership.cancellation_effective",

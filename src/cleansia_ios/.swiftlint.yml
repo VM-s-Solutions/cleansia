@@ -2,7 +2,12 @@ included:
   - CleansiaCore/Sources
   - CleansiaCore/Tests
   - CleansiaPartner/Sources
+  - CleansiaPartner/Tests
+  - CleansiaPartner/NotificationService
   - CleansiaCustomer/Sources
+  - CleansiaCustomer/Tests
+  - CleansiaCustomer/LiveActivity
+  - CleansiaCustomer/NotificationService
 
 excluded:
   - "**/Generated"

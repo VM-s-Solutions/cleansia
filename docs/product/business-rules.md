@@ -1030,10 +1030,22 @@ the market — or from the order, on a contract for work.
 - **Every e-mail footer** names the company its receipts name — the company of the order's market, or
   the ambient company where there is no order — instead of a fixed *Cleansia s.r.o.*; the period-end
   reminder names the company that owns the pay period.
-- **The customer web footer** prints fixed contacts — `info@cleansia.cz` and the phone — and no longer
-  the *IČO [IČO] · DIČ [DIČ]* placeholder line: a fixed footer for a one-company launch. The privacy
-  page points questions at `privacy@cleansia.cz`, every other page at `info@cleansia.cz`, and Help on
-  Android and iOS names `info@cleansia.cz` as the one contact address.
+- **The customer web footer** prints fixed contacts — `support@cleansia.cz` and the phone — and no
+  longer the *IČO [IČO] · DIČ [DIČ]* placeholder line: a fixed footer for a one-company launch. The
+  privacy page points questions at `privacy@cleansia.cz`, every other legal page at
+  `support@cleansia.cz`.
+- **`support@cleansia.cz` is the one support contact** a customer or a cleaner is shown or linked to
+  (owner ruling 2026-10-02). That covers the web footer, the FAQ's *write to us*, the order detail's
+  payment-help note, the partner *How jobs are offered* review line, and Help on Android and iOS. It
+  also covers *Contact support* on a rejected cleaner's registration lock, and the support line of
+  every e-mail. The server fills that line from one constant, whatever a template's translation row
+  says. Before, the e-mails named the SendGrid sender `it@cleansia.cz`, a `.com` address or
+  `info@cleansia.cz`, and Help named `info@cleansia.cz`. The sender (`SendGrid:AddressFrom`) only
+  delivers mail and is never shown as the contact. No Reply-To is set, so a customer who presses
+  Reply writes to the sender. Two other addresses are unchanged. `privacy@cleansia.cz` is the
+  data-protection contact on the privacy page and in the partner GDPR copy. The `companyEmail` on the
+  company record is the seller's own address (`info@cleansia.cz` in the seed), printed on receipts,
+  invoices and the legal texts.
 - **The registered name comes with the registration.** Whether the company is *Cleansia CZ s.r.o.* or
   *Cleansia s.r.o.* is written once, on the company record, and every text, receipt, confirmation and
   e-mail footer follows it; the footer's copyright line still reads *Cleansia s.r.o.*
@@ -2136,6 +2148,53 @@ with an accountant in the room; nothing is deleted until then.
 **Defaults the owner may overrule** (ADR-0064 O-1..O-6): administrators are not refused at deactivation;
 every Plus is ended regardless of currency; the bundle holds the books only; credit is written off rather
 than transferred; the storage container is not locked; nothing decides the eleventh year.
+
+## Customer credit {#credit}
+
+**Credit is money the platform owes a customer, and the platform spends it for them** (owner rulings
+2026-09-05 and 2026-09-09). It is not loyalty points: points move the tier and its discount and are
+never spent → [Points are not credit](/flows/loyalty-and-memberships#points-vs-credit).
+
+| Rule | Value |
+|---|---|
+| Where it comes from | the apology when the cleaner does not arrive or nobody takes the job (`Currency.NoShowCredit`, [above](#money-constants)); a justified complaint the customer chose to settle in credit ([disputes](#dispute-settlement)); an administrator's goodwill grant |
+| How it is spent | **automatically**, on the customer's next **card** booking in the **same currency** — a one-off at `CreateOrder`, a recurring occurrence when the customer confirms it. There is no *spend it now* control |
+| How much of one booking | at most **70 %** of the booking's total (`BookingPolicy.MaxCreditShareOfOrder`), rounded **down** to whole cents. The card always pays the rest |
+| When it comes back | when the booking it paid for is refunded or cancelled, exactly once → [above](#when-the-cleaner-cancels-or-no-shows) |
+| When it expires | **12 months after the account's last movement** (`CreditAccount.ExpiryMonths`). Every grant, spend or return restarts the clock, and `ExpireStaleCredit` takes what has lapsed, daily at 03:30 UTC |
+| When it is lost | on account deletion ([below](#credit-on-account-deletion)), when the operating company is deactivated ([a company's lifecycle](#company-lifecycle)) and when an administrator discharges it with *Expire credit* |
+| Across currencies | one account per currency. A CZK balance never pays a EUR booking and is never converted |
+
+**Why never the whole booking.** Every booking still produces a real card charge, so there is a
+payment to refund against if the next clean goes wrong too, and a live card on file. At 70 % a goodwill
+credit for a bad clean is usually spent in one booking. The cap is a share of the booking's **total**,
+after every discount and surcharge, the promo code included: credit is a *tender*, so the sale keeps
+its size and only the figure the card is asked for moves (`Order.CreditAppliedAmount`,
+`AmountDueOnCard = TotalPrice − CreditAppliedAmount`). It is floored to whole cents so the figure on the
+order and the figure sent to Stripe are cent-identical.
+
+**Why card only.** A cash booking is settled into the cleaner's hand on the doorstep, and the job sheet
+has one figure on it. A cash booking spends no credit. The Android and iOS confirm steps and, since
+2026-10-02, the web booking summary say so when a customer who holds a balance picks cash (the web also
+before a method is chosen).
+
+**The checkout takes the credit before it asks Stripe for anything.** `CreateOrder` debits through a
+conditional update, then records on the order what it actually took. Two checkouts racing for one
+balance cannot both spend it: the loser simply pays in full, which is what it would have seen a second
+later.
+
+**The credit surfaces show the server's figures, not a sentence that bakes them in.** `GET /api/Credit/GetMy`
+returns every balance with its expiry date, and the share as a number (`maxShareOfOrder`), so no client
+states *70 %* of its own and the credit surfaces show the server's date. **One literal remains:** the
+dispute-settlement choice still names the 12-month rule as text — `pages.disputes.settlement_hint` and
+`settlement_hint_cash` on the web, `dispute_settlement_credit_desc` on Android and iOS, in all five
+locales — and no gate ties those strings to `CreditAccount.ExpiryMonths`, so changing the constant means
+changing them by hand. The quote returns the balance in the quote's currency and the
+share (`creditBalance`, `creditMaxShareOfOrder`), the two *inputs* to the cap and not its answer,
+because a promo code entered at checkout still moves the price. Each client applies the same cap to the
+total it is displaying. That figure is a preview: the order's `creditAppliedAmount` and
+`amountDueOnCard` are what happened, and they are what the screens after the booking read. Where each
+client shows it → [Features](/product/features).
 
 ## Credit on a deleted account {#credit-on-account-deletion}
 

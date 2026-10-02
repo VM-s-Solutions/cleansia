@@ -938,7 +938,7 @@ describe('OrderWizardComponent (a11y)', () => {
       facade.displayedTotalPrice.set(1000);
       fixture.detectChanges();
 
-      expect(el.querySelector('.cl-wiz__total')?.textContent).toMatch(/1[\s .,]?000/);
+      expect(el.querySelector('.cl-wiz__total')?.textContent).toMatch(/1[\s\u00A0.,]?000/);
       expect(el.textContent).toContain('pages.order.price_fixed');
     });
   });
@@ -1246,6 +1246,47 @@ describe('OrderWizardComponent (a11y)', () => {
       fixture.detectChanges();
 
       expect(discountRows()).toEqual([]);
+    });
+  });
+
+  describe(`the summary rail's credit lines`, () => {
+    function creditText(): string {
+      return (el.querySelector('.cl-wiz__credit')?.textContent ?? '').replace(/\s+/g, ' ').trim();
+    }
+
+    it('shows the split when the card is paying and credit applies', async () => {
+      await setup();
+      facade.creditBalance.set(500);
+      facade.creditApplied.set(500);
+      facade.amountDueOnCard.set(1500);
+      fixture.detectChanges();
+
+      expect(creditText()).toContain('summary.credit_applied');
+      expect(creditText()).toContain('summary.due_on_card');
+      expect(creditText()).not.toContain('summary.credit_card_only');
+    });
+
+    /**
+     * Cash takes no credit, so the facade answers zero for it — and a customer with a balance who
+     * switches to cash is told why the lines went away rather than left to wonder.
+     */
+    it('says credit is for card payments only when cash is chosen and there is a balance', async () => {
+      await setup();
+      facade.creditBalance.set(500);
+      facade.creditApplied.set(0);
+      facade.updateFormData({ paymentType: PaymentType.Cash });
+      fixture.detectChanges();
+
+      expect(creditText()).toContain('summary.credit_card_only');
+      expect(creditText()).not.toContain('summary.due_on_card');
+    });
+
+    it('says nothing about credit to a customer without a balance', async () => {
+      await setup();
+      facade.updateFormData({ paymentType: PaymentType.Cash });
+      fixture.detectChanges();
+
+      expect(el.querySelector('.cl-wiz__credit')).toBeNull();
     });
   });
 

@@ -6,7 +6,9 @@ import kotlinx.datetime.toJavaLocalDateTime
 import kotlinx.datetime.toLocalDateTime
 import java.text.NumberFormat
 import java.time.format.DateTimeFormatter
+import java.util.Currency
 import java.util.Locale
+import kotlin.math.abs
 import kotlin.time.Duration.Companion.minutes
 
 /**
@@ -95,17 +97,26 @@ fun formatOrderDateRange(
  * and decimal marks. Known currencies get their native symbol (Kč, €, $);
  * unknown codes fall through as "123 USD"; a blank code renders the bare
  * number rather than a label guessed for it.
+ *
+ * A whole amount prints without a fraction ("1,200 Kč") and any other to the
+ * currency's minor unit ("319.90 Kč"), the web's `formatMoney` rule: a credit
+ * share or a discount can leave haléře, and rounding them away shows a figure
+ * the card is not charged (Stripe's sheet shows the decimals). A blank or
+ * unknown code takes two digits.
  */
 fun formatOrderPrice(
     amount: Double,
     currencyCode: String?,
     locale: Locale = Locale.getDefault(),
 ): String {
+    val rounded = Math.round(amount).toDouble()
+    val isWhole = abs(amount - rounded) < WHOLE_TOLERANCE
+    val digits = if (isWhole) 0 else minorUnits(currencyCode)
     val nf = NumberFormat.getNumberInstance(locale).apply {
-        maximumFractionDigits = 0
-        minimumFractionDigits = 0
+        maximumFractionDigits = digits
+        minimumFractionDigits = digits
     }
-    val formatted = nf.format(amount)
+    val formatted = nf.format(if (isWhole) rounded else amount)
     val code = currencyCode?.trim()?.takeIf { it.isNotEmpty() } ?: return formatted
     return when (code.uppercase()) {
         "CZK" -> "$formatted Kč"
@@ -114,4 +125,14 @@ fun formatOrderPrice(
         "GBP" -> "£$formatted"
         else -> "$formatted $code"
     }
+}
+
+/** Under half a minor unit from a whole number is whole: 319.999 is 320, as on the web. */
+private const val WHOLE_TOLERANCE = 0.005
+
+private fun minorUnits(currencyCode: String?): Int {
+    val code = currencyCode?.trim()?.uppercase()?.takeIf { it.isNotEmpty() } ?: return 2
+    val digits = runCatching { Currency.getInstance(code).defaultFractionDigits }.getOrNull()
+    // -1 marks a pseudo-currency with no minor unit (XAU); an unknown code throws.
+    return digits?.takeIf { it >= 0 } ?: 2
 }

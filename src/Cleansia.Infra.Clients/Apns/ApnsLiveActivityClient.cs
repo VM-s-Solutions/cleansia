@@ -184,6 +184,25 @@ public sealed class ApnsLiveActivityClient(
             aps["attributes"] = push.Attributes;
         }
 
+        // Title and body are localized-string dictionaries, the shape Apple documents for a Live Activity
+        // alert, with no sound. → /decisions/adr-0029#amendment-a5
+        if (push.Alert is { } alert)
+        {
+            aps["alert"] = new Dictionary<string, object>
+            {
+                ["title"] = new Dictionary<string, object>
+                {
+                    ["loc-key"] = alert.TitleLocKey,
+                    ["loc-args"] = Array.Empty<string>(),
+                },
+                ["body"] = new Dictionary<string, object>
+                {
+                    ["loc-key"] = alert.BodyLocKey,
+                    ["loc-args"] = alert.BodyLocArgs,
+                },
+            };
+        }
+
         return new Dictionary<string, object?> { ["aps"] = aps };
     }
 }

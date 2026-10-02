@@ -8,6 +8,7 @@ final class RegisterViewModelTests: XCTestCase {
     private final class FakeRegisterClient: RegistrationAuthClient {
         var result: ApiResult<Bool> = .success(true)
         private(set) var callCount = 0
+        // swiftlint:disable:next large_tuple
         private(set) var lastArgs: (
             email: String,
             password: String,
@@ -249,7 +250,8 @@ final class RegisterViewModelTests: XCTestCase {
         // A German handset: nothing supported in the device list, so the intro
         // would otherwise register "en".
         let store = UserDefaultsAppSettingsStore(defaults: defaults, preferredLanguageTags: { ["de-DE"] })
-        let preferences = PreferencesModel(settings: store, languageSync: SilentLanguageSync())
+        // The test's own suite as the App Group, not the installed test host's real one.
+        let preferences = PreferencesModel(settings: store, languageSync: SilentLanguageSync(), appGroup: suiteName)
         XCTAssertEqual(preferences.languageTag, "en")
 
         preferences.selectLanguage(id: "uk")
@@ -275,7 +277,8 @@ final class RegisterViewModelTests: XCTestCase {
         defer { defaults.removePersistentDomain(forName: suiteName) }
 
         let store = UserDefaultsAppSettingsStore(defaults: defaults, preferredLanguageTags: { ["cs-CZ"] })
-        let preferences = PreferencesModel(settings: store, languageSync: SilentLanguageSync())
+        // The test's own suite as the App Group, not the installed test host's real one.
+        let preferences = PreferencesModel(settings: store, languageSync: SilentLanguageSync(), appGroup: suiteName)
         preferences.selectLanguage(id: "de-DE")
 
         let vm = RegisterViewModel(

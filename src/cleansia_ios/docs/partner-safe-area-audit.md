@@ -12,6 +12,15 @@ where content can escape its viewport; it does not establish rendered behavior o
 | OrderDetailView / shared SnapSheet | The edge-following mascot extended above the safe viewport at expanded/dragged positions | Clip its full-height overlay to the safe viewport while preserving its position relative to the sheet and controls |
 | ApproximateAreaBackdrop | A legend centered from physical screen top could overlap the status bar when the sheet was expanded | Publish the measured safe top from SnapSheet; fit the whole legend between that boundary and the sheet, falling back to the decorative background when it cannot fit |
 
+### 2026-10-02 — the profile hero paints its own status-bar strip
+
+Moving `.ignoresSafeArea(.container, edges: .top)` onto the ProfileHubContent hero background did
+nothing: the hero sits inside a scroll view, which turns the top safe area into a content inset, so its
+background had no safe area left to ignore and the hub showed a background-coloured strip behind the
+status bar. The hero now bleeds its background 600pt above its own frame — a block of the gradient's
+first stop above the unchanged gradient — the customer Profile hero's form (customer audit, 2026-10-01).
+Content still stays in the safe viewport. Checked on the iPhone 17 (iOS 26.3) simulator.
+
 No guessed status-bar height or hardcoded sheet anchor is used. The map backdrop remains full bleed.
 `ViewThatFits` is available on iOS 16 and selects a child by the proposed space; see [Apple's documentation](https://developer.apple.com/documentation/swiftui/viewthatfits).
 
@@ -95,7 +104,7 @@ Shared containers: SnapSheet geometry/content are safe with the ornament now cli
 | CleansiaPartner/Sources/Features/Profile/OnboardingChainHeader.swift | OnboardingChainHeader, StepPill, StepDot | Inherits safe host; no direct top-content escape |
 | CleansiaPartner/Sources/Features/Profile/Personal/PersonalSectionView.swift | PersonalSectionView | Inherits safe host; no direct top-content escape |
 | CleansiaPartner/Sources/Features/Profile/ProfileAvatarField.swift | ProfileAvatarField, PendingAvatarBar | Background/media/UIKit-only escape; controls inherit safe host |
-| CleansiaPartner/Sources/Features/Profile/ProfileHubContent.swift | ProfileHubContent, ProfileHero, ContractStatusChip, ProfileSectionRow, DeleteAccountRow, LogoutRow | Repaired: profile content stays inside the safe viewport |
+| CleansiaPartner/Sources/Features/Profile/ProfileHubContent.swift | ProfileHubContent, ProfileHero, ContractStatusChip, ProfileSectionRow, DeleteAccountRow, LogoutRow | Repaired: profile content stays inside the safe viewport; the hero background bleeds above its frame |
 | CleansiaPartner/Sources/Features/Profile/ProfileView.swift | ProfileView, ErrorContent | Background/media/UIKit-only escape; controls inherit safe host |
 | CleansiaPartner/Sources/Features/Profile/SaveSectionButton.swift | SaveSectionButton | Inherits safe host; no direct top-content escape |
 | CleansiaPartner/Sources/Features/Profile/SectionScaffold.swift | SectionScaffold, SectionErrorRetry | Background/media/UIKit-only escape; controls inherit safe host |

@@ -98,6 +98,11 @@ builds and archives are unaffected, so it looks like a test regression when it i
   passes `ASC_TEAM_ID` from `fastlane/.env` as an xcarg, which overrides the file; either is
   accepted by the pre-build check.
 - Register the bundle ids `cz.cleansia.partner` and `cz.cleansia.customer` in the developer portal.
+- The extension App IDs (`cz.cleansia.customer.widgets`, `cz.cleansia.customer.notificationservice`,
+  `cz.cleansia.partner.notificationservice`) and the App Groups (`group.cz.cleansia.customer`,
+  `group.cz.cleansia.partner`) are registered by the next signed archive: the fastlane lanes pass
+  `-allowProvisioningUpdates`, so automatic signing creates them. If that archive fails on signing,
+  create the App IDs and groups in the portal and tick App Groups on each of the five App IDs.
 - Create/download provisioning profiles + certificates.
 
 These are owner-only; agents do not manage provisioning.

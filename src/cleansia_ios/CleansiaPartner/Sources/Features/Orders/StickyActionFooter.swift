@@ -11,9 +11,8 @@ struct StickyActionFooter: View {
     let action: OrderPrimaryAction
     let inFlightAction: OrderAction?
     let onConfirm: (OrderPrimaryAction) -> Void
-    /// Raised instead of confirming inline: the cash confirmation is a `CleansiaDialog`, which is a
-    /// full-screen scrim + card, so it belongs at the screen root — not nested inside this footer's
-    /// bottom-pinned, surface-backed strip where it would be laid out inside a ~90pt-tall container.
+    /// Raised instead of confirming inline: the screen root (`OrderDetailContent`) owns the cash-collected
+    /// confirmation, a native `.alert`, so the footer only asks for it.
     var onCashConfirmRequested: () -> Void = {}
     /// The reservation held for this cleaner on this order. Present only where a hold exists, which is
     /// why the screen degrades to an ordinary job in the short-lead band the push also reaches.

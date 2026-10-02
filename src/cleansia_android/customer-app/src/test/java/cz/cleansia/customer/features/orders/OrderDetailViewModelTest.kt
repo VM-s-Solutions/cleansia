@@ -10,6 +10,7 @@ import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.R
+import cz.cleansia.customer.core.loyalty.LoyaltyRepository
 import cz.cleansia.customer.core.memberships.GetMyMembershipResponse
 import cz.cleansia.customer.core.memberships.MembershipRepository
 import cz.cleansia.customer.core.memberships.MembershipStatus
@@ -86,6 +87,7 @@ class OrderDetailViewModelTest {
     private lateinit var appContext: Context
     private lateinit var orderEventBus: OrderEventBus
     private lateinit var paymentRepository: PaymentRepository
+    private lateinit var loyaltyRepository: LoyaltyRepository
 
     /** Mirrors the VM's private companion constant — 5 minutes. */
     private val pollIntervalMs = 5L * 60L * 1000L
@@ -102,6 +104,7 @@ class OrderDetailViewModelTest {
         appContext = mockk(relaxed = true)
         orderEventBus = OrderEventBus()
         paymentRepository = mockk(relaxed = true)
+        loyaltyRepository = mockk(relaxed = true)
 
         every { membershipRepository.current } returns membership
         every { membershipRepository.staleness } returns membershipStaleness
@@ -124,6 +127,7 @@ class OrderDetailViewModelTest {
         savedStateHandle = SavedStateHandle(mapOf("orderId" to id)),
         membershipRepository = membershipRepository,
         orderEventBus = orderEventBus,
+        loyaltyRepository = loyaltyRepository,
         paymentRepository = paymentRepository,
     )
 
@@ -521,6 +525,52 @@ class OrderDetailViewModelTest {
 
         assertTrue(sheets.isEmpty())
         assertEquals(ActionState.Idle, vm.confirmRecurringState.value)
+    }
+
+    // ── the credit a card confirm spends ──
+
+    /**
+     * ConfirmRecurringOrder takes the customer's credit in its card arm, before any sheet opens, and
+     * Rewards and Profile show the balance from the shared cache. So the card confirm re-reads it at
+     * once, as a cancel does, whether or not the sheet is then paid.
+     */
+    @Test
+    fun `a card confirm re-reads the credit balance at once`() = runTest {
+        val vm = cardConfirmReady()
+        advanceUntilIdle()
+
+        vm.confirmRecurring()
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { loyaltyRepository.refresh() }
+    }
+
+    @Test
+    fun `a cash confirm spends no credit and leaves the balance alone`() = runTest {
+        coEvery { repository.getById(orderId) } returns
+            ApiResult.Success(recurringCashOccurrence(needsConfirmation = true))
+        coEvery { repository.confirmRecurring(orderId) } returns
+            ApiResult.Success(ConfirmRecurringOrderResponse(orderId = orderId))
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.confirmRecurring()
+        advanceUntilIdle()
+
+        coVerify(exactly = 0) { loyaltyRepository.refresh() }
+    }
+
+    @Test
+    fun `a refused card confirm leaves the credit balance alone`() = runTest {
+        val vm = cardConfirmReady()
+        coEvery { repository.confirmRecurring(orderId) } returns
+            ApiResult.Error(ApiError.BadRequest("refused"))
+        advanceUntilIdle()
+
+        vm.confirmRecurring()
+        advanceUntilIdle()
+
+        coVerify(exactly = 0) { loyaltyRepository.refresh() }
     }
 
     @Test

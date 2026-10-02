@@ -37,10 +37,10 @@ final class CleaningChecklistViewModelTests: XCTestCase {
     }
 
     func testKeyedByOrderIdNoCollision() {
-        let a = CleaningChecklistViewModel(orderId: "order-a", store: store)
-        a.setChecked("item", true)
-        let b = CleaningChecklistViewModel(orderId: "order-b", store: store)
-        XCTAssertTrue(b.checkedIds.isEmpty)
-        XCTAssertEqual(a.checkedIds, ["item"])
+        let orderA = CleaningChecklistViewModel(orderId: "order-a", store: store)
+        orderA.setChecked("item", true)
+        let orderB = CleaningChecklistViewModel(orderId: "order-b", store: store)
+        XCTAssertTrue(orderB.checkedIds.isEmpty)
+        XCTAssertEqual(orderA.checkedIds, ["item"])
     }
 }

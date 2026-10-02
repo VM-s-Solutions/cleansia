@@ -123,6 +123,7 @@ final class ProfileAvatarRenderingTests: XCTestCase {
         )
     }
 
+    // swiftlint:disable:next large_tuple
     private func centrePixel(of image: UIImage) -> (CGFloat, CGFloat, CGFloat)? {
         guard let cgImage = image.cgImage else { return nil }
         var pixel = [UInt8](repeating: 0, count: 4)

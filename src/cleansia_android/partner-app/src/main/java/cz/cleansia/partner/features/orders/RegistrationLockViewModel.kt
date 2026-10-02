@@ -98,11 +98,17 @@ data class StepRow(
      */
     val detailKeys: List<String>,
     /**
-     * Destination the "Fix" CTA should route to. `null` when the row has no
-     * actionable fix (e.g. the Approval row when admin is reviewing or has
-     * rejected — cleaner can't unblock that themselves).
+     * Where tapping the row goes. Profile, Documents and Contract documents keep theirs after they are
+     * Done, because the lock replaces the whole app until approval and is the cleaner's only way back
+     * to correct their data or add a document. `null` only on the Approval row, which the cleaner
+     * cannot act on (a rejected one opens a support e-mail instead). -> /partner-app/onboarding
      */
     val fixDestination: NavRoute?,
+    /**
+     * The administrator's own words on a rejected application, shown verbatim. Free text in the
+     * admin's language, so it never goes through [detailKeys]' resource lookup.
+     */
+    val note: String? = null,
 )
 
 /**
@@ -150,6 +156,11 @@ class RegistrationLockViewModel @Inject constructor(
         // never the user-pull path. Otherwise the first paint would flash
         // a spurious suds spinner before we've even shown anything.
         ensureFreshOrCachedAsync()
+        // An approval or rejection pushed while the lock is on screen: no resume follows, so re-read
+        // now (silently, past the stale window) instead of leaving "under review" up.
+        viewModelScope.launch {
+            profileRepository.registrationDecisions.collect { fetchRegistrationStatus(userInitiated = false) }
+        }
     }
 
     /**
@@ -288,6 +299,7 @@ class RegistrationLockViewModel @Inject constructor(
             val approvalStatus: StepStatus
             val approvalDetails: List<String>
             val approvalFixDestination: NavRoute?
+            var approvalNote: String? = null
             when {
                 contract == ContractStatus._4 || contract == ContractStatus._2 -> {
                     approvalStatus = StepStatus.Done
@@ -300,6 +312,7 @@ class RegistrationLockViewModel @Inject constructor(
                     // Rejected cleaners need to talk to support; render the
                     // mailto link directly in the row, not a NavRoute.
                     approvalFixDestination = null
+                    approvalNote = status?.rejectionReason?.trim()?.takeIf { it.isNotEmpty() }
                 }
                 profileDone && docsDone && legalDone &&
                     contract == ContractStatus._1 -> {
@@ -324,22 +337,23 @@ class RegistrationLockViewModel @Inject constructor(
                     // cleaner doesn't have to bounce through the lock
                     // between sections. `onboarding=true` tells the saved
                     // section to navigate forward instead of popping back.
-                    fixDestination = if (profileDone) null
-                    else firstMissingProfileSection(profileMissing, forOnboarding = true),
+                    // A complete profile opens on Personal, and saving any
+                    // section returns to the lock.
+                    fixDestination = firstMissingProfileSection(profileMissing, forOnboarding = true),
                 ),
                 StepRow(
                     category = StepCategory.Documents,
                     status = if (docsDone) StepStatus.Done else StepStatus.Missing,
                     detailKeys = if (docsDone) emptyList()
                     else listOf("registration_lock.documents_required"),
-                    fixDestination = if (docsDone) null else NavRoute.ProfileDocuments,
+                    fixDestination = NavRoute.ProfileDocuments,
                 ),
                 legalDocuments?.takeIf { it.isNotEmpty() }?.let {
                     StepRow(
                         category = StepCategory.LegalDocuments,
                         status = if (legalDone) StepStatus.Done else StepStatus.Missing,
                         detailKeys = emptyList(),
-                        fixDestination = if (legalDone) null else NavRoute.LegalDocuments,
+                        fixDestination = NavRoute.LegalDocuments,
                     )
                 },
                 StepRow(
@@ -347,6 +361,7 @@ class RegistrationLockViewModel @Inject constructor(
                     status = approvalStatus,
                     detailKeys = approvalDetails,
                     fixDestination = approvalFixDestination,
+                    note = approvalNote,
                 ),
             )
         }

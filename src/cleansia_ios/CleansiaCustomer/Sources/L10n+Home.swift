@@ -10,16 +10,58 @@ extension L10n {
             localized("home_address_placeholder")
         }
 
-        static var heroGreeting: String {
-            localized("home_hero_greeting")
+        static var upsellNotificationsTop: String {
+            localized("home_upsell_notifications_top")
         }
 
-        static var heroPrompt: String {
-            localized("home_hero_prompt")
+        static var upsellNotificationsTitle: String {
+            localized("home_upsell_notifications_title")
         }
 
-        static var heroCta: String {
-            localized("home_hero_cta")
+        static var upsellNotificationsCta: String {
+            localized("home_upsell_notifications_cta")
+        }
+
+        /// The formatted balance, and the server's share as a whole percent.
+        static func upsellCreditTitle(_ balance: String, share: Double) -> String {
+            format("home_upsell_credit_title", balance, L10n.Credit.sharePercent(share))
+        }
+
+        /// The express window, from the booking bands the server pins.
+        static func upsellExpressTop(_ fromHours: Int, _ toHours: Int) -> String {
+            format("home_upsell_express_top", fromHours, toHours)
+        }
+
+        static func upsellExpressTitle(_ remaining: Int) -> String {
+            plural("home_upsell_express_title", remaining)
+        }
+
+        static var upsellBookCta: String {
+            localized("home_upsell_book_cta")
+        }
+
+        static var quickSizeTitle: String {
+            localized("home_quick_size_title")
+        }
+
+        static var quickSizeCta: String {
+            localized("home_quick_size_cta")
+        }
+
+        static var quickSizeRoomsLess: String {
+            localized("home_quick_size_rooms_less")
+        }
+
+        static var quickSizeRoomsMore: String {
+            localized("home_quick_size_rooms_more")
+        }
+
+        static var quickSizeBathsLess: String {
+            localized("home_quick_size_baths_less")
+        }
+
+        static var quickSizeBathsMore: String {
+            localized("home_quick_size_baths_more")
         }
 
         static var upsellPlusTop: String {
@@ -64,6 +106,11 @@ extension L10n {
 
         static var upsellReferralCta: String {
             localized("home_upsell_referral_cta")
+        }
+
+        /// "Offer 2 of 3" — the card's VoiceOver value; swipe up/down moves between offers.
+        static func upsellPageA11y(_ position: Int, _ count: Int) -> String {
+            format("home_upsell_page_a11y", position, count)
         }
 
         static var trustInsured: String {

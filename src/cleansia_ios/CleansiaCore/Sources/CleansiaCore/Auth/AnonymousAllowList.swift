@@ -38,17 +38,16 @@ public struct AnonymousAllowList: Sendable {
         "/api/market/getoverview"
     ]
 
-    private static let customerGuestBooking = [
+    /// Reads the customer app makes before (or regardless of) a session: the catalogue, the quote, the
+    /// plans and the sign-up form's referral check. The app has no guest-booking surface — guest booking
+    /// and its lookup live on the web only.
+    private static let customerPreSession = [
         "/api/service/getoverview",
         "/api/package/getoverview",
         "/api/extra/getoverview",
         "/api/currency/getoverview",
         "/api/membership/getplans",
         "/api/order/quote",
-        "/api/order/lookup",
-        "/api/order/lookupbatch",
-        "/api/order/guestcancellationpreview",
-        "/api/order/cancelguest",
         "/api/referral/validate"
     ]
 
@@ -58,7 +57,7 @@ public struct AnonymousAllowList: Sendable {
 
     public static let partner = AnonymousAllowList(paths: sharedAuth + marketDirectory)
     public static let customer = AnonymousAllowList(
-        paths: sharedAuth + marketDirectory + customerGuestBooking,
+        paths: sharedAuth + marketDirectory + customerPreSession,
         dualUsePaths: customerDualUse
     )
 }

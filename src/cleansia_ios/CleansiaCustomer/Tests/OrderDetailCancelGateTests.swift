@@ -29,6 +29,7 @@ final class OrderDetailCancelGateTests: XCTestCase {
             snackbar: snackbar,
             eventBus: OrderEventBus(),
             liveActivity: NoopLiveActivitySync(),
+            onCreditMoved: {},
             pollInterval: 60,
             now: now
         )
@@ -80,16 +81,7 @@ final class OrderDetailCancelGateTests: XCTestCase {
         XCTAssertFalse(vm.canCancel)
     }
 
-    /// The one function both the signed-in and the guest surface read, so the two cannot drift.
-    func testTheGuestSurfaceReadsTheSameGate() {
-        for status in 0 ... 6 {
-            let guest = GuestOrderFixtures.order(statusValue: status)
-            XCTAssertEqual(
-                guest.isCancellable,
-                OrderStatusGroup.isCancellable(OrderStatus(rawValue: status)),
-                "status \(status)"
-            )
-        }
+    func testOnlyTheFourPreStartStatusesAreCancellable() {
         XCTAssertEqual(
             (0 ... 6).filter { OrderStatusGroup.isCancellable(OrderStatus(rawValue: $0)) },
             [0, 1, 2, 3]
@@ -346,10 +338,8 @@ final class OrderDetailCancelGateTests: XCTestCase {
         XCTAssertFalse(sheet.contains("2000"), "the sheet carries a notes limit of its own")
         XCTAssertFalse(sheet.contains("reasonLimit"), "the sheet takes a per-caller limit again")
 
-        for view in ["OrderDetailView.swift", "GuestOrderView.swift"] {
-            let source = try readSource("CleansiaCustomer/Sources/Features/Orders/\(view)")
-            XCTAssertFalse(source.contains("reasonLimit"), "\(view) hands the sheet a limit of its own")
-        }
+        let detail = try readSource("CleansiaCustomer/Sources/Features/Orders/OrderDetailView.swift")
+        XCTAssertFalse(detail.contains("reasonLimit"), "OrderDetailView hands the sheet a limit of its own")
     }
 
     private func readSource(_ relativePath: String) throws -> String {

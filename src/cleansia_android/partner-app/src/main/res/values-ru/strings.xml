@@ -484,7 +484,8 @@
     <string name="bank_account_number_helper">Часть перед косой чертой, например 5885638003.</string>
     <string name="bank_code">Код банка</string>
     <string name="bank_code_helper">Четыре цифры после косой черты, например 5500.</string>
-    <string name="iban_helper">Для чешского или словацкого счёта можно оставить пустым — мы вычислим его из чисел выше.</string>
+    <string name="iban_helper">Полный IBAN, начинается с кода страны вашего банка. Его можно найти в выписке по счёту или в банковском приложении.</string>
+    <string name="iban_wrong_length">У этого IBAN неправильная длина для страны вашего банка — там она составляет %1$d. Проверьте, не пропущен ли символ и нет ли лишнего.</string>
     <string name="swift_code_helper">Нужен только тогда, когда ваш банк в другой стране, чем та, где вы работаете.</string>
     <string name="bank_account_holder">Владелец счёта</string>
     <string name="bank_account_holder_helper">Необязательно — имя, которое банк указал для счёта, если оно отличается от вашего.</string>
@@ -1152,7 +1153,7 @@
     <string name="error_order_card_payment_unverified">Не удалось проверить оплату картой за этот заказ. Пока не берите наличные — попробуйте снова через минуту.</string>
     <string name="error_order_cash_not_allowed_on_card_order">Этот заказ оплачивается картой, поэтому наличные по нему записать нельзя. Не берите наличные — обратитесь в офис.</string>
     <string name="error_order_payment_not_outstanding">По этому заказу уже нечего собирать — он оплачен или деньги возвращены. Не берите наличные.</string>
-    <string name="error_credit_cash_not_collectable_on_credit_order">Часть этого заказа уже оплачена бонусами клиента. Обратитесь в офис — не берите сумму, указанную в приложении.</string>
+    <string name="error_credit_cash_not_collectable_on_credit_order">Часть этого заказа уже оплачена кредитом клиента. Обратитесь в офис — не берите сумму, указанную в приложении.</string>
 
     <string name="error_order_note_content_required">Текст заметки обязателен.</string>
     <string name="error_order_issue_description_required">Описание проблемы обязательно.</string>
@@ -1266,6 +1267,10 @@
     <string name="notification_order_seat_open_body">Уборщик отказался от заказа #%1$s. Нажмите, чтобы взять его.</string>
     <string name="notification_employee_weekly_limit_set_title">Недельный лимит заказов обновлён</string>
     <string name="notification_employee_weekly_limit_set_body">Теперь вы можете брать не более %1$d заказов в неделю.</string>
+    <string name="notification_employee_registration_approved_title">Заявка одобрена</string>
+    <string name="notification_employee_registration_approved_body">Вы одобрены. Откройте приложение, чтобы начать брать заказы.</string>
+    <string name="notification_employee_registration_rejected_title">Заявка отклонена</string>
+    <string name="notification_employee_registration_rejected_body">Ваша заявка отклонена. Откройте приложение, чтобы узнать причину, или обратитесь в поддержку.</string>
     <string name="notification_payroll_invoice_paid_title">Вам выплачено</string>
     <string name="notification_payroll_invoice_paid_body">Ваш счёт за последний расчётный период оплачен. Нажмите, чтобы посмотреть.</string>
     <string name="notification_preferred_offer_title">Клиент попросил именно вас</string>

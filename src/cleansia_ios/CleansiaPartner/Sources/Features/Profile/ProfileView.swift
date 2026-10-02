@@ -77,7 +77,15 @@ struct ProfileView: View {
         // The section adds no load of its own, so entering it re-reads nothing.
         .task { await avatarVM.load() }
         .onReceive(vm.signedOut) { onSignedOut() }
-        .overlay { logoutOverlay }
+        .alert(L10n.Profile.logoutDialogTitle, isPresented: $showLogoutDialog) {
+            // A second sign-out while one is in flight is refused by the view model's own guard.
+            Button(L10n.Profile.logoutDialogConfirm, role: .destructive) {
+                Task { await vm.signOut() }
+            }
+            Button(L10n.Profile.logoutDialogCancel, role: .cancel) {}
+        } message: {
+            Text(L10n.Profile.logoutDialogMessage)
+        }
     }
 
     @ViewBuilder
@@ -196,26 +204,6 @@ struct ProfileView: View {
         // Maintenance edits (onboarding == false) simply pop. The onboarding
         // chain only runs from the registration lock's own stack, never the hub.
         popLast()
-    }
-
-    @ViewBuilder
-    private var logoutOverlay: some View {
-        if showLogoutDialog {
-            CleansiaDialog(
-                title: L10n.Profile.logoutDialogTitle,
-                confirmLabel: L10n.Profile.logoutDialogConfirm,
-                onConfirm: {
-                    showLogoutDialog = false
-                    Task { await vm.signOut() }
-                },
-                onDismiss: { showLogoutDialog = false },
-                message: L10n.Profile.logoutDialogMessage,
-                dismissLabel: L10n.Profile.logoutDialogCancel,
-                icon: "rectangle.portrait.and.arrow.right",
-                destructive: true,
-                confirmEnabled: !vm.action.isSubmitting
-            )
-        }
     }
 }
 

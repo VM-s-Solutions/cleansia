@@ -52,7 +52,7 @@ src/cleansia_android/
 │       ├── ui/state/            # ActionState
 │       ├── snackbar/            # global snackbar bus
 │       ├── notifications/       # FCM token lifecycle + device registration
-│       ├── location/            # FusedLocation wrapper, Mapbox geocoding, map styles
+│       ├── location/            # FusedLocation wrapper, Mapbox geocoding, the map style + pin
 │       ├── servicearea/ settings/ format/ validation/ media/ freshness/ sentry/ config/
 ├── partner-app/                 # cz.cleansia.partner
 └── customer-app/                # cz.cleansia.customer
@@ -60,7 +60,8 @@ src/cleansia_android/
 
 Both apps declare `implementation(project(":core"))`. `:core` exposes the Mapbox and
 FusedLocation stacks as `api` dependencies because the app-side pickers call `MapboxMap` and
-`UserLocation` directly.
+`UserLocation` directly. Every map draws the one style and pin in `location/CleansiaMap.kt`, the
+twin of iOS's `CleansiaCore/Location` → [Every map is quiet](/mobile-app/patterns#maps).
 
 ::: info Source files
 - `src/cleansia_android/settings.gradle.kts` — the module list
@@ -246,6 +247,15 @@ English, Czech, Slovak, Ukrainian and Russian — `values/` (en, the base) plus 
 `res/xml/locales_config.xml`. The customer app additionally pins `resourceConfigurations` to the
 same set so no stray locale ships.
 
+The language picked in the app is applied through `AppCompatDelegate.setApplicationLocales`. On API 33+
+that is the framework's per-app locale and reaches every context. On 26–32 AppCompat's backport reaches
+only activity contexts, so text drawn anywhere else — the FCM service's banners, the two notification
+feeds — goes through `AppLocale.localizedContext(base, tag)` in `:core`, with the tag read from
+DataStore: a process FCM cold-starts never runs `MainActivity`, which is the only thing that fills
+AppCompat's copy. Notification channel names follow the app too: `MainActivity` names them at start and
+again on a language change, and the `Application` only creates the ones that do not exist yet.
+→ [Which language a notification is in](/architecture/push-notifications#language)
+
 ### Local setup on macOS
 
 ::: danger `java` on your PATH lies about openjdk@21
@@ -380,16 +390,65 @@ src/cleansia_ios/
 ├── fastlane/                    # TestFlight lanes (see fastlane/README.md)
 ├── CleansiaPartnerApi/          # GENERATED swift5 client — gitignored, machine-owned
 ├── CleansiaCustomerApi/         # GENERATED swift5 client — gitignored, machine-owned
-├── CleansiaPartner/             # project.yml (XcodeGen spec), Sources/, Tests/, Resources/
+├── CleansiaPartner/             # project.yml (XcodeGen spec), Sources/, Tests/, Resources/, NotificationService/
 ├── CleansiaCustomer/            # same shape, plus LiveActivity/ (CleansiaCustomerLiveActivity)
 ├── .swiftlint.yml               # strict, blocking — force_* = error
 └── .swiftformat                 # strict — runs --lint in CI
 ```
 
-The customer app additionally ships a **WidgetKit Live Activity extension**
-(`CleansiaCustomer/LiveActivity/`, target `CleansiaCustomerLiveActivity`). Its card views live in
+### App extensions and the App Group {#app-extensions}
+
+Each app embeds a **Notification Service Extension** (`NotificationService/`, iOS 16.0), and the
+customer app also embeds a **WidgetKit Live Activity extension** (`CleansiaCustomer/LiveActivity/`,
+target `CleansiaCustomerLiveActivity`, iOS 16.1). The Live Activity's card views live in
 `CleansiaCore/LiveActivity/` and are linked by both the extension and the app target, so the lock
 screen and the in-app order screen cannot drift apart.
+
+**The card's brand mark is the Cleansia wordmark, alone.** The lock screen and the expanded Dynamic
+Island draw `LiveActivityBrandLockup`: the vector wordmark from Core's asset catalogue
+(`cleansia_wordmark`, the path of Android's `ic_launcher_foreground.xml`), 12 pt tall, template-tinted in
+the primary colour, with no container, and the system text "Cleansia" if the asset ever fails to
+resolve. It replaced a 22 pt disc with the waving mascot inside, a scale-less 600 × 600 px image that
+WidgetKit counted as 600 pt and swapped for a placeholder, leaving the filled circle with a dark hole
+that reinstalling never fixed. The compact and minimal presentations draw no image asset, only SF
+Symbols, which are sized by their font and so always fit. `LiveActivityCard.symbol` says where the clean
+is: `car.fill` on the way, `sparkles` while cleaning (and for a status this build does not know),
+`checkmark.seal.fill` done, `xmark.circle.fill` cancelled. The compact trailing slot falls back to it
+when it has neither a countdown nor a clock to show. The minimal slot, which iOS shows when another
+app's activity shares the Dynamic Island, draws it at 16 pt semibold in the primary colour, with the
+step position, or *Cancelled*, as its spoken label; until 2026-10-02 it was an 8 pt dot that said
+nothing.
+
+| Target | Bundle id | App Group |
+|---|---|---|
+| `CleansiaCustomer` | `cz.cleansia.customer` | `group.cz.cleansia.customer` |
+| `CleansiaCustomerLiveActivity` | `cz.cleansia.customer.widgets` | `group.cz.cleansia.customer` |
+| `CleansiaCustomerNotificationService` | `cz.cleansia.customer.notificationservice` | `group.cz.cleansia.customer` |
+| `CleansiaPartner` | `cz.cleansia.partner` | `group.cz.cleansia.partner` |
+| `CleansiaPartnerNotificationService` | `cz.cleansia.partner.notificationservice` | `group.cz.cleansia.partner` |
+
+**The App Group carries one thing: the language picked inside the app.** An extension runs in its own
+process with its own defaults, so the app writes the language chosen in its picker there at launch and
+on every change, and removes it on "System", when the extensions follow the phone
+(`CleansiaCore/Localization/AppGroupLanguage.swift`). The Notification Service Extension uses it
+to render a push in that language from the app's own `Localizable.xcstrings`, which is compiled into
+the extension, and the widget uses it to draw the card in that language.
+→ [Which language a notification is in](/architecture/push-notifications#language)
+
+- **The extensions do not link CleansiaCore.** Core's resource bundle would be copied into each of
+  them, so they compile `AppGroupLanguage.swift` directly, and only it. The widget is the exception: it
+  links Core for the card.
+- **Entitlements.** The customer app's `CleansiaCustomer.entitlements` is hand-maintained; every other
+  target's entitlements file is generated by XcodeGen from `project.yml`.
+- **Provisioning.** The two extension App IDs and both App Groups are registered by the next signed
+  archive (`bundle exec fastlane customer|partner` passes `-allowProvisioningUpdates`); nothing is
+  registered by hand, and a simulator build needs none.
+- **Privacy manifests.** Writing an App Group is a `UserDefaults` access, so each app, the widget and
+  each extension declares reason `1C8F.1`.
+- **The simulator cannot show the result.** `xcrun simctl push` never launches a Notification Service
+  Extension, so the simulator always shows the system-language banner.
+
+`src/cleansia_ios/README.md` has the same table with each target's entitlements file.
 
 ### The Xcode projects and `Info.plist` are generated — do not edit them
 
@@ -541,6 +600,17 @@ Match the pinned versions locally (`swiftformat --version`, `swiftlint version`)
 at install time so a PATH-shadowed Homebrew copy fails loudly instead of producing mystery churn.
 The generated API packages and `**/Generated` are excluded from both configs.
 :::
+
+**SwiftLint lints the tests and the extensions too.** `.swiftlint.yml`'s `included:` lists every Swift
+tree that ships or tests: the three `Sources` trees, the three `Tests` trees, `CleansiaCustomer/LiveActivity`
+and both `NotificationService` folders. Until 2026-10-02 the two app `Tests` trees and the extensions
+were never linted, and the test trees held 87 violations. Test code meets the same rules: no force
+unwrap (fall back with `?? .standard` or fail the test), and a suite stays under the 600-line file and
+400-line type-body limits by moving its later `MARK` sections into `extension <Suite>` files, tests
+unchanged. A rule is never relaxed in the config; the accepted exception is a narrow inline disable,
+`swiftlint:disable:next` or a `swiftlint:disable` / `swiftlint:enable` pair round a documented
+declaration or section, such as `large_tuple` on a fake's recorded-call tuple or
+`calendar_day_needs_greenwich` round a wire fixture.
 
 ### Shipping to TestFlight
 

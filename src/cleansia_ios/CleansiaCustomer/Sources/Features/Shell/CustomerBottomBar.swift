@@ -29,6 +29,13 @@ enum BookFabMetrics {
     static var chromeEnvelope: CGFloat {
         bottomPadding + size
     }
+
+    /// What a tab root reserves below its scroll content on top of the system bar's own inset: the
+    /// FAB's overhang above the bar plus the 12pt gap the snackbar keeps, so the last item scrolls
+    /// clear of the disc's top edge instead of under it.
+    static var scrollClearance: CGFloat {
+        chromeEnvelope - systemTabBarHeight + Spacing.s
+    }
 }
 
 /// The floating Book action — the surviving piece of the retired pill composite

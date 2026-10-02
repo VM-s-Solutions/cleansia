@@ -1,14 +1,17 @@
 import Combine
 import Foundation
 
-final class TestScheduler<SchedulerTimeType: Strideable, SchedulerOptions>: Scheduler
-    where SchedulerTimeType.Stride: SchedulerTimeIntervalConvertible
-{
+final class TestScheduler<Time: Strideable, Options>: Scheduler where Time.Stride: SchedulerTimeIntervalConvertible {
+    typealias SchedulerTimeType = Time
+    typealias SchedulerOptions = Options
+
     private(set) var now: SchedulerTimeType
     var minimumTolerance: SchedulerTimeType.Stride = .zero
 
     private var lastSequence: UInt = 0
-    private var scheduled: [(sequence: UInt, date: SchedulerTimeType, action: () -> Void)] = []
+    // swiftlint:disable:next large_tuple
+    private typealias Entry = (sequence: UInt, date: SchedulerTimeType, action: () -> Void)
+    private var scheduled: [Entry] = []
 
     init(now: SchedulerTimeType) {
         self.now = now
@@ -66,17 +69,12 @@ final class TestScheduler<SchedulerTimeType: Strideable, SchedulerOptions>: Sche
         return lastSequence
     }
 
-    private func lessThan(
-        _ lhs: (sequence: UInt, date: SchedulerTimeType, action: () -> Void),
-        _ rhs: (sequence: UInt, date: SchedulerTimeType, action: () -> Void)
-    ) -> Bool {
+    private func lessThan(_ lhs: Entry, _ rhs: Entry) -> Bool {
         lhs.date == rhs.date ? lhs.sequence < rhs.sequence : lhs.date < rhs.date
     }
 }
 
-extension TestScheduler where SchedulerTimeType == DispatchQueue.SchedulerTimeType,
-    SchedulerOptions == DispatchQueue.SchedulerOptions
-{
+extension TestScheduler where Time == DispatchQueue.SchedulerTimeType, Options == DispatchQueue.SchedulerOptions {
     static var dispatch: TestScheduler<DispatchQueue.SchedulerTimeType, DispatchQueue.SchedulerOptions> {
         .init(now: DispatchQueue.SchedulerTimeType(DispatchTime(uptimeNanoseconds: 1)))
     }

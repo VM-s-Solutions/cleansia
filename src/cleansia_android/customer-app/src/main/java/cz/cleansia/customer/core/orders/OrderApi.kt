@@ -211,6 +211,9 @@ private fun GenOrderItem?.toAppDto(): OrderDetailDto {
         tierDiscountAmount = order.tierDiscountAmount,
         membershipDiscountAmount = order.membershipDiscountAmount,
         promoDiscountAmount = order.promoDiscountAmount,
+        // Money the screen states as "paid with credit / paid by card", so refused like the total.
+        creditAppliedAmount = order.creditAppliedAmount.required("creditAppliedAmount"),
+        amountDueOnCard = order.amountDueOnCard.required("amountDueOnCard"),
         estimatedTime = order.estimatedTime.required("estimatedTime"),
         actualCompletionTime = order.actualCompletionTime,
         completedAt = order.completedAt?.toString(),
@@ -379,7 +382,7 @@ internal fun GenCancelOrderResponse?.toAppDto(): CancelOrderResponse {
  * too, so ordinal 0 would quote a free cancellation on the strength of a field the server never sent.
  *
  * `oopsWindowMinutes` is dropped rather than refused when absent: it only adds a sentence, and refusing
- * it would take the whole quote away from a guest, who cannot cancel without one.
+ * it would take the whole quote away over it.
  */
 internal fun GenGetCancellationFeePreviewResponse?.toAppDto(): CancellationFeePreviewDto {
     val quote = required("GetCancellationFeePreviewResponse")

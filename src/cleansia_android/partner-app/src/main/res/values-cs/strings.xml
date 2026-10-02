@@ -430,7 +430,8 @@
     <string name="bank_account_number_helper">Část před lomítkem, například 5885638003.</string>
     <string name="bank_code">Kód banky</string>
     <string name="bank_code_helper">Čtyři číslice za lomítkem, například 5500.</string>
-    <string name="iban_helper">U českého nebo slovenského účtu ho můžete nechat prázdný — dopočítáme ho z čísel výše.</string>
+    <string name="iban_helper">Celý IBAN, začíná kódem země vaší banky. Najdete ho na výpisu z účtu nebo v internetovém bankovnictví.</string>
+    <string name="iban_wrong_length">Tento IBAN nemá pro zemi vaší banky správnou délku — ta je %1$d. Zkontrolujte, jestli nějaký znak nechybí nebo nepřebývá.</string>
     <string name="swift_code_helper">Potřebujeme ho jen tehdy, když je vaše banka v jiné zemi, než ve které pracujete.</string>
     <string name="bank_account_holder">Majitel účtu</string>
     <string name="bank_account_holder_helper">Nepovinné — jméno, které má banka u účtu, pokud se liší od vašeho.</string>
@@ -1282,6 +1283,10 @@
     <string name="notification_order_seat_open_body">Z objednávky #%1$s odstoupil uklízeč. Klepnutím ji převezmete.</string>
     <string name="notification_employee_weekly_limit_set_title">Týdenní limit zakázek změněn</string>
     <string name="notification_employee_weekly_limit_set_body">Nyní si můžete vzít nejvýše %1$d zakázek týdně.</string>
+    <string name="notification_employee_registration_approved_title">Žádost schválena</string>
+    <string name="notification_employee_registration_approved_body">Byli jste schváleni. Otevřete aplikaci a začněte přijímat zakázky.</string>
+    <string name="notification_employee_registration_rejected_title">Žádost zamítnuta</string>
+    <string name="notification_employee_registration_rejected_body">Vaše žádost byla zamítnuta. Otevřete aplikaci a zjistěte proč, nebo kontaktujte podporu.</string>
     <string name="notification_payroll_invoice_paid_title">Byli jste vyplaceni</string>
     <string name="notification_payroll_invoice_paid_body">Vaše faktura za poslední výplatní období byla proplacena. Klepnutím zobrazíte.</string>
     <string name="notification_preferred_offer_title">Zákazník si vás vyžádal</string>

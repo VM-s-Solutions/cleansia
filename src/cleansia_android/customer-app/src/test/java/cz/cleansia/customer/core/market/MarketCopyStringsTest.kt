@@ -97,6 +97,14 @@ class MarketCopyStringsTest {
         assertEquals("the FAQ must not read the figured key without a figure", 1, Regex("R\\.string\\.help_faq_a3\\b[^_]").findAll(help).count())
     }
 
+    /** Owner ruling 2026-10-02: support@cleansia.cz is the one support contact a customer is shown. */
+    @Test
+    fun `the help screen names the one support address in every locale`() {
+        locales.forEach { locale ->
+            assertEquals("$locale/help_email_desc", "support@cleansia.cz", valueOf(stringsXml(locale), "help_email_desc"))
+        }
+    }
+
     private fun source(path: String): String =
         File(moduleDir, "src/main/java/cz/cleansia/customer/$path").readText().replace(Regex("\\s+"), " ")
 
@@ -108,8 +116,8 @@ class MarketCopyStringsTest {
             "values" to Regex("credit", RegexOption.IGNORE_CASE),
             "values-cs" to Regex("kredit", RegexOption.IGNORE_CASE),
             "values-sk" to Regex("kredit", RegexOption.IGNORE_CASE),
-            "values-uk" to Regex("бонус|кредит", RegexOption.IGNORE_CASE),
-            "values-ru" to Regex("бонус|кредит", RegexOption.IGNORE_CASE),
+            "values-uk" to Regex("кредит", RegexOption.IGNORE_CASE),
+            "values-ru" to Regex("кредит", RegexOption.IGNORE_CASE),
         )
     }
 }

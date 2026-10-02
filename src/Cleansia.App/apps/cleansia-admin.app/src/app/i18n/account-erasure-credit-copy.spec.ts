@@ -33,8 +33,8 @@ const COPY: Record<Locale, { writtenOff: RegExp; notPaidOut: RegExp; refused: Re
   en: { writtenOff: /written off/i, notPaidOut: /not paid out|no payout/i, refused: /refused/i },
   cs: { writtenOff: /odepíše/i, notPaidOut: /nevyplácí|bez výplaty/i, refused: /odmít/i },
   sk: { writtenOff: /odpíše/i, notPaidOut: /nevypláca|bez výplaty/i, refused: /odmiet/i },
-  uk: { writtenOff: /спис/i, notPaidOut: /не виплачуються|без виплати/i, refused: /відхиля/i },
-  ru: { writtenOff: /спис/i, notPaidOut: /не выплачиваются|без выплаты/i, refused: /отклоня/i },
+  uk: { writtenOff: /спис/i, notPaidOut: /не виплачується|без виплати/i, refused: /відхиля/i },
+  ru: { writtenOff: /спис/i, notPaidOut: /не выплачивается|без выплаты/i, refused: /отклоня/i },
 };
 
 function readLocale(locale: Locale): Record<string, unknown> {

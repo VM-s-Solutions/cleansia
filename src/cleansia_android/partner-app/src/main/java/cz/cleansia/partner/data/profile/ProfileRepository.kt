@@ -25,6 +25,9 @@ import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.network.mapWire
 import cz.cleansia.core.network.safeApiCall
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -61,6 +64,15 @@ interface ProfileRepository {
      * for the lifetime of the singleton repo (no per-screen reset).
      */
     fun getRegistrationStatusStaleness(): Staleness
+
+    /**
+     * Fires when a push says an administrator approved or rejected this cleaner's application. The
+     * registration lock re-reads on it, because a lock already on screen gets no resume to do so.
+     */
+    val registrationDecisions: Flow<Unit>
+
+    /** Called by the messaging service on `employee.registration_approved` / `_rejected`. */
+    fun onRegistrationDecisionPushed()
 
     /**
      * Carries no email: the login address is the session's identity and the
@@ -119,10 +131,12 @@ interface ProfileRepository {
     suspend fun getPayoutDetails(): ApiResult<MyPayoutDetails?>
 
     /**
-     * The account is identified by its local parts — the server derives the IBAN from them
-     * and rejects a supplied [iban] that disagrees, so [iban] is a cross-check the cleaner
-     * may leave empty. [swift] becomes required when the bank sits in a different country
-     * than the one the cleaner works in; the server decides that and says so.
+     * The bank country decides which fields identify the account, and only those are sent. A
+     * CZ or SK bank (the server's CzskDomesticWithIban scheme) is identified by [accountPrefix],
+     * [accountNumber] and [bankCode]; the server derives the IBAN from them, so [iban] is null.
+     * Any other bank country is identified by [iban] alone, with the three parts null.
+     * [swift] becomes required when the bank sits in a different country than the one the
+     * cleaner works in; the server decides that and says so.
      */
     suspend fun updateBankDetails(
         employeeId: String,
@@ -230,6 +244,13 @@ class ProfileRepositoryImpl @Inject constructor(
             }
 
     override fun getRegistrationStatusStaleness(): Staleness = registrationStatusStaleness
+
+    private val _registrationDecisions = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    override val registrationDecisions: Flow<Unit> = _registrationDecisions.asSharedFlow()
+
+    override fun onRegistrationDecisionPushed() {
+        _registrationDecisions.tryEmit(Unit)
+    }
 
     override suspend fun clear() {
         registrationStatusStaleness.reset()

@@ -1,6 +1,6 @@
 import { PLATFORM_ID, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { CustomerClient } from '@cleansia/customer-services';
+import { CustomerClient, PaymentType } from '@cleansia/customer-services';
 import { of } from 'rxjs';
 import { OrderPricingFacade } from './order-pricing.facade';
 import { quoteFixture } from './order-quote.fixtures';
@@ -140,6 +140,37 @@ describe('credit in the booking summary', () => {
       expect(facade.displayedTotalPrice()).toBe(500);
       expect(facade.creditApplied()).toBe(400);
       expect(facade.amountDueOnCard()).toBe(100);
+    });
+
+    /**
+     * `CreateOrder` takes credit only from a card booking. A split shown for cash would promise money
+     * off that the booking never gets, so the preview follows the payment choice both ways.
+     */
+    it('takes no credit from a cash booking, and takes it again when the customer returns to card', async () => {
+      await quoteWith(
+        quoteFixture({ totalPrice: 2000, finalPriceAfterDiscount: 2000, creditBalance: 500 }),
+      );
+
+      formData.update((d) => ({ ...d, paymentType: PaymentType.Cash }));
+
+      expect(facade.creditApplied()).toBe(0);
+      expect(facade.amountDueOnCard()).toBe(2000);
+      // The balance is still known, so the summary can say why the credit lines went away.
+      expect(facade.creditBalance()).toBe(500);
+
+      formData.update((d) => ({ ...d, paymentType: PaymentType.Card }));
+
+      expect(facade.creditApplied()).toBe(500);
+    });
+
+    it('takes no credit before a payment method is chosen', async () => {
+      await quoteWith(
+        quoteFixture({ totalPrice: 2000, finalPriceAfterDiscount: 2000, creditBalance: 500 }),
+      );
+
+      formData.update((d) => ({ ...d, paymentType: null }));
+
+      expect(facade.creditApplied()).toBe(0);
     });
 
     it('adds up: the two lines always equal the price being charged', async () => {

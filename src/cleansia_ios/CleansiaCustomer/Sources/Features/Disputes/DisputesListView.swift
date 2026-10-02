@@ -48,18 +48,25 @@ struct DisputesListView: View {
         switch vm.state {
         case .loading:
             DisputesLoadingView()
+        // A scroll view proposes no height, so the state is sized to the viewport it sits in and centres
+        // there, not in a fixed band under the title (the Orders tab's form). The scroll view stays for
+        // pull-to-refresh.
         case .error:
-            ScrollView {
-                DisputesErrorView { Task { await vm.retry() } }
-                    .frame(maxWidth: .infinity, minHeight: 360)
+            GeometryReader { proxy in
+                ScrollView {
+                    DisputesErrorView { Task { await vm.retry() } }
+                        .frame(maxWidth: .infinity, minHeight: proxy.size.height)
+                }
+                .refreshable { await vm.pullToRefresh() }
             }
-            .refreshable { await vm.pullToRefresh() }
         case let .loaded(entries) where entries.isEmpty:
-            ScrollView {
-                DisputesEmptyView(onBrowseOrders: onBrowseOrders)
-                    .frame(maxWidth: .infinity, minHeight: 420)
+            GeometryReader { proxy in
+                ScrollView {
+                    DisputesEmptyView(onBrowseOrders: onBrowseOrders)
+                        .frame(maxWidth: .infinity, minHeight: proxy.size.height)
+                }
+                .refreshable { await vm.pullToRefresh() }
             }
-            .refreshable { await vm.pullToRefresh() }
         case .loaded:
             DisputesListContent(vm: vm, onDisputeClick: onDisputeClick)
         }

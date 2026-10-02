@@ -12,6 +12,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -56,6 +57,8 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -66,10 +69,11 @@ import com.mapbox.geojson.Point
 import com.mapbox.maps.MapboxExperimental
 import com.mapbox.maps.extension.compose.MapboxMap
 import com.mapbox.maps.extension.compose.animation.viewport.rememberMapViewportState
-import com.mapbox.maps.extension.compose.style.MapStyle
 import cz.cleansia.core.location.GeocodedAddress
 import cz.cleansia.core.location.LocationService
-import cz.cleansia.core.location.MapStyles
+import cz.cleansia.core.location.CleansiaMapPin
+import cz.cleansia.core.location.CleansiaMapPinHeight
+import cz.cleansia.core.location.CleansiaMapStyle
 import cz.cleansia.core.location.ReverseGeocodingService
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
@@ -190,20 +194,34 @@ fun AddressPickerScreen(
         searching = false
     }
 
+    // How much of the map's bottom edge the confirm card covers, nav bar included; measured, since
+    // the card grows with the address and the font scale.
+    val density = LocalDensity.current
+    var cardCoverHeight by remember { mutableStateOf(0.dp) }
+
     Box(modifier = Modifier.fillMaxSize()) {
         MapboxMap(
             modifier = Modifier.fillMaxSize(),
             mapViewportState = viewportState,
-            style = { MapStyle(style = if (darkTheme) MapStyles.DARK else MapStyles.LIGHT) },
+            style = { CleansiaMapStyle(darkTheme) },
             scaleBar = {}, // hide default 0–300m overlay
+            // Mapbox's terms require the wordmark and the attribution. Lifted above the confirm card,
+            // which covers the map's bottom edge where they sit by default. Only the ornaments move:
+            // the camera centre, which the pin marks, stays the map's centre.
+            logo = {
+                Logo(contentPadding = PaddingValues(start = 4.dp, bottom = cardCoverHeight + 4.dp))
+            },
+            attribution = {
+                Attribution(contentPadding = PaddingValues(start = 92.dp, bottom = cardCoverHeight + 4.dp))
+            },
         )
 
-        // Centre pin.
+        // Centre pin, lifted by its own height so its tip is the map's centre.
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center,
         ) {
-            CenterPin()
+            CleansiaMapPin(darkTheme = darkTheme, modifier = Modifier.padding(bottom = CleansiaMapPinHeight))
         }
 
         // Top bar: back + search.
@@ -301,6 +319,7 @@ fun AddressPickerScreen(
             onConfirm = { resolved?.let(onConfirmed) },
             modifier = Modifier
                 .align(Alignment.BottomCenter)
+                .onSizeChanged { cardCoverHeight = with(density) { it.height.toDp() } }
                 .navigationBarsPadding(),
         )
     }
@@ -373,33 +392,6 @@ private fun ConfirmCard(
             onClick = onConfirm,
             enabled = resolved != null && !lookingUp,
         )
-    }
-}
-
-@Composable
-private fun CenterPin() {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Box(
-            modifier = Modifier
-                .size(28.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primary),
-            contentAlignment = Alignment.Center,
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(10.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.onPrimary),
-            )
-        }
-        Box(
-            modifier = Modifier
-                .width(2.dp)
-                .height(14.dp)
-                .background(MaterialTheme.colorScheme.primary),
-        )
-        Spacer(Modifier.height(24.dp)) // visually offsets so pin tip points at center
     }
 }
 

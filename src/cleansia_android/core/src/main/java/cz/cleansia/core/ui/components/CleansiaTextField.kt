@@ -50,9 +50,11 @@ fun CleansiaTextField(
      * they don't disappear on the page background.
      */
     transparentContainer: Boolean = false,
+    /** How the value is drawn, e.g. an IBAN in groups of four; the value itself is unchanged. */
+    visualTransformation: VisualTransformation = VisualTransformation.None,
 ) {
     var passwordVisible by remember { mutableStateOf(false) }
-    val visual = if (isPassword && !passwordVisible) PasswordVisualTransformation() else VisualTransformation.None
+    val visual = if (isPassword && !passwordVisible) PasswordVisualTransformation() else visualTransformation
     val isError = errorText != null
 
     OutlinedTextField(

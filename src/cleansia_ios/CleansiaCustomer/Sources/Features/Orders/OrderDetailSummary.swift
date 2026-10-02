@@ -62,6 +62,10 @@ struct OrderPriceBreakdown: Equatable {
     let subtotal: Double?
     let discounts: [DiscountLine]
     let total: Double
+    /// Credit is a tender, not a discount: the total keeps the size of the sale, and these two figures
+    /// say how it was paid — the card one is what the customer's statement shows. No rows at zero.
+    let paidWithCredit: Double
+    let paidByCard: Double
     let paymentMethod: OrderPaymentMethod?
     let paymentStatus: OrderPaymentStatus?
     let currencyCode: String?
@@ -80,6 +84,8 @@ struct OrderPriceBreakdown: Equatable {
                 line(.promo, order.promoDiscountAmount)
             ].compactMap { $0 },
             total: order.total,
+            paidWithCredit: order.creditAppliedAmount,
+            paidByCard: order.amountDueOnCard,
             paymentMethod: paymentMethod(order.paymentType),
             paymentStatus: paymentStatus(order.paymentStatus),
             currencyCode: order.currencyCode
@@ -108,6 +114,24 @@ struct OrderPriceBreakdown: Equatable {
         case 5: .disputed
         default: code?.name.flatMap { $0.isBlank ? nil : .named($0) }
         }
+    }
+}
+
+extension CustomerOrderDetail {
+    /// No card charge to speak of: a cash booking — a confirmed recurring cash occurrence rests at Paid
+    /// with nothing taken — or a card one whose payment is Pending or Failed (the server's
+    /// `Order.TookNoPayment`). Read by the cancel sheet and the order detail's credit split.
+    var tookNoCardPayment: Bool {
+        let paymentStatus = paymentStatus?.value
+        return paymentType?.value == 1 || paymentStatus == 1 || paymentStatus == 3
+    }
+
+    /// The order detail's card line under a credit split: `paidByCard` only once the card was charged;
+    /// while the payment is pending or failed the card share is still to pay (`dueOnCard`, the confirm
+    /// step's copy). Android's `cardShareLabelRes`. The booking confirmation does not read it: it is
+    /// reached only after the PaymentSheet completed, before the webhook marks the order Paid.
+    var cardShareLabel: String {
+        tookNoCardPayment ? L10n.Credit.dueOnCard : L10n.Credit.paidByCard
     }
 }
 
@@ -170,6 +194,16 @@ struct OrderPriceBreakdownCard: View {
                 Text(OrdersFormat.price(breakdown.total, currencyCode: breakdown.currencyCode))
                     .font(CleansiaTypography.titleLarge)
                     .foregroundColor(CleansiaColors.primary)
+            }
+            if breakdown.paidWithCredit > 0 {
+                OrderInfoRow(
+                    label: L10n.Credit.paidWithCredit,
+                    value: "−" + OrdersFormat.price(breakdown.paidWithCredit, currencyCode: breakdown.currencyCode)
+                )
+                OrderInfoRow(
+                    label: order.cardShareLabel,
+                    value: OrdersFormat.price(breakdown.paidByCard, currencyCode: breakdown.currencyCode)
+                )
             }
             if let method = breakdown.paymentMethod {
                 OrderInfoRow(
@@ -252,6 +286,8 @@ struct OrderDiscountChip: View {
             appliedDiscountSource: ._4,
             tierDiscountAmount: 210,
             membershipDiscountAmount: 300,
+            creditAppliedAmount: 320,
+            amountDueOnCard: 1270,
             estimatedTime: 180,
             currency: CurrencyDetailDto(code: "CZK"),
             dirtinessLevel: ._1,

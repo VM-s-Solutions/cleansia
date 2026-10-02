@@ -47,9 +47,14 @@ struct DeleteAccountView: View {
                         .background(CleansiaColors.background)
                 }
             }
-            if showConfirmDialog {
-                confirmDialog
+        }
+        .alert(L10n.DeleteAccount.dialogTitle, isPresented: $showConfirmDialog) {
+            Button(L10n.DeleteAccount.dialogConfirm, role: .destructive) {
+                Task { await vm.submit() }
             }
+            Button(L10n.cancel, role: .cancel) {}
+        } message: {
+            Text(L10n.DeleteAccount.dialogMessage)
         }
         .navigationTitle(L10n.DeleteAccount.title)
         .navigationBarTitleDisplayMode(.inline)
@@ -113,22 +118,5 @@ struct DeleteAccountView: View {
             // mis-tap becomes a filed request against a colleague's account on a shared device.
             showConfirmDialog = true
         }
-    }
-
-    private var confirmDialog: some View {
-        CleansiaDialog(
-            title: L10n.DeleteAccount.dialogTitle,
-            confirmLabel: L10n.DeleteAccount.dialogConfirm,
-            onConfirm: {
-                showConfirmDialog = false
-                Task { await vm.submit() }
-            },
-            onDismiss: { showConfirmDialog = false },
-            message: L10n.DeleteAccount.dialogMessage,
-            dismissLabel: L10n.cancel,
-            icon: "exclamationmark.triangle",
-            destructive: true,
-            confirmEnabled: !vm.submitState.isSubmitting
-        )
     }
 }

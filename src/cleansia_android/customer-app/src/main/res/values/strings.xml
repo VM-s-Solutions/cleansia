@@ -102,13 +102,7 @@
     <string name="home_reorder_details">2 rooms · Last ordered Apr 2</string>
     <string name="home_reorder_cta">Rebook</string>
 
-    <!-- Home — hero carousel -->
-    <string name="home_hero_greeting">Welcome back</string>
-    <string name="home_hero_prompt">Ready for a spotless home?</string>
-    <string name="home_hero_cta">Book in 30 seconds</string>
-
-    <!-- Smart upsell carousel slides — Plus / Welcome / Referral. The Book
-         slide reuses the existing home_hero_* trio above. -->
+    <!-- Smart upsell carousel slides -->
     <string name="home_upsell_plus_top">Cleansia Plus</string>
     <string name="home_upsell_plus_title">Save on every cleaning.</string>
     <string name="home_upsell_plus_cta">Get Plus</string>
@@ -117,6 +111,25 @@
     <string name="home_upsell_referral_top">Refer a friend</string>
     <string name="home_upsell_referral_title">You both get 150 points after their first completed cleaning</string>
     <string name="home_upsell_referral_cta">Share my code</string>
+    <string name="home_upsell_page_a11y">Offer %1$d of %2$d</string>
+    <string name="home_upsell_next">Next offer</string>
+    <string name="home_upsell_previous">Previous offer</string>
+    <string name="home_upsell_notifications_top">Stay in the loop</string>
+    <string name="home_upsell_notifications_title">Know the moment your cleaner is on the way</string>
+    <string name="home_upsell_notifications_cta">Turn on</string>
+    <string name="home_upsell_credit_title">%1$s comes off your next card booking, up to %2$d%% of it</string>
+    <string name="home_upsell_express_top">Plus · %1$d–%2$d h notice</string>
+    <plurals name="home_upsell_express_title">
+        <item quantity="one">No express surcharge on %1$d more booking this month</item>
+        <item quantity="other">No express surcharge on %1$d more bookings this month</item>
+    </plurals>
+    <string name="home_upsell_book_cta">Book now</string>
+    <string name="home_quick_size_title">How big is your home?</string>
+    <string name="home_quick_size_cta">See my price</string>
+    <string name="home_quick_size_rooms_less">Fewer rooms</string>
+    <string name="home_quick_size_rooms_more">More rooms</string>
+    <string name="home_quick_size_baths_less">Fewer bathrooms</string>
+    <string name="home_quick_size_baths_more">More bathrooms</string>
     <string name="home_upsell_setup_recurring_top">Plus perk</string>
     <string name="home_upsell_setup_recurring_title">Set up a recurring cleaning — book once, run forever</string>
     <string name="home_upsell_setup_recurring_cta">Set one up</string>
@@ -213,7 +226,6 @@
     <string name="order_detail_title">Order #%1$s</string>
     <string name="order_detail_created">Created %1$s</string>
     <string name="order_detail_section_details">Cleaning details</string>
-    <string name="order_detail_date">Date &amp; time</string>
     <string name="order_detail_address">Address</string>
     <string name="order_detail_headline_default">Booking received</string>
     <string name="order_detail_headline_confirmed">Cleaner accepted</string>
@@ -238,6 +250,8 @@
     <string name="order_detail_completed_at">Completed at</string>
     <string name="order_detail_services">Price breakdown</string>
     <string name="order_detail_total">Total</string>
+    <string name="order_paid_with_credit">Paid with credit</string>
+    <string name="order_paid_by_card">Paid by card</string>
     <string name="order_detail_confirmation">Confirmation code</string>
     <string name="order_detail_cleaners">Your cleaner</string>
     <string name="order_detail_instructions">Instructions</string>
@@ -502,7 +516,7 @@
     <string name="help_call">Call support</string>
     <string name="help_call_desc">Mon–Sun · 8:00–20:00</string>
     <string name="help_email">Email us</string>
-    <string name="help_email_desc">info@cleansia.cz</string>
+    <string name="help_email_desc">support@cleansia.cz</string>
     <string name="help_faq_title">Frequently asked questions</string>
     <string name="help_faq_q1">How do I cancel my booking?</string>
     <string name="help_faq_a1">Open your booking from the Orders tab and tap \"Cancel\". Cancellations free of charge up to 24 hours before the cleaning start time. Within 15 minutes of booking you pay nothing — within 60 minutes on your first booking or with Cleansia Plus.</string>
@@ -611,6 +625,7 @@
     <string name="details_add_to_booking">Add to booking</string>
     <string name="details_remove_from_booking">Remove from booking</string>
     <string name="booking_your_home">Your home</string>
+    <string name="booking_size_limit_caption">Up to %1$d rooms and %2$d bathrooms</string>
     <string name="booking_search_services">Search services</string>
     <string name="booking_no_results">No services match your search</string>
     <string name="booking_cat_all">All</string>
@@ -724,6 +739,9 @@
     <string name="booking_summary_tier_discount">Loyalty tier discount</string>
     <string name="booking_summary_tier_discount_min_not_met">Loyalty discount applies on orders above %1$s</string>
     <string name="booking_summary_total">Total</string>
+    <string name="booking_summary_due_on_card">To pay by card</string>
+    <string name="booking_summary_credit_note">Your credit balance is %1$s. It comes off automatically, and part of every booking is always paid by card.</string>
+    <string name="booking_summary_credit_card_only">Credit applies to card payments only.</string>
 
     <!-- Promo code (Loyalty Phase B) — auto-validated input on Confirm step -->
     <string name="booking_promo_code_label">Have a promo code?</string>
@@ -1156,6 +1174,7 @@
     <!-- ── Disputes (Wave 2 Phase 6) ── -->
     <!-- Profile row -->
     <string name="profile_row_disputes">Disputes</string>
+    <string name="profile_row_credit">Credit</string>
 
     <!-- Order detail action -->
     <string name="order_action_report_issue">Report issue</string>
@@ -1227,6 +1246,17 @@
     <string name="loyalty_tier_label_short_gold">Gold</string>
     <string name="loyalty_tier_label_short_platinum">Platinum</string>
     <string name="loyalty_lifetime_points">Lifetime points</string>
+    <string name="credit_your_credit">Your credit</string>
+    <string name="credit_auto_applied_share">Comes off your next card booking automatically, up to %1$d%% of it.</string>
+    <string name="credit_expires_on">Expires %1$s. Every booking pushes that back.</string>
+    <string name="credit_none">No credit right now. If a clean goes wrong, credit we give you shows up here.</string>
+    <string name="credit_explainer_title">How credit works</string>
+    <string name="credit_explainer_source_title">Where it comes from</string>
+    <string name="credit_explainer_source_body">An apology when your cleaner doesn\'t arrive or nobody can take your booking, a complaint you chose to settle in credit, or a goodwill gesture from us.</string>
+    <string name="credit_explainer_spend_title">How it\'s spent</string>
+    <string name="credit_explainer_spend_body">Automatically, on your next card booking in the same currency, up to %1$d%% of it. The card always pays the rest.</string>
+    <string name="credit_explainer_points_title">Credit isn\'t points</string>
+    <string name="credit_explainer_points_body">Points move your tier and its discount, and are never spent. Credit is money off your bookings.</string>
     <string name="loyalty_points_unit">pts</string>
     <string name="loyalty_progress_to_next">%1$d / %2$d points to %3$s</string>
     <string name="loyalty_max_tier_reached">You\'ve reached the top — thank you!</string>
@@ -1447,7 +1477,7 @@
     </plurals>
     <plurals name="booking_bath_short">
         <item quantity="one">%1$d bath</item>
-        <item quantity="other">%1$d bath</item>
+        <item quantity="other">%1$d baths</item>
     </plurals>
     <plurals name="order_review_star_content_desc">
         <item quantity="one">Rate %1$d star</item>
@@ -1502,16 +1532,4 @@
     <string name="order_market_label">%1$s · %2$s</string>
     <string name="notification_recurring_paused_title">Recurring schedule paused</string>
     <string name="notification_recurring_paused_body">Your recurring schedule is paused because Plus is not active. Renew Plus to resume scheduling.</string>
-    <string name="guest_order_entry">Find a guest booking</string>
-    <string name="guest_order_title">Guest booking</string>
-    <string name="guest_order_intro">Paste the tracking link from your booking email. It opens your booking — there is nothing else to enter.</string>
-    <string name="guest_order_link">Tracking link from your email</string>
-    <string name="guest_order_lookup">Find booking</string>
-    <string name="guest_order_required">Paste the tracking link from your booking email.</string>
-    <string name="guest_order_empty">Your booking details will appear here after lookup.</string>
-    <string name="guest_order_loading">Finding your booking…</string>
-    <string name="guest_order_cancel">Cancel booking</string>
-    <string name="guest_order_cannot_cancel">This booking cannot be cancelled.</string>
-    <string name="guest_order_preview_required">The cancellation fee could not be checked. Try again before confirming cancellation.</string>
-    <string name="guest_order_fee_estimate">Cancellation fee: %1$s. Maximum card refund: %2$s. Only collected card payments can be refunded; your confirmation shows the actual amount.</string>
 </resources>

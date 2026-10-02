@@ -8,6 +8,7 @@ import cz.cleansia.customer.R
 import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
+import cz.cleansia.customer.core.loyalty.LoyaltyRepository
 import cz.cleansia.customer.core.memberships.MembershipRepository
 import cz.cleansia.customer.core.notifications.OrderEventBus
 import cz.cleansia.customer.core.orders.CancelOrderResponse
@@ -106,6 +107,7 @@ class OrderDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val membershipRepository: MembershipRepository,
     orderEventBus: OrderEventBus,
+    private val loyaltyRepository: LoyaltyRepository,
     private val paymentRepository: PaymentRepository,
 ) : ViewModel() {
 
@@ -432,6 +434,11 @@ class OrderDetailViewModel @Inject constructor(
                 // Cancelled status on its next composition. Silent on failure —
                 // the user can pull-to-refresh if the list is stale.
                 orderRepository.refresh()
+                // A cancelled card order returns the credit it spent, so the balance is re-read now,
+                // as iOS does; stale first, so a read that fails or is cut short is retried by the
+                // next screen that shows it.
+                loyaltyRepository.staleness.reset()
+                launch { loyaltyRepository.refresh() }
                 // Re-fetch the current detail so this screen also reflects the
                 // new status (status pill, timeline, footer visibility).
                 load()
@@ -488,6 +495,12 @@ class OrderDetailViewModel @Inject constructor(
                 load()
                 return@launch
             }
+
+            // The card confirm is where the server spends the customer's credit on the occurrence,
+            // whatever the sheet then does, so the balance is re-read now, as after a cancel; stale
+            // first, so a read that fails or is cut short is retried by the next screen that shows it.
+            loyaltyRepository.staleness.reset()
+            launch { loyaltyRepository.refresh() }
 
             // Card path's snackbars fire from the PaymentSheet result callback
             // (via [notifyCardPaymentResult]) since only the screen sees the

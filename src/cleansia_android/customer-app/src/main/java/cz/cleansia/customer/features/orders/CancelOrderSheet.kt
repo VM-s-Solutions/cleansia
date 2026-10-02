@@ -83,7 +83,7 @@ private enum class CancelReasonOption(val code: String, val labelRes: Int) {
  *    confirmation.
  *  - Confirm is held back only while the quote is in flight. A quote that
  *    FAILS never blocks a cancellation — the card says so and the button stays
- *    live for signed-in callers. Guests require a valid preview.
+ *    live.
  *  - Clicking the primary button never closes the sheet directly; the VM
  *    observes the result and emits on a SharedFlow that the screen uses to
  *    drive the dismissal.
@@ -102,7 +102,6 @@ fun CancelOrderSheet(
     isSubmitting: Boolean = false,
     errorMessage: String? = null,
     onReasonChanged: () -> Unit = {},
-    requireValidPreview: Boolean = false,
     tookNoCardPayment: Boolean = false,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -115,7 +114,6 @@ fun CancelOrderSheet(
         isOtherReason = selectedReason == CancelReasonOption.Other,
         notes = notes,
         isSubmitting = isSubmitting,
-        requireValidPreview = requireValidPreview,
     )
 
     ModalBottomSheet(
@@ -141,7 +139,6 @@ fun CancelOrderSheet(
             FeePreviewBlock(
                 state = previewState,
                 onRetry = onRetryPreview,
-                requireValidPreview = requireValidPreview,
                 tookNoCardPayment = tookNoCardPayment,
             )
             Spacer(Modifier.height(16.dp))
@@ -336,7 +333,6 @@ private fun ReasonChipGrid(
 private fun FeePreviewBlock(
     state: CancellationPreviewUiState,
     onRetry: () -> Unit,
-    requireValidPreview: Boolean,
     tookNoCardPayment: Boolean,
 ) {
     when (state) {
@@ -353,15 +349,11 @@ private fun FeePreviewBlock(
                 )
             },
         )
-        CancellationPreviewUiState.Error -> UnavailableFeeCard(onRetry, requireValidPreview)
+        CancellationPreviewUiState.Error -> UnavailableFeeCard(onRetry)
         is CancellationPreviewUiState.Loaded -> {
-            val callout = cancellationFeeCallout(
-                state.preview,
-                refundIsEstimate = requireValidPreview,
-                tookNoCardPayment = tookNoCardPayment,
-            )
+            val callout = cancellationFeeCallout(state.preview, tookNoCardPayment = tookNoCardPayment)
             if (callout == null) {
-                UnavailableFeeCard(onRetry, requireValidPreview)
+                UnavailableFeeCard(onRetry)
             } else {
                 LoadedFeeCard(callout, state.preview.currencyCode)
             }
@@ -410,17 +402,14 @@ private fun LoadedFeeCard(callout: CancellationFeeCallout, currencyCode: String?
 }
 
 @Composable
-private fun UnavailableFeeCard(onRetry: () -> Unit, requireValidPreview: Boolean) {
+private fun UnavailableFeeCard(onRetry: () -> Unit) {
     val tint = MaterialTheme.colorScheme.onSurfaceVariant
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         FeeCard(
             tint = tint,
             icon = Icons.Outlined.Warning,
             title = stringResource(R.string.order_cancel_fee_neutral),
-            subtitle = stringResource(
-                if (requireValidPreview) R.string.guest_order_preview_required
-                else R.string.order_cancel_fee_unavailable,
-            ),
+            subtitle = stringResource(R.string.order_cancel_fee_unavailable),
         )
         CleansiaTextLink(
             text = stringResource(R.string.order_cancel_fee_retry),

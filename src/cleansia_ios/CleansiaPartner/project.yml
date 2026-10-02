@@ -107,6 +107,9 @@ targets:
       path: CleansiaPartner.entitlements
       properties:
         aps-environment: development
+        # The Notification Service Extension reads the in-app language from here (AppGroupLanguage).
+        com.apple.security.application-groups:
+          - group.cz.cleansia.partner
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: cz.cleansia.partner
@@ -135,6 +138,8 @@ targets:
         product: FirebaseCore
       - package: Firebase
         product: FirebaseMessaging
+      # Embeds the Notification Service Extension, which renders pushes in the in-app language.
+      - target: CleansiaPartnerNotificationService
 
   CleansiaPartnerTests:
     type: bundle.unit-test
@@ -149,6 +154,46 @@ targets:
     dependencies:
       - target: CleansiaPartner
       - package: CleansiaCore
+
+  # Re-renders every loc-key push in the language picked inside the app: iOS resolves loc-keys in the
+  # app's SYSTEM language, and the server marks those alerts mutable-content so this runs for each.
+  # It reads the language from the App Group and the copy from the app's own catalog, compiled into
+  # it. It does not link CleansiaCore — its resource bundle would be copied in — and compiles the one
+  # Foundation-only file it needs instead. -> /architecture/push-notifications
+  CleansiaPartnerNotificationService:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "16.0"
+    sources:
+      - path: NotificationService
+      - path: ../CleansiaCore/Sources/CleansiaCore/Localization/AppGroupLanguage.swift
+      - path: Resources/Localizable.xcstrings
+    info:
+      path: NotificationService/Info.plist
+      properties:
+        # Must track the parent app exactly — Apple rejects an extension whose version differs.
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleDisplayName: Cleansia Partner
+        CFBundleLocalizations:
+          - en
+          - cs
+          - sk
+          - uk
+          - ru
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.usernotifications.service
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).NotificationService
+    entitlements:
+      path: NotificationService/CleansiaPartnerNotificationService.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.cz.cleansia.partner
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: cz.cleansia.partner.notificationservice
+        GENERATE_INFOPLIST_FILE: NO
+        SKIP_INSTALL: NO
 
 schemes:
   CleansiaPartner:

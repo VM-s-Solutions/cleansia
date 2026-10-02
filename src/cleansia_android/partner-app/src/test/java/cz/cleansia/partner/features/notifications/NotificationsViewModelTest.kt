@@ -10,6 +10,7 @@ import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.partner.core.notifications.NotificationFeedRepository
 import cz.cleansia.partner.core.notifications.PagedNotificationsDto
 import cz.cleansia.partner.core.notifications.UserNotificationDto
+import cz.cleansia.partner.core.settings.AppSettingsRepository
 import cz.cleansia.partner.navigation.NavRoute
 import cz.cleansia.partner.testing.MainDispatcherRule
 import io.mockk.coEvery
@@ -37,6 +38,7 @@ class NotificationsViewModelTest {
     private lateinit var snackbar: SnackbarController
     private lateinit var errorTranslator: ApiErrorTranslator
     private lateinit var appContext: Context
+    private lateinit var appSettings: AppSettingsRepository
 
     private val translatedError = "Something went wrong."
 
@@ -82,6 +84,9 @@ class NotificationsViewModelTest {
         snackbar = mockk(relaxed = true)
         errorTranslator = mockk()
         appContext = mockk(relaxed = true)
+        appSettings = mockk()
+        // Following the device: the rows resolve on the Application context itself.
+        coEvery { appSettings.chosenLanguageTag() } returns null
         every { appContext.getString(R.string.notification_new_jobs_title) } returns "New jobs available"
         every { appContext.getString(R.string.notification_new_jobs_body, 3) } returns "3 new jobs available near you."
         every { appContext.getString(R.string.notification_order_assignment_cancelled_title) } returns "Job cancelled"
@@ -95,7 +100,29 @@ class NotificationsViewModelTest {
         coEvery { repository.refreshUnreadCount() } returns ApiResult.Success(0)
     }
 
-    private fun viewModel() = NotificationsViewModel(repository, snackbar, errorTranslator, appContext)
+    private fun viewModel() = NotificationsViewModel(repository, snackbar, errorTranslator, appContext, appSettings)
+
+    /**
+     * A chosen language renders the rows through the re-localized context, not the Application one,
+     * which on API 26–32 resolves in the device language. (Unit tests run with SDK_INT 0, below 33.)
+     */
+    @Test
+    fun `a chosen language renders the rows in that language`() = runTest {
+        val czech: Context = mockk(relaxed = true)
+        every { appContext.createConfigurationContext(any()) } returns czech
+        every { czech.getString(R.string.notification_new_jobs_title) } returns "Nové zakázky"
+        every { czech.getString(R.string.notification_new_jobs_body, 3) } returns "3 nové zakázky ve vašem okolí."
+        coEvery { appSettings.chosenLanguageTag() } returns "cs"
+        coEvery { repository.getPage(offset = 0) } returns ApiResult.Success(page(newJobsRow))
+
+        val vm = viewModel()
+        vm.open()
+        advanceUntilIdle()
+
+        val row = (vm.state.value as NotificationsUiState.Loaded).items.single()
+        assertEquals("Nové zakázky", row.title)
+        assertEquals("3 nové zakázky ve vašem okolí.", row.body)
+    }
 
     private fun page(vararg rows: UserNotificationDto, total: Int = rows.size) =
         PagedNotificationsDto(pageNumber = 1, pageSize = 20, total = total, data = rows.toList())

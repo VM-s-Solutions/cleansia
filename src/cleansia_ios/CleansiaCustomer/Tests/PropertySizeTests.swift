@@ -28,6 +28,48 @@ final class PropertySizeTests: XCTestCase {
         }
     }
 
+    /// The caps are stated, not only enforced: both flows carry the caption under their size row, and
+    /// the one-off minus stops at 1 the way the plus stops at the cap.
+    func testBothBookingFlowsStateTheCapAndTheOneOffMinusStopsAtOne() throws {
+        for path in [
+            "CleansiaCustomer/Sources/Features/Booking/Steps/ServicesStep.swift",
+            "CleansiaCustomer/Sources/Features/Recurring/CreateRecurringScreen.swift"
+        ] {
+            let source = try String(contentsOf: Self.iosRoot().appendingPathComponent(path), encoding: .utf8)
+            XCTAssertTrue(source.contains("L10n.Booking.sizeLimitCaption"), "\(path) does not state the cap")
+        }
+        let oneOff = try String(
+            contentsOf: Self.iosRoot().appendingPathComponent(
+                "CleansiaCustomer/Sources/Features/Booking/Steps/ServicesStep.swift"
+            ),
+            encoding: .utf8
+        )
+        XCTAssertEqual(oneOff.components(separatedBy: "minimum: 1,").count - 1, 2, "both one-off minuses stop at 1")
+    }
+
+    /// The numbers are the format arguments, never words of the translation, in every language.
+    func testTheCaptionStatesTheCapsInEveryLanguage() throws {
+        let restore = L10n.bundle
+        defer { L10n.bundle = restore }
+        for language in ["en", "cs", "sk", "uk", "ru"] {
+            let path = try XCTUnwrap(
+                [Bundle.main, Bundle(for: Self.self)].lazy
+                    .compactMap { $0.path(forResource: language, ofType: "lproj") }
+                    .first,
+                "no \(language).lproj in the built bundle"
+            )
+            L10n.bundle = try XCTUnwrap(Bundle(path: path))
+            let raw = L10n.localized("booking_size_limit_caption")
+            XCTAssertNotEqual(raw, "booking_size_limit_caption", "missing in \(language)")
+            XCTAssertTrue(raw.contains("%1$lld") && raw.contains("%2$lld"), "\(language) lost a placeholder: \(raw)")
+            let residue = raw.replacingOccurrences(of: #"%\d+\$lld"#, with: "", options: .regularExpression)
+            XCTAssertNil(residue.rangeOfCharacter(from: .decimalDigits), "\(language) names a number: \(raw)")
+            let caption = L10n.Booking.sizeLimitCaption
+            XCTAssertTrue(caption.contains("\(PropertySize.maxRooms)"), "\(language): \(caption)")
+            XCTAssertTrue(caption.contains("\(PropertySize.maxBathrooms)"), "\(language): \(caption)")
+        }
+    }
+
     private static func policyInt(_ name: String) throws -> Int {
         let policy = iosRoot()
             .deletingLastPathComponent()

@@ -12,15 +12,25 @@ final class CustomerPreferencesModel: ObservableObject {
     /// Required, with no default: a dropped injection compiles, leaves every test green, and shows up
     /// only as a server-rendered mail arriving in the language signup happened to send.
     private let languageSync: LanguagePreferenceSync
+    /// Where the extensions read the in-app language from: iOS renders a push's loc-keys in the app's
+    /// SYSTEM language, so the Notification Service Extension re-renders it in this one. Only an
+    /// explicit choice goes there; on System they keep iOS's rendering, which follows the phone.
+    private let appGroup: String
 
-    init(settings: AppSettingsStore, languageSync: LanguagePreferenceSync) {
+    init(
+        settings: AppSettingsStore,
+        languageSync: LanguagePreferenceSync,
+        appGroup: String = AppGroupLanguage.customerAppGroup
+    ) {
         self.settings = settings
         self.languageSync = languageSync
+        self.appGroup = appGroup
         languageTag = settings.languageTag
         isFollowingSystemLanguage = settings.persistedLanguageTag == nil
         theme = settings.theme
         L10n.bundle = Self.bundle(for: settings.languageTag)
         CoreL10n.apply(languageTag: settings.languageTag)
+        AppGroupLanguage.write(settings.persistedLanguageTag, appGroup: appGroup)
     }
 
     var locale: Locale {
@@ -44,6 +54,7 @@ final class CustomerPreferencesModel: ObservableObject {
         let resolved = settings.languageTag
         L10n.bundle = Self.bundle(for: resolved)
         CoreL10n.apply(languageTag: resolved)
+        AppGroupLanguage.write(settings.persistedLanguageTag, appGroup: appGroup)
         languageTag = resolved
         isFollowingSystemLanguage = settings.persistedLanguageTag == nil
         Task { [languageSync] in await languageSync.send(languageCode: resolved) }

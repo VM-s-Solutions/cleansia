@@ -6,6 +6,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,7 +17,9 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
@@ -28,6 +31,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Remove
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material.icons.automirrored.outlined.ArrowForwardIos
 import androidx.compose.material.icons.outlined.AutoAwesome
@@ -46,11 +51,14 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
+import androidx.compose.material3.ripple
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -63,14 +71,20 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -86,9 +100,14 @@ import cz.cleansia.customer.features.booking.localizedName
 import cz.cleansia.customer.features.recurring.ScheduleStatus
 import cz.cleansia.core.ui.theme.Poppins
 import cz.cleansia.customer.R
+import cz.cleansia.customer.core.booking.PropertySize
+import cz.cleansia.customer.core.loyalty.CreditBalanceDto
 import cz.cleansia.customer.core.loyalty.LoyaltyAccountDto
 import cz.cleansia.customer.core.loyalty.LoyaltyTier
+import cz.cleansia.customer.core.memberships.ExpressWaiverStatus
 import cz.cleansia.customer.core.memberships.benefitsPaused
+import cz.cleansia.customer.core.memberships.resolveExpressWaiver
+import cz.cleansia.customer.features.booking.BookingPricing
 import cz.cleansia.customer.core.orders.OrderListItemDto
 import cz.cleansia.customer.features.booking.localizedName
 import cz.cleansia.customer.features.orders.OrderStatus
@@ -98,6 +117,10 @@ import cz.cleansia.customer.ui.format.orderStatusColor
 import cz.cleansia.customer.ui.theme.CleansiaTheme
 import cz.cleansia.customer.ui.theme.SuccessText
 import cz.cleansia.customer.ui.theme.WarningStar
+import cz.cleansia.customer.features.main.MainShellBottomClearance
+import cz.cleansia.customer.ui.components.statusBarFade
+import kotlin.math.roundToInt
+import kotlinx.coroutines.launch
 
 /* ── Presentation models ── */
 
@@ -126,6 +149,8 @@ fun HomeTab(
     onManageRecurring: () -> Unit = {},
     /** Tap on an inbox row with a deep link. Receives a typed `Routes.X` value. */
     onOpenNotificationRoute: (Any) -> Unit = {},
+    /** "See my price" on the carousel's quick-size slide. Opens booking with the size already set. */
+    onBookSize: (rooms: Int, bathrooms: Int) -> Unit = { _, _ -> },
     viewModel: HomeTabViewModel = androidx.hilt.navigation.compose.hiltViewModel(),
 ) {
     val repo = viewModel.addressRepository
@@ -150,6 +175,44 @@ fun HomeTab(
     // Null while loading or for guests.
     val loyaltyRepo = viewModel.loyaltyRepository
     val loyaltyAccount by loyaltyRepo.account.collectAsState(initial = null)
+    // Credit comes from the same loyalty read the Rewards card and the Profile row show.
+    val credit by loyaltyRepo.credit.collectAsState(initial = null)
+    val referralAccount by viewModel.referralRepository.account.collectAsState(initial = null)
+
+    // Push permission, re-read whenever Home resumes — returning from the system settings page with
+    // notifications on removes the carousel's notifications slide.
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var notificationsEnabled by remember {
+        mutableStateOf(androidx.core.app.NotificationManagerCompat.from(context).areNotificationsEnabled())
+    }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        notificationsEnabled = androidx.core.app.NotificationManagerCompat.from(context).areNotificationsEnabled()
+    }
+    val permissionScope = androidx.compose.runtime.rememberCoroutineScope()
+    val notificationPermission = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        notificationsEnabled = androidx.core.app.NotificationManagerCompat.from(context).areNotificationsEnabled()
+        // Refused from the slide itself: the next tap opens the settings page, which can grant it
+        // whether this refusal was for good or the dialog was only dismissed.
+        if (!granted) permissionScope.launch { viewModel.appSettings.markNotificationPermissionRefused() }
+    }
+    // The system dialog only when it can still appear; a permission refused for good, or
+    // notifications switched off in settings, can only be undone on the settings page.
+    val onTurnOnNotifications: () -> Unit = {
+        permissionScope.launch {
+            val activity = context.findActivity()
+            val permission = android.Manifest.permission.POST_NOTIFICATIONS
+            val asks = activity != null && asksForNotificationPermission(
+                sdkInt = android.os.Build.VERSION.SDK_INT,
+                granted = androidx.core.content.ContextCompat.checkSelfPermission(context, permission) ==
+                    android.content.pm.PackageManager.PERMISSION_GRANTED,
+                showsRationale = androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale(activity, permission),
+                refusedBefore = viewModel.appSettings.hasRefusedNotificationPermission(),
+            )
+            if (asks) notificationPermission.launch(permission) else openAppNotificationSettings(context)
+        }
+    }
 
     // Membership — drives the Plus upsell card visibility in the smart
     // carousel. This effect only covers the cold case; re-fetching an already
@@ -171,6 +234,13 @@ fun HomeTab(
     val packages by catalogRepo.packages.collectAsState(initial = emptyList())
     val marketState by viewModel.marketRepository.state.collectAsStateWithLifecycle()
     val marketCountryId = marketState.countryId
+    // Credit only pays an order in its own currency, so the slide offers the balance held in the
+    // currency Home prices in: the market's, else the catalogue default the server prices.
+    val catalogCurrency by catalogRepo.currencyCode.collectAsState()
+    val homeCurrency = (marketState as? MarketState.Resolved)?.selected?.currencyCode ?: catalogCurrency
+    val creditHere = credit?.balances?.firstOrNull {
+        it.balance > 0.0 && homeCurrency != null && it.currencyCode.equals(homeCurrency, ignoreCase = true)
+    }
     androidx.compose.runtime.LaunchedEffect(marketCountryId) {
         if (packages.isEmpty() || catalogRepo.countryId.value != marketCountryId) viewModel.refreshCatalog()
     }
@@ -204,6 +274,11 @@ fun HomeTab(
     }
     val showRecurringSection = activeRecurring.isNotEmpty()
     val showSetupRecurringSlide = isPlus && membership?.benefitsPaused != true && recurringTemplates.isEmpty()
+    // The express perk is the booking wizard's own verdict, so the slide and the wizard cannot disagree.
+    val expressWaiver = resolveExpressWaiver(membership)
+    val expressRemaining = expressWaiver.remaining.takeIf {
+        expressWaiver.status == ExpressWaiverStatus.Available && membership?.benefitsPaused != true
+    } ?: 0
 
     // Most recent Completed order — drives the "Order again" quick-action card.
     val mostRecentCompleted = androidx.compose.runtime.remember(recentOrders) {
@@ -270,6 +345,7 @@ fun HomeTab(
 
     val isRefreshing by viewModel.isUserRefreshing.collectAsStateWithLifecycle()
     val pullState = rememberPullToRefreshState()
+    val scrollState = rememberScrollState()
 
     // Wrapped here rather than around the whole composable: the firstPaintReady branch above
     // returns early, and a gesture attached before it would be dead during first paint.
@@ -279,11 +355,14 @@ fun HomeTab(
         state = pullState,
         modifier = modifier.fillMaxSize(),
         indicator = {
+            // The box runs under the status bar (Home is edge-to-edge), so the indicator rests
+            // below the status-bar inset, where the other tabs' indicators rest below their title.
             SudsRefreshIndicator(
                 state = pullState,
                 isRefreshing = isRefreshing,
                 modifier = Modifier
                     .align(Alignment.TopCenter)
+                    .windowInsetsPadding(WindowInsets.statusBars)
                     .padding(top = 8.dp),
             )
         },
@@ -292,8 +371,11 @@ fun HomeTab(
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
-                .windowInsetsPadding(WindowInsets.statusBars)
-                .verticalScroll(rememberScrollState()),
+                .statusBarFade(scrollState)
+                .verticalScroll(scrollState)
+                // Inside the scroll, so the address bar starts below the status bar at rest and
+                // scrolls under it, where statusBarFade fades it out.
+                .windowInsetsPadding(WindowInsets.statusBars),
         ) {
             // 1. Address bar + market chip + bell
             AddressTopBar(
@@ -316,16 +398,29 @@ fun HomeTab(
                 )
             }
 
-            // 2. Smart upsell carousel — Plus / referral / book / setup-recurring.
-            // Slides hide based on user state.
+            // 2. Smart upsell carousel. Slides show and hide by state; see upsellKinds.
             SmartUpsellCarousel(
                 isPlus = isPlus,
                 plusTrialDays = plusTrialDays,
                 showSetupRecurring = showSetupRecurringSlide,
+                notificationsOff = !notificationsEnabled,
+                credit = creditHere,
+                creditShare = credit?.maxShareOfOrder ?: 0.0,
+                expressRemaining = expressRemaining,
+                referralCode = referralAccount?.code?.takeIf { it.isNotBlank() },
+                onTurnOnNotifications = onTurnOnNotifications,
                 onSubscribePlus = onSubscribePlus,
                 onBookCleaning = onBookCleaning,
                 onOpenReferral = onOpenReferral,
+                onShareReferral = { code ->
+                    cz.cleansia.customer.features.rewards.shareReferralOrFallback(
+                        context,
+                        code,
+                        viewModel::onReferralShareUnavailable,
+                    )
+                },
                 onSetupRecurring = onSetupRecurring,
+                onBookSize = onBookSize,
             )
             Spacer(Modifier.height(20.dp))
 
@@ -384,9 +479,8 @@ fun HomeTab(
                 }
             }
 
-            // Trailing inset reserves room for the floating island bottom nav so
-            // the last card isn't hidden behind it. ~96dp pill height + 12dp gap.
-            Spacer(Modifier.height(108.dp))
+            // Clears the floating island bottom nav and its Book FAB.
+            Spacer(Modifier.navigationBarsPadding().height(MainShellBottomClearance))
         }
     }
 }
@@ -503,141 +597,236 @@ private fun AddressTopBar(
 
 /* ── 2. Smart upsell carousel — state-driven swipeable cards ──
  *
- * The home upsell shelf. State drives both which slides appear and their order: Plus hides for
- * subscribers, Referral and Book are always present.
+ * The home upsell shelf. State drives which slides appear and their order; see [upsellKinds].
  * -> /product/features
  */
 
-private enum class UpsellKind { Plus, Referral, Book, SetupRecurring }
+internal enum class UpsellKind { Notifications, Credit, Express, SetupRecurring, Plus, Referral, QuickSize }
+
+/** How many slides may come before the quick-size closer, which always shows. */
+internal const val UPSELL_LEADING_CAP = 4
+
+/**
+ * Which slides show, in order — most relevant first, so the slide on screen at t=0 is the one the
+ * customer is most likely to act on. The first [UPSELL_LEADING_CAP] eligible slides show, then the
+ * quick-size slide always closes the set, so there are never more than five: a longer set is a
+ * longer auto-advance cycle and a row of dots nobody counts. Referral is always eligible but is the
+ * first to give way.
+ */
+internal fun upsellKinds(
+    notificationsOff: Boolean,
+    hasCredit: Boolean,
+    expressAvailable: Boolean,
+    showSetupRecurring: Boolean,
+    isPlus: Boolean,
+): List<UpsellKind> = buildList {
+    if (notificationsOff) add(UpsellKind.Notifications)
+    if (hasCredit) add(UpsellKind.Credit)
+    if (expressAvailable) add(UpsellKind.Express)
+    if (showSetupRecurring) add(UpsellKind.SetupRecurring)
+    if (!isPlus) add(UpsellKind.Plus)
+    add(UpsellKind.Referral)
+}.take(UPSELL_LEADING_CAP) + UpsellKind.QuickSize
+
+/** Every slide its own drawing, so no two visible slides repeat a mascot. Same mapping as iOS. */
+@androidx.annotation.DrawableRes
+internal fun UpsellKind.mascotRes(): Int = when (this) {
+    UpsellKind.Notifications -> R.drawable.mascot_waving
+    UpsellKind.Credit -> R.drawable.mascot_invoice
+    UpsellKind.Express -> R.drawable.mascot_floor_scrubber
+    UpsellKind.SetupRecurring -> R.drawable.mascot_idea
+    UpsellKind.Plus -> R.drawable.mascot_plus
+    UpsellKind.Referral -> R.drawable.mascot_thumbs_up
+    UpsellKind.QuickSize -> R.drawable.mascot_vacuuming
+}
 
 private data class UpsellSlide(
     val kind: UpsellKind,
-    val topRes: Int,
-    val titleRes: Int,
-    val titleArg: Int? = null,
-    val ctaRes: Int,
+    val top: String,
+    val title: String,
+    val cta: String,
     val gradient: List<Color>,
-    val mascotRes: Int,
     val onClick: () -> Unit,
 )
+
+/** Every slide is this tall, so the pager never changes height between slides. The skeleton matches. */
+private val UpsellCardHeight = 196.dp
 
 @Composable
 private fun SmartUpsellCarousel(
     isPlus: Boolean,
     plusTrialDays: Int,
     showSetupRecurring: Boolean,
+    notificationsOff: Boolean,
+    /** The balance held in Home's currency, or null when there is none to spend here. */
+    credit: CreditBalanceDto?,
+    creditShare: Double,
+    /** Express waivers left this month; 0 when the member has none (or is not one). */
+    expressRemaining: Int,
+    /** The customer's referral code once it has loaded; null falls back to opening Rewards. */
+    referralCode: String?,
+    onTurnOnNotifications: () -> Unit,
     onSubscribePlus: () -> Unit,
     onBookCleaning: () -> Unit,
     onOpenReferral: () -> Unit,
+    onShareReferral: (code: String) -> Unit,
     onSetupRecurring: () -> Unit,
+    onBookSize: (rooms: Int, bathrooms: Int) -> Unit,
 ) {
     // Resolve gradient pairs at the composable level — BrandGradients.*() are
-    // @Composable (they read LocalAppSettings for the theme override) and
-    // can't be called from inside `remember`'s plain lambda.
+    // @Composable (they read LocalAppSettings for the theme override).
     val plusGradient = listOf(
         cz.cleansia.customer.ui.theme.Sky950,
         cz.cleansia.customer.ui.theme.Slate900,
     )
-    val (purpleA, purpleB) = cz.cleansia.customer.ui.theme.BrandGradients.purple()
-    val purpleGradient = listOf(purpleA, purpleB)
-    val (cyanA, cyanB) = cz.cleansia.customer.ui.theme.BrandGradients.cyan()
-    val cyanGradient = listOf(cyanA, cyanB)
-    val (blueA, blueB) = cz.cleansia.customer.ui.theme.BrandGradients.blue()
-    val blueGradient = listOf(blueA, blueB)
+    val purpleGradient = cz.cleansia.customer.ui.theme.BrandGradients.purple().toList()
+    val cyanGradient = cz.cleansia.customer.ui.theme.BrandGradients.cyan().toList()
+    val blueGradient = cz.cleansia.customer.ui.theme.BrandGradients.blue().toList()
+    val orangeGradient = cz.cleansia.customer.ui.theme.BrandGradients.orange().toList()
+    val emeraldGradient = cz.cleansia.customer.ui.theme.BrandGradients.emerald().toList()
 
-    // Build the slide list from current state. Order matters: most-relevant
-    // first so the slide on screen at t=0 is the one the user is most likely
-    // to act on.
-    val slides = androidx.compose.runtime.remember(
-        isPlus, plusTrialDays, showSetupRecurring,
-        plusGradient, purpleGradient, cyanGradient, blueGradient,
-    ) {
-        buildList {
-            if (!isPlus) {
-                val offersTrial = plusTrialDays > 0
-                add(
-                    UpsellSlide(
-                        kind = UpsellKind.Plus,
-                        topRes = R.string.home_upsell_plus_top,
-                        titleRes = if (offersTrial) R.string.home_upsell_plus_title_trial else R.string.home_upsell_plus_title,
-                        titleArg = plusTrialDays.takeIf { offersTrial },
-                        ctaRes = if (offersTrial) R.string.home_upsell_plus_cta_trial else R.string.home_upsell_plus_cta,
-                        // Same gradient as the Plus subscribe page hero — tapping
-                        // the card visually previews where the user lands.
-                        gradient = plusGradient,
-                        mascotRes = R.drawable.mascot_ready,
-                        onClick = onSubscribePlus,
-                    ),
-                )
-            }
+    val kinds = upsellKinds(
+        notificationsOff = notificationsOff,
+        hasCredit = credit != null,
+        expressAvailable = expressRemaining > 0,
+        showSetupRecurring = showSetupRecurring,
+        isPlus = isPlus,
+    )
+    val sharePercent = (creditShare * 100).roundToInt()
+    val offersTrial = plusTrialDays > 0
+    val slides = kinds.map { kind ->
+        when (kind) {
+            UpsellKind.Notifications -> UpsellSlide(
+                kind = kind,
+                top = stringResource(R.string.home_upsell_notifications_top),
+                title = stringResource(R.string.home_upsell_notifications_title),
+                cta = stringResource(R.string.home_upsell_notifications_cta),
+                gradient = orangeGradient,
+                onClick = onTurnOnNotifications,
+            )
+            // The server's balance and share, never a figure of the copy's own; it is spent
+            // automatically, so the slide just opens booking.
+            UpsellKind.Credit -> UpsellSlide(
+                kind = kind,
+                top = stringResource(R.string.credit_your_credit),
+                title = stringResource(
+                    R.string.home_upsell_credit_title,
+                    formatOrderPrice(credit?.balance ?: 0.0, credit?.currencyCode),
+                    sharePercent,
+                ),
+                cta = stringResource(R.string.home_upsell_book_cta),
+                gradient = emeraldGradient,
+                onClick = onBookCleaning,
+            )
+            // Members only: Plus waives the express surcharge N times a month, on a slot 2–4 h out.
+            UpsellKind.Express -> UpsellSlide(
+                kind = kind,
+                top = stringResource(
+                    R.string.home_upsell_express_top,
+                    BookingPricing.EXPRESS_LEAD_HOURS.toInt(),
+                    BookingPricing.STANDARD_LEAD_HOURS.toInt(),
+                ),
+                title = pluralStringResource(R.plurals.home_upsell_express_title, expressRemaining, expressRemaining),
+                cta = stringResource(R.string.home_upsell_book_cta),
+                gradient = plusGradient,
+                onClick = onBookCleaning,
+            )
             // Setup-recurring — only for Plus subscribers who haven't yet built
             // a schedule. Surfaces the headline Plus perk so it doesn't get
             // stuck behind a tab.
-            if (showSetupRecurring) {
-                add(
-                    UpsellSlide(
-                        kind = UpsellKind.SetupRecurring,
-                        topRes = R.string.home_upsell_setup_recurring_top,
-                        titleRes = R.string.home_upsell_setup_recurring_title,
-                        ctaRes = R.string.home_upsell_setup_recurring_cta,
-                        gradient = purpleGradient,
-                        mascotRes = R.drawable.mascot_idea,
-                        onClick = onSetupRecurring,
-                    ),
-                )
-            }
-            add(
-                UpsellSlide(
-                    kind = UpsellKind.Referral,
-                    topRes = R.string.home_upsell_referral_top,
-                    titleRes = R.string.home_upsell_referral_title,
-                    ctaRes = R.string.home_upsell_referral_cta,
-                    gradient = cyanGradient,
-                    mascotRes = R.drawable.mascot_cleaning,
-                    onClick = onOpenReferral,
-                ),
+            UpsellKind.SetupRecurring -> UpsellSlide(
+                kind = kind,
+                top = stringResource(R.string.home_upsell_setup_recurring_top),
+                title = stringResource(R.string.home_upsell_setup_recurring_title),
+                cta = stringResource(R.string.home_upsell_setup_recurring_cta),
+                gradient = purpleGradient,
+                onClick = onSetupRecurring,
             )
-            add(
-                UpsellSlide(
-                    kind = UpsellKind.Book,
-                    topRes = R.string.home_hero_greeting,
-                    titleRes = R.string.home_hero_prompt,
-                    ctaRes = R.string.home_hero_cta,
-                    gradient = blueGradient,
-                    mascotRes = R.drawable.mascot_cleaning,
-                    onClick = onBookCleaning,
-                ),
+            UpsellKind.Plus -> UpsellSlide(
+                kind = kind,
+                top = stringResource(R.string.home_upsell_plus_top),
+                title = if (offersTrial) {
+                    stringResource(R.string.home_upsell_plus_title_trial, plusTrialDays)
+                } else {
+                    stringResource(R.string.home_upsell_plus_title)
+                },
+                cta = stringResource(if (offersTrial) R.string.home_upsell_plus_cta_trial else R.string.home_upsell_plus_cta),
+                // Same gradient as the Plus subscribe page hero — tapping
+                // the card visually previews where the user lands.
+                gradient = plusGradient,
+                onClick = onSubscribePlus,
+            )
+            // The CTA says "Share my code", so the card shares it; until the code has loaded it
+            // opens Rewards, where the code appears.
+            UpsellKind.Referral -> UpsellSlide(
+                kind = kind,
+                top = stringResource(R.string.home_upsell_referral_top),
+                title = stringResource(R.string.home_upsell_referral_title),
+                cta = stringResource(R.string.home_upsell_referral_cta),
+                gradient = cyanGradient,
+                onClick = { referralCode?.let(onShareReferral) ?: onOpenReferral() },
+            )
+            // The closer replaces the old generic "Book" slide, which only duplicated the FAB.
+            UpsellKind.QuickSize -> UpsellSlide(
+                kind = kind,
+                top = "",
+                title = stringResource(R.string.home_quick_size_title),
+                cta = stringResource(R.string.home_quick_size_cta),
+                gradient = blueGradient,
+                onClick = {},
             )
         }
     }
 
-    val pagerState = rememberPagerState(pageCount = { slides.size })
-
-    // Auto-rotate every 6s. The previous version keyed the LaunchedEffect on
-    // `slides.size`, `currentPage`, AND `isScrollInProgress` — which meant
-    // every async state arrival (membership refresh, order prefetch, the
-    // animateScrollToPage call itself flipping isScrollInProgress) cancelled
-    // the in-flight delay and the timer never got to fire.
-    //
-    // Fix: a single long-lived loop keyed only on `slides.size`. The loop
-    // reads `currentPage` + `isScrollInProgress` from inside (snapshot reads)
-    // so they don't act as cancellation triggers. Pause is implemented by
-    // skipping the advance when the user is mid-drag — the next iteration
-    // waits another 6s and tries again.
+    // The carousel loops: a bounded run of virtual pages, each showing slides[page mod n], opened in
+    // the middle on slide 0, so a swipe past the last slide lands on the first and there is no edge to
+    // rubber-band on. Bounded rather than Int.MAX_VALUE so TalkBack's scroll range stays sane. iOS
+    // gets the same loop from sentinel clones, because TabView's page style is not lazy.
     val slideCount = slides.size
+    val pagerState = rememberPagerState(initialPage = upsellAnchor(slideCount)) { upsellVirtualCount(slideCount) }
+    val pagerScope = androidx.compose.runtime.rememberCoroutineScope()
+
+    // A slide arriving or leaving after first paint (membership, credit, the notification setting)
+    // changes the set; re-anchor so the slide on screen stays the one the customer was looking at.
+    var anchoredKinds by remember { mutableStateOf(kinds) }
+    androidx.compose.runtime.LaunchedEffect(kinds) {
+        if (anchoredKinds != kinds) {
+            val target = upsellReanchor(pagerState.currentPage, anchoredKinds, kinds)
+            anchoredKinds = kinds
+            pagerState.scrollToPage(target)
+        }
+    }
+
+    // Auto-advance every 6s, always forward. It stops for the rest of this Home visit once the
+    // customer swipes or taps (WCAG 2.2.2: moving content they can stop), and never runs under
+    // TalkBack or with animations removed. One long-lived loop keyed on n alone: every input it
+    // reads is a snapshot read inside it, so a state arrival does not cancel the pending delay.
+    var userInteracted by remember { mutableStateOf(false) }
+    val dragged by pagerState.interactionSource.collectIsDraggedAsState()
+    androidx.compose.runtime.LaunchedEffect(dragged) {
+        if (dragged) userInteracted = true
+    }
+    val context = androidx.compose.ui.platform.LocalContext.current
     val autoRotateMs = 6_000L
     androidx.compose.runtime.LaunchedEffect(slideCount) {
         if (slideCount <= 1) return@LaunchedEffect
         while (true) {
             kotlinx.coroutines.delay(autoRotateMs)
-            if (!pagerState.isScrollInProgress) {
-                val next = (pagerState.currentPage + 1) % slideCount
-                pagerState.animateScrollToPage(next)
+            if (userInteracted) return@LaunchedEffect
+            if (!pagerState.isScrollInProgress && upsellAutoAdvanceAllowed(context)) {
+                pagerState.animateScrollToPage(pagerState.currentPage + 1)
             }
-            // If isScrollInProgress was true, we just skip this advance and
-            // wait another 6s — gives the user time to settle their gesture.
         }
     }
+    val goToPage: (Int) -> Unit = { page ->
+        userInteracted = true
+        pagerScope.launch { pagerState.animateScrollToPage(page) }
+    }
+
+    // The quick-size slide's own steppers. Starting where the booking wizard starts, and bounded by
+    // the same caps, so "See my price" opens a booking the server accepts.
+    var quickRooms by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(1) }
+    var quickBathrooms by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(1) }
 
     Column {
         // No contentPadding here — earlier version used 20dp peek-ahead so
@@ -649,18 +838,64 @@ private fun SmartUpsellCarousel(
             state = pagerState,
             pageSpacing = 0.dp,
         ) { page ->
-            UpsellSlideCard(slide = slides[page])
+            val logical = upsellLogical(page, slideCount)
+            val slide = slides[logical]
+            val position = stringResource(R.string.home_upsell_page_a11y, logical + 1, slideCount)
+            val nextLabel = stringResource(R.string.home_upsell_next)
+            val previousLabel = stringResource(R.string.home_upsell_previous)
+            val pageSemantics = Modifier.semantics {
+                stateDescription = position
+                if (slideCount > 1) {
+                    customActions = listOf(
+                        CustomAccessibilityAction(nextLabel) { goToPage(page + 1); true },
+                        CustomAccessibilityAction(previousLabel) { goToPage(page - 1); true },
+                    )
+                }
+            }
+            if (slide.kind == UpsellKind.QuickSize) {
+                QuickSizeSlideCard(
+                    slide = slide,
+                    rooms = quickRooms,
+                    bathrooms = quickBathrooms,
+                    onRoomsChange = {
+                        userInteracted = true
+                        quickRooms = it.coerceIn(1, PropertySize.MAX_ROOMS)
+                    },
+                    onBathroomsChange = {
+                        userInteracted = true
+                        quickBathrooms = it.coerceIn(1, PropertySize.MAX_BATHROOMS)
+                    },
+                    onSeePrice = {
+                        userInteracted = true
+                        onBookSize(quickRooms, quickBathrooms)
+                    },
+                    modifier = pageSemantics,
+                )
+            } else {
+                UpsellSlideCard(
+                    slide = slide.copy(
+                        onClick = {
+                            userInteracted = true
+                            slide.onClick()
+                        },
+                    ),
+                    modifier = pageSemantics,
+                )
+            }
         }
         // Dot indicator — active segment grows wider, no fill animation.
-        // Hidden when there's only one slide (no swipe affordance needed).
+        // Hidden when there's only one slide (no swipe affordance needed). Silent to TalkBack: the
+        // card states its own position.
         if (slides.size > 1) {
             Spacer(Modifier.height(10.dp))
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clearAndSetSemantics {},
                 horizontalArrangement = Arrangement.Center,
             ) {
                 repeat(slides.size) { idx ->
-                    val selected = pagerState.currentPage == idx
+                    val selected = upsellLogical(pagerState.currentPage, slideCount) == idx
                     val width by animateDpAsState(
                         targetValue = if (selected) 24.dp else 8.dp,
                         label = "upsell-dot-$idx",
@@ -681,16 +916,55 @@ private fun SmartUpsellCarousel(
     }
 }
 
+/**
+ * The loop's page arithmetic, top-level so it is testable. n slides become n × 1000 virtual pages
+ * (none when there is nothing to loop), opened on a page in the middle that shows slide 0.
+ */
+internal fun upsellVirtualCount(n: Int): Int = if (n > 1) n * 1000 else n
+
+internal fun upsellAnchor(n: Int): Int {
+    if (n <= 1) return 0
+    val middle = upsellVirtualCount(n) / 2
+    return middle - middle.mod(n)
+}
+
+internal fun upsellLogical(page: Int, n: Int): Int = if (n <= 0) 0 else page.mod(n)
+
+/**
+ * The page to jump to when the slide set changes: the slide on screen if it is still in the set —
+ * slides arrive at the front, so its index moves — else the same position, or the last slide if the
+ * set shrank past it.
+ */
+internal fun upsellReanchor(page: Int, old: List<UpsellKind>, new: List<UpsellKind>): Int {
+    if (new.isEmpty()) return 0
+    val logical = upsellLogical(page, old.size)
+    val index = old.getOrNull(logical)?.let { new.indexOf(it) }?.takeIf { it >= 0 }
+        ?: minOf(logical, new.size - 1)
+    return upsellAnchor(new.size) + index
+}
+
+/** Auto-advance is moving content: never under TalkBack, never with animations removed. */
+private fun upsellAutoAdvanceAllowed(context: android.content.Context): Boolean {
+    val a11y = context.getSystemService(android.view.accessibility.AccessibilityManager::class.java)
+    if (a11y?.isTouchExplorationEnabled == true) return false
+    val animatorScale = android.provider.Settings.Global.getFloat(
+        context.contentResolver,
+        android.provider.Settings.Global.ANIMATOR_DURATION_SCALE,
+        1f,
+    )
+    return animatorScale > 0f
+}
+
 @Composable
-private fun UpsellSlideCard(slide: UpsellSlide) {
+private fun UpsellSlideCard(slide: UpsellSlide, modifier: Modifier = Modifier) {
     // Outer padding lives on the slide (not the pager) so each page snaps
     // full-width with no peek-ahead from neighbors. 20dp matches the
     // horizontal gutter used elsewhere on the home tab.
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 20.dp)
-            .height(180.dp)
+            .height(UpsellCardHeight)
             .clip(RoundedCornerShape(22.dp))
             .background(Brush.linearGradient(slide.gradient))
             .clickable(onClick = slide.onClick)
@@ -698,40 +972,262 @@ private fun UpsellSlideCard(slide: UpsellSlide) {
     ) {
         Column(modifier = Modifier.fillMaxWidth(0.72f)) {
             Text(
-                stringResource(slide.topRes),
+                slide.top,
                 style = MaterialTheme.typography.labelLarge,
                 color = Color.White.copy(alpha = 0.85f),
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                slide.titleArg?.let { stringResource(slide.titleRes, it) } ?: stringResource(slide.titleRes),
+                slide.title,
                 style = MaterialTheme.typography.headlineSmall.copy(fontFamily = Poppins, fontWeight = FontWeight.Bold),
                 color = Color.White,
             )
             Spacer(Modifier.height(14.dp))
-            Row(
-                modifier = Modifier
-                    .background(Color.White.copy(alpha = 0.22f), RoundedCornerShape(999.dp))
-                    .padding(horizontal = 14.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    stringResource(slide.ctaRes),
-                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-                    color = Color.White,
-                )
-                Spacer(Modifier.width(6.dp))
-                Icon(Icons.AutoMirrored.Outlined.ArrowForward, null, tint = Color.White, modifier = Modifier.size(14.dp))
-            }
+            UpsellCtaPill(slide.cta)
         }
         Image(
-            painter = painterResource(slide.mascotRes),
+            painter = painterResource(slide.kind.mascotRes()),
             contentDescription = null,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .size(110.dp),
         )
     }
+}
+
+@Composable
+private fun UpsellCtaPill(text: String, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier
+            .background(Color.White.copy(alpha = 0.22f), RoundedCornerShape(999.dp))
+            .padding(horizontal = 14.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text,
+            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+            color = Color.White,
+        )
+        Spacer(Modifier.width(6.dp))
+        Icon(Icons.AutoMirrored.Outlined.ArrowForward, null, tint = Color.White, modifier = Modifier.size(14.dp))
+    }
+}
+
+/**
+ * "How big is your home?" — two −/+ capsules and a "See my price" button that opens booking with the
+ * size already set. Taps only (a drag would fight the pager), and the card itself is not a button, so
+ * a stepper tap never opens booking. The mascot sits bottom-right beside the price button, under the
+ * steppers rather than behind them, so the steppers keep the card's full width (as on iOS). Top-right
+ * it shared its 72 dp band with the capsules and drew under the bathrooms "+".
+ */
+@Composable
+private fun QuickSizeSlideCard(
+    slide: UpsellSlide,
+    rooms: Int,
+    bathrooms: Int,
+    onRoomsChange: (Int) -> Unit,
+    onBathroomsChange: (Int) -> Unit,
+    onSeePrice: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var titleLines by remember { mutableIntStateOf(1) }
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp)
+            .height(UpsellCardHeight)
+            .clip(RoundedCornerShape(22.dp))
+            .background(Brush.linearGradient(slide.gradient))
+            .padding(20.dp),
+    ) {
+        Image(
+            painter = painterResource(slide.kind.mascotRes()),
+            contentDescription = null,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .size(quickSizeMascotSize(titleLines)),
+        )
+        Column(modifier = Modifier.fillMaxWidth()) {
+            // Full width now that nothing sits beside it: a title that wraps pushes the steppers down,
+            // and the mascot shrinks to stay below them (quickSizeMascotSize).
+            Text(
+                slide.title,
+                style = MaterialTheme.typography.headlineSmall.copy(fontFamily = Poppins, fontWeight = FontWeight.Bold),
+                color = Color.White,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                onTextLayout = { titleLines = it.lineCount },
+                modifier = Modifier.fillMaxWidth(),
+            )
+            // The steppers and the price button are 48 dp touch rows around 36 dp capsules: this
+            // spacer is 6 dp short of the 8 dp gap it draws, and the 12 dp between the steppers and
+            // the button is their two margins, so the card still fits UpsellCardHeight.
+            Spacer(Modifier.height(2.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                QuickSizeStepper(
+                    label = pluralStringResource(R.plurals.booking_rooms_short, rooms, rooms),
+                    lessLabel = stringResource(R.string.home_quick_size_rooms_less),
+                    moreLabel = stringResource(R.string.home_quick_size_rooms_more),
+                    canRemove = rooms > 1,
+                    canAdd = rooms < PropertySize.MAX_ROOMS,
+                    onMinus = { onRoomsChange(rooms - 1) },
+                    onPlus = { onRoomsChange(rooms + 1) },
+                    modifier = Modifier.weight(1f),
+                )
+                QuickSizeStepper(
+                    label = pluralStringResource(R.plurals.booking_bath_short, bathrooms, bathrooms),
+                    lessLabel = stringResource(R.string.home_quick_size_baths_less),
+                    moreLabel = stringResource(R.string.home_quick_size_baths_more),
+                    canRemove = bathrooms > 1,
+                    canAdd = bathrooms < PropertySize.MAX_BATHROOMS,
+                    onMinus = { onBathroomsChange(bathrooms - 1) },
+                    onPlus = { onBathroomsChange(bathrooms + 1) },
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            UpsellCtaPill(
+                slide.cta,
+                modifier = Modifier
+                    .minimumInteractiveComponentSize()
+                    .clip(RoundedCornerShape(999.dp))
+                    .clickable(role = Role.Button, onClick = onSeePrice),
+            )
+        }
+    }
+}
+
+/**
+ * The quick-size mascot's side, which keeps it clear of the steppers above it. The title is 18sp on
+ * 24sp lines and at most two of them; under it come a 2dp spacer and the 48dp stepper row, whose 36dp
+ * capsules sit 6dp in. On one line the capsules end 68dp down the card's 156dp inner height, above a
+ * 72dp mascot's top at 84dp. A wrapped title (uk and ru on a 360dp phone, more locales on a narrower
+ * one) ends them at 92dp, 8dp into a 72dp mascot, so the mascot is 56dp then and starts at 100dp.
+ */
+internal fun quickSizeMascotSize(titleLines: Int): Dp = if (titleLines > 1) 56.dp else 72.dp
+
+@Composable
+private fun QuickSizeStepper(
+    label: String,
+    lessLabel: String,
+    moreLabel: String,
+    canRemove: Boolean,
+    canAdd: Boolean,
+    onMinus: () -> Unit,
+    onPlus: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    // A 36 dp capsule, but each −/+ answers a 48 dp square centred on its icon: the 6 dp above and
+    // below are this row's padding, and the 4 dp either side reach into the label's margin and the
+    // gap beside the capsule, so the label keeps its width. Nothing here clips — a clip would stop
+    // the overhang taking taps — and the ripple is an 18 dp circle that stays inside the capsule.
+    Row(
+        modifier = modifier
+            .padding(vertical = 6.dp)
+            .height(36.dp)
+            .background(Color.White.copy(alpha = 0.22f), RoundedCornerShape(999.dp)),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            Modifier
+                .size(40.dp, 36.dp)
+                .requiredSize(48.dp)
+                .clickable(
+                    interactionSource = null,
+                    indication = ripple(bounded = false, radius = 18.dp),
+                    enabled = canRemove,
+                    role = Role.Button,
+                    onClick = onMinus,
+                )
+                .semantics { contentDescription = lessLabel },
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                Icons.Outlined.Remove,
+                null,
+                tint = Color.White.copy(alpha = if (canRemove) 1f else 0.38f),
+                modifier = Modifier.size(16.dp),
+            )
+        }
+        // On a 360dp phone the label has 56dp, and uk and ru counts do not fit one line ("1 ванна
+        // кімната", "2 комнаты"), so it takes two 16sp lines, which the 36dp capsule holds. A word still
+        // too wide for its line steps the size down to 80%, as iOS's minimumScaleFactor(0.8) does.
+        var shrinkSteps by remember(label) { mutableIntStateOf(0) }
+        val labelStyle = MaterialTheme.typography.labelMedium
+        Text(
+            label,
+            style = labelStyle.copy(
+                fontWeight = FontWeight.SemiBold,
+                fontSize = labelStyle.fontSize * (1f - 0.1f * shrinkSteps),
+                lineHeight = 16.sp,
+            ),
+            color = Color.White,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center,
+            onTextLayout = { if (it.hasVisualOverflow && shrinkSteps < 2) shrinkSteps++ },
+            modifier = Modifier.weight(1f),
+        )
+        Box(
+            Modifier
+                .size(40.dp, 36.dp)
+                .requiredSize(48.dp)
+                .clickable(
+                    interactionSource = null,
+                    indication = ripple(bounded = false, radius = 18.dp),
+                    enabled = canAdd,
+                    role = Role.Button,
+                    onClick = onPlus,
+                )
+                .semantics { contentDescription = moreLabel },
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                Icons.Outlined.Add,
+                null,
+                tint = Color.White.copy(alpha = if (canAdd) 1f else 0.38f),
+                modifier = Modifier.size(16.dp),
+            )
+        }
+    }
+}
+
+/**
+ * Whether the notifications slide raises the system dialog rather than the settings page: only on
+ * API 33+ with the permission not granted, and only while the dialog can still appear. Android shows
+ * a rationale between the first and the second refusal; a permission never refused shows none but can
+ * still be asked, and one refused for good shows none and cannot, which [refusedBefore] tells apart.
+ * Notifications switched off in settings with the permission granted are the settings page's too.
+ */
+internal fun asksForNotificationPermission(
+    sdkInt: Int,
+    granted: Boolean,
+    showsRationale: Boolean,
+    refusedBefore: Boolean,
+): Boolean = sdkInt >= android.os.Build.VERSION_CODES.TIRAMISU && !granted && (showsRationale || !refusedBefore)
+
+/** The system's notification page for this app — where a permanently refused permission is undone. */
+private fun openAppNotificationSettings(context: android.content.Context) {
+    val intent = android.content.Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+        .putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, context.packageName)
+    if (context.findActivity() == null) intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+    try {
+        context.startActivity(intent)
+    } catch (_: android.content.ActivityNotFoundException) {
+        val details = android.content.Intent(
+            android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+            android.net.Uri.fromParts("package", context.packageName, null),
+        ).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+        runCatching { context.startActivity(details) }
+    }
+}
+
+private tailrec fun android.content.Context.findActivity(): android.app.Activity? = when (this) {
+    is android.app.Activity -> this
+    is android.content.ContextWrapper -> baseContext.findActivity()
+    else -> null
 }
 
 /* ── 3. Trust strip ── */
@@ -1341,12 +1837,12 @@ private fun HomeSkeleton(modifier: Modifier = Modifier) {
             )
         }
 
-        // Carousel slide placeholder — matches the real upsell card's 180dp height
+        // Carousel slide placeholder — matches the real upsell card's height
         SkeletonBlock(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp)
-                .height(180.dp),
+                .height(UpsellCardHeight),
             color = blockColor,
             shape = RoundedCornerShape(22.dp),
         )

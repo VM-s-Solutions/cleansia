@@ -208,6 +208,25 @@ public static class NotificationEventCatalog
     public const string EmployeeWeeklyLimitSet = "employee.weekly_limit_set";
 
     /// <summary>
+    /// Partner-targeted: an admin approved this cleaner's registration (<c>ApproveEmployee</c>), so the
+    /// registration lock lifts on the next load. Argless.
+    ///
+    /// <para><b>Push-only</b> — in no feed keyset, because the inbox cannot be reached from the lock this
+    /// answers. Non-mutable (<c>GetCategoryFor</c> returns null): the cleaner is waiting for exactly this
+    /// decision, and a mute would leave them on a stale "under review" screen.
+    /// → /architecture/push-notifications#event-catalogue</para>
+    /// </summary>
+    public const string EmployeeRegistrationApproved = "employee.registration_approved";
+
+    /// <summary>
+    /// Partner-targeted: an admin rejected this cleaner's registration (<c>RejectEmployee</c>). Argless —
+    /// the admin's free-text reason never rides the push: it is outside the lock-screen allowlist
+    /// (ADR-0025 D3) and may carry personal data; the lock shows it from the registration status instead.
+    /// Push-only and non-mutable, for the reasons on <see cref="EmployeeRegistrationApproved"/>.
+    /// </summary>
+    public const string EmployeeRegistrationRejected = "employee.registration_rejected";
+
+    /// <summary>
     /// Customer-targeted: the booking's time arrived with no cleaner on it, so the platform cancelled
     /// it, refunded in full and added the apology credit. Args: <c>orderNumber</c> (loc) +
     /// <c>amount</c> (loc, the credit with its currency's symbol, "250 Kč") + <c>orderId</c> (deep

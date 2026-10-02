@@ -330,6 +330,18 @@ class UserRepositoryTest {
         return sent.captured
     }
 
+    /**
+     * The command's PhoneNumber is non-nullable on the server, and explicitNulls = false drops a null
+     * from the body — so a null phone was an omitted member the model binder refused. A blank is what
+     * "nothing to say" looks like there; a phone-less customer's language push depends on it.
+     */
+    @Test
+    fun updateCurrentUser_givenNoPhone_sendsABlankRatherThanOmittingIt() = runTest {
+        val command = captureUpdateCommand()
+
+        assertEquals("", command.phoneNumber)
+    }
+
     @Test
     fun updateCurrentUser_givenAPickedPhoto_putsTheEncodedImageOnTheGeneratedCommand() = runTest {
         val command = captureUpdateCommand(

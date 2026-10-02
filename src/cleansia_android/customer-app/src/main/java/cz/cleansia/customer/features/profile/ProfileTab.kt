@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -28,6 +29,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowForwardIos
 import androidx.compose.material.icons.automirrored.outlined.Logout
+import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.CreditCard
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.DeleteForever
@@ -65,7 +67,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import cz.cleansia.customer.R
+import cz.cleansia.core.format.formatOrderPrice
+import cz.cleansia.customer.core.loyalty.CreditDto
 import cz.cleansia.customer.core.user.CurrentUser
+import cz.cleansia.customer.features.rewards.CreditExplainerSheet
 import cz.cleansia.core.ui.components.CleansiaDialog
 import cz.cleansia.customer.ui.theme.BrandGradients
 import cz.cleansia.customer.ui.theme.CleansiaTheme
@@ -75,11 +80,15 @@ import cz.cleansia.customer.ui.theme.Sky600
 import cz.cleansia.customer.ui.theme.asList
 import kotlinx.datetime.toJavaLocalDateTime
 import kotlinx.datetime.toLocalDateTime
+import cz.cleansia.customer.features.main.MainShellBottomClearance
+import cz.cleansia.customer.ui.components.statusBarFade
 
 private data class ProfileRow(
     val key: String,
     val icon: ImageVector,
     val labelRes: Int,
+    /** A trailing figure the row states before it is opened — the credit balance. */
+    val value: String? = null,
 )
 
 /**
@@ -94,6 +103,8 @@ fun ProfileTab(
     isPlus: Boolean = false,
     /** The Market row renders only when the directory offers a choice (ADR-0058 D6). */
     showMarketRow: Boolean = false,
+    /** The customer's credit; null (not loaded, or the read failed) hides the row, zero shows "0 Kč". */
+    credit: CreditDto? = null,
     onLogout: () -> Unit = {},
     onRowClick: (key: String) -> Unit = {},
     onAvatarLoadFailed: () -> Unit = {},
@@ -110,7 +121,17 @@ fun ProfileTab(
     val savedDisplay = formatSaved(user?.totalSavings, user?.savingsCurrencyCode)
     val memberSince = formatMemberSince(user?.memberSince)
 
-    val accountRows = listOf(
+    val accountRows = listOfNotNull(
+        // The same placement the web profile rail gives credit, shown at zero too. It opens the
+        // explainer the Rewards card opens, so the two never describe credit differently.
+        credit?.let {
+            ProfileRow(
+                "credit",
+                Icons.Outlined.AccountBalanceWallet,
+                R.string.profile_row_credit,
+                value = formatOrderPrice(it.primary.balance, it.primary.currencyCode),
+            )
+        },
         ProfileRow("addresses", Icons.Outlined.Home, R.string.profile_row_addresses),
         ProfileRow("payments", Icons.Outlined.CreditCard, R.string.profile_row_payments),
         // "Disputes" opens the My Disputes list (Wave 2 Phase 6). Gavel is
@@ -133,12 +154,15 @@ fun ProfileTab(
     // back to SignIn + clears tokens). The "Log out" row only flips the flag;
     // the actual `onLogout()` callback fires after the user confirms.
     var showLogoutDialog by remember { mutableStateOf(false) }
+    var showCreditSheet by remember { mutableStateOf(false) }
+    val scrollState = rememberScrollState()
 
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .verticalScroll(rememberScrollState()),
+            .statusBarFade(scrollState)
+            .verticalScroll(scrollState),
     ) {
         // 1. Hero + stats card (stats overlap the hero's bottom edge)
         Box {
@@ -188,7 +212,10 @@ fun ProfileTab(
         Spacer(Modifier.height(18.dp))
 
         // 2. Account (only saved addresses now — "Edit profile" moved into the hero)
-        SettingsSection(rows = accountRows, onClick = onRowClick)
+        SettingsSection(
+            rows = accountRows,
+            onClick = { key -> if (key == "credit") showCreditSheet = true else onRowClick(key) },
+        )
         Spacer(Modifier.height(18.dp))
 
         // 3. Preferences
@@ -225,8 +252,12 @@ fun ProfileTab(
                 .padding(vertical = 20.dp),
             textAlign = TextAlign.Center,
         )
-        // Reserve room for the floating island bottom nav.
-        Spacer(Modifier.height(108.dp))
+        // Clears the floating island bottom nav and its Book FAB.
+        Spacer(Modifier.navigationBarsPadding().height(MainShellBottomClearance))
+    }
+
+    if (showCreditSheet && credit != null) {
+        CreditExplainerSheet(credit = credit, onDismiss = { showCreditSheet = false })
     }
 
     if (showLogoutDialog) {
@@ -251,8 +282,8 @@ fun ProfileTab(
 // spare — so ru ellipsizes below ~376dp by design.
 private const val EditChipMaxWidthFraction = 0.45f
 
-// The gradient runs edge to edge under the status bar and the row starts this far below it, matching
-// iOS's `.padding(.top, 48 + topInset)` on the same hero.
+// The gradient runs edge to edge under the status bar and the row starts this far below it. iOS pads
+// its hero by the same 48 inside the safe area and paints the background up through the status bar.
 private val HeroContentTopPadding = 48.dp
 
 @Composable
@@ -552,6 +583,15 @@ private fun SettingsRow(row: ProfileRow, onClick: () -> Unit) {
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.weight(1f),
         )
+        if (row.value != null) {
+            Text(
+                row.value,
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+            )
+            Spacer(Modifier.width(8.dp))
+        }
         Icon(
             Icons.AutoMirrored.Outlined.ArrowForwardIos,
             null,

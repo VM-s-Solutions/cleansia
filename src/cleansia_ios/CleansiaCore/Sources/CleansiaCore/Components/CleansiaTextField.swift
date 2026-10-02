@@ -12,6 +12,7 @@ public struct CleansiaTextField: View {
     private let enabled: Bool
     private let transparentContainer: Bool
     private let autoFocus: Bool
+    private let keepsCaretWhenRegrouped: Bool
 
     @State private var passwordVisible = false
     @State private var focused = false
@@ -26,7 +27,8 @@ public struct CleansiaTextField: View {
         isPassword: Bool = false,
         enabled: Bool = true,
         transparentContainer: Bool = false,
-        autoFocus: Bool = false
+        autoFocus: Bool = false,
+        keepsCaretWhenRegrouped: Bool = false
     ) {
         _value = value
         self.label = label
@@ -38,6 +40,28 @@ public struct CleansiaTextField: View {
         self.enabled = enabled
         self.transparentContainer = transparentContainer
         self.autoFocus = autoFocus
+        self.keepsCaretWhenRegrouped = keepsCaretWhenRegrouped
+    }
+
+    /// Where the caret goes when a binding regroups the text under it (the IBAN's fours): after as many
+    /// letters and digits in `newText` as stood before UTF-16 offset `caret` in `oldText`, so the spaces
+    /// a regroup moves never move the caret off the character being edited. The same mapping as
+    /// Android's `IbanGroupsOfFour` offset mapping, in both directions.
+    static func regroupedCaret(_ caret: Int, from oldText: String, to newText: String) -> Int {
+        var offset = 0
+        var remaining = 0
+        for character in oldText {
+            offset += character.utf16.count
+            guard offset <= caret else { break }
+            if character.isLetter || character.isNumber { remaining += 1 }
+        }
+        var moved = 0
+        for character in newText {
+            guard remaining > 0 else { break }
+            moved += character.utf16.count
+            if character.isLetter || character.isNumber { remaining -= 1 }
+        }
+        return moved
     }
 
     private var isError: Bool {
@@ -137,7 +161,8 @@ public struct CleansiaTextField: View {
             isEnabled: enabled,
             font: inputFont,
             textColor: enabled ? CleansiaColors.onSurface : CleansiaColors.disabledInk,
-            tintColor: CleansiaColors.primary
+            tintColor: CleansiaColors.primary,
+            keepsCaretWhenRegrouped: keepsCaretWhenRegrouped
         )
         .frame(maxWidth: .infinity)
         .frame(height: inputFont.lineHeight.rounded(.up))
@@ -159,6 +184,7 @@ private struct ManagedTextField: UIViewRepresentable {
     let font: UIFont
     let textColor: Color
     let tintColor: Color
+    let keepsCaretWhenRegrouped: Bool
 
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
@@ -190,7 +216,7 @@ private struct ManagedTextField: UIViewRepresentable {
         context.coordinator.parent = self
 
         if field.text != text {
-            field.setTextPreservingBinding(text)
+            seat(text, in: field)
         }
 
         field.font = font
@@ -202,6 +228,25 @@ private struct ManagedTextField: UIViewRepresentable {
 
         applySecureEntry(field)
         syncFirstResponder(field)
+    }
+
+    /// Assigning `text` puts the caret at the end. A binding that regroups what is typed rewrites the
+    /// text on every edit before its last group, so for such a field the caret is put back after the
+    /// same letters and digits; any other field takes the binding's text as it always has.
+    private func seat(_ newText: String, in field: TrackingTextField) {
+        guard keepsCaretWhenRegrouped, field.isFirstResponder, let selection = field.selectedTextRange else {
+            field.setTextPreservingBinding(newText)
+            return
+        }
+        let caret = CleansiaTextField.regroupedCaret(
+            field.offset(from: field.beginningOfDocument, to: selection.end),
+            from: field.text ?? "",
+            to: newText
+        )
+        field.setTextPreservingBinding(newText)
+        if let position = field.position(from: field.beginningOfDocument, offset: caret) {
+            field.selectedTextRange = field.textRange(from: position, to: position)
+        }
     }
 
     private func applySecureEntry(_ field: TrackingTextField) {

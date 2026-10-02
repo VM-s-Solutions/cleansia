@@ -27,7 +27,8 @@ sequenceDiagram
   API->>F: create
   F-->>API: New + PaymentStatus.Pending
   alt Card
-    API->>S: create checkout session for order.TotalPrice
+    API->>API: take the customer's credit (same currency, at most 70 %)
+    API->>S: create checkout session for order.AmountDueOnCard
     S-->>C: payment page
   else Cash
     API-->>C: booked; nothing to pay now
@@ -60,8 +61,13 @@ regardless of the browsing market. → [ADR-0061 D6](/decisions/adr-0061#d6-tena
 
 `CreateOrder.Command` carries a `TotalPrice`, and it is **a confirmation, not an input**. The validator
 re-prices the whole selection server-side and refuses on disagreement. The amount that reaches Stripe
-is `ToMinorUnits(order.TotalPrice)` read from the persisted, server-computed value — the client cannot
-influence it at any point, which is why the payment webhook does not need to reconcile the amount.
+is `ToMinorUnits(order.AmountDueOnCard)` — the total less the credit `CreateOrder` took for it — read
+from the persisted, server-computed values. The client cannot influence it at any point, which is why
+the payment webhook does not need to reconcile the amount. The quote carries the customer's credit
+balance and the share (`creditBalance`, `creditMaxShareOfOrder`) so the wizard can say *To pay by card*
+before Stripe does. Every client shows that split only for a card payment, because `CreateOrder` takes
+credit only from a card booking (`TakeCreditForOrderAsync`); with cash and a balance held it says credit
+applies to card payments only. → [Business rules — customer credit](/product/business-rules#credit)
 
 ## The customer says how dirty the home is {#dirtiness-level}
 
@@ -200,6 +206,15 @@ read, gets a receipt in the language they booked in. A recurring occurrence has 
 its own: its `LanguageCode` is null and its receipt follows the account's preference.
 → [What the receipt says](/flows/payment-and-fiscal#what-the-receipt-says)
 
+**So do the order's status e-mails, since 2026-10-01.** *A cleaner has taken your job* (`TakeOrder`),
+*started* (`StartOrder`) and *all done* (`CompleteOrder`) used to read the account's preferred
+language alone, so a customer whose stored preference was stale — a Google or Apple sign-up is stamped
+`en` — got a Czech confirmation followed by English status e-mails. They now resolve the order's
+language, then the account's preference, then English, the chain the booking confirmation already
+used: **one order, one language.** A booking language with no e-mail copy falls back to English, as
+the confirmation does. A customer who changes the app's language after booking keeps getting that
+order's e-mails in the language it was booked in.
+
 ## Responsive quote previews
 
 The home calculator requests its quote immediately. Booking groups rapid selection changes into a
@@ -230,8 +245,13 @@ the crew, it can decide cash. Those minutes are **0 on every service** until the
 typed into the admin catalogue, so for now the size moves the price and not the time.
 → [Business rules — crew size](/product/business-rules#crew-size)
 
-**No client offers a size the server refuses.** Every picker stops at 8 rooms and 4 bathrooms, and on
-Android and iOS the plus button is disabled at the cap:
+**No client offers a size the server refuses, and the mobile apps say where it stops.** Every picker
+stops at 8 rooms and 4 bathrooms. On Android and iOS both stepper buttons stop at the bounds: the plus
+greys at the cap, and the minus greys at the floor, 1 on a one-off booking and 0 on a schedule. Under
+the size row of both flows the apps state the limit, *Up to 8 rooms and 4 bathrooms*
+(`booking_size_limit_caption`, rendered from the two constants rather than written into the
+translation). The steppers used to stop at the cap without saying why, and the one-off minus looked
+live at 1 (owner ruling 2026-10-01):
 
 | Picker | Rooms | Bathrooms |
 |---|---|---|
@@ -239,13 +259,28 @@ Android and iOS the plus button is disabled at the cap:
 | Recurring schedule — web | 1 – 8 | 1 – 4 |
 | Recurring schedule — Android, iOS | 0 – 8 | 0 – 4 |
 
+**On the one-off booking's size row, the *Your home* title sits above the two steppers** on Android
+and iOS (since 2026-10-02). The steppers used to sit beside the title, which left no room once
+Ukrainian counted bathrooms as *ванна кімната* (owner ruling 2026-10-02). On a 360dp phone the two
+Ukrainian counters alone needed 306dp of the row's 292dp, and on a 320pt iPhone they ran into each
+other. Each counter's label now takes the width its pill leaves after both buttons, and a longer label
+wraps onto a second line between words. Home's *How big is your home?* card gives its labels up to two
+lines too, and then shrinks them to 80% if a word is still too wide. On Android the cleaner's job-board
+scope chips wrap onto a second line (`FlowRow`), as iOS's `ChipFlow` already did.
+
 On Android and iOS, a rebooking, or a schedule started from a past order, that was larger starts at the
 cap. The web's two prefills (`prefillFromRebook`, `prefillFromOrder`) pass the stored size through
 unclamped: a larger past order leaves no size chip selected, and submitting it is refused with
 `order.size_exceeds_maximum`. Editing an existing schedule does not clamp what it stored; the server
 already refuses anything larger. Android
 (`PropertySize.kt`) and iOS (`PropertySize.swift`) each hold the two caps once, and a test on each
-reads them against `BookingPolicy.MaxRooms` and `MaxBathrooms` in `BookingPolicy.cs`.
+reads them against `BookingPolicy.MaxRooms` and `MaxBathrooms` in `BookingPolicy.cs`. The
+booking-policy parity gate (`check-booking-policy-parity.mjs`) holds every client to the same two
+numbers. It reads both constants, the last chip of the web's two size pickers, the refusal copy
+(`order.size_exceeds_maximum`) in the web, Android and iOS catalogs in all five locales, which must
+state exactly 8 and 4, and the caption, which must carry its two placeholders and no figure. The
+caption's noun forms in Czech, Slovak, Ukrainian and Russian agree with 8 and 4, so the gate also fails
+when the policy moves and asks for them to be re-read.
 
 **Starts are 08:00 – 19:45 in 15-minute steps, in the market's time zone, at most 60 days ahead — and
 the server enforces it** (owner ruling 2026-09-28). `CreateOrder` and `QuoteOrder` refuse a start off the
@@ -437,6 +472,16 @@ Both reads sit in the `interactive` rate-limit window, and the request logger su
 `accessToken` the way it suppresses a password.
 → [Rate-limit policy](/domain/roles/rate-limit-policy)
 
+**The lookup is web-only; the mobile host still serves it** (owner ruling 2026-10-01). The guest's
+link opens the web `/track-order`, and neither the Android nor the iOS customer app has a guest screen
+any more: *Find a guest booking*, where the guest pasted the link into the app, is gone, and no guest
+path is on either app's anonymous allow-list. That reverses the 2026-09-28 meeting default that the
+apps keep the lookup because it creates nothing. The customer mobile host keeps all six guest routes
+for now — `Lookup` (POST and GET), `LookupBatch`, and the three in
+[Guest cancellation](#guest-cancellation) — because an app build installed before the change still
+calls `Lookup`, `GuestCancellationPreview` and `CancelGuest`. They answer as they do on the web host
+until a follow-up removes them (T-0800, once no supported build calls them). → [The anonymous allow-list](/mobile-app/api-integration#the-anonymous-allow-list)
+
 The guest projection carries no address and no crew: the token opens the **booking**, not the
 household. It does carry the `confirmationCode`, now purely as the short human reference printed on
 the booking — nothing authenticates on it, and it is served on the guest's own order only.
@@ -503,7 +548,7 @@ way cannot be cancelled; nor can one whose booked start has passed with a cleane
 (`order.start_passed_cannot_cancel`), which the guest reports as a no-show instead.
 → [Cancellation rules](/product/business-rules#cancellation)
 
-The two anonymous routes are available on the customer web and customer mobile API hosts, both in
+The three anonymous routes are available on the customer web and customer mobile API hosts, all in
 the `auth` rate-limit window. Each request body carries the access token and nothing else that
 proves anything:
 

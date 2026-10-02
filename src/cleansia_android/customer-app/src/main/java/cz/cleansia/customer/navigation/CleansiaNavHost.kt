@@ -33,7 +33,6 @@ import cz.cleansia.customer.features.disputes.DisputeDetailScreen
 import cz.cleansia.customer.features.disputes.DisputeFormConstants
 import cz.cleansia.customer.features.disputes.DisputesListScreen
 import cz.cleansia.customer.features.main.MainShell
-import cz.cleansia.customer.features.orders.GuestOrderScreen
 import cz.cleansia.customer.features.orders.OrderDetailScreen
 import cz.cleansia.customer.features.orders.photos.OrderPhotosScreen
 import cz.cleansia.customer.core.settings.AppSettingsRepository
@@ -170,18 +169,9 @@ fun CleansiaNavHost(
                 onSignInClick = { email, password -> vm.signIn(email, password) },
                 onForgotPassword = { navController.navigate(Routes.ForgotPassword) },
                 onCreateAccount = { navController.navigate(Routes.SignUp) },
-                onGuestOrder = { navController.navigate(Routes.GuestOrder) },
                 onGoogleSignIn = { vm.signInWithGoogle(context) },
                 loading = state.loading,
             )
-        }
-        composable<Routes.GuestOrder>(
-            enterTransition = pushEnter,
-            exitTransition = pushExit,
-            popEnterTransition = popEnter,
-            popExitTransition = popExit,
-        ) {
-            GuestOrderScreen(onBack = { navController.popBackStack() })
         }
         composable<Routes.SignUp>(
             enterTransition = pushEnter,

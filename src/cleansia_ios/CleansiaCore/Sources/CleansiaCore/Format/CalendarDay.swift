@@ -33,9 +33,15 @@ public enum CalendarDay {
     /// was shown is the day that is stored.
     public static func pickerBinding(_ birthDate: Binding<Date?>) -> Binding<Date> {
         Binding(
-            get: { birthDate.wrappedValue ?? Date() },
+            get: { birthDate.wrappedValue ?? unsetSeed() },
             set: { birthDate.wrappedValue = startOfDay($0, in: calendar.timeZone) }
         )
+    }
+
+    /// What an unset field's wheel shows: thirty years back, so an adult's year is a short spin away
+    /// rather than decades of it. Shown only — nothing is stored until the wheel moves.
+    static func unsetSeed(now: Date = Date()) -> Date {
+        calendar.date(byAdding: .year, value: -30, to: now) ?? now
     }
 
     public static func text(_ date: Date, locale: Locale) -> String {

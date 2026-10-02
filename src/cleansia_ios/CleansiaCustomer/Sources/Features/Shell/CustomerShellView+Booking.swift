@@ -33,6 +33,18 @@ extension CustomerShellView {
         model.book()
     }
 
+    /// The Home quick-size slide — the size it holds, on top of the usual address hydration.
+    func bookSize(rooms: Int, bathrooms: Int) {
+        bookingVM.update {
+            BookingPrefill.withSize(
+                BookingPrefill.hydratedWithPreferred($0, preferred: preferredAddress),
+                rooms: rooms,
+                bathrooms: bathrooms
+            )
+        }
+        model.book()
+    }
+
     /// "Order again" — present first, then pre-fill from the fetched order
     /// (Android opens the sheet and lets the rebook effect fill it,
     /// `MainShell.kt:276-279` + `BookingBottomSheet.kt:305-374`). Rebook owns

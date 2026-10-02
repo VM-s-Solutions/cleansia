@@ -965,7 +965,8 @@
         "price_before_discount": "Price before discount: {{amount}}",
         "credit_applied": "Your credit",
         "due_on_card": "To pay by card",
-        "credit_note": "Your credit balance is {{balance}}. We apply it to your next booking automatically, so there is nothing to choose — and part of every booking is always paid by card."
+        "credit_note": "Your credit balance is {{balance}}. We apply it to your next booking automatically, so there is nothing to choose — and part of every booking is always paid by card.",
+        "credit_card_only": "Credit applies to card payments only."
       },
       "summary_address": "Address",
       "summary_bathrooms_few": "{{count}} bathrooms",
@@ -1130,6 +1131,8 @@
       "packages": "Packages",
       "services": "Services",
       "total": "Total",
+      "paid_with_credit": "Paid with credit",
+      "paid_by_card": "Paid by card",
       "discount_tier": "Loyalty discount",
       "discount_membership": "Cleansia Plus discount",
       "discount_promo": "Promo code",
@@ -1280,7 +1283,7 @@
         "fact_slot": "We're holding your slot for an hour",
         "fact_slot_note": "After that we release it and you'd have to book again. Either way, nothing is charged.",
         "fact_help": "Not working?",
-        "fact_help_note": "Write to info@cleansia.cz and we'll sort the payment out with you.",
+        "fact_help_note": "Write to support@cleansia.cz and we'll sort the payment out with you.",
         "pay_now": "Pay now",
         "resume_failed": "We couldn't reopen this payment. The booking may have already been released — please book again."
       }

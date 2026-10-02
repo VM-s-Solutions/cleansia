@@ -119,6 +119,30 @@ final class MascotSegmentAssetTests: XCTestCase {
         return availability
     }
 
+    /// Each segment's frames used to sit on a near-invisible fill: a 306 pt square of alpha-1 pixels baked
+    /// into the key frame, which showed as a faint lighter square behind the mascot on the busy card and
+    /// the order puck. The welcoming mascot carried the same fill. Nothing behind a mascot may be drawn.
+    func testNoFrameCarriesANearTransparentFillBehindTheMascot() throws {
+        for name in AnimatedMascot.cleaningInProgress.segmentNames + AnimatedMascot.welcoming.segmentNames {
+            let source = try XCTUnwrap(CGImageSourceCreateWithURL(dataset(name) as CFURL, nil))
+            let frame = try XCTUnwrap(CGImageSourceCreateImageAtIndex(source, 0, nil))
+            var pixels = [UInt8](repeating: 0, count: frame.width * frame.height * 4)
+            let context = try XCTUnwrap(CGContext(
+                data: &pixels,
+                width: frame.width,
+                height: frame.height,
+                bitsPerComponent: 8,
+                bytesPerRow: frame.width * 4,
+                space: CGColorSpaceCreateDeviceRGB(),
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+            ))
+            context.draw(frame, in: CGRect(x: 0, y: 0, width: frame.width, height: frame.height))
+            let faint = stride(from: 3, to: pixels.count, by: 4).filter { (1 ... 3).contains(pixels[$0]) }.count
+
+            XCTAssertLessThan(faint, 500, "\(name) draws \(faint) near-transparent pixels behind the mascot")
+        }
+    }
+
     private func dataset(_ name: String) -> URL {
         catalog.appendingPathComponent("\(name).dataset/\(name).webp")
     }

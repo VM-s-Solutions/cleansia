@@ -24,36 +24,46 @@
           formControlName="bankCountryId"
         />
       </div>
-      <!-- One control, three segments. The account is a single thing to the person typing it, so the
-           three columns it is stored in are not three boxes to fill. -->
-      <div class="cleansia-profile__field cleansia-profile__field--full">
-        <cleansia-bank-account
-          [label]="'pages.profile.bank_account' | translate"
-          [prefix]="facade.formGroup.controls.accountPrefix"
-          [number]="facade.formGroup.controls.accountNumber"
-          [bankCode]="facade.formGroup.controls.bankCode"
-          [prefixLabel]="'pages.profile.bank_account_prefix' | translate"
-          [numberLabel]="'pages.profile.bank_account_number' | translate"
-          [bankCodeLabel]="'pages.profile.bank_code' | translate"
-          [prefixPlaceholder]="'pages.profile.bank_account_prefix_placeholder' | translate"
-          [numberPlaceholder]="'pages.profile.bank_account_number_placeholder' | translate"
-          [bankCodePlaceholder]="'pages.profile.bank_code_placeholder' | translate"
-        />
-        <small class="cleansia-profile__field-hint">
-          {{ 'pages.profile.bank_account_hint' | translate }}
-        </small>
-      </div>
-      <div class="cleansia-profile__field">
-        <cleansia-text-input
-          [label]="'pages.profile.iban' | translate"
-          [floatVariant]="'on'"
-          formControlName="iban"
-          dataType="text"
-        />
-        <small class="cleansia-profile__field-hint">
-          {{ 'pages.profile.iban_hint' | translate }}
-        </small>
-      </div>
+      <!-- The bank country decides the form (owner ruling 2026-10-02). A Czech or Slovak bank is one
+           control in three segments: the account is a single thing to the person typing it, so the
+           three columns it is stored in are not three boxes to fill. A bank anywhere else is one IBAN. -->
+      @if (!facade.ibanCountry()) {
+        <div class="cleansia-profile__field cleansia-profile__field--full">
+          <cleansia-bank-account
+            [label]="'pages.profile.bank_account' | translate"
+            [prefix]="facade.formGroup.controls.accountPrefix"
+            [number]="facade.formGroup.controls.accountNumber"
+            [bankCode]="facade.formGroup.controls.bankCode"
+            [prefixLabel]="'pages.profile.bank_account_prefix' | translate"
+            [numberLabel]="'pages.profile.bank_account_number' | translate"
+            [bankCodeLabel]="'pages.profile.bank_code' | translate"
+            [prefixPlaceholder]="'pages.profile.bank_account_prefix_placeholder' | translate"
+            [numberPlaceholder]="'pages.profile.bank_account_number_placeholder' | translate"
+            [bankCodePlaceholder]="'pages.profile.bank_code_placeholder' | translate"
+          />
+          <small class="cleansia-profile__field-hint">
+            {{ 'pages.profile.bank_account_hint' | translate }}
+          </small>
+        </div>
+      } @else {
+        <div class="cleansia-profile__field">
+          <cleansia-text-input
+            [label]="'pages.profile.iban' | translate"
+            [floatVariant]="'on'"
+            [className]="facade.ibanError() ? 'ng-invalid ng-dirty' : ''"
+            formControlName="iban"
+            dataType="text"
+          />
+          @if (facade.ibanError(); as error) {
+            <ul class="cleansia-error-message-container">
+              <li>{{ error.key | translate: error }}</li>
+            </ul>
+          }
+          <small class="cleansia-profile__field-hint">
+            {{ 'pages.profile.iban_hint' | translate }}
+          </small>
+        </div>
+      }
       <div class="cleansia-profile__field">
         <cleansia-text-input
           [label]="'pages.profile.swift_code' | translate"

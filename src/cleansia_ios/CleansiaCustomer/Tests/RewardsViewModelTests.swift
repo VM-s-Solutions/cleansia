@@ -4,6 +4,7 @@ import XCTest
 
 @MainActor
 final class RewardsViewModelTests: XCTestCase {
+    // swiftlint:disable large_tuple
     /// Default arguments are evaluated in a nonisolated context, so the two main-actor stores are
     /// built inside the body instead.
     private func makeVM(
@@ -26,6 +27,8 @@ final class RewardsViewModelTests: XCTestCase {
         )
         return (vm, loyaltyRepo, referralRepo)
     }
+
+    // swiftlint:enable large_tuple
 
     /// The tier floor is a platform-default-currency figure. Without a directory the ladder labels it
     /// with the code the catalogue overview names as the default — not the market the last booking
@@ -122,6 +125,49 @@ final class RewardsViewModelTests: XCTestCase {
         XCTAssertEqual(content.referral?.code, "JOIN50")
     }
 
+    func testTheContentCarriesTheCredit() async {
+        let loyalty = FakeLoyaltyClient()
+        loyalty.creditResult = .success(LoyaltyFixtures.credit(balance: 250))
+        let (vm, _, _) = makeVM(loyalty, FakeRewardsReferralClient())
+
+        await vm.load()
+
+        guard case let .loaded(content) = vm.state else {
+            return XCTFail("expected loaded state")
+        }
+        XCTAssertEqual(content.credit?.primary.amount, 250)
+    }
+
+    /// A booking spends credit and a cancellation returns it, outside this screen; the shell re-reads
+    /// the repository then, and the card follows without a pull.
+    func testABalanceReReadElsewhereReachesTheLoadedCard() async {
+        let loyalty = FakeLoyaltyClient()
+        loyalty.creditResult = .success(LoyaltyFixtures.credit(balance: 250))
+        let (vm, repo, _) = makeVM(loyalty, FakeRewardsReferralClient())
+        await vm.load()
+
+        loyalty.creditResult = .success(LoyaltyFixtures.credit(balance: 0))
+        await repo.refresh()
+
+        guard case let .loaded(content) = vm.state else {
+            return XCTFail("expected loaded state")
+        }
+        XCTAssertEqual(content.credit?.primary.amount, 0)
+    }
+
+    func testAFailedCreditReadHidesOnlyTheCreditCard() async {
+        let loyalty = FakeLoyaltyClient()
+        loyalty.creditResult = .failure(ApiError(httpStatus: 500))
+        let (vm, _, _) = makeVM(loyalty, FakeRewardsReferralClient())
+
+        await vm.load()
+
+        guard case let .loaded(content) = vm.state else {
+            return XCTFail("expected loaded state")
+        }
+        XCTAssertNil(content.credit)
+    }
+
     func testRefreshFailureWhileLoadedStaysLoaded() async {
         let loyalty = FakeLoyaltyClient()
         let (vm, _, _) = makeVM(loyalty, FakeRewardsReferralClient())
@@ -131,6 +177,34 @@ final class RewardsViewModelTests: XCTestCase {
         await vm.refresh()
 
         if case .loaded = vm.state {} else { XCTFail("expected to stay loaded") }
+    }
+
+    /// Opened straight from the tab bar, Rewards shows the cached account at once, and re-reads it only
+    /// once the watermark has lapsed — a re-entry inside the window costs no round trip.
+    func testACachedAccountIsReReadOnlyOnceItIsStale() async {
+        var now = Date(timeIntervalSince1970: 1_700_000_000)
+        let loyalty = FakeLoyaltyClient()
+        loyalty.accountResult = .success(LoyaltyFixtures.account(lifetimePoints: 600))
+        let repository = LoyaltyRepository(client: loyalty, staleness: Staleness(window: 30, now: { now }))
+        let vm = RewardsViewModel(
+            loyaltyRepository: repository,
+            referralRepository: RewardsReferralRepository(client: FakeRewardsReferralClient()),
+            catalogSource: BookingViewModel(catalogClient: FakeCatalogClient()),
+            marketStore: MarketStore(client: FakeMarketClient(), preference: FakeMarketPreferenceStore()),
+            snackbar: SnackbarController()
+        )
+        await vm.load()
+        XCTAssertEqual(loyalty.accountCallCount, 1)
+
+        now += 10
+        await vm.load()
+        XCTAssertEqual(loyalty.accountCallCount, 1, "a fresh cache is not read again")
+
+        now += 30
+        loyalty.accountResult = .success(LoyaltyFixtures.account(lifetimePoints: 750))
+        await vm.load()
+        XCTAssertEqual(loyalty.accountCallCount, 2, "a stale cache is read again")
+        XCTAssertEqual(vm.state.loadedValue?.account.lifetimePoints, 750)
     }
 }
 

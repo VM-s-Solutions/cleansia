@@ -9,6 +9,7 @@ private struct PhotoIndex: Identifiable {
 struct OrderPhotosScreen: View {
     @StateObject private var vm: OrderPhotosViewModel
     @State private var fullscreen: PhotoIndex?
+    @Namespace private var zoom
 
     init(orderId: String, client: OrderClient, snackbar: SnackbarController) {
         _vm = StateObject(wrappedValue: OrderPhotosViewModel(orderId: orderId, client: client, snackbar: snackbar))
@@ -21,7 +22,7 @@ struct OrderPhotosScreen: View {
             .background(CleansiaColors.background.ignoresSafeArea())
             .task { await vm.load() }
             .fullScreenCover(item: $fullscreen) { item in
-                FullscreenPager(photos: vm.state.loadedValue?.photos ?? [], startIndex: item.id) {
+                FullscreenPager(photos: vm.state.loadedValue?.photos ?? [], startIndex: item.id, zoom: zoom) {
                     fullscreen = nil
                 }
             }
@@ -63,6 +64,7 @@ struct OrderPhotosScreen: View {
                         PhotoThumb(urlString: photo.blobUrl, size: 112)
                     }
                     .buttonStyle(.plain)
+                    .zoomSource(id: index, in: zoom)
                 }
             }
             .padding(Spacing.m)

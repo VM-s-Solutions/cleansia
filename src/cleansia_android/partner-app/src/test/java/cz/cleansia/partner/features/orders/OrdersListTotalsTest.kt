@@ -1,7 +1,10 @@
 package cz.cleansia.partner.features.orders
 
+import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.partner.api.model.CurrencyListItem
 import cz.cleansia.partner.api.model.OrderListItem
+import java.text.DecimalFormatSymbols
+import java.util.Locale
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -58,6 +61,41 @@ class OrdersListTotalsTest {
         val orders = listOf(order(null, eur), order(40.0, eur))
 
         assertEquals(listOf("EUR" to 40.0), earningsByCurrency(orders))
+    }
+
+    /**
+     * The board and the history rows format a job's pay with [formatMoney]; its detail formats the same
+     * `estimatedCleanerPay` with core's `formatOrderPrice`. That one prints the haléře of an amount that
+     * is not whole, so rounding them here showed 412.30 as "412 Kč" on the board and "412,30 Kč" on the
+     * detail. Pay is booked to the haléř, and a seat's share of a job need not be whole.
+     */
+    @Test
+    fun `a job's pay reads the same on the board as on its detail`() {
+        val cs = Locale.forLanguageTag("cs-CZ")
+        listOf(412.30, 412.5, 0.4, 412.0, 0.0).forEach { pay ->
+            listOf(cs, Locale.US).forEach { locale ->
+                assertEquals("$pay in $locale", formatOrderPrice(pay, "CZK", locale), formatMoney(pay, "Kč", locale))
+                assertEquals("$pay in $locale", formatOrderPrice(pay, "EUR", locale), formatMoney(pay, "€", locale))
+            }
+        }
+    }
+
+    @Test
+    fun `a pay that is not whole keeps its minor units, thousands still grouped with a space`() {
+        val cs = Locale.forLanguageTag("cs-CZ")
+        assertEquals("1 412,30 Kč", formatMoney(1412.3, "Kč", cs))
+        assertEquals("1 412.30 Kč", formatMoney(1412.3, "Kč", Locale.US))
+        assertEquals("12,05", formatMoney(12.05, null, cs))
+        // Under half a haléř from whole is whole, as on the detail.
+        assertEquals("1 275 Kč", formatMoney(1274.999, "Kč", cs))
+    }
+
+    /** A total of pays that are not whole is not rounded either. */
+    @Test
+    fun `the list total keeps the minor units of its rows`() {
+        val orders = listOf(order(412.30, czk), order(500.0, czk))
+
+        assertEquals("912${DecimalFormatSymbols.getInstance().decimalSeparator}30 Kč", formatEarningsTotal(orders))
     }
 
     @Test

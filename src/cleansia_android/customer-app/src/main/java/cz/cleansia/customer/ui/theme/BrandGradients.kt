@@ -30,8 +30,22 @@ object BrandGradients {
     private val CyanPairLight = Color(0xFF0891B2) to Color(0xFF67E8F9)
     private val CyanPairDark = Color(0xFF0E6E88) to Color(0xFF4BAEC1) // lightly muted
 
+    // ── Orange (accent: the Home notifications slide) ──
+    private val OrangePairLight = Color(0xFFEA580C) to Color(0xFFFB923C)
+    private val OrangePairDark = Color(0xFFB4470F) to Color(0xFFC9712F) // lightly muted
+
+    // ── Emerald (accent: the Home credit slide — money off) ──
+    private val EmeraldPairLight = Color(0xFF059669) to Color(0xFF34D399)
+    private val EmeraldPairDark = Color(0xFF04765A) to Color(0xFF2E9C79) // lightly muted
+
     @Composable @ReadOnlyComposable
     fun blue(): Pair<Color, Color> = if (isDark()) BluePairDark else BluePairLight
+
+    @Composable @ReadOnlyComposable
+    fun orange(): Pair<Color, Color> = if (isDark()) OrangePairDark else OrangePairLight
+
+    @Composable @ReadOnlyComposable
+    fun emerald(): Pair<Color, Color> = if (isDark()) EmeraldPairDark else EmeraldPairLight
 
     @Composable @ReadOnlyComposable
     fun purple(): Pair<Color, Color> = if (isDark()) PurplePairDark else PurplePairLight

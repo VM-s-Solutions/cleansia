@@ -19,12 +19,15 @@ final class FakePartnerOrderClient: PartnerOrderClient {
     /// asserts the carried id is the acted-on id and nothing else (O1/O2).
     private(set) var commands: [(name: String, orderId: String)] = []
 
+    // swiftlint:disable large_tuple
     /// Note/issue mutations appended here for the notes-section tests.
     private(set) var noteCommands: [(name: String, id: String?, content: String?)] = []
+    // swiftlint:enable large_tuple
 
     var getPhotosResult: ApiResult<[OrderPhoto]> = .success([])
     private(set) var getPhotosCallCount = 0
 
+    // swiftlint:disable large_tuple
     /// Each photo mutation appends `(name, orderId, photoId, photoType, hasBase64)`
     /// — the ownership test asserts the carried ids + that no employeeId leaks.
     private(set) var photoCommands: [(
@@ -34,6 +37,7 @@ final class FakePartnerOrderClient: PartnerOrderClient {
         photoType: PhotoType?,
         hasBase64: Bool
     )] = []
+    // swiftlint:enable large_tuple
 
     /// When set, the next command suspends until `resumeCommand()` so a test can
     /// hold one mutation mid-flight and fire a second (re-entry guard).

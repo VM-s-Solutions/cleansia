@@ -484,7 +484,8 @@
     <string name="bank_account_number_helper">Частина перед скісною рискою, наприклад 5885638003.</string>
     <string name="bank_code">Код банку</string>
     <string name="bank_code_helper">Чотири цифри після скісної риски, наприклад 5500.</string>
-    <string name="iban_helper">Для чеського або словацького рахунку можете залишити порожнім — ми обчислимо його з чисел вище.</string>
+    <string name="iban_helper">Повний IBAN, що починається з коду країни вашого банку. Його можна знайти у виписці з рахунку або в банківському застосунку.</string>
+    <string name="iban_wrong_length">Цей IBAN має неправильну довжину для країни вашого банку — там вона становить %1$d. Перевірте, чи не бракує символу і чи немає зайвого.</string>
     <string name="swift_code_helper">Потрібен лише тоді, коли ваш банк в іншій країні, ніж та, де ви працюєте.</string>
     <string name="bank_account_holder">Власник рахунку</string>
     <string name="bank_account_holder_helper">Необов\'язково — ім\'я, яке банк має на рахунку, якщо воно відрізняється від вашого.</string>
@@ -860,10 +861,10 @@
         <item quantity="other">%1$d кімнати</item>
     </plurals>
     <plurals name="scope_baths">
-        <item quantity="one">%1$d ванна</item>
-        <item quantity="few">%1$d ванні</item>
-        <item quantity="many">%1$d ванних</item>
-        <item quantity="other">%1$d ванні</item>
+        <item quantity="one">%1$d ванна кімната</item>
+        <item quantity="few">%1$d ванні кімнати</item>
+        <item quantity="many">%1$d ванних кімнат</item>
+        <item quantity="other">%1$d ванні кімнати</item>
     </plurals>
     <plurals name="scope_extras">
         <item quantity="one">+%1$d додатково</item>
@@ -1152,7 +1153,7 @@
     <string name="error_order_card_payment_unverified">Не вдалося перевірити оплату карткою за це замовлення. Поки не беріть готівку — спробуйте ще раз за хвилину.</string>
     <string name="error_order_cash_not_allowed_on_card_order">Це замовлення оплачується карткою, тому готівку за нього зафіксувати не можна. Не беріть готівку — зверніться до офісу.</string>
     <string name="error_order_payment_not_outstanding">За цим замовленням уже нічого стягувати — його оплачено або кошти повернено. Не беріть готівку.</string>
-    <string name="error_credit_cash_not_collectable_on_credit_order">Частину цього замовлення вже оплачено бонусами клієнта. Зверніться до офісу — не беріть суму, вказану в додатку.</string>
+    <string name="error_credit_cash_not_collectable_on_credit_order">Частину цього замовлення вже оплачено кредитом клієнта. Зверніться до офісу — не беріть суму, вказану в додатку.</string>
 
     <string name="error_order_note_content_required">Текст нотатки обов\'язковий.</string>
     <string name="error_order_issue_description_required">Опис проблеми обов\'язковий.</string>
@@ -1266,6 +1267,10 @@
     <string name="notification_order_seat_open_body">Прибиральник відмовився від замовлення #%1$s. Натисніть, щоб взяти його.</string>
     <string name="notification_employee_weekly_limit_set_title">Тижневий ліміт замовлень оновлено</string>
     <string name="notification_employee_weekly_limit_set_body">Тепер ви можете брати щонайбільше %1$d замовлень на тиждень.</string>
+    <string name="notification_employee_registration_approved_title">Заявку схвалено</string>
+    <string name="notification_employee_registration_approved_body">Вас схвалено. Відкрийте застосунок, щоб почати брати замовлення.</string>
+    <string name="notification_employee_registration_rejected_title">Заявку відхилено</string>
+    <string name="notification_employee_registration_rejected_body">Вашу заявку відхилено. Відкрийте застосунок, щоб дізнатися причину, або зверніться до підтримки.</string>
     <string name="notification_payroll_invoice_paid_title">Вам виплачено</string>
     <string name="notification_payroll_invoice_paid_body">Ваш рахунок за останній розрахунковий період оплачено. Торкніться, щоб переглянути.</string>
     <string name="notification_preferred_offer_title">Клієнт попросив саме вас</string>

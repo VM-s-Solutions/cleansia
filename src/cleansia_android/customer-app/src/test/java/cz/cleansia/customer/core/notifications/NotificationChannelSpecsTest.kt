@@ -1,7 +1,15 @@
 package cz.cleansia.customer.core.notifications
 
+import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.content.Context
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.slot
+import io.mockk.verify
+import java.io.File
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -71,6 +79,64 @@ class NotificationChannelSpecsTest {
         )
 
         assertEquals(expected, notificationChannelSpecs.associate { it.category to it.importance })
+    }
+
+    /**
+     * The Application only creates what is missing: on API 26-32 its context is in the device
+     * language, and a process a push cold-starts would otherwise rename every channel back into it.
+     */
+    @Test
+    fun `registerMissing creates only the channels that do not exist yet`() {
+        val existing = NotificationChannels.channelIdFor(NotificationCategoryDto.Promo)
+        val manager = mockk<NotificationManager>(relaxed = true) {
+            every { getNotificationChannel(any()) } answers {
+                if (firstArg<String>() == existing) mockk() else null
+            }
+        }
+        val context = mockk<Context>(relaxed = true) {
+            every { getSystemService(NotificationManager::class.java) } returns manager
+            every { getSystemService(Context.NOTIFICATION_SERVICE) } returns manager
+        }
+        val created = slot<List<NotificationChannel>>()
+
+        NotificationChannels.registerMissing(context)
+
+        verify(exactly = 1) { manager.createNotificationChannels(capture(created)) }
+        assertEquals(notificationChannelSpecs.size - 1, created.captured.size)
+    }
+
+    /**
+     * Names follow the in-app language: MainActivity's context carries it on every API level, and
+     * registering an existing channel again renames it. The manifest handles locale changes, so a
+     * language change reaches onConfigurationChanged instead of recreating the activity.
+     */
+    @Test
+    fun `both apps name their channels from MainActivity, at start and on a locale change`() {
+        for ((app, pkg, application) in APPS) {
+            val activity = source(app, "$pkg/MainActivity.kt").replace(Regex("\\s+"), " ")
+            assertTrue("$app registers its channels as MainActivity starts", activity.contains("restorePersistedAppLocale() registerNotificationChannels()"))
+            assertTrue(
+                "$app re-registers its channels on a locale change",
+                activity.contains("if (newConfig.locales != channelLocales) registerNotificationChannels()"),
+            )
+            assertTrue(activity.contains("NotificationChannels.registerAll(this)"))
+            val appSource = source(app, "$pkg/$application.kt")
+            assertTrue("the $application must not rename channels", appSource.contains("NotificationChannels.registerMissing(this)"))
+            assertTrue("the $application must not rename channels", !appSource.contains("NotificationChannels.registerAll("))
+        }
+    }
+
+    private fun source(app: String, path: String): String = sequenceOf(File(".."), File("."), File("src/cleansia_android"))
+        .map { File(it, "$app/src/main/java/cz/cleansia/$path") }
+        .firstOrNull { it.isFile }
+        ?.readText()
+        ?: error("$app/$path not found from working dir ${File(".").absolutePath}")
+
+    private companion object {
+        val APPS = listOf(
+            Triple("customer-app", "customer", "CleansiaApp"),
+            Triple("partner-app", "partner", "CleansiaPartnerApp"),
+        )
     }
 
     /** Baked into every install's system settings and into the FCM service's lookup. */

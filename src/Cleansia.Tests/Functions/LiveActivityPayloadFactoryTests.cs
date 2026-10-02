@@ -2,9 +2,11 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Cleansia.Core.Clients.Abstractions.Apns;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Functions.Core.Handlers;
+using Cleansia.Infra.Clients.Fcm;
 
 namespace Cleansia.Tests.Functions;
 
@@ -56,6 +58,35 @@ public class LiveActivityPayloadFactoryTests
         Assert.NotNull(push.Attributes);
         Assert.Equal("ORD-AB12CD34", push.Attributes!.OrderNumber);
         Assert.Null(push.DismissalDate);
+    }
+
+    /// <summary>
+    /// ActivityKit: a push that starts a Live Activity must "Include an alert in the JSON payload". The
+    /// alert reuses the copy of the order.on_the_way push — a key the APNs display map registers with exactly
+    /// one argument, so ApnsDisplayMapIosCatalogSyncTests already proves both iOS catalogs carry its title and
+    /// body in every language, with one slot in the body. → /decisions/adr-0029#amendment-a5
+    /// </summary>
+    [Fact]
+    public void Start_Carries_The_On_The_Way_Alert_With_The_Order_Number()
+    {
+        var push = LiveActivityPayloadFactory.Build(Message(LiveActivityEventKeys.Start), currentStatus: null, Now);
+
+        Assert.NotNull(push.Alert);
+        Assert.Equal("push.order.on_the_way.title", push.Alert!.TitleLocKey);
+        Assert.Equal("push.order.on_the_way.body", push.Alert.BodyLocKey);
+        Assert.Equal(new[] { "ORD-AB12CD34" }, push.Alert.BodyLocArgs);
+        Assert.Single(FcmMessageFactory.ApnsDisplayMap[NotificationEventCatalog.OrderOnTheWay]);
+    }
+
+    [Theory]
+    [InlineData(LiveActivityEventKeys.Update, null)]
+    [InlineData(LiveActivityEventKeys.End, OrderStatus.Completed)]
+    [InlineData(LiveActivityEventKeys.End, OrderStatus.Cancelled)]
+    public void Only_A_Start_Carries_An_Alert(string eventKey, OrderStatus? currentStatus)
+    {
+        var push = LiveActivityPayloadFactory.Build(Message(eventKey), currentStatus, Now);
+
+        Assert.Null(push.Alert);
     }
 
     [Fact]

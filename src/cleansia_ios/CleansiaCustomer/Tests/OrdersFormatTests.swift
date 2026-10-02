@@ -28,6 +28,37 @@ final class OrdersFormatTests: XCTestCase {
         XCTAssertTrue(OrdersFormat.price(1290, currencyCode: "EUR").hasSuffix(" €"))
     }
 
+    /// A credit share can leave haléře; rounding them away shows a figure the card is not charged.
+    func testAnAmountThatIsNotWholeShowsItsMinorUnits() {
+        let american = Locale(identifier: "en_US")
+        XCTAssertEqual(OrdersFormat.price(319.90, currencyCode: "CZK", locale: american), "319.90 Kč")
+        XCTAssertEqual(OrdersFormat.price(137.10, currencyCode: "CZK", locale: american), "137.10 Kč")
+        XCTAssertEqual(OrdersFormat.price(12.5, currencyCode: "EUR", locale: american), "12.50 €")
+        XCTAssertEqual(OrdersFormat.price(1200.05, currencyCode: "USD", locale: american), "$1,200.05")
+        XCTAssertEqual(OrdersFormat.price(-57.6, currencyCode: "CZK", locale: american), "-57.60 Kč")
+    }
+
+    func testAWholeAmountStaysWholeWithinHalfAMinorUnit() {
+        let american = Locale(identifier: "en_US")
+        XCTAssertEqual(OrdersFormat.price(320, currencyCode: "CZK", locale: american), "320 Kč")
+        XCTAssertEqual(OrdersFormat.price(319.999, currencyCode: "CZK", locale: american), "320 Kč")
+        XCTAssertEqual(OrdersFormat.price(1200, currencyCode: "CZK", locale: american), "1,200 Kč")
+        XCTAssertEqual(OrdersFormat.price(0, currencyCode: "CZK", locale: american), "0 Kč")
+        XCTAssertEqual(OrdersFormat.price(-0.001, currencyCode: "CZK", locale: american), "0 Kč")
+    }
+
+    /// The currency's own minor unit: none for yen; two for a blank or unknown code.
+    func testTheFractionDigitsComeFromTheCurrency() {
+        let american = Locale(identifier: "en_US")
+        XCTAssertEqual(OrdersFormat.price(1199.6, currencyCode: "JPY", locale: american), "1,200 JPY")
+        XCTAssertEqual(OrdersFormat.price(319.9, currencyCode: nil, locale: american), "319.90")
+        XCTAssertEqual(OrdersFormat.price(319.9, currencyCode: "XYZ", locale: american), "319.90 XYZ")
+    }
+
+    func testTheLocalesDecimalMarkIsUsed() {
+        XCTAssertEqual(OrdersFormat.price(319.9, currencyCode: "CZK", locale: Locale(identifier: "cs_CZ")), "319,90 Kč")
+    }
+
     func testDateTimeLocalizesPerAppLocale() {
         XCTAssertNotEqual(
             OrdersFormat.dateTime(instant, locale: ruLocale),

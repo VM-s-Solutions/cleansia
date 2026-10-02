@@ -1,3 +1,4 @@
+import UIKit
 import XCTest
 @testable import CleansiaCore
 
@@ -158,6 +159,18 @@ final class LiveActivityCardTests: XCTestCase {
     /// the order's mouth.
     func testAnUnknownCardSaysNothingItCannotKnow() {
         XCTAssertNil(card("something_new").detail)
+    }
+
+    /// The Dynamic Island's minimal slot shows where the clean is, so each state the backend sends draws
+    /// its own symbol, and every one of them exists.
+    func testEveryStatusTheBackendCanSendDrawsItsOwnSymbol() {
+        let statuses = ["onTheWay", "inProgress", "completed", "cancelled"]
+        let symbols = statuses.map { card($0).symbol }
+
+        XCTAssertEqual(Set(symbols).count, statuses.count, "two states draw the same symbol: \(symbols)")
+        for symbol in symbols + [card("something_new").symbol] {
+            XCTAssertNotNil(UIImage(systemName: symbol), "\(symbol) is not an SF Symbol")
+        }
     }
 }
 

@@ -81,6 +81,39 @@ final class RegistrationCompletionTests: XCTestCase {
         XCTAssertTrue(approval.details.contains(.approvalRejected))
     }
 
+    func testTheRejectedRowCarriesTheAdminsReasonTrimmed() {
+        var status = complete(contract: .rejected)
+        status.rejectionReason = "  Upload a readable ID card.\n"
+        let approval = step(buildSteps(status), .approval)
+        XCTAssertEqual(approval.details, [.approvalRejected, .rejectionReason("Upload a readable ID card.")])
+    }
+
+    func testARejectionWithoutAReasonShowsOnlyTheRejectedLine() {
+        for reason in [nil, "", "   \n"] {
+            var status = complete(contract: .rejected)
+            status.rejectionReason = reason
+            XCTAssertEqual(
+                step(buildSteps(status), .approval).details,
+                [.approvalRejected],
+                "\(String(describing: reason))"
+            )
+        }
+    }
+
+    /// The reason field outlives the decision on the server; only a rejection may show it.
+    func testAReasonIsNeverShownOnAnApplicationThatIsNotRejected() {
+        for contract in [ContractStatus.pending, .approved, .active] {
+            var status = complete(contract: contract)
+            status.rejectionReason = "stale"
+            let details = step(buildSteps(status), .approval).details
+            XCTAssertFalse(details.contains(.rejectionReason("stale")), "\(contract)")
+        }
+    }
+
+    func testOnlyARejectedApprovalRowOpensSupport() {
+        XCTAssertTrue(isFixable(step(buildSteps(complete(contract: .rejected)), .approval)))
+    }
+
     func testBuildStepsAwaitingReviewWhenProfileAndDocsDoneAndPending() {
         let approval = step(buildSteps(complete(contract: .pending)), .approval)
         XCTAssertEqual(approval.status, .pending)
@@ -152,6 +185,35 @@ final class RegistrationCompletionTests: XCTestCase {
 
         XCTAssertEqual(step(steps, .legalDocuments).status, .done)
         XCTAssertEqual(step(steps, .approval).status, .pending)
+    }
+
+    // MARK: re-entry
+
+    /// The lock replaces the app until approval, so a row that stopped opening once Done left a
+    /// cleaner no way to correct a section or add the second document approval needs.
+    func testEveryCleanerOwnedRowStillOpensOnceDone() {
+        let steps = buildSteps(
+            complete(contract: .pending),
+            legalDocuments: [.sample(type: ._3, isAccepted: true)]
+        )
+        for category in [RegistrationStepCategory.profile, .documents, .legalDocuments] {
+            let done = step(steps, category)
+            XCTAssertEqual(done.status, .done, "\(category)")
+            XCTAssertTrue(isFixable(done), "\(category) must reopen when Done")
+        }
+    }
+
+    func testARejectedCleanerCanStillReopenTheirSections() {
+        let steps = buildSteps(complete(contract: .rejected))
+        XCTAssertTrue(isFixable(step(steps, .profile)))
+        XCTAssertTrue(isFixable(step(steps, .documents)))
+    }
+
+    func testTheApprovalRowOpensNothingWhileTheAdminDecides() {
+        for contract in [ContractStatus.pending, .approved, .active] {
+            XCTAssertFalse(isFixable(step(buildSteps(complete(contract: contract)), .approval)), "\(contract)")
+        }
+        XCTAssertFalse(isFixable(step(buildSteps(complete(profile: false, contract: .pending)), .approval)))
     }
 
     private func step(_ steps: [RegistrationStep], _ category: RegistrationStepCategory) -> RegistrationStep {

@@ -6,12 +6,13 @@ import XCTest
 /// that drops any of the three fails in the locale that dropped it. `account-deletion-credit-claim.spec.ts`
 /// holds the same line for web, with the same words.
 final class AccountDeletionCreditClaimTests: XCTestCase {
+    // swiftlint:disable:next large_tuple
     private static let claims: [String: (credit: String, forfeited: String, paidOut: String)] = [
         "en": ("credit", "forfeit", "paid out"),
         "cs": ("kredit", "propadá", "vyplatit"),
         "sk": ("kredit", "prepadá", "vyplatiť"),
-        "uk": ("бонус", "анулю", "виплатити"),
-        "ru": ("бонус", "аннулир", "выплатить")
+        "uk": ("кредит", "анулю", "виплатити"),
+        "ru": ("кредит", "аннулир", "выплатить")
     ]
 
     /// The confirmation the customer accepts, and the text above the button that opens it.

@@ -1,4 +1,5 @@
 import CleansiaCore
+import CleansiaCustomerApi
 import XCTest
 @testable import CleansiaCustomer
 
@@ -23,12 +24,21 @@ final class LanguagePreferenceSyncTests: XCTestCase {
         XCTAssertNil(LanguagePreferencePush.update(for: profile(language: "uk"), languageCode: "uk"))
     }
 
-    /// `UpdateCurrentUser` blindly replaces first/last/phone and its validators reject blanks, so replaying
-    /// an incomplete profile would either 400 or overwrite good data with nothing.
-    func testNoPushWhenTheProfileIsIncomplete() {
+    /// `UpdateCurrentUser` replaces first and last name outright and its validators reject blanks, so
+    /// replaying a profile without them would either 400 or overwrite good data with nothing.
+    func testNoPushWhenANameIsMissing() {
         XCTAssertNil(LanguagePreferencePush.update(for: profile(firstName: ""), languageCode: "uk"))
-        XCTAssertNil(LanguagePreferencePush.update(for: profile(lastName: ""), languageCode: "uk"))
-        XCTAssertNil(LanguagePreferencePush.update(for: profile(phone: nil), languageCode: "uk"))
+        XCTAssertNil(LanguagePreferencePush.update(for: profile(lastName: " "), languageCode: "uk"))
+    }
+
+    /// The customer an Apple or Google sign-up leaves without a phone is the one the gate used to strand
+    /// on the server's 'en' stamp. The phone is not the server's to require here: a blank keeps it.
+    func testAProfileWithoutAPhoneStillPushes() throws {
+        for phone in [nil, ""] {
+            let update = try XCTUnwrap(LanguagePreferencePush.update(for: profile(phone: phone), languageCode: "uk"))
+            XCTAssertEqual(update.languageCode, "uk")
+            XCTAssertEqual(UpdateCurrentUserCommand(update).phoneNumber, "", "the push must not omit the phone")
+        }
     }
 
     func testPushesWhenTheServerHasNoLanguageYet() {
@@ -96,6 +106,44 @@ final class LanguagePreferenceSyncTests: XCTestCase {
         XCTAssertFalse(sync.sent.contains(CustomerPreferencesLabels.systemLanguageId))
     }
 
+    /// The Notification Service Extension and the Live Activity render in whatever the app leaves in its
+    /// App Group, so the app leaves an explicit choice there at launch and on every change. System
+    /// leaves nothing: a resolved tag would be the phone's language when the app last ran, and would
+    /// override iOS's own rendering after the phone switched while the app was not running.
+    func testTheChosenLanguageIsLeftForTheExtensionsAtLaunchAndOnEveryChange() {
+        let group = "LanguagePreferenceSyncTests.group.\(UUID().uuidString)"
+        defer { UserDefaults().removePersistentDomain(forName: group) }
+        let settings = UserDefaultsAppSettingsStore(
+            defaults: UserDefaults(suiteName: UUID().uuidString) ?? .standard,
+            preferredLanguageTags: { ["sk"] }
+        )
+        settings.setLanguage("cs")
+
+        let model = CustomerPreferencesModel(settings: settings, languageSync: SpyLanguageSync(), appGroup: group)
+        XCTAssertEqual(AppGroupLanguage.read(appGroup: group), "cs")
+
+        model.setLanguage("uk")
+        XCTAssertEqual(AppGroupLanguage.read(appGroup: group), "uk")
+
+        model.setSystemLanguage()
+        XCTAssertNil(AppGroupLanguage.read(appGroup: group), "System leaves the phone's language to iOS")
+    }
+
+    /// A build that wrote the resolved tag on System left one behind; the next launch on System clears it.
+    func testALaunchOnSystemClearsATagLeftBehind() {
+        let group = "LanguagePreferenceSyncTests.group.\(UUID().uuidString)"
+        defer { UserDefaults().removePersistentDomain(forName: group) }
+        AppGroupLanguage.write("en", appGroup: group)
+        let settings = UserDefaultsAppSettingsStore(
+            defaults: UserDefaults(suiteName: UUID().uuidString) ?? .standard,
+            preferredLanguageTags: { ["cs"] }
+        )
+
+        _ = CustomerPreferencesModel(settings: settings, languageSync: SpyLanguageSync(), appGroup: group)
+
+        XCTAssertNil(AppGroupLanguage.read(appGroup: group))
+    }
+
     func testTheLocalChoiceIsAppliedBeforeAndIndependentlyOfTheSync() {
         let (model, _) = makeModel()
 
@@ -107,13 +155,16 @@ final class LanguagePreferenceSyncTests: XCTestCase {
 
     // MARK: - Support
 
+    /// The model writes the in-app language to its App Group, and the default is the installed test host's
+    /// real one, so the test's own suite stands in for it.
     private func makeModel() -> (CustomerPreferencesModel, SpyLanguageSync) {
         let sync = SpyLanguageSync()
+        let suite = "LanguagePreferenceSyncTests.\(UUID().uuidString)"
         let settings = UserDefaultsAppSettingsStore(
-            defaults: UserDefaults(suiteName: UUID().uuidString)!,
+            defaults: UserDefaults(suiteName: suite) ?? .standard,
             preferredLanguageTags: { ["en"] }
         )
-        return (CustomerPreferencesModel(settings: settings, languageSync: sync), sync)
+        return (CustomerPreferencesModel(settings: settings, languageSync: sync, appGroup: suite), sync)
     }
 
     private func profile(

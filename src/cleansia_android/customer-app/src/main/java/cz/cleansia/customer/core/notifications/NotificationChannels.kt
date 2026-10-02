@@ -25,8 +25,9 @@ internal data class NotificationChannelSpec(
  * The complete channel table, one row per category.
  *
  * Names and descriptions are the same strings the in-app toggle renders, so the OS category a user mutes
- * reads exactly like the switch they just tapped. **They are read ONCE, at registration** — renaming a
- * channel later needs a new channel id, or the old name persists.
+ * reads exactly like the switch they just tapped. They are read when a channel is registered, and
+ * registering an existing id again renames it (`createNotificationChannel` updates the name and the
+ * description), which is how they follow the in-app language: see [NotificationChannels.registerAll].
  * -> /architecture/push-notifications#event-catalogue
  */
 internal val notificationChannelSpecs: List<NotificationChannelSpec> = listOf(
@@ -79,9 +80,8 @@ internal val notificationChannelSpecs: List<NotificationChannelSpec> = listOf(
 )
 
 /**
- * Registers one [NotificationChannel] per [NotificationCategoryDto] at app
- * start. Android dedupes by channel id, so calling [registerAll] on every
- * cold start is cheap and safe.
+ * One [NotificationChannel] per [NotificationCategoryDto]. Android dedupes by
+ * channel id, so registering on every start is cheap and safe.
  *
  * Why one channel per category: gives users system-level granular control
  * — long-press a notification → "Stop showing this category" — without
@@ -99,9 +99,26 @@ object NotificationChannels {
     fun channelIdFor(category: NotificationCategoryDto): String =
         "cleansia.notification.${category.name}"
 
+    /**
+     * Registers every channel in [context]'s language, renaming the existing ones. MainActivity calls
+     * it with its own context, which carries the in-app language on every API level, at start and
+     * after a language change.
+     */
     fun registerAll(context: Context) {
         val manager = context.getSystemService<NotificationManager>() ?: return
         manager.createNotificationChannels(notificationChannelSpecs.map { channel(context, it) })
+    }
+
+    /**
+     * Creates only the channels that do not exist yet, so a push can be posted before the app is
+     * first opened. The Application calls this rather than [registerAll]: on API 26–32 its context
+     * resolves in the DEVICE language, and a process a push cold-starts would rename every channel
+     * back into it.
+     */
+    fun registerMissing(context: Context) {
+        val manager = context.getSystemService<NotificationManager>() ?: return
+        val missing = notificationChannelSpecs.filter { manager.getNotificationChannel(channelIdFor(it.category)) == null }
+        if (missing.isNotEmpty()) manager.createNotificationChannels(missing.map { channel(context, it) })
     }
 
     private fun channel(context: Context, spec: NotificationChannelSpec): NotificationChannel {

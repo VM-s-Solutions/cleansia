@@ -9,6 +9,9 @@ import cz.cleansia.customer.R
 import cz.cleansia.customer.core.notifications.NotificationFeedRepository
 import cz.cleansia.customer.core.notifications.PagedNotificationsDto
 import cz.cleansia.customer.core.notifications.UserNotificationDto
+import cz.cleansia.customer.core.settings.AppSettings
+import cz.cleansia.customer.core.settings.AppSettingsRepository
+import cz.cleansia.customer.core.settings.LanguagePreference
 import cz.cleansia.customer.features.main.MainTab
 import cz.cleansia.customer.navigation.Routes
 import cz.cleansia.customer.testing.MainDispatcherRule
@@ -18,6 +21,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -36,6 +40,8 @@ class NotificationsInboxViewModelTest {
     private lateinit var repository: NotificationFeedRepository
     private lateinit var snackbar: SnackbarController
     private lateinit var appContext: Context
+    private lateinit var appSettings: AppSettingsRepository
+    private val settings = MutableStateFlow(AppSettings())
 
     private val serverMessage = "Server unavailable."
 
@@ -66,6 +72,9 @@ class NotificationsInboxViewModelTest {
         repository = mockk(relaxUnitFun = true)
         snackbar = mockk(relaxed = true)
         appContext = mockk(relaxed = true)
+        // Following the device by default: the rows resolve on the Application context itself.
+        appSettings = mockk()
+        every { appSettings.settings } returns settings
         every { appContext.getString(R.string.notification_order_completed_title) } returns "All done!"
         every {
             appContext.getString(R.string.notification_order_completed_body, "A-1042")
@@ -106,7 +115,29 @@ class NotificationsInboxViewModelTest {
         verify(exactly = 1) { repository.decrementUnread() }
     }
 
-    private fun viewModel() = NotificationsInboxViewModel(repository, snackbar, appContext)
+    private fun viewModel() = NotificationsInboxViewModel(repository, snackbar, appContext, appSettings)
+
+    /**
+     * A chosen language renders the rows through the re-localized context, not the Application one,
+     * which on API 26–32 resolves in the device language. (Unit tests run with SDK_INT 0, below 33.)
+     */
+    @Test
+    fun aChosenLanguageRendersTheRowsInThatLanguage() = runTest {
+        val czech: Context = mockk(relaxed = true)
+        every { appContext.createConfigurationContext(any()) } returns czech
+        every { czech.getString(R.string.notification_order_completed_title) } returns "Hotovo!"
+        every { czech.getString(R.string.notification_order_completed_body, "A-1042") } returns "Rezervace #A-1042 je hotová."
+        settings.value = AppSettings(language = LanguagePreference.Czech)
+        coEvery { repository.getPage(offset = 0) } returns ApiResult.Success(page(completedRow))
+
+        val vm = viewModel()
+        vm.open()
+        advanceUntilIdle()
+
+        val row = (vm.state.value as NotificationsInboxUiState.Loaded).items.single()
+        assertEquals("Hotovo!", row.title)
+        assertEquals("Rezervace #A-1042 je hotová.", row.body)
+    }
 
     private fun page(vararg rows: UserNotificationDto, total: Int = rows.size) =
         PagedNotificationsDto(pageNumber = 1, pageSize = 20, total = total, data = rows.toList())

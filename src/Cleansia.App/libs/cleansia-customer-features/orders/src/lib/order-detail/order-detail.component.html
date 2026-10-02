@@ -489,6 +489,25 @@
             {{ formatPrice(order()!.totalPrice) }}
           </span>
         </div>
+
+        <!--
+          Credit is a tender, not a discount: the total stays the size of the sale, and these two
+          lines say how it is paid. The card line claims a payment only once the card was charged;
+          until then (pending, or failed) it is what the card is still to pay, as in both apps.
+        -->
+        @if (order()!.creditAppliedAmount > 0) {
+        <div class="order-detail__price-line" data-spec-tender="credit">
+          <span>{{ 'pages.order_detail.paid_with_credit' | translate }}</span>
+          <span class="order-detail__price-amount cl-num">−{{ formatPrice(order()!.creditAppliedAmount) }}</span>
+        </div>
+        <div class="order-detail__price-line" data-spec-tender="card">
+          <span>{{
+            (tookNoCardPayment() ? 'pages.order.summary.due_on_card' : 'pages.order_detail.paid_by_card')
+              | translate
+          }}</span>
+          <span class="order-detail__price-amount cl-num">{{ formatPrice(order()!.amountDueOnCard) }}</span>
+        </div>
+        }
       </section>
 
       <!-- What you can do about it. -->

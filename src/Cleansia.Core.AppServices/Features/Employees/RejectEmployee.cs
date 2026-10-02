@@ -1,9 +1,11 @@
-﻿using Cleansia.Core.AppServices.Abstractions;
+﻿using System.Globalization;
+using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
@@ -85,6 +87,16 @@ public class RejectEmployee
             var statusBefore = employee.ContractStatus;
 
             employee.Reject(adminUser.Id, command.Reason);
+
+            // Argless: the admin's reason never rides the push. The subject is the moment of the
+            // decision, so reject -> approve -> reject mints a new outbox key each time.
+            await notificationProducer.NotifyAsync(
+                employee.UserId,
+                NotificationEventCatalog.EmployeeRegistrationRejected,
+                new Dictionary<string, string>(),
+                employee.TenantId,
+                $"{employee.Id}:{employee.RejectedAt!.Value.ToString("O", CultureInfo.InvariantCulture)}",
+                cancellationToken);
 
             await ReleaseFutureSeatsAsync(employee.Id, cancellationToken);
 

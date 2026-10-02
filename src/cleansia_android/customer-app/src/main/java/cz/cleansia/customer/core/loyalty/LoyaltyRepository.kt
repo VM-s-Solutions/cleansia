@@ -35,6 +35,13 @@ class LoyaltyRepository @Inject constructor(
     private val _tiers = MutableStateFlow<List<TierInfoDto>>(emptyList())
     val tiers: StateFlow<List<TierInfoDto>> = _tiers.asStateFlow()
 
+    /**
+     * The customer's credit. Null means it has not loaded or the read failed, and every surface then
+     * hides it; a zero balance is a value, not a null, and is shown.
+     */
+    private val _credit = MutableStateFlow<CreditDto?>(null)
+    val credit: StateFlow<CreditDto?> = _credit.asStateFlow()
+
     private val _loading = MutableStateFlow(false)
     val loading: StateFlow<Boolean> = _loading.asStateFlow()
 
@@ -73,6 +80,13 @@ class LoyaltyRepository @Inject constructor(
             if (tiersResp?.isSuccessful == true) {
                 _tiers.value = tiersResp.body()?.tiers ?: emptyList()
             }
+
+            // Credit is read alongside, and its failure does not fail the points: the two are
+            // separate accounts, and a Rewards tab that will not open because a balance read failed
+            // hides the points the customer came for. A failed or refused read leaves null, which
+            // hides every credit surface rather than showing a zero the server never said.
+            val creditResp = networkCall { api.getCredit() }
+            _credit.value = creditResp?.takeIf { it.isSuccessful }?.body()
 
             _loaded.value = true
             staleness.markFresh()
@@ -119,6 +133,7 @@ class LoyaltyRepository @Inject constructor(
     override suspend fun clear() {
         _account.value = null
         _tiers.value = emptyList()
+        _credit.value = null
         _loaded.value = false
         staleness.reset()
     }

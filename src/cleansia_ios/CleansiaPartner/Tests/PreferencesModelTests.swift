@@ -6,6 +6,8 @@ import XCTest
 @MainActor
 final class PreferencesModelTests: XCTestCase {
     private var defaults: UserDefaults!
+    /// Also the App Group the model writes the in-app language to: the default is the installed test
+    /// host's real one, which these tests must not rewrite.
     private var suiteName: String!
 
     override func setUp() {
@@ -25,18 +27,49 @@ final class PreferencesModelTests: XCTestCase {
         UserDefaultsAppSettingsStore(defaults: defaults, preferredLanguageTags: { [locale] })
     }
 
+    /// The Notification Service Extension renders pushes in whatever the app leaves in its App Group,
+    /// so the app leaves an explicit choice there at launch and on every change. System leaves nothing:
+    /// a resolved tag would be the phone's language when the app last ran, and would override iOS's own
+    /// rendering after the phone switched while the app was not running.
+    func testTheChosenLanguageIsLeftForTheExtensionsAtLaunchAndOnEveryChange() {
+        let group = "PreferencesModelTests.group.\(UUID().uuidString)"
+        defer { UserDefaults().removePersistentDomain(forName: group) }
+        let store = makeStore(locale: "uk")
+        store.setLanguage("cs")
+
+        let model = PreferencesModel(settings: store, languageSync: SilentLanguageSync(), appGroup: group)
+        XCTAssertEqual(AppGroupLanguage.read(appGroup: group), "cs")
+
+        model.setLanguage("sk")
+        XCTAssertEqual(AppGroupLanguage.read(appGroup: group), "sk")
+
+        model.setSystemLanguage()
+        XCTAssertNil(AppGroupLanguage.read(appGroup: group), "System leaves the phone's language to iOS")
+    }
+
+    /// A build that wrote the resolved tag on System left one behind; the next launch on System clears it.
+    func testALaunchOnSystemClearsATagLeftBehind() {
+        let group = "PreferencesModelTests.group.\(UUID().uuidString)"
+        defer { UserDefaults().removePersistentDomain(forName: group) }
+        AppGroupLanguage.write("en", appGroup: group)
+
+        _ = PreferencesModel(settings: makeStore(locale: "cs"), languageSync: SilentLanguageSync(), appGroup: group)
+
+        XCTAssertNil(AppGroupLanguage.read(appGroup: group))
+    }
+
     func testSeedsFromStore() {
         let store = makeStore()
         store.setLanguage("cs")
         store.setTheme(.dark)
-        let model = PreferencesModel(settings: store, languageSync: SilentLanguageSync())
+        let model = PreferencesModel(settings: store, languageSync: SilentLanguageSync(), appGroup: suiteName)
         XCTAssertEqual(model.languageTag, "cs")
         XCTAssertEqual(model.theme, .dark)
     }
 
     func testSetLanguageUpdatesPublishedAndStore() {
         let store = makeStore()
-        let model = PreferencesModel(settings: store, languageSync: SilentLanguageSync())
+        let model = PreferencesModel(settings: store, languageSync: SilentLanguageSync(), appGroup: suiteName)
         model.setLanguage("sk")
         XCTAssertEqual(model.languageTag, "sk")
         XCTAssertEqual(store.languageTag, "sk")
@@ -45,21 +78,25 @@ final class PreferencesModelTests: XCTestCase {
 
     func testSetLanguageUnsupportedClampsToResolvedTag() {
         let store = makeStore()
-        let model = PreferencesModel(settings: store, languageSync: SilentLanguageSync())
+        let model = PreferencesModel(settings: store, languageSync: SilentLanguageSync(), appGroup: suiteName)
         model.setLanguage("de")
         // Unsupported clears the store → resolves via locale ("en").
         XCTAssertEqual(model.languageTag, "en")
     }
 
     func testFreshInstallFollowsSystem() {
-        let model = PreferencesModel(settings: makeStore(locale: "uk"), languageSync: SilentLanguageSync())
+        let model = PreferencesModel(
+            settings: makeStore(locale: "uk"),
+            languageSync: SilentLanguageSync(),
+            appGroup: suiteName
+        )
         XCTAssertTrue(model.isFollowingSystemLanguage)
         XCTAssertEqual(model.languageTag, "uk")
     }
 
     func testSetSystemClearsTagAndResolvesToDeviceLocale() {
         let store = makeStore(locale: "uk")
-        let model = PreferencesModel(settings: store, languageSync: SilentLanguageSync())
+        let model = PreferencesModel(settings: store, languageSync: SilentLanguageSync(), appGroup: suiteName)
         model.setLanguage("sk")
         XCTAssertFalse(model.isFollowingSystemLanguage)
 
@@ -73,7 +110,7 @@ final class PreferencesModelTests: XCTestCase {
 
     func testLanguageThenSystemRoundTripsToUnset() {
         let store = makeStore(locale: "cs")
-        let model = PreferencesModel(settings: store, languageSync: SilentLanguageSync())
+        let model = PreferencesModel(settings: store, languageSync: SilentLanguageSync(), appGroup: suiteName)
         model.setLanguage("ru")
         XCTAssertEqual(store.persistedLanguageTag, "ru")
         model.setSystemLanguage()
@@ -83,7 +120,7 @@ final class PreferencesModelTests: XCTestCase {
 
     func testSelectLanguageBySentinelIdFollowsSystem() {
         let store = makeStore(locale: "uk")
-        let model = PreferencesModel(settings: store, languageSync: SilentLanguageSync())
+        let model = PreferencesModel(settings: store, languageSync: SilentLanguageSync(), appGroup: suiteName)
         model.setLanguage("sk")
 
         model.selectLanguage(id: PreferencesLabels.systemLanguageId)
@@ -95,7 +132,7 @@ final class PreferencesModelTests: XCTestCase {
 
     func testSelectLanguageByTagPersistsExplicitChoice() {
         let store = makeStore(locale: "en")
-        let model = PreferencesModel(settings: store, languageSync: SilentLanguageSync())
+        let model = PreferencesModel(settings: store, languageSync: SilentLanguageSync(), appGroup: suiteName)
 
         model.selectLanguage(id: "cs")
 
@@ -106,7 +143,7 @@ final class PreferencesModelTests: XCTestCase {
 
     func testSetThemeUpdatesPublishedAndStore() {
         let store = makeStore()
-        let model = PreferencesModel(settings: store, languageSync: SilentLanguageSync())
+        let model = PreferencesModel(settings: store, languageSync: SilentLanguageSync(), appGroup: suiteName)
         model.setTheme(.light)
         XCTAssertEqual(model.theme, .light)
         XCTAssertEqual(store.theme, .light)

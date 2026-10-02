@@ -76,7 +76,7 @@ struct AddressSectionView: View {
                 }
                 WhyWeNeedThisCard(expanded: $whyExpanded)
                 SaveSectionButton(
-                    onboarding: onboarding,
+                    onboarding: onboarding && chainVM.state.completedSteps < chainVM.state.totalSteps,
                     isSubmitting: vm.action.isSubmitting,
                     enabled: vm.canSave,
                     onBack: onboardingBack,

@@ -88,61 +88,38 @@ private struct PreferencePickerList: View {
     let selectedId: String
     let onSelect: (String) -> Void
 
+    /// A native inset-grouped list: the row press highlight, separators, Dynamic Type row metrics and
+    /// the iOS 26 list look come with it. The brand background and surface stay.
     var body: some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                ForEach(options.indices, id: \.self) { index in
-                    PreferenceRow(
-                        option: options[index],
-                        isSelected: options[index].id == selectedId,
-                        onTap: { onSelect(options[index].id) }
-                    )
-                    if index < options.count - 1 {
-                        Divider()
-                            .background(CleansiaColors.outline.opacity(0.5))
-                            .padding(.leading, Spacing.m)
+        List {
+            Section {
+                ForEach(options) { option in
+                    let isSelected = option.id == selectedId
+                    Button {
+                        onSelect(option.id)
+                    } label: {
+                        HStack(spacing: Spacing.m) {
+                            Text(option.label)
+                                .font(CleansiaTypography.bodyLarge)
+                                .foregroundColor(CleansiaColors.onSurface)
+                            Spacer()
+                            if isSelected {
+                                Image(systemName: "checkmark")
+                                    .font(.system(size: 15, weight: .semibold))
+                                    .foregroundColor(CleansiaColors.primary)
+                            }
+                        }
+                        .contentShape(Rectangle())
                     }
+                    .listRowBackground(CleansiaColors.surface)
+                    .accessibilityAddTraits(isSelected ? .isSelected : [])
                 }
             }
-            .background(CleansiaColors.surface)
-            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.large))
-            .padding(Spacing.m)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
         .background(CleansiaColors.background.ignoresSafeArea())
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
-    }
-}
-
-private struct PreferenceRow: View {
-    let option: PreferenceOption
-    let isSelected: Bool
-    let onTap: () -> Void
-
-    var body: some View {
-        Button(action: onTap) {
-            HStack(spacing: Spacing.m) {
-                Text(option.label)
-                    .font(CleansiaTypography.bodyLarge)
-                    .fontWeight(isSelected ? .semibold : .regular)
-                    .foregroundColor(isSelected ? CleansiaColors.primary : CleansiaColors.onSurface)
-                Spacer()
-                if isSelected {
-                    ZStack {
-                        Circle()
-                            .fill(CleansiaColors.primary)
-                            .frame(width: 24, height: 24)
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundColor(CleansiaColors.onPrimary)
-                    }
-                }
-            }
-            .padding(Spacing.m)
-            .frame(maxWidth: .infinity)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
     }
 }

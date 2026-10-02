@@ -54,15 +54,19 @@ struct RewardsTab: View {
             ProgressView()
                 .tint(CleansiaColors.primary)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+        // Sized to the viewport between the title and the Book FAB's top, and centred there (the Orders
+        // tab's form): a scroll view proposes no height. The scroll view stays for pull-to-refresh.
         case .error:
-            ScrollView {
-                RewardsStateMessage(
-                    systemImage: "wifi.slash",
-                    message: L10n.Rewards.errorLoad
-                ) { Task { await vm.refresh() } }
-                    .frame(maxWidth: .infinity, minHeight: 360)
+            GeometryReader { proxy in
+                ScrollView {
+                    RewardsStateMessage(
+                        systemImage: "wifi.slash",
+                        message: L10n.Rewards.errorLoad
+                    ) { Task { await vm.refresh() } }
+                        .frame(maxWidth: .infinity, minHeight: proxy.size.height)
+                }
+                .refreshable { await vm.refresh() }
             }
-            .refreshable { await vm.refresh() }
         case let .loaded(content):
             RewardsContentView(
                 content: content,
@@ -99,10 +103,17 @@ struct RewardsContentView: View {
         )
     }
 
+    @State private var showCreditSheet = false
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Spacing.m) {
                 TierHeroCard(tier: currentTier, account: content.account)
+                // Credit sits beside the points because the two are confused: points move the tier,
+                // credit is money off. A failed read hides the card; a zero balance shows its one line.
+                if let credit = content.credit {
+                    CreditCard(credit: credit) { showCreditSheet = true }
+                }
                 ProgressCard(account: content.account)
                 CurrentPerksCard(labels: perkLabels)
                 TierLadderCard(tiers: content.tiers, current: currentTier, floor: tierFloor)
@@ -114,6 +125,11 @@ struct RewardsContentView: View {
                 ActivityPreviewCard(activity: content.activityPreview, onOpenActivity: onOpenActivity)
             }
             .padding(.horizontal, Spacing.ml)
+        }
+        .sheet(isPresented: $showCreditSheet) {
+            if let credit = content.credit {
+                CreditExplainerSheet(credit: credit) { showCreditSheet = false }
+            }
         }
     }
 }
@@ -143,6 +159,8 @@ private struct TierHeroCard: View {
                 Text(verbatim: "\(account.lifetimePoints)")
                     .cleansiaFont(CleansiaTypography.displayMedium)
                     .foregroundColor(.white)
+                    .contentTransition(.numericText())
+                    .animation(.default, value: account.lifetimePoints)
                 Text(L10n.Rewards.pointsUnit)
                     .font(CleansiaTypography.titleMedium)
                     .foregroundColor(.white.opacity(0.9))

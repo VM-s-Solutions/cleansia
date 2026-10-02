@@ -118,7 +118,7 @@ struct SummaryCard: View {
             LabeledInfoRow(
                 systemImage: "house",
                 label: L10n.Booking.summaryProperty,
-                value: L10n.Booking.summaryProperty(rooms: state.rooms, bathrooms: state.bathrooms)
+                value: L10n.OrderDetail.roomsBathrooms(state.rooms, state.bathrooms)
             )
             LabeledInfoRow(
                 systemImage: "sparkles",
@@ -185,7 +185,30 @@ struct SummaryCard: View {
                 )
             }
             AmountRow(label: L10n.Booking.summaryTotal, value: money(summary.total), emphasis: .total)
+            creditLines
         }
+    }
+
+    /// Credit applies by itself to a card booking, so the customer is told here rather than first
+    /// reading the smaller figure on the Stripe sheet. Cash takes no credit, and a customer who toggles
+    /// to cash is told why the credit lines went away.
+    @ViewBuilder
+    private var creditLines: some View {
+        if summary.creditApplied > 0 {
+            AmountRow(label: L10n.Credit.yourCredit, value: "−\(money(summary.creditApplied))", emphasis: .success)
+            AmountRow(label: L10n.Credit.dueOnCard, value: money(summary.dueOnCard), emphasis: .total)
+            creditNote(L10n.Credit.summaryNote(balance: money(summary.creditBalance)))
+        } else if state.paymentMethod != .card, summary.creditBalance > 0 {
+            creditNote(L10n.Credit.cardOnly)
+        }
+    }
+
+    private func creditNote(_ text: String) -> some View {
+        Text(text)
+            .font(CleansiaTypography.labelMedium)
+            .foregroundColor(CleansiaColors.onSurfaceVariant)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.top, Spacing.xxs)
     }
 
     private func money(_ amount: Double) -> String {

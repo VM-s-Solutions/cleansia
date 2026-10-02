@@ -16,6 +16,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -49,7 +50,6 @@ import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.MyLocation
-import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material.icons.outlined.WarningAmber
@@ -77,9 +77,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -89,10 +90,11 @@ import com.mapbox.geojson.Point
 import com.mapbox.maps.MapboxExperimental
 import com.mapbox.maps.extension.compose.MapboxMap
 import com.mapbox.maps.extension.compose.animation.viewport.rememberMapViewportState
-import com.mapbox.maps.extension.compose.style.MapStyle
 import cz.cleansia.core.location.GeocodedAddress
 import cz.cleansia.core.location.LocationService
-import cz.cleansia.core.location.MapStyles
+import cz.cleansia.core.location.CleansiaMapPin
+import cz.cleansia.core.location.CleansiaMapPinHeight
+import cz.cleansia.core.location.CleansiaMapStyle
 import cz.cleansia.core.location.ReverseGeocodingService
 import cz.cleansia.core.serviceareas.CityNameMatch
 import cz.cleansia.core.snackbar.SnackbarController
@@ -623,21 +625,36 @@ private fun AddOnMapPane(
         searching = false
     }
 
+    // How much of the map's bottom edge the address card covers, nav bar included; measured, since
+    // the card grows with the address and the font scale.
+    val density = LocalDensity.current
+    var cardCoverHeight by remember { mutableStateOf(0.dp) }
+
     Box(modifier = Modifier.fillMaxSize()) {
         // ── Map ──
         MapboxMap(
             modifier = Modifier.fillMaxSize(),
             mapViewportState = viewportState,
-            style = { MapStyle(style = if (darkTheme) MapStyles.DARK else MapStyles.LIGHT) },
+            style = { CleansiaMapStyle(darkTheme) },
             scaleBar = {}, // hide Mapbox's default 0–300m scale bar overlay
+            // Mapbox's terms require the wordmark and the attribution. Lifted above the address card,
+            // which covers the map's bottom edge where they sit by default. Only the ornaments move:
+            // the camera centre, which the pin marks, stays the map's centre.
+            logo = {
+                Logo(contentPadding = PaddingValues(start = 4.dp, bottom = cardCoverHeight + 4.dp))
+            },
+            attribution = {
+                Attribution(contentPadding = PaddingValues(start = 92.dp, bottom = cardCoverHeight + 4.dp))
+            },
         )
 
-        // ── Centre pin ──
+        // ── Centre pin ── lifted by its own height, so its tip is the map's centre: the point the
+        // reverse geocode resolves.
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center,
         ) {
-            CenterPin()
+            CleansiaMapPin(darkTheme = darkTheme, modifier = Modifier.padding(bottom = CleansiaMapPinHeight))
         }
 
         // ── Top: back button + search bar overlay ──
@@ -715,6 +732,7 @@ private fun AddOnMapPane(
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.BottomCenter)
+                .onSizeChanged { cardCoverHeight = with(density) { it.height.toDp() } }
                 .shadow(elevation = 24.dp, shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp), clip = false)
                 .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
                 .background(MaterialTheme.colorScheme.surface)
@@ -1115,38 +1133,6 @@ private fun SearchStateRow(text: String, showProgress: Boolean) {
             Spacer(Modifier.width(10.dp))
         }
         Text(text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
-}
-
-@Composable
-private fun CenterPin() {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.padding(bottom = 40.dp),
-    ) {
-        Box(
-            modifier = Modifier
-                .shadow(elevation = 12.dp, shape = CircleShape, clip = false)
-                .size(44.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primary)
-                .border(3.dp, Color.White, CircleShape),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                Icons.Outlined.Place,
-                contentDescription = null,
-                tint = Color.White,
-                modifier = Modifier.size(24.dp),
-            )
-        }
-        Box(modifier = Modifier.height(4.dp).width(2.dp).background(Color.Black.copy(alpha = 0.2f)))
-        Box(
-            modifier = Modifier
-                .size(width = 10.dp, height = 4.dp)
-                .clip(RoundedCornerShape(50))
-                .background(Color.Black.copy(alpha = 0.15f)),
-        )
     }
 }
 

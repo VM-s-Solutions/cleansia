@@ -24,28 +24,19 @@ struct PendingOffersView: View {
     }
 
     var body: some View {
-        ZStack {
-            PendingOffersContent(
-                state: vm.state,
-                inFlight: inFlight,
-                onRetry: { Task { await vm.load() } },
-                onConfirm: vm.confirm,
-                onDeclineRequested: { pendingDecline = $0 }
-            )
-            if let pendingDecline {
-                OfferDeclineDialog(
-                    onConfirm: {
-                        let offer = pendingDecline
-                        self.pendingDecline = nil
-                        Task { await vm.decline(offer) }
-                    },
-                    onDismiss: { self.pendingDecline = nil }
-                )
-            }
-            if let refusal = vm.refusal {
-                OfferRefusalDialog(refusal: refusal, onDismiss: vm.dismissRefusal)
-            }
-        }
+        PendingOffersContent(
+            state: vm.state,
+            inFlight: inFlight,
+            onRetry: { Task { await vm.load() } },
+            onConfirm: vm.confirm,
+            onDeclineRequested: { pendingDecline = $0 }
+        )
+        .offerDeclineAlert(
+            pendingDecline,
+            onDismiss: { pendingDecline = nil },
+            onConfirm: { offer in Task { await vm.decline(offer) } }
+        )
+        .offerRefusalAlert(vm.refusal, onDismiss: vm.dismissRefusal)
         .navigationTitle(L10n.Offers.title)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)

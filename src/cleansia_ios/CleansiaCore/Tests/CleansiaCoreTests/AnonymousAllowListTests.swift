@@ -16,17 +16,13 @@ final class AnonymousAllowListTests: XCTestCase {
         "/api/User/ChangePassword"
     ]
 
-    private let customerGuestPaths = [
+    private let customerPreSessionPaths = [
         "/api/Service/GetOverview",
         "/api/Package/GetOverview",
         "/api/Extra/GetOverview",
         "/api/Currency/GetOverview",
         "/api/Membership/GetPlans",
         "/api/Order/Quote",
-        "/api/Order/Lookup",
-        "/api/Order/LookupBatch",
-        "/api/Order/GuestCancellationPreview",
-        "/api/Order/CancelGuest",
         "/api/Referral/Validate"
     ]
 
@@ -48,9 +44,9 @@ final class AnonymousAllowListTests: XCTestCase {
         }
     }
 
-    func testPartnerDoesNotAllowGuestBookingPaths() {
+    func testPartnerDoesNotAllowCustomerPreSessionPaths() {
         let list = AnonymousAllowList.partner
-        for path in customerGuestPaths {
+        for path in customerPreSessionPaths {
             XCTAssertFalse(list.isAnonymous(path: path), "partner must NOT treat \(path) as anonymous")
         }
     }
@@ -62,10 +58,10 @@ final class AnonymousAllowListTests: XCTestCase {
         }
     }
 
-    func testCustomerAllowsGuestBookingPaths() {
+    func testCustomerAllowsPreSessionPaths() {
         let list = AnonymousAllowList.customer
-        for path in customerGuestPaths {
-            XCTAssertTrue(list.isAnonymous(path: path), "customer should allow guest path \(path)")
+        for path in customerPreSessionPaths {
+            XCTAssertTrue(list.isAnonymous(path: path), "customer should allow pre-session path \(path)")
         }
     }
 
@@ -93,10 +89,10 @@ final class AnonymousAllowListTests: XCTestCase {
         }
     }
 
-    func testDualUsePathsRemainOnTheGuestAllowList() {
+    func testDualUsePathsRemainOnTheAnonymousAllowList() {
         let list = AnonymousAllowList.customer
         for path in dualUsePaths {
-            XCTAssertTrue(list.isAnonymous(path: path), "dual-use \(path) must stay on the guest allow-list")
+            XCTAssertTrue(list.isAnonymous(path: path), "dual-use \(path) must stay on the anonymous allow-list")
         }
     }
 
@@ -105,18 +101,16 @@ final class AnonymousAllowListTests: XCTestCase {
         for path in sharedAuthPaths {
             XCTAssertFalse(list.isDualUse(path: path), "pure-anon \(path) must never be dual-use")
         }
-        XCTAssertFalse(list.isDualUse(path: "/api/Order/Lookup"))
         XCTAssertFalse(list.isDualUse(path: "/api/Service/GetOverview"))
         XCTAssertFalse(list.isDualUse(path: "/api/Referral/Validate"))
     }
 
-    /// The guest's secret is the whole credential. A signed-in customer looking up someone else's guest
-    /// booking must not send their own stale Bearer beside it, while their own account cancel keeps it.
-    func testGuestOrderPathsStayTokenlessWhileTheAccountCancelStaysAuthed() {
+    /// The app has no guest surface: a guest booking is tracked and cancelled from its e-mail link on the
+    /// web, so no guest lookup or cancel route is anonymous here, and the account cancel stays authed.
+    func testNoGuestOrderPathIsAnonymousAndTheAccountCancelStaysAuthed() {
         let list = AnonymousAllowList.customer
         for path in ["/api/Order/Lookup", "/api/Order/GuestCancellationPreview", "/api/Order/CancelGuest"] {
-            XCTAssertTrue(list.isAnonymous(path: path), "\(path) must be anonymous")
-            XCTAssertFalse(list.isDualUse(path: path), "\(path) must never carry a Bearer")
+            XCTAssertFalse(list.isAnonymous(path: path), "\(path) must not be on the anonymous allow-list")
         }
         XCTAssertFalse(list.isAnonymous(path: "/api/Order/Cancel"))
         XCTAssertFalse(list.isAnonymous(path: "/api/Order/CancellationPreview"))

@@ -37,7 +37,7 @@ final class DashboardViewModelTests: XCTestCase {
         super.setUp()
         client = FakeDashboardClient()
         suiteName = "DashboardViewModelTests.\(UUID().uuidString)"
-        settings = UserDefaultsAppSettingsStore(defaults: UserDefaults(suiteName: suiteName)!)
+        settings = UserDefaultsAppSettingsStore(defaults: UserDefaults(suiteName: suiteName) ?? .standard)
     }
 
     override func tearDown() {

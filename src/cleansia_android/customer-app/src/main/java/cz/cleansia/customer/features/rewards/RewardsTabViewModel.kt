@@ -7,6 +7,7 @@ import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.catalog.CatalogRepository
+import cz.cleansia.customer.core.loyalty.CreditDto
 import cz.cleansia.customer.core.loyalty.LoyaltyAccountDto
 import cz.cleansia.customer.core.loyalty.LoyaltyActivityItemDto
 import cz.cleansia.customer.core.loyalty.LoyaltyRepository
@@ -45,6 +46,7 @@ class RewardsTabViewModel @Inject constructor(
     val loading: StateFlow<Boolean> = loyaltyRepository.loading
     val loaded: StateFlow<Boolean> = loyaltyRepository.loaded
     val referralAccount: StateFlow<ReferralAccountDto?> = referralRepository.account
+    val credit: StateFlow<CreditDto?> = loyaltyRepository.credit
 
     /** The market's currency when one resolved, else the catalogue default the server prices in. */
     val currencyCode: StateFlow<String?> =
@@ -74,11 +76,39 @@ class RewardsTabViewModel @Inject constructor(
         viewModelScope.launch { fetchActivityPreview() }
     }
 
-    fun refresh() {
+    /**
+     * The pull spinner's own flag. The repository's `loading` is raised by every read of the cache —
+     * the shell's warm-up and [onEnter] too — and a spinner the customer did not ask for is what
+     * Home's `isUserRefreshing` exists to prevent.
+     */
+    private val _isUserRefreshing = MutableStateFlow(false)
+    val isUserRefreshing: StateFlow<Boolean> = _isUserRefreshing.asStateFlow()
+
+    /**
+     * Tab entry, and the app returning to the foreground on this tab. A booking, a cancel or a card
+     * occurrence confirm marks the loyalty cache stale, and Home — the other screen that honours the
+     * mark — is not composed behind this tab, so a stale cache is re-read here, with the activity
+     * preview. Silent, like Home's entry: the cached snapshot stays on screen. A cache that never
+     * loaded is the shell warm-up's first read, and its failure is this tab's error state.
+     */
+    fun onEnter() {
+        if (!loyaltyRepository.loaded.value || !loyaltyRepository.staleness.isStale()) return
         viewModelScope.launch {
-            loyaltyRepository.refresh().showErrorUnlessNetwork()
-            referralRepository.refresh().showErrorUnlessNetwork()
-            fetchActivityPreview()
+            if (loyaltyRepository.refresh() is ApiResult.Success) fetchActivityPreview()
+        }
+    }
+
+    fun refresh() {
+        if (_isUserRefreshing.value) return
+        viewModelScope.launch {
+            _isUserRefreshing.value = true
+            try {
+                loyaltyRepository.refresh().showErrorUnlessNetwork()
+                referralRepository.refresh().showErrorUnlessNetwork()
+                fetchActivityPreview()
+            } finally {
+                _isUserRefreshing.value = false
+            }
         }
     }
 

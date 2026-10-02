@@ -38,6 +38,7 @@ struct OrderDetailView: View {
         onReportIssue: @escaping (String) -> Void,
         onReportCleanerNoShow: @escaping (String) -> Void,
         onRebook: @escaping (String) -> Void,
+        onCreditMoved: @escaping () -> Void,
         onMakeRecurring: @escaping (String) -> Void
     ) {
         _vm = StateObject(
@@ -48,7 +49,8 @@ struct OrderDetailView: View {
                 membershipRepository: membershipRepository,
                 marketStore: marketStore,
                 snackbar: snackbar,
-                eventBus: eventBus
+                eventBus: eventBus,
+                onCreditMoved: onCreditMoved
             )
         )
         routeOrderId = orderId

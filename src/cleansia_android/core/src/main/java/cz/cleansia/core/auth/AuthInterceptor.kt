@@ -48,9 +48,6 @@ class AuthInterceptor(
             "/api/auth/googleauth",
             "/api/auth/confirmuseremail",
             "/api/auth/resendconfirmationemail",
-            "/api/order/lookup",
-            "/api/order/guestcancellationpreview",
-            "/api/order/cancelguest",
         )
     }
 }

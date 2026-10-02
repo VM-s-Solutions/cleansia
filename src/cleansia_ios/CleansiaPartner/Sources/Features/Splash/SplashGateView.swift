@@ -142,28 +142,14 @@ private struct SplashUnreachableView: View {
         .padding(Spacing.xl)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(CleansiaColors.background)
-        .overlay { confirmOverlay }
-    }
-
-    /// The same dialog the profile hub raises. It now describes something the button really
-    /// does — until this change it only navigated, which is why T-0626 deliberately left the
-    /// confirmation off rather than ship copy that overstated the action.
-    @ViewBuilder
-    private var confirmOverlay: some View {
-        if confirmingSignOut {
-            CleansiaDialog(
-                title: L10n.Profile.logoutDialogTitle,
-                confirmLabel: L10n.Profile.logoutDialogConfirm,
-                onConfirm: {
-                    confirmingSignOut = false
-                    onSignOut()
-                },
-                onDismiss: { confirmingSignOut = false },
-                message: L10n.Profile.logoutDialogMessage,
-                dismissLabel: L10n.Profile.logoutDialogCancel,
-                icon: "rectangle.portrait.and.arrow.right",
-                destructive: true
-            )
+        // The same confirm the profile hub raises. It now describes something the button really
+        // does — until this change it only navigated, which is why T-0626 deliberately left the
+        // confirmation off rather than ship copy that overstated the action.
+        .alert(L10n.Profile.logoutDialogTitle, isPresented: $confirmingSignOut) {
+            Button(L10n.Profile.logoutDialogConfirm, role: .destructive, action: onSignOut)
+            Button(L10n.Profile.logoutDialogCancel, role: .cancel) {}
+        } message: {
+            Text(L10n.Profile.logoutDialogMessage)
         }
     }
 }

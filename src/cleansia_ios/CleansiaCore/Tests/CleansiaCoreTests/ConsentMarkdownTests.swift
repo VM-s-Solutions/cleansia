@@ -110,6 +110,6 @@ final class CleansiaWebTests: XCTestCase {
 
     func testReferralLinkAndContactEmailShareTheSameDomain() {
         XCTAssertEqual(CleansiaWeb.referralLink(code: "ABC123"), "\(CleansiaWeb.origin)/r/ABC123")
-        XCTAssertEqual(CleansiaWeb.contactEmail, "info@\(CleansiaWeb.domain)")
+        XCTAssertEqual(CleansiaWeb.contactEmail, "support@\(CleansiaWeb.domain)")
     }
 }

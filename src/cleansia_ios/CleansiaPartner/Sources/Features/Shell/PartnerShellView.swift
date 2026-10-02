@@ -122,7 +122,18 @@ struct PartnerShellView: View {
         }
     }
 
+    /// iOS 26: the bar shrinks to its selected tab while a tab root scrolls down and comes back on the
+    /// way up — the system behaviour, with no overlay above the bar to strand. Earlier: the stock bar.
+    @ViewBuilder
     private var tabs: some View {
+        if #available(iOS 26, *) {
+            tabView.tabBarMinimizeBehavior(.onScrollDown)
+        } else {
+            tabView
+        }
+    }
+
+    private var tabView: some View {
         TabView(selection: $model.selection) {
             dashboardTab
                 .tabItem { Label(ShellTab.dashboard.label, systemImage: ShellTab.dashboard.systemImage) }

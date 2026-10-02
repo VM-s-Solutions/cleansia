@@ -68,6 +68,11 @@ extension L10n {
             plural("booking_bath_short", count)
         }
 
+        /// "Up to 8 rooms and 4 bathrooms" — the numbers are `PropertySize`'s, pinned to the server's caps.
+        static var sizeLimitCaption: String {
+            format("booking_size_limit_caption", PropertySize.maxRooms, PropertySize.maxBathrooms)
+        }
+
         static var noResults: String {
             localized("booking_no_results")
         }
@@ -222,10 +227,6 @@ extension L10n {
 
         static var summaryTotal: String {
             localized("booking_summary_total")
-        }
-
-        static func summaryProperty(rooms: Int, bathrooms: Int) -> String {
-            format("booking_summary_property_value", rooms, bathrooms)
         }
 
         static var paymentMethod: String {

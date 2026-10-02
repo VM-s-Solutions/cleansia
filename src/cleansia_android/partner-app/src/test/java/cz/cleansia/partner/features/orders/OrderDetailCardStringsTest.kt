@@ -87,6 +87,34 @@ class OrderDetailCardStringsTest {
     }
 
     /**
+     * Owner ruling 2026-10-02: a bathroom is "ванна кімната" in Ukrainian and "ванная" in Russian. Bare
+     * "ванна" or "ванні" read as bathtubs on the board, the offer, the contract and this card.
+     */
+    @Test
+    fun `Ukrainian and Russian count bathrooms, not bathtubs`() {
+        val expected = mapOf(
+            "values-uk" to mapOf(
+                "one" to "%1\$d ванна кімната",
+                "few" to "%1\$d ванні кімнати",
+                "many" to "%1\$d ванних кімнат",
+                "other" to "%1\$d ванні кімнати",
+            ),
+            "values-ru" to mapOf(
+                "one" to "%1\$d ванная",
+                "few" to "%1\$d ванные",
+                "many" to "%1\$d ванных",
+                "other" to "%1\$d ванные",
+            ),
+        )
+        expected.forEach { (locale, items) ->
+            val declared = Regex("<item quantity=\"([^\"]+)\">(.*?)</item>")
+                .findAll(pluralBody(stringsXml(locale), locale, "scope_baths"))
+                .associate { it.groupValues[1] to it.groupValues[2] }
+            assertEquals("$locale/scope_baths", items, declared)
+        }
+    }
+
+    /**
      * The wire `name` ("OnTheWay") is only ever a debug diagnostic, and the one
      * place that decides so is [orderStatusLabel]. Reading it at the call site
      * puts it back on screen in every locale.

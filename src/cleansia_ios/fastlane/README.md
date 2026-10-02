@@ -19,9 +19,15 @@ signing — no secrets in CI.
    ```
    Set `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_KEY_PATH`, and `ASC_TEAM_ID`.
 4. Make sure the app records exist in App Store Connect (`cz.cleansia.customer`,
-   `cz.cleansia.partner`) and each App ID has its capabilities enabled: Push and
-   Sign in with Apple on `cz.cleansia.customer`, an App ID for its Live Activity
-   extension `cz.cleansia.customer.widgets`, and Push on `cz.cleansia.partner`.
+   `cz.cleansia.partner`) and each App ID has its capabilities enabled: Push,
+   Sign in with Apple and App Groups (`group.cz.cleansia.customer`) on
+   `cz.cleansia.customer`; App Groups on its Live Activity extension
+   `cz.cleansia.customer.widgets` and its Notification Service Extension
+   `cz.cleansia.customer.notificationservice`; Push and App Groups
+   (`group.cz.cleansia.partner`) on `cz.cleansia.partner` and App Groups on
+   `cz.cleansia.partner.notificationservice`. The lanes archive and export with
+   `-allowProvisioningUpdates`, so automatic signing registers the extension App
+   IDs and the groups on the first signed archive after they were added.
    The **first** archive is easiest done once by hand
    in Xcode Organizer so Xcode bootstraps the distribution certificate + App
    Store profiles; after that these lanes are non-interactive.
@@ -69,5 +75,5 @@ within minutes (no review).
 
 > The build number is injected at archive time (`CURRENT_PROJECT_VERSION`), never
 > written into `project.yml`, so it survives xcodegen regeneration and keeps the
-> app and its Live Activity extension on the same version. To raise the **marketing
+> app and its extensions (Live Activity, Notification Service) on the same version. To raise the **marketing
 > version** (e.g. `1.0.0` → `1.1.0`), bump `MARKETING_VERSION` in both `project.yml`.

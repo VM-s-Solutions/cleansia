@@ -5,6 +5,7 @@ import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
   CustomerClient,
   DirtinessLevel,
+  PaymentType,
   QuoteOrderCommand,
   QuoteOrderResponse,
 } from '@cleansia/customer-services';
@@ -189,15 +190,20 @@ export class OrderPricingFacade extends UnsubscribeControlDirective {
    *
    * Capped against `displayedTotalPrice` — the price actually being charged, promo included — through
    * the one shared function that mirrors the server rule. → capCreditForOrder
+   *
+   * Zero unless the customer pays by card: `CreateOrder` takes no credit from a cash booking, so a
+   * split shown for cash would promise money off that the booking never gets.
    */
   readonly creditBalance = computed(() => this.quote()?.creditBalance ?? 0);
 
   readonly creditApplied = computed(() =>
-    capCreditForOrder(
-      this.creditBalance(),
-      this.displayedTotalPrice(),
-      this.quote()?.creditMaxShareOfOrder ?? 0,
-    ),
+    this.formData().paymentType === PaymentType.Card
+      ? capCreditForOrder(
+          this.creditBalance(),
+          this.displayedTotalPrice(),
+          this.quote()?.creditMaxShareOfOrder ?? 0,
+        )
+      : 0,
   );
 
   /** What the card is asked for once credit has settled its share. */

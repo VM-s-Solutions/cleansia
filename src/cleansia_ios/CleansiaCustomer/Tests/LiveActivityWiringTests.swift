@@ -132,6 +132,7 @@ final class OrderLiveActivitySyncTests: XCTestCase {
             snackbar: SnackbarController(),
             eventBus: OrderEventBus(),
             liveActivity: sync,
+            onCreditMoved: {},
             pollInterval: 3600
         )
     }

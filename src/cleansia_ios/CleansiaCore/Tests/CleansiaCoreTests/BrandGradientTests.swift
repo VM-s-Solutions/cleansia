@@ -25,6 +25,14 @@ final class BrandGradientTests: XCTestCase {
         assertStops(.plusHero, light: [0x082F49, 0x0F172A], dark: [0x082F49, 0x0F172A])
     }
 
+    func testOrangeMatchesTheAndroidAccentPair() {
+        assertStops(.orange, light: [0xEA580C, 0xFB923C], dark: [0xB4470F, 0xC9712F])
+    }
+
+    func testEmeraldMatchesTheAndroidAccentPair() {
+        assertStops(.emerald, light: [0x059669, 0x34D399], dark: [0x04765A, 0x2E9C79])
+    }
+
     func testEveryGradientDerivesItsColorsFromItsStops() {
         for gradient in BrandGradient.allCases {
             XCTAssertEqual(gradient.colors.count, gradient.stops.count, "\(gradient)")

@@ -19,6 +19,8 @@ import {
   canSubmitBankDetails,
   createBankDetailsForm,
   createUpdateBankDetailsCommand,
+  ibanOnlyCountry,
+  ibanProblem,
   mapPayoutDetailsToBankForm,
 } from './profile-bank.models';
 
@@ -45,8 +47,33 @@ export class ProfileBankFacade extends UnsubscribeControlDirective {
   private readonly formValue = signal<BankDetailsFormValue>(
     this.formGroup.getRawValue()
   );
+  /** Country id → ISO alpha-2, the code an IBAN starts with. */
+  private readonly countryAlpha2 = signal<ReadonlyMap<string, string>>(new Map());
+  private readonly bankCountryAlpha2 = computed(() =>
+    this.countryAlpha2().get(this.formValue().bankCountryId)
+  );
 
-  readonly canSubmit = computed(() => canSubmitBankDetails(this.formValue()));
+  /** The country a bank entered as one IBAN is in; null keeps the Czech and Slovak three parts. */
+  readonly ibanCountry = computed(() => ibanOnlyCountry(this.bankCountryAlpha2()));
+
+  /** Whether a save has been tried, after which the IBAN's problem shows under it as it is edited. */
+  private readonly ibanChecked = signal(false);
+
+  /**
+   * What the server would refuse about the IBAN, once a save has been tried. Read here, not from a
+   * validator on the control: it changes with the bank country as well as with the IBAN, and the text
+   * input redraws its own errors only when it is edited.
+   */
+  readonly ibanError = computed(() => {
+    const country = this.ibanCountry();
+    return country && this.ibanChecked()
+      ? ibanProblem(this.formValue().iban, country)
+      : null;
+  });
+
+  readonly canSubmit = computed(() =>
+    canSubmitBankDetails(this.formValue(), this.bankCountryAlpha2())
+  );
 
   constructor() {
     super();
@@ -61,6 +88,7 @@ export class ProfileBankFacade extends UnsubscribeControlDirective {
   load(): void {
     this.loading.set(true);
     this.loadFailed.set(false);
+    this.ibanChecked.set(false);
 
     combineLatest([
       this.partnerClient.employeeClient.getCurrentEmployee(),
@@ -94,6 +122,14 @@ export class ProfileBankFacade extends UnsubscribeControlDirective {
         this.countries.set(
           (countries ?? []).map((country) => this.toOption(country))
         );
+        this.countryAlpha2.set(
+          new Map(
+            (countries ?? []).flatMap((country) => {
+              const alpha2 = this.alpha2Of(country);
+              return country.id && alpha2 ? [[country.id, alpha2] as const] : [];
+            })
+          )
+        );
         this.formGroup.setValue(
           mapPayoutDetailsToBankForm(payoutDetails, employee.countryId)
         );
@@ -109,6 +145,12 @@ export class ProfileBankFacade extends UnsubscribeControlDirective {
       return;
     }
 
+    const ibanCountry = this.ibanCountry();
+    if (ibanCountry && ibanProblem(this.formValue().iban, ibanCountry)) {
+      this.ibanChecked.set(true);
+      return;
+    }
+
     const employeeId = this.employeeId();
     if (!employeeId) {
       this.snackbarService.showErrorTranslated('global.messages.profile.not_loaded');
@@ -119,7 +161,11 @@ export class ProfileBankFacade extends UnsubscribeControlDirective {
 
     this.partnerClient.employeeClient
       .updateBankDetails(
-        createUpdateBankDetailsCommand(employeeId, this.formGroup.getRawValue())
+        createUpdateBankDetailsCommand(
+          employeeId,
+          this.formGroup.getRawValue(),
+          this.bankCountryAlpha2()
+        )
       )
       .pipe(
         takeUntil(this.destroyed$),
@@ -144,6 +190,11 @@ export class ProfileBankFacade extends UnsubscribeControlDirective {
         control.setValue(normalized, { emitEvent: false });
       }
     }
+  }
+
+  /** The code the country's IBANs start with — `isoAlpha2`, since the seed stores `isoCode` alpha-3. */
+  private alpha2Of(country: CountryListItem): string | undefined {
+    return country.isoAlpha2?.trim().toUpperCase() || undefined;
   }
 
   private toOption(country: CountryListItem): ICleansiaSelectOption {

@@ -77,13 +77,6 @@ private struct RegisterContent: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
-                Mascot.waving.image
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 140, height: 140)
-
-                Spacer().frame(height: Spacing.l)
-
                 Text(L10n.Register.title)
                     .cleansiaFont(CleansiaTypography.displayMedium)
                     .foregroundColor(CleansiaColors.onBackground)

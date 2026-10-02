@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
@@ -24,29 +25,36 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ArrowForwardIos
+import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.CardGiftcard
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material.icons.outlined.ContentCopy
+import androidx.compose.material.icons.outlined.CreditCard
 import androidx.compose.material.icons.outlined.Diamond
 import androidx.compose.material.icons.outlined.EmojiEvents
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.MilitaryTech
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.Star
+import androidx.compose.material.icons.outlined.VolunteerActivism
 import androidx.compose.material.icons.outlined.Workspaces
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -61,6 +69,8 @@ import androidx.compose.ui.unit.dp
 import cz.cleansia.customer.R
 import cz.cleansia.core.format.formatOrderDateTime
 import cz.cleansia.core.format.formatOrderPrice
+import cz.cleansia.customer.core.loyalty.CreditBalanceDto
+import cz.cleansia.customer.core.loyalty.CreditDto
 import cz.cleansia.customer.core.loyalty.LoyaltyAccountDto
 import cz.cleansia.customer.core.loyalty.LoyaltyActivityItemDto
 import cz.cleansia.customer.core.loyalty.LoyaltyEarnSource
@@ -73,7 +83,18 @@ import cz.cleansia.core.ui.components.SudsRefreshIndicator
 import cz.cleansia.core.ui.theme.Poppins
 import cz.cleansia.customer.ui.theme.SuccessText
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cz.cleansia.customer.features.main.MainShellBottomClearance
+import cz.cleansia.core.ui.components.CleansiaPrimaryButton
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
+import kotlin.math.roundToInt
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toJavaLocalDate
+import kotlinx.datetime.toLocalDateTime
 
 /**
  * Rewards tab — Loyalty Phase A (M2).
@@ -110,9 +131,15 @@ fun RewardsTab(
     val loaded by viewModel.loaded.collectAsStateWithLifecycle()
     val referralAccount by viewModel.referralAccount.collectAsStateWithLifecycle()
     val activityPreview by viewModel.activityPreview.collectAsStateWithLifecycle()
+    val credit by viewModel.credit.collectAsStateWithLifecycle()
+    val isUserRefreshing by viewModel.isUserRefreshing.collectAsStateWithLifecycle()
 
     LaunchedEffect(loaded) {
         if (loaded) viewModel.loadActivityPreview()
+    }
+    // Tab entry and foreground: re-reads a stale loyalty cache (see onEnter).
+    LifecycleEventEffect(Lifecycle.Event.ON_START) {
+        viewModel.onEnter()
     }
 
     val pullState = rememberPullToRefreshState()
@@ -135,14 +162,14 @@ fun RewardsTab(
         )
 
         PullToRefreshBox(
-            isRefreshing = loading,
+            isRefreshing = isUserRefreshing,
             onRefresh = refresh,
             state = pullState,
             modifier = Modifier.fillMaxSize(),
             indicator = {
                 SudsRefreshIndicator(
                     state = pullState,
-                    isRefreshing = loading,
+                    isRefreshing = isUserRefreshing,
                     modifier = Modifier
                         .align(Alignment.TopCenter)
                         .padding(top = 8.dp),
@@ -161,6 +188,7 @@ fun RewardsTab(
                 loadedAccount == null -> ScrollableStateContainer { LoyaltyError(onRetry = refresh) }
                 else -> LoyaltyContent(
                     account = loadedAccount,
+                    credit = credit,
                     tiers = tiers,
                     currencyCode = currencyCode,
                     tierFloorApplies = tierFloorApplies,
@@ -180,6 +208,7 @@ fun RewardsTab(
 @Composable
 private fun LoyaltyContent(
     account: LoyaltyAccountDto,
+    credit: CreditDto?,
     tiers: List<TierInfoDto>,
     currencyCode: String?,
     tierFloorApplies: Boolean,
@@ -190,6 +219,7 @@ private fun LoyaltyContent(
     onReferralShareUnavailable: () -> Unit,
 ) {
     val currentTier = LoyaltyTier.fromValue(account.currentTier) ?: LoyaltyTier.BronzeCleaner
+    var showCreditSheet by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -203,6 +233,13 @@ private fun LoyaltyContent(
             bookingsCount = account.completedBookingsCount,
         )
         Spacer(Modifier.height(16.dp))
+
+        // Credit sits beside the points because the two are confused: points move the tier, credit is
+        // money off. A failed read hides the card; a zero balance shows its one-line state.
+        if (credit != null) {
+            CreditCard(credit = credit, onClick = { showCreditSheet = true })
+            Spacer(Modifier.height(16.dp))
+        }
 
         ProgressCard(account = account, currentTier = currentTier)
         Spacer(Modifier.height(16.dp))
@@ -238,10 +275,201 @@ private fun LoyaltyContent(
             activity = activityPreview,
             onOpenActivity = onOpenActivity,
         )
-        // Reserve room for the floating island bottom nav.
-        Spacer(Modifier.height(108.dp))
+        // Clears the floating island bottom nav and its Book FAB.
+        Spacer(Modifier.navigationBarsPadding().height(MainShellBottomClearance))
+    }
+
+    if (showCreditSheet && credit != null) {
+        CreditExplainerSheet(credit = credit, onDismiss = { showCreditSheet = false })
     }
 }
+
+/* ── Credit ── */
+
+/**
+ * The customer's credit balance, one row per currency held. At zero it collapses to one line that says
+ * where credit would come from, so the card is never a big "0 Kč" that reads as a lost reward. The
+ * share and the expiry are the server's numbers, never copy of their own.
+ */
+@Composable
+private fun CreditCard(credit: CreditDto, onClick: () -> Unit) {
+    val held = credit.balances.filter { it.balance > 0.0 }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(18.dp))
+            .clickable(onClick = onClick)
+            .padding(16.dp),
+        verticalAlignment = if (held.isEmpty()) Alignment.CenterVertically else Alignment.Top,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f), CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                Icons.Outlined.AccountBalanceWallet,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(20.dp),
+            )
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            if (held.isEmpty()) {
+                Text(
+                    stringResource(R.string.credit_none),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                Text(
+                    stringResource(R.string.credit_your_credit),
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
+                held.forEach { row ->
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        formatOrderPrice(row.balance, row.currencyCode),
+                        style = MaterialTheme.typography.headlineSmall.copy(
+                            fontFamily = Poppins,
+                            fontWeight = FontWeight.Bold,
+                        ),
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    creditExpiryLine(row)?.let { line ->
+                        Text(
+                            line,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    stringResource(R.string.credit_auto_applied_share, creditSharePercent(credit)),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        Spacer(Modifier.width(8.dp))
+        Icon(
+            Icons.AutoMirrored.Outlined.ArrowForwardIos,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier
+                .padding(top = if (held.isEmpty()) 0.dp else 10.dp)
+                .size(14.dp),
+        )
+    }
+}
+
+/**
+ * What credit is, where it comes from and how it is spent — opened from the Rewards card and from the
+ * Profile row, so both explain it in the same words. Ends on the largest balance's expiry, which the
+ * Profile row does not show.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun CreditExplainerSheet(credit: CreditDto, onDismiss: () -> Unit) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.surface,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp)
+                .padding(bottom = 8.dp),
+        ) {
+            Text(
+                stringResource(R.string.credit_explainer_title),
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Spacer(Modifier.height(16.dp))
+            CreditExplainerRow(
+                icon = Icons.Outlined.VolunteerActivism,
+                title = stringResource(R.string.credit_explainer_source_title),
+                body = stringResource(R.string.credit_explainer_source_body),
+            )
+            Spacer(Modifier.height(14.dp))
+            CreditExplainerRow(
+                icon = Icons.Outlined.CreditCard,
+                title = stringResource(R.string.credit_explainer_spend_title),
+                body = stringResource(R.string.credit_explainer_spend_body, creditSharePercent(credit)),
+            )
+            Spacer(Modifier.height(14.dp))
+            CreditExplainerRow(
+                icon = Icons.Outlined.Star,
+                title = stringResource(R.string.credit_explainer_points_title),
+                body = stringResource(R.string.credit_explainer_points_body),
+            )
+            creditExpiryLine(credit.primary)?.let { line ->
+                Spacer(Modifier.height(16.dp))
+                Text(
+                    line,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Spacer(Modifier.height(24.dp))
+            CleansiaPrimaryButton(
+                text = stringResource(R.string.common_got_it),
+                onClick = onDismiss,
+            )
+            Spacer(Modifier.navigationBarsPadding())
+        }
+    }
+}
+
+@Composable
+private fun CreditExplainerRow(icon: ImageVector, title: String, body: String) {
+    Row(verticalAlignment = Alignment.Top) {
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f), CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                title,
+                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Spacer(Modifier.height(2.dp))
+            Text(
+                body,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+/** The share as a whole percent (0.70 → 70). From the wire, so the copy follows the rule. */
+private fun creditSharePercent(credit: CreditDto): Int = (credit.maxShareOfOrder * 100).roundToInt()
+
+/** "Expires 12 Dec 2026. Every booking pushes that back." — null when nothing expires. */
+@Composable
+private fun creditExpiryLine(row: CreditBalanceDto): String? {
+    val expiresOn = row.expiresOn?.takeIf { row.balance > 0.0 } ?: return null
+    return stringResource(R.string.credit_expires_on, formatCreditDate(expiresOn))
+}
+
+private fun formatCreditDate(instant: Instant): String =
+    instant.toLocalDateTime(TimeZone.currentSystemDefault()).date.toJavaLocalDate()
+        .format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(java.util.Locale.getDefault()))
 
 /* ── Hero ── */
 
@@ -957,8 +1185,9 @@ private fun copyToClipboard(context: android.content.Context, code: String) {
 /**
  * Launches the system share sheet. Falls back to clipboard + snackbar when no
  * activity can handle ACTION_SEND (rare — stripped-down devices, headless tests).
+ * Shared with the Home carousel's referral slide.
  */
-private fun shareReferralOrFallback(
+internal fun shareReferralOrFallback(
     context: android.content.Context,
     code: String,
     onShareUnavailable: () -> Unit,

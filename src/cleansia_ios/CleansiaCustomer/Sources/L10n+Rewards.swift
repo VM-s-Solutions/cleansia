@@ -157,3 +157,94 @@ extension L10n {
         }
     }
 }
+
+extension L10n {
+    /// Credit is money off a booking, not points — see `CustomerCredit`. The share and the dates are the
+    /// server's; no row states a percentage or a duration of its own.
+    enum Credit {
+        static var yourCredit: String {
+            localized("credit_your_credit")
+        }
+
+        static func autoAppliedShare(_ share: Double) -> String {
+            format("credit_auto_applied_share", sharePercent(share))
+        }
+
+        static func expiresOn(_ date: Date, locale: Locale) -> String {
+            format("credit_expires_on", expiryDate(date, locale: locale))
+        }
+
+        static var none: String {
+            localized("credit_none")
+        }
+
+        static var explainerTitle: String {
+            localized("credit_explainer_title")
+        }
+
+        static var explainerSourceTitle: String {
+            localized("credit_explainer_source_title")
+        }
+
+        static var explainerSourceBody: String {
+            localized("credit_explainer_source_body")
+        }
+
+        static var explainerSpendTitle: String {
+            localized("credit_explainer_spend_title")
+        }
+
+        static func explainerSpendBody(_ share: Double) -> String {
+            format("credit_explainer_spend_body", sharePercent(share))
+        }
+
+        static var explainerPointsTitle: String {
+            localized("credit_explainer_points_title")
+        }
+
+        static var explainerPointsBody: String {
+            localized("credit_explainer_points_body")
+        }
+
+        static var profileRow: String {
+            localized("profile_row_credit")
+        }
+
+        static var dueOnCard: String {
+            localized("booking_summary_due_on_card")
+        }
+
+        static func summaryNote(balance: String) -> String {
+            format("booking_summary_credit_note", balance)
+        }
+
+        static var cardOnly: String {
+            localized("booking_summary_credit_card_only")
+        }
+
+        static var paidWithCredit: String {
+            localized("order_paid_with_credit")
+        }
+
+        static var paidByCard: String {
+            localized("order_paid_by_card")
+        }
+
+        static var gotIt: String {
+            localized("common_got_it")
+        }
+
+        /// The server's fraction as whole percent — 0.70 → 70. The `%` and its spacing are the copy's.
+        static func sharePercent(_ share: Double) -> Int {
+            Int((share * 100).rounded())
+        }
+
+        static func expiryDate(_ date: Date, locale: Locale) -> String {
+            let formatter = DateFormatter()
+            formatter.locale = locale
+            formatter.dateStyle = .medium
+            formatter.timeStyle = .none
+            return formatter.string(from: date)
+        }
+    }
+}

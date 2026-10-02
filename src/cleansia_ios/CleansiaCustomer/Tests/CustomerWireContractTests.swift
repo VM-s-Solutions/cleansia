@@ -13,7 +13,7 @@ import XCTest
 final class CustomerWireContractTests: XCTestCase {
     // MARK: the quote — the number the customer commits to
 
-    private func quotePayload() -> QuoteOrderResponse {
+    func quotePayload() -> QuoteOrderResponse {
         QuoteOrderResponse(
             totalPrice: 2400,
             finalPriceAfterDiscount: 2400,
@@ -34,6 +34,74 @@ final class CustomerWireContractTests: XCTestCase {
         )
     }
 
+    /// The two inputs to the confirm step's credit preview ride the quote; an absent one previews no
+    /// credit rather than refusing the quote, since the order's own figures say what the card paid.
+    func testTheQuoteCarriesTheCreditInputs() throws {
+        var payload = quotePayload()
+        payload.creditBalance = 250
+        payload.creditMaxShareOfOrder = 0.7
+        let quote = try BookingQuote(from: payload)
+        XCTAssertEqual(quote.creditBalance, 250)
+        XCTAssertEqual(quote.creditMaxShareOfOrder, 0.7)
+
+        payload.creditBalance = nil
+        payload.creditMaxShareOfOrder = nil
+        let bare = try BookingQuote(from: payload)
+        XCTAssertEqual(bare.creditBalance, 0)
+        XCTAssertEqual(bare.creditMaxShareOfOrder, 0)
+    }
+
+    // MARK: credit — money owed, so refused rather than zeroed
+
+    func creditPayload() -> GetMyCreditResponse {
+        GetMyCreditResponse(
+            balance: 250,
+            currencyCode: "CZK",
+            maxShareOfOrder: 0.7,
+            appliesAutomatically: true,
+            expiresOn: Date(timeIntervalSince1970: 1_800_000_000),
+            balances: [GetMyCreditCurrencyBalance(
+                balance: 250,
+                currencyCode: "CZK",
+                expiresOn: Date(timeIntervalSince1970: 1_800_000_000)
+            )]
+        )
+    }
+
+    func testAFullyPopulatedCreditMaps() throws {
+        let credit = try creditPayload().toDomain()
+        XCTAssertEqual(credit.primary.amount, 250)
+        XCTAssertEqual(credit.primary.currencyCode, "CZK")
+        XCTAssertEqual(credit.maxShareOfOrder, 0.7)
+        XCTAssertEqual(credit.balances.count, 1)
+        XCTAssertEqual(credit.heldBalances.count, 1)
+    }
+
+    /// The never-credited customer: no rows, and one zero in the platform default — shown, not hidden.
+    func testANeverCreditedCustomerMapsToAZero() throws {
+        var payload = creditPayload()
+        payload.balance = 0
+        payload.expiresOn = nil
+        payload.balances = []
+        let credit = try payload.toDomain()
+        XCTAssertEqual(credit.primary.amount, 0)
+        XCTAssertTrue(credit.heldBalances.isEmpty)
+    }
+
+    func testABrokenCreditIsRefusedRatherThanReadAsNothingOwed() {
+        for (field, corrupt) in [
+            ("balance", { (dto: inout GetMyCreditResponse) in dto.balance = nil }),
+            ("currencyCode", { dto in dto.currencyCode = "" }),
+            ("maxShareOfOrder", { dto in dto.maxShareOfOrder = nil }),
+            ("balance", { dto in dto.balances = [GetMyCreditCurrencyBalance(currencyCode: "EUR")] }),
+            ("currencyCode", { dto in dto.balances = [GetMyCreditCurrencyBalance(balance: 10)] })
+        ] {
+            var payload = creditPayload()
+            corrupt(&payload)
+            assertRefused(field) { try payload.toDomain() }
+        }
+    }
+
     func testAFullyPopulatedQuoteMaps() throws {
         let quote = try BookingQuote(from: quotePayload())
         XCTAssertEqual(quote.totalPrice, 2400)
@@ -45,7 +113,7 @@ final class CustomerWireContractTests: XCTestCase {
     }
 
     func testABrokenQuoteIsRefusedRatherThanPricedAtZero() {
-        for (field, break_) in [
+        for (field, corrupt) in [
             ("totalPrice", { (dto: inout QuoteOrderResponse) in dto.totalPrice = nil }),
             ("originalSubtotal", { dto in dto.originalSubtotal = nil }),
             ("servicesSubtotal", { dto in dto.servicesSubtotal = nil }),
@@ -61,7 +129,7 @@ final class CustomerWireContractTests: XCTestCase {
             ("dirtinessLevel", { dto in dto.dirtinessLevel = nil })
         ] {
             var payload = quotePayload()
-            break_(&payload)
+            corrupt(&payload)
             assertRefused(field) { try BookingQuote(from: payload) }
         }
     }
@@ -101,12 +169,12 @@ final class CustomerWireContractTests: XCTestCase {
     }
 
     func testABrokenCancellationDoesNotReportNoRefund() {
-        for (field, break_) in [
+        for (field, corrupt) in [
             ("refundAmount", { (dto: inout CancelOrderResponse) in dto.refundAmount = nil }),
             ("refundInitiated", { dto in dto.refundInitiated = nil })
         ] {
             var payload = CancelOrderResponse(refundAmount: 1200, refundInitiated: true, actualRefundAmount: 1200)
-            break_(&payload)
+            corrupt(&payload)
             assertRefused(field) { try OrderCancellation(payload) }
         }
     }
@@ -143,20 +211,24 @@ final class CustomerWireContractTests: XCTestCase {
         XCTAssertEqual(detail.currencyCode, "CZK")
         XCTAssertEqual(detail.dirtiness, .heavy)
         XCTAssertEqual(detail.dirtinessSurchargeAmount, 540)
+        XCTAssertEqual(detail.creditAppliedAmount, 0)
+        XCTAssertEqual(detail.amountDueOnCard, 1590)
     }
 
     func testABrokenOrderDetailIsRefusedRatherThanPricedAtZero() {
-        for (field, break_) in [
+        for (field, corrupt) in [
             ("totalPrice", { (dto: inout OrderItem) in dto.totalPrice = nil }),
             ("originalSubtotal", { dto in dto.originalSubtotal = nil }),
             ("rooms", { dto in dto.rooms = nil }),
             ("bathrooms", { dto in dto.bathrooms = nil }),
             ("estimatedTime", { dto in dto.estimatedTime = nil }),
             ("dirtinessLevel", { dto in dto.dirtinessLevel = nil }),
-            ("dirtinessSurchargeAmount", { dto in dto.dirtinessSurchargeAmount = nil })
+            ("dirtinessSurchargeAmount", { dto in dto.dirtinessSurchargeAmount = nil }),
+            ("creditAppliedAmount", { dto in dto.creditAppliedAmount = nil }),
+            ("amountDueOnCard", { dto in dto.amountDueOnCard = nil })
         ] {
             var payload = OrderItem.wireComplete()
-            break_(&payload)
+            corrupt(&payload)
             assertRefused(field) { try CustomerOrderDetail(payload) }
         }
     }
@@ -164,13 +236,13 @@ final class CustomerWireContractTests: XCTestCase {
     /// A line refuses with the order rather than dropping out of it: the lines and the total are read
     /// side by side, so a silently shorter or cheaper breakdown is a total that stops adding up.
     func testABrokenCatalogLineRefusesWithTheOrder() {
-        for (field, break_) in [
+        for (field, corrupt) in [
             ("price", { (dto: inout OrderItem) in dto.selectedPackages = [PackageDetails(estimatedTime: 60)] }),
             ("estimatedTime", { dto in dto.selectedPackages = [PackageDetails(price: 800)] }),
             ("estimatedTime", { dto in dto.selectedServices = [ServiceDetails(name: "Deep clean")] })
         ] {
             var payload = OrderItem.wireComplete()
-            break_(&payload)
+            corrupt(&payload)
             assertRefused(field) { try CustomerOrderDetail(payload) }
         }
     }
@@ -230,12 +302,12 @@ final class CustomerWireContractTests: XCTestCase {
     /// rows with a `rethrows` `compactMap`, so an order is priced as the server priced it or the list
     /// says it could not be loaded.
     func testAnOrderRowRefusesItsOwnMoneyRatherThanShowingItAtZero() {
-        for (field, break_) in [
+        for (field, corrupt) in [
             ("totalPrice", { (dto: inout OrderListItem) in dto.totalPrice = nil }),
             ("estimatedTime", { dto in dto.estimatedTime = nil })
         ] {
             var payload = OrderListItem.wireComplete()
-            break_(&payload)
+            corrupt(&payload)
             assertRefused(field) { try CustomerOrderSummary(payload) }
         }
     }
@@ -261,7 +333,7 @@ final class CustomerWireContractTests: XCTestCase {
     /// `GetCancellationFeePreview.Response` is a positional record of non-nullable members with one
     /// success path, so there is no state this sheet can be in where any of them is legitimately absent.
     func testEveryFigureOnTheCancelSheetIsRefusedRatherThanDefaulted() {
-        for (field, break_) in [
+        for (field, corrupt) in [
             ("tier", { (dto: inout GetCancellationFeePreviewResponse) in dto.tier = nil }),
             ("feeAmount", { dto in dto.feeAmount = nil }),
             ("refundAmount", { dto in dto.refundAmount = nil }),
@@ -269,7 +341,7 @@ final class CustomerWireContractTests: XCTestCase {
             ("oopsWindowMinutes", { dto in dto.oopsWindowMinutes = nil })
         ] {
             var payload = cancellationPayload()
-            break_(&payload)
+            corrupt(&payload)
             assertRefused(field) { try CancellationQuote(payload) }
         }
     }
@@ -283,7 +355,7 @@ final class CustomerWireContractTests: XCTestCase {
         XCTAssertEqual(quote.oopsWindowMinutes, 60)
     }
 
-    private func cancellationPayload() -> GetCancellationFeePreviewResponse {
+    func cancellationPayload() -> GetCancellationFeePreviewResponse {
         GetCancellationFeePreviewResponse(
             orderId: "o1",
             tier: ._3,
@@ -299,7 +371,7 @@ final class CustomerWireContractTests: XCTestCase {
 
     // MARK: the recurring list — a schedule the server now skips
 
-    private func templatePayload() -> RecurringBookingTemplateDto {
+    func templatePayload() -> RecurringBookingTemplateDto {
         RecurringBookingTemplateDto(
             id: "tpl-1",
             frequency: 1,
@@ -341,12 +413,12 @@ final class CustomerWireContractTests: XCTestCase {
     /// so the count is a second statement about the order. Coerced, the pill reads "0 before photos"
     /// above a rail that is showing them.
     func testThePhotoCountsAreRefusedRatherThanReportedAsNone() {
-        for (field, break_) in [
+        for (field, corrupt) in [
             ("beforePhotoCount", { (dto: inout GetOrderPhotosResponse) in dto.beforePhotoCount = nil }),
             ("afterPhotoCount", { dto in dto.afterPhotoCount = nil })
         ] {
             var payload = GetOrderPhotosResponse(photos: [], beforePhotoCount: 3, afterPhotoCount: 4)
-            break_(&payload)
+            corrupt(&payload)
             assertRefused(field) { try OrderPhotos(payload) }
         }
     }
@@ -356,234 +428,5 @@ final class CustomerWireContractTests: XCTestCase {
         let gallery = try OrderPhotos(GetOrderPhotosResponse(beforePhotoCount: 0, afterPhotoCount: 0))
         XCTAssertEqual(gallery.photos, [])
         XCTAssertEqual(gallery.beforeCount, 0)
-    }
-
-    // MARK: the Plus plans — priced per market, so every figure travels with its unit
-
-    private func planPayload() -> GetMembershipPlansResponse {
-        GetMembershipPlansResponse(
-            code: "PLUS_MONTHLY",
-            name: "Monthly",
-            price: 199,
-            monthlyEquivalentPrice: 199,
-            billingInterval: 1,
-            discountPercentage: 5,
-            freeCancellationWindowHours: 4,
-            allowsExpressUpgrade: true,
-            expressUpgradesPerMonth: 2,
-            trialPeriodDays: 0,
-            savingsPercentVsMonthly: 0,
-            currencyCode: "CZK"
-        )
-    }
-
-    func testAFullyPopulatedPlanMapsWithItsCurrency() throws {
-        let plan = try planPayload().toDomain()
-        XCTAssertEqual(plan.price, 199)
-        XCTAssertEqual(plan.currencyCode, "CZK")
-        XCTAssertEqual(plan.billingInterval, 1)
-        XCTAssertEqual(plan.expressUpgradesPerMonth, 2)
-    }
-
-    /// A plan without its unit would be printed with a unit guessed for it, and one without its
-    /// money would be advertised as free.
-    func testABrokenPlanIsRefusedRatherThanPricedOrLabelledByGuess() {
-        for (field, break_) in [
-            ("price", { (dto: inout GetMembershipPlansResponse) in dto.price = nil }),
-            ("monthlyEquivalentPrice", { dto in dto.monthlyEquivalentPrice = nil }),
-            ("billingInterval", { dto in dto.billingInterval = nil }),
-            ("expressUpgradesPerMonth", { dto in dto.expressUpgradesPerMonth = nil }),
-            ("currencyCode", { dto in dto.currencyCode = nil }),
-            ("currencyCode", { dto in dto.currencyCode = "" })
-        ] {
-            var payload = planPayload()
-            break_(&payload)
-            assertRefused(field) { try payload.toDomain() }
-        }
-    }
-
-    // MARK: my membership — its own price and currency, for the life of the subscription
-
-    func testAMembershipMapsItsOwnPriceAndCurrency() throws {
-        let membership = try GetMyMembershipResponse(
-            hasMembership: true,
-            planCode: "PLUS_MONTHLY",
-            planName: "Cleansia Plus",
-            price: 199,
-            cancelRequested: false,
-            billingInterval: 1,
-            monthlyEquivalentPrice: 199,
-            currencyCode: "CZK"
-        ).toDomain()
-        XCTAssertEqual(membership.price, 199)
-        XCTAssertEqual(membership.monthlyEquivalentPrice, 199)
-        XCTAssertEqual(membership.currencyCode, "CZK")
-    }
-
-    /// `price` is null without a membership and when the plan's row in that currency is gone; neither
-    /// is a broken wire, so the snapshot still maps and the figures are simply not printed.
-    func testAMembershipWithoutAPriceRowStillMaps() throws {
-        let membership = try GetMyMembershipResponse(hasMembership: false, cancelRequested: false).toDomain()
-        XCTAssertFalse(membership.hasMembership)
-        XCTAssertNil(membership.price)
-        XCTAssertNil(membership.currencyCode)
-    }
-
-    /// A failed renewal keeps the enrolment alive, so `hasMembership` stays true; only the status says that
-    /// no benefit runs.
-    func testAPastDueOrPausedMembershipIsLiveButItsBenefitsArePaused() throws {
-        for status in [MembershipStatus._2, ._4] {
-            let membership = try GetMyMembershipResponse(
-                hasMembership: true,
-                status: status,
-                cancelRequested: false
-            ).toDomain()
-            XCTAssertTrue(membership.hasMembership)
-            XCTAssertTrue(membership.benefitsPaused, "status \(status.rawValue)")
-        }
-    }
-
-    /// One free trial per account: a trial the server has not confirmed is never advertised.
-    func testTrialEligibilityMapsAndAnUnstatedAnswerOffersNoTrial() throws {
-        let cases: [(stated: Bool?, expected: Bool)] = [(true, true), (false, false), (nil, false)]
-        for (stated, expected) in cases {
-            let membership = try GetMyMembershipResponse(
-                hasMembership: false,
-                cancelRequested: false,
-                trialEligible: stated
-            ).toDomain()
-            XCTAssertEqual(membership.trialEligible, expected, "trialEligible \(String(describing: stated))")
-        }
-    }
-
-    func testAnActiveMembershipRunsItsBenefits() throws {
-        let membership = try GetMyMembershipResponse(
-            hasMembership: true,
-            status: ._1,
-            cancelRequested: false
-        ).toDomain()
-        XCTAssertFalse(membership.benefitsPaused)
-    }
-
-    // MARK: the express-waiver quota — a claim, not a number
-
-    /// The one case where the coerced value is the OPPOSITE of what the server's null means:
-    /// *null = no membership*, and `?? 0` turned it into "you used your allowance up".
-    func testAnUnreportedQuotaIsNotReportedAsUsedUp() {
-        XCTAssertEqual(
-            ExpressWaiverStatus.resolve(
-                hasMembership: true,
-                upgradesPerMonth: 2,
-                upgradesRemaining: nil
-            ),
-            .none
-        )
-    }
-
-    // MARK: notification preferences — read, then written back
-
-    func testEveryPreferenceIsRefusedBecauseTheScreenWritesThemBack() {
-        for (field, break_) in [
-            ("orderUpdates", { (dto: inout NotificationPreferencesDto) in dto.orderUpdates = nil }),
-            ("promo", { dto in dto.promo = nil }),
-            ("disputeReply", { dto in dto.disputeReply = nil })
-        ] {
-            var payload = preferencesPayload()
-            break_(&payload)
-            assertRefused(field) { try payload.toDomain() }
-        }
-    }
-
-    func testAFullyPopulatedPreferencePayloadMaps() throws {
-        let preferences = try preferencesPayload().toDomain()
-        XCTAssertTrue(preferences.orderUpdates)
-        XCTAssertFalse(preferences.promo)
-    }
-
-    private func preferencesPayload() -> NotificationPreferencesDto {
-        NotificationPreferencesDto(
-            orderUpdates: true,
-            cleanerOnTheWay: true,
-            orderCompleted: true,
-            orderCancelled: true,
-            refundIssued: true,
-            membershipExpiring: true,
-            membershipCancelled: true,
-            tierUpgrade: true,
-            promo: false,
-            disputeReply: true,
-            recurringScheduled: true
-        )
-    }
-
-    // MARK: the referral code — the one string a spec sweep reads clean
-
-    func testAReferralAccountWithNoCodeRefusesRatherThanSharingNothing() {
-        var payload = GetMyReferralResponse(
-            code: "JANE-2026",
-            timesUsed: 3,
-            qualifiedCount: 2,
-            acceptedCount: 3,
-            pointsPerReferral: 250
-        )
-        XCTAssertEqual(try? payload.toDomain().code, "JANE-2026")
-        payload.code = ""
-        assertRefused("code") { try payload.toDomain() }
-    }
-
-    // MARK: the saved-address picker
-
-    func testASavedAddressIsRefusedRatherThanLosingItsDefaultFlag() {
-        var payload = SavedAddressDto(
-            id: "addr-1",
-            label: "Home",
-            street: "Vinohradská 12",
-            city: "Praha",
-            zipCode: "120 00",
-            isDefault: true
-        )
-        XCTAssertEqual(try? payload.toDomain().isDefault, true)
-        payload.isDefault = nil
-        assertRefused("isDefault") { try payload.toDomain() }
-    }
-
-    /// The recurring form prices its catalogue for the picked address's country, so the row it picks
-    /// from has to carry it; a row without an id is dropped, one without a country reads the default.
-    func testARecurringAddressCarriesItsCountry() {
-        var payload = SavedAddressDto(
-            id: "addr-1",
-            label: "Home",
-            street: "Hlavná 1",
-            city: "Bratislava",
-            zipCode: "811 01",
-            countryId: "svk",
-            isDefault: true
-        )
-        XCTAssertEqual(payload.toRecurringAddress()?.countryId, "svk")
-        XCTAssertEqual(payload.toRecurringAddress()?.isDefault, true)
-
-        payload.countryId = nil
-        XCTAssertNil(payload.toRecurringAddress()?.countryId)
-        XCTAssertNotNil(payload.toRecurringAddress())
-
-        payload.id = nil
-        XCTAssertNil(payload.toRecurringAddress())
-    }
-
-    private func assertRefused(
-        _ field: String,
-        file: StaticString = #filePath,
-        line: UInt = #line,
-        _ map: () throws -> some Any
-    ) {
-        XCTAssertThrowsError(try map(), "\(field) was supplied a value instead of refusing", file: file, line: line) {
-            XCTAssertEqual(
-                $0 as? WireContractViolation,
-                WireContractViolation(field: field),
-                "the refusal must name \(field)",
-                file: file,
-                line: line
-            )
-        }
     }
 }

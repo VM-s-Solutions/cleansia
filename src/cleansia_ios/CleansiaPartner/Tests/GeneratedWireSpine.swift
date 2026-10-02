@@ -8,6 +8,7 @@ import Foundation
 /// is the only way to tell an omitted member from a null one.
 final class WireBodies: @unchecked Sendable {
     private let lock = NSLock()
+    // swiftlint:disable:next large_tuple
     private var recorded: [(path: String, method: String, body: Data?)] = []
 
     func record(_ request: URLRequest) {

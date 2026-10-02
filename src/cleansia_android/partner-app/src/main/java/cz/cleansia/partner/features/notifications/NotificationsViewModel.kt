@@ -4,12 +4,14 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cz.cleansia.core.network.ApiResult
+import cz.cleansia.core.settings.AppLocale
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.partner.core.notifications.NotificationDeepLink
 import cz.cleansia.partner.core.notifications.NotificationFeedRepository
 import cz.cleansia.partner.core.notifications.NotificationTemplates
 import cz.cleansia.partner.core.notifications.UserNotificationDto
+import cz.cleansia.partner.core.settings.AppSettingsRepository
 import cz.cleansia.partner.navigation.NavRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -32,7 +34,7 @@ sealed interface NotificationsUiState {
     ) : NotificationsUiState
 }
 
-/** A feed row with its template already rendered in the device locale. */
+/** A feed row with its template already rendered in the in-app language. */
 data class NotificationFeedItem(
     val id: String,
     val eventKey: String,
@@ -56,6 +58,7 @@ class NotificationsViewModel @Inject constructor(
     private val snackbar: SnackbarController,
     private val errorTranslator: ApiErrorTranslator,
     @ApplicationContext private val appContext: Context,
+    private val appSettingsRepository: AppSettingsRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<NotificationsUiState>(NotificationsUiState.Loading)
@@ -86,7 +89,7 @@ class NotificationsViewModel @Inject constructor(
                     fetchedCount = page.data.size
                     total = page.total
                     _state.value = NotificationsUiState.Loaded(
-                        items = page.data.mapNotNull { it.toFeedItem() },
+                        items = page.data.toFeedItems(),
                         canLoadMore = fetchedCount < total,
                     )
                     markFetchedSeen(page.data)
@@ -111,7 +114,7 @@ class NotificationsViewModel @Inject constructor(
                     total = page.total
                     val latest = _state.value as? NotificationsUiState.Loaded ?: return@launch
                     _state.value = latest.copy(
-                        items = latest.items + page.data.mapNotNull { it.toFeedItem() },
+                        items = latest.items + page.data.toFeedItems(),
                         canLoadMore = page.data.isNotEmpty() && fetchedCount < total,
                         loadingMore = false,
                     )
@@ -152,13 +155,19 @@ class NotificationsViewModel @Inject constructor(
         }
     }
 
-    private fun UserNotificationDto.toFeedItem(): NotificationFeedItem? {
+    /** The rows render in the in-app language; on API 26–32 the Application context is the device's. */
+    private suspend fun List<UserNotificationDto>.toFeedItems(): List<NotificationFeedItem> {
+        val strings = AppLocale.localizedContext(appContext, appSettingsRepository.chosenLanguageTag())
+        return mapNotNull { it.toFeedItem(strings) }
+    }
+
+    private fun UserNotificationDto.toFeedItem(strings: Context): NotificationFeedItem? {
         val template = NotificationTemplates.templateFor(eventKey) ?: return null
         return NotificationFeedItem(
             id = id,
             eventKey = eventKey,
-            title = appContext.getString(template.titleRes),
-            body = NotificationTemplates.formatBody(appContext, eventKey, template.bodyRes, args),
+            title = strings.getString(template.titleRes),
+            body = NotificationTemplates.formatBody(strings, eventKey, template.bodyRes, args),
             createdOn = createdOn,
             unread = readOn == null,
             args = args,

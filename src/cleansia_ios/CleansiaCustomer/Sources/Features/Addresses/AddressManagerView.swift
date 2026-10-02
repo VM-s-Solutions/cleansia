@@ -299,17 +299,7 @@ private struct SavedAddressRow: View {
                     .accessibilityLabel(L10n.AddressManager.cityNotServiced)
             }
             Menu {
-                if !address.isDefault {
-                    Button(action: onSetDefault) {
-                        Label(L10n.AddressManager.setDefault, systemImage: "star")
-                    }
-                }
-                Button(action: onRename) {
-                    Label(L10n.AddressManager.rename, systemImage: "pencil")
-                }
-                Button(role: .destructive, action: onDelete) {
-                    Label(L10n.AddressManager.delete, systemImage: "trash")
-                }
+                actions
             } label: {
                 Image(systemName: "ellipsis")
                     .foregroundColor(CleansiaColors.onSurfaceVariant)
@@ -331,6 +321,24 @@ private struct SavedAddressRow: View {
         )
         .contentShape(Rectangle())
         .onTapGesture(perform: onSelect)
+        // A long press offers the ellipsis menu's actions too (ADR-0018 D2), lifted as the card's shape.
+        .contentShape(.contextMenuPreview, RoundedRectangle(cornerRadius: CornerRadius.medium))
+        .contextMenu { actions }
+    }
+
+    @ViewBuilder
+    private var actions: some View {
+        if !address.isDefault {
+            Button(action: onSetDefault) {
+                Label(L10n.AddressManager.setDefault, systemImage: "star")
+            }
+        }
+        Button(action: onRename) {
+            Label(L10n.AddressManager.rename, systemImage: "pencil")
+        }
+        Button(role: .destructive, action: onDelete) {
+            Label(L10n.AddressManager.delete, systemImage: "trash")
+        }
     }
 }
 

@@ -416,7 +416,10 @@ final class BookingCodesViewModelTests: XCTestCase {
         XCTAssertEqual(vm.promoState, .idle)
         XCTAssertEqual(vm.state.promoCode, "")
     }
+}
 
+@MainActor
+extension BookingCodesViewModelTests {
     func testValidateReferralValidPersistsCodeAndName() async {
         let referral = FakeReferralClient(result: .success(ReferralValidation(
             isValid: true,

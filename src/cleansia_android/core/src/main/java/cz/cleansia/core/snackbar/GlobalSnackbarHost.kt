@@ -1,5 +1,7 @@
 package cz.cleansia.core.snackbar
 
+import android.os.Build
+import android.view.HapticFeedbackConstants
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -42,6 +44,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -80,10 +83,12 @@ fun GlobalSnackbarHost(modifier: Modifier = Modifier) {
     }
 
     var current by remember { mutableStateOf<SnackbarMessage?>(null) }
+    val view = LocalView.current
 
     LaunchedEffect(Unit) {
         controller.messages.collect { message ->
             current = message
+            snackbarHaptic(message.severity)?.let(view::performHapticFeedback)
             val durationMs = if (message.severity == Severity.Error) 6_000L else 3_500L
             delay(durationMs)
             // Only clear if still the same message (a newer one would have replaced it).
@@ -109,6 +114,21 @@ fun GlobalSnackbarHost(modifier: Modifier = Modifier) {
             }
         }
     }
+}
+
+/**
+ * The haptic a shown message plays, or null for none (ADR-0018 D2). Every mutation outcome in both apps
+ * reaches [GlobalSnackbarHost], so this is the one place it plays, as iOS `SnackbarController.show` is.
+ * `CONFIRM` and `REJECT` arrive in API 30; below that both fall back to `LONG_PRESS`, the haptic the
+ * customer swipe-to-confirm already plays. Android has no warning haptic, and every warning the apps
+ * raise is a refusal, so it shares `REJECT`. Info reports no outcome and stays silent. The system
+ * "touch feedback" switch still applies.
+ */
+internal fun snackbarHaptic(severity: Severity, sdkInt: Int = Build.VERSION.SDK_INT): Int? = when {
+    severity == Severity.Info -> null
+    sdkInt < Build.VERSION_CODES.R -> HapticFeedbackConstants.LONG_PRESS
+    severity == Severity.Success -> HapticFeedbackConstants.CONFIRM
+    else -> HapticFeedbackConstants.REJECT
 }
 
 @Composable

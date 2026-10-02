@@ -40,6 +40,10 @@ public struct CleansiaBankAccountField: View {
     private let enabled: Bool
 
     @FocusState private var focusedSegment: Segment?
+    /// Bumped by every routed paste to rebuild the segments. On iOS 26 a TextField whose binding setter
+    /// rewrites the edit it is handling keeps drawing the raw text — the whole pasted account, over the
+    /// box's placeholder — until focus moves, whether or not that box's own value changed.
+    @State private var pasteRevision = 0
 
     private enum Segment: Hashable {
         case prefix, number, bankCode
@@ -149,32 +153,119 @@ public struct CleansiaBankAccountField: View {
         maxLength: Int,
         focus: Segment
     ) -> some View {
-        TextField("", text: text)
-            .background(alignment: .leading) {
-                if text.wrappedValue.isEmpty, !placeholder.isEmpty {
-                    Text(placeholder)
-                        .font(CleansiaTypography.bodyMedium)
-                        .foregroundColor(CleansiaColors.onSurfaceVariant)
-                        .lineLimit(1)
-                        .allowsHitTesting(false)
+        // A whole account pasted into any one segment is split across all three, and a bare number pasted
+        // into any of them is the account number. It has to be caught here, before the caller's binding
+        // sees it: callers sanitise to digits on write, so by the time onChange below runs the slash is
+        // gone and the bank code has been run into the number.
+        TextField("", text: Binding(
+            get: { text.wrappedValue },
+            set: { raw in
+                guard let pasted = Self.splitPastedAccount(raw, replacing: text.wrappedValue) else {
+                    text.wrappedValue = raw
+                    return
                 }
+                if let newPrefix = pasted.prefix { prefix = newPrefix }
+                number = pasted.number
+                if let code = pasted.bankCode { bankCode = code }
+                // The rebuild ends the edit, so the keyboard goes with it: say so, rather than leave
+                // the focus state to catch up with a field that no longer exists.
+                pasteRevision += 1
+                focusedSegment = nil
             }
-            .keyboardType(.numberPad)
-            .textContentType(nil)
-            .multilineTextAlignment(.leading)
-            .font(CleansiaTypography.bodyLarge)
-            .foregroundColor(CleansiaColors.onSurface)
-            .disabled(!enabled)
-            .focused($focusedSegment, equals: focus)
-            // Digits only, clamped to the segment's own maximum. Doing it here rather than in the
-            // view model keeps every caller's binding a plain String while making an over-long or
-            // pasted-with-punctuation entry impossible to produce.
-            // Single-parameter onChange: the package floor is iOS 16 (Package.swift), where the
-            // two-parameter overload does not exist yet.
-            .onChange(of: text.wrappedValue) { newValue in
-                let digits = String(newValue.filter(\.isNumber).prefix(maxLength))
-                if digits != newValue { text.wrappedValue = digits }
+        ))
+        .id(pasteRevision)
+        .background(alignment: .leading) {
+            if text.wrappedValue.isEmpty, !placeholder.isEmpty {
+                Text(placeholder)
+                    .font(CleansiaTypography.bodyMedium)
+                    .foregroundColor(CleansiaColors.onSurfaceVariant)
+                    .lineLimit(1)
+                    .allowsHitTesting(false)
             }
+        }
+        .keyboardType(.numberPad)
+        .textContentType(nil)
+        .multilineTextAlignment(.leading)
+        .font(CleansiaTypography.bodyLarge)
+        .foregroundColor(CleansiaColors.onSurface)
+        .disabled(!enabled)
+        .focused($focusedSegment, equals: focus)
+        // Digits only, clamped to the segment's own maximum. Doing it here rather than in the
+        // view model keeps every caller's binding a plain String while making an over-long or
+        // pasted-with-punctuation entry impossible to produce.
+        // Single-parameter onChange: the package floor is iOS 16 (Package.swift), where the
+        // two-parameter overload does not exist yet.
+        .onChange(of: text.wrappedValue) { newValue in
+            let digits = Self.clampSegment(newValue, maxLength: maxLength)
+            if digits != newValue { text.wrappedValue = digits }
+        }
+    }
+
+    /// What a segment keeps of an edit that is not an account: ASCII digits, up to `maxLength`. Not
+    /// `isNumber`, which also takes the Arabic-Indic and full-width digits a keyboard can type and the
+    /// server refuses; the paste splitter is ASCII-only already. Android's `clampSegment`.
+    static func clampSegment(_ raw: String, maxLength: Int) -> String {
+        String(raw.filter { $0.isASCII && $0.isNumber }.prefix(maxLength))
+    }
+
+    // swiftlint:disable large_tuple
+    /// A Czech or Slovak account pasted (or typed on a hardware keyboard) in one go, split into its
+    /// three fields; `raw` is the segment's new text and `current` the value it replaces. A nil part
+    /// leaves that field as it is, and a nil result means the text is an ordinary entry for the segment
+    /// it landed in, which the digit clamp takes.
+    ///
+    /// Recognised: `[prefix-]number/bankcode` and `prefix-number` — the number pad types neither
+    /// separator, so their presence is what marks a paste — a CZ or SK IBAN, whose BBAN is
+    /// `bankcode(4) prefix(6) number(10)`, and a bare number, which is the account number whichever box
+    /// it was pasted into. A bare number counts only when it lands two or more characters at once: the
+    /// number pad types one at a time, so typing a prefix or a bank code never jumps to the number.
+    /// Whitespace of every kind (NBSP included) is dropped and an en or em dash reads as a hyphen,
+    /// because that is what banking apps put on the clipboard. A written-out account without a prefix
+    /// clears the old one; a missing bank code keeps it. Nothing is validated beyond shape: the server
+    /// owns mod-11, the bank code and the IBAN cross-check. -> /partner-app/onboarding
+    static func splitPastedAccount(
+        _ raw: String,
+        replacing current: String = ""
+    ) -> (prefix: String?, number: String, bankCode: String?)? {
+        let pasted = String(
+            raw.filter { !$0.isWhitespace }.map { $0 == "\u{2013}" || $0 == "\u{2014}" ? "-" : $0 }
+        )
+        let text = domesticForm(ofIban: pasted) ?? pasted
+        guard text.contains("-") || text.contains("/") else {
+            guard raw.count - current.count >= 2, isDigits(text, upTo: numberMaxLength) else { return nil }
+            return (nil, text, nil)
+        }
+
+        let slash = text.split(separator: "/", omittingEmptySubsequences: false)
+        guard slash.count <= 2 else { return nil }
+        let bankCode = slash.count == 2 ? String(slash[1]) : nil
+        if let bankCode, !isDigits(bankCode, upTo: bankCodeMaxLength) { return nil }
+
+        let dash = slash[0].split(separator: "-", omittingEmptySubsequences: false)
+        guard dash.count <= 2 else { return nil }
+        let prefix = dash.count == 2 ? String(dash[0]) : ""
+        let number = String(dash[dash.count - 1])
+        guard dash.count == 1 || isDigits(prefix, upTo: prefixMaxLength),
+              isDigits(number, upTo: numberMaxLength) else { return nil }
+        return (prefix, number, bankCode)
+    }
+
+    // swiftlint:enable large_tuple
+
+    /// `CZ65 0800 0000 1920 0014 5399` reads as `19-2000145399/0800`: the BBAN's zero padding is not
+    /// part of the written account. Nil for any other text, other countries' IBANs included.
+    private static func domesticForm(ofIban text: String) -> String? {
+        let iban = text.uppercased()
+        guard iban.count == 24, iban.hasPrefix("CZ") || iban.hasPrefix("SK"),
+              iban.dropFirst(2).allSatisfy({ $0.isASCII && $0.isNumber }) else { return nil }
+        let bban = iban.dropFirst(4)
+        let prefix = bban.dropFirst(bankCodeMaxLength).prefix(prefixMaxLength).drop { $0 == "0" }
+        let number = bban.suffix(numberMaxLength).drop { $0 == "0" }
+        return (prefix.isEmpty ? "" : "\(prefix)-") + "\(number)/\(bban.prefix(bankCodeMaxLength))"
+    }
+
+    private static func isDigits(_ value: String, upTo maxLength: Int) -> Bool {
+        (1 ... maxLength).contains(value.count) && value.allSatisfy { $0.isASCII && $0.isNumber }
     }
 
     private func separator(_ symbol: String) -> some View {

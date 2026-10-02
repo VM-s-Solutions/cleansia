@@ -23,6 +23,7 @@ class AppSettingsRepository(private val context: Context) {
         val THEME = stringPreferencesKey("theme")
         val LANGUAGE = stringPreferencesKey("language")
         val MARKET = stringPreferencesKey("market")
+        val NOTIFICATION_PERMISSION_REFUSED = booleanPreferencesKey("notification_permission_refused")
     }
 
     val settings: Flow<AppSettings> = context.dataStore.data.map { prefs -> prefs.toAppSettings() }
@@ -84,6 +85,19 @@ class AppSettingsRepository(private val context: Context) {
 
     suspend fun markOnboardingSeen(userId: String) {
         context.dataStore.edit { it[onboardingKey(userId)] = true }
+    }
+
+    /**
+     * The customer has refused the notification permission at least once. Android shows no rationale
+     * both for a permission never asked and for one refused for good, and only the first can still
+     * raise the system dialog; this tells them apart for the Home notifications slide. Device-wide, as
+     * the permission is.
+     */
+    suspend fun hasRefusedNotificationPermission(): Boolean =
+        context.dataStore.data.map { it[Keys.NOTIFICATION_PERMISSION_REFUSED] ?: false }.first()
+
+    suspend fun markNotificationPermissionRefused() {
+        context.dataStore.edit { it[Keys.NOTIFICATION_PERMISSION_REFUSED] = true }
     }
 
     private fun Preferences.toAppSettings(): AppSettings {

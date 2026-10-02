@@ -6,6 +6,8 @@ struct ProfileTab: View {
     @ObservedObject var membershipVM: MembershipViewModel
     @ObservedObject var preferences: CustomerPreferencesModel
     @ObservedObject var marketStore: MarketStore
+    /// The credit read the Rewards card shares; nil (not landed, or failed) hides the row.
+    @ObservedObject var loyalty: LoyaltyRepository
     @Environment(\.locale) private var locale
     let avatarCache: RemoteImageCache
     let onOpen: (ShellRoute) -> Void
@@ -23,6 +25,7 @@ struct ProfileTab: View {
     }
 
     @State private var showSignOutDialog = false
+    @State private var showCreditSheet = false
 
     private var tierLabel: String {
         membershipVM.current?.hasMembership == true ? L10n.Profile.tierPlus : L10n.Profile.tierRegular
@@ -31,7 +34,7 @@ struct ProfileTab: View {
     var body: some View {
         ZStack {
             CleansiaColors.background.ignoresSafeArea()
-            ScrollView {
+            StatusBarFadeScrollView {
                 VStack(spacing: Spacing.l) {
                     ProfileHeader(
                         user: profileVM.currentUser,
@@ -72,16 +75,27 @@ struct ProfileTab: View {
                             showSignOutDialog = true
                         }
                     }
+                    // No bottom padding of its own: the tab root's FAB clearance (C6) is the gap, as on
+                    // the other three tabs.
                     .padding(.horizontal, Spacing.m)
-                    .padding(.bottom, Spacing.xxl)
                 }
             }
         }
-        .overlay { signOutOverlay }
+        .alert(L10n.Profile.signOutDialogTitle, isPresented: $showSignOutDialog) {
+            Button(L10n.Profile.signOutDialogConfirm, role: .destructive, action: onSignOut)
+            Button(L10n.cancel, role: .cancel) {}
+        } message: {
+            Text(L10n.Profile.signOutDialogMessage)
+        }
+        .sheet(isPresented: $showCreditSheet) {
+            if let credit = loyalty.credit {
+                CreditExplainerSheet(credit: credit) { showCreditSheet = false }
+            }
+        }
     }
 
     private var accountRows: [ProfileRowItem] {
-        [
+        creditRow + [
             ProfileRowItem(
                 icon: "person.crop.circle",
                 label: Self.editRowLabel,
@@ -91,6 +105,18 @@ struct ProfileTab: View {
             ProfileRowItem(icon: "creditcard", label: L10n.Payments.profileRow, route: .payments),
             ProfileRowItem(icon: "exclamationmark.bubble", label: L10n.Profile.rowDisputes, route: .disputes)
         ]
+    }
+
+    /// The same placement the web profile rail gives credit, shown at zero too ("0 Kč"). It opens the
+    /// explainer the Rewards card opens, so the two never describe credit differently.
+    private var creditRow: [ProfileRowItem] {
+        guard let credit = loyalty.credit else { return [] }
+        return [ProfileRowItem(
+            icon: "wallet.pass",
+            label: L10n.Credit.profileRow,
+            value: OrdersFormat.price(credit.primary.amount, currencyCode: credit.primary.currencyCode),
+            action: { showCreditSheet = true }
+        )]
     }
 
     private var preferenceRows: [ProfileRowItem] {
@@ -142,7 +168,7 @@ struct ProfileTab: View {
                 .padding(.horizontal, Spacing.m)
             VStack(spacing: 0) {
                 ForEach(rows.indices, id: \.self) { index in
-                    ProfileRow(item: rows[index], onTap: { onOpen(rows[index].route) })
+                    ProfileRow(item: rows[index], onTap: { open(rows[index]) })
                     if index < rows.count - 1 {
                         Divider().padding(.leading, Spacing.xl)
                     }
@@ -154,37 +180,38 @@ struct ProfileTab: View {
         }
     }
 
-    @ViewBuilder
-    private var signOutOverlay: some View {
-        if showSignOutDialog {
-            CleansiaDialog(
-                title: L10n.Profile.signOutDialogTitle,
-                confirmLabel: L10n.Profile.signOutDialogConfirm,
-                onConfirm: {
-                    showSignOutDialog = false
-                    onSignOut()
-                },
-                onDismiss: { showSignOutDialog = false },
-                message: L10n.Profile.signOutDialogMessage,
-                dismissLabel: L10n.cancel,
-                icon: "rectangle.portrait.and.arrow.right",
-                destructive: true
-            )
+    private func open(_ row: ProfileRowItem) {
+        switch row.target {
+        case let .route(route): onOpen(route)
+        case let .action(action): action()
         }
     }
 }
 
 struct ProfileRowItem {
+    /// Most rows push a screen; the credit row opens a sheet over the tab instead.
+    enum Target {
+        case route(ShellRoute)
+        case action(() -> Void)
+    }
+
     let icon: String
     let label: String
     var value: String?
-    let route: ShellRoute
+    let target: Target
 
     init(icon: String, label: String, value: String? = nil, route: ShellRoute) {
         self.icon = icon
         self.label = label
         self.value = value
-        self.route = route
+        target = .route(route)
+    }
+
+    init(icon: String, label: String, value: String?, action: @escaping () -> Void) {
+        self.icon = icon
+        self.label = label
+        self.value = value
+        target = .action(action)
     }
 }
 
@@ -246,6 +273,10 @@ private struct ProfileHeader: View {
                 saved: ProfileStatsFormat.saved(user?.totalSavings ?? 0, currencyCode: user?.savingsCurrencyCode),
                 memberSince: ProfileStatsFormat.memberSince(user?.memberSince, locale: locale)
             )
+            // Re-localize on a runtime language switch: the card takes value-type inputs that a switch
+            // rarely changes, so SwiftUI skips its body and its labels stayed in the old language. Stamping
+            // the locale identity rebuilds it (the app's pattern, see RewardsTab).
+            .id(locale.identifier)
             .padding(.horizontal, Spacing.ml)
             .offset(y: -Spacing.m)
             .padding(.bottom, -Spacing.m)
@@ -345,12 +376,23 @@ private struct HeroGradient: View {
         .padding(.top, 48)
         .padding(.bottom, 40)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            LinearGradient(colors: BrandGradient.blue.colors, startPoint: .top, endPoint: .bottom)
-                .ignoresSafeArea(.container, edges: .top)
-        )
+        // The hero sits in a scroll view, which turns the top safe area into a content inset — an
+        // `ignoresSafeArea` here has nothing left to ignore, and the gradient stopped at the status-bar
+        // line. So the background paints upward past the hero's own frame instead: the gradient keeps
+        // exactly the hero's bounds (its colours unchanged) and a block of its first stop fills the
+        // status-bar strip and the rubber-band overscroll above it.
+        .background(alignment: .bottom) {
+            VStack(spacing: 0) {
+                BrandGradient.blue.colors[0].frame(height: heroBleed)
+                LinearGradient(colors: BrandGradient.blue.colors, startPoint: .top, endPoint: .bottom)
+            }
+            .padding(.top, -heroBleed)
+        }
     }
 }
+
+/// How far the hero background paints above its frame — past the status bar and any overscroll.
+private let heroBleed: CGFloat = 600
 
 private struct TierBadge: View {
     let tier: String

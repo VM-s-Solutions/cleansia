@@ -74,6 +74,7 @@ public class RejectEmployeeReleasesSeatsTests
         user.Id = EmployeeUserId;
         var employee = Employee.CreateWithUser(user);
         employee.Id = EmployeeId;
+        employee.TenantId = CompanyId;
         return employee;
     }
 
@@ -193,7 +194,7 @@ public class RejectEmployeeReleasesSeatsTests
         var subjects = new List<string?>();
         _producer
             .Setup(p => p.NotifyAsync(
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Dictionary<string, string>>(),
+                It.IsAny<string>(), NotificationEventCatalog.OrderAssignmentRevoked, It.IsAny<Dictionary<string, string>>(),
                 It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .Callback<string, string, Dictionary<string, string>, string?, string?, CancellationToken>(
                 (_, _, _, _, subject, _) => subjects.Add(subject))
@@ -232,18 +233,87 @@ public class RejectEmployeeReleasesSeatsTests
     }
 
     /// <summary>
-    /// A cleaner holding nothing is the ordinary case and must not cost a notification or a write.
+    /// A cleaner holding nothing is the ordinary case: the rejection notice is the only thing sent, and
+    /// no administrator is told.
     /// </summary>
     [Fact]
-    public async Task A_Cleaner_Holding_No_Future_Work_Is_Rejected_Silently()
+    public async Task A_Cleaner_Holding_No_Future_Work_Is_Told_Only_Of_The_Rejection()
     {
         ArrangeHeldOrders();
 
         Assert.True(await RejectAsync());
 
+        VerifyRejectionNotice(Times.Once());
         _producer.VerifyNoOtherCalls();
         _adminNotifier.VerifyNoOtherCalls();
     }
+
+    // ── The cleaner is told ──
+
+    /// <summary>
+    /// The cleaner waiting on the registration lock is told, once, argless — the admin's reason never
+    /// rides the push (it is outside the lock-screen allowlist and may carry personal data) — under the
+    /// cleaner's company.
+    /// </summary>
+    [Fact]
+    public async Task The_Cleaner_Is_Told_Of_The_Rejection_Without_The_Reason()
+    {
+        ArrangeHeldOrders();
+        Dictionary<string, string>? sentArgs = null;
+        string? sentTenant = null;
+        _producer
+            .Setup(p => p.NotifyAsync(
+                EmployeeUserId, NotificationEventCatalog.EmployeeRegistrationRejected,
+                It.IsAny<Dictionary<string, string>>(), It.IsAny<string?>(), It.IsAny<string?>(),
+                It.IsAny<CancellationToken>()))
+            .Callback<string, string, Dictionary<string, string>, string?, string?, CancellationToken>(
+                (_, _, args, tenant, _, _) => (sentArgs, sentTenant) = (args, tenant))
+            .Returns(Task.CompletedTask);
+
+        Assert.True(await RejectAsync());
+
+        VerifyRejectionNotice(Times.Once());
+        Assert.NotNull(sentArgs);
+        Assert.Empty(sentArgs!);
+        Assert.Equal(CompanyId, sentTenant);
+    }
+
+    /// <summary>
+    /// The subject is the moment of the decision, not the employee: reject → approve → reject must mint
+    /// a fresh outbox key, or the unique index would roll the second rejection back at commit.
+    /// </summary>
+    [Fact]
+    public async Task The_Rejection_Notice_Is_Keyed_On_The_Moment_Of_The_Decision()
+    {
+        ArrangeHeldOrders();
+        string? subject = null;
+        _producer
+            .Setup(p => p.NotifyAsync(
+                It.IsAny<string>(), NotificationEventCatalog.EmployeeRegistrationRejected,
+                It.IsAny<Dictionary<string, string>>(), It.IsAny<string?>(), It.IsAny<string?>(),
+                It.IsAny<CancellationToken>()))
+            .Callback<string, string, Dictionary<string, string>, string?, string?, CancellationToken>(
+                (_, _, _, _, s, _) => subject = s)
+            .Returns(Task.CompletedTask);
+
+        var result = await CreateHandler().Handle(
+            new RejectEmployee.Command(EmployeeId, "documents look forged"), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(
+            $"{EmployeeId}:{result.Value.RejectedAt.ToString("O", System.Globalization.CultureInfo.InvariantCulture)}",
+            subject);
+    }
+
+    private void VerifyRejectionNotice(Times times) =>
+        _producer.Verify(p => p.NotifyAsync(
+                EmployeeUserId,
+                NotificationEventCatalog.EmployeeRegistrationRejected,
+                It.IsAny<Dictionary<string, string>>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<CancellationToken>()),
+            times);
 
     /// <summary>
     /// Only <c>Confirmed</c> work in the future is asked for. In-progress work is a cleaner standing in

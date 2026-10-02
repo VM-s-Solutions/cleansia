@@ -3,9 +3,9 @@
  * Self-test for the booking-policy parity gate (`check-booking-policy-parity.mjs`).
  *
  * It never touches the working tree: every scenario materialises a fixture repository under a
- * throwaway directory — a BookingPolicy.cs, the web's shared model, five web locale files, five
- * Android string files, an iOS catalog and the legal seed's markdown files — and runs the tool
- * against it with `--root=`.
+ * throwaway directory — a BookingPolicy.cs, the web's shared model and its two size pickers, five web
+ * locale files, five Android string files, the two iOS catalogs, the two mobile `PropertySize` files
+ * and the legal seed's markdown files — and runs the tool against it with `--root=`.
  *
  * WHAT THIS HAS TO PROVE, in order of what it cost to learn:
  *
@@ -144,6 +144,23 @@ function buildFixture(overrides = {}) {
     reasonMissingOn: null,
     // Declared by the server and rendered by no client yet: the checker's own not-yet-rendered list.
     unrenderedReasons: ['customer_lockout'],
+    // The largest home (§5). `null` leaves the constant, the key or the file out of the fixture.
+    maxRooms: '8',
+    maxBathrooms: '4',
+    iosMaxRooms: '8',
+    iosMaxBathrooms: '4',
+    androidMaxRooms: '8',
+    androidMaxBathrooms: '4',
+    webRoomChoices: '[1, 2, 3, 4, 5, 6, 7, 8]',
+    webBathroomChoices: '[1, 2, 3, 4]',
+    recurringRoomChoices: '[1, 2, 3, 4, 5, 6, 7, 8]',
+    recurringBathroomChoices: '[1, 2, 3, 4]',
+    webSizeRefusal: 'A booking can include up to 8 rooms and 4 bathrooms.',
+    androidSizeRefusal: 'A booking can include up to 8 rooms and 4 bathrooms.',
+    iosCoreSizeRefusal: 'A booking can include up to 8 rooms and 4 bathrooms.',
+    androidSizeCaption: 'Up to %1$d rooms and %2$d bathrooms',
+    iosSizeCaption: 'Up to %1$lld rooms and %2$lld bathrooms',
+    iosCorePresent: true,
     ...overrides,
   };
 
@@ -164,7 +181,30 @@ ${o.graceFirstBooking === null ? '' : `    public const int OopsWindowMinutesFir
     public const int OopsWindowMinutesPlus = ${o.gracePlus};
 ${o.increasedDirtinessRate === null ? '' : `    public const decimal IncreasedDirtinessSurchargeRate = ${o.increasedDirtinessRate};`}
 ${o.heavyDirtinessRate === null ? '' : `    public const decimal HeavyDirtinessSurchargeRate = ${o.heavyDirtinessRate};`}
+${o.maxRooms === null ? '' : `    public const int MaxRooms = ${o.maxRooms};`}
+${o.maxBathrooms === null ? '' : `    public const int MaxBathrooms = ${o.maxBathrooms};`}
 }
+`);
+
+  write(root, 'src/cleansia_ios/CleansiaCustomer/Sources/Features/Booking/PropertySize.swift', `
+enum PropertySize {
+    static let maxRooms = ${o.iosMaxRooms}
+    static let maxBathrooms = ${o.iosMaxBathrooms}
+}
+`);
+  write(root, 'src/cleansia_android/customer-app/src/main/java/cz/cleansia/customer/core/booking/PropertySize.kt', `
+object PropertySize {
+    const val MAX_ROOMS = ${o.androidMaxRooms}
+    const val MAX_BATHROOMS = ${o.androidMaxBathrooms}
+}
+`);
+  write(root, 'src/Cleansia.App/libs/cleansia-customer-features/order-wizard/src/lib/order-wizard/order-wizard.component.ts', `
+  readonly roomChoices = ${o.webRoomChoices};
+  readonly bathroomChoices = ${o.webBathroomChoices};
+`);
+  write(root, 'src/Cleansia.App/libs/cleansia-customer-features/recurring-bookings/src/lib/create-recurring-wizard/create-recurring-wizard.component.ts', `
+  protected readonly roomChoices = ${o.recurringRoomChoices};
+  protected readonly bathroomChoices = ${o.recurringBathroomChoices};
 `);
 
   if (o.seedPresent) {
@@ -234,6 +274,9 @@ export const HEAVY_DIRTINESS_SURCHARGE_RATE = ${o.tsHeavyDirtinessRate};
       root,
       `src/Cleansia.App/apps/cleansia.app/src/assets/i18n/${locale}.json`,
       JSON.stringify({
+        api: {
+          order: { size_exceeds_maximum: o.webSizeRefusal },
+        },
         pages: {
           order: {
             cancel_policy_tier3_value: o.webTier3,
@@ -293,7 +336,8 @@ export const HEAVY_DIRTINESS_SURCHARGE_RATE = ${o.tsHeavyDirtinessRate};
     <string name="booking_trust_insured_no_figure">${o.androidInsuredNoFigure}</string>
     <string name="help_faq_a3">${o.androidFaq}</string>
     <string name="help_faq_a3_no_figure">${o.androidFaqNoFigure}</string>
-${mapped('android-locale').map((r) => `    <string name="order_cancelled_reason_${r}">Reason ${r}</string>\n`).join('')}${o.androidSeasonal === null ? '' : `    <string name="home_seasonal_subtitle">${o.androidSeasonal}</string>\n`}</resources>`,
+    <string name="error_order_size_exceeds_maximum">${o.androidSizeRefusal}</string>
+${o.androidSizeCaption === null ? '' : `    <string name="booking_size_limit_caption">${o.androidSizeCaption}</string>\n`}${mapped('android-locale').map((r) => `    <string name="order_cancelled_reason_${r}">Reason ${r}</string>\n`).join('')}${o.androidSeasonal === null ? '' : `    <string name="home_seasonal_subtitle">${o.androidSeasonal}</string>\n`}</resources>`,
     );
   }
 
@@ -318,6 +362,7 @@ ${mapped('android-locale').map((r) => `    <string name="order_cancelled_reason_
         booking_trust_insured_no_figure: { localizations: localizations(o.iosInsuredNoFigure) },
         help_faq_a3: { localizations: localizations(o.iosFaq) },
         help_faq_a3_no_figure: { localizations: localizations(o.iosFaqNoFigure) },
+        booking_size_limit_caption: { localizations: localizations(o.iosSizeCaption) },
         ...Object.fromEntries(
           mapped('ios-locale').map((r) => [`order_cancelled_reason_${r}`, { localizations: localizations(`Reason ${r}`) }]),
         ),
@@ -325,6 +370,17 @@ ${mapped('android-locale').map((r) => `    <string name="order_cancelled_reason_
       },
     }, null, 2),
   );
+  if (o.iosCorePresent) {
+    write(
+      root,
+      'src/cleansia_ios/CleansiaCore/Sources/CleansiaCore/Resources/Localizable.xcstrings',
+      JSON.stringify({
+        strings: {
+          'error.order.size_exceeds_maximum': { localizations: localizations(o.iosCoreSizeRefusal) },
+        },
+      }, null, 2),
+    );
+  }
 
   return root;
 }
@@ -734,7 +790,110 @@ for (const [name, override] of [
   );
 }
 
+// ─── 4c. The largest home is read from BookingPolicy and pinned on every client (D11) ─────────
+// iOS and Android hold the caps as constants and the web as the last chip of its two pickers; the
+// refusal states them as literals in three catalogs, and the mobile caption renders them through two
+// placeholders whose noun forms were written for 8 and 4.
+scenario(
+  'states the size caps BookingPolicy holds',
+  {},
+  { code: 0, mentions: ['a home of up to 8 rooms and 4 bathrooms'] },
+);
+scenario(
+  'moving MaxRooms in C# fails every surface still holding the old cap',
+  { maxRooms: '10' },
+  {
+    code: 1,
+    mentions: [
+      'PropertySize.swift — `maxRooms` is 8, BookingPolicy.MaxRooms is 10',
+      'PropertySize.kt — `MAX_ROOMS` is 8, BookingPolicy.MaxRooms is 10',
+      'order-wizard.component.ts — `roomChoices` stops at 8',
+      'create-recurring-wizard.component.ts — `roomChoices` stops at 8',
+      'web/en — api.order.size_exceeds_maximum',
+      'android/values — error_order_size_exceeds_maximum',
+      'ios-core/en — error.order.size_exceeds_maximum',
+      'does not state 10',
+      'states 8, which is neither',
+      'noun forms were written for 8 rooms and 4 bathrooms',
+    ],
+    silentAbout: ['`maxBathrooms`', '`MAX_BATHROOMS`', '`bathroomChoices`'],
+  },
+);
+scenario(
+  'catches the iOS stepper cap drifting on its own',
+  { iosMaxBathrooms: '5' },
+  {
+    code: 1,
+    mentions: ['PropertySize.swift — `maxBathrooms` is 5, BookingPolicy.MaxBathrooms is 4'],
+    silentAbout: ['PropertySize.kt', 'noun forms'],
+  },
+);
+scenario(
+  'catches the Android stepper cap drifting on its own',
+  { androidMaxRooms: '9' },
+  { code: 1, mentions: ['PropertySize.kt — `MAX_ROOMS` is 9, BookingPolicy.MaxRooms is 8'], silentAbout: ['PropertySize.swift'] },
+);
+scenario(
+  'catches a web picker that stops short of the cap',
+  { recurringBathroomChoices: '[1, 2, 3]' },
+  {
+    code: 1,
+    mentions: ['create-recurring-wizard.component.ts — `bathroomChoices` stops at 3, BookingPolicy.MaxBathrooms is 4'],
+    silentAbout: ['order-wizard.component.ts'],
+  },
+);
+scenario(
+  'catches a refusal that states a stale cap',
+  { androidSizeRefusal: 'A booking can include up to 6 rooms and 4 bathrooms.' },
+  { code: 1, mentions: ['android/values — error_order_size_exceeds_maximum', 'does not state 8', 'states 6, which is neither'] },
+);
+scenario(
+  'catches a refusal that drops a cap',
+  { iosCoreSizeRefusal: 'A booking can include up to 8 rooms.' },
+  { code: 1, mentions: ['ios-core/en — error.order.size_exceeds_maximum', 'does not state 4'] },
+);
+scenario(
+  'catches a caption that bakes the caps in',
+  { androidSizeCaption: 'Up to 8 rooms and 4 bathrooms', iosSizeCaption: 'Up to 8 rooms and %2$lld bathrooms' },
+  {
+    code: 1,
+    mentions: [
+      'android/values — booking_size_limit_caption',
+      'does not carry the %1$d placeholder',
+      'bakes a figure in (8, 4)',
+      'ios/en — booking_size_limit_caption',
+      'does not carry the %1$lld placeholder',
+      'bakes a figure in (8)',
+    ],
+  },
+);
+scenario(
+  'a missing caption is a finding, not a silent pass',
+  { androidSizeCaption: null },
+  { code: 1, mentions: ['android/values — booking_size_limit_caption is missing'] },
+);
+scenario(
+  'a BookingPolicy that no longer declares MaxRooms is a finding',
+  { maxRooms: null },
+  { code: 1, mentions: ['could not read `MaxRooms`'], silentAbout: ['noun forms'] },
+);
+scenario(
+  'a missing iOS core catalog is a finding, not a crash',
+  { iosCorePresent: false },
+  { code: 1, mentions: ['CleansiaCore/Resources/Localizable.xcstrings — is missing'] },
+);
+
 // ─── 5. It does not cry wolf ────────────────────────────────────────────────
+scenario(
+  'reads the iOS %lld slots as slots, not as figures',
+  { iosSizeCaption: 'Nejvýše %1$lld pokojů a %2$lld koupelny' },
+  { code: 0 },
+);
+scenario(
+  'a refusal that names the caps in the other order still states both',
+  { webSizeRefusal: 'Не більше 4 ванних кімнат і 8 кімнат в одному замовленні.' },
+  { code: 0 },
+);
 scenario(
   'a space before the percent sign is the same number',
   { androidTier2: '25 % poplatok', iosTier2: '25 % штраф', webTier3: '25 % poplatok' },

@@ -26,6 +26,11 @@ struct BusyMascotOverlay: View {
                 .padding(.vertical, 28)
                 .frame(maxWidth: 360)
                 .background(CleansiaColors.surface, in: RoundedRectangle(cornerRadius: CornerRadius.large))
+                // Flatten before shadowing (the SnapSheet precedent): `.shadow` falls on every opaque
+                // thing in the subtree, so without this the mascot and the message each cast their own
+                // shadow onto the card. Composited first, only the card's edge does — Android's
+                // elevation shadow, which the mascot never had there.
+                .compositingGroup()
                 .shadow(radius: 16)
                 .padding(.horizontal, Spacing.xl)
                 .transition(.scale(scale: 0.85).combined(with: .opacity))

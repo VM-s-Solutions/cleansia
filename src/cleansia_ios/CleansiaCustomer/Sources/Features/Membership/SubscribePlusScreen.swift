@@ -97,22 +97,24 @@ struct SubscribePlusScreen: View {
     }
 
     private func offer(_ plans: [MembershipPlan]) -> some View {
-        Group {
-            ScrollView {
-                VStack(alignment: .leading, spacing: Spacing.l) {
-                    HeroBlock(
-                        plans: plans,
-                        selectedPlanCode: selectedPlanCode,
-                        selectedPlan: selectedPlan,
-                        trialDays: trialDays,
-                        onSelectPlan: { selectedPlanCode = $0 },
-                        onBack: onBack
-                    )
-                    SocialProofTile()
-                    PerksSection(plan: selectedPlan)
-                    Color.clear.frame(height: 140)
-                }
+        StatusBarFadeScrollView {
+            VStack(alignment: .leading, spacing: Spacing.l) {
+                HeroBlock(
+                    plans: plans,
+                    selectedPlanCode: selectedPlanCode,
+                    selectedPlan: selectedPlan,
+                    trialDays: trialDays,
+                    onSelectPlan: { selectedPlanCode = $0 },
+                    onBack: onBack
+                )
+                SocialProofTile()
+                PerksSection(plan: selectedPlan)
             }
+            .padding(.bottom, Spacing.l)
+        }
+        // Mounted as an inset, not overlaid: the scroll content then reserves exactly the bar's real
+        // height at any Dynamic Type size and disclosure length, instead of a fixed guess.
+        .safeAreaInset(edge: .bottom, spacing: 0) {
             if vm.canSubscribe {
                 StickyCtaBar(
                     label: trialDays > 0 ? L10n.Membership.ctaStartTrial : L10n.Membership.ctaSubscribe,
@@ -186,6 +188,9 @@ struct SubscribePlusScreen: View {
         }
     }
 }
+
+/// How far the offer hero's background paints above its frame — past the status bar and any overscroll.
+private let heroBleed: CGFloat = 600
 
 /// The character perched on the plan switcher: his size, and how much of him sits below the control's
 /// top edge so he reads as resting on it rather than hovering.
@@ -268,7 +273,15 @@ private struct HeroBlock: View {
         .padding(.bottom, Spacing.ml)
         .padding(.top, Spacing.ml)
         .frame(maxWidth: .infinity)
-        .background(MembershipPalette.heroGradient.ignoresSafeArea(.container, edges: .top))
+        // Inside the offer's scroll view, so it paints its own status-bar strip: the gradient keeps the
+        // hero's bounds and a block of its first stop rises above them (the ProfileTab hero's form).
+        .background(alignment: .bottom) {
+            VStack(spacing: 0) {
+                MembershipPalette.sky950.frame(height: heroBleed)
+                MembershipPalette.heroGradient
+            }
+            .padding(.top, -heroBleed)
+        }
     }
 
     @ViewBuilder
@@ -458,14 +471,18 @@ private struct StickyCtaBar: View {
     let onTap: () -> Void
 
     var body: some View {
-        VStack(spacing: Spacing.s) {
+        VStack(spacing: Spacing.xs) {
             CleansiaPrimaryButton(label, leadingIcon: "crown", enabled: enabled, action: onTap)
             Text(disclosure)
                 .font(CleansiaTypography.bodyMedium)
                 .foregroundColor(CleansiaColors.onSurfaceVariant)
                 .multilineTextAlignment(.center)
         }
-        .padding(Spacing.ml)
+        // 12pt under the disclosure, above the home indicator's own inset — the bar used to pad 20pt
+        // on every side, which read as a band of empty surface under the text.
+        .padding(.horizontal, Spacing.ml)
+        .padding(.top, Spacing.m)
+        .padding(.bottom, Spacing.s)
         .frame(maxWidth: .infinity)
         .background(CleansiaColors.surface.ignoresSafeArea(edges: .bottom))
     }

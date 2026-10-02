@@ -96,21 +96,29 @@ export class CleansiaBankAccountComponent {
 
   /**
    * Paste a whole account and it lands in the right segments. `19-2000145399/0800`,
-   * `2000145399/0800` and a bare number all work, because those are the three shapes a Czech account
-   * is actually written in — and the alternative is the customer deleting the punctuation by hand,
-   * which is exactly the friction the single control is meant to remove.
+   * `2000145399/0800`, a Czech or Slovak IBAN and a bare number all work, because those are the shapes
+   * a Czech account is actually written in — and the alternative is the customer deleting the
+   * punctuation by hand, which is exactly the friction the single control is meant to remove.
+   *
+   * A bare number is the account number and nothing else, so the prefix and bank code already in the
+   * control stay; an account written out with a separator but no prefix clears the old prefix.
+   * Whitespace of every kind (a no-break space included) is dropped and an en or em dash reads as a
+   * hyphen, because that is what banking apps put on the clipboard. All as in the apps'
+   * `splitPastedAccount` (owner decision D14).
    */
   protected onPaste(event: ClipboardEvent): void {
-    const text = event.clipboardData?.getData('text')?.trim();
-    if (!text) return;
+    const pasted = (event.clipboardData?.getData('text') ?? '')
+      .replace(/\s/g, '')
+      .replace(/[\u2013\u2014]/g, '-');
+    const text = domesticFormOfIban(pasted) ?? pasted;
 
-    const match = /^(?:(\d{1,6})\s*-\s*)?(\d{1,10})(?:\s*\/\s*(\d{1,4}))?$/.exec(text);
+    const match = /^(?:(\d{1,6})-)?(\d{1,10})(?:\/(\d{1,4}))?$/.exec(text);
     if (!match) return;
 
     event.preventDefault();
     const [, prefix, number, bankCode] = match;
 
-    this.prefix().setValue(prefix ?? '');
+    if (/[-/]/.test(text)) this.prefix().setValue(prefix ?? '');
     this.number().setValue(number);
     if (bankCode) this.bankCode().setValue(bankCode);
 
@@ -118,4 +126,18 @@ export class CleansiaBankAccountComponent {
       control.markAsDirty();
     }
   }
+}
+
+/**
+ * `CZ65 0800 0000 1920 0014 5399` (spaces already dropped) reads as `19-2000145399/0800`: a Czech or
+ * Slovak BBAN is bank code (4), prefix (6) and number (10), and the zero padding is not part of the
+ * written account. Null for any other text. Shape only — the server checks the digits.
+ */
+function domesticFormOfIban(text: string): string | null {
+  const bban = /^(?:CZ|SK)\d{2}(\d{20})$/.exec(text.toUpperCase())?.[1];
+  if (!bban) return null;
+
+  const prefix = bban.slice(4, 10).replace(/^0+/, '');
+  const number = bban.slice(10).replace(/^0+/, '');
+  return `${prefix ? `${prefix}-` : ''}${number}/${bban.slice(0, 4)}`;
 }

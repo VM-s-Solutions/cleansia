@@ -33,9 +33,11 @@ class CleansiaPartnerApp : Application(), SingletonImageLoader.Factory {
     override fun onCreate() {
         super.onCreate()
         MapboxOptions.accessToken = BuildConfig.MAPBOX_ACCESS_TOKEN
-        // Register FCM channels on every cold start (idempotent) so the cleaner
-        // can mute categories at the OS level even before the first push lands.
-        NotificationChannels.registerAll(this)
+        // Create the FCM channels on every cold start so the cleaner can mute
+        // categories at the OS level even before the first push lands. Only the
+        // missing ones: MainActivity names them in the in-app language, and this
+        // context is in the device language on API 26-32.
+        NotificationChannels.registerMissing(this)
         purgeCaptures(cacheDir)
 
         // Guarded on the DSN: a blank one means Sentry stays dormant rather than initialising into

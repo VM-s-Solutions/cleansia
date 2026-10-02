@@ -86,7 +86,7 @@ struct IdentificationSectionView: View {
                     )
                 }
                 SaveSectionButton(
-                    onboarding: onboarding,
+                    onboarding: onboarding && chainVM.state.completedSteps < chainVM.state.totalSteps,
                     isSubmitting: vm.action.isSubmitting,
                     onBack: onboardingBack,
                     action: { Task { await vm.save() } }

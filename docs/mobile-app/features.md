@@ -32,6 +32,7 @@ definition.
 | Shared components | `ui/components/Cleansia*` | `Components/Cleansia*` |
 | Global snackbar | `snackbar/SnackbarController` | `Snackbar/SnackbarController` |
 | Push token lifecycle | `notifications/PushTokenRepository` | `Push/PushTokenRegistrar` |
+| The in-app language, where the app's own locale does not reach | `settings/AppLocale.localizedContext` (API 26–32) | `Localization/AppGroupLanguage` (the App Group, read by the extensions) |
 | Location + geocoding | `location/` | `Location/` |
 | Serviced countries/cities | `servicearea/` | `ServiceArea/` |
 | Photo compression (both strip EXIF/GPS on re-encode) | `media/ImageCompressor` — reads the orientation tag first, via `androidx.exifinterface` | `Media/ImageCompressor` |
@@ -204,6 +205,17 @@ Two shared mechanisms decide when a screen re-fetches and when it must forget ev
 A repository may hold both, and should reset its `Staleness` from its `clear()` so the watermark
 does not survive a session swap.
 
+**The customer's loyalty cache is the case that matters most**, because it holds the points and the
+credit balance. Every action that can move the credit invalidates it. A cancellation re-reads it at
+once, and so does the card confirmation of a recurring occurrence, whose credit the server takes before
+it mints the payment intent, so the re-read runs as soon as the confirm succeeds, before the payment
+sheet opens. A booking re-reads it with the orders on iOS; on Android it marks it stale, because the
+shell's scope ends as it leaves for the success screen, and the shell re-reads it on return.
+Otherwise the cache goes stale after 30 seconds, and Home and Rewards re-read a stale cache on entry,
+as does Profile on Android for its *Credit* row, showing the cached figures meanwhile (since
+2026-10-02; Rewards used to keep whatever it held until a pull). A re-read on entry shows no spinner:
+on Android the Rewards pull indicator follows the user's own pull only, as Home's does.
+
 ## Localization
 
 Both platforms ship English, Czech, Slovak, Ukrainian and Russian — the same fixed set as the web
@@ -216,6 +228,15 @@ apps.
 
 Backend error keys resolve through the platform's own naming convention, **not** the web apps'
 `api.*` namespace — see [API Integration](/mobile-app/api-integration#error-keys-become-user-facing-text).
+
+**The language picked in the app is the language of everything the app draws, and of every push
+whose text the device writes** — the push banner, the notification feed and the Live Activity card,
+whatever the phone is set to — except, probably, the iOS Live Activity's start alert, which iOS resolves
+in the app's system language ([ADR-0029](/decisions/adr-0029#amendment-a5) A5, not yet checked on a
+device). The sitewide promo push is not one of them: the server writes its text,
+in the account's language. Neither platform gets that for free outside the app's own screens: iOS
+resolves a push's keys in the app's system language, and Android 26–32 localizes only activity
+contexts. Each closes the gap with the one shared seam in the table above. → [Which language a notification is in](/architecture/push-notifications#language)
 
 ## Tests
 

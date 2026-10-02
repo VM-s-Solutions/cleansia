@@ -118,6 +118,18 @@ object NotificationTemplates {
             R.string.notification_employee_weekly_limit_set_body,
             NotificationChannels.CHANNEL_ORDER_UPDATES,
         )
+        // The admin's decision on a cleaner's application. Push-only and argless: the rejection reason
+        // is free text that may carry PII, so it stays on the lock screen, which reads it from the API.
+        "employee.registration_approved" -> Template(
+            R.string.notification_employee_registration_approved_title,
+            R.string.notification_employee_registration_approved_body,
+            NotificationChannels.CHANNEL_ORDER_UPDATES,
+        )
+        "employee.registration_rejected" -> Template(
+            R.string.notification_employee_registration_rejected_title,
+            R.string.notification_employee_registration_rejected_body,
+            NotificationChannels.CHANNEL_ORDER_UPDATES,
+        )
         else -> null
     }
 

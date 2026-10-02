@@ -130,6 +130,137 @@ final class UpsellClaimTests: XCTestCase {
         }
     }
 
+    /// The newer carousel slides; every one renders, so every one is in every language.
+    private static let carouselKeys = [
+        "home_upsell_notifications_top",
+        "home_upsell_notifications_title",
+        "home_upsell_notifications_cta",
+        "home_upsell_credit_title",
+        "home_upsell_express_top",
+        "home_upsell_book_cta",
+        "home_quick_size_title",
+        "home_quick_size_cta",
+        "home_quick_size_rooms_less",
+        "home_quick_size_rooms_more",
+        "home_quick_size_baths_less",
+        "home_quick_size_baths_more"
+    ]
+
+    func testEveryNewCarouselSlideIsWrittenInEveryLanguageAndPromisesNoTrial() throws {
+        try forEachLanguage { language in
+            for key in Self.carouselKeys {
+                let value = L10n.localized(key)
+                XCTAssertNotEqual(value, key, "\(key) is unlocalized in \(language)")
+                XCTAssertFalse(Self.matches(value, Self.trialClaim), "\(key) promises a trial in \(language): \(value)")
+            }
+            XCTAssertFalse(Self.matches(L10n.Home.upsellExpressTitle(2), Self.trialClaim), language)
+        }
+    }
+
+    /// The credit balance and its share are the server's (`GetMyCredit`), the waivers left are the
+    /// membership's, and the express window is the booking policy's — so no language states a number.
+    func testTheCreditAndExpressSlidesStateTheServersFiguresNeverTheirOwn() throws {
+        try forEachLanguage { language in
+            let credit = L10n.Home.upsellCreditTitle("§", share: 0.55)
+            XCTAssertTrue(credit.contains("§") && credit.contains("55"), "\(language): \(credit)")
+            XCTAssertNil(Self.digitsBeyond(credit, "55"), "the credit slide names a number in \(language)")
+
+            let window = L10n.Home.upsellExpressTop(7, 9)
+            XCTAssertTrue(window.contains("7") && window.contains("9"), "\(language): \(window)")
+            XCTAssertNil(Self.digitsBeyond(window, "7", "9"), "the express window names a number in \(language)")
+
+            for remaining in [1, 3, 6] {
+                let title = L10n.Home.upsellExpressTitle(remaining)
+                XCTAssertTrue(title.contains(String(remaining)), "\(language) drops the count: \(title)")
+                XCTAssertNil(Self.digitsBeyond(title, String(remaining)), "\(language) names a number: \(title)")
+            }
+        }
+    }
+
+    /// The quick-size slide showed "2 bath": English `other` had been left on the singular.
+    func testTheSizeSteppersCountRoomsAndBathsInTheEnglishPlural() throws {
+        L10n.bundle = try localeBundle("en")
+        XCTAssertEqual([L10n.Booking.roomsShort(1), L10n.Booking.roomsShort(2)], ["1 room", "2 rooms"])
+        XCTAssertEqual([L10n.Booking.bathShort(1), L10n.Booking.bathShort(2)], ["1 bath", "2 baths"])
+    }
+
+    /// The confirm step's size line read "1 rooms · 1 bath" (cs "1 pokojů · 1 koupelny"): one format with two
+    /// counts, which no plural variation can select on. It now composes the two plurals, as the order detail
+    /// does.
+    func testTheConfirmSummaryCountsRoomsAndBathsInTheirPlurals() throws {
+        let restore = L10n.bundle
+        defer { L10n.bundle = restore }
+        L10n.bundle = try localeBundle("en")
+        XCTAssertEqual(L10n.OrderDetail.roomsBathrooms(1, 1), "1 room · 1 bath")
+        XCTAssertEqual(L10n.OrderDetail.roomsBathrooms(3, 2), "3 rooms · 2 baths")
+        L10n.bundle = try localeBundle("cs")
+        XCTAssertEqual(L10n.OrderDetail.roomsBathrooms(1, 1), "1 pokoj · 1 koup.")
+        XCTAssertEqual(L10n.OrderDetail.roomsBathrooms(5, 1), "5 pokojů · 1 koup.")
+
+        let confirm = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appendingPathComponent("Sources/Features/Booking/Confirm/ConfirmStepComponents.swift")
+        XCTAssertTrue(
+            try String(contentsOf: confirm, encoding: .utf8)
+                .contains("value: L10n.OrderDetail.roomsBathrooms(state.rooms, state.bathrooms)"),
+            "the confirm summary no longer composes the two plurals"
+        )
+    }
+
+    /// Owner ruling 2026-10-02: a bathroom is "ванна кімната" in Ukrainian and "ванная" in Russian, never
+    /// "ванна/ванны" (a bathtub). The forms are picked by the language's own plural rules, not the
+    /// handset's, so each count is formatted in that language's locale.
+    func testUkrainianAndRussianCountBathroomsNotBathtubs() throws {
+        let expected: [String: [Int: String]] = [
+            "uk": [1: "1 ванна кімната", 2: "2 ванні кімнати", 4: "4 ванні кімнати", 5: "5 ванних кімнат"],
+            "ru": [1: "1 ванная", 2: "2 ванные", 4: "4 ванные", 5: "5 ванных"]
+        ]
+        let restore = L10n.bundle
+        defer { L10n.bundle = restore }
+        for (language, forms) in expected {
+            L10n.bundle = try localeBundle(language)
+            let format = L10n.localized("booking_bath_short")
+            for (count, form) in forms {
+                XCTAssertEqual(String(format: format, locale: Locale(identifier: language), count), form, language)
+            }
+        }
+        L10n.bundle = try localeBundle("uk")
+        XCTAssertEqual(L10n.Recurring.createBathroomsLabel, "Ванні кімнати")
+    }
+
+    /// The express slide states the 2–4 h window from the client's booking bands, so those must be the
+    /// server's.
+    func testTheExpressWindowTheSlideStatesIsTheBookingPolicys() throws {
+        XCTAssertEqual(Int(BookingPricing.expressLeadHours), try Self.bookingPolicyHours("ExpressLeadTimeHours"))
+        XCTAssertEqual(Int(BookingPricing.standardLeadHours), try Self.bookingPolicyHours("StandardLeadTimeHours"))
+    }
+
+    private static func digitsBeyond(_ text: String, _ allowed: String...) -> Range<String.Index>? {
+        var residue = text
+        for figure in allowed {
+            residue = residue.replacingOccurrences(of: figure, with: "")
+        }
+        return residue.rangeOfCharacter(from: .decimalDigits)
+    }
+
+    private static func bookingPolicyHours(_ name: String) throws -> Int {
+        let policy = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appendingPathComponent("Cleansia.Core.AppServices/Features/Orders/BookingPolicy.cs")
+        let source = try String(contentsOf: policy, encoding: .utf8)
+        let regex = try NSRegularExpression(pattern: #"public\s+const\s+int\s+"# + name + #"\s*=\s*(\d+)\s*;"#)
+        let match = try XCTUnwrap(
+            regex.firstMatch(in: source, range: NSRange(source.startIndex..., in: source)),
+            "BookingPolicy.\(name) not found — the parser needs updating"
+        )
+        let digits = try XCTUnwrap(Range(match.range(at: 1), in: source))
+        return try XCTUnwrap(Int(source[digits]))
+    }
+
     func testTheScansWouldHaveCaughtTheRemovedCopy() {
         for removed in ["Save on every cleaning. 14 days free.", "Try Plus free", "Vyzkoušet zdarma na 14 dní"] {
             XCTAssertTrue(Self.matches(removed, Self.trialClaim), "the trial scan cannot see \(removed)")

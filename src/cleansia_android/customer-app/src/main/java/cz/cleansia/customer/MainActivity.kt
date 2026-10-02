@@ -4,8 +4,10 @@ import cz.cleansia.core.snackbar.GlobalSnackbarHost
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
+import android.os.LocaleList
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -26,9 +28,11 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
 import cz.cleansia.core.notifications.PushTokenSessionObserver
 import cz.cleansia.core.settings.AppLocale
+import cz.cleansia.customer.core.notifications.NotificationChannels
 import cz.cleansia.customer.core.notifications.NotificationDeepLink
 import cz.cleansia.customer.core.settings.AppSettings
 import cz.cleansia.customer.core.settings.AppSettingsRepository
+import cz.cleansia.customer.core.settings.LanguageSessionObserver
 import cz.cleansia.customer.core.settings.ThemePreference
 import cz.cleansia.customer.navigation.CleansiaNavHost
 import cz.cleansia.customer.ui.theme.CleansiaTheme
@@ -55,6 +59,9 @@ class MainActivity : androidx.appcompat.app.AppCompatActivity() {
      */
     @Inject lateinit var pushTokenSessionObserver: PushTokenSessionObserver
 
+    /** Re-states a chosen display language on the server once per session start. */
+    @Inject lateinit var languageSessionObserver: LanguageSessionObserver
+
     /**
      * Notification-tap deep link, in typed-route form (e.g.
      * `Routes.OrderDetail(orderId)`). Set from the launching intent in
@@ -73,14 +80,16 @@ class MainActivity : androidx.appcompat.app.AppCompatActivity() {
      * the system silently drops the call to `NotificationManager.notify`.
      * No-op on older API levels (permission was install-time there).
      *
-     * We're not interested in the result here — the OS handles "denied"
-     * by hiding the toast, which is the correct user-facing behavior, and
-     * the NotificationsScreen lets the user toggle per-category prefs
-     * separately. If they re-enable later via system settings, we pick it
-     * up automatically without re-prompting.
+     * The OS handles "denied" by hiding the toast, and the NotificationsScreen
+     * lets the user toggle per-category prefs separately. If they re-enable
+     * later via system settings, we pick it up automatically without
+     * re-prompting. A refusal is recorded (see [recordNotificationRefusal]) so
+     * the Home notifications slide knows whether the dialog can still appear.
      */
     private val requestNotificationPermission =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { /* result ignored */ }
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            if (!granted) recordNotificationRefusal()
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
@@ -90,11 +99,13 @@ class MainActivity : androidx.appcompat.app.AppCompatActivity() {
         // the NavHost composes so the LaunchedEffect picks it up immediately.
         pendingDeepLink.value = NotificationDeepLink.resolve(intent)
         restorePersistedAppLocale()
+        registerNotificationChannels()
         maybeRequestNotificationPermission()
         // Start observing (session × FCM-token) so the device gets
         // registered on every cold start with an existing session, not
         // only on discrete login / rotation events.
         pushTokenSessionObserver.attach(lifecycleScope)
+        languageSessionObserver.attach(lifecycleScope)
         setContent {
             val settings by settingsRepository.settings
                 .collectAsStateWithLifecycle(initialValue = AppSettings())
@@ -162,6 +173,28 @@ class MainActivity : androidx.appcompat.app.AppCompatActivity() {
     }
 
     /**
+     * The manifest handles locale changes, so an in-app language change reaches this activity here
+     * rather than recreating it: on API 26-32 AppCompat updates its resources and calls this, on 33+
+     * the framework does.
+     */
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        if (newConfig.locales != channelLocales) registerNotificationChannels()
+    }
+
+    /** The locales the notification channels were last named in. */
+    private var channelLocales: LocaleList? = null
+
+    /**
+     * Names the notification channels in this activity's language, which is the in-app one on every
+     * API level; registering an existing channel again renames it.
+     */
+    private fun registerNotificationChannels() {
+        channelLocales = resources.configuration.locales
+        NotificationChannels.registerAll(this)
+    }
+
+    /**
      * Re-applies the persisted language on every cold start.
      *
      * **On API 26-32 AppCompat holds the per-app locale in a process-scoped static and loses it when the
@@ -181,7 +214,20 @@ class MainActivity : androidx.appcompat.app.AppCompatActivity() {
             Manifest.permission.POST_NOTIFICATIONS,
         ) == PackageManager.PERMISSION_GRANTED
         if (!granted) {
+            // A refusal from before this was recorded still shows as a rationale now.
+            recordNotificationRefusal()
             requestNotificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
+    }
+
+    /**
+     * Records that the customer has refused the notification permission, once the rationale shows:
+     * Android shows it between the first and the second refusal, and never after a dialog that was
+     * only dismissed, which leaves the permission still askable.
+     */
+    private fun recordNotificationRefusal() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        if (!shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS)) return
+        lifecycleScope.launch { settingsRepository.markNotificationPermissionRefused() }
     }
 }

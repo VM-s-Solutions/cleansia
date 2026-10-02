@@ -134,7 +134,8 @@
       "bank_account_number_placeholder": "Číslo účtu",
       "bank_code_placeholder": "Kód",
       "bank_code_hint": "Čtyři číslice za lomítkem, například 5500.",
-      "iban_hint": "U českého nebo slovenského účtu ho můžete nechat prázdný — dopočítáme ho z čísel výše.",
+      "iban_hint": "Celý IBAN, začíná kódem země vaší banky. Najdete ho na výpisu z účtu nebo v internetovém bankovnictví.",
+      "iban_wrong_length": "Tento IBAN nemá pro zemi vaší banky správnou délku — ta je {{length}}. Zkontrolujte, jestli nějaký znak nechybí nebo nepřebývá.",
       "swift_code": "SWIFT kód",
       "swift_code_hint": "Potřebujeme ho jen tehdy, když je vaše banka v jiné zemi, než ve které pracujete.",
       "bank_name": "Název banky",
@@ -622,7 +623,7 @@
       "approval_title": "Jak probíhá schválení",
       "approval_text": "Než si budete moct brát zakázky, administrátor schválí váš účet. Ověří, že máte vyplněný profil, že jste nahráli všechny dokumenty, které vyžaduje země, kde budete pracovat, a že byly přijaty, že jste přijali platné partnerské dokumenty a že v této zemi působíme. O schválení i zamítnutí vždy rozhoduje člověk, nikdy automat.",
       "review_title": "Požádejte, aby rozhodnutí posoudil člověk",
-      "review_text": "Pokud nesouhlasíte s rozhodnutím o svém účtu nebo zakázkách, například se zamítnutím, odebráním ze zakázky nebo týdenním limitem, napište na info@cleansia.cz. Posoudí to člověk, ne automatický systém, a odpoví vám."
+      "review_text": "Pokud nesouhlasíte s rozhodnutím o svém účtu nebo zakázkách, například se zamítnutím, odebráním ze zakázky nebo týdenním limitem, napište na support@cleansia.cz. Posoudí to člověk, ne automatický systém, a odpoví vám."
     }
   },
   "sidebar": {
@@ -807,6 +808,8 @@
     "description": "Pro přístup k této sekci musíte dokončit nastavení profilu a nahrát požadované dokumenty.",
     "complete_profile": "Dokončit profil",
     "progress": "{{completed}} z {{total}} kroků dokončeno",
+    "contact_support": "Kontaktovat podporu",
+    "support_subject": "Cleansia partner — žádost zamítnuta",
     "categories": {
       "profile": "Informace o profilu",
       "documents": "Požadované dokumenty",

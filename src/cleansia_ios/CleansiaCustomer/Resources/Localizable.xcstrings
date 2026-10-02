@@ -1730,7 +1730,7 @@
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$lld bath"
+                  "value": "%1$lld baths"
                 }
               }
             }
@@ -1802,25 +1802,25 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$lld ванна"
+                  "value": "%1$lld ванна кімната"
                 }
               },
               "few": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$lld ванни"
+                  "value": "%1$lld ванні кімнати"
                 }
               },
               "many": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$lld ванн"
+                  "value": "%1$lld ванних кімнат"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$lld ванни"
+                  "value": "%1$lld ванні кімнати"
                 }
               }
             }
@@ -1832,25 +1832,25 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$lld ванна"
+                  "value": "%1$lld ванная"
                 }
               },
               "few": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$lld ванны"
+                  "value": "%1$lld ванные"
                 }
               },
               "many": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$lld ванн"
+                  "value": "%1$lld ванных"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$lld ванны"
+                  "value": "%1$lld ванные"
                 }
               }
             }
@@ -2414,6 +2414,181 @@
           "stringUnit": {
             "state": "translated",
             "value": "Прохання розпочати прибирання протягом строку для відмови"
+          }
+        }
+      }
+    },
+    "booking_size_limit_caption": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Up to %1$lld rooms and %2$lld bathrooms"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nejvýše %1$lld pokojů a %2$lld koupelny"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Najviac %1$lld izieb a %2$lld kúpeľne"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не більше %1$lld кімнат і %2$lld ванних кімнат"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не более %1$lld комнат и %2$lld ванных комнат"
+          }
+        }
+      }
+    },
+    "booking_summary_credit_card_only": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Credit applies to card payments only."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kredit se uplatní jen při platbě kartou."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kredit sa uplatní len pri platbe kartou."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Кредит діє лише при оплаті карткою."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Кредит действует только при оплате картой."
+          }
+        }
+      }
+    },
+    "booking_summary_credit_note": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your credit balance is %1$@. It comes off automatically, and part of every booking is always paid by card."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zbývá vám %1$@ kreditu. Odečte se automaticky a část každé objednávky se vždy platí kartou."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zostáva vám %1$@ kreditu. Odpočíta sa automaticky a časť každej objednávky sa vždy platí kartou."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваш кредит — %1$@. Він списується автоматично, а частина кожного замовлення завжди сплачується карткою."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваш кредит — %1$@. Он списывается автоматически, а часть каждого заказа всегда оплачивается картой."
+          }
+        }
+      }
+    },
+    "booking_summary_due_on_card": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To pay by card"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "K úhradě kartou"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na úhradu kartou"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "До сплати карткою"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "К оплате картой"
+          }
+        }
+      }
+    },
+    "common_got_it": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Got it"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rozumím"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rozumiem"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Зрозуміло"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Понятно"
           }
         }
       }
@@ -6412,41 +6587,6 @@
         }
       }
     },
-    "booking_summary_property_value": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$d pokojů · %2$d koupelny"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$d rooms · %2$d bath"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$d комнат · %2$d ванных"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$d izieb · %2$d kúpeľne"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$d кімнат · %2$d ванних"
-          }
-        }
-      }
-    },
     "booking_summary_subtotal": {
       "extractionState": "stale",
       "localizations": {
@@ -7252,6 +7392,391 @@
         }
       }
     },
+    "credit_auto_applied_share": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comes off your next card booking automatically, up to %1$lld%% of it."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automaticky se odečte z vaší příští objednávky placené kartou, až do výše %1$lld %% její ceny."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automaticky sa odpočíta z vašej ďalšej objednávky platenej kartou, až do výšky %1$lld %% jej ceny."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Автоматично списується з наступного замовлення з оплатою карткою — до %1$lld%% його вартості."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Автоматически списывается со следующего заказа с оплатой картой — до %1$lld%% его стоимости."
+          }
+        }
+      }
+    },
+    "credit_expires_on": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expires %1$@. Every booking pushes that back."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vyprší %1$@. Každá objednávka lhůtu prodlouží."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vyprší %1$@. Každá objednávka lehotu predĺži."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Згорає %1$@. Кожне замовлення відсуває цю дату."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сгорает %1$@. Каждый заказ отодвигает эту дату."
+          }
+        }
+      }
+    },
+    "credit_explainer_points_body": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Points move your tier and its discount, and are never spent. Credit is money off your bookings."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Body posouvají vaši úroveň a její slevu a nikdy se neutrácejí. Kredit jsou peníze, které se odečtou z vašich objednávek."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Body posúvajú vašu úroveň a jej zľavu a nikdy sa neminú. Kredit sú peniaze, ktoré sa odpočítajú z vašich objednávok."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Бали підвищують ваш рівень і його знижку та ніколи не витрачаються. Кредит — це гроші, що віднімаються від ваших замовлень."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Баллы повышают ваш уровень и его скидку и никогда не тратятся. Кредит — это деньги, которые вычитаются из ваших заказов."
+          }
+        }
+      }
+    },
+    "credit_explainer_points_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Credit isn't points"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kredit nejsou body"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kredit nie sú body"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Кредит — це не бали"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Кредит — это не баллы"
+          }
+        }
+      }
+    },
+    "credit_explainer_source_body": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "An apology when your cleaner doesn't arrive or nobody can take your booking, a complaint you chose to settle in credit, or a goodwill gesture from us."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Omluva, když uklízeč nedorazí nebo vaši objednávku nikdo nepřevezme, reklamace, kterou jste se rozhodli vyřešit kreditem, nebo vstřícné gesto od nás."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ospravedlnenie, keď upratovač nepríde alebo vašu objednávku nikto neprevezme, reklamácia, ktorú ste sa rozhodli vyriešiť kreditom, alebo ústretové gesto od nás."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вибачення, коли прибиральник не приїхав або ніхто не зміг узяти ваше замовлення, скарга, яку ви вирішили врегулювати кредитом, або жест доброї волі від нас."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Извинение, когда уборщик не приехал или никто не смог взять ваш заказ, жалоба, которую вы решили урегулировать кредитом, или жест доброй воли от нас."
+          }
+        }
+      }
+    },
+    "credit_explainer_source_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Where it comes from"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odkud se bere"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odkiaľ sa berie"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Звідки він береться"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Откуда он берётся"
+          }
+        }
+      }
+    },
+    "credit_explainer_spend_body": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatically, on your next card booking in the same currency, up to %1$lld%% of it. The card always pays the rest."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automaticky, na vaši příští objednávku placenou kartou ve stejné měně, až do výše %1$lld %% její ceny. Zbytek vždy zaplatíte kartou."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automaticky, na vašu ďalšiu objednávku platenú kartou v rovnakej mene, až do výšky %1$lld %% jej ceny. Zvyšok vždy zaplatíte kartou."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Автоматично, на наступне замовлення з оплатою карткою в тій самій валюті — до %1$lld%% його вартості. Решту завжди сплачує картка."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Автоматически, на следующий заказ с оплатой картой в той же валюте — до %1$lld%% его стоимости. Остаток всегда оплачивается картой."
+          }
+        }
+      }
+    },
+    "credit_explainer_spend_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How it's spent"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jak se čerpá"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ako sa čerpá"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Як він витрачається"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Как он тратится"
+          }
+        }
+      }
+    },
+    "credit_explainer_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How credit works"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jak funguje kredit"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ako funguje kredit"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Як працює кредит"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Как работает кредит"
+          }
+        }
+      }
+    },
+    "credit_none": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No credit right now. If a clean goes wrong, credit we give you shows up here."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Teď nemáte žádný kredit. Pokud se úklid nepovede, kredit, který vám dáme, uvidíte tady."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Teraz nemáte žiadny kredit. Ak sa upratovanie nepodarí, kredit, ktorý vám dáme, uvidíte tu."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Зараз кредиту немає. Якщо з прибиранням щось піде не так, кредит, який ми нарахуємо, з’явиться тут."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сейчас кредита нет. Если с уборкой что-то пойдёт не так, кредит, который мы начислим, появится здесь."
+          }
+        }
+      }
+    },
+    "credit_your_credit": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your credit"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Váš kredit"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Váš kredit"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваш кредит"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваш кредит"
+          }
+        }
+      }
+    },
     "delete_account_apple_note": {
       "extractionState": "stale",
       "localizations": {
@@ -7480,7 +8005,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ваши персональные данные будут удалены, и это действие нельзя отменить; записи, перечисленные на этом экране, мы храним в течение указанных на нём сроков. Неиспользованные бонусы на счёте аннулируются, как только удаление завершится, — их нельзя выплатить или восстановить."
+            "value": "Ваши персональные данные будут удалены, и это действие нельзя отменить; записи, перечисленные на этом экране, мы храним в течение указанных на нём сроков. Неиспользованный кредит на счёте аннулируется, как только удаление завершится, — его нельзя выплатить или восстановить."
           }
         },
         "sk": {
@@ -7492,7 +8017,7 @@
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ваші персональні дані буде видалено, і цю дію неможливо скасувати; записи, перелічені на цьому екрані, ми зберігаємо протягом зазначених на ньому строків. Невикористані бонуси на рахунку анулюються, щойно видалення завершиться, — їх не можна виплатити чи відновити."
+            "value": "Ваші персональні дані буде видалено, і цю дію неможливо скасувати; записи, перелічені на цьому екрані, ми зберігаємо протягом зазначених на ньому строків. Невикористаний кредит на рахунку анулюється, щойно видалення завершиться, — його не можна виплатити чи відновити."
           }
         }
       }
@@ -7865,7 +8390,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "При удалении аккаунта мы удалим ваши персональные данные. Мы храним только то, чего требует закон или защита правовых требований, — список ниже. Неиспользованные бонусы при удалении аккаунта аннулируются — их нельзя выплатить или восстановить. Это действие нельзя отменить."
+            "value": "При удалении аккаунта мы удалим ваши персональные данные. Мы храним только то, чего требует закон или защита правовых требований, — список ниже. Неиспользованный кредит при удалении аккаунта аннулируется — его нельзя выплатить или восстановить. Это действие нельзя отменить."
           }
         },
         "sk": {
@@ -7877,7 +8402,7 @@
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Під час видалення облікового запису ми видалимо ваші персональні дані. Ми зберігаємо лише те, чого вимагає закон або захист правових вимог, — перелік нижче. Невикористані бонуси після видалення облікового запису анулюються — їх не можна виплатити чи відновити. Цю дію неможливо скасувати."
+            "value": "Під час видалення облікового запису ми видалимо ваші персональні дані. Ми зберігаємо лише те, чого вимагає закон або захист правових вимог, — перелік нижче. Невикористаний кредит після видалення облікового запису анулюється — його не можна виплатити чи відновити. Цю дію неможливо скасувати."
           }
         }
       }
@@ -11417,426 +11942,6 @@
         }
       }
     },
-    "guest_order_cancel": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zrušit rezervaci"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cancel booking"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Отменить бронирование"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zrušiť rezerváciu"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Скасувати бронювання"
-          }
-        }
-      }
-    },
-    "guest_order_cannot_cancel": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tuto rezervaci nelze zrušit."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This booking cannot be cancelled."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Это бронирование невозможно отменить."
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Túto rezerváciu nemožno zrušiť."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Це бронювання неможливо скасувати."
-          }
-        }
-      }
-    },
-    "guest_order_empty": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Po vyhledání se zde zobrazí podrobnosti rezervace."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Your booking details will appear here after lookup."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "После поиска здесь появятся сведения о бронировании."
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Po vyhľadaní sa tu zobrazia podrobnosti rezervácie."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Після пошуку тут з’являться деталі бронювання."
-          }
-        }
-      }
-    },
-    "guest_order_entry": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Najít rezervaci bez účtu"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Find a guest booking"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Найти бронирование без учётной записи"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nájsť rezerváciu bez účtu"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Знайти бронювання без облікового запису"
-          }
-        }
-      }
-    },
-    "guest_order_fee_estimate": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Storno poplatek: %1$@. Maximální vrácení platby kartou: %2$@. Vrátit lze pouze přijaté platby kartou; v potvrzení uvidíte skutečně vrácenou částku."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cancellation fee: %1$@. Maximum card refund: %2$@. Only collected card payments can be refunded; your confirmation shows the actual amount."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Сбор за отмену: %1$@. Максимальный возврат на карту: %2$@. Вернуть можно только полученные платежи картой; в подтверждении будет указана фактически возвращённая сумма."
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Storno poplatok: %1$@. Maximálne vrátenie platby kartou: %2$@. Vrátiť možno iba prijaté platby kartou; v potvrdení uvidíte skutočne vrátenú sumu."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Збір за скасування: %1$@. Максимальне повернення на картку: %2$@. Повернути можна лише отримані платежі карткою; у підтвердженні буде вказано фактично повернену суму."
-          }
-        }
-      }
-    },
-    "guest_order_intro": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vložte odkaz na sledování z potvrzovacího e-mailu. Otevře vaši rezervaci — nic dalšího zadávat nemusíte."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Paste the tracking link from your booking email. It opens your booking — there is nothing else to enter."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Вставьте ссылку для отслеживания из письма о бронировании. Она откроет ваше бронирование — больше ничего вводить не нужно."
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vložte odkaz na sledovanie z potvrdzovacieho e-mailu. Otvorí vašu rezerváciu — nič ďalšie zadávať nemusíte."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Вставте посилання для відстеження з листа про бронювання. Воно відкриє ваше бронювання — більше нічого вводити не треба."
-          }
-        }
-      }
-    },
-    "guest_order_loading": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hledáme vaši rezervaci…"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Finding your booking…"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ищем ваше бронирование…"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hľadáme vašu rezerváciu…"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Шукаємо ваше бронювання…"
-          }
-        }
-      }
-    },
-    "guest_order_lookup": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Najít rezervaci"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Find booking"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Найти бронирование"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nájsť rezerváciu"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Знайти бронювання"
-          }
-        }
-      }
-    },
-    "guest_order_link": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Odkaz na sledování z e-mailu"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tracking link from your email"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ссылка для отслеживания из письма"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Odkaz na sledovanie z e-mailu"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Посилання для відстеження з листа"
-          }
-        }
-      }
-    },
-    "guest_order_preview_required": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Poplatek za zrušení se nepodařilo ověřit. Před potvrzením zrušení to zkuste znovu."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The cancellation fee could not be checked. Try again before confirming cancellation."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Не удалось проверить плату за отмену. Попробуйте ещё раз, прежде чем подтвердить отмену."
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Poplatok za zrušenie sa nepodarilo overiť. Pred potvrdením zrušenia to skúste znova."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Не вдалося перевірити плату за скасування. Спробуйте ще раз, перш ніж підтвердити скасування."
-          }
-        }
-      }
-    },
-    "guest_order_required": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vložte odkaz na sledování z potvrzovacího e-mailu."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Paste the tracking link from your booking email."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Вставьте ссылку для отслеживания из письма о бронировании."
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vložte odkaz na sledovanie z potvrdzovacieho e-mailu."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Вставте посилання для відстеження з листа про бронювання."
-          }
-        }
-      }
-    },
-    "guest_order_title": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rezervace bez účtu"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Guest booking"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Бронирование без учётной записи"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rezervácia bez účtu"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Бронювання без облікового запису"
-          }
-        }
-      }
-    },
     "help_call": {
       "extractionState": "stale",
       "localizations": {
@@ -12182,7 +12287,7 @@
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Кухня, ванні, усі підлоги, витирання пилу та загальне прибирання. Додатково — чищення духовки тощо."
+            "value": "Кухня, ванні кімнати, усі підлоги, витирання пилу та загальне прибирання. Додатково — чищення духовки тощо."
           }
         }
       }
@@ -12498,111 +12603,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Виберіть адресу"
-          }
-        }
-      }
-    },
-    "home_hero_cta": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rezervovat za 30 sekund"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Book in 30 seconds"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Заказать за 30 секунд"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rezervovať za 30 sekúnd"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Замовити за 30 секунд"
-          }
-        }
-      }
-    },
-    "home_hero_greeting": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vítejte zpět"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Welcome back"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "С возвращением"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vitajte späť"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "З поверненням"
-          }
-        }
-      }
-    },
-    "home_hero_prompt": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Těšíte se na čistý domov?"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ready for a spotless home?"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Готовы к безупречно чистому дому?"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tešíte sa na čistý domov?"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Готові до бездоганного дому?"
           }
         }
       }
@@ -12959,6 +12959,216 @@
         }
       }
     },
+    "home_quick_size_baths_less": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fewer bathrooms"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Méně koupelen"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Menej kúpeľní"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Менше ванних кімнат"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Меньше ванных комнат"
+          }
+        }
+      }
+    },
+    "home_quick_size_baths_more": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More bathrooms"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Více koupelen"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Viac kúpeľní"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Більше ванних кімнат"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Больше ванных комнат"
+          }
+        }
+      }
+    },
+    "home_quick_size_cta": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See my price"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zobrazit cenu"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zobraziť cenu"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Показати ціну"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Показать цену"
+          }
+        }
+      }
+    },
+    "home_quick_size_rooms_less": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fewer rooms"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Méně pokojů"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Menej izieb"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Менше кімнат"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Меньше комнат"
+          }
+        }
+      }
+    },
+    "home_quick_size_rooms_more": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More rooms"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Více pokojů"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Viac izieb"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Більше кімнат"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Больше комнат"
+          }
+        }
+      }
+    },
+    "home_quick_size_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How big is your home?"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jak velký je váš domov?"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aký veľký je váš domov?"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Який розмір вашого житла?"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Какой размер вашего жилья?"
+          }
+        }
+      }
+    },
     "home_recent_fallback_title": {
       "extractionState": "stale",
       "localizations": {
@@ -13200,6 +13410,394 @@
           "stringUnit": {
             "state": "translated",
             "value": "Сьогодні"
+          }
+        }
+      }
+    },
+    "home_upsell_book_cta": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Book now"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Objednat"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Objednať"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Замовити"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заказать"
+          }
+        }
+      }
+    },
+    "home_upsell_credit_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ comes off your next card booking, up to %2$lld%% of it"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ se odečte z vaší příští objednávky kartou, až %2$lld %% její ceny"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ sa odpočíta z vašej ďalšej objednávky kartou, až %2$lld %% jej ceny"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ спишуться з наступного замовлення карткою — до %2$lld%% вартості"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ спишутся со следующего заказа картой — до %2$lld%% стоимости"
+          }
+        }
+      }
+    },
+    "home_upsell_express_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "No express surcharge on %1$lld more booking this month"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "No express surcharge on %1$lld more bookings this month"
+                }
+              }
+            }
+          }
+        },
+        "cs": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Bez expresního příplatku ještě %1$lld objednávka tento měsíc"
+                }
+              },
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Bez expresního příplatku ještě %1$lld objednávky tento měsíc"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Bez expresního příplatku ještě %1$lld objednávky tento měsíc"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Bez expresního příplatku ještě %1$lld objednávek tento měsíc"
+                }
+              }
+            }
+          }
+        },
+        "sk": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Bez expresného príplatku ešte %1$lld objednávka tento mesiac"
+                }
+              },
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Bez expresného príplatku ešte %1$lld objednávky tento mesiac"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Bez expresného príplatku ešte %1$lld objednávky tento mesiac"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Bez expresného príplatku ešte %1$lld objednávok tento mesiac"
+                }
+              }
+            }
+          }
+        },
+        "uk": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Ще %1$lld замовлення цього місяця без експрес-доплати"
+                }
+              },
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Ще %1$lld замовлення цього місяця без експрес-доплати"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Ще %1$lld замовлень цього місяця без експрес-доплати"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Ще %1$lld замовлення цього місяця без експрес-доплати"
+                }
+              }
+            }
+          }
+        },
+        "ru": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Ещё %1$lld заказ в этом месяце без экспресс-доплаты"
+                }
+              },
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Ещё %1$lld заказа в этом месяце без экспресс-доплаты"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Ещё %1$lld заказов в этом месяце без экспресс-доплаты"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Ещё %1$lld заказа в этом месяце без экспресс-доплаты"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "home_upsell_express_top": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plus · %1$lld–%2$lld h notice"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plus · %1$lld–%2$lld h předem"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plus · %1$lld–%2$lld h vopred"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plus · за %1$lld–%2$lld год"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plus · за %1$lld–%2$lld ч"
+          }
+        }
+      }
+    },
+    "home_upsell_notifications_cta": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn on"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapnout"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapnúť"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Увімкнути"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Включить"
+          }
+        }
+      }
+    },
+    "home_upsell_notifications_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Know the moment your cleaner is on the way"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dozvíte se hned, když je uklízeč na cestě"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dozviete sa hneď, keď je upratovač na ceste"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Дізнайтеся одразу, коли прибиральник уже в дорозі"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Узнайте сразу, когда уборщик уже в пути"
+          }
+        }
+      }
+    },
+    "home_upsell_notifications_top": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stay in the loop"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buďte v obraze"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buďte v obraze"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Будьте в курсі"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Будьте в курсе"
+          }
+        }
+      }
+    },
+    "home_upsell_page_a11y": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Offer %1$lld of %2$lld"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nabídka %1$lld z %2$lld"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ponuka %1$lld z %2$lld"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пропозиція %1$lld з %2$lld"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Предложение %1$lld из %2$lld"
           }
         }
       }
@@ -17229,6 +17827,76 @@
           "stringUnit": {
             "state": "translated",
             "value": "Скасування протягом %d хвилин після замовлення безкоштовне, навіть якщо прибиральник уже взяв замовлення."
+          }
+        }
+      }
+    },
+    "order_paid_by_card": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paid by card"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaplaceno kartou"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaplatené kartou"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сплачено карткою"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оплачено картой"
+          }
+        }
+      }
+    },
+    "order_paid_with_credit": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paid with credit"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaplaceno kreditem"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaplatené kreditom"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сплачено кредитом"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оплачено кредитом"
           }
         }
       }
@@ -27282,6 +27950,41 @@
         }
       }
     },
+    "profile_row_credit": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Credit"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kredit"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kredit"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Кредит"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Кредит"
+          }
+        }
+      }
+    },
     "profile_row_devices": {
       "extractionState": "stale",
       "localizations": {
@@ -29032,6 +29735,146 @@
         }
       }
     },
+    "push.employee.registration_approved.body": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Byli jste schváleni. Otevřete aplikaci a začněte přijímat zakázky."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're approved. Open the app to start taking jobs."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вы одобрены. Откройте приложение, чтобы начать брать заказы."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Boli ste schválení. Otvorte aplikáciu a začnite prijímať zákazky."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вас схвалено. Відкрийте застосунок, щоб почати брати замовлення."
+          }
+        }
+      }
+    },
+    "push.employee.registration_approved.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Žádost schválena"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Application approved"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заявка одобрена"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Žiadosť schválená"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заявку схвалено"
+          }
+        }
+      }
+    },
+    "push.employee.registration_rejected.body": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaše žádost byla zamítnuta. Otevřete aplikaci a zjistěte proč, nebo kontaktujte podporu."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your application was rejected. Open the app to see why, or contact support."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваша заявка отклонена. Откройте приложение, чтобы узнать причину, или обратитесь в поддержку."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaša žiadosť bola zamietnutá. Otvorte aplikáciu a zistite prečo, alebo kontaktujte podporu."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вашу заявку відхилено. Відкрийте застосунок, щоб дізнатися причину, або зверніться до підтримки."
+          }
+        }
+      }
+    },
+    "push.employee.registration_rejected.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Žádost zamítnuta"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Application rejected"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заявка отклонена"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Žiadosť zamietnutá"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заявку відхилено"
+          }
+        }
+      }
+    },
     "push.employee.weekly_limit_set.body": {
       "extractionState": "manual",
       "localizations": {
@@ -30030,7 +30873,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "На заказ #%1$@ не смог приехать ни один уборщик, поэтому мы его отменили. Мы ничего с вас не списали, а ещё добавили бонус %2$@ на следующую уборку. Простите."
+            "value": "На заказ #%1$@ не смог приехать ни один уборщик, поэтому мы его отменили. Мы ничего с вас не списали, а ещё начислили %2$@ кредита на следующую уборку. Простите."
           }
         },
         "sk": {
@@ -30042,7 +30885,7 @@
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "На замовлення #%1$@ не зміг приїхати жоден прибиральник, тому ми його скасували. Ми нічого з вас не списали, а ще додали бонус %2$@ на наступне прибирання. Вибачте."
+            "value": "На замовлення #%1$@ не зміг приїхати жоден прибиральник, тому ми його скасували. Ми нічого з вас не списали, а ще нарахували %2$@ кредиту на наступне прибирання. Вибачте."
           }
         }
       }
@@ -30100,7 +30943,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "На заказ #%1$@ не смог приехать ни один уборщик, поэтому мы его отменили. Возврат средств обрабатывается, а ещё мы добавили бонус %2$@ на следующую уборку. Простите."
+            "value": "На заказ #%1$@ не смог приехать ни один уборщик, поэтому мы его отменили. Возврат средств обрабатывается, а ещё мы начислили %2$@ кредита на следующую уборку. Простите."
           }
         },
         "sk": {
@@ -30112,7 +30955,7 @@
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "На замовлення #%1$@ не зміг приїхати жоден прибиральник, тому ми його скасували. Повернення коштів обробляється, а ще ми додали бонус %2$@ на наступне прибирання. Вибачте."
+            "value": "На замовлення #%1$@ не зміг приїхати жоден прибиральник, тому ми його скасували. Повернення коштів обробляється, а ще ми нарахували %2$@ кредиту на наступне прибирання. Вибачте."
           }
         }
       }
@@ -30175,13 +31018,13 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Заказ #%1$@ никто не взял, поэтому мы вернули всю сумму и добавили бонус %2$@ на следующую уборку. Простите."
+            "value": "Заказ #%1$@ никто не взял, поэтому мы вернули всю сумму и начислили %2$@ кредита на следующую уборку. Простите."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Замовлення #%1$@ ніхто не взяв, тому ми повернули всю суму та додали бонус %2$@ на наступне прибирання. Вибачте."
+            "value": "Замовлення #%1$@ ніхто не взяв, тому ми повернули всю суму та нарахували %2$@ кредиту на наступне прибирання. Вибачте."
           }
         }
       }
@@ -32207,7 +33050,7 @@
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ванні"
+            "value": "Ванні кімнати"
           }
         }
       }
@@ -34896,7 +35739,7 @@
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "У ванній звичайні сліди від води, унітаз без нальоту"
+            "value": "У ванній кімнаті звичайні сліди від води, унітаз без нальоту"
           }
         },
         "ru": {

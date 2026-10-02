@@ -263,4 +263,79 @@ class LoyaltyRepositoryTest {
 
         assertTrue("sign-out must not leave the next session reading this one as fresh", repo.staleness.isStale())
     }
+
+    // ── credit ──
+
+    private val credit = CreditDto(
+        balances = listOf(CreditBalanceDto(balance = 250.0, currencyCode = "CZK", expiresOn = null)),
+        maxShareOfOrder = 0.7,
+    )
+
+    private fun accountAndTiersSucceed() {
+        coEvery { api.getMy() } returns Response.success(LoyaltyAccountDto(currentTier = 2))
+        coEvery { api.getTiers() } returns Response.success(LoyaltyTiersResponseDto(tiers = emptyList()))
+    }
+
+    @Test
+    fun refresh_readsTheCreditAlongsideTheAccount() = runTest {
+        accountAndTiersSucceed()
+        coEvery { api.getCredit() } returns Response.success(credit)
+
+        val repo = newRepo()
+        repo.refresh()
+
+        assertEquals(credit, repo.credit.value)
+    }
+
+    /** Points and credit are separate accounts: a balance read that fails must not hide the points. */
+    @Test
+    fun refresh_whenTheCreditReadFails_stillSucceedsAndLeavesCreditNull() = runTest {
+        accountAndTiersSucceed()
+        coEvery { api.getCredit() } returns Response.error(500, "{}".toResponseBody("application/json".toMediaType()))
+
+        val repo = newRepo()
+        val result = repo.refresh()
+
+        assertTrue("a credit failure must not fail the points, got $result", result is ApiResult.Success)
+        assertEquals(null, repo.credit.value)
+        assertTrue(repo.loaded.value)
+    }
+
+    @Test
+    fun refresh_whenTheCreditReadThrows_leavesCreditNull() = runTest {
+        accountAndTiersSucceed()
+        coEvery { api.getCredit() } throws java.io.IOException("boom")
+
+        val repo = newRepo()
+        val result = repo.refresh()
+
+        assertTrue(result is ApiResult.Success)
+        assertEquals(null, repo.credit.value)
+    }
+
+    /** Zero is the server's answer for a never-credited customer, and the screens show it. */
+    @Test
+    fun refresh_keepsAZeroBalanceRatherThanNullingIt() = runTest {
+        accountAndTiersSucceed()
+        val zero = credit.copy(balances = listOf(CreditBalanceDto(0.0, "CZK", null)))
+        coEvery { api.getCredit() } returns Response.success(zero)
+
+        val repo = newRepo()
+        repo.refresh()
+
+        assertEquals(0.0, repo.credit.value!!.primary.balance, 0.0)
+    }
+
+    @Test
+    fun clear_wipesTheCredit() = runTest {
+        accountAndTiersSucceed()
+        coEvery { api.getCredit() } returns Response.success(credit)
+        val repo = newRepo()
+        repo.refresh()
+        assertEquals(credit, repo.credit.value)
+
+        repo.clear()
+
+        assertEquals("the next user must not see this one's balance", null, repo.credit.value)
+    }
 }

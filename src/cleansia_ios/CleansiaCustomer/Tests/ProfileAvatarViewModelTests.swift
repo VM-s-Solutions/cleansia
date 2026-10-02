@@ -21,7 +21,9 @@ final class ProfileAvatarViewModelTests: XCTestCase {
     private func makeVM() -> ProfileViewModel {
         ProfileViewModel(
             repository: repository,
-            settings: UserDefaultsAppSettingsStore(defaults: UserDefaults(suiteName: "test.\(UUID().uuidString)")!),
+            settings: UserDefaultsAppSettingsStore(
+                defaults: UserDefaults(suiteName: "test.\(UUID().uuidString)") ?? .standard
+            ),
             snackbar: snackbar
         )
     }

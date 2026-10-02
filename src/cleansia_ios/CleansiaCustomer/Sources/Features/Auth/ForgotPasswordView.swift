@@ -83,10 +83,6 @@ private struct ForgotPasswordContent: View {
 
             CenteredAuthScroll {
                 VStack(spacing: 0) {
-                    AuthHeaderImage()
-
-                    Spacer().frame(height: Spacing.l)
-
                     Text(L10n.Auth.forgotTitle)
                         .cleansiaFont(CleansiaTypography.displayMedium)
                         .foregroundColor(CleansiaColors.onBackground)

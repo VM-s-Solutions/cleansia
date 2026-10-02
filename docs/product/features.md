@@ -11,16 +11,18 @@ platform's default market, and drives the catalogue, the quick quote, the Plus p
 figures in the copy until a booking's address takes over. One market today (CZ), so the selector
 stays hidden and the chip is a plain label. → [Business rules — the market](/product/business-rules#market)
 
-**Booking** — browse the service catalogue and packages, pick rooms, bathrooms and extras, choose a
-date and an arrival time on the quarter hour from 08:00 to 19:45 (on the web, the part of day first —
-morning, afternoon or evening — then that part's slots; [the time step](/customer-app/ordering-flow#step-2-date-time)),
-and pay by card — or in cash, when signed in and the booking is a job one cleaner does alone
+**Booking** — browse the service catalogue and packages, pick rooms and bathrooms (up to 8 and 4, which
+the Android and iOS apps state under the size steppers) and extras, choose a date and an arrival time on
+the quarter hour from 08:00 to 19:45 (on the web, the part of day first — morning, afternoon or evening —
+then that part's slots; [the time step](/customer-app/ordering-flow#step-2-date-time)), and pay by card —
+or in cash, when signed in and the booking is a job one cleaner does alone
 ([the cash rule](/product/business-rules#cash)).
 Paying by card, a signed-in customer on web, Android or iOS may tick *Save this card for my next
 bookings*, unticked by default; only a ticked card is kept, under the card-guarantee consent, and it
 is listed with the customer's saved cards, where it can be removed
-([a saved card](/product/business-rules#card-guarantee)). Book as a
-guest with no account, paying by card. Get a live price quote before committing, including whether an
+([a saved card](/product/business-rules#card-guarantee)). On the web, book as a guest with no account,
+paying by card; the Android and iOS apps book for a signed-in customer only. Get a live price quote
+before committing, including whether an
 express surcharge applies and whether a membership waives it. Before the address step the catalogue and the quote are in the chosen
 market's currency; from the address step on, the address's country decides.
 
@@ -52,9 +54,10 @@ notifications and a Live Activity on iOS.
 
 **Tracking without an account** — a guest opens their booking from **the link in their e-mail**, and
 cancels it from there under the same policy a signed-in customer gets. The link carries a per-order
-access token: on the web, opening it *is* the lookup — nothing to type, no reference number to
-remember; in the mobile apps the guest pastes the link and the app takes the token out of it. There is
-no longer any form asking for an order number, an e-mail and a code.
+access token, and opening it *is* the lookup — nothing to type, no reference number to remember.
+There is no longer any form asking for an order number, an e-mail and a code. **This is web-only:**
+the Android and iOS apps are for customers with an account and have no guest screen at all (owner
+ruling 2026-10-01; until then the apps offered *Find a guest booking*, where the guest pasted the link).
 
 Every message about the booking — the receipt, *a cleaner has taken your job*, *we're on our way*,
 *all done*, the cancellation — carries a fresh working link, and a browser remembers the bookings it
@@ -100,6 +103,37 @@ trialing member's membership screen says *Free trial until* the day of the first
 → [Business rules — Cleansia Plus](/product/business-rules#cleansia-plus),
 [the free trial](/product/business-rules#plus-trial)
 
+**The Home carousel** (Android and iOS) — a row of offer cards at the top of Home. It loops: a swipe
+past the last card lands on the first, and a swipe back past the first lands on the last. It moves on
+by itself every 6 seconds, always forward. Once the customer swipes, taps or changes card with a screen
+reader, it stops for the rest of that visit to Home. It never moves by itself while VoiceOver or
+TalkBack is on, or while Reduce Motion (iOS) or Remove animations (Android) is set. A screen reader
+announces each card's place, *Offer 2 of 4*. On iOS a swipe up or down changes the card, and on Android
+the *Next offer* and *Previous offer* actions do. Every card draws its own mascot, the same one on both
+platforms, so no two cards repeat a drawing: the Plus card carries the web's Plus mascot.
+
+Which cards show, most relevant first:
+
+- *Stay in the loop*, while the phone does not allow the app's notifications. *Turn on* asks for
+  permission, or opens the system settings once the phone will not ask again. It is re-checked each
+  time the app returns to the foreground, so the card goes once notifications are allowed. Android 13
+  and later cannot be asked whether it will still ask, so the app remembers a refusal: it raises the
+  system dialog while Android offers a rationale or no refusal was recorded, and opens the settings
+  after that (since 2026-10-02; a permission never refused, such as a dismissed launch prompt, used to
+  go straight to the settings). An install from before then that was refused for good opens the
+  settings on the second tap.
+- The customer's credit, when they hold a balance in the currency Home prices in. It opens booking.
+- *No express surcharge on N more bookings this month*, for a Plus member with waivers left whose
+  benefits are not paused. It opens booking.
+- Setting up a recurring cleaning, for a Plus member with no schedule whose benefits are not paused.
+- Cleansia Plus, for a customer who is not a member.
+- The referral card. *Share my code* opens the share sheet with the customer's code once it has
+  loaded, and Rewards until then.
+
+The first four that apply show, and *How big is your home?* always closes the row, so there are never
+more than five cards. Its two steppers run 1–8 rooms and 1–4 bathrooms, and *See my price* opens booking
+at that size. It replaced the plain *Book* card, which repeated the Book button.
+
 **Honest copy** — the money figures in the customer copy (the apology credit when a cleaner never
 comes, the insurance ceiling on the mobile trust badge and FAQ, the currency named in the terms) come
 from the market, not from the translation; a market with no figure gets the sentence without one — and
@@ -109,7 +143,10 @@ supplies are eco products; the cleaner brings the supplies, included in the pric
 copy promises only what the platform does (since 2026-09-28): the web catalogue's trust chip says
 *24 h to report a problem* — the dispute window — instead of *100 % Satisfaction*; the web order
 detail has no *Track live* button, which only went back; the mobile referral slide says both sides
-earn their points after the friend's **first completed cleaning**; and strings that promised a free
+earn their points after the friend's **first completed cleaning**; the mobile credit slide states the
+server's balance and share (*{balance} comes off your next card booking, up to {share} % of it*), and
+the express slide the member's own waiver count and the 2–4 h window from `BookingPolicy` (since
+2026-10-01); and strings that promised a free
 add-on, tier perks or a satisfaction guarantee the platform does not give are deleted. Each retired
 claim is pinned absent by a test in every locale.
 → [Business rules — disputes](/product/business-rules#disputes)
@@ -119,6 +156,37 @@ The tier follows the current points total both ways: points taken back — a ref
 administrator's revoke — can lower it, and the web rewards page says the tier follows the total. As
 seeded, a tier's perks are the welcome badge and, above the first tier, its discount.
 → [Loyalty — tiers](/flows/loyalty-and-memberships#tiers)
+
+**Credit** — money the platform owes the customer: the apology when a cleaner never comes, a complaint
+they chose to settle in credit, an administrator's goodwill. It comes off their next card booking by
+itself, never the whole of it, and expires a year after it last moved; the share and the date are the
+server's, never the copy's. The web profile rail shows the balance and its expiry date, and the web
+booking summary shows *Your credit −X* and *To pay by card Y* with card chosen; with cash, or no method
+chosen yet, a customer holding a balance reads *Credit applies to card payments only* instead (since
+2026-10-02 — the summary used to show the split for cash too, which the booking never got). Since
+2026-10-01 the Android and iOS apps show it too:
+
+- **Rewards** has a credit card between the tier and the progress card: one row per currency held,
+  with its expiry date and the share of a booking it can pay. At zero it is one line, saying credit
+  shows up here if a clean goes wrong. It opens a sheet on where credit comes from, how it is spent
+  and why it is not points.
+- **Profile** has *Credit* as the first Account row, with the largest balance (*0 Kč* at zero). It
+  opens the same sheet.
+- **The confirm step**, with card chosen and credit applying, adds *Your credit −X* and *To pay by card
+  Y* with a note, and the button at the foot of the booking shows the to-pay figure, the amount the
+  Stripe sheet then asks for. With cash chosen and a balance held, it says *Credit applies to card
+  payments only*.
+- **After booking**, the success screen and the order's price card add *Paid with credit* and the card
+  share, read from the order rather than the preview. On the order, the card line says *Paid by card*
+  only once the card was charged — payment `Paid`, `Refunded`, `PartiallyRefunded` or `Disputed`, the
+  inverse of the server's `Order.TookNoPayment` — and *To pay by card* while the payment is `Pending`
+  or `Failed`. The success screen says *Paid by card*. A card booking reaches it only after Stripe's
+  sheet has completed, and the order it reads is usually still `Pending` until the webhook lands.
+  Android says *To pay by card* there if the payment is `Failed`; iOS does not.
+
+The web order detail shows the same two lines under the total, by the same rule (since 2026-10-02).
+→ [Business rules — customer credit](/product/business-rules#credit),
+[Points are not credit](/flows/loyalty-and-memberships#points-vs-credit)
 
 **Account and privacy** — saved addresses, notification preferences, five languages, data export and
 account erasure. The export carries the customer's own conduct record — every booking, cancellation,
@@ -147,7 +215,12 @@ years.
 
 **Onboarding** — register, upload the documents your country asks for, add payout details, wait for
 approval. An incomplete profile or an unapproved contract blocks work, deliberately, and approval now
-requires the required documents to exist and be accepted rather than just a button press.
+requires the required documents to exist and be accepted rather than just a button press. While the
+apps' lock screen waits for that approval, every finished section stays open from it — to correct a
+detail or add the second document the country asks for — and an edit does not resubmit the
+application. The decision is pushed to the cleaner either way, and a rejection shows the
+administrator's reason with a way to contact support.
+→ [The registration lock](/partner-app/onboarding#registration-lock-screen)
 
 **Their own documents** — a checklist of what the country expects, replace a file with a newer one
 without waiting for anybody, and ask an admin to remove one. Removing is the only one that needs a
@@ -348,7 +421,13 @@ refused sign-in is that account's row.
 
 ## Across all of it
 
-- **Five languages** — English, Czech, Slovak, Ukrainian, Russian.
+- **Five languages** — English, Czech, Slovak, Ukrainian, Russian. The language picked inside an app
+  is also the language of every push whose text the device writes, its notification feed and, on iOS,
+  the Live Activity card, whatever the phone is set to — except, probably, the Live Activity's start
+  alert, which iOS resolves in the app's system language
+  ([ADR-0029](/decisions/adr-0029#amendment-a5) A5). The sitewide promo push, whose text the server
+  writes, is in the account's language, and a customer's e-mails about an order are in the language it
+  was booked in. → [Which language a notification is in](/architecture/push-notifications#language)
 - **Three web apps and four native apps** — customer, partner and admin on the web; customer and
   partner on both Android and iOS.
 - **Fiscal receipts** with a reconciliation and retry path when issuance fails.

@@ -41,11 +41,12 @@ class CleansiaApp : Application(), SingletonImageLoader.Factory {
 
     override fun onCreate() {
         super.onCreate()
-        // Register the per-category Android notification channels up-front
+        // Create the per-category Android notification channels up-front
         // so users can pre-mute any future-phase categories from system
-        // settings even before we ship the events that drive them.
-        // Idempotent — Android dedupes by channelId.
-        NotificationChannels.registerAll(this)
+        // settings even before we ship the events that drive them. Only the
+        // missing ones: MainActivity names them in the in-app language, and this
+        // context is in the device language on API 26-32.
+        NotificationChannels.registerMissing(this)
 
         // Mapbox requires the access token set once before any map is instantiated.
         // Token lives in ~/.gradle/gradle.properties → BuildConfig; see build.gradle.kts.

@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -19,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -45,8 +47,8 @@ import cz.cleansia.customer.features.orders.OrderStatus
 import cz.cleansia.customer.features.orders.orderStatusFromValue
 import cz.cleansia.core.ui.components.CleansiaOutlinedButton
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
-import cz.cleansia.customer.ui.components.MascotAnimation
 import cz.cleansia.customer.ui.theme.CleansiaTheme
+import cz.cleansia.customer.ui.theme.SuccessText
 
 /**
  * State of a single timeline row. `Done` rows are checked off, `Active`
@@ -126,13 +128,17 @@ fun BookingSuccessScreen(
     val steps = computeTimelineSteps(loadedOrder)
 
     // Compact layout — every section trimmed by ~30% so the full success
-    // sequence (mascot, code, summary, timeline, CTAs) fits on a single
+    // sequence (check, code, summary, timeline, CTAs) fits on a single
     // mid-range device viewport without scrolling. Still verticalScroll-wrapped
-    // for safety on small/landscape screens.
+    // for safety on small/landscape screens. No mascot: at 220dp it pushed the
+    // sequence into a scroll, and a 48dp check carries the at-a-glance success
+    // cue in a fifth of the height. The system-bar insets are the screen's own
+    // now that no transparent mascot top keeps the title clear of the status bar.
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+            .systemBarsPadding()
             .verticalScroll(rememberScrollState()),
         contentAlignment = Alignment.Center,
     ) { Column(
@@ -141,14 +147,12 @@ fun BookingSuccessScreen(
             .padding(horizontal = 20.dp, vertical = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        // Mascot — short welcoming animation. Played via Coil's animated WebP
-        // decoder so the alpha channel renders correctly over the background.
-        // Plays exactly once and freezes on the final frame — repeating it
-        // would feel needy for a one-shot success moment.
-        MascotAnimation(
-            resId = R.raw.mascot_welcoming,
-            size = 220.dp,
-            loop = false,
+        // Decorative: the title under it says the same thing.
+        Icon(
+            imageVector = Icons.Filled.CheckCircle,
+            contentDescription = null,
+            tint = SuccessText,
+            modifier = Modifier.size(48.dp),
         )
         Spacer(Modifier.height(8.dp))
 
@@ -300,6 +304,25 @@ private fun OrderSummaryCard(order: OrderDetailDto) {
             SummaryRow(
                 label = stringResource(R.string.booking_success_total_label),
                 value = total,
+            )
+        }
+        // The order's own figures, not the confirm step's preview: a concurrent booking can drain
+        // the balance between the two, and the card was charged what the order says.
+        if (order.creditAppliedAmount > 0.0) {
+            SummaryRow(
+                label = stringResource(R.string.order_paid_with_credit),
+                value = "−" + formatOrderPrice(order.creditAppliedAmount, order.currency?.code),
+            )
+            // Not the order detail's cardShareLabelRes: a credit split is a card order, and one reaches this
+            // screen only after the PaymentSheet completed, so the card was charged. The single read here
+            // usually beats the webhook, and Pending means only that it is not in yet. Failed (3) is the one
+            // status that leaves the card share to pay.
+            SummaryRow(
+                label = stringResource(
+                    if (order.paymentStatus?.value == 3) R.string.booking_summary_due_on_card
+                    else R.string.order_paid_by_card,
+                ),
+                value = formatOrderPrice(order.amountDueOnCard, order.currency?.code),
             )
         }
     }

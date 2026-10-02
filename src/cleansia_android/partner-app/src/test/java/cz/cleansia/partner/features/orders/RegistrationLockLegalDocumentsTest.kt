@@ -17,6 +17,7 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -80,11 +81,11 @@ class RegistrationLockLegalDocumentsTest {
     }
 
     @Test
-    fun `every document accepted is a done step and the application waits for review`() {
+    fun `every document accepted is a done step that still opens the documents, and the application waits for review`() {
         val steps = RegistrationLockViewModel.buildSteps(readyForReview, listOf(document(accepted = true)))
 
         assertEquals(StepStatus.Done, steps.row(StepCategory.LegalDocuments)?.status)
-        assertNull(steps.row(StepCategory.LegalDocuments)?.fixDestination)
+        assertEquals(NavRoute.LegalDocuments, steps.row(StepCategory.LegalDocuments)?.fixDestination)
         assertEquals(StepStatus.Pending, steps.row(StepCategory.Approval)?.status)
     }
 
@@ -96,6 +97,7 @@ class RegistrationLockLegalDocumentsTest {
         coEvery { appSettings.emailLanguageTag() } returns "cs"
         every { errors.translate(any()) } returns "translated"
         every { profileRepository.getRegistrationStatusStaleness() } returns Staleness()
+        every { profileRepository.registrationDecisions } returns emptyFlow()
         coEvery { profileRepository.getRegistrationStatus() } returns ApiResult.Success(readyForReview)
         coEvery { profileRepository.getLegalDocuments("cs") } returnsMany listOf(
             ApiResult.Success(listOf(document(accepted = false))),

@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import cz.cleansia.core.freshness.Staleness
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.snackbar.SnackbarController
+import cz.cleansia.customer.R
 import cz.cleansia.customer.core.catalog.CatalogRepository
 import cz.cleansia.customer.core.data.AddressRepository
 import cz.cleansia.customer.core.loyalty.LoyaltyRepository
@@ -16,6 +17,8 @@ import cz.cleansia.customer.core.memberships.headlineTrialDays
 import cz.cleansia.customer.core.notifications.NotificationFeedRepository
 import cz.cleansia.customer.core.orders.OrderRepository
 import cz.cleansia.customer.core.recurring.RecurringBookingRepository
+import cz.cleansia.customer.core.referral.ReferralRepository
+import cz.cleansia.customer.core.settings.AppSettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,7 +31,7 @@ import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 
 /**
- * Injection seam for the home screen's seven singleton repositories.
+ * Injection seam for the home screen's singleton repositories.
  *
  * **Almost no state lives here** — it exists so the screen avoids the EntryPointAccessors
  * pattern. The exceptions are [isUserRefreshing], on purpose — see its own note — and
@@ -45,7 +48,16 @@ class HomeTabViewModel @Inject constructor(
     val notificationFeedRepository: NotificationFeedRepository,
     val marketRepository: MarketRepository,
     private val snackbar: SnackbarController,
+    /** The carousel's referral slide shares the code from here; MainShell prefetches it. */
+    val referralRepository: ReferralRepository,
+    /** Whether the notifications slide may still raise the system dialog (see [asksForNotificationPermission]). */
+    val appSettings: AppSettingsRepository,
 ) : ViewModel() {
+
+    /** The referral slide's share sheet could not open, so the code was copied instead. */
+    fun onReferralShareUnavailable() {
+        snackbar.showInfoKey(R.string.loyalty_referral_share_failed)
+    }
 
     /**
      * Home prices the chosen market (ADR-0058 D5). The directory is awaited first so the catalogue

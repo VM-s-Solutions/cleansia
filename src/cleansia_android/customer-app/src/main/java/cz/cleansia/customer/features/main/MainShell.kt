@@ -45,6 +45,8 @@ import androidx.compose.runtime.setValue
 import kotlinx.coroutines.launch
 import androidx.hilt.navigation.compose.hiltViewModel
 import cz.cleansia.customer.core.market.offersAChoice
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -126,6 +128,8 @@ fun MainShell(
     // it on dismiss/complete so a fresh booking from the FAB doesn't carry
     // a stale package over.
     var prefillPackageId by remember { mutableStateOf<String?>(null) }
+    // Set by the Home carousel's quick-size slide; cleared like the package prefill.
+    var prefillSize by remember { mutableStateOf<Pair<Int, Int>?>(null) }
     // Used by onComplete to fire-and-forget a refresh of the orders cache
     // after a successful booking (so the new order shows on the Orders tab).
     val scope = rememberCoroutineScope()
@@ -211,8 +215,8 @@ fun MainShell(
     }
 
     // Warm the address cache from the server in parallel with the profile fetch.
-    // The VM surfaces a snackbar on HTTP failure; guests and connectivity
-    // failures stay silent. Safe no-op for guests.
+    // The VM surfaces a snackbar on HTTP failure; connectivity failures stay
+    // silent. A no-op with no session.
     LaunchedEffect(Unit) {
         shellViewModel.refreshAddresses()
     }
@@ -263,15 +267,17 @@ fun MainShell(
     }
 
     // Warm the loyalty cache so the Rewards tab is instant on first tap. The
-    // repo gates the network call on its own `loading` flag — and we additionally
-    // gate on `loaded` here so navigating back to the shell from a child screen
-    // doesn't re-fetch what's already cached.
+    // repo gates the network call on its own `loading` flag. Coming back to the
+    // shell from a child screen re-fetches only a stale cache: a booking or a
+    // cancel marks it stale because both move the credit balance, and Rewards and
+    // Profile read that balance from here — Home is not composed behind them.
     val loyaltyRepo = shellViewModel.loyaltyRepository
     LaunchedEffect(Unit) {
-        if (!loyaltyRepo.loaded.value) {
+        if (!loyaltyRepo.loaded.value || loyaltyRepo.staleness.isStale()) {
             loyaltyRepo.refresh()
         }
     }
+    val credit by loyaltyRepo.credit.collectAsStateWithLifecycle()
 
     // Warm the referral cache (Loyalty Phase C) so the "Invite friends" card
     // on the Rewards tab is instant. Backend lazy-creates the user's code on
@@ -286,9 +292,10 @@ fun MainShell(
 
     val openBooking = { bookingSheetOpen = true }
 
-    // Lift the global snackbar above the custom bottom bar on every tab.
-    // Bar is ~76dp (60dp + FAB overhang); +12dp gives a visible gap.
-    cz.cleansia.core.snackbar.SnackbarInsetScope(88.dp)
+    // Lift the global snackbar above the custom bottom bar on every tab. The host already pads
+    // the nav-bar inset, so this is the bar box (98dp, its top is the Book FAB's top) plus the
+    // same 16dp gap the tab roots leave above the FAB.
+    SnackbarInsetScope(MainShellBottomClearance)
 
     Box(modifier = Modifier.fillMaxSize()) {
         // Pager fills the full screen; tabs paint their own background
@@ -296,9 +303,9 @@ fun MainShell(
         // is one continuous page background — making the pill genuinely
         // float on the page, not sit on a separate band.
         //
-        // Bottom inset for the pill is handled by `MainTab.contentBottomInset`
-        // which each tab adds as a trailing Spacer in its scroll column, so
-        // the last list item isn't hidden behind the pill.
+        // Each tab ends its scroll content with a trailing
+        // `Spacer(Modifier.navigationBarsPadding().height(MainShellBottomClearance))`,
+        // so the last item clears the pill and the Book FAB above it.
         val navInsets = WindowInsets.navigationBars.asPaddingValues()
 
         HorizontalPager(
@@ -326,6 +333,10 @@ fun MainShell(
                     onSetupRecurring = onSetupRecurring,
                     onManageRecurring = onManageRecurring,
                     onOpenNotificationRoute = onOpenNotificationRoute,
+                    onBookSize = { rooms, bathrooms ->
+                        prefillSize = rooms to bathrooms
+                        bookingSheetOpen = true
+                    },
                 )
                 MainTab.Orders -> OrdersTab(
                     onOrderClick = onOrderClick,
@@ -334,15 +345,26 @@ fun MainShell(
                 MainTab.Rewards -> RewardsTab(
                     onOpenActivity = onOpenRewardsActivity,
                 )
-                MainTab.Profile -> ProfileTab(
-                    user = currentUser,
-                    isPlus = isPlus,
-                    showMarketRow = marketState.offersAChoice,
-                    onLogout = onLogout,
-                    onRowClick = onProfileRow,
-                    onAvatarLoadFailed = profileVm::onAvatarLoadFailed,
-                    onAvatarLoadSucceeded = profileVm::onAvatarLoadSucceeded,
-                )
+                MainTab.Profile -> {
+                    // The credit row reads the loyalty cache, which a booking, a cancel or a card
+                    // occurrence confirm marks stale; Home re-reads it, but is not composed behind
+                    // this tab, so Profile's entry re-reads a stale cache too (Rewards' onEnter).
+                    LifecycleEventEffect(Lifecycle.Event.ON_START) {
+                        if (loyaltyRepo.loaded.value && loyaltyRepo.staleness.isStale()) {
+                            scope.launch { loyaltyRepo.refresh() }
+                        }
+                    }
+                    ProfileTab(
+                        user = currentUser,
+                        isPlus = isPlus,
+                        showMarketRow = marketState.offersAChoice,
+                        credit = credit,
+                        onLogout = onLogout,
+                        onRowClick = onProfileRow,
+                        onAvatarLoadFailed = profileVm::onAvatarLoadFailed,
+                        onAvatarLoadSucceeded = profileVm::onAvatarLoadSucceeded,
+                    )
+                }
             }
         }
 
@@ -368,20 +390,27 @@ fun MainShell(
             visible = bookingSheetOpen,
             rebookFromOrderId = rebookFromOrderId,
             prefillPackageId = prefillPackageId,
+            prefillSize = prefillSize,
             onDismiss = {
                 bookingSheetOpen = false
                 rebookFromOrderId = null
                 prefillPackageId = null
+                prefillSize = null
             },
             onComplete = { confirmationCode, orderId ->
                 bookingSheetOpen = false
                 rebookFromOrderId = null
                 prefillPackageId = null
+                prefillSize = null
                 // Refresh the orders cache the moment a booking is confirmed
                 // so the new order shows up on the Orders tab without the
                 // user needing to pull-to-refresh. Fire-and-forget — the
                 // BookingSuccess screen is what they're navigating to first.
                 scope.launch { orderRepo.refresh() }
+                // A card booking may have spent credit. Marked stale here rather than fetched: this
+                // scope ends as the shell leaves for BookingSuccess, and the shell's loyalty warm-up
+                // re-reads a stale cache when the customer comes back.
+                loyaltyRepo.staleness.reset()
                 onBookingComplete(confirmationCode, orderId)
             },
             onNavigateToEditProfile = {
@@ -403,6 +432,16 @@ fun MainShell(
         )
     }
 }
+
+/**
+ * Where a tab root's scroll content must end, measured up from the nav-bar inset: the bar box
+ * plus 16dp, so the last item clears the Book FAB instead of touching it. The box in
+ * [CustomBottomBar] is its 12dp vertical padding around its tallest child, and that child is the
+ * 74dp FAB, not the 64dp pill (an offset does not change a child's measured size), so the box is
+ * 98dp and the FAB's top sits on its top edge. Tabs add the nav-bar inset at runtime, which a
+ * 3-button nav bar makes twice as tall as the gesture handle.
+ */
+internal val MainShellBottomClearance = 12.dp + 74.dp + 12.dp + 16.dp
 
 /**
  * Floating island bottom bar — Wolt/Bolt style. Pill-shaped surface that

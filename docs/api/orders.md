@@ -616,7 +616,7 @@ redaction blanks both as well. → [Business rules — cancellation](/product/bu
 
 ---
 
-### Lookup <Badge type="info" text="Customer API only" />
+### Lookup <Badge type="info" text="Customer + Customer Mobile" />
 
 Opens a guest booking with its **access token** — the credential the guest's e-mail link carries.
 
@@ -631,7 +631,11 @@ GET  /api/Order/Lookup?token=p8Jw2hQx…
 { "accessToken": "p8Jw2hQx…" }
 ```
 
-**Auth:** Anonymous · rate-limit window `interactive`. The request logger suppresses `accessToken`.
+**Auth:** Anonymous · rate-limit window `interactive` on the customer web host, `auth` on the customer
+mobile host. The request logger suppresses `accessToken`.
+
+Neither app has called the guest routes since 2026-10-01: guest booking and lookup live on the web
+only. The mobile host keeps them for app builds installed before then, until T-0800 removes them.
 
 **Response:** the guest projection — id, display order number, customer name, cleaning date, payment
 type and status, total, estimate, order status, `confirmationCode`, currency, the selected services
@@ -655,7 +659,7 @@ served on the order detail to every cleaner assigned to the job.
 
 ---
 
-### LookupBatch <Badge type="info" text="Customer API only" />
+### LookupBatch <Badge type="info" text="Customer + Customer Mobile" />
 
 Opens the bookings a browser still holds tokens for, in one call.
 
@@ -663,7 +667,8 @@ Opens the bookings a browser still holds tokens for, in one call.
 POST /api/Order/LookupBatch
 ```
 
-**Auth:** Anonymous · rate-limit window `interactive`
+**Auth:** Anonymous · rate-limit window `interactive` on the customer web host, `auth` on the customer
+mobile host
 
 **Request body** — at most **10** tokens; more than ten, or none, returns an empty list:
 
@@ -1054,7 +1059,7 @@ POST /api/Order/ReportIssue
 
 ## Review and Receipt
 
-### SubmitReview <Badge type="info" text="Customer API only" />
+### SubmitReview <Badge type="info" text="Customer + Customer Mobile" />
 
 Customer submits a review after order completion.
 

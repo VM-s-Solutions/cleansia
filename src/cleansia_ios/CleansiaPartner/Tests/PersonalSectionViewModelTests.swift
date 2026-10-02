@@ -14,12 +14,15 @@ final class PersonalSectionViewModelTests: XCTestCase {
         snackbar = SnackbarController()
     }
 
+    // swiftlint:disable calendar_day_needs_greenwich
     /// Greenwich, because that is what a value decoded off the wire carries — the generated decoder
-    /// stores the day at midnight UTC and stamps the formatter's zone, never the handset's.
+    /// stores the day at midnight UTC and stamps the formatter's zone, never the handset's. Built the way
+    /// the decoder builds it, so through the generated initializer.
     private let someBirthDate = OpenAPIDateWithoutTime(
         wrappedDate: Date(timeIntervalSince1970: 662_688_000),
         timezone: .gmt
     )
+    // swiftlint:enable calendar_day_needs_greenwich
 
     private func makeVM() -> PersonalSectionViewModel {
         PersonalSectionViewModel(client: client, snackbar: snackbar)
@@ -157,6 +160,8 @@ final class PersonalSectionViewModelTests: XCTestCase {
             id: "emp-1",
             firstName: "Jana",
             lastName: "N",
+            // A stored value as the decoder hands it over, late in its day.
+            // swiftlint:disable:next calendar_day_needs_greenwich
             birthDate: OpenAPIDateWithoutTime(
                 wrappedDate: Date(timeIntervalSince1970: 662_772_600),
                 timezone: .gmt

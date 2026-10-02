@@ -224,10 +224,17 @@ class ProfileViewModel @Inject constructor(
 
     /**
      * Save the onboarding fields without disturbing first/last name (the
-     * registration form already collected those). Language is auto-detected
-     * from device locale — we only send it if the device language is one we
-     * actually ship translations for, otherwise the backend default ("en") wins.
-     * Marks onboarding seen on success so the screen doesn't reappear.
+     * registration form already collected those). Marks onboarding seen on
+     * success so the screen doesn't reappear.
+     *
+     * The language sent is the one the app resolves to: the language the user
+     * chose in this app, or on "System" the device's language narrowed to a
+     * supported one ([AppSettingsRepository.emailLanguageTag]). This is the one
+     * write that replaces the server's sign-up stamp (`en` for every Google or
+     * Apple sign-up), so sending none on "System" left a Czech phone on English
+     * e-mails and promo pushes for good. It is never the raw device locale,
+     * which used to overwrite an in-app choice with the phone's language.
+     * -> /flows/auth-and-identity#account-language
      */
     fun completeOnboarding(
         phoneNumber: String,
@@ -236,8 +243,6 @@ class ProfileViewModel @Inject constructor(
     ) {
         if (_saveState.value is ActionState.Submitting) return
         val user = userRepository.currentUser.value ?: return
-        val deviceLang = java.util.Locale.getDefault().language.lowercase()
-        val languageCode = if (deviceLang in SUPPORTED_LANGUAGES) deviceLang else "en"
         _saveState.value = ActionState.Submitting
         viewModelScope.launch {
             val result = userRepository.updateCurrentUser(
@@ -245,7 +250,7 @@ class ProfileViewModel @Inject constructor(
                 lastName = user.lastName,
                 phoneNumber = phoneNumber.trim(),
                 birthDate = birthDate?.trim(),
-                languageCode = languageCode,
+                languageCode = settings.emailLanguageTag(),
             )
             result
                 .onSuccess {
@@ -258,10 +263,6 @@ class ProfileViewModel @Inject constructor(
                     if (error !is ApiError.Network) snackbar.showError(error)
                 }
         }
-    }
-
-    private companion object {
-        val SUPPORTED_LANGUAGES = setOf("en", "cs", "sk", "uk", "ru")
     }
 
     /**

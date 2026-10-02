@@ -3,15 +3,26 @@ import {
   MyPayoutDetails,
   UpdateBankDetailsCommand,
 } from '@cleansia/partner-services';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import {
+  IBAN_LENGTHS,
   asBankReference,
+  asGroupedIban,
   canSubmitBankDetails,
   createBankDetailsForm,
   createUpdateBankDetailsCommand,
   digitsOnly,
+  ibanOnlyCountry,
+  ibanProblem,
   mapPayoutDetailsToBankForm,
   withoutPayoutPadding,
 } from './profile-bank.models';
+
+const IBAN_CALCULATOR = join(
+  __dirname,
+  '../../../../../../../Cleansia.Core.Domain/Payouts/IbanCalculator.cs'
+);
 
 describe('profile bank models', () => {
   const fb = new FormBuilder().nonNullable;
@@ -42,6 +53,17 @@ describe('profile bank models', () => {
         'CZ6508000000192000145399'
       );
       expect(asBankReference('giba-cz-px')).toBe('GIBACZPX');
+    });
+
+    it('groups an IBAN in fours as it is read off a statement', () => {
+      expect(asGroupedIban('de89370400440532013000')).toBe('DE89 3704 0044 0532 0130 00');
+      expect(asGroupedIban('DE89 3704-0044')).toBe('DE89 3704 0044');
+      expect(asGroupedIban('DE89')).toBe('DE89');
+      expect(asGroupedIban('')).toBe('');
+    });
+
+    it('caps an IBAN at the 34 characters ISO 13616 allows', () => {
+      expect(asBankReference(asGroupedIban('MT'.padEnd(40, '1')))).toHaveLength(34);
     });
 
     it('strips the stored zero padding for display', () => {
@@ -87,12 +109,89 @@ describe('profile bank models', () => {
     });
   });
 
+  describe('ibanOnlyCountry', () => {
+    it('keeps the three parts for a Czech or Slovak bank', () => {
+      expect(ibanOnlyCountry('CZ')).toBeNull();
+      expect(ibanOnlyCountry('SK')).toBeNull();
+    });
+
+    it('keeps the three parts when the bank country is not known', () => {
+      expect(ibanOnlyCountry(undefined)).toBeNull();
+      expect(ibanOnlyCountry('')).toBeNull();
+    });
+
+    it('pays a bank anywhere else to its IBAN alone', () => {
+      expect(ibanOnlyCountry('DE')).toBe('DE');
+      expect(ibanOnlyCountry('UA')).toBe('UA');
+    });
+  });
+
+  /**
+   * What the server's IbanCalculator refuses, in the order the Android twin names it: another
+   * country first, then the country's length, then the shape and the check digits.
+   */
+  describe('ibanProblem', () => {
+    const invalid = { key: 'api.validation.payout.invalid_iban' };
+    const otherCountry = { key: 'api.validation.payout.iban_country_mismatch' };
+
+    it('accepts a valid IBAN from the bank country, however it is spaced or cased', () => {
+      expect(ibanProblem('DE89370400440532013000', 'DE')).toBeNull();
+      expect(ibanProblem('de89 3704 0044 0532 0130 00', 'DE')).toBeNull();
+      expect(ibanProblem('AT611904300234573201', 'AT')).toBeNull();
+      expect(ibanProblem('GB82WEST12345698765432', 'GB')).toBeNull();
+      expect(ibanProblem('NL91ABNA0417164300', 'NL')).toBeNull();
+      expect(ibanProblem('UA213223130000026007233566001', 'UA')).toBeNull();
+    });
+
+    it('holds a country the registry table lacks to the generic 15–34 bound only', () => {
+      expect(ibanProblem('XK051212012345678906', 'XK')).toBeNull();
+    });
+
+    it('names another country\'s IBAN first, whatever else is wrong with it', () => {
+      expect(ibanProblem('AT611904300234573201', 'DE')).toEqual(otherCountry);
+      expect(ibanProblem('AT6119', 'DE')).toEqual(otherCountry);
+    });
+
+    it('names the length the bank country\'s IBANs have', () => {
+      // 21 characters with valid check digits; a German IBAN has 22.
+      expect(ibanProblem('DE5137040044053201300', 'DE')).toEqual({
+        key: 'pages.profile.iban_wrong_length',
+        length: 22,
+      });
+      expect(ibanProblem('DE89', 'DE')).toEqual({ key: 'pages.profile.iban_wrong_length', length: 22 });
+    });
+
+    it('refuses a mistyped digit by its check digits', () => {
+      expect(ibanProblem('DE89370400440532013001', 'DE')).toEqual(invalid);
+    });
+
+    it('refuses text that does not start like an IBAN', () => {
+      for (const value of ['4111 1111 1111 1111', '89DE370400440532013000', '', 'D']) {
+        expect(ibanProblem(value, 'DE')).toEqual(invalid);
+      }
+      // Check digits that are not digits, at the right length.
+      expect(ibanProblem('DEX9370400440532013000', 'DE')).toEqual(invalid);
+    });
+
+    it('carries the server\'s registry lengths, entry for entry', () => {
+      const source = readFileSync(IBAN_CALCULATOR, 'utf8');
+      const table = /RegistryLengths\s*=\s*new\([^)]*\)\s*\{([\s\S]*?)\};/.exec(source)?.[1];
+      if (!table) throw new Error('IbanCalculator.RegistryLengths not found — the parser needs updating');
+      const server = Object.fromEntries(
+        [...table.matchAll(/\["([A-Z]{2})"\]\s*=\s*(\d+)/g)].map(([, code, length]) => [code, Number(length)])
+      );
+
+      expect(Object.keys(server).length).toBeGreaterThan(0);
+      expect(IBAN_LENGTHS).toEqual(server);
+    });
+  });
+
   describe('canSubmitBankDetails', () => {
     it('needs a bank country plus something that identifies the account', () => {
       expect(canSubmitBankDetails(filledForm)).toBe(true);
     });
 
-    it('accepts an IBAN on its own', () => {
+    it('needs the account number for a Czech or Slovak bank — the IBAN there is the server\'s to derive', () => {
       expect(
         canSubmitBankDetails({
           ...filledForm,
@@ -100,7 +199,7 @@ describe('profile bank models', () => {
           bankCode: '',
           accountPrefix: '',
         })
-      ).toBe(true);
+      ).toBe(false);
     });
 
     it('accepts an account number without a prefix — the prefix is optional', () => {
@@ -119,6 +218,27 @@ describe('profile bank models', () => {
       expect(
         canSubmitBankDetails({ ...filledForm, accountNumber: '', iban: '' })
       ).toBe(false);
+    });
+
+    it('keeps the Czech rule for a Czech or Slovak bank', () => {
+      expect(canSubmitBankDetails({ ...filledForm, iban: '' }, 'CZ')).toBe(true);
+      expect(canSubmitBankDetails({ ...filledForm, iban: 'not an iban' }, 'SK')).toBe(true);
+    });
+
+    describe('for a bank paid to its IBAN alone', () => {
+      const german = { ...filledForm, bankCountryId: 'country-de', iban: 'DE89 3704 0044 0532 0130 00' };
+
+      it('accepts a valid IBAN from the bank country', () => {
+        expect(canSubmitBankDetails(german, 'DE')).toBe(true);
+      });
+
+      it('refuses without an IBAN, whatever the hidden account parts hold', () => {
+        expect(canSubmitBankDetails({ ...german, iban: '' }, 'DE')).toBe(false);
+      });
+
+      it('leaves the IBAN\'s own check to the save, which names the problem', () => {
+        expect(canSubmitBankDetails({ ...german, iban: 'DE89370400440532013001' }, 'DE')).toBe(true);
+      });
     });
   });
 
@@ -166,15 +286,19 @@ describe('profile bank models', () => {
   });
 
   describe('createUpdateBankDetailsCommand', () => {
-    it('carries all nine fields the endpoint accepts', () => {
-      const command = createUpdateBankDetailsCommand('emp-1', filledForm);
+    /**
+     * The stored IBAN is the one the server derived from the stored parts, so sent back with edited
+     * parts it was refused as `iban_mismatch`.
+     */
+    it('sends a Czech or Slovak bank the parts and leaves the IBAN to the server', () => {
+      const command = createUpdateBankDetailsCommand('emp-1', filledForm, 'CZ');
 
       expect(command).toBeInstanceOf(UpdateBankDetailsCommand);
       // Every generated member is optional, so an omission is invisible to the
       // compiler — assert the wire payload field by field.
       expect(command.toJSON()).toEqual({
         employeeId: 'emp-1',
-        iban: 'CZ6508000000192000145399',
+        iban: undefined,
         bankCountryId: 'country-cz',
         accountPrefix: '19',
         accountNumber: '2000145399',
@@ -201,6 +325,32 @@ describe('profile bank models', () => {
       expect(command.holderName).toBeUndefined();
       expect(command.iban).toBeUndefined();
       expect(command.accountNumber).toBe('2000145399');
+    });
+
+    it('treats a bank country it cannot name as Czech or Slovak', () => {
+      expect(createUpdateBankDetailsCommand('emp-1', filledForm).iban).toBeUndefined();
+      expect(createUpdateBankDetailsCommand('emp-1', filledForm).accountNumber).toBe('2000145399');
+    });
+
+    it('sends a bank paid to its IBAN alone the IBAN and its country, and none of the hidden parts', () => {
+      const command = createUpdateBankDetailsCommand('emp-1', {
+        ...filledForm,
+        bankCountryId: 'country-de',
+        iban: 'DE89 3704 0044 0532 0130 00',
+        swift: 'COBADEFF',
+      }, 'DE');
+
+      expect(command.toJSON()).toEqual({
+        employeeId: 'emp-1',
+        iban: 'DE89370400440532013000',
+        bankCountryId: 'country-de',
+        accountPrefix: undefined,
+        accountNumber: undefined,
+        bankCode: undefined,
+        swift: 'COBADEFF',
+        bankName: 'Ceska sporitelna',
+        holderName: 'Jana Novakova',
+      });
     });
   });
 });

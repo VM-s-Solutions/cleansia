@@ -28,9 +28,8 @@ enum OrderStatusGroup {
     }
 
     /// The statuses a customer may cancel from — every status the server's `CancellationAssessor` does
-    /// not refuse, which is every status before a cleaner has started work. One function for the
-    /// signed-in and the guest surface: the two used to stop at different statuses. The assessor also
-    /// refuses a staffed order past its start; `isAwaitingCleanerPastStart` is that half.
+    /// not refuse, which is every status before a cleaner has started work. The assessor also refuses a
+    /// staffed order past its start; `isAwaitingCleanerPastStart` is that half.
     static func isCancellable(_ status: OrderStatus?) -> Bool {
         switch status {
         case ._0, ._1, ._2, ._3: true

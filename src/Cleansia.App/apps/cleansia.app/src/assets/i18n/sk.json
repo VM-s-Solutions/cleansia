@@ -685,7 +685,7 @@
       "export_request": "Vyžiadať",
       "credit": {
         "auto_applied": "Kredit — automaticky sa použije na vašu najbližšiu objednávku.",
-        "expires_on": "Vyprší {{date}} — každá objednávka lehôtu predĺži."
+        "expires_on": "Vyprší {{date}} — každá objednávka lehotu predĺži."
       },
       "saved_cards": {
         "title": "Uložené karty",
@@ -965,7 +965,8 @@
         "price_before_discount": "Cena pred zľavou: {{amount}}",
         "credit_applied": "Váš kredit",
         "due_on_card": "Na úhradu kartou",
-        "credit_note": "Zostáva vám {{balance}} kreditu. Použijeme ho na vašu najbližšiu objednávku automaticky, nie je teda čo nastavovať — a časť každej objednávky sa vždy platí kartou."
+        "credit_note": "Zostáva vám {{balance}} kreditu. Použijeme ho na vašu najbližšiu objednávku automaticky, nie je teda čo nastavovať — a časť každej objednávky sa vždy platí kartou.",
+        "credit_card_only": "Kredit sa uplatní len pri platbe kartou."
       },
       "summary_address": "Adresa",
       "summary_bathrooms_few": "{{count}} kúpeľne",
@@ -1130,6 +1131,8 @@
       "packages": "Balíčky",
       "services": "Služby",
       "total": "Celkom",
+      "paid_with_credit": "Zaplatené kreditom",
+      "paid_by_card": "Zaplatené kartou",
       "discount_tier": "Vernostná zľava",
       "discount_membership": "Zľava Cleansia Plus",
       "discount_promo": "Zľavový kód",
@@ -1280,7 +1283,7 @@
         "fact_slot": "Termín držíme hodinu",
         "fact_slot_note": "Potom ho uvoľníme a museli by ste objednať znovu. Tak či tak vám nič nestrhneme.",
         "fact_help": "Nedarí sa to?",
-        "fact_help_note": "Napíšte na info@cleansia.cz a platbu s vami vyriešime.",
+        "fact_help_note": "Napíšte na support@cleansia.cz a platbu s vami vyriešime.",
         "pay_now": "Zaplatiť teraz",
         "resume_failed": "Platbu sa nepodarilo znovu otvoriť. Objednávka už možno bola uvoľnená — skúste ju prosím zadať znovu."
       }

@@ -101,6 +101,89 @@ would mark them incomplete and lock them out of the partner surface overnight.
 Admins see a **masked** view by default; the plaintext is behind a separate, audited reveal action.
 :::
 
+**The bank's country decides the form**, on partner web, Android and iOS alike (owner ruling
+2026-10-02). The form shows the three boxes or one IBAN field, never both:
+
+| Bank country | The form | Sent with the bank country |
+|---|---|---|
+| CZ or SK, or one the list cannot name (none picked yet, or the country list failed to load) | the three boxes, *prefix – number / bank code* | the parts only; the server derives the IBAN |
+| any other | one IBAN field | the IBAN only |
+
+The clients decide by the country's `isoAlpha2`, because the country list does not carry
+`CountryConfiguration.PayoutScheme`. CZ and SK are the two countries of the `CzskDomesticWithIban`
+scheme ([ADR-0034](/decisions/adr-0034) D5.2). Until then every cleaner got the Czech boxes with an
+optional IBAN field under them, so a German or Austrian bank had no form of its own. That field also
+loaded the stored IBAN, which the server had derived from the old parts, and sent it back with edited
+parts, so a Czech cleaner changing their account was refused with `validation.payout.iban_mismatch`.
+
+**The IBAN field** shows the IBAN in groups of four and in capitals. It sends it without the spaces,
+and stops at 34 characters, the ISO 13616 maximum; on iOS it opens the ASCII keyboard. Its hint reads
+*Your full IBAN, starting with your bank's country code* (`iban_helper` on the apps,
+`pages.profile.iban_hint` on the web). Before anything is sent, the client checks the IBAN as the
+server's `IbanCalculator` does, in the order a cleaner can act on:
+
+1. **The country.** Its two letters must be the bank country's. The message is the copy of
+   `validation.payout.iban_country_mismatch`. An entry that does not start with two letters is not an
+   IBAN at all (step 3's message).
+2. **The length.** The IBAN must have the length that country's IBANs have. The message names that
+   length (`iban_wrong_length` on the apps, `pages.profile.iban_wrong_length` on the web). This message
+   exists only on the clients, because the server reports a wrong length as `invalid_iban`. A country
+   outside the registry takes the generic 15–34. Each client's tests read the registry table from
+   `IbanCalculator.RegistryLengths`, entry for entry.
+3. **The shape and the check digits.** The ISO 7064 mod-97 check must hold. The message is the copy of
+   `validation.payout.invalid_iban`.
+
+Save is enabled once an IBAN is typed. The first Save with a problem sends nothing and shows the
+message under the field, which then follows the edits. The server checks the IBAN again. One of its
+rules has no client twin: a card number typed into the field is refused on the device as not an IBAN,
+so the server's more specific `looks_like_card` never comes back.
+
+**A Czech or Slovak account can be pasted whole into any one of its three boxes** — prefix, number or
+bank code — on partner web, Android and iOS, and it lands in all three. Each box used to keep its own
+digits and clamp, so pasting `12321414/3545` into the number gave the number `1232141435` and an empty
+bank code. The clients read three shapes:
+
+| Pasted | Lands as |
+|---|---|
+| `19-2000145399/0800`, `2000145399/0800` | prefix, number and bank code; a missing prefix clears the old one |
+| `19-2000145399` | prefix and number; the bank code already there stays |
+| `CZ65 0800 0000 1920 0014 5399`, or an SK IBAN | the same three parts, with the IBAN's zero padding dropped |
+
+Spaces of every kind are ignored (a non-breaking one included) and an en or em dash counts as a hyphen.
+**A bare number goes to the number field, whichever box it was pasted into**: up to ten digits pasted
+at once (spaces ignored) into an empty box become the number, and the prefix and bank code stay as they
+are, so `2000145399` pasted into an empty prefix box no longer turns into the prefix `200014`. Typing
+never jumps, because the number pad types one digit at a time, and eleven or more bare digits are not
+an account number, so the box keeps its own clamp. **On the apps, a paste into a box that already
+holds digits is read together with them**, because every shape is matched against the box's whole new
+text. Partner web does not do this; see the end of this section. Pasted at the caret, `2000145399`
+after a `19` in the prefix box is the twelve digits `192000145399`, which is no account, so the box
+clamps it to the prefix `192000`, and `2000145399/0800` pasted there falls back to the clamp the same
+way. A shorter paste can be routed with the box's digits in front: `2000` after `19` makes the number
+`192000`, and the prefix stays `19`. Pasted over all of the box's digits, the paste is read on its
+own, though a bare number still has to be at least two characters longer than what it replaces. The
+rule has one more cost: a real two-digit prefix such as `19` pasted into an empty prefix box goes to
+the number; typed, it stays. **After a routed paste the keyboard closes, on both apps**,
+because both rebuild the three boxes: iOS with `.id(pasteRevision)`, so each box draws its new value,
+and Android with `key(pasteRevision)`, so pasting the same text into the same box a second time is not
+dropped as a repeat. **Each box keeps the digits `0`–`9` only**, up to its length, on both apps
+(`clampSegment`, since 2026-10-02): a keyboard can type Arabic-Indic or full-width digits, which the
+server refuses, and the boxes used to keep them. The clients only split text. The server keeps every
+rule on the parts (the mod-11 check and the bank-code shape). Partner web reads the same three shapes
+since 2026-10-02: it splits a CZ or SK IBAN, ignores whitespace of every kind inside the digits too,
+and reads an en or em dash as a hyphen. Before, it split only the two separator shapes. It also sends
+a bare number to the number field from any box and leaves the prefix and bank code alone, as the apps
+do; until 2026-10-02 it cleared the prefix. A written-out account without a prefix still clears the
+old one there too. The web differs in two ways. First, it sends a one-digit paste to the number
+field, where the apps need at least two characters. On the web a paste event is never typing, and
+telling the two apart is the only reason the apps have that rule. Second, it reads the paste on its
+own and never adds the digits already in the box. A recognised shape fills its fields whatever the
+box held, so the apps' clamp fallback never applies to it. `2000145399` pasted after a `19` in the
+prefix box makes the number `2000145399` and leaves the prefix `19`, where the apps clamp it to the
+prefix `192000`. `2000145399/0800` pasted there sets the number and the bank code and clears the
+prefix, where the apps clamp it the same way. A paste that matches none of the shapes is left to the
+browser, which inserts it at the caret and cuts it to the box's length.
+
 ::: tip Country Configuration
 Country-specific labels and validation rules (e.g., field names, format masks) are driven by the `CountryConfiguration` table managed in the admin app.
 :::
@@ -222,7 +305,10 @@ anyone already approved.
 
 **Approval actions:**
 - `approveEmployee()` -- Sets `ContractStatus` to `Approved`, granting full access
-- `rejectEmployee(reason)` -- Sets `ContractStatus` to `Rejected` with a reason
+- `rejectEmployee(reason)` -- Sets `ContractStatus` to `Rejected` with a reason, which the cleaner
+  reads word for word on their lock screen
+
+Either decision is pushed to the cleaner — see the [lock screen](#registration-lock-screen) below.
 
 ::: warning
 Until approved, the partner can log in and access their profile, but their ability to take and manage orders may be restricted. The `contractStatus` field determines the partner's access level.
@@ -230,17 +316,63 @@ Until approved, the partner can log in and access their profile, but their abili
 
 ### Registration Lock Screen
 
-Partners who have not yet been approved see a registration lock screen that displays a **progress bar** and three requirement categories:
+Partners who have not yet been approved see a registration lock screen that displays a **progress
+bar** and the requirements still between them and work — three rows on the web, and on the Android
+and iOS apps a fourth, **Contract documents**:
 
 1. **Profile Information** -- lists the names of any missing required fields (translated to the partner's language)
 2. **Required Documents** -- whether at least one active (uploaded) document exists. The
    documents screen behind it lists what the country actually asks for, per
    [document requirements](#document-requirements)
-3. **Admin Approval** -- shows one of the following distinct states:
+3. **Contract documents** (mobile) -- shown only while a partner document is in force for the market,
+   and done once every one is accepted at its current version; until one is in force, approval does
+   not wait on it
+4. **Admin Approval** -- shows one of the following distinct states:
    - _"Complete profile first"_ -- profile is not yet complete
    - _"Awaiting review"_ -- profile is complete and pending admin decision
    - _"Rejected: {reason}"_ -- admin has rejected the application with a reason
    - _"Approved"_ -- admin has approved the partner
+
+**On the mobile apps a finished row still opens its section, until approval** (owner ruling
+2026-10-01). The lock replaces the whole app until an admin approves, so a row that went inert at
+*Done* left a cleaner who had filled everything in with no way back to correct it — and
+*Documents: Done* means one active document, not every type the country requires, so a cleaner who had
+uploaded only an ID could not get back to add the insurance certificate approval needs. A *Done* row
+keeps its *Done* label and gains a chevron: Profile opens Personal at the start of the onboarding
+chain, from which every section is one step-dot away; Documents opens the documents screen; Contract
+documents opens the documents to read and accept. This holds for a **rejected** cleaner too, and **an
+edit does not resubmit anything** — the application stays where the admin left it. With a complete
+profile the Personal, Address and Identification buttons read **Save** rather than *Next*, because
+saving returns to the lock instead of moving on. Partner web already left the profile open behind the lock (see
+*Excluded Routes* below), so this brings the apps to parity.
+
+**A rejection says why, and offers a way out.** On both apps the rejected Approval row is drawn as an
+error, shows the admin's reason under its line — **verbatim and untranslated**, as partner web shows
+it, trimmed, and nothing when the admin left it blank — and offers **Contact support**, which opens an
+e-mail to `support@cleansia.cz` with the subject *"Cleansia partner — application rejected"* in the
+app's language. Partner web offers the same link under the reason since 2026-10-02, with the subject in
+the UI language, and only while the application is rejected. The reason never travels in the push (below); the lock reads it from the
+registration status.
+
+**The decision reaches the cleaner without a pull.** An admin's approval or rejection pushes the cleaner
+`employee.registration_approved` or `employee.registration_rejected` — push-only, with no feed row and
+no deep link, because a tap opens the app and for this cleaner the app *is* the lock
+([event catalogue](/architecture/push-notifications#registration-decided)). The lock re-checks:
+
+| When | Android | iOS |
+|---|---|---|
+| The lock comes back on screen — the app returns to the foreground, or a section pops back | on `ON_RESUME`, once a 15-second stale window has passed | every time (`scenePhase` → `.active`, and `onAppear`) |
+| A decision push arrives while the lock is on screen | at once, inside the stale window too | at once |
+| Pull to refresh | yes | yes |
+
+An approval found by that re-check unlocks the app; a rejection redraws the Approval row.
+
+::: warning A document the admin rejected still reads *Done*
+*Required Documents* counts any active document, whatever its review status, so a cleaner whose
+required document an admin rejected still sees *Documents: Done* and *Awaiting review*. Reading the
+per-type statuses the documents screen already loads (`GetMyDocumentRequirements`) would fix it on the
+client; that is filed as T-0801 and not built.
+:::
 
 Signing out from this screen is confirmed on both mobile platforms. It is the one destructive thing
 the screen offers and the control sat one tap away from it.

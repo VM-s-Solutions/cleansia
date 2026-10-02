@@ -44,9 +44,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -65,12 +63,12 @@ import com.mapbox.maps.ViewAnnotationAnchor
 import com.mapbox.maps.extension.compose.MapboxMap
 import com.mapbox.maps.extension.compose.animation.viewport.rememberMapViewportState
 import com.mapbox.maps.extension.compose.annotation.ViewAnnotation
-import com.mapbox.maps.extension.compose.style.MapStyle
 import com.mapbox.maps.viewannotation.annotationAnchor
 import com.mapbox.maps.viewannotation.geometry
 import com.mapbox.maps.viewannotation.viewAnnotationOptions
 import cz.cleansia.core.format.formatOrderPrice
-import cz.cleansia.core.location.MapStyles
+import cz.cleansia.core.location.CleansiaMapPin
+import cz.cleansia.core.location.CleansiaMapStyle
 import cz.cleansia.core.ui.components.CleansiaDialog
 import cz.cleansia.core.ui.components.CleansiaErrorState
 import cz.cleansia.core.ui.theme.Spacing
@@ -454,14 +452,26 @@ private fun MapBackdrop(
     MapboxMap(
         modifier = Modifier.fillMaxSize(),
         mapViewportState = viewportState,
-        style = { MapStyle(style = if (darkTheme) MapStyles.DARK else MapStyles.LIGHT) },
+        style = { CleansiaMapStyle(darkTheme) },
         scaleBar = {},
         compass = {},
-        logo = {},
-        attribution = {},
+        // Mapbox's terms require the wordmark and the attribution. Lifted above the resting sheet,
+        // which covers the map's bottom edge where they sit by default.
+        logo = {
+            Logo(
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 8.dp, bottom = sheetCoverHeight + 8.dp),
+                alignment = Alignment.BottomStart,
+            )
+        },
+        attribution = {
+            Attribution(
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(end = 8.dp, bottom = sheetCoverHeight + 8.dp),
+                alignment = Alignment.BottomEnd,
+            )
+        },
     ) {
         ViewAnnotation(options = annotationOptions) {
-            MapBackdropPin()
+            CleansiaMapPin(darkTheme = darkTheme)
         }
     }
 }
@@ -524,24 +534,6 @@ private fun ApproximateAreaBackdrop(
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun MapBackdropPin() {
-    Box(
-        modifier = Modifier
-            .size(40.dp)
-            .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.primary),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            imageVector = Icons.Outlined.Place,
-            contentDescription = null,
-            tint = Color.White,
-            modifier = Modifier.size(22.dp),
-        )
     }
 }
 

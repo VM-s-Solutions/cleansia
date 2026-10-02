@@ -10,6 +10,10 @@ public enum BrandGradient: CaseIterable {
     case purple
     case cyan
     case plusHero
+    /// The Home notifications slide's accent.
+    case orange
+    /// The Home credit slide's accent — money off.
+    case emerald
 
     /// The light/dark hex stops are the single source of truth — `colors` is
     /// derived from them. They are also the unit-testable surface: a SwiftUI
@@ -27,6 +31,10 @@ public enum BrandGradient: CaseIterable {
             [(light: 0x0891B2, dark: 0x0E6E88), (light: 0x67E8F9, dark: 0x4BAEC1)]
         case .plusHero:
             [(light: 0x082F49, dark: 0x082F49), (light: 0x0F172A, dark: 0x0F172A)]
+        case .orange:
+            [(light: 0xEA580C, dark: 0xB4470F), (light: 0xFB923C, dark: 0xC9712F)]
+        case .emerald:
+            [(light: 0x059669, dark: 0x04765A), (light: 0x34D399, dark: 0x2E9C79)]
         }
     }
 

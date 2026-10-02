@@ -101,7 +101,13 @@ class BookingExpressWaiverBindingTest {
             val flat = source(name).replace(Regex("\\s+"), " ")
             assertTrue(
                 "$name does not spend the view model's discount at its BookingPriceSummary call",
-                Regex("BookingPriceSummary\\.resolve\\(\\w+, effectiveDiscount\\)").containsMatchIn(flat),
+                Regex("BookingPriceSummary\\.resolve\\(\\w+, effectiveDiscount, payByCard\\)").containsMatchIn(flat),
+            )
+            // Credit is a card-only tender: both surfaces must ask the one question the same way, or
+            // the receipt and the slide-to-confirm label disagree about what the card is charged.
+            assertTrue(
+                "$name decides card payment differently from the other money surface",
+                flat.contains("val payByCard = state.paymentMethod == BookingViewModel.PAYMENT_CARD"),
             )
             assertTrue(
                 "$name derives its own discount instead of the view model's",

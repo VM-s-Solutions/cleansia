@@ -40,7 +40,6 @@ data class CancellationFeeCallout(
  */
 fun cancellationFeeCallout(
     preview: CancellationFeePreviewDto,
-    refundIsEstimate: Boolean = false,
     tookNoCardPayment: Boolean = false,
 ): CancellationFeeCallout? =
     when (cancellationFeeTierFromValue(preview.tier)) {
@@ -50,13 +49,11 @@ fun cancellationFeeCallout(
         CancellationFeeTier.Partial -> preview.charged(
             R.string.order_cancel_fee_partial,
             CancellationFeeSeverity.Fee,
-            refundIsEstimate,
             tookNoCardPayment,
         )
         CancellationFeeTier.LastMinute -> preview.charged(
             R.string.order_cancel_fee_last_minute,
             CancellationFeeSeverity.LastMinute,
-            refundIsEstimate,
             tookNoCardPayment,
         )
         null -> null
@@ -78,8 +75,7 @@ private const val PAYMENT_STATUS_FAILED = 3
 /**
  * Confirm goes live once a reason is picked and the quote has either arrived or
  * definitively failed. Only a quote still in flight holds the button back: a
- * preview outage must never stand between a signed-in customer and cancelling.
- * Guest callers opt into a valid quote before confirming.
+ * preview outage must never stand between a customer and cancelling.
  */
 fun cancelConfirmEnabled(
     previewState: CancellationPreviewUiState,
@@ -87,15 +83,11 @@ fun cancelConfirmEnabled(
     isOtherReason: Boolean,
     notes: String,
     isSubmitting: Boolean,
-    requireValidPreview: Boolean = false,
 ): Boolean = hasReason &&
     // "Other" needs a description so support has something to work with.
     (!isOtherReason || notes.trim().length >= 3) &&
     !isSubmitting &&
-    previewState !is CancellationPreviewUiState.Loading &&
-    (!requireValidPreview || (previewState is CancellationPreviewUiState.Loaded &&
-        cancellationFeeCallout(previewState.preview) != null &&
-        !previewState.preview.currencyCode.isNullOrBlank()))
+    previewState !is CancellationPreviewUiState.Loading
 
 private fun CancellationFeePreviewDto.free(@StringRes titleRes: Int) = CancellationFeeCallout(
     titleRes = titleRes,
@@ -109,15 +101,10 @@ private fun CancellationFeePreviewDto.free(@StringRes titleRes: Int) = Cancellat
 private fun CancellationFeePreviewDto.charged(
     @StringRes titleRes: Int,
     severity: CancellationFeeSeverity,
-    refundIsEstimate: Boolean,
     tookNoCardPayment: Boolean,
 ) = CancellationFeeCallout(
     titleRes = titleRes,
-    amountRes = when {
-        tookNoCardPayment -> R.string.order_cancel_fee_only
-        refundIsEstimate -> R.string.guest_order_fee_estimate
-        else -> R.string.order_cancel_fee_split
-    },
+    amountRes = if (tookNoCardPayment) R.string.order_cancel_fee_only else R.string.order_cancel_fee_split,
     amounts = if (tookNoCardPayment) listOf(feeAmount) else listOf(feeAmount, refundAmount),
     severity = severity,
     warnsExpressWaiverForfeited = expressWaiverForfeitedOnCancel,

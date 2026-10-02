@@ -169,9 +169,9 @@ final class HeaderAdapterTests: XCTestCase {
         }
     }
 
-    func testSignedInGuestReadPathsStayTokenless() throws {
-        for path in ["/api/Service/GetOverview", "/api/Order/Lookup", "/api/Referral/Validate"] {
-            XCTAssertNil(try customerBearer(for: path, token: "t-1"), "guest read \(path) stays tokenless")
+    func testSignedInPreSessionReadPathsStayTokenless() throws {
+        for path in ["/api/Service/GetOverview", "/api/Referral/Validate"] {
+            XCTAssertNil(try customerBearer(for: path, token: "t-1"), "pre-session read \(path) stays tokenless")
         }
     }
 

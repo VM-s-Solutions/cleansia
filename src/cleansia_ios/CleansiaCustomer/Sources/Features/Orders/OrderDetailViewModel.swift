@@ -44,6 +44,10 @@ final class OrderDetailViewModel: ViewModel {
     private let eventBus: OrderEventBus
     private let paymentIntentClient: PaymentIntentClient
     private let liveActivity: OrderLiveActivitySyncing
+    /// Re-reads the credit balance the Rewards and Profile screens show. Required, with no default: the
+    /// balance moves here twice — a cancelled order returns the credit it spent, and confirming a card
+    /// occurrence spends it — and a dropped injection would only show as a stale balance.
+    private let onCreditMoved: () -> Void
     private let pollInterval: TimeInterval
     private let now: () -> Date
 
@@ -61,6 +65,7 @@ final class OrderDetailViewModel: ViewModel {
         eventBus: OrderEventBus,
         paymentIntentClient: PaymentIntentClient = LivePaymentIntentClient(),
         liveActivity: OrderLiveActivitySyncing = LiveActivityBridge(),
+        onCreditMoved: @escaping () -> Void,
         // Active-order tracking cadence. Short so an OnTheWay → InProgress change surfaces (and the Live
         // Activity is updated) within ~30s while the detail screen is open, instead of up to 5 minutes.
         // Scoped to active orders and only ticks while foregrounded (the sleeping task suspends in the
@@ -77,6 +82,7 @@ final class OrderDetailViewModel: ViewModel {
         self.eventBus = eventBus
         self.paymentIntentClient = paymentIntentClient
         self.liveActivity = liveActivity
+        self.onCreditMoved = onCreditMoved
         self.pollInterval = pollInterval
         self.now = now
         super.init()
@@ -105,12 +111,9 @@ final class OrderDetailViewModel: ViewModel {
         )
     }
 
-    /// No card charge for the cancel sheet to promise back: a cash booking — a confirmed recurring cash
-    /// occurrence rests at Paid with nothing taken — or a card one whose payment is Pending or Failed.
+    /// No card charge for the cancel sheet to promise back (`CustomerOrderDetail.tookNoCardPayment`).
     var tookNoCardPayment: Bool {
-        guard let order = state.loadedValue else { return false }
-        let paymentStatus = order.paymentStatus?.value
-        return order.paymentType?.value == 1 || paymentStatus == 1 || paymentStatus == 3
+        state.loadedValue?.tookNoCardPayment ?? false
     }
 
     /// Gates the "Make this recurring" shortcut, from the same nullable membership the
@@ -260,6 +263,7 @@ final class OrderDetailViewModel: ViewModel {
             snackbar.showSuccess(message)
             cancelState = .idle
             cancelSucceeded.send(response)
+            onCreditMoved()
             _ = await repository.refresh()
             await fetch(initial: false)
         case let .failure(error):
@@ -383,6 +387,9 @@ final class OrderDetailViewModel: ViewModel {
         switch await client.confirmRecurring(orderId: orderId) {
         case let .success(confirmation):
             if confirmation.needsPayment {
+                // The server takes the occurrence's credit before it mints the intent, so the balance has
+                // moved whether or not the sheet is then completed.
+                onCreditMoved()
                 await presentCardPayment()
             } else {
                 confirmRecurringState = .idle

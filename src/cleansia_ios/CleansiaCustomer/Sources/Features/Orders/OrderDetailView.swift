@@ -157,7 +157,8 @@ struct OrderDetailView: View {
         if order.needsConfirmation {
             ConfirmRecurringFooter(
                 submitting: vm.confirmRecurringState.isSubmitting,
-                label: OrderRecurringConfirm.ctaLabel(order)
+                label: OrderRecurringConfirm.ctaLabel(order),
+                saveCard: vm.offersCardSaving ? Binding(get: { vm.saveCard }, set: vm.setSaveCard) : nil
             ) {
                 Task { await vm.confirmRecurring() }
             }
@@ -270,10 +271,14 @@ enum OrderRecurringConfirm {
 private struct ConfirmRecurringFooter: View {
     let submitting: Bool
     let label: String
+    let saveCard: Binding<Bool>?
     let onConfirm: () -> Void
 
     var body: some View {
-        VStack {
+        VStack(spacing: Spacing.s) {
+            if let saveCard {
+                SaveCardOption(saved: saveCard)
+            }
             CleansiaPrimaryButton(
                 label,
                 leadingIcon: "checkmark.circle",

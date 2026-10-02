@@ -423,8 +423,9 @@ the minimal one is an 8 pt dot.
 | `CleansiaPartnerNotificationService` | `cz.cleansia.partner.notificationservice` | `group.cz.cleansia.partner` |
 
 **The App Group carries one thing: the language picked inside the app.** An extension runs in its own
-process with its own defaults, so the app writes the resolved language there at launch and on every
-change (`CleansiaCore/Localization/AppGroupLanguage.swift`). The Notification Service Extension uses it
+process with its own defaults, so the app writes the language chosen in its picker there at launch and
+on every change, and removes it on "System", when the extensions follow the phone
+(`CleansiaCore/Localization/AppGroupLanguage.swift`). The Notification Service Extension uses it
 to render a push in that language from the app's own `Localizable.xcstrings`, which is compiled into
 the extension, and the widget uses it to draw the card in that language.
 → [Which language a notification is in](/architecture/push-notifications#language)

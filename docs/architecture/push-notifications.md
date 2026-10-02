@@ -256,9 +256,9 @@ and the feed rendered in the device language.
 
 | Surface | Language | How |
 |---|---|---|
-| iOS push banner, both apps | in-app | The server marks every loc-key alert `mutable-content: 1`. Each app's **Notification Service Extension** reads the in-app language from the app's App Group and renders the same `push.<event>.title` and `.body` keys and `loc-args` from the app's own catalogue, which is compiled into the extension. On any miss — no language written yet, an unknown key, an argument the copy cannot fill, the time budget spent — the alert goes out as iOS resolved it, in the system language, never as a raw key. |
+| iOS push banner, both apps | in-app | The server marks every loc-key alert `mutable-content: 1`. Each app's **Notification Service Extension** reads the in-app language from the app's App Group and renders the same `push.<event>.title` and `.body` keys and `loc-args` from the app's own catalogue, which is compiled into the extension. On any miss — no language written (the app is on "System", or has not launched since the update), an unknown key, an argument the copy cannot fill, the time budget spent — the alert goes out as iOS resolved it, in the system language, never as a raw key. |
 | iOS in-app feed, both apps | in-app | the same `push.*` keys, through the app's own bundles |
-| Live Activity (customer, iOS) | in-app | The server sends no text, only the status and the times. The widget reads the App Group language and applies it before it draws the card; until the app has written one it follows the phone, which it can because the extension declares the five languages ([ADR-0029](/decisions/adr-0029) Amendment A4). |
+| Live Activity (customer, iOS) | in-app | The server sends no text, only the status and the times. The widget reads the App Group language and applies it before it draws the card; with none written it follows the phone, which it can because the extension declares the five languages ([ADR-0029](/decisions/adr-0029) Amendment A4). |
 | Android push banner, both apps | in-app, on every API level | Data-only: the app renders its template in `onMessageReceived`. On 33+ the framework's per-app locale covers the service; on 26–32 the text goes through `AppLocale.localizedContext` with the language persisted in DataStore. |
 | Android in-app feed, both apps | in-app | the same wrap, in both feed view models |
 | Android notification channel names | the device's on 26–32; the app's on 33+, from the next cold start | Registered in `Application.onCreate` and not re-registered after a picker change. Left as it was on 2026-10-01. |
@@ -267,8 +267,10 @@ and the feed rendered in the device language.
 
 The App Groups are `group.cz.cleansia.customer` (the customer app, its Live Activity widget and its
 extension `cz.cleansia.customer.notificationservice`) and `group.cz.cleansia.partner` (the partner app
-and `cz.cleansia.partner.notificationservice`). The app writes the **resolved** language — never the
-"System" sentinel — at launch and on every change. → [App extensions](/mobile-app/overview#app-extensions)
+and `cz.cleansia.partner.notificationservice`). The app writes the language **chosen** in its picker at
+launch and on every change, and on "System" it removes it, so the extensions follow the phone. Neither app
+runs in the background, so a resolved phone language written there went stale as soon as the phone's
+language changed while the app was closed. → [App extensions](/mobile-app/overview#app-extensions)
 
 Three limits:
 

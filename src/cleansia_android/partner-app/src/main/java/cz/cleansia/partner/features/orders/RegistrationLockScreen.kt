@@ -388,6 +388,9 @@ private fun ProgressCard(
     }
 }
 
+/** The step row's leading halo; the row's detail lines are indented past it. */
+private val StepHaloSize = 44.dp
+
 /**
  * Brand-tinted icon halo — shared shape recipe with
  * [EarningsSummaryScreen.IconHalo]. Local copy keeps the lock screen
@@ -398,7 +401,7 @@ private fun ProgressCard(
 private fun IconHalo(icon: ImageVector) {
     Box(
         modifier = Modifier
-            .size(44.dp)
+            .size(StepHaloSize)
             .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
         contentAlignment = Alignment.Center,
     ) {
@@ -479,7 +482,7 @@ private fun StepRowView(step: StepRow, onFixStep: (NavRoute) -> Unit) {
     // Flat row: surface background, 1dp outlineVariant border, 16dp
     // corners — same shape grammar as the parent ProgressCard so the
     // nested rows read as light "sub-cards" inside the main card.
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
@@ -491,44 +494,81 @@ private fun StepRowView(step: StepRow, onFixStep: (NavRoute) -> Unit) {
             )
             .let { if (rowClick != null) it.clickable { rowClick() } else it }
             .padding(horizontal = Spacing.S, vertical = Spacing.S),
-        verticalAlignment = Alignment.CenterVertically,
     ) {
-        // Leading category icon — brand-tinted halo matching the
-        // earnings screen's IconHalo recipe (44dp primaryContainer
-        // circle with a 22dp tinted glyph).
-        IconHalo(icon = categoryIcon)
-        Spacer(Modifier.size(Spacing.S))
+        // The icon, the title with its status line and the trailing status share one line and are
+        // centred on it. The details hang below at the title's indent: centred on the whole row, a
+        // list of missing fields drew the icon and the status down beside the list, away from the title.
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            // Leading category icon — brand-tinted halo matching the
+            // earnings screen's IconHalo recipe (44dp primaryContainer
+            // circle with a 22dp tinted glyph).
+            IconHalo(icon = categoryIcon)
+            Spacer(Modifier.size(Spacing.S))
 
-        // Middle text column — title + CTA/status sub-label + optional
-        // detail line (Profile missing fields or rejection note).
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = stringResource(categoryLabelRes),
-                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            when {
-                // Done first: a completed row is still tappable, and it must say Done, not repeat its CTA.
-                step.status == StepStatus.Done -> Text(
-                    text = stringResource(R.string.registration_lock_step_complete),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary,
+            // Title + CTA/status sub-label.
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(categoryLabelRes),
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
-                isActionable -> Text(
-                    text = stringResource(ctaLabelRes),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Medium,
-                )
-                step.status == StepStatus.Pending -> Text(
-                    text = stringResource(R.string.registration_lock_approval_awaiting_review),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.tertiary,
-                )
+                when {
+                    // Done first: a completed row is still tappable, and it must say Done, not repeat its CTA.
+                    step.status == StepStatus.Done -> Text(
+                        text = stringResource(R.string.registration_lock_step_complete),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                    isActionable -> Text(
+                        text = stringResource(ctaLabelRes),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Medium,
+                    )
+                    step.status == StepStatus.Pending -> Text(
+                        text = stringResource(R.string.registration_lock_approval_awaiting_review),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.tertiary,
+                    )
+                }
             }
 
-            if (step.category == StepCategory.Profile && step.detailKeys.isNotEmpty()) {
-                Spacer(Modifier.height(Spacing.XS))
+            Spacer(Modifier.size(Spacing.S))
+
+            // Trailing fixed-width cluster: status icon + chevron slot.
+            // Chevron slot is always rendered (Box of the same size) so
+            // status icons line up at the same x across all rows, even
+            // when only Approval lacks an actionable chevron.
+            Icon(
+                imageVector = statusIcon,
+                contentDescription = null,
+                tint = statusTint,
+                modifier = Modifier.size(statusIconSize),
+            )
+            Spacer(Modifier.size(gapBetween))
+            Box(
+                modifier = Modifier.size(chevronSize),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (isActionable) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(chevronSize),
+                    )
+                }
+            }
+        }
+
+        // Optional detail lines (Profile missing fields or the rejection note), as wide as the title
+        // column above them: indented past the halo, stopping short of the trailing cluster.
+        val detailsModifier = Modifier.padding(
+            start = StepHaloSize + Spacing.S,
+            end = Spacing.S + statusIconSize + gapBetween + chevronSize,
+        )
+        if (step.category == StepCategory.Profile && step.detailKeys.isNotEmpty()) {
+            Column(modifier = detailsModifier.padding(top = Spacing.XS)) {
                 // Show every missing field on its own line — the
                 // cleaner has to fix all of them anyway, hiding 7
                 // behind a "+7" was less useful than honest.
@@ -548,9 +588,11 @@ private fun StepRowView(step: StepRow, onFixStep: (NavRoute) -> Unit) {
                     }
                 }
             }
-            if (step.category == StepCategory.Approval &&
-                step.detailKeys.contains("registration_lock.approval_rejected")) {
-                Spacer(Modifier.height(Spacing.XXS))
+        }
+        if (step.category == StepCategory.Approval &&
+            step.detailKeys.contains("registration_lock.approval_rejected")
+        ) {
+            Column(modifier = detailsModifier.padding(top = Spacing.XXS)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         imageVector = Icons.Outlined.Mail,
@@ -573,33 +615,6 @@ private fun StepRowView(step: StepRow, onFixStep: (NavRoute) -> Unit) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-            }
-        }
-
-        Spacer(Modifier.size(Spacing.S))
-
-        // Trailing fixed-width cluster: status icon + chevron slot.
-        // Chevron slot is always rendered (Box of the same size) so
-        // status icons line up at the same x across all rows, even
-        // when only Approval lacks an actionable chevron.
-        Icon(
-            imageVector = statusIcon,
-            contentDescription = null,
-            tint = statusTint,
-            modifier = Modifier.size(statusIconSize),
-        )
-        Spacer(Modifier.size(gapBetween))
-        Box(
-            modifier = Modifier.size(chevronSize),
-            contentAlignment = Alignment.Center,
-        ) {
-            if (isActionable) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(chevronSize),
-                )
             }
         }
     }

@@ -173,13 +173,16 @@ public class PreferredCleanerSlotAgreementTests(PostgresContainerFixture fixture
         customer.Created(TestUtilities.Constants.TestUserSession.TestUserName, DateTime.UtcNow);
         context.Add(customer);
 
+        // On the wall clock, not the fixed Now: the entitlement read compares CurrentPeriodEnd with the
+        // database's now(), so a period pinned to a past date expires the membership and both answers
+        // collapse to NoMembership.
         context.Add(UserMembership.Create(
             userId: CustomerId,
             membershipPlanId: NewPlan(context).Id,
             currencyId: CurrencyId,
             stripeSubscriptionId: "sub_slot_agreement",
-            currentPeriodStart: Now.AddDays(-10),
-            currentPeriodEnd: Now.AddDays(20)));
+            currentPeriodStart: DateTime.UtcNow.AddDays(-10),
+            currentPeriodEnd: DateTime.UtcNow.AddDays(20)));
 
         var slotEnd = CleaningUtc.AddMinutes(ServiceMinutes);
 

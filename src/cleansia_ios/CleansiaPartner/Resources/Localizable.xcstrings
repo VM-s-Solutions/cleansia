@@ -21537,25 +21537,25 @@
               "few": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$ld ванні"
+                  "value": "%1$ld ванні кімнати"
                 }
               },
               "many": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$ld ванних"
+                  "value": "%1$ld ванних кімнат"
                 }
               },
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$ld ванна"
+                  "value": "%1$ld ванна кімната"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$ld ванні"
+                  "value": "%1$ld ванні кімнати"
                 }
               }
             }

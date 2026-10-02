@@ -1802,25 +1802,25 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$lld ванна"
+                  "value": "%1$lld ванна кімната"
                 }
               },
               "few": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$lld ванни"
+                  "value": "%1$lld ванні кімнати"
                 }
               },
               "many": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$lld ванн"
+                  "value": "%1$lld ванних кімнат"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$lld ванни"
+                  "value": "%1$lld ванні кімнати"
                 }
               }
             }
@@ -1832,25 +1832,25 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$lld ванна"
+                  "value": "%1$lld ванная"
                 }
               },
               "few": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$lld ванны"
+                  "value": "%1$lld ванные"
                 }
               },
               "many": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$lld ванн"
+                  "value": "%1$lld ванных"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%1$lld ванны"
+                  "value": "%1$lld ванные"
                 }
               }
             }
@@ -12287,7 +12287,7 @@
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Кухня, ванні, усі підлоги, витирання пилу та загальне прибирання. Додатково — чищення духовки тощо."
+            "value": "Кухня, ванні кімнати, усі підлоги, витирання пилу та загальне прибирання. Додатково — чищення духовки тощо."
           }
         }
       }
@@ -33050,7 +33050,7 @@
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ванні"
+            "value": "Ванні кімнати"
           }
         }
       }
@@ -35739,7 +35739,7 @@
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "У ванній звичайні сліди від води, унітаз без нальоту"
+            "value": "У ванній кімнаті звичайні сліди від води, унітаз без нальоту"
           }
         },
         "ru": {

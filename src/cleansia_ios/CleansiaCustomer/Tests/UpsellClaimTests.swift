@@ -208,6 +208,27 @@ final class UpsellClaimTests: XCTestCase {
         )
     }
 
+    /// Owner ruling 2026-10-02: a bathroom is "ванна кімната" in Ukrainian and "ванная" in Russian, never
+    /// "ванна/ванны" (a bathtub). The forms are picked by the language's own plural rules, not the
+    /// handset's, so each count is formatted in that language's locale.
+    func testUkrainianAndRussianCountBathroomsNotBathtubs() throws {
+        let expected: [String: [Int: String]] = [
+            "uk": [1: "1 ванна кімната", 2: "2 ванні кімнати", 4: "4 ванні кімнати", 5: "5 ванних кімнат"],
+            "ru": [1: "1 ванная", 2: "2 ванные", 4: "4 ванные", 5: "5 ванных"]
+        ]
+        let restore = L10n.bundle
+        defer { L10n.bundle = restore }
+        for (language, forms) in expected {
+            L10n.bundle = try localeBundle(language)
+            let format = L10n.localized("booking_bath_short")
+            for (count, form) in forms {
+                XCTAssertEqual(String(format: format, locale: Locale(identifier: language), count), form, language)
+            }
+        }
+        L10n.bundle = try localeBundle("uk")
+        XCTAssertEqual(L10n.Recurring.createBathroomsLabel, "Ванні кімнати")
+    }
+
     /// The express slide states the 2–4 h window from the client's booking bands, so those must be the
     /// server's.
     func testTheExpressWindowTheSlideStatesIsTheBookingPolicys() throws {

@@ -23,14 +23,15 @@ struct PropertyStepper: View {
     var body: some View {
         HStack(spacing: 0) {
             stepButton(systemImage: "minus", outward: .leading, enabled: canDecrement) { step(-1) }
-            // Android CompactCounter parity: the counter label keeps its
-            // intrinsic width so long locales (RU "1 комнат") never break
-            // mid-word — the flexible row label absorbs the squeeze instead.
+            // Android CompactCounter parity: both buttons are measured first, and a label wider than
+            // the space left wraps onto a second line (between words) rather than pushing the plus out
+            // of the pill — two uk steppers ("3 кімнати", "2 ванні кімнати") overrun a 320 pt row.
             Text(label)
                 .font(CleansiaTypography.labelLarge)
                 .foregroundColor(CleansiaColors.onSurface)
-                .lineLimit(1)
-                .fixedSize()
+                .lineLimit(2)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
                 .contentTransition(.numericText())
                 .animation(.default, value: value)
                 // Room for both buttons' inward hit regions (12pt each) under a one-digit label.

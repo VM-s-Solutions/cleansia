@@ -359,11 +359,15 @@ private struct QuickSizeStepper: View {
     var body: some View {
         HStack(spacing: 0) {
             button("minus", label: lessLabel, enabled: value > range.lowerBound) { onChange(value - 1) }
+            // On a 320 pt phone the label has 44 pt, and uk and ru counts do not fit one line
+            // ("1 ванна кімната", "3 комнаты"), so it takes two, which the 44 pt capsule holds; a word
+            // still too wide for its line shrinks to 80%. Android's twin does the same.
             Text(label)
                 .font(CleansiaTypography.labelMedium)
                 .fontWeight(.semibold)
                 .foregroundColor(.white)
-                .lineLimit(1)
+                .lineLimit(2)
+                .multilineTextAlignment(.center)
                 .minimumScaleFactor(0.8)
                 .frame(maxWidth: .infinity)
             button("plus", label: moreLabel, enabled: value < range.upperBound) { onChange(value + 1) }
@@ -372,7 +376,9 @@ private struct QuickSizeStepper: View {
         .background(Color.white.opacity(0.22), in: Capsule())
     }
 
-    /// 44 pt square, the HIG's smallest target; the bound greys the button rather than hiding it.
+    /// A 44 pt square target, the HIG's smallest, laid out 36 pt wide: the 4 pt either side reach into the
+    /// label's margin and the gap beside the capsule, so the label keeps the width (Android's 40 dp step
+    /// with its 48 dp target). The bound greys the button rather than hiding it.
     private func button(
         _ systemImage: String,
         label: String,
@@ -389,6 +395,7 @@ private struct QuickSizeStepper: View {
         .buttonStyle(.plain)
         .disabled(!enabled)
         .accessibilityLabel(Text(label))
+        .padding(.horizontal, -4)
     }
 }
 

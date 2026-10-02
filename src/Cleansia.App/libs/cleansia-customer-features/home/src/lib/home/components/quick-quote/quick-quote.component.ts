@@ -73,6 +73,9 @@ export class QuickQuoteComponent {
    */
   readonly placeholderChipWidths = [104, 132, 88, 116, 76];
 
+  /** Five, the length of each market's size ladder; their width is the stylesheet's. */
+  readonly placeholderSizeChips = [0, 1, 2, 3, 4];
+
   readonly dirtinessLevels = DIRTINESS_LEVELS;
 
   /**

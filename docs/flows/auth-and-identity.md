@@ -129,6 +129,10 @@ All four apps keep it current afterwards, by one rule:
   server holds and re-states the language the user **chose** in the app if it differs. A user who
   follows the phone ("System") is never re-stated: the handset's language is not a choice, and it must
   not overwrite one made on another client.
+- **The profile completion after a first sign-in** (the customer apps' onboarding form) follows the
+  session-start rule, because it is not a picker change. It sends the language the user chose in the
+  app, and none on "System", so the server keeps the code it holds. Until 2026-10-01 it sent the
+  phone's language: Android whatever the user had chosen, iOS on "System".
 - **Only the two names gate it.** The update replays the profile, because `UpdateCurrentUser` replaces
   first and last name outright, so it waits for both names — and, since 2026-10-01, for nothing else.
   The customer apps used to wait for a phone as well, which the server never needed: it validates a

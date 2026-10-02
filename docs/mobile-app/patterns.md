@@ -342,3 +342,7 @@ What changed on iOS:
   chosen row, on the brand surface, instead of a hand-built card of rows. They gain the system row
   highlight, Dynamic Type row heights and the iOS 26 list look. The rows, their order and their labels
   are unchanged, and choosing one still applies it and goes back.
+- **On iOS 26 the cleaner's tab bar shrinks while a tab scrolls down.** The partner tab bar minimizes to
+  the selected tab's button as a tab root scrolls down, and comes back on a scroll up, which gives the
+  content the room. The customer tab bar does not: the Book FAB sits over it at a fixed offset, and a
+  shrunk bar would leave the button floating on its own. Below iOS 26 both bars are as they were.

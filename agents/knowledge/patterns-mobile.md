@@ -1084,6 +1084,8 @@ children cover bar + FAB by construction; the Book FAB survives as a solid-prima
 opens zooms out of it (`zoomSource`/`zoomDestination`, owner decision D15), with no glass added. **Partner (FINAL, T-0429):**
 stock `TabView` + per-tab `NavigationStack`s each over a `NavigationPath` — a merged shell enum there would
 be a god-enum without de-dup, and `ProfileRoute` is shared with the out-of-shell RegistrationLock audience.
+On iOS 26+ the partner bar minimizes on scroll down (`.tabBarMinimizeBehavior(.onScrollDown)`); the customer
+bar does not, because a minimized bar would leave the fixed-offset FAB floating (owner decision D15, 2026-10-01).
 **Deviations a reviewer rejects (#35):** a nested `NavigationStack`; a typed `[Route]` path array; a
 resurrected pill/pager or glass-FAB composite; a customer child route registered anywhere but the ONE
 shell-level `.navigationDestination(for: ShellRoute.self)`.

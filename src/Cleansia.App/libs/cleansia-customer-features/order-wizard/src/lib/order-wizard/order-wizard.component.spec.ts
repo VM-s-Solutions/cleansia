@@ -938,7 +938,7 @@ describe('OrderWizardComponent (a11y)', () => {
       facade.displayedTotalPrice.set(1000);
       fixture.detectChanges();
 
-      expect(el.querySelector('.cl-wiz__total')?.textContent).toMatch(/1[\s .,]?000/);
+      expect(el.querySelector('.cl-wiz__total')?.textContent).toMatch(/1[\s\u00A0.,]?000/);
       expect(el.textContent).toContain('pages.order.price_fixed');
     });
   });

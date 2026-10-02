@@ -55,7 +55,7 @@ export class HeroComponent {
         'imagesrcset',
         'assets/images/mascot/mascot-mopping-480.webp 480w, assets/images/mascot/mascot-mopping.webp 800w'
       );
-      link.setAttribute('imagesizes', '(max-width: 768px) 260px, 400px');
+      link.setAttribute('imagesizes', '(max-width: 768px) 112px, 400px');
       link.setAttribute('fetchpriority', 'high');
       this.document.head.appendChild(link);
     }

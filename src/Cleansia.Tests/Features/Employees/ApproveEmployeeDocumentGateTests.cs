@@ -78,7 +78,7 @@ public class ApproveEmployeeDocumentGateTests
     private void Holds(DocumentType type, DocumentStatus status, bool active = true)
     {
         var document = EmployeeDocument.Create(
-            EmployeeId, $"{type}.pdf", $"path/{type}", "application/pdf", 1024, type, null, "system");
+            EmployeeId, $"{type}.pdf", $"path/{type}", "application/pdf", 1024, new string('0', 64), type, null, "system");
 
         if (status == DocumentStatus.Approved)
         {

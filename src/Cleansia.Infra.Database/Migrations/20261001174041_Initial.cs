@@ -2067,6 +2067,7 @@ namespace Cleansia.Infra.Database.Migrations
                     FilePath = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
                     ContentType = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     FileSizeBytes = table.Column<long>(type: "bigint", nullable: false),
+                    ContentSha256 = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
                     DocumentType = table.Column<int>(type: "integer", nullable: false),
                     Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     Version = table.Column<int>(type: "integer", nullable: false, defaultValue: 1),

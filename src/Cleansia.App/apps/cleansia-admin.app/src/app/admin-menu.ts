@@ -52,6 +52,12 @@ export const ADMIN_MENU_ITEMS: readonly SidebarMenuItem[] = [
     permission: Policy.CanViewPagedOrderAdmin,
   },
   {
+    label: 'sidebar.customers',
+    icon: 'pi pi-user',
+    route: `/${CleansiaAdminRoute.CUSTOMERS}`,
+    permission: Policy.CanViewOrderCustomer,
+  },
+  {
     label: 'sidebar.disputes',
     icon: 'pi pi-flag',
     route: `/${CleansiaAdminRoute.DISPUTE_MANAGEMENT}`,

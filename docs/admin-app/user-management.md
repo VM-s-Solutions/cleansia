@@ -211,9 +211,15 @@ Each document card shows:
 
 ### Approval Criteria
 
-The `canApproveOrReject()` method returns `true` when:
-- `isProfileComplete === true`
-- `contractStatus === 'Pending'`
+The detail page and the list row offer **Approve** when `canApprove()` is `true` and **Reject** when
+`canReject()` is:
+- both need `isProfileComplete === true` and the role's policy (`CanApproveEmployee`, `CanRejectEmployee`)
+- **Approve** is offered on a `Pending` **or `Rejected`** contract — a cleaner rejected earlier can be
+  approved again once the gates below pass, and approving clears the rejection reason
+- **Reject** is offered on a `Pending` contract only
+
+Nothing moves a rejected cleaner back to `Pending` by itself; the contract stays `Rejected` until an
+administrator approves it. → [Business rules — the papers a cleaner uploads](/product/business-rules#employee-documents)
 
 The **server** adds two more. The first is the one that bites: every document type the employee's work
 country marks required must be present **and** `Approved`. The second is pay coverage in the work
@@ -411,10 +417,33 @@ services and use global rates for others; it also means an override authored in 
 EUR order, which falls through to the EUR global rate.
 → [/product/business-rules#rates-per-currency](/product/business-rules#rates-per-currency)
 
+## Customers {#customers}
+
+Route: `/customers`, the *Customers* sidebar entry after *Receivables* (a `customers-list` in the
+`loyalty-user-detail` library). Entry, route and endpoint carry `CanViewOrderCustomer` — Support or above,
+so an Administrator, a Manager and a Support see it and an Accountant does not. The list pages
+`GET api/AdminCustomer/get-paged` server-side; the filter drawer's search matches part of the first name,
+last name, e-mail or phone (after the drawer's shared debounce), and a status filter picks **Active**,
+**Inactive** or **All**, opening on Active. The columns are name, e-mail, phone, status, e-mail
+confirmed and created. A row click, or its view action, opens the customer detail below.
+
 ## Customer detail — credit is held per currency {#customer-credit}
 
 Route: `/customers/:id` (the `loyalty-user-detail` library; it kept its name when it grew a credit
-balance, a ledger and the two credit actions). A customer holds **one credit account per currency** —
+balance, a ledger and the two credit actions).
+
+**Points and credit are two different things, offered side by side** (owner ruling 2026-10-01). The
+header actions carry **Grant points**, **Revoke points** and **Issue credit** next to each other, after
+*Export subject data* and *Incident file*, with Issue credit the one filled primary at the right. Points
+are the **loyalty** balance — `GrantPointsManually` / `RevokePointsManually`, both behind
+`CanGrantLoyaltyPoints` — and the tier follows their total. Credit is **money** in a named currency on
+the customer's balance, spent on a booking in that currency — `IssueCustomerCredit`, behind
+`CanIssueCustomerCredit`; the dialog labels the amount with the currency picked (*Amount in CZK*) and
+preselects none. Both policies are Support or above. Neither action stands in for the other: in every
+locale the credit label and its confirmation share no word with the points ones (a copy spec pins it),
+so the uk and ru credit action speaks of money put on the balance, not of bonuses.
+
+A customer holds **one credit account per currency** —
 credit issued for a EUR booking is EUR and cannot be spent on a CZK one — so the page shows one
 balance block per account, each labelled with its currency code, and the two actions name a currency:
 

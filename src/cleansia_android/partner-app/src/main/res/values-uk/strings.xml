@@ -1101,6 +1101,7 @@
     <string name="error_employee_document_unauthorized">У вас немає доступу до цього документа.</string>
     <string name="error_employee_document_not_owned">Цей документ вам не належить.</string>
     <string name="error_employee_document_deletion_already_requested">Ви вже подали запит на видалення цього документа. Ми скоро на нього відповімо.</string>
+    <string name="error_employee_document_duplicate_file">Ви вже завантажили саме цей файл. Виберіть інший файл або замініть наявний документ.</string>
 
     <string name="error_order_not_found">Замовлення не знайдено.</string>
     <string name="error_order_take_already_cancelled">Це замовлення вже скасовано.</string>

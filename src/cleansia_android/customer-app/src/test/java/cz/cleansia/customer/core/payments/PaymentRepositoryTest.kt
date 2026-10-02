@@ -48,9 +48,9 @@ class PaymentRepositoryTest {
     @Test
     fun createPaymentIntent_givenSuccess_returnsBody() = runTest {
         val body = intentResponse()
-        coEvery { api.createPaymentIntent(CreatePaymentIntentRequest("o-1")) } returns Response.success(body)
+        coEvery { api.createPaymentIntent(CreatePaymentIntentRequest("o-1", saveCard = true)) } returns Response.success(body)
 
-        val result = newRepo().createPaymentIntent("o-1")
+        val result = newRepo().createPaymentIntent("o-1", saveCard = true)
 
         assertTrue(result.isSuccess)
         assertEquals(body, result.getOrNull())
@@ -61,7 +61,7 @@ class PaymentRepositoryTest {
         val errBody = "{}".toResponseBody("application/json".toMediaType())
         coEvery { api.createPaymentIntent(any()) } returns Response.error(400, errBody)
 
-        val result = newRepo().createPaymentIntent("o-1")
+        val result = newRepo().createPaymentIntent("o-1", saveCard = false)
 
         assertTrue(result.isError)
     }
@@ -70,7 +70,7 @@ class PaymentRepositoryTest {
     fun createPaymentIntent_whenApiThrows_yieldsFailure() = runTest {
         coEvery { api.createPaymentIntent(any()) } throws java.io.IOException("boom")
 
-        val result = newRepo().createPaymentIntent("o-1")
+        val result = newRepo().createPaymentIntent("o-1", saveCard = false)
 
         assertTrue(result.isError)
     }

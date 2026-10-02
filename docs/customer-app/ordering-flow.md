@@ -67,23 +67,48 @@ The customer picks a cleaning date and an **arrival time in 15-minute increments
 through 19:45. The home calculator, web booking wizard, Android and iOS offer the same times.
 The selected minutes are preserved in the booking sent to the API.
 
-**Date selection:**
-- Minimum date: today (if time slots remain) or tomorrow
-- Uses PrimeNG `DatePicker`
+**Date selection** — the wizard's own calendar grid, not a PrimeNG `DatePicker`: one month of day
+buttons under the weekday names, with previous and next month arrows.
+- Earliest day: today, if one of today's slots is still outside the lead time, else tomorrow
+- Latest day: the day before the 60-day horizon falls (`lastBookableDay`), so every slot of every
+  offered day is inside it
+- Days outside that range are drawn disabled, and the arrows offer no month wholly outside it
+- A new date keeps the booked time when it is bookable on that date, and otherwise moves it to the
+  date's first bookable slot
 
-**Time selection** — the daily bounds and lead times mirror `BookingPolicy` on the backend.
-Web arrival options live in the shared `booking-window.models.ts`:
+**Time selection — the part of day first, then the slot.** The step shows three part-of-day buttons,
+each labelled with its first and last arrival time:
+
+| Part | Hours | Label |
+|---|---|---|
+| Morning | 08–12 | 08:00–11:45 |
+| Afternoon | 12–16 | 12:00–15:45 |
+| Evening | 16–20 | 16:00–19:45 |
+
+Under them is a 4 × 4 grid of the chosen part's sixteen quarter-hour slots, in place of one tall list
+of all 48.
+
+- **Choosing a part never changes the booked time.** It only changes which sixteen slots are on
+  screen; the booking keeps its time until a slot is pressed. The step opens on the part that holds
+  the booked time, and that part carries a dot while another one is being browsed.
+- **A part with no bookable slot is disabled** — today's morning, for instance, once every morning
+  slot is inside the lead time. A slot inside the lead time is greyed and disabled in the grid.
+
+The daily bounds and lead times mirror `BookingPolicy` on the backend. Web arrival options live in
+the shared `booking-window.models.ts`; the three parts are `dayParts` in `OrderWizardComponent`:
 
 | Constant | Value |
 |---|---|
-| `BOOKING_SLOT_INTERVAL_MINUTES` | 15 → 48 arrival times |
+| `SLOT_GRID_MINUTES` | 15 → 48 arrival times (mirrors `BookingPolicy.SlotGridMinutes`) |
 | `FIRST_WINDOW_HOUR` / `LAST_WINDOW_HOUR` | 8 / 20 (inclusive start, exclusive end) |
+| `MAX_BOOKING_HORIZON_DAYS` | 60 — the last offered day is the one before it |
 | `EXPRESS_LEAD_TIME_HOURS` | 2 — below this, nothing is bookable |
 | `STANDARD_LEAD_TIME_HOURS` | 4 — between 2 and 4 h, the slot is bookable **with surcharge** |
 
 Each option is annotated `available` | `express` | `unavailable` by `filterTimeOptionsForToday`.
-Only the arrival time is shown ("10:00"), never the window range — a job can run longer than an hour
-and "10:00 – 11:00" reads as an end time.
+A slot shows only its arrival time ("10:00"), never a window range — a job can run longer than an hour
+and "10:00 – 11:00" reads as an end time. A part's label is a range of arrival times for the same
+reason, not a promise of when the clean ends.
 
 ::: tip Express is a slot property, not a member property
 The backend's `ExpressWaiverResolver` answers `inExpressWindow` for everyone, guests included, so the
@@ -121,6 +146,13 @@ available for this booking…* (`pages.order.cash_cleared`) and the customer cho
 sends refused cash; if the server still answers `order.cash_not_available`, the choice is cleared and
 the wizard returns to the payment step. → [Paying in cash](/product/business-rules#cash)
 
+**Saving the card.** A signed-in customer who chooses card is offered an unticked *Save this card for
+my next bookings*, followed by the card-guarantee consent sentence of the version the server records
+on the card (`SavedCard.ConsentTextVersionInForce`). A guest or a cash booking never sees it.
+`CreateOrderCommand.saveCard` is `true` only for an offered, ticked box; ticked, the card is kept
+when the payment succeeds and is listed under **Saved cards** on `/profile`, where it can be removed;
+unticked, Stripe keeps nothing. → [A saved card guarantees cash](/product/business-rules#card-guarantee)
+
 ### Step 4: Review & Submit
 
 A summary of the entire order is displayed. The customer can navigate back to any previous step to make changes.
@@ -131,6 +163,36 @@ cleaner on these terms*, linking `/work-contract` (`pages.order.work_contract_no
 information line, not a tick: the customer's half of that contract is the terms consent plus the
 contract text the server stamps on the order at booking; the cleaner's half is written when they take
 the job. → [Business rules — the contract for work](/product/business-rules#work-contract)
+
+## The order summary {#order-summary}
+
+The summary is one element, `.cl-wiz__summary`, placed after the step in the document so a screen
+reader meets it after the choices that produce it. CSS alone decides where it sits. It shows no price
+until a line is priced.
+
+**Desktop, wider than 1100px.** The step is on the left and a side column on the right. On the
+services step the room and bathroom counts sit in their own card at the top of that column
+(`.cl-wiz__counts-card`), above the summary, and scroll away with the page; only the summary is
+sticky, under the navbar. On a short window the price lines scroll inside their own box before the
+panel does, so the total, Continue and the free-cancellation note stay on screen.
+
+**At 1100px and below.** The counts move into the services step, under its lead, and the summary
+becomes a bar pinned to the bottom of the screen: the total and a chevron on the left, the primary
+button — Continue, or Place order on the last step — on the right. The chevron opens the full summary
+above the bar, over a scrim; the chevron again, the scrim, Escape or any step change collapses it, so
+every step starts with the bar closed. The page reserves the bar's height under the step and under
+the site footer, the scroll-to-top button and the DEV pill sit above it, and the navbar's menu sheet
+opens over it.
+
+::: info Why the bar is not a second copy of the total
+On 2026-09-01 the wizard's bottom price bar was removed because it was a **second copy of the total**:
+two copies of one number, which every quote has to keep equal, and one of them covering the form.
+That objection still holds, and the bar answers it rather than overriding it. The bar **is** the
+summary — the same element, collapsed by CSS to its own total, chevron and button — so the total
+exists once in the document at every width; and the page reserves the bar's height, so it covers no
+part of the form. `order-wizard.component.spec.ts` pins exactly one `.cl-wiz__summary` and no
+`.order-wizard__mobile-price`; a copy of the total must not come back.
+:::
 
 ## Price Calculation
 

@@ -12,6 +12,13 @@
     line-height: 1;
   }
 
+  &__check {
+    margin-inline-start: auto;
+    padding-inline-start: 12px;
+    font-size: 14px;
+    color: var(--cl-accent);
+  }
+
   .p-select {
     display: inline-flex;
     align-items: center;
@@ -24,6 +31,10 @@
 // is told apart by glyph rather than by reading the code.
 .cleansia-market-switcher--pill {
   @include pref-pill('.cleansia-market-switcher__map');
+}
+
+.cleansia-market-switcher__list--pill {
+  @include pref-pill-list;
 }
 
 :root.dark-mode .cleansia-market-switcher--pill {

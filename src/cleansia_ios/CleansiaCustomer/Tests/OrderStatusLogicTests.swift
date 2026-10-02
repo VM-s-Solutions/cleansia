@@ -180,6 +180,10 @@ final class OrderDetailFooterActionsTests: XCTestCase {
             source.range(of: "paymentStatus?.value == 1"),
             "the confirm footer infers the verdict from the payment status again"
         )
+        XCTAssertTrue(
+            source.contains("saveCard: vm.offersCardSaving ? Binding(get: { vm.saveCard }, set: vm.setSaveCard) : nil"),
+            "the confirm footer offers the save tick off something other than the view model's gate"
+        )
     }
 
     /// The shell used to answer the membership question for this screen out of its own

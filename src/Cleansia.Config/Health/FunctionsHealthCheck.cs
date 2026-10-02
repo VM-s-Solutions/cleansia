@@ -1,4 +1,5 @@
 using Azure.Storage.Queues;
+using Cleansia.Config.Services;
 using Cleansia.Infra.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -19,11 +20,12 @@ public sealed record HealthReport(bool Healthy, IReadOnlyList<HealthProbe> Probe
 /// dies) → this returns 503; the worker <b>process itself</b> is down (the 2026-07-18 outage) → the
 /// endpoint is unreachable and App Service's own health monitor trips. The <b>queue-storage</b> probe
 /// catches the middle case (host up, storage/identity broken) that would otherwise silently stall every
-/// trigger. Every probe is best-effort and self-naming: one failing dependency names itself and flips
-/// the verdict, but the check never throws.
+/// trigger. Every probe is bounded, best-effort and self-naming: a dependency that fails or does not answer
+/// within <see cref="ReadinessHealthChecks.ReadinessCheckTimeout"/> names itself and flips the verdict, but
+/// the check never throws.
 /// </summary>
 public sealed class FunctionsHealthCheck(
-    CleansiaDbContext dbContext,
+    DbContextOptions<CleansiaDbContext> dbContextOptions,
     QueueServiceClient queueServiceClient,
     ILogger<FunctionsHealthCheck> logger)
 {
@@ -31,9 +33,13 @@ public sealed class FunctionsHealthCheck(
     {
         var probes = new[]
         {
+            // A context the probe owns, not the request scope's: an abandoned open outlives the bound, and the
+            // scope's context would throw on dispose with its connection still Connecting. This one is disposed
+            // in the background once that open gives up.
             await ProbeAsync("database", async ct =>
             {
-                if (!await dbContext.Database.CanConnectAsync(ct))
+                await using var probeContext = new CleansiaDbContext(dbContextOptions);
+                if (!await probeContext.Database.CanConnectAsync(ct))
                 {
                     throw new InvalidOperationException("CanConnect returned false");
                 }
@@ -67,9 +73,13 @@ public sealed class FunctionsHealthCheck(
         Func<CancellationToken, Task> probe,
         CancellationToken cancellationToken)
     {
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        cts.CancelAfter(ReadinessHealthChecks.ReadinessCheckTimeout);
         try
         {
-            await probe(cancellationToken);
+            // Bounded on the awaiting side as well as by the token: Npgsql's open ignores the token once the peer
+            // has accepted and stalls, and would otherwise hold the probe to the connection string's own Timeout.
+            await probe(cts.Token).WaitAsync(cts.Token);
             return new HealthProbe(name, Ok: true, Detail: null);
         }
         catch (Exception ex)

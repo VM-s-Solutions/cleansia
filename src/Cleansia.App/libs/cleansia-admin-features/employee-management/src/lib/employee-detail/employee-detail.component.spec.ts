@@ -143,7 +143,8 @@ class FacadeStub {
   readonly payConfigDialogOpen = signal<boolean>(false);
   readonly currencies = signal<ICleansiaSelectOption[]>([]);
   readonly hasEntityActions = signal<boolean>(true);
-  readonly canApproveOrReject = signal<boolean>(false);
+  readonly canApprove = signal<boolean>(false);
+  readonly canReject = signal<boolean>(false);
   loadEmployeeDetail = jest.fn();
   loadEmployeePayConfigs = jest.fn();
   loadPayConfigOptions = jest.fn();
@@ -265,6 +266,21 @@ describe('EmployeeDetailComponent', () => {
   function reasonBox(): TextareaStub {
     return capPanel().query(By.directive(TextareaStub)).componentInstance;
   }
+
+  function buttonLabels(): string[] {
+    return fixture.debugElement
+      .queryAll(By.directive(ButtonStub))
+      .map((b) => (b.componentInstance as ButtonStub).label());
+  }
+
+  it('offers Approve without Reject when only Approve is open', () => {
+    facade.canApprove.set(true);
+    facade.canReject.set(false);
+    render({ contractStatus: 'Rejected' });
+
+    expect(buttonLabels()).toContain('pages.employee_detail.actions.approve_employee');
+    expect(buttonLabels()).not.toContain('pages.employee_detail.actions.reject_employee');
+  });
 
   it('shows the reason the weekly cap was set', () => {
     render({ weeklyOrderLimit: 3, weeklyOrderLimitReason: 'new partner' });

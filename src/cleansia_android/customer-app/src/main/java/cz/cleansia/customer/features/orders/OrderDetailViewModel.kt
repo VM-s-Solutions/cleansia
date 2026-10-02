@@ -13,7 +13,6 @@ import cz.cleansia.customer.core.memberships.MembershipRepository
 import cz.cleansia.customer.core.notifications.OrderEventBus
 import cz.cleansia.customer.core.orders.CancelOrderResponse
 import cz.cleansia.customer.core.orders.CancellationFeePreviewDto
-import cz.cleansia.customer.core.orders.ConfirmRecurringOrderResponse
 import cz.cleansia.customer.core.orders.OrderDetailDto
 import cz.cleansia.customer.core.orders.OrderPhotosResponse
 import cz.cleansia.customer.core.market.MarketRepository
@@ -21,6 +20,9 @@ import cz.cleansia.customer.core.orders.OrderRepository
 import cz.cleansia.customer.core.orders.ReviewLineScoreRequest
 import cz.cleansia.customer.core.orders.ReviewTag
 import cz.cleansia.customer.core.orders.OrderReviewDto
+import cz.cleansia.customer.core.payments.PaymentRepository
+import cz.cleansia.customer.core.payments.PaymentSheetParams
+import cz.cleansia.customer.core.payments.toPaymentSheetParams
 import cz.cleansia.customer.features.recurring.RecurringAuthoringGate
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.ui.state.ActionState
@@ -106,6 +108,7 @@ class OrderDetailViewModel @Inject constructor(
     private val membershipRepository: MembershipRepository,
     orderEventBus: OrderEventBus,
     private val loyaltyRepository: LoyaltyRepository,
+    private val paymentRepository: PaymentRepository,
 ) : ViewModel() {
 
     val markets = marketRepository.state
@@ -220,16 +223,35 @@ class OrderDetailViewModel @Inject constructor(
 
     /**
      * Wave 3.3 — Pending recurring-order confirm flow. Submitting hides the
-     * Confirm CTA + spins a loader; success flows through [confirmResult] so
-     * the screen can branch (Card → open PaymentSheet, Cash → snackbar +
-     * refetch). Repo surfaces failure snackbars; we keep the state simple
+     * Confirm CTA + spins a loader; a card confirm flows through [cardPayment]
+     * so the screen opens PaymentSheet, a cash one ends in a snackbar +
+     * refetch. Repo surfaces failure snackbars; we keep the state simple
      * (no inline error message) so the user just retries via the same CTA.
      */
     private val _confirmRecurringState = MutableStateFlow<ActionState>(ActionState.Idle)
     val confirmRecurringState: StateFlow<ActionState> = _confirmRecurringState.asStateFlow()
 
-    private val _confirmResult = MutableSharedFlow<ConfirmRecurringOrderResponse>(extraBufferCapacity = 1)
-    val confirmResult: SharedFlow<ConfirmRecurringOrderResponse> = _confirmResult.asSharedFlow()
+    private val _cardPayment = MutableSharedFlow<PaymentSheetParams>(extraBufferCapacity = 1)
+    val cardPayment: SharedFlow<PaymentSheetParams> = _cardPayment.asSharedFlow()
+
+    /** "Save this card for my next bookings" on a card confirm. Off until ticked. */
+    private val _saveCard = MutableStateFlow(false)
+    val saveCard: StateFlow<Boolean> = _saveCard.asStateFlow()
+
+    /**
+     * The order is read through the customer's own session, so a card occurrence awaiting confirmation
+     * is a signed-in card payment.
+     */
+    val offersCardSaving: StateFlow<Boolean> = _state
+        .map { state ->
+            (state as? OrderDetailUiState.Loaded)?.order
+                ?.let { it.needsConfirmation && it.paymentType?.value == PAYMENT_TYPE_CARD } == true
+        }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    fun setSaveCard(save: Boolean) {
+        _saveCard.value = save
+    }
 
     init {
         viewModelScope.launch { marketRepository.ensureLoaded() }
@@ -358,6 +380,8 @@ class OrderDetailViewModel @Inject constructor(
         // 5 minutes — safety net only. Push events from [OrderEventBus] handle
         // the common case at near-zero latency.
         const val POLL_INTERVAL_MS = 5L * 60L * 1000L
+
+        const val PAYMENT_TYPE_CARD = 2
     }
 
     /**
@@ -438,8 +462,14 @@ class OrderDetailViewModel @Inject constructor(
      *   * Cash response (clientSecret == null) → the occurrence is confirmed and
      *     its payment stays Pending until the cleaner collects; we push a success
      *     snackbar + refetch, and the refetched order no longer needs confirmation.
-     *   * Card response (clientSecret != null) → screen consumes [confirmResult]
-     *     and opens the Stripe PaymentSheet with the returned client secret.
+     *   * Card response (clientSecret != null) → the sheet's intent is asked of
+     *     CreatePaymentIntent with the save tick, and [cardPayment] opens
+     *     PaymentSheet on it.
+     *
+     * ConfirmRecurringOrder takes no saveCard, and the intent it mints keeps
+     * nothing. CreatePaymentIntent hands that same intent back unticked and
+     * replaces it with a card-saving one ticked, so whichever the customer
+     * chose last is the one they pay.
      *
      * Repo surfaces snackbar on failure. Idempotent: a second tap while
      * Submitting is a no-op.
@@ -455,18 +485,26 @@ class OrderDetailViewModel @Inject constructor(
                 _confirmRecurringState.value = ActionState.Idle
                 return@launch
             }
-            _confirmResult.emit(resp)
-            _confirmRecurringState.value = ActionState.Idle
 
-            // Card path's snackbars fire from the PaymentSheet result callback
-            // (via [notifyCardPaymentResult]) since only the screen sees the
-            // Stripe outcome.
             if (resp.clientSecret.isNullOrBlank()) {
+                _confirmRecurringState.value = ActionState.Idle
                 snackbar.showSuccess(
                     appContext.getString(R.string.recurring_confirm_success),
                 )
                 orderRepository.refresh()
                 load()
+                return@launch
+            }
+
+            // Card path's snackbars fire from the PaymentSheet result callback
+            // (via [notifyCardPaymentResult]) since only the screen sees the
+            // Stripe outcome.
+            val saveCard = _saveCard.value
+            val intent = paymentRepository.createPaymentIntent(id, saveCard).surfaceError().getOrNull()
+            _confirmRecurringState.value = ActionState.Idle
+            if (intent != null) {
+                val currencyCode = (state.value as? OrderDetailUiState.Loaded)?.order?.currency?.code
+                _cardPayment.emit(intent.toPaymentSheetParams(saveCard, currencyCode))
             }
         }
     }

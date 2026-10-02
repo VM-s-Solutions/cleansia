@@ -47,6 +47,7 @@ const LIST_TEMPLATES = [
   'loyalty-promo-codes/src/lib/promo-codes-list/promo-codes-list.component.html',
   'loyalty-referrals/src/lib/referrals-list/referrals-list.component.html',
   'loyalty-tier-configs/src/lib/tier-configs/tier-configs.component.html',
+  'loyalty-user-detail/src/lib/customers-list/customers-list.component.html',
   'membership-plan-management/src/lib/membership-plan-list/membership-plan-list.component.html',
   'notifications/src/lib/notifications/notifications.component.html',
   'order-management/src/lib/order-management/order-management.component.html',

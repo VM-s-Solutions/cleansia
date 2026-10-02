@@ -86,6 +86,7 @@
       "membership_plan_edit": "Upravit plán členství",
       "data_protection": "Ochrana údajů",
       "profile": "Můj profil",
+      "customers": "Zákazníci",
       "customer_detail": "Zákazník",
       "audit_log_customers": "Akce zákazníků",
       "audit_log_customer_entry": "Akce zákazníka",
@@ -100,7 +101,13 @@
       "go_home": "Na úvodní stránku",
       "error_code": "Chyba {{code}}"
     },
-    "brand_mark_alt": "Cleansia"
+    "brand_mark_alt": "Cleansia",
+    "notifications_panel": {
+      "open": "Otevřít upozornění",
+      "title": "Upozornění",
+      "view_all": "Zobrazit všechna upozornění",
+      "empty": "Zatím žádná upozornění"
+    }
   },
   "global": {
     "yes": "Ano",
@@ -315,6 +322,7 @@
     "notifications": "Upozornění",
     "profile": "Můj profil",
     "receivables": "Pohledávky",
+    "customers": "Zákazníci",
     "cash_held": "Hotovost u uklízečů"
   },
   "pages": {
@@ -2343,6 +2351,28 @@
         }
       }
     },
+    "customers": {
+      "title": "Zákazníci",
+      "description": "Zákaznické účty vaší společnosti včetně kontaktních údajů",
+      "filters": {
+        "search": "Vyhledávání",
+        "search_placeholder": "Hledat dle jména, e-mailu nebo telefonu",
+        "status": "Stav",
+        "status_active": "Aktivní",
+        "status_inactive": "Neaktivní",
+        "status_all": "Všichni"
+      },
+      "columns": {
+        "name": "Jméno",
+        "email": "E-mail",
+        "phone": "Telefon",
+        "status": "Stav",
+        "email_confirmed": "E-mail ověřen",
+        "created_on": "Vytvořeno"
+      },
+      "no_customers": "Nebyli nalezeni žádní zákazníci",
+      "load_error": "Zákazníky se nepodařilo načíst. Zkuste to prosím znovu."
+    },
     "loyalty_user_detail": {
       "title": "Zákazník",
       "title_for_user": "Věrnost pro {{email}}",
@@ -2440,6 +2470,7 @@
           "field": {
             "currency": "Měna",
             "amount": "Částka",
+            "amount_in": "Částka v {{currency}}",
             "reason": "Důvod",
             "note": "Co se stalo",
             "note_help": "Zaznamenáno pod vaším jménem. Napište to, co byste sami chtěli číst, než tomuto zákazníkovi znovu něco přidělíte."

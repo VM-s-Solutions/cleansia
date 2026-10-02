@@ -89,7 +89,7 @@ public sealed class SupersededDocumentSweepTests : IDisposable
     private static EmployeeDocument Replaced(string filePath)
     {
         var document = EmployeeDocument.Create(
-            EmployeeId, Path.GetFileName(filePath), filePath, "application/pdf", 2048,
+            EmployeeId, Path.GetFileName(filePath), filePath, "application/pdf", 2048, new string('0', 64),
             DocumentType.IdentityCard, description: null, createdBy: "seed");
         document.Deactivated("seed", DateTimeOffset.UtcNow.AddDays(-400));
         return document;

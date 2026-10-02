@@ -635,8 +635,28 @@
 
           <div>
             <div class="cl-lbl cl-wiz__time-label">{{ 'pages.order.arrival_time_label' | translate }}</div>
+            <div class="cl-wiz__dayparts" role="group" [attr.aria-label]="'pages.order.day_part_label' | translate">
+              @for (part of dayPartSlots(); track part.key) {
+              <button
+                type="button"
+                class="cl-chip cl-wiz__daypart"
+                [class.cl-chip--on]="activeDayPart() === part.key"
+                [disabled]="!part.bookable"
+                [attr.aria-pressed]="activeDayPart() === part.key"
+                (click)="activeDayPart.set(part.key)"
+              >
+                <span class="cl-wiz__daypart-name">
+                  {{ 'pages.order.day_part.' + part.key | translate }}
+                  @if (part.holdsSelection) {
+                  <span class="cl-wiz__daypart-dot" aria-hidden="true"></span>
+                  }
+                </span>
+                <span class="cl-wiz__daypart-range">{{ part.firstLabel }}–{{ part.lastLabel }}</span>
+              </button>
+              }
+            </div>
             <div class="cl-wiz__times">
-              @for (opt of timeOptions(); track opt.value) {
+              @for (opt of visibleTimeOptions(); track opt.value) {
               <button
                 type="button"
                 class="cl-chip cl-wiz__time"
@@ -780,6 +800,22 @@
           </p>
           <cleansia-customer-amount-due (leaving)="parkDraft()" />
         </div>
+        }
+
+        <!--
+          The consent is the card-guarantee wording, keyed by the version the server records on the
+          saved card: a card kept here also guarantees a later cash booking.
+        -->
+        @if (facade.saveCardOffered()) {
+        <label class="cl-wiz__consent" data-spec-save-card>
+          <p-checkbox
+            [ngModel]="facade.saveCard()"
+            (ngModelChange)="facade.setSaveCard($event)"
+            [binary]="true"
+            inputId="wizard-save-card"
+          />
+          <span>{{ 'pages.order.save_card.label' | translate }} {{ 'pages.order.card_capture.consent.card-guarantee-draft-2026-09-28' | translate }}</span>
+        </label>
         }
 
         <div class="cl-wiz__rule"></div>
@@ -1179,14 +1215,20 @@
       }
     </div>
 
-    <!-- Price Sidebar (Desktop) -->
-      <aside class="cl-wiz__summary">
-        @if (facade.activeStep() === 0) {
-        <div class="cl-wiz__counts-desktop">
-          <ng-container [ngTemplateOutlet]="roomCounts" />
-          <div class="cl-wiz__rule"></div>
-        </div>
-        }
+    <div class="cl-wiz__side">
+      @if (facade.activeStep() === 0) {
+      <section class="cl-wiz__counts-card">
+        <ng-container [ngTemplateOutlet]="roomCounts" />
+      </section>
+      }
+
+      <aside
+        class="cl-wiz__summary"
+        [class.cl-wiz__summary--open]="summaryOpen()"
+        (keydown.escape)="summaryOpen.set(false)"
+      >
+        <div class="cl-wiz__summary-details" id="wizard-summary-details">
+        <div class="cl-wiz__summary-fold">
         <h2 class="cl-h3">{{ 'pages.order.summary_heading' | translate }}</h2>
 
         <!--
@@ -1334,7 +1376,21 @@
         }
 
         <div class="cl-wiz__rule"></div>
+        </div>
+        </div>
 
+        <div class="cl-wiz__price">
+        <button
+          type="button"
+          class="cl-wiz__summary-toggle"
+          [attr.aria-expanded]="summaryOpen()"
+          aria-controls="wizard-summary-details wizard-summary-after wizard-summary-foot"
+          [attr.aria-label]="(summaryOpen() ? 'pages.order.summary_hide' : 'pages.order.summary_show') | translate"
+          (click)="toggleSummary()"
+        >
+          <i class="pi pi-chevron-up" aria-hidden="true"></i>
+        </button>
+        @if (priceLines().length > 0) {
         <div class="cl-lbl">{{ 'pages.order.price_fixed' | translate }}</div>
         <!--
           The price before any discount, struck through above the one being charged. `<s>` rather
@@ -1356,6 +1412,10 @@
         </div>
         }
         <div class="cl-num cl-wiz__total">{{ formatPrice(facade.displayedTotalPrice()) }}</div>
+        }
+        </div>
+        <div class="cl-wiz__summary-after" id="wizard-summary-after">
+        <div class="cl-wiz__summary-fold">
         <!--
           Credit applies automatically (owner ruling 2026-09-05), so the customer is told here rather
           than left to discover a smaller charge on the Stripe page. Two lines, because the number
@@ -1386,6 +1446,8 @@
           {{ 'pages.order.summary_estimate' | translate: { hours: estimateHours() } }}
         </div>
         }
+        </div>
+        </div>
 
         <!--
           The forward action lives with the price it commits to. Back is a link
@@ -1450,6 +1512,8 @@
           headline: this is the screen where the customer commits, so the "you
           can still undo this" is worth its extra line.
         -->
+        <div class="cl-wiz__summary-foot" id="wizard-summary-foot">
+        <div class="cl-wiz__summary-fold">
         @if (facade.activeStep() === facade.steps.length - 1) {
         <p class="cl-muted cl-wiz__summary-policy">{{ 'pages.order.cancel_policy_note' | translate }}</p>
         } @else {
@@ -1458,10 +1522,17 @@
           {{ 'pages.order.summary_free_cancel' | translate }}
         </div>
         }
-    </aside>
+        </div>
+        </div>
+      </aside>
+    </div>
   </div>
+
+  @if (summaryOpen()) {
+  <div class="cl-wiz__scrim" aria-hidden="true" (click)="summaryOpen.set(false)"></div>
+  }
+  <cleansia-scroll-top [ariaLabel]="'global.scroll_to_top' | translate" />
 </div>
-<cleansia-scroll-top [ariaLabel]="'global.scroll_to_top' | translate" />
 
 <!-- Rebook Warning Dialog -->
 <p-dialog

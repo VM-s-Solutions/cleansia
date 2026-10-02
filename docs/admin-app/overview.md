@@ -58,15 +58,16 @@ The admin app does not support self-registration. Admin accounts must be provisi
 The admin app uses a sidebar layout with the following sections. Every route is behind `adminGuard` **and**
 `permissionGuard`, every sidebar entry carries the permission of its area (`ADMIN_MENU_ITEMS` in
 `apps/cleansia-admin.app/src/app/admin-menu.ts`), and an entry the signed-in role lacks is not shown — so
-a Support sees no *Pay Periods*, *Invoices* or *Reports*, an Accountant no *Orders*, *Disputes* or
-*Employee documents*, and neither sees *Admin Users*, *Legal documents*, *Company settings*, *Company
+a Support sees no *Pay Periods*, *Invoices* or *Reports*, an Accountant no *Orders*, *Customers*,
+*Disputes* or *Employee documents*, and neither sees *Admin Users*, *Legal documents*, *Company settings*, *Company
 lifecycle* or *Marketing* (`admin-role-visibility.spec.ts` pins both lists):
 
 | Route                     | Label        | Description                                   |
 | ------------------------- | ------------ | --------------------------------------------- |
-| `/notifications`          | Notifications | The admin feed — first in the sidebar, with the unread count as its badge (polled every 60 s while the tab is visible; on the mobile toolbar the same count sits on a bell beside the language switcher): newest first, 20 a page, one localised sentence per event, mark read on click and navigate to the order / dispute / data-protection / company-lifecycle page it names, mark all read; entry gated by `CanViewAdminNotifications` (ADR-0065) |
+| `/notifications`          | Notifications | The admin feed, the full history — first in the sidebar, with the unread count as its badge (polled every 60 s while the tab is visible; on the mobile toolbar the same count sits on a bell beside the language switcher, which opens the [notifications panel](#notifications-button)): newest first, 20 a page, one localised sentence per event, mark read on click and navigate to the order / dispute / data-protection / company-lifecycle page it names, mark all read; entry gated by `CanViewAdminNotifications` (ADR-0065) |
 | `/employee-management`    | Employees    | Partner/employee management                   |
 | `/order-management`       | Orders       | Order oversight and management                |
+| `/customers`              | Customers    | The customer accounts, paged, searched and filtered; a row opens the customer detail → [Customers](./user-management#customers); entry gated by `CanViewOrderCustomer` (Support or above) |
 | `/invoice-management`     | Invoices     | Invoice management                            |
 | `/pay-periods`            | Pay Periods  | Pay period management (open, close, paid)    |
 | `/reports`                | Reports      | Revenue and payroll reports                   |
@@ -76,6 +77,7 @@ lifecycle* or *Marketing* (`admin-role-visibility.spec.ts` pins both lists):
 | `/admin-user-management`  | Admin Users  | Administrator accounts and their roles — the list shows each account's role, the create form carries a role select (default *Support*), and the detail has a role picker under `CanSetAdminRole` (Administrator only; disabled on one's own row; the server's *last Administrator* refusal renders in five locales); entry gated by `CanViewAdminUsers` (Manager or above) |
 | `/language-management`    | Languages    | Language configuration                        |
 | `/country-management`     | Countries    | Country configuration                         |
+| `/service-area-management` | Service area | Which countries are serviced, and their service cities → [The Service area page](#service-area); entry gated by `CanViewServiceCities` |
 | `/currency-management`    | Currencies   | Currency configuration                        |
 | `/company-info`           | Company Info | Company details                               |
 | `/company-settings`       | Company settings | The admin's own operating company's overrides of sixteen catalogued platform settings (fourteen retention settings — the receipt-PDF window among them — the chargeback horizon, and the administrator notification mailbox); entry gated by `CanViewTenantConfigurations` |
@@ -87,6 +89,31 @@ The default route (`/`) redirects to `/employee-management` when the role can op
 today — and otherwise to the first sidebar page the role can open (`resolveLandingRoute`), so no role
 lands on a page it lacks.
 
+### Which entry is lit — the most specific wins {#sidebar-active-entry}
+
+The sidebar lights **one** entry: the longest visible route, children included, that equals the URL path
+or prefixes it before a slash, read without its query string or fragment. So *Cash held*
+(`/pay-periods/cash-held`) lights itself and not *Pay Periods*, *Receivables*
+(`/order-management/receivables`) itself and not *Orders*, an order detail (`/order-management/:id`)
+still lights *Orders*, and a URL with a query string lights its entry. A group with children is never lit
+itself; it opens when it holds the active page. `aria-current="page"` follows the highlight. The partner
+web's rail is the same component.
+
+### The notifications button {#notifications-button}
+
+Every admin page but the feed itself carries a round bell at the bottom right (49 px, 1.5 rem from the
+right and bottom edges) with the unread count on it — the sidebar badge's count, polled every 60 s while
+the tab is visible. A click opens a panel over the page (380 px wide, at most 70 % of the viewport high,
+the list scrolling inside) that reads the newest page of the feed each time it opens. A row click marks it
+read and lands on the order, dispute or page it names, and the panel closes on that navigation — also when
+the row names the page already shown, a navigation the router skips rather than ends. The panel offers
+*Mark all as read* and *View all notifications*, and says so when the feed is empty.
+
+**The sidebar's *Notifications* entry stays:** the panel is the latest page, the feed is the full history,
+paged. At 768 px and below the circle is not drawn; the phone toolbar's bell opens the same panel. While
+the cookie notice shows, the circle rises above its band. The button carries the feed's own gate,
+`CanViewAdminNotifications`, and the panel's rows and the page's are one `NotificationFeedComponent`.
+
 ## Route Structure
 
 ```
@@ -96,6 +123,8 @@ lands on a page it lacks.
 /employee-management/:id  # Employee detail (admin guard)
 /order-management         # Order list (admin guard)
 /order-management/:id     # Order detail (admin guard)
+/customers                # Customer list (admin guard)
+/customers/:id            # Customer detail — credit, points, trail (admin guard)
 /invoice-management       # Invoice list (admin guard)
 /invoice-management/:id   # Invoice detail (admin guard)
 /pay-periods              # Pay period management (admin guard)
@@ -106,6 +135,7 @@ lands on a page it lacks.
 /admin-user-management    # Admin user CRUD (admin guard)
 /language-management      # Language CRUD (admin guard)
 /country-management       # Country CRUD (admin guard)
+/service-area-management  # Serviced countries and service cities (admin guard)
 /currency-management      # Currency CRUD (admin guard)
 /company-info             # Company info CRUD (admin guard)
 /company-settings         # Company settings — catalogued per-company overrides (admin guard)
@@ -119,8 +149,8 @@ lands on a page it lacks.
 "admin guard" above means both guards: `adminGuard` (a signed-in Administrator-profile session) and
 `permissionGuard` (the route's `data.permission` — its area's *view* policy, e.g. `CanViewPagedOrderAdmin`
 on `/order-management`, `CanViewPagedInvoicesAdmin` on `/invoice-management`, `CanViewCompanyLifecycle` on
-`/company-lifecycle`). `/customers/:id` is a route with no sidebar entry (`CanViewOrderCustomer`), reached
-from an order, the audit log or a notification. `admin-role-surface.spec.ts` walks the route table and the
+`/company-lifecycle`). `/customers` and `/customers/:id` carry `CanViewOrderCustomer`; the detail is
+reached from the customer list, an order, the audit log or a notification. `admin-role-surface.spec.ts` walks the route table and the
 sidebar array and fails an entry that carries no permission.
 
 ## Feature Libraries
@@ -247,6 +277,25 @@ Three of those forms author what a customer's **market** shows:
   a button; until one lands, the client method or the API is the way to move it.
 
 → [API — markets and memberships](/api/markets-and-memberships)
+
+### The Service area page {#service-area}
+
+`/service-area-management` (`CanViewServiceCities`, in the `country-management` library) lists the
+countries, each with its serviced switch, and the service cities. Opening it makes two requests: the
+cities, and **one** `GET api/AdminCountry/service-area-overview` that answers a `ServiceAreaCountryDto`
+per active country — `isServiced`, `isDefaultMarket`, and whether it has a configuration row. The table
+rows and the switches both come from that overview; until 2026-10-01 the page read the country list and
+then one detail request per country. A failed read leaves the countries and their switches as they were.
+
+**The switch shows the raw `Country.IsServiced` column, not the effective "serviced" predicate.** The
+switch is the administrator's own decision, and `SetCountryServiced` writes that column. The effective
+predicate (`CountryRepository.GetServicedAsync` / `IsServicedAsync`, which every reader of "is this a
+market" asks) also requires the country to be active and its operating company not deactivated. Drawn
+from the predicate, a deactivated company's market would show *off* while its column is on, and a click
+would rewrite a column that was never what kept it off. So the page shows what was set; whether customers
+can book a market also depends on its company →
+[Security rules — S10](/architecture/security-rules#s10-soft-delete-isactive-semantics),
+[A company's lifecycle](/product/business-rules#company-lifecycle).
 
 ## Mobile Responsiveness
 

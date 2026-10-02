@@ -118,6 +118,12 @@ Primary buttons are **pills** (`CircleShape`) at heights **40 / 48 / 56** with h
 Elevation is Material-neutral. **Never a coloured glow** — `rgba($primary, …)` in a `box-shadow` is a
 defect. Ceiling for a resting button: `0 2px 6px rgba(15,23,42,.12)`.
 
+**A shadow-only card gets an edge in dark mode** (P2-WC-07). A customer-site card that floats on a
+shadow alone in light mode draws the `--cl-edge` outline in dark mode, where a shadow cannot be seen on
+the navy ground. The token lives in `pages/cleansia-customer/_home-design.scss` — `transparent` in
+light, `rgba(148,163,184,.28)` in dark — and is drawn as `outline: 1px solid var(--cl-edge);
+outline-offset: -1px`, so no box changes size. A new card opts in by joining the selector list there.
+
 ### 2.5 Spacing
 
 8-pt grid with 4-pt extensions: `2 · 4 · 8 · 12 · 16 · 20 · 24 · 32 · 40`.

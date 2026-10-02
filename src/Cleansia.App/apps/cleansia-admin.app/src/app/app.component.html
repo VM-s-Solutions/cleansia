@@ -16,8 +16,9 @@
         severity="secondary"
         [style]="'basic-button'"
         [text]="true"
-        [routerLink]="notificationsRoute"
-        [ariaLabel]="'sidebar.notifications' | translate"
+        [ariaLabel]="'components.notifications_panel.open' | translate"
+        [ariaExpanded]="notificationsPanelOpen()"
+        (onClick)="toggleNotifications($event)"
       />
       @if (notificationBadge.badgeLabel(); as badge) {
       <span class="cleansia-mobile-toolbar__action-count">{{ badge }}</span>
@@ -29,6 +30,10 @@
   <main class="main-content" [ngClass]="{ 'main-content__margin': showNavigation(), 'main-content__with-toolbar': showNavigation() && isMobile() }">
     <router-outlet></router-outlet>
   </main>
+
+  @if (showNavigation()) {
+  <cleansia-admin-notifications-launcher *cleansiaPermission="Policy.CanViewAdminNotifications" />
+  }
 
   <p-toast></p-toast>
   <p-confirmDialog styleClass="cleansia-dialog" />

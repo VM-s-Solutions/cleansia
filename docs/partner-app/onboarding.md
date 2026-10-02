@@ -147,6 +147,9 @@ Partners must upload identity and work-related documents through the profile pag
 2. Files are staged with no type assigned -- each file gets its own **inline type selector** where the partner picks the document type
 3. **Validation:** all staged files must have a type selected before the upload can proceed; files missing a type are highlighted in red with an error message
 4. Document cards display file-type colored icons (PDF = red, DOC = blue, JPG = yellow, etc.)
+5. Every file is its own document — several of one type are allowed — and a file byte-identical to one
+   the cleaner already holds, active and not rejected, is refused (`employee_document.duplicate_file`)
+   → [Business rules — the papers a cleaner uploads](/product/business-rules#employee-documents)
 
 Supported document types:
 
@@ -234,7 +237,8 @@ After the partner completes their profile and uploads required documents, an adm
 
 **Approval criteria:**
 - Profile is complete (`isProfileComplete === true`)
-- Contract status is `Pending`
+- Contract status is `Pending` or `Rejected` — a cleaner rejected earlier can be approved again, and
+  nothing returns them to `Pending` by itself → [Business rules](/product/business-rules#employee-documents)
 - Every document type the **work country** marks required is present **and** `Approved`
 - Every partner document in force for that market — the framework contract, the self-billing
   agreement, the data-processing agreement — is accepted at its current version

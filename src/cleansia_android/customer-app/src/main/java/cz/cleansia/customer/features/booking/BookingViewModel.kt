@@ -21,7 +21,9 @@ import cz.cleansia.customer.core.consent.SIGNUP_TICK_CONSENTS
 import cz.cleansia.customer.core.memberships.ExpressWaiver
 import cz.cleansia.customer.core.memberships.MembershipRepository
 import cz.cleansia.customer.core.memberships.resolveExpressWaiver
+import cz.cleansia.customer.core.payments.PaymentSheetParams
 import cz.cleansia.customer.core.payments.SavedCardRepository
+import cz.cleansia.customer.core.payments.toPaymentSheetParams
 import cz.cleansia.customer.core.payments.usableIn
 import cz.cleansia.customer.core.promo.PromoCodeApi
 import cz.cleansia.customer.core.promo.PromoCodeError
@@ -86,19 +88,6 @@ sealed interface BookingSubmitOutcome {
     /** User profile is missing a required field; UI should deep-link to Edit Profile. */
     data object ProfileIncomplete : BookingSubmitOutcome
 }
-
-/**
- * Bundle of values PaymentSheet needs to render: the PaymentIntent
- * client_secret it confirms against, plus the Stripe customer id +
- * ephemeral key that let it surface saved cards.
- */
-data class PaymentSheetParams(
-    val clientSecret: String,
-    val ephemeralKey: String,
-    val customerId: String,
-    /** The quote's currency — the one the PaymentIntent is minted in, which Google Pay is told up front. */
-    val currencyCode: String,
-)
 
 data class CardGuaranteeSheetParams(
     val setupIntentClientSecret: String,
@@ -326,6 +315,10 @@ class BookingViewModel @Inject constructor(
                 (!needsGuarantee || s.cardGuaranteeAccepted) &&
                 s.earlyPerformanceRequested
         }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    val offersCardSaving: StateFlow<Boolean> =
+        combine(tokenStore.tokens, _state) { tokens, s -> tokens != null && s.paymentMethod == PAYMENT_CARD }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     fun selectPaymentMethod(method: String) {
         if (method == PAYMENT_CASH && cashEligibility.value != CashEligibility.Available) return
@@ -716,7 +709,7 @@ class BookingViewModel @Inject constructor(
                 return BookingSubmitOutcome.Success(body)
             }
 
-            val intent = paymentRepository.createPaymentIntent(body.id).getOrNull()
+            val intent = paymentRepository.createPaymentIntent(body.id, saveCard = s.saveCard).getOrNull()
             if (intent == null) {
                 // Order is created but PaymentIntent failed — leave the order
                 // in Pending. The stale-pending sweeper will clean it up
@@ -727,12 +720,7 @@ class BookingViewModel @Inject constructor(
 
             return BookingSubmitOutcome.CardPending(
                 response = body,
-                paymentSheet = PaymentSheetParams(
-                    clientSecret = intent.clientSecret,
-                    ephemeralKey = intent.ephemeralKey,
-                    customerId = intent.stripeCustomerId,
-                    currencyCode = quoted.currencyCode,
-                ),
+                paymentSheet = intent.toPaymentSheetParams(s.saveCard, quoted.currencyCode),
             )
         } finally {
             _submitState.value = ActionState.Idle

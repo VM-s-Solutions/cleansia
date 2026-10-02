@@ -27,7 +27,11 @@
     "how_it_works": "How it works",
     "plus": "Cleansia Plus",
     "login_short": "Log in",
-    "my_recurring": "Recurring cleanings"
+    "my_recurring": "Recurring cleanings",
+    "open_menu": "Open menu",
+    "close_menu": "Close menu",
+    "user_menu": "Account menu",
+    "section_menu": "Menu"
   },
   "cookies": {
     "title": "Cookies on this site",
@@ -781,6 +785,12 @@
       "date_time": "Date & Time",
       "datetime_note": "We'll confirm the exact time with you",
       "datetime_section_title": "When Should We Come?",
+      "day_part": {
+        "morning": "Morning",
+        "afternoon": "Afternoon",
+        "evening": "Evening"
+      },
+      "day_part_label": "Part of day",
       "draft_partially_restored": "Your order is back. Something in it is no longer offered, so it was removed.",
       "entry_instructions_label": "Entry Instructions",
       "entry_instructions_placeholder": "How should we access your property? (e.g., doorbell, key under mat...)",
@@ -971,6 +981,7 @@
       "summary_extras": "Add extras",
       "summary_free_cancel": "Free cancellation up to 24 h",
       "summary_heading": "Summary",
+      "summary_hide": "Hide order summary",
       "summary_instructions": "Instructions",
       "summary_line_calc": "{{base}} + {{units}} × {{unit}}",
       "summary_no_surcharge": "no surcharge",
@@ -985,6 +996,7 @@
       "summary_rooms_other": "{{count}} rooms",
       "summary_section_title": "Review Your Order",
       "summary_services": "Services",
+      "summary_show": "Show order summary",
       "summary_with_plus": "With Plus you would pay",
       "terms_already_accepted": "You accepted our Terms of Service and Privacy Policy with your account.",
       "contract_notice": "By confirming the order you conclude a contract for the cleaning with the operating company of the market where your home is, under its <a href='/terms' target='_blank' rel='noopener'>terms of service</a>. The cleaner carries it out as a subcontractor of the company and is not a party to your contract.",
@@ -1048,6 +1060,9 @@
         },
         "continue": "Save card",
         "cancel": "Not now"
+      },
+      "save_card": {
+        "label": "Save this card for my next bookings."
       }
     },
     "orders": {
@@ -2081,7 +2096,8 @@
     },
     "saved_card": {
       "consent_not_accepted": "Please agree that fees and unpaid cash may be charged to your card before saving it.",
-      "not_found": "We couldn't find that saved card."
+      "not_found": "We couldn't find that saved card.",
+      "requires_account": "Sign in to save your card for your next bookings."
     },
     "receivable": {
       "not_found": "We couldn't find that amount due.",

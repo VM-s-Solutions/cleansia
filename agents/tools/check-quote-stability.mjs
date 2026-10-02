@@ -15,22 +15,31 @@ import { createRequire } from 'node:module';
 const { chromium } = createRequire(`${process.cwd()}/`)('playwright');
 
 const TARGET = process.env.TARGET ?? 'http://localhost:4202/';
+const WIDTH = Number(process.env.WIDTH ?? 1440);
+const HEIGHT = Number(process.env.HEIGHT ?? 1000);
 const browser = await chromium.launch();
-const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
-await page.addInitScript(() => {
+const page = await browser.newPage({
+  viewport: { width: WIDTH, height: HEIGHT },
+  isMobile: WIDTH < 800,
+  hasTouch: WIDTH < 800,
+});
+await page.addInitScript((theme) => {
   try {
     localStorage.setItem('preferred_language', 'cs');
+    localStorage.setItem('cleansia-theme', theme);
     localStorage.setItem('cleansia-customer-cookie-consent', 'accepted');
   } catch {
     /* private mode */
   }
-});
+}, process.env.THEME ?? 'light');
 await page.goto(TARGET, { waitUntil: 'networkidle' });
 await page.waitForSelector('.cl-quote__price');
 await page.waitForTimeout(800);
 
 // Watch the card and the result row for the whole interaction, sampling on
 // every animation frame rather than polling - a one-frame jump still counts.
+// `top` is read against the document: on a phone each click scrolls its chip
+// into view, and that scroll is not the calculator moving.
 await page.evaluate(() => {
   window.__samples = [];
   const tick = () => {
@@ -42,7 +51,7 @@ await page.evaluate(() => {
         card: Math.round(card.getBoundingClientRect().height),
         row: Math.round(row.getBoundingClientRect().height),
         price: Math.round(price.getBoundingClientRect().height),
-        top: Math.round(row.getBoundingClientRect().top),
+        top: Math.round(row.getBoundingClientRect().top + window.scrollY),
       });
     }
     window.__raf = requestAnimationFrame(tick);

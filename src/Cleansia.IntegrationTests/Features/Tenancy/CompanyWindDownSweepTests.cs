@@ -847,8 +847,9 @@ public sealed class CompanyWindDownSweepTests(PostgresContainerFixture fixture) 
         public Task<CheckoutSessionResult> CreateCheckoutSessionAsync(Order order, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task<CheckoutSessionResult> CreateCheckoutSessionAsync(Order order, DateTime expiresAtUtc, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task<string> CreateCustomerAsync(string userId, string email, string fullName, string? phone, CancellationToken cancellationToken) => throw new NotSupportedException();
-        public Task<PaymentIntentResult> CreatePaymentIntentAsync(decimal amount, string currency, string stripeCustomerId, string orderId, string displayOrderNumber, CancellationToken cancellationToken) => throw new NotSupportedException();
+        public Task<PaymentIntentResult> CreatePaymentIntentAsync(decimal amount, string currency, string stripeCustomerId, string orderId, string displayOrderNumber, string? savedCardId, string? currentPaymentIntentId, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task CancelPaymentIntentAsync(string paymentIntentId, CancellationToken cancellationToken) => throw new NotSupportedException();
+        public Task CancelReplacedPaymentIntentAsync(string paymentIntentId, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task<StripePaymentSnapshot> GetPaymentSnapshotAsync(string? stripeSessionId, string? stripePaymentIntentId, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task<string?> FindCheckoutSessionOrderIdAsync(string paymentIntentId, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task<string> CreateEphemeralKeyAsync(string stripeCustomerId, CancellationToken cancellationToken) => throw new NotSupportedException();
@@ -856,6 +857,8 @@ public sealed class CompanyWindDownSweepTests(PostgresContainerFixture fixture) 
         public Task<SetupIntentResult> CreateCardSetupIntentAsync(string stripeCustomerId, string savedCardId, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task<string> CreateCardSetupCheckoutSessionAsync(string stripeCustomerId, string savedCardId, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task<SavedCardDetails?> GetSetupIntentCardAsync(string setupIntentId, CancellationToken cancellationToken) => throw new NotSupportedException();
+        public Task<SavedCardDetails?> GetPaymentIntentCardAsync(string paymentIntentId, CancellationToken cancellationToken) => throw new NotSupportedException();
+        public Task<CheckoutSessionResult> CreateCardSavingCheckoutSessionAsync(Order order, string stripeCustomerId, string savedCardId, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task<string> ChargeReceivableOffSessionAsync(string receivableId, decimal amount, string currency, string stripeCustomerId, string paymentMethodId, int attempt, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task<CheckoutSessionResult> CreateReceivableCheckoutSessionAsync(string receivableId, string? currentSessionId, string orderId, string displayOrderNumber, decimal amount, string currency, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task<bool> ExpireReceivableCheckoutSessionAsync(string sessionId, CancellationToken cancellationToken) => throw new NotSupportedException();

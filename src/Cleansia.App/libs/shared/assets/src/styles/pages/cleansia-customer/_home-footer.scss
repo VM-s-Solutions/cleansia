@@ -64,31 +64,44 @@
   }
 
   &__app {
+    position: relative;
     display: inline-flex;
     align-items: center;
     gap: 8px;
     min-height: 44px;
     padding: 0 16px;
-    border: 1px solid rgba(186, 230, 253, 0.35);
+    border: 1px solid rgba(186, 230, 253, 0.2);
     border-radius: 12px;
-    color: $white;
+    color: rgba(255, 255, 255, 0.4);
     font-size: 14px;
     font-weight: 700;
+    cursor: default;
 
     i {
-      color: $primary-accent;
+      color: inherit;
+      opacity: 0.6;
     }
 
-    // Quieter than the store name it qualifies: the chip still reads "App Store" first, and this
-    // says why it does not do anything. Not italic despite the <em> — the tag is for emphasis in
-    // the accessibility tree, and slanted 11px on a navy ground is hard to read.
+    // Not italic despite the <em>: the tag is for emphasis in the accessibility tree, and slanted
+    // 11px reads poorly on the pill.
     .cl-footer__app-soon {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: $primary-light;
+      color: $text-heading;
+      font-family: $font-body;
       font-size: 11px;
       font-style: normal;
-      font-weight: 600;
-      letter-spacing: 0.04em;
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
-      color: rgba(186, 230, 253, 0.75);
+      white-space: nowrap;
+      box-shadow: $shadow-action;
     }
   }
 
@@ -208,17 +221,19 @@
         }
       }
 
+      // Trigger only: the open list renders inside the host and keeps the
+      // header's look.
       .p-select-label,
       .p-select-dropdown,
-      .cleansia-language-switcher__globe,
-      .cleansia-market-switcher__map {
+      .p-select-label .cleansia-language-switcher__globe,
+      .p-select-label .cleansia-market-switcher__map {
         color: #bae6fd;
         font-size: 13px;
       }
 
       .p-select:not(.p-disabled):hover .p-select-label,
-      .p-select:not(.p-disabled):hover .cleansia-language-switcher__globe,
-      .p-select:not(.p-disabled):hover .cleansia-market-switcher__map {
+      .p-select:not(.p-disabled):hover .p-select-label .cleansia-language-switcher__globe,
+      .p-select:not(.p-disabled):hover .p-select-label .cleansia-market-switcher__map {
         color: #{$white};
       }
     }

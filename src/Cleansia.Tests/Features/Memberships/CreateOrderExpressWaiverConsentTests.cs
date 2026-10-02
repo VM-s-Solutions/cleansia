@@ -117,6 +117,7 @@ public class CreateOrderExpressWaiverConsentTests
                 _pending.Object,
                 new OrderChannelProvider(OrderChannel.Mobile),
                 new StripeConfig(new ConfigurationBuilder().Build()),
+                Mock.Of<IUserRepository>(), Mock.Of<IStripeCustomerResolver>(), Mock.Of<ISavedCardRepository>(), Mock.Of<IRequestMetadataProvider>(),
                 NullLogger<OrderPaymentDispatcher>.Instance),
             TestGuestOrderAccessTokenIssuer.WithNoLiveTokens(),
             _expressWaiverConsumer.Object,

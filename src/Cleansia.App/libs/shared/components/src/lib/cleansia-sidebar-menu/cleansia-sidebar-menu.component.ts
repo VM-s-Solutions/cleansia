@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   ElementRef,
   HostListener,
   inject,
@@ -50,10 +51,9 @@ export class CleansiaSidebarMenuComponent {
   menuItems = input<SidebarMenuItem[]>([]);
   isRoot = input(true);
   collapsed = input(false);
+  activeRoute = input<string | null>(null);
 
-  visibleItems = computed(() =>
-    this.menuItems().filter((item) => isSidebarItemAllowed(item, this.permissionService))
-  );
+  visibleItems = computed(() => this.allowedItems(this.menuItems()));
 
   // Two-way binding for mobile sidebar expanded state (controlled by parent)
   mobileExpanded = model(false);
@@ -77,7 +77,16 @@ export class CleansiaSidebarMenuComponent {
   // The mobile drawer always opens at full width, so it is never a narrow rail.
   brandCompact = computed(() => this.effectiveCollapsed() && !this.isMobile());
 
+  matchedRoute = computed(() => (this.isRoot() ? this.longestMatchingRoute() : this.activeRoute()));
+
   constructor() {
+    effect(() => {
+      const route = this.matchedRoute();
+      if (this.isRoot() && route) {
+        this.expandGroupsContaining(this.visibleItems(), route);
+      }
+    });
+
     if (this.isBrowser) {
       this.updateMobileStatus();
     }
@@ -136,13 +145,46 @@ export class CleansiaSidebarMenuComponent {
     }
   }
 
-  isActiveRoute(itemRoute: string | undefined): boolean {
-    if (!itemRoute) return false;
-    const currentUrl = this.currentRoute();
-    return currentUrl === itemRoute || currentUrl.startsWith(itemRoute + '/');
+  isActiveRoute(item: SidebarMenuItem): boolean {
+    return !item.children?.length && !!item.route && item.route === this.matchedRoute();
   }
 
   getTooltipText(item: SidebarMenuItem): string {
     return this.effectiveCollapsed() ? item.label : '';
+  }
+
+  private allowedItems(items: readonly SidebarMenuItem[]): SidebarMenuItem[] {
+    return items.filter((item) => isSidebarItemAllowed(item, this.permissionService));
+  }
+
+  private longestMatchingRoute(): string | null {
+    const path = this.currentRoute().split(/[?#]/, 1)[0];
+    return (
+      this.routesOf(this.visibleItems())
+        .filter((route) => path === route || path.startsWith(route + '/'))
+        .sort((a, b) => b.length - a.length)[0] ?? null
+    );
+  }
+
+  private routesOf(items: readonly SidebarMenuItem[]): string[] {
+    return items.flatMap((item) => [
+      ...(item.route ? [item.route] : []),
+      ...this.routesOf(this.allowedItems(item.children ?? [])),
+    ]);
+  }
+
+  private expandGroupsContaining(items: readonly SidebarMenuItem[], route: string): boolean {
+    let contains = false;
+    for (const item of items) {
+      if (item.children?.length) {
+        if (this.expandGroupsContaining(this.allowedItems(item.children), route)) {
+          item.expanded = true;
+          contains = true;
+        }
+      } else if (item.route === route) {
+        contains = true;
+      }
+    }
+    return contains;
   }
 }

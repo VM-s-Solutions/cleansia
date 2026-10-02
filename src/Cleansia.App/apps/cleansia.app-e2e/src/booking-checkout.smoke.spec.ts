@@ -42,6 +42,12 @@ const SERVICES_FIXTURE = [
   },
 ];
 
+const SERVICE_LIST_FIXTURE = Array.from({ length: 15 }, (_, index) => ({
+  ...SERVICES_FIXTURE[0],
+  id: `${SERVICE_ID.slice(0, -2)}${String(index).padStart(2, '0')}`,
+  name: `Cleaning service ${index + 1}`,
+}));
+
 const SERVICED_COUNTRIES_FIXTURE = [
   { id: CZ_COUNTRY_ID, isoCode: 'CZ', name: 'Czechia', translations: {} },
 ];
@@ -158,6 +164,19 @@ function addressSearchBody() {
   return { suggestions: [ADDRESS_SUGGESTION] };
 }
 
+function roomScaledQuote(route: Route): Promise<void> {
+  const { selectedServiceIds } = route.request().postDataJSON() as { selectedServiceIds?: string[] };
+  const lines = (selectedServiceIds ?? []).map((itemId) => ({
+    kind: 'service',
+    itemId,
+    baseAmount: 500,
+    unitAmount: 150,
+    units: 3,
+    amount: 950,
+  }));
+  return json(route, { ...QUOTE_FIXTURE, lines });
+}
+
 async function stubBackend(page: Page): Promise<void> {
   // Playwright matches routes in REVERSE registration order, so the catch-all
   // is registered FIRST and the specific fixtures override it. The catch-all
@@ -190,24 +209,27 @@ test.beforeEach(async ({ page, context }) => {
   await stubBackend(page);
 });
 
-test('room selectors stay beside the summary on desktop and lead the form on mobile', async ({ page }) => {
+test('the room counts sit in their own card above the sticky summary on desktop and lead the form on mobile', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.route('**/api/Service/GetOverview*', (route) => json(route,
-    Array.from({ length: 15 }, (_, index) => ({
-      ...SERVICES_FIXTURE[0],
-      id: `${SERVICE_ID.slice(0, -2)}${String(index).padStart(2, '0')}`,
-      name: `Cleaning service ${index + 1}`,
-    })),
-  ));
+  await page.route('**/api/Service/GetOverview*', (route) => json(route, SERVICE_LIST_FIXTURE));
   await page.goto('/order');
 
   const rooms = page.getByRole('group', { name: 'Number of rooms', exact: true });
   const bathrooms = page.getByRole('group', { name: 'Number of bathrooms', exact: true });
   const setRooms = page.getByRole('button', { name: 'Set number of rooms: 4', exact: true });
   const setBathrooms = page.getByRole('button', { name: 'Set number of bathrooms: 2', exact: true });
+  const countsCard = page.locator('.cl-wiz__counts-card');
+  const summary = page.locator('.cl-wiz__summary');
 
   await expect(rooms).toHaveCount(1);
   await expect(bathrooms).toHaveCount(1);
+  await expect(countsCard.getByRole('group', { name: 'Number of rooms', exact: true })).toHaveCount(1);
+  await expect(countsCard.getByRole('group', { name: 'Number of bathrooms', exact: true })).toHaveCount(1);
+  await expect(summary.getByRole('group', { name: 'Number of rooms', exact: true })).toHaveCount(0);
+  await expect(summary.getByRole('group', { name: 'Number of bathrooms', exact: true })).toHaveCount(0);
+  const countsCardBottom = await countsCard.evaluate((element) => element.getBoundingClientRect().bottom);
+  const summaryTop = await summary.evaluate((element) => element.getBoundingClientRect().top);
+  expect(countsCardBottom).toBeLessThanOrEqual(summaryTop);
   await expect(rooms).toBeInViewport({ ratio: 1 });
   await expect(bathrooms).toBeInViewport({ ratio: 1 });
   await setRooms.click();
@@ -217,12 +239,11 @@ test('room selectors stay beside the summary on desktop and lead the form on mob
 
   await page.evaluate(() => window.scrollTo(0, 700));
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(600);
-  await expect(rooms).toBeInViewport({ ratio: 1 });
-  await expect(bathrooms).toBeInViewport({ ratio: 1 });
-  const summary = page.locator('.cl-wiz__summary');
   expect(await summary.evaluate((element) => getComputedStyle(element).position)).toBe('sticky');
-  await page.getByRole('button', { name: 'Continue', exact: true }).scrollIntoViewIfNeeded();
-  await expect(page.getByRole('button', { name: 'Continue', exact: true })).toBeInViewport();
+  await expect(summary).toBeInViewport();
+  await expect(rooms).not.toBeInViewport();
+  await expect(bathrooms).not.toBeInViewport();
+  await expect(page.getByRole('button', { name: 'Continue', exact: true })).toBeInViewport({ ratio: 1 });
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.evaluate(() => window.scrollTo(0, 0));
@@ -238,6 +259,37 @@ test('room selectors stay beside the summary on desktop and lead the form on mob
   expect(countsBottom).toBeLessThan(firstServiceTop);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
 });
+
+for (const viewport of [
+  { width: 1440, height: 900 },
+  { width: 1366, height: 768 },
+  { width: 1280, height: 720 },
+]) {
+  test(`the summary needs no scroll bar with four services picked at ${viewport.width}x${viewport.height}`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await page.route('**/api/Service/GetOverview*', (route) => json(route, SERVICE_LIST_FIXTURE));
+    await page.route('**/api/Order/Quote', roomScaledQuote);
+    await page.goto('/order');
+
+    const addService = page.locator('.cl-wiz__svc-add');
+    for (let index = 0; index < 4; index++) {
+      await addService.nth(index).click();
+      await expect(addService.nth(index)).toHaveAttribute('aria-pressed', 'true');
+    }
+    const summary = page.locator('.cl-wiz__summary');
+    await expect(summary.locator('.cl-wiz__summary-line')).toHaveCount(4);
+    await expect(summary.locator('.cl-wiz__total')).toBeVisible();
+
+    await page.evaluate(() => window.scrollTo(0, 700));
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(600);
+    expect(await summary.evaluate((element) => element.scrollHeight - element.clientHeight)).toBeLessThanOrEqual(0);
+    expect(
+      await summary.locator('.cl-wiz__summary-lines').evaluate((element) => element.scrollHeight - element.clientHeight),
+    ).toBeLessThanOrEqual(0);
+    await expect(page.getByRole('button', { name: 'Continue', exact: true })).toBeInViewport({ ratio: 1 });
+    await expect(summary.locator('.cl-wiz__summary-note')).toBeInViewport({ ratio: 1 });
+  });
+}
 
 test('customer can drive the booking wizard to the checkout handoff', async ({ page }) => {
   // ── Land on the customer app and start a booking from the real CTA ──

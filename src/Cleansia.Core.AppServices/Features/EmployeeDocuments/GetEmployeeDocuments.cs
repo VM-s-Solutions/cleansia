@@ -27,8 +27,7 @@ public class GetEmployeeDocuments
                 isActive: request.Filter?.IsActive ?? true,
                 employeeId: request.Filter?.EmployeeId,
                 documentType: request.Filter?.DocumentType,
-                status: request.Filter?.Status,
-                latestVersionOnly: request.Filter?.LatestVersionOnly
+                status: request.Filter?.Status
             );
 
             var filter = specification.SatisfiedBy();

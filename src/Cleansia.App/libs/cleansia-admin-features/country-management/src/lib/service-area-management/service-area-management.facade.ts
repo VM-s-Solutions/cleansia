@@ -2,15 +2,14 @@ import { Injectable, inject, signal } from '@angular/core';
 import {
   AdminClient,
   AdminCountryControllerSetCountryServicedRequest,
-  CountryDetailDto,
-  CountryListItem,
   CreateServiceCityCommand,
+  ServiceAreaCountryDto,
   ServiceCityDto,
   UpdateServiceCityCommand,
 } from '@cleansia/admin-services';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { DialogService, SnackbarService } from '@cleansia/services';
-import { catchError, filter, forkJoin, of, takeUntil } from 'rxjs';
+import { catchError, filter, of, takeUntil } from 'rxjs';
 
 /**
  * Facade for the admin "Service area" management page. Two concerns
@@ -30,58 +29,34 @@ export class ServiceAreaManagementFacade extends UnsubscribeControlDirective {
   private readonly dialog = inject(DialogService);
   private readonly snackbarService = inject(SnackbarService);
 
-  readonly countries = signal<CountryListItem[]>([]);
+  readonly countries = signal<ServiceAreaCountryDto[]>([]);
   readonly cities = signal<ServiceCityDto[]>([]);
   readonly servicedCountryIds = signal<Set<string>>(new Set());
   readonly loading = signal<boolean>(false);
   readonly initialLoading = signal<boolean>(true);
 
-  /**
-   * Loads the full country catalog AND the per-country IsServiced flag
-   * (which lives on CountryDetailDto, not CountryListItem). One detail
-   * call per country in parallel via forkJoin — acceptable for the v1
-   * catalog size (~50 countries). If it grows past a few hundred, swap to
-   * a dedicated `/admin-countries/serviced-ids` endpoint.
-   */
   loadCountries(): void {
     this.loading.set(true);
     this.adminClient.adminCountryClient
-      .getOverview()
+      .serviceAreaOverview()
       .pipe(
         takeUntil(this.destroyed$),
-        catchError(() => of([] as CountryListItem[]))
+        catchError(() => of(null))
       )
       .subscribe((countries) => {
-        // `?? []` because the generated client returns NULL, not an empty list, for a 200 whose body
-        // is not a JSON array and for a 204, while its declared type promises an array — neither
-        // `catchError` nor the compiler can see it. Reasoned out in full in
-        // service-management/service-form.facade.ts. Coalesced ONCE into a local so the signal and
-        // the `.map` below read the same list; the `.map` is what would throw.
-        const list = countries ?? [];
-        this.countries.set(list);
-        const ids = list.map((c) => c.id).filter((id): id is string => !!id);
-        if (ids.length === 0) {
-          this.servicedCountryIds.set(new Set());
-          this.loading.set(false);
-          this.initialLoading.set(false);
-          return;
+        if (countries) {
+          this.countries.set(countries);
+          this.servicedCountryIds.set(
+            new Set(
+              countries
+                .filter((c) => c.isServiced)
+                .map((c) => c.id)
+                .filter((id): id is string => !!id)
+            )
+          );
         }
-        const detailCalls = ids.map((id) =>
-          this.adminClient.adminCountryClient
-            .details(id)
-            .pipe(catchError(() => of(null)))
-        );
-        forkJoin(detailCalls)
-          .pipe(takeUntil(this.destroyed$))
-          .subscribe((details) => {
-            const next = new Set<string>();
-            details.forEach((d: CountryDetailDto | null) => {
-              if (d?.id && d.isServiced) next.add(d.id);
-            });
-            this.servicedCountryIds.set(next);
-            this.loading.set(false);
-            this.initialLoading.set(false);
-          });
+        this.loading.set(false);
+        this.initialLoading.set(false);
       });
   }
 
@@ -127,8 +102,8 @@ export class ServiceAreaManagementFacade extends UnsubscribeControlDirective {
         takeUntil(this.destroyed$),
         catchError(() => of([] as ServiceCityDto[]))
       )
-      // Same generated-client null as `loadCountries` above. Nothing dereferences it here, so the
-      // null would sit in the signal until the city table iterates it.
+      // The generated client answers a 200 whose body is not a JSON array, and a 204, with NULL
+      // although its type promises an array. → service-management/service-form.facade.ts
       .subscribe((cities) => this.cities.set(cities ?? []));
   }
 

@@ -19,12 +19,19 @@ function findSolutionDir(): string {
 }
 
 const ORDER_ENTITY = join(findSolutionDir(), 'Cleansia.Core.Domain/Orders/Order.cs');
+const SAVED_CARD_ENTITY = join(findSolutionDir(), 'Cleansia.Core.Domain/Users/SavedCard.cs');
 
 function earlyPerformanceVersionInForce(): string {
   const match = readFileSync(ORDER_ENTITY, 'utf8').match(
     /EarlyPerformanceConsentTextVersionInForce\s*=\s*"([^"]+)"/,
   );
   if (!match) throw new Error('Order.EarlyPerformanceConsentTextVersionInForce not found');
+  return match[1];
+}
+
+function savedCardConsentVersionInForce(): string {
+  const match = readFileSync(SAVED_CARD_ENTITY, 'utf8').match(/ConsentTextVersionInForce\s*=\s*"([^"]+)"/);
+  if (!match) throw new Error('SavedCard.ConsentTextVersionInForce not found');
   return match[1];
 }
 
@@ -110,6 +117,24 @@ describe('the customer contract copy in every locale', () => {
       const tick = String(leaf(readLocale(locale), ['pages', 'order', 'early_performance', version]));
 
       expect({ locale, namesPeriod: tick.includes('14') }).toEqual({ locale, namesPeriod: true });
+    }
+  });
+
+  it('the save-card tick at payment carries the card-guarantee consent of the version the server records', () => {
+    const version = savedCardConsentVersionInForce();
+    for (const locale of LOCALES) {
+      const bundle = readLocale(locale);
+      const empty = [
+        ['pages', 'order', 'save_card', 'label'],
+        ['pages', 'order', 'card_capture', 'consent', version],
+      ]
+        .filter((path) => {
+          const value = leaf(bundle, path);
+          return typeof value !== 'string' || !value.trim();
+        })
+        .map((path) => path.join('.'));
+
+      expect({ locale, empty }).toEqual({ locale, empty: [] });
     }
   });
 });

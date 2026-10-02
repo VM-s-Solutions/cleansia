@@ -633,6 +633,8 @@ const CUSTOMER_SURFACE_ERROR_KEYS: readonly string[] = [
   // Saved card — the guarantee for cash bookings
   'saved_card.consent_not_accepted',
   'saved_card.not_found',
+  // CreateOrder: a guest booking asked to save its card, which only an account can hold.
+  'saved_card.requires_account',
   // What the customer owes on an order, read and paid through its pay link
   'receivable.not_found',
   'receivable.not_open',

@@ -50,6 +50,9 @@ var latencySeverity = isProd ? 2 : 3
 var responseTimeThresholdSeconds = 2
 var exceptionsSeverity = isProd ? 2 : 3
 var exceptionsThreshold = isProd ? 10 : 25
+// Dev: fire only when the Functions host is unhealthy for at least half the window, so a 2-5 minute
+// restart (every deploy) stays quiet. Prod keeps 100 — any unhealthy minute counts.
+var functionsHealthThreshold = isProd ? 100 : 50
 
 // ---------------------------------------------------------------------------------------------------
 // Action Group — the one email receiver every alert below fans into. Location is 'global' by design
@@ -138,7 +141,7 @@ resource functionsHealthAlert 'Microsoft.Insights/metricAlerts@2018-03-01' = {
           metricNamespace: 'Microsoft.Web/sites'
           metricName: 'HealthCheckStatus'
           operator: 'LessThan'
-          threshold: 100
+          threshold: functionsHealthThreshold
           timeAggregation: 'Average'
         }
       ]
@@ -151,6 +154,8 @@ resource functionsHealthAlert 'Microsoft.Insights/metricAlerts@2018-03-01' = {
   }
 }
 
+// Disabled on dev, not removed: on a site with no traffic the cold-start requests after every deploy
+// dominate the average and trip it. Removing the loop would leave the rules behind (incremental mode).
 resource latencyAlerts 'Microsoft.Insights/metricAlerts@2018-03-01' = [
   for siteName in siteNames: {
     name: 'alert-latency-${siteName}'
@@ -159,7 +164,7 @@ resource latencyAlerts 'Microsoft.Insights/metricAlerts@2018-03-01' = [
     properties: {
       description: 'Average HTTP response time on ${siteName} exceeded ${responseTimeThresholdSeconds}s over ${windowSize}.'
       severity: latencySeverity
-      enabled: true
+      enabled: isProd
       scopes: [resourceId('Microsoft.Web/sites', siteName)]
       evaluationFrequency: evaluationFrequency
       windowSize: windowSize

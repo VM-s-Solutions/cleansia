@@ -382,6 +382,8 @@ public class ConfirmRecurringOrder
                 stripeCustomerId: stripeCustomerId,
                 orderId: order.Id,
                 displayOrderNumber: order.DisplayOrderNumber,
+                savedCardId: null,
+                currentPaymentIntentId: null,
                 cancellationToken: cancellationToken);
 
             if (string.IsNullOrEmpty(order.StripePaymentIntentId))

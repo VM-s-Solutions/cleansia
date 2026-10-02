@@ -100,7 +100,8 @@ export function getEmployeeTableDefinition(
         color: 'success',
         onClick: (row: AdminEmployeeListItem) => defs.onApprove(row),
         visible: (row: AdminEmployeeListItem) =>
-          row.contractStatus === ContractStatus[ContractStatus.Pending] &&
+          (row.contractStatus === ContractStatus[ContractStatus.Pending] ||
+            row.contractStatus === ContractStatus[ContractStatus.Rejected]) &&
           row.isProfileComplete && permissions.hasPolicy(Policy.CanApproveEmployee),
       },
       {

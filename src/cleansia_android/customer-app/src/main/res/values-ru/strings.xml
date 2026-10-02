@@ -793,6 +793,7 @@
     <string name="booking_card_guarantee_consent_required">Чтобы платить наличными, согласитесь на гарантию картой или выберите оплату картой.</string>
     <string name="booking_card_guarantee_pending">Мы ещё подтверждаем вашу карту. Через мгновение подтвердите заказ ещё раз.</string>
     <string name="booking_card_guarantee_cancelled">Карта не сохранена, поэтому ничего не забронировано. Сохраните карту, чтобы платить наличными, или выберите оплату картой.</string>
+    <string name="booking_save_card_label">Сохранить эту карту для моих следующих заказов</string>
     <string name="booking_special_instructions_hint">Особые пожелания? (необязательно)</string>
     <string name="booking_access_instructions_hint">Как войти? (необязательно)</string>
 

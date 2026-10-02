@@ -25,4 +25,16 @@ public static class CountryMappers
             InsuranceCoverageAmount: configuration?.InsuranceCoverageAmount,
             HasConfiguration: configuration is not null,
             IsDefaultMarket: configuration?.IsDefaultMarket ?? false);
+
+    public static ServiceAreaCountryDto MapToServiceAreaDto(this Country country, CountryConfiguration? configuration) =>
+        new(
+            country.Id,
+            country.IsoCode,
+            country.IsoAlpha2,
+            country.Name,
+            Translations: country.Translations.ToDictionary(),
+            // The admin switch's own column, not the effective "serviced" predicate (CountryRepository.GetServicedAsync). → /architecture/security-rules#s10-soft-delete-isactive-semantics
+            IsServiced: country.IsServiced,
+            IsDefaultMarket: configuration?.IsDefaultMarket ?? false,
+            HasConfiguration: configuration is not null);
 }

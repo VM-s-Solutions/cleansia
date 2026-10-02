@@ -26,6 +26,7 @@ final class OrderDetailViewModel: ViewModel {
     @Published private(set) var reviewState: ActionState = .idle
     @Published private(set) var receiptState: ActionState = .idle
     @Published private(set) var confirmRecurringState: ActionState = .idle
+    @Published private(set) var saveCard = false
     @Published private(set) var hasMembership: Bool?
     @Published private(set) var markets: MarketState = .loading
 
@@ -41,6 +42,7 @@ final class OrderDetailViewModel: ViewModel {
     private let marketStore: MarketStore
     private let snackbar: SnackbarController
     private let eventBus: OrderEventBus
+    private let paymentIntentClient: PaymentIntentClient
     private let liveActivity: OrderLiveActivitySyncing
     private let pollInterval: TimeInterval
     private let now: () -> Date
@@ -57,6 +59,7 @@ final class OrderDetailViewModel: ViewModel {
         marketStore: MarketStore,
         snackbar: SnackbarController,
         eventBus: OrderEventBus,
+        paymentIntentClient: PaymentIntentClient = LivePaymentIntentClient(),
         liveActivity: OrderLiveActivitySyncing = LiveActivityBridge(),
         // Active-order tracking cadence. Short so an OnTheWay → InProgress change surfaces (and the Live
         // Activity is updated) within ~30s while the detail screen is open, instead of up to 5 minutes.
@@ -72,6 +75,7 @@ final class OrderDetailViewModel: ViewModel {
         self.marketStore = marketStore
         self.snackbar = snackbar
         self.eventBus = eventBus
+        self.paymentIntentClient = paymentIntentClient
         self.liveActivity = liveActivity
         self.pollInterval = pollInterval
         self.now = now
@@ -355,34 +359,33 @@ final class OrderDetailViewModel: ViewModel {
 
     // MARK: - Confirm recurring
 
+    /// The order is read through the customer's own session, so a card occurrence awaiting confirmation is a
+    /// signed-in card payment.
+    var offersCardSaving: Bool {
+        guard let order = state.loadedValue else { return false }
+        return order.needsConfirmation && order.paymentType?.value == 2
+    }
+
+    func setSaveCard(_ save: Bool) {
+        saveCard = save
+    }
+
     /// A recurring-generated order the server marks `needsConfirmation` needs an
     /// explicit confirm. The backend branches on payment type: a cash response carries
     /// no `clientSecret` (confirmed, still unpaid until the cleaner takes the cash)
-    /// → success + refetch; a card response carries a `clientSecret` → emit a
-    /// PaymentSheet presentation for
-    /// the view to present (PaymentIntent variant). `.completed` is UX-only — the
-    /// view calls `notifyRecurringPaymentResult` and we re-read the order; the
-    /// webhook remains the sole paid authority.
+    /// → success + refetch; a card response carries a `clientSecret` → the sheet's
+    /// intent is asked of CreatePaymentIntent with the save tick. `.completed` is
+    /// UX-only — the view calls `notifyRecurringPaymentResult` and we re-read the
+    /// order; the webhook remains the sole paid authority.
     func confirmRecurring() async {
         guard !orderId.isBlank, !confirmRecurringState.isSubmitting else { return }
         confirmRecurringState = .submitting
         switch await client.confirmRecurring(orderId: orderId) {
         case let .success(confirmation):
-            confirmRecurringState = .idle
-            if confirmation.needsPayment,
-               let clientSecret = confirmation.clientSecret,
-               let stripeCustomerId = confirmation.stripeCustomerId,
-               let ephemeralKey = confirmation.ephemeralKey,
-               !stripeCustomerId.isEmpty, !ephemeralKey.isEmpty
-            {
-                recurringCardPayment.send(PaymentSheetPresentation(
-                    clientSecret: clientSecret,
-                    ephemeralKey: ephemeralKey,
-                    stripeCustomerId: stripeCustomerId,
-                    merchantDisplayName: "Cleansia",
-                    intentKind: .payment
-                ))
+            if confirmation.needsPayment {
+                await presentCardPayment()
             } else {
+                confirmRecurringState = .idle
                 snackbar.showSuccess(L10n.Recurring.confirmSuccess)
                 _ = await repository.refresh()
                 await fetch(initial: false)
@@ -390,6 +393,26 @@ final class OrderDetailViewModel: ViewModel {
         case let .failure(error):
             snackbar.showApiError(error)
             confirmRecurringState = .idle
+        }
+    }
+
+    /// ConfirmRecurringOrder takes no saveCard and its intent keeps nothing. CreatePaymentIntent hands that
+    /// intent back unticked and replaces it with a card-saving one ticked. It is asked on every card confirm:
+    /// a confirm repeated after a ticked attempt replays the intent that attempt cancelled.
+    private func presentCardPayment() async {
+        let savesCard = saveCard
+        let result = await paymentIntentClient.createPaymentIntent(orderId: orderId, saveCard: savesCard)
+        confirmRecurringState = .idle
+        switch result {
+        case let .success(intent):
+            recurringCardPayment.send(.cardPayment(
+                clientSecret: intent.clientSecret,
+                ephemeralKey: intent.ephemeralKey,
+                stripeCustomerId: intent.stripeCustomerId,
+                intentSavesCard: savesCard
+            ))
+        case let .failure(error):
+            snackbar.showApiError(error)
         }
     }
 

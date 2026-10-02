@@ -9,10 +9,16 @@
       [ngModel]="current()?.value ?? null"
       optionLabel="short"
       optionValue="value"
+      [appendTo]="appendTo()"
+      [overlayOptions]="overlayOptions()"
+      [panelStyleClass]="listClass()"
       (onChange)="onPick($event.value)"
     >
       <ng-template let-market pTemplate="item">
         <span class="cleansia-market-switcher__item">{{ market.label }}</span>
+        @if (market.value === current()?.value) {
+          <i class="pi pi-check cleansia-market-switcher__check" aria-hidden="true"></i>
+        }
       </ng-template>
 
       <ng-template let-market pTemplate="selectedItem">

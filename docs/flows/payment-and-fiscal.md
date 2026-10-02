@@ -3,8 +3,8 @@
 Money arrives and is recorded on the payment axis — the order stays `New` until a cleaner takes it —
 and a receipt is issued once money has been received: on settlement for card, at completion for cash,
 after the cleaner has recorded the handover. The same webhook also lands a card a customer saves as the
-guarantee for cash, and settles what a customer owes after the booking, which earns a receipt of its
-own. Almost all of the difficulty is
+guarantee for cash, at a cash booking or by a tick while paying by card, and settles what a customer
+owes after the booking, which earns a receipt of its own. Almost all of the difficulty is
 in making a webhook that can arrive twice, late, or out of order behave as though it arrived once.
 
 ## The path
@@ -60,6 +60,7 @@ sequenceDiagram
 | Card payment settles after the order was cancelled | The order is **not** marked `Paid`: the customer paid for a clean that will not happen, so the webhook escalates a dispute for a refund (the customer's open one, or a new one), as it does for a card payment that lands on an order already settled in cash. |
 | Checkout expired or payment cancelled (`checkout.session.expired`, `payment_intent.canceled`) | An order not yet cancelled is cancelled through `Order.Cancel` — by the system, `order.cancelled.payment_not_completed`, no fee, no refund — and a guest is e-mailed, with the old links revoked and a fresh one minted. |
 | A recurring occurrence's Checkout Session expires | Nothing is cancelled: the session is released and the occurrence stays confirmable until the stale-occurrence sweep's cut-off. |
+| A PaymentSheet intent replaced by a newer one (`payment_intent.canceled` with Stripe's reason `duplicate`) | Nothing is cancelled: `CreatePaymentIntent` cancels the order's old intent that way only when it hands the customer a new one to pay. Any other cancelled intent cancels the order as above. |
 | A saved card's capture reported twice (setup intent and setup-mode session) | The first lands the card; the second changes nothing. |
 | A receivable paid through its pay link | Paid under the receivable's company; the fee receipt is asked for; the order is untouched. |
 | A receivable paid twice — the pay link and a charge, or two links | The second payment is refunded in full; a redelivery replays the same refund. |
@@ -67,16 +68,58 @@ sequenceDiagram
 
 ## A saved card and a paid fee arrive by the same webhook {#saved-cards-and-receivables}
 
-Two kinds of money event are not an order's sale (owner rulings 2026-09-28, decisions 16–18). Both
+Two kinds of money event are not an order's sale (owner rulings 2026-09-28, decisions 16–18), and a
+third rides on one: the card a customer ticked to keep while paying (owner decision 2026-10-01). All
 pass the same signature check and event-id stamp.
 
 | Event | What happens |
 |---|---|
 | `setup_intent.succeeded`, or `checkout.session.completed` of a setup-mode session | The saved card lands: brand, last four and expiry are read from Stripe onto the `SavedCards` row the capture started, and the customer's earlier card in that currency is retired. A second event for the same capture — a web capture raises both — changes nothing; one naming no saved card, or one already captured or removed, is ignored. → [Business rules — a saved card guarantees cash](/product/business-rules#card-guarantee) |
+| `checkout.session.completed` of a booking's payment-mode session, or `payment_intent.succeeded`, carrying `SavedCardId` | The card the customer ticked to keep lands the same way, read from the PaymentIntent and only when it succeeded with `setup_future_usage=off_session`. **Which event then settles the order depends on the channel.** An app's intent carries the `OrderId` as well, so its `payment_intent.succeeded` goes on to the order and settles it like any card payment. A web payment raises both events, and the PaymentIntent behind the web's Checkout Session carries `SavedCardId` but no `OrderId`: whichever event arrives first lands the card and the second finds it already captured, but only `checkout.session.completed` settles the web order — the intent's event lands the card and stops there. → [Business rules — saving a card while paying](/product/business-rules#save-card) |
 | `checkout.session.completed` of a receivable's pay link | The receivable is paid, under its own company. The session names the receivable (`ReceivableId`) and **never an `OrderId`**, so the order path cannot mistake the fee for the booking's sale; the order's payment status, charge surface and refunds are untouched. |
 | `payment_intent.succeeded` of an off-session charge | The same, for a charge on the saved card. |
 | A payment for a receivable already paid by another PaymentIntent | Refunded in full on that PaymentIntent under `refund:receivable:{id}:{paymentIntent}`, so a redelivery replays the same refund. |
 | `payment_intent.payment_failed` of an off-session charge — a decline, or the bank's `authentication_required` | A pay link is opened, recorded on the receivable and e-mailed to the customer (five locales). None for a receivable no longer open, and none while card payments are switched off. |
+
+**Only a ticked payment keeps a card.** With the box ticked, the booking's charge surface is opened on
+the customer's Stripe Customer for the booking's currency with `setup_future_usage=off_session` and the
+`SavedCardId` of a row already recorded with the consent: on the web the Checkout Session, which puts
+both on its PaymentIntent too; on the apps the PaymentIntent `CreatePaymentIntent` mints for
+PaymentSheet. A row whose payment never succeeds is never captured. Unticked, neither channel keeps a
+card, and what else is kept differs:
+
+- **The web** opens the session on no Stripe Customer and asks Stripe to keep nothing.
+- **The apps** still open the intent on the account's own Stripe Customer — `CreatePaymentIntent`
+  creates one and records it on the account when there is none — but with no `setup_future_usage` and
+  no `SavedCardId`. Stripe records the payment against that Customer and does not attach the card to
+  it, and no `SavedCards` row is written. The response still carries the Customer and an ephemeral key;
+  the booking's sheet is opened without them, because a sheet given them draws Stripe's own save box on
+  an intent that keeps nothing, and a card saved through that box would stay on the Customer with no
+  `SavedCards` row and no consent.
+
+**Until the 2026-10-01 ruling every card paid in the apps was kept.** Every PaymentIntent the apps
+opened, a booking's and a recurring occurrence's alike, asked Stripe for
+`setup_future_usage=off_session` unconditionally, so each card paid in the apps was kept on the Stripe
+Customer silently, with no `SavedCards` row and no consent.
+
+**A recurring occurrence's confirmation keeps no card itself.** `ConfirmRecurringOrder` takes no
+`saveCard`: the web pays the occurrence through a Checkout Session on no Stripe Customer, the apps
+through a PaymentIntent on the account's Stripe Customer with no `setup_future_usage` and no
+`SavedCardId`, answered, as `CreatePaymentIntent`'s is, with that Customer and an ephemeral key. What
+the clients do with it is the current implementation; the 2026-10-01 decision names a booking paid by
+card and rules nothing on an occurrence. Android and iOS offer the booking's tick above *Confirm and
+pay*, off by default, and after the confirm take the sheet's intent from `CreatePaymentIntent` with it:
+unticked, that hands back the confirm's own intent and the sheet opens without the Customer; ticked, it
+records the row with the consent, replaces the intent with a card-saving one, cancels the old one as
+`duplicate`, and the sheet opens on the Customer. The web offers no tick there and keeps no card — an
+open item, not a ruling ([ADR-0070, amended 2026-10-01](/decisions/adr-0070#amended-2026-10-01)).
+
+**Re-opening PaymentSheet does not cancel the booking.** `CreatePaymentIntent` hands back the order's
+open intent while Stripe still lets the customer confirm it, for the same amount, on the same Stripe
+Customer and with the same tick. Otherwise it opens a new intent keyed on the one it replaces and
+cancels the old one with Stripe's reason `duplicate`; that cancellation leaves the order alone (the
+edge case above), and an old intent Stripe will not cancel — one already paid, say — refuses the new
+one with `order.payment_gateway_unavailable` rather than risk a second charge.
 
 A paid receivable asks for its [fee receipt](#fee-receipt) and, when it is a cancellation or lockout
 fee, for the crew's share of it → [Business rules — what a customer owes](/product/business-rules#receivables).

@@ -94,6 +94,7 @@ class OrderDetailCancelGateTest {
         membershipRepository = membershipRepository,
         orderEventBus = orderEventBus,
         loyaltyRepository = loyaltyRepository,
+        paymentRepository = mockk(relaxed = true),
     )
 
     /**

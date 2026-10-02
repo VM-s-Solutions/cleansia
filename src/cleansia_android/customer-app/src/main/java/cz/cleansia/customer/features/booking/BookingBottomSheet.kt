@@ -62,6 +62,7 @@ import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.theme.Poppins
+import cz.cleansia.customer.core.payments.toConfiguration
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
@@ -657,32 +658,7 @@ private fun SheetContent(
                                     pendingCardOrder = outcome.response
                                     paymentSheet.presentWithPaymentIntent(
                                         paymentIntentClientSecret = outcome.paymentSheet.clientSecret,
-                                        configuration = com.stripe.android.paymentsheet.PaymentSheet.Configuration(
-                                            merchantDisplayName = "Cleansia",
-                                            customer = com.stripe.android.paymentsheet.PaymentSheet.CustomerConfiguration(
-                                                id = outcome.paymentSheet.customerId,
-                                                ephemeralKeySecret = outcome.paymentSheet.ephemeralKey,
-                                            ),
-                                            googlePay = com.stripe.android.paymentsheet.PaymentSheet.GooglePayConfiguration(
-                                                // Follows the Stripe key, not the build type — a
-                                                // release build on a pk_test_ key must still ask
-                                                // Google Pay for Test, or the sheet fails after the
-                                                // user has committed. Derived in build.gradle.kts
-                                                // from the key prefix so the two cannot desync.
-                                                environment = if (cz.cleansia.customer.BuildConfig.GOOGLE_PAY_PRODUCTION) {
-                                                    com.stripe.android.paymentsheet.PaymentSheet.GooglePayConfiguration.Environment.Production
-                                                } else {
-                                                    com.stripe.android.paymentsheet.PaymentSheet.GooglePayConfiguration.Environment.Test
-                                                },
-                                                // Stripe: "The two-letter ISO 3166 code of the country of
-                                                // your business" — the merchant account, not the order.
-                                                countryCode = "CZ",
-                                                // The PaymentIntent's own currency wins on the sheet; this
-                                                // is the Google Pay availability hint.
-                                                currencyCode = outcome.paymentSheet.currencyCode,
-                                            ),
-                                            allowsDelayedPaymentMethods = false,
-                                        ),
+                                        configuration = outcome.paymentSheet.toConfiguration(),
                                     )
                                 }
                                 is BookingSubmitOutcome.CardGuaranteeNeeded -> {

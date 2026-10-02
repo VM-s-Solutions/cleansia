@@ -271,3 +271,14 @@ checks an iOS screen against (`agents/architecture/decisions/ios-app-architectur
   Android keeps its own idiom for each.
 - **The iOS floor stays 16** ([ADR-0014](/decisions/adr-0014)). An API from a later version sits behind
   `#available`, and below that version the screen looks and works as it did.
+
+What changed on iOS:
+
+- **A short list opens as a menu on its field.** A `CleansiaDropdown` over a closed list (the dispute
+  reason, the partner sign-up market, the partner document type) is the label of a native `Menu` that
+  holds an inline `Picker`. The list drops down from the field, with the system checkmark on the
+  chosen option, instead of a sheet sliding up over the screen; on iOS 26 the menu is Liquid Glass. A
+  searchable one keeps the sheet and its search field, because the country lists (bank country,
+  nationality, business country) are about 250 entries long. Both draw the same field, and the whole
+  field opens either one. Android keeps its bottom sheet; its customer dispute form already used an
+  anchored menu for the reason.

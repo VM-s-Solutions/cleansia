@@ -231,7 +231,9 @@ Backend error keys resolve through the platform's own naming convention, **not**
 
 **The language picked in the app is the language of everything the app draws, and of every push
 whose text the device writes** — the push banner, the notification feed and the Live Activity card,
-whatever the phone is set to. The sitewide promo push is not one of them: the server writes its text,
+whatever the phone is set to — except, probably, the iOS Live Activity's start alert, which iOS resolves
+in the app's system language ([ADR-0029](/decisions/adr-0029#amendment-a5) A5, not yet checked on a
+device). The sitewide promo push is not one of them: the server writes its text,
 in the account's language. Neither platform gets that for free outside the app's own screens: iOS
 resolves a push's keys in the app's system language, and Android 26–32 localizes only activity
 contexts. Each closes the gap with the one shared seam in the table above. → [Which language a notification is in](/architecture/push-notifications#language)

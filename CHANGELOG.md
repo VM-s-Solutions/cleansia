@@ -131,8 +131,9 @@ need backfilling.
   *Credit*. On the confirm step, with card chosen and credit applying, the summary shows *Your credit
   −X* and *To pay by card Y*, and the button shows the amount the card is charged; with cash chosen and
   a balance held, it says credit applies to card payments only. After booking, the success screen and
-  the order say *Paid with credit* and, once the card was charged, *Paid by card*; while the card
-  payment is pending or failed the card share reads *To pay by card*. How credit is earned and spent
+  the order say *Paid with credit* and *Paid by card*. On the order, the card share reads *To pay by
+  card* while the card payment is pending or failed, and *Paid by card* once the card was charged,
+  even if the payment was later refunded or disputed. How credit is earned and spent
   did not change. (Owner ruling 2026-10-01.)
 
 - **Customer web — the order detail says how a booking that spent credit is paid.** Under the total, a

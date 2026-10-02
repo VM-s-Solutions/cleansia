@@ -177,9 +177,12 @@ chosen yet, a customer holding a balance reads *Credit applies to card payments 
   Stripe sheet then asks for. With cash chosen and a balance held, it says *Credit applies to card
   payments only*.
 - **After booking**, the success screen and the order's price card add *Paid with credit* and the card
-  share, read from the order rather than the preview. The card line says *Paid by card* only once the
-  card was charged — payment `Paid`, `Refunded`, `PartiallyRefunded` or `Disputed`, the inverse of the
-  server's `Order.TookNoPayment` — and *To pay by card* while the payment is `Pending` or `Failed`.
+  share, read from the order rather than the preview. On the order, the card line says *Paid by card*
+  only once the card was charged — payment `Paid`, `Refunded`, `PartiallyRefunded` or `Disputed`, the
+  inverse of the server's `Order.TookNoPayment` — and *To pay by card* while the payment is `Pending`
+  or `Failed`. The success screen says *Paid by card*. A card booking reaches it only after Stripe's
+  sheet has completed, and the order it reads is usually still `Pending` until the webhook lands.
+  Android says *To pay by card* there if the payment is `Failed`; iOS does not.
 
 The web order detail shows the same two lines under the total, by the same rule (since 2026-10-02).
 → [Business rules — customer credit](/product/business-rules#credit),

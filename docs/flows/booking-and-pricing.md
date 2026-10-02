@@ -259,6 +259,15 @@ live at 1 (owner ruling 2026-10-01):
 | Recurring schedule — web | 1 – 8 | 1 – 4 |
 | Recurring schedule — Android, iOS | 0 – 8 | 0 – 4 |
 
+**On the one-off booking's size row, the *Your home* title sits above the two steppers** on Android
+and iOS (since 2026-10-02). The steppers used to sit beside the title, which left no room once
+Ukrainian counted bathrooms as *ванна кімната* (owner ruling 2026-10-02). On a 360dp phone the two
+Ukrainian counters alone needed 306dp of the row's 292dp, and on a 320pt iPhone they ran into each
+other. Each counter's label now takes the width its pill leaves after both buttons, and a longer label
+wraps onto a second line between words. Home's *How big is your home?* card gives its labels up to two
+lines too, and then shrinks them to 80% if a word is still too wide. On Android the cleaner's job-board
+scope chips wrap onto a second line (`FlowRow`), as iOS's `ChipFlow` already did.
+
 On Android and iOS, a rebooking, or a schedule started from a past order, that was larger starts at the
 cap. The web's two prefills (`prefillFromRebook`, `prefillFromOrder`) pass the stored size through
 unclamped: a larger past order leaves no size chip selected, and submitting it is refused with

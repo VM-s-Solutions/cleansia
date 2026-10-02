@@ -536,6 +536,17 @@ need backfilling.
   everywhere, as it is *kredit* in Czech and Slovak. Points and a cleaner's pay bonus keep their
   names. (Owner ruling 2026-10-02.)
 
+- **Customer and cleaner, in Ukrainian and Russian — a bathroom is a bathroom, not a bathtub.** In the
+  apps, bathroom counts said *ванна* / *ванни* in Ukrainian and *ванна* / *ванны* in Russian, which
+  name the tub. That covered the booking steppers, Home's *How big is your home?* card, the booking
+  summary, the order and the schedule, and in Ukrainian also the cleaner's job board, offer and work
+  contract. They now say *ванна кімната* (*2 ванні кімнати*, *5 ванних кімнат*) and *ванная*
+  (*2 ванные*, *5 ванных*). Ukrainian on the customer, cleaner and admin web changed the same way;
+  Russian there already said *ванная*. The longer words did not fit, so in both apps the booking's
+  *Your home* title now sits above the two steppers. A count too long for its stepper, or for Home's
+  size card, wraps onto a second line. On Android the cleaner's job-board chips wrap too. (Owner
+  ruling 2026-10-02.)
+
 - **Customer iOS — the Live Activity's smallest Dynamic Island slot shows where the clean is.** When
   another app's activity shares the Dynamic Island, Cleansia's slot drew a plain dot. It now shows a car
   while the cleaner is on the way, sparkles during the clean, a seal when it is done and a cross if it

@@ -300,7 +300,8 @@ What changed on iOS:
   pill growing; the two steppers on the booking row split the gap between them. VoiceOver reads each
   pill as one adjustable control, named by its row (*Your home*, or *Rooms* and *Bathrooms* on a
   schedule) with the count as its value, and a swipe up or down steps it within the buttons' bounds.
-  Android's counters are still 28dp with no TalkBack adjust action.
+  Android is unchanged: the booking counter's buttons are 28dp, the schedule stepper's are Material's
+  48dp, and on both the buttons are unlabelled and TalkBack has no adjust action.
 - **On iOS 26 the booking sheet grows out of the Book button.** Opened from the Book FAB, the booking
   sheet zooms out of the button and shrinks back into it when it closes. Every other way into booking
   (Home's book buttons, the carousel slides, *Order again*) slides the sheet up as before. The FAB looks

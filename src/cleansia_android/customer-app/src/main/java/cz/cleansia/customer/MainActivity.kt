@@ -4,8 +4,10 @@ import cz.cleansia.core.snackbar.GlobalSnackbarHost
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
+import android.os.LocaleList
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -26,6 +28,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
 import cz.cleansia.core.notifications.PushTokenSessionObserver
 import cz.cleansia.core.settings.AppLocale
+import cz.cleansia.customer.core.notifications.NotificationChannels
 import cz.cleansia.customer.core.notifications.NotificationDeepLink
 import cz.cleansia.customer.core.settings.AppSettings
 import cz.cleansia.customer.core.settings.AppSettingsRepository
@@ -96,6 +99,7 @@ class MainActivity : androidx.appcompat.app.AppCompatActivity() {
         // the NavHost composes so the LaunchedEffect picks it up immediately.
         pendingDeepLink.value = NotificationDeepLink.resolve(intent)
         restorePersistedAppLocale()
+        registerNotificationChannels()
         maybeRequestNotificationPermission()
         // Start observing (session × FCM-token) so the device gets
         // registered on every cold start with an existing session, not
@@ -166,6 +170,28 @@ class MainActivity : androidx.appcompat.app.AppCompatActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         pendingDeepLink.value = NotificationDeepLink.resolve(intent)
+    }
+
+    /**
+     * The manifest handles locale changes, so an in-app language change reaches this activity here
+     * rather than recreating it: on API 26-32 AppCompat updates its resources and calls this, on 33+
+     * the framework does.
+     */
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        if (newConfig.locales != channelLocales) registerNotificationChannels()
+    }
+
+    /** The locales the notification channels were last named in. */
+    private var channelLocales: LocaleList? = null
+
+    /**
+     * Names the notification channels in this activity's language, which is the in-app one on every
+     * API level; registering an existing channel again renames it.
+     */
+    private fun registerNotificationChannels() {
+        channelLocales = resources.configuration.locales
+        NotificationChannels.registerAll(this)
     }
 
     /**

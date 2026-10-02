@@ -76,4 +76,35 @@ class OrderFormattersTest {
     fun `formatOrderPrice passes unknown codes through as a suffix`() {
         assertEquals("1,200 PLN", formatOrderPrice(1200.0, "PLN"))
     }
+
+    /** A credit share can leave haléře; rounding them away shows a figure the card is not charged. */
+    @Test
+    fun `formatOrderPrice shows the minor units of an amount that is not whole`() {
+        assertEquals("319.90 Kč", formatOrderPrice(319.90, "CZK"))
+        assertEquals("137.10 Kč", formatOrderPrice(137.10, "CZK"))
+        assertEquals("12.50 €", formatOrderPrice(12.5, "EUR"))
+        assertEquals("\$1,200.05", formatOrderPrice(1200.05, "USD"))
+        assertEquals("-57.60 Kč", formatOrderPrice(-57.6, "CZK"))
+    }
+
+    @Test
+    fun `formatOrderPrice keeps a whole amount whole, within half a minor unit`() {
+        assertEquals("320 Kč", formatOrderPrice(320.0, "CZK"))
+        assertEquals("320 Kč", formatOrderPrice(319.999, "CZK"))
+        assertEquals("0 Kč", formatOrderPrice(0.0, "CZK"))
+        assertEquals("0 Kč", formatOrderPrice(-0.001, "CZK"))
+    }
+
+    /** The currency's own minor unit: none for yen; two for a blank or unknown code. */
+    @Test
+    fun `formatOrderPrice takes the fraction digits from the currency`() {
+        assertEquals("1,200 JPY", formatOrderPrice(1199.6, "JPY"))
+        assertEquals("319.90", formatOrderPrice(319.9, null))
+        assertEquals("319.90 XYZ", formatOrderPrice(319.9, "XYZ"))
+    }
+
+    @Test
+    fun `formatOrderPrice uses the locale's decimal mark`() {
+        assertEquals("319,90 Kč", formatOrderPrice(319.9, "CZK", Locale.forLanguageTag("cs-CZ")))
+    }
 }

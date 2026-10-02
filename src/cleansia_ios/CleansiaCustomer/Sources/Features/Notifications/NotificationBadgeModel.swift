@@ -17,10 +17,6 @@ final class NotificationBadgeModel: ObservableObject, SessionScopedCache {
         self.client = client
     }
 
-    var badgeLabel: String? {
-        Self.label(for: unreadCount)
-    }
-
     static func label(for count: Int) -> String? {
         guard count > 0 else { return nil }
         return count > 99 ? "99+" : "\(count)"

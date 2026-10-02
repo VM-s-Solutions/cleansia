@@ -17,7 +17,6 @@ final class NotificationBadgeModelTests: XCTestCase {
         client.unreadCountResult = .success(3)
         await badge.refresh()
         XCTAssertEqual(badge.unreadCount, 3)
-        XCTAssertEqual(badge.badgeLabel, "3")
     }
 
     func testRefreshFailureKeepsTheLastValueSilently() async {
@@ -32,7 +31,6 @@ final class NotificationBadgeModelTests: XCTestCase {
         client.unreadCountResult = .failure(ApiError(httpStatus: 401))
         await badge.refresh()
         XCTAssertEqual(badge.unreadCount, 0)
-        XCTAssertNil(badge.badgeLabel)
     }
 
     func testPushReceiptIncrementsForAFeedEvent() {

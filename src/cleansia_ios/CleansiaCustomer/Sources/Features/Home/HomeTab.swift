@@ -138,7 +138,7 @@ struct HomeTab: View {
                 AddressTopBar(
                     displayedAddress: vm.displayedAddress?.oneLine,
                     market: vm.marketChip,
-                    unreadBadge: notificationBadge.badgeLabel,
+                    unreadCount: notificationBadge.unreadCount,
                     onAddressTap: onOpenAddressManager,
                     onMarketTap: onOpenMarket,
                     onNotificationTap: { showNotifications = true }
@@ -257,10 +257,14 @@ private struct AddressTopBar: View {
     @Environment(\.locale) private var locale
     let displayedAddress: String?
     let market: Market?
-    let unreadBadge: String?
+    let unreadCount: Int
     let onAddressTap: () -> Void
     let onMarketTap: () -> Void
     let onNotificationTap: () -> Void
+
+    private var unreadBadge: String? {
+        NotificationBadgeModel.label(for: unreadCount)
+    }
 
     var body: some View {
         HStack(alignment: .center, spacing: Spacing.xs) {
@@ -296,6 +300,7 @@ private struct AddressTopBar: View {
 
             Button(action: onNotificationTap) {
                 Image(systemName: "bell")
+                    .cleansiaBounce(onIncreaseOf: unreadCount)
                     .font(.system(size: 18))
                     .foregroundColor(CleansiaColors.onSurface)
                     .frame(width: 40, height: 40)
@@ -376,7 +381,7 @@ private struct MarketChip: View {
                         noShowCredit: 250,
                         insuranceCoverageAmount: nil
                     ),
-                    unreadBadge: "3",
+                    unreadCount: 3,
                     onAddressTap: {},
                     onMarketTap: {},
                     onNotificationTap: {}
@@ -384,7 +389,7 @@ private struct MarketChip: View {
                 AddressTopBar(
                     displayedAddress: nil,
                     market: nil,
-                    unreadBadge: nil,
+                    unreadCount: 0,
                     onAddressTap: {},
                     onMarketTap: {},
                     onNotificationTap: {}

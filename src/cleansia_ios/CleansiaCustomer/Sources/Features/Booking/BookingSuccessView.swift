@@ -38,6 +38,7 @@ struct BookingSuccessView: View {
                 Image(systemName: "checkmark.circle.fill")
                     .font(.system(size: 48))
                     .foregroundColor(CleansiaColors.successText)
+                    .cleansiaBounceOnAppear()
                     .accessibilityHidden(true)
                 VStack(spacing: Spacing.xxs) {
                     Text(L10n.Booking.successTitle)

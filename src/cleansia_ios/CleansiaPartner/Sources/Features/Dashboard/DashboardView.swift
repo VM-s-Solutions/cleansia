@@ -92,7 +92,7 @@ struct DashboardView: View {
         case let .loaded(data):
             DashboardContent(
                 data: data,
-                unreadBadge: notificationBadge.badgeLabel,
+                unreadCount: notificationBadge.unreadCount,
                 showsJobRadiusPrompt: vm.showsJobRadiusPrompt,
                 pendingOffers: pendingOffers,
                 onOpenPendingOffers: onOpenPendingOffers,
@@ -137,7 +137,7 @@ private struct DashboardErrorView: View {
 struct DashboardContent: View {
     @Environment(\.locale) private var locale
     let data: DashboardData
-    let unreadBadge: String?
+    let unreadCount: Int
     let showsJobRadiusPrompt: Bool
     let pendingOffers: PendingOffersStore?
     let onOpenPendingOffers: () -> Void
@@ -152,7 +152,7 @@ struct DashboardContent: View {
 
     init(
         data: DashboardData,
-        unreadBadge: String? = nil,
+        unreadCount: Int = 0,
         showsJobRadiusPrompt: Bool = false,
         pendingOffers: PendingOffersStore? = nil,
         onOpenPendingOffers: @escaping () -> Void = {},
@@ -166,7 +166,7 @@ struct DashboardContent: View {
         onOpenHelp: @escaping () -> Void = {}
     ) {
         self.data = data
-        self.unreadBadge = unreadBadge
+        self.unreadCount = unreadCount
         self.showsJobRadiusPrompt = showsJobRadiusPrompt
         self.pendingOffers = pendingOffers
         self.onOpenPendingOffers = onOpenPendingOffers
@@ -186,7 +186,7 @@ struct DashboardContent: View {
                 GreetingBar(
                     firstName: data.firstName,
                     locale: locale,
-                    unreadBadge: unreadBadge,
+                    unreadCount: unreadCount,
                     onNotificationTap: onNotificationTap
                 )
                 if let pendingOffers {
@@ -224,7 +224,7 @@ struct DashboardContent: View {
 private struct GreetingBar: View {
     let firstName: String?
     let locale: Locale
-    let unreadBadge: String?
+    let unreadCount: Int
     let onNotificationTap: () -> Void
 
     var body: some View {
@@ -242,7 +242,7 @@ private struct GreetingBar: View {
                     .foregroundColor(CleansiaColors.onSurfaceVariant)
             }
             Spacer()
-            NotificationBell(unreadBadge: unreadBadge, onTap: onNotificationTap)
+            NotificationBell(unreadCount: unreadCount, onTap: onNotificationTap)
         }
         .padding(.horizontal, Spacing.m)
     }
@@ -251,12 +251,17 @@ private struct GreetingBar: View {
 /// The dashboard notification bell carrying the unread badge ("99+" capped,
 /// hidden at zero — FD-AC5); opens the notifications inbox.
 private struct NotificationBell: View {
-    let unreadBadge: String?
+    let unreadCount: Int
     let onTap: () -> Void
+
+    private var unreadBadge: String? {
+        NotificationBadgeModel.label(for: unreadCount)
+    }
 
     var body: some View {
         Button(action: onTap) {
             Image(systemName: "bell")
+                .cleansiaBounce(onIncreaseOf: unreadCount)
                 .font(.system(size: 18))
                 .foregroundColor(CleansiaColors.onSurface)
                 .frame(width: 40, height: 40)

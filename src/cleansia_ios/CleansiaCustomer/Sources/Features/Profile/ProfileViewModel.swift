@@ -155,9 +155,10 @@ final class ProfileViewModel: ViewModel {
         !saveState.isSubmitting && !firstName.isBlank && !lastName.isBlank && !phoneNumber.isBlank
     }
 
-    /// The language sent is the one CHOSEN in this app, and none (the server keeps its own) on
-    /// "System": onboarding is not a picker change, so it keeps the session-start rule — the phone's
-    /// language is not a choice and must not overwrite one made on another client.
+    /// The language sent is the one the app resolves to: the language chosen in this app, or on
+    /// "System" the phone's language narrowed to a supported one (`settings.languageTag`). This is the
+    /// one write that replaces the server's sign-up stamp (`en` for every Google or Apple sign-up), so
+    /// sending none on "System" left a Czech phone on English e-mails and promo pushes for good.
     /// → /flows/auth-and-identity#account-language
     func completeOnboarding(
         firstName: String,
@@ -182,7 +183,7 @@ final class ProfileViewModel: ViewModel {
             lastName: lastName.trimmed,
             phoneNumber: phoneNumber.trimmed.nilIfEmpty,
             birthDate: birthDate,
-            languageCode: settings.persistedLanguageTag
+            languageCode: settings.languageTag
         )
         switch await repository.update(update) {
         case .success:

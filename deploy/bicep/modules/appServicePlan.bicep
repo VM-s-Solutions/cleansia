@@ -1,4 +1,5 @@
-// Linux App Service Plan that hosts the five API App Services + the customer SSR App Service.
+// Linux App Service Plan that hosts the five API App Services, the customer SSR App Service and the
+// Functions container (functionApp.bicep) — seven always-on processes on one plan.
 // Reusable across environments: the SKU is a parameter (B2 for dev per ADR-0015 D2, S1 for prod).
 // The region token (ADR-0017 D4) is carried in the name so a second region is a param value, not a
 // rename of a live resource.

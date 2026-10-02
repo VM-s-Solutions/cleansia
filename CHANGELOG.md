@@ -797,6 +797,93 @@ need backfilling.
   They are now set in `main.bicep`, so **the first deploy after this change starts running work that has
   never run before** — expect a burst of previously-undelivered notifications on that deploy.
 
+### Deprecated
+
+- **API — `OrderStatus.Pending` (`1`) is no longer written by anything.** The state it used to
+  describe — a card order waiting for the payment webhook — is real and still ships, but it lives on
+  the payment axis: `CurrentStatus = New`, `PaymentType = Card`, `PaymentStatus = Pending`. The
+  integer stays on the wire and legacy rows may still hold it, so clients must keep tolerating it;
+  nothing should start producing it, and no order can be moved into it. (ADR-0037)
+
+### Removed
+
+- **Customer Android and iOS — the sign-in screen no longer offers *Find a guest booking*.** The apps
+  are for customers with an account. A guest booking is made, tracked and cancelled on the web, from
+  the link in its e-mail, which already opened the web page with the whole flow, including the no-show
+  report the apps never had. A guest who later installs the app cannot open that booking there, and
+  registering does not attach it either. **API consumer:** nothing changes yet. The customer mobile
+  host still serves the six guest routes, because an installed build still calls three of them, and a
+  follow-up removes them. (Owner ruling 2026-10-01, reversing the 2026-09-28 meeting default E-13.)
+
+- **Cleaner, admin — the weekly availability schedule is gone.** Nothing ever read it: dispatch is a
+  first-come board, and a cleaner's days and hours gated no offer, no take and no approval. The admin's
+  employee detail loses its *Availability* section and its per-day editor, and the registration lock's
+  three requirements (profile, documents, approval) are the whole list — the docs used to name a
+  fourth. **API consumer:** `PUT /api/AdminEmployee/{employeeId}/update-availability` (admin host) and
+  `PUT /api/Employee/UpdateAvailability` (partner mobile host, `:5002`) are gone;
+  `EmployeeItem.availability`, `EmployeeListItem.availability` and
+  `RegistrationCompletionStatus.hasSetAvailability` (which the server had hard-coded `true`) left the
+  wire and the regenerated web clients and the partner mobile spec; the `dayOfWeek` enum left the code
+  overview. (T-0791; the module was read by nothing since the partner web dropped its editor.)
+
+- **Operator — four things the schema carried and nothing read were dropped in one migration.** The
+  `Carts`, `CartServiceItems` and `CartPackageItems` tables (written once per registration, never
+  read — the wizard builds orders directly), the `EmailTranslations` table and its seed (the renderer
+  reads `EmailTemplateTranslations`), `Employees.PreferredCurrencyCode` (its only writer had no caller;
+  a cleaner's invoice currency comes from the pay rows) and `Employees.Availability` above. The
+  `Initial` migration was regenerated as `20260920204705_Initial` — 84 tables, down from 88 — and the
+  DEV database drop before the next deploy covers it. `MembershipPlan.TrialPeriodDays` **stays**: still
+  a column and still on the plan DTOs, pinned at `0` by the server. (T-0791; Q-UI-02.)
+
+- **API consumer — routes no shipped client called are gone from the partner and admin hosts.**
+  Partner host (`:5000`): the `Dispute`, `PayConfig`, `Currency`, `Package` and `Service` controllers,
+  `PayPeriodController.GetPayPeriodById`, and `EmployeePayrollController.CalculateOrderPay` /
+  `RegenerateInvoicePdf`; the partner mobile host never had them. Admin host (`:5001`):
+  `GET api/AdminEmailTemplate/get-paged`, `GET api/AdminUser/{userId}` (the `details/{userId}` read
+  stays) and `GET api/AdminCompany/get-current`. The regenerated admin and partner clients no longer
+  carry them. Permission constants no route carried are gone as well (`CanUpdateOrder`,
+  `CanViewOrderReview`, `CanAddPhoneNumber`, the four Country Configuration ones,
+  `CanCreateTenantConfiguration`), and `CanCalculateOrderPay` and `CanViewPayPeriod` went with their
+  routes; the error keys no handler ever emitted left `BusinessErrorMessage` and the `api.*` blocks of
+  every web locale. The partner host's `POST /api/Payment/webhook` and `api/v1/Health` **stay**
+  (Q-UI-03), as do the admin pay-period `create`/`update`/`delete`/`open` routes, the document
+  `versions` read and `generate-invoice`, which have no screen yet (Q-UI-04). (T-0792, T-0793.)
+
+- **Admin — the membership plan form no longer offers a trial-days field, and the plan list has no
+  *Trial days* column.** Both survived the September ruling that there is no free trial; the field was
+  refused by the server on any value but 0, so it was a control that could only fail. The form sends
+  the zero the server accepts. (T-0793; owner ruling 2026-09-08 on the trial itself.)
+
+- **Partner API — the partner hosts no longer register customers.** `POST api/Auth/Register` is gone
+  from the Partner and Partner Mobile hosts (a cleaner's account is opened through `RegisterEmployee`,
+  which is unchanged), and a Google sign-in on a partner host **signs in an existing cleaner or
+  administrator only**: a Google identity with no account is refused `auth.social_account_not_found`
+  and nothing is created, a customer account is refused `auth.insufficient_privileges` as the password
+  sign-in already refused it. Until now a first-time Google sign-in on a partner host created a
+  customer account and handed it a partner session. No shipped client called the removed route; the
+  partner web's dead `register()` went with it and the partner mobile spec no longer lists it.
+  (Owner ruling 2026-09-15, *"remove it"*)
+
+- **`MembershipPlan.MonthlyPriceCzk` / `StripePriceId` and `BookingPolicy.NoShowCreditCzk`.** A
+  plan's price and Stripe Price id are `MembershipPlanPrice` rows, one per currency; the apology
+  credit is `Currency.NoShowCredit`. The customer and admin wires renamed `monthlyPriceCzk` to `price`
+  and gained `currencyCode`; the `Initial` migration was regenerated (DEV drop owed at deploy).
+  (ADR-0059, ADR-0060)
+
+- **Customer — the Cleansia Plus "same-day express upgrade" perk claim is gone from the web, Android
+  and iOS apps.** It promised something the pricing never delivered: "express" is a 2–4 hour lead-time
+  window, so a same-day promise waived a surcharge that would not have applied to most same-day
+  bookings anyway, and nothing in pricing read the plan's express flag at all. The web app has since
+  regained an express line — the real one, describing the metered waiver above — and it renders only
+  when the server says the waiver exists. The Android and iOS apps do not show it, so a Plus member
+  booking from a phone gets the waiver without being told. (T-0513)
+
+- **Invoices — the per-country legal notices that nobody had reviewed are gone.** The generator used
+  to print paragraphs asserting German, Austrian, Polish, Slovak, US, UK, French, Italian and Spanish
+  law under a legal-notice heading, and one asserting Czech law in English under a Czech heading. Only
+  the Czech notice survives, because the business supplies it; every other jurisdiction now prints a
+  generic English sentence that is honest about being generic, until counsel supplies each one.
+
 ### Fixed
 
 - **Customer iOS — the room and bathroom steppers are easier to hit, and VoiceOver can adjust them.**
@@ -937,95 +1024,6 @@ need backfilling.
   **Before enabling this against real data**, run `sql-scripts/check-orders-past-retention-window.sql`.
   The order-anonymisation task overwrites a shared `Address` row, and addresses are deduplicated across
   customers in the same building, so an old order can blank a live customer's saved address.
-
-### Deprecated
-
-- **API — `OrderStatus.Pending` (`1`) is no longer written by anything.** The state it used to
-  describe — a card order waiting for the payment webhook — is real and still ships, but it lives on
-  the payment axis: `CurrentStatus = New`, `PaymentType = Card`, `PaymentStatus = Pending`. The
-  integer stays on the wire and legacy rows may still hold it, so clients must keep tolerating it;
-  nothing should start producing it, and no order can be moved into it. (ADR-0037)
-
-### Removed
-
-- **Customer Android and iOS — the sign-in screen no longer offers *Find a guest booking*.** The apps
-  are for customers with an account. A guest booking is made, tracked and cancelled on the web, from
-  the link in its e-mail, which already opened the web page with the whole flow, including the no-show
-  report the apps never had. A guest who later installs the app cannot open that booking there, and
-  registering does not attach it either. **API consumer:** nothing changes yet. The customer mobile
-  host still serves the six guest routes, because an installed build still calls three of them, and a
-  follow-up removes them. (Owner ruling 2026-10-01, reversing the 2026-09-28 meeting default E-13.)
-
-- **Cleaner, admin — the weekly availability schedule is gone.** Nothing ever read it: dispatch is a
-  first-come board, and a cleaner's days and hours gated no offer, no take and no approval. The admin's
-  employee detail loses its *Availability* section and its per-day editor, and the registration lock's
-  three requirements (profile, documents, approval) are the whole list — the docs used to name a
-  fourth. **API consumer:** `PUT /api/AdminEmployee/{employeeId}/update-availability` (admin host) and
-  `PUT /api/Employee/UpdateAvailability` (partner mobile host, `:5002`) are gone;
-  `EmployeeItem.availability`, `EmployeeListItem.availability` and
-  `RegistrationCompletionStatus.hasSetAvailability` (which the server had hard-coded `true`) left the
-  wire and the regenerated web clients and the partner mobile spec; the `dayOfWeek` enum left the code
-  overview. (T-0791; the module was read by nothing since the partner web dropped its editor.)
-
-- **Operator — four things the schema carried and nothing read were dropped in one migration.** The
-  `Carts`, `CartServiceItems` and `CartPackageItems` tables (written once per registration, never
-  read — the wizard builds orders directly), the `EmailTranslations` table and its seed (the renderer
-  reads `EmailTemplateTranslations`), `Employees.PreferredCurrencyCode` (its only writer had no caller;
-  a cleaner's invoice currency comes from the pay rows) and `Employees.Availability` above. The
-  `Initial` migration was regenerated as `20260920204705_Initial` — 84 tables, down from 88 — and the
-  DEV database drop before the next deploy covers it. `MembershipPlan.TrialPeriodDays` **stays**: still
-  a column and still on the plan DTOs, pinned at `0` by the server. (T-0791; Q-UI-02.)
-
-- **API consumer — routes no shipped client called are gone from the partner and admin hosts.**
-  Partner host (`:5000`): the `Dispute`, `PayConfig`, `Currency`, `Package` and `Service` controllers,
-  `PayPeriodController.GetPayPeriodById`, and `EmployeePayrollController.CalculateOrderPay` /
-  `RegenerateInvoicePdf`; the partner mobile host never had them. Admin host (`:5001`):
-  `GET api/AdminEmailTemplate/get-paged`, `GET api/AdminUser/{userId}` (the `details/{userId}` read
-  stays) and `GET api/AdminCompany/get-current`. The regenerated admin and partner clients no longer
-  carry them. Permission constants no route carried are gone as well (`CanUpdateOrder`,
-  `CanViewOrderReview`, `CanAddPhoneNumber`, the four Country Configuration ones,
-  `CanCreateTenantConfiguration`), and `CanCalculateOrderPay` and `CanViewPayPeriod` went with their
-  routes; the error keys no handler ever emitted left `BusinessErrorMessage` and the `api.*` blocks of
-  every web locale. The partner host's `POST /api/Payment/webhook` and `api/v1/Health` **stay**
-  (Q-UI-03), as do the admin pay-period `create`/`update`/`delete`/`open` routes, the document
-  `versions` read and `generate-invoice`, which have no screen yet (Q-UI-04). (T-0792, T-0793.)
-
-- **Admin — the membership plan form no longer offers a trial-days field, and the plan list has no
-  *Trial days* column.** Both survived the September ruling that there is no free trial; the field was
-  refused by the server on any value but 0, so it was a control that could only fail. The form sends
-  the zero the server accepts. (T-0793; owner ruling 2026-09-08 on the trial itself.)
-
-- **Partner API — the partner hosts no longer register customers.** `POST api/Auth/Register` is gone
-  from the Partner and Partner Mobile hosts (a cleaner's account is opened through `RegisterEmployee`,
-  which is unchanged), and a Google sign-in on a partner host **signs in an existing cleaner or
-  administrator only**: a Google identity with no account is refused `auth.social_account_not_found`
-  and nothing is created, a customer account is refused `auth.insufficient_privileges` as the password
-  sign-in already refused it. Until now a first-time Google sign-in on a partner host created a
-  customer account and handed it a partner session. No shipped client called the removed route; the
-  partner web's dead `register()` went with it and the partner mobile spec no longer lists it.
-  (Owner ruling 2026-09-15, *"remove it"*)
-
-- **`MembershipPlan.MonthlyPriceCzk` / `StripePriceId` and `BookingPolicy.NoShowCreditCzk`.** A
-  plan's price and Stripe Price id are `MembershipPlanPrice` rows, one per currency; the apology
-  credit is `Currency.NoShowCredit`. The customer and admin wires renamed `monthlyPriceCzk` to `price`
-  and gained `currencyCode`; the `Initial` migration was regenerated (DEV drop owed at deploy).
-  (ADR-0059, ADR-0060)
-
-- **Customer — the Cleansia Plus "same-day express upgrade" perk claim is gone from the web, Android
-  and iOS apps.** It promised something the pricing never delivered: "express" is a 2–4 hour lead-time
-  window, so a same-day promise waived a surcharge that would not have applied to most same-day
-  bookings anyway, and nothing in pricing read the plan's express flag at all. The web app has since
-  regained an express line — the real one, describing the metered waiver above — and it renders only
-  when the server says the waiver exists. The Android and iOS apps do not show it, so a Plus member
-  booking from a phone gets the waiver without being told. (T-0513)
-
-- **Invoices — the per-country legal notices that nobody had reviewed are gone.** The generator used
-  to print paragraphs asserting German, Austrian, Polish, Slovak, US, UK, French, Italian and Spanish
-  law under a legal-notice heading, and one asserting Czech law in English under a Czech heading. Only
-  the Czech notice survives, because the business supplies it; every other jurisdiction now prints a
-  generic English sentence that is honest about being generic, until counsel supplies each one.
-
-### Fixed
 
 - **Cleaner — you can no longer start a job before it is due.** Marking yourself on the way and starting
   a clean were both possible from the moment the booking was confirmed — days ahead of the actual date,

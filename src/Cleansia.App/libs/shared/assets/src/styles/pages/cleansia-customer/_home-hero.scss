@@ -649,7 +649,10 @@ cleansia-hero {
         'ctas mascot'
         'quote quote';
       gap: 0 12px;
-      padding: 16px var(--cl-gutter) 0;
+      // The card ends above the divider, not on it: the 22px overlap below is
+      // for the desktop mascot, and on a phone it put the whole 16px edge under
+      // the card, so the hero's tint just stopped at the next section.
+      padding: 16px var(--cl-gutter) 28px;
 
       > cleansia-quick-quote {
         grid-area: quote;
@@ -691,6 +694,16 @@ cleansia-hero {
 
     &__spacer {
       display: none;
+    }
+
+    // Taller than the viewBox's 16px at this width, so the tabs read as the
+    // site's foam and not as a ragged hairline.
+    // The host and the SVG inside it both carry `.cl-foam`; both take the height,
+    // or the host's extra rows show the hero's tint under the tabs.
+    .cl-foam--hero,
+    .cl-foam--hero .cl-foam {
+      margin-top: 0;
+      height: 28px;
     }
 
     &__image {

@@ -531,7 +531,7 @@ need backfilling.
 - **Customer and cleaner iOS — numbers roll, and the bell bounces.** The room and bathroom counts, the
   booking step counter, the Rewards points and the cleaner's dashboard figures roll to their new value
   instead of jumping. On iOS 17 and later the notification bell bounces once when the unread count goes
-  up, and the booking-success and *code applied* checks bounce once as they appear. (Owner ruling
+  up, and the booking-success, Plus welcome and *code applied* checks bounce once as they appear. (Owner ruling
   2026-10-01.)
 
 - **Customer and cleaner, Android and iOS — notifications follow the language picked in the app.** Push
@@ -574,7 +574,9 @@ need backfilling.
 
 - **Customer Android and iOS — the booking confirmation opens on a check.** A small success check
   replaces the large welcoming mascot, and on iOS the screen takes Android's tighter spacing, so the
-  confirmation fits a 6.1" iPhone without scrolling. (Owner ruling 2026-10-01.)
+  confirmation fits a 6.1" iPhone without scrolling. The Plus welcome screen after joining does the
+  same, and on iOS it sits in the middle of the screen as on Android. (Owner ruling 2026-10-01; Plus
+  welcome 2026-10-02.)
 
 - **Customer and cleaner, Android and iOS — no mascot on the sign-in and account screens.** Sign-in,
   sign-up, forgot password and e-mail confirmation in both apps, and the customer's profile

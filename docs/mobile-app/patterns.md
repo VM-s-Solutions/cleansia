@@ -350,8 +350,9 @@ What changed on iOS:
   leaves the field empty, as on Android, whose picker opens with no selection. Future dates stay
   blocked, and the stored day keeps its time-zone handling.
 - **A few symbols bounce, from iOS 17.** The notification bell (customer Home, partner dashboard)
-  bounces once when the unread count rises, and stays still when it falls. The booking-success check
-  and the *code applied* check of the promo and referral sheets bounce once as they appear. Nothing
+  bounces once when the unread count rises, and stays still when it falls. The booking-success check,
+  the Plus welcome screen's check and the *code applied* check of the promo and referral sheets bounce
+  once as they appear. Nothing
   else moves: before iOS 17 these stay still, and Reduce Motion tones the bounce down by itself. The
   one gate is Core's `cleansiaBounce(onIncreaseOf:)` / `cleansiaBounceOnAppear()`
   (`Components/SymbolBounce.swift`).

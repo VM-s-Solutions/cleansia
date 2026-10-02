@@ -1875,8 +1875,10 @@ spine + the §7.6 map seam + the §7.16 Slice C booking picker reuse + the Parit
   stays app-local; its *VM* is now the shared Core `AddressPickerViewModel` (the picker→Core HARVEST **T-0349 done** — only the VM
   hoisted, the View did not). The VM holds no app navigation — the host's onBack closes.
 - **`SavedAddressRepository`** is `@MainActor`, a `SessionScopedCache`, registered, caching the `[SavedAddress]` list — and is
-  **server-scoped only**. The Android `AddressRepository.kt` guest/DataStore offline path + `serverId`/local-id duality are NOT
-  ported (they exist on Android purely for the offline guest cache); the iOS repo always hits the backend. Ownership is enforced
+  **server-scoped only**. The Android `AddressRepository.kt` DataStore cache + `serverId`/local-id duality are NOT
+  ported; the iOS repo always hits the backend. Android's guest-only mode (an upsert written to DataStore with no session,
+  and local-only delete/default/rename) was removed on 2026-10-02 (F-A14): neither app has a guest surface since C1, so
+  every Android write now goes to the server too. Ownership is enforced
   server-side (`BeOwnedByCaller`) — **add NO client ownership check.**
 - **Mutations refetch the list** rather than mirroring server invariants in two places: `setDefault` (the server demotes peers),
   `add`/`update`, and especially **Delete — `savedAddressDelete` returns an intentional empty-200 with NO id in the body, so the

@@ -12,8 +12,14 @@ figures in the copy until a booking's address takes over. One market today (CZ),
 stays hidden and the chip is a plain label. → [Business rules — the market](/product/business-rules#market)
 
 **Booking** — browse the service catalogue and packages, pick rooms, bathrooms and extras, choose a
-date and a 60-minute window between 08:00 and 20:00, and pay by card — or in cash, when signed in and
-the booking is a job one cleaner does alone ([the cash rule](/product/business-rules#cash)). Book as a
+date and an arrival time on the quarter hour from 08:00 to 19:45 (on the web, the part of day first —
+morning, afternoon or evening — then that part's slots; [the time step](/customer-app/ordering-flow#step-2-date-time)),
+and pay by card — or in cash, when signed in and the booking is a job one cleaner does alone
+([the cash rule](/product/business-rules#cash)).
+Paying by card, a signed-in customer on web, Android or iOS may tick *Save this card for my next
+bookings*, unticked by default; only a ticked card is kept, under the card-guarantee consent, and it
+is listed with the customer's saved cards, where it can be removed
+([a saved card](/product/business-rules#card-guarantee)). Book as a
 guest with no account, paying by card. Get a live price quote before committing, including whether an
 express surcharge applies and whether a membership waives it. Before the address step the catalogue and the quote are in the chosen
 market's currency; from the address step on, the address's country decides.

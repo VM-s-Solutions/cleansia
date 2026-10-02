@@ -305,7 +305,9 @@ What changed on iOS:
   out of their thumbnail into the full-screen viewer and shrink back into it, and a swipe down closes
   the viewer. The photo viewer keys the way back on the page on screen, so after paging it shrinks
   into that photo's thumbnail. On iOS 26 its close button is clear Liquid Glass, the variant for a
-  control over media. iOS 16 and 17 keep the plain full-screen cover, closed with its X. The one
+  control over media, and a translucent dark circle below; since 2026-10-02 the dispute-evidence viewer
+  closes through the same control (`Components/MediaCloseButton.swift`), where it had a bare white X
+  that vanished over a light photo. iOS 16 and 17 keep the plain full-screen cover, closed with its X. The one
   `#available(iOS 18, *)` gate sits in the customer app's `zoomSource` / `zoomDestination`
   (`Components/ZoomTransition.swift`). Android has no twin: this is motion, not layout.
 - **Numbers roll instead of snapping.** A number that changes in place rolls digit by digit, like an

@@ -79,7 +79,8 @@ need backfilling.
 - **Customer iOS — photos zoom open and swipe away.** On iOS 18 and later an order's photo or a
   dispute's evidence image grows out of its thumbnail into the full-screen viewer, and a swipe down
   shrinks it back, into the photo you paged to. Earlier versions open the viewer as before, closed with
-  its X. On iOS 26 the photo viewer's close button is clear glass. (Owner ruling 2026-10-01.)
+  its X. On iOS 26 the close button of both viewers is clear glass, and a dark circle before that, so
+  it stays visible over a light photo. (Owner ruling 2026-10-01.)
 
 - **Customer iOS 26 — the booking sheet grows out of the Book button.** Opened from the round Book
   button, the booking sheet zooms out of it, and back into it when it closes. Home's book buttons, the

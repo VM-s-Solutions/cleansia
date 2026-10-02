@@ -120,15 +120,16 @@ struct OrderPriceBreakdown: Equatable {
 extension CustomerOrderDetail {
     /// No card charge to speak of: a cash booking — a confirmed recurring cash occurrence rests at Paid
     /// with nothing taken — or a card one whose payment is Pending or Failed (the server's
-    /// `Order.TookNoPayment`). Read by the cancel sheet and the credit split.
+    /// `Order.TookNoPayment`). Read by the cancel sheet and the order detail's credit split.
     var tookNoCardPayment: Bool {
         let paymentStatus = paymentStatus?.value
         return paymentType?.value == 1 || paymentStatus == 1 || paymentStatus == 3
     }
 
-    /// The card line under a credit split: `paidByCard` only once the card was charged; while the payment
-    /// is pending or failed the card share is still to pay (`dueOnCard`, the confirm step's copy).
-    /// Android's `cardShareLabelRes`.
+    /// The order detail's card line under a credit split: `paidByCard` only once the card was charged;
+    /// while the payment is pending or failed the card share is still to pay (`dueOnCard`, the confirm
+    /// step's copy). Android's `cardShareLabelRes`. The booking confirmation does not read it: it is
+    /// reached only after the PaymentSheet completed, before the webhook marks the order Paid.
     var cardShareLabel: String {
         tookNoCardPayment ? L10n.Credit.dueOnCard : L10n.Credit.paidByCard
     }

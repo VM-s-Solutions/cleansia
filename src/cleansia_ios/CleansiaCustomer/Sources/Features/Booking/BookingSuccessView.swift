@@ -114,7 +114,7 @@ struct BookingSuccessView: View {
             ProgressView()
                 .tint(CleansiaColors.primary)
         case let .loaded(order):
-            let rows = summaryRows(order)
+            let rows = Self.summaryRows(order, locale: locale)
             if !rows.isEmpty {
                 summaryCard(rows)
             }
@@ -123,7 +123,7 @@ struct BookingSuccessView: View {
         }
     }
 
-    private func summaryRows(_ order: CustomerOrderDetail) -> [SummaryRow] {
+    static func summaryRows(_ order: CustomerOrderDetail, locale: Locale) -> [SummaryRow] {
         var rows: [SummaryRow] = []
         if order.cleaningDateTime != nil {
             rows.append(SummaryRow(
@@ -145,14 +145,18 @@ struct BookingSuccessView: View {
             ))
         }
         // The order's own figures, not the confirm step's preview: a concurrent booking can drain the
-        // balance between the two, and the card was asked for what the order says.
+        // balance between the two, and the card was asked for what the order says. The card line is
+        // "Paid by card" outright, not the order detail's `cardShareLabel`: credit applies only to a
+        // card booking, which reaches this screen only once the PaymentSheet completed, while the
+        // order read here usually still says Pending (the webhook moves it to Paid, and this screen
+        // reads once).
         if order.creditAppliedAmount > 0 {
             rows.append(SummaryRow(
                 label: L10n.Credit.paidWithCredit,
                 value: "−" + OrdersFormat.price(order.creditAppliedAmount, currencyCode: order.currencyCode)
             ))
             rows.append(SummaryRow(
-                label: order.cardShareLabel,
+                label: L10n.Credit.paidByCard,
                 value: OrdersFormat.price(order.amountDueOnCard, currencyCode: order.currencyCode)
             ))
         }
@@ -180,7 +184,7 @@ struct BookingSuccessView: View {
         .successCard()
     }
 
-    private func addressLine(_ address: OrderAddress?) -> String? {
+    private static func addressLine(_ address: OrderAddress?) -> String? {
         guard let address else { return nil }
         let parts = [address.street, address.city]
             .compactMap { $0 }
@@ -245,7 +249,7 @@ struct BookingSuccessView: View {
     }
 }
 
-private struct SummaryRow: Identifiable {
+struct SummaryRow: Identifiable {
     let label: String
     let value: String
 

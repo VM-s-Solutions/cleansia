@@ -80,4 +80,27 @@ final class BookingSuccessViewModelTests: XCTestCase {
 
         XCTAssertEqual(recorder.warmCount, 1)
     }
+
+    /// Credit applies only to a card booking, which reaches the confirmation only once the PaymentSheet
+    /// completed, while the one read of the order usually still says Pending (the webhook moves it to
+    /// Paid). So the card line says "Paid by card" there, not the order detail's `cardShareLabel`.
+    func testACreditSplitReadsPaidByCardWhileTheWebhookHasNotLanded() {
+        let order = OrderFixtures.detail(
+            total: 1500,
+            creditAppliedAmount: 320,
+            amountDueOnCard: 1180,
+            paymentType: Code(type: "PaymentType", name: nil, value: 2),
+            paymentStatus: Code(type: "PaymentStatus", name: nil, value: 1),
+            currencyCode: "CZK"
+        )
+
+        let rows = BookingSuccessView.summaryRows(order, locale: Locale(identifier: "en"))
+
+        XCTAssertEqual(order.cardShareLabel, L10n.Credit.dueOnCard)
+        XCTAssertEqual(
+            rows.map(\.label),
+            [L10n.Booking.successTotalLabel, L10n.Credit.paidWithCredit, L10n.Credit.paidByCard]
+        )
+        XCTAssertEqual(rows.last?.value, OrdersFormat.price(1180, currencyCode: "CZK"))
+    }
 }

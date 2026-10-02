@@ -31,6 +31,24 @@ class QuickSizeMascotTest {
         }
     }
 
+    /**
+     * The capsule label has 56dp on a 360dp phone, and the uk and ru counts ("1 ванна кімната",
+     * "2 комнаты") do not fit one line of it, so the label takes two 16sp lines inside the 36dp capsule.
+     */
+    @Test
+    fun `the stepper label's two lines fit inside its capsule`() {
+        val home = File(
+            sequenceOf(File("."), File("customer-app"), File("src/cleansia_android/customer-app"))
+                .map { File(it, "src/main/java/cz/cleansia/customer/features/home/HomeTab.kt") }
+                .first { it.isFile }
+                .path,
+        ).readText()
+        val stepper = home.substringAfter("private fun QuickSizeStepper(").substringBefore("internal fun asksForNotificationPermission(")
+        assertTrue("the label no longer wraps onto two lines", stepper.contains("maxLines = 2"))
+        assertTrue("the label's line height moved", stepper.contains("lineHeight = 16.sp"))
+        assertTrue("the capsule is no longer 36dp, which two 16sp lines fill", stepper.contains(".height(36.dp)"))
+    }
+
     @Test
     fun `the mascot keeps its size while the title fits one line`() {
         assertEquals(72.dp, quickSizeMascotSize(1))

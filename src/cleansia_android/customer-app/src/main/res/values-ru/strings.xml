@@ -1454,10 +1454,10 @@
         <item quantity="other">%1$d комнаты</item>
     </plurals>
     <plurals name="booking_bath_short">
-        <item quantity="one">%1$d ванна</item>
-        <item quantity="few">%1$d ванны</item>
-        <item quantity="many">%1$d ванн</item>
-        <item quantity="other">%1$d ванны</item>
+        <item quantity="one">%1$d ванная</item>
+        <item quantity="few">%1$d ванные</item>
+        <item quantity="many">%1$d ванных</item>
+        <item quantity="other">%1$d ванные</item>
     </plurals>
     <plurals name="order_review_star_content_desc">
         <item quantity="one">Оценить %1$d звезду</item>

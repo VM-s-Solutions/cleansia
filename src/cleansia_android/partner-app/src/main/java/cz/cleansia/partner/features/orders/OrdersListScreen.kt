@@ -12,6 +12,8 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -501,6 +503,7 @@ private fun SortDropdown(
  * **The pay readout is prominent because it is the decision** — cleaners said a card without it is not
  * worth reading. -> /flows/offerability-and-take
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun AvailableOrderRow(
     order: OrderListItem,
@@ -617,7 +620,12 @@ private fun AvailableOrderRow(
             val extras = order.extras?.count { it.value } ?: 0
             val dirtinessRes = dirtinessChipLabelRes(order.dirtinessLevel)
             if (rooms > 0 || baths > 0 || extras > 0 || dirtinessRes != null) {
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                // Wraps onto a second line when the card runs out of width, as iOS's ChipFlow does: in uk
+                // the dirtiness chip and "2 ванні кімнати" together are wider than a 360dp card.
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
                     if (dirtinessRes != null) {
                         ScopeChip(text = stringResource(dirtinessRes))
                     }

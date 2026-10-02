@@ -63,6 +63,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
@@ -662,13 +663,16 @@ private fun PropertyCompactRow(
             .background(selectionTint())
             .padding(horizontal = 14.dp, vertical = 10.dp),
     ) {
+        // The title sits above the counters, not beside them: on a 360dp phone the two uk counters
+        // ("2 кімнати", "1 ванна кімната") need more than the row's width on their own, and beside
+        // them the title was squeezed to nothing. A counter that still does not fit wraps its label.
+        Text(
+            stringResource(R.string.booking_your_home),
+            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+            color = MaterialTheme.colorScheme.primary,
+        )
+        Spacer(Modifier.height(6.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                stringResource(R.string.booking_your_home),
-                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.weight(1f),
-            )
             // Both ends of each stepper stop at the bounds, so a tap that cannot move the number never
             // looks like one that can. TalkBack reads each as "Your home" and its value, as iOS does.
             val home = stringResource(R.string.booking_your_home)
@@ -726,9 +730,14 @@ private fun CompactCounter(
         CounterStep(Icons.Outlined.Remove, outwardStart = true, enabled = value > range.first) { change(value - 1) }
         Text(
             label,
-            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold, lineHeight = 16.sp),
             color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(horizontal = 4.dp),
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center,
+            // Weighted so both steps are measured first: a label wider than the space left wraps
+            // rather than pushing the plus out of the pill.
+            modifier = Modifier.weight(1f, fill = false).padding(horizontal = 4.dp),
         )
         CounterStep(Icons.Outlined.Add, outwardStart = false, enabled = value < range.last) { change(value + 1) }
     }
@@ -736,8 +745,8 @@ private fun CompactCounter(
 
 /**
  * A 28dp glyph whose target is a 48dp square without growing the pill, as on iOS: 10dp above and
- * below (the size row's padding), 16dp toward the label and 4dp outward, so two counters sharing the
- * row split the 8dp between them. The ripple stays on the glyph.
+ * below, 16dp toward the label and 4dp outward, so two counters sharing the row split the 8dp
+ * between them. The ripple stays on the glyph.
  */
 @Composable
 private fun CounterStep(icon: ImageVector, outwardStart: Boolean, enabled: Boolean, onClick: () -> Unit) {

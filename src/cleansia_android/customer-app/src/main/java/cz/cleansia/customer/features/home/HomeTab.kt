@@ -84,6 +84,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -1150,13 +1151,23 @@ private fun QuickSizeStepper(
                 modifier = Modifier.size(16.dp),
             )
         }
+        // On a 360dp phone the label has 56dp, and uk and ru counts do not fit one line ("1 ванна
+        // кімната", "2 комнаты"), so it takes two 16sp lines, which the 36dp capsule holds. A word still
+        // too wide for its line steps the size down to 80%, as iOS's minimumScaleFactor(0.8) does.
+        var shrinkSteps by remember(label) { mutableIntStateOf(0) }
+        val labelStyle = MaterialTheme.typography.labelMedium
         Text(
             label,
-            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+            style = labelStyle.copy(
+                fontWeight = FontWeight.SemiBold,
+                fontSize = labelStyle.fontSize * (1f - 0.1f * shrinkSteps),
+                lineHeight = 16.sp,
+            ),
             color = Color.White,
-            maxLines = 1,
+            maxLines = 2,
             overflow = TextOverflow.Ellipsis,
             textAlign = TextAlign.Center,
+            onTextLayout = { if (it.hasVisualOverflow && shrinkSteps < 2) shrinkSteps++ },
             modifier = Modifier.weight(1f),
         )
         Box(

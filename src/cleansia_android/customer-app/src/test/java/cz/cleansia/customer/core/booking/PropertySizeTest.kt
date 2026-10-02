@@ -73,6 +73,51 @@ class PropertySizeTest {
         }
     }
 
+    /**
+     * Owner ruling 2026-10-02: a bathroom is "ванна кімната" in Ukrainian and "ванная" in Russian. Bare
+     * "ванна", "ванни" or "ванны" is a bathtub, which is what the steppers, the summary and the order
+     * detail all counted before.
+     */
+    @Test
+    fun `Ukrainian and Russian count bathrooms, not bathtubs`() {
+        val expected = mapOf(
+            "values-uk" to mapOf(
+                "one" to "%1\$d ванна кімната",
+                "few" to "%1\$d ванні кімнати",
+                "many" to "%1\$d ванних кімнат",
+                "other" to "%1\$d ванні кімнати",
+            ),
+            "values-ru" to mapOf(
+                "one" to "%1\$d ванная",
+                "few" to "%1\$d ванные",
+                "many" to "%1\$d ванных",
+                "other" to "%1\$d ванные",
+            ),
+        )
+        expected.forEach { (locale, items) ->
+            val xml = File(moduleDir, "src/main/res/$locale/strings.xml").readText()
+            val body = Regex("<plurals name=\"booking_bath_short\">(.*?)</plurals>", RegexOption.DOT_MATCHES_ALL)
+                .find(xml)?.groupValues?.get(1)
+                ?: error("$locale/booking_bath_short is missing")
+            val declared = Regex("<item quantity=\"([^\"]+)\">(.*?)</item>").findAll(body)
+                .associate { it.groupValues[1] to it.groupValues[2] }
+            assertEquals("$locale/booking_bath_short", items, declared)
+        }
+    }
+
+    /**
+     * "1 ванна кімната" is wider than a 360dp phone leaves the bathrooms counter, so its label is the
+     * part that gives: weighted, so both steps keep their place, and wrapping onto a second line.
+     */
+    @Test
+    fun `a counter label too wide for its pill wraps instead of pushing the plus out`() {
+        val counter = source("features/booking/ServicesStep.kt")
+            .substringAfter("private fun CompactCounter(")
+            .substringBefore("private fun CounterStep(")
+        assertTrue("the label is no longer weighted", counter.contains("Modifier.weight(1f, fill = false)"))
+        assertTrue("the label no longer wraps onto two lines", counter.contains("maxLines = 2"))
+    }
+
     /** The one-off flow floors at 1 like the recurring one floors at 0: a minus that cannot move looks dead. */
     @Test
     fun `the one-off minus stops at one room and one bathroom`() {

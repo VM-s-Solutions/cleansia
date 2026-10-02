@@ -526,7 +526,7 @@
     <string name="help_faq_q4">Чи можна змінити час?</string>
     <string name="help_faq_a4">Поки що ні — перенести бронювання не можна. Скасуйте його у вкладці Замовлення та забронюйте новий час; поки жоден клінер не взяв бронювання, скасування безкоштовне.</string>
     <string name="help_faq_q5">Що включено у стандартне прибирання?</string>
-    <string name="help_faq_a5">Кухня (стільниці, мийка, зовнішня частина техніки), ванні (унітаз, душ, плитка), всі підлоги, витирання пилу, загальне прибирання. Додатки, як-от чищення духовки, доступні окремо.</string>
+    <string name="help_faq_a5">Кухня (стільниці, мийка, зовнішня частина техніки), ванні кімнати (унітаз, душ, плитка), всі підлоги, витирання пилу, загальне прибирання. Додатки, як-от чищення духовки, доступні окремо.</string>
 
     <!-- Profile — appearance -->
     <string name="appearance_title">Вигляд</string>
@@ -628,7 +628,7 @@
     <string name="booking_catalog_empty">Зараз немає доступних послуг</string>
     <string name="booking_catalog_retry">Повторити</string>
     <string name="booking_rooms">Кімнати</string>
-    <string name="booking_bathrooms">Ванні</string>
+    <string name="booking_bathrooms">Ванні кімнати</string>
 
     <string name="booking_where">Де</string>
     <string name="booking_select_address_hint">Виберіть зі збережених або додайте нову</string>
@@ -705,7 +705,7 @@
     <string name="dirtiness_normal_price">Без доплати</string>
     <string name="dirtiness_normal_when">Помешкання прибирають регулярно, востаннє приблизно 1–2 тижні тому.</string>
     <string name="dirtiness_normal_detail_1">Пил на меблях і полицях, крихти й волосся на підлозі</string>
-    <string name="dirtiness_normal_detail_2">У ванній звичайні плями від води, унітаз без нальоту</string>
+    <string name="dirtiness_normal_detail_2">У ванній кімнаті звичайні плями від води, унітаз без нальоту</string>
     <string name="dirtiness_normal_detail_3">Кухня після звичайного готування: протерти стільницю й плиту, без пригорілого</string>
     <string name="dirtiness_normal_detail_4">Посуд помитий або в посудомийній машині</string>
     <string name="dirtiness_increased_title">Підвищений</string>
@@ -997,7 +997,7 @@
     <string name="recurring_create_day_label">Який день?</string>
     <string name="recurring_create_time_label">О котрій годині?</string>
     <string name="recurring_create_rooms_label">Кімнати</string>
-    <string name="recurring_create_bathrooms_label">Ванні</string>
+    <string name="recurring_create_bathrooms_label">Ванні кімнати</string>
     <string name="recurring_create_address_label">Адреса</string>
     <string name="recurring_create_address_default">ЗА ЗАМОВЧУВАННЯМ</string>
     <string name="recurring_create_address_empty">Спочатку збережіть адресу у профілі.</string>
@@ -1454,10 +1454,10 @@
         <item quantity="other">%1$d кімнати</item>
     </plurals>
     <plurals name="booking_bath_short">
-        <item quantity="one">%1$d ванна</item>
-        <item quantity="few">%1$d ванни</item>
-        <item quantity="many">%1$d ванн</item>
-        <item quantity="other">%1$d ванни</item>
+        <item quantity="one">%1$d ванна кімната</item>
+        <item quantity="few">%1$d ванні кімнати</item>
+        <item quantity="many">%1$d ванних кімнат</item>
+        <item quantity="other">%1$d ванні кімнати</item>
     </plurals>
     <plurals name="order_review_star_content_desc">
         <item quantity="one">Оцінити %1$d зірку</item>

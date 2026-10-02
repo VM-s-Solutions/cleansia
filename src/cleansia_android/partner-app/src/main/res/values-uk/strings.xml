@@ -860,10 +860,10 @@
         <item quantity="other">%1$d кімнати</item>
     </plurals>
     <plurals name="scope_baths">
-        <item quantity="one">%1$d ванна</item>
-        <item quantity="few">%1$d ванні</item>
-        <item quantity="many">%1$d ванних</item>
-        <item quantity="other">%1$d ванні</item>
+        <item quantity="one">%1$d ванна кімната</item>
+        <item quantity="few">%1$d ванні кімнати</item>
+        <item quantity="many">%1$d ванних кімнат</item>
+        <item quantity="other">%1$d ванні кімнати</item>
     </plurals>
     <plurals name="scope_extras">
         <item quantity="one">+%1$d додатково</item>

@@ -113,10 +113,17 @@ The apps read three shapes:
 | `CZ65 0800 0000 1920 0014 5399`, or an SK IBAN | the same three parts, with the IBAN's zero padding dropped |
 
 Spaces of every kind are ignored (a non-breaking one included) and an en or em dash counts as a hyphen.
-**A bare number is not split**: it stays in the box it was pasted into, so pasted into the number box it
-is the number. The apps only split text — the server keeps every rule (the mod-11 check, the bank-code
-shape, the IBAN cross-check). Partner web splits the two separator shapes as well, but not an IBAN, and
-it reads a bare number as the account number whichever box it was pasted into.
+**A bare number goes to the number field, whichever box it was pasted into**: up to ten digits
+pasted at once (spaces ignored) become the number, and the prefix and bank code stay as they are, so
+`2000145399` pasted into the prefix box no longer turns into the prefix `200014`. Typing never jumps,
+because the number pad types one digit at a time, and eleven or more bare digits are not an account
+number, so the box keeps its own clamp. The rule has one cost: a real two-digit prefix such as `19`
+pasted into an empty prefix box goes to the number; typed, it stays. After a routed paste iOS closes
+the keyboard, because it rebuilds the three boxes so each one draws its new value; Android keeps the
+keyboard in the box that received the paste. The apps only split text — the server keeps every rule
+(the mod-11 check, the bank-code shape, the IBAN cross-check). Partner web splits the two separator
+shapes as well, but not an IBAN, and it also sends a bare number to the number field from any box;
+unlike the apps, it clears the prefix when it does.
 
 ::: tip Country Configuration
 Country-specific labels and validation rules (e.g., field names, format masks) are driven by the `CountryConfiguration` table managed in the admin app.

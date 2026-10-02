@@ -18,7 +18,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
@@ -54,7 +57,8 @@ private const val BankCodeMaxLength = 4
  *
  * **A whole account pasted into any segment is spread over all three, and a bare number pasted into
  * any segment is the number** ([splitPastedAccount]), so an account copied off a statement or a banking
- * app lands where it belongs instead of being clamped into one box.
+ * app lands where it belongs instead of being clamped into one box. Such a paste ends the edit, so the
+ * keyboard closes, as on iOS.
  *
  * The web twin is `cleansia-bank-account`; keep the two in step.
  */
@@ -86,6 +90,9 @@ fun CleansiaBankAccountInput(
     val bankCodeFocused by bankCodeInteraction.collectIsFocusedAsState()
     val focused = prefixFocused || numberFocused || bankCodeFocused
 
+    // Bumped by every paste that is spread over the segments, which rebuilds them (see the key below).
+    var pasteRevision by remember { mutableIntStateOf(0) }
+
     val isError = errorText != null
     val borderColor = when {
         isError -> MaterialTheme.colorScheme.error
@@ -104,6 +111,7 @@ fun CleansiaBankAccountInput(
             split.first?.let(onPrefixChange)
             onNumberChange(split.second)
             split.third?.let(onBankCodeChange)
+            pasteRevision++
         }
     }
 
@@ -127,36 +135,43 @@ fun CleansiaBankAccountInput(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Start,
         ) {
-            // Every segment reads from the left, placeholder and digits alike. Right-aligning the
-            // prefix kept its digits against the dash, but it also right-aligned its hint, so the three
-            // labels in an empty control started at three different places. Its width is set by the
-            // longest placeholder we ship ("Predčíslie"), not by its six digits.
-            AccountSegment(
-                value = prefix,
-                onValueChange = segmentChange(PrefixMaxLength, onPrefixChange),
-                interactionSource = prefixInteraction,
-                enabled = enabled,
-                placeholder = prefixPlaceholder,
-                modifier = Modifier.width(76.dp),
-            )
-            Separator("–")
-            AccountSegment(
-                value = number,
-                onValueChange = segmentChange(NumberMaxLength, onNumberChange),
-                interactionSource = numberInteraction,
-                enabled = enabled,
-                placeholder = numberPlaceholder,
-                modifier = Modifier.weight(1f),
-            )
-            Separator("/")
-            AccountSegment(
-                value = bankCode,
-                onValueChange = segmentChange(BankCodeMaxLength, onBankCodeChange),
-                interactionSource = bankCodeInteraction,
-                enabled = enabled,
-                placeholder = bankCodePlaceholder,
-                modifier = Modifier.width(52.dp),
-            )
+            // A spread paste rebuilds the three segments. BasicTextField drops a change whose text
+            // equals the last one it reported for as long as its value is unchanged, and a paste
+            // routed out of a box leaves that box's value as it was, so the same paste into the same
+            // box a second time did nothing. The rebuild ends the edit and the keyboard goes with it,
+            // as on iOS (`.id(pasteRevision)` in CleansiaBankAccountField).
+            key(pasteRevision) {
+                // Every segment reads from the left, placeholder and digits alike. Right-aligning the
+                // prefix kept its digits against the dash, but it also right-aligned its hint, so the
+                // three labels in an empty control started at three different places. Its width is set
+                // by the longest placeholder we ship ("Predčíslie"), not by its six digits.
+                AccountSegment(
+                    value = prefix,
+                    onValueChange = segmentChange(PrefixMaxLength, onPrefixChange),
+                    interactionSource = prefixInteraction,
+                    enabled = enabled,
+                    placeholder = prefixPlaceholder,
+                    modifier = Modifier.width(76.dp),
+                )
+                Separator("–")
+                AccountSegment(
+                    value = number,
+                    onValueChange = segmentChange(NumberMaxLength, onNumberChange),
+                    interactionSource = numberInteraction,
+                    enabled = enabled,
+                    placeholder = numberPlaceholder,
+                    modifier = Modifier.weight(1f),
+                )
+                Separator("/")
+                AccountSegment(
+                    value = bankCode,
+                    onValueChange = segmentChange(BankCodeMaxLength, onBankCodeChange),
+                    interactionSource = bankCodeInteraction,
+                    enabled = enabled,
+                    placeholder = bankCodePlaceholder,
+                    modifier = Modifier.width(52.dp),
+                )
+            }
         }
 
         if (errorText != null || helper != null) {

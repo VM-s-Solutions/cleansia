@@ -241,10 +241,14 @@ When VS ships a toolset with net10 support, switch to F5 launch instead.
 
 ## Which language a notification is in {#language}
 
-**The language picked inside the app**, on every surface that carries text but one (Android's channel
-names, below), whatever the phone is set to (owner ruling 2026-10-01). The server does not know that
-language for a transactional push — it sends a key and its arguments, and the device writes the
-sentence — so each platform has to carry the in-app choice to wherever the text is drawn. Both used to fall short. iOS resolves a loc-key alert
+**The language picked inside the app**, for every text the device writes but one (Android's channel
+names, below), whatever the phone is set to (owner ruling 2026-10-01). The two texts the server writes
+follow a stored language instead, the last two rows below: the sitewide promo push is in the account's
+language, which the apps update only from a choice made in the app's picker — a Google or Apple
+sign-up who never opens the picker keeps `en` — and an order's e-mails stay in the language it was
+booked in. The server does not know the in-app language for a transactional push — it sends a key and
+its arguments, and the device writes the sentence — so each platform has to carry the in-app choice to
+wherever the text is drawn. Both used to fall short. iOS resolves a loc-key alert
 itself, in the app's **system** language (the phone's, or the per-app language in iOS Settings), and
 the in-app picker deliberately never sets it, so an English phone got English banners whatever the app
 showed. On Android 26–32 AppCompat's per-app locale reaches only activity contexts, so the FCM service

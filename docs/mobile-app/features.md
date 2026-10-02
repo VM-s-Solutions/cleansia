@@ -218,11 +218,12 @@ apps.
 Backend error keys resolve through the platform's own naming convention, **not** the web apps'
 `api.*` namespace — see [API Integration](/mobile-app/api-integration#error-keys-become-user-facing-text).
 
-**The language picked in the app is the language of everything the app draws, notifications
-included** — the push banner, the notification feed and the Live Activity card, whatever the phone is
-set to. Neither platform gets that for free outside the app's own screens: iOS resolves a push's keys in
-the app's system language, and Android 26–32 localizes only activity contexts. Each closes the gap with
-the one shared seam in the table above. → [Which language a notification is in](/architecture/push-notifications#language)
+**The language picked in the app is the language of everything the app draws, and of every push
+whose text the device writes** — the push banner, the notification feed and the Live Activity card,
+whatever the phone is set to. The sitewide promo push is not one of them: the server writes its text,
+in the account's language. Neither platform gets that for free outside the app's own screens: iOS
+resolves a push's keys in the app's system language, and Android 26–32 localizes only activity
+contexts. Each closes the gap with the one shared seam in the table above. → [Which language a notification is in](/architecture/push-notifications#language)
 
 ## Tests
 

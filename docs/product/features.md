@@ -397,9 +397,10 @@ refused sign-in is that account's row.
 ## Across all of it
 
 - **Five languages** — English, Czech, Slovak, Ukrainian, Russian. The language picked inside an app
-  is also the language of its push notifications, its notification feed and, on iOS, the Live Activity
-  card, whatever the phone is set to; a customer's e-mails about an order are in the language it was
-  booked in. → [Which language a notification is in](/architecture/push-notifications#language)
+  is also the language of every push whose text the device writes, its notification feed and, on iOS,
+  the Live Activity card, whatever the phone is set to. The sitewide promo push, whose text the server
+  writes, is in the account's language, and a customer's e-mails about an order are in the language it
+  was booked in. → [Which language a notification is in](/architecture/push-notifications#language)
 - **Three web apps and four native apps** — customer, partner and admin on the web; customer and
   partner on both Android and iOS.
 - **Fiscal receipts** with a reconciliation and retry path when issuance fails.

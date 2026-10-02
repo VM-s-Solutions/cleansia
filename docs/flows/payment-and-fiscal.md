@@ -161,8 +161,10 @@ said credit had paid part of it. Now the confirm step adds *Your credit −X* an
 when card is chosen, and the button shows Y. Every client caps the credit with the server's share,
 floored to cents like `BookingPolicy.CapCreditForOrder`, against the total it displays, promo
 included. Both apps pin that cap with the server's own test vectors. After booking, the success screen
-and the order's price card read `creditAppliedAmount` and `amountDueOnCard` from the order. The web
-wizard showed the same two lines already.
+and the order's price card read `creditAppliedAmount` and `amountDueOnCard` from the order, and so,
+since 2026-10-02, does the web order detail. All three call the card share *Paid by card* only when the
+order is not `TookNoPayment`, and *To pay by card* while the payment is `Pending` or `Failed`: a card
+the sheet never charged has paid nothing. The web wizard showed the same two lines already.
 
 ## No guessed unit, no guessed regime
 

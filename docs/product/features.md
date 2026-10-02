@@ -169,10 +169,12 @@ show it too:
   Y* with a note, and the button at the foot of the booking shows the to-pay figure, the amount the
   Stripe sheet then asks for. With cash chosen and a balance held, it says *Credit applies to card
   payments only*.
-- **After booking**, the success screen and the order's price card add *Paid with credit* and *Paid by
-  card*, read from the order rather than the preview.
+- **After booking**, the success screen and the order's price card add *Paid with credit* and the card
+  share, read from the order rather than the preview. The card line says *Paid by card* only once the
+  card was charged — payment `Paid`, `Refunded`, `PartiallyRefunded` or `Disputed`, the inverse of the
+  server's `Order.TookNoPayment` — and *To pay by card* while the payment is `Pending` or `Failed`.
 
-The web order detail does not show the split yet.
+The web order detail shows the same two lines under the total, by the same rule (since 2026-10-02).
 → [Business rules — customer credit](/product/business-rules#credit),
 [Points are not credit](/flows/loyalty-and-memberships#points-vs-credit)
 

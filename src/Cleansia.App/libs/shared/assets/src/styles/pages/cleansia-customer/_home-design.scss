@@ -38,6 +38,9 @@
   --cl-border: #{$border};
   --cl-border-tint: #{$primary-light};
   --cl-rule: rgba(3, 105, 161, 0.16);
+  // The edge of a card that the light theme separates by shadow alone. A navy
+  // shadow cannot be seen on a navy ground, so only the dark theme draws one.
+  --cl-edge: transparent;
 
   --cl-accent: #{$primary};
   --cl-accent-soft: #{$primary-accent};
@@ -150,6 +153,8 @@
   --cl-border: rgba(148, 163, 184, 0.22);
   --cl-border-tint: rgba(56, 189, 248, 0.24);
   --cl-rule: rgba(125, 211, 252, 0.22);
+  // A step over --cl-border: it has to read against a coloured band.
+  --cl-edge: rgba(148, 163, 184, 0.28);
 
   --cl-accent: #38bdf8;
   --cl-accent-soft: #7dd3fc;
@@ -444,6 +449,28 @@ button.cl-link {
   }
 }
 
+// From 900px down a link is a 40px tap target (_home-common.scss), and a border
+// is drawn at the foot of that box, about 12px under the words. A text underline
+// stays with the words at any height. Longhands, because Safari reads a
+// multi-value `text-decoration` only under its -webkit- prefix and would drop
+// the line altogether.
+@media (max-width: 900px) {
+  .cl-link,
+  button.cl-link {
+    border-bottom: 0;
+    padding-bottom: 0;
+    text-decoration-line: underline;
+    text-decoration-thickness: 2px;
+    text-decoration-color: var(--cl-accent-soft);
+    text-underline-offset: 5px;
+    transition: text-decoration-color 0.16s ease, color 0.16s ease;
+
+    &:hover {
+      text-decoration-color: var(--cl-accent);
+    }
+  }
+}
+
 // ---- Chips ------------------------------------------------------------------
 .cl-chip {
   display: inline-flex;
@@ -502,6 +529,28 @@ button.cl-link {
 
 .cl-lift {
   box-shadow: 0 10px 30px rgba(12, 74, 110, 0.1);
+}
+
+// Every card that has a shadow and no border. An outline rather than a border
+// so no box changes size: the hero calculator and the home bands are measured
+// for layout shift.
+:root.dark-mode
+  :is(
+    .cl-quote,
+    .cl-cta__card,
+    .cl-promises__card,
+    .cl-gallery__item,
+    .cl-plusp__cta,
+    .cl-cat-closing__card,
+    .cl-rec__empty,
+    .cl-rec__summary,
+    .cl-trk__card,
+    .cl-wiz__rail,
+    .cl-wiz__panel,
+    .cl-wiz__summary
+  ) {
+  outline: 1px solid var(--cl-edge);
+  outline-offset: -1px;
 }
 
 // ---- The shared button, corrected ------------------------------------------

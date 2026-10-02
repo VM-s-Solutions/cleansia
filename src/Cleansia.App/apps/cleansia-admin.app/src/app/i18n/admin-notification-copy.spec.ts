@@ -7,6 +7,8 @@ type Locale = (typeof LOCALES)[number];
 const PAGE_ROOT = 'pages.notifications';
 const EVENTS_ROOT = `${PAGE_ROOT}.events`;
 const CREW_LOST = 'admin.order.crew_lost';
+const PANEL_ROOT = 'components.notifications_panel';
+const PANEL_KEYS = ['empty', 'open', 'title', 'view_all'];
 
 function findSolutionDir(): string {
   let dir = process.cwd();
@@ -23,8 +25,6 @@ const SOLUTION_DIR = findSolutionDir();
 const DOMAIN_CATALOGUE = join(SOLUTION_DIR, 'Cleansia.Core.Domain/Notifications/AdminNotificationEventCatalog.cs');
 const APP_SERVICES_CATALOGUE = join(SOLUTION_DIR, 'Cleansia.Core.AppServices/Features/AdminNotifications/AdminEventCatalog.cs');
 const I18N_DIR = join(SOLUTION_DIR, 'Cleansia.App/apps/cleansia-admin.app/src/assets/i18n');
-// Read off disk rather than imported: the feature lib is lazy-loaded by the app, and a static import
-// from the app project is the boundary the module-boundaries gate refuses.
 const PAGE_MODELS = join(
   SOLUTION_DIR,
   'Cleansia.App/libs/cleansia-admin-features/notifications/src/lib/notifications/notifications.models.ts'
@@ -176,6 +176,20 @@ describe('admin notification copy', () => {
       const tree = readLocale(locale);
       expect(leafKeys(resolve(tree, PAGE_ROOT)).sort()).toEqual(reference);
       expect(untranslated(tree, reference.map((key) => `${PAGE_ROOT}.${key}`))).toEqual([]);
+    }
+  });
+
+  it('components.notifications_panel carries the same four keys in all five locales, none left as the English source', () => {
+    const en = readLocale('en');
+    for (const locale of LOCALES) {
+      const tree = readLocale(locale);
+      expect(leafKeys(resolve(tree, PANEL_ROOT)).sort()).toEqual(PANEL_KEYS);
+      expect(untranslated(tree, PANEL_KEYS.map((key) => `${PANEL_ROOT}.${key}`))).toEqual([]);
+    }
+    for (const locale of LOCALES.filter((l) => l !== 'en')) {
+      const tree = readLocale(locale);
+      const echoed = PANEL_KEYS.filter((key) => resolve(tree, `${PANEL_ROOT}.${key}`) === resolve(en, `${PANEL_ROOT}.${key}`));
+      expect({ locale, echoed }).toEqual({ locale, echoed: [] });
     }
   });
 

@@ -8,7 +8,9 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.boolean
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
@@ -39,6 +41,7 @@ class PaymentWireTest {
     private suspend fun intent(
         body: String,
         code: Int = 200,
+        saveCard: Boolean = false,
         onRequest: (RecordedRequest) -> Unit = {},
     ): ApiResult<CreatePaymentIntentResponse> {
         val server = MockWebServer()
@@ -60,7 +63,7 @@ class PaymentWireTest {
                 ),
                 json,
             )
-            repo.createPaymentIntent(ORDER_ID).also { onRequest(server.takeRequest()) }
+            repo.createPaymentIntent(ORDER_ID, saveCard).also { onRequest(server.takeRequest()) }
         } finally {
             server.shutdown()
         }
@@ -112,6 +115,20 @@ class PaymentWireTest {
 
         assertEquals("POST", method)
         assertEquals("/api/Payment/CreatePaymentIntent", path)
+    }
+
+    @Test
+    fun theSaveTickReachesTheServerUnderTheSpecName() = runTest {
+        val sent = listOf(true, false).map { tick ->
+            var body: JsonObject? = null
+            intent(CAPTURED_INTENT, saveCard = tick) { request ->
+                body = Json.parseToJsonElement(request.body.readUtf8()).jsonObject
+            }
+            body!!
+        }
+
+        assertEquals(listOf(true, false), sent.map { it["saveCard"]?.jsonPrimitive?.boolean })
+        assertEquals(listOf(ORDER_ID, ORDER_ID), sent.map { it["orderId"]?.jsonPrimitive?.content })
     }
 
     // --- rule 1 applied to credentials: nothing is supplied for a missing one ------

@@ -24,7 +24,7 @@ public sealed class StripeCustomerResolver(
 
         if (await CanAdoptLegacyCustomerAsync(user, currency, cancellationToken))
         {
-            userStripeCustomerRepository.Add(UserStripeCustomer.Create(user.Id, currency.Id, user.StripeCustomerId!));
+            AddForAccount(user, currency, user.StripeCustomerId!);
             logger.LogInformation(
                 "Adopted the legacy Stripe customer {StripeCustomerId} of user {UserId} for {CurrencyCode}",
                 user.StripeCustomerId, user.Id, currency.Code);
@@ -38,7 +38,7 @@ public sealed class StripeCustomerResolver(
             user.PhoneNumber,
             cancellationToken);
 
-        userStripeCustomerRepository.Add(UserStripeCustomer.Create(user.Id, currency.Id, stripeCustomerId));
+        AddForAccount(user, currency, stripeCustomerId);
         if (string.IsNullOrEmpty(user.StripeCustomerId))
         {
             user.AssignStripeCustomerId(stripeCustomerId);
@@ -48,6 +48,15 @@ public sealed class StripeCustomerResolver(
             "Created Stripe customer {StripeCustomerId} for user {UserId} in {CurrencyCode}",
             stripeCustomerId, user.Id, currency.Code);
         return stripeCustomerId;
+    }
+
+    // The row is the account's, stamped with its company: a booking in another company's market resolves it
+    // while committing in that market's company.
+    private void AddForAccount(User user, Currency currency, string stripeCustomerId)
+    {
+        var row = UserStripeCustomer.Create(user.Id, currency.Id, stripeCustomerId);
+        row.TenantId = user.TenantId;
+        userStripeCustomerRepository.Add(row);
     }
 
     // The legacy Customer may be adopted for a currency only when Stripe cannot already have locked it

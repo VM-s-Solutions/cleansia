@@ -13,7 +13,7 @@ Cleansia runs on Microsoft Azure (West Europe region) with separate DEV and PRO 
 
 | Resource | DEV | PRO |
 |----------|-----|-----|
-| **App Service Plan** | Basic B1 | Standard S1 |
+| **App Service Plan** | Basic B2 | Standard S1 |
 | **App Service** (Customer API + SSR) | 1 instance | 1 instance |
 | **App Service** (Partner API) | 1 instance | 1 instance |
 | **App Service** (Admin API) | 1 instance | 1 instance |
@@ -22,10 +22,16 @@ Cleansia runs on Microsoft Azure (West Europe region) with separate DEV and PRO 
 | **Static Web App** (Admin SPA) | Free tier | Standard |
 | **PostgreSQL Flexible Server** | Burstable B1ms | General Purpose D2s_v3 |
 | **Storage Account** | LRS | LRS |
-| **Azure Functions** | Consumption (Docker) | Consumption (Docker) |
+| **Azure Functions** | Container on the shared App Service plan, Always On | Container on the shared App Service plan, Always On |
 | **Key Vault** | Standard | Standard |
 | **Application Insights** | Basic | Basic |
 | **Container Registry** | Basic | Basic |
+
+**Seven always-on processes share one plan:** the five APIs, the customer SSR and the Functions
+container. The Functions app is not on Consumption — `functionApp.bicep` gives it the shared plan's
+`serverFarmId` and `alwaysOn: true`, because on a dedicated plan an idle Functions host stops polling
+its queues. On DEV that plan is a B2 (2 vCPU, 3.5 GB) with no staging slots, so every deploy restarts
+its sites on the cores the rest are serving from — see [Deploying onto the shared plan](#deploys).
 
 ::: warning The SSR host still sends nothing, and App Insights volume changed in August 2026
 The connection string is injected into all seven hosts. The five APIs began exporting to it at T-0500
@@ -61,7 +67,7 @@ Key Vault
 | `Stripe--SecretKey` | Customer API | Stripe payment processing |
 | `Stripe--WebhookSecret` | Customer API | Stripe webhook signature verification |
 | `SendGrid--ApiKey` | Functions, APIs | Email delivery |
-| `Sentry--Dsn` | The five APIs (not Functions) | Error tracking — **empty on DEV, so Sentry is off**. See [Observability](#observability) |
+| `Sentry--Dsn` | The five APIs and the Functions worker | Error tracking — **set on DEV, so Sentry is on**: the CI secret push writes it from `SENTRY_DSN`, as the log of `Deploy to DEV` run 36763660261 records. See [Sentry](#sentry) |
 | `Storage--ConnectionString` | All APIs, Functions — **DEV only** | Azure Blob/Queue Storage. Production has no storage secret: the hosts use their managed identity and the account refuses shared keys |
 | `Fiscal--CzechEet2--ApiKey` | APIs, Functions (only once `fiscalSecretProvisioned` is true) | Czech EET fiscal API key |
 | `Fiscal--CzechEet2--CertificatePassword` | APIs, Functions (only once `fiscalSecretProvisioned` is true) | Czech EET certificate password |
@@ -364,6 +370,43 @@ public class EmailService(ISendGridClient client) : IEmailService
 }
 ```
 
+## Deploying onto the shared plan {#deploys}
+
+A DEV deploy lands every artifact straight on its live site: B-series plans accept no staging slot. All
+seven processes restart on the same B2, and on 2026-10-01 the deploy was changed in four places so those
+restarts stop feeding on each other.
+
+| What | DEV | Prod | Where |
+|---|---|---|---|
+| API deploys | `deploy-api` is one matrix job of five legs at `max-parallel: 2`. Each leg deploys, then warms its own `/health` through `.github/scripts/warm-site.sh` before it gives up its seat | `max-parallel: 5`, the full fan-out: each leg deploys to its staging slot, warms it and swaps | `.github/workflows/deploy-azure.yml` |
+| Container start limit | `WEBSITES_CONTAINER_START_TIME_LIMIT` = `600` on the five APIs and the SSR | the platform default, 230 s | `containerStartSettings`, `main.bicep` |
+| SSR startup command | `node server/server.mjs`, set by Bicep as `appCommandLine` on the site and its staging slot | the same | `appService.bicep`, passed by `main.bicep` |
+| Functions deploy | `az functionapp config container set` to the build's sha, and no separate restart | the same | `build-and-deploy-functions` |
+
+**Two API sites at a time on DEV.** Fanned out, the five API deploys started in the same second as the
+Functions and SSR deploys, warming took 7–17 minutes, and the two mobile APIs — the last to start —
+failed together on 2026-08-12 and 2026-08-15 with nothing wrong with them. Holding the seat until the
+site answers means the next host starts only once this one has finished starting. `warm-site.sh` is the
+DEV warm loop: 30 attempts 10 s apart, 15 s each, and a site that never answers fails its leg rather
+than leaving a green run. The SSR is warmed after every API leg by `warm-dev-sites`, on both its
+hostnames, against Angular's server-render marker. This is the `max-parallel` fallback
+[ADR-0015](/decisions/adr-0015) D5(d) named for contention on B2. **Prod keeps the full fan-out of
+five**, so its slot swaps land together and its environment approvals arrive at once; throttling it is
+the owner's call.
+
+**600 seconds to start, on DEV only.** Linux App Service kills a container that has not answered its
+start ping within 230 s. Each API runs its database-bound hosted services — `NpgsqlTypeCatalogInitializer`,
+`LegalDocumentSeedHostedService` — against a one-vCore Postgres before Kestrel listens, so on a busy
+B2 a slow start was killed and retried rather than waited for.
+
+**Bicep owns the SSR startup command.** It used to be a deploy step, and a config write restarts the
+site — seconds before the artifact deploy restarted it again. `appCommandLine` travels with the slot on
+a swap, so prod needs nothing more. The Functions deploy lost its restart step for the same reason:
+setting the image already restarts the site.
+
+The alert mails those restarts would trip are muted for the length of the deploy —
+[the deploy quiet window](#deploy-quiet-window).
+
 ## Health probes — liveness restarts, readiness reports {#health-probes}
 
 Two endpoints, and the difference is a restart policy rather than a naming preference.
@@ -403,6 +446,19 @@ request anyway), blob Degraded-but-200. What changed is only who is allowed to r
 > comes from the .NET `MapDefaultEndpoints` — and its `/health` touches no database and no storage, so
 > it is already a liveness probe by construction.
 
+### The Functions probe is bounded too
+
+The Functions host has no `/alive` either. `functionApp.bicep` points Azure's probe at `/api/health`,
+the worker's only HTTP route, so a non-200 there recycles the worker, and the `HealthCheckStatus`
+metric it feeds is what the Functions health alert watches. `FunctionsHealthCheck` runs two probes —
+the database (`CanConnectAsync`) and queue storage (one page of the queue list) — and since 2026-10-01
+each answers within the same 5-second `ReadinessCheckTimeout`. The bound holds on the awaiting side as
+well as on the token, because Npgsql's open ignores the token once the server has accepted the
+connection and then stalls. A probe that fails or runs out of time names itself and the endpoint answers
+503; it never hangs. The database probe builds a context of its own rather than using the request
+scope's, so an open abandoned at the bound is disposed in the background instead of throwing when the
+request scope ends.
+
 ## Observability
 
 ::: tip What changed, and what did not (T-0500)
@@ -415,22 +471,22 @@ exactly one read it.
 containing the fix, everything below describes the intended state and the "what you can see today"
 answer is still platform metrics only.
 
-**Sentry is unchanged and still off.** It is wired into the five API hosts, its DSN is empty in every
-committed configuration file, and DEV is deployed with it empty. That is now a *supported* posture
-rather than a blind one — see [Sentry](#sentry) for what it would still add.
+**Sentry is on in DEV.** It is wired into the five API hosts and the Functions worker. Its DSN is
+empty in every committed configuration file and reaches Azure through Key Vault, where the CI secret
+push wrote it on DEV — see [Sentry](#sentry).
 :::
 
 ### Who sends what
 
 | Host | Application Insights | Sentry |
 |---|---|---|
-| Partner API | **yes** — logs, exceptions, requests, metrics | wired, DSN empty |
-| Admin API | **yes** | wired, DSN empty |
-| Customer API | **yes** | wired, DSN empty |
-| Partner Mobile API | **yes** | wired, DSN empty |
-| Customer Mobile API | **yes** | wired, DSN empty |
+| Partner API | **yes** — logs, exceptions, requests, metrics | **yes** — on in DEV |
+| Admin API | **yes** | **yes** |
+| Customer API | **yes** | **yes** |
+| Partner Mobile API | **yes** | **yes** |
+| Customer Mobile API | **yes** | **yes** |
 | Customer SSR (Node) | no — connection string injected, no client in the app | not wired |
-| Azure Functions | **yes** — via the Application Insights worker SDK, not OpenTelemetry | not wired |
+| Azure Functions | **yes** — via the Application Insights worker SDK, not OpenTelemetry | **yes** — the logging integration: every log at `Error` or above is an event |
 
 ### How the APIs reach App Insights
 
@@ -465,23 +521,42 @@ agent to fall back on.
 Two independent layers, and the distinction matters during an incident: **platform metrics** are
 emitted by Azure itself and need no instrumentation, so they were the entire diagnostic surface before
 T-0500 and are unaffected by any application change. The alert set is gated on `alertEmail` being
-non-empty (`main.bicep:793`); `deploy/bicep/weu.dev.bicepparam:45` sets it, so these are live on DEV and
+non-empty (`main.bicep:970`); `deploy/bicep/weu.dev.bicepparam:45` sets it, so these are live on DEV and
 mail the ops Action Group.
 
 | Signal | Source | Dev threshold |
 |---|---|---|
-| HTTP 5xx count per site | `Microsoft.Web/sites` platform metric (`alerts.bicep:81`) | > 25 in 15 min, severity 3 |
-| Average response time per site | `Microsoft.Web/sites` platform metric (`alerts.bicep:154`) | > 2 s over 15 min |
-| Functions host health probe | `HealthCheckStatus` platform metric (`alerts.bicep:121`) | < 100% healthy |
-| Postgres failed connections / CPU / storage | `Microsoft.DBforPostgreSQL` platform metrics (`alerts.bicep:259`) | > 10 failures; > 90% CPU; > 85% storage |
+| HTTP 5xx count per site | `Microsoft.Web/sites` platform metric (`alerts.bicep:84`) | > 25 in 15 min, severity 3 |
+| Average response time per site | `Microsoft.Web/sites` platform metric (`alerts.bicep:159`) | **disabled on DEV** (`enabled: isProd`); prod > 2 s |
+| Functions host health probe | `HealthCheckStatus` platform metric (`alerts.bicep:124`) | < 50% healthy; prod < 100% |
+| Postgres failed connections / CPU / storage | `Microsoft.DBforPostgreSQL` platform metrics (`alerts.bicep:273`) | > 10 failures; > 90% CPU; > 85% storage |
 | Poison-queue arrivals | queue diagnostic settings → Log Analytics scheduled query (`queueAlerts.bicep`) | any `PutMessage` into a `*-poison` queue |
-| Server exceptions | App Insights `exceptions/count` (`alerts.bicep:194`) | > 25 in 15 min — **now genuinely covers the five APIs + Functions**, as that file always claimed |
+| Server exceptions | App Insights `exceptions/count` (`alerts.bicep:208`) | > 25 in 15 min — **now genuinely covers the five APIs + Functions**, as that file always claimed |
+
+Two of those DEV values exist because every deploy restarts every site (2026-10-01). The six latency
+rules are **disabled on DEV, not removed**: on sites with no traffic, the cold-start requests after a
+deploy dominate the average and trip them, and deleting the loop would leave the rules behind, since
+the Bicep deploys incrementally. The Functions health alert fires on DEV only when the host is
+unhealthy for at least **half** the window, so the 2–5 minute restart of a deploy stays quiet; prod
+keeps 100, where any unhealthy minute counts.
 
 **Alerting still tells you almost nothing about a single failure.** Every threshold above is a
 *volume* threshold: on DEV one 500 does not reach any of them (the 5xx alert takes 26 in 15 minutes).
 What changed at T-0500 is not who gets emailed — it is that the failure is now **recorded**, so there
 is something to look at once you know to look. Being *told* about a first occurrence is the gap
-[Sentry](#sentry) would fill.
+[Sentry](#sentry) fills, and on DEV it is on.
+
+#### The deploy quiet window {#deploy-quiet-window}
+
+A DEV deploy mutes the mails, not the alerts. The provision job opens an alert processing rule,
+`apr-cleansia-<region>-<env>-deploy`, that removes the action groups from every alert raised in the
+resource group: the alerts still fire and stay visible in Monitor > Alerts, and only the mails are
+suppressed. It opens set to lapse after **120 minutes**, so a run that never reaches its end cannot mute
+DEV for longer. `close-deploy-quiet-window` runs after every restarting job — passed, failed or
+cancelled — and rewrites the rule to lapse **25 minutes** later, because an alert tripped during the
+deploy resolves up to a 15-minute window plus a 5-minute evaluation afterwards, and that Resolved mail is
+the deploy's too. The workflow owns the rule, not Bicep; `deploy/AZURE-DEV-RUNBOOK.md` §0 says why. Prod
+has no quiet window.
 
 ### Reading API telemetry
 
@@ -580,20 +655,26 @@ Two known noise sources were left alone rather than fixed here, both measured:
 
 ### Sentry
 
-Sentry is wired into the five API hosts only — the Functions host does not use it. `Program.cs:16` on
-each API calls `UseSentryMonitoring()` (`Cleansia.ServiceDefaults/Extensions.cs:85-112`), which reads
-`Sentry:Dsn` and **leaves the SDK uninitialized when that value is absent or blank**:
+Sentry is wired into the five API hosts and the Functions worker, and **it is on in DEV**: the
+`SENTRY_DSN` secret is set in the `dev-weu` GitHub Environment, and the CI secret push writes it to
+`Sentry--Dsn` — the log of `Deploy to DEV` run 36763660261 (2026-09-30) records it. The customer SSR is
+not wired.
+
+`Program.cs:16` on each API calls `UseSentryMonitoring()`, which adds the OpenTelemetry bridge. The
+Functions worker has no web host to hang `UseSentry` on and builds no `TracerProvider` for the bridge,
+so its `Program.cs` calls `AddSentryMonitoring` on the logging builder instead: every log at `Error` or
+above becomes an event, which is the alert contract `PoisonHandlerBase` relies on. Both go through one
+guard in `Cleansia.ServiceDefaults/Extensions.cs`, which reads `Sentry:Dsn` and **leaves the SDK
+uninitialized when that value is absent or blank**:
 
 ```csharp
-webBuilder.UseSentry((context, options) =>
+private static bool ConfigureSentry(SentryOptions options, string? dsn)
 {
-    var dsn = context.Configuration["Sentry:Dsn"];
     if (string.IsNullOrWhiteSpace(dsn))
     {
-        // Empty DSN is treated as "disabled" — the SDK rejects a blank DSN and would fail startup.
         options.Dsn = string.Empty;
         options.AutoSessionTracking = false;
-        return;
+        return false;
     }
 
     options.Dsn = dsn;
@@ -601,17 +682,17 @@ webBuilder.UseSentry((context, options) =>
     options.AttachStacktrace = true;
     options.AutoSessionTracking = true;
     options.TracesSampleRate = 0.2;
-    options.UseOpenTelemetry();
     options.SetBeforeSend((evt, _) => evt.Exception is OperationCanceledException ? null : evt);
-});
+    return true;
+}
 ```
 
 The empty-DSN branch is deliberate, not a bug — it is what keeps a host with no DSN from failing to
 boot. `TracesSampleRate` and `SendDefaultPii` are fixed in code, not read from configuration.
 
-Every committed `appsettings*.json` sets `"Dsn": ""`. In Azure the value arrives from Key Vault,
-populated by CI from the `SENTRY_DSN` GitHub secret — and the DEV runbook instructs that it be left
-empty. **Turning Sentry on is a secret value, not a code change.**
+Every committed `appsettings*.json` sets `"Dsn": ""`. In Azure the value arrives from Key Vault as the
+`Sentry__Dsn` app setting on the five APIs and the Functions app, populated by CI from the `SENTRY_DSN`
+GitHub secret. **Turning Sentry on or off is a secret value, not a code change.**
 
 #### Is Sentry redundant now that App Insights works?
 
@@ -623,21 +704,21 @@ occurrence one. It also carries release health and a far better stack-trace read
 
 So they are complementary, and the honest split is *App Insights is the record, Sentry is the pager*.
 
-What the owner would have to do to turn it on, in order:
+It was turned on the way this section said it would be — a Sentry project, the `SENTRY_DSN` secret in
+the `dev-weu` GitHub Environment, and the next deploy writing it to Key Vault, with no code change. Two
+things stay true while it is on:
 
-1. Create a Sentry project (free tier: 5k errors/month, enough for DEV) and set the `SENTRY_DSN` secret
-   in the `dev-weu` GitHub Environment. CI writes it to Key Vault on the next deploy; no code change.
-2. Know the blast radius before doing it. `TracesSampleRate = 0.2` also sends 20% of *transactions*,
-   not just errors, and `AutoSessionTracking = true` sends a session per request-ish unit — those, not
-   the errors, are what consume a free tier.
-3. `SendDefaultPii = false` is already set and must stay. Together with the deployed `Warning` log
+1. Know the blast radius. `TracesSampleRate = 0.2` also sends 20% of *transactions*, not just errors,
+   and `AutoSessionTracking = true` sends a session per request-ish unit — those, not the errors, are
+   what consume a free tier.
+2. `SendDefaultPii = false` is already set and must stay. Together with the deployed `Warning` log
    level (which keeps the `RequestLoggingMiddleware` Information records — and the caller email, name,
    phone and birth date they can contain — out of the breadcrumb trail entirely) that is what keeps a
    third-party error tracker from becoming a PII export. **Lowering the deployed log level and enabling
    Sentry are individually fine and jointly not**; sprint 14's T-0457 is the ticket that owns that PII.
 
-Two smaller things worth fixing when someone next touches this, neither done here because both are
-inert while the DSN is empty: `appsettings.Production.json` hardcodes `Sentry:Environment =
-"production"`, so DEV errors would arrive tagged as production; and `TracesSampleRate` /
-`SendDefaultPii` are fixed in code rather than read from configuration, so there is no way to tune the
-sample rate per environment without a redeploy.
+Two smaller things are worth fixing when someone next touches this. One is live now that the DSN is
+set: `appsettings.Production.json` hardcodes `Sentry:Environment = "production"` on every API host and
+every deployed host runs as `Production`, so **DEV API events arrive in Sentry tagged `production`**.
+The other is unchanged: `TracesSampleRate` / `SendDefaultPii` are fixed in code rather than read from
+configuration, so there is no way to tune the sample rate per environment without a redeploy.

@@ -53,14 +53,17 @@ public class SaveMyDocuments
         private const int MaxDocumentsPerRequest = 10;
 
         private readonly IEmployeeRepository _employeeRepository;
+        private readonly IEmployeeDocumentRepository _documentRepository;
         private readonly IUserSessionProvider _userSessionProvider;
 
         public Validator(
             IUserRepository userRepository,
             IUserSessionProvider userSessionProvider,
-            IEmployeeRepository employeeRepository) : base(userRepository, userSessionProvider)
+            IEmployeeRepository employeeRepository,
+            IEmployeeDocumentRepository documentRepository) : base(userRepository, userSessionProvider)
         {
             _employeeRepository = employeeRepository;
+            _documentRepository = documentRepository;
             _userSessionProvider = userSessionProvider;
 
             RuleFor(x => x)
@@ -96,7 +99,15 @@ public class SaveMyDocuments
             })
             // Without this the per-item rules still decode every item of a list already refused for
             // being too long, which is the cost the count cap exists to refuse.
-            .When(x => x.Documents.Count <= MaxDocumentsPerRequest);
+            .When(x => x.Documents.Count <= MaxDocumentsPerRequest)
+            // Dependent, so the hash decodes only files every per-item rule has already passed.
+            .DependentRules(() =>
+            {
+                RuleFor(x => x.Documents)
+                    .MustAsync(RepeatNoKeptFileAsync)
+                    .WithMessage(BusinessErrorMessage.EmployeeDocumentDuplicateFile)
+                    .When(x => x.Documents.Count is > 0 and <= MaxDocumentsPerRequest);
+            });
         }
 
         private async Task<bool> EmployeeExistsAsync(Command command, CancellationToken cancellationToken)
@@ -104,6 +115,21 @@ public class SaveMyDocuments
             var userEmail = _userSessionProvider.GetUserEmail();
             var employee = await _employeeRepository.GetByUserEmailAsync(userEmail!, cancellationToken);
             return employee is not null;
+        }
+
+        private async Task<bool> RepeatNoKeptFileAsync(List<DocumentToSave> documents, CancellationToken cancellationToken)
+        {
+            var contentHashes = documents.Select(d => DocumentContentHash.Of(d.File)).ToList();
+            if (contentHashes.Distinct().Count() != contentHashes.Count)
+            {
+                return false;
+            }
+
+            var employee = await _employeeRepository.GetByUserEmailAsync(
+                _userSessionProvider.GetUserEmail()!, cancellationToken);
+
+            return employee is null || !await DocumentContentHash.IsKeptByAsync(
+                _documentRepository, employee.Id, contentHashes, cancellationToken);
         }
     }
 
@@ -145,40 +171,17 @@ public class SaveMyDocuments
                 await client.UploadAsync(fullBlobPath, stream, metadata, cancellationToken);
                 var blobUrl = client.GetBlobUri(fullBlobPath).ToString();
 
-                // Check for existing document with same filename (auto-versioning)
-                var existingDocument = await documentRepository.GetLatestByFileNameAsync(
-                    employee.Id,
-                    doc.File.FileName,
-                    cancellationToken);
-
-                EmployeeDocument employeeDocument;
-                if (existingDocument is not null)
-                {
-                    employeeDocument = EmployeeDocument.CreateNewVersion(
-                        previousVersion: existingDocument,
-                        fileName: doc.File.FileName,
-                        filePath: fullBlobPath,
-                        contentType: contentType,
-                        fileSizeBytes: stream.Length,
-                        documentType: doc.DocumentType,
-                        description: doc.Description,
-                        createdBy: user.Id
-                    );
-                }
-                else
-                {
-                    // Create new document (V1)
-                    employeeDocument = EmployeeDocument.Create(
-                        employeeId: employee.Id,
-                        fileName: doc.File.FileName,
-                        filePath: fullBlobPath,
-                        contentType: contentType,
-                        fileSizeBytes: stream.Length,
-                        documentType: doc.DocumentType,
-                        description: doc.Description,
-                        createdBy: user.Id
-                    );
-                }
+                var employeeDocument = EmployeeDocument.Create(
+                    employeeId: employee.Id,
+                    fileName: doc.File.FileName,
+                    filePath: fullBlobPath,
+                    contentType: contentType,
+                    fileSizeBytes: stream.Length,
+                    contentSha256: DocumentContentHash.Of(doc.File),
+                    documentType: doc.DocumentType,
+                    description: doc.Description,
+                    createdBy: user.Id
+                );
 
                 documentRepository.Add(employeeDocument);
 

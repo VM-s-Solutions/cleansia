@@ -60,7 +60,8 @@ public class UserSpecification : BaseSpecification<string?>, ISpecification<User
             specification &= new DirectSpecification<User>(x =>
                 x.FirstName.ToLower().Contains(searchTerm) ||
                 x.LastName.ToLower().Contains(searchTerm) ||
-                x.Email.ToLower().Contains(searchTerm));
+                x.Email.ToLower().Contains(searchTerm) ||
+                (x.PhoneNumber != null && x.PhoneNumber.Contains(searchTerm)));
         }
 
         if (UserProfiles is not null && UserProfiles.Any())

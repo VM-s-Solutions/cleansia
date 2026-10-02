@@ -3,7 +3,7 @@ package cz.cleansia.customer.core.payments
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class CreatePaymentIntentRequest(val orderId: String)
+data class CreatePaymentIntentRequest(val orderId: String, val saveCard: Boolean)
 
 /**
  * Mirrors backend `CreatePaymentIntent.Response`. The four pieces below are

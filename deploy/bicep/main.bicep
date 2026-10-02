@@ -553,6 +553,13 @@ var storageSettings = storageManagedIdentityEnabled
       ConnectionStrings__QueueStorageConnectionString: kvRef(keyVaultUri, 'Storage--ConnectionString')
     }
 
+// How long Linux App Service waits for a container to answer its start ping before it kills it. The
+// default is 230 s, and on DEV a deploy starts the five APIs and the SSR at once on a 2-vCPU plan,
+// each API running its database-bound hosted services (NpgsqlTypeCatalogInitializer,
+// LegalDocumentSeedHostedService) against a 1-vCore Postgres BEFORE Kestrel listens — so a slow
+// start was killed and retried rather than waited for. 600 s on DEV only; prod stays on the default.
+var containerStartSettings = env == 'prod' ? {} : { WEBSITES_CONTAINER_START_TIME_LIMIT: '600' }
+
 var apiBaseSettings = union({
   ConnectionStrings__ConnectionString: kvRef(keyVaultUri, 'ConnectionStrings--cleansia-db')
   JwtSettings__Secret: kvRef(keyVaultUri, 'Jwt--Key')
@@ -588,7 +595,7 @@ var apiBaseSettings = union({
   // /architecture/request-logging documents that as load-bearing in both directions. Prod stays at
   // Warning regardless.
   Logging__LogLevel__Cleansia: env == 'prod' ? 'Warning' : 'Information'
-}, storageSettings, sendGridSettings)
+}, storageSettings, sendGridSettings, containerStartSettings)
 
 // FCM push dispatch — the Functions queue consumer is the ONLY dispatcher; FcmPushDispatcher is a
 // deliberate no-op while this is unset, so pushes are silently ACKed until the secret exists. Value:
@@ -777,7 +784,8 @@ module ssr 'modules/appService.bicep' = {
     location: location
     appServicePlanId: appServicePlan.outputs.id
     linuxFxVersion: ssrLinuxFxVersion
-    appSettings: {
+    appCommandLine: 'node server/server.mjs'
+    appSettings: union({
       // DEAD CONFIG on this host, deliberately kept — unlike the five .NET APIs, nothing here reads it.
       // The SSR app is Node and ships no telemetry client, and the App Service Node auto-instrumentation
       // agent is off (it needs ApplicationInsightsAgent_EXTENSION_VERSION, which no host sets). So this
@@ -797,7 +805,7 @@ module ssr 'modules/appService.bicep' = {
       NG_TRUST_PROXY_HEADERS: 'x-forwarded-for,x-forwarded-host,x-forwarded-proto,x-forwarded-tlsversion'
       WEBSITE_WARMUP_PATH: '/health'
       WEBSITE_WARMUP_STATUSES: '200'
-    }
+    }, containerStartSettings)
     corsAllowedOrigins: []
     httpsOnly: true
     // Always On in every stage — same reasoning as the API hosts above, and it matters most here:

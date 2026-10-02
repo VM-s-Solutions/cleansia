@@ -106,6 +106,10 @@ public class CreateOrder
             RuleFor(x => x.PaymentType)
                 .IsInEnum().WithMessage(BusinessErrorMessage.InvalidEnumValue);
 
+            RuleFor(x => x.SaveCard)
+                .Must(saveCard => !saveCard || !IsGuest())
+                .WithMessage(BusinessErrorMessage.SavedCardRequiresAccount);
+
             RuleFor(x => x.Rooms)
                 .GreaterThanOrEqualTo(0)
                 .WithMessage(BusinessErrorMessage.MustBePositive)
@@ -872,7 +876,11 @@ public class CreateOrder
         DirtinessLevel DirtinessLevel = DirtinessLevel.Normal,
         // The early-performance tick, asked on every booking, signed-in or guest; nullable for the same
         // reason as the terms tick, so an absent member is refused rather than unbindable.
-        bool? EarlyPerformanceRequested = null) : ICommand<Response>, IOperatorScopedRequest
+        bool? EarlyPerformanceRequested = null,
+        // "Save this card for my next bookings", offered to a signed-in customer paying by card and off by
+        // default; the web checkout asks Stripe to keep the card, the mobile apps tick it on their
+        // PaymentSheet intent instead.
+        bool SaveCard = false) : ICommand<Response>, IOperatorScopedRequest
     {
         // A guest's market is the inline address's country; a guest cannot name a saved address, and a
         // request with no country lands in the default market (ADR-0061 D3). The validator's operator
@@ -1198,8 +1206,12 @@ public class CreateOrder
                 order.ApplyCredit(intendedCredit, userId);
             }
 
+            // A card saved while paying is the account's, like a promo: the customer, their Stripe Customer
+            // and the saved card are read and recorded in the account's company, the booking in the operator's.
+            if (accountTenantId is not null) tenantProvider.SetTenantOverride(accountTenantId);
             var dispatch = await orderPaymentDispatcher.DispatchAsync(
-                order, command.Language, cancellationToken);
+                order, command.Language, command.SaveCard, cancellationToken);
+            if (operatorTenantId is not null) tenantProvider.SetTenantOverride(operatorTenantId);
             if (dispatch.Failure is { } dispatchFailure)
             {
                 // Stripe is unreachable and this order will not exist - the pipeline commits nothing on

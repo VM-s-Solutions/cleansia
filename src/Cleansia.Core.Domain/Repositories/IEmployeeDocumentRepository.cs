@@ -6,7 +6,6 @@ public interface IEmployeeDocumentRepository : IRepository<EmployeeDocument, str
 {
     Task<List<EmployeeDocument>> GetByEmployeeIdAsync(string employeeId, bool includeInactive = false, CancellationToken cancellationToken = default);
     Task<List<EmployeeDocument>> GetVersionHistoryAsync(string documentId, CancellationToken cancellationToken = default);
-    Task<EmployeeDocument?> GetLatestByFileNameAsync(string employeeId, string fileName, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// GDPR erasure. Deletes the subject's document rows once their blobs have been deleted.

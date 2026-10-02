@@ -17,8 +17,12 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 /// </summary>
 public interface IOrderPaymentDispatcher
 {
+    /// <param name="saveCard">
+    /// The customer ticked "save this card": on the web the Checkout Session asks Stripe to keep the card and
+    /// a saved card is recorded under the consent. The mobile channel saves at its PaymentSheet intent instead.
+    /// </param>
     Task<OrderPaymentDispatchResult> DispatchAsync(
-        Order order, string languageCode, CancellationToken cancellationToken);
+        Order order, string languageCode, bool saveCard, CancellationToken cancellationToken);
 }
 
 /// <summary>

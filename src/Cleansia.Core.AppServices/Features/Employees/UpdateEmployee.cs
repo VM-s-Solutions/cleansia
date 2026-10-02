@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Common.Validators;
 using Cleansia.Core.AppServices.Extensions;
+using Cleansia.Core.AppServices.Features.EmployeeDocuments;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Shared.DTOs.Files;
 using Cleansia.Core.Blobs.Abstractions;
@@ -258,6 +259,7 @@ public class UpdateEmployee
                     fullFilePath,
                     contentType,
                     fileSizeBytes,
+                    DocumentContentHash.Of(document),
                     DocumentType.Other,
                     null,
                     currentUser);

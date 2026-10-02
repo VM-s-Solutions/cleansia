@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { readdirSync, readFileSync } from 'fs';
 import { join, relative } from 'path';
@@ -57,6 +58,88 @@ describe('CleansiaButtonComponent (a11y)', () => {
     fixture.detectChanges();
 
     expect(nativeButton().getAttribute('aria-label')).toBeNull();
+  });
+});
+
+/**
+ * A disclosure's state has to sit on the element a screen reader focuses. Bound on
+ * <cleansia-button> it landed on the host, which is not focusable, and was never announced.
+ */
+describe('CleansiaButtonComponent (disclosure state)', () => {
+  let fixture: ComponentFixture<CleansiaButtonComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [CleansiaButtonComponent, TranslateModule.forRoot()],
+      providers: [provideRouter([])],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(CleansiaButtonComponent);
+    fixture.componentRef.setInput('icon', 'pi pi-bars');
+    fixture.componentRef.setInput('ariaLabel', 'Open menu');
+  });
+
+  function control(selector: string): HTMLElement {
+    return fixture.nativeElement.querySelector(selector);
+  }
+
+  it('puts aria-expanded and aria-controls on the inner button, not on the host', () => {
+    fixture.componentRef.setInput('ariaExpanded', true);
+    fixture.componentRef.setInput('ariaControls', 'site-menu');
+    fixture.detectChanges();
+
+    expect(control('button').getAttribute('aria-expanded')).toBe('true');
+    expect(control('button').getAttribute('aria-controls')).toBe('site-menu');
+    expect(fixture.nativeElement.hasAttribute('aria-expanded')).toBe(false);
+
+    fixture.componentRef.setInput('ariaExpanded', false);
+    fixture.detectChanges();
+
+    expect(control('button').getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('adds neither attribute when the inputs are not set', () => {
+    fixture.detectChanges();
+
+    expect(control('button').hasAttribute('aria-expanded')).toBe(false);
+    expect(control('button').hasAttribute('aria-controls')).toBe(false);
+  });
+
+  it('puts them on the anchor of a routerLink button', () => {
+    fixture.componentRef.setInput('routerLink', '/orders');
+    fixture.componentRef.setInput('ariaExpanded', true);
+    fixture.componentRef.setInput('ariaControls', 'site-menu');
+    fixture.detectChanges();
+
+    expect(control('a').getAttribute('aria-expanded')).toBe('true');
+    expect(control('a').getAttribute('aria-controls')).toBe('site-menu');
+  });
+
+  it('puts them on the anchor of an href button', () => {
+    fixture.componentRef.setInput('href', '/orders');
+    fixture.componentRef.setInput('ariaExpanded', false);
+    fixture.componentRef.setInput('ariaControls', 'site-menu');
+    fixture.detectChanges();
+
+    expect(control('a').getAttribute('aria-expanded')).toBe('false');
+    expect(control('a').getAttribute('aria-controls')).toBe('site-menu');
+  });
+
+  it('focuses the inner button', () => {
+    fixture.detectChanges();
+
+    fixture.componentInstance.focus();
+
+    expect(document.activeElement).toBe(control('button'));
+  });
+
+  it('focuses the anchor of a link button', () => {
+    fixture.componentRef.setInput('href', '/orders');
+    fixture.detectChanges();
+
+    fixture.componentInstance.focus();
+
+    expect(document.activeElement).toBe(control('a'));
   });
 });
 

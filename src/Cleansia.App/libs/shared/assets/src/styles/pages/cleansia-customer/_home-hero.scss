@@ -15,10 +15,7 @@ cleansia-hero {
 // exactly that height and pays it back as padding.
 .cl-hero {
   // The shell's navbar spacer, reclaimed and paid back, so the gradient runs to
-  // the top of the page with the white pill floating ON it. Read from the token
-  // rather than written as 96px: the navbar publishes --cl-nav-h and makes it
-  // TALLER when the dev banner is up, and the hardcoded pair left the hero
-  // pulled 96px up and padded 126 down on every environment that shows it.
+  // the top of the page with the white pill floating ON it.
   margin-top: calc(-1 * var(--cl-nav-h));
   // Radial rather than linear so the light sits behind the mascot instead of
   // sweeping across the whole band. The stops are tokens because the whole band
@@ -67,11 +64,10 @@ cleansia-hero {
     grid-template-columns: minmax(0, 1fr) 650px;
     gap: 48px;
     align-items: end;
-    // 1.5, not 3.25. The hero sat 104px below the navbar at 1280px wide, which
-    // read as a gap rather than as breathing room and pushed the calculator
-    // card's fixed price below the fold on a laptop. The navbar payback on
+    // No top padding: every pixel here pushed the calculator card's footnote
+    // further below the fold of a 1440x772 window. The navbar payback on
     // `.cl-hero` above is untouched — that one is structural.
-    padding: calc(0.75 * var(--cl-u)) var(--cl-gutter) 0;
+    padding: 0 var(--cl-gutter) 0;
     max-width: $home-width;
     margin: 0 auto;
 
@@ -149,36 +145,6 @@ cleansia-hero {
 // =============================
 // Dark Mode — Hero
 // =============================
-
-// =============================
-// Responsive — Hero
-// =============================
-@media (max-width: 768px) {
-  .cl-hero {
-    padding: 4rem 1.5rem 6rem;
-    &__inner {
-      flex-direction: column;
-      text-align: center;
-      gap: 2.5rem;
-    }
-    &__tagline {
-      align-self: center;
-    }
-    &__subtitle {
-      margin-left: auto;
-      margin-right: auto;
-    }
-    &__buttons {
-      justify-content: center;
-    }
-    &__trust {
-      justify-content: center;
-    }
-    &__image {
-      width: min(100%, 260px);
-    }
-  }
-}
 
 // =============================
 // Quick quote — the calculator in the hero
@@ -387,20 +353,6 @@ cleansia-hero {
   }
 }
 
-@media (max-width: 768px) {
-  .cl-hero {
-    &__inner {
-      padding: 32px 20px 0;
-    }
-
-    &__buttons {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 18px;
-    }
-  }
-}
-
 // The artboard's calculator details: the size row carries a muted per-country
 // note on its right, and "when" is two boxes rather than one wide input.
 .cl-quote {
@@ -545,6 +497,32 @@ cleansia-hero {
   margin: 13px 0 0;
 }
 
+// At the artboard's rhythm the card's footnote fell below a 1440x772 window.
+// Stacked below 1100px, the card is not at the fold.
+@media (min-width: 1101px) {
+  .cl-quote {
+    padding: 22px 30px 20px;
+  }
+
+  .cl-quote__field {
+    margin-top: calc(0.875 * var(--cl-u)); // 14px
+  }
+
+  .cl-quote__chips,
+  .cl-quote__when {
+    margin-top: calc(0.5 * var(--cl-u)); // 8px
+  }
+
+  .cl-quote__result {
+    margin-top: 16px;
+    padding-top: 14px;
+  }
+
+  .cl-quote__footnote {
+    margin-top: 6px;
+  }
+}
+
 @keyframes cl-quote-ghost {
   0%,
   100% {
@@ -639,6 +617,130 @@ cleansia-hero {
     .cl-btn {
       width: 100%;
       white-space: normal;
+    }
+  }
+}
+
+// Phones: one left-aligned grid with the mascot small beside the actions, so
+// the calculator starts on the first screen. `__text` dissolves into the grid,
+// which places its children without a template change. Last in the file: the
+// 900px block above sizes the mascot too, and would otherwise win.
+@media (max-width: 768px) {
+  .cl-hero {
+    &__sud {
+      display: none;
+    }
+
+    &__inner {
+      grid-template-columns: minmax(0, 1fr) 112px;
+      grid-template-areas:
+        'title title'
+        'sub sub'
+        'ctas mascot'
+        'quote quote';
+      gap: 0 12px;
+      padding: 16px var(--cl-gutter) 0;
+
+      > cleansia-quick-quote {
+        grid-area: quote;
+        margin-top: 20px;
+      }
+    }
+
+    &__text {
+      display: contents;
+    }
+
+    &__title {
+      grid-area: title;
+      margin-top: 0;
+      font-size: clamp(32px, 8.6vw, 34px);
+      line-height: 1.1;
+    }
+
+    &__subtitle {
+      grid-area: sub;
+      font-size: 16px;
+      line-height: 1.6;
+      margin-top: 12px;
+    }
+
+    &__buttons {
+      grid-area: ctas;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+      margin-top: 20px;
+
+      .cl-btn {
+        align-self: stretch;
+        min-height: 48px;
+        padding: 0 24px;
+      }
+    }
+
+    &__spacer {
+      display: none;
+    }
+
+    &__image {
+      grid-area: mascot;
+      width: 112px;
+      margin: 0;
+      justify-self: end;
+      align-self: end;
+
+      img {
+        width: 100%;
+        margin-left: 0;
+      }
+    }
+  }
+
+  .cl-quote {
+    padding: 20px 16px;
+    border-radius: 24px;
+    text-align: left;
+
+    // The service chips are one row that scrolls sideways, edge to edge of the
+    // card. It reserves ONE chip row, so it still holds still when the catalogue
+    // replaces the placeholders; the chips are border-box because a button is and
+    // the placeholder span is not, which made the two rows 2px apart. The 4px
+    // block padding keeps a chip's focus ring (2px at a 2px offset) out of the
+    // scroller's clip; the margins give it back. The fade is exactly the end
+    // padding, so the last chip at rest is never faded.
+    &__chips--services {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scroll-snap-type: x proximity;
+      scroll-padding-inline: 16px;
+      scrollbar-width: none;
+      margin-inline: -16px;
+      padding: 4px 16px;
+      margin-top: calc(0.625 * var(--cl-u) - 4px);
+      margin-bottom: -4px;
+      min-height: max(44px, calc(2.75 * var(--cl-u)));
+      -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 16px), transparent);
+      mask-image: linear-gradient(to right, #000 calc(100% - 16px), transparent);
+
+      &::-webkit-scrollbar {
+        display: none;
+      }
+
+      > .cl-chip {
+        flex: 0 0 auto;
+        box-sizing: border-box;
+        white-space: nowrap;
+        scroll-snap-align: start;
+      }
+    }
+
+    // Each box is about 150px at 380, room for a date and its icon; below that
+    // the 900px block's stack stands.
+    @media (min-width: 380px) {
+      &__when {
+        grid-template-columns: 1fr 1fr;
+      }
     }
   }
 }

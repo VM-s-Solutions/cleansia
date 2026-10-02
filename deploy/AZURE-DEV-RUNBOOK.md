@@ -72,6 +72,23 @@ The deployment also creates: 6 blob containers (`order-photos`, `employee-docume
 managed-identity role grants. Both lists are `storage.bicep`'s; the queue set mirrors `QueueNames.cs`
 and `QueueListenerInventoryTests` fails the build if the two drift again.
 
+> ### ⓘ One resource in the group is not in the Bicep: the deploy quiet window
+>
+> After the first deploy the group also holds an **alert processing rule**,
+> `apr-cleansia-<region>-<env>-deploy` (`apr-cleansia-weu-dev-deploy` here). **The deploy workflow owns
+> it, not Bicep.** The provision job PUTs it through `az rest` at the start of every DEV deploy, removing
+> the action groups from every alert raised in the group and set to lapse 120 minutes later, so a run that
+> dies cannot mute DEV for longer; `close-deploy-quiet-window` re-PUTs it after the last restarting job to
+> lapse 25 minutes later. The alerts still fire and stay in Monitor → Alerts; only the mails are muted.
+>
+> Why the workflow: the window has to open before the first restart and close after the last, and only
+> the workflow knows those moments. A provision would reset it, and most deploys skip the provision
+> anyway (the provision gate runs Bicep only when the infrastructure fingerprint changed), so a
+> Bicep-declared window would open only on the runs that change infrastructure. Bicep deploys in
+> incremental mode, so it leaves the rule alone. Outside a deploy the rule is inert, its schedule
+> lapsed. Prod has none. See
+> [Infrastructure — the deploy quiet window](../docs/architecture/infrastructure.md#deploy-quiet-window).
+
 > ### ⓘ Naming rule: the name encodes the REGION, not the COUNTRY/market (ADR-0017)
 >
 > Every resource + GitHub Environment is named `…-<region>-<stage>` (e.g. `…-weu-dev`, env `dev-weu`).

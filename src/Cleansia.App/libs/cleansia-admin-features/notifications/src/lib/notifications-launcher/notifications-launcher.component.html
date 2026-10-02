@@ -1,0 +1,83 @@
+@if (!onFeedPage()) {
+<div class="cleansia-notifications-launcher">
+  <cleansia-button
+    icon="pi pi-bell"
+    buttonSize="large"
+    [ariaLabel]="'components.notifications_panel.open' | translate"
+    [ariaExpanded]="panelOpen()"
+    [ariaControls]="panelId"
+    (onClick)="toggle($event)"
+  />
+  @if (badge.badgeLabel(); as count) {
+  <span class="cleansia-notifications-launcher__count">{{ count }}</span>
+  }
+</div>
+}
+
+<p-popover
+  styleClass="cleansia-notifications-panel"
+  [autoZIndex]="false"
+  [ariaLabel]="'components.notifications_panel.title' | translate"
+  (onShow)="onPanelShow()"
+  (onHide)="onPanelHide()"
+>
+  <ng-template #content>
+    <section class="cleansia-notifications-panel__frame" [id]="panelId">
+      <div class="cleansia-notifications-panel__head">
+        <h2 class="cleansia-notifications-panel__title">{{ 'components.notifications_panel.title' | translate }}</h2>
+        <cleansia-button
+          [label]="'pages.notifications.mark_all_read' | translate"
+          icon="pi pi-check-circle"
+          severity="secondary"
+          buttonSize="small"
+          [text]="true"
+          [disabled]="!facade.hasUnread()"
+          [loading]="facade.markingAll()"
+          (onClick)="facade.markAllRead()"
+        />
+      </div>
+
+      <div class="cleansia-notifications-panel__body">
+        @if (facade.initialLoading()) {
+        <cleansia-loader />
+        } @else if (facade.hasError()) {
+        <div class="empty-state">
+          <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+          <p>{{ 'pages.notifications.load_error' | translate }}</p>
+          <cleansia-button
+            [label]="'pages.notifications.retry' | translate"
+            icon="pi pi-refresh"
+            severity="secondary"
+            buttonSize="small"
+            [outlined]="true"
+            (onClick)="facade.load()"
+          />
+        </div>
+        } @else if (facade.rows().length === 0) {
+        <div class="empty-state">
+          <i class="pi pi-bell-slash" aria-hidden="true"></i>
+          <p>{{ 'components.notifications_panel.empty' | translate }}</p>
+        </div>
+        } @else {
+        <cleansia-admin-notification-feed
+          [rows]="facade.rows()"
+          [openingId]="facade.openingId()"
+          [refreshing]="facade.loading()"
+          (rowOpen)="facade.open($event)"
+        />
+        }
+      </div>
+
+      <div class="cleansia-notifications-panel__foot">
+        <cleansia-button
+          [label]="'components.notifications_panel.view_all' | translate"
+          icon="pi pi-arrow-right"
+          iconPosition="right"
+          buttonSize="small"
+          [text]="true"
+          [routerLink]="feedRoute"
+        />
+      </div>
+    </section>
+  </ng-template>
+</p-popover>

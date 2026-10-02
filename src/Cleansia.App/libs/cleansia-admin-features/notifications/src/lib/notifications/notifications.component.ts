@@ -8,8 +8,8 @@ import {
 } from '@cleansia/components';
 import { TranslatePipe } from '@ngx-translate/core';
 import { PaginatorModule, PaginatorState } from 'primeng/paginator';
+import { NotificationFeedComponent } from '../notification-feed/notification-feed.component';
 import { NotificationsFacade } from './notifications.facade';
-import { NotificationRow } from './notifications.models';
 
 @Component({
   selector: 'cleansia-admin-notifications',
@@ -22,6 +22,7 @@ import { NotificationRow } from './notifications.models';
     CleansiaLoaderComponent,
     CleansiaSectionComponent,
     CleansiaTitleComponent,
+    NotificationFeedComponent,
   ],
   templateUrl: './notifications.component.html',
   providers: [NotificationsFacade],
@@ -36,10 +37,5 @@ export class NotificationsComponent implements OnInit {
 
   onPageChange(event: PaginatorState): void {
     this.facade.onPageChange(event.first ?? 0);
-  }
-
-  onRowKeydown(row: NotificationRow, event: Event): void {
-    event.preventDefault();
-    this.facade.open(row);
   }
 }

@@ -216,6 +216,7 @@ public static class DomainSeed
             filePath: "host-tests/id.pdf",
             contentType: "application/pdf",
             fileSizeBytes: 1024,
+            contentSha256: new string('0', 64),
             documentType: DocumentType.Passport,
             description: "host-test active doc",
             createdBy: "seed");

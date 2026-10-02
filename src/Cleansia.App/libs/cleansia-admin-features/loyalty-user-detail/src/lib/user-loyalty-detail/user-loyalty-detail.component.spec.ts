@@ -441,6 +441,70 @@ describe('UserLoyaltyDetailComponent — credit section', () => {
     expect(el.querySelector('.cleansia-user-loyalty-detail__incident-scope')).toBeNull();
   });
 
+  const GRANT_POINTS = 'cleansia-user-loyalty-detail__grant-points';
+  const REVOKE_POINTS = 'cleansia-user-loyalty-detail__revoke-points';
+  const ISSUE_CREDIT = 'cleansia-user-loyalty-detail__issue-credit';
+
+  function headerActions(el: HTMLElement): string[] {
+    const row = el.querySelector('.cleansia-page-header__actions') as HTMLElement;
+    return Array.from(row.children)
+      .filter((child) => child.tagName === 'CLEANSIA-BUTTON')
+      .map((child) => child.className);
+  }
+
+  it('puts Grant points, Revoke points and Issue credit side by side in the header, credit rightmost', () => {
+    const el = render(noAccount());
+    const actions = headerActions(el);
+    const grant = actions.indexOf(GRANT_POINTS);
+
+    expect(grant).toBeGreaterThanOrEqual(0);
+    expect(actions.slice(grant)).toEqual([GRANT_POINTS, REVOKE_POINTS, ISSUE_CREDIT]);
+
+    const sections = Array.from(el.querySelectorAll('cleansia-section'));
+    expect(sections.some((section) => section.querySelector(`.${GRANT_POINTS}, .${ISSUE_CREDIT}`))).toBe(false);
+  });
+
+  it('offers the points actions on CanGrantLoyaltyPoints and Issue credit on CanIssueCustomerCredit', () => {
+    grantedPolicies.delete('CanIssueCustomerCredit');
+    expect(headerActions(render(noAccount()))).toEqual(
+      expect.arrayContaining([GRANT_POINTS, REVOKE_POINTS])
+    );
+    expect(headerActions(render(noAccount()))).not.toContain(ISSUE_CREDIT);
+
+    grantedPolicies.add('CanIssueCustomerCredit');
+    grantedPolicies.delete('CanGrantLoyaltyPoints');
+    const actions = headerActions(render(noAccount()));
+    expect(actions).toContain(ISSUE_CREDIT);
+    expect(actions).not.toContain(GRANT_POINTS);
+    expect(actions).not.toContain(REVOKE_POINTS);
+  });
+
+  it('opens the points dialog in the mode of the header action pressed, and credit in its own dialog', () => {
+    const fixture = renderFixture(noAccount());
+    const el = fixture.nativeElement as HTMLElement;
+    const press = (action: string) => {
+      (el.querySelector(`.${action} button`) as HTMLButtonElement).click();
+      fixture.detectChanges();
+    };
+    const points = () =>
+      fixture.debugElement.query(By.directive(GrantPointsDialogStub)).componentInstance as GrantPointsDialogStub;
+    const credit = () =>
+      fixture.debugElement.query(By.directive(IssueCreditDialogStub)).componentInstance as IssueCreditDialogStub;
+
+    press(REVOKE_POINTS);
+    expect({ visible: points().visible(), mode: points().mode() }).toEqual({ visible: true, mode: 'revoke' });
+    expect(credit().visible()).toBe(false);
+
+    fixture.componentInstance.onDialogVisibleChange(false);
+    press(GRANT_POINTS);
+    expect(points().mode()).toBe('grant');
+
+    fixture.componentInstance.onDialogVisibleChange(false);
+    press(ISSUE_CREDIT);
+    expect(credit().visible()).toBe(true);
+    expect(points().visible()).toBe(false);
+  });
+
   // The timeline endpoint answers 403 without CanViewAuditLog; a section that always fails is worse
   // than none, and the sibling entry points (order and dispute History) gate on the same policy.
   it('hides the timeline section without CanViewAuditLog', () => {

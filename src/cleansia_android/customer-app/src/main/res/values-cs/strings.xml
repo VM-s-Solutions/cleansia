@@ -775,6 +775,7 @@
     <string name="booking_card_guarantee_consent_required">Pro platbu v hotovosti potvrďte souhlas se zárukou kartou, nebo zvolte platbu kartou.</string>
     <string name="booking_card_guarantee_pending">Kartu ještě ověřujeme. Za chvíli objednávku potvrďte znovu.</string>
     <string name="booking_card_guarantee_cancelled">Karta se neuložila, takže se nic neobjednalo. Pro platbu v hotovosti si uložte kartu, nebo zvolte platbu kartou.</string>
+    <string name="booking_save_card_label">Uložit tuto kartu pro mé další objednávky</string>
     <string name="booking_special_instructions_hint">Speciální požadavky? (nepovinné)</string>
     <string name="booking_access_instructions_hint">Pokyny ke vstupu? (nepovinné)</string>
 

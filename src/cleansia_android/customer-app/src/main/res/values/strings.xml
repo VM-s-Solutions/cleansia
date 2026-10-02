@@ -784,6 +784,7 @@
     <string name="booking_card_guarantee_consent_required">Agree to the card guarantee to pay in cash, or choose card.</string>
     <string name="booking_card_guarantee_pending">We\'re still confirming your card. Swipe again in a moment.</string>
     <string name="booking_card_guarantee_cancelled">Your card wasn\'t saved, so nothing was booked. Save a card to pay in cash, or choose card.</string>
+    <string name="booking_save_card_label">Save this card for my next bookings</string>
     <string name="booking_special_instructions_hint">Any special requests? (optional)</string>
     <string name="booking_access_instructions_hint">How do we get in? (optional)</string>
 

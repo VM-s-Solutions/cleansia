@@ -72,7 +72,7 @@ public class EmployeeDocumentDownloadContentTypeTests
     {
         var document = EmployeeDocument.Create(
             EmployeeId, "contract.pdf", "employees/emp-1/documents/contract.pdf", recorded,
-            stored.Length, DocumentType.Other, null, "seed");
+            stored.Length, new string('0', 64), DocumentType.Other, null, "seed");
         document.Id = DocumentId;
 
         var repository = new Mock<IEmployeeDocumentRepository>();

@@ -86,6 +86,7 @@
       "membership_plan_edit": "Edit Membership Plan",
       "data_protection": "Data Protection",
       "profile": "My Profile",
+      "customers": "Customers",
       "customer_detail": "Customer",
       "audit_log_customers": "Customer actions",
       "audit_log_customer_entry": "Customer action",
@@ -100,7 +101,13 @@
       "go_home": "Go to the home page",
       "error_code": "Error {{code}}"
     },
-    "brand_mark_alt": "Cleansia"
+    "brand_mark_alt": "Cleansia",
+    "notifications_panel": {
+      "open": "Open notifications",
+      "title": "Notifications",
+      "view_all": "View all notifications",
+      "empty": "No notifications yet"
+    }
   },
   "global": {
     "yes": "Yes",
@@ -315,6 +322,7 @@
     "notifications": "Notifications",
     "profile": "My Profile",
     "receivables": "Receivables",
+    "customers": "Customers",
     "cash_held": "Cash held"
   },
   "pages": {
@@ -2343,6 +2351,28 @@
         }
       }
     },
+    "customers": {
+      "title": "Customers",
+      "description": "Your company's customer accounts with their contact details",
+      "filters": {
+        "search": "Search",
+        "search_placeholder": "Search by name, email or phone",
+        "status": "Status",
+        "status_active": "Active",
+        "status_inactive": "Inactive",
+        "status_all": "All"
+      },
+      "columns": {
+        "name": "Name",
+        "email": "Email",
+        "phone": "Phone",
+        "status": "Status",
+        "email_confirmed": "Email confirmed",
+        "created_on": "Created"
+      },
+      "no_customers": "No customers found",
+      "load_error": "Customers could not be loaded. Please try again."
+    },
     "loyalty_user_detail": {
       "title": "Customer",
       "title_for_user": "Loyalty for {{email}}",
@@ -2440,6 +2470,7 @@
           "field": {
             "currency": "Currency",
             "amount": "Amount",
+            "amount_in": "Amount in {{currency}}",
             "reason": "Reason",
             "note": "What happened",
             "note_help": "Recorded against your name. Write what you would want a colleague to read before compensating this customer again."

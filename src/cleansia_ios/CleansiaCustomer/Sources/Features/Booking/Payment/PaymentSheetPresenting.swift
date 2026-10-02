@@ -33,6 +33,24 @@ struct PaymentSheetPresentation: Equatable, CustomStringConvertible, CustomDebug
     var debugDescription: String {
         description
     }
+
+    /// Given the customer, PaymentSheet draws its own save box on an intent that keeps nothing, and a card
+    /// saved through it gets no SavedCards row and no consent. So the customer rides only on an intent the
+    /// server set up to save the card.
+    static func cardPayment(
+        clientSecret: String,
+        ephemeralKey: String,
+        stripeCustomerId: String,
+        intentSavesCard: Bool
+    ) -> PaymentSheetPresentation {
+        PaymentSheetPresentation(
+            clientSecret: clientSecret,
+            ephemeralKey: intentSavesCard ? ephemeralKey : "",
+            stripeCustomerId: intentSavesCard ? stripeCustomerId : "",
+            merchantDisplayName: "Cleansia",
+            intentKind: .payment
+        )
+    }
 }
 
 enum PaymentSheetOutcome: Equatable {

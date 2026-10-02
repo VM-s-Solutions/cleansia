@@ -12,8 +12,14 @@ figures in the copy until a booking's address takes over. One market today (CZ),
 stays hidden and the chip is a plain label. → [Business rules — the market](/product/business-rules#market)
 
 **Booking** — browse the service catalogue and packages, pick rooms, bathrooms and extras, choose a
-date and a 60-minute window between 08:00 and 20:00, and pay by card — or in cash, when signed in and
-the booking is a job one cleaner does alone ([the cash rule](/product/business-rules#cash)). Book as a
+date and an arrival time on the quarter hour from 08:00 to 19:45 (on the web, the part of day first —
+morning, afternoon or evening — then that part's slots; [the time step](/customer-app/ordering-flow#step-2-date-time)),
+and pay by card — or in cash, when signed in and the booking is a job one cleaner does alone
+([the cash rule](/product/business-rules#cash)).
+Paying by card, a signed-in customer on web, Android or iOS may tick *Save this card for my next
+bookings*, unticked by default; only a ticked card is kept, under the card-guarantee consent, and it
+is listed with the customer's saved cards, where it can be removed
+([a saved card](/product/business-rules#card-guarantee)). Book as a
 guest with no account, paying by card. Get a live price quote before committing, including whether an
 express surcharge applies and whether a membership waives it. Before the address step the catalogue and the quote are in the chosen
 market's currency; from the address step on, the address's country decides.
@@ -146,7 +152,9 @@ requires the required documents to exist and be accepted rather than just a butt
 **Their own documents** — a checklist of what the country expects, replace a file with a newer one
 without waiting for anybody, and ask an admin to remove one. Removing is the only one that needs a
 person: some of these the employer has to hold, and self-delete used to cost a cleaner their access to
-work in a single tap.
+work in a single tap. Every upload is its own document, several of one type are fine, and the same file
+twice is refused unless the earlier copy was rejected.
+→ [Business rules — the papers a cleaner uploads](/product/business-rules#employee-documents)
 
 **Finding work** — a board of offerable jobs, new-job push notifications and a digest. What a browsing
 cleaner sees is the job, not the household — the customer's identity, address and free text are
@@ -218,7 +226,9 @@ admin's own doing: a reassignment writes no acceptance, the cleaner accepts from
 **Read** opens the accepted text with the frozen job facts; an Administrator also sees the accepted
 text row's SHA-256, the hash a dispute cites. → [Business rules — the contract for work](/product/business-rules#work-contract)
 
-**Being told** — a bell in the sidebar and a *Notifications* page: one row per event the company has
+**Being told** — a bell at the bottom right of every page that opens the latest notifications in a
+panel over it (on a phone, the toolbar's bell opens the same panel), and the *Notifications* page in the
+sidebar for the full history: one row per event the company has
 to act on — an order to serve, an order that lost its last cleaner, a dispute filed, a chargeback, a
 first card decline, a failed erasure retry, and the company's own wind-down request, each run that did
 something, and the archive — with the order, dispute or page it names a click away, unread emphasis,
@@ -226,9 +236,12 @@ mark read and mark all read, and a badge that refreshes every minute while the t
 event is also e-mailed: to each administrator in their own language, or to the one shared mailbox
 the company sets on Company settings. → [Business rules — administrators are told](/product/business-rules#admin-notifications)
 
-**People** — approve or reject cleaners, review and remove documents, set which document types each
-country requires, answer removal requests, manage administrator accounts and their roles, inspect a
-customer's loyalty position.
+**People** — approve or reject cleaners, and approve again one rejected earlier, review and remove
+documents, set which document types each country requires, answer removal requests, manage
+administrator accounts and their roles. A *Customers* list (Support and above) searches the customers by
+name, e-mail or phone, filters active and inactive, and opens a customer's page, where **Grant points**,
+**Revoke points** and **Issue credit** sit side by side: points are loyalty, credit is money on the
+customer's balance in the currency the admin names, and they are separate acts. → [Customers](/admin-app/user-management#customers)
 
 **Money** — pay periods (open, close, reopen, mark paid), employee invoices (one per cleaner per period
 per currency they were paid in, numbered `INV-YYYY-NNNNNN` from the operating company's own series

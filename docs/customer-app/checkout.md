@@ -22,6 +22,10 @@ Order Wizard → submitOrder() → paymentClient.createOrder()
    - **Success**: `/checkout/success?type=card`
    - **Cancel**: `/checkout/cancel`
 
+A signed-in customer may tick *Save this card for my next bookings* on the payment step, unticked by
+default; the command then carries `saveCard: true` and the session keeps the card that pays
+→ [Saving a card while paying by card](/product/business-rules#save-card)
+
 ::: info
 The Stripe integration uses **Stripe Checkout** (hosted payment page), not Stripe Elements. This means the frontend never handles raw card data -- all PCI compliance is handled by Stripe.
 :::

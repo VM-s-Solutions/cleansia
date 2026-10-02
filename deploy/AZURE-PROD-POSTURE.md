@@ -35,7 +35,7 @@ Vault references would swap a broken instance into production.
   the production site is never stopped.
 - **The Functions host deliberately gets NO slot**: a warm staging Functions container would compete
   with production for the same Storage Queue messages (double-consumption). Functions deploys stay
-  the container-set + restart they are today.
+  a container set — setting the image restarts the site, so there is no separate restart step.
 - S1 supports 5 slots per app; B-series rejects slot creation, which is why dev stays `false`.
 - **Slots are not coming to dev, and "upgrade dev to Standard so it can have them" is the wrong fix —
   it is both the expensive option and the worse one.** The intuitive cure for a cold dev host is a
@@ -46,7 +46,8 @@ Vault references would swap a broken instance into production.
   symptom is a net loss before the invoice is even opened. (The monthly delta is a pricing-table lookup
   and is deliberately not quoted here; the SKU arithmetic above is the decisive part and does not go
   stale.) Always On plus the post-deploy warm probe already close the dev gap at **€0** — see the Always
-  On note above and `.github/workflows/deploy-azure.yml`'s *Warm the deployed site* step.
+  On note above, the *Warm the site* step each DEV leg of `deploy-api` runs through
+  `.github/scripts/warm-site.sh`, and the `warm-dev-sites` job that warms the SSR after them.
 - **Slots are NOT Always On** (hardcoded `alwaysOn: false` on the slot resource): Always On is on
   Azure's not-swapped (slot-sticky) settings list, so a warm slot buys zero swap benefit — the CI
   workflow warms the slot explicitly before swapping. Mirroring the parent's prod `alwaysOn: true`
@@ -59,15 +60,24 @@ Vault references would swap a broken instance into production.
   per instance). If prod shows memory-driven recycling (502/503 + worker restarts in App Insights),
   step the plan SKU to **S2 or P0v3** rather than tuning processes.
 
-**Workflow step (authored):** the six web-host deploy jobs in `.github/workflows/deploy-azure.yml`
-now run the full slot flow whenever `inputs.env == 'prod'`: deploy the artifact to the `staging` slot
+**Workflow step (authored):** the six web-host deploys in `.github/workflows/deploy-azure.yml` — the
+five legs of the `deploy-api` matrix job and `deploy-customer-ssr` — run the full slot flow whenever
+`inputs.env == 'prod'`: deploy the artifact to the `staging` slot
 (`slot-name: staging` on `azure/webapps-deploy@v3`), **warm it** (curl the slot — `/health` for the
 five APIs, `/` for the SSR — retrying up to 5 minutes and FAILING the job rather than swapping a
 cold/broken slot), then
 `az webapp deployment slot swap … --slot staging --target-slot production`. The SSR's startup command
-is set on the staging slot for prod (`appCommandLine` swaps with the slot). Dev keeps deploying
-straight to the production site (B-series has no slots — path unchanged), and the Functions host keeps
-its slotless container-set + restart deploy (the queue double-consumption rule above).
+is not a deploy step: Bicep sets `appCommandLine` to `node server/server.mjs` on the site and on its
+staging slot (`modules/appService.bicep`), so a deploy no longer restarts the SSR to set it, and the
+command travels with the slot on a swap. Dev keeps deploying straight to the production site
+(B-series has no slots — path unchanged), and the Functions host keeps its slotless deploy, now a
+container set only (the queue double-consumption rule above).
+
+**Prod deploys keep the full five-way fan-out.** `deploy-api` runs at `max-parallel: 5` in prod, so
+the five slot swaps land together and the environment approvals arrive at once; DEV runs two legs at a
+time, each warming its own site before the next starts (2026-10-01, ADR-0015 D5(d)'s fallback).
+Throttling prod as well is an owner option — one value in that `max-parallel` expression — and is not
+taken here.
 
 The SSR warm probe hits `/` rather than its `/health` route **on purpose**, and that is a different
 question from Azure's own probe. `/health` (registered in `apps/cleansia.app/server.ts` ahead of the

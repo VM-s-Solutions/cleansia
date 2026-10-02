@@ -6,6 +6,7 @@
 -->
 @if (routerLink(); as link) {
 <a
+  #control
   pButton
   [class]="cssClasses()"
   [routerLink]="link"
@@ -21,10 +22,13 @@
   [pTooltip]="tooltip()"
   [tooltipPosition]="tooltipPosition()"
   [attr.aria-label]="resolvedAriaLabel()"
+  [attr.aria-expanded]="ariaExpanded()"
+  [attr.aria-controls]="ariaControls()"
   (click)="handleClick($event)"
 ></a>
 } @else {
 <a
+  #control
   pButton
   [class]="cssClasses()"
   [href]="href()"
@@ -39,10 +43,13 @@
   [pTooltip]="tooltip()"
   [tooltipPosition]="tooltipPosition()"
   [attr.aria-label]="resolvedAriaLabel()"
+  [attr.aria-expanded]="ariaExpanded()"
+  [attr.aria-controls]="ariaControls()"
   (click)="handleClick($event)"
 ></a>
 } } @else {
 <p-button
+  #control
   [class]="cssClasses()"
   [label]="label() || title()"
   [icon]="icon()"
@@ -58,6 +65,7 @@
   [pTooltip]="tooltip()"
   [tooltipPosition]="tooltipPosition()"
   [ariaLabel]="resolvedAriaLabel()"
+  [pt]="disclosurePt()"
   (onClick)="handleClick($event)"
 />
 }

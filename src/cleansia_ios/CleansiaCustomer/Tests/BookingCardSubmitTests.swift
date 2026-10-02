@@ -10,6 +10,7 @@ final class BookingCardSubmitTests: XCTestCase {
             result: .success(CreatedOrder(id: "o-card", confirmationCode: "CLN-C"))
         ),
         paymentIntent: FakePaymentIntentClient = FakePaymentIntentClient(),
+        tokenStore: FakeTokenStore = .signedIn(),
         cardAvailable: Bool = true
     ) -> BookingViewModel {
         BookingViewModel(
@@ -21,7 +22,7 @@ final class BookingCardSubmitTests: XCTestCase {
             paymentIntentClient: paymentIntent,
             countryResolver: FakeCountryResolver(),
             savedCardClient: FakeSavedCardClient.holdingCzkCard(),
-            tokenStore: FakeTokenStore.signedIn(),
+            tokenStore: tokenStore,
             isCardPaymentAvailable: cardAvailable,
             quoteDebounce: .milliseconds(400),
             scheduler: TestScheduler.dispatch.eraseToAnyScheduler()
@@ -60,9 +61,95 @@ final class BookingCardSubmitTests: XCTestCase {
         XCTAssertEqual(orderId, "o-card")
         XCTAssertEqual(confirmationCode, "CLN-C")
         XCTAssertEqual(presentation.clientSecret, "pi_secret_123")
-        XCTAssertEqual(presentation.ephemeralKey, "ek_secret_456")
-        XCTAssertEqual(presentation.stripeCustomerId, "cus_789")
         XCTAssertEqual(presentation.merchantDisplayName, "Cleansia")
+    }
+
+    func testUntickedCardPaymentAsksStripeToKeepNothing() async {
+        let intent = FakePaymentIntentClient()
+        let vm = makeVM(paymentIntent: intent)
+        vm.update(cardReadyState)
+
+        _ = await vm.submit()
+
+        XCTAssertEqual(intent.saveCards, [false])
+    }
+
+    func testTickedCardPaymentAsksStripeToKeepTheCard() async {
+        let intent = FakePaymentIntentClient()
+        let vm = makeVM(paymentIntent: intent)
+        vm.update(cardReadyState)
+        vm.setSaveCard(true)
+
+        _ = await vm.submit()
+
+        XCTAssertEqual(intent.saveCards, [true])
+    }
+
+    func testUntickedCardPaymentPresentsTheSheetWithoutTheCustomer() async {
+        let vm = makeVM()
+        vm.update(cardReadyState)
+
+        let outcome = await vm.submit()
+
+        guard case let .cardPending(_, _, presentation) = outcome else {
+            return XCTFail("expected cardPending, got \(outcome)")
+        }
+        XCTAssertEqual(presentation.clientSecret, "pi_secret_123")
+        XCTAssertTrue(presentation.stripeCustomerId.isEmpty)
+        XCTAssertTrue(presentation.ephemeralKey.isEmpty)
+    }
+
+    func testTickedCardPaymentPresentsTheSheetWithTheCustomer() async {
+        let vm = makeVM()
+        vm.update(cardReadyState)
+        vm.setSaveCard(true)
+
+        let outcome = await vm.submit()
+
+        guard case let .cardPending(_, _, presentation) = outcome else {
+            return XCTFail("expected cardPending, got \(outcome)")
+        }
+        XCTAssertEqual(presentation.stripeCustomerId, "cus_789")
+        XCTAssertEqual(presentation.ephemeralKey, "ek_secret_456")
+    }
+
+    func testCardSavingIsOfferedOnlyWhilePayingByCard() {
+        let vm = makeVM()
+        XCTAssertFalse(vm.offersCardSaving)
+
+        vm.update(cardReadyState)
+        XCTAssertTrue(vm.offersCardSaving)
+
+        vm.update { state in
+            var s = state
+            s.paymentMethod = .cash
+            return s
+        }
+        XCTAssertFalse(vm.offersCardSaving)
+    }
+
+    func testGuestIsNeverOfferedCardSaving() {
+        let vm = makeVM(tokenStore: .guest)
+        vm.update(cardReadyState)
+
+        XCTAssertFalse(vm.offersCardSaving)
+    }
+
+    func testCardSavingIsNotOfferedWhenCardPaymentIsUnavailable() {
+        let vm = makeVM(cardAvailable: false)
+        vm.update(cardReadyState)
+
+        XCTAssertFalse(vm.offersCardSaving)
+    }
+
+    func testSaveCardTickStartsOffAndIsNotCarriedIntoTheNextBooking() {
+        let vm = makeVM()
+        XCTAssertFalse(vm.state.saveCard)
+
+        vm.setSaveCard(true)
+        vm.reset()
+
+        XCTAssertFalse(vm.state.saveCard)
     }
 
     /// The order is already created at this point, so the customer needs to know

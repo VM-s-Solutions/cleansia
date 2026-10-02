@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, OnInit, PLATFORM_ID, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, linkedSignal, OnInit, PLATFORM_ID, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -106,7 +106,7 @@ export class OrderWizardComponent implements OnInit {
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   protected readonly PaymentType = PaymentType;
 
-  mobileBreakdownExpanded = signal(false);
+  readonly summaryOpen = signal(false);
   showRebookWarning = signal(false);
   unavailableItems = signal<string[]>([]);
   private pendingRebook = signal<RebookParams | null>(null);
@@ -114,6 +114,15 @@ export class OrderWizardComponent implements OnInit {
   newAddressLabel = signal('');
   labelError = signal<string | null>(null);
   touched = signal<Record<string, boolean>>({});
+
+  private readonly collapseSummaryOnStep = effect(() => {
+    void this.facade.activeStep();
+    this.summaryOpen.set(false);
+  });
+
+  toggleSummary(): void {
+    this.summaryOpen.update((open) => !open);
+  }
 
   markTouched(field: string): void {
     this.touched.update((t) => ({ ...t, [field]: true }));
@@ -160,6 +169,41 @@ export class OrderWizardComponent implements OnInit {
   /** The express-waiver note only belongs under a grid that actually offers an express slot. */
   hasExpressSlot = computed(() =>
     this.timeOptions().some((opt) => opt.availability === 'express')
+  );
+
+  readonly dayParts = [
+    { key: 'morning', from: FIRST_WINDOW_HOUR, to: 12 },
+    { key: 'afternoon', from: 12, to: 16 },
+    { key: 'evening', from: 16, to: LAST_WINDOW_HOUR },
+  ] as const;
+
+  private dayPartHolding(time: string) {
+    const hour = Number(time.split(':')[0]);
+    return this.dayParts.find((part) => hour >= part.from && hour < part.to);
+  }
+
+  // Through a computed: a linkedSignal reading formData() directly re-derives on every write to it,
+  // so choosing an access mode would throw the part being browsed back to the booked one.
+  private readonly chosenTime = computed(() => this.facade.formData().cleaningTime);
+
+  readonly activeDayPart = linkedSignal(() => (this.dayPartHolding(this.chosenTime()) ?? this.dayParts[0]).key);
+
+  readonly dayPartSlots = computed(() =>
+    this.dayParts.map((part) => {
+      const slots = this.timeOptions().filter((option) => this.dayPartHolding(option.value) === part);
+      return {
+        key: part.key,
+        slots,
+        bookable: slots.some((option) => option.availability !== 'unavailable'),
+        holdsSelection: slots.some((option) => option.value === this.chosenTime()),
+        firstLabel: slots[0]?.label ?? '',
+        lastLabel: slots[slots.length - 1]?.label ?? '',
+      };
+    })
+  );
+
+  readonly visibleTimeOptions = computed(
+    () => this.dayPartSlots().find((part) => part.key === this.activeDayPart())?.slots ?? []
   );
 
   selectedServices = computed(() => {

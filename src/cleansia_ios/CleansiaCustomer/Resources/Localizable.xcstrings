@@ -2558,6 +2558,41 @@
         }
       }
     },
+    "booking_save_card": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uložit tuto kartu pro mé další objednávky"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save this card for my next bookings"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сохранить эту карту для моих следующих заказов"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uložiť túto kartu pre moje ďalšie objednávky"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Зберегти цю картку для моїх наступних замовлень"
+          }
+        }
+      }
+    },
     "booking_cash_needs_account": {
       "extractionState": "manual",
       "localizations": {

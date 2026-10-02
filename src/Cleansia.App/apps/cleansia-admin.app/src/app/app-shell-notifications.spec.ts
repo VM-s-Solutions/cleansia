@@ -79,16 +79,26 @@ describe('admin app shell notifications', () => {
     expect(component.sidebarMenuItems()[0].badge).toBeUndefined();
   });
 
-  it('projects the bell into the shared toolbar, behind the same policy, with the count off the badge service', () => {
+  it('projects the bell into the shared toolbar, behind the same policy, opening the panel with the count off the badge service', () => {
     const html = readFileSync(join(__dirname, 'app.component.html'), 'utf-8');
 
     expect(html).toMatch(/\*cleansiaPermission="Policy\.CanViewAdminNotifications"/);
-    expect(html).toMatch(/icon="pi pi-bell"[\s\S]*\[routerLink\]="notificationsRoute"/);
+    expect(html).toMatch(/icon="pi pi-bell"[\s\S]*\(onClick\)="toggleNotifications\(\$event\)"/);
+    expect(html).not.toMatch(/notificationsRoute/);
     expect(html).toMatch(/@if \(notificationBadge\.badgeLabel\(\); as badge\)/);
     expect(html).toMatch(
       /<cleansia-mobile-toolbar \(menuOpen\)="openSidebar\(\)">[\s\S]*cleansia-mobile-toolbar__action[\s\S]*cleansia-mobile-toolbar__action-count[\s\S]*<\/cleansia-mobile-toolbar>/
     );
     expect(html).not.toMatch(/<cleansia-language-switcher/);
     expect(html).toMatch(/\[menuItems\]="sidebarMenuItems\(\)"/);
+  });
+
+  it('renders the floating bell once, with the navigation, behind the feed policy', () => {
+    const html = readFileSync(join(__dirname, 'app.component.html'), 'utf-8');
+
+    expect(html.match(/<cleansia-admin-notifications-launcher/g)).toHaveLength(1);
+    expect(html).toMatch(
+      /@if \(showNavigation\(\)\) \{\s*<cleansia-admin-notifications-launcher \*cleansiaPermission="Policy\.CanViewAdminNotifications" \/>\s*\}/
+    );
   });
 });

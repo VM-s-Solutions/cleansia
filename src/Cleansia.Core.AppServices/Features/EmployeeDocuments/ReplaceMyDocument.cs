@@ -74,7 +74,9 @@ public class ReplaceMyDocument
             RuleFor(x => x.File)
                 .Cascade(CascadeMode.Stop)
                 .NotNull().WithMessage(BusinessErrorMessage.Required)
-                .SetValidator(new DocumentFileValidator());
+                .SetValidator(new DocumentFileValidator())
+                .MustAsync(NotRepeatAKeptFileAsync)
+                .WithMessage(BusinessErrorMessage.EmployeeDocumentDuplicateFile);
 
             RuleFor(x => x.File.FileName)
                 .Cascade(CascadeMode.Stop)
@@ -93,6 +95,15 @@ public class ReplaceMyDocument
 
             var document = await _documentRepository.GetByIdAsync(documentId, cancellationToken);
             return document is not null && document.EmployeeId == employee.Id;
+        }
+
+        private async Task<bool> NotRepeatAKeptFileAsync(BlobFileDto file, CancellationToken cancellationToken)
+        {
+            var employee = await _employeeRepository.GetByUserEmailAsync(
+                _userSessionProvider.GetUserEmail()!, cancellationToken);
+
+            return employee is null || !await DocumentContentHash.IsKeptByAsync(
+                _documentRepository, employee.Id, [DocumentContentHash.Of(file)], cancellationToken);
         }
     }
 
@@ -157,6 +168,7 @@ public class ReplaceMyDocument
                 filePath: fullBlobPath,
                 contentType: contentType,
                 fileSizeBytes: stream.Length,
+                contentSha256: DocumentContentHash.Of(command.File),
                 documentType: previous.DocumentType,
                 description: command.Description,
                 createdBy: user.Id);

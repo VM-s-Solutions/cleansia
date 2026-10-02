@@ -8316,6 +8316,9 @@
           "earlyPerformanceRequested": {
             "type": "boolean",
             "nullable": true
+          },
+          "saveCard": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -8348,6 +8351,9 @@
           "orderId": {
             "type": "string",
             "nullable": true
+          },
+          "saveCard": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false

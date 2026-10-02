@@ -18,6 +18,9 @@ public class EmployeeDocument : TenantAuditable
 
     public long FileSizeBytes { get; private set; }
 
+    [MaxLength(64)]
+    public string ContentSha256 { get; private set; } = default!;
+
     public DocumentType DocumentType { get; private set; }
 
     [MaxLength(500)]
@@ -47,6 +50,7 @@ public class EmployeeDocument : TenantAuditable
         string filePath,
         string contentType,
         long fileSizeBytes,
+        string contentSha256,
         DocumentType documentType,
         string? description,
         string createdBy)
@@ -58,6 +62,7 @@ public class EmployeeDocument : TenantAuditable
             FilePath = filePath,
             ContentType = contentType,
             FileSizeBytes = fileSizeBytes,
+            ContentSha256 = contentSha256,
             DocumentType = documentType,
             Description = description,
             Version = 1,
@@ -75,6 +80,7 @@ public class EmployeeDocument : TenantAuditable
         string filePath,
         string contentType,
         long fileSizeBytes,
+        string contentSha256,
         DocumentType documentType,
         string? description,
         string createdBy)
@@ -89,6 +95,7 @@ public class EmployeeDocument : TenantAuditable
             FilePath = filePath,
             ContentType = contentType,
             FileSizeBytes = fileSizeBytes,
+            ContentSha256 = contentSha256,
             DocumentType = documentType,
             Description = description ?? previousVersion.Description,
             Version = previousVersion.Version + 1,

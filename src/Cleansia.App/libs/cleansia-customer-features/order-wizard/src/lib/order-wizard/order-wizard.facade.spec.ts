@@ -1123,6 +1123,70 @@ describe('OrderWizardFacade', () => {
       expect(orderClient.createOrder.mock.calls[2][0].termsAccepted).toBeUndefined();
     });
 
+    describe('keeping the card for the next bookings', () => {
+      it('is offered only to a signed-in customer paying by card', () => {
+        facade.updateFormData({ paymentType: null });
+        expect(facade.saveCardOffered()).toBe(false);
+
+        facade.updateFormData({ paymentType: PaymentType.Cash });
+        expect(facade.saveCardOffered()).toBe(false);
+
+        facade.updateFormData({ paymentType: PaymentType.Card });
+        expect(facade.saveCardOffered()).toBe(true);
+
+        signedIn.set(false);
+        expect(facade.saveCardOffered()).toBe(false);
+      });
+
+      it('keeps nothing until the customer ticks it', async () => {
+        facade.updateFormData({ paymentType: PaymentType.Card });
+
+        await facade.submitOrder();
+
+        expect(facade.saveCard()).toBe(false);
+        expect(paymentClient.createOrder.mock.calls[0][0].saveCard).toBe(false);
+      });
+
+      it('asks to keep the card a signed-in card payer ticked', async () => {
+        facade.updateFormData({ paymentType: PaymentType.Card });
+        facade.setSaveCard(true);
+
+        await facade.submitOrder();
+
+        expect(paymentClient.createOrder.mock.calls[0][0].saveCard).toBe(true);
+      });
+
+      it('asks to keep nothing once the tick is taken off again', async () => {
+        facade.updateFormData({ paymentType: PaymentType.Card });
+        facade.setSaveCard(true);
+        facade.setSaveCard(false);
+
+        await facade.submitOrder();
+
+        expect(paymentClient.createOrder.mock.calls[0][0].saveCard).toBe(false);
+      });
+
+      it('asks to keep nothing for a guest, whatever the tick says', async () => {
+        signedIn.set(false);
+        facade.updateFormData({ paymentType: PaymentType.Card });
+        facade.setSaveCard(true);
+
+        await facade.submitOrder();
+
+        expect(paymentClient.createOrder.mock.calls[0][0].saveCard).toBe(false);
+      });
+
+      it('asks to keep nothing on a cash booking, whatever the tick says', async () => {
+        facade.updateFormData({ paymentType: PaymentType.Card });
+        facade.setSaveCard(true);
+        facade.updateFormData({ paymentType: PaymentType.Cash });
+
+        await facade.submitOrder();
+
+        expect(orderClient.createOrder.mock.calls[0][0].saveCard).toBe(false);
+      });
+    });
+
     it('asserts the request to start within the withdrawal period only when it was ticked', async () => {
       facade.updateFormData({ paymentType: PaymentType.Cash });
 

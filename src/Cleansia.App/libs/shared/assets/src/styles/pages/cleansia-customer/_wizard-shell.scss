@@ -191,28 +191,77 @@
 }
 
 // ---- the summary rail -------------------------------------------------------
+// The room counts sit in their own card above the summary and scroll away with
+// the page; only the summary sticks. Both together do not fit under the navbar
+// on a 768px-tall laptop without a scroll bar inside the panel.
+.cl-wiz__side {
+  // Stretched to the whole grid row: the body aligns its items to the start,
+  // and a sticky child only travels within its parent's box.
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
 // Sticky, because it is the answer to "what am I paying" and that question is
-// live on every step. It replaced a bar pinned to the bottom of the viewport,
-// which put the number furthest from the choices that change it.
+// live on every step. At 1100px and below the same element is the bar pinned to
+// the bottom of the screen (see Responsive) — moved by CSS, never copied.
 .cl-wiz__summary {
   position: sticky;
   // Below the fixed navbar, not below the viewport top: the bar reappears on
   // scroll-up and would otherwise cover the total and the button under it.
   top: calc(var(--cl-nav-h, 64px) + 24px);
+  // The last resort only. On a short window the price lines scroll inside
+  // their own box first, so the total and the button never leave the panel.
   max-height: calc(100dvh - var(--cl-nav-h, 64px) - 48px);
   overflow-y: auto;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
   background: var(--cl-surface);
   border-radius: 28px;
   padding: 24px 26px;
   box-shadow: 0 10px 30px rgba(12, 74, 110, 0.1);
+
+  > :not(.cl-wiz__summary-lines),
+  .cl-wiz__summary-fold > :not(.cl-wiz__summary-lines),
+  .cl-wiz__price > * {
+    flex-shrink: 0;
+  }
+
+  .cl-wiz__rule {
+    margin: 16px 0;
+  }
+}
+
+// The bottom sheet's rows. On the rail they generate no box, so it lays out as
+// if they were not there.
+.cl-wiz__summary-details,
+.cl-wiz__summary-after,
+.cl-wiz__summary-foot,
+.cl-wiz__summary-fold,
+.cl-wiz__price {
+  display: contents;
+}
+
+.cl-wiz__summary-toggle,
+.cl-wiz__scrim {
+  display: none;
 }
 
 .cl-wiz__summary-lines {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  margin-top: 16px;
+  // The remove buttons overhang their rows by 10px. In a scroll box that
+  // overhang is a scroll bar of its own, so the padding takes it in and the
+  // negative margin keeps the rows where they were.
+  margin: 6px -10px -10px;
+  padding: 10px;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   font-size: 15px;
   color: var(--cl-body);
 }
@@ -336,17 +385,196 @@
 // Responsive
 // =============================================================================
 @media (max-width: 1100px) {
-  // The summary stops being a rail and becomes the last card in the column. It
-  // keeps its place in the reading order either way — after the choices, before
-  // the action.
+  // The summary becomes a sheet pinned to the bottom of the screen: collapsed,
+  // it is the total, a chevron and the button; the chevron opens the rest above
+  // them. As the last card in the column it put the only Continue button under
+  // the whole step. It is still the one summary, moved by CSS — a bottom price
+  // bar was removed on 2026-09-01 because it was a SECOND copy of the total, and
+  // a copy must not come back. The grid areas move rows on screen only; the
+  // reading order stays the DOM's, choices before the button.
+  .cl-wiz {
+    padding-bottom: calc(96px + env(safe-area-inset-bottom));
+    --cl-scroll-top-bottom: calc(104px + env(safe-area-inset-bottom));
+  }
+
   .cl-wiz__body {
     grid-template-columns: minmax(0, 1fr);
   }
 
+  // The side carries the pinning and the fade rather than the summary itself:
+  // the summary scrolls when open, and a scroll box clips its own ::before.
+  .cl-wiz__side {
+    position: fixed;
+    inset: auto 0 0 0;
+    z-index: 950;
+    display: block;
+
+    &::before {
+      content: '';
+      position: absolute;
+      inset: auto 0 100% 0;
+      height: 24px;
+      background: linear-gradient(to bottom, transparent, var(--cl-wiz-ground));
+      pointer-events: none;
+    }
+  }
+
   .cl-wiz__summary {
     position: static;
-    max-height: none;
-    overflow-y: visible;
+    max-height: calc(100dvh - 80px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border-radius: 32px 32px 0 0;
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+    box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.12);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'details details'
+      'after after'
+      'foot foot'
+      'blocked blocked'
+      'price action';
+    column-gap: 12px;
+    align-items: center;
+
+    .cl-wiz__blocked {
+      grid-area: blocked;
+      margin: 0 0 12px;
+    }
+
+    .cl-wiz__advance {
+      grid-area: action;
+      width: auto;
+      margin: 0;
+    }
+
+    .cl-wiz__total-was {
+      margin-top: 0;
+    }
+  }
+
+  .cl-wiz__summary-details,
+  .cl-wiz__summary-after,
+  .cl-wiz__summary-foot {
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    // Hidden, not just folded: the collapsed rows leave the tab order with it.
+    visibility: hidden;
+    transition: grid-template-rows 0.28s ease, opacity 0.2s ease, visibility 0s 0.28s;
+  }
+
+  .cl-wiz__summary-details {
+    grid-area: details;
+  }
+
+  .cl-wiz__summary-after {
+    grid-area: after;
+  }
+
+  .cl-wiz__summary-foot {
+    grid-area: foot;
+  }
+
+  // The inline margin makes room for the remove buttons, which overhang their
+  // rows by 10px and would otherwise be clipped at the fold's edge.
+  .cl-wiz__summary-fold {
+    display: block;
+    min-height: 0;
+    overflow: hidden;
+    margin-inline: -10px;
+    padding-inline: 10px;
+
+    > :last-child {
+      margin-bottom: 12px;
+    }
+  }
+
+  .cl-wiz__summary--open {
+    .cl-wiz__summary-details,
+    .cl-wiz__summary-after,
+    .cl-wiz__summary-foot {
+      grid-template-rows: 1fr;
+      opacity: 1;
+      visibility: visible;
+      transition: grid-template-rows 0.28s ease, opacity 0.2s ease, visibility 0s;
+    }
+  }
+
+  .cl-wiz__price {
+    grid-area: price;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    column-gap: 10px;
+    min-width: 0;
+
+    > :not(.cl-wiz__summary-toggle) {
+      grid-column: 2;
+    }
+
+    .cl-wiz__total {
+      margin-top: 0;
+      font-size: 22px;
+    }
+  }
+
+  .cl-wiz__summary-toggle {
+    grid-row: 1 / span 3;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 1px solid var(--cl-border);
+    border-radius: 999px;
+    background: var(--cl-surface);
+    color: var(--cl-heading);
+    font: inherit;
+    cursor: pointer;
+
+    i {
+      transition: transform 0.2s ease;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--cl-accent);
+      outline-offset: 2px;
+    }
+
+    .cl-wiz__summary--open & i {
+      transform: rotate(180deg);
+    }
+  }
+
+  .cl-wiz__scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 940;
+    background: rgba(15, 23, 42, 0.32);
+  }
+
+  body:has(.cl-wiz) .cleansia-dev-banner.cleansia-dev-banner.cleansia-dev-banner {
+    bottom: calc(96px + env(safe-area-inset-bottom));
+  }
+
+  // The page ends with the site footer, not the wizard, so the bar's height is
+  // reserved there too or the footer's last row (language, market, theme) stays
+  // under it; the navy runs on beneath the bar.
+  body:has(.cl-wiz) .cl-footer {
+    padding-bottom: calc(96px + env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-width: 1100px) and (prefers-reduced-motion: reduce) {
+  .cl-wiz__summary .cl-wiz__summary-details,
+  .cl-wiz__summary .cl-wiz__summary-after,
+  .cl-wiz__summary .cl-wiz__summary-foot,
+  .cl-wiz__summary-toggle i {
+    transition: none;
   }
 }
 
@@ -651,22 +879,29 @@
   display: none;
 }
 
-.cl-wiz__counts-desktop .cl-wiz__counts {
+.cl-wiz__counts-card {
+  background: var(--cl-surface);
+  border-radius: 24px;
+  padding: 20px 24px;
+  box-shadow: 0 2px 10px rgba(12, 74, 110, 0.06);
+}
+
+.cl-wiz__counts-card .cl-wiz__counts {
   grid-template-columns: minmax(0, 1fr);
   gap: 20px;
 }
 
-.cl-wiz__counts-desktop .cl-wiz__count-chips {
+.cl-wiz__counts-card .cl-wiz__count-chips {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
-.cl-wiz__counts-desktop .cl-wiz__count-chip {
+.cl-wiz__counts-card .cl-wiz__count-chip {
   min-width: 0;
 }
 
 @media (max-width: 1100px) {
-  .cl-wiz__counts-desktop {
+  .cl-wiz__counts-card {
     display: none;
   }
 
@@ -774,7 +1009,9 @@
 }
 
 .cl-wiz__level {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
   width: 100%;
   box-sizing: border-box;
   text-align: left;
@@ -801,6 +1038,18 @@
     border: 2px solid $primary;
     padding: 21px 23px;
     box-shadow: 0 10px 30px rgba(12, 74, 110, 0.1);
+  }
+}
+
+// Each card subgrids the head, lead and signs rows, so every title, lead and divider sits on one
+// line across the cards whatever its neighbours wrap to.
+@supports (grid-template-rows: subgrid) {
+  .cl-wiz__level {
+    display: grid;
+    grid-row: span 3;
+    grid-template-rows: subgrid;
+    row-gap: 0;
+    align-content: start;
   }
 }
 
@@ -859,6 +1108,11 @@
 @media (max-width: 960px) {
   .cl-wiz__levels {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cl-wiz__level {
+    display: flex;
+    grid-row: auto;
   }
 }
 
@@ -1354,14 +1608,59 @@
   margin-bottom: 12px;
 }
 
-.cl-wiz__times {
+.cl-wiz__dayparts {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 9px;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.cl-wiz__daypart {
+  flex-direction: column;
+  justify-content: center;
+  min-height: 52px;
+  padding: 6px 8px;
+  line-height: 1.2;
+  text-align: center;
+
+  &[disabled] {
+    opacity: 0.4;
+    cursor: default;
+  }
+}
+
+.cl-wiz__daypart-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cl-wiz__daypart-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.cl-wiz__daypart-range {
+  font-size: calc(0.75 * var(--cl-u));
+  font-weight: 400;
+  color: var(--cl-muted);
+}
+
+.cl-chip--on .cl-wiz__daypart-range {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.cl-wiz__times {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
 }
 
 .cl-wiz__time {
   justify-content: center;
+  padding: 0 6px;
   text-align: left;
   cursor: pointer;
 

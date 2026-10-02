@@ -9243,6 +9243,7 @@ export class CreateOrderCommand implements ICreateOrderCommand {
     termsAccepted!: boolean | undefined;
     dirtinessLevel!: DirtinessLevel;
     earlyPerformanceRequested!: boolean | undefined;
+    saveCard!: boolean;
 
     constructor(data?: ICreateOrderCommand) {
         if (data) {
@@ -9295,6 +9296,7 @@ export class CreateOrderCommand implements ICreateOrderCommand {
             this.termsAccepted = Data["termsAccepted"];
             this.dirtinessLevel = Data["dirtinessLevel"];
             this.earlyPerformanceRequested = Data["earlyPerformanceRequested"];
+            this.saveCard = Data["saveCard"];
         }
     }
 
@@ -9347,6 +9349,7 @@ export class CreateOrderCommand implements ICreateOrderCommand {
         data["termsAccepted"] = this.termsAccepted;
         data["dirtinessLevel"] = this.dirtinessLevel;
         data["earlyPerformanceRequested"] = this.earlyPerformanceRequested;
+        data["saveCard"] = this.saveCard;
         return data;
     }
 }
@@ -9378,6 +9381,7 @@ export interface ICreateOrderCommand {
     termsAccepted: boolean | undefined;
     dirtinessLevel: DirtinessLevel;
     earlyPerformanceRequested: boolean | undefined;
+    saveCard: boolean;
 }
 
 export class CreateOrderResponse implements ICreateOrderResponse {
@@ -9430,6 +9434,7 @@ export interface ICreateOrderResponse {
 
 export class CreatePaymentIntentCommand implements ICreatePaymentIntentCommand {
     orderId!: string | undefined;
+    saveCard!: boolean;
 
     constructor(data?: ICreatePaymentIntentCommand) {
         if (data) {
@@ -9443,6 +9448,7 @@ export class CreatePaymentIntentCommand implements ICreatePaymentIntentCommand {
     init(Data?: any) {
         if (Data) {
             this.orderId = Data["orderId"];
+            this.saveCard = Data["saveCard"];
         }
     }
 
@@ -9456,12 +9462,14 @@ export class CreatePaymentIntentCommand implements ICreatePaymentIntentCommand {
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
         data["orderId"] = this.orderId;
+        data["saveCard"] = this.saveCard;
         return data;
     }
 }
 
 export interface ICreatePaymentIntentCommand {
     orderId: string | undefined;
+    saveCard: boolean;
 }
 
 export class CreatePaymentIntentResponse implements ICreatePaymentIntentResponse {

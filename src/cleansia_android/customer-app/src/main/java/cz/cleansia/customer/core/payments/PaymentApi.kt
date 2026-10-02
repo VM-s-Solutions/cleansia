@@ -17,7 +17,7 @@ class PaymentApi(
 ) {
     suspend fun createPaymentIntent(body: CreatePaymentIntentRequest): Response<CreatePaymentIntentResponse> {
         val raw = paymentApi.paymentCreatePaymentIntent(
-            createPaymentIntentCommand = GenCreatePaymentIntentCommand(orderId = body.orderId),
+            createPaymentIntentCommand = GenCreatePaymentIntentCommand(orderId = body.orderId, saveCard = body.saveCard),
         )
         return raw.mapWire { it.toAppDto() }
     }

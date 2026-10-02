@@ -5,7 +5,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { By } from '@angular/platform-browser';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { CleansiaSelectComponent } from '@cleansia/components';
-import { lastBookableDay } from '@cleansia/models';
+import { generateTimeOptions, lastBookableDay } from '@cleansia/models';
 import { SnackbarService } from '@cleansia/services';
 import {
   CreateReceivablePayLinkResponse,
@@ -157,6 +157,9 @@ class FakeOrderWizardFacade {
   cashClearedNotice = signal(false);
   cashOwed = signal(false);
   selectPaymentType = jest.fn((paymentType: PaymentType) => this.updateFormData({ paymentType }));
+  saveCardOffered = signal(false);
+  saveCard = signal(false);
+  setSaveCard = jest.fn((save: boolean) => this.saveCard.set(save));
   cardCaptureVisible = signal(false);
   cardCaptureConsent = signal(false);
   cardCaptureStarting = signal(false);
@@ -267,6 +270,74 @@ describe('OrderWizardComponent (a11y)', () => {
       expect(fixture.componentInstance.minDate().getDate()).toBe(firstBookableDay);
       expect(fixture.componentInstance.timeOptions().some((option) => option.availability !== 'unavailable'))
         .toBe(todayAvailable);
+    });
+  });
+
+  describe('the part of day before the arrival times', () => {
+    afterEach(() => jest.useRealTimers());
+
+    async function openWhenStep(beforeCreate?: () => void): Promise<void> {
+      await setup(beforeCreate);
+      facade.activeStep.set(3);
+      fixture.detectChanges();
+    }
+
+    const partChips = () => Array.from(el.querySelectorAll<HTMLButtonElement>('button.cl-wiz__daypart'));
+    const pressedPart = () => partChips().find((chip) => chip.getAttribute('aria-pressed') === 'true');
+    const shownTimes = () =>
+      Array.from(el.querySelectorAll('button.cl-wiz__time')).map((chip) => chip.textContent?.trim());
+
+    it('puts every arrival time in exactly one part, sixteen to a part', async () => {
+      await setup();
+      const parts = fixture.componentInstance.dayPartSlots();
+
+      expect(parts.flatMap((part) => part.slots.map((slot) => slot.value)))
+        .toEqual(generateTimeOptions().map((option) => option.value));
+      expect(parts.map((part) => part.slots.length)).toEqual([16, 16, 16]);
+    });
+
+    it('opens the default 09:00 on Morning, showing 08:00 to 11:45', async () => {
+      await openWhenStep();
+
+      expect(facade.formData().cleaningTime).toBe('09:00');
+      expect(partChips()).toHaveLength(3);
+      expect(pressedPart()?.textContent).toContain('pages.order.day_part.morning');
+      expect(pressedPart()?.textContent).toContain('08:00–11:45');
+      expect(shownTimes()).toHaveLength(16);
+      expect(shownTimes()[0]).toBe('08:00');
+      expect(shownTimes()[15]).toBe('11:45');
+    });
+
+    it('shows the afternoon on choosing it, without moving the booked time', async () => {
+      await openWhenStep();
+
+      partChips()[1].click();
+      fixture.detectChanges();
+
+      expect(pressedPart()?.textContent).toContain('pages.order.day_part.afternoon');
+      expect(shownTimes()[0]).toBe('12:00');
+      expect(shownTimes()[15]).toBe('15:45');
+      expect(facade.formData().cleaningTime).toBe('09:00');
+      expect(partChips()[0].querySelector('.cl-wiz__daypart-dot')).not.toBeNull();
+      expect(partChips()[1].querySelector('.cl-wiz__daypart-dot')).toBeNull();
+
+      fixture.componentInstance.setAccessMode('keys_handover');
+      fixture.detectChanges();
+
+      expect(pressedPart()?.textContent).toContain('pages.order.day_part.afternoon');
+    });
+
+    it('follows the snap to 15:00 at 13:00 today, with the morning closed', async () => {
+      const now = new Date(2026, 8, 10, 13, 0);
+      await openWhenStep(() => jest.useFakeTimers().setSystemTime(now));
+
+      fixture.componentInstance.onDateChange(new Date(2026, 8, 10));
+      fixture.detectChanges();
+
+      expect(facade.formData().cleaningTime).toBe('15:00');
+      expect(pressedPart()?.textContent).toContain('pages.order.day_part.afternoon');
+      expect(partChips()[0].disabled).toBe(true);
+      expect(partChips()[1].disabled).toBe(false);
     });
   });
 
@@ -679,6 +750,44 @@ describe('OrderWizardComponent (a11y)', () => {
       expect(el.querySelector('#wizard-cash-reason')).toBeNull();
     });
 
+    describe('keeping the card for the next bookings', () => {
+      const saveCardTick = () => el.querySelector<HTMLElement>('[data-spec-save-card]');
+
+      it('shows no tick unless the facade offers one', async () => {
+        await setup();
+        facade.activeStep.set(4);
+        fixture.detectChanges();
+
+        expect(saveCardTick()).toBeNull();
+      });
+
+      it('offers an unticked box with the card-guarantee consent the server records', async () => {
+        await setup();
+        facade.activeStep.set(4);
+        facade.saveCardOffered.set(true);
+        fixture.detectChanges();
+
+        expect(saveCardTick()?.textContent).toContain('pages.order.save_card.label');
+        expect(saveCardTick()?.textContent).toContain(
+          'pages.order.card_capture.consent.card-guarantee-draft-2026-09-28',
+        );
+        expect(saveCardTick()?.querySelector<HTMLInputElement>('input[type="checkbox"]')?.checked).toBe(false);
+      });
+
+      it('hands the tick to the facade', async () => {
+        await setup();
+        facade.activeStep.set(4);
+        facade.saveCardOffered.set(true);
+        fixture.detectChanges();
+
+        fixture.debugElement
+          .query(By.css('[data-spec-save-card] p-checkbox'))
+          .triggerEventHandler('ngModelChange', true);
+
+        expect(facade.setSaveCard).toHaveBeenCalledWith(true);
+      });
+    });
+
     it('says cash was taken away only while the facade says so', async () => {
       await setup();
       facade.activeStep.set(4);
@@ -799,18 +908,148 @@ describe('OrderWizardComponent (a11y)', () => {
   describe('running total (AC1)', () => {
     it('keeps the summary in the document and after the step in reading order', async () => {
       await setup();
-      // The bottom price bar is gone. It was a second copy of the summary,
-      // pinned over the form on the widths where the summary rail already
-      // stacks into the column. The guarantee that matters is unchanged: the
-      // total is on the page without a toggle, and a screen reader meets it
+      // One summary at every width. On a phone CSS pins this same element to
+      // the bottom of the screen; the price bar removed on 2026-09-01 was a
+      // SECOND copy of the total, and a copy must not come back. The total is
+      // on the page without a toggle, and a screen reader meets the summary
       // after the choices that produce it rather than before them.
       const panel = el.querySelector('.cl-wiz__panel');
       const summary = el.querySelector('.cl-wiz__summary');
-      expect(summary).toBeTruthy();
+      expect(el.querySelectorAll('.cl-wiz__summary').length).toBe(1);
       expect(el.querySelector('.order-wizard__mobile-price')).toBeNull();
       expect(
         panel && summary && panel.compareDocumentPosition(summary) & Node.DOCUMENT_POSITION_FOLLOWING
       ).toBeTruthy();
+    });
+
+    it('shows no price until a line is priced, and the total once one is', async () => {
+      await setup();
+      facade.displayedTotalPrice.set(0);
+      fixture.detectChanges();
+
+      expect(el.querySelector('.cl-wiz__total')).toBeNull();
+      expect(el.textContent).not.toContain('pages.order.price_fixed');
+
+      facade.quote.set(
+        QuoteOrderResponse.fromJS({
+          lines: [{ kind: 'service', itemId: 's-1', baseAmount: 1000, unitAmount: 0, units: 0, amount: 1000 }],
+        }),
+      );
+      facade.displayedTotalPrice.set(1000);
+      fixture.detectChanges();
+
+      expect(el.querySelector('.cl-wiz__total')?.textContent).toMatch(/1[\s .,]?000/);
+      expect(el.textContent).toContain('pages.order.price_fixed');
+    });
+  });
+
+  describe('the summary as a bottom sheet', () => {
+    const toggle = () => el.querySelector('.cl-wiz__summary-toggle') as HTMLButtonElement;
+    const summary = () => el.querySelector('.cl-wiz__summary') as HTMLElement;
+    const isOpen = () =>
+      toggle().getAttribute('aria-expanded') === 'true' &&
+      summary().classList.contains('cl-wiz__summary--open');
+    const isClosed = () =>
+      toggle().getAttribute('aria-expanded') === 'false' &&
+      !summary().classList.contains('cl-wiz__summary--open') &&
+      el.querySelector('.cl-wiz__scrim') === null;
+
+    async function setupOpen(): Promise<void> {
+      await setup();
+      toggle().click();
+      fixture.detectChanges();
+      expect(isOpen()).toBe(true);
+    }
+
+    it('starts collapsed, and the chevron opens and closes it', async () => {
+      await setup();
+      expect(isClosed()).toBe(true);
+      expect(toggle().getAttribute('aria-label')).toBe('pages.order.summary_show');
+
+      toggle().click();
+      fixture.detectChanges();
+      expect(isOpen()).toBe(true);
+      expect(toggle().getAttribute('aria-label')).toBe('pages.order.summary_hide');
+      expect(el.querySelector('.cl-wiz__scrim')).not.toBeNull();
+
+      toggle().click();
+      fixture.detectChanges();
+      expect(isClosed()).toBe(true);
+    });
+
+    it('controls the three rows it folds', async () => {
+      await setup();
+
+      const ids = toggle().getAttribute('aria-controls')?.split(' ') ?? [];
+      expect(ids).toEqual(['wizard-summary-details', 'wizard-summary-after', 'wizard-summary-foot']);
+      for (const id of ids) {
+        expect(summary().querySelector(`#${id}`)).not.toBeNull();
+      }
+    });
+
+    it('keeps the chevron and Continue with nothing picked and no price yet', async () => {
+      await setup();
+
+      expect(el.querySelector('.cl-wiz__total')).toBeNull();
+      expect(el.querySelector('.cl-wiz__price .cl-wiz__summary-toggle')).not.toBeNull();
+      expect(el.querySelector('[data-spec-advance]')).not.toBeNull();
+    });
+
+    it('collapses on a step change', async () => {
+      await setupOpen();
+
+      facade.activeStep.set(1);
+      fixture.detectChanges();
+
+      expect(isClosed()).toBe(true);
+    });
+
+    it('collapses on Escape', async () => {
+      await setupOpen();
+
+      toggle().dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      fixture.detectChanges();
+
+      expect(isClosed()).toBe(true);
+    });
+
+    it('collapses on a tap on the scrim', async () => {
+      await setupOpen();
+
+      (el.querySelector('.cl-wiz__scrim') as HTMLElement).click();
+      fixture.detectChanges();
+
+      expect(isClosed()).toBe(true);
+    });
+
+    it('keeps the free-cancel note after the button, in the folded foot', async () => {
+      await setup();
+
+      const advance = el.querySelector('[data-spec-advance]');
+      const note = el.querySelector('.cl-wiz__summary-note');
+      expect(note?.closest('#wizard-summary-foot')).not.toBeNull();
+      expect(advance && note && advance.compareDocumentPosition(note) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+  });
+
+  describe('the room counts card', () => {
+    it('sits above the summary in its own card, on the services step only', async () => {
+      await setup();
+
+      const card = el.querySelector('.cl-wiz__counts-card');
+      const summary = el.querySelector('.cl-wiz__summary');
+      expect(card).toBeTruthy();
+      expect(card?.querySelectorAll('.cl-wiz__count-chip').length).toBe(12);
+      expect(summary?.contains(card)).toBe(false);
+      expect(summary?.querySelector('.cl-wiz__count-chip')).toBeNull();
+      expect(card?.parentElement?.classList.contains('cl-wiz__side')).toBe(true);
+      expect(summary?.parentElement).toBe(card?.parentElement);
+      expect(card && summary && card.compareDocumentPosition(summary) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+      facade.activeStep.set(1);
+      fixture.detectChanges();
+
+      expect(el.querySelector('.cl-wiz__counts-card')).toBeNull();
     });
   });
 
@@ -1011,13 +1250,23 @@ describe('OrderWizardComponent (a11y)', () => {
   });
 
   describe('the price before the discount', () => {
+    // The price shows only once a line is priced, so these give the rail one to show it for.
+    async function setupPriced(): Promise<void> {
+      await setup();
+      facade.quote.set(
+        QuoteOrderResponse.fromJS({
+          lines: [{ kind: 'service', itemId: 's-1', baseAmount: 2000, unitAmount: 0, units: 0, amount: 2000 }],
+        }),
+      );
+    }
+
     /**
      * Two TOTALS, never subtotal-minus-discount. The express surcharge is computed on the
      * undiscounted subtotal, so the chain does not reconcile on an express order — the pair of
      * server-quoted totals does, whatever the surcharge is doing between them.
      */
     it('strikes through the old price and names the saving', async () => {
-      await setup();
+      await setupPriced();
       facade.totalPrice.set(2000);
       facade.displayedTotalPrice.set(1700);
       fixture.detectChanges();
@@ -1029,7 +1278,7 @@ describe('OrderWizardComponent (a11y)', () => {
     });
 
     it('shows nothing when no discount applies', async () => {
-      await setup();
+      await setupPriced();
       facade.totalPrice.set(2000);
       facade.displayedTotalPrice.set(2000);
       fixture.detectChanges();
@@ -1051,7 +1300,7 @@ describe('OrderWizardComponent (a11y)', () => {
     // Every figure used to go through two module-level CZK formatters, whatever the quote said it
     // was priced in. The label is the quote's own currency now, and a EUR quote must never print Kč.
     it("prints every figure in the quote's own currency, not in crowns", async () => {
-      await setup();
+      await setupPriced();
       facade.currencyCode.set('EUR');
       facade.totalPrice.set(2000);
       facade.displayedTotalPrice.set(1700);

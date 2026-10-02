@@ -1,5 +1,5 @@
 import { TemplateRef } from '@angular/core';
-import { CountryListItem, ServiceCityDto } from '@cleansia/admin-services';
+import { ServiceAreaCountryDto, ServiceCityDto } from '@cleansia/admin-services';
 import { TableAction, TableColumn } from '@cleansia/components';
 import { TranslateService } from '@ngx-translate/core';
 
@@ -13,8 +13,8 @@ export const EMPTY_SERVICE_CITY_FORM: ServiceCityForm = { name: '', zipPrefix: '
 
 export function getServicedCountryTableColumns(
   translate: TranslateService,
-  servicedTemplate?: TemplateRef<CountryListItem>
-): TableColumn<CountryListItem>[] {
+  servicedTemplate?: TemplateRef<ServiceAreaCountryDto>
+): TableColumn<ServiceAreaCountryDto>[] {
   return [
     {
       id: 'name',

@@ -181,6 +181,7 @@ final class FakePaymentIntentClient: PaymentIntentClient, @unchecked Sendable {
     var result: ApiResult<PaymentIntentDetails>
     private(set) var callCount = 0
     private(set) var orderIds: [String] = []
+    private(set) var saveCards: [Bool] = []
 
     init(result: ApiResult<PaymentIntentDetails> = .success(PaymentIntentDetails(
         clientSecret: "pi_secret_123",
@@ -190,9 +191,10 @@ final class FakePaymentIntentClient: PaymentIntentClient, @unchecked Sendable {
         self.result = result
     }
 
-    func createPaymentIntent(orderId: String) async -> ApiResult<PaymentIntentDetails> {
+    func createPaymentIntent(orderId: String, saveCard: Bool) async -> ApiResult<PaymentIntentDetails> {
         callCount += 1
         orderIds.append(orderId)
+        saveCards.append(saveCard)
         return result
     }
 }

@@ -10,7 +10,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { CountryListItem, ServiceCityDto } from '@cleansia/admin-services';
+import { ServiceAreaCountryDto, ServiceCityDto } from '@cleansia/admin-services';
 import {
   CleansiaButtonComponent,
   CleansiaLoaderComponent,
@@ -66,7 +66,8 @@ export class ServiceAreaManagementComponent implements OnInit {
   protected readonly facade = inject(ServiceAreaManagementFacade);
   protected readonly Policy = Policy;
 
-  private readonly servicedTemplate = viewChild<TemplateRef<CountryListItem>>('servicedTemplate');
+  private readonly servicedTemplate =
+    viewChild<TemplateRef<ServiceAreaCountryDto>>('servicedTemplate');
   private readonly activeTemplate = viewChild<TemplateRef<ServiceCityDto>>('activeTemplate');
   private readonly lang = currentLanguage(this.translate);
 
@@ -141,12 +142,12 @@ export class ServiceAreaManagementComponent implements OnInit {
     this.activeTabIndex.set(numIndex);
   }
 
-  onToggleServiced(country: CountryListItem, isServiced: boolean): void {
+  onToggleServiced(country: ServiceAreaCountryDto, isServiced: boolean): void {
     if (!country.id) return;
     this.facade.setCountryServiced(country.id, isServiced);
   }
 
-  isCountryServiced(country: CountryListItem): boolean {
+  isCountryServiced(country: ServiceAreaCountryDto): boolean {
     return !!country.id && this.facade.servicedCountryIds().has(country.id);
   }
 

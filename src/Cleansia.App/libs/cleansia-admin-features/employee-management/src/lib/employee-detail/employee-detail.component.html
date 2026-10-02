@@ -107,13 +107,15 @@
           (onClick)="startEditingWeeklyLimit()"
         />
         }
-        @if (facade.canApproveOrReject()) {
+        @if (facade.canApprove()) {
         <cleansia-button
           *cleansiaPermission="Policy.CanApproveEmployee"
           [label]="'pages.employee_detail.actions.approve_employee' | translate"
           icon="pi pi-check"
           (onClick)="facade.openApproveEmployeeDialog()"
         />
+        }
+        @if (facade.canReject()) {
         <cleansia-button
           *cleansiaPermission="Policy.CanRejectEmployee"
           [label]="'pages.employee_detail.actions.reject_employee' | translate"

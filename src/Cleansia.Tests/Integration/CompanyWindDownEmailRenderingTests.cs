@@ -93,7 +93,8 @@ public class CompanyWindDownEmailRenderingTests
         Assert.DoesNotContain("{{", html, StringComparison.Ordinal);
         Assert.DoesNotContain("{0}", html, StringComparison.Ordinal);
         Assert.DoesNotContain("{1}", html, StringComparison.Ordinal);
-        Assert.Contains("noreply@example.test", html, StringComparison.Ordinal);
+        Assert.Contains("mailto:support@cleansia.cz", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("noreply@example.test", html, StringComparison.Ordinal);
         Assert.Contains("https://app.test", html, StringComparison.Ordinal);
     }
 

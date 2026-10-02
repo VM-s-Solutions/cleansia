@@ -54,7 +54,7 @@ public sealed partial class EmailService
         values["lang"] = locale;
         values["Subject"] = subject;
         values["Body"] = body;
-        values["SupportEmail"] = sendGridConfig.AddressFrom;
+        values["SupportEmail"] = SupportAddress;
         values["FooterText"] = await FooterTextAsync(locale, countryId: null, ct);
 
         return await SendRenderedAsync(

@@ -86,7 +86,8 @@ public sealed class AdminNotificationEmailRenderingTests
         Assert.DoesNotContain("{2}", html, StringComparison.Ordinal);
         Assert.DoesNotContain("{3}", html, StringComparison.Ordinal);
         Assert.DoesNotContain("2026-10-01T", html, StringComparison.Ordinal);
-        Assert.Contains("noreply@example.test", html, StringComparison.Ordinal);
+        Assert.Contains("mailto:support@cleansia.cz", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("noreply@example.test", html, StringComparison.Ordinal);
         Assert.False(string.IsNullOrWhiteSpace(capture.Subject));
         Assert.DoesNotContain("{0}", capture.Subject, StringComparison.Ordinal);
         Assert.DoesNotContain("{{", capture.Subject, StringComparison.Ordinal);

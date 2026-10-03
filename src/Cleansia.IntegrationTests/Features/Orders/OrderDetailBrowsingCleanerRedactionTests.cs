@@ -490,7 +490,8 @@ public class OrderDetailBrowsingCleanerRedactionTests(PostgresContainerFixture f
             currencyId: CurrencyId,
             paymentStatus: PaymentStatus.Paid,
             specialInstructions: SpecialInstructions,
-            accessInstructions: AccessInstructions);
+            accessInstructions: AccessInstructions,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = orderId;
         order.AddSelectedExtras([OrderExtra.Create(order, InsideOven, 250m)]);
         order.Created(TestConstants.TestUserSession.TestUserName, DateTime.UtcNow.AddDays(-33));

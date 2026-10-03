@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.Users;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
@@ -132,7 +133,8 @@ public class UpdateCurrentUserPhoneBackfillTests(PostgresContainerFixture fixtur
             totalPrice: 1250m,
             currencyId: CurrencyId,
             paymentStatus: PaymentStatus.Paid,
-            userId: userId);
+            userId: userId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = id;
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Completed, order));
         return order;

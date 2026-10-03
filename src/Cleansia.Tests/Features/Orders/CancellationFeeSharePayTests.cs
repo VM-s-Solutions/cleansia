@@ -137,7 +137,8 @@ public class CancellationFeeSharePayTests
             totalPrice: 1000m,
             currencyId: currency.Id,
             paymentStatus: paymentStatus,
-            userId: UserId);
+            userId: UserId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.TenantId = TenantId;
         order.Created("tester", DateTime.UtcNow.AddDays(-2));

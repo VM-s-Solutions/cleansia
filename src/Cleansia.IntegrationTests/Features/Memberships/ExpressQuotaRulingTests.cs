@@ -366,7 +366,6 @@ public class ExpressQuotaRulingTests(PostgresContainerFixture fixture) : BaseInt
             code: code,
             name: code,
             discountPercentage: 0m,
-            freeCancellationWindowHours: 4,
             allowsExpressUpgrade: true,
             expressUpgradesPerMonth: quota);
         plan.Id = id;

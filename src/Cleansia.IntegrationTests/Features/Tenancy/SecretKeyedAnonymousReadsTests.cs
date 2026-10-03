@@ -64,7 +64,8 @@ public sealed class SecretKeyedAnonymousReadsTests(PostgresContainerFixture fixt
                     totalPrice: 1000m,
                     currencyId: CurrencyId,
                     paymentStatus: PaymentStatus.Pending,
-                    userId: null);
+                    userId: null,
+                    cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
                 order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));
                 order.TenantId = TestTenants.Second;
                 context.Orders.Add(order);

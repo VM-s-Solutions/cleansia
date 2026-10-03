@@ -279,7 +279,6 @@ public class MembershipBenefitReservationTests(PostgresContainerFixture fixture)
             code: "PLUS_MONTHLY",
             name: "Plus Monthly",
             discountPercentage: 5m,
-            freeCancellationWindowHours: 4,
             allowsExpressUpgrade: true,
             expressUpgradesPerMonth: 2);
         plan.Id = PlanId;

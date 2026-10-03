@@ -34,10 +34,12 @@ public interface ILoyaltyService
     Task RevokeForCancelledOrderAsync(string orderId, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Proportional loyalty clawback for a single partial refund: revokes
-    /// <c>floor(refundNet / Currency.LoyaltyPointsDivisor)</c> points — symmetric with the earn
-    /// <c>floor(order.TotalPrice / Currency.LoyaltyPointsDivisor)</c>, on net so the VAT portion isn't
-    /// clawed back. No-op with a log line when the order's currency has no divisor.
+    /// Proportional loyalty clawback for a single partial refund: revokes the same share of the order's
+    /// <c>OrderCompleted</c> earn as the refund returned of the price,
+    /// <c>floor(earn.Points × amountReturned / order.TotalPrice)</c>. <paramref name="amountReturned"/> is
+    /// everything the refund gave back — the card leg plus the credit leg — because the earn was on the
+    /// whole gross price. It never reads the currency's divisor, so a divisor edit after completion cannot
+    /// move it. No-op when the order earned nothing.
     /// <para>
     /// Unlike <see cref="RevokeForCancelledOrderAsync"/> (a one-shot full mirror that no-ops on a
     /// second call), this is keyed per refund: each distinct <paramref name="refundKey"/> revokes,
@@ -51,7 +53,7 @@ public interface ILoyaltyService
     /// </para>
     /// </summary>
     Task RevokeForPartialRefundAsync(
-        string orderId, decimal refundNet, string refundKey, string actorId, CancellationToken cancellationToken);
+        string orderId, decimal amountReturned, string refundKey, string actorId, CancellationToken cancellationToken);
 
     /// <summary>
     /// Compute the tier discount (an amount in the order's currency, not %) for a user + raw subtotal.

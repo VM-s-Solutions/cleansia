@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Features.Memberships;
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Memberships;
@@ -64,5 +65,15 @@ public class GetMyMembershipCurrencyTests
         Assert.Null(result.Value.Price);
         Assert.Null(result.Value.MonthlyEquivalentPrice);
         Assert.Equal("CZK", result.Value.CurrencyCode);
+    }
+
+    /// <summary>The Plus free window is a contract term, the same on every plan; the wire keeps the field.</summary>
+    [Fact]
+    public async Task TheFreeCancellationWindow_IsThePlusWindowOfTheContract()
+    {
+        var result = await Handler().Handle(new GetMyMembership.Query(), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(BookingPolicy.PlusFreeCancellationHours, result.Value.FreeCancellationWindowHours);
     }
 }

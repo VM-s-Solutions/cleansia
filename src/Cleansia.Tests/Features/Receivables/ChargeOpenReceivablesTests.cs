@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.Receivables;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Enums;
@@ -84,7 +85,8 @@ public class ChargeOpenReceivablesTests
             totalPrice: 1500m,
             currencyId: "currency-czk",
             paymentStatus: PaymentStatus.Pending,
-            userId: "user-owing");
+            userId: "user-owing",
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         var receivable = Receivable.ForCashCancellationFee(order, 375m);
         receivable.TenantId = TenantId;
         typeof(Receivable).GetProperty(nameof(Receivable.Currency))!.SetValue(receivable, Currency.Create("CZK", "Kč", "Czech koruna"));

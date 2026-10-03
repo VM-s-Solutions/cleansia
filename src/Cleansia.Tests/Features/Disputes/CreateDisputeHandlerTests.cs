@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Auditing;
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.TestUtilities.MockDataFactories.Orders;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Disputes;
@@ -75,7 +76,8 @@ public class CreateDisputeHandlerTests
             totalPrice: 1000m,
             currencyId: "currency-1",
             paymentStatus: PaymentStatus.Pending,
-            userId: ownerUserId);
+            userId: ownerUserId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = orderId;
 
         _orderRepository

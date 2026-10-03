@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Features.DataRetention;
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
@@ -53,7 +54,8 @@ public class GuestOrderAccessTokenRetentionTests(PostgresContainerFixture fixtur
                     customerName: "Guest Customer", customerEmail: "guest.token-ret@cleansia.test",
                     customerPhone: "+420777111333", customerAddress: Address.Create("Ulice 1", "Praha", "11000", CountryId),
                     rooms: 2, bathrooms: 1, cleaningDateTime: DateTime.UtcNow.AddDays(-5), paymentType: PaymentType.Card,
-                    totalPrice: 1250m, currencyId: CurrencyId, paymentStatus: PaymentStatus.Paid);
+                    totalPrice: 1250m, currencyId: CurrencyId, paymentStatus: PaymentStatus.Paid,
+                    cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
                 order.Id = OrderId;
                 order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Completed, order));
                 context.Orders.Add(order);

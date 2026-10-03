@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
@@ -32,7 +33,8 @@ public class CardRefundCeilingTests
             totalPrice: totalPrice,
             currencyId: "currency-1",
             paymentStatus: PaymentStatus.Paid,
-            userId: "user-1");
+            userId: "user-1",
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
 
         if (creditApplied > 0m)
         {

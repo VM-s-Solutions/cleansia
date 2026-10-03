@@ -104,7 +104,8 @@ public class MemberCancellationRefundRedriveTests(PostgresContainerFixture fixtu
                 totalPrice: Total,
                 currencyId: CzkId,
                 paymentStatus: PaymentStatus.Paid,
-                userId: userId);
+                userId: userId,
+                cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
             order.Id = OrderId;
             order.SetMaxEmployees(1);
             order.ApplyCredit(Credit, userId);

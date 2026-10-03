@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
@@ -30,7 +31,8 @@ public class CreditRefundSplitTests
             totalPrice: totalPrice,
             currencyId: currency.Id,
             paymentStatus: PaymentStatus.Paid,
-            userId: "user-1");
+            userId: "user-1",
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.SetCurrency(currency);
         if (creditApplied > 0m)
         {

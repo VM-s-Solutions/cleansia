@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.EmployeePayroll;
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Domain.Credit;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
@@ -249,7 +250,8 @@ public class CollectedFeeSharePayTests(PostgresContainerFixture fixture) : BaseI
             totalPrice: totalPrice,
             currencyId: CurrencyId,
             paymentStatus: paymentStatus,
-            userId: customer.Id);
+            userId: customer.Id,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.UpdateEstimatedTime(seats * 120).CalculateRequiredEmployees(spareSeats: 0);
 
         var first = NewEmployee(context, "fee-share-first@cleansia.test");

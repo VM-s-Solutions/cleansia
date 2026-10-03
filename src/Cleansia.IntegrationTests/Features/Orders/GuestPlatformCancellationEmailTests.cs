@@ -190,7 +190,8 @@ public class GuestPlatformCancellationEmailTests(PostgresContainerFixture fixtur
 
         var order = Order.Create("Guest", Email, "+420777000111",
             Address.Create("Guest Street", "Praha", "11000", CountryId), 2, 1,
-            cleaningDateTime, PaymentType.Card, 1000m, CurrencyId, paymentStatus);
+            cleaningDateTime, PaymentType.Card, 1000m, CurrencyId, paymentStatus,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.SetMaxEmployees(1);
         order.AssignStripePaymentIntentId(PaymentIntentId);

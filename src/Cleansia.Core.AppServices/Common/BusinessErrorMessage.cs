@@ -224,8 +224,6 @@ public static class BusinessErrorMessage
     public const string MembershipPlanCodeAlreadyExists = "membership.plan.code_already_exists";
     public const string MembershipPlanDiscountOutOfRange = "membership.plan.discount_out_of_range";
     public const string MembershipPlanStripePriceAlreadyUsed = "membership.plan.stripe_price_already_used";
-    /// <summary>A plan's free-notice window longer than the standard one would make a member's cancellation terms worse.</summary>
-    public const string MembershipPlanFreeCancellationWindowTooLong = "membership.plan.free_cancellation_window_too_long";
 
     // Saved card, the guarantee for cash bookings
     /// <summary>A card capture started without the customer's consent that fees and unpaid cash may be charged to the card.</summary>

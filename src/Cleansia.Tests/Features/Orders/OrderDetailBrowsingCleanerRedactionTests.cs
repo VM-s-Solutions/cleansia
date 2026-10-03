@@ -565,7 +565,8 @@ public class OrderDetailBrowsingCleanerRedactionTests
             paymentStatus: PaymentStatus.Paid,
             userId: CustomerUserId,
             specialInstructions: SpecialInstructions,
-            accessInstructions: AccessInstructions);
+            accessInstructions: AccessInstructions,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
 
         order.Id = OrderId;
         order.AddSelectedExtras(

@@ -546,7 +546,8 @@ redirect the cancellation.
 
 The preview shows the standard cancellation tier, fee and policy refund in the order’s currency —
 **0** refund on a booking that took no payment. The cancellation recalculates those figures at the time
-it is submitted, with the same notice, cleaner-assignment and oops-window rules as the signed-in path,
+it is submitted, with the same notice, cleaner-assignment and oops-window rules as the signed-in path
+and the fee figures frozen on the order when it was booked,
 and records `CancelledBy.Customer`. A guest has no Plus entitlement, so their oops window is 60 minutes
 on their **first booking** — the first on that e-mail or phone, guest or account — and the standard 15
 otherwise; the preview's `oopsWindowMinutes` says which. An order already cancelled, completed or under

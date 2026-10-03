@@ -149,7 +149,8 @@ public sealed class TakeOrderWorkContractTests
         var unstamped = Order.Create(
             "Test Customer", "test@example.com", "+420000000000",
             Core.Domain.Users.Address.Create("123 Main St", "Prague", "11000", "cz"),
-            1, 1, ValidatorTestHelpers.DefaultCleaningTime, PaymentType.Cash, 1000m, ValidatorTestHelpers.CurrencyId, PaymentStatus.Pending);
+            1, 1, ValidatorTestHelpers.DefaultCleaningTime, PaymentType.Cash, 1000m, ValidatorTestHelpers.CurrencyId, PaymentStatus.Pending,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         unstamped.Id = OrderId;
         unstamped.SetMaxEmployees(2);
         unstamped.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, unstamped));

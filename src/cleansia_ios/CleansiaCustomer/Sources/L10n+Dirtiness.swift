@@ -63,12 +63,22 @@ extension L10n.Booking {
         }
     }
 
-    /// The receipt's own words for the surcharge line; Normal adds none.
+    /// The booking's surcharge line, stating today's rate; Normal adds none.
     static func dirtinessSurcharge(_ level: Dirtiness) -> String? {
         switch level {
         case .normal: nil
         case .increased: L10n.localized("booking_dirtiness_surcharge_increased")
         case .heavy: L10n.localized("booking_dirtiness_surcharge_heavy")
+        }
+    }
+
+    /// A booked order's surcharge was charged at its booking's rate, which need not be today's, so its
+    /// line names no rate.
+    static func bookedDirtinessSurcharge(_ level: Dirtiness) -> String? {
+        switch level {
+        case .normal: nil
+        case .increased: L10n.localized("booking_dirtiness_surcharge_line_increased")
+        case .heavy: L10n.localized("booking_dirtiness_surcharge_line_heavy")
         }
     }
 }

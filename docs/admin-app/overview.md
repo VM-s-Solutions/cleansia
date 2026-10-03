@@ -252,10 +252,10 @@ Three of those forms author what a customer's **market** shows:
   period and the Stripe Price id that charges it. Every block is optional: a block is sent only when
   both fields are filled, a half-filled block is a per-block error, and a currency the plan is not
   priced in stays blank on populate (never `0`). The list shows the platform-default-currency price
-  with its code and prints "—" when the plan has none. Refusals rendered: `currency.not_found`,
-  `membership.plan.stripe_price_already_used`, and `membership.plan.free_cancellation_window_too_long`
-  for a free-cancellation window above 24 h — a longer window would give a member less than everyone
-  else ([Business rules — Cleansia Plus](/product/business-rules#cleansia-plus)).
+  with its code and prints "—" when the plan has none. Refusals rendered: `currency.not_found` and
+  `membership.plan.stripe_price_already_used`. The form has no free-cancellation window since
+  2026-10-03: a Plus member's window is a fixed term of the customer contract, not a plan setting
+  ([Business rules — Cleansia Plus](/product/business-rules#cleansia-plus)).
 - **Currencies** — `No-show apology credit` beside the loyalty divisor: the amount `CancelUnfilledOrders`
   pays on an order in that currency; blank means none is paid.
 - **Countries** — the `Two-letter code` (required on create, pattern-checked on edit; the market chip

@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.Payments;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
@@ -350,7 +351,8 @@ public class OrderWebhookIntegrationTests(PostgresContainerFixture fixture) : Ba
             totalPrice: 1500m,
             currencyId: CurrencyId,
             paymentStatus: PaymentStatus.Pending,
-            userId: user.Id);
+            userId: user.Id,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.AssignStripeSessionId("cs_test_session");
         order.AddOrderStatus(OrderStatusTrack.Create(ArrangedStatus, order));
         order.TenantId = tenantId;

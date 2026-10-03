@@ -68,14 +68,6 @@ public class MembershipPlan : Auditable
     public decimal DiscountPercentage { get; private set; }
 
     /// <summary>
-    /// Hours-before-cleaning window in which a member can cancel for free.
-    /// Non-members use <c>BookingPolicy.FreeCancellationHours</c>. A Plus
-    /// member with this set to 4 can cancel up to 4h before for free; below
-    /// that the partial-fee window applies.
-    /// </summary>
-    public int FreeCancellationWindowHours { get; private set; }
-
-    /// <summary>
     /// Whether this plan grants free express upgrades (skipping the +20%
     /// surcharge for 2-4h lead bookings). When true, usage is capped — see
     /// the future "membership benefit usage" tracker. When false, members
@@ -84,11 +76,10 @@ public class MembershipPlan : Auditable
     public bool AllowsExpressUpgrade { get; private set; }
 
     /// <summary>
-    /// ADR-0035 D2.1 — how many express waivers this plan grants per calendar month. Mirrors
-    /// <see cref="FreeCancellationWindowHours"/> in role: the benefit's number belongs on the plan, next
-    /// to the benefit it meters, where an admin can change it without a deploy and a second tier can
-    /// differ. <c>0</c> means no waiver (fail-closed), the same semantic the cancellation window uses;
-    /// "unlimited" is deliberately not expressible, so a seeding mistake cannot become an unbounded perk.
+    /// ADR-0035 D2.1 — how many express waivers this plan grants per calendar month. The benefit's number
+    /// belongs on the plan, next to the benefit it meters, where an admin can change it without a deploy
+    /// and a second tier can differ. <c>0</c> means no waiver (fail-closed); "unlimited" is deliberately
+    /// not expressible, so a seeding mistake cannot become an unbounded perk.
     /// Ignored entirely when <see cref="AllowsExpressUpgrade"/> is false.
     /// </summary>
     public int ExpressUpgradesPerMonth { get; private set; }
@@ -108,7 +99,6 @@ public class MembershipPlan : Auditable
         string code,
         string name,
         decimal discountPercentage,
-        int freeCancellationWindowHours,
         bool allowsExpressUpgrade,
         BillingInterval billingInterval = BillingInterval.Monthly,
         int trialPeriodDays = 0,
@@ -118,7 +108,6 @@ public class MembershipPlan : Auditable
             Code = code.ToUpperInvariant(),
             Name = name,
             DiscountPercentage = discountPercentage,
-            FreeCancellationWindowHours = freeCancellationWindowHours,
             AllowsExpressUpgrade = allowsExpressUpgrade,
             BillingInterval = billingInterval,
             TrialPeriodDays = trialPeriodDays,
@@ -139,12 +128,10 @@ public class MembershipPlan : Auditable
 
     public MembershipPlan UpdateBenefits(
         decimal discountPercentage,
-        int freeCancellationWindowHours,
         bool allowsExpressUpgrade,
         int expressUpgradesPerMonth)
     {
         DiscountPercentage = discountPercentage;
-        FreeCancellationWindowHours = freeCancellationWindowHours;
         AllowsExpressUpgrade = allowsExpressUpgrade;
         ExpressUpgradesPerMonth = expressUpgradesPerMonth;
         return this;

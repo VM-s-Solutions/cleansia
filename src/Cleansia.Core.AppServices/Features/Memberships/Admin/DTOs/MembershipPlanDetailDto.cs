@@ -14,7 +14,6 @@ public record MembershipPlanDetailDto(
     Dictionary<string, MembershipPlanPriceDto> Prices,
     decimal DiscountPercentage,
     int TrialPeriodDays,
-    int FreeCancellationWindowHours,
     bool AllowsExpressUpgrade,
     int ExpressUpgradesPerMonth,
     bool IsActive,

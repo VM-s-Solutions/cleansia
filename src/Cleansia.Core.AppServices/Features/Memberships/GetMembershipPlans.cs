@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Repositories;
@@ -91,7 +92,7 @@ public class GetMembershipPlans
                     MonthlyEquivalentPrice: monthlyEquivalent,
                     BillingInterval: (int)x.Plan.BillingInterval,
                     DiscountPercentage: x.Plan.DiscountPercentage,
-                    FreeCancellationWindowHours: x.Plan.FreeCancellationWindowHours,
+                    FreeCancellationWindowHours: BookingPolicy.PlusFreeCancellationHours,
                     AllowsExpressUpgrade: x.Plan.AllowsExpressUpgrade,
                     ExpressUpgradesPerMonth: x.Plan.AllowsExpressUpgrade ? x.Plan.ExpressUpgradesPerMonth : 0,
                     TrialPeriodDays: x.Plan.TrialPeriodDays,

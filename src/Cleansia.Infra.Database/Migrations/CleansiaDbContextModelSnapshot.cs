@@ -3445,9 +3445,6 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("integer")
                         .HasDefaultValue(0);
 
-                    b.Property<int>("FreeCancellationWindowHours")
-                        .HasColumnType("integer");
-
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
@@ -4102,6 +4099,23 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasPrecision(5, 4)
                         .HasColumnType("numeric(5,4)");
 
+                    b.Property<int>("CancellationFreeHours")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("CancellationLastMinuteFeeRate")
+                        .HasPrecision(5, 4)
+                        .HasColumnType("numeric(5,4)");
+
+                    b.Property<decimal>("CancellationPartialFeeRate")
+                        .HasPrecision(5, 4)
+                        .HasColumnType("numeric(5,4)");
+
+                    b.Property<int>("CancellationPartialHours")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("CancellationPlusFreeHours")
+                        .HasColumnType("integer");
+
                     b.Property<string>("CancellationReason")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
@@ -4438,6 +4452,22 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
+
+                    b.Property<decimal?>("JobBasePay")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<decimal?>("JobExtrasPay")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<decimal?>("JobMaxPay")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<decimal?>("JobMinPay")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<string>("OrderId")
                         .IsRequired()

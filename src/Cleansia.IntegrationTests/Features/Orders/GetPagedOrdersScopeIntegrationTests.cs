@@ -365,7 +365,8 @@ public class GetPagedOrdersScopeIntegrationTests(PostgresContainerFixture fixtur
             paymentType: PaymentType.Card,
             totalPrice: 1500m,
             currencyId: CurrencyId,
-            paymentStatus: PaymentStatus.Paid);
+            paymentStatus: PaymentStatus.Paid,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = orderId;
         order.Created(Constants.TestUserSession.TestUserName, DateTime.UtcNow);
 

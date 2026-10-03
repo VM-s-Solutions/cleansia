@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Disputes;
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Mappers;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Credit;
@@ -359,7 +360,8 @@ public sealed class DisputeSettlementAndCleanerChargeTests
             totalPrice: 1000m,
             currencyId: "currency-czk",
             paymentStatus: PaymentStatus.Paid,
-            userId: CustomerId);
+            userId: CustomerId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         typeof(Dispute).GetProperty(nameof(Dispute.Order))!.SetValue(dispute, order);
         _disputes.Setup(r => r.GetForUpdateAsync(DisputeId, It.IsAny<CancellationToken>())).ReturnsAsync(dispute);

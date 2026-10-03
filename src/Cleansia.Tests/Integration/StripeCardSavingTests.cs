@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using System.Net;
 using System.Text;
 using Cleansia.Core.Domain.Enums;
@@ -334,7 +335,8 @@ public class StripeCardSavingTests
             totalPrice: 1000m,
             currencyId: "currency-czk",
             paymentStatus: PaymentStatus.Pending,
-            userId: "user-1");
+            userId: "user-1",
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = "order-card-saving";
         order.SetCurrency(Currency.Create("CZK", "Kč", "Czech koruna"));
         return order;

@@ -254,7 +254,8 @@ public class AdminReassignOrderPartnerNotifyTests
             totalPrice: 1000m,
             currencyId: "czk",
             paymentStatus: PaymentStatus.Paid,
-            userId: CustomerUserId);
+            userId: CustomerUserId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.SetMaxEmployees(maxEmployees);
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Confirmed, order));

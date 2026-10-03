@@ -49,7 +49,6 @@ public class MembershipTrialOncePerCustomerTests
         code: PlanCode,
         name: "Plus Monthly",
         discountPercentage: 5m,
-        freeCancellationWindowHours: 4,
         allowsExpressUpgrade: true,
         billingInterval: BillingInterval.Monthly,
         trialPeriodDays: PlanTrialDays,
@@ -168,7 +167,6 @@ public class MembershipTrialOncePerCustomerTests
             code: "PLUS_YEARLY",
             name: "Plus Yearly",
             discountPercentage: 5m,
-            freeCancellationWindowHours: 4,
             allowsExpressUpgrade: true,
             billingInterval: BillingInterval.Yearly,
             trialPeriodDays: 0);

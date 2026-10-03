@@ -161,7 +161,45 @@ The phase-5 loyalty perks arrive with the reseed that follows the drop (below) �
 Phase 6A (2026-09-23) regenerates `Initial` as **`20260923071814`**, removing the unread
 `CountryConfigurations.ReducedVatRate` column while retaining both live VAT rates.
 
-**The one owed drop belongs to `20260923071814`**: a DEV database whose
+The 2026-09-27 meeting plan and the fixes after it regenerated it nineteen times more, each one adding
+what is named against the id before it:
+
+- **`20260927231818`** (2026-09-28, `5d7d7b68a`, the chargeback and dispute-amount fixes):
+  `Disputes.CardRefundedAmount` and `Disputes.CreditReturnedAmount`, `numeric(18,2)` NULL.
+- **`20260928185130`** (2026-09-29, phase 1, `3f8446178` + `70bf76e28`): the
+  `CleanerLegalDocumentAcceptances` table (FKs `LegalDocumentTexts` and `Tenants`, four indexes);
+  `Orders.CustomerEmail` becomes `citext` with `IX_Orders_CustomerEmail`; `Orders.CashCollectedAmount`
+  and `CustomerConfirmedAt`; `Disputes.SettlementPreference`; `Employees.WeeklyOrderLimitReason`;
+  `OrderEmployeePays.DeductionDisputeId` and `DeductionReason`; `OrderReceipts.BlobDeletedAt`. **86**
+  tables.
+- Phase 2, the dirtiness level (2026-09-29): **`20260929022837`** (`Orders.DirtinessLevel`,
+  `DirtinessSurchargeAmount`), **`20260929031611`** (`Services.MinutesPerRoom`), **`20260929035817`**
+  (`RecurringBookingTemplates.DirtinessLevel`), **`20260929042152`** (`OrderEmployeePays.DirtinessPay`).
+- Phase 3, the card guarantee and receivables (2026-09-29): **`20260929070817`** (`SavedCards`),
+  **`20260929082511`** (`Receivables`), **`20260929094036`** (`Receivables.StripePaymentIntentId` and
+  `PaidOn`; `OrderReceipts.ReceivableId` with its FK and index), **`20260929102644`**
+  (`Orders.LockoutReportedAt`, `LockoutReportedByEmployeeId`, `LockoutCallAttempts`),
+  **`20260929105442`** (`Receivables.PayLinkSessionId`), **`20260929111628`**
+  (`OrderEmployeePays.LineType`, default 0), **`20260929114448`** (`CashLedgerEntries`),
+  **`20260929124018`** (`CashLedgerEntries.RemittanceRequestedAt`, `EmployeeInvoices.CashSetOffAmount`).
+  **89** tables, **53** carrying the `Tenants` FK.
+- **`20260929175413`** (2026-09-29, `00dd84f6f`, P4-D61): the five `EarlyPerformanceConsent*` columns on
+  `Orders` and on `RecurringBookingTemplates`.
+- **`20260929222804`** (2026-09-30, `07f165f17`, L-E1a): `Users.MustChangePassword`.
+- **`20261001174041`** (2026-10-01, `74a854078`, P1-BE-02): `EmployeeDocuments.ContentSha256`, NOT NULL.
+- **`20261003084437`** (2026-10-03, `59a87b219`): `Orders.DirtinessRate`, `numeric(5,4)` NOT NULL,
+  default 0.
+- **`20261003132430`** (2026-10-03, `4d02da9df`, branch `fix/settlement-snapshots-2026-10-03`): `Orders`
+  gains `CancellationFreeHours`, `CancellationPartialHours`, `CancellationPartialFeeRate`,
+  `CancellationLastMinuteFeeRate` (`numeric(5,4)`) and `CancellationPlusFreeHours`, all NOT NULL with
+  **no** default — an order created without its booked terms must fail, not default to a free
+  cancellation; `OrderEmployees` gains `JobBasePay`, `JobExtrasPay`, `JobMinPay` and `JobMaxPay`,
+  `numeric(18,2)` NULL; `MembershipPlans.FreeCancellationWindowHours` is dropped. Still **89** tables
+  and **53** with the `Tenants` FK; `has-pending-model-changes` reports none, and the three backend
+  suites ran green at it (7564 / 739 / 417).
+
+**The one owed drop belongs to `20261003132430`**, and the coordinator runs it right after
+`fix/settlement-snapshots-2026-10-03` merges: a DEV database whose
 `__EFMigrationsHistory` records any earlier id replays the whole create script against tables that
 already exist. The legal texts need no extra step — every host seeds them at start, and since
 `b34dff07` a fresh Development database is seeded once more in the boot that migrates it (the factory

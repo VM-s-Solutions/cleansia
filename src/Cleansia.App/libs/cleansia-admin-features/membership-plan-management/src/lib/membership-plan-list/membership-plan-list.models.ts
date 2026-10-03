@@ -111,16 +111,6 @@ export function getMembershipPlanTableDefinition(
         width: '7%',
       },
       {
-        id: 'freeCancellationWindowHours',
-        numeric: true,
-        field: 'freeCancellationWindowHours',
-        header: translate.instant(
-          'pages.membership_plans.columns.free_cancel_window'
-        ),
-        getValue: (row) => `${row.freeCancellationWindowHours ?? 0}`,
-        width: '7%',
-      },
-      {
         id: 'trialPeriodDays',
         numeric: true,
         field: 'trialPeriodDays',

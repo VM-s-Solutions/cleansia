@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
@@ -66,7 +67,8 @@ public class PlatformOrderCancellationTests
             totalPrice: 1000m,
             currencyId: currency.Id,
             paymentStatus: paymentStatus,
-            userId: OwnerUserId);
+            userId: OwnerUserId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.SetCurrency(currency);
         if (paymentIntentOnly)

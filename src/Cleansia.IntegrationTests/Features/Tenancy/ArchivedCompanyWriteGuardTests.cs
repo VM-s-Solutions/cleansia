@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using System.Data.Common;
 using Cleansia.Core.AppServices.Features.DataRetention;
 using Cleansia.Core.AppServices.Features.TenantSettings;
@@ -270,7 +271,7 @@ public sealed class ArchivedCompanyWriteGuardTests(PostgresContainerFixture fixt
         ctx.CountryConfigurations.AddRange(
             CountryConfiguration.Create(SvkId, "EUR", "sk", 0.20m, timeZoneId: "Europe/Bratislava").AssignOperator(B),
             CountryConfiguration.Create(CzeId, "CZK", "cs", 0.21m, timeZoneId: "Europe/Prague").AssignOperator(A).SetAsDefaultMarket(true));
-        var plan = MembershipPlan.Create(PlanId, "Archive plan", 10m, 24, allowsExpressUpgrade: false);
+        var plan = MembershipPlan.Create(PlanId, "Archive plan", 10m, allowsExpressUpgrade: false);
         plan.Id = PlanId;
         ctx.MembershipPlans.Add(plan);
 
@@ -343,7 +344,8 @@ public sealed class ArchivedCompanyWriteGuardTests(PostgresContainerFixture fixt
             totalPrice: 100m,
             currencyId: currencyId,
             paymentStatus: PaymentStatus.Paid,
-            userId: userId);
+            userId: userId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = id;
         order.TenantId = tenantId;
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));

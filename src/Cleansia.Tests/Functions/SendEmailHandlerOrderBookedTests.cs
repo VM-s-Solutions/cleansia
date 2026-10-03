@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
@@ -47,7 +48,7 @@ public sealed class SendEmailHandlerOrderBookedTests
             .ReturnsAsync((ConfirmationPdf, ConfirmationFileName));
     }
 
-    private SendEmailHandler CreateHandler() => new(
+    private SendEmailHandler CreateHandler(ICancellationPolicyResolver? policies = null) => new(
         _emailService.Object,
         _guard,
         _tenantProvider.Object,
@@ -58,13 +59,13 @@ public sealed class SendEmailHandlerOrderBookedTests
         _orders.Object,
         TestGuestOrderAccessTokenIssuer.WithNoLiveTokens(),
         Mock.Of<IUnitOfWork>(),
-        _policies.Object,
+        policies ?? _policies.Object,
         Mock.Of<IReceivableRepository>(),
         _confirmations.Object,
         Mock.Of<IWorkContractAcceptanceRepository>(),
         Mock.Of<IEmployeeRepository>());
 
-    private Order ArrangeOrder(bool cancelled = false)
+    private Order ArrangeOrder(bool cancelled = false, CancellationTerms? terms = null)
     {
         var order = Order.Create(
             customerName: "Jana Novakova",
@@ -78,7 +79,8 @@ public sealed class SendEmailHandlerOrderBookedTests
             totalPrice: 1500m,
             currencyId: "czk",
             paymentStatus: PaymentStatus.Pending,
-            userId: "user-1");
+            userId: "user-1",
+            cancellationTerms: terms ?? BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.TenantId = TenantId;
         order.SetLanguage("cs");
@@ -112,6 +114,22 @@ public sealed class SendEmailHandlerOrderBookedTests
             ConfirmationPdf, ConfirmationFileName),
             Times.Once);
         _tenantProvider.Verify(t => t.SetTenantOverride(TenantId), Times.AtLeastOnce);
+    }
+
+    /// <summary>The e-mail states the free window this booking was frozen under, not today's 24 h.</summary>
+    [Fact]
+    public async Task The_Booking_Email_States_The_Free_Window_Frozen_On_The_Order()
+    {
+        var order = ArrangeOrder(terms: new CancellationTerms(
+            FreeHours: 48, PartialHours: 6, PartialFeeRate: 0.30m, LastMinuteFeeRate: 0.60m, PlusFreeHours: 8));
+        var resolver = new CancellationPolicyResolver(Mock.Of<IUserMembershipRepository>(), _orders.Object);
+
+        await CreateHandler(resolver).HandleAsync(Body(), CancellationToken.None);
+
+        _emailService.Verify(s => s.SendOrderBookedEmailAsync(
+            order.CustomerEmail, It.Is<Order>(o => o.Id == OrderId), 48, "cs", It.IsAny<CancellationToken>(), null,
+            ConfirmationPdf, ConfirmationFileName),
+            Times.Once);
     }
 
     [Fact]

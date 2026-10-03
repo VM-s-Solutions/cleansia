@@ -759,6 +759,8 @@
     <string name="dirtiness_heavy_detail_4">Засохлий бруд на підлозі, липкі поверхні, сильний запах</string>
     <string name="dirtiness_surcharge_increased" formatted="false">Доплата за підвищене забруднення (+15%)</string>
     <string name="dirtiness_surcharge_heavy" formatted="false">Доплата за сильне забруднення (+30%)</string>
+    <string name="dirtiness_surcharge_line_increased">Доплата за підвищене забруднення</string>
+    <string name="dirtiness_surcharge_line_heavy">Доплата за сильне забруднення</string>
 
     <string name="booking_summary_promo_discount">Промокод (-%1$s)</string>
     <string name="booking_summary_membership_discount">Знижка Cleansia Plus</string>

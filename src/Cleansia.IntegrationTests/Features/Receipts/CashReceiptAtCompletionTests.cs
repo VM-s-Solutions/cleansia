@@ -200,7 +200,8 @@ public class CashReceiptAtCompletionTests(PostgresContainerFixture fixture) : Ba
             totalPrice: 1500m,
             currencyId: CurrencyId,
             paymentStatus: PaymentStatus.Pending,
-            userId: null);
+            userId: null,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.UpdateEstimatedTime(120);
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));

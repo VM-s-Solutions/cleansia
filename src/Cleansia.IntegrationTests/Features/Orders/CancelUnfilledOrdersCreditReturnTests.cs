@@ -113,7 +113,8 @@ public class CancelUnfilledOrdersCreditReturnTests(PostgresContainerFixture fixt
                 totalPrice: Total,
                 currencyId: CzkId,
                 paymentStatus: paymentStatus,
-                userId: userId);
+                userId: userId,
+                cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
             order.Id = OrderId;
             order.SetMaxEmployees(1);
             order.ApplyCredit(Credit, userId);
@@ -396,7 +397,8 @@ public class CancelUnfilledOrdersCreditReturnTests(PostgresContainerFixture fixt
                     totalPrice: Total,
                     currencyId: CzkId,
                     paymentStatus: PaymentStatus.Paid,
-                    userId: userId);
+                    userId: userId,
+                    cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
                 order.Id = orderId;
                 order.SetMaxEmployees(1);
                 order.ApplyCredit(Credit, userId);

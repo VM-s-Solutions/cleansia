@@ -37296,6 +37296,76 @@
         }
       }
     },
+    "booking_dirtiness_surcharge_line_increased": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Increased dirtiness surcharge"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Příplatek za zvýšené znečištění"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Príplatok za zvýšené znečistenie"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Доплата за підвищене забруднення"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Доплата за повышенное загрязнение"
+          }
+        }
+      }
+    },
+    "booking_dirtiness_surcharge_line_heavy": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heavy dirtiness surcharge"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Příplatek za silné znečištění"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Príplatok za silné znečistenie"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Доплата за сильне забруднення"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Доплата за сильное загрязнение"
+          }
+        }
+      }
+    },
     "booking_dirtiness_level_label": {
       "extractionState": "manual",
       "localizations": {

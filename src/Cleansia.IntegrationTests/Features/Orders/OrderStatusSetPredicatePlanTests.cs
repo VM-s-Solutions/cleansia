@@ -351,12 +351,15 @@ public sealed class OrderStatusSetPredicatePlanTests(OrderStatusSetPredicatePlan
             "\"PaymentStatus\",\"TotalPrice\",\"NetAmount\",\"VatAmount\",\"EstimatedTime\"," +
             "\"EmployeePayCalculated\",\"RequiredEmployees\",\"MaxEmployees\",\"ConfirmationCode\"," +
             "\"StripeSessionId\",\"CurrencyId\",\"CurrentStatus\",\"IsActive\"," +
+            "\"CancellationFreeHours\",\"CancellationPartialHours\",\"CancellationPartialFeeRate\"," +
+            "\"CancellationLastMinuteFeeRate\",\"CancellationPlusFreeHours\"," +
             "\"CreatedBy\",\"CreatedOn\",\"TenantId\") SELECT " +
             $"'{idPrefix}-' || g, 'Cust ' || g, 'c' || g || '@x.test', '+420' || g, 'addr-1', " +
             "'ORD-' || g, 2, 1, " + cleaningSql + ", 2, " +
             "2, 1200, 1000, 200, 120, " +
             "false, 1, 1, 'CONF' || g, " +
             "'sess-' || g, 'czk', " + statusSql + ", true, " +
+            "24, 4, 0.25, 0.50, 4, " +
             $"'seed', '{Iso(WindowStart)}'::timestamptz, '{TestTenants.Default}' FROM generate_series(1, {count}) AS g;";
 
         private static async Task Execute(NpgsqlConnection conn, string sql)

@@ -112,7 +112,8 @@ public class CancelledOrderPiiRetentionTests(PostgresContainerFixture fixture) :
                     currencyId: CurrencyId,
                     paymentStatus: PaymentStatus.Pending,
                     userId: owner.Id,
-                    recurringTemplateId: "tmpl-cpii-recurring");
+                    recurringTemplateId: "tmpl-cpii-recurring",
+                    cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
                 occurrence.Id = RetractedOccurrenceId;
                 occurrence.Created("seed", new DateTimeOffset(cancelledAt.AddDays(-7)));
                 occurrence.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, occurrence));
@@ -220,7 +221,8 @@ public class CancelledOrderPiiRetentionTests(PostgresContainerFixture fixture) :
             accessInstructions: "Code 4455",
             customerFloor: "3",
             customerApartment: "12B",
-            accessMode: "door_code");
+            accessMode: "door_code",
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = id;
         return order;
     }

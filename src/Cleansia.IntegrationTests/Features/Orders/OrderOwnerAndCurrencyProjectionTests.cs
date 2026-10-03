@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
@@ -106,7 +107,8 @@ public class OrderOwnerAndCurrencyProjectionTests(PostgresContainerFixture fixtu
             totalPrice: 1000m,
             currencyId: CurrencyId,
             paymentStatus: PaymentStatus.Pending,
-            userId: userId);
+            userId: userId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = orderId;
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));
         return order;

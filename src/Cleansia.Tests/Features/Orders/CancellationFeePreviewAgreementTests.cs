@@ -30,7 +30,8 @@ namespace Cleansia.Tests.Features.Orders;
 /// agreeing with itself.</para>
 ///
 /// <para>Nothing here re-implements the schedule: the fixture varies only the inputs the schedule
-/// reads (lead time, booking age, whether a cleaner is on the job, the member's own free window) and
+/// reads (lead time, booking age, whether a cleaner is on the job, membership, the schedule frozen on the
+/// order at booking) and
 /// lets both handlers answer. That is the point — if the two could ever disagree, a customer is told
 /// one number and charged another.</para>
 /// </summary>
@@ -38,6 +39,10 @@ public class CancellationFeePreviewAgreementTests
 {
     private const string OrderId = "order-preview-1";
     private const string UserId = "user-1";
+
+    /// <summary>Free 48 h, partial 30 % down to 6 h, last-minute 60 %, Plus free 8 h — unlike today on every figure.</summary>
+    private static readonly CancellationTerms FrozenElsewhere = new(
+        FreeHours: 48, PartialHours: 6, PartialFeeRate: 0.30m, LastMinuteFeeRate: 0.60m, PlusFreeHours: 8);
 
     private readonly Mock<IOrderRepository> _orderRepository = new();
     private readonly Mock<IUserSessionProvider> _session = new();
@@ -100,7 +105,8 @@ public class CancellationFeePreviewAgreementTests
         decimal totalPrice = 1000m,
         int bookedMinutesAgo = 120,
         PaymentType paymentType = PaymentType.Card,
-        PaymentStatus paymentStatus = PaymentStatus.Paid)
+        PaymentStatus paymentStatus = PaymentStatus.Paid,
+        CancellationTerms? terms = null)
     {
         var currency = Currency.Create("CZK", "Kč", "Czech Koruna");
         var order = Order.Create(
@@ -115,7 +121,8 @@ public class CancellationFeePreviewAgreementTests
             totalPrice: totalPrice,
             currencyId: currency.Id,
             paymentStatus: paymentStatus,
-            userId: UserId);
+            userId: UserId,
+            cancellationTerms: terms ?? BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.Created("tester", DateTime.UtcNow.AddMinutes(-bookedMinutesAgo));
         order.SetCurrency(currency);
@@ -141,13 +148,12 @@ public class CancellationFeePreviewAgreementTests
         return order;
     }
 
-    private void GivenPlusMembership(int freeCancellationWindowHours)
+    private void GivenPlusMembership()
     {
         var plan = MembershipPlan.Create(
             code: "PLUS",
             name: "Cleansia Plus",
             discountPercentage: 10m,
-            freeCancellationWindowHours: freeCancellationWindowHours,
             allowsExpressUpgrade: true);
         var membership = UserMembership.Create(
             userId: UserId,
@@ -292,7 +298,7 @@ public class CancellationFeePreviewAgreementTests
     {
         // Past the standard 15 minutes, inside an entitled member's 60: free on both surfaces, where the
         // same order for a non-member is the 50% tier (next case).
-        GivenPlusMembership(freeCancellationWindowHours: 4);
+        GivenPlusMembership();
         ArrangeOrder(cleaningInHours: 1, bookedMinutesAgo: 30);
 
         await AssertQuoteMatchesChargeAsync(
@@ -310,7 +316,7 @@ public class CancellationFeePreviewAgreementTests
     [Fact]
     public async Task Plus_Member_Past_The_Sixty_Minutes_Quotes_50Percent_And_Charges_50Percent()
     {
-        GivenPlusMembership(freeCancellationWindowHours: 4);
+        GivenPlusMembership();
         ArrangeOrder(cleaningInHours: 1, bookedMinutesAgo: 90);
 
         await AssertQuoteMatchesChargeAsync(
@@ -335,7 +341,7 @@ public class CancellationFeePreviewAgreementTests
     [Fact]
     public async Task Plus_Member_Six_Hours_Out_Quotes_Free_And_Charges_Free()
     {
-        GivenPlusMembership(freeCancellationWindowHours: 4);
+        GivenPlusMembership();
         ArrangeOrder(cleaningInHours: 6);
 
         await AssertQuoteMatchesChargeAsync(
@@ -350,6 +356,40 @@ public class CancellationFeePreviewAgreementTests
         ArrangeOrder(cleaningInHours: 6);
 
         await AssertQuoteMatchesChargeAsync(CancellationFeeTier.Partial, 0.25m, 750m, 250m);
+    }
+
+    // ── The schedule frozen on the order at booking, not today's (ToS §19) ──
+
+    [Fact]
+    public async Task An_Order_Frozen_At_48_Hours_Thirty_Hours_Out_Quotes_And_Charges_Its_Own_30Percent()
+    {
+        // 30h before start: free under today's 24h, but this order's free window is 48h and its partial
+        // threshold 6h → partial at its own 0.30. Hand-derived: refund 1000 × 0.70 = 700, fee 300.
+        ArrangeOrder(cleaningInHours: 30, terms: FrozenElsewhere);
+
+        await AssertQuoteMatchesChargeAsync(CancellationFeeTier.Partial, 0.30m, 700m, 300m);
+    }
+
+    [Fact]
+    public async Task An_Order_Frozen_At_6_Hours_Five_Hours_Out_Quotes_And_Charges_Its_Own_60Percent()
+    {
+        // 5h before start: today's 25% tier (≥ 4h), but under this order's 6h partial threshold it is
+        // last-minute at its own 0.60. Hand-derived: refund 1000 × 0.40 = 400, fee 600.
+        ArrangeOrder(cleaningInHours: 5, terms: FrozenElsewhere);
+
+        await AssertQuoteMatchesChargeAsync(CancellationFeeTier.LastMinute, 0.60m, 400m, 600m);
+    }
+
+    [Fact]
+    public async Task A_Plus_Member_Gets_The_Plus_Window_Frozen_On_The_Order()
+    {
+        // 7h before start: free under today's Plus 4h, but this order's Plus window is 8h → partial at its
+        // own 0.30 (7 ≥ 6). Hand-derived: refund 1000 × 0.70 = 700, fee 300.
+        GivenPlusMembership();
+        ArrangeOrder(cleaningInHours: 7, terms: FrozenElsewhere);
+
+        await AssertQuoteMatchesChargeAsync(
+            CancellationFeeTier.Partial, 0.30m, 700m, 300m, BookingPolicy.OopsWindowMinutesPlus);
     }
 
     // ── Rounding ──

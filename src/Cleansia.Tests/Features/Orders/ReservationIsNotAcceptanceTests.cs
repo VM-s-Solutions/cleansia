@@ -135,7 +135,8 @@ public class ReservationIsNotAcceptanceTests
             currencyId: currency.Id,
             paymentStatus: PaymentStatus.Paid,
             userId: UserId,
-            preferredEmployeeId: "employee-favourite");
+            preferredEmployeeId: "employee-favourite",
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.SetMaxEmployees(2);
         order.SetCurrency(currency);

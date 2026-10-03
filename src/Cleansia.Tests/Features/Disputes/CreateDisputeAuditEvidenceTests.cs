@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using System.Text.Json;
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
@@ -58,7 +59,8 @@ public sealed class CreateDisputeAuditEvidenceTests
             totalPrice: 1250m,
             currencyId: currency.Id,
             paymentStatus: PaymentStatus.Paid,
-            userId: ownerUserId);
+            userId: ownerUserId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.SetCurrency(currency);
         var service = Service.Create("cat-1", "Kitchen", "");

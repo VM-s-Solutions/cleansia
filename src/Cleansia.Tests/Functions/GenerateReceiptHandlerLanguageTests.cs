@@ -164,7 +164,8 @@ public class GenerateReceiptHandlerLanguageTests
             totalPrice: 1000m,
             currencyId: "czk",
             paymentStatus: PaymentStatus.Paid,
-            userId: accountLanguage is null ? null : "user-1");
+            userId: accountLanguage is null ? null : "user-1",
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.SetLanguage(bookedIn);
 

@@ -332,7 +332,8 @@ public class PreferredOfferDisclosureTests
             currencyId: "czk",
             paymentStatus: paymentStatus,
             userId: CustomerUserId,
-            recurringTemplateId: recurringTemplateId);
+            recurringTemplateId: recurringTemplateId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.UpdateEstimatedTime(120);
         order.SetMaxEmployees(2);

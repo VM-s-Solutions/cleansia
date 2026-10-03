@@ -82,7 +82,8 @@ public class AdminRefusalTraceabilityTests(PostgresContainerFixture fixture) : B
             totalPrice: 1000m,
             currencyId: CurrencyId,
             paymentStatus: PaymentStatus.Pending,
-            userId: CustomerId);
+            userId: CustomerId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = id;
         order.Created("seed", DateTimeOffset.UtcNow.AddDays(-2));
         var stamp = DateTimeOffset.UtcNow.AddDays(-2);

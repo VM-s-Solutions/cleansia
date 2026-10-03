@@ -129,7 +129,8 @@ public class CancelUnfilledOrdersTests
             totalPrice: 1000m,
             currencyId: currency.Id,
             paymentStatus: paymentStatus,
-            userId: userId);
+            userId: userId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
 
         order.Id = orderId;
         // The sweep reads the apology figure off the order's currency navigation (Include(o => o.Currency)).
@@ -439,7 +440,8 @@ public class CancelUnfilledOrdersTests
             currencyId: _czk.Id,
             paymentStatus: PaymentStatus.Pending,
             userId: UserId,
-            recurringTemplateId: recurringTemplateId);
+            recurringTemplateId: recurringTemplateId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = orderId;
         order.SetCurrency(_czk);
         order.SetMaxEmployees(1);

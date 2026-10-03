@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
@@ -52,5 +53,6 @@ public sealed class OrderAnonymizeCustomerAddressTests
             paymentType: PaymentType.Card,
             totalPrice: 1250m,
             currencyId: "czk",
-            paymentStatus: PaymentStatus.Paid);
+            paymentStatus: PaymentStatus.Paid,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
 }

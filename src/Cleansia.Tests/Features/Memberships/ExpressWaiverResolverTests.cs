@@ -53,9 +53,8 @@ public class ExpressWaiverResolverTests
             code: "PLUS_MONTHLY",
             name: "Plus",
             discountPercentage: 5m,
-            freeCancellationWindowHours: 4,
             allowsExpressUpgrade: allowsExpressUpgrade);
-        plan.UpdateBenefits(5m, 4, allowsExpressUpgrade, expressUpgradesPerMonth);
+        plan.UpdateBenefits(5m, allowsExpressUpgrade, expressUpgradesPerMonth);
 
         var membership = UserMembership.Create(
             UserId, plan.Id, "currency-czk", "sub_test", NowUtc.AddDays(-10), NowUtc.AddDays(20), trialEndsAtUtc);

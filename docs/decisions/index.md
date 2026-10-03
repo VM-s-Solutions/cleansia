@@ -89,6 +89,11 @@ the Option B it rejected — a Notification Service Extension per iOS app — is
 that a push is in the language picked inside the app; its premise that the device locale is the user's
 language is corrected there, and the rest of the record stands. [ADR-0029](./adr-0029) carries the
 matching Amendment A4 for the Live Activity widget. Neither replaces a record, so there is no arrow.
+**[ADR-0009](./adr-0009), [ADR-0035](./adr-0035) and [ADR-0068](./adr-0068) were amended in place on
+2026-10-03** (owner rulings on what a booking or a contract keeps from the moment it was agreed): a
+partial refund takes back a share of the points the order earned, the Plus free-cancellation window is a
+contract term frozen on the order with the rest of the cancellation ladder, and a seat is paid from the
+job figures frozen when its contract for work formed. None replaces a record, so there is no arrow.
 
 ## All records
 
@@ -102,7 +107,7 @@ matching Amendment A4 for the Live Activity widget. Neither replaces a record, s
 | **[ADR-0006](./adr-0006)** | Refund dispute money path ⟲ | `accepted` |
 | **[ADR-0007](./adr-0007)** | Soft delete policy | `accepted` |
 | **[ADR-0008](./adr-0008)** | Outbox table and drainer | `accepted` |
-| **[ADR-0009](./adr-0009)** | Refund policy | `accepted` |
+| **[ADR-0009](./adr-0009)** | Refund policy (amended 2026-10-03: a partial refund's loyalty clawback is a share of what the order earned) | `accepted` |
 | **[ADR-0010](./adr-0010)** | Durable consumer idempotency ⟲ | `accepted` |
 | **[ADR-0011](./adr-0011)** | Mobile apiresult contract | `accepted` |
 | **[ADR-0012](./adr-0012)** | Admin action audit log | `accepted` |
@@ -128,7 +133,7 @@ matching Amendment A4 for the Live Activity widget. Neither replaces a record, s
 | **[ADR-0032](./adr-0032)** | Catalog law declarations require a named ci gate | `accepted` |
 | **[ADR-0033](./adr-0033)** | Catalog edit authority the routing test and cross… | `accepted` |
 | **[ADR-0034](./adr-0034)** | Partner payout details shape | `accepted` |
-| **[ADR-0035](./adr-0035)** | Metered membership benefit usage (amended 2026-09-30: the Plus free trial is back with every benefit, express waivers included — overrides AM-18; records T-0690 of 2026-09-08) | `accepted` |
+| **[ADR-0035](./adr-0035)** | Metered membership benefit usage (amended 2026-09-30: the Plus free trial is back with every benefit, express waivers included — overrides AM-18; records T-0690 of 2026-09-08; amended 2026-10-03: the Plus free-cancellation window is a contract term, no longer a plan setting) | `accepted` |
 | **[ADR-0036](./adr-0036)** | Preferred cleaner first refusal hold ⟲ | `accepted` |
 | **[ADR-0037](./adr-0037)** | Order offerability is a payment qualified status… ⟲ | `accepted` |
 | **[ADR-0038](./adr-0038)** | Promo redemption reservation runs after the uow… | `accepted` |
@@ -161,7 +166,7 @@ matching Amendment A4 for the Live Activity widget. Neither replaces a record, s
 | **[ADR-0065](./adr-0065)** | Administrators are told: an in-app feed and an e-mail per event (owner ruling D5, 2026-09-19; shipped as T-0768 / T-0769 / T-0774 / T-0775) | `accepted` |
 | **[ADR-0066](./adr-0066)** | Four administrator roles: Administrator, Manager, Support, Accountant (owner ruling D8, 2026-09-19; supersedes ADR-0001 D2's admin rows; T-0748 / T-0773) | `accepted` |
 | **[ADR-0067](./adr-0067)** | Confirmed → New when the last cleaner leaves; the administrators are told (owner ruling D2, 2026-09-19; supersedes ADR-0057's open consequence; shipped as T-0770) | `accepted` |
-| **[ADR-0068](./adr-0068)** | A contract for work per job: the text the order is booked under, the cleaner's acceptance of it, what both parties can see (owner ruling 2026-09-20; amends ADR-0063 D9 by one sentence; shipped as T-0777–T-0784; amended 2026-09-27: the company sells in its own name; amended 2026-09-29: the operating company and the cleaner are the parties, under our draft texts) | `accepted` |
+| **[ADR-0068](./adr-0068)** | A contract for work per job: the text the order is booked under, the cleaner's acceptance of it, what both parties can see (owner ruling 2026-09-20; amends ADR-0063 D9 by one sentence; shipped as T-0777–T-0784; amended 2026-09-27: the company sells in its own name; amended 2026-09-29: the operating company and the cleaner are the parties, under our draft texts; amended 2026-10-03: the seat is paid the reward its contract states) | `accepted` |
 | **[ADR-0069](./adr-0069)** | The dirtiness level prices, times, crews and pays the job, and a job's pay is split across its seats (owner rulings 2026-09-28, meeting-plan decisions 28–40; changes a premise of ADR-0037 D9, whose no-spare-seat ruling stands) | `accepted` |
 | **[ADR-0070](./adr-0070)** | A saved card guarantees cash, and what a customer owes is a receivable — paid through a pay link, charged to the card only once the terms allow it; a lockout is the customer's cancellation at the whole price; the crew shares a fee once it is collected (owner rulings 2026-09-28, meeting-plan decisions 11–13, 16–18 and 24; amended 2026-10-01: a card may be saved while paying by card, and only a ticked one is kept) | `accepted` |
 

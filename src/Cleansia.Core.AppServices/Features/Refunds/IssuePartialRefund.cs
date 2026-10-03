@@ -161,14 +161,13 @@ public class IssuePartialRefund
                 return BusinessResult.Failure<Response>(refund.Error!);
             }
 
-            // ADR-0009 D2/D3 — VAT and the loyalty net both derive from the seam-CONFIRMED amount
-            // (result.Amount, clamped to the refundable ceiling), never the pre-fee gross. Apportioned
-            // once off the confirmed amount with the same rate/(100+rate) shape RefundAllocator uses.
+            // ADR-0009 D2/D3 — VAT and the loyalty clawback both derive from the seam-CONFIRMED amounts
+            // (clamped to the refundable ceiling), never the pre-fee gross. The clawback is handed the card
+            // leg plus the credit leg, gross: the earn was on the whole gross price.
             var result = refund.Value!;
             var refundVat = ApportionVat(result.Amount, order.AppliedVatRate);
-            var refundNet = result.Amount - refundVat;
             await loyaltyService.RevokeForPartialRefundAsync(
-                order.Id, refundNet < 0m ? 0m : refundNet, result.RefundKey, actorId, cancellationToken);
+                order.Id, result.Amount + result.CreditReturned, result.RefundKey, actorId, cancellationToken);
 
             var consumedAfter = await refundRepository.GetSucceededRefundTotalForOrderAsync(
                 order.Id, cancellationToken);

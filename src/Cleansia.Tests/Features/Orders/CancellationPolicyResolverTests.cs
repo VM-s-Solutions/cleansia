@@ -18,8 +18,9 @@ namespace Cleansia.Tests.Features.Orders;
 
 /// <summary>
 /// Owner ruling 2026-09-28: the oops window after booking is 60 minutes on a customer's first booking
-/// ever and for an entitled, paid Plus member, and 15 for everyone else — and it is not the plan's
-/// free-cancellation HOURS, which is a separate benefit that keeps working as before.
+/// ever and for an entitled, paid Plus member, and 15 for everyone else — and it is not the Plus
+/// free-cancellation HOURS, which is a separate benefit. Every figure is the one frozen on the order at
+/// booking; only who the customer is (Plus, first booking) is judged at the call.
 ///
 /// <para>Runs the REAL <c>UserMembershipRepository</c> and <c>OrderRepository</c> against SQLite:
 /// whether a PastDue, paused, expired or trialing enrolment is entitled is a property of the shared
@@ -32,6 +33,10 @@ public sealed class CancellationPolicyResolverTests : IDisposable
     private const string CountryId = "country-oops";
     private const string Email = "oops@cleansia.test";
     private const string Phone = "+420111222333";
+
+    /// <summary>A schedule unlike today's on every figure, so a reader of the constants cannot pass.</summary>
+    private static readonly CancellationTerms FrozenElsewhere = new(
+        FreeHours: 48, PartialHours: 6, PartialFeeRate: 0.30m, LastMinuteFeeRate: 0.60m, PlusFreeHours: 8);
 
     private readonly SqliteConnection _connection;
 
@@ -55,7 +60,6 @@ public sealed class CancellationPolicyResolverTests : IDisposable
     }
 
     private async Task SeedAsync(
-        int planFreeCancellationHours = 4,
         string? stripeStatus = null,
         DateTime? periodEnd = null,
         DateTime? trialEndsAtUtc = null,
@@ -68,7 +72,6 @@ public sealed class CancellationPolicyResolverTests : IDisposable
             code: "PLUS_MONTHLY",
             name: "Plus Monthly",
             discountPercentage: 5m,
-            freeCancellationWindowHours: planFreeCancellationHours,
             allowsExpressUpgrade: true);
         ctx.Add(plan);
         ctx.Add(Language.Create("en", "English"));
@@ -104,10 +107,11 @@ public sealed class CancellationPolicyResolverTests : IDisposable
         string phone = Phone,
         bool abandonedCheckout = false,
         PaymentType paymentType = PaymentType.Card,
-        PaymentStatus paymentStatus = PaymentStatus.Paid)
+        PaymentStatus paymentStatus = PaymentStatus.Paid,
+        CancellationTerms? terms = null)
     {
         await using var ctx = NewContext();
-        var order = NewOrder(createdOn, userId, email, phone, paymentType, paymentStatus);
+        var order = NewOrder(createdOn, userId, email, phone, paymentType, paymentStatus, terms);
         if (abandonedCheckout)
         {
             order.UpdatePaymentStatus(PaymentStatus.Failed);
@@ -126,12 +130,14 @@ public sealed class CancellationPolicyResolverTests : IDisposable
         string email = Email,
         string phone = Phone,
         PaymentType paymentType = PaymentType.Card,
-        PaymentStatus paymentStatus = PaymentStatus.Paid)
+        PaymentStatus paymentStatus = PaymentStatus.Paid,
+        CancellationTerms? terms = null)
     {
         var order = Order.Create(
             "Oops Window", email, phone, Address.Create("Oops 1", "Prague", "11000", CountryId), 1, 1,
             DateTime.UtcNow.AddDays(3), paymentType, 1000m, MembershipPricingMockFactory.CzkCurrencyId,
-            paymentStatus, userId: userId);
+            paymentStatus, userId: userId,
+            cancellationTerms: terms ?? BookingPolicy.CancellationTermsAtBooking);
         order.Created("test", createdOn);
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));
         return order;
@@ -145,10 +151,10 @@ public sealed class CancellationPolicyResolverTests : IDisposable
     }
 
     /// <summary>The account's second booking, so only a membership can lengthen its oops window.</summary>
-    private async Task<CancellationPolicy> ResolveReturningAsync()
+    private async Task<CancellationPolicy> ResolveReturningAsync(CancellationTerms? terms = null)
     {
         await BookedAsync(DateTimeOffset.UtcNow.AddDays(-30), email: "earlier@cleansia.test", phone: "+420999000111");
-        return await ResolveAsync(await BookedAsync(DateTimeOffset.UtcNow));
+        return await ResolveAsync(await BookedAsync(DateTimeOffset.UtcNow, terms: terms));
     }
 
     private static void AssertStandard(CancellationPolicy policy)
@@ -303,23 +309,55 @@ public sealed class CancellationPolicyResolverTests : IDisposable
         Assert.Equal(OopsWindowRule.Plus, policy.OopsWindowRule);
     }
 
-    [Theory]
-    [InlineData(0, BookingPolicy.FreeCancellationHours)]
-    [InlineData(4, 4)]
-    [InlineData(24, 24)]
-    public async Task An_Entitled_Member_Gets_Sixty_Minutes_Whatever_The_Plans_Free_Hours(
-        int planFreeCancellationHours, int expectedFreeHours)
+    [Fact]
+    public async Task An_Entitled_Member_Gets_Sixty_Minutes_And_The_Plus_Free_Hours()
     {
-        await SeedAsync(planFreeCancellationHours);
+        await SeedAsync();
 
         var policy = await ResolveReturningAsync();
 
         Assert.Equal(BookingPolicy.OopsWindowMinutesPlus, policy.OopsWindowMinutes);
         Assert.Equal(OopsWindowRule.Plus, policy.OopsWindowRule);
-        Assert.Equal(expectedFreeHours, policy.FreeCancellationHours);
+        Assert.Equal(BookingPolicy.PlusFreeCancellationHours, policy.FreeCancellationHours);
         Assert.Equal(BookingPolicy.PartialCancellationHours, policy.PartialCancellationHours);
         Assert.Equal(BookingPolicy.PartialCancellationFeeRate, policy.PartialCancellationFeeRate);
         Assert.Equal(BookingPolicy.LastMinuteCancellationFeeRate, policy.LastMinuteCancellationFeeRate);
+    }
+
+    /// <summary>
+    /// ToS §19: a booking stays under the terms it was made under. An order frozen under a schedule unlike
+    /// today's is resolved to ITS figures, not BookingPolicy's.
+    /// </summary>
+    [Fact]
+    public async Task A_Non_Member_Gets_The_Schedule_Frozen_On_The_Order()
+    {
+        await SeedAsync(withMembership: false);
+
+        var policy = await ResolveReturningAsync(FrozenElsewhere);
+
+        Assert.Equal(OopsWindowRule.Standard, policy.OopsWindowRule);
+        Assert.Equal(48, policy.FreeCancellationHours);
+        Assert.Equal(6, policy.PartialCancellationHours);
+        Assert.Equal(0.30m, policy.PartialCancellationFeeRate);
+        Assert.Equal(0.60m, policy.LastMinuteCancellationFeeRate);
+    }
+
+    /// <summary>
+    /// Plus status is judged at the call; the Plus window is the order's, so neither the constant nor any
+    /// plan can move it after booking.
+    /// </summary>
+    [Fact]
+    public async Task An_Entitled_Member_Gets_The_Plus_Free_Hours_Frozen_On_The_Order()
+    {
+        await SeedAsync();
+
+        var policy = await ResolveReturningAsync(FrozenElsewhere);
+
+        Assert.Equal(OopsWindowRule.Plus, policy.OopsWindowRule);
+        Assert.Equal(8, policy.FreeCancellationHours);
+        Assert.Equal(6, policy.PartialCancellationHours);
+        Assert.Equal(0.30m, policy.PartialCancellationFeeRate);
+        Assert.Equal(0.60m, policy.LastMinuteCancellationFeeRate);
     }
 
     [Theory]
@@ -343,7 +381,7 @@ public sealed class CancellationPolicyResolverTests : IDisposable
 
     /// <summary>Owner ruling 2026-09-30: the free trial carries both cancellation benefits from day one.</summary>
     [Fact]
-    public async Task A_Trialing_Member_Gets_Sixty_Minutes_And_The_Plans_Free_Hours()
+    public async Task A_Trialing_Member_Gets_Sixty_Minutes_And_The_Plus_Free_Hours()
     {
         await SeedAsync(stripeStatus: "trialing", trialEndsAtUtc: DateTime.UtcNow.AddDays(5));
 
@@ -351,7 +389,7 @@ public sealed class CancellationPolicyResolverTests : IDisposable
 
         Assert.Equal(BookingPolicy.OopsWindowMinutesPlus, policy.OopsWindowMinutes);
         Assert.Equal(OopsWindowRule.Plus, policy.OopsWindowRule);
-        Assert.Equal(4, policy.FreeCancellationHours);
+        Assert.Equal(BookingPolicy.PlusFreeCancellationHours, policy.FreeCancellationHours);
     }
 
     [Fact]
@@ -362,7 +400,7 @@ public sealed class CancellationPolicyResolverTests : IDisposable
         var policy = await ResolveReturningAsync();
 
         Assert.Equal(BookingPolicy.OopsWindowMinutesPlus, policy.OopsWindowMinutes);
-        Assert.Equal(4, policy.FreeCancellationHours);
+        Assert.Equal(BookingPolicy.PlusFreeCancellationHours, policy.FreeCancellationHours);
     }
 
     private sealed class FixedTenantProvider(string? tenantId) : ITenantProvider

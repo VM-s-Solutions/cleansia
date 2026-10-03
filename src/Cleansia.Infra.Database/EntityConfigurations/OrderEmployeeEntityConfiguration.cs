@@ -42,6 +42,11 @@ public class OrderEmployeeEntityConfiguration : BaseEntityConfiguration<OrderEmp
         // date before it looks at a seat, and cover requests are a vanishing fraction of assignments.
         builder.Property(oe => oe.CoverRequestedAt).IsRequired(false);
 
+        builder.Property(oe => oe.JobBasePay).IsRequired(false).HasPrecision(18, 2);
+        builder.Property(oe => oe.JobExtrasPay).IsRequired(false).HasPrecision(18, 2);
+        builder.Property(oe => oe.JobMinPay).IsRequired(false).HasPrecision(18, 2);
+        builder.Property(oe => oe.JobMaxPay).IsRequired(false).HasPrecision(18, 2);
+
         builder.HasIndex(oe => new { oe.OrderId, oe.SeatOrdinal })
             .IsUnique()
             .HasDatabaseName("IX_OrderEmployees_OrderId_SeatOrdinal");

@@ -110,7 +110,8 @@ public class OrderPayEstimatorSeatShareTests
             paymentType: PaymentType.Card,
             totalPrice: 1000m,
             currencyId: CurrencyId,
-            paymentStatus: PaymentStatus.Pending);
+            paymentStatus: PaymentStatus.Pending,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.AddSelectedServices([OrderService.Create(order, service, 1000m, 0m, 1000m)]);
         order.UpdateEstimatedTime(seats * 120).CalculateRequiredEmployees(spareSeats: 0);
         order.SetDirtinessSurcharge(level, 0m, rate);

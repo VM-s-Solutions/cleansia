@@ -52,7 +52,7 @@ public sealed class GetWorkContractPreviewHandlerTests
     {
         _orderRepository.Setup(r => r.GetQueryable()).Returns(new[] { order }.AsQueryable().BuildMock());
         _accessService.Setup(s => s.GetCallerEmployeeIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(caller);
-        _factsBuilder.Setup(b => b.BuildAsync(OrderId, EmployeeId, It.IsAny<CancellationToken>())).ReturnsAsync(Facts);
+        _factsBuilder.Setup(b => b.BuildAsync(OrderId, EmployeeId, It.IsAny<CancellationToken>())).ReturnsAsync((Facts, null));
     }
 
     [Fact]
@@ -116,7 +116,8 @@ public sealed class GetWorkContractPreviewHandlerTests
         var unstamped = Order.Create(
             "Test Customer", "test@example.com", "+420000000000",
             Core.Domain.Users.Address.Create("123 Main St", "Prague", "11000", "cz"),
-            1, 1, ValidatorTestHelpers.DefaultCleaningTime, PaymentType.Cash, 1000m, ValidatorTestHelpers.CurrencyId, PaymentStatus.Pending);
+            1, 1, ValidatorTestHelpers.DefaultCleaningTime, PaymentType.Cash, 1000m, ValidatorTestHelpers.CurrencyId, PaymentStatus.Pending,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         unstamped.Id = OrderId;
         Arrange(unstamped);
 

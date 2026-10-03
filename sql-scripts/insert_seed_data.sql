@@ -743,13 +743,13 @@ INSERT INTO public."MembershipPlans" (
     "Id", "IsActive", "CreatedBy", "CreatedOn", "UpdatedBy", "UpdatedOn",
     "DeactivatedBy", "DeactivatedOn",
     "Code", "Name",
-    "DiscountPercentage", "FreeCancellationWindowHours", "AllowsExpressUpgrade",
+    "DiscountPercentage", "AllowsExpressUpgrade",
     "ExpressUpgradesPerMonth",
     "BillingInterval", "TrialPeriodDays"
 )
 SELECT '01PLUSMONTHLY00000000000A', true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
     'PLUS_MONTHLY', 'Cleansia Plus (Monthly)',
-    5.00, 4, true,
+    5.00, true,
     1,
     1, 14
 WHERE NOT EXISTS (SELECT 1 FROM public."MembershipPlans" WHERE "Code" = 'PLUS_MONTHLY');
@@ -759,13 +759,13 @@ INSERT INTO public."MembershipPlans" (
     "Id", "IsActive", "CreatedBy", "CreatedOn", "UpdatedBy", "UpdatedOn",
     "DeactivatedBy", "DeactivatedOn",
     "Code", "Name",
-    "DiscountPercentage", "FreeCancellationWindowHours", "AllowsExpressUpgrade",
+    "DiscountPercentage", "AllowsExpressUpgrade",
     "ExpressUpgradesPerMonth",
     "BillingInterval", "TrialPeriodDays"
 )
 SELECT '01PLUSYEARLY000000000000A', true, 'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL,
     'PLUS_YEARLY', 'Cleansia Plus (Annual)',
-    5.00, 4, true,
+    5.00, true,
     1,
     2, 14
 WHERE NOT EXISTS (SELECT 1 FROM public."MembershipPlans" WHERE "Code" = 'PLUS_YEARLY');

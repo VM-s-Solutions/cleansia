@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.DataRetention;
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Disputes;
@@ -318,7 +319,8 @@ public class OrderPhotoRetentionTests(PostgresContainerFixture fixture) : BaseIn
             paymentType: PaymentType.Card,
             totalPrice: 1250m,
             currencyId: CurrencyId,
-            paymentStatus: PaymentStatus.Paid);
+            paymentStatus: PaymentStatus.Paid,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = id;
         return order;
     }

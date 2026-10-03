@@ -92,7 +92,8 @@ public class ReceivableWebhookTests
             totalPrice: 1500m,
             currencyId: "currency-czk",
             paymentStatus: PaymentStatus.Pending,
-            userId: "user-owing");
+            userId: "user-owing",
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         var receivable = Receivable.ForCashCancellationFee(order, 375m);
         receivable.TenantId = TenantId;
         typeof(Receivable).GetProperty(nameof(Receivable.Order))!.SetValue(receivable, order);

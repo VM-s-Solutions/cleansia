@@ -135,7 +135,8 @@ public partial class CreateOrderCallerCurrencyTests
         var address = Address.Create("Testovaci 12", "Bratislava", "11000", Slovakia);
         address.TenantId = TestTenants.Second;
         var order = Order.Create("Caller Customer", CustomerEmail, "+420777111555", address, 2, 1,
-            DateTime.UtcNow.AddHours(-2), PaymentType.Cash, 60m, Eur, PaymentStatus.Pending, userId: CustomerUserId);
+            DateTime.UtcNow.AddHours(-2), PaymentType.Cash, 60m, Eur, PaymentStatus.Pending, userId: CustomerUserId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = CrossOrderId;
         order.TenantId = TestTenants.Second;
         order.SetMaxEmployees(1);
@@ -222,7 +223,7 @@ public partial class CreateOrderCallerCurrencyTests
     private static async Task SeedCrossMembershipAsync(CleansiaDbContext context)
     {
         await SeedWithSlovakiaOperatedBySecondCompanyAsync(context);
-        var plan = MembershipPlan.Create("PLUS", "Plus", 0m, 4, true);
+        var plan = MembershipPlan.Create("PLUS", "Plus", 0m, true);
         context.MembershipPlans.Add(plan);
         context.UserMemberships.Add(UserMembership.Create(CustomerUserId, plan.Id, Czk, "sub_cross_market", DateTime.UtcNow.AddDays(-1), DateTime.UtcNow.AddMonths(1)));
         var address = Address.Create("Testovaci 12", "Bratislava", "11000", Slovakia);

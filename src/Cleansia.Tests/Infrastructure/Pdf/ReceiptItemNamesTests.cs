@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Domain.Company;
@@ -131,7 +132,8 @@ public class ReceiptItemNamesTests
             paymentType: PaymentType.Cash,
             totalPrice: 1700m,
             currencyId: "czk",
-            paymentStatus: PaymentStatus.Pending);
+            paymentStatus: PaymentStatus.Pending,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = "01HZX9N6M7Q8R9S0T1V2W3X4Y5";
         order.AddSelectedServices([OrderService.Create(order, service, 1000m, 0m, 1000m)]);
         order.AddSelectedPackages([OrderPackage.Create(order, package, 500m)]);

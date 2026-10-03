@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using System.Net;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -103,7 +104,8 @@ public sealed class ContractConfirmationEmailCopyTests
             totalPrice: 1234.5m,
             currencyId: "czk",
             paymentStatus: paymentType == PaymentType.Card ? PaymentStatus.Paid : PaymentStatus.Pending,
-            userId: "user-1");
+            userId: "user-1",
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         var czk = Currency.Create("CZK", "Kč", "Czech koruna");
         czk.Id = "czk";
         order.SetCurrency(czk);

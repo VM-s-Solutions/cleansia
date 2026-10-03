@@ -172,7 +172,8 @@ public class OrderListCurrencyScopeTests(PostgresContainerFixture fixture) : Bas
             paymentType: PaymentType.Card,
             totalPrice: totalPrice,
             currencyId: currencyId,
-            paymentStatus: PaymentStatus.Paid);
+            paymentStatus: PaymentStatus.Paid,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = id;
         order.Created(TestUtilities.Constants.TestUserSession.TestUserName, DateTime.UtcNow);
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));

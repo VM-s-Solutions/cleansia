@@ -380,7 +380,8 @@ public class CreateOrderCashEligibilityTests(PostgresContainerFixture fixture) :
             "Cash Rule Customer", CustomerEmail, "+420777222333",
             Address.Create("Hotovostni 5", City, "11000", Czechia),
             rooms: 2, bathrooms: 1, cleaningUtc, paymentType, OneCleanerPrice, Czk, paymentStatus,
-            userId: CustomerUserId, recurringTemplateId: recurringTemplateId);
+            userId: CustomerUserId, recurringTemplateId: recurringTemplateId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.AddOrderStatus(OrderStatusTrack.Create(status, order));
         return order;
     }
@@ -513,7 +514,6 @@ public class CreateOrderCashEligibilityTests(PostgresContainerFixture fixture) :
             code: "PLUS_CASH_RULE",
             name: "Plus",
             discountPercentage: 0m,
-            freeCancellationWindowHours: 4,
             allowsExpressUpgrade: true,
             expressUpgradesPerMonth: 1);
         context.Add(plan);

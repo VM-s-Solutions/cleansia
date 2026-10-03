@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Users;
@@ -30,7 +31,8 @@ public class ReturnToBoardIfUnstaffedTests
             totalPrice: 1000m,
             currencyId: "czk",
             paymentStatus: PaymentStatus.Paid,
-            userId: "user-board");
+            userId: "user-board",
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.SetMaxEmployees(2);
         var stamp = new DateTimeOffset(Now).AddMinutes(-history.Length);
         foreach (var status in history)

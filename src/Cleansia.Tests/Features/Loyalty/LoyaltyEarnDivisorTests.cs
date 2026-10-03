@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
@@ -113,7 +114,8 @@ public class LoyaltyEarnDivisorTests
             totalPrice: total,
             currencyId: currencyId,
             paymentStatus: PaymentStatus.Paid,
-            userId: UserId);
+            userId: UserId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         _orderRepository
             .Setup(r => r.GetQueryable())

@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using System.Linq.Expressions;
 using System.Reflection;
 using Cleansia.Core.AppServices.Authentication;
@@ -137,7 +138,8 @@ public class GetAvailableJobsPreviewCurrencyScopeTests
             paymentType: PaymentType.Card,
             totalPrice: totalPrice,
             currencyId: currencyId,
-            paymentStatus: PaymentStatus.Paid);
+            paymentStatus: PaymentStatus.Paid,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = id;
         order.SetMaxEmployees(1);
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));

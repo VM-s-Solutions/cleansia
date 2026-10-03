@@ -79,7 +79,8 @@ public sealed class ConfirmRecurringOrderAuditEvidenceTests
             currencyId: currency.Id,
             paymentStatus: paymentStatus,
             userId: ownerUserId,
-            recurringTemplateId: TemplateId);
+            recurringTemplateId: TemplateId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.TenantId = "tenant-1";
         order.SetCurrency(currency);

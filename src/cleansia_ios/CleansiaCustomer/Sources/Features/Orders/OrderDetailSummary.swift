@@ -173,7 +173,9 @@ struct OrderPriceBreakdownCard: View {
                     value: OrdersFormat.price(subtotal, currencyCode: breakdown.currencyCode)
                 )
             }
-            if breakdown.dirtinessSurcharge > 0, let label = L10n.Booking.dirtinessSurcharge(breakdown.dirtiness) {
+            if breakdown.dirtinessSurcharge > 0,
+               let label = L10n.Booking.bookedDirtinessSurcharge(breakdown.dirtiness)
+            {
                 OrderInfoRow(
                     label: label,
                     value: "+" + OrdersFormat.price(breakdown.dirtinessSurcharge, currencyCode: breakdown.currencyCode)

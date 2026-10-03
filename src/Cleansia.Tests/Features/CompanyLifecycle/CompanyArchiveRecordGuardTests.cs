@@ -164,6 +164,23 @@ public sealed class CompanyArchiveRecordGuardTests
     }
 
     /// <summary>
+    /// The order row carries the rates and the cancellation schedule frozen on the order, so the books
+    /// read back what the order was charged and could be cancelled under, never today's policy.
+    /// </summary>
+    [Fact]
+    public void The_Order_Row_Carries_The_Figures_Frozen_On_The_Order()
+    {
+        var carried = typeof(CompanyArchiveRecords.Order).GetProperties().Select(p => p.Name).ToList();
+        string[] frozen =
+        [
+            "AppliedVatRate", "DirtinessRate", "CancellationFreeHours", "CancellationPartialHours",
+            "CancellationPartialFeeRate", "CancellationLastMinuteFeeRate", "CancellationPlusFreeHours", "CancellationFeeRate",
+        ];
+
+        Assert.All(frozen, name => Assert.Contains(name, carried));
+    }
+
+    /// <summary>
     /// Only the ledger names the person, as its counterparty, and the ADR is silent on it; every
     /// other row cross-references by order, receipt, invoice, dispute or employee id. The order row
     /// is what the two-year sweep leaves, and the dispute row must not restore the link the sweep

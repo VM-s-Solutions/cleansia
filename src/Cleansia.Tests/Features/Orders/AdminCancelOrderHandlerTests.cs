@@ -63,7 +63,8 @@ public class AdminCancelOrderHandlerTests
             currencyId: currency.Id,
             paymentStatus: PaymentStatus.Paid,
             // OWNED BY A DIFFERENT USER — proves the admin path has no ownership gate.
-            userId: OwnerUserId);
+            userId: OwnerUserId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.SetCurrency(currency);
         order.AssignStripeSessionId("cs_test_admin_cancel");

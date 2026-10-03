@@ -75,7 +75,8 @@ public class AdminReassignOrderStatusSequenceTests(PostgresContainerFixture fixt
             totalPrice: 1250m,
             currencyId: CurrencyId,
             paymentStatus: PaymentStatus.Paid,
-            userId: CustomerId);
+            userId: CustomerId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.SetMaxEmployees(1);
         var creation = OrderStatusTrack.Create(OrderStatus.New, order);

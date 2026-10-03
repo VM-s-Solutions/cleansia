@@ -121,7 +121,8 @@ public sealed class CleanupStalePendingOrdersTwoOperatorsTests(PostgresContainer
             totalPrice: 1000m,
             currencyId: CurrencyId,
             paymentStatus: PaymentStatus.Pending,
-            userId: userId);
+            userId: userId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = $"ord-{key}";
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));
         order.Created("seed", DateTimeOffset.UtcNow.AddHours(-2));

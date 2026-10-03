@@ -759,6 +759,8 @@
     <string name="dirtiness_heavy_detail_4">Zaschnuté nečistoty na podlahe, lepkavé povrchy, výrazný zápach</string>
     <string name="dirtiness_surcharge_increased" formatted="false">Príplatok za zvýšené znečistenie (+15 %)</string>
     <string name="dirtiness_surcharge_heavy" formatted="false">Príplatok za silné znečistenie (+30 %)</string>
+    <string name="dirtiness_surcharge_line_increased">Príplatok za zvýšené znečistenie</string>
+    <string name="dirtiness_surcharge_line_heavy">Príplatok za silné znečistenie</string>
 
     <string name="booking_summary_promo_discount">Zľavový kód (-%1$s)</string>
     <string name="booking_summary_membership_discount">Zľava Cleansia Plus</string>

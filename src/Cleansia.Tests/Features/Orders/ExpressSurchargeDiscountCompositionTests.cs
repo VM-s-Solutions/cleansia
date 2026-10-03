@@ -280,7 +280,6 @@ public class ExpressSurchargeDiscountCompositionTests
             code: "PLUS",
             name: "Cleansia Plus",
             discountPercentage: discountPercentage,
-            freeCancellationWindowHours: 4,
             allowsExpressUpgrade: true);
         var membership = UserMembership.Create(
             userId: UserId,

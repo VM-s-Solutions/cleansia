@@ -60,7 +60,7 @@ public sealed class MembershipPlanPerMarketRouteTests(HostTestPostgresFixture db
         var monthly = DomainSeed.MembershipPlan("PLUS_MONTHLY");
         monthly.Id = MonthlyId;
         var yearly = Cleansia.Core.Domain.Memberships.MembershipPlan.Create(
-            "PLUS_YEARLY", "Host-test yearly", 10m, 24, true, BillingInterval.Yearly);
+            "PLUS_YEARLY", "Host-test yearly", 10m, true, BillingInterval.Yearly);
         yearly.Id = YearlyId;
         ctx.MembershipPlans.AddRange(monthly, yearly);
         ctx.MembershipPlanPrices.AddRange(
@@ -99,7 +99,6 @@ public sealed class MembershipPlanPerMarketRouteTests(HostTestPostgresFixture db
                 Name = "Host-test plan",
                 Prices = new Dictionary<string, object> { ["CZK"] = new { Price = 199m, StripePriceId = "price_hosttest_PLUS_MONTHLY" } },
                 DiscountPercentage = 12m,
-                FreeCancellationWindowHours = 24,
                 TrialPeriodDays = 0,
                 AllowsExpressUpgrade = true,
                 ExpressUpgradesPerMonth = 1,
@@ -127,7 +126,6 @@ public sealed class MembershipPlanPerMarketRouteTests(HostTestPostgresFixture db
                 BillingInterval = 1,
                 Prices = new Dictionary<string, object> { ["XXX"] = new { Price = 1m, StripePriceId = "price_xxx" } },
                 DiscountPercentage = 5m,
-                FreeCancellationWindowHours = 4,
                 TrialPeriodDays = 0,
                 AllowsExpressUpgrade = true,
             });
@@ -149,7 +147,6 @@ public sealed class MembershipPlanPerMarketRouteTests(HostTestPostgresFixture db
                 Name = "Host-test plan",
                 Prices = new Dictionary<string, object> { ["CZK"] = new { Price = 199m, StripePriceId = "price_hosttest_PLUS_YEARLY" } },
                 DiscountPercentage = 10m,
-                FreeCancellationWindowHours = 24,
                 TrialPeriodDays = 0,
                 AllowsExpressUpgrade = true,
             });

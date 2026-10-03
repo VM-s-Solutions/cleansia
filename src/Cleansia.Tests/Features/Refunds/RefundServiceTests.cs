@@ -1,4 +1,5 @@
 ﻿using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
@@ -61,7 +62,8 @@ public class RefundServiceTests
             totalPrice: totalPrice,
             currencyId: currency.Id,
             paymentStatus: PaymentStatus.Paid,
-            userId: "user-1");
+            userId: "user-1",
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.SetCurrency(currency);
         order.AssignStripeSessionId(StripeSessionId);
@@ -85,7 +87,8 @@ public class RefundServiceTests
             totalPrice: totalPrice,
             currencyId: currency.Id,
             paymentStatus: PaymentStatus.Paid,
-            userId: "user-1");
+            userId: "user-1",
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.SetCurrency(currency);
         order.AssignStripePaymentIntentId(StripePaymentIntentId);
@@ -107,7 +110,8 @@ public class RefundServiceTests
             totalPrice: totalPrice,
             currencyId: "currency-czk",
             paymentStatus: PaymentStatus.Paid,
-            userId: "user-1");
+            userId: "user-1",
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.AssignStripeSessionId(StripeSessionId);
         return order;

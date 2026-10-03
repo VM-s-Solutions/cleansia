@@ -51,7 +51,6 @@ public class QuoteOrderExpressSurchargeDiscountBaseTests
             code: "PLUS",
             name: "Cleansia Plus",
             discountPercentage: PlusPercentage,
-            freeCancellationWindowHours: 4,
             allowsExpressUpgrade: true);
         var membership = UserMembership.Create(
             userId: UserId,

@@ -71,7 +71,6 @@ public class CreateMembershipSubscriptionIdempotencyTests
             code: PlanCode,
             name: "Plus Monthly",
             discountPercentage: 5m,
-            freeCancellationWindowHours: 4,
             allowsExpressUpgrade: true,
             billingInterval: BillingInterval.Monthly,
             trialPeriodDays: 0);

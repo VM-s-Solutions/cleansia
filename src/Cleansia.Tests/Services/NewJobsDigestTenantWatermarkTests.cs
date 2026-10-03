@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
@@ -151,7 +152,8 @@ public sealed class NewJobsDigestTenantWatermarkTests : IDisposable
                 totalPrice: 1200m,
                 currencyId: "czk",
                 paymentStatus: PaymentStatus.Paid,
-                userId: null);
+                userId: null,
+                cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
             order.Id = "order-digest-fresh";
             order.Created("system", DateTimeOffset.UtcNow.AddDays(-1));
             AppendTrack(order, OrderStatus.New, DateTimeOffset.UtcNow.AddMinutes(-10));

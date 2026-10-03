@@ -2668,7 +2668,6 @@
         "price": "Цена",
         "monthly_equivalent": "Месячный эквивалент",
         "discount": "Скидка",
-        "free_cancel_window": "Беспл. отмена (ч)",
         "trial": "Пробный период (дни)",
         "express": "Экспресс",
         "status": "Статус",
@@ -2707,7 +2706,6 @@
           "stripe_price_id": "Stripe Price id",
           "stripe_price_id_help": "Скопируйте из панели Stripe (price_...). Платформа не создаёт цены в Stripe.",
           "discount": "Скидка (%)",
-          "free_cancel_window": "Окно бесплатной отмены (часы)",
           "trial_days": "Бесплатный пробный период (дни)",
           "trial_days_help": "Сколько дней новый участник пользуется всеми преимуществами Plus до первого списания. Один пробный период на аккаунт; 0 означает без пробного периода.",
           "express_upgrade": "Разрешает экспресс-апгрейд",
@@ -3313,8 +3311,7 @@
         "code_already_exists": "План с таким кодом уже существует.",
         "discount_out_of_range": "Скидка должна быть от 0 до 100.",
         "not_found": "План членства не найден.",
-        "stripe_price_already_used": "Этот Stripe Price id уже используется ценой другого плана.",
-        "free_cancellation_window_too_long": "Окно бесплатной отмены не может быть длиннее стандартных 24 часов."
+        "stripe_price_already_used": "Этот Stripe Price id уже используется ценой другого плана."
       }
     },
     "order": {

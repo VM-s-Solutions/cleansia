@@ -54,7 +54,8 @@ public class LookupOrderSecretTests
             totalPrice: 1000m,
             currencyId: currency.Id,
             paymentStatus: PaymentStatus.Pending,
-            userId: userId);
+            userId: userId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
 
         order.Id = "ord-1";
         order.SetCurrency(currency);

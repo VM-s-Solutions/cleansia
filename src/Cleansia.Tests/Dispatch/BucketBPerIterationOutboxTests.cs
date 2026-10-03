@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Features.Bookings;
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Notifications;
@@ -75,7 +76,8 @@ public sealed class BucketBPerIterationOutboxTests : IDisposable
             currencyId: "czk",
             paymentStatus: PaymentStatus.Pending,
             userId: userId,
-            recurringTemplateId: $"tmpl-{orderId}");
+            recurringTemplateId: $"tmpl-{orderId}",
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = orderId;
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Pending, order));
         return order;

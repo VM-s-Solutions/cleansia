@@ -126,7 +126,6 @@ public class QuotePlusSavingsTests
             code: "PLUS_MONTHLY",
             name: "Cleansia Plus",
             discountPercentage: discountPercent,
-            freeCancellationWindowHours: 4,
             allowsExpressUpgrade: true,
             billingInterval: BillingInterval.Monthly,
             trialPeriodDays: 14,

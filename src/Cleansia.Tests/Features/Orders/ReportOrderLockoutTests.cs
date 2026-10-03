@@ -54,7 +54,8 @@ public class ReportOrderLockoutTests
             totalPrice: 1000m,
             currencyId: "czk",
             paymentStatus: PaymentStatus.Paid,
-            userId: "customer-lockout-1");
+            userId: "customer-lockout-1",
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.TenantId = TenantId;
 

@@ -22,7 +22,7 @@ public class UpdateMembershipPlanHandlerTests
 
     public UpdateMembershipPlanHandlerTests()
     {
-        _plan = MembershipPlan.Create("PLUS_MONTHLY", "Plus Monthly", 5m, 4, true);
+        _plan = MembershipPlan.Create("PLUS_MONTHLY", "Plus Monthly", 5m, true);
         _plan.Id = "plan-1";
         _planRepository.Setup(r => r.GetByIdAsync(_plan.Id, It.IsAny<CancellationToken>())).ReturnsAsync(_plan);
         _currencyRepository
@@ -42,7 +42,7 @@ public class UpdateMembershipPlanHandlerTests
             new UpdateMembershipPlan.Command(
                 _plan.Id, "Plus Monthly",
                 new Dictionary<string, MembershipPlanPriceInput> { ["CZK"] = new(249m, "price_czk_v2") },
-                DiscountPercentage: 10m, FreeCancellationWindowHours: 4, TrialPeriodDays: 0, AllowsExpressUpgrade: true),
+                DiscountPercentage: 10m, TrialPeriodDays: 0, AllowsExpressUpgrade: true),
             CancellationToken.None);
 
         Assert.True(result.IsSuccess);
@@ -62,7 +62,7 @@ public class UpdateMembershipPlanHandlerTests
             new UpdateMembershipPlan.Command(
                 _plan.Id, "Plus Monthly",
                 new Dictionary<string, MembershipPlanPriceInput> { ["EUR"] = new(7.99m, "price_eur") },
-                DiscountPercentage: 5m, FreeCancellationWindowHours: 4, TrialPeriodDays: 0, AllowsExpressUpgrade: true),
+                DiscountPercentage: 5m, TrialPeriodDays: 0, AllowsExpressUpgrade: true),
             CancellationToken.None);
 
         var row = Assert.Single(added);

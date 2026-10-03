@@ -2,6 +2,7 @@ package cz.cleansia.customer.features.booking
 
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.booking.DirtinessLevel
+import cz.cleansia.customer.features.orders.bookedSurchargeLineRes
 import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -18,12 +19,15 @@ class DirtinessCopyStringsTest {
 
     private val levels = listOf("normal", "increased", "heavy")
 
+    private val bookedLines = listOf("dirtiness_surcharge_line_increased", "dirtiness_surcharge_line_heavy")
+
     private val keys = listOf("dirtiness_title", "dirtiness_intro", "dirtiness_hint", "dirtiness_level_label") +
         levels.flatMap { level ->
             listOf("title", "price", "when", "detail_1", "detail_2", "detail_3", "detail_4")
                 .map { "dirtiness_${level}_$it" }
         } +
-        listOf("dirtiness_surcharge_increased", "dirtiness_surcharge_heavy")
+        listOf("dirtiness_surcharge_increased", "dirtiness_surcharge_heavy") +
+        bookedLines
 
     private val statedRates = mapOf(
         "dirtiness_normal_price" to emptyList(),
@@ -74,6 +78,17 @@ class DirtinessCopyStringsTest {
     }
 
     @Test
+    fun `a booked order names no rate beside its surcharge, it may have been booked at another`() {
+        locales.forEach { locale ->
+            val xml = stringsXml(locale)
+            bookedLines.forEach { key ->
+                val value = valueOf(xml, key)!!
+                assertTrue("$locale/$key states a rate: $value", value.none { it == '%' || it.isDigit() })
+            }
+        }
+    }
+
+    @Test
     fun `every level has a title and only the surcharged ones have a summary line`() {
         assertEquals(R.string.dirtiness_normal_title, DirtinessLevel.Normal.titleRes())
         assertEquals(R.string.dirtiness_increased_title, DirtinessLevel.Increased.titleRes())
@@ -82,6 +97,22 @@ class DirtinessCopyStringsTest {
         assertNull(DirtinessLevel.Normal.surchargeLineRes())
         assertEquals(R.string.dirtiness_surcharge_increased, DirtinessLevel.Increased.surchargeLineRes())
         assertEquals(R.string.dirtiness_surcharge_heavy, DirtinessLevel.Heavy.surchargeLineRes())
+
+        assertNull(DirtinessLevel.Normal.bookedSurchargeLineRes())
+        assertEquals(R.string.dirtiness_surcharge_line_increased, DirtinessLevel.Increased.bookedSurchargeLineRes())
+        assertEquals(R.string.dirtiness_surcharge_line_heavy, DirtinessLevel.Heavy.bookedSurchargeLineRes())
+    }
+
+    @Test
+    fun `the booking labels its surcharge with the rate it charges and the order detail with none`() {
+        assertTrue(
+            "the confirm step no longer states the rate it charges",
+            source("features/booking/ConfirmStep.kt").contains("dirtinessLevel?.surchargeLineRes()"),
+        )
+        assertTrue(
+            "the order detail no longer uses its rate-free line",
+            source("features/orders/OrderDetailSummary.kt").contains("dirtinessLevel.bookedSurchargeLineRes()"),
+        )
     }
 
     @Test

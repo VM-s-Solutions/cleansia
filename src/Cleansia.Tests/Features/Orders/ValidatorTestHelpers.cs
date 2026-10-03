@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Users;
@@ -75,7 +76,8 @@ internal static class ValidatorTestHelpers
             totalPrice: 1000m,
             currencyId: CurrencyId,
             paymentStatus: paymentStatus,
-            userId: userId);
+            userId: userId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
 
         order.Id = orderId;
         order.SetMaxEmployees(maxEmployees);
@@ -134,7 +136,8 @@ internal static class ValidatorTestHelpers
             totalPrice: 1000m,
             currencyId: "czk",
             paymentStatus: paymentStatus,
-            recurringTemplateId: recurringTemplateId);
+            recurringTemplateId: recurringTemplateId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
 
         order.Id = orderId;
         order.SetMaxEmployees(maxEmployees);

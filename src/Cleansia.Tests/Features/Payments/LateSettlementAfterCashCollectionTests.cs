@@ -87,7 +87,8 @@ public class LateSettlementAfterCashCollectionTests
             totalPrice: 1000m,
             currencyId: "currency-1",
             paymentStatus: PaymentStatus.Pending,
-            userId: "user-1");
+            userId: "user-1",
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.TenantId = TenantId;
         order.SetCurrency(Core.Domain.Internationalization.Currency.Create("CZK", "Kč", "Czech koruna"));

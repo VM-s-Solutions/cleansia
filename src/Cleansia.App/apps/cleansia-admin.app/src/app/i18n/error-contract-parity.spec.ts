@@ -690,8 +690,6 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'loyalty.tier_perks_json_invalid',
   'membership.plan.code_already_exists',
   'membership.plan.discount_out_of_range',
-  // A plan's free-notice window may not exceed the standard 24 hours: Create/UpdateMembershipPlan.Validator.
-  'membership.plan.free_cancellation_window_too_long',
   'membership.plan.not_found',
   // A Stripe Price is single-currency and single-product; one id on two plan prices is a typo:
   // the per-currency price validators of CreateMembershipPlan / UpdateMembershipPlan.

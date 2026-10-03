@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Disputes;
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Disputes;
 using Cleansia.Core.Domain.Enums;
@@ -77,7 +78,8 @@ public class ResolveDisputeRefundSeamTests
             totalPrice: 1000m,
             currencyId: "currency-1",
             paymentStatus: PaymentStatus.Paid,
-            userId: "customer-1");
+            userId: "customer-1",
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         return order;
     }

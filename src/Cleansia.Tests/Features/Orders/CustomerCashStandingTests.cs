@@ -259,7 +259,8 @@ public sealed class CustomerCashStandingTests
             currencyId: Czk.Id,
             paymentStatus: paymentStatus,
             userId: UserId,
-            recurringTemplateId: recurringTemplateId);
+            recurringTemplateId: recurringTemplateId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.AddOrderStatus(OrderStatusTrack.Create(status, order));
         return order;
     }
@@ -382,7 +383,6 @@ public sealed class CustomerCashStandingTests
             code: "PLUS",
             name: "Cleansia Plus",
             discountPercentage: 10m,
-            freeCancellationWindowHours: 4,
             allowsExpressUpgrade: true);
         return UserMembership.Create(
             userId: UserId,

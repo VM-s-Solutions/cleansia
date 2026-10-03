@@ -83,7 +83,8 @@ public static class OrderMappers
                     os.Service!.Category!.Description,
                     os.Service!.Category!.DisplayOrder,
                     os.Service!.Category!.Translations))).ToList(),
-            o.AssignedEmployees.Select(ae => new OrderListEmployeeRow(ae.Id, ae.EmployeeId)).ToList(),
+            o.AssignedEmployees.Select(ae => new OrderListEmployeeRow(
+                ae.Id, ae.EmployeeId, ae.JobBasePay, ae.JobExtrasPay, ae.JobMinPay, ae.JobMaxPay)).ToList(),
             o.RequiredEmployees,
             o.MaxEmployees,
             o.Reviews.Any(),

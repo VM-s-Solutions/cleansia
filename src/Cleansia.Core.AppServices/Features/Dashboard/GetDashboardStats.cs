@@ -114,7 +114,8 @@ public class GetDashboardStats
                 weekStart, weekEnd,
                 cancellationToken);
 
-            // Earnings fall back to the pay-config estimate when no OrderEmployeePay row exists yet.
+            // Earnings fall back to the reward of the cleaner's own seat's contract for work, then to the
+            // pay-config estimate, when no OrderEmployeePay row exists yet.
             // Without the fallback the dashboard showed "0 Kc earned" while the orders list showed the
             // real figure for the same job, because payroll had not run.
             // -> /flows/pay-and-payouts
@@ -169,7 +170,9 @@ public class GetDashboardStats
             decimal SumWindow(IEnumerable<Cleansia.Core.Domain.Orders.Order> windowOrders) => windowOrders.Sum(o =>
                 bookedPayByOrderId.TryGetValue(o.Id, out var booked)
                     ? booked
-                    : OrderPayEstimator.Estimate(o, employeeId, serviceConfigs, packageConfigs) ?? 0m);
+                    : OrderPayEstimator.ContractReward(o, employeeId)
+                        ?? OrderPayEstimator.Estimate(o, employeeId, serviceConfigs, packageConfigs)
+                        ?? 0m);
 
             var todayEarnings = SumWindow(todayCompletedOrderRows);
             var weekEarnings = SumWindow(weekCompletedOrderRows);

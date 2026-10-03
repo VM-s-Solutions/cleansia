@@ -99,7 +99,8 @@ public class CancelOrderStandardTierFeeTests
             totalPrice: totalPrice,
             currencyId: currency.Id,
             paymentStatus: PaymentStatus.Paid,
-            userId: UserId);
+            userId: UserId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         // Created well before the oops window so the short-circuit cannot mask the tier.
         order.Created("tester", DateTime.UtcNow.AddDays(-2));

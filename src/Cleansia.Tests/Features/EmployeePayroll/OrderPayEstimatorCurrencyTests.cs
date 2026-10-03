@@ -1,6 +1,5 @@
 using System.Reflection;
 using Cleansia.Core.Domain.EmployeePayroll;
-using Cleansia.Core.Domain.Enums;
 
 namespace Cleansia.Tests.Features.EmployeePayroll;
 
@@ -43,7 +42,7 @@ public class OrderPayEstimatorCurrencyTests
             2,
             1,
             1,
-            DirtinessLevel.Normal,
+            0m,
             orderCurrencyId,
             EmployeeId,
             (IReadOnlyList<EmployeePayConfig>)configs.ToList(),

@@ -144,6 +144,22 @@ public class DirtinessLevelPricingTests
     }
 
     /// <summary>
+    /// The order keeps the rate it was booked at beside the surcharge that rate produced, so pay reads the
+    /// booking's rate after any later change to the policy.
+    /// </summary>
+    [Theory]
+    [InlineData(DirtinessLevel.Normal)]
+    [InlineData(DirtinessLevel.Increased)]
+    [InlineData(DirtinessLevel.Heavy)]
+    public async Task The_Order_Stores_The_Rate_It_Was_Booked_At(DirtinessLevel level)
+    {
+        var order = await CreateOrderAsync(level, express: false, userId: null);
+
+        Assert.Equal(BookingPolicy.DirtinessSurchargeRate(level), order.DirtinessRate);
+        Assert.Equal(Cents(LinesSubtotal * order.DirtinessRate), order.DirtinessSurchargeAmount);
+    }
+
+    /// <summary>
     /// The level and the per-room minutes lengthen the booked time (owner rulings 2026-09-28), and the
     /// quote states the length and crew the order is then staffed with, so a client re-evaluates cash
     /// from the quote. The home here is two rooms and a bathroom.

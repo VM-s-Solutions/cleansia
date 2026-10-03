@@ -43,7 +43,8 @@ public sealed record OrderListRow(
     bool HasReview,
     DateTime? CompletedAt,
     DirtinessLevel DirtinessLevel,
-    decimal DirtinessSurchargeAmount);
+    decimal DirtinessSurchargeAmount,
+    decimal DirtinessRate);
 
 public sealed record OrderListAddressRow(
     string Id,

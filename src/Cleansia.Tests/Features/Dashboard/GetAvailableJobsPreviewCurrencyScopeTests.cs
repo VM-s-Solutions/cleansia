@@ -57,23 +57,29 @@ public class GetAvailableJobsPreviewCurrencyScopeTests
         Assert.Equal(EurPayPerJob, response.TotalPotentialEarnings);
     }
 
-    [Fact]
-    public async Task The_Headline_Sums_One_Seat_Of_A_Crew_Job_Raised_By_Its_Level()
+    /// <summary>
+    /// 13 over two seats is 6.50, and heavy adds the order's booked rate of the job's 13, split the same
+    /// way: 1.95 a seat at 30 %, and 3.90 at 60 %, a rate booked before today's.
+    /// </summary>
+    [Theory]
+    [InlineData(0.30, 8.45)]
+    [InlineData(0.60, 10.40)]
+    public async Task The_Headline_Sums_One_Seat_Of_A_Crew_Job_Raised_By_Its_Booked_Rate(
+        decimal bookedRate, decimal expected)
     {
         var service = Service.Create("category-scope", "Deep clean", "Payable", 120);
         service.Id = ServiceId;
         var order = NewOfferableOrder("order-eur-crew", EurId, totalPrice: 150m, service);
         order.UpdateEstimatedTime(240).CalculateRequiredEmployees(spareSeats: 0);
-        order.SetDirtinessSurcharge(DirtinessLevel.Heavy, 45m);
+        order.SetDirtinessSurcharge(DirtinessLevel.Heavy, 150m * bookedRate, bookedRate);
 
         var handler = CreateHandler([order], paidIn: EurId);
 
         var result = await (Task<BusinessResult<AvailableJobsPreviewResponse>>)HandleMethod.Invoke(
             handler, [new GetAvailableJobsPreview.Query(Limit: 5), CancellationToken.None])!;
 
-        // 13 over two seats is 6.50; heavy adds 30 % of the job's 13, 1.95 a seat.
         Assert.True(result.IsSuccess);
-        Assert.Equal(8.45m, result.Value!.TotalPotentialEarnings);
+        Assert.Equal(expected, result.Value!.TotalPotentialEarnings);
     }
 
     // The handler is internal, as every query handler in this folder is; the dashboard sibling test

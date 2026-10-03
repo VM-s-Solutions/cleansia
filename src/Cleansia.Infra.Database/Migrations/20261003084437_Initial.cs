@@ -1476,6 +1476,7 @@ namespace Cleansia.Infra.Database.Migrations
                     ExpressSurchargeAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 0m),
                     DirtinessLevel = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
                     DirtinessSurchargeAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false, defaultValue: 0m),
+                    DirtinessRate = table.Column<decimal>(type: "numeric(5,4)", precision: 5, scale: 4, nullable: false, defaultValue: 0m),
                     LanguageCode = table.Column<string>(type: "character varying(5)", maxLength: 5, nullable: true),
                     TierDiscountAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),
                     TierAtPurchase = table.Column<int>(type: "integer", nullable: true),

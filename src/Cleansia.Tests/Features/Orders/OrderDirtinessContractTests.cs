@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Cleansia.Config.Abstractions;
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Mappers;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
@@ -20,7 +21,7 @@ public class OrderDirtinessContractTests
     private static Order HeavyOrder()
     {
         var order = OrderMockFactory.Generate();
-        order.SetDirtinessSurcharge(DirtinessLevel.Heavy, Surcharge);
+        order.SetDirtinessSurcharge(DirtinessLevel.Heavy, Surcharge, BookingPolicy.HeavyDirtinessSurchargeRate);
         return order;
     }
 

@@ -33,6 +33,7 @@ namespace Cleansia.Tests.Features.Orders;
 public sealed class OrderListProjectionEquivalenceTests : IAsyncLifetime, IDisposable
 {
     private const string CustomerUserId = "user-proj-customer";
+    private const decimal EarlierHeavyRate = 0.60m;
 
     private readonly SqliteConnection _connection;
 
@@ -106,7 +107,7 @@ public sealed class OrderListProjectionEquivalenceTests : IAsyncLifetime, IDispo
         });
         full.AddSelectedPackages(new[] { OrderLineMockFactory.PackageLine(full, package) });
         full.SetMaxEmployees(2);
-        full.SetDirtinessSurcharge(DirtinessLevel.Heavy, 540.30m);
+        full.SetDirtinessSurcharge(DirtinessLevel.Heavy, 540.30m, EarlierHeavyRate);
         full.AddAssignedEmployee(OrderEmployee.Create(full, employee));
         AppendTrack(full, OrderStatus.New, stamp);
         AppendTrack(full, OrderStatus.Confirmed, stamp.AddHours(1));
@@ -193,6 +194,27 @@ public sealed class OrderListProjectionEquivalenceTests : IAsyncLifetime, IDispo
             var expected = expectedById[dto.Id];
             Assert.Equal(JsonSerializer.Serialize(expected), JsonSerializer.Serialize(dto));
         }
+    }
+
+    /// <summary>
+    /// The board's pay estimate reads the rate from the row, which no DTO carries, so the comparisons
+    /// above cannot see it. The full order was booked at a rate that is not today's, so a projection that
+    /// looked the level up in <c>BookingPolicy</c> fails here.
+    /// </summary>
+    [Fact]
+    public async Task The_Row_Carries_The_Rate_The_Order_Was_Booked_At()
+    {
+        Assert.NotEqual(BookingPolicy.HeavyDirtinessSurchargeRate, EarlierHeavyRate);
+
+        await using var ctx = NewContext();
+        var rates = (await ctx.Set<Order>()
+            .SelectOrderListRows()
+            .AsSplitQuery()
+            .ToListAsync(CancellationToken.None))
+            .ToDictionary(row => row.Id, row => row.DirtinessRate);
+
+        Assert.Equal(EarlierHeavyRate, rates["proj-full"]);
+        Assert.Equal(0m, rates["proj-bare"]);
     }
 
     /// <summary>

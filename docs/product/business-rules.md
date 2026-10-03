@@ -607,7 +607,9 @@ booking flow — web, Android and iOS — asks as a required step of its own aft
 three descriptions and the hint to pick the higher level when unsure, and picks nothing for the
 customer. An unknown value is `common.invalid_enum_value` on the quote, the Plus preview, the booking,
 the serving-cleaners picker and both recurring commands. The order stores the level
-(`Order.DirtinessLevel`), and nothing changes it after booking.
+(`Order.DirtinessLevel`), and nothing changes it after booking. It stores the level's rate beside it
+(`Order.DirtinessRate`), and [cleaner pay](#cleaner-pay) and every pay estimate read that rate, not
+today's, so a later change of rate moves no booked job's pay.
 → [ADR-0069](/decisions/adr-0069)
 
 ### What the rate applies to {#dirtiness-price}

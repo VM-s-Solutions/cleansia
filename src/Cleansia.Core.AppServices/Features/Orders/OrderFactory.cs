@@ -273,14 +273,17 @@ public sealed class OrderFactory(
         var linesSubtotal = selectedServices.Sum(s => s.LineTotal)
             + selectedPackages.Sum(p => p.LineTotal)
             + selectedExtraLines.Sum(e => e.UnitPrice);
+        var dirtinessRate = BookingPolicy.DirtinessSurchargeRate(input.DirtinessLevel);
         order.SetDirtinessSurcharge(
-            input.DirtinessLevel, BookingPolicy.DirtinessSurchargeFor(linesSubtotal, input.DirtinessLevel));
+            input.DirtinessLevel,
+            BookingPolicy.DirtinessSurchargeFor(linesSubtotal, input.DirtinessLevel),
+            dirtinessRate);
 
         var estimatedTime = OrderDuration.EstimateMinutes(
             selectedServices.Select(s => s.Service!),
             selectedPackages.Select(p => p.Package!),
             unitCount,
-            BookingPolicy.DirtinessSurchargeRate(input.DirtinessLevel));
+            dirtinessRate);
 
         // Ahead of CalculateRequiredEmployees, so an over-cap span cannot mint a crew on its way out.
         // CreateOrder.Validator turns this into a business error for the customer; this is the backstop

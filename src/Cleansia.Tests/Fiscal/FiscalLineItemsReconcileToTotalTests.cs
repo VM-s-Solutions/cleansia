@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Domain.Company;
@@ -184,8 +185,8 @@ public class FiscalLineItemsReconcileToTotalTests
             OrderExtra.Create(order, Extra.Create("oven", "Deep oven clean", null), 150m),
             OrderExtra.Create(order, Extra.Create("fridge", "Inside the fridge", null), 100m),
         ]);
-        order.SetDirtinessSurcharge(
-            dirtinessSurcharge > 0m ? DirtinessLevel.Heavy : DirtinessLevel.Normal, dirtinessSurcharge);
+        var level = dirtinessSurcharge > 0m ? DirtinessLevel.Heavy : DirtinessLevel.Normal;
+        order.SetDirtinessSurcharge(level, dirtinessSurcharge, BookingPolicy.DirtinessSurchargeRate(level));
         order.SetExpressSurcharge(expressSurcharge);
 
         return order;

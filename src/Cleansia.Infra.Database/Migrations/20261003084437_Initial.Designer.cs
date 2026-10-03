@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cleansia.Infra.Database.Migrations
 {
     [DbContext(typeof(CleansiaDbContext))]
-    [Migration("20261001174041_Initial")]
+    [Migration("20261003084437_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -4208,6 +4208,12 @@ namespace Cleansia.Infra.Database.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
                         .HasDefaultValue(0);
+
+                    b.Property<decimal>("DirtinessRate")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(5, 4)
+                        .HasColumnType("numeric(5,4)")
+                        .HasDefaultValue(0m);
 
                     b.Property<decimal>("DirtinessSurchargeAmount")
                         .ValueGeneratedOnAdd()

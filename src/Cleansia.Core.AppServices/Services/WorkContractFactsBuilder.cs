@@ -32,7 +32,7 @@ public sealed class WorkContractFactsBuilder(
                 o.Rooms,
                 o.Bathrooms,
                 o.RequiredEmployees,
-                o.DirtinessLevel,
+                o.DirtinessRate,
                 Services = o.SelectedServices.Select(s => new WorkContractFactsLine(s.ServiceId, s.Service!.Name)).ToList(),
                 Packages = o.SelectedPackages.Select(p => new WorkContractFactsLine(p.PackageId, p.Package!.Name)).ToList(),
                 ExtraSlugs = o.SelectedExtras.Select(e => e.Slug).ToList(),
@@ -56,7 +56,7 @@ public sealed class WorkContractFactsBuilder(
         // No rate in the order's currency is also what the pay run would find, and it writes nothing for
         // the seat; booking and pay-config deletion both refuse to leave a live order in that state.
         var reward = OrderPayEstimator.Estimate(
-            serviceIds, packageIds, row.Rooms, row.Bathrooms, row.RequiredEmployees, row.DirtinessLevel,
+            serviceIds, packageIds, row.Rooms, row.Bathrooms, row.RequiredEmployees, row.DirtinessRate,
             row.CurrencyId, employeeId, serviceConfigs, packageConfigs) ?? 0m;
 
         return new WorkContractFacts(

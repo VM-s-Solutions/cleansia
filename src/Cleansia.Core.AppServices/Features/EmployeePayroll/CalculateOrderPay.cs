@@ -276,7 +276,7 @@ public class CalculateOrderPay
             var (basePay, extrasPay, dirtinessPay, totalPay, minPay, maxPay, breakdown) = payConfigs.CalculateSeatPay(
                 order.Rooms,
                 order.Bathrooms,
-                BookingPolicy.DirtinessSurchargeRate(order.DirtinessLevel),
+                order.DirtinessRate,
                 order.RequiredEmployees,
                 firstSeat);
 

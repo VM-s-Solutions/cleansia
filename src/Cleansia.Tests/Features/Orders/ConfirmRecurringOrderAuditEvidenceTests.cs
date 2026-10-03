@@ -102,7 +102,8 @@ public sealed class ConfirmRecurringOrderAuditEvidenceTests
     [Fact]
     public async Task A_Cash_Confirmation_Records_The_Occurrence_Its_Template_Price_And_Lead_Time()
     {
-        ArrangeOrder().SetDirtinessSurcharge(DirtinessLevel.Increased, 207.69m);
+        ArrangeOrder().SetDirtinessSurcharge(
+            DirtinessLevel.Increased, 207.69m, BookingPolicy.IncreasedDirtinessSurchargeRate);
 
         var result = await CreateHandler().Handle(new ConfirmRecurringOrder.Command(OrderId), CancellationToken.None);
 

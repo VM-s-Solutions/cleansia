@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Features.EmployeePayroll;
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Internationalization;
@@ -15,13 +16,15 @@ namespace Cleansia.IntegrationTests.Features.EmployeePayroll;
 
 /// <summary>
 /// A two-seat heavy job pays each seat half the job and half the dirtiness term, and the cent residue
-/// lands on the first seat whichever row is calculated first.
+/// lands on the first seat whichever row is calculated first. The term is raised by the rate the order
+/// was booked at, read back from the order's own column.
 /// </summary>
 [Collection("PostgresCollection")]
 public class CrewSeatPayTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
 {
     private const string CurrencyId = "currency-czk-crew-pay";
     private const string CountryId = "country-cz-crew-pay";
+    private const decimal EarlierHeavyRate = 0.60m;
 
     private static string _orderId = default!;
     private static string _firstSeatEmployeeId = default!;
@@ -31,14 +34,8 @@ public class CrewSeatPayTests(PostgresContainerFixture fixture) : BaseIntegratio
     public async Task Each_Seat_Is_Paid_Its_Share_Of_The_Job_Raised_By_The_Level()
     {
         await TestMethod(
-            arrange: SeedCompletedTwoSeatHeavyOrder,
-            act: async provider =>
-            {
-                var mediator = provider.GetRequiredService<IMediator>();
-                var second = await mediator.Send(new CalculateOrderPay.Command(_orderId, _secondSeatEmployeeId));
-                var first = await mediator.Send(new CalculateOrderPay.Command(_orderId, _firstSeatEmployeeId));
-                return (first, second);
-            },
+            arrange: context => SeedCompletedTwoSeatHeavyOrder(context, bookedRate: 0.30m),
+            act: PayBothSeatsSecondFirst,
             assert: async (CleansiaDbContext context,
                 (BusinessResult<CalculateOrderPay.Response> First, BusinessResult<CalculateOrderPay.Response> Second) results) =>
             {
@@ -64,7 +61,47 @@ public class CrewSeatPayTests(PostgresContainerFixture fixture) : BaseIntegratio
             });
     }
 
-    private static async Task SeedCompletedTwoSeatHeavyOrder(CleansiaDbContext context)
+    [Fact]
+    public async Task Each_Seat_Is_Raised_By_The_Rate_The_Order_Was_Booked_At_Not_Todays()
+    {
+        Assert.NotEqual(BookingPolicy.HeavyDirtinessSurchargeRate, EarlierHeavyRate);
+
+        await TestMethod(
+            arrange: context => SeedCompletedTwoSeatHeavyOrder(context, EarlierHeavyRate),
+            act: PayBothSeatsSecondFirst,
+            assert: async (CleansiaDbContext context,
+                (BusinessResult<CalculateOrderPay.Response> First, BusinessResult<CalculateOrderPay.Response> Second) results) =>
+            {
+                Assert.True(results.First.IsSuccess, results.First.Error?.Message);
+                Assert.True(results.Second.IsSuccess, results.Second.Error?.Message);
+
+                var pays = await context.Set<OrderEmployeePay>()
+                    .IgnoreQueryFilters()
+                    .Where(p => p.OrderId == _orderId)
+                    .ToDictionaryAsync(p => p.EmployeeId);
+
+                // Job 333.33, booked heavy at 60 % adds 200.00 (199.998, rounded): 166.67 + 100.00 and
+                // 166.66 + 100.00. Today's 30 % would pay 50.00 a seat.
+                var first = pays[_firstSeatEmployeeId];
+                Assert.Equal(100m, first.DirtinessPay);
+                Assert.Equal(266.67m, first.TotalPay);
+
+                var second = pays[_secondSeatEmployeeId];
+                Assert.Equal(100m, second.DirtinessPay);
+                Assert.Equal(266.66m, second.TotalPay);
+            });
+    }
+
+    private static async Task<(BusinessResult<CalculateOrderPay.Response> First, BusinessResult<CalculateOrderPay.Response> Second)>
+        PayBothSeatsSecondFirst(IServiceProvider provider)
+    {
+        var mediator = provider.GetRequiredService<IMediator>();
+        var second = await mediator.Send(new CalculateOrderPay.Command(_orderId, _secondSeatEmployeeId));
+        var first = await mediator.Send(new CalculateOrderPay.Command(_orderId, _firstSeatEmployeeId));
+        return (first, second);
+    }
+
+    private static async Task SeedCompletedTwoSeatHeavyOrder(CleansiaDbContext context, decimal bookedRate)
     {
         context.Languages.Add(Language.Create("en", "English"));
 
@@ -106,7 +143,7 @@ public class CrewSeatPayTests(PostgresContainerFixture fixture) : BaseIntegratio
             paymentStatus: PaymentStatus.Paid);
         order.AddSelectedPackages([OrderPackage.Create(order, package, 2400m)]);
         order.UpdateEstimatedTime(240).CalculateRequiredEmployees(spareSeats: 0);
-        order.SetDirtinessSurcharge(DirtinessLevel.Heavy, 720m);
+        order.SetDirtinessSurcharge(DirtinessLevel.Heavy, 2400m * bookedRate, bookedRate);
         order.AddAssignedEmployee(OrderEmployee.Create(order, firstCleaner));
         order.AddAssignedEmployee(OrderEmployee.Create(order, secondCleaner));
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Completed, order));

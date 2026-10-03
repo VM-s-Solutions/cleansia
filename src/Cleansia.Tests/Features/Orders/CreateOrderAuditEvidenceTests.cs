@@ -235,7 +235,8 @@ public sealed class CreateOrderAuditEvidenceTests
                     CustomerAddress = input.Address,
                     CleaningDateTime = input.CleaningDate,
                     TenantId = "tenant-1",
-                }, currency: Czk).SetDirtinessSurcharge(input.DirtinessLevel, 360m));
+                }, currency: Czk).SetDirtinessSurcharge(
+                    input.DirtinessLevel, 360m, BookingPolicy.DirtinessSurchargeRate(input.DirtinessLevel)));
 
         var result = await CreateHandler().Handle(
             CreateOrderTestData.ValidCommand(paymentType: PaymentType.Cash)

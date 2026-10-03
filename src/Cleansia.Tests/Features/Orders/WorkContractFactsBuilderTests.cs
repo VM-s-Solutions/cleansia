@@ -24,6 +24,7 @@ public sealed class WorkContractFactsBuilderTests
 
     private readonly Mock<IOrderRepository> _orderRepository = new();
     private readonly Mock<IEmployeePayConfigRepository> _payConfigRepository = new();
+    private readonly Order _order;
 
     public WorkContractFactsBuilderTests()
     {
@@ -46,6 +47,7 @@ public sealed class WorkContractFactsBuilderTests
         order.SetCurrency(currency);
         order.AddSelectedServices([OrderService.Create(order, service, 1500m, 0m, 1500m)]);
         order.UpdateEstimatedTime(240).CalculateRequiredEmployees(spareSeats: 0);
+        _order = order;
         _orderRepository.Setup(r => r.GetQueryable()).Returns(new[] { order }.AsQueryable().BuildMock());
 
         var shared = EmployeePayConfig.CreateForService(ServiceId, 600m, currency.Id);
@@ -74,6 +76,20 @@ public sealed class WorkContractFactsBuilderTests
         Assert.Equal(300m, others!.TotalPrice);
         Assert.Equal("CZK", callers.CurrencyCode);
         Assert.Equal("Standard clean", callers.Services.Single().Name);
+    }
+
+    /// <summary>
+    /// The caller's 800 over two seats is 400; a heavy job booked at 60 % adds 60 % of 800 split the same
+    /// way, 240. Today's 30 % would add 120, so the reward reads the order's rate, not the policy's.
+    /// </summary>
+    [Fact]
+    public async Task The_Reward_Is_Raised_By_The_Rate_The_Order_Was_Booked_At()
+    {
+        _order.SetDirtinessSurcharge(DirtinessLevel.Heavy, 900m, 0.60m);
+
+        var facts = await CreateBuilder().BuildAsync(OrderId, CallerId, CancellationToken.None);
+
+        Assert.Equal(640m, facts!.TotalPrice);
     }
 
     [Fact]

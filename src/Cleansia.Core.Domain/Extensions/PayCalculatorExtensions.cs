@@ -62,7 +62,8 @@ public static class PayCalculatorExtensions
     /// the seat's share is clamped, and the dirtiness term - the job's clamped pay x
     /// <paramref name="dirtinessRate"/>, split the same way - is added after the clamp so a cap cannot
     /// swallow it. Every term leaves its cent residue on the first seat, so a full crew's rows add up to
-    /// the job. <paramref name="dirtinessRate"/> is <c>BookingPolicy.DirtinessSurchargeRate(level)</c>.
+    /// the job. <paramref name="dirtinessRate"/> is the rate the order was booked at,
+    /// <c>Order.DirtinessRate</c>.
     /// </summary>
     public static (decimal basePay, decimal extrasPay, decimal dirtinessPay, decimal totalPay, decimal minPay, decimal maxPay, string breakdown) CalculateSeatPay(
         this IEnumerable<EmployeePayConfig> configs,

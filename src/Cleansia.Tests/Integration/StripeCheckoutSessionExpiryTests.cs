@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -82,7 +83,8 @@ public class StripeCheckoutSessionExpiryTests
             totalPrice: 1000m,
             currencyId: "currency-czk",
             paymentStatus: PaymentStatus.Pending,
-            userId: "user-1");
+            userId: "user-1",
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = "order-expiring-checkout";
         order.SetCurrency(Currency.Create("CZK", "Kč", "Czech koruna"));
         return order;

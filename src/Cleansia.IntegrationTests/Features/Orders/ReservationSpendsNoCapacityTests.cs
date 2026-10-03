@@ -199,7 +199,8 @@ public class ReservationSpendsNoCapacityTests(PostgresContainerFixture fixture) 
             totalPrice: 1500m,
             currencyId: CurrencyId,
             paymentStatus: PaymentStatus.Paid,
-            preferredEmployeeId: BeneficiaryId);
+            preferredEmployeeId: BeneficiaryId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = "order-cap-reserved";
         order.UpdateEstimatedTime(120);
         order.SetMaxEmployees(2);

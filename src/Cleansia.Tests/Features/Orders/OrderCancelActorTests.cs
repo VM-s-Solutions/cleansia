@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
@@ -26,7 +27,8 @@ public class OrderCancelActorTests
             totalPrice: 1000m,
             currencyId: currency.Id,
             paymentStatus: PaymentStatus.Paid,
-            userId: "user-1");
+            userId: "user-1",
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.SetCurrency(currency);
         return order;
     }

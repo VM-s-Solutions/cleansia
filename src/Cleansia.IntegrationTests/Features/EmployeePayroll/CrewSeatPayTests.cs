@@ -140,7 +140,8 @@ public class CrewSeatPayTests(PostgresContainerFixture fixture) : BaseIntegratio
             paymentType: PaymentType.Card,
             totalPrice: 3120m,
             currencyId: CurrencyId,
-            paymentStatus: PaymentStatus.Paid);
+            paymentStatus: PaymentStatus.Paid,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.AddSelectedPackages([OrderPackage.Create(order, package, 2400m)]);
         order.UpdateEstimatedTime(240).CalculateRequiredEmployees(spareSeats: 0);
         order.SetDirtinessSurcharge(DirtinessLevel.Heavy, 2400m * bookedRate, bookedRate);

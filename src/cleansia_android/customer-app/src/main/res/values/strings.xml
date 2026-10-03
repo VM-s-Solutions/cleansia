@@ -764,6 +764,8 @@
     <string name="dirtiness_heavy_detail_4">Dried-on dirt on the floor, sticky surfaces, a strong smell</string>
     <string name="dirtiness_surcharge_increased" formatted="false">Increased dirtiness surcharge (+15%)</string>
     <string name="dirtiness_surcharge_heavy" formatted="false">Heavy dirtiness surcharge (+30%)</string>
+    <string name="dirtiness_surcharge_line_increased">Increased dirtiness surcharge</string>
+    <string name="dirtiness_surcharge_line_heavy">Heavy dirtiness surcharge</string>
 
     <string name="booking_summary_promo_discount">Promo (-%1$s)</string>
     <string name="booking_summary_membership_discount">Cleansia Plus discount</string>

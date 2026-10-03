@@ -90,7 +90,8 @@ public class OrderDetailCashAndConfirmationFieldsTests
             currencyId: currency.Id,
             paymentStatus: PaymentStatus.Pending,
             userId: UserId,
-            recurringTemplateId: recurringTemplateId);
+            recurringTemplateId: recurringTemplateId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.SetCurrency(currency);
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));

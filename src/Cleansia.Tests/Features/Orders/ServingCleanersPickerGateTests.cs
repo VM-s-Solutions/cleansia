@@ -292,7 +292,8 @@ public sealed class ServingCleanersPickerGateTests : IDisposable
             totalPrice: 1200m,
             currencyId: "czk",
             paymentStatus: PaymentStatus.Paid,
-            userId: CustomerId);
+            userId: CustomerId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = orderId;
         order.Created("system", DateTimeOffset.UtcNow.AddDays(-4));
         order.AddAssignedEmployee(OrderEmployee.Create(order, employee));

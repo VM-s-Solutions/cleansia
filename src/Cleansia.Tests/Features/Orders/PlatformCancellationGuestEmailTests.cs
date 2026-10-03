@@ -139,7 +139,8 @@ public sealed class PlatformCancellationGuestEmailTests
             totalPrice: 1000m,
             currencyId: "czk",
             paymentStatus: paymentStatus,
-            userId: userId);
+            userId: userId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = $"order-platform-{paymentType}-{userId ?? "guest"}";
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Confirmed, order));
         return order;

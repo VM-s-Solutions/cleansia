@@ -324,10 +324,10 @@ public sealed class CreateOrderAuditEvidenceTests
     }
 
     [Fact]
-    public async Task A_Plus_Members_Booking_Carries_The_Plans_Free_Window_And_Is_Not_A_Guest()
+    public async Task A_Plus_Members_Booking_Carries_The_Plus_Free_Window_And_Is_Not_A_Guest()
     {
         _session.Setup(s => s.GetUserId()).Returns(UserId);
-        var plan = MembershipPlan.Create("PLUS_MONTHLY", "Plus", 5m, freeCancellationWindowHours: 4, allowsExpressUpgrade: true);
+        var plan = MembershipPlan.Create("PLUS_MONTHLY", "Plus", 5m, allowsExpressUpgrade: true);
         var membership = UserMembershipMockFactory.Paid(UserId, plan.Id);
         typeof(UserMembership).GetProperty(nameof(UserMembership.MembershipPlan))!
             .GetSetMethod(nonPublic: true)!.Invoke(membership, [plan]);
@@ -342,7 +342,9 @@ public sealed class CreateOrderAuditEvidenceTests
         var snapshot = _auditContext.DrainSnapshot();
         var payload = Payload(snapshot);
         Assert.False(payload.GetProperty("isGuest").GetBoolean());
-        Assert.Equal(4, payload.GetProperty("cancellationPolicyShown").GetProperty("freeHoursForThisCustomer").GetInt32());
+        Assert.Equal(
+            BookingPolicy.PlusFreeCancellationHours,
+            payload.GetProperty("cancellationPolicyShown").GetProperty("freeHoursForThisCustomer").GetInt32());
         Assert.Equal(
             BookingPolicy.OopsWindowMinutesPlus,
             payload.GetProperty("cancellationPolicyShown").GetProperty("oopsMinutesForThisCustomer").GetInt32());

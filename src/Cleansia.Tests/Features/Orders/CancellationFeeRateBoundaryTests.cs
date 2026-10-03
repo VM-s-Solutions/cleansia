@@ -10,28 +10,30 @@ namespace Cleansia.Tests.Features.Orders;
 /// <c>&gt;=</c>) implementation would get wrong — plus the free-window override that the base
 /// suite never exercises.
 ///
-/// Override contract: <c>freeCancellationHoursOverride</c> is the ABSOLUTE free-cancellation
-/// threshold in hours (it REPLACES <see cref="BookingPolicy.FreeCancellationHours"/>), matching the
-/// only production caller — <c>CancellationAssessor</c> passes <c>CancellationPolicy.FreeCancellationHours</c>,
-/// which <c>CancellationPolicyResolver</c> resolves to the absolute window: 24 for the standard tier,
-/// the membership's <c>FreeCancellationWindowHours</c> for a Plus member. A SMALLER threshold is MORE
-/// generous (free even closer to the start), so a Plus plan seeded at 4 lets a member cancel free up
-/// to 4h before — wider than the standard 24h. This is the contract every adjacent piece (the
-/// membership domain model, the DTOs, the create/update validators, the seed) already speaks; a
-/// "widen-by delta" inversion here, with the caller still feeding the absolute value, collapses the
-/// standard 24h threshold to 0 and refunds every standard cancellation in full. Every expected rate
-/// is the policy's named constant, never a recomputation.
+/// Free-window contract: <c>freeCancellationHours</c> is the ABSOLUTE free-cancellation threshold in
+/// hours, matching the only production caller — <c>CancellationAssessor</c> passes
+/// <c>CancellationPolicy.FreeCancellationHours</c>, which <c>CancellationPolicyResolver</c> fills from
+/// the order: its frozen standard window (24 today), or its frozen Plus window
+/// (<see cref="BookingPolicy.PlusFreeCancellationHours"/>, 4) for an entitled member. A SMALLER threshold
+/// is MORE generous (free even closer to the start). A "widen-by delta" inversion here, with the caller
+/// still feeding the absolute value, collapses the standard 24h threshold to 0 and refunds every
+/// standard cancellation in full. Every expected rate is the policy's named constant, never a
+/// recomputation.
 /// </summary>
 public class CancellationFeeRateBoundaryTests
 {
     private static readonly DateTime BookingCreated = new(2026, 4, 1, 10, 0, 0, DateTimeKind.Utc);
 
     private static decimal Rate(
-        DateTime cleaning, DateTime cancel, bool accepted = true, int? freeOverride = null) =>
+        DateTime cleaning, DateTime cancel, bool accepted = true,
+        int freeOverride = BookingPolicy.FreeCancellationHours) =>
         BookingPolicy.CalculateCancellationFeeRate(
             cleaning, BookingCreated, cancel,
             oopsWindowMinutes: BookingPolicy.OopsWindowMinutesStandard, hasBeenAccepted: accepted,
-            freeCancellationHoursOverride: freeOverride);
+            freeCancellationHours: freeOverride,
+            partialCancellationHours: BookingPolicy.PartialCancellationHours,
+            partialCancellationFeeRate: BookingPolicy.PartialCancellationFeeRate,
+            lastMinuteCancellationFeeRate: BookingPolicy.LastMinuteCancellationFeeRate);
 
     // ── Free/partial boundary at exactly FreeCancellationHours (24h) ──
 
@@ -117,17 +119,14 @@ public class CancellationFeeRateBoundaryTests
         Assert.Equal(BookingPolicy.LastMinuteCancellationFeeRate, Rate(cleaning, cancel));
     }
 
-    // ── Override is the ABSOLUTE free threshold (it REPLACES FreeCancellationHours) ──
+    // ── The free window is the ABSOLUTE threshold ──
     // A SMALLER threshold is MORE generous (free closer to the start). This is the production caller's
     // shape: CancelOrder passes CancellationPolicy.FreeCancellationHours, the resolver's absolute
-    // window — 24 for standard, the membership's FreeCancellationWindowHours (seed 4) for Plus.
+    // window — the order's 24 for standard, its Plus 4 for an entitled member.
 
-    // ── The PRODUCTION standard-tier shape: the resolver supplies the absolute 24, NOT null. ──
-    // CancelOrder never passes null; it always passes CancellationPolicy.FreeCancellationHours, which
-    // for a non-member resolves to BookingPolicy.FreeCancellationHours (24). These pin that the
-    // standard tier is charged its real fees under the value the sole caller actually feeds — the
-    // gap a null-only or delta-only test leaves open, and where a "widen-by delta" inversion silently
-    // refunds every standard cancellation in full.
+    // ── The PRODUCTION standard-tier shape: the resolver supplies the absolute 24. ──
+    // These pin that the standard tier is charged its real fees under the value the sole caller actually
+    // feeds — where a "widen-by delta" inversion silently refunds every standard cancellation in full.
 
     [Fact]
     public void StandardTier_ResolverSuppliedAbsoluteWindow_LastMinute_StillCharges50()
@@ -165,29 +164,14 @@ public class CancellationFeeRateBoundaryTests
         Assert.Equal(0m, Rate(cleaning, cancel, freeOverride: BookingPolicy.FreeCancellationHours));
     }
 
-    [Fact]
-    public void StandardTier_ResolverSuppliedAbsoluteWindow_EqualsNullDefault_AcrossTiers()
-    {
-        // The resolver-supplied 24 must behave IDENTICALLY to the null default across every tier — the
-        // standard tier is genuinely unchanged whether the caller passes null or the absolute 24.
-        var cleaning = BookingCreated.AddDays(30);
-
-        foreach (var hoursBefore in new[] { 48d, 24d, 23.99, 12d, 4d, 3.99, 0.5 })
-        {
-            var cancel = cleaning.AddHours(-hoursBefore);
-            Assert.Equal(
-                Rate(cleaning, cancel),
-                Rate(cleaning, cancel, freeOverride: BookingPolicy.FreeCancellationHours));
-        }
-    }
-
     // ── Plus override (a SMALLER absolute threshold) is MORE generous than the standard 24h ──
 
     [Fact]
     public void SmallerOverride_WidensFreeWindow_WhereDefaultWouldBePartial()
     {
         // 15h before start: standard 24h window → 25%. A Plus member whose absolute window is 4
-        // (the seed) is free at 15h (15 ≥ 4). A larger override would be STRICTER, the wrong direction.
+        // (PlusFreeCancellationHours) is free at 15h (15 ≥ 4). A larger one would be STRICTER, the wrong
+        // direction.
         var cleaning = BookingCreated.AddDays(30);
         var cancel = cleaning.AddHours(-15);
 
@@ -204,7 +188,7 @@ public class CancellationFeeRateBoundaryTests
         var cancel = cleaning.AddHours(-15);
 
         var large = Rate(cleaning, cancel, freeOverride: 48);       // threshold 48 → 15h < 48 → 0.25
-        var standard = Rate(cleaning, cancel);                      // no override → 24 → 0.25
+        var standard = Rate(cleaning, cancel);                      // standard 24 → 0.25
         var medium = Rate(cleaning, cancel, freeOverride: 15);      // threshold 15 → free
         var small = Rate(cleaning, cancel, freeOverride: 4);        // threshold 4 → free
 
@@ -249,18 +233,6 @@ public class CancellationFeeRateBoundaryTests
         Assert.Equal(
             BookingPolicy.LastMinuteCancellationFeeRate,
             Rate(cleaning, cleaning.AddHours(-BookingPolicy.PartialCancellationHours).AddMinutes(1), freeOverride: 8));
-    }
-
-    [Fact]
-    public void NullOverride_BehavesLikeStandard_FreeWindowUnchanged()
-    {
-        // A null override falls back to the standard 24h window. Pins that the default is unchanged.
-        var cleaning = BookingCreated.AddDays(30);
-
-        Assert.Equal(0m, Rate(cleaning, cleaning.AddHours(-BookingPolicy.FreeCancellationHours)));
-        Assert.Equal(
-            BookingPolicy.PartialCancellationFeeRate,
-            Rate(cleaning, cleaning.AddHours(-BookingPolicy.FreeCancellationHours).AddMinutes(1)));
     }
 
     [Fact]

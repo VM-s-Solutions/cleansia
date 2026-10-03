@@ -1,4 +1,5 @@
 ﻿using Cleansia.Core.Domain.Common;
+using Cleansia.Core.Domain.Extensions;
 using Cleansia.Core.Domain.Users;
 
 namespace Cleansia.Core.Domain.Orders;
@@ -59,6 +60,24 @@ public class OrderEmployee : BaseEntity
     /// </summary>
     public DateTime? CoverRequestedAt { get; private set; }
 
+    /// <summary>
+    /// The job figures this seat's reward was priced from when its contract for work formed: the summed
+    /// base and extras and the clamp bounds of the cleaner's rates then, before the split across the crew
+    /// and the dirtiness term. The seat is paid from them, so a rate edit after the take reprices only jobs
+    /// taken after it. All four are null on a seat with no contract yet, an administrator's placement the
+    /// cleaner has not accepted, which is paid at the rates in force when its pay is calculated.
+    /// </summary>
+    public decimal? JobBasePay { get; private set; }
+
+    /// <inheritdoc cref="JobBasePay"/>
+    public decimal? JobExtrasPay { get; private set; }
+
+    /// <inheritdoc cref="JobBasePay"/>
+    public decimal? JobMinPay { get; private set; }
+
+    /// <inheritdoc cref="JobBasePay"/>
+    public decimal? JobMaxPay { get; private set; }
+
     /// <summary>First stamp wins, so a re-entrant sweep cannot move it forward and re-open a second send.</summary>
     public OrderEmployee MarkReminderSoonSent(DateTime sentAtUtc)
     {
@@ -82,6 +101,30 @@ public class OrderEmployee : BaseEntity
         CoverRequestedAt ??= requestedAtUtc;
         return this;
     }
+
+    /// <summary>
+    /// Written once, by the contract's one writer. A seat has one contract, so a second freeze is a
+    /// programming error rather than a re-price.
+    /// </summary>
+    public OrderEmployee FreezeJobPay((decimal jobBasePay, decimal jobExtrasPay, decimal jobMinPay, decimal jobMaxPay) jobPay)
+    {
+        if (JobBasePay is not null)
+        {
+            throw new InvalidOperationException($"Seat {Id} already carries the pay of its contract for work.");
+        }
+
+        (JobBasePay, JobExtrasPay, JobMinPay, JobMaxPay) = jobPay;
+        return this;
+    }
+
+    /// <summary>This seat's pay from its frozen figures; null while no contract for work has formed on it.</summary>
+    public (decimal basePay, decimal extrasPay, decimal dirtinessPay, decimal totalPay, decimal minPay, decimal maxPay, string breakdown)? FrozenPay(
+        decimal dirtinessRate,
+        int seats,
+        bool firstSeat) =>
+        this is { JobBasePay: { } jobBasePay, JobExtrasPay: { } jobExtrasPay, JobMinPay: { } jobMinPay, JobMaxPay: { } jobMaxPay }
+            ? PayCalculatorExtensions.CalculateSeatPay(jobBasePay, jobExtrasPay, jobMinPay, jobMaxPay, dirtinessRate, seats, firstSeat)
+            : null;
 
     public static OrderEmployee Create(Order order, Employee employee) => new()
     {

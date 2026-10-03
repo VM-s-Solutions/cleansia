@@ -33,9 +33,9 @@ public class SwapMembershipPlanCurrencyTests
     {
         _session.Setup(s => s.GetUserId()).Returns(UserId);
 
-        var monthly = MembershipPlan.Create("PLUS_MONTHLY", "Monthly", 5m, 4, true);
+        var monthly = MembershipPlan.Create("PLUS_MONTHLY", "Monthly", 5m, true);
         monthly.Id = "plan-monthly";
-        _yearly = MembershipPlan.Create("PLUS_YEARLY", "Yearly", 5m, 4, true, BillingInterval.Yearly);
+        _yearly = MembershipPlan.Create("PLUS_YEARLY", "Yearly", 5m, true, BillingInterval.Yearly);
         _yearly.Id = "plan-yearly";
         _planRepository
             .Setup(r => r.GetByCodeAsync("PLUS_YEARLY", It.IsAny<CancellationToken>()))

@@ -261,7 +261,8 @@ public class PendingOffersSurfaceTests(PostgresContainerFixture fixture) : BaseI
             totalPrice: 1500m,
             currencyId: CurrencyId,
             paymentStatus: scenario.PaymentStatus,
-            preferredEmployeeId: scenario.Beneficiary);
+            preferredEmployeeId: scenario.Beneficiary,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = scenario.OrderId;
         order.UpdateEstimatedTime(120);
         order.SetMaxEmployees(scenario.Seats);

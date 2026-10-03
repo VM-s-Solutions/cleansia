@@ -334,7 +334,8 @@ public class RevenueReportPredicateTests(PostgresContainerFixture fixture) : Bas
             totalPrice: 1000m,
             currencyId: currencyId,
             paymentStatus: paymentStatus,
-            userId: userId);
+            userId: userId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = id;
         return order;
     }

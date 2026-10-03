@@ -317,7 +317,8 @@ public sealed class NotifyLapsedPreferredOffersSweepTests : IDisposable
             paymentStatus: PaymentStatus.Paid,
             userId: userId,
             preferredEmployeeId: BeneficiaryId,
-            recurringTemplateId: recurringTemplateId);
+            recurringTemplateId: recurringTemplateId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = orderId;
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Confirmed, order));

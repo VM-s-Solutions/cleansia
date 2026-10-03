@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.Refunds;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
@@ -74,7 +75,8 @@ public class RedrivePendingRefundsTests
             totalPrice: 1000m,
             currencyId: "czk",
             paymentStatus: PaymentStatus.Paid,
-            userId: userId);
+            userId: userId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = orderId;
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Confirmed, order));
         if (orderCancelled)

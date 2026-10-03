@@ -31,7 +31,6 @@ export interface MembershipPlanCreateInput {
    */
   prices: { [code: string]: MembershipPlanPriceEntry };
   discountPercentage: number;
-  freeCancellationWindowHours: number;
   trialPeriodDays: number;
   allowsExpressUpgrade: boolean;
   expressUpgradesPerMonth: number;
@@ -107,7 +106,6 @@ export class MembershipPlanFormFacade extends UnsubscribeControlDirective {
     command.billingInterval = input.billingInterval;
     command.prices = this.buildPrices(input.prices);
     command.discountPercentage = input.discountPercentage;
-    command.freeCancellationWindowHours = input.freeCancellationWindowHours;
     command.trialPeriodDays = input.trialPeriodDays;
     command.allowsExpressUpgrade = input.allowsExpressUpgrade;
     command.expressUpgradesPerMonth = input.expressUpgradesPerMonth;
@@ -136,7 +134,6 @@ export class MembershipPlanFormFacade extends UnsubscribeControlDirective {
     command.name = input.name.trim();
     command.prices = this.buildPrices(input.prices);
     command.discountPercentage = input.discountPercentage;
-    command.freeCancellationWindowHours = input.freeCancellationWindowHours;
     command.trialPeriodDays = input.trialPeriodDays;
     command.allowsExpressUpgrade = input.allowsExpressUpgrade;
     command.expressUpgradesPerMonth = input.expressUpgradesPerMonth;

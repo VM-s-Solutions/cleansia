@@ -35,7 +35,7 @@ public class QuoteOrderMembershipDiscountIsCurrencyFreeTests
                 It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new TierDiscountResult(0m, null));
 
-        var plan = MembershipPlan.Create("PLUS_MONTHLY", "Cleansia Plus", PlusPercentage, 4, true);
+        var plan = MembershipPlan.Create("PLUS_MONTHLY", "Cleansia Plus", PlusPercentage, true);
         var membership = UserMembership.Create(
             UserId, plan.Id, MembershipPricingMockFactory.CzkCurrencyId, "sub_czk",
             DateTime.UtcNow.AddDays(-1), DateTime.UtcNow.AddMonths(1));

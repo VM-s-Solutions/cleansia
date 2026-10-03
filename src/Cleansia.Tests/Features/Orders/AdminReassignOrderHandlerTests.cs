@@ -63,7 +63,8 @@ public class AdminReassignOrderHandlerTests
             totalPrice: 1000m,
             currencyId: "czk",
             paymentStatus: PaymentStatus.Paid,
-            userId: "owner-user");
+            userId: "owner-user",
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.SetMaxEmployees(maxEmployees);
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Confirmed, order));

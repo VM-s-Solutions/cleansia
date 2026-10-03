@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
@@ -13,9 +14,10 @@ using Moq;
 namespace Cleansia.Tests.Features.Loyalty;
 
 /// <summary>
-/// Proportional loyalty clawback on a partial refund. The method is keyed per refund, so two distinct
-/// partial refunds each revoke — it is not the one-shot cancel mirror that no-ops on a second call.
-/// Σ(revoked) across an order's partials is capped at the original OrderCompleted earn.
+/// Proportional loyalty clawback on a partial refund: a refund takes back the same share of the points
+/// the order's OrderCompleted earn granted as it returned of the order's price. The method is keyed per
+/// refund, so two distinct partial refunds each revoke — it is not the one-shot cancel mirror that no-ops
+/// on a second call. Σ(revoked) across an order's partials is capped at the original earn.
 ///
 /// These are logic-level unit tests with mocked repositories: the fast-path key lookup is the mocked
 /// GetByIdempotencyKeyAsync and the concurrent-race backstop is the mocked CommitAsync throwing a wrapped
@@ -46,18 +48,27 @@ public class PartialRefundLoyaltyClawbackTests
             _producer.Object,
             NullLogger<LoyaltyService>.Instance);
 
-    private LoyaltyAccount ArrangeAccount(int originalEarn)
+    /// <summary>
+    /// The account and the OrderCompleted ledger row the repository returns are the same grant, so the
+    /// earn the clawback reads is the earn the account holds.
+    /// </summary>
+    private LoyaltyAccount ArrangeEarn(int points)
     {
         var account = LoyaltyAccount.Create(UserId);
         account.Id = "acct-1";
-        account.GrantPoints(originalEarn, LoyaltyEarnSource.OrderCompleted, OrderId, ActorId, DefaultThresholds());
+        account.GrantPoints(points, LoyaltyEarnSource.OrderCompleted, OrderId, ActorId, DefaultThresholds());
+        var earnRow = account.Transactions.Single(t => t.Source == LoyaltyEarnSource.OrderCompleted);
+
         _accountRepository
             .Setup(r => r.GetByUserIdIgnoringTenantAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(account);
+        _transactionRepository
+            .Setup(r => r.GetLatestForOrderSourceAsync(OrderId, LoyaltyEarnSource.OrderCompleted, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(earnRow);
         return account;
     }
 
-    private void ArrangeOrder(string? userId)
+    private void ArrangeOrder(string? userId, decimal totalPrice = 1000m)
     {
         var order = Order.Create(
             customerName: "Test Customer",
@@ -68,20 +79,18 @@ public class PartialRefundLoyaltyClawbackTests
             bathrooms: 1,
             cleaningDateTime: DateTime.UtcNow.AddDays(1),
             paymentType: PaymentType.Cash,
-            totalPrice: 1000m,
+            totalPrice: totalPrice,
             currencyId: "currency-1",
             paymentStatus: PaymentStatus.Paid,
-            userId: userId);
+            userId: userId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
 
         _orderRepository
             .Setup(r => r.GetQueryable())
             .Returns(new[] { order }.AsQueryable().BuildMock());
-
-        ArrangeDivisor(10m);
     }
 
-    /// <summary>The order's currency and how much of it earns one point (T-0703).</summary>
     private void ArrangeDivisor(decimal? divisor)
     {
         var currency = Currency.Create("CZK", "Kč", "Czech Koruna");
@@ -90,15 +99,6 @@ public class PartialRefundLoyaltyClawbackTests
         _currencyRepository
             .Setup(r => r.GetByIdAsync("currency-1", It.IsAny<CancellationToken>()))
             .ReturnsAsync(currency);
-    }
-
-    private void ArrangeOriginalEarn(int earn)
-    {
-        var earnRow = LoyaltyTransaction.Create(
-            "acct-1", LoyaltyTransactionType.Earn, earn, LoyaltyEarnSource.OrderCompleted, OrderId);
-        _transactionRepository
-            .Setup(r => r.GetLatestForOrderSourceAsync(OrderId, LoyaltyEarnSource.OrderCompleted, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(earnRow);
     }
 
     private void ArrangeNoExistingKey()
@@ -114,6 +114,20 @@ public class PartialRefundLoyaltyClawbackTests
             .Setup(r => r.GetRevokedPointsSumForOrderSourceAsync(
                 OrderId, LoyaltyEarnSource.OrderPartiallyRefunded, It.IsAny<CancellationToken>()))
             .ReturnsAsync(alreadyRevoked);
+    }
+
+    /// <summary>Each refund sees the running total revoked by the ones before it, as the ledger would.</summary>
+    private void ArrangeRunningRevokedTotal(LoyaltyAccount account)
+    {
+        var revokedSoFar = 0;
+        _transactionRepository
+            .Setup(r => r.GetRevokedPointsSumForOrderSourceAsync(
+                OrderId, LoyaltyEarnSource.OrderPartiallyRefunded, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() => revokedSoFar);
+        _transactionRepository
+            .Setup(r => r.CommitAsync(It.IsAny<CancellationToken>()))
+            .Callback(() => revokedSoFar = PartialRevokes(account).Sum(t => -t.Points))
+            .Returns(Task.CompletedTask);
     }
 
     private void ArrangeCommit() =>
@@ -143,16 +157,16 @@ public class PartialRefundLoyaltyClawbackTests
             .ToList();
 
     [Fact]
-    public async Task PartialRevoke_RevokesFloorOfRefundNetOverTen()
+    public async Task PartialRevoke_RemovesTheReturnedShareOfTheEarn_Floored()
     {
-        var account = ArrangeAccount(originalEarn: 100);
-        ArrangeOrder(UserId);
-        ArrangeOriginalEarn(1000);
+        var account = ArrangeEarn(100);
+        ArrangeOrder(UserId, totalPrice: 1000m);
         ArrangeNoExistingKey();
         ArrangeAlreadyRevoked(0);
         ArrangeTierConfigs();
         ArrangeCommit();
 
+        // floor(100 × 95 / 1000) = floor(9.5) = 9.
         await CreateService().RevokeForPartialRefundAsync(OrderId, 95m, RefundKey, ActorId, CancellationToken.None);
 
         var revoke = Assert.Single(PartialRevokes(account));
@@ -161,52 +175,93 @@ public class PartialRefundLoyaltyClawbackTests
     }
 
     /// <summary>
-    /// The clawback reads the SAME divisor as the earn. A EUR order that earned 100 points on 40.00
-    /// (divisor 0.40) gives back 50 on a 20.00 refund — not 2, which is what the old hard-coded /10
-    /// would have taken and what T-0688 warned nobody would remember to change.
+    /// The clawback follows what the order EARNED, not the currency's rate on the day of the refund. A
+    /// 2000 order earned 200 points at a divisor of 10; whether the admin has since lowered the divisor
+    /// to 5, raised it to 20 or cleared it, refunding half the order takes back half the earn. Dividing
+    /// the refund by the live divisor took 200, 50 and 0.
     /// </summary>
-    [Fact]
-    public async Task PartialRevoke_UsesTheSameDivisorAsTheEarn()
+    [Theory]
+    [InlineData(5.0)]
+    [InlineData(20.0)]
+    [InlineData(null)]
+    public async Task PartialRevoke_DivisorChangedSinceTheEarn_DoesNotChangeTheClawback(double? divisorNow)
     {
-        var account = ArrangeAccount(originalEarn: 100);
-        ArrangeOrder(UserId);
-        ArrangeDivisor(0.40m);
-        ArrangeOriginalEarn(100);
+        var account = ArrangeEarn(200);
+        ArrangeOrder(UserId, totalPrice: 2000m);
+        ArrangeDivisor((decimal?)divisorNow);
         ArrangeNoExistingKey();
         ArrangeAlreadyRevoked(0);
         ArrangeTierConfigs();
         ArrangeCommit();
 
-        await CreateService().RevokeForPartialRefundAsync(OrderId, 20m, RefundKey, ActorId, CancellationToken.None);
+        await CreateService().RevokeForPartialRefundAsync(OrderId, 1000m, RefundKey, ActorId, CancellationToken.None);
 
         var revoke = Assert.Single(PartialRevokes(account));
-        Assert.Equal(-50, revoke.Points);
+        Assert.Equal(-100, revoke.Points);
+        _currencyRepository.Verify(
+            r => r.GetByIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
-    /// <summary>A currency with no divisor claws nothing back, as it earned nothing.</summary>
+    /// <summary>
+    /// Returning the whole price takes back the whole earn. The earn is on the gross price, so a 1210
+    /// order with 21 % VAT earned 121; the clawback on the VAT-stripped 1000 took 100 and left the
+    /// customer 21 points for money they got back.
+    /// </summary>
     [Fact]
-    public async Task PartialRevoke_SkipsWhenTheCurrencyHasNoDivisor()
+    public async Task PartialRevoke_WholePriceReturned_RemovesEveryEarnedPoint()
     {
-        var account = ArrangeAccount(originalEarn: 100);
-        ArrangeOrder(UserId);
-        ArrangeDivisor(null);
-        ArrangeOriginalEarn(100);
+        var account = ArrangeEarn(121);
+        ArrangeOrder(UserId, totalPrice: 1210m);
         ArrangeNoExistingKey();
         ArrangeAlreadyRevoked(0);
         ArrangeTierConfigs();
         ArrangeCommit();
 
-        await CreateService().RevokeForPartialRefundAsync(OrderId, 95m, RefundKey, ActorId, CancellationToken.None);
+        await CreateService().RevokeForPartialRefundAsync(OrderId, 1210m, RefundKey, ActorId, CancellationToken.None);
 
+        var revoke = Assert.Single(PartialRevokes(account));
+        Assert.Equal(-121, revoke.Points);
+        Assert.Equal(0, account.LifetimePoints);
+    }
+
+    /// <summary>An order that earned nothing — its currency had no divisor at completion — gives nothing back.</summary>
+    [Fact]
+    public async Task PartialRevoke_OrderEarnedNothing_NoOps()
+    {
+        ArrangeOrder(UserId);
+        _transactionRepository
+            .Setup(r => r.GetLatestForOrderSourceAsync(OrderId, LoyaltyEarnSource.OrderCompleted, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((LoyaltyTransaction?)null);
+        ArrangeNoExistingKey();
+
+        await CreateService().RevokeForPartialRefundAsync(OrderId, 500m, RefundKey, ActorId, CancellationToken.None);
+
+        _accountRepository.Verify(r => r.GetByUserIdIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _transactionRepository.Verify(r => r.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task PartialRevoke_ZeroPriceOrder_NoOps()
+    {
+        var account = ArrangeEarn(100);
+        ArrangeOrder(UserId, totalPrice: 0m);
+        ArrangeNoExistingKey();
+        ArrangeAlreadyRevoked(0);
+        ArrangeTierConfigs();
+        ArrangeCommit();
+
+        var ex = await Record.ExceptionAsync(() =>
+            CreateService().RevokeForPartialRefundAsync(OrderId, 100m, RefundKey, ActorId, CancellationToken.None));
+
+        Assert.Null(ex);
         Assert.Empty(PartialRevokes(account));
     }
 
     [Fact]
     public async Task PartialRevoke_SameRefundKeyTwice_RevokesOnce()
     {
-        var account = ArrangeAccount(originalEarn: 100);
+        var account = ArrangeEarn(100);
         ArrangeOrder(UserId);
-        ArrangeOriginalEarn(1000);
         ArrangeAlreadyRevoked(0);
         ArrangeTierConfigs();
 
@@ -230,23 +285,11 @@ public class PartialRefundLoyaltyClawbackTests
     [Fact]
     public async Task PartialRevoke_TwoDifferentRefunds_EachRevokes()
     {
-        var account = ArrangeAccount(originalEarn: 100);
+        var account = ArrangeEarn(100);
         ArrangeOrder(UserId);
-        ArrangeOriginalEarn(1000);
         ArrangeNoExistingKey();
         ArrangeTierConfigs();
-        ArrangeCommit();
-
-        // Each refund sees the running total revoked by the previous one.
-        var revokedSoFar = 0;
-        _transactionRepository
-            .Setup(r => r.GetRevokedPointsSumForOrderSourceAsync(
-                OrderId, LoyaltyEarnSource.OrderPartiallyRefunded, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(() => revokedSoFar);
-        _transactionRepository
-            .Setup(r => r.CommitAsync(It.IsAny<CancellationToken>()))
-            .Callback(() => revokedSoFar = PartialRevokes(account).Sum(t => -t.Points))
-            .Returns(Task.CompletedTask);
+        ArrangeRunningRevokedTotal(account);
 
         var service = CreateService();
         await service.RevokeForPartialRefundAsync(OrderId, 30m, RefundKey, ActorId, CancellationToken.None);
@@ -257,17 +300,37 @@ public class PartialRefundLoyaltyClawbackTests
         Assert.Equal(8, revokes.Sum(t => -t.Points));
     }
 
+    /// <summary>
+    /// Two refunds whose shares add up to more than the earn stop at the earn: 600 of a 1000 order asks
+    /// for 60 of its 100 points, and a second 600 asks for 60 more but finds only 40 left.
+    /// </summary>
+    [Fact]
+    public async Task PartialRevoke_TwoRefunds_NeverTakeBackMoreThanTheEarn()
+    {
+        var account = ArrangeEarn(100);
+        ArrangeOrder(UserId, totalPrice: 1000m);
+        ArrangeNoExistingKey();
+        ArrangeTierConfigs();
+        ArrangeRunningRevokedTotal(account);
+
+        var service = CreateService();
+        await service.RevokeForPartialRefundAsync(OrderId, 600m, RefundKey, ActorId, CancellationToken.None);
+        await service.RevokeForPartialRefundAsync(OrderId, 600m, OtherRefundKey, ActorId, CancellationToken.None);
+
+        Assert.Equal([-60, -40], PartialRevokes(account).Select(t => t.Points));
+        Assert.Equal(0, account.LifetimePoints);
+    }
+
     [Fact]
     public async Task PartialRevoke_CumulativeCap_NeverExceedsOriginalEarn()
     {
-        var account = ArrangeAccount(originalEarn: 100);
+        var account = ArrangeEarn(100);
         ArrangeOrder(UserId);
-        ArrangeOriginalEarn(100);
         ArrangeNoExistingKey();
         ArrangeTierConfigs();
 
-        // 90 already revoked under prior partials; the next refund asks for floor(500/10)=50, but only 10
-        // of headroom remains to the original earn.
+        // 90 already revoked under prior partials; the next refund returns half the order and asks for
+        // half the earn, 50, but only 10 of headroom remains.
         ArrangeAlreadyRevoked(90);
         ArrangeCommit();
 
@@ -280,9 +343,8 @@ public class PartialRefundLoyaltyClawbackTests
     [Fact]
     public async Task PartialRevoke_NoHeadroomLeft_NoOps()
     {
-        var account = ArrangeAccount(originalEarn: 100);
+        var account = ArrangeEarn(100);
         ArrangeOrder(UserId);
-        ArrangeOriginalEarn(100);
         ArrangeNoExistingKey();
         ArrangeTierConfigs();
         ArrangeAlreadyRevoked(100);
@@ -307,9 +369,8 @@ public class PartialRefundLoyaltyClawbackTests
     [Fact]
     public async Task PartialRevoke_Concurrent_SameRefundKey_UniqueViolation_Collapses_NoThrow()
     {
-        ArrangeAccount(originalEarn: 100);
+        ArrangeEarn(100);
         ArrangeOrder(UserId);
-        ArrangeOriginalEarn(1000);
         ArrangeNoExistingKey();
         ArrangeAlreadyRevoked(0);
         ArrangeTierConfigs();

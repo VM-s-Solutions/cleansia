@@ -97,7 +97,8 @@ public class RejectEmployeeReleasesSeatsTests
             totalPrice: 1000m,
             currencyId: "czk",
             paymentStatus: PaymentStatus.Paid,
-            userId: "customer-user");
+            userId: "customer-user",
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = orderId;
         order.TenantId = CompanyId;
         order.SetMaxEmployees(maxEmployees);

@@ -81,7 +81,8 @@ public sealed class CleanupStalePendingOrdersSweepTests : IDisposable
             currencyId: "czk",
             paymentStatus: PaymentStatus.Pending,
             userId: userId,
-            recurringTemplateId: recurringTemplateId);
+            recurringTemplateId: recurringTemplateId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = orderId;
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));
 

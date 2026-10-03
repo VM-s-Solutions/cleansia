@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Features.EmployeePayroll;
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Internationalization;
@@ -115,7 +116,8 @@ public class LegacyDistancePayTests(PostgresContainerFixture fixture) : BaseInte
             paymentType: PaymentType.Card,
             totalPrice: 2400m,
             currencyId: CurrencyId,
-            paymentStatus: PaymentStatus.Paid);
+            paymentStatus: PaymentStatus.Paid,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         typeof(Order).GetProperty(nameof(Order.TravelDistance))!.SetValue(order, 12.5m);
         order.AddSelectedPackages([OrderPackage.Create(order, package, 2400m)]);
         order.AddAssignedEmployee(OrderEmployee.Create(order, employee));

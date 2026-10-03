@@ -991,17 +991,18 @@ public class CreateOrder
             RecurringTemplateId: order.RecurringTemplateId,
             Language: command.Language,
             IsGuest: string.IsNullOrEmpty(order.UserId),
-            CancellationPolicyShown: CancellationPolicyShown.From(cancellationPolicy),
+            CancellationPolicyShown: CancellationPolicyShown.From(order, cancellationPolicy),
             TermsAccepted: command.TermsAccepted,
             TermsVersionAccepted: termsVersion,
             PrivacyVersionAccepted: privacyVersion);
     }
 
     /// <summary>
-    /// The cancellation schedule the booking was made under: the platform figures, plus the free window
-    /// and the oops window this customer had AT BOOKING (a Plus free window is narrower than the standard
-    /// 24 h, a first booking's or a Plus oops window longer than 15 minutes) and which rule gave it. The
-    /// cancellation re-resolves both live, so its own evidence row is what explains a given cancellation.
+    /// The cancellation schedule the booking was made under: the figures frozen on the order, plus the free
+    /// window and the oops window this customer had AT BOOKING (a Plus free window is narrower than the
+    /// standard one, a first booking's or a Plus oops window longer than 15 minutes) and which rule gave
+    /// it. The cancellation re-resolves who the customer is live, so its own evidence row is what explains
+    /// a given cancellation.
     /// </summary>
     public record CancellationPolicyShown(
         int FreeHours,
@@ -1012,11 +1013,11 @@ public class CreateOrder
         int OopsMinutesForThisCustomer,
         OopsWindowRule OopsRuleForThisCustomer)
     {
-        public static CancellationPolicyShown From(CancellationPolicy policy) => new(
-            FreeHours: BookingPolicy.FreeCancellationHours,
-            PartialHours: BookingPolicy.PartialCancellationHours,
-            PartialRate: BookingPolicy.PartialCancellationFeeRate,
-            LastMinuteRate: BookingPolicy.LastMinuteCancellationFeeRate,
+        public static CancellationPolicyShown From(Order order, CancellationPolicy policy) => new(
+            FreeHours: order.CancellationFreeHours,
+            PartialHours: order.CancellationPartialHours,
+            PartialRate: order.CancellationPartialFeeRate,
+            LastMinuteRate: order.CancellationLastMinuteFeeRate,
             FreeHoursForThisCustomer: policy.FreeCancellationHours,
             OopsMinutesForThisCustomer: policy.OopsWindowMinutes,
             OopsRuleForThisCustomer: policy.OopsWindowRule);

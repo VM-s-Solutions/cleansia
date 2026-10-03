@@ -198,9 +198,9 @@ public class MembershipPlanPerMarketTests(PostgresContainerFixture fixture) : Ba
         ctx.CountryConfigurations.Add(CountryConfiguration.Create(CzeId, "CZK", "cs", 0.21m).AssignOperator(TestTenants.Default));
         ctx.CountryConfigurations.Add(CountryConfiguration.Create(SvkId, "EUR", "sk", 0.20m).AssignOperator(TestTenants.Default));
 
-        var monthly = MembershipPlan.Create("PLUS_MONTHLY", "Cleansia Plus (Monthly)", 5m, 4, true);
+        var monthly = MembershipPlan.Create("PLUS_MONTHLY", "Cleansia Plus (Monthly)", 5m, true);
         monthly.Id = MonthlyId;
-        var yearly = MembershipPlan.Create("PLUS_YEARLY", "Cleansia Plus (Annual)", 5m, 4, true, BillingInterval.Yearly);
+        var yearly = MembershipPlan.Create("PLUS_YEARLY", "Cleansia Plus (Annual)", 5m, true, BillingInterval.Yearly);
         yearly.Id = YearlyId;
         ctx.MembershipPlans.AddRange(monthly, yearly);
 

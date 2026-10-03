@@ -138,7 +138,7 @@ public sealed class LoyaltyService(
     }
 
     public async Task RevokeForPartialRefundAsync(
-        string orderId, decimal refundNet, string refundKey, string actorId, CancellationToken cancellationToken)
+        string orderId, decimal amountReturned, string refundKey, string actorId, CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(refundKey))
         {
@@ -156,12 +156,21 @@ public sealed class LoyaltyService(
             return;
         }
 
-        if (string.IsNullOrEmpty(order.UserId))
+        if (string.IsNullOrEmpty(order.UserId) || order.TotalPrice <= 0m)
         {
             return;
         }
 
-        var requested = await PointsForAsync(order.CurrencyId, refundNet, orderId, cancellationToken);
+        var originalEarn = await loyaltyTransactionRepository.GetLatestForOrderSourceAsync(
+            orderId, LoyaltyEarnSource.OrderCompleted, cancellationToken);
+        if (originalEarn == null)
+        {
+            return;
+        }
+
+        // A share of what the order EARNED, never the currency's divisor today, which an admin may have
+        // changed since completion. → /product/business-rules#money-constants
+        var requested = (int)Math.Floor(originalEarn.Points * amountReturned / order.TotalPrice);
         if (requested <= 0)
         {
             return;
@@ -170,13 +179,6 @@ public sealed class LoyaltyService(
         // Idempotency on the refund key — a replay of the same partial refund collapses to one revoke.
         var existingByKey = await loyaltyTransactionRepository.GetByIdempotencyKeyAsync(refundKey, cancellationToken);
         if (existingByKey != null)
-        {
-            return;
-        }
-
-        var originalEarn = await loyaltyTransactionRepository.GetLatestForOrderSourceAsync(
-            orderId, LoyaltyEarnSource.OrderCompleted, cancellationToken);
-        if (originalEarn == null)
         {
             return;
         }
@@ -411,8 +413,8 @@ public sealed class LoyaltyService(
     /// <summary>
     /// <c>floor(amount / the currency's divisor)</c>. Zero — with a log line — when the currency has no
     /// divisor: a currency switched on before its rate was authored must not earn at another currency's
-    /// rate in either direction. ONE helper for the earn and the partial-refund clawback, so the two
-    /// cannot disagree about what a unit of money is worth. → /product/business-rules#money-constants
+    /// rate in either direction. The earn only; the partial-refund clawback takes a share of the earn
+    /// instead. → /product/business-rules#money-constants
     /// </summary>
     private async Task<int> PointsForAsync(
         string currencyId, decimal amount, string orderId, CancellationToken cancellationToken)

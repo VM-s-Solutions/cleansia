@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Users;
@@ -215,7 +216,8 @@ public class PreferredOfferGrantTests
             totalPrice: 1000m,
             currencyId: "czk",
             paymentStatus: PaymentStatus.Pending,
-            userId: "user-grant");
+            userId: "user-grant",
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));
         return order;
     }

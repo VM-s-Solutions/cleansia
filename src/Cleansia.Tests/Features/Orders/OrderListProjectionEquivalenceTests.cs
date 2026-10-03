@@ -268,7 +268,8 @@ public sealed class OrderListProjectionEquivalenceTests : IAsyncLifetime, IDispo
             userId: CustomerUserId,
             tierDiscountAmount: tierDiscountAmount,
             promoDiscountAmount: promoDiscountAmount,
-            membershipDiscountAmount: membershipDiscountAmount);
+            membershipDiscountAmount: membershipDiscountAmount,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = orderId;
         order.AddSelectedExtras(extras.Select(e =>
             OrderExtra.Create(order, Extra.Create(e.Slug, e.Slug, null), e.Price)));

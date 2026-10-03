@@ -40,6 +40,13 @@ calculated with) are in [Business rules](/product/business-rules#cleaner-pay). A
 currency, and the pay writer reads only rates in the order's currency — so every pay row is in the
 currency of the order that earned it.
 
+**The rates are read once, when the seat's contract for work forms** (owner ruling 2026-10-03). The
+take — or the cleaner's acceptance of an administrator's placement — freezes the job's base, extras and
+clamp bounds at that cleaner's rates on the seat (`OrderEmployees.JobBasePay` … `JobMaxPay`), the same
+read that prices the reward the contract states, and `CalculateOrderPay` pays the seat from them. A
+rate edited after the take reaches only jobs taken after it; a seat no contract has formed on yet is
+paid at the rates in force when its pay is calculated.
+
 **A job that did not happen can pay too** (owner ruling 2026-09-28, decision 12). When a late
 cancellation or a customer [lockout](/flows/cancellation-refund-dispute#lockout) brings the company a
 fee, `CalculateOrderPay` pays each crew member a seat's share of **half of what was collected** — kept
@@ -223,7 +230,9 @@ from its own columns.
 **What the board promised is one seat.** The pay a cleaner sees before taking a job — the board card,
 the job detail, the dashboard estimate and the available-jobs preview — is `OrderPayEstimator`'s
 per-seat figure, raised by the level, the same share `CalculateOrderPay` writes for every seat but the
-first (which also takes the residue cents). The partner web labels it *per spot*.
+first (which also takes the residue cents). The partner web labels it *per spot*. Once the cleaner
+holds the seat, the job detail, *My jobs* and the dashboard quote that seat's contract reward from its
+frozen figures, which is what the pay row will say; the board stays at today's rates.
 
 ## Numbering is allocated, never derived
 
@@ -284,3 +293,4 @@ already does.
 | A late cancellation of a paid card order | Each crew member gets a `CancellationFeeShare` row: a seat's share of half the fee the company still holds. |
 | A lockout on a cash booking whose receivable is still open | No pay row; the crew is paid when the receivable is paid, and nothing if it is written off. |
 | An administrator writes a cleaner's rates from a template | Standard 0.5, experienced 0.6 or expert 0.7 of each list price — every template leaves a margin, and like every rate it describes the job, so each seat of a two-seat job earns half; the old junior/medior/senior ranks are refused. → [Business rules — per-employee rates](/product/business-rules#per-employee-rates) |
+| A rate is changed or deleted while a cleaner holds a job | The held job is paid at the figures frozen on the seat when its contract formed; only jobs taken after the change use the new rate. A deleted rate does not block the held job's pay. |

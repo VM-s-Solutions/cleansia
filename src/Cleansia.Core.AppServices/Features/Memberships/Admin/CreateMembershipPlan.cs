@@ -1,7 +1,6 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Memberships.Admin.DTOs;
-using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
@@ -30,7 +29,6 @@ public class CreateMembershipPlan
         /// </summary>
         Dictionary<string, MembershipPlanPriceInput>? Prices,
         decimal DiscountPercentage,
-        int FreeCancellationWindowHours,
         int TrialPeriodDays,
         bool AllowsExpressUpgrade,
         /// <summary>
@@ -76,13 +74,6 @@ public class CreateMembershipPlan
                 .InclusiveBetween(0m, 100m)
                 .WithMessage(BusinessErrorMessage.MembershipPlanDiscountOutOfRange);
 
-            RuleFor(x => x.FreeCancellationWindowHours)
-                .Cascade(CascadeMode.Stop)
-                .GreaterThanOrEqualTo(0)
-                .WithMessage(BusinessErrorMessage.MustBePositive)
-                .LessThanOrEqualTo(BookingPolicy.FreeCancellationHours)
-                .WithMessage(BusinessErrorMessage.MembershipPlanFreeCancellationWindowTooLong);
-
             RuleFor(x => x.TrialPeriodDays)
                 .GreaterThanOrEqualTo(0)
                 .WithMessage(BusinessErrorMessage.MustBePositive);
@@ -107,7 +98,6 @@ public class CreateMembershipPlan
                 code: command.Code,
                 name: command.Name,
                 discountPercentage: command.DiscountPercentage,
-                freeCancellationWindowHours: command.FreeCancellationWindowHours,
                 allowsExpressUpgrade: command.AllowsExpressUpgrade,
                 billingInterval: command.BillingInterval,
                 trialPeriodDays: command.TrialPeriodDays,

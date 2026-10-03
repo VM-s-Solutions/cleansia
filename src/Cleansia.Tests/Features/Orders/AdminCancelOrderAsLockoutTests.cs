@@ -87,7 +87,8 @@ public class AdminCancelOrderAsLockoutTests
             totalPrice: 1000m,
             currencyId: CzkId,
             paymentStatus: paymentStatus,
-            userId: userId);
+            userId: userId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.TenantId = TenantId;
         order.SetCurrency(_czk);

@@ -56,7 +56,8 @@ public class GenerateReceiptHandlerFeeReceiptTests
             totalPrice: 1500m,
             currencyId: "czk",
             paymentStatus: PaymentStatus.Pending,
-            userId: "user-owing");
+            userId: "user-owing",
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         _order.Id = OrderId;
         _orderRepository
             .Setup(r => r.GetByIdIgnoringTenantAsync(OrderId, It.IsAny<CancellationToken>()))

@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using System.Net;
 using System.Text.Json;
 using Cleansia.Core.AppServices.Services;
@@ -219,7 +220,8 @@ public class MigratedEmailRenderingTests
         paymentType: PaymentType.Card,
         totalPrice: 1250.00m,
         currencyId: "czk",
-        paymentStatus: PaymentStatus.Pending);
+        paymentStatus: PaymentStatus.Pending,
+        cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
 
     /// <summary>
     /// The promo e-mail with NO translation rows at all — which is the state the

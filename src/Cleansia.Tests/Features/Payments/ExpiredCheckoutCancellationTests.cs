@@ -80,7 +80,8 @@ public class ExpiredCheckoutCancellationTests
             currencyId: "czk",
             paymentStatus: PaymentStatus.Pending,
             userId: userId,
-            recurringTemplateId: recurringTemplateId);
+            recurringTemplateId: recurringTemplateId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.TenantId = "tenant-a";
         var stamp = DateTimeOffset.UtcNow.AddHours(-2);

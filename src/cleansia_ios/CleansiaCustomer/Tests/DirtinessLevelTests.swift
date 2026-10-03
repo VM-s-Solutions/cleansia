@@ -36,6 +36,7 @@ final class DirtinessLevelTests: XCTestCase {
                 XCTAssertEqual(Set(signs).count, 4, "\(level) has repeated or missing signs in \(language)")
                 copy += signs
                 copy += L10n.Booking.dirtinessSurcharge(level).map { [$0] } ?? []
+                copy += L10n.Booking.bookedDirtinessSurcharge(level).map { [$0] } ?? []
             }
             for text in copy {
                 XCTAssertFalse(text.isBlank, "empty dirtiness copy in \(language)")
@@ -48,6 +49,9 @@ final class DirtinessLevelTests: XCTestCase {
         XCTAssertNil(L10n.Booking.dirtinessSurcharge(.normal))
         XCTAssertNotNil(L10n.Booking.dirtinessSurcharge(.increased))
         XCTAssertNotNil(L10n.Booking.dirtinessSurcharge(.heavy))
+        XCTAssertNil(L10n.Booking.bookedDirtinessSurcharge(.normal))
+        XCTAssertNotNil(L10n.Booking.bookedDirtinessSurcharge(.increased))
+        XCTAssertNotNil(L10n.Booking.bookedDirtinessSurcharge(.heavy))
     }
 
     /// The percentages on the choice and on the surcharge line are copy, so they are held to the rates
@@ -70,6 +74,28 @@ final class DirtinessLevelTests: XCTestCase {
                     Self.integers(in: L10n.Booking.dirtinessSurcharge(level) ?? ""),
                     [percent],
                     "\(level) surcharge line in \(language)"
+                )
+            }
+        }
+    }
+
+    /// A booked order's surcharge was charged at its booking's rate, which need not be today's, so the
+    /// line that labels it states no rate in any locale.
+    func testTheBookedSurchargeLineStatesNoRate() throws {
+        let restore = L10n.bundle
+        defer { L10n.bundle = restore }
+
+        for language in ["en", "cs", "sk", "uk", "ru"] {
+            L10n.bundle = try localeBundle(language)
+            for level in [Dirtiness.increased, .heavy] {
+                let line = try XCTUnwrap(L10n.Booking.bookedDirtinessSurcharge(level))
+                XCTAssertFalse(
+                    line.hasPrefix("booking_dirtiness_"),
+                    "\(level) booked line is unlocalized in \(language)"
+                )
+                XCTAssertFalse(
+                    line.contains { $0 == "%" || $0.isNumber },
+                    "\(level) booked line states a rate in \(language): \(line)"
                 )
             }
         }
@@ -104,10 +130,14 @@ final class DirtinessLevelTests: XCTestCase {
                 .contains("L10n.Booking.dirtinessSurcharge(summary.dirtiness)"),
             "the booking summary drops the surcharge row"
         )
+        let orderDetail = try read("Features/Orders/OrderDetailSummary.swift")
         XCTAssertTrue(
-            try read("Features/Orders/OrderDetailSummary.swift")
-                .contains("L10n.Booking.dirtinessSurcharge(breakdown.dirtiness)"),
+            orderDetail.contains("L10n.Booking.bookedDirtinessSurcharge(breakdown.dirtiness)"),
             "the order's price breakdown drops the surcharge row"
+        )
+        XCTAssertFalse(
+            orderDetail.contains("L10n.Booking.dirtinessSurcharge("),
+            "the order's price breakdown states today's rate beside a surcharge charged at its booking's"
         )
         XCTAssertTrue(
             try read("Features/Orders/OrderDetailDetailsCards.swift")

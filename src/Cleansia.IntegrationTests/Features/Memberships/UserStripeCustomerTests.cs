@@ -156,7 +156,7 @@ public class UserStripeCustomerTests(PostgresContainerFixture fixture) : BaseInt
         eur.Id = EurId;
         ctx.Currencies.AddRange(czk, eur);
 
-        var plan = MembershipPlan.Create("PLUS_MONTHLY", "Cleansia Plus (Monthly)", 5m, 4, true);
+        var plan = MembershipPlan.Create("PLUS_MONTHLY", "Cleansia Plus (Monthly)", 5m, true);
         plan.Id = PlanId;
         ctx.MembershipPlans.Add(plan);
 

@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
@@ -200,7 +201,8 @@ public class FeeReceiptPersistenceTests(PostgresContainerFixture fixture) : Base
             "Fee Owner", CustomerEmail, "+420777000111",
             Address.Create("Poplatkova 1", "Praha", "11000", CountryId),
             rooms: 2, bathrooms: 1, DateTime.UtcNow.AddDays(-1), PaymentType.Card, 1500m, CurrencyId, PaymentStatus.Paid,
-            userId: customer.Id);
+            userId: customer.Id,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));
         ctx.Orders.Add(order);
 

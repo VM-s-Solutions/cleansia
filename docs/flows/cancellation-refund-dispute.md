@@ -35,6 +35,14 @@ customer's own window. A Plus membership separately widens the free cancellation
 (hours before the cleaning); the two never derive from each other. The fee ladder itself is priced in
 exactly one place. → [The oops window](/product/business-rules#oops-window)
 
+**The figures are the order's.** The free notice, the partial threshold, both rates and the Plus free
+notice are frozen on the order when it is booked (`Orders.Cancellation*`, owner ruling 2026-10-03 —
+terms §19 keep a booking under the version accepted when it was made), so the resolver builds the
+policy from the order, never from today's `BookingPolicy`, and a later change of the ladder or of the
+Plus window reaches only bookings made after it. Who the customer is — an entitled member, a first
+booking — is still judged at the cancel, and the oops minutes are still today's.
+→ [Business rules — cancellation](/product/business-rules#cancellation)
+
 **After the booked start, a customer does not cancel.** With a cleaner on the job and nobody having
 started it, the cancel and both previews answer `order.start_passed_cannot_cancel` (owner ruling
 2026-09-28); the clients replace *Cancel* with *the cleaner did not arrive* — a *service not provided*
@@ -125,8 +133,8 @@ sequenceDiagram
 `customer.order.cancel` ([ADR-0062](/decisions/adr-0062)): the row that rides its commit carries the
 tier, the fee rate and amount, the refund amount, the notice given in hours, the minutes since booking,
 the oops window applied and why (`oopsMinutesApplied`, 15 or 60, and `oopsRuleApplied`), whether a cleaner had already accepted (the fact the fee turns on, and one that drop/cover hard-deletes
-so it cannot be reconstructed later), the free window applied (Plus or standard), the policy figures at
-that moment, whether an express-waiver slot was actually released, whether a refund was initiated,
+so it cannot be reconstructed later), the free window applied (Plus or standard), the policy figures it
+priced by (the order's frozen ladder and today's oops minutes), whether an express-waiver slot was actually released, whether a refund was initiated,
 and that a reason was given — the reason's text stays on the order. The preview the customer saw is
 **not** sent back and would not be stored if it were: a row holding "the customer says they were shown
 0 %" is their claim, not our evidence; the server's figures at the click plus the deterministic preview
@@ -179,6 +187,14 @@ their value remains in the denominator even when the selected refund line is a s
 undiscounted order with a 1,000 service and a 200 extra, the split allocates 1,000 to that service,
 before any applicable processing fee, instead of the whole 1,200. The refund service still applies
 its remaining-money ceiling.
+
+**A partial refund takes back its share of the order's points.** `IssuePartialRefund` hands the
+loyalty service everything the refund returned — the card leg plus the credit leg — and it removes
+`floor(earned × returned / TotalPrice)` of the order's completion earn, keyed on the refund and capped
+at what the earn still holds; no divisor is read (owner ruling 2026-10-03). **A full refund
+(`AdminRefundOrder`) and a dispute refund (`ResolveDispute`) take back no points today** — a known gap
+against the customer terms' §11, not a ruling.
+→ [Business rules — money constants](/product/business-rules#money-constants)
 
 ## Dispute
 

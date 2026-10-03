@@ -64,7 +64,8 @@ public class AdminOverrideOrderStatusHandlerTests
             totalPrice: 1000m,
             currencyId: currency.Id,
             paymentStatus: PaymentStatus.Paid,
-            userId: "owner-user");
+            userId: "owner-user",
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.SetCurrency(currency);
         order.SetMaxEmployees(2);

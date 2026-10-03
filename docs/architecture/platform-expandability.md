@@ -718,7 +718,7 @@ now with the full three-axis picture behind it:
   trust the client `Host` header on an unauthenticated route (S3). Strictly worse.
 
 **Marching order:** proceed with Addendum A1's implementation contract verbatim
-(`MembershipPlan.cs:24` drop `ITenantEntity`; `MembershipPlanEntityConfiguration.cs:55-56`
+(`MembershipPlan.cs:24` drop `ITenantEntity`; `MembershipPlanEntityConfiguration.cs:49-50`
 `(TenantId,Code)` → `(Code)`; no DbContext/handler/repo change; ef-migration folds into the owner's
 regenerated Initial; ACs = read parity, no-footgun, write-side parity AC6, host-boot test, structural
 "not ITenantEntity" test; `LoyaltyTierConfig` untouched — no anonymous read path). **No revision to the

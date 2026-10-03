@@ -60,6 +60,7 @@ public class CancelOrder
         bool ReasonProvided,
         decimal? ActualRefundAmount = null) : ICustomerAuditPayload;
 
+    /// <summary>The schedule the cancel was priced under: the order's frozen figures and today's oops windows.</summary>
     public record CancellationPolicyFigures(
         int FreeHours,
         int PartialHours,
@@ -69,11 +70,11 @@ public class CancelOrder
         int OopsMinutesPlus,
         int OopsMinutesFirstBooking)
     {
-        public static CancellationPolicyFigures Current() => new(
-            BookingPolicy.FreeCancellationHours,
-            BookingPolicy.PartialCancellationHours,
-            BookingPolicy.PartialCancellationFeeRate,
-            BookingPolicy.LastMinuteCancellationFeeRate,
+        public static CancellationPolicyFigures Of(Order order) => new(
+            order.CancellationFreeHours,
+            order.CancellationPartialHours,
+            order.CancellationPartialFeeRate,
+            order.CancellationLastMinuteFeeRate,
             BookingPolicy.OopsWindowMinutesStandard,
             BookingPolicy.OopsWindowMinutesPlus,
             BookingPolicy.OopsWindowMinutesFirstBooking);

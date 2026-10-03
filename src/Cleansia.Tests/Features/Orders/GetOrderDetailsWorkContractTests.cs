@@ -3,9 +3,11 @@ using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Contracts;
+using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Services;
 using Cleansia.Core.Domain.Users;
 using Cleansia.TestUtilities;
 using Cleansia.TestUtilities.MockDataFactories.Orders;
@@ -141,5 +143,29 @@ public sealed class GetOrderDetailsWorkContractTests
 
         Assert.True(result.IsSuccess, result.Error?.Message);
         Assert.Empty(result.Value!.WorkContractAcceptances!);
+    }
+
+    /// <summary>
+    /// Owner ruling 2026-10-03: the crew's seat shows the reward its contract for work was priced at, 900,
+    /// even after the cleaner's rate has moved to 700; a cleaner browsing the job is offered today's 700.
+    /// </summary>
+    [Theory]
+    [InlineData(CrewEmployeeId, true, 900)]
+    [InlineData(BrowserEmployeeId, false, 700)]
+    public async Task A_Held_Seat_Shows_Its_Contract_Reward_And_A_Browsing_Cleaner_The_Live_Rate(
+        string caller, bool entitled, int expectedPay)
+    {
+        var (order, seat) = ArrangeEmployeeCaller(caller, entitled);
+        var service = Service.Create("cat-1", "Standard clean", "Regular");
+        order.AddSelectedServices([OrderService.Create(order, service, 1000m, 0m, 1000m)]);
+        seat.FreezeJobPay((900m, 0m, 0m, 0m));
+        _payConfigRepository
+            .Setup(r => r.GetServiceConfigsForOrderAsync(It.IsAny<IEnumerable<string>>(), caller, It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([EmployeePayConfig.CreateForService(service.Id, 700m, order.CurrencyId)]);
+
+        var result = await CreateHandler().Handle(new GetOrderDetails.Query(OrderId), CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Equal((decimal)expectedPay, result.Value!.EstimatedCleanerPay);
     }
 }

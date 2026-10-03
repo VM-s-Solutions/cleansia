@@ -46,7 +46,8 @@ public class LookupOrderBatchSecretTests
             paymentType: PaymentType.Cash,
             totalPrice: 1000m,
             currencyId: currency.Id,
-            paymentStatus: PaymentStatus.Pending);
+            paymentStatus: PaymentStatus.Pending,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = id;
         order.SetCurrency(currency);
         order.UpdateEstimatedTime(120);

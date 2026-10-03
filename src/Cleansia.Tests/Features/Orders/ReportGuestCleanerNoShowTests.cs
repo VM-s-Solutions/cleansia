@@ -56,7 +56,8 @@ public class ReportGuestCleanerNoShowTests
             paymentType: PaymentType.Card,
             totalPrice: 1000m,
             currencyId: "czk",
-            paymentStatus: PaymentStatus.Paid);
+            paymentStatus: PaymentStatus.Paid,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.TenantId = TenantId;
         var stamp = DateTimeOffset.UtcNow.AddDays(-2);

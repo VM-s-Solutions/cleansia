@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using System.Reflection;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.LiveActivities;
@@ -191,7 +192,8 @@ public class RegisterLiveActivityTokenTests
             totalPrice: 1000m,
             currencyId: "czk",
             paymentStatus: PaymentStatus.Paid,
-            userId: ownerUserId);
+            userId: ownerUserId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
 
         var now = DateTimeOffset.UtcNow;

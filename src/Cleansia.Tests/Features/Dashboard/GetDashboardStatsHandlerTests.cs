@@ -10,6 +10,7 @@ using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.TestUtilities.MockDataFactories.EmployeePayroll;
 using Cleansia.TestUtilities.MockDataFactories.Orders;
+using Cleansia.Tests.Features.Orders;
 using Moq;
 
 namespace Cleansia.Tests.Features.Dashboard;
@@ -176,6 +177,32 @@ public class GetDashboardStatsHandlerTests
         Assert.Equal(500m, dto.TodayEarnings);
         Assert.Equal(500m, dto.WeekEarnings);
         Assert.Equal(300m, dto.LastMonthEarnings);
+    }
+
+    /// <summary>
+    /// Owner ruling 2026-10-03: a job completed today whose pay has not been calculated counts at the reward
+    /// the cleaner's seat was contracted at, 500, not at today's rates, which here quote nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_Completed_Unpaid_Seat_Earns_The_Reward_Its_Contract_States()
+    {
+        var order = CompletedOrder("dash-frozen", DateTime.UtcNow.Date.AddHours(12));
+        var seat = OrderEmployee.Create(order, ValidatorTestHelpers.BuildEmployee(CallerEmployeeId, ContractStatus.Approved));
+        order.AddAssignedEmployee(seat);
+        seat.FreezeJobPay((500m, 0m, 0m, 0m));
+        _orderRepository
+            .Setup(r => r.GetCompletedOrdersInEitherRangeAsync(
+                CallerEmployeeId,
+                It.IsAny<DateTime>(), It.IsAny<DateTime>(),
+                It.IsAny<DateTime>(), It.IsAny<DateTime>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { order });
+
+        var result = await CreateHandler().Handle(new GetDashboardStats.Query(), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(500m, result.Value.TodayEarnings);
+        Assert.Equal(500m, result.Value.WeekEarnings);
     }
 
     /// <summary>

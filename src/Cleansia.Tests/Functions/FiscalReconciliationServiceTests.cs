@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using System.Text.Json;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -93,7 +94,8 @@ public class FiscalReconciliationServiceTests
             paymentType: paymentType,
             totalPrice: 1000m,
             currencyId: "czk",
-            paymentStatus: paymentStatus);
+            paymentStatus: paymentStatus,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = orderId;
         order.TenantId = tenantId;
         return order;

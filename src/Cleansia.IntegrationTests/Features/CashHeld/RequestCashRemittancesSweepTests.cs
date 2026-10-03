@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Features.CashHeld;
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
@@ -104,7 +105,8 @@ public class RequestCashRemittancesSweepTests(PostgresContainerFixture fixture) 
             totalPrice: 1500m,
             currencyId: CurrencyId,
             paymentStatus: PaymentStatus.Pending,
-            userId: user.Id);
+            userId: user.Id,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));
         order.TenantId = TenantId;
         order.MarkCashCollected(employee.Id, DateTime.UtcNow.AddDays(-50), 1500m);

@@ -2668,7 +2668,6 @@
         "price": "Cena",
         "monthly_equivalent": "Mesačný ekvivalent",
         "discount": "Zľava",
-        "free_cancel_window": "Bezplatné storno (h)",
         "trial": "Skúšobná doba (dni)",
         "express": "Expres",
         "status": "Stav",
@@ -2707,7 +2706,6 @@
           "stripe_price_id": "Stripe Price id",
           "stripe_price_id_help": "Skopírujte zo Stripe dashboardu (price_...). Platforma ceny v Stripe nevytvára.",
           "discount": "Zľava (%)",
-          "free_cancel_window": "Lehota na bezplatné storno (hodiny)",
           "trial_days": "Skúšobná doba zadarmo (dni)",
           "trial_days_help": "Počet dní, počas ktorých má nový člen všetky výhody Plus ešte pred prvou platbou. Jedna skúšobná doba na účet; 0 znamená bez skúšobnej doby.",
           "express_upgrade": "Umožňuje expresný upgrade",
@@ -3313,8 +3311,7 @@
         "code_already_exists": "Plán s týmto kódom už existuje.",
         "discount_out_of_range": "Zľava musí byť medzi 0 a 100.",
         "not_found": "Plán členstva sa nenašiel.",
-        "stripe_price_already_used": "Toto Stripe Price id už používa cena iného plánu.",
-        "free_cancellation_window_too_long": "Okno na bezplatné zrušenie nemôže byť dlhšie ako štandardných 24 hodín."
+        "stripe_price_already_used": "Toto Stripe Price id už používa cena iného plánu."
       }
     },
     "order": {

@@ -88,7 +88,8 @@ public class GenerateReceiptHandlerIdempotencyTests
             paymentType: PaymentType.Cash,
             totalPrice: 1000m,
             currencyId: "czk",
-            paymentStatus: PaymentStatus.Paid);
+            paymentStatus: PaymentStatus.Paid,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         return order;
     }

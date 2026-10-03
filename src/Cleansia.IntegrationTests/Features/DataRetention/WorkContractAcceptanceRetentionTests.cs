@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using System.Security.Claims;
 using System.Text.Json;
 using Cleansia.Core.AppServices.Features.DataRetention;
@@ -179,7 +180,8 @@ public sealed class WorkContractAcceptanceRetentionTests(PostgresContainerFixtur
             paymentType: PaymentType.Cash,
             totalPrice: 1250m,
             currencyId: CurrencyId,
-            paymentStatus: PaymentStatus.Paid);
+            paymentStatus: PaymentStatus.Paid,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = id;
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Completed, order));
         order.SetWorkContractDocument(document);

@@ -2,6 +2,7 @@ using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Disputes;
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Disputes;
 using Cleansia.Core.Domain.Enums;
@@ -42,7 +43,8 @@ public sealed class DisputeSettlementPreferenceFilingTests
             totalPrice: 1000m,
             currencyId: "currency-czk",
             paymentStatus: PaymentStatus.Paid,
-            userId: CustomerId);
+            userId: CustomerId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         _orders.Setup(r => r.GetByIdAsync(OrderId, It.IsAny<CancellationToken>())).ReturnsAsync(order);
     }

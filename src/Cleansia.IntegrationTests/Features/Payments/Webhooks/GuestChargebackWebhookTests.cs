@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.Payments;
 using Cleansia.Core.Domain.Disputes;
 using Cleansia.Core.Domain.Enums;
@@ -136,7 +137,8 @@ public class GuestChargebackWebhookTests(PostgresContainerFixture fixture) : Bas
             paymentType: PaymentType.Card,
             totalPrice: 1500m,
             currencyId: CurrencyId,
-            paymentStatus: PaymentStatus.Paid);
+            paymentStatus: PaymentStatus.Paid,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.AssignStripePaymentIntentId(PaymentIntentId);
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Completed, order));
         context.Add(order);

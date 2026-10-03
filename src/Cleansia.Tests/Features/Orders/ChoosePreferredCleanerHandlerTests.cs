@@ -304,7 +304,8 @@ public class ChoosePreferredCleanerHandlerTests
             paymentStatus: PaymentStatus.Paid,
             userId: CustomerUserId,
             preferredEmployeeId: FirstChoiceId,
-            recurringTemplateId: recurringTemplateId);
+            recurringTemplateId: recurringTemplateId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.UpdateEstimatedTime(120);
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));

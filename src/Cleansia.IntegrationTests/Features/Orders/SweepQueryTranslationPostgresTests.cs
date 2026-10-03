@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
@@ -163,7 +164,8 @@ public class SweepQueryTranslationPostgresTests(PostgresContainerFixture fixture
             paymentType: PaymentType.Cash,
             totalPrice: 1000m,
             currencyId: currencyId,
-            paymentStatus: PaymentStatus.Pending);
+            paymentStatus: PaymentStatus.Pending,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = orderId;
         order.SetMaxEmployees(1);
         order.AddOrderStatus(OrderStatusTrack.Create(status, order));

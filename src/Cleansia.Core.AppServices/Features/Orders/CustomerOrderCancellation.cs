@@ -105,7 +105,7 @@ public sealed class CustomerOrderCancellation(
             FreeCancellationHoursApplied: policy.FreeCancellationHours,
             OopsMinutesApplied: policy.OopsWindowMinutes,
             OopsRuleApplied: policy.OopsWindowRule,
-            PolicyFigures: CancellationPolicyFigures.Current(),
+            PolicyFigures: CancellationPolicyFigures.Of(order),
             ExpressWaiverReleased: waiverReleased,
             RefundInitiated: refundInitiated,
             PaymentType: order.PaymentType,

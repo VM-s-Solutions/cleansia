@@ -219,7 +219,8 @@ public partial class CreateOrderCallerCurrencyTests
                 {
                     var address = Address.Create("Home 1", "Praha", "11000", Czechia);
                     var earlier = Order.Create("Caller Customer", CustomerEmail, "+420777111555", address, 2, 1,
-                        DateTime.UtcNow.AddDays(-7), PaymentType.Cash, 60m, Czk, PaymentStatus.Paid, userId: CustomerUserId);
+                        DateTime.UtcNow.AddDays(-7), PaymentType.Cash, 60m, Czk, PaymentStatus.Paid, userId: CustomerUserId,
+                        cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
                     earlier.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Completed, earlier));
                     context.Orders.Add(earlier);
                 }

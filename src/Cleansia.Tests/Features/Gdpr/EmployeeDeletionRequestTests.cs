@@ -293,7 +293,8 @@ public sealed class EmployeeDeletionRequestTests : IDisposable
                 totalPrice: 1500m,
                 currencyId: "czk",
                 paymentStatus: PaymentStatus.Pending,
-                userId: CustomerUserId);
+                userId: CustomerUserId,
+                cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
             order.Id = "order-seat-del-1";
             order.AddOrderStatus(OrderStatusTrack.Create(status, order));
             ctx.Add(order);

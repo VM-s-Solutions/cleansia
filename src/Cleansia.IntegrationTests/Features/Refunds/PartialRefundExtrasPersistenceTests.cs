@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using System.Security.Claims;
 using Cleansia.Core.AppServices.Features.Refunds;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -79,7 +80,8 @@ public class PartialRefundExtrasPersistenceTests(PostgresContainerFixture fixtur
 
         var order = Order.Create("Customer", "customer-extras@cleansia.test", "+420777123456",
             Address.Create("Testovaci 12", "Praha", "11000", CountryId), 2, 1,
-            DateTime.UtcNow.AddDays(-1), PaymentType.Card, 1200m, currency.Id, PaymentStatus.Paid);
+            DateTime.UtcNow.AddDays(-1), PaymentType.Card, 1200m, currency.Id, PaymentStatus.Paid,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.AddSelectedServices([OrderService.Create(order, service, 1000m, 0m, 1000m)]);
         order.AddSelectedExtras([OrderExtra.Create(order, extra, 200m)]);

@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Users;
@@ -26,7 +27,8 @@ public class MarkCompletedAtTests
         totalPrice: 1000m,
         currencyId: "czk",
         paymentStatus: PaymentStatus.Paid,
-        userId: "user-stamp");
+        userId: "user-stamp",
+        cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
 
     [Fact]
     public void Stamps_The_Given_Instant_On_An_Undated_Order()

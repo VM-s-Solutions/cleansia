@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Features.Gdpr;
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.Common;
@@ -207,7 +208,8 @@ public class ErasureSingleCommitTests(PostgresContainerFixture fixture) : BaseIn
             totalPrice: 1250m,
             currencyId: CurrencyId,
             paymentStatus: PaymentStatus.Paid,
-            userId: SubjectId);
+            userId: SubjectId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Completed, order));
         context.Orders.Add(order);
@@ -223,7 +225,8 @@ public class ErasureSingleCommitTests(PostgresContainerFixture fixture) : BaseIn
             paymentType: PaymentType.Cash,
             totalPrice: 900m,
             currencyId: CurrencyId,
-            paymentStatus: PaymentStatus.Paid);
+            paymentStatus: PaymentStatus.Paid,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         guestOrder.Id = GuestOrderId;
         guestOrder.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Completed, guestOrder));
         context.Orders.Add(guestOrder);

@@ -59,7 +59,8 @@ public sealed class SendEmailHandlerOrderLockoutTests
             totalPrice: 1500m,
             currencyId: "czk",
             paymentStatus: PaymentStatus.Pending,
-            userId: "user-1");
+            userId: "user-1",
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.TenantId = TenantId;
         order.SetLanguage("cs");

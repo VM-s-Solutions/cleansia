@@ -56,6 +56,36 @@ public static class PayCalculatorExtensions
         return (basePay, extrasPay, 0m, totalPay, breakdown);
     }
 
+    /// <summary>One seat's pay on the job the configs price, as the primitive below computes it.</summary>
+    public static (decimal basePay, decimal extrasPay, decimal dirtinessPay, decimal totalPay, decimal minPay, decimal maxPay, string breakdown) CalculateSeatPay(
+        this IEnumerable<EmployeePayConfig> configs,
+        int rooms,
+        int bathrooms,
+        decimal dirtinessRate,
+        int seats,
+        bool firstSeat)
+    {
+        var (jobBasePay, jobExtrasPay, jobMinPay, jobMaxPay) = configs.AggregateJobPay(rooms, bathrooms);
+        return CalculateSeatPay(jobBasePay, jobExtrasPay, jobMinPay, jobMaxPay, dirtinessRate, seats, firstSeat);
+    }
+
+    /// <summary>
+    /// The four figures a set of configs prices a job at, before it is split across its seats: the summed
+    /// base and extras and the aggregated clamp bounds. A seat freezes them when its contract for work forms.
+    /// </summary>
+    public static (decimal jobBasePay, decimal jobExtrasPay, decimal jobMinPay, decimal jobMaxPay) AggregateJobPay(
+        this IEnumerable<EmployeePayConfig> configs,
+        int rooms,
+        int bathrooms)
+    {
+        var configList = configs.ToList();
+
+        var (jobBasePay, jobExtrasPay, _, _, _) = configList.CalculateAggregatedPay(rooms, bathrooms);
+        var (jobMinPay, jobMaxPay) = configList.AggregateBounds();
+
+        return (jobBasePay, jobExtrasPay, jobMinPay, jobMaxPay);
+    }
+
     /// <summary>
     /// One seat's pay on a job crewed by <paramref name="seats"/> cleaners (owner ruling 2026-09-28): the
     /// rates describe the job, so its base, extras and clamp bounds are split equally across the seats,
@@ -66,17 +96,15 @@ public static class PayCalculatorExtensions
     /// <c>Order.DirtinessRate</c>.
     /// </summary>
     public static (decimal basePay, decimal extrasPay, decimal dirtinessPay, decimal totalPay, decimal minPay, decimal maxPay, string breakdown) CalculateSeatPay(
-        this IEnumerable<EmployeePayConfig> configs,
-        int rooms,
-        int bathrooms,
+        decimal jobBasePay,
+        decimal jobExtrasPay,
+        decimal jobMinPay,
+        decimal jobMaxPay,
         decimal dirtinessRate,
         int seats,
         bool firstSeat)
     {
-        var configList = configs.ToList();
-
-        var (jobBasePay, jobExtrasPay, _, jobPay, _) = configList.CalculateAggregatedPay(rooms, bathrooms);
-        var (jobMinPay, jobMaxPay) = configList.AggregateBounds();
+        var jobPay = ApplyMinMaxClamp(jobBasePay + jobExtrasPay, jobMinPay, jobMaxPay);
         var jobDirtinessPay = Math.Round(jobPay * dirtinessRate, 2, MidpointRounding.AwayFromZero);
 
         var basePay = SeatShare(jobBasePay, seats, firstSeat);

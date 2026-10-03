@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.EmployeePayroll;
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
@@ -234,7 +235,8 @@ public class MixedCurrencyPeriodInvoicingTests(PostgresContainerFixture fixture)
             totalPrice: 1500m,
             currencyId: currencyId,
             paymentStatus: PaymentStatus.Pending,
-            userId: ownerUserId);
+            userId: ownerUserId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));
         return order;
     }

@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Domain.Company;
@@ -104,7 +105,8 @@ public class ReceiptServiceCurrencyFailClosedTests
             paymentType: PaymentType.Cash,
             totalPrice: 1000m,
             currencyId: "eur",
-            paymentStatus: PaymentStatus.Pending);
+            paymentStatus: PaymentStatus.Pending,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         if (currency is not null)
         {

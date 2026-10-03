@@ -219,7 +219,8 @@ public sealed class ErasureAttemptMarkingTests : IDisposable
                 totalPrice: 1500m,
                 currencyId: "czk",
                 paymentStatus: PaymentStatus.Pending,
-                userId: SubjectUserId);
+                userId: SubjectUserId,
+                cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
             order.Id = "order-attempt-1";
             order.AddOrderStatus(OrderStatusTrack.Create(status, order));
             ctx.Add(order);

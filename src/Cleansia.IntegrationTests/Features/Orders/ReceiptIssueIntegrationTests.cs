@@ -102,7 +102,7 @@ public partial class CreateOrderCallerCurrencyTests
             {
                 await SeedAsync(context);
                 await PriceTheEuroServiceAtAsync(context, 8.10m);
-                var plan = MembershipPlan.Create("PLUS", "Plus", 5m, 4, true);
+                var plan = MembershipPlan.Create("PLUS", "Plus", 5m, true);
                 context.MembershipPlans.Add(plan);
                 context.UserMemberships.Add(UserMembership.Create(
                     CustomerUserId, plan.Id, Eur, "sub_reconcile", DateTime.UtcNow.AddDays(-1), DateTime.UtcNow.AddMonths(1)));

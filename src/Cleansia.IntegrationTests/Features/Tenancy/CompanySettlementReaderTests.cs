@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Domain.Bookings;
 using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Credit;
@@ -232,7 +233,8 @@ public sealed class CompanySettlementReaderTests(PostgresContainerFixture fixtur
             totalPrice: 100m,
             currencyId: CurrencyId,
             paymentStatus: paymentStatus,
-            userId: $"user-{id}");
+            userId: $"user-{id}",
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = id;
         order.AddOrderStatus(Track(OrderStatus.New, order, DateTimeOffset.UtcNow.AddMinutes(-10)));
         return order;

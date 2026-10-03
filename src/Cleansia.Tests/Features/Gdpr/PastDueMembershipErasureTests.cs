@@ -151,7 +151,6 @@ public sealed class PastDueMembershipErasureTests : IDisposable
             code: "PLUS_MONTHLY",
             name: "Plus Monthly",
             discountPercentage: 5m,
-            freeCancellationWindowHours: 4,
             allowsExpressUpgrade: true);
         ctx.Add(plan);
 

@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
@@ -201,7 +202,8 @@ public class NewJobsDigestRadiusPostgresTests(PostgresContainerFixture fixture) 
             paymentType: PaymentType.Card,
             totalPrice: 1200m,
             currencyId: CurrencyId,
-            paymentStatus: PaymentStatus.Paid);
+            paymentStatus: PaymentStatus.Paid,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = job.OrderId;
         order.UpdateEstimatedTime(120);
         order.Created(TestUtilities.Constants.TestUserSession.TestUserName, DateTime.UtcNow);

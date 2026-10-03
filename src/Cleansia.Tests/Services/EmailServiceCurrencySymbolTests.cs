@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using System.Globalization;
 using System.Net;
 using Cleansia.Core.AppServices.Services;
@@ -138,7 +139,8 @@ public class EmailServiceCurrencySymbolTests
             paymentType: PaymentType.Cash,
             totalPrice: 1234.5m,
             currencyId: "eur",
-            paymentStatus: PaymentStatus.Pending);
+            paymentStatus: PaymentStatus.Pending,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         if (currency is not null)
         {
             order.SetCurrency(currency);

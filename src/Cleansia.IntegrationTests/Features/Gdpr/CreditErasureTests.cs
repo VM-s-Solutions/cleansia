@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using System.Data.Common;
 using System.Security.Claims;
 using Cleansia.Core.AppServices.Common;
@@ -680,7 +681,8 @@ public class CreditErasureTests(PostgresContainerFixture fixture) : BaseIntegrat
             context.Countries.Add(country);
             var order = Order.Create("Credit Subject", TestConstants.TestUserSession.TestUserEmail,
                 "+420777111333", Address.Create("Test 12", "Praha", "11000", country.Id), 1, 1,
-                DateTime.UtcNow.AddDays(1), PaymentType.Cash, 1250m, CzkId, PaymentStatus.Pending, userId: SubjectId);
+                DateTime.UtcNow.AddDays(1), PaymentType.Cash, 1250m, CzkId, PaymentStatus.Pending, userId: SubjectId,
+                cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
             order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));
             context.Orders.Add(order);
         }
@@ -690,7 +692,8 @@ public class CreditErasureTests(PostgresContainerFixture fixture) : BaseIntegrat
             context.Countries.Add(country);
             var order = Order.Create("Credit Subject", TestConstants.TestUserSession.TestUserEmail,
                 "+420777111333", Address.Create("Test 12", "Praha", "11000", country.Id), 1, 1,
-                DateTime.UtcNow.AddDays(-2), PaymentType.Card, 2000m, CzkId, PaymentStatus.Paid, userId: SubjectId);
+                DateTime.UtcNow.AddDays(-2), PaymentType.Card, 2000m, CzkId, PaymentStatus.Paid, userId: SubjectId,
+                cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
             order.Id = EndedOrderId;
             order.ApplyCredit(500m, SubjectId);
             order.AssignStripePaymentIntentId(PaymentIntentId);

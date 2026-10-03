@@ -52,7 +52,8 @@ public class CashEligibilityPolicyTests
             "Customer", "customer@example.com", "+420000000000",
             Address.Create("Main 1", "Prague", "11000", "cz"),
             rooms: 1, bathrooms: 1, DateTime.UtcNow.AddDays(2), PaymentType.Cash, 1000m, "czk", PaymentStatus.Pending,
-            userId: "user-1");
+            userId: "user-1",
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.UpdateEstimatedTime(120);
 
         order.CalculateRequiredEmployees(spareSeats: 2);
@@ -70,7 +71,8 @@ public class CashEligibilityPolicyTests
         var order = Order.Create(
             "Customer", "customer@example.com", "+420000000000",
             Address.Create("Main 1", "Prague", "11000", "cz"),
-            rooms: 1, bathrooms: 1, DateTime.UtcNow.AddDays(2), PaymentType.Card, 1000m, "czk", PaymentStatus.Pending);
+            rooms: 1, bathrooms: 1, DateTime.UtcNow.AddDays(2), PaymentType.Card, 1000m, "czk", PaymentStatus.Pending,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.UpdateEstimatedTime(minutes);
 
         order.CalculateRequiredEmployees(BookingPolicy.SpareSeatsPerOrder);

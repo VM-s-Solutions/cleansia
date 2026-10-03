@@ -17,7 +17,6 @@ public record MembershipPlanListItem(
     string CurrencyCode,
     decimal DiscountPercentage,
     int TrialPeriodDays,
-    int FreeCancellationWindowHours,
     bool AllowsExpressUpgrade,
     int ExpressUpgradesPerMonth,
     bool IsActive,

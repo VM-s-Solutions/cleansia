@@ -66,7 +66,8 @@ public class GetCancellationFeePreviewHandlerTests
             totalPrice: 1000m,
             currencyId: currency.Id,
             paymentStatus: PaymentStatus.Paid,
-            userId: ownerId);
+            userId: ownerId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.Created("tester", DateTime.UtcNow.AddDays(-2));
         order.SetCurrency(currency);

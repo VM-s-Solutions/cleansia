@@ -184,7 +184,8 @@ public class OrderPaymentConfirmedHonestProducerTests
             currencyId: "czk",
             paymentStatus: PaymentStatus.Pending,
             userId: CustomerUserId,
-            recurringTemplateId: recurringTemplateId);
+            recurringTemplateId: recurringTemplateId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.TenantId = TenantId;
         order.SetCurrency(Currency.Create("CZK", "Kč", "Czech koruna"));

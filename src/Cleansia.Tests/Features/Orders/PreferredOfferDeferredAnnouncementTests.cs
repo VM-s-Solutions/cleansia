@@ -224,7 +224,8 @@ public class PreferredOfferDeferredAnnouncementTests
             paymentStatus: PaymentStatus.Pending,
             userId: CustomerUserId,
             preferredEmployeeId: preferredEmployeeId,
-            recurringTemplateId: recurringTemplateId);
+            recurringTemplateId: recurringTemplateId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.TenantId = TenantId;
         order.SetCurrency(Core.Domain.Internationalization.Currency.Create("CZK", "Kč", "Czech koruna"));

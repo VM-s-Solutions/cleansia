@@ -91,7 +91,8 @@ public class AdminCancelOrderAsNoShowTests
             totalPrice: 1000m,
             currencyId: CzkId,
             paymentStatus: paymentStatus,
-            userId: CustomerId);
+            userId: CustomerId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.SetCurrency(_czk);
         if (paymentType == PaymentType.Card)

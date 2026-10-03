@@ -116,7 +116,6 @@ public class CancellationOopsWindowTests(PostgresContainerFixture fixture) : Bas
                 code: "PLUS_MONTHLY",
                 name: "Plus Monthly",
                 discountPercentage: 5m,
-                freeCancellationWindowHours: 4,
                 allowsExpressUpgrade: true);
             db.MembershipPlans.Add(plan);
             db.UserMemberships.Add(UserMembership.Create(
@@ -144,7 +143,8 @@ public class CancellationOopsWindowTests(PostgresContainerFixture fixture) : Bas
             totalPrice: TotalPrice,
             currencyId: CurrencyId,
             paymentStatus: PaymentStatus.Paid,
-            userId: userId);
+            userId: userId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = id;
         order.Created("seed", bookedAt);
         var stamp = bookedAt;

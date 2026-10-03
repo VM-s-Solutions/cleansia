@@ -105,7 +105,8 @@ public class OrderSeatCapacityTests
             paymentType: PaymentType.Cash,
             totalPrice: 1000m,
             currencyId: "czk",
-            paymentStatus: PaymentStatus.Pending);
+            paymentStatus: PaymentStatus.Pending,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
 
         order.Id = OrderId;
         order.UpdateEstimatedTime(estimatedMinutes);

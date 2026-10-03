@@ -33,7 +33,8 @@ public sealed class DeleteOrderPhotoBlobNameTests
 
         var order = Order.Create("Customer", "customer@example.com", "+420000000000",
             Address.Create("Dlouha 1", "Praha", "11000", "cz"), 1, 1, DateTime.UtcNow.AddDays(1),
-            PaymentType.Cash, 1000m, "czk", PaymentStatus.Pending);
+            PaymentType.Cash, 1000m, "czk", PaymentStatus.Pending,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.AddAssignedEmployee(OrderEmployee.Create(order, ValidatorTestHelpers.BuildEmployee(EmployeeId, ContractStatus.Approved)));
         var orders = new Mock<IOrderRepository>();

@@ -159,7 +159,8 @@ public class TakeOrderImplicitDeclineTests
             currencyId: "czk",
             paymentStatus: PaymentStatus.Paid,
             userId: customerUserId,
-            preferredEmployeeId: EmployeeId);
+            preferredEmployeeId: EmployeeId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = orderId;
         order.UpdateEstimatedTime(120);
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));

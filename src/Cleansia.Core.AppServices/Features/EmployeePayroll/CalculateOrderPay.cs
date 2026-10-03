@@ -172,6 +172,7 @@ public class CalculateOrderPay
                 .GetAll()
                 .Include(o => o.SelectedServices)
                 .Include(o => o.SelectedPackages)
+                .Include(o => o.AssignedEmployees)
                 .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);
 
             if (order is null)
@@ -179,7 +180,10 @@ public class CalculateOrderPay
                 return false;
             }
 
-            if (order.CancelledAt is not null)
+            // A seat paid from its frozen figures needs no rate today; the rate it was priced from may since
+            // have been deleted.
+            if (order.CancelledAt is not null
+                || order.AssignedEmployees.Any(oe => oe.EmployeeId == command.EmployeeId && oe.JobBasePay is not null))
             {
                 return true;
             }
@@ -255,38 +259,26 @@ public class CalculateOrderPay
                 return BusinessResult.Success(new Response(feeShare.Id));
             }
 
-            var serviceIds = order.SelectedServices.Select(os => os.ServiceId).ToList();
-            var packageIds = order.SelectedPackages.Select(os => os.PackageId).ToList();
-
-            var payConfigs = new List<EmployeePayConfig>();
-
-            // Scoped to the order's own currency, so SelectPreferredConfigs below is choosing between
-            // an override and a platform-wide row rather than between denominations. This is the WRITER
-            // -- the number it lands in OrderEmployeePay is what the cleaner is actually paid.
-            var serviceConfigs = await payConfigRepository.GetServiceConfigsForOrderAsync(
-                serviceIds, command.EmployeeId, [order.CurrencyId], cancellationToken);
-            var packageConfigs = await payConfigRepository.GetPackageConfigsForOrderAsync(
-                packageIds, command.EmployeeId, [order.CurrencyId], cancellationToken);
-
-            payConfigs.AddRange(SelectPreferredConfigs(packageConfigs, c => c.PackageId));
-            payConfigs.AddRange(SelectPreferredConfigs(serviceConfigs, c => c.ServiceId));
-
-            // The seat's bounds are persisted with its pay so a later bonus or deduction re-clamps the
-            // core exactly as it was clamped here.
-            var (basePay, extrasPay, dirtinessPay, totalPay, minPay, maxPay, breakdown) = payConfigs.CalculateSeatPay(
-                order.Rooms,
-                order.Bathrooms,
-                order.DirtinessRate,
-                order.RequiredEmployees,
-                firstSeat);
+            // A seat whose contract for work formed is paid from the figures its reward was priced from, so a
+            // rate edited after the take does not reach it. The seat's bounds are persisted with its pay so a
+            // later bonus or deduction re-clamps the core exactly as it was clamped here.
+            var seat = order.AssignedEmployees.FirstOrDefault(oe => oe.EmployeeId == command.EmployeeId);
+            var (basePay, extrasPay, dirtinessPay, totalPay, minPay, maxPay, breakdown) =
+                seat?.FrozenPay(order.DirtinessRate, order.RequiredEmployees, firstSeat)
+                ?? (await LivePayConfigsAsync(order, command.EmployeeId, cancellationToken)).CalculateSeatPay(
+                    order.Rooms,
+                    order.Bathrooms,
+                    order.DirtinessRate,
+                    order.RequiredEmployees,
+                    firstSeat);
 
             var orderEmployeePay = OrderEmployeePay.Create(
                 orderId: command.OrderId,
                 employeeId: command.EmployeeId,
                 payPeriodId: payPeriod!.Id,
-                // The order's currency, which is also the pay configs' -- the reads above return only
-                // rates denominated in it, so the amounts below were computed in this currency rather
-                // than merely labelled with it.
+                // The order's currency, which is also the pay configs' -- the rates are read, at the take
+                // or here, only in it, so the amounts below were computed in this currency rather than
+                // merely labelled with it.
                 currencyId: order.CurrencyId,
                 basePay: basePay,
                 extrasPay: extrasPay,
@@ -301,6 +293,26 @@ public class CalculateOrderPay
             order.MarkEmployeePayCalculated();
 
             return BusinessResult.Success(new Response(orderEmployeePay.Id));
+        }
+
+        // Scoped to the order's own currency, so SelectPreferredConfigs below is choosing between an
+        // override and a platform-wide row rather than between denominations.
+        private async Task<List<EmployeePayConfig>> LivePayConfigsAsync(
+            Order order, string employeeId, CancellationToken cancellationToken)
+        {
+            var serviceIds = order.SelectedServices.Select(os => os.ServiceId).ToList();
+            var packageIds = order.SelectedPackages.Select(os => os.PackageId).ToList();
+
+            var serviceConfigs = await payConfigRepository.GetServiceConfigsForOrderAsync(
+                serviceIds, employeeId, [order.CurrencyId], cancellationToken);
+            var packageConfigs = await payConfigRepository.GetPackageConfigsForOrderAsync(
+                packageIds, employeeId, [order.CurrencyId], cancellationToken);
+
+            return
+            [
+                .. SelectPreferredConfigs(packageConfigs, c => c.PackageId),
+                .. SelectPreferredConfigs(serviceConfigs, c => c.ServiceId),
+            ];
         }
 
         private static IEnumerable<EmployeePayConfig> SelectPreferredConfigs(

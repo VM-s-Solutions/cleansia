@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
@@ -151,7 +152,8 @@ public class TakeOrderConcurrentSeatRaceTests(PostgresContainerFixture fixture) 
             paymentType: PaymentType.Cash,
             totalPrice: 1000m,
             currencyId: currency.Id,
-            paymentStatus: PaymentStatus.Pending);
+            paymentStatus: PaymentStatus.Pending,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = orderId;
         order.SetMaxEmployees(1);
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Confirmed, order));

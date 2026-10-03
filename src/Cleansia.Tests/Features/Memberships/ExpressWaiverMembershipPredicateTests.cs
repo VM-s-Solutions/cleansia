@@ -63,7 +63,6 @@ public sealed class ExpressWaiverMembershipPredicateTests : IDisposable
             code: "PLUS_MONTHLY",
             name: "Plus Monthly",
             discountPercentage: 5m,
-            freeCancellationWindowHours: 4,
             allowsExpressUpgrade: true,
             expressUpgradesPerMonth: 2);
         ctx.Add(plan);

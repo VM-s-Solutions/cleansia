@@ -22,8 +22,8 @@ import cz.cleansia.core.format.formatOrderDateRange
 import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.customer.BuildConfig
 import cz.cleansia.customer.R
+import cz.cleansia.customer.core.booking.DirtinessLevel
 import cz.cleansia.customer.core.orders.OrderDetailDto
-import cz.cleansia.customer.features.booking.surchargeLineRes
 
 /**
  * What the customer is charged and how. The per-source discount amounts are on
@@ -45,7 +45,7 @@ internal fun PriceBreakdownCard(order: OrderDetailDto) {
             ?.takeIf { it > 0.0 }
             ?.let { stringResource(R.string.order_detail_discount_promo) to it },
     )
-    val dirtinessLine = order.dirtinessLevel.surchargeLineRes()?.takeIf { order.dirtinessSurchargeAmount > 0.0 }
+    val dirtinessLine = order.dirtinessLevel.bookedSurchargeLineRes()?.takeIf { order.dirtinessSurchargeAmount > 0.0 }
     val showSubtotal = dirtinessLine != null ||
         (order.originalSubtotal > 0.0 && order.originalSubtotal != order.totalPrice)
 
@@ -123,6 +123,14 @@ internal fun PriceBreakdownCard(order: OrderDetailDto) {
  * reads as the total. The express part stays inside the subtotal, which the order detail does not itemise.
  */
 internal fun OrderDetailDto.subtotalBeforeDirtiness(): Double = originalSubtotal - dirtinessSurchargeAmount
+
+/** The stored surcharge was charged at its booking's rate, which need not be today's, so the label names no rate. */
+@StringRes
+internal fun DirtinessLevel.bookedSurchargeLineRes(): Int? = when (this) {
+    DirtinessLevel.Normal -> null
+    DirtinessLevel.Increased -> R.string.dirtiness_surcharge_line_increased
+    DirtinessLevel.Heavy -> R.string.dirtiness_surcharge_line_heavy
+}
 
 /** Backend `PaymentType`: Cash = 1, Card = 2. */
 @StringRes

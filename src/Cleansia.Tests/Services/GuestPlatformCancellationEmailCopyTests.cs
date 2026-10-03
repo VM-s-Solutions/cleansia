@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using System.Net;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -185,7 +186,8 @@ public sealed class GuestPlatformCancellationEmailCopyTests
             paymentType: paymentType,
             totalPrice: 1000m,
             currencyId: "eur",
-            paymentStatus: paymentStatus);
+            paymentStatus: paymentStatus,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         var euro = Currency.Create("EUR", "€", "Euro");
         euro.Id = "eur";
         order.SetCurrency(euro);

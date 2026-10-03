@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using System.Security.Claims;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.EmployeePayroll;
@@ -226,7 +227,8 @@ public class InvoiceListCurrencyScopeTests(PostgresContainerFixture fixture) : B
             totalPrice: 1500m,
             currencyId: currencyId,
             paymentStatus: PaymentStatus.Pending,
-            userId: ownerUserId);
+            userId: ownerUserId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));
         return order;
     }

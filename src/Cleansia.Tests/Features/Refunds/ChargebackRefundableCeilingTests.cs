@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
@@ -68,7 +69,8 @@ public sealed class ChargebackRefundableCeilingTests : IDisposable
             totalPrice: totalPrice,
             currencyId: currency.Id,
             paymentStatus: PaymentStatus.Paid,
-            userId: null);
+            userId: null,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
 
         var chargeback = Refund.Create(

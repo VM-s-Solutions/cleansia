@@ -23,9 +23,6 @@ public class MembershipPlanEntityConfiguration : AuditableEntityConfiguration<Me
         builder.Property(p => p.DiscountPercentage)
             .HasPrecision(5, 2);
 
-        builder.Property(p => p.FreeCancellationWindowHours)
-            .IsRequired();
-
         builder.Property(p => p.AllowsExpressUpgrade)
             .IsRequired();
 

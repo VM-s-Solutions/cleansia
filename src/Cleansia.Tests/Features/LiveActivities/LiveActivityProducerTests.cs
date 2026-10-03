@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
@@ -48,7 +49,8 @@ public class LiveActivityProducerTests
             totalPrice: 1000m,
             currencyId: "czk",
             paymentStatus: PaymentStatus.Paid,
-            userId: userId);
+            userId: userId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.UpdateEstimatedTime(120);
 

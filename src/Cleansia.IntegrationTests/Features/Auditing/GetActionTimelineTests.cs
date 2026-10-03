@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using System.Security.Claims;
 using Cleansia.Core.AppServices.Features.Auditing;
 using Cleansia.Core.AppServices.Features.Auditing.DTOs;
@@ -244,7 +245,8 @@ public class GetActionTimelineTests(PostgresContainerFixture fixture) : BaseInte
             totalPrice: 1500m,
             currencyId: CurrencyId,
             paymentStatus: PaymentStatus.Paid,
-            userId: userId);
+            userId: userId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = orderId;
         order.Created(Constants.TestUserSession.TestUserName, DateTime.UtcNow);
         var stamp = T0.AddDays(-2);

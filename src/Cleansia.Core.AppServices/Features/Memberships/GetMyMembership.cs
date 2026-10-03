@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Abstractions;
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Repositories;
@@ -105,7 +106,7 @@ public class GetMyMembership
                 PlanName: membership.MembershipPlan.Name,
                 Price: price?.Price,
                 DiscountPercentage: membership.MembershipPlan.DiscountPercentage,
-                FreeCancellationWindowHours: membership.MembershipPlan.FreeCancellationWindowHours,
+                FreeCancellationWindowHours: BookingPolicy.PlusFreeCancellationHours,
                 AllowsExpressUpgrade: membership.MembershipPlan.AllowsExpressUpgrade,
                 Status: membership.Status,
                 CurrentPeriodEnd: membership.CurrentPeriodEnd,

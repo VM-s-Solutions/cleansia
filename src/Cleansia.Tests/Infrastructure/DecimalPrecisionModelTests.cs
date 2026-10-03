@@ -76,6 +76,8 @@ public sealed class DecimalPrecisionModelTests
     [InlineData(nameof(Order.AppliedVatRate))]
     [InlineData(nameof(Order.CancellationFeeRate))]
     [InlineData(nameof(Order.DirtinessRate))]
+    [InlineData(nameof(Order.CancellationPartialFeeRate))]
+    [InlineData(nameof(Order.CancellationLastMinuteFeeRate))]
     public void Order_RateColumns_Are_5_4(string propertyName)
     {
         var property = Property(typeof(Order), propertyName);

@@ -108,7 +108,8 @@ public sealed class FiscalRetryServicePerReceiptDurabilityTests
             paymentType: PaymentType.Cash,
             totalPrice: 1000m,
             currencyId: "eur",
-            paymentStatus: PaymentStatus.Pending);
+            paymentStatus: PaymentStatus.Pending,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.SetCurrency(Euro());
         order.Id = orderId;
         return order;

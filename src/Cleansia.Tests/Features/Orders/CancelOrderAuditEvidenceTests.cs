@@ -23,7 +23,7 @@ namespace Cleansia.Tests.Features.Orders;
 /// <summary>
 /// ADR-0062 D3 at the producer: a customer cancel emits ONE <see cref="CancelOrder.OrderCancellationEvidence"/>
 /// carrying the figures the server charged by — the tier, the rate, the resolved free window, the
-/// platform constants at that instant, the acceptance fact and the money — and nothing the customer
+/// schedule frozen on the order, the acceptance fact and the money — and nothing the customer
 /// typed. A refused cancel emits nothing (the pipeline writes the refusal row from the key alone).
 /// Enum members are pinned by camelCase NAME, the form the row is read in years later.
 /// </summary>
@@ -74,11 +74,11 @@ public sealed class CancelOrderAuditEvidenceTests
                 TimeProvider.System,
                 NullLogger<CustomerOrderCancellation>.Instance));
 
-    private void ArrangePlusMember(int freeCancellationWindowHours = 4)
+    private void ArrangePlusMember()
     {
         var plan = MembershipPlan.Create(
             code: "PLUS_MONTHLY", name: "Plus", discountPercentage: 5m,
-            freeCancellationWindowHours: freeCancellationWindowHours, allowsExpressUpgrade: true);
+            allowsExpressUpgrade: true);
         var membership = UserMembershipMockFactory.Paid(UserId, plan.Id);
         typeof(UserMembership).GetProperty(nameof(UserMembership.MembershipPlan))!
             .GetSetMethod(nonPublic: true)!.Invoke(membership, [plan]);
@@ -95,7 +95,8 @@ public sealed class CancelOrderAuditEvidenceTests
         PaymentType paymentType = PaymentType.Card,
         PaymentStatus paymentStatus = PaymentStatus.Paid,
         OrderStatus? currentStatus = null,
-        int bookedMinutesAgo = 2 * 24 * 60)
+        int bookedMinutesAgo = 2 * 24 * 60,
+        CancellationTerms? terms = null)
     {
         var currency = Currency.Create("CZK", "Kč", "Czech Koruna");
         currency.Id = CurrencyId;
@@ -111,7 +112,8 @@ public sealed class CancelOrderAuditEvidenceTests
             totalPrice: totalPrice,
             currencyId: currency.Id,
             paymentStatus: paymentStatus,
-            userId: ownerUserId);
+            userId: ownerUserId,
+            cancellationTerms: terms ?? BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.Created("tester", DateTime.UtcNow.AddMinutes(-bookedMinutesAgo));
         order.SetCurrency(currency);
@@ -155,7 +157,7 @@ public sealed class CancelOrderAuditEvidenceTests
     [Fact]
     public async Task A_Plus_Member_Cancelling_An_Accepted_Paid_Job_Three_Hours_Out_Records_The_Last_Minute_Tier_And_Every_Figure()
     {
-        ArrangePlusMember(freeCancellationWindowHours: 4);
+        ArrangePlusMember();
         ArrangeOrder(DateTime.UtcNow.AddHours(3));
 
         var result = await CreateHandler().Handle(new CancelOrder.Command(OrderId, Reason: null), CancellationToken.None);
@@ -179,7 +181,7 @@ public sealed class CancelOrderAuditEvidenceTests
         Assert.True(payload.GetProperty("hasBeenAccepted").GetBoolean());
         Assert.InRange(payload.GetProperty("hoursBeforeCleaning").GetDecimal(), 2.9m, 3.0m);
         Assert.InRange(payload.GetProperty("minutesSinceBooking").GetDecimal(), 2879m, 2881m);
-        Assert.Equal(4, payload.GetProperty("freeCancellationHoursApplied").GetInt32());
+        Assert.Equal(BookingPolicy.PlusFreeCancellationHours, payload.GetProperty("freeCancellationHoursApplied").GetInt32());
         Assert.Equal(BookingPolicy.OopsWindowMinutesPlus, payload.GetProperty("oopsMinutesApplied").GetInt32());
         Assert.Equal("plus", payload.GetProperty("oopsRuleApplied").GetString());
         Assert.False(payload.GetProperty("expressWaiverReleased").GetBoolean());
@@ -205,6 +207,35 @@ public sealed class CancelOrderAuditEvidenceTests
             || m.EndsWith("Email", StringComparison.OrdinalIgnoreCase)
             || m.EndsWith("Phone", StringComparison.OrdinalIgnoreCase)
             || m.EndsWith("Address", StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>
+    /// The evidence records the figures the cancel was priced by — the order's, frozen at booking — never
+    /// today's constants. Twelve hours out under free 48 h / partial 30 % down to 6 h: the 30 % tier.
+    /// </summary>
+    [Fact]
+    public async Task The_Evidence_Records_The_Schedule_Frozen_On_The_Order_Not_Todays()
+    {
+        _membershipRepository
+            .Setup(r => r.GetEntitledForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((UserMembership?)null);
+        ArrangeOrder(
+            DateTime.UtcNow.AddHours(12),
+            terms: new CancellationTerms(
+                FreeHours: 48, PartialHours: 6, PartialFeeRate: 0.30m, LastMinuteFeeRate: 0.60m, PlusFreeHours: 8));
+
+        var result = await CreateHandler().Handle(new CancelOrder.Command(OrderId, Reason: null), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        var payload = Payload(_auditContext.DrainSnapshot());
+        Assert.Equal("partial", payload.GetProperty("tier").GetString());
+        Assert.Equal(0.30m, payload.GetProperty("feeRate").GetDecimal());
+        Assert.Equal(48, payload.GetProperty("freeCancellationHoursApplied").GetInt32());
+        var figures = payload.GetProperty("policyFigures");
+        Assert.Equal(48, figures.GetProperty("freeHours").GetInt32());
+        Assert.Equal(6, figures.GetProperty("partialHours").GetInt32());
+        Assert.Equal(0.30m, figures.GetProperty("partialRate").GetDecimal());
+        Assert.Equal(0.60m, figures.GetProperty("lastMinuteRate").GetDecimal());
     }
 
     [Fact]

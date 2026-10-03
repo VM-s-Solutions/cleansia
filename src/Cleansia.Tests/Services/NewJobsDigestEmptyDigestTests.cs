@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
@@ -184,7 +185,8 @@ public sealed class NewJobsDigestEmptyDigestTests : IDisposable
             paymentType: PaymentType.Card,
             totalPrice: 1200m,
             currencyId: "czk",
-            paymentStatus: PaymentStatus.Paid);
+            paymentStatus: PaymentStatus.Paid,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = orderId;
         order.UpdateEstimatedTime(SlotMinutes);
         order.Created("system", DateTimeOffset.UtcNow.AddDays(-1));

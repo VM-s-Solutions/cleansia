@@ -657,7 +657,7 @@ VALUES (
     'Prague',
     '11000',
     (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE' LIMIT 1),
-    '+420 123 456 789',
+    '<company_phone_number>',  -- Phone - a placeholder until the real number is entered in admin
     'support@cleansia.cz',
     'https://www.cleansia.cz',
     'Česká spořitelna',

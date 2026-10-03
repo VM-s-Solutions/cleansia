@@ -1,3 +1,4 @@
+using Cleansia.Core.Domain.Company;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Infra.Services.Pdf;
 using Cleansia.Infra.Services.Pdf.Layouts;
@@ -42,6 +43,28 @@ public class ReceiptRenderTests
         }
     }
 
+    /// <summary>
+    /// The seeded company phone is the literal <c>&lt;company_phone_number&gt;</c> until the real number is
+    /// entered (owner decision 2026-10-03). QuestPDF draws text, never markup, so the company block prints
+    /// the contact line exactly as the company record formats it, and the render above draws it, with the
+    /// footer's e-mail and phone, in every language with the glyph check on.
+    /// </summary>
+    [Fact]
+    public void The_Seeded_Placeholder_Phone_Is_Printed_As_Written_In_The_Company_Block()
+    {
+        var data = Receipt("cs");
+
+        Assert.Contains(
+            (ReceiptLabels.For("cs").Contact, (string?)"Tel: <company_phone_number> | Email: support@cleansia.cz"),
+            new ProbeLayout().Company(data));
+        Assert.Equal("<company_phone_number>", data.Company!.Phone);
+    }
+
+    // The contact values of the seeded company record (insert_seed_data.sql).
+    private static readonly CompanyInfo SeededContact = CompanyInfo.Create(
+        "Cleansia s.r.o.", "Cleansia", "12345678", "Hlavní 1", "Praha", "11000", "country-cze",
+        phone: "<company_phone_number>", email: "support@cleansia.cz");
+
     private static ReceiptPdfData Receipt(string languageCode) =>
         new()
         {
@@ -75,9 +98,14 @@ public class ReceiptRenderTests
                 City = "Praha",
                 ZipCode = "11000",
                 Address = "Hlavní 1, Praha, 11000",
-                ContactInfo = "info@cleansia.cz",
-                Email = "info@cleansia.cz",
-                Phone = "+420 123 456 789",
+                ContactInfo = SeededContact.GetFormattedContactInfo(),
+                Email = SeededContact.Email,
+                Phone = SeededContact.Phone,
             },
         };
+
+    private sealed class ProbeLayout : DefaultReceiptLayoutBuilder
+    {
+        public IReadOnlyList<(string Label, string? Value)> Company(ReceiptPdfData data) => CompanyFields(data);
+    }
 }

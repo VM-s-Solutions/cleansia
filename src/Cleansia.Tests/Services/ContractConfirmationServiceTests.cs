@@ -221,6 +221,37 @@ public sealed class ContractConfirmationServiceTests
         Assert.Equal([("Cena", true), ("Cena je uvedena v CZK.", false)], _printed.Text);
     }
 
+    /// <summary>
+    /// The seeded company record gives support@cleansia.cz and the literal phone placeholder
+    /// <c>&lt;company_phone_number&gt;</c> (owner decisions 2026-10-03). The seller section prints both as
+    /// written, and QuestPDF draws them as text, never markup, with the glyph check on.
+    /// </summary>
+    [Fact]
+    public async Task The_Booking_Confirmation_Prints_The_Seeded_Contact_As_Written()
+    {
+        _companies.Setup(r => r.GetActiveByCountryAsync(CountryId, It.IsAny<CancellationToken>())).ReturnsAsync(CompanyInfo.Create(
+            "Cleansia s.r.o.", "CLEANSIA", "12345678", "Václavské náměstí 1", "Prague", "11000", CountryId,
+            phone: "<company_phone_number>", email: "support@cleansia.cz"));
+
+        await CreateService().ForBookingAsync(CardOrder(), PaidOn, "cs", CancellationToken.None);
+
+        Assert.Contains(("E-mail", "support@cleansia.cz"), Section("Prodávající"));
+        Assert.Contains(("Telefon", "<company_phone_number>"), Section("Prodávající"));
+
+        var checkedBefore = QuestPDF.Settings.CheckIfAllTextGlyphsAreAvailable;
+        QuestPDF.Settings.CheckIfAllTextGlyphsAreAvailable = true;
+        try
+        {
+            Assert.StartsWith("%PDF", Encoding.ASCII.GetString(
+                new QuestPdfService(new LayoutBuilderFactory([], []), NullLogger<QuestPdfService>.Instance)
+                    .GenerateConfirmationPdf(_printed!), 0, 4));
+        }
+        finally
+        {
+            QuestPDF.Settings.CheckIfAllTextGlyphsAreAvailable = checkedBefore;
+        }
+    }
+
     [Fact]
     public async Task Both_Confirmations_Render_To_A_Pdf_In_Any_Script()
     {

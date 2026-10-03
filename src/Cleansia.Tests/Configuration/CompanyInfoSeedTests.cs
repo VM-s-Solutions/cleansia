@@ -3,8 +3,9 @@ namespace Cleansia.Tests.Configuration;
 /// <summary>
 /// The company record <c>insert_seed_data.sql</c> writes is what every legal text, cleaner contract,
 /// receipt and invoice prints through the company placeholders, so its contact values are pinned here,
-/// each to its own column. Owner decision 2026-10-03: its e-mail is support@cleansia.cz, the one support
-/// address customers and cleaners see.
+/// each to its own column. Owner decisions 2026-10-03: its e-mail is support@cleansia.cz, the one support
+/// address customers and cleaners see, and its phone is a placeholder nobody can mistake for a number
+/// until the real one is entered in admin.
 /// </summary>
 public class CompanyInfoSeedTests
 {
@@ -12,6 +13,13 @@ public class CompanyInfoSeedTests
     public void The_Seeded_Company_Gives_The_Support_Address_As_Its_E_Mail()
     {
         Assert.Equal("'support@cleansia.cz'", SeededCompany()["Email"]);
+    }
+
+    // +420 123 456 789 read like a real number in the legal texts and the cleaner contracts.
+    [Fact]
+    public void The_Seeded_Company_Phone_Is_The_Literal_Placeholder()
+    {
+        Assert.Equal("'<company_phone_number>'", SeededCompany()["Phone"]);
     }
 
     /// <summary>The seed's one company row, column name to the SQL expression written for it.</summary>

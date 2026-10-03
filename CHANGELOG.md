@@ -1005,11 +1005,12 @@ need backfilling.
   the step's name, not halfway down the details: level with the name on iOS, and level with the name
   and the line under it on Android. (Owner remark 2026-10-03.)
 
-- **Customer Android and iOS — the address picker holds still while it finds the address.** Each time
-  the map stopped, the card under it shrank to one line while it looked the address up, then grew back
-  to two. On iOS the map, the pin and the card jumped with it, and on Android the card and the Mapbox
-  logo bobbed. The card now keeps its height, in booking and in the saved addresses. (Owner remark
-  2026-10-03.)
+- **Customer and cleaner Android and iOS — the address picker holds still while it finds the
+  address.** Each time the map stopped, the card under it shrank to one line while it looked the
+  address up, then grew back to two. On iOS the map, the pin and the card jumped with it, and on
+  Android the card and the Mapbox logo bobbed. The card now keeps its height: for a customer in
+  booking and in the saved addresses, and for a cleaner in the address on their profile. (Owner
+  remarks 2026-10-03.)
 
 - **Customer iOS — the credit sheet's *Got it* button is no longer cut off.** The sheet that explains
   credit, opened from Rewards and from Profile, took half the screen whatever it held. That was too

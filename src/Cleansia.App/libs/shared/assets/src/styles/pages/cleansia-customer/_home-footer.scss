@@ -55,8 +55,8 @@
 
   // The two store badges the artboard puts under the blurb. They are not links
   // yet — neither app is published — so they are marked as such rather than
-  // pointing nowhere. The row gap leaves room for the marquee that rises above
-  // each badge when the two wrap onto separate lines.
+  // pointing nowhere. The row gap leaves room for the pill that rises above each
+  // badge when the two wrap onto separate lines.
   &__apps {
     display: flex;
     gap: 20px 10px;
@@ -83,39 +83,30 @@
       opacity: 0.6;
     }
 
-    // A cinema marquee on the badge's top edge, not a pill across its middle:
-    // the pill hid both the store's icon and its name, so it was not clear what
-    // was coming. Bulb rows run along the top and bottom of a navy board and
-    // alternate like a marquee chase. Not italic despite the <em>: the tag is
-    // for emphasis in the accessibility tree.
+    // The site's own eyebrow pill (`.cl-section__badge`), set on the badge's top edge rather than
+    // across its middle, where it hid both the store's icon and its name. The ring in the footer's
+    // navy cuts the pill out of the badge's border. Not italic despite the <em>: the tag is for
+    // emphasis in the accessibility tree.
     .cl-footer__app-soon {
-      --cl-bulb: radial-gradient(circle, #e0f2fe 0 1.1px, transparent 1.7px);
       position: absolute;
       top: 0;
       left: 50%;
-      transform: translate(-50%, -60%);
-      padding: 6px 10px;
-      border: 1px solid rgba(125, 211, 252, 0.55);
-      border-radius: 6px;
-      background:
-        var(--cl-bulb) 0 1px / 7px 4px repeat-x,
-        var(--cl-bulb) 0 calc(100% - 1px) / 7px 4px repeat-x,
-        #082f49;
-      color: $white;
-      font-family: $font-body;
-      font-size: 9px;
+      transform: translate(-50%, -50%);
+      padding: 0.3rem 0.8rem;
+      border-radius: 999px;
+      background: $primary-light;
+      color: $primary-dark;
+      font-family: $font-heading;
+      font-size: 0.68rem;
       font-style: normal;
-      font-weight: 800;
-      line-height: 1;
-      letter-spacing: 0.16em;
+      font-weight: 600;
+      line-height: 1.2;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
       white-space: nowrap;
-      text-shadow: 0 0 6px rgba(125, 211, 252, 0.9);
-      // The ring in the footer's own navy cuts the board out of the badge's border.
       box-shadow:
         0 0 0 3px var(--cl-footer-bg),
-        0 0 14px rgba(56, 189, 248, 0.35);
-      animation: cl-marquee-chase 1.2s infinite;
+        $shadow-action;
     }
   }
 
@@ -326,24 +317,5 @@
   .cl-footer__prefs .cleansia-market-switcher--pill .p-select {
     min-height: 44px;
     height: 44px;
-  }
-}
-
-// The marquee's chase: every other bulb lit, swapped twice a second.
-@keyframes cl-marquee-chase {
-  0%,
-  49.9% {
-    background-position: 0 1px, 3.5px calc(100% - 1px), 0 0;
-  }
-
-  50%,
-  100% {
-    background-position: 3.5px 1px, 0 calc(100% - 1px), 0 0;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .cl-footer__app .cl-footer__app-soon {
-    animation: none;
   }
 }

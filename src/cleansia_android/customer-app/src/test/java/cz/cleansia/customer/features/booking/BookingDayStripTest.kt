@@ -1,5 +1,6 @@
 package cz.cleansia.customer.features.booking
 
+import java.io.File
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -107,5 +108,32 @@ class BookingDayStripTest {
         assertNotEquals(pickedInCzech.label, sameDayInUkrainian.label)
         // And label-matching finds nothing, which is the bug in one line.
         assertNull(uk.firstOrNull { it.label == pickedInCzech.label })
+    }
+
+    /**
+     * The When step has no Compose harness, so its rebuild is pinned as source: a step left on screen
+     * while the app was in the background shows the strip and the slot grid as of its return, not as of
+     * when it was first drawn (slots since inside the lead time still offered, yesterday still "Today").
+     */
+    @Test
+    fun `the When step rebuilds its strip and slots when the app comes back to the foreground`() {
+        val step = sequenceOf(File("."), File("customer-app"), File("src/cleansia_android/customer-app"))
+            .map { File(it, "src/main/java/cz/cleansia/customer/features/booking/WhenWhereStep.kt") }
+            .first { it.isFile }
+            .readText()
+            .replace(Regex("\\s+"), " ")
+
+        assertTrue(
+            "a return to the foreground is no longer counted",
+            step.contains("LifecycleEventEffect(Lifecycle.Event.ON_START) { returns++ }"),
+        )
+        assertTrue(
+            "the day strip is not rebuilt on a return",
+            step.contains("remember(locale, todayLabel, returns) { buildDays(locale, todayLabel) }"),
+        )
+        assertTrue(
+            "the slot grid is not rebuilt on a return",
+            step.contains("remember(pickedDayChip?.localDate, returns) { pickedDayChip?.localDate?.let { timeSlotsFor(it) }"),
+        )
     }
 }

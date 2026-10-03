@@ -57,6 +57,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.customer.R
 import cz.cleansia.core.format.formatOrderPrice
@@ -378,6 +380,15 @@ private fun SheetContent(
     // without ever composing closed and the effect above never hears of the close. Leaving composition
     // is the one thing every way out shares, so the close is recorded there too.
     DisposableEffect(bookingVm) { onDispose { bookingVm.setSheetVisible(false) } }
+    // A sheet left open in the background comes back to a clock that has moved on, so its time is
+    // re-checked on the way back, as a plain open re-checks one. Only a start after a stop is a return:
+    // the ON_START a new observer is sent as it enters composition is not one.
+    var stopped by remember { mutableStateOf(false) }
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) { stopped = true }
+    LifecycleEventEffect(Lifecycle.Event.ON_START) {
+        if (stopped && visible) bookingVm.revalidateResumedTime()
+        stopped = false
+    }
 
     LaunchedEffect(visible, rebookFromOrderId) {
         if (!visible) return@LaunchedEffect

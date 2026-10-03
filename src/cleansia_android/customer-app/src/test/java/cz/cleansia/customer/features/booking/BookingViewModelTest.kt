@@ -1215,6 +1215,154 @@ class BookingViewModelTest {
         verify(exactly = 0) { snackbar.showInfoKey(R.string.booking_draft_time_changed) }
     }
 
+    // An open sheet is re-checked too — on the way back to the foreground and before submit — and the band
+    // a time is judged in is the one its quote landed in, the sheet's close only when no quote did.
+
+    private var clockNow: Instant = Instant.DISTANT_PAST
+    private val testClock = object : Clock {
+        override fun now(): Instant = clockNow
+    }
+
+    /** [time] today, 10 September 2026, picked on [vm] and quoted at [at]. */
+    private suspend fun kotlinx.coroutines.test.TestScope.quoteTodayAt(vm: BookingViewModel, time: String, at: Instant) {
+        coEvery { bookingApi.quote(any()) } returns Response.success(quoteWith())
+        vm.clock = testClock
+        clockNow = at
+        val (hour, minute) = time.split(":").map(String::toInt)
+        vm.update {
+            it.copy(
+                selectedServiceIds = setOf("s-1"),
+                selectedLocalDate = LocalDate(2026, 9, 10),
+                selectedDate = "Today",
+                selectedTime = time,
+                selectedInstant = localAt(10, hour, minute),
+            )
+        }
+        advanceUntilIdle()
+    }
+
+    /** 15:00 quoted at 10:30 is standard; at 12:30 it is express already, so the close calls it unchanged at 12:45. */
+    @Test
+    fun revalidate_judgesTheBandFromWhenTheQuoteLanded_notFromWhenTheSheetClosed() = runTest {
+        val vm = newViewModel()
+        quoteTodayAt(vm, "15:00", at = localAt(10, 10, 30))
+        repeat(3) { vm.nextStep() }
+        vm.setSheetVisible(false, now = localAt(10, 12, 30))
+
+        assertTrue(vm.revalidateResumedTime(now = localAt(10, 12, 45)))
+
+        assertEquals("", vm.state.value.selectedTime)
+        assertEquals(3, vm.step.value)
+        verify(exactly = 1) { snackbar.showInfoKey(R.string.booking_draft_time_changed) }
+    }
+
+    /** Closed at 08:00, when 14:30 was standard; reopened, and 14:30 picked and quoted express at 12:00. */
+    @Test
+    fun revalidate_aTimeQuotedAfterTheSheetLastClosed_isJudgedFromItsQuote() = runTest {
+        val vm = newViewModel()
+        vm.setSheetVisible(false, now = localAt(10, 8))
+        vm.setSheetVisible(true)
+        quoteTodayAt(vm, "14:30", at = localAt(10, 12))
+        repeat(3) { vm.nextStep() }
+
+        assertEquals(false, vm.revalidateResumedTime(now = localAt(10, 12, 10)))
+
+        assertEquals("14:30", vm.state.value.selectedTime)
+        assertEquals(4, vm.step.value)
+        verify(exactly = 0) { snackbar.showInfoKey(R.string.booking_draft_time_changed) }
+    }
+
+    /** A re-quote after 15:00 went express carries the surcharge, so from then on the time holds. */
+    @Test
+    fun revalidate_aReQuoteThatLandsLater_resetsTheMomentTheTimeIsJudgedFrom() = runTest {
+        val vm = newViewModel()
+        quoteTodayAt(vm, "15:00", at = localAt(10, 10, 30))
+        repeat(3) { vm.nextStep() }
+
+        clockNow = localAt(10, 12)
+        vm.setRooms(2)
+        advanceUntilIdle()
+
+        assertEquals(false, vm.revalidateResumedTime(now = localAt(10, 12, 10)))
+        assertEquals("15:00", vm.state.value.selectedTime)
+        coVerify(exactly = 2) { bookingApi.quote(any()) }
+    }
+
+    /** The sheet's way back to the foreground (BookingSheetDraftTest) is this call with the sheet open. */
+    @Test
+    fun revalidate_onAnOpenSheet_clearsATimeThatCameInsideTheLeadTime() = runTest {
+        val vm = newViewModel()
+        vm.setSheetVisible(true)
+        quoteTodayAt(vm, "15:00", at = localAt(10, 10, 30))
+        repeat(3) { vm.nextStep() }
+
+        assertTrue(vm.revalidateResumedTime(now = localAt(10, 13, 30)))
+
+        assertEquals("", vm.state.value.selectedTime)
+        assertEquals(LocalDate(2026, 9, 10), vm.state.value.selectedLocalDate)
+        assertEquals(3, vm.step.value)
+        verify(exactly = 1) { snackbar.showInfoKey(R.string.booking_draft_time_changed) }
+    }
+
+    @Test
+    fun submit_aTimeThatNoLongerHolds_isRefusedBeforeAnythingIsSent() = runTest {
+        currentUserFlow.value = completeUser()
+        coEvery { bookingApi.create(any()) } returns Response.success(CreateOrderResponse(id = "o-1", confirmationCode = "ABC123"))
+        val vm = newViewModel()
+        quoteTodayAt(vm, "15:00", at = localAt(10, 10, 30))
+        vm.update { it.copy(paymentMethod = BookingViewModel.PAYMENT_CASH, earlyPerformanceRequested = true) }
+        repeat(3) { vm.nextStep() }
+
+        clockNow = localAt(10, 12)
+        val outcome = vm.submit()
+
+        assertEquals(BookingSubmitOutcome.Failed, outcome)
+        assertEquals("", vm.state.value.selectedTime)
+        assertEquals(3, vm.step.value)
+        verify(exactly = 1) { snackbar.showInfoKey(R.string.booking_draft_time_changed) }
+        coVerify(exactly = 1) { bookingApi.quote(any()) }
+        coVerify(exactly = 0) { userRepository.refreshCurrentUser() }
+        coVerify(exactly = 0) { bookingApi.create(any()) }
+        assertEquals(ActionState.Idle, vm.submitState.value)
+    }
+
+    @Test
+    fun submit_aTimeThatStillHolds_isSent() = runTest {
+        currentUserFlow.value = completeUser()
+        coEvery { bookingApi.create(any()) } returns Response.success(CreateOrderResponse(id = "o-1", confirmationCode = "ABC123"))
+        val vm = newViewModel()
+        quoteTodayAt(vm, "15:00", at = localAt(10, 10, 30))
+        vm.update { it.copy(paymentMethod = BookingViewModel.PAYMENT_CASH, earlyPerformanceRequested = true) }
+        repeat(3) { vm.nextStep() }
+
+        clockNow = localAt(10, 10, 50)
+        val outcome = vm.submit()
+
+        assertTrue("expected Success but was $outcome", outcome is BookingSubmitOutcome.Success)
+        coVerify(exactly = 1) { bookingApi.create(any()) }
+        verify(exactly = 0) { snackbar.showInfoKey(R.string.booking_draft_time_changed) }
+    }
+
+    /** The card PaymentSheet saved can take a while; the cash order it guarantees is re-checked like any submit. */
+    @Test
+    fun submitAfterCardGuarantee_aTimeThatNoLongerHolds_booksNothing() = runTest {
+        savedCardsFlow.value = emptyList()
+        val vm = cashReady(guaranteeAccepted = true)
+        coEvery { bookingApi.create(any()) } coAnswers { createRefusedWith("order.cash_requires_saved_card") }
+        quoteTodayAt(vm, "15:00", at = localAt(10, 10, 30))
+        clockNow = localAt(10, 10, 40)
+        assertTrue(vm.submit() is BookingSubmitOutcome.CardGuaranteeNeeded)
+
+        clockNow = localAt(10, 12)
+        val outcome = vm.submitAfterCardGuarantee()
+
+        assertEquals(BookingSubmitOutcome.Failed, outcome)
+        assertEquals("", vm.state.value.selectedTime)
+        coVerify(exactly = 1) { bookingApi.create(any()) }
+        coVerify(exactly = 0) { savedCardRepository.refresh() }
+        verify(exactly = 1) { snackbar.showInfoKey(R.string.booking_draft_time_changed) }
+    }
+
     /** September 2026, on the device's clock — the zone the When step's rules read. */
     private fun localAt(day: Int, hour: Int, minute: Int = 0): Instant =
         LocalDateTime(2026, 9, day, hour, minute).toInstant(TimeZone.currentSystemDefault())

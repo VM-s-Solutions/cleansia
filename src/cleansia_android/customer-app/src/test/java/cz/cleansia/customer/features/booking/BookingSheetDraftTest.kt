@@ -12,7 +12,8 @@ import org.junit.Test
  * so its open effects are pinned as source: a plain open (the Book FAB) resumes the draft, and each
  * open that seeds a booking — Order again, a popular package, the quick-size slide — resets it before
  * filling. The view model's half is BookingViewModelTest's `closingTheSheet_keepsTheDraftAndItsStep`.
- * A resumed draft's address follows Home's choice only while it is still the one the sheet seeded.
+ * A resumed draft's address follows Home's choice only while it is still the one the sheet seeded, and
+ * an open sheet re-checks its time when the app comes back to the foreground.
  */
 class BookingSheetDraftTest {
 
@@ -49,6 +50,28 @@ class BookingSheetDraftTest {
         assertTrue(
             "leaving composition no longer records the close, so a swiped-away draft is never stamped",
             flat.contains("DisposableEffect(bookingVm) { onDispose { bookingVm.setSheetVisible(false) } }"),
+        )
+    }
+
+    /**
+     * A sheet left open in the background is re-checked on the way back (the view model's half is
+     * BookingViewModelTest's `revalidate_onAnOpenSheet_…`). Only a start that follows a stop counts: the
+     * ON_START a new observer is sent on entering composition would otherwise re-check every open,
+     * seeded ones included, before their seed resets the draft.
+     */
+    @Test
+    fun `an open sheet re-checks its time when the app comes back to the foreground`() {
+        val flat = sheet.replace(Regex("\\s+"), " ")
+        assertTrue(
+            "a stop is no longer recorded, so the return cannot be told from the sheet opening",
+            flat.contains("LifecycleEventEffect(Lifecycle.Event.ON_STOP) { stopped = true }"),
+        )
+        assertTrue(
+            "a return to the foreground no longer re-checks the open sheet's time",
+            flat.contains(
+                "LifecycleEventEffect(Lifecycle.Event.ON_START) { " +
+                    "if (stopped && visible) bookingVm.revalidateResumedTime() stopped = false }",
+            ),
         )
     }
 

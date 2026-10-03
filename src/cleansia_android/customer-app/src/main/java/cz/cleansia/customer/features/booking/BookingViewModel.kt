@@ -337,24 +337,34 @@ class BookingViewModel @Inject constructor(
      */
     private var sheetVisible = true
 
-    /** When the sheet last closed on this draft; the band its time was in then is what was quoted. */
+    /** The clock every time check here reads. Tests fix it. */
+    internal var clock: Clock = Clock.System
+
+    /** When the sheet last closed on this draft: the band its time was priced in when no quote for it landed. */
     private var draftLeftAt: Instant? = null
 
-    fun setSheetVisible(visible: Boolean, now: Instant = Clock.System.now()) {
+    /** When the quote in [lastQuoteInputs] landed: the band the time it names was priced in. */
+    private var quotedAt: Instant? = null
+
+    fun setSheetVisible(visible: Boolean, now: Instant = clock.now()) {
         sheetVisible = visible
         if (!visible) draftLeftAt = now
     }
 
     /**
-     * A plain open resumes the draft, possibly hours after it was left, and only the server would
-     * refuse a time that has since passed or come inside the lead time. Re-checked against the When
-     * step's own slot rules ([draftTimeStillHolds]): a time that no longer holds is cleared — with its
-     * day, when the day has left the strip — the wizard goes back to the When step if it was past it,
-     * and the customer is told why.
+     * The time on a booking can stop holding while nobody touches it: a draft resumed hours after it
+     * was left, a sheet left open while the app was in the background, a Confirm step left on screen
+     * before the swipe. Only the server would refuse a time that has since passed or come inside the
+     * lead time, so it is re-checked against the When step's own slot rules ([draftTimeStillHolds]) on
+     * a plain open, on the way back to the foreground, and before submit. The band is judged from
+     * when the quote for that time landed, or from when the draft was left if none did. A time that
+     * no longer holds is cleared — with its day, when the day has left the strip — the wizard goes
+     * back to the When step if it was past it, and the customer is told why. True when it cleared one.
      */
-    fun revalidateResumedTime(now: Instant = Clock.System.now()) {
+    fun revalidateResumedTime(now: Instant = clock.now()): Boolean {
         val s = _state.value
-        if (draftTimeStillHolds(s.selectedLocalDate, s.selectedTime, draftLeftAt, now)) return
+        val pricedAt = quotedAt.takeIf { lastQuoteInputs.value?.cleaningInstant == s.selectedInstant } ?: draftLeftAt
+        if (draftTimeStillHolds(s.selectedLocalDate, s.selectedTime, pricedAt, now)) return false
         val today = now.toLocalDateTime(TimeZone.currentSystemDefault()).date
         val dayGone = s.selectedLocalDate.let { it == null || it < today }
         _state.update {
@@ -367,6 +377,7 @@ class BookingViewModel @Inject constructor(
         }
         _step.update { it.coerceAtMost(WHEN_STEP) }
         snackbar.showInfoKey(R.string.booking_draft_time_changed)
+        return true
     }
 
     /** Never replaced by card: the customer is told and chooses again. */
@@ -486,9 +497,9 @@ class BookingViewModel @Inject constructor(
      * Reset the entire wizard to a clean slate. Called on submit success and when
      * an open seeds a new booking (Order again, a popular package, the quick-size
      * slide) — a plain open resumes the draft instead. Clears services/packages/
-     * dates/address selections, the cached quote, in-flight indicators, both
-     * code-dialog UI states, and when the last booking was left, so its close is never
-     * read against the next one; the seed is applied after it.
+     * dates/address selections, the cached quote and when it landed, in-flight
+     * indicators, both code-dialog UI states, and when the last booking was left, so
+     * its close is never read against the next one; the seed is applied after it.
      */
     fun reset() {
         _state.value = BookingState()
@@ -502,6 +513,7 @@ class BookingViewModel @Inject constructor(
         _cashCleared.value = false
         guaranteeCurrencyCode = null
         draftLeftAt = null
+        quotedAt = null
     }
 
     fun update(transform: (BookingState) -> BookingState) {
@@ -537,9 +549,12 @@ class BookingViewModel @Inject constructor(
      * Calls /Quote then /Create. Returns an outcome the sheet uses to decide
      * navigation: Success → confirmation screen; ProfileIncomplete → deep-link
      * to Edit Profile with a helpful snackbar; Failed → stay put (snackbar fired).
+     * A time that no longer holds is refused before anything is sent: the wizard
+     * is back on the When step with the notice ([revalidateResumedTime]).
      */
     suspend fun submit(): BookingSubmitOutcome {
         if (_submitState.value is ActionState.Submitting) return BookingSubmitOutcome.Failed
+        if (revalidateResumedTime()) return BookingSubmitOutcome.Failed
         _submitState.value = ActionState.Submitting
         try {
             // "Signed in" is determined by the TokenStore (the source of truth
@@ -827,6 +842,7 @@ class BookingViewModel @Inject constructor(
         if (inputs.serviceIds.isEmpty() && inputs.packageIds.isEmpty()) {
             _quoteState.value = QuoteState.Idle
             lastQuoteInputs.value = null
+            quotedAt = null
             return
         }
         // Snapshot the previous Quoted response so we can fall back to it on
@@ -856,6 +872,7 @@ class BookingViewModel @Inject constructor(
         _quoteState.value = when {
             body != null -> {
                 lastQuoteInputs.value = inputs
+                quotedAt = clock.now()
                 QuoteState.Quoted(body)
             }
             previousQuoted != null -> QuoteState.Quoted(previousQuoted)

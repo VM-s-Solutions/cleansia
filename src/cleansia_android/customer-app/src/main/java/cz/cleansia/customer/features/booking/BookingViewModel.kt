@@ -486,8 +486,9 @@ class BookingViewModel @Inject constructor(
      * Reset the entire wizard to a clean slate. Called on submit success and when
      * an open seeds a new booking (Order again, a popular package, the quick-size
      * slide) — a plain open resumes the draft instead. Clears services/packages/
-     * dates/address selections, the cached quote, in-flight indicators, and both
-     * code-dialog UI states; the seed is applied after it.
+     * dates/address selections, the cached quote, in-flight indicators, both
+     * code-dialog UI states, and when the last booking was left, so its close is never
+     * read against the next one; the seed is applied after it.
      */
     fun reset() {
         _state.value = BookingState()
@@ -500,6 +501,7 @@ class BookingViewModel @Inject constructor(
         lastQuoteInputs.value = null
         _cashCleared.value = false
         guaranteeCurrencyCode = null
+        draftLeftAt = null
     }
 
     fun update(transform: (BookingState) -> BookingState) {

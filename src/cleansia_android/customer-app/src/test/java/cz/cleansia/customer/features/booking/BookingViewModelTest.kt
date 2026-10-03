@@ -1195,6 +1195,26 @@ class BookingViewModelTest {
         verify(exactly = 0) { snackbar.showInfoKey(R.string.booking_draft_time_changed) }
     }
 
+    /** A booking that went through, or one a seeded open replaced, takes its close with it. */
+    @Test
+    fun reset_forgetsWhenTheLastBookingWasLeft_soTheNextDraftIsNotReadAgainstIt() = runTest {
+        val today = LocalDate(2026, 9, 10)
+        val vm = newViewModel()
+        vm.setSheetVisible(false, now = localAt(10, 8))
+        vm.reset()
+        // Express at 11:00, and quoted so; at 08:00 the same slot was standard.
+        vm.update {
+            it.copy(selectedLocalDate = today, selectedDate = "Today", selectedTime = "14:00", selectedInstant = localAt(10, 14))
+        }
+        repeat(3) { vm.nextStep() }
+
+        vm.revalidateResumedTime(now = localAt(10, 11, 10))
+
+        assertEquals("14:00", vm.state.value.selectedTime)
+        assertEquals(4, vm.step.value)
+        verify(exactly = 0) { snackbar.showInfoKey(R.string.booking_draft_time_changed) }
+    }
+
     /** September 2026, on the device's clock — the zone the When step's rules read. */
     private fun localAt(day: Int, hour: Int, minute: Int = 0): Instant =
         LocalDateTime(2026, 9, day, hour, minute).toInstant(TimeZone.currentSystemDefault())

@@ -39,6 +39,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -373,6 +374,10 @@ private fun SheetContent(
             bookingVm.revalidateResumedTime()
         }
     }
+    // A swipe takes the sheet to Hidden before `visible` flips, so this content leaves composition
+    // without ever composing closed and the effect above never hears of the close. Leaving composition
+    // is the one thing every way out shares, so the close is recorded there too.
+    DisposableEffect(bookingVm) { onDispose { bookingVm.setSheetVisible(false) } }
 
     LaunchedEffect(visible, rebookFromOrderId) {
         if (!visible) return@LaunchedEffect

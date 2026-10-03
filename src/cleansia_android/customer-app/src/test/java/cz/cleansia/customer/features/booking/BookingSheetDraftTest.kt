@@ -38,6 +38,20 @@ class BookingSheetDraftTest {
         assertTrue("an open sends the draft back to its first step", !sheet.contains("returnToFirstStep()"))
     }
 
+    /**
+     * A swipe takes the sheet to Hidden before `visible` flips, so the content leaves composition without
+     * composing closed: only leaving composition sees that close, and without it the express band is read
+     * against an older close, or none.
+     */
+    @Test
+    fun `every way out of the sheet, a swipe included, records the close`() {
+        val flat = sheet.replace(Regex("\\s+"), " ")
+        assertTrue(
+            "leaving composition no longer records the close, so a swiped-away draft is never stamped",
+            flat.contains("DisposableEffect(bookingVm) { onDispose { bookingVm.setSheetVisible(false) } }"),
+        )
+    }
+
     @Test
     fun `every seeded open starts its booking afresh before filling it`() {
         listOf(

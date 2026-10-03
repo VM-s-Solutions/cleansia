@@ -1,3 +1,4 @@
+import CleansiaCore
 import Foundation
 
 enum L10n {
@@ -57,14 +58,16 @@ enum L10n {
 
     /// A key whose `.xcstrings` entry carries PLURAL VARIATIONS.
     ///
-    /// `String(format:)` is not enough: plural selection is applied by
-    /// `String.localizedStringWithFormat`, which resolves the variation against the current locale's
-    /// rules before substituting. Calling `format` on a plural key returns whichever form happens to be
-    /// the base and silently ignores the count — which is the bug this whole migration exists to fix,
-    /// so it must not be reintroduced by using the wrong helper.
+    /// `String(format:)` is not enough: plural selection needs a locale, whose rules pick the variation
+    /// before substituting. Calling `format` on a plural key returns whichever form happens to be the
+    /// base and silently ignores the count — which is the bug this whole migration exists to fix, so it
+    /// must not be reintroduced by using the wrong helper.
+    ///
+    /// The locale is the IN-APP language's (`CoreL10n.locale`), never `.current`: the in-app switch does
+    /// not change the process locale, so `.current` applied the phone's rules to the chosen language's
+    /// forms — "5 кімнати" on an English phone running the app in Ukrainian.
     static func plural(_ key: String, _ count: Int, _ extra: CVarArg...) -> String {
-        // locale: .current is what applies the plural rules; String(format:) without it does not.
-        String(format: localized(key), locale: .current, arguments: [count as CVarArg] + extra)
+        String(format: localized(key), locale: CoreL10n.locale, arguments: [count as CVarArg] + extra)
     }
 
     static func format(_ key: String, arguments: [CVarArg]) -> String {

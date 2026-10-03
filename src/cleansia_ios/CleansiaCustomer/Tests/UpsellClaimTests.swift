@@ -1,3 +1,4 @@
+import CleansiaCore
 import XCTest
 @testable import CleansiaCustomer
 
@@ -348,6 +349,28 @@ final class UpsellClaimTests: XCTestCase {
         }
         L10n.bundle = try localeBundle("uk")
         XCTAssertEqual(L10n.Recurring.createBathroomsLabel, "Ванні кімнати")
+    }
+
+    /// The count's FORM follows the in-app language, not the phone: `L10n.plural` resolved against
+    /// `.current`, which the in-app switch never changes, so an English phone running the app in Czech read
+    /// "2 pokojů" and in Ukrainian "5 кімнати". Each language is applied as the switch applies it — both
+    /// bundles repointed, the process locale left on the simulator's English.
+    func testPluralFormsFollowTheInAppLanguageNotTheDeviceLocale() throws {
+        let expected: [String: [Int: String]] = [
+            "cs": [1: "1 pokoj", 2: "2 pokoje", 5: "5 pokojů"],
+            "sk": [1: "1 izba", 2: "2 izby", 5: "5 izieb"],
+            "uk": [1: "1 кімната", 2: "2 кімнати", 5: "5 кімнат"],
+            "ru": [1: "1 комната", 2: "2 комнаты", 5: "5 комнат"]
+        ]
+        let restoreTag = CoreL10n.languageTag
+        defer { CoreL10n.apply(languageTag: restoreTag) }
+        for (language, forms) in expected {
+            L10n.bundle = try localeBundle(language)
+            CoreL10n.apply(languageTag: language)
+            for (count, form) in forms {
+                XCTAssertEqual(L10n.Booking.roomsShort(count), form, "\(language), \(count)")
+            }
+        }
     }
 
     /// The express slide states the 2–4 h window from the client's booking bands, so those must be the

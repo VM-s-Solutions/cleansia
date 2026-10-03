@@ -1,3 +1,4 @@
+import CleansiaCore
 import CleansiaPartnerApi
 import Foundation
 import XCTest
@@ -156,6 +157,49 @@ final class OrdersFormatTests: XCTestCase {
             let format = L10n.localized("scope_baths")
             for (count, form) in forms {
                 XCTAssertEqual(String(format: format, locale: Locale(identifier: language), count), form, language)
+            }
+        }
+    }
+
+    /// The count's FORM follows the in-app language, not the phone: `format` passed no locale, so the
+    /// partner app picked no form by the chosen language's rules — "2 pokojů", "5 кімнати" on an English
+    /// phone running the app in Czech or Ukrainian. Each language is applied as the switch applies it,
+    /// both bundles repointed, the process locale left on the simulator's English.
+    func testPluralFormsFollowTheInAppLanguageNotTheDeviceLocale() throws {
+        let expected: [String: [Int: (rooms: String, crew: String)]] = [
+            "cs": [
+                1: ("1 pokoj", "Potřeba 1 uklízeč"),
+                2: ("2 pokoje", "Potřeba 2 uklízeči"),
+                5: ("5 pokojů", "Potřeba 5 uklízečů")
+            ],
+            "sk": [
+                1: ("1 izba", "Potrebný 1 upratovač"),
+                2: ("2 izby", "Potrební 2 upratovači"),
+                5: ("5 izieb", "Potrebných 5 upratovačov")
+            ],
+            "uk": [
+                1: ("1 кімната", "Потрібен 1 прибиральник"),
+                2: ("2 кімнати", "Потрібні 2 прибиральники"),
+                5: ("5 кімнат", "Потрібно 5 прибиральників")
+            ],
+            "ru": [
+                1: ("1 комната", "Нужен 1 клинер"),
+                2: ("2 комнаты", "Нужны 2 клинера"),
+                5: ("5 комнат", "Нужно 5 клинеров")
+            ]
+        ]
+        let restore = L10n.bundle
+        let restoreTag = CoreL10n.languageTag
+        defer {
+            L10n.bundle = restore
+            CoreL10n.apply(languageTag: restoreTag)
+        }
+        for (language, forms) in expected {
+            L10n.bundle = try localeBundle(language)
+            CoreL10n.apply(languageTag: language)
+            for (count, form) in forms {
+                XCTAssertEqual(L10n.Orders.rooms(count), form.rooms, "\(language), \(count)")
+                XCTAssertEqual(L10n.Orders.crewSize(count), form.crew, "\(language), \(count)")
             }
         }
     }

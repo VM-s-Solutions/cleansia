@@ -31,6 +31,9 @@ import cz.cleansia.customer.R
 import cz.cleansia.customer.core.recurring.RecurringBookingRepository
 import cz.cleansia.customer.core.recurring.UpdateRecurringBookingRequest
 import cz.cleansia.customer.features.booking.BOOKING_SLOT_INTERVAL_MINUTES
+import cz.cleansia.customer.features.booking.DoubleBooking
+import cz.cleansia.customer.features.booking.doubleBookingOfPackage
+import cz.cleansia.customer.features.booking.doubleBookingOfService
 import cz.cleansia.customer.features.booking.FIRST_WINDOW_HOUR
 import cz.cleansia.customer.features.booking.LAST_WINDOW_HOUR
 import cz.cleansia.customer.ui.state.ActionState
@@ -140,6 +143,11 @@ class CreateRecurringViewModel @Inject constructor(
     val services: StateFlow<List<ServiceListItem>> = catalogRepo.services
     val packages: StateFlow<List<PackageListItem>> = catalogRepo.packages
 
+    private val _doubleBooking = MutableStateFlow<DoubleBooking?>(null)
+
+    /** A tap on the What step that would book a service twice, held until the customer answers. */
+    val doubleBooking: StateFlow<DoubleBooking?> = _doubleBooking.asStateFlow()
+
     private val _submitState = MutableStateFlow<ActionState>(ActionState.Idle)
     val submitState: StateFlow<ActionState> = _submitState.asStateFlow()
 
@@ -224,20 +232,46 @@ class CreateRecurringViewModel @Inject constructor(
     fun setBathrooms(n: Int) { _state.update { it.copy(bathrooms = n.coerceIn(0, PropertySize.MAX_BATHROOMS)) } }
     fun setDirtinessLevel(level: DirtinessLevel) { _state.update { it.copy(dirtinessLevel = level) } }
     fun setSavedAddressId(id: String) { _state.update { it.copy(savedAddressId = id) } }
+
+    /** A removal never asks; adding a service a chosen package includes does (see [DoubleBooking]). */
     fun toggleService(id: String) {
-        _state.update {
-            val current = it.selectedServiceIds.toMutableSet()
-            if (!current.add(id)) current.remove(id)
-            it.copy(selectedServiceIds = current)
+        val s = _state.value
+        if (id in s.selectedServiceIds) {
+            _state.update { it.copy(selectedServiceIds = it.selectedServiceIds - id) }
+            return
         }
+        val twice = doubleBookingOfService(id, s.selectedPackageIds, services.value, packages.value)
+        if (twice != null) _doubleBooking.value = twice
+        else _state.update { it.copy(selectedServiceIds = it.selectedServiceIds + id) }
     }
+
+    /** A removal never asks; adding a package that includes a chosen service does. */
     fun togglePackage(id: String) {
-        _state.update {
-            val current = it.selectedPackageIds.toMutableSet()
-            if (!current.add(id)) current.remove(id)
-            it.copy(selectedPackageIds = current)
+        val s = _state.value
+        if (id in s.selectedPackageIds) {
+            _state.update { it.copy(selectedPackageIds = it.selectedPackageIds - id) }
+            return
         }
+        val twice = doubleBookingOfPackage(id, s.selectedServiceIds, packages.value)
+        if (twice != null) _doubleBooking.value = twice
+        else _state.update { it.copy(selectedPackageIds = it.selectedPackageIds + id) }
     }
+
+    /** The customer books it twice: the held pick is added. */
+    fun confirmDoubleBooking() {
+        when (val pick = _doubleBooking.value) {
+            is DoubleBooking.Service -> _state.update { it.copy(selectedServiceIds = it.selectedServiceIds + pick.service.id) }
+            is DoubleBooking.Package -> _state.update { it.copy(selectedPackageIds = it.selectedPackageIds + pick.pkg.id) }
+            null -> Unit
+        }
+        _doubleBooking.value = null
+    }
+
+    /** Cancel: the selection stays as it was. */
+    fun dismissDoubleBooking() {
+        _doubleBooking.value = null
+    }
+
     fun setPaymentType(t: Int) {
         if (t == PAYMENT_CASH && cashEligibilityOf(_state.value, quotedCrew.value) != CashEligibility.Available) return
         _cashCleared.value = false

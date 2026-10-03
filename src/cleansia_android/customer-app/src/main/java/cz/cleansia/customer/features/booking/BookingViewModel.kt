@@ -519,8 +519,9 @@ class BookingViewModel @Inject constructor(
      * an open seeds a new booking (Order again, a popular package, the quick-size
      * slide) — a plain open resumes the draft instead. Clears services/packages/
      * dates/address selections, the cached quote and when it landed, in-flight
-     * indicators, both code-dialog UI states, and when the last booking was left, so
-     * its close is never read against the next one; the seed is applied after it.
+     * indicators, both code-dialog UI states, a held double-booking confirm, and
+     * when the last booking was left, so its close is never read against the next
+     * one; the seed is applied after it.
      */
     fun reset() {
         _state.value = BookingState()
@@ -535,10 +536,62 @@ class BookingViewModel @Inject constructor(
         guaranteeCurrencyCode = null
         draftLeftAt = null
         quotedAt = null
+        _doubleBooking.value = null
     }
 
     fun update(transform: (BookingState) -> BookingState) {
         _state.value = transform(_state.value)
+    }
+
+    private val _doubleBooking = MutableStateFlow<DoubleBooking?>(null)
+
+    /** A tap on the services step that would book a service twice, held until the customer answers. */
+    val doubleBooking: StateFlow<DoubleBooking?> = _doubleBooking.asStateFlow()
+
+    /** The services list's tap. A removal never asks; adding a service a chosen package includes does. */
+    fun toggleService(id: String) {
+        val s = _state.value
+        if (id in s.selectedServiceIds) {
+            _state.update { it.copy(selectedServiceIds = it.selectedServiceIds - id) }
+            return
+        }
+        val twice = doubleBookingOfService(id, s.selectedPackageIds, catalogRepository.services.value, catalogRepository.packages.value)
+        if (twice != null) _doubleBooking.value = twice
+        else _state.update { it.copy(selectedServiceIds = it.selectedServiceIds + id) }
+    }
+
+    /**
+     * The package sheet's button. A removal never asks; adding a package that includes a chosen service
+     * does. True when the selection changed now, so the sheet closes; false while the customer is asked.
+     */
+    fun togglePackage(id: String): Boolean {
+        val s = _state.value
+        if (id in s.selectedPackageIds) {
+            _state.update { it.copy(selectedPackageIds = it.selectedPackageIds - id) }
+            return true
+        }
+        val twice = doubleBookingOfPackage(id, s.selectedServiceIds, catalogRepository.packages.value)
+        if (twice != null) {
+            _doubleBooking.value = twice
+            return false
+        }
+        _state.update { it.copy(selectedPackageIds = it.selectedPackageIds + id) }
+        return true
+    }
+
+    /** The customer books it twice: the held pick is added. */
+    fun confirmDoubleBooking() {
+        when (val pick = _doubleBooking.value) {
+            is DoubleBooking.Service -> _state.update { it.copy(selectedServiceIds = it.selectedServiceIds + pick.service.id) }
+            is DoubleBooking.Package -> _state.update { it.copy(selectedPackageIds = it.selectedPackageIds + pick.pkg.id) }
+            null -> Unit
+        }
+        _doubleBooking.value = null
+    }
+
+    /** Cancel: the selection stays as it was. */
+    fun dismissDoubleBooking() {
+        _doubleBooking.value = null
     }
 
     fun setRooms(n: Int) {

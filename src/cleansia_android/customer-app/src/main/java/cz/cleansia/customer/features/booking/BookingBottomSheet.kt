@@ -257,6 +257,7 @@ private fun SheetContent(
     val currentStep by bookingVm.step.collectAsStateWithLifecycle()
     val canStepBack by bookingVm.canStepBack.collectAsStateWithLifecycle()
     val canPlaceOrder by bookingVm.canPlaceOrder.collectAsStateWithLifecycle()
+    val doubleBooking by bookingVm.doubleBooking.collectAsStateWithLifecycle()
     val scope = androidx.compose.runtime.rememberCoroutineScope()
 
     var showAddressManager by remember { mutableStateOf(false) }
@@ -634,9 +635,13 @@ private fun SheetContent(
                 when (step) {
                     1 -> ServicesStep(
                         state = state,
-                        onUpdate = { next -> bookingVm.update { next } },
+                        onToggleService = bookingVm::toggleService,
+                        onTogglePackage = bookingVm::togglePackage,
                         onRoomsChange = bookingVm::setRooms,
                         onBathroomsChange = bookingVm::setBathrooms,
+                        doubleBooking = doubleBooking,
+                        onConfirmDoubleBooking = bookingVm::confirmDoubleBooking,
+                        onDismissDoubleBooking = bookingVm::dismissDoubleBooking,
                     )
                     2 -> DirtinessStep(
                         selected = state.dirtinessLevel,

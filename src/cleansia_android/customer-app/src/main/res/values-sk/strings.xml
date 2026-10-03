@@ -653,6 +653,13 @@
     <string name="details_per_room">Za izbu</string>
     <string name="details_add_to_booking">Pridať do rezervácie</string>
     <string name="details_remove_from_booking">Odobrať z rezervácie</string>
+    <string name="booking_in_your_package">Vo vašom balíčku: %1$s</string>
+    <string name="booking_twice_service_title">Už je vo vašom balíčku</string>
+    <string name="booking_twice_service_message">Služba %1$s je súčasťou balíčka %2$s. Ak ju pridáte znova, objednáte ju dvakrát: vykoná sa dvakrát a zaplatíte ju dvakrát.</string>
+    <string name="booking_twice_service_confirm">Pridať znova</string>
+    <string name="booking_twice_package_title">Už je vo vašej rezervácii</string>
+    <string name="booking_twice_package_message">Balíček %1$s obsahuje aj to, čo už máte v rezervácii samostatne: %2$s. Ak balíček pridáte, objednáte to dvakrát: vykoná sa to dvakrát a zaplatíte to dvakrát.</string>
+    <string name="booking_twice_package_confirm">Pridať balíček</string>
     <string name="booking_your_home">Váš domov</string>
     <string name="booking_size_limit_caption">Najviac %1$d izieb a %2$d kúpeľne</string>
     <string name="booking_search_services">Hľadať služby</string>

@@ -16,6 +16,7 @@ import cz.cleansia.customer.core.catalog.CatalogRepository
 import cz.cleansia.customer.core.catalog.CategoryDto
 import cz.cleansia.customer.core.catalog.ExtraListItem
 import cz.cleansia.customer.core.catalog.PackageListItem
+import cz.cleansia.customer.core.catalog.PackageServiceSummary
 import cz.cleansia.customer.core.catalog.ServiceListItem
 import cz.cleansia.customer.core.consent.GdprConsentClient
 import cz.cleansia.customer.core.consent.SignupConsentType
@@ -2710,6 +2711,128 @@ class BookingViewModelTest {
         vm.reset()
 
         assertNull(vm.state.value.dirtinessLevel)
+    }
+
+    // ── a package and a service it includes ──
+    //
+    // Owner ruling: both are kept, so that service is booked twice. A tap that adds one asks first;
+    // a removal and a seeded selection never ask (→ /product/business-rules#charging-a-package-and-a-service-together).
+
+    private fun packageWith(id: String, vararg serviceIds: String) = PackageListItem(
+        id = id,
+        name = "Package $id",
+        price = 20.0,
+        includedServices = serviceIds.map { PackageServiceSummary(name = "Service $it", serviceId = it) },
+    )
+
+    private fun kotlinx.coroutines.test.TestScope.withDeepCleanPackage(): BookingViewModel {
+        catalogServicesFlow.value = listOf(service("svc-1"), service("svc-2"))
+        catalogPackagesFlow.value = listOf(packageWith("pkg-1", "svc-1"))
+        return newViewModel().also { advanceUntilIdle() }
+    }
+
+    @Test
+    fun addingAServiceAChosenPackageIncludes_asksFirstAndAddsNothingYet() = runTest {
+        val vm = withDeepCleanPackage()
+        vm.togglePackage("pkg-1")
+
+        vm.toggleService("svc-1")
+
+        assertEquals(DoubleBooking.Service(service("svc-1"), catalogPackagesFlow.value), vm.doubleBooking.value)
+        assertEquals(emptySet<String>(), vm.state.value.selectedServiceIds)
+    }
+
+    @Test
+    fun cancellingTheConfirm_keepsTheSelectionAsItWas() = runTest {
+        val vm = withDeepCleanPackage()
+        vm.togglePackage("pkg-1")
+        vm.toggleService("svc-1")
+
+        vm.dismissDoubleBooking()
+
+        assertNull(vm.doubleBooking.value)
+        assertEquals(emptySet<String>(), vm.state.value.selectedServiceIds)
+        assertEquals(setOf("pkg-1"), vm.state.value.selectedPackageIds)
+    }
+
+    @Test
+    fun confirming_addsTheServiceAlongsideThePackage() = runTest {
+        val vm = withDeepCleanPackage()
+        vm.togglePackage("pkg-1")
+        vm.toggleService("svc-1")
+
+        vm.confirmDoubleBooking()
+
+        assertNull(vm.doubleBooking.value)
+        assertEquals(setOf("svc-1"), vm.state.value.selectedServiceIds)
+        assertEquals(setOf("pkg-1"), vm.state.value.selectedPackageIds)
+    }
+
+    @Test
+    fun addingAPackageThatIncludesAChosenService_asksFirstThenAddsOnConfirm() = runTest {
+        val vm = withDeepCleanPackage()
+        vm.toggleService("svc-1")
+
+        // False keeps the package sheet open under the confirm.
+        assertEquals(false, vm.togglePackage("pkg-1"))
+
+        val pkg = catalogPackagesFlow.value.single()
+        assertEquals(DoubleBooking.Package(pkg, pkg.includedServices!!), vm.doubleBooking.value)
+        assertEquals(emptySet<String>(), vm.state.value.selectedPackageIds)
+
+        vm.confirmDoubleBooking()
+
+        assertEquals(setOf("pkg-1"), vm.state.value.selectedPackageIds)
+        assertEquals(setOf("svc-1"), vm.state.value.selectedServiceIds)
+    }
+
+    @Test
+    fun addingWhatNoChosenPackageIncludes_addsWithoutAsking() = runTest {
+        val vm = withDeepCleanPackage()
+        assertEquals(true, vm.togglePackage("pkg-1"))
+
+        vm.toggleService("svc-2")
+
+        assertNull(vm.doubleBooking.value)
+        assertEquals(setOf("svc-2"), vm.state.value.selectedServiceIds)
+    }
+
+    @Test
+    fun removingEitherHalf_neverAsks() = runTest {
+        val vm = withDeepCleanPackage()
+        vm.update { it.copy(selectedServiceIds = setOf("svc-1"), selectedPackageIds = setOf("pkg-1")) }
+
+        vm.toggleService("svc-1")
+        assertEquals(true, vm.togglePackage("pkg-1"))
+
+        assertNull(vm.doubleBooking.value)
+        assertEquals(emptySet<String>(), vm.state.value.selectedServiceIds)
+        assertEquals(emptySet<String>(), vm.state.value.selectedPackageIds)
+    }
+
+    @Test
+    fun aSeededSelection_neverAsksAndItsServiceIsMarked() = runTest {
+        val vm = withDeepCleanPackage()
+
+        // Order again, a Home package and a resumed draft all land through update.
+        vm.update { it.copy(selectedServiceIds = setOf("svc-1"), selectedPackageIds = setOf("pkg-1")) }
+
+        assertNull(vm.doubleBooking.value)
+        assertEquals(
+            catalogPackagesFlow.value,
+            catalogPackagesFlow.value.selectedIncluding("svc-1", vm.state.value.selectedPackageIds),
+        )
+    }
+
+    @Test
+    fun reset_forgetsAHeldConfirm() = runTest {
+        val vm = withDeepCleanPackage()
+        vm.togglePackage("pkg-1")
+        vm.toggleService("svc-1")
+
+        vm.reset()
+
+        assertNull(vm.doubleBooking.value)
     }
 
     private fun quoteWith(

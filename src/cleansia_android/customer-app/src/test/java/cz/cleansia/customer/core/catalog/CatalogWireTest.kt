@@ -334,6 +334,25 @@ class CatalogWireTest {
         assertEquals(emptyList<ExtraListItem>(), extras("", code = 204))
     }
 
+    /** The id is what marks a service in the list as already in a chosen package. */
+    @Test
+    fun anIncludedServiceKeepsTheServiceIdTheWireCarried() = runTest {
+        val included = packages(CAPTURED_PACKAGES)?.map { pkg -> pkg.includedServices?.map { it.serviceId } }
+
+        assertEquals(listOf(listOf("svc-1"), listOf("svc-2")), included)
+    }
+
+    @Test
+    fun anIncludedServiceWithoutItsIdStillPrints() = runTest {
+        val noId = packagesWithFirstRow { row ->
+            row + ("includedServices" to JsonArray(row["includedServices"]!!.jsonArray.map { it.jsonObject - "serviceId" }))
+        }
+        val included = packages(noId)?.first()?.includedServices?.single()
+
+        assertNull(included?.serviceId)
+        assertEquals("Standard clean", included?.name)
+    }
+
     @Test
     fun aPackageWithNoIncludedServicesStillPrices() = runTest {
         val pkg = packages(packagesWithFirstRow { it - "includedServices" })?.first()
@@ -442,7 +461,7 @@ class CatalogWireTest {
                 "price": 450.00,
                 "translations": { "cs": { "name": "Balicek pri stehovani", "description": "Vse a okna" } },
                 "includedServices": [
-                  { "name": "Standard clean",
+                  { "serviceId": "svc-1", "name": "Standard clean",
                     "translations": { "cs": { "name": "Bezny uklid", "description": "Pokoje" } } }
                 ],
                 "currencyCode": "EUR"
@@ -454,7 +473,7 @@ class CatalogWireTest {
                 "price": 980.00,
                 "translations": { "cs": { "name": "Kancelarsky balicek", "description": "Tydne" } },
                 "includedServices": [
-                  { "name": "Deep clean",
+                  { "serviceId": "svc-2", "name": "Deep clean",
                     "translations": { "cs": { "name": "Generalni uklid", "description": "Vse" } } }
                 ],
                 "currencyCode": "EUR"

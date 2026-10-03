@@ -293,10 +293,12 @@ quote carries the surcharge. A time that does not hold is cleared, and its day w
 past. Nothing is sent, the booking goes back to the When step if it was past it, and a notice says the
 time picked is no longer available or its price has changed and asks for a new one
 (`booking_draft_time_changed`, worded the same on both apps). It first opened *While you were away*,
-which did not fit a customer refused at submit who had never left. A time that holds is kept. A kept
-day is named against the moment of the resume, so a day that has since become today reads *Today* and
-is the day the When step selects; iOS stores the day as its label and re-derives it, Android stores the
-date. A seeded open is not re-checked: it resets the draft anyway.
+which did not fit a customer refused at submit who had never left. A time that holds is kept. On both
+apps a kept day, whether its time held or was cleared, is named again against the moment of the
+re-check, as the When step's strip names it. A day that has since become today therefore reads *Today*
+on Confirm and is the day the When step selects. iOS stores the day as its label and re-derives the
+label. Android stores the date and re-labels the day it shows (`selectedDate`, display only, so nothing
+is re-quoted). A seeded open is not re-checked: it resets the draft anyway.
 
 On a return to the foreground the When step also rebuilds its day strip and its slots from the
 current clock, so a step left on screen no longer offers a slot that has since come inside the lead
@@ -307,7 +309,9 @@ Until the first of these, a draft resumed on the Confirm step could keep a time 
 the lead time, and only the server refused it. Until the foreground and submit re-checks, a sheet left
 open in the background, or a Confirm step left on screen, kept such a time too. The band was judged
 from when the sheet closed, so a time quoted standard and left after it had gone express read as
-unchanged and kept a price without the surcharge.
+unchanged and kept a price without the surcharge. Android re-labelled a kept day only once the When
+step redrew its strip, so a booking picked on Thursday for Friday and resumed on Friday read *Fr* on
+Confirm for a clean that was today.
 
 ## The booking's steps slide the way they go {#booking-steps}
 

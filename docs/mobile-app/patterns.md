@@ -246,7 +246,7 @@ away (owner remark 2026-10-03). The draft, meaning the step and every choice on 
 the sheet is opened:
 
 - **A plain open resumes it.** The Book button and the other plain *Book now* entries reopen the sheet
-  on the step it was left on, with every choice it held.
+  on the step it was left on, with every choice it held, once its time has been re-checked (below).
 - **An open that seeds a booking starts a fresh one in its place.** *Order again*, a popular package
   and the quick-size card's *See my price* reset the draft, fill it with that order, package or size,
   and open on the first step.
@@ -262,10 +262,20 @@ payment carried into the repeated order.
 
 One difference between the platforms remains. On a plain open, iOS refills the draft's address from
 the preferred saved address when the draft's address was filled in from it automatically and the
-preferred one has since changed; Android keeps the address the draft had. One gap is known on both:
-neither app re-checks a resumed draft's time. A draft resumed on the Confirm step can hold a time that
-has since come inside the 2 h lead time. The When step clears such a time, but a booking placed
-straight from a resumed Confirm step is left for the server to refuse.
+preferred one has since changed; Android keeps the address the draft had.
+
+**A resumed time is re-checked against the When step's own rules** (since 2026-10-03). On a plain
+open both apps ask `draftTimeStillHolds` (`WhenWhereStep.kt` on Android, `BookingTimeSlots` on iOS),
+which reads the same slot states the When step draws. The time holds while the When step still offers
+it, which means its day is not past and it is not inside the 2 h lead time, and while it is in the
+band it was in when the sheet closed. A standard time that has since slid into the 2–4 h express band
+does not hold, because it was quoted as a standard time, without the express surcharge; a time that
+was already express when the sheet closed does. A time that does not hold is cleared, and its day with it once the day is
+past. The booking goes back to the When step if it was past it, and a notice asks for a new time
+(`booking_draft_time_changed`). A time that holds is left alone. A seeded open is not re-checked: it
+resets the draft anyway. Until then a draft resumed on the Confirm step could keep a time that had
+come inside the lead time, and only the server refused it. Neither app re-checks a sheet that stays
+open, such as a booking left on the Confirm step while the app sat in the background.
 
 ## The booking's steps slide the way they go {#booking-steps}
 

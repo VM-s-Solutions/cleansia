@@ -999,6 +999,14 @@ need backfilling.
 
 ### Fixed
 
+- **Customer Android and iOS — a booking you come back to asks for a new time when its time has
+  gone.** A booking swiped away and reopened with the Book button came back with the time it had, even
+  hours later. A time that had since passed, or come within 2 hours, stayed on the confirm step until
+  the server refused the booking. A time that had moved into the express band, 2 to 4 hours ahead,
+  kept a price without the express surcharge. Such a time is now cleared, with its day once the day
+  is past. The booking goes back to *When & where*, and a notice asks for a new time. A time that
+  still holds is kept, and *Order again*, a package and *See my price* start afresh as before.
+
 - **Customer, cleaner and admin — a reply to a Cleansia e-mail goes to support.** Every e-mail the
   platform sends now has support@cleansia.cz as its reply address, so pressing Reply writes to
   support. Until now a reply went to the address the e-mails are sent from, it@cleansia.cz, which is

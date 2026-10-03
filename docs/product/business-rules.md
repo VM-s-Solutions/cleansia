@@ -1047,11 +1047,19 @@ the market — or from the order, on a contract for work.
   `info@cleansia.cz`, and Help named `info@cleansia.cz`. The sender (`SendGrid:AddressFrom`) only
   delivers mail and is never shown as the contact. Every e-mail, to a customer, a cleaner or an
   administrator, sets its Reply-To to `support@cleansia.cz` from the same constant, so pressing Reply
-  writes to support, not to the sender (since 2026-10-03; before, no Reply-To was set). Two other
-  addresses are unchanged. `privacy@cleansia.cz` is the
-  data-protection contact on the privacy page and in the partner GDPR copy. The `companyEmail` on the
-  company record is the seller's own address (`info@cleansia.cz` in the seed), printed on receipts,
-  invoices and the legal texts.
+  writes to support, not to the sender (since 2026-10-03; before, no Reply-To was set). One other
+  address is unchanged. `privacy@cleansia.cz` is the
+  data-protection contact on the privacy page and in the partner GDPR copy.
+- **The company record's e-mail is `support@cleansia.cz` too** (owner ruling 2026-10-03). It is the
+  seller's address as the record holds it, the `companyEmail` the legal texts print. The customer terms,
+  privacy policy and complaints procedure and the cleaner's three agreements print it. So do the receipt
+  (the company block and the footer), the payout invoice footer and the booking confirmation's seller
+  section. A customer and a cleaner therefore see one address wherever the company is named. The
+  development seed writes it; until then it held `info@cleansia.cz`. A DEV database seeded earlier is
+  moved by `sql-scripts/update_company_contact_placeholders.sql`, which changes only a row that still
+  holds the old address. Production's record is typed into the admin console
+  ([The first production deploy](/deployment/ci-cd#first-production-deploy)). No e-mail prints the
+  company record's e-mail or phone.
 - **Help in the customer apps opens the contact** (since 2026-10-03). On Android and iOS, *Email us*
   opens the mail app on `support@cleansia.cz` and *Call support* opens the dialer on
   +420 739 788 108, the line the customer web footer prints. When nothing on the phone takes the link,

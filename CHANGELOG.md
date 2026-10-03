@@ -526,6 +526,14 @@ need backfilling.
 
 ### Changed
 
+- **Customer and cleaner — receipts, invoices and the legal texts name support@cleansia.cz.** The
+  company's own e-mail is now support@cleansia.cz, the address the apps, the web and the e-mails
+  already give for support. The terms, the privacy policy, the complaints procedure and the cleaner's
+  agreements print it, and so do the receipt, the payout invoice and the booking confirmation. They
+  printed info@cleansia.cz, so a customer saw two addresses. **Operator:** a DEV database seeded
+  before this keeps info@cleansia.cz until `sql-scripts/update_company_contact_placeholders.sql` runs
+  on it. Production's company record is typed into the admin console. (Owner ruling 2026-10-03.)
+
 - **Customer Android and iOS — arrival times are grouped by part of day, as on the web.** The
   booking's time step asks for morning, afternoon or evening first, then shows that part's sixteen
   times in a grid of four rows, instead of one long list of every quarter hour. A part with nothing

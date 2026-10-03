@@ -338,8 +338,11 @@ things: no POIs, a muted base and the same pin.
   only the ornaments move, not the camera centre the pin marks. Since 2026-10-03 both pickers' address
   blocks keep the height of their two lines while they look the address up (a minimum height of the
   `titleSmall` and `bodySmall` line heights, converted through the density so it follows the font
-  scale). Each line keeps to one, and the first, which also carries the looking-up and drag-the-map
-  hints, ends in an ellipsis, so a long locale or a large font cannot outgrow the reservation.
+  scale). Each line keeps to one, so a long locale or a large font cannot outgrow the reservation.
+  The partner card's first line carries the looking-up and drag-the-map hints as well as the street,
+  and ends in an ellipsis. The customer card gives each state its own text, and only its two hints end
+  in an ellipsis. Its street and postcode-and-city lines, and the partner card's place line, are cut
+  off at the card's edge (Compose's default), where iOS ends every line of both cards in an ellipsis.
   Before, each lookup bobbed the card and the ornaments above it, by about 12dp on the customer
   picker and 16dp on the partner one. `AddressPickerCardTest` (partner) pins the reservation, the
   one-line rule and that the card's height reaches only the ornaments.

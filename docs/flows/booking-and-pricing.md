@@ -264,7 +264,13 @@ and iOS (since 2026-10-02). The steppers used to sit beside the title, which lef
 Ukrainian counted bathrooms as *ванна кімната* (owner ruling 2026-10-02). On a 360dp phone the two
 Ukrainian counters alone needed 306dp of the row's 292dp, and on a 320pt iPhone they ran into each
 other. Each counter's label now takes the width its pill leaves after both buttons, and a longer label
-wraps onto a second line between words. Home's *How big is your home?* card gives its labels up to two
+wraps onto a second line between words. **Since 2026-10-03 the two steppers split the row equally**
+(owner remark 2026-10-03). Each takes half of the width from the title's leading edge to the card's
+trailing edge, less an 8pt (8dp) gap, the same gap as on Home's quick-size card. Both keep one height
+when a label wraps, and each label is centred between its minus and plus. They used to be as wide as
+their labels, so *3 rooms* and *1 bath* sat at different widths and left a ragged gap at the
+card's edge, out of line with the title and the caption. The schedule's size section keeps steppers as
+wide as their labels, on both platforms. Home's *How big is your home?* card gives its labels up to two
 lines too, and then shrinks them to 80% if a word is still too wide. On Android the cleaner's job-board
 scope chips wrap onto a second line (`FlowRow`), as iOS's `ChipFlow` already did.
 

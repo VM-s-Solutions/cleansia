@@ -974,6 +974,11 @@ need backfilling.
 
 ### Fixed
 
+- **Customer Android and iOS — the booking's room and bathroom steppers are the same width.** On the
+  *Your home* row the two steppers now share the row equally, with their counts centred, in line with
+  the title and the caption above and below them. They used to be as wide as their text, so they
+  never lined up. (Owner remark 2026-10-03.)
+
 - **Customer iOS — going back in the booking slides back.** Stepping back through the booking's
   steps brought the previous step in from the right, as if going on. It now comes in from the left,
   as on Android, and with Reduce Motion on the steps fade instead. (Owner remark 2026-10-03.)

@@ -113,4 +113,43 @@ final class BookingStepGateTests: XCTestCase {
     func testTotalStepsIsFour() {
         XCTAssertEqual(BookingStepGate.totalSteps, 4)
     }
+
+    /// The wizard steps itself back to When when a time stops holding — at the slide, after a card guarantee, on
+    /// a return to the foreground — and that step back slides back like the back button does: the sheet reads
+    /// the direction from the step change, not from which button was tapped (docs/mobile-app/patterns.md
+    /// #booking-steps).
+    func testEveryStepBackSlidesBackWhateverMovedIt() throws {
+        let sheet = try String(
+            contentsOf: URL(fileURLWithPath: #filePath)
+                .deletingLastPathComponent()
+                .deletingLastPathComponent()
+                .appendingPathComponent("Sources/Features/Booking/BookingSheetView.swift"),
+            encoding: .utf8
+        ).replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
+        XCTAssertTrue(
+            sheet.contains(
+                ".onChange(of: viewModel.currentStep) { next in DispatchQueue.main.async { " +
+                    "movingForward = next > shownStep shownStep = next } }"
+            ),
+            "the direction is not read from the step change, or the page drawn moves with the wizard"
+        )
+        XCTAssertTrue(
+            sheet.contains(
+                "viewModel.currentStep == shownStep ? movingForward : viewModel.currentStep > shownStep"
+            ),
+            "the page on screen is not drawn with the way it is about to leave"
+        )
+        XCTAssertEqual(
+            sheet.replacingOccurrences(of: "@State private var movingForward = true", with: "")
+                .components(separatedBy: "movingForward =").count - 1,
+            1,
+            "something other than the step change decides the direction"
+        )
+        XCTAssertTrue(sheet.contains("private var step: Int { shownStep }"), "the page drawn moves with the wizard")
+        XCTAssertTrue(
+            sheet.contains("insertion: .move(edge: forward ? .trailing : .leading)") &&
+                sheet.contains("removal: .move(edge: forward ? .leading : .trailing)"),
+            "the slide does not follow the direction of the step change"
+        )
+    }
 }

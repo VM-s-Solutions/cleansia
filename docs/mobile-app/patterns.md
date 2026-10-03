@@ -458,11 +458,13 @@ What changed on iOS:
     button it came from shows a spinner while the request runs, the other rows' buttons wait, and a
     refusal goes to the snackbar. The retry hint the card showed after a failure had nowhere left to go and was
     deleted.
-  - **iOS 16 hides a disabled alert button** and never brings it back, so the deletion request cannot
-    hold its button off until a reason is typed. The view model refuses a blank reason itself, with
-    *This field is required.* in the snackbar, and sends nothing. Android can bring a button back, so
-    it holds the confirm disabled until a reason is typed. That is the one deliberate difference
-    between the two platforms' dialogs.
+  - **iOS 16 hides a disabled alert button** and never brings it back, so an alert cannot hold its
+    button off until its field is filled. Two dialogs need a filled field, and both differ between the
+    platforms for that reason. For the deletion request, the view model refuses a blank reason itself,
+    with *This field is required.* in the snackbar, and sends nothing. The customer's address rename
+    keeps *Save* enabled, and a blank label closes the alert and saves nothing, with no message.
+    Android can bring a button back, so both its dialogs hold the confirm disabled until the reason
+    or the label is typed. Those two are the only differences in what the two platforms' dialogs do.
   - The alerts use the same title, message and button strings, and lose the card's icon circle and
     spring. `CleansiaDialog`, the branded card, had no caller left and is deleted from CleansiaCore.
     Until 2026-10-01 it was every confirmation, and until 2026-10-03 it was still the six that held a

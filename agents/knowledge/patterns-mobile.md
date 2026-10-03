@@ -693,8 +693,11 @@ duplicate a `:core` component.
 > so the view model returns to `Idle` on a failure, not `ActionState.Error(hint)`. **iOS 16 hides a disabled alert
 > button and never brings it back**, so a required field in an iOS alert is refused by the view model (the partner
 > document deletion reason answers a blank one with `error.common.required` and sends nothing), never by
-> `.disabled(text.isEmpty)`; Android can, and holds the confirm `enabled = reason.isNotBlank()` — the one recorded
-> difference. The branded `CleansiaDialog` is **deleted on both** (the Core overlay card and the `:core` `Dialog`
+> `.disabled(text.isEmpty)`; Android can, and holds the confirm `enabled = reason.isNotBlank()`. The customer address
+> rename is the second required field and does not follow that rule on iOS: `RenameAlertButtons` keeps *Save*
+> enabled and drops a blank label with no message (`if !trimmed.isEmpty { onConfirm(trimmed) }`), while Android's
+> `RenameDialog` holds Save `enabled = value.isNotBlank()`. Those two are the recorded differences. The branded
+> `CleansiaDialog` is **deleted on both** (the Core overlay card and the `:core` `Dialog`
 > window); a custom confirm card on either platform is a deviation, and on Android `SystemDialogUsageTest` fails any
 > `import androidx.compose.ui.window.Dialog` → docs `/mobile-app/patterns#native-ios`.
 

@@ -1,7 +1,6 @@
 package cz.cleansia.customer.features.profile
 
 import android.content.Context
-import app.cash.turbine.test
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
@@ -20,7 +19,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -60,7 +58,6 @@ class DevicesViewModelTest {
         snackbar = mockk(relaxed = true)
         appContext = mockk(relaxed = true)
         every { appContext.getString(R.string.devices_revoke_success) } returns "Device removed"
-        every { appContext.getString(R.string.devices_revoke_retry_hint) } returns "retry hint"
         every { appContext.getString(R.string.error_generic_server) } returns serverMessage
         every { appContext.getString(R.string.error_generic_unknown) } returns "unknown"
         every { appContext.getString(R.string.error_generic_unauthorized) } returns "unauth"
@@ -110,18 +107,16 @@ class DevicesViewModelTest {
     }
 
     @Test
-    fun `revoke success removes the device, emits effect, returns to Idle`() = runTest {
+    fun `revoke success removes the device and returns to Idle`() = runTest {
         coEvery { repository.getMyDevices() } returns ApiResult.Success(listOf(thisDevice, otherDevice))
         coEvery { repository.revoke("row-2") } returns ApiResult.Success(Unit)
 
         val vm = viewModel()
         advanceUntilIdle()
 
-        vm.revoked.test {
-            vm.revoke(otherDevice)
-            advanceUntilIdle()
-            assertEquals("row-2", awaitItem())
-        }
+        vm.revoke(otherDevice)
+        assertEquals(ActionState.Submitting, vm.revokeState.value)
+        advanceUntilIdle()
 
         assertEquals(ActionState.Idle, vm.revokeState.value)
         assertEquals(DevicesUiState.Loaded(listOf(thisDevice)), vm.state.value)
@@ -164,11 +159,12 @@ class DevicesViewModelTest {
 
         // The server still holds our session; wiping locally would strand the user for no reason.
         coVerify(exactly = 0) { authRepository.signOutLocal() }
-        assertTrue(vm.revokeState.value is ActionState.Error)
+        assertEquals(ActionState.Idle, vm.revokeState.value)
     }
 
+    /** The system confirm has already closed, so the refusal is the snackbar's and the row is free again. */
     @Test
-    fun `revoke http error keeps the list, surfaces snackbar and ActionState Error`() = runTest {
+    fun `revoke http error keeps the list, surfaces the snackbar and returns to Idle`() = runTest {
         coEvery { repository.getMyDevices() } returns ApiResult.Success(listOf(thisDevice, otherDevice))
         coEvery { repository.revoke("row-2") } returns ApiResult.Error(ApiError.Server(500, serverMessage))
 
@@ -178,14 +174,13 @@ class DevicesViewModelTest {
         vm.revoke(otherDevice)
         advanceUntilIdle()
 
-        assertTrue(vm.revokeState.value is ActionState.Error)
-        assertEquals("retry hint", (vm.revokeState.value as ActionState.Error).message)
+        assertEquals(ActionState.Idle, vm.revokeState.value)
         assertEquals(DevicesUiState.Loaded(listOf(thisDevice, otherDevice)), vm.state.value)
         verify(exactly = 1) { snackbar.showError(serverMessage) }
     }
 
     @Test
-    fun `revoke infrastructure error keeps the list, ActionState Error, no snackbar`() = runTest {
+    fun `revoke infrastructure error keeps the list, returns to Idle, no snackbar`() = runTest {
         coEvery { repository.getMyDevices() } returns ApiResult.Success(listOf(thisDevice, otherDevice))
         coEvery { repository.revoke("row-2") } returns ApiResult.Error(ApiError.Network("offline"))
 
@@ -195,7 +190,7 @@ class DevicesViewModelTest {
         vm.revoke(otherDevice)
         advanceUntilIdle()
 
-        assertTrue(vm.revokeState.value is ActionState.Error)
+        assertEquals(ActionState.Idle, vm.revokeState.value)
         assertEquals(DevicesUiState.Loaded(listOf(thisDevice, otherDevice)), vm.state.value)
         verify(exactly = 0) { snackbar.showError(any<String>()) }
     }

@@ -5,8 +5,11 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.Logout
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -29,7 +32,6 @@ import cz.cleansia.core.auth.SessionEvent
 import cz.cleansia.core.auth.TokenStore
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
-import cz.cleansia.core.ui.components.CleansiaDialog
 import cz.cleansia.core.ui.components.CleansiaErrorState
 import cz.cleansia.core.ui.components.WordmarkSplash
 import cz.cleansia.partner.R
@@ -575,7 +577,9 @@ private fun SplashGate(
             // it signs out — the one thing a stuck cleaner can always do, and the same escape the
             // registration lock offers. It really does sign out now; it used to only navigate.
             backLabel = stringResource(R.string.logout),
-            onBack = { confirmingSignOut = true },
+            // Once confirmed, the wipe is running and the view model refuses a second one; nothing
+            // asks again meanwhile.
+            onBack = { if (!isSigningOut) confirmingSignOut = true },
         )
     } else {
         WordmarkSplash(
@@ -584,19 +588,26 @@ private fun SplashGate(
         )
     }
 
+    // The same confirm the profile hub raises. It closes on the tap, as every system confirm does.
     if (confirmingSignOut) {
-        // Dismiss is blocked while the wipe runs: the dialog is the only thing on screen that
-        // knows a sign-out is in flight, and closing it would hide that.
-        CleansiaDialog(
-            onDismiss = { if (!isSigningOut) confirmingSignOut = false },
-            title = stringResource(R.string.profile_logout_dialog_title),
-            message = stringResource(R.string.profile_logout_dialog_message),
-            icon = Icons.AutoMirrored.Outlined.Logout,
-            destructive = true,
-            confirmEnabled = !isSigningOut,
-            confirmLabel = stringResource(R.string.profile_logout_dialog_confirm),
-            onConfirm = { viewModel.signOut(onSignOut) },
-            dismissLabel = stringResource(R.string.profile_logout_dialog_cancel),
+        AlertDialog(
+            onDismissRequest = { confirmingSignOut = false },
+            title = { Text(stringResource(R.string.profile_logout_dialog_title)) },
+            text = { Text(stringResource(R.string.profile_logout_dialog_message)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        confirmingSignOut = false
+                        viewModel.signOut(onSignOut)
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                ) { Text(stringResource(R.string.profile_logout_dialog_confirm)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmingSignOut = false }) {
+                    Text(stringResource(R.string.profile_logout_dialog_cancel))
+                }
+            },
         )
     }
 }
@@ -649,7 +660,7 @@ class SplashViewModel @Inject constructor(
      * `logout()` always reaches its local wipe (its two network calls are each wrapped in
      * runCatching), so an unreachable server — the only reason this screen exists — cannot
      * leave the session half-cleared. It is not time-bounded the way the iOS twin is, which is
-     * why the dialog's confirm disables while it runs rather than pretending it is instant.
+     * why the screen does not offer the sign-out again while it runs.
      */
     fun signOut(onSignedOut: () -> Unit) {
         if (_isSigningOut.value) return

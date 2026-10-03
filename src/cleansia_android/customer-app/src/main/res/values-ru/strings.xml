@@ -1386,7 +1386,6 @@
     <string name="payments_card_remove_message">При следующем заказе с оплатой наличными мы снова попросим карту.</string>
     <string name="payments_card_remove_confirm">Удалить</string>
     <string name="payments_card_removed">Карта удалена</string>
-    <string name="payments_card_remove_retry_hint">Не удалось удалить карту. Попробуйте ещё раз.</string>
     <string name="payments_error_message">Не удалось загрузить платежи. Проверьте подключение и попробуйте ещё раз.</string>
     <string name="payments_error_retry">Попробовать снова</string>
     <!-- ── Ваши устройства ── -->
@@ -1407,7 +1406,6 @@
     <string name="devices_revoke_dialog_message">%1$s выйдет из аккаунта и перестанет получать уведомления.</string>
     <string name="devices_revoke_dialog_confirm">Удалить</string>
     <string name="devices_revoke_success">Устройство удалено</string>
-    <string name="devices_revoke_retry_hint">Не удалось удалить – попробуйте ещё раз.</string>
     <string name="devices_self_revoke_action">Выйти с этого устройства</string>
     <string name="devices_self_revoke_dialog_title">Выйти с этого устройства?</string>
     <string name="devices_self_revoke_dialog_message">Это устройство будет удалено, и вы сразу выйдете из аккаунта.</string>

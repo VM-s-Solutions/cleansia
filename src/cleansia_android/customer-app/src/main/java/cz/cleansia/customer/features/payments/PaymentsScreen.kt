@@ -24,12 +24,15 @@ import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
 import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material.icons.outlined.CreditCard
 import androidx.compose.material.icons.outlined.DeleteOutline
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -54,7 +57,6 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.core.ui.components.CleansiaButtonSize
-import cz.cleansia.core.ui.components.CleansiaDialog
 import cz.cleansia.core.ui.components.CleansiaOutlinedButton
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.state.ActionState
@@ -75,39 +77,57 @@ fun PaymentsScreen(
     val removeState by viewModel.removeState.collectAsStateWithLifecycle()
     val payState by viewModel.payState.collectAsStateWithLifecycle()
     var cardToRemove by remember { mutableStateOf<SavedCard?>(null) }
+    // The card a confirmed removal is running for, so its row can show the spinner the dialog used to.
+    var removingCardId by remember { mutableStateOf<String?>(null) }
     val uriHandler = LocalUriHandler.current
 
-    LaunchedEffect(viewModel) { viewModel.removed.collect { cardToRemove = null } }
     LaunchedEffect(viewModel) { viewModel.payLinks.collect { uriHandler.openUri(it) } }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.onResumed() }
 
     PaymentsScreenContent(
         state = state,
-        removeState = removeState,
+        removingCardId = removingCardId.takeIf { removeState is ActionState.Submitting },
         paying = payState is ActionState.Submitting,
-        cardToRemove = cardToRemove,
         onBack = onBack,
         onRetry = viewModel::load,
         onPay = viewModel::pay,
         onRemoveRequested = { cardToRemove = it },
-        onRemoveConfirmed = viewModel::remove,
-        onRemoveDismissed = { cardToRemove = null },
     )
+
+    // The system confirm closes on the tap; the row shows the removal running and a refusal is the
+    // snackbar's, so nothing holds a dialog open over a request.
+    cardToRemove?.let { card ->
+        AlertDialog(
+            onDismissRequest = { cardToRemove = null },
+            title = { Text(stringResource(R.string.payments_card_remove_title)) },
+            text = { Text(stringResource(R.string.payments_card_remove_message)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        cardToRemove = null
+                        removingCardId = card.id
+                        viewModel.remove(card)
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                ) { Text(stringResource(R.string.payments_card_remove_confirm)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { cardToRemove = null }) { Text(stringResource(R.string.common_cancel)) }
+            },
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PaymentsScreenContent(
     state: PaymentsUiState,
-    removeState: ActionState,
+    removingCardId: String?,
     paying: Boolean,
-    cardToRemove: SavedCard?,
     onBack: () -> Unit = {},
     onRetry: () -> Unit = {},
     onPay: (Receivable) -> Unit = {},
     onRemoveRequested: (SavedCard) -> Unit = {},
-    onRemoveConfirmed: (SavedCard) -> Unit = {},
-    onRemoveDismissed: () -> Unit = {},
 ) {
     Column(
         modifier = Modifier
@@ -156,36 +176,16 @@ fun PaymentsScreenContent(
                     item(key = "card-empty") { SectionIntro(R.string.payments_card_empty) }
                 } else {
                     items(state.cards, key = { it.id }) { card ->
-                        SavedCardRow(card = card, onRemove = { onRemoveRequested(card) })
+                        SavedCardRow(
+                            card = card,
+                            removing = removingCardId == card.id,
+                            canRemove = removingCardId == null,
+                            onRemove = { onRemoveRequested(card) },
+                        )
                     }
                 }
             }
         }
-    }
-
-    cardToRemove?.let { card ->
-        CleansiaDialog(
-            onDismiss = onRemoveDismissed,
-            title = stringResource(R.string.payments_card_remove_title),
-            message = stringResource(R.string.payments_card_remove_message),
-            icon = Icons.Outlined.DeleteOutline,
-            destructive = true,
-            confirmLabel = stringResource(R.string.payments_card_remove_confirm),
-            confirmEnabled = removeState !is ActionState.Submitting,
-            onConfirm = { onRemoveConfirmed(card) },
-            dismissLabel = stringResource(R.string.common_cancel),
-            content = (removeState as? ActionState.Error)?.let { error ->
-                {
-                    Text(
-                        text = error.message,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
-            },
-        )
     }
 }
 
@@ -259,7 +259,13 @@ private fun ReceivableCard(receivable: Receivable, paying: Boolean, onPay: () ->
 }
 
 @Composable
-private fun SavedCardRow(card: SavedCard, onRemove: () -> Unit) {
+private fun SavedCardRow(
+    card: SavedCard,
+    removing: Boolean,
+    // One removal at a time: the view model drops a second while the first is in flight.
+    canRemove: Boolean,
+    onRemove: () -> Unit,
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -286,12 +292,22 @@ private fun SavedCardRow(card: SavedCard, onRemove: () -> Unit) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        IconButton(onClick = onRemove) {
-            Icon(
-                imageVector = Icons.Outlined.DeleteOutline,
-                contentDescription = stringResource(R.string.payments_card_remove_action),
-                tint = MaterialTheme.colorScheme.error,
-            )
+        if (removing) {
+            Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(22.dp),
+                    strokeWidth = 2.dp,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
+        } else {
+            IconButton(onClick = onRemove, enabled = canRemove) {
+                Icon(
+                    imageVector = Icons.Outlined.DeleteOutline,
+                    contentDescription = stringResource(R.string.payments_card_remove_action),
+                    tint = MaterialTheme.colorScheme.error.copy(alpha = if (canRemove) 1f else 0.4f),
+                )
+            }
         }
     }
 }
@@ -364,9 +380,8 @@ private fun PaymentsPreview() {
                     SavedCard(id = "card-1", brand = "visa", last4 = "4242", expMonth = 4, expYear = 2029, currencyCode = "CZK"),
                 ),
             ),
-            removeState = ActionState.Idle,
+            removingCardId = null,
             paying = false,
-            cardToRemove = null,
         )
     }
 }

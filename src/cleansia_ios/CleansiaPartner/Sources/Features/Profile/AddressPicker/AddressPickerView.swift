@@ -260,7 +260,7 @@ private struct SearchResultRow: View {
     }
 }
 
-private struct ConfirmCard: View {
+struct ConfirmCard: View {
     let resolved: GeocodedAddress?
     let lookingUp: Bool
     let enabled: Bool
@@ -271,17 +271,23 @@ private struct ConfirmCard: View {
             HStack(spacing: Spacing.xs) {
                 Image(systemName: "mappin.and.ellipse")
                     .foregroundColor(CleansiaColors.primary)
+                // Two lines tall in every state — the street over its city line — so the lookup that
+                // starts on each drag and ends with an address never changes the card's height. The map
+                // is inset by that height (its Legal link and the pin's centre sit above the card), and a
+                // new inset re-centres it: the card growing and shrinking is what moved the map. While
+                // there is no second line, the title holds its place unseen, so the height follows the
+                // text size.
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
                         .font(CleansiaTypography.titleMedium)
                         .foregroundColor(CleansiaColors.onSurface)
                         .lineLimit(1)
-                    if let subtitle {
-                        Text(subtitle)
-                            .font(CleansiaTypography.bodyMedium)
-                            .foregroundColor(CleansiaColors.onSurfaceVariant)
-                            .lineLimit(1)
-                    }
+                    Text(subtitle ?? title)
+                        .font(CleansiaTypography.bodyMedium)
+                        .foregroundColor(CleansiaColors.onSurfaceVariant)
+                        .lineLimit(1)
+                        .opacity(subtitle == nil ? 0 : 1)
+                        .accessibilityHidden(subtitle == nil)
                 }
                 Spacer()
                 if lookingUp {

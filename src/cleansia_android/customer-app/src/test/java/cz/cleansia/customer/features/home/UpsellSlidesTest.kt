@@ -1,6 +1,9 @@
 package cz.cleansia.customer.features.home
 
 import cz.cleansia.customer.R
+import cz.cleansia.customer.core.memberships.GetMyMembershipResponse
+import cz.cleansia.customer.features.booking.cancellationPolicyFor
+import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -14,21 +17,26 @@ class UpsellSlidesTest {
 
     private val bools = listOf(false, true)
 
-    /** Every combination of the inputs; the member's cancellation window is either none or 4 h. */
+    /** The slide's hours for a member whose plan carries [window], read the way Home reads them. */
+    private fun memberHours(window: Int?): Int = cancellationPolicyFor(
+        GetMyMembershipResponse(hasMembership = true, freeCancellationWindowHours = window),
+    ).plusFreeHours ?: 0
+
+    /** Every combination of the inputs; the member's plan window is none, 4 h, or the standard 24 h. */
     private val permutations: List<List<UpsellKind>> =
         bools.flatMap { notifications ->
             bools.flatMap { credit ->
                 bools.flatMap { express ->
                     bools.flatMap { setup ->
                         bools.flatMap { isPlus ->
-                            listOf(0, 4).map { cancellationHours ->
+                            listOf(null, 4, 24).map { window ->
                                 upsellKinds(
                                     notificationsOff = notifications,
                                     hasCredit = credit,
                                     expressAvailable = express,
                                     showSetupRecurring = setup,
                                     isPlus = isPlus,
-                                    memberCancellationHours = cancellationHours,
+                                    memberCancellationHours = memberHours(window),
                                 )
                             }
                         }
@@ -100,6 +108,31 @@ class UpsellSlidesTest {
         assertEquals(
             listOf(UpsellKind.Referral, UpsellKind.ExpressToday, UpsellKind.Rewards, UpsellKind.ArrivalTimes, UpsellKind.QuickSize),
             upsellKinds(notificationsOff = false, hasCredit = false, expressAvailable = false, showSetupRecurring = false, isPlus = true),
+        )
+    }
+
+    /** A plan may carry anything up to 24 h, and 24 h is the window everyone gets, so it is no benefit. */
+    @Test
+    fun `a member whose window is the standard one sees no cancellation slide`() {
+        assertEquals(0, memberHours(24))
+        assertEquals(
+            listOf(UpsellKind.Referral, UpsellKind.ExpressToday, UpsellKind.Rewards, UpsellKind.ArrivalTimes, UpsellKind.QuickSize),
+            upsellKinds(
+                notificationsOff = false,
+                hasCredit = false,
+                expressAvailable = false,
+                showSetupRecurring = false,
+                isPlus = true,
+                memberCancellationHours = memberHours(24),
+            ),
+        )
+        val home = sequenceOf(File("."), File("customer-app"), File("src/cleansia_android/customer-app"))
+            .map { File(it, "src/main/java/cz/cleansia/customer/features/home/HomeTab.kt") }
+            .first { it.isFile }
+            .readText()
+        assertTrue(
+            "Home no longer reads the member's window by the confirm step's rule",
+            home.contains("val memberCancellationHours = cancellationPolicyFor(membership).plusFreeHours ?: 0"),
         )
     }
 

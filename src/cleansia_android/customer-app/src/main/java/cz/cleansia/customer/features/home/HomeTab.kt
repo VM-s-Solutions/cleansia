@@ -118,6 +118,7 @@ import cz.cleansia.customer.features.booking.BOOKING_SLOT_INTERVAL_MINUTES
 import cz.cleansia.customer.features.booking.BookingPricing
 import cz.cleansia.customer.features.booking.FIRST_WINDOW_HOUR
 import cz.cleansia.customer.features.booking.LAST_WINDOW_HOUR
+import cz.cleansia.customer.features.booking.cancellationPolicyFor
 import cz.cleansia.customer.core.orders.OrderListItemDto
 import cz.cleansia.customer.features.booking.localizedName
 import cz.cleansia.customer.features.orders.OrderStatus
@@ -236,13 +237,10 @@ fun HomeTab(
     val isPlus = membership?.hasMembership == true
     val plusTrialDays by viewModel.plusTrialDays.collectAsStateWithLifecycle()
     val plusDiscountPercent by viewModel.plusDiscountPercent.collectAsStateWithLifecycle()
-    // The member's own free-cancellation window, the figure MembershipPerks lists; 0 hides the slide,
-    // and so does a renewal that failed, since no benefit runs then.
-    val memberCancellationHours = membership
-        ?.takeIf { it.hasMembership && !it.benefitsPaused }
-        ?.freeCancellationWindowHours
-        ?.coerceAtLeast(0)
-        ?: 0
+    // The member's own free-cancellation window, the figure MembershipPerks lists, read by the confirm
+    // step's rule: 0 hides the slide, and so do a renewal that failed, since no benefit runs then, and
+    // a window no shorter than the standard one everyone gets, which is no benefit to advertise.
+    val memberCancellationHours = cancellationPolicyFor(membership).plusFreeHours ?: 0
 
     // Catalog — used for the popular-packages quick-book strip. Home prices the chosen market
     // (ADR-0058 D5): refresh on first composition when nothing is loaded, whenever the market

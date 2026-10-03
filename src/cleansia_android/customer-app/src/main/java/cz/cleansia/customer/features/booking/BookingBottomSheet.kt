@@ -62,6 +62,7 @@ import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.theme.Poppins
+import cz.cleansia.customer.core.data.UserAddress
 import cz.cleansia.customer.core.payments.toConfiguration
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
@@ -76,6 +77,25 @@ private enum class SheetAnchor { Hidden, Peek, Half, Full }
  * leaving moves the opposite way.
  */
 internal fun stepSlideDirection(forward: Boolean, rtl: Boolean): Int = (if (forward) 1 else -1) * (if (rtl) -1 else 1)
+
+/**
+ * The draft with its address seeded from [preferred], the saved address Home's top bar chose. A blank
+ * street always seeds. A resumed draft re-seeds only when Home's choice has moved on and the address is
+ * still the one this seeded, so an address the customer picked in the sheet is never overwritten. The
+ * iOS twin is BookingPrefill.hydratedWithPreferred.
+ */
+internal fun BookingState.hydratedWithPreferred(preferred: UserAddress): BookingState {
+    val stillSeeded = savedAddressId != null && savedAddressId == hydratedFromSavedId
+    if (street.isNotBlank() && !(stillSeeded && preferred.serverId != savedAddressId)) return this
+    return copy(
+        street = preferred.street,
+        city = preferred.city,
+        zipCode = preferred.zipCode,
+        countryIsoCode = preferred.countryIsoCode,
+        savedAddressId = preferred.serverId,
+        hydratedFromSavedId = preferred.serverId,
+    )
+}
 
 private const val TOTAL_STEPS = BookingViewModel.TOTAL_STEPS
 
@@ -319,23 +339,15 @@ private fun SheetContent(
         }
     }
 
-    // Hydrate from the repo whenever the sheet becomes visible OR a different
-    // preferred address arrives. Keying on (visible, preferred?.id) means the
-    // re-open after a fresh-open reset still triggers re-hydration even though
-    // preferred?.id is unchanged. Suppressed when rebook is in flight — the
-    // rebook effect owns the address and handles saved-address matching itself.
+    // Seed the address from Home's choice whenever the sheet becomes visible OR a different preferred
+    // address arrives. The content leaves composition while hidden and the saved addresses start empty,
+    // so every open sees preferred?.id arrive and runs this: a blank draft takes Home's address, and a
+    // resumed one follows a change of Home's address unless the customer picked one in the sheet (see
+    // hydratedWithPreferred). Suppressed when rebook is in flight — the rebook effect owns the address
+    // and handles saved-address matching itself.
     LaunchedEffect(visible, preferred?.id) {
-        if (visible && rebookFromOrderId == null && state.street.isBlank() && preferred != null) {
-            bookingVm.update {
-                it.copy(
-                    street = preferred.street,
-                    city = preferred.city,
-                    zipCode = preferred.zipCode,
-                    countryIsoCode = preferred.countryIsoCode,
-                    savedAddressId = preferred.serverId,
-                )
-            }
-        }
+        val address = preferred ?: return@LaunchedEffect
+        if (visible && rebookFromOrderId == null) bookingVm.update { it.hydratedWithPreferred(address) }
     }
 
     // Wave 3 Phase R1 — pre-fill from a previous order when the sheet opens

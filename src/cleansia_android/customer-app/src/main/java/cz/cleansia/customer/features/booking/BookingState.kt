@@ -38,6 +38,10 @@ data class BookingState(
     // submit code uses this to pick between savedAddressId vs inline payload
     // (backend expects XOR).
     val savedAddressId: String? = null,
+    // The saved address the sheet seeded from Home's choice, set only by hydratedWithPreferred. While
+    // it equals [savedAddressId] the address is still the seeded one and follows Home's choice; a pick
+    // in the sheet leaves it behind, so that address is never overwritten.
+    val hydratedFromSavedId: String? = null,
     // DISPLAY ONLY — a localized label ("Today", "po", "пн"). It is deliberately NOT the identity of
     // the chosen day: the strip's labels are rebuilt from the device locale, so a language change
     // mid-booking gives every chip a new label and any match against this string silently stops

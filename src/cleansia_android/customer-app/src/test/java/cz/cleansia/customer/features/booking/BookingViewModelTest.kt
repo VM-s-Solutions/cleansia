@@ -172,6 +172,7 @@ class BookingViewModelTest {
         every { appContext.getString(R.string.error_booking_sign_in_required) } returns signInMessage
         every { appContext.getString(R.string.error_booking_profile_incomplete) } returns profileIncompleteMessage
         every { appContext.getString(R.string.booking_market_items_unavailable) } returns marketNotice
+        every { appContext.getString(R.string.booking_today) } returns "Today"
         every { appContext.getString(R.string.error_generic_unknown) } returns "unknown"
         every { appContext.getString(R.string.error_generic_server) } returns "server"
         every { appContext.getString(R.string.error_generic_unauthorized) } returns "unauth"
@@ -1191,8 +1192,48 @@ class BookingViewModelTest {
 
         assertEquals("10:00", vm.state.value.selectedTime)
         assertEquals(localAt(12, 10), vm.state.value.selectedInstant)
+        assertEquals("a day still ahead keeps its weekday", "Sa", vm.state.value.selectedDate)
         assertEquals(4, vm.step.value)
         verify(exactly = 0) { snackbar.showInfoKey(R.string.booking_draft_time_changed) }
+    }
+
+    /**
+     * A day picked on the day before carries its weekday. Resumed on the day itself, Confirm read
+     * "Fr" for a clean that is today — the same weekday the When step's strip gives a week later — so
+     * a kept day is re-labelled against the moment of the resume, whether its time holds or not.
+     */
+    @Test
+    fun resumingADraft_whoseTimeStillHolds_onADayThatHasSinceBecomeToday_readsToday() = runTest {
+        val vm = newViewModel()
+        vm.update {
+            it.copy(selectedLocalDate = LocalDate(2026, 9, 11), selectedDate = "Fr", selectedTime = "18:00", selectedInstant = localAt(11, 18))
+        }
+        repeat(3) { vm.nextStep() }
+        vm.setSheetVisible(false, now = localAt(10, 20))
+
+        assertEquals(false, vm.revalidateResumedTime(now = localAt(11, 8)))
+
+        assertEquals("18:00", vm.state.value.selectedTime)
+        assertEquals("Today", vm.state.value.selectedDate)
+        assertEquals(4, vm.step.value)
+        verify(exactly = 0) { snackbar.showInfoKey(R.string.booking_draft_time_changed) }
+    }
+
+    @Test
+    fun resumingADraft_whoseTimeNoLongerHolds_onADayThatHasSinceBecomeToday_keepsTheDayAsToday() = runTest {
+        val vm = newViewModel()
+        vm.update {
+            it.copy(selectedLocalDate = LocalDate(2026, 9, 11), selectedDate = "Fr", selectedTime = "09:00", selectedInstant = localAt(11, 9))
+        }
+        repeat(3) { vm.nextStep() }
+        vm.setSheetVisible(false, now = localAt(10, 20))
+
+        assertTrue(vm.revalidateResumedTime(now = localAt(11, 8)))
+
+        assertEquals("", vm.state.value.selectedTime)
+        assertEquals(LocalDate(2026, 9, 11), vm.state.value.selectedLocalDate)
+        assertEquals("Today", vm.state.value.selectedDate)
+        assertEquals(3, vm.step.value)
     }
 
     /** A booking that went through, or one a seeded open replaced, takes its close with it. */

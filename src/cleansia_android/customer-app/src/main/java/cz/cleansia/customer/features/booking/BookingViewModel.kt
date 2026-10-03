@@ -360,19 +360,25 @@ class BookingViewModel @Inject constructor(
      * when the quote for that time landed, or from when the draft was left if none did. A time that
      * no longer holds is cleared — with its day, when the day has left the strip — the wizard goes
      * back to the When step if it was past it, and the customer is told why. True when it cleared one.
+     * A kept day is re-labelled against [now], held or not: picked on an earlier day it carries its
+     * weekday, and on the day itself it reads "Today", as the When step's strip labels it ([buildDays]).
      */
     fun revalidateResumedTime(now: Instant = clock.now()): Boolean {
         val s = _state.value
         val pricedAt = quotedAt.takeIf { lastQuoteInputs.value?.cleaningInstant == s.selectedInstant } ?: draftLeftAt
-        if (draftTimeStillHolds(s.selectedLocalDate, s.selectedTime, pricedAt, now)) return false
         val today = now.toLocalDateTime(TimeZone.currentSystemDefault()).date
+        val dayLabel = if (s.selectedLocalDate == today) appContext.getString(R.string.booking_today) else s.selectedDate
+        if (draftTimeStillHolds(s.selectedLocalDate, s.selectedTime, pricedAt, now)) {
+            _state.update { it.copy(selectedDate = dayLabel) }
+            return false
+        }
         val dayGone = s.selectedLocalDate.let { it == null || it < today }
         _state.update {
             it.copy(
                 selectedTime = "",
                 selectedInstant = null,
                 selectedLocalDate = if (dayGone) null else it.selectedLocalDate,
-                selectedDate = if (dayGone) "" else it.selectedDate,
+                selectedDate = if (dayGone) "" else dayLabel,
             )
         }
         _step.update { it.coerceAtMost(WHEN_STEP) }

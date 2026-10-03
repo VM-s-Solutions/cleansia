@@ -1802,8 +1802,9 @@ the web, Android and iOS — the same four things hold:
   Adding it again books it twice: it is done twice and charged twice."* — with *Add again* and
   *Cancel*.
 - **Adding a package asks the other way round** when it includes a service already chosen on its
-  own. *Already in your booking* — *"{package} includes {services}, which you added on its own. Adding
-  the package books it twice: it is done twice and charged twice."* — with *Add package* and *Cancel*.
+  own. *Already in your booking* — *"{package} also includes what you already added separately:
+  {services}. Adding the package books that twice: done twice and charged twice."* The wording reads
+  the same for one service or several. — with *Add package* and *Cancel*.
   On Android and iOS the package's details sheet stays open under the question, closes once the
   package is in, and stays open on *Cancel*.
 - ***Cancel* leaves the selection as it was**, and it is the way out: it is the alert's cancel action

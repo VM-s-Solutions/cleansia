@@ -2923,7 +2923,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$@ includes %2$@, which you added on its own. Adding the package books it twice: it is done twice and charged twice."
+            "value": "%1$@ also includes what you already added separately: %2$@. Adding the package books that twice: done twice and charged twice."
           }
         },
         "ru": {

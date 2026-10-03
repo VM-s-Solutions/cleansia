@@ -1,6 +1,7 @@
 package cz.cleansia.customer.features.addresses
 
 import java.io.File
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -30,6 +31,23 @@ class AddressPickerCardTest {
             ),
         )
         assertTrue("the address block no longer holds that height", flat.contains(".heightIn(min = addressLines)"))
+    }
+
+    /**
+     * The reservation holds only while no line wraps: the uk and ru "move the map" hints are wider than
+     * a 360dp phone's address block, and a two-line hint grew the card by 12dp whenever a lookup found
+     * nothing. Every line keeps to one, the hints ending in an ellipsis, as the iOS twin's lineLimit(1).
+     */
+    @Test
+    fun `every line of the address block keeps to one in every state`() {
+        val block = pane.substringAfter("val addr = resolved").substringBefore("if (lookingUp) {")
+        val texts = Regex("\\bText\\(").findAll(block).count()
+        assertTrue("the address block's states are no longer where this looks", texts >= 3)
+        assertEquals("a line of the address block can wrap past its reservation", texts, Regex("maxLines = 1\\b").findAll(block).count())
+        listOf("address_picker_looking_up", "address_picker_move_pin").forEach { hint ->
+            val text = block.substringAfter("R.string.$hint").substringBefore(")\n")
+            assertTrue("the $hint hint no longer ends in an ellipsis", text.contains("overflow = TextOverflow.Ellipsis"))
+        }
     }
 
     @Test

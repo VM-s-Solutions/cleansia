@@ -86,6 +86,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.mapbox.geojson.Point
 import com.mapbox.maps.MapboxExperimental
@@ -760,7 +761,8 @@ private fun AddOnMapPane(
                 // Two lines tall in every state, the street over its city line, so the lookup that
                 // starts on each camera move and ends with an address never changes the card's height:
                 // its top edge, and the Mapbox ornaments lifted above it, stay put while the map moves.
-                // Measured from the two lines' heights in sp, so it follows the font scale.
+                // Measured from the two lines' heights in sp, so it follows the font scale. Every line
+                // keeps to one, as on iOS: a hint that wrapped (uk and ru, or a large font) would outgrow it.
                 val addressLines = with(density) {
                     MaterialTheme.typography.titleSmall.lineHeight.toDp() + MaterialTheme.typography.bodySmall.lineHeight.toDp()
                 }
@@ -777,6 +779,8 @@ private fun AddOnMapPane(
                                 stringResource(R.string.address_picker_looking_up),
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
                             )
                             addr != null -> {
                                 Text(
@@ -799,6 +803,8 @@ private fun AddOnMapPane(
                                 stringResource(R.string.address_picker_move_pin),
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
                             )
                         }
                     }

@@ -365,8 +365,8 @@ is missing (`ValidateEmailTemplates` in the project file):
 Three more e-mails reuse a template with their copy written in code rather than in translation rows.
 `order-status-update.html` carries the pay link a customer gets when their saved card could not be
 charged for what they owe. `admin-notification.html` carries the request to a cleaner to hand over cash
-carried past the company's limit ([The company's cash in a cleaner's hands](/product/business-rules#cash-held)),
-and the cleaner's copy of a contract for work they accepted, its PDF attached.
+they have carried longer than the company allows (`cash.remittance_request_days`, 30 days by default)
+([The company's cash in a cleaner's hands](/product/business-rules#cash-held)), and the cleaner's copy of a contract for work they accepted, its PDF attached.
 
 Every e-mail leaves through one method, `EmailService.SendRenderedAsync` (shortened here):
 

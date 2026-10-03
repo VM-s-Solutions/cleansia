@@ -101,22 +101,55 @@ final class BookingDraftSurvivalTests: XCTestCase {
         vm.draftLeft(at: at(day: 1, hour: 7))
     }
 
+    /// The day the When step's strip selects for the draft's day label when it is `now`, matched the way
+    /// `WhenWhereStep.selectedDay` matches it.
+    private func stripDay(_ vm: BookingViewModel, now: Date) -> Date? {
+        BookingTimeSlots.days(now: now, calendar: calendar).first {
+            BookingDateFormat.dayLabel($0.date, calendar: calendar, now: now) == vm.state.selectedDate
+        }?.date
+    }
+
     /// Only the server refused a resumed time that had come inside the lead time; now the draft goes back
     /// to the When step without it, keeping its day and everything else.
     func testAResumedTimeInsideTheLeadTimeIsClearedAndTheDraftGoesBackToWhen() {
         let vm = makeVM()
         draftOnConfirm(vm)
         XCTAssertEqual(vm.currentStep, 4)
-        let day = vm.state.selectedDate
+        let resumedAt = at(day: 1, hour: 17)
 
-        XCTAssertTrue(vm.revalidateResumedTime(now: at(day: 1, hour: 17), calendar: calendar))
+        XCTAssertTrue(vm.revalidateResumedTime(now: resumedAt, calendar: calendar))
 
         XCTAssertEqual(vm.state.selectedTime, "")
         XCTAssertNil(vm.state.selectedInstant)
-        XCTAssertEqual(vm.state.selectedDate, day, "the day is still on the strip")
+        XCTAssertEqual(stripDay(vm, now: resumedAt), at(day: 1, hour: 0), "the When step no longer selects the day")
         XCTAssertEqual(vm.currentStep, 3)
         XCTAssertEqual(vm.state.street, "Vodičkova 12")
         XCTAssertEqual(vm.state.selectedServiceIds, ["s-1"])
+    }
+
+    /// Picked the evening before, the day carries its weekday label, which on the day itself the strip gives
+    /// to the same weekday a week later: a time chosen there booked next week, and Confirm still read the
+    /// weekday. The kept day is the draft's own date, today.
+    func testADayThatHasSinceBecomeTodayIsTheDayTheWhenStepSelects() {
+        let vm = makeVM()
+        seedDraft(vm)
+        vm.selectDay(at(day: 2, hour: 0), calendar: calendar)
+        vm.selectTime("09:00", on: at(day: 2, hour: 0), calendar: calendar)
+        vm.advance()
+        vm.draftLeft(at: at(day: 1, hour: 20))
+        XCTAssertEqual(
+            vm.state.selectedDate,
+            BookingDateFormat.dayLabel(at(day: 2, hour: 0), calendar: calendar, now: at(day: 1, hour: 20)),
+            "the day was picked as a weekday, not as today"
+        )
+        let resumedAt = at(day: 2, hour: 8)
+
+        XCTAssertTrue(vm.revalidateResumedTime(now: resumedAt, calendar: calendar))
+
+        XCTAssertEqual(vm.state.selectedTime, "")
+        XCTAssertEqual(stripDay(vm, now: resumedAt), at(day: 2, hour: 0), "the When step selects next week's day")
+        XCTAssertEqual(vm.state.selectedDate, L10n.Booking.today)
+        XCTAssertEqual(vm.currentStep, 3)
     }
 
     func testAResumedTimeOnADayThatHasPassedTakesTheDayWithIt() {

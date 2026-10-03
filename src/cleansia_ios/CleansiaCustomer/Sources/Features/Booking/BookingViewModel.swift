@@ -516,7 +516,11 @@ extension BookingViewModel {
             var next = current
             next.selectedTime = ""
             next.selectedInstant = nil
-            if dayGone { next.selectedDate = "" }
+            // A kept day is re-labelled against `now`: picked on an earlier day it carries its weekday, which
+            // on the day itself names the same weekday a week later on the When step's strip.
+            next.selectedDate = dayGone ? "" : draft.selectedInstant.map {
+                BookingDateFormat.dayLabel($0, calendar: calendar, now: now)
+            } ?? ""
             return next
         }
         currentStep = min(currentStep, Self.whenStep)

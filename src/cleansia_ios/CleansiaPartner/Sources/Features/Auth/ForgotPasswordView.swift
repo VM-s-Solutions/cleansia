@@ -64,7 +64,7 @@ private struct ForgotPasswordContent: View {
             }
             .padding(Spacing.s)
 
-            ScrollView {
+            CenteredAuthScroll {
                 VStack(spacing: 0) {
                     Text(L10n.ForgotPassword.title)
                         .cleansiaFont(CleansiaTypography.displayMedium)
@@ -107,7 +107,7 @@ private struct ForgotPasswordContent: View {
                     }
                 }
                 .padding(.horizontal, Spacing.l)
-                .padding(.bottom, Spacing.xl)
+                .padding(.vertical, Spacing.xl)
                 .frame(maxWidth: .infinity)
             }
         }

@@ -56,7 +56,7 @@ private struct LoginContent: View {
     }
 
     var body: some View {
-        ScrollView {
+        CenteredAuthScroll {
             VStack(spacing: 0) {
                 Text(L10n.welcomeBack)
                     .cleansiaFont(CleansiaTypography.displayMedium)
@@ -116,8 +116,7 @@ private struct LoginContent: View {
                 }
             }
             .padding(.horizontal, Spacing.l)
-            .padding(.top, 64)
-            .padding(.bottom, Spacing.xl)
+            .padding(.vertical, Spacing.xl)
             .frame(maxWidth: .infinity)
         }
         .background(CleansiaColors.background.ignoresSafeArea())

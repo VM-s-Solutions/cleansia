@@ -75,7 +75,7 @@ private struct RegisterContent: View {
     }
 
     var body: some View {
-        ScrollView {
+        CenteredAuthScroll {
             VStack(spacing: 0) {
                 Text(L10n.Register.title)
                     .cleansiaFont(CleansiaTypography.displayMedium)
@@ -199,8 +199,7 @@ private struct RegisterContent: View {
                 }
             }
             .padding(.horizontal, Spacing.l)
-            .padding(.top, 64)
-            .padding(.bottom, Spacing.xl)
+            .padding(.vertical, Spacing.xl)
             .frame(maxWidth: .infinity)
         }
         .background(CleansiaColors.background.ignoresSafeArea())

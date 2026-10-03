@@ -10,6 +10,8 @@ import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.R
+import cz.cleansia.customer.core.consent.GdprConsentClient
+import cz.cleansia.customer.core.consent.SignupConsentType
 import cz.cleansia.customer.core.loyalty.LoyaltyRepository
 import cz.cleansia.customer.core.memberships.GetMyMembershipResponse
 import cz.cleansia.customer.core.memberships.MembershipRepository
@@ -88,6 +90,7 @@ class OrderDetailViewModelTest {
     private lateinit var orderEventBus: OrderEventBus
     private lateinit var paymentRepository: PaymentRepository
     private lateinit var loyaltyRepository: LoyaltyRepository
+    private lateinit var consentClient: GdprConsentClient
 
     /** Mirrors the VM's private companion constant — 5 minutes. */
     private val pollIntervalMs = 5L * 60L * 1000L
@@ -105,6 +108,9 @@ class OrderDetailViewModelTest {
         orderEventBus = OrderEventBus()
         paymentRepository = mockk(relaxed = true)
         loyaltyRepository = mockk(relaxed = true)
+        consentClient = mockk()
+        coEvery { consentClient.grantedTypes() } returns
+            setOf(SignupConsentType.TermsOfService, SignupConsentType.PrivacyPolicy)
 
         every { membershipRepository.current } returns membership
         every { membershipRepository.staleness } returns membershipStaleness
@@ -129,6 +135,7 @@ class OrderDetailViewModelTest {
         orderEventBus = orderEventBus,
         loyaltyRepository = loyaltyRepository,
         paymentRepository = paymentRepository,
+        consentClient = consentClient,
     )
 
     /** Wire values: Confirmed=2, OnTheWay=3, InProgress=4, Completed=5, Cancelled=6. */
@@ -420,7 +427,7 @@ class OrderDetailViewModelTest {
             ApiResult.Success(recurringCashOccurrence(needsConfirmation = false)),
         )
         coEvery { repository.refresh() } returns ApiResult.Success(Unit)
-        coEvery { repository.confirmRecurring(orderId) } returns
+        coEvery { repository.confirmRecurring(orderId, null) } returns
             ApiResult.Success(ConfirmRecurringOrderResponse(orderId = orderId))
         every { appContext.getString(R.string.recurring_confirm_success) } returns "Booking confirmed"
 
@@ -449,7 +456,7 @@ class OrderDetailViewModelTest {
     /** ConfirmRecurring answers with its own intent and customer, which keep nothing and must not reach the sheet. */
     private fun cardConfirmReady(): OrderDetailViewModel {
         coEvery { repository.getById(orderId) } returns ApiResult.Success(recurringCardOccurrence())
-        coEvery { repository.confirmRecurring(orderId) } returns ApiResult.Success(
+        coEvery { repository.confirmRecurring(orderId, null) } returns ApiResult.Success(
             ConfirmRecurringOrderResponse(
                 orderId = orderId,
                 clientSecret = "pi_confirm_secret",
@@ -549,7 +556,7 @@ class OrderDetailViewModelTest {
     fun `a cash confirm spends no credit and leaves the balance alone`() = runTest {
         coEvery { repository.getById(orderId) } returns
             ApiResult.Success(recurringCashOccurrence(needsConfirmation = true))
-        coEvery { repository.confirmRecurring(orderId) } returns
+        coEvery { repository.confirmRecurring(orderId, null) } returns
             ApiResult.Success(ConfirmRecurringOrderResponse(orderId = orderId))
         val vm = viewModel()
         advanceUntilIdle()
@@ -563,7 +570,7 @@ class OrderDetailViewModelTest {
     @Test
     fun `a refused card confirm leaves the credit balance alone`() = runTest {
         val vm = cardConfirmReady()
-        coEvery { repository.confirmRecurring(orderId) } returns
+        coEvery { repository.confirmRecurring(orderId, null) } returns
             ApiResult.Error(ApiError.BadRequest("refused"))
         advanceUntilIdle()
 
@@ -592,5 +599,78 @@ class OrderDetailViewModelTest {
         val cash = viewModel()
         advanceUntilIdle()
         assertFalse(cash.offersCardSaving.value)
+    }
+
+    // ── the terms tick on a recurring confirm — the booking's rule ──
+
+    private fun cashConfirmReady(): OrderDetailViewModel {
+        coEvery { repository.getById(orderId) } returns
+            ApiResult.Success(recurringCashOccurrence(needsConfirmation = true))
+        coEvery { repository.confirmRecurring(orderId, any()) } returns
+            ApiResult.Success(ConfirmRecurringOrderResponse(orderId = orderId))
+        return viewModel()
+    }
+
+    @Test
+    fun `an account holding both consents in force is not asked and its confirm asserts nothing`() = runTest {
+        val vm = cashConfirmReady()
+        advanceUntilIdle()
+
+        assertFalse(vm.termsAsked.value)
+        assertTrue(vm.canConfirmRecurring.value)
+
+        vm.confirmRecurring()
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { repository.confirmRecurring(orderId, null) }
+    }
+
+    /** One of the two is not both: a consent to an older Terms version is not on this list either. */
+    @Test
+    fun `an account missing a consent in force is asked, and the confirm waits for the tick`() = runTest {
+        coEvery { consentClient.grantedTypes() } returns setOf(SignupConsentType.PrivacyPolicy)
+        val vm = cashConfirmReady()
+        advanceUntilIdle()
+
+        assertTrue(vm.termsAsked.value)
+        assertFalse(vm.canConfirmRecurring.value)
+
+        vm.confirmRecurring()
+        advanceUntilIdle()
+        coVerify(exactly = 0) { repository.confirmRecurring(any(), any()) }
+
+        vm.setTermsAccepted(true)
+        advanceUntilIdle()
+        assertTrue(vm.canConfirmRecurring.value)
+        vm.confirmRecurring()
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { repository.confirmRecurring(orderId, true) }
+    }
+
+    /** The safe direction is always "ask" — a consent that might not exist is asked for. */
+    @Test
+    fun `a failed consent read asks for the tick`() = runTest {
+        coEvery { consentClient.grantedTypes() } returns null
+        val vm = cashConfirmReady()
+        advanceUntilIdle()
+
+        assertTrue(vm.termsAsked.value)
+        assertFalse(vm.canConfirmRecurring.value)
+    }
+
+    @Test
+    fun `the consents are read once, and only for a visit awaiting its confirmation`() = runTest {
+        coEvery { repository.getById(orderId) } returns ApiResult.Success(order(5))
+        viewModel()
+        advanceUntilIdle()
+        coVerify(exactly = 0) { consentClient.grantedTypes() }
+
+        val vm = cashConfirmReady()
+        advanceUntilIdle()
+        vm.refresh()
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { consentClient.grantedTypes() }
     }
 }

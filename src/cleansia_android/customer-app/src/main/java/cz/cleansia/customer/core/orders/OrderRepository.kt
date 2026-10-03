@@ -164,9 +164,12 @@ class OrderRepository @Inject constructor(
      * (the cleaner collects on the day); the caller refetches and shows success. A card response
      * carries the Stripe PaymentIntent fields the mobile PaymentSheet needs.
      */
-    suspend fun confirmRecurring(orderId: String): ApiResult<ConfirmRecurringOrderResponse> = wireResult {
+    suspend fun confirmRecurring(
+        orderId: String,
+        termsAccepted: Boolean?,
+    ): ApiResult<ConfirmRecurringOrderResponse> = wireResult {
         val resp = networkCall {
-            api.confirmRecurring(ConfirmRecurringOrderRequest(orderId = orderId))
+            api.confirmRecurring(ConfirmRecurringOrderRequest(orderId = orderId, termsAccepted = termsAccepted))
         } ?: return networkError()
         if (!resp.isSuccessful) {
             return httpError(resp.errorBody(), resp.code())

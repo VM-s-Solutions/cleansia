@@ -52,7 +52,7 @@ public class MigratedEmailRenderingTests
     }
 
     [Fact]
-    public async Task Password_reset_carries_the_link_unescaped_by_the_renderer()
+    public async Task Password_reset_link_keeps_its_escaped_query_and_encodes_only_the_ampersand()
     {
         var (service, wire) = Build(new Dictionary<string, string>
         {
@@ -62,12 +62,29 @@ public class MigratedEmailRenderingTests
 
         await service.SendResetPasswordEmailAsync(Recipient, "Jana", "A1B2C3", "en", CancellationToken.None);
 
-        // The reset URL is built with escaped query values; the renderer is a literal
-        // substitution and must not touch them again.
-        Assert.Contains("customer%40example.com", wire.Html, StringComparison.Ordinal);
-        Assert.Contains("code=A1B2C3", wire.Html, StringComparison.Ordinal);
+        // The reset URL is built with escaped query values. In the href the renderer writes its "&" as
+        // "&amp;", which the reader's mail client reads back as "&"; the percent-escapes are untouched
+        // and nothing is encoded twice.
+        Assert.Contains(
+            "href=\"https://app.test/reset-password?email=customer%40example.com&amp;code=A1B2C3\"",
+            wire.Html,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("&amp;amp;", wire.Html, StringComparison.Ordinal);
         Assert.Contains("Choose a new password", wire.Html, StringComparison.Ordinal);
         Assert.DoesNotContain("{{", wire.Html, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_customer_name_with_markup_is_shown_as_text_in_the_receipt()
+    {
+        var (service, wire) = Build(new Dictionary<string, string> { ["Subject"] = "Your Order Receipt" });
+        var order = NewOrder("<b>Ann & Co</b>");
+
+        await service.SendOrderReceiptEmailAsync(Recipient, order, languageCode: "en", ct: CancellationToken.None);
+
+        Assert.Contains("&lt;b&gt;Ann &amp; Co&lt;/b&gt;", wire.Html, StringComparison.Ordinal);
+        Assert.DoesNotContain("<b>Ann", wire.Html, StringComparison.Ordinal);
+        Assert.DoesNotContain("&amp;amp;", wire.Html, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -239,8 +256,8 @@ public class MigratedEmailRenderingTests
         Assert.DoesNotContain("info@cleansia.cz", html, StringComparison.Ordinal);
     }
 
-    private static Order NewOrder() => Order.Create(
-        customerName: "Jana Novakova",
+    private static Order NewOrder(string customerName = "Jana Novakova") => Order.Create(
+        customerName: customerName,
         customerEmail: Recipient,
         customerPhone: "+420000000000",
         customerAddress: Address.Create("Dlouha 12", "Praha", "11000", "cz"),

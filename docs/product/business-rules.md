@@ -892,9 +892,14 @@ holds a card there and, while it stays usable, is asked for nothing ([below](#sa
   booking or the schedule, sends the customer through Stripe, and brings them back to it as they left
   it. Android does the same at the one-off booking; iOS reads the saved cards before it books and
   captures when it finds no usable one. Both then wait for the card to land (eight reads, 1.5 s apart)
-  before they book, and iOS also offers *Save a card* under Profile → Payments. The other two refusals
-  take cash off and send the customer back to choose how to pay; on the web, a debt refusal lists what
-  is owed with *Pay now*.
+  before they book, and iOS also offers *Save a card* under Profile → Payments. On both apps a card
+  that has not landed by then books nothing: the customer is told it is still being saved and slides
+  again. That slide, like one after a time that stopped holding meanwhile, waits for the same card the
+  same way and never opens a second capture. A setup sheet cancelled or failed saved nothing, so the
+  next slide captures afresh at once. Until 2026-10-04 iOS's next slide read the cards, found none
+  usable yet and opened a second capture. The other two
+  refusals take cash off and send the customer back to choose how to pay; on the web, a debt refusal
+  lists what is owed with *Pay now*.
 
 #### Saving a card while paying by card {#save-card}
 

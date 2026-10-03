@@ -1039,6 +1039,12 @@ need backfilling.
 
 ### Fixed
 
+- **Customer iOS — a cash booking waits for the card you just saved, and never asks for another.**
+  After you saved a card to guarantee a cash booking, the booking waits for the card to reach your
+  account. When it took too long and you slid again, or the time had to be picked again first, iOS
+  opened the card form again and asked for a card you had already saved. That slide now waits for the
+  card already on its way, as Android does. A card form you closed without saving asks afresh.
+
 - **Customer Android and iOS — a booking left open asks for a new time too.** A booking left open
   while the app was in the background, or left on the confirm step, kept its time after the time had
   passed or come within 2 hours, and only the server refused it. The time is now checked again when you

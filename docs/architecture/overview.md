@@ -50,7 +50,7 @@ Cleansia is a multi-tenant cleaning services platform deployed on Azure. The sys
 | iOS | Swift / SwiftUI (iOS 16 floor) | XcodeGen + SPM |
 | Background Jobs | Azure Functions (Docker) | v4 |
 | PDF Generation | QuestPDF | Native .NET |
-| Email | SendGrid | Dynamic Templates |
+| Email | SendGrid | Delivery only — [the server renders the HTML](/architecture/infrastructure#sendgrid) |
 | Payments | Stripe | Checkout Sessions |
 | Auth | JWT + Google OAuth | Custom |
 | Orchestration | .NET Aspire | 13.1.1 |

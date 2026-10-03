@@ -72,9 +72,10 @@ extension BookingViewModel {
 
     /// What stops a booking before anything is sent: no session, or a time that no longer holds — a Confirm
     /// step left on screen may hold one that has since passed or slid into the express band it was not priced in.
+    /// A time already cleared is refused the same way, not sent on to fail as if the connection had.
     private func refusalBeforeSending() -> BookingSubmitOutcome? {
         guard tokenStore.current() != nil else { return .failed(nil) }
-        return revalidateResumedTime() ? .timeNoLongerHolds : nil
+        return (revalidateResumedTime() || state.selectedInstant == nil) ? .timeNoLongerHolds : nil
     }
 
     private func cardPending(for order: CreatedOrder, saveCard: Bool) async -> BookingSubmitOutcome {

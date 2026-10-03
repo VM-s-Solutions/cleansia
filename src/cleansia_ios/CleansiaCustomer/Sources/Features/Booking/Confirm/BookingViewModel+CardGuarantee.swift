@@ -85,8 +85,9 @@ extension BookingViewModel {
     /// in time, nothing is booked and the customer slides again.
     func submitAfterCardGuarantee() async -> BookingSubmitOutcome {
         guard let currencyCode = guaranteeCurrencyCode, !submitState.isSubmitting else { return .failed(nil) }
-        // Saving the card can take a while; a time that stopped holding meanwhile waits for no card.
-        if revalidateResumedTime() { return .timeNoLongerHolds }
+        // Saving the card can take a while; a time that stopped holding meanwhile waits for no card, and nor
+        // does one already cleared — the booking would read the cards only to fail as if offline.
+        if revalidateResumedTime() || state.selectedInstant == nil { return .timeNoLongerHolds }
         submitState = .submitting
         let landed = await awaitUsableCard(currencyCode: currencyCode)
         submitState = .idle

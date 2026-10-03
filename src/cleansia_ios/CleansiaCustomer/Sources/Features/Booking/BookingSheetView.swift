@@ -145,8 +145,17 @@ struct BookingSheetView: View {
         }
     }
 
+    /// Stripe's sheet over the booking. The app leaves the foreground under it and comes back — a 3-D Secure
+    /// approval in the bank app, a look-up of the card number, a Face ID prompt — and the order or the card is
+    /// past the time by then, so the open booking is not re-checked while it is up.
+    private func showPaymentSheet(_ presentation: PaymentSheetPresentation) async -> PaymentSheetOutcome {
+        vm.paymentSheetShowing = true
+        defer { vm.paymentSheetShowing = false }
+        return await paymentSheet.present(presentation)
+    }
+
     private func saveCardGuarantee(_ presentation: PaymentSheetPresentation) async {
-        switch await paymentSheet.present(presentation) {
+        switch await showPaymentSheet(presentation) {
         case .completed:
             await handle(vm.submitAfterCardGuarantee())
         case .canceled, .failed:
@@ -160,7 +169,7 @@ struct BookingSheetView: View {
         orderId: String,
         confirmationCode: String
     ) async {
-        let outcome = await paymentSheet.present(presentation)
+        let outcome = await showPaymentSheet(presentation)
         switch BookingCardResultResolver.resolve(outcome, confirmationCode: confirmationCode) {
         case let .navigateToSuccess(code):
             // Same duplicate-order guard as the VM's cash path: clear the

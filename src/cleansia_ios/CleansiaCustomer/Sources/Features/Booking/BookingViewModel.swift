@@ -63,6 +63,9 @@ final class BookingViewModel: ViewModel {
     private var draftLeftAt: Date?
     /// The currency of the card PaymentSheet is saving; the booking waits for that card to land.
     var guaranteeCurrencyCode: String?
+    /// While Stripe's sheet is over the booking, paying for its order or saving its card. The sheet sets it; a
+    /// return to the foreground re-checks nothing under it (`recheckOpenBooking`).
+    var paymentSheetShowing = false
     private var quoteTask: Task<Void, Never>?
     private var catalogLoad: Task<Void, Never>?
     private var marketReload: Task<Void, Never>?

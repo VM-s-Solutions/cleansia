@@ -240,6 +240,30 @@ final class BookingCardGuaranteeTests: XCTestCase {
         XCTAssertFalse(vm.submitState.isSubmitting)
     }
 
+    /// A time already cleared — a re-check ran while the card was being saved — is refused the same way: no card
+    /// is waited for and nothing is sent, and the customer is told the time changed, not that the connection
+    /// failed.
+    func testATimeClearedWhileTheCardWasSavedBooksNothing() async throws {
+        let cards = FakeSavedCardClient()
+        let create = FakeOrderCreateClient()
+        let vm = makeVM(cards: cards, create: create)
+        vm.update(readyState())
+        guard case .cardGuaranteeNeeded = await vm.submit() else { return XCTFail("no capture was asked for") }
+        let readsBefore = cards.readCount
+        let calendar = Calendar.current
+        let yesterday = try XCTUnwrap(calendar.date(byAdding: .day, value: -1, to: calendar.startOfDay(for: Date())))
+        vm.selectDay(yesterday)
+        vm.selectTime("10:00", on: yesterday)
+        XCTAssertTrue(vm.revalidateResumedTime(), "the time was not cleared")
+
+        let outcome = await vm.submitAfterCardGuarantee()
+
+        XCTAssertEqual(outcome, .timeNoLongerHolds)
+        XCTAssertEqual(cards.readCount, readsBefore, "it waited for the card")
+        XCTAssertTrue(create.commands.isEmpty)
+        XCTAssertFalse(vm.submitState.isSubmitting)
+    }
+
     func testWithoutACaptureInFlightThereIsNothingToWaitFor() async {
         let cards = FakeSavedCardClient()
         let vm = makeVM(cards: cards)

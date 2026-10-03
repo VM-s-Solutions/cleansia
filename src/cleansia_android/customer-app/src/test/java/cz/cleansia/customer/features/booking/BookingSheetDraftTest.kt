@@ -68,9 +68,35 @@ class BookingSheetDraftTest {
         )
         assertTrue(
             "a return to the foreground no longer re-checks the open sheet's time",
-            flat.contains(
-                "LifecycleEventEffect(Lifecycle.Event.ON_START) { " +
-                    "if (stopped && visible) bookingVm.revalidateResumedTime() stopped = false }",
+            flat.contains("LifecycleEventEffect(Lifecycle.Event.ON_START) {") &&
+                flat.substringAfter("LifecycleEventEffect(Lifecycle.Event.ON_START) {")
+                    .substringBefore("stopped = false }")
+                    .contains("bookingVm.revalidateResumedTime()"),
+        )
+    }
+
+    /**
+     * A booking being placed or paid is not re-checked on the way back. The card path creates the order
+     * and then shows Stripe's PaymentSheet, and a bank's 3-D Secure screen or app stops the host; a slot
+     * boundary passing in that hop cleared the paid booking's time and told the customer to pick one
+     * again. A cash submit left in flight is the same. The submit state is read from the view model, not
+     * the composed `submitting`, which stops following the flow while the host is stopped.
+     */
+    @Test
+    fun `a booking being placed or paid is not re-checked on the way back`() {
+        val flat = sheet.replace(Regex("\\s+"), " ")
+        val onStart = flat.substringAfter("LifecycleEventEffect(Lifecycle.Event.ON_START) {")
+            .substringBefore("stopped = false }")
+        assertTrue(
+            "a return during a submit no longer reads the live submit state",
+            onStart.contains(
+                "val placing = bookingVm.submitState.value is cz.cleansia.customer.ui.state.ActionState.Submitting",
+            ),
+        )
+        assertTrue(
+            "a return while an order is in flight or being paid re-checks its time",
+            onStart.contains(
+                "if (stopped && visible && !placing && pendingCardOrder == null) bookingVm.revalidateResumedTime()",
             ),
         )
     }

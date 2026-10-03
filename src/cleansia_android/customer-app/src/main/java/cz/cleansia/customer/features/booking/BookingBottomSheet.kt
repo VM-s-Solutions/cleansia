@@ -382,11 +382,15 @@ private fun SheetContent(
     DisposableEffect(bookingVm) { onDispose { bookingVm.setSheetVisible(false) } }
     // A sheet left open in the background comes back to a clock that has moved on, so its time is
     // re-checked on the way back, as a plain open re-checks one. Only a start after a stop is a return:
-    // the ON_START a new observer is sent as it enters composition is not one.
+    // the ON_START a new observer is sent as it enters composition is not one. Nor is a booking being
+    // placed or paid re-checked: its order exists or is on its way, and a bank's 3-D Secure hop stops
+    // the host, so a slot boundary passing meanwhile would tell a paying customer to pick a time again.
+    // The submit state is read live, as the composed one stops following the flow while stopped.
     var stopped by remember { mutableStateOf(false) }
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) { stopped = true }
     LifecycleEventEffect(Lifecycle.Event.ON_START) {
-        if (stopped && visible) bookingVm.revalidateResumedTime()
+        val placing = bookingVm.submitState.value is cz.cleansia.customer.ui.state.ActionState.Submitting
+        if (stopped && visible && !placing && pendingCardOrder == null) bookingVm.revalidateResumedTime()
         stopped = false
     }
 

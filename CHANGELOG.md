@@ -983,6 +983,11 @@ need backfilling.
 
 ### Fixed
 
+- **Cleaner Android and iOS — the registration screen's *Done* and arrow line up with their step.** On
+  a step with details under it, such as missing fields or a rejection reason, the status and the
+  arrow sat at the top of the row on iOS and halfway down the details on Android. They now sit level
+  with the step's name. (Owner remark 2026-10-03.)
+
 - **Customer Android and iOS — the address picker holds still while it finds the address.** Each time
   the map stopped, the card under it shrank to one line while it looked the address up, then grew back
   to two. On iOS the map, the pin and the card jumped with it, and on Android the card and the Mapbox

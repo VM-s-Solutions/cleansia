@@ -260,9 +260,13 @@ back to the first step. Android let the swipe through on any step, but every pla
 draft, while *Order again* skipped the reset, so an abandoned draft's dirtiness level, date, time and
 payment carried into the repeated order.
 
-One difference between the platforms remains. On a plain open, iOS refills the draft's address from
-the preferred saved address when the draft's address was filled in from it automatically and the
-preferred one has since changed; Android keeps the address the draft had.
+**A resumed draft follows Home's address** (both apps since 2026-10-03). On a plain open the draft's
+address is refilled from the saved address Home's top bar has chosen when the sheet filled the address
+in from it and Home's choice has since changed; a blank address is always filled in. An address the
+customer picked in the sheet is never replaced (`hydratedWithPreferred`: `BookingPrefill` on iOS,
+`BookingBottomSheet.kt` on Android). Until then Android kept the address the draft had, so a booking
+reopened after Home switched address was quoted and created for the old one while Home showed and
+priced the new one.
 
 **A resumed time is re-checked against the When step's own rules** (since 2026-10-03). On a plain
 open both apps ask `draftTimeStillHolds` (`WhenWhereStep.kt` on Android, `BookingTimeSlots` on iOS),

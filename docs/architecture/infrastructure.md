@@ -342,7 +342,10 @@ on production the operating company's own account (decision 49) —
 
 ### SendGrid
 
-Used for all transactional emails via Dynamic Templates.
+Delivers every transactional e-mail. SendGrid holds no template: the server renders the HTML from the
+repository's `email-templates/*.html`, embedded in `Cleansia.Core.AppServices` and filled by
+`EmailTemplateRenderer` from the e-mail type's translation rows and the e-mail's own values, and hands
+SendGrid the finished page.
 
 | Template | Trigger |
 |----------|---------|
@@ -353,22 +356,42 @@ Used for all transactional emails via Dynamic Templates.
 | Welcome Email | After registration |
 | Password Reset | On password reset request |
 
-```csharp
-public class EmailService(ISendGridClient client) : IEmailService
-{
-    public async Task SendTemplateEmailAsync(
-        string to, string templateId, object templateData)
-    {
-        var message = new SendGridMessage();
-        message.SetFrom("noreply@cleansia.cz", "Cleansia");
-        message.AddTo(to);
-        message.SetTemplateId(templateId);
-        message.SetTemplateData(templateData);
+Every e-mail leaves through one method, `EmailService.SendRenderedAsync` (shortened here):
 
-        await client.SendEmailAsync(message);
-    }
+```csharp
+private async Task<string> SendRenderedAsync(
+    string email, string htmlContent, string subject, string logContext, CancellationToken ct,
+    byte[]? attachmentBytes = null, string? attachmentFileName = null)
+{
+    var client = new SendGridClient(httpClientFactory.CreateClient("SendGrid"), sendGridConfig.ApiKey);
+    var msg = MailHelper.CreateSingleEmail(
+        new EmailAddress(sendGridConfig.AddressFrom, "Cleansia"),
+        new EmailAddress(email),
+        subject,
+        plainTextContent: null,
+        htmlContent: htmlContent);
+
+    msg.SetReplyTo(new EmailAddress(SupportAddress)); // "support@cleansia.cz"
+
+    if (attachmentBytes is { Length: > 0 } && !string.IsNullOrWhiteSpace(attachmentFileName))
+        msg.AddAttachment(attachmentFileName, Convert.ToBase64String(attachmentBytes), "application/pdf");
+
+    var response = await client.SendEmailAsync(msg, ct);
+    if (!response.IsSuccessStatusCode)
+        await ThrowClassifiedAsync(response, email, ct); // throws EmailDeliveryException
+    // … returns SendGrid's X-Message-Id
 }
 ```
+
+- **From** is `SendGrid:AddressFrom`, shown as *Cleansia*. It only delivers mail and is never shown as
+  the contact ([Environment configuration — SendGrid](/deployment/environment-config#sendgrid)).
+- **Reply-To** is `support@cleansia.cz` on every e-mail, the same constant the support line prints, so
+  pressing Reply writes to support ([Decision 54](/product/business-rules#company-identity)).
+- **The transport** is the named `SendGrid` `HttpClient` from `IHttpClientFactory`, pooled and behind
+  the standard resilience handler. A response that is still a failure after its retries is classified,
+  counted in `IntegrationFailureMetrics` and thrown as `EmailDeliveryException`.
+- **A PDF** rides along when the caller has one: the receipt, the booking confirmation, the cleaner's
+  payout invoice at period close, the contract for work.
 
 ## Deploying onto the shared plan {#deploys}
 

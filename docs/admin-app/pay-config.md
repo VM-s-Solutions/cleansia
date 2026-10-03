@@ -25,6 +25,11 @@ When calculating pay for an order:
 
 This means an employee can have specific overrides for some services and use global rates for others.
 
+The rates are resolved when a seat's contract for work forms — the cleaner's take, or their acceptance
+of an administrator's placement — and frozen on the seat, so an edit here reaches only jobs taken after
+it; a job a cleaner already holds is paid as its contract was priced (owner ruling 2026-10-03 →
+[Cleaner pay](/product/business-rules#cleaner-pay)).
+
 ## Global Rates List
 
 Route: `/pay-config-management`
@@ -131,7 +136,7 @@ distance component was removed keep the figures they were calculated with.
 3. Picks the new service, sets currency to CZK
 4. Sets `BasePay = 800`, `ExtraPerRoom = 200`, `ExtraPerBathroom = 100`
 5. Sets `MinimumPay = 1000` (no employee earns less than 1000 CZK for a Deep Clean)
-6. Saves. All employees now use this rate when they complete a Deep Clean order.
+6. Saves. Every Deep Clean job taken from now on by an employee without an override is priced and paid at this rate.
 
 **Override for a specific employee**:
 

@@ -8,9 +8,11 @@ Every grant carries an **idempotency key**, unique per tenant. A retried grant i
 index rather than doubling someone's balance.
 
 A completed order earns `floor(total / Currency.LoyaltyPointsDivisor)` in the order's currency — 1
-point per 10 CZK today — and a partial refund claws back the same fraction of the refund's net through
-the same divisor. The divisor is authored per currency on the admin currency form; a currency with no
-divisor earns nothing and logs. It is not scaled from another currency's rate.
+point per 10 CZK today. A partial refund takes back the same share of the points that order earned as
+it returned of the price — card and credit, gross — whatever the divisor is by then (owner ruling
+2026-10-03); a full refund and a dispute refund take back none today, a known gap. The divisor is
+authored per currency on the admin currency form; a currency with no divisor earns nothing and logs.
+It is not scaled from another currency's rate.
 
 **A market cannot open without one.** An order completed while its currency has no divisor earns
 nothing, permanently: the earn returns before any ledger row is written and nothing re-fires it when
@@ -67,7 +69,10 @@ five locales, or if the copy promises that a tier cannot drop.
 A membership buys a discount, a wider free-cancellation window, a 60-minute oops window after every
 booking instead of the standard 15 — anyone's first booking gets 60 too
 ([the oops window](/product/business-rules#oops-window)) — a quota of express-surcharge waivers,
-recurring schedules and the preferred cleaner, all of them from the first day of a free trial.
+recurring schedules and the preferred cleaner, all of them from the first day of a free trial. The
+free-cancellation window is 4 hours before the cleaning instead of 24: a fixed term of the customer
+contract, frozen on each order at booking, and no longer a plan setting (owner ruling 2026-10-03 →
+[Cleansia Plus](/product/business-rules#cleansia-plus)).
 
 **A free trial carries every benefit, and an account gets one** (owner ruling 2026-09-30, reversing
 the trial half of the 2026-09-08 ruling, T-0690). The trial is the plan's `TrialPeriodDays` — 14 on both

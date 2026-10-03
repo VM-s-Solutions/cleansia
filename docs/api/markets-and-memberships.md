@@ -120,6 +120,9 @@ an error. Without `countryId` the list is in the platform default currency.
 is `price / 12` for a yearly plan, else `price`; `savingsPercentVsMonthly` compares the yearly row
 against the cheapest **monthly** row **in the same currency**, so it may differ between markets. Every
 figure on the row is in `currencyCode` — a client labels from it, never from a currency it assumed.
+`freeCancellationWindowHours` is the same on every plan: the contract's fixed Plus window,
+`BookingPolicy.PlusFreeCancellationHours` (4), not a plan setting since 2026-10-03; `GetMine` carries
+the same figure → [Business rules — Cleansia Plus](/product/business-rules#cleansia-plus).
 
 ---
 
@@ -220,7 +223,6 @@ Stripe Price objects are created out of band — the admin enters ids.
     "CZK": { "price": 199.00, "stripePriceId": "price_…" }
   },
   "discountPercentage": 5,
-  "freeCancellationWindowHours": 4,
   "trialPeriodDays": 14,
   "allowsExpressUpgrade": true,
   "expressUpgradesPerMonth": 1

@@ -65,6 +65,9 @@ order, so that a claim against a cleaner for a job is answered from a record and
   **session's signed `device_id` claim** for the device (never the `X-Device-Id` header — the client's
   word alone on a signed-in act), `IHostAudienceProvider.Audience`, creates the row and one
   `EmployeeActionAudit(ContractAccepted)`, pins both to `order.TenantId`, and does **not** commit.
+  Since 2026-10-03 it also freezes the seat's four job pay figures from the same read of the rates
+  (`OrderEmployee.FreezeJobPay`, set once), which the seat is paid from →
+  [Cleaner pay](/product/business-rules#cleaner-pay).
 - **`WorkContractFactsBuilder.BuildAsync(orderId)`** — one `AsNoTracking` projection shared by the
   preview and the acceptor so the screen and the row cannot differ: `orderNumber`,
   `cleaningDateTimeUtc` + `estimatedMinutes` (the window), `totalPrice` + `currencyCode` (the

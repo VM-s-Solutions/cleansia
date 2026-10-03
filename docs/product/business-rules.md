@@ -106,6 +106,29 @@ flowchart LR
 
 `CancellationFeeRateFor` is the **only** place a tier is priced.
 
+**The figures are the order's, fixed when it is booked** (owner ruling 2026-10-03). The customer terms
+keep a booking under the version accepted when it was made (§19), so the five figures that price a
+cancellation are frozen on the order at booking and never read from today's `BookingPolicy` again: the
+free notice (`Orders.CancellationFreeHours`, 24), the partial threshold (`CancellationPartialHours`, 4),
+the two rates (`CancellationPartialFeeRate` 0.25, `CancellationLastMinuteFeeRate` 0.50) and an entitled
+Plus member's free notice (`CancellationPlusFreeHours`, 4 → [Cleansia Plus](#cleansia-plus)).
+`OrderFactory` stamps them from `BookingPolicy.CancellationTermsAtBooking` on every booking — signed in,
+guest, and each recurring occurrence when the materialiser creates it. `Order.Create` cannot be called
+without them and the columns carry no database default, so a missing stamp is a build error rather than
+a 0 free hours that would make the order free to cancel at any time. The resolver, the assessor behind
+both cancels and both previews, the cancel's and the booking's evidence rows and the booking e-mail all
+read the order's figures; a change to the ladder is a new terms version and reaches only bookings made
+after it. Until 2026-10-03 every one of them read the constants at the cancel, and a Plus member's
+window was the plan's, which an administrator could edit — one edit re-priced every member's open
+bookings in every company.
+
+**Who the customer is stays live.** Whether they are an entitled Plus member and whether this is their
+first booking are judged at the cancel ([the oops window](#oops-window)), because the terms grant the
+Plus window *"for as long as the membership is current"* (§10) and *"while you have the Cleansia Plus
+benefits"* (§13): a member who lapsed since booking cancels under the standard figures, and one who
+joined since under the Plus figure frozen on the order. The oops minutes are read from `BookingPolicy`
+at the cancel too; they only matter in the first hour after booking.
+
 **A booking that took no payment records no refund.** Every cancellation records the fee rate it
 applied. The refund amount it records is what goes back — so on an order whose payment is still
 `Pending` or `Failed` (a cash booking not yet collected, a card never charged) it is **0**, whoever
@@ -196,11 +219,13 @@ column.
   first-booking read, for the signed-in and the guest cancel, both previews and the booking's evidence
   row alike, so a membership that lapses between the preview and the click is judged as it stands at
   the click. The minutes run from the order's creation — for a recurring occurrence, from when the
-  materialiser created it.
-- **It is minutes after booking, not hours before the cleaning.** The Plus plan's own
-  `FreeCancellationWindowHours` still moves only the free notice window (24 h → 4 h); the 60 minutes is
-  a separate benefit and is never derived from it. The partial and last-minute thresholds and rates
-  never move.
+  materialiser created it. Only *who* the customer is is live; the notice figures it applies are the
+  order's ([fixed at booking](#cancellation)).
+- **It is minutes after booking, not hours before the cleaning.** The Plus free notice window
+  (24 h → 4 h, `BookingPolicy.PlusFreeCancellationHours`, frozen on the order as
+  `CancellationPlusFreeHours`) moves only the free notice window; the 60 minutes is a separate benefit
+  and is never derived from it. The partial and last-minute thresholds and rates do not depend on Plus
+  or a first booking.
 - **Every client states the customer's own number.** The cancellation preview carries
   `oopsWindowMinutes` (15 or 60) beside the tier, and the web, Android and iOS cancellation sheets —
   signed-in and guest — print it rather than a figure of their own. The static grace copy on every
@@ -293,7 +318,11 @@ a person confirms it. Nothing about a closed door is provable by a timer.
    after). Refused without a report (`order.lockout.not_reported`) and on a cancelled or completed
    order; admitted on a job in progress, because a cleaner may have started at the door. The order is
    cancelled by the administrator at `BookingPolicy.LockoutFeeRate` — **100 %** — with no refund and
-   the reason key `order.cancelled.customer_lockout`.
+   the reason key `order.cancelled.customer_lockout`. The rate is the one in force at the confirmation,
+   stamped on the order there (`Order.CancellationFeeRate`) and **not** frozen at booking (owner ruling
+   2026-10-03): the money is the whole price — the payment kept, or a receivable for `TotalPrice` —
+   whatever the constant says, so a change to it would move only the recorded rate and *Fee still
+   owed*, and would come with a new terms version, which states 100 % (§15).
 
 | The booking | What the customer pays |
 |---|---|
@@ -503,10 +532,15 @@ There are **seven** benefits:
 | Preferred cleaner at booking | Request a specific cleaner when placing the order |
 | Preferred cleaner re-pick | Change that choice after booking |
 
-The free-cancellation window is the plan's `FreeCancellationWindowHours`, which an administrator may
-set anywhere from **0 to 24 h** (`BookingPolicy.FreeCancellationHours`). A longer window would give a
-paying member *less* free cancellation than everyone else, so the create and update plan commands
-refuse it with `membership.plan.free_cancellation_window_too_long`.
+**The free-cancellation window is 4 hours, a term of the customer contract** (owner ruling
+2026-10-03): `BookingPolicy.PlusFreeCancellationHours`, beside the Plus oops window. The terms state it
+as a figure, the same on every plan (§10, §13), so it changes only with a new terms version, and it is
+frozen on each order at booking with the rest of the ladder ([Cancellation](#cancellation)). Until
+then it was the plan's `FreeCancellationWindowHours`, 0–24 h, which an administrator could change on a
+live plan; the field, its admin form control, its validator rule and
+`membership.plan.free_cancellation_window_too_long` are gone. The customer reads (`GetPlans`,
+`GetMine`) still carry `freeCancellationWindowHours`, filled from the constant, so the customer web,
+Android and iOS read it unchanged. The discount and the express waivers stay per plan.
 
 All seven resolve through **one** entitlement predicate
 (`UserMembershipRepository.EntitledForUserQuery`), so `PastDue`, `Paused`, `Cancelled` and an elapsed
@@ -648,7 +682,11 @@ to a catalogue the server serves and snapshots on the order.
 It is **a line of its own** wherever a price is itemised. The receipt prints *Increased* or *Heavy
 dirtiness surcharge* in the receipt's language, and the fiscal request carries a *Dirtiness surcharge*
 line, so the declared lines still sum to the total. The customer web, Android and iOS summaries and
-order details name the level and itemise its surcharge; the admin order detail shows both; the partner
+order details name the level and itemise its surcharge. **A booked order's line states no rate**: the
+order detail on all three says *Increased* or *Heavy dirtiness surcharge* beside the stored amount, as the
+receipt does, because the order was priced at its own `DirtinessRate` and today's figure could misstate
+it — the Android and iOS order details printed today's +15 % / +30 % until 2026-10-03. Their booking
+confirm steps still state the rate, which at booking is the one charged. The admin order detail shows both; the partner
 board flags an *Increased* or *Heavy* home and the job detail names the level. The booking and
 recurring-confirmation audit rows and the company-archive order row carry the level.
 → [What the receipt says](/flows/payment-and-fiscal#what-the-receipt-says)
@@ -1116,7 +1154,7 @@ deleted, and an admin's placement left the same row a cleaner's own act did.
 | When the acceptance forms | at the **take**: the cleaner reads the text and the job facts in the app and takes the job in one act; the take **carries the id of the exact text row** they read (`acceptedWorkContractTextId`), and a take without it is refused |
 | One contract per **seat** | a take → drop → re-take is two seats and **two** contracts; a take → drop → admin re-add of the same cleaner is a new seat with **no** contract until they accept |
 | An administrator places a cleaner | **no** acceptance is written — an admin cannot accept on a cleaner's behalf. The placement is an offer the cleaner may decline ([below](#placement-is-an-offer)); a cleaner who keeps it accepts from the job detail (a banner), or is refused at **Start** and at **Complete** with `contract.acceptance_required` and accepts then; a cleaner placed on an **in-progress** job can still accept before completing |
-| What binds | the text row (document, version, language, hash by one join) **and a frozen snapshot of the job as shown at acceptance**: order number, date and time window, **the seat's reward** and currency — the accepting cleaner's own rates for one seat, as the board quotes them, never what the customer pays — the coarse location (*"Praha · 120"*), rooms, bathrooms, services, packages, extras. Never the street, never a name |
+| What binds | the text row (document, version, language, hash by one join) **and a frozen snapshot of the job as shown at acceptance**: order number, date and time window, **the seat's reward** and currency — the accepting cleaner's own rates for one seat, as the board quotes them, never what the customer pays — the coarse location (*"Praha · 120"*), rooms, bathrooms, services, packages, extras. Never the street, never a name. Since 2026-10-03 the seat also keeps the job figures that reward was priced from, and is paid from them ([Cleaner pay](#cleaner-pay)) |
 | A new version of the text | applies to orders **booked from its date**; an order already booked keeps its text — no re-acceptance, no "stale version" case |
 | What survives | the row outlives the seat (a drop, cover, rejection or reassignment leaves it), the order's anonymisation and the cleaner's erasure — it is books, kept with the order, **never deleted** |
 | Who can read an accepted contract | the cleaner who accepted it (the server still answers them after they left the job — the read is keyed on the acceptance, not the seat) and the company's administrators — with the stored facts and the text in the reader's language (the page says *accepted in Czech* when it renders another); anyone else, **the order's customer included**, is told the order does not exist. The customer hosts still mount the read, and it answers every customer that way |
@@ -1403,6 +1441,20 @@ its currency is refused (`payroll.no_pay_configuration`). There is one formula,
 `PayCalculatorExtensions.CalculateSeatPay`, and the first room is inside `BasePay` everywhere it is
 applied. For a one-cleaner job at *Normal* it is exactly the old figure.
 
+**The rates are the ones the seat's contract for work was priced at** (owner ruling 2026-10-03). When a
+seat's [contract for work](#work-contract) forms — at the take, or at the cleaner's acceptance of an
+administrator's placement — the job's four figures above (`jobBase`, `jobExtras`, `jobMin`, `jobMax`, at
+that cleaner's rates then) are frozen on the seat (`OrderEmployees.JobBasePay`, `JobExtrasPay`,
+`JobMinPay`, `JobMaxPay`, written once by `WorkContractAcceptor`), and `CalculateOrderPay` pays the seat
+from them with the order's own `DirtinessRate`, `RequiredEmployees` and the first-seat residue. The
+reward the contract states and the pay row come from one read of the rates
+(`WorkContractFactsBuilder`), so they differ only by the first seat's residue cents. **A rate edit —
+`UpdatePayConfig`, a template overwrite, a new override or a deleted one — reaches only jobs taken
+after it**, and a seat with figures needs no current rate to be paid. A seat with no contract yet — a
+placement its cleaner has not accepted — carries none and is paid at the rates in force when its pay is
+calculated. Until 2026-10-03 every seat was paid at those live rates, so a re-grade between the take
+and the completion re-priced contracted work and the self-billed invoice disagreed with the contract.
+
 Six things that surprise people:
 
 - **`extrasPay` is rooms and bathrooms, not the extras the customer bought.** The order's extra lines
@@ -1432,7 +1484,10 @@ Six things that surprise people:
   rates three times against one customer price.
 - **What a cleaner is shown is the seat's share.** The board, the job detail, the dashboard estimate and
   the available-jobs preview quote `OrderPayEstimator`'s figure — one seat, raised by the level, without
-  the first seat's residue cents — and the partner web labels it *per spot*. My Pay carries the term as
+  the first seat's residue cents — and the partner web labels it *per spot*. On a job the cleaner
+  holds, the job detail, *My jobs* and the dashboard (a completed job not yet paid included) quote
+  their own seat's contract reward from its frozen figures; an open job is quoted at today's rates,
+  because an offer is made at them. My Pay carries the term as
   `dirtinessPay` on each row and `totalDirtinessPay` on the period summary, and the partner web, Android
   and iOS show it in the pay breakdown. → [Pay and payouts](/flows/pay-and-payouts)
 
@@ -1486,6 +1541,12 @@ seat      = share(collected × 0.50)    # over RequiredEmployees, the residue on
   invoice, names each line's type.
 - Two seats of a 666.66 fee are paid 166.67 and 166.66; a paid 900 lockout receivable pays one seat 450,
   as a lockout share.
+- **The share in force when the fee is collected.** Unlike job pay, the share is not frozen when the
+  contract for work forms: `CleanerFeeShareRate` is read when the pay is asked for — at the cancel, the
+  lockout confirmation or the receivable's settlement, which can be weeks later — and stored nowhere
+  (owner ruling 2026-10-03, left as it is and written down). It is a constant and the framework
+  agreement states *half* in words (§9), so it moves only with a deploy and a new framework version,
+  and the ADR that makes that change decides what a fee owed before it but collected after receives.
 
 ### Rates are per currency {#rates-per-currency}
 
@@ -1810,9 +1871,20 @@ insurance certificate**: `InsuranceDocument` is seeded as a required cleaner doc
 so approval's existing required-documents rule refuses a cleaner without an approved one.
 
 **Loyalty earn — `Currency.LoyaltyPointsDivisor`.** A completed order earns
-`floor(total / divisor)` in the order's currency, and the partial-refund clawback removes the same
-fraction of the refund's net through the same divisor, so the two cannot disagree about what a unit of
-money is worth. The divisor is authored per currency by the admin on the currency form, like a price;
+`floor(total / divisor)` in the order's currency, at the divisor of the day it completes. **A partial
+refund takes back the same share of the points that order earned as it returned of the price** (owner
+ruling 2026-10-03): `floor(earned × returned / TotalPrice)`, where *returned* is the card leg plus the
+credit leg, gross — capped at what the order's earn still holds, floored per refund in the customer's
+favour. It reads no divisor, so an admin's divisor edit after completion cannot move it, and VAT cancels
+out of a share. That is the customer terms' *"a refund removes points in the same proportion"* (§11).
+Until 2026-10-03 the clawback divided the card leg's net by the divisor at the refund: a halved divisor
+took every point for refunding half the order, a VAT order refunded in full kept 21 of its 121 points,
+and the credit leg counted for nothing. *N* partial refunds that together return the whole price can
+leave up to *N* − 1 points behind; that is accepted rather than tracked.
+**A full refund and a dispute refund take back no points today** — `AdminRefundOrder` and
+`ResolveDispute` do not call the loyalty service, so a completed order refunded in full outside the
+partial-refund path keeps its points and the tier they reach. It is a known gap against §11, not a
+ruling. The divisor is authored per currency by the admin on the currency form, like a price;
 CZK is seeded at **10** — the historical "1 point per 10 CZK". A currency with no divisor earns nothing
 and logs; it is never scaled from another currency's rate in either direction. Because an order completed
 in that state earns nothing permanently, a market cannot be switched on without a divisor and an active
@@ -2297,8 +2369,8 @@ just in case (ADR-0045 D13). The acts, and the evidence each success row carries
 
 | Act | Label | What the row proves |
 |---|---|---|
-| Book (signed in or guest) | `customer.order.create` | the server-computed price breakdown — total, net, VAT, currency, tier and promo and membership discounts, express surcharge and whether Plus waived it, credit applied — plus the payment type, the cleaning time and lead time, the line items by id and slug, rooms and bathrooms, the address by id, the language, whether it was a guest booking, the **cancellation policy as shown** (24 h / 4 h / 25 % / 50 %, this customer's free window and this customer's oops window — `oopsMinutesForThisCustomer`, 15 or 60, and `oopsRuleForThisCustomer`, *Standard*, *FirstBooking* or *Plus*), and the **terms tick with the terms and privacy versions the booking is made under** (`termsVersionAccepted`, `privacyVersionAccepted`: the texts in force when the box was ticked, else the versions the customer's consents hold) |
-| Cancel | `customer.order.cancel` | the fee tier, rate and amount, the refund amount (0 on an order that took no payment), the notice given in hours, the minutes since booking, the oops window applied and why (`oopsMinutesApplied` — 15 or 60 — and `oopsRuleApplied`), whether a cleaner had already accepted, the free window applied (Plus or standard), the policy figures at that moment (`oopsMinutesStandard`, `oopsMinutesPlus` and `oopsMinutesFirstBooking` among them — a row written before 2026-09-24 carries `oopsMinutesFirstTime` instead), whether an express-waiver slot was released, whether a refund was initiated, the payment type and status, and that a reason was given (never the reason) |
+| Book (signed in or guest) | `customer.order.create` | the server-computed price breakdown — total, net, VAT, currency, tier and promo and membership discounts, express surcharge and whether Plus waived it, credit applied — plus the payment type, the cleaning time and lead time, the line items by id and slug, rooms and bathrooms, the address by id, the language, whether it was a guest booking, the **cancellation policy as shown** (the figures frozen on the order — 24 h / 4 h / 25 % / 50 % today — this customer's free window and this customer's oops window — `oopsMinutesForThisCustomer`, 15 or 60, and `oopsRuleForThisCustomer`, *Standard*, *FirstBooking* or *Plus*), and the **terms tick with the terms and privacy versions the booking is made under** (`termsVersionAccepted`, `privacyVersionAccepted`: the texts in force when the box was ticked, else the versions the customer's consents hold) |
+| Cancel | `customer.order.cancel` | the fee tier, rate and amount, the refund amount (0 on an order that took no payment), the notice given in hours, the minutes since booking, the oops window applied and why (`oopsMinutesApplied` — 15 or 60 — and `oopsRuleApplied`), whether a cleaner had already accepted, the free window applied (Plus or standard), the policy figures it priced by (the order's frozen notice figures and rates since 2026-10-03, and today's `oopsMinutesStandard`, `oopsMinutesPlus` and `oopsMinutesFirstBooking` among them — a row written before 2026-09-24 carries `oopsMinutesFirstTime` instead), whether an express-waiver slot was released, whether a refund was initiated, the payment type and status, and that a reason was given (never the reason) |
 | Confirm a recurring occurrence | `customer.order.recurring.confirm` | the order, the template, the price, the currency, the payment type, the cleaning time and lead time |
 | File a dispute | `customer.dispute.create` | the dispute and order ids, the reason (an enum), hours since completion against the 24 h window, the window shown, the description's length and line count (never its text), the order total and currency |
 | Register by email | `customer.account.register` | the method, the language, whether a referral code was given, the terms tick, and the terms and privacy versions in force (the effective dates of the documents shown). A Google or Apple **sign-up** writes no registration row — its proof is the two server-written consent rows with the version, plus `User.CreatedOn` — but a refused one is recorded (see the next row) |

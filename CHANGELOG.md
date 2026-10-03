@@ -974,6 +974,12 @@ need backfilling.
 
 ### Fixed
 
+- **Customer iOS — the credit sheet's *Got it* button is no longer cut off.** The sheet that explains
+  credit, opened from Rewards and from Profile, took half the screen whatever it held. That was too
+  short for its text, so on iOS 16 and 18 *Got it* sat under the home indicator, and at a large text
+  size it was out of reach. The sheet now takes the height its text and button need, and the text
+  scrolls above the button when it does not fit. (Owner remark 2026-10-03.)
+
 - **Customer Android and iOS — the booking's room and bathroom steppers are the same width.** On the
   *Your home* row the two steppers now share the row equally, with their counts centred, in line with
   the title and the caption above and below them. They used to be as wide as their text, so they

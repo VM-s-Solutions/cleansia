@@ -1443,7 +1443,12 @@ ADR-0018 D3 + §7.6 D1 + §7.7 D5 + the Parity rule; reviewer #29/#30/#31):**
   content**: `.fixedSize(horizontal:false, vertical:true)` on the content, a `GeometryReader` `PreferenceKey`
   reading its height, and `.presentationDetents([.height(measured)])` (16.0-safe; the content-height key breaks
   the size↔detent feedback loop). No trailing `Spacer()`. *(Architect-ratified T-0397, 2026-07-19 — verified
-  against `CodeSheetShell.swift:29-36`; second adopter `PackageDetailsSheet.swift:28`.)*
+  against `CodeSheetShell.swift:29-36`; second adopter `PackageDetailsSheet.swift:28`.)* The same holds for a
+  short **read** sheet: the customer credit explainer (`Rewards/CreditViews.swift`) opened at `.medium`, which on
+  iOS 16.4 and 18.6 put its *Got it* under the home indicator. It now measures its text and its button separately,
+  pins the button with `safeAreaInset(edge: .bottom)` below a `ScrollView` of the text, and offers
+  `.presentationDetents([.height(text + button), .large])`, so at an accessibility text size the text scrolls and the
+  button stays in view (H-7, 2026-10-03).
 - **The primary lifecycle action** is the **pure shared `OrderPrimaryAction.action(for:isMine:hasAfterPhotos:)`** sealed
   enum (one tested function, three call sites — NOT inline switches), mirroring `OrderPrimaryAction.kt`'s table; it is
   **presentational** and consumes `isMine`/`hasAfterPhotos` — the **ownership trust is SECURITY §7.8 (O1–O4)**, not this

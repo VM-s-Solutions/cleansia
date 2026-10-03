@@ -540,12 +540,12 @@
     <!-- Profile — help & support -->
     <string name="help_title">Nápověda a podpora</string>
     <string name="help_contact_title">Kontaktujte nás</string>
-    <string name="help_chat">Živý chat</string>
-    <string name="help_chat_desc">Obvykle odpovíme do několika minut</string>
     <string name="help_call">Zavolat na podporu</string>
     <string name="help_call_desc">Po–Ne · 8:00–20:00</string>
     <string name="help_email">Napsat e-mail</string>
     <string name="help_email_desc">support@cleansia.cz</string>
+    <string name="help_call_unavailable">Na tomto zařízení nelze volat. Číslo je zkopírované.</string>
+    <string name="help_email_unavailable">Nenašli jsme e-mailovou aplikaci. Adresa je zkopírovaná.</string>
     <string name="help_faq_title">Často kladené otázky</string>
     <string name="help_faq_q1">Jak mohu zrušit rezervaci?</string>
     <string name="help_faq_a1">Otevřete rezervaci v záložce Objednávky a klepněte na \"Zrušit\". Zrušení zdarma až 24 hodin před začátkem úklidu. Do 15 minut od objednání neplatíte nic — u první objednávky nebo s Cleansia Plus do 60 minut.</string>

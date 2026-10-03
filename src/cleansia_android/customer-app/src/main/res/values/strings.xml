@@ -537,12 +537,12 @@
     <!-- Profile — help & support -->
     <string name="help_title">Help &amp; support</string>
     <string name="help_contact_title">Contact us</string>
-    <string name="help_chat">Live chat</string>
-    <string name="help_chat_desc">Typically replies within a few minutes</string>
     <string name="help_call">Call support</string>
     <string name="help_call_desc">Mon–Sun · 8:00–20:00</string>
     <string name="help_email">Email us</string>
     <string name="help_email_desc">support@cleansia.cz</string>
+    <string name="help_call_unavailable">Calls aren\'t available on this device. Number copied.</string>
+    <string name="help_email_unavailable">No e-mail app found. Address copied.</string>
     <string name="help_faq_title">Frequently asked questions</string>
     <string name="help_faq_q1">How do I cancel my booking?</string>
     <string name="help_faq_a1">Open your booking from the Orders tab and tap \"Cancel\". Cancellations free of charge up to 24 hours before the cleaning start time. Within 15 minutes of booking you pay nothing — within 60 minutes on your first booking or with Cleansia Plus.</string>

@@ -143,10 +143,10 @@ need backfilling.
   clean. The web order detail used to show the total alone, so it did not match the card statement.
   (Matches the apps, 2026-10-02.)
 
-- **Customer Android and iOS — five cards in the Home carousel, each saying more.** Every card now
-  has a two-line description under its title and a chip with its figure. *Stay in the loop* shows
-  while the phone blocks the app's notifications, and asks for them or opens the settings. A card with
-  the customer's credit balance shows when they hold one, and a Plus member sees how many
+- **Customer Android and iOS — five cards in the Home carousel, each saying more.** Each of the first
+  four cards now has a two-line description under its title and a chip with its figure. *Stay in the
+  loop* shows while the phone blocks the app's notifications, and asks for them or opens the settings.
+  A card with the customer's credit balance shows when they hold one, and a Plus member sees how many
   express-surcharge waivers are left this month; both open booking. *Did you know?* cards fill the
   rest: a Plus member's free-cancellation window, booking from 2 hours ahead, points on every
   completed cleaning and the exact arrival times. The Plus card names the plan's discount and the

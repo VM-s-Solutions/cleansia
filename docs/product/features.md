@@ -112,8 +112,9 @@ announces each card's place, *Offer 2 of 5*. On iOS a swipe up or down changes t
 the *Next offer* and *Previous offer* actions do. Every card draws its own mascot, the same one on both
 platforms, so no two cards repeat a drawing: the Plus card carries the web's Plus mascot.
 
-**Each card says more than a headline** (since 2026-10-03). It has an eyebrow, a title, a two-line
-description and a fact chip: an icon, with the card's figure beside it when the card has one. All of
+**Each card says more than a headline** (since 2026-10-03). Each of the first four has an eyebrow, a
+title, a two-line description and a fact chip: an icon, with the card's figure beside it when the
+card has one. *How big is your home?* keeps its title, its two steppers and *See my price*. All of
 this fits the card's old height. Every figure comes from the server or the booking rules, never from
 the translation, and a card whose figure has not loaded yet shows a line without one.
 

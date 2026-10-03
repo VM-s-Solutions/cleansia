@@ -1112,9 +1112,9 @@ the market — or from the order, on a contract for work.
   section. A customer and a cleaner therefore see one address wherever the company is named. The
   development seed writes it; until then it held `info@cleansia.cz`. A DEV database seeded earlier is
   moved by `sql-scripts/fix-company-contact-placeholders.sql`, which changes only a row that still
-  holds the old address. Production's record is typed into the admin console
-  ([The first production deploy](/deployment/ci-cd#first-production-deploy)). No e-mail prints the
-  company record's e-mail or phone.
+  holds the old address; `execute-sql.yml` refuses it against PRO. Production's record is typed into
+  the admin console ([The first production deploy](/deployment/ci-cd#first-production-deploy)). No
+  e-mail prints the company record's e-mail or phone.
 - **The seeded phone is the placeholder `<company_phone_number>`** (owner ruling 2026-10-03). It stays
   that until the real number is entered in the admin console's company form. It prints as written
   wherever the record's phone appears. A legal page shows it as text, never as a tag or a link: the

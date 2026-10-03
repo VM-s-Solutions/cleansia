@@ -12,6 +12,11 @@ struct UpsellSlide: Equatable, Identifiable {
         case setupRecurring
         case plus
         case referral
+        /// The "did you know" facts that fill the set after referral.
+        case plusCancellation
+        case expressToday
+        case rewards
+        case arrivalTimes
         case quickSize
     }
 
@@ -44,11 +49,23 @@ struct UpsellSlide: Equatable, Identifiable {
         var expressRemaining = 0
         /// The customer's referral code once it has loaded.
         var referralCode: String?
+        /// The headline plan's discount in whole percent; 0 while unknown, and the Plus slide then names none.
+        var plusDiscountPercent = 0
+        /// The member's free-cancellation window when it is a benefit (shorter than the standard one);
+        /// 0 for a non-member, a member whose benefits are paused, or a plan with no shorter window.
+        var memberCancellationHours = 0
+        /// The points each side of a referral gets, from the server; nil until the referral account loads.
+        var referralPoints: Int?
     }
 
     let kind: Kind
     let top: String
     let title: String
+    /// Two lines under the title.
+    let description: String
+    /// The fact chip above the mascot: an SF Symbol, with the slide's figure beside it when it has one.
+    let chipSymbol: String
+    let chipText: String?
     let cta: String
     let gradient: BrandGradient
     let mascot: Mascot
@@ -58,14 +75,15 @@ struct UpsellSlide: Equatable, Identifiable {
         kind
     }
 
-    /// How many slides may come before the quick-size closer, which always shows: a longer set is a
-    /// longer auto-advance cycle and a row of dots nobody counts.
+    /// How many slides come before the quick-size closer, which always shows.
     static let leadingCap = 4
 
     /// Which slides show, in order — most relevant first, so the slide on screen at t=0 is the one the
     /// customer is most likely to act on. The first ``leadingCap`` eligible slides show, then quick-size
-    /// closes the set, so there are never more than five. Referral is always eligible but is the first
-    /// to give way.
+    /// closes the set: five every time, for every customer. The state-driven slides come first; the
+    /// "did you know" facts after referral fill the rest, and give way first. Referral, rewards and arrival
+    /// times are always eligible, and express-today is whenever the express slide is not, so four leading
+    /// slides always exist. Same order as Android's `upsellKinds`.
     static func kinds(_ inputs: Inputs) -> [Kind] {
         var leading: [Kind] = []
         if inputs.notificationsOff { leading.append(.notifications) }
@@ -74,12 +92,29 @@ struct UpsellSlide: Equatable, Identifiable {
         if inputs.showSetupRecurring { leading.append(.setupRecurring) }
         if !inputs.isPlus { leading.append(.plus) }
         leading.append(.referral)
+        if inputs.isPlus, inputs.memberCancellationHours > 0 { leading.append(.plusCancellation) }
+        // The express slide already says it for a member with a waiver left.
+        if inputs.expressRemaining == 0 { leading.append(.expressToday) }
+        leading.append(.rewards)
+        leading.append(.arrivalTimes)
         return Array(leading.prefix(leadingCap)) + [.quickSize]
+    }
+
+    /// The first and the last arrival time the booking offers — 08:00 and 19:45 — for the arrival-times slide.
+    static var arrivalBounds: (first: String, last: String) {
+        let last = BookingTimeSlots.lastWindowHour * 60 - BookingTimeSlots.bookingSlotIntervalMinutes
+        return (
+            String(format: "%02d:00", BookingTimeSlots.firstWindowHour),
+            String(format: "%02d:%02d", last / 60, last % 60)
+        )
     }
 
     static func slides(_ inputs: Inputs) -> [UpsellSlide] {
         kinds(inputs).map { slide($0, inputs) }
     }
+
+    // One case per kind is the whole of `mascot` and `chip`, so their complexity is the number of slides.
+    // swiftlint:disable cyclomatic_complexity
 
     /// Every slide draws its own mascot, so no two visible slides repeat one. Same mapping as Android.
     static func mascot(_ kind: Kind) -> Mascot {
@@ -90,6 +125,10 @@ struct UpsellSlide: Equatable, Identifiable {
         case .setupRecurring: .idea
         case .plus: .plus
         case .referral: .thumbsUp
+        case .plusCancellation: .leaning
+        case .expressToday: .ready
+        case .rewards: .sprayAndCloth
+        case .arrivalTimes: .resting
         case .quickSize: .vacuuming
         }
     }
@@ -100,18 +139,24 @@ struct UpsellSlide: Equatable, Identifiable {
         case .credit: .emerald
         // Members only, so it never sits beside the Plus slide that shares the Plus hero.
         case .express, .plus: .plusHero
-        case .setupRecurring: .purple
-        case .referral: .cyan
+        case .setupRecurring, .plusCancellation: .purple
+        case .referral, .arrivalTimes: .cyan
+        case .expressToday: .orange
+        case .rewards: .emerald
         case .quickSize: .blue
         }
     }
 
     private static func slide(_ kind: Kind, _ inputs: Inputs) -> UpsellSlide {
         let copy = copy(kind, inputs)
+        let chip = chip(kind, inputs)
         return UpsellSlide(
             kind: kind,
             top: copy.top,
             title: copy.title,
+            description: copy.description,
+            chipSymbol: chip.symbol,
+            chipText: chip.text,
             cta: copy.cta,
             gradient: gradient(kind),
             mascot: mascot(kind),
@@ -122,52 +167,140 @@ struct UpsellSlide: Equatable, Identifiable {
     private static func action(_ kind: Kind, _ inputs: Inputs) -> Action {
         switch kind {
         case .notifications: .turnOnNotifications
-        // Credit is spent by itself and express is a perk of any booking, so both just open booking.
-        case .credit, .express: .book
+        // Credit is spent by itself and express is a perk of any booking, so both just open booking — and
+        // so do the facts about booking.
+        case .credit, .express, .plusCancellation, .expressToday, .arrivalTimes: .book
         case .setupRecurring: .setupRecurring
         case .plus: .subscribePlus
         case .referral: inputs.referralCode.map { .shareReferral(code: $0) } ?? .openReferral
+        // Rewards is where the points are, the tab the referral slide falls back to.
+        case .rewards: .openReferral
         case .quickSize: .bookSize(rooms: 1, bathrooms: 1)
         }
     }
 
-    // swiftlint:disable:next large_tuple
-    private static func copy(_ kind: Kind, _ inputs: Inputs) -> (top: String, title: String, cta: String) {
+    /// The fact chip: the slide's figure when it has one, every figure the server's or the booking's.
+    private static func chip(_ kind: Kind, _ inputs: Inputs) -> (symbol: String, text: String?) {
+        switch kind {
+        case .notifications: ("bell", nil)
+        case .credit: ("wallet.pass", nil)
+        case .express: ("bolt.fill", L10n.Home.upsellChipTimes(inputs.expressRemaining))
+        case .setupRecurring: ("repeat", nil)
+        case .plus: (
+                "star",
+                inputs.plusDiscountPercent > 0 ? L10n.Home.upsellChipPercentOff(inputs.plusDiscountPercent) : nil
+            )
+        case .referral: ("gift", inputs.referralPoints.map(L10n.Home.upsellChipPoints))
+        case .plusCancellation: ("calendar.badge.checkmark", L10n.Home.upsellChipHours(inputs.memberCancellationHours))
+        case .expressToday: ("bolt.fill", L10n.Home.upsellChipHours(Int(BookingPricing.expressLeadHours)))
+        case .rewards: ("trophy", nil)
+        case .arrivalTimes: ("clock", L10n.Home.upsellChipMinutes(BookingTimeSlots.bookingSlotIntervalMinutes))
+        case .quickSize: ("house", nil)
+        }
+    }
+
+    // swiftlint:enable cyclomatic_complexity
+
+    private struct Copy {
+        let top: String
+        let title: String
+        let description: String
+        let cta: String
+    }
+
+    // swiftlint:disable:next function_body_length cyclomatic_complexity
+    private static func copy(_ kind: Kind, _ inputs: Inputs) -> Copy {
+        let expressLead = Int(BookingPricing.expressLeadHours)
+        let standardLead = Int(BookingPricing.standardLeadHours)
         switch kind {
         case .notifications:
-            (L10n.Home.upsellNotificationsTop, L10n.Home.upsellNotificationsTitle, L10n.Home.upsellNotificationsCta)
+            return Copy(
+                top: L10n.Home.upsellNotificationsTop,
+                title: L10n.Home.upsellNotificationsTitle,
+                description: L10n.Home.upsellNotificationsDesc,
+                cta: L10n.Home.upsellNotificationsCta
+            )
         case .credit:
             // The server's balance and share, never a figure of the copy's own.
-            (
-                L10n.Credit.yourCredit,
-                L10n.Home.upsellCreditTitle(
-                    OrdersFormat.price(inputs.credit?.amount ?? 0, currencyCode: inputs.credit?.currencyCode),
-                    share: inputs.creditShare
+            return Copy(
+                top: L10n.Credit.yourCredit,
+                title: L10n.Home.upsellCreditTitle(
+                    OrdersFormat.price(inputs.credit?.amount ?? 0, currencyCode: inputs.credit?.currencyCode)
                 ),
-                L10n.Home.upsellBookCta
+                description: L10n.Home.upsellCreditDesc(share: inputs.creditShare),
+                cta: L10n.Home.upsellBookCta
             )
         case .express:
             // Plus waives the express surcharge N times a month, on a slot 2–4 h out.
-            (
-                L10n.Home.upsellExpressTop(Int(BookingPricing.expressLeadHours), Int(BookingPricing.standardLeadHours)),
-                L10n.Home.upsellExpressTitle(inputs.expressRemaining),
-                L10n.Home.upsellBookCta
+            return Copy(
+                top: L10n.Home.upsellExpressTop(expressLead, standardLead),
+                title: L10n.Home.upsellExpressTitle(inputs.expressRemaining),
+                description: L10n.Home.upsellExpressDesc,
+                cta: L10n.Home.upsellBookCta
             )
         case .setupRecurring:
-            (L10n.Home.upsellSetupRecurringTop, L10n.Home.upsellSetupRecurringTitle, L10n.Home.upsellSetupRecurringCta)
+            return Copy(
+                top: L10n.Home.upsellSetupRecurringTop,
+                title: L10n.Home.upsellSetupRecurringTitle,
+                description: L10n.Home.upsellSetupRecurringDesc,
+                cta: L10n.Home.upsellSetupRecurringCta
+            )
         case .plus:
-            inputs.plusTrialDays > 0
-                ? (
-                    L10n.Home.upsellPlusTop,
-                    L10n.Home.upsellPlusTitleTrial(inputs.plusTrialDays),
-                    L10n.Home.upsellPlusCtaTrial
-                )
-                : (L10n.Home.upsellPlusTop, L10n.Home.upsellPlusTitle, L10n.Home.upsellPlusCta)
+            // The discount is the headline plan's, read from the server; until the plans load the slide
+            // names the two benefits no plan configures.
+            let trial = inputs.plusTrialDays > 0
+            return Copy(
+                top: L10n.Home.upsellPlusTop,
+                title: trial ? L10n.Home.upsellPlusTitleTrial(inputs.plusTrialDays) : L10n.Home.upsellPlusTitle,
+                description: inputs.plusDiscountPercent > 0
+                    ? L10n.Home.upsellPlusDesc(inputs.plusDiscountPercent)
+                    : L10n.Home.upsellPlusDescGeneric,
+                cta: trial ? L10n.Home.upsellPlusCtaTrial : L10n.Home.upsellPlusCta
+            )
         case .referral:
-            (L10n.Home.upsellReferralTop, L10n.Home.upsellReferralTitle, L10n.Home.upsellReferralCta)
+            // The points are the server's.
+            return Copy(
+                top: L10n.Home.upsellReferralTop,
+                title: L10n.Home.upsellReferralTitle,
+                description: inputs.referralPoints.map(L10n.Home.upsellReferralDesc) ?? L10n.Home
+                    .upsellReferralDescGeneric,
+                cta: L10n.Home.upsellReferralCta
+            )
+        case .plusCancellation:
+            // "Did you know?" — the member's own window, as the membership reports it.
+            return Copy(
+                top: L10n.Home.upsellDidYouKnow,
+                title: L10n.Home.upsellPlusCancelTitle(inputs.memberCancellationHours),
+                description: L10n.Home.upsellPlusCancelDesc,
+                cta: L10n.Home.upsellBookCta
+            )
+        case .expressToday:
+            // The express band is the booking policy's (BookingPricing mirrors it, and a test pins it).
+            return Copy(
+                top: L10n.Home.upsellDidYouKnow,
+                title: L10n.Home.upsellExpressTodayTitle(expressLead),
+                description: L10n.Home.upsellExpressTodayDesc(standardLead),
+                cta: L10n.Home.upsellBookCta
+            )
+        case .rewards:
+            return Copy(
+                top: L10n.Home.upsellDidYouKnow,
+                title: L10n.Home.upsellRewardsTitle,
+                description: L10n.Home.upsellRewardsDesc,
+                cta: L10n.Home.upsellRewardsCta
+            )
+        case .arrivalTimes:
+            // The booking's own window and grid, the times the When step offers.
+            let bounds = arrivalBounds
+            return Copy(
+                top: L10n.Home.upsellDidYouKnow,
+                title: L10n.Home.upsellTimesTitle,
+                description: L10n.Home.upsellTimesDesc(bounds.first, bounds.last),
+                cta: L10n.Home.upsellBookCta
+            )
         case .quickSize:
             // The closer replaces the old generic "Book" slide, which only duplicated the FAB.
-            ("", L10n.Home.quickSizeTitle, L10n.Home.quickSizeCta)
+            return Copy(top: "", title: L10n.Home.quickSizeTitle, description: "", cta: L10n.Home.quickSizeCta)
         }
     }
 }

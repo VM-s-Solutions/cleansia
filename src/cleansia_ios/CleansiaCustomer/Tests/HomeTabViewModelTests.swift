@@ -130,6 +130,42 @@ final class HomeTabViewModelTests: XCTestCase {
         XCTAssertEqual(vm.upsellInputs.referralCode, "JOIN50")
     }
 
+    /// The referral slide's points are the server's `pointsPerReferral`, unknown until the account loads.
+    func testTheReferralSlideStatesTheServersPointsOnceTheyHaveLoaded() async {
+        let referrals = RewardsReferralRepository(client: referralClient)
+        let vm = makeViewModel(referralRepository: referrals)
+        XCTAssertNil(vm.upsellInputs.referralPoints)
+
+        await referrals.refresh()
+
+        XCTAssertEqual(vm.upsellInputs.referralPoints, ReferralFixtures.account().pointsPerReferral)
+    }
+
+    /// The Plus slide names the headline plan's discount; none before the plans arrive.
+    func testThePlusSlideNamesTheHeadlinePlansDiscount() async {
+        let vm = makeViewModel()
+        XCTAssertEqual(vm.upsellInputs.plusDiscountPercent, 0)
+
+        await membershipRepository.refreshPlans()
+
+        XCTAssertEqual(vm.upsellInputs.plusDiscountPercent, 5)
+    }
+
+    /// The member's own window, while their benefits run; a failed renewal runs none.
+    func testTheCancellationSlideFollowsTheMembersWindowWhileBenefitsRun() async {
+        let vm = makeViewModel()
+        XCTAssertEqual(vm.upsellInputs.memberCancellationHours, 0)
+
+        membershipClient.mineResults = [.success(MembershipFixtures.active)]
+        await membershipRepository.refresh()
+        XCTAssertEqual(vm.upsellInputs.memberCancellationHours, 4)
+        XCTAssertTrue(UpsellSlide.kinds(vm.upsellInputs).contains(.plusCancellation))
+
+        membershipClient.mineResults = [.success(MembershipFixtures.pastDue)]
+        await membershipRepository.refresh()
+        XCTAssertEqual(vm.upsellInputs.memberCancellationHours, 0)
+    }
+
     func testTheNotificationsSlideShowsOnlyWhileAlertsAreNotAllowed() async {
         let vm = makeViewModel()
         for (status, off) in [

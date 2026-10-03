@@ -211,21 +211,32 @@ private struct UpsellSlideCard: View {
 }
 
 /// The card itself, without the control that wraps it — a button, or the referral share sheet.
+///
+/// Inside 196 pt, 20 pt of padding leaves 156: the eyebrow (16) + 6 + the title (two 18 pt lines) + 4 +
+/// the description (two lines) + the CTA pill, with the slack above the pill. The mascot's 84 pt square
+/// sits bottom-trailing, below where the title's second line ends, so the title runs the full width; the
+/// fact chip sits top-trailing, beside the eyebrow, and the eyebrow, the description and the pill stop
+/// short of that column. A title or description too long for its two lines shrinks to 80% — Android's
+/// twin steps down the same way.
 private struct UpsellSlideFace: View {
     let slide: UpsellSlide
 
+    private static let mascotSize: CGFloat = 84
+    /// What the eyebrow, the description and the pill leave free at the card's end: the mascot's column
+    /// and a 4 pt gap.
+    private static let mascotColumn: CGFloat = 88
+
     var body: some View {
-        GeometryReader { geo in
-            ZStack(alignment: .bottomTrailing) {
-                textColumn
-                    .frame(width: geo.size.width * 0.72, alignment: .leading)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                slide.mascot.image
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 110, height: 110)
-                    .accessibilityHidden(true)
-            }
+        ZStack(alignment: .topLeading) {
+            slide.mascot.image
+                .resizable()
+                .scaledToFit()
+                .frame(width: Self.mascotSize, height: Self.mascotSize)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+                .accessibilityHidden(true)
+            UpsellFactChip(symbol: slide.chipSymbol, text: slide.chipText)
+                .frame(maxWidth: .infinity, alignment: .topTrailing)
+            textColumn
         }
         .padding(Spacing.ml)
         .frame(height: upsellCardHeight)
@@ -236,16 +247,57 @@ private struct UpsellSlideFace: View {
     private var textColumn: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text(slide.top)
-                .font(CleansiaTypography.labelLarge)
+                .font(CleansiaTypography.labelMedium)
                 .foregroundColor(.white.opacity(0.85))
+                .lineLimit(1)
+                .padding(.trailing, Self.mascotColumn)
             Text(slide.title)
                 .cleansiaFont(.poppins(.bold, size: 18))
                 .foregroundColor(.white)
                 .multilineTextAlignment(.leading)
+                .lineLimit(2)
+                .minimumScaleFactor(0.8)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 6)
+            Text(slide.description)
+                .cleansiaFont(.nunito(.regular, size: 13))
+                .foregroundColor(.white.opacity(0.9))
+                .multilineTextAlignment(.leading)
+                .lineLimit(2)
+                .minimumScaleFactor(0.8)
+                .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, Spacing.xxs)
+                .padding(.trailing, Self.mascotColumn)
+            Spacer(minLength: Spacing.xs)
             UpsellCtaPill(text: slide.cta)
-                .padding(.top, 14)
+                .padding(.trailing, Self.mascotColumn)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+}
+
+/// The slide's fact: an icon, and its figure when it has one ("−5%", "2 h", "+150"). Decorative to
+/// VoiceOver — the title and description already say it.
+private struct UpsellFactChip: View {
+    let symbol: String
+    let text: String?
+
+    var body: some View {
+        HStack(spacing: Spacing.xxs) {
+            Image(systemName: symbol)
+                .font(.system(size: 13, weight: .semibold))
+            if let text {
+                Text(text)
+                    .font(CleansiaTypography.labelMedium)
+                    .fontWeight(.heavy)
+                    .lineLimit(1)
+            }
+        }
+        .foregroundColor(.white)
+        .padding(.horizontal, text == nil ? 6 : 10)
+        .padding(.vertical, 3)
+        .background(Color.white.opacity(0.22), in: Capsule())
+        .accessibilityHidden(true)
     }
 }
 
@@ -254,9 +306,12 @@ private struct UpsellCtaPill: View {
 
     var body: some View {
         HStack(spacing: 6) {
+            // One line: beside the mascot on a narrow phone, a long label shrinks rather than wraps.
             Text(text)
                 .font(CleansiaTypography.labelLarge)
                 .foregroundColor(.white)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
             Image(systemName: "arrow.right")
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundColor(.white)

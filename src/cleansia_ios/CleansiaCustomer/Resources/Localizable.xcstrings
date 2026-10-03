@@ -2637,31 +2637,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zatímco jste byli pryč, vybraný čas přestal být dostupný nebo se změnila jeho cena. Vyberte prosím čas znovu."
+            "value": "Vybraný čas už není dostupný nebo se změnila jeho cena. Vyberte prosím čas znovu."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "While you were away, the time you picked became unavailable or changed price. Please pick a time again."
+            "value": "The time you picked is no longer available or its price has changed. Please pick a time again."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Пока вас не было, выбранное время стало недоступным или изменилась его цена. Пожалуйста, выберите время снова."
+            "value": "Выбранное время больше недоступно или изменилась его цена. Пожалуйста, выберите время снова."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Kým ste boli preč, vybraný čas prestal byť dostupný alebo sa zmenila jeho cena. Vyberte si, prosím, čas znova."
+            "value": "Vybraný čas už nie je dostupný alebo sa zmenila jeho cena. Vyberte si, prosím, čas znova."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Поки вас не було, обраний час став недоступним або змінив ціну. Будь ласка, оберіть час знову."
+            "value": "Обраний час більше недоступний або змінив ціну. Будь ласка, оберіть час знову."
           }
         }
       }

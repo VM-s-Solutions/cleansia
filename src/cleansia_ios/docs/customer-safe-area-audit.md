@@ -36,6 +36,19 @@ nothing with the navigation bar hidden on the iPhone 17 Pro (iOS 26.3) simulator
 on every version. Checked with real drags on that simulator (light and dark) and on the iPhone 14 Pro
 (iOS 16.4) simulator. Orders and Rewards keep a static title above their scroll view and need none.
 
+### 2026-10-03 — the fade covers only the status bar
+
+Owner remark 2026-10-03: the fade was too tall, too sharp and too opaque. It now covers the status bar
+alone (the clock, signal and battery) and ends in an 8pt tail below it (`StatusBarFade.tail`): a light
+blur (`.ultraThinMaterial` at 40 %) under a 40 % wash of the page colour, full across the top 35 % of
+the status bar and eased out from there to the tail's end through a nine-sample smoothstep, so no line
+marks the status bar's edge. The wash lightens content in light mode and darkens it in dark, which keeps
+the clock legible over a busy card. With Reduce Transparency on, the wash alone at 85 % stands in for
+the blur. It is the same on every version: iOS 26's system soft scroll edge, used until then, is drawn
+by the system well below the status bar, at a height the app cannot set. Checked on the iPhone 17 Pro
+(iOS 26.3), iPhone 16 Pro (iOS 18.6) and iPhone 14 Pro (iOS 16.4) simulators, light and dark, with
+Home scrolled so a carousel card sits under the status bar.
+
 The map backdrop remains full bleed. No navigation flow, generated API member, text or membership
 behavior changes. The decision follows SwiftUI's documented [safe-area expansion](https://developer.apple.com/documentation/swiftui/view/ignoressafearea(_:edges:)) and [clipping](https://developer.apple.com/documentation/swiftui/view/clipped(antialiased:)) behavior.
 

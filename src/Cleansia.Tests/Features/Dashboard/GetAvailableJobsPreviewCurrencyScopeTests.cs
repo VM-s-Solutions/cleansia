@@ -64,16 +64,16 @@ public class GetAvailableJobsPreviewCurrencyScopeTests
         service.Id = ServiceId;
         var order = NewOfferableOrder("order-eur-crew", EurId, totalPrice: 150m, service);
         order.UpdateEstimatedTime(240).CalculateRequiredEmployees(spareSeats: 0);
-        order.SetDirtinessSurcharge(DirtinessLevel.Heavy, 90m);
+        order.SetDirtinessSurcharge(DirtinessLevel.Heavy, 45m);
 
         var handler = CreateHandler([order], paidIn: EurId);
 
         var result = await (Task<BusinessResult<AvailableJobsPreviewResponse>>)HandleMethod.Invoke(
             handler, [new GetAvailableJobsPreview.Query(Limit: 5), CancellationToken.None])!;
 
-        // 13 over two seats is 6.50; heavy adds 60 % of the job's 13, 3.90 a seat.
+        // 13 over two seats is 6.50; heavy adds 30 % of the job's 13, 1.95 a seat.
         Assert.True(result.IsSuccess);
-        Assert.Equal(10.40m, result.Value!.TotalPotentialEarnings);
+        Assert.Equal(8.45m, result.Value!.TotalPotentialEarnings);
     }
 
     // The handler is internal, as every query handler in this folder is; the dashboard sibling test

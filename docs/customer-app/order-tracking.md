@@ -40,6 +40,11 @@ builds one link shape for every order e-mail; nothing on this page reads either 
 opens anything. The lookup is `POST /api/Order/Lookup` with `{ accessToken }`; a failure leaves the
 token in a signal so **Try again** can retry without going back to the mailbox.
 
+**A booking made from an account never comes here.** Its e-mail links `/orders/:orderId`, behind
+`customerAuthGuard`. Signed out, the guard sends the reader to `/login?returnUrl=/orders/:orderId`, and
+signing in — password, Google or Apple — lands on that order rather than on the order board.
+→ [`customerAuthGuard`](/customer-app/authentication#customerauthguard)
+
 ::: warning The three-field lookup form is gone
 The page used to ask for an order number, an e-mail and a confirmation code. That triple was not a
 secret: the display number is sequential, the e-mail is not private, and the confirmation code was

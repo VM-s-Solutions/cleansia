@@ -327,16 +327,16 @@ public class PayCalculatorExtensionsTests
     [Fact]
     public void CalculateSeatPay_The_Cent_Residue_Goes_To_The_First_Seat()
     {
-        // 100.10 over two seats is 50.05 each; increased adds 30.03, which halves to 15.01 and a cent.
-        var configs = new[] { Config(basePay: 100.10m) };
+        // 100.20 over two seats is 50.10 each; increased adds 15.03, which halves to 7.51 and a cent.
+        var configs = new[] { Config(basePay: 100.20m) };
 
         var first = configs.CalculateSeatPay(rooms: 1, bathrooms: 0, Rate(DirtinessLevel.Increased), seats: 2, firstSeat: true);
         var second = configs.CalculateSeatPay(rooms: 1, bathrooms: 0, Rate(DirtinessLevel.Increased), seats: 2, firstSeat: false);
 
-        Assert.Equal(15.02m, first.dirtinessPay);
-        Assert.Equal(15.01m, second.dirtinessPay);
-        Assert.Equal(65.07m, first.totalPay);
-        Assert.Equal(65.06m, second.totalPay);
+        Assert.Equal(7.52m, first.dirtinessPay);
+        Assert.Equal(7.51m, second.dirtinessPay);
+        Assert.Equal(57.62m, first.totalPay);
+        Assert.Equal(57.61m, second.totalPay);
     }
 
     [Theory]
@@ -360,8 +360,8 @@ public class PayCalculatorExtensionsTests
 
     [Theory]
     [InlineData(DirtinessLevel.Normal, 0, 600)]
-    [InlineData(DirtinessLevel.Increased, 180, 780)]
-    [InlineData(DirtinessLevel.Heavy, 360, 960)]
+    [InlineData(DirtinessLevel.Increased, 90, 690)]
+    [InlineData(DirtinessLevel.Heavy, 180, 780)]
     public void CalculateSeatPay_Each_Level_Raises_Pay_By_Its_Rate(DirtinessLevel level, int dirtinessPay, int totalPay)
     {
         var configs = new[] { Config(basePay: 500m, extraPerRoom: 50m) };
@@ -376,27 +376,27 @@ public class PayCalculatorExtensionsTests
     [Fact]
     public void CalculateSeatPay_The_Dirtiness_Term_Is_Added_After_The_Cap()
     {
-        // Raw 1000 capped at 800; heavy adds 60 % of the capped 800, so the cap cannot swallow it.
+        // Raw 1000 capped at 800; heavy adds 30 % of the capped 800, so the cap cannot swallow it.
         var configs = new[] { Config(basePay: 1000m, maximumPay: 800m) };
 
         var seat = configs.CalculateSeatPay(rooms: 1, bathrooms: 0, Rate(DirtinessLevel.Heavy), seats: 1, firstSeat: true);
 
         Assert.Equal(800m, seat.maxPay);
-        Assert.Equal(480m, seat.dirtinessPay);
-        Assert.Equal(1280m, seat.totalPay);
+        Assert.Equal(240m, seat.dirtinessPay);
+        Assert.Equal(1040m, seat.totalPay);
     }
 
     [Fact]
     public void CalculateSeatPay_The_Floor_Is_Split_With_The_Seats_And_Applied_Before_The_Dirtiness_Term()
     {
-        // Raw 100 floored to 300 for the job, 150 a seat; increased adds 30 % of that seat's 150.
+        // Raw 100 floored to 300 for the job, 150 a seat; increased adds 15 % of that seat's 150.
         var configs = new[] { Config(basePay: 100m, minimumPay: 300m) };
 
         var seat = configs.CalculateSeatPay(rooms: 1, bathrooms: 0, Rate(DirtinessLevel.Increased), seats: 2, firstSeat: false);
 
         Assert.Equal(150m, seat.minPay);
-        Assert.Equal(45m, seat.dirtinessPay);
-        Assert.Equal(195m, seat.totalPay);
+        Assert.Equal(22.5m, seat.dirtinessPay);
+        Assert.Equal(172.5m, seat.totalPay);
     }
 
     // ── CalculateSeatFeeShare — the crew's half of a collected fee, split like job pay ──

@@ -506,9 +506,54 @@ body:has(.customer-navbar) .cleansia-dev-banner.cleansia-dev-banner.cleansia-dev
   z-index: 1000;
 }
 
+// On a phone the pill sat on whatever the page pins to the bottom — the order
+// summary, the cookie notice — so it folds into a tab on the left edge, halfway
+// down, and the DEV tab opens the bug-report link beside it.
 @media (max-width: 600px) {
-  body:has(.customer-navbar) .cleansia-dev-banner__text {
+  body:has(.customer-navbar) .cleansia-dev-banner.cleansia-dev-banner.cleansia-dev-banner {
+    top: 50%;
+    bottom: auto;
+    left: 0;
+    transform: translateY(-50%);
+    padding: 2px 2px 2px 0;
+    border-radius: 0 10px 10px 0;
+    gap: 6px;
+    font-size: 11px;
+    box-shadow: 2px 2px 8px rgba(15, 23, 42, 0.25);
+  }
+
+  body:has(.customer-navbar) .cleansia-dev-banner__env,
+  body:has(.customer-navbar) .cleansia-dev-banner__text,
+  body:has(.customer-navbar) .cleansia-dev-banner:not(.cleansia-dev-banner--open) .cleansia-dev-banner__link {
     display: none;
+  }
+
+  body:has(.customer-navbar) .cleansia-dev-banner.cleansia-dev-banner.cleansia-dev-banner.cleansia-dev-banner--open {
+    padding-right: 10px;
+  }
+
+  // Set on its side, so the closed tab is about as wide as the page's gutter and
+  // stays off the content beside it.
+  body:has(.customer-navbar) .cleansia-dev-banner__toggle {
+    display: inline-flex;
+    align-items: center;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    min-width: 18px;
+    padding: 8px 2px;
+    border: 0;
+    border-radius: 8px 0 0 8px;
+    background: rgba(0, 0, 0, 0.25);
+    color: #fff;
+    font: inherit;
+    font-weight: 800;
+    letter-spacing: 1px;
+    cursor: pointer;
+
+    &:focus-visible {
+      outline: 2px solid #fff;
+      outline-offset: 1px;
+    }
   }
 }
 

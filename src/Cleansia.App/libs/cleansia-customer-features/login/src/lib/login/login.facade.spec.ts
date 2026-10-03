@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { Router } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, Router } from '@angular/router';
 import { CustomerAuthService } from '@cleansia/customer-services';
 import { selectMarketCountryId } from '@cleansia/customer-stores';
 import { SnackbarService, extractApiErrorCode } from '@cleansia/services';
@@ -27,7 +27,8 @@ describe('LoginFacade (customer)', () => {
     showErrorTranslated: jest.Mock;
     showSuccessTranslated: jest.Mock;
   };
-  let router: { navigate: jest.Mock };
+  let router: { navigate: jest.Mock; navigateByUrl: jest.Mock };
+  let queryParams: Record<string, string>;
 
   /** Google hands the callback an ID token; the facade reads its payload segment. */
   const CREDENTIAL = [
@@ -58,7 +59,8 @@ describe('LoginFacade (customer)', () => {
       showErrorTranslated: jest.fn(),
       showSuccessTranslated: jest.fn(),
     };
-    router = { navigate: jest.fn() };
+    router = { navigate: jest.fn(), navigateByUrl: jest.fn() };
+    queryParams = {};
 
     TestBed.configureTestingModule({
       providers: [
@@ -67,6 +69,10 @@ describe('LoginFacade (customer)', () => {
           selectors: [{ selector: selectMarketCountryId, value: 'svk-id' }],
         }),
         { provide: Router, useValue: router },
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { get queryParamMap() { return convertToParamMap(queryParams); } } },
+        },
         { provide: CustomerAuthService, useValue: authService },
         { provide: SnackbarService, useValue: snackbar },
         { provide: GuestOrderService, useValue: { clear: jest.fn() } },
@@ -129,6 +135,31 @@ describe('LoginFacade (customer)', () => {
     expect(router.navigate).toHaveBeenCalled();
     expect(snackbar.showApiError).not.toHaveBeenCalled();
   });
+
+  // The auth guard hands over the page it turned away — an order e-mail's link
+  // to `/orders/:id` — and signing in lands there rather than on the board.
+  it('lands on the page the guard turned away', () => {
+    authService.login.mockReturnValue(of({ isEmailConfirmed: true }));
+    queryParams = { returnUrl: '/orders/01ORDER' };
+    fillValid();
+
+    facade.login();
+
+    expect(router.navigateByUrl).toHaveBeenCalledWith('/orders/01ORDER');
+    expect(router.navigate).not.toHaveBeenCalled();
+  });
+
+  it.each(['https://evil.example/orders', '//evil.example/orders', 'orders'])(
+    'ignores a return address that is not a path on this site (%s)',
+    (returnUrl) => {
+      queryParams = { returnUrl };
+
+      facade.googleLogin(CREDENTIAL);
+
+      expect(router.navigateByUrl).not.toHaveBeenCalled();
+      expect(router.navigate).toHaveBeenCalledWith(['orders']);
+    },
+  );
 
   it('surfaces a login error via showApiError (no swallow)', () => {
     authService.login.mockReturnValue(throwError(() => ({ message: 'bad creds' })));

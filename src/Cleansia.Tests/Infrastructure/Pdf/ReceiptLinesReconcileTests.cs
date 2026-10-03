@@ -170,13 +170,13 @@ public class ReceiptLinesReconcileTests
 
     /// <summary>
     /// A DIRTINESS LEVEL, EXPRESS AND A PROMO, IN EURO CENTS. The level's rate on the 60.33 of lines is
-    /// 36.198 heavy or 18.099 increased, stored as 36.20 or 18.10 and inside the raw subtotal; express
+    /// 18.099 heavy or 9.0495 increased, stored as 18.10 or 9.05 and inside the raw subtotal; express
     /// and the promo then compound on that. The level's own line sits between the catalogue lines and
     /// the express line, labelled with the level, and every stored term still sums to the stored total.
     /// </summary>
     [Theory]
-    [InlineData(DirtinessLevel.Heavy, "Heavy dirtiness surcharge", 36.20)]
-    [InlineData(DirtinessLevel.Increased, "Increased dirtiness surcharge", 18.10)]
+    [InlineData(DirtinessLevel.Heavy, "Heavy dirtiness surcharge", 18.10)]
+    [InlineData(DirtinessLevel.Increased, "Increased dirtiness surcharge", 9.05)]
     public async Task A_Dirtiness_Express_Promo_Booking_In_Cents_Has_Its_Level_Line_And_Adds_Up(
         DirtinessLevel level, string label, double surcharge)
     {

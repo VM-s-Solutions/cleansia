@@ -117,19 +117,19 @@ public class FiscalLineItemsReconcileToTotalTests
         Assert.DoesNotContain("Dirtiness surcharge", lines.Keys);
     }
 
-    // Heavy: 60 % of the 2250 lines = 1350, raw 3600; express at 20 % of the raw = 720; a 300 promo
-    // charged against the surcharged price = 360, so 2250 + 1350 + 720 - 360 = 3960.
+    // Heavy: 30 % of the 2250 lines = 675, raw 2925; express at 20 % of the raw = 585; a 300 promo
+    // charged against the surcharged price = 360, so 2250 + 675 + 585 - 360 = 3150.
     [Fact]
     public async Task The_Dirtiness_Surcharge_Is_Its_Own_Line_And_The_Lines_Still_Sum_To_The_Total()
     {
         var order = BuildOrder(
-            tierDiscount: 0, membershipDiscount: 0, promoDiscount: 360, totalPrice: 3960,
-            dirtinessSurcharge: 1350m, expressSurcharge: 720m);
+            tierDiscount: 0, membershipDiscount: 0, promoDiscount: 360, totalPrice: 3150,
+            dirtinessSurcharge: 675m, expressSurcharge: 585m);
 
         await CreateService().RealizeFiscalAndPdfAsync(order, BuildReceipt(), CancellationToken.None);
 
         var request = _provider.LastRequest!;
-        Assert.Equal(1350m, Assert.Single(request.LineItems, l => l.Description == "Dirtiness surcharge").UnitPrice);
+        Assert.Equal(675m, Assert.Single(request.LineItems, l => l.Description == "Dirtiness surcharge").UnitPrice);
         Assert.Equal(order.TotalPrice, request.TotalAmount);
         Assert.Equal(order.TotalPrice, request.LineItems.Sum(l => l.Quantity * l.UnitPrice));
     }

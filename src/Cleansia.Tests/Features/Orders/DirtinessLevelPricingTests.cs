@@ -59,8 +59,8 @@ public class DirtinessLevelPricingTests
 
     [Theory]
     [InlineData(DirtinessLevel.Normal, 0, 383.32)]
-    [InlineData(DirtinessLevel.Increased, 115.00, 498.32)]
-    [InlineData(DirtinessLevel.Heavy, 229.99, 613.31)]
+    [InlineData(DirtinessLevel.Increased, 57.50, 440.82)]
+    [InlineData(DirtinessLevel.Heavy, 115.00, 498.32)]
     public async Task The_Level_Surcharges_The_Whole_Basket_Including_Extras_In_Cents(
         DirtinessLevel level, decimal expectedSurcharge, decimal expectedTotal)
     {
@@ -71,7 +71,7 @@ public class DirtinessLevelPricingTests
     }
 
     [Fact]
-    public async Task Express_Compounds_On_Top_Of_Heavy_So_The_Basket_Costs_192_Percent()
+    public async Task Express_Compounds_On_Top_Of_Heavy_So_The_Basket_Costs_156_Percent()
     {
         var calculator = CreateCalculator(servicePrice: 1000m, extraPrice: null);
 
@@ -80,9 +80,9 @@ public class DirtinessLevelPricingTests
             cleaningDateUtc: DateTime.UtcNow.AddHours(3), userId: null, nowUtc: DateTime.UtcNow,
             CancellationToken.None);
 
-        Assert.Equal(600m, result.DirtinessSurchargeAmount);
-        Assert.Equal(320m, result.ExpressSurchargeAmount);
-        Assert.Equal(1000m * 1.92m, result.TotalPrice);
+        Assert.Equal(300m, result.DirtinessSurchargeAmount);
+        Assert.Equal(260m, result.ExpressSurchargeAmount);
+        Assert.Equal(1000m * 1.56m, result.TotalPrice);
     }
 
     [Fact]
@@ -95,10 +95,10 @@ public class DirtinessLevelPricingTests
         var order = await CreateOrderAsync(
             DirtinessLevel.Heavy, express: false, UserId, servicePrice: 1000m, extraPrice: null);
 
-        Assert.Equal(1600m, Assert.Single(_tierSubtotalsAsked));
-        Assert.Equal(80m, order.TierDiscountAmount);
-        Assert.Equal(80m, order.MembershipDiscountAmount);
-        Assert.Equal(1440m, order.TotalPrice);
+        Assert.Equal(1300m, Assert.Single(_tierSubtotalsAsked));
+        Assert.Equal(65m, order.TierDiscountAmount);
+        Assert.Equal(65m, order.MembershipDiscountAmount);
+        Assert.Equal(1170m, order.TotalPrice);
     }
 
     /// <summary>
@@ -150,10 +150,10 @@ public class DirtinessLevelPricingTests
     /// </summary>
     [Theory]
     [InlineData(DirtinessLevel.Normal, 0, 120, 1)]
-    [InlineData(DirtinessLevel.Increased, 0, 156, 2)]
-    [InlineData(DirtinessLevel.Heavy, 0, 192, 2)]
+    [InlineData(DirtinessLevel.Increased, 0, 138, 2)]
+    [InlineData(DirtinessLevel.Heavy, 0, 156, 2)]
     [InlineData(DirtinessLevel.Normal, 10, 150, 2)]
-    [InlineData(DirtinessLevel.Heavy, 10, 240, 2)]
+    [InlineData(DirtinessLevel.Heavy, 10, 195, 2)]
     public async Task The_Booked_Time_Follows_The_Level_And_The_Home_And_The_Quote_States_The_Crew(
         DirtinessLevel level, int minutesPerRoom, int expectedMinutes, int expectedCrew)
     {

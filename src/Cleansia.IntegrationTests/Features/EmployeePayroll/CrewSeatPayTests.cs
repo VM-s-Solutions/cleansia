@@ -50,17 +50,17 @@ public class CrewSeatPayTests(PostgresContainerFixture fixture) : BaseIntegratio
                     .Where(p => p.OrderId == _orderId)
                     .ToDictionaryAsync(p => p.EmployeeId);
 
-                // Job 333.33, heavy adds 200.00 (60 %, rounded): 166.67 + 100.00 and 166.66 + 100.00.
+                // Job 333.33, heavy adds 100.00 (30 %, rounded): 166.67 + 50.00 and 166.66 + 50.00.
                 var first = pays[_firstSeatEmployeeId];
                 Assert.Equal(166.67m, first.BasePay);
-                Assert.Equal(100m, first.DirtinessPay);
-                Assert.Equal(266.67m, first.TotalPay);
+                Assert.Equal(50m, first.DirtinessPay);
+                Assert.Equal(216.67m, first.TotalPay);
                 Assert.Contains("Dirtiness", first.PayBreakdown);
 
                 var second = pays[_secondSeatEmployeeId];
                 Assert.Equal(166.66m, second.BasePay);
-                Assert.Equal(100m, second.DirtinessPay);
-                Assert.Equal(266.66m, second.TotalPay);
+                Assert.Equal(50m, second.DirtinessPay);
+                Assert.Equal(216.66m, second.TotalPay);
             });
     }
 
@@ -101,12 +101,12 @@ public class CrewSeatPayTests(PostgresContainerFixture fixture) : BaseIntegratio
             bathrooms: 0,
             cleaningDateTime: DateTime.UtcNow.AddDays(-1),
             paymentType: PaymentType.Card,
-            totalPrice: 3840m,
+            totalPrice: 3120m,
             currencyId: CurrencyId,
             paymentStatus: PaymentStatus.Paid);
         order.AddSelectedPackages([OrderPackage.Create(order, package, 2400m)]);
         order.UpdateEstimatedTime(240).CalculateRequiredEmployees(spareSeats: 0);
-        order.SetDirtinessSurcharge(DirtinessLevel.Heavy, 1440m);
+        order.SetDirtinessSurcharge(DirtinessLevel.Heavy, 720m);
         order.AddAssignedEmployee(OrderEmployee.Create(order, firstCleaner));
         order.AddAssignedEmployee(OrderEmployee.Create(order, secondCleaner));
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Completed, order));

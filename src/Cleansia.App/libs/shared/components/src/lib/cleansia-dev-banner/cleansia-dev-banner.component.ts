@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -30,6 +30,10 @@ import { CommonModule } from '@angular/common';
       text-transform: uppercase;
     }
 
+    .cleansia-dev-banner__toggle {
+      display: none;
+    }
+
     .cleansia-dev-banner__text {
       opacity: 0.9;
     }
@@ -56,4 +60,7 @@ import { CommonModule } from '@angular/common';
 })
 export class CleansiaDevBannerComponent {
   @Input() bugReportUrl: string | undefined;
+
+  /** Whether the folded edge tab shows its link; nothing reads it where the banner does not fold. */
+  readonly open = signal(false);
 }

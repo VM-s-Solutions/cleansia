@@ -999,6 +999,14 @@ need backfilling.
 
 ### Fixed
 
+- **Customer and cleaner iOS — a count takes the right form in the app's language.** On a phone set
+  to English with the app in Czech, Slovak, Ukrainian or Russian, counts followed English plural
+  rules: *2 pokojů* instead of *2 pokoje*, *5 кімнати* instead of *5 кімнат*, *Нужно 5 клинера*
+  instead of *Нужно 5 клинеров*. For a customer that covered the rooms and bathrooms in booking and on
+  an order, and the counts on Home and Rewards. For a cleaner it covered a job's rooms, bathrooms and
+  extras, the cleaners it needs and the spots still open. Counts now follow the language chosen in the
+  app, whatever the phone is set to. Android already did.
+
 - **Cleaner Android and iOS — the registration screen's *Done* and arrow line up with their step.** On
   a step with details under it, such as missing fields or a rejection reason, the status and the
   arrow sat at the top of the row on iOS and halfway down the details on Android. They now sit beside

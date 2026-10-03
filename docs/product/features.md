@@ -13,8 +13,8 @@ stays hidden and the chip is a plain label. → [Business rules — the market](
 
 **Booking** — browse the service catalogue and packages, pick rooms and bathrooms (up to 8 and 4, which
 the Android and iOS apps state under the size steppers) and extras, choose a date and an arrival time on
-the quarter hour from 08:00 to 19:45 (on the web, the part of day first — morning, afternoon or evening —
-then that part's slots; [the time step](/customer-app/ordering-flow#step-2-date-time)), and pay by card —
+the quarter hour from 08:00 to 19:45 (the part of day first — morning, afternoon or evening — then that
+part's slots, on the web, Android and iOS alike; [the time step](/customer-app/ordering-flow#step-2-date-time)), and pay by card —
 or in cash, when signed in and the booking is a job one cleaner does alone
 ([the cash rule](/product/business-rules#cash)).
 Paying by card, a signed-in customer on web, Android or iOS may tick *Save this card for my next

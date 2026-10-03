@@ -94,6 +94,21 @@ of all 48.
 - **A part with no bookable slot is disabled** — today's morning, for instance, once every morning
   slot is inside the lead time. A slot inside the lead time is greyed and disabled in the grid.
 
+**The Android and iOS apps group the time the same way** (since 2026-10-03). Their booking's When step
+shows the same three parts, with the same hours and labels, over a 4 × 4 grid of the chosen part's
+sixteen slots, and follows both rules above. Each app opens on the part that holds the booked time
+while it is still bookable, and otherwise on the first part with a bookable slot. A slot inside the
+lead time stays in the grid, greyed and disabled, instead of being left out. An express slot carries a
+bolt, and a part that shows one adds a legend line under the grid: *Express +20%*, or *Express · no
+surcharge* while the customer has a Plus waiver left. Nothing animates when the part changes, and
+every part and slot is at least 48pt (iOS) or 48dp (Android) tall. VoiceOver and TalkBack read a part
+as *Morning, 6 slots available* and a slot as its time with its express tag. A recurring schedule's
+time uses the same picker. A weekly time has no lead time, so all 48 of its slots can be picked. Until
+then the apps listed every bookable quarter hour in one column and tagged the first as *Earliest*. On
+iOS a schedule's time was a wheel, and on Android a list in two groups split at 17:00. The apps keep
+their own slot data and lead-time bands (`timeSlotsFor` on Android, `BookingTimeSlots` on iOS). Only
+the three parts come from the web, as `DayPart` in each app.
+
 The daily bounds and lead times mirror `BookingPolicy` on the backend. Web arrival options live in
 the shared `booking-window.models.ts`; the three parts are `dayParts` in `OrderWizardComponent`:
 

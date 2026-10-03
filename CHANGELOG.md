@@ -519,6 +519,13 @@ need backfilling.
 
 ### Changed
 
+- **Customer Android and iOS — arrival times are grouped by part of day, as on the web.** The
+  booking's time step asks for morning, afternoon or evening first, then shows that part's sixteen
+  times in a grid of four rows, instead of one long list of every quarter hour. A part with nothing
+  left to book is greyed out, and so is a time too soon to book, which used to be left out. The
+  *Earliest* tag is gone. A recurring schedule picks its time the same way; on iOS it was a wheel.
+  (Owner request 2026-10-03.)
+
 - **Customer and cleaner — one support address, support@cleansia.cz.** The customer web footer, its
   FAQ and legal pages, the order detail's payment note, the cleaner's *How jobs are offered* page,
   Help in the Android and iOS apps and the support line of every e-mail now name support@cleansia.cz.

@@ -390,10 +390,11 @@ public class IssuePartialRefundHandlerTests
         Assert.Equal(1000m, result.Value!.RefundAmount);
     }
 
-    // FINDING 2 — fee/VAT/net all derive from the seam-confirmed amount, never the pre-fee gross.
-    // Architect oracle: TotalPrice 1210, VAT 21%, whole order, AdminDiscretion, CZ fee 1.4%+6.
+    // FINDING 2 — the fee, the VAT and the loyalty clawback all derive from the seam-confirmed amount,
+    // never the pre-fee gross. Architect oracle: TotalPrice 1210, VAT 21%, whole order, AdminDiscretion,
+    // CZ fee 1.4%+6.
     [Fact]
-    public async Task AdminDiscretion_VatPayer_VatAndNetDeriveFromConfirmedAmount_NotPreFee()
+    public async Task AdminDiscretion_VatPayer_VatAndClawbackDeriveFromConfirmedAmount_NotPreFee()
     {
         var svc = Svc("svc-a", 1210m);
         var order = CreateOrder(1210m, appliedVatRate: 0.21m, completed: true, services: [svc]);
@@ -413,10 +414,11 @@ public class IssuePartialRefundHandlerTests
         // fee = round(1210 * 0.014 + 6) = 22.94 → sent/confirmed = 1187.06.
         Assert.Equal(1187.06m, _refundService.LastRequest!.Amount);
         Assert.Equal(1187.06m, result.Value!.RefundAmount);
-        // VAT and net off the CONFIRMED amount (1187.06), not the pre-fee 1210 (the split-brain bug, which
-        // would report VAT 210.00 / net 977.06). round(1187.06 * 21/121) = 206.02; net = 1187.06 - 206.02.
+        // VAT off the CONFIRMED amount (1187.06), not the pre-fee 1210 (the split-brain bug, which would
+        // report VAT 210.00). round(1187.06 * 21/121) = 206.02. The clawback is handed the confirmed
+        // amount itself: the earn was on the gross price, so the share returned is gross too.
         Assert.Equal(206.02m, result.Value!.RefundVat);
-        Assert.Equal(981.04m, _loyaltyService.LastRefundNet);
+        Assert.Equal(1187.06m, _loyaltyService.LastAmountReturned);
     }
 
     // FINDING 1 — a standalone service's gross ratio weight MUST include PerRoomPrice × (rooms+bathrooms)
@@ -559,9 +561,11 @@ public class IssuePartialRefundHandlerTests
         Assert.Equal(PaymentStatus.Refunded, result.Value!.PaymentStatus);
     }
 
-    // TC-REFUND-VAT — apportioned VAT is reported and the loyalty clawback is on net (VAT-excluded).
+    // TC-REFUND-VAT — apportioned VAT is reported, and the loyalty clawback is handed the gross returned:
+    // refunding all of a 1210 order passes 1210, so it removes every point the order earned. Passing the
+    // net 1000 removed 100 of the 121 earned and left 21 for money the customer got back.
     [Fact]
-    public async Task VatIsApportioned_AndLoyaltyClawbackIsOnNet()
+    public async Task VatIsApportioned_AndLoyaltyClawbackIsOnTheGrossReturned()
     {
         var svc = Svc("svc-a", 1210m);
         var order = CreateOrder(1210m, appliedVatRate: 0.21m, completed: true, services: [svc]);
@@ -578,7 +582,35 @@ public class IssuePartialRefundHandlerTests
 
         Assert.True(result.IsSuccess);
         Assert.Equal(210m, result.Value!.RefundVat);                 // round(1210 * 21/121)
-        Assert.Equal(1000m, _loyaltyService.LastRefundNet);          // net = 1210 - 210
+        Assert.Equal(1210m, _loyaltyService.LastAmountReturned);
+    }
+
+    /// <summary>
+    /// The clawback is handed what the refund returned on BOTH tenders. A 1000 order settled with 400
+    /// credit and 600 card earned on the whole 1000; refunding it puts 600 back on the card and 400 back
+    /// on the balance, and all 1000 counts. The card leg alone left 40 % of the points with the customer.
+    /// </summary>
+    [Fact]
+    public async Task CreditLeg_CountsTowardsTheLoyaltyClawback()
+    {
+        var svc = Svc("svc-a", 1000m);
+        var order = CreateOrder(1000m, appliedVatRate: null, completed: true, services: [svc]);
+        order.ApplyCredit(400m, AdminId);
+        ArrangeOrder(order);
+        ArrangeConsumed(600m);
+        _refundService.CreditShare = 400m;
+
+        var result = await CreateHandler().Handle(
+            new IssuePartialRefund.Command(
+                OrderId,
+                [new IssuePartialRefund.RefundLineSelection("svc-a", null)],
+                RefundReason.ServiceNotRendered,
+                OverrideReason: null),
+            CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(600m, result.Value!.RefundAmount);
+        Assert.Equal(1000m, _loyaltyService.LastAmountReturned);
     }
 
     /// <summary>
@@ -683,6 +715,9 @@ public class IssuePartialRefundHandlerTests
         public int CallCount { get; private set; }
         public RefundRequest? LastRequest { get; private set; }
 
+        /// <summary>The part of each request the order's credit settled, returned to the balance.</summary>
+        public decimal CreditShare { get; set; }
+
         public void Reset()
         {
             CallCount = 0;
@@ -701,20 +736,21 @@ public class IssuePartialRefundHandlerTests
                 // branches that silently dropped the line selection were never exercised by any test
                 // in this file, and the suite stayed green over a refund that moved no money.
                 RefundKey: RefundService.BuildRefundKey(request),
-                Amount: request.Amount,
+                Amount: request.Amount - CreditShare,
                 Status: RefundStatus.Succeeded,
-                ResolvedToExisting: false)));
+                ResolvedToExisting: false,
+                CreditReturned: CreditShare)));
         }
     }
 
     private sealed class RecordingLoyaltyService : ILoyaltyService
     {
-        public decimal? LastRefundNet { get; private set; }
+        public decimal? LastAmountReturned { get; private set; }
 
         public Task RevokeForPartialRefundAsync(
-            string orderId, decimal refundNet, string refundKey, string actorId, CancellationToken cancellationToken)
+            string orderId, decimal amountReturned, string refundKey, string actorId, CancellationToken cancellationToken)
         {
-            LastRefundNet = refundNet;
+            LastAmountReturned = amountReturned;
             return Task.CompletedTask;
         }
 

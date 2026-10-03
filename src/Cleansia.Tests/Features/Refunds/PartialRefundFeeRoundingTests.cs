@@ -214,12 +214,13 @@ public class PartialRefundFeeRoundingTests
     }
 
     [Fact]
-    public async Task Fee_DeductedBeforeVatNetDerivation_VatOffConfirmedAmount()
+    public async Task Fee_DeductedBeforeVatDerivation_VatOffConfirmedAmount()
     {
-        // VAT-payer order, whole order, AdminDiscretion. Fee deducts FIRST off the gross, THEN VAT/net
-        // derive from the seam-confirmed (post-fee) amount — not the pre-fee gross.
+        // VAT-payer order, whole order, AdminDiscretion. Fee deducts FIRST off the gross, THEN the VAT and
+        // the loyalty clawback derive from the seam-confirmed (post-fee) amount — not the pre-fee gross.
         // total 10 @21% VAT; fee 4.05% of 10 = 0.405 → 0.41 → confirmed 9.59.
-        // VAT off 9.59 = round(9.59 × 0.21/1.21) = round(1.6643…) = 1.66; net = 9.59 − 1.66 = 7.93 (hand-derived).
+        // VAT off 9.59 = round(9.59 × 0.21/1.21) = round(1.6643…) = 1.66 (hand-derived); the clawback is
+        // handed the confirmed 9.59 itself.
         var order = SingleServiceOrder(totalPrice: 10m, appliedVatRate: 0.21m);
         Arrange(order);
         ArrangeCountryFee(rate: 4.05m, fixedFee: 0m);
@@ -229,7 +230,7 @@ public class PartialRefundFeeRoundingTests
         Assert.True(result.IsSuccess);
         Assert.Equal(9.59m, result.Value!.RefundAmount);
         Assert.Equal(1.66m, result.Value.RefundVat);
-        Assert.Equal(7.93m, _loyaltyService.LastRefundNet);
+        Assert.Equal(9.59m, _loyaltyService.LastAmountReturned);
     }
 
     private sealed class RecordingRefundService : IRefundService
@@ -254,12 +255,12 @@ public class PartialRefundFeeRoundingTests
 
     private sealed class RecordingLoyaltyService : ILoyaltyService
     {
-        public decimal? LastRefundNet { get; private set; }
+        public decimal? LastAmountReturned { get; private set; }
 
         public Task RevokeForPartialRefundAsync(
-            string orderId, decimal refundNet, string refundKey, string actorId, CancellationToken cancellationToken)
+            string orderId, decimal amountReturned, string refundKey, string actorId, CancellationToken cancellationToken)
         {
-            LastRefundNet = refundNet;
+            LastAmountReturned = amountReturned;
             return Task.CompletedTask;
         }
 

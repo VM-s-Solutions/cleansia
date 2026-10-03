@@ -264,5 +264,13 @@ export class MembershipPlanFormComponent implements OnInit, OnDestroy {
       expressUpgradesPerMonth: detail.expressUpgradesPerMonth ?? 0,
     });
     this.patchPrices(detail.prices);
+    if (this.facade.benefitsLocked()) {
+      this.lockSubscribedBenefits();
+    }
+  }
+
+  private lockSubscribedBenefits(): void {
+    this.form.controls.discountPercentage.disable({ emitEvent: false });
+    this.form.controls.expressUpgradesPerMonth.disable({ emitEvent: false });
   }
 }

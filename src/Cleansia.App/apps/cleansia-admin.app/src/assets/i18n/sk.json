@@ -2710,7 +2710,8 @@
           "trial_days_help": "Počet dní, počas ktorých má nový člen všetky výhody Plus ešte pred prvou platbou. Jedna skúšobná doba na účet; 0 znamená bez skúšobnej doby.",
           "express_upgrade": "Umožňuje expresný upgrade",
           "express_upgrades_per_month": "Zahrnuté expresné upgrady za mesiac",
-          "express_upgrades_per_month_help": "Koľko expresných rezervácií dostane člen každý mesiac bez expresného príplatku. Nula znamená žiadne."
+          "express_upgrades_per_month_help": "Koľko expresných rezervácií dostane člen každý mesiac bez expresného príplatku. Nula znamená žiadne.",
+          "benefits_locked_help": "Tento plán si už niekto predplatil, takže jeho zľava a zahrnuté expresné upgrady sú pevné. Ak chcete ponúknuť iné, vytvorte nový plán a tento deaktivujte."
         },
         "validation": {
           "price_block_half_filled": "Zadajte cenu aj Stripe Price id, alebo nechajte obe polia prázdne, aby plán v tejto mene nebol v predaji."

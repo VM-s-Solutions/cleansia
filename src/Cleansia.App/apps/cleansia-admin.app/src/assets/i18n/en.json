@@ -2710,7 +2710,8 @@
           "trial_days_help": "Days a new member gets every Plus benefit before the first charge. One trial per account; 0 means no trial.",
           "express_upgrade": "Allows express upgrade",
           "express_upgrades_per_month": "Included express upgrades per month",
-          "express_upgrades_per_month_help": "How many express bookings a member gets each month without the express surcharge. Zero means none."
+          "express_upgrades_per_month_help": "How many express bookings a member gets each month without the express surcharge. Zero means none.",
+          "benefits_locked_help": "Someone has subscribed to this plan, so its discount and included express upgrades are fixed. To offer different ones, create a new plan and deactivate this one."
         },
         "validation": {
           "price_block_half_filled": "Enter both a price and a Stripe Price id, or leave both empty to keep the plan off sale in this currency."

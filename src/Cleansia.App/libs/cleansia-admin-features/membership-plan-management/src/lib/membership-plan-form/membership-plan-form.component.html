@@ -153,6 +153,14 @@
                 'pages.membership_plans.form.field.trial_days_help' | translate
               }}
             </p>
+            @if (facade.benefitsLocked()) {
+              <p class="form-hint" data-spec-benefits-locked>
+                {{
+                  'pages.membership_plans.form.field.benefits_locked_help'
+                    | translate
+                }}
+              </p>
+            }
           </div>
         </cleansia-section>
 

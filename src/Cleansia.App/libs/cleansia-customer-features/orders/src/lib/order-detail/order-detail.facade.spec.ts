@@ -6,11 +6,10 @@ import {
   CancellationFeeTier,
   ConfirmRecurringOrderCommand,
   ConfirmRecurringOrderResponse,
+  ConsentType,
   CustomerAuthService,
   CustomerClient,
   GetCancellationFeePreviewResponse,
-  GetMyMembershipResponse,
-  MembershipStatus,
   OrderItem,
   OrderStatus,
   PaymentStatus,
@@ -56,6 +55,7 @@ describe('OrderDetailFacade', () => {
     cancel: jest.Mock;
     confirmRecurring: jest.Mock;
   };
+  let gdprClient: { consentsGet: jest.Mock };
   let snackbar: { showSuccess: jest.Mock; showError: jest.Mock; showApiError: jest.Mock };
   let signedIn: WritableSignal<boolean>;
   let facade: OrderDetailFacade;
@@ -72,6 +72,7 @@ describe('OrderDetailFacade', () => {
         of(ConfirmRecurringOrderResponse.fromJS({ orderId: ORDER_ID })),
       ),
     };
+    gdprClient = { consentsGet: jest.fn().mockReturnValue(of([])) };
     snackbar = {
       showSuccess: jest.fn(),
       showError: jest.fn(),
@@ -86,6 +87,7 @@ describe('OrderDetailFacade', () => {
           provide: CustomerClient,
           useValue: {
             orderClient,
+            gdprClient,
             membershipClient: { getMine: jest.fn().mockReturnValue(of(null)) },
           },
         },
@@ -264,43 +266,23 @@ describe('OrderDetailFacade', () => {
     });
   });
 
-  // The server charges by the entitlement, which a running trial holds and a failed renewal does not.
   describe('the free-cancellation window the page states', () => {
-    const DAY_MS = 24 * 60 * 60 * 1000;
-    const plus = (trialEndsAtUtc?: Date, status = MembershipStatus.Active) =>
-      GetMyMembershipResponse.fromJS({
-        hasMembership: true,
-        status,
-        freeCancellationWindowHours: 12,
-        trialEndsAtUtc: trialEndsAtUtc?.toISOString(),
-      });
-
-    it("is the plan's window for a paid member", () => {
-      facade.membership.set(plus());
+    it('is the window the server resolved for this order', () => {
+      facade.order.set(OrderItem.fromJS({ id: ORDER_ID, freeCancellationHours: 12 }));
       expect(facade.freeCancellationHours()).toBe(12);
     });
 
-    it("is the plan's window during a running trial", () => {
-      facade.membership.set(plus(new Date(Date.now() + 7 * DAY_MS)));
-      expect(facade.freeCancellationHours()).toBe(12);
+    it('is stated even when the server resolved no window at all', () => {
+      facade.order.set(OrderItem.fromJS({ id: ORDER_ID, freeCancellationHours: 0 }));
+      expect(facade.freeCancellationHours()).toBe(0);
     });
 
-    it("is the plan's window once the trial has ended", () => {
-      facade.membership.set(plus(new Date(Date.now() - DAY_MS)));
-      expect(facade.freeCancellationHours()).toBe(12);
-    });
+    it('is not stated when the server sent none, or before the order has loaded', () => {
+      facade.order.set(OrderItem.fromJS({ id: ORDER_ID }));
+      expect(facade.freeCancellationHours()).toBeNull();
 
-    it('is the standard 24 hours while a renewal payment has failed', () => {
-      facade.membership.set(plus(undefined, MembershipStatus.PastDue));
-      expect(facade.freeCancellationHours()).toBe(24);
-    });
-
-    it('is the standard 24 hours without a membership', () => {
-      facade.membership.set(GetMyMembershipResponse.fromJS({ hasMembership: false }));
-      expect(facade.freeCancellationHours()).toBe(24);
-
-      facade.membership.set(null);
-      expect(facade.freeCancellationHours()).toBe(24);
+      facade.order.set(null);
+      expect(facade.freeCancellationHours()).toBeNull();
     });
   });
 
@@ -409,6 +391,8 @@ describe('OrderDetailFacade', () => {
         needsConfirmation,
       });
     const refusal = (field: string, key: string) => () => ({ errors: { [field]: key } });
+
+    beforeEach(() => facade.alreadyConsented.set(true));
 
     afterEach(() => {
       window.location.hash = '';
@@ -600,6 +584,136 @@ describe('OrderDetailFacade', () => {
     });
   });
 
+  // Owner ruling 2026-10-03: confirming an occurrence asks for the terms exactly as a booking does.
+  describe('the terms tick on a recurring confirm', () => {
+    const awaiting = (needsConfirmation = true) =>
+      OrderItem.fromJS({
+        id: ORDER_ID,
+        orderStatus: { value: OrderStatus.New, name: OrderStatus[OrderStatus.New] },
+        paymentType: { value: PaymentType.Cash, name: PaymentType[PaymentType.Cash] },
+        needsConfirmation,
+      });
+    const consent = (
+      type: ConsentType,
+      { isGranted = true, withdrawnAt = undefined as string | undefined, coversCurrentVersion = true } = {},
+    ) => ({
+      id: `c${type}`,
+      consentType: type,
+      isGranted,
+      grantedAt: '2026-09-14T10:00:00Z',
+      withdrawnAt,
+      createdOn: '2026-09-14T10:00:00Z',
+      documentVersion: '2026-09-14',
+      coversCurrentVersion,
+    });
+    const sentTerms = () =>
+      (orderClient.confirmRecurring.mock.calls[0][0] as ConfirmRecurringOrderCommand).termsAccepted;
+
+    function load(order: OrderItem): void {
+      orderClient.getById.mockReturnValue(of(order));
+      facade.loadOrder(ORDER_ID);
+    }
+
+    it('is not asked of an account whose two consents cover the texts in force, and asserts nothing', () => {
+      gdprClient.consentsGet.mockReturnValue(
+        of([consent(ConsentType.TermsOfService), consent(ConsentType.PrivacyPolicy)]),
+      );
+      load(awaiting());
+
+      expect(facade.termsAsked()).toBe(false);
+      facade.confirmRecurring();
+      expect(sentTerms()).toBeUndefined();
+    });
+
+    it.each([
+      { what: 'only the terms are on record', consents: [consent(ConsentType.TermsOfService)] },
+      {
+        what: 'the terms accepted are older than the text in force',
+        consents: [
+          consent(ConsentType.TermsOfService, { coversCurrentVersion: false }),
+          consent(ConsentType.PrivacyPolicy),
+        ],
+      },
+      {
+        what: 'the privacy policy was withdrawn',
+        consents: [
+          consent(ConsentType.TermsOfService),
+          consent(ConsentType.PrivacyPolicy, { withdrawnAt: '2026-09-20T10:00:00Z' }),
+        ],
+      },
+      {
+        what: 'the privacy policy was refused',
+        consents: [
+          consent(ConsentType.TermsOfService),
+          consent(ConsentType.PrivacyPolicy, { isGranted: false }),
+        ],
+      },
+    ])('is asked when $what', ({ consents }) => {
+      gdprClient.consentsGet.mockReturnValue(of(consents));
+      load(awaiting());
+
+      expect(facade.termsAsked()).toBe(true);
+    });
+
+    it('is asked when the consents could not be read', () => {
+      gdprClient.consentsGet.mockReturnValue(throwError(() => new Error('offline')));
+      load(awaiting());
+
+      expect(facade.termsAsked()).toBe(true);
+    });
+
+    it('is asked when the consent read hands back null rather than a list', () => {
+      gdprClient.consentsGet.mockReturnValue(of(null));
+      load(awaiting());
+
+      expect(facade.termsAsked()).toBe(true);
+    });
+
+    it('is asked of a guest, without reading consents nobody holds', () => {
+      signedIn.set(false);
+      load(awaiting());
+
+      expect(gdprClient.consentsGet).not.toHaveBeenCalled();
+      expect(facade.termsAsked()).toBe(true);
+    });
+
+    it('reads no consents for an order that awaits no confirmation, and asks nothing', () => {
+      load(awaiting(false));
+
+      expect(gdprClient.consentsGet).not.toHaveBeenCalled();
+      expect(facade.termsAsked()).toBe(false);
+    });
+
+    it('holds the confirm until the customer ticks it', () => {
+      load(awaiting());
+
+      expect(facade.confirmAwaitsTerms()).toBe(true);
+      facade.confirmRecurring();
+
+      expect(orderClient.confirmRecurring).not.toHaveBeenCalled();
+    });
+
+    it('confirms with the tick asserted once the customer ticks it', () => {
+      load(awaiting());
+
+      facade.setTermsAccepted(true);
+      expect(facade.confirmAwaitsTerms()).toBe(false);
+      facade.confirmRecurring();
+
+      expect(sentTerms()).toBe(true);
+    });
+
+    it('holds the confirm again once the tick is taken off', () => {
+      load(awaiting());
+      facade.setTermsAccepted(true);
+      facade.setTermsAccepted(false);
+
+      facade.confirmRecurring();
+
+      expect(orderClient.confirmRecurring).not.toHaveBeenCalled();
+    });
+  });
+
   // Every member of a generated command is optional, so a dropped assignment type-checks.
   // These pin the serialized body instead (ADR-0031).
   describe('command bodies on the wire', () => {
@@ -625,6 +739,7 @@ describe('OrderDetailFacade', () => {
     });
 
     it('serializes the recurring confirm with the order id and an unticked save-card', () => {
+      facade.alreadyConsented.set(true);
       facade.order.set(OrderItem.fromJS({ id: ORDER_ID, needsConfirmation: true }));
 
       facade.confirmRecurring();
@@ -635,6 +750,7 @@ describe('OrderDetailFacade', () => {
     });
 
     it('serializes a ticked save-card on a card occurrence', () => {
+      facade.alreadyConsented.set(true);
       facade.order.set(OrderItem.fromJS({
         id: ORDER_ID,
         needsConfirmation: true,
@@ -646,6 +762,16 @@ describe('OrderDetailFacade', () => {
 
       const command: ConfirmRecurringOrderCommand = orderClient.confirmRecurring.mock.calls[0][0];
       expect(command.toJSON()).toEqual({ orderId: ORDER_ID, saveCard: true });
+    });
+
+    it('serializes the terms tick on a recurring confirm that asked for it', () => {
+      facade.order.set(OrderItem.fromJS({ id: ORDER_ID, needsConfirmation: true }));
+      facade.setTermsAccepted(true);
+
+      facade.confirmRecurring();
+
+      const command: ConfirmRecurringOrderCommand = orderClient.confirmRecurring.mock.calls[0][0];
+      expect(command.toJSON()).toEqual({ orderId: ORDER_ID, saveCard: false, termsAccepted: true });
     });
 
     it('serializes the review with the order id, the rating and the comment', () => {

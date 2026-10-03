@@ -528,12 +528,23 @@
             <span>{{ 'pages.order.save_card.label' | translate }} {{ 'pages.order.card_capture.consent.card-guarantee-draft-2026-09-28' | translate }}</span>
           </label>
           }
+          @if (termsAsked()) {
+          <label class="order-detail__save-card" data-spec-recurring-terms>
+            <p-checkbox
+              [ngModel]="termsAccepted()"
+              (ngModelChange)="setTermsAccepted($event)"
+              [binary]="true"
+              inputId="order-detail-recurring-terms"
+            />
+            <span>{{ 'pages.order.accept_terms' | translate }}</span>
+          </label>
+          }
           @if (canConfirmRecurring()) {
           <cleansia-button
             [block]="true"
             [label]="recurringConfirmLabelKey() | translate"
             [loading]="confirmingRecurring()"
-            [disabled]="confirmingRecurring()"
+            [disabled]="confirmingRecurring() || confirmAwaitsTerms()"
             (onClick)="confirmRecurring()"
           />
           }
@@ -580,6 +591,12 @@
           }
         </div>
 
+        @if (confirmAwaitsTerms()) {
+        <p class="order-detail__policy" data-spec-terms-missing>
+          <i class="pi pi-exclamation-circle"></i>
+          {{ 'pages.order.missing.terms' | translate }}
+        </p>
+        }
         @if (canConfirmRecurring()) {
         <p class="order-detail__policy">
           <i class="pi pi-info-circle"></i>
@@ -613,14 +630,14 @@
         </div>
         }
 
-        <!-- The window is a membership benefit, so it is read off the
-             membership rather than hardcoded. → /product/business-rules -->
-        <p class="order-detail__policy">
+        @if (freeCancellationHours() !== null) {
+        <p class="order-detail__policy" data-spec-free-cancellation>
           <i class="pi pi-calendar"></i>
           {{
             'pages.order_detail.cancellation_note' | translate: { hours: freeCancellationHours() }
           }}
         </p>
+        }
       </section>
     </div>
   </div>

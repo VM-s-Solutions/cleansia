@@ -5,17 +5,18 @@ import {
   CancelOrderCommand,
   CancelOrderResponse,
   ConfirmRecurringOrderCommand,
+  ConsentType,
   CustomerAuthService,
   CustomerClient,
   GetCancellationFeePreviewResponse,
   GetMyMembershipResponse,
-  MembershipStatus,
   OrderItem,
   OrderStatus,
   PaymentStatus,
   PaymentType,
   SubmitOrderReviewCommand,
   SubmitOrderReviewReviewLineScore,
+  UserConsentDto,
 } from '@cleansia/customer-services';
 import { ReviewLineScore } from './order-review-lines.models';
 import { extractApiErrorCode, SnackbarService } from '@cleansia/services';
@@ -31,8 +32,6 @@ const CANCELLABLE_ORDER_STATUSES: readonly OrderStatus[] = [
   OrderStatus.Confirmed,
   OrderStatus.OnTheWay,
 ];
-
-const STANDARD_FREE_CANCELLATION_HOURS = 24;
 
 const START_PASSED_CANNOT_CANCEL = 'order.start_passed_cannot_cancel';
 
@@ -82,6 +81,15 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
   readonly saveCard = signal(false);
 
   /**
+   * Decided exactly as the booking wizard decides its tick: both consents granted, not withdrawn, and
+   * each an acceptance of the text in force. Unread or unreadable is "ask".
+   */
+  readonly alreadyConsented = signal(false);
+  readonly termsAccepted = signal(false);
+  readonly termsAsked = computed(() => this.canConfirmRecurring() && !this.alreadyConsented());
+  readonly confirmAwaitsTerms = computed(() => this.termsAsked() && !this.termsAccepted());
+
+  /**
    * Past the booked start with a cleaner on the job who has not started, the server refuses a
    * self-cancel and the customer reports that the cleaner did not arrive. The server's refusal also
    * counts, so a client clock behind the server's cannot keep offering a cancel it will refuse.
@@ -114,15 +122,7 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
       status === PaymentStatus.Pending || status === PaymentStatus.Failed;
   });
 
-  /**
-   * How long free cancellation lasted. Plus shortens the window, trial included; a failed renewal
-   * does not. -> /product/business-rules
-   */
-  readonly freeCancellationHours = computed(() => {
-    const membership = this.membership();
-    if (membership?.status !== MembershipStatus.Active) return STANDARD_FREE_CANCELLATION_HOURS;
-    return membership.freeCancellationWindowHours ?? STANDARD_FREE_CANCELLATION_HOURS;
-  });
+  readonly freeCancellationHours = computed(() => this.order()?.freeCancellationHours ?? null);
 
   readonly canConfirmCancellation = computed(() =>
     this.canCancel() && this.cancellationOpen() && !!this.cancellationPreview() &&
@@ -159,6 +159,7 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
         next: (order) => {
           this.order.set(order);
           this.loading.set(false);
+          if (order?.needsConfirmation) this.loadConsentState();
         },
         error: (err) => {
           this.error.set(err.message || 'Failed to load order');
@@ -308,10 +309,11 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
    */
   confirmRecurring(): void {
     const orderId = this.order()?.id;
-    if (!orderId || !this.canConfirmRecurring() || this.confirmingRecurring()) return;
+    if (!orderId || !this.canConfirmRecurring() || this.confirmAwaitsTerms() || this.confirmingRecurring()) return;
     const command = new ConfirmRecurringOrderCommand();
     command.orderId = orderId;
     command.saveCard = this.saveCardOffered() && this.saveCard();
+    command.termsAccepted = this.termsAsked() && this.termsAccepted() ? true : undefined;
     this.confirmingRecurring.set(true);
     this.customerClient.orderClient
       .confirmRecurring(command)
@@ -339,10 +341,34 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
     this.saveCard.set(save);
   }
 
+  setTermsAccepted(accepted: boolean): void {
+    this.termsAccepted.set(accepted);
+  }
+
   showRecurringPlusRequired(): void {
     this.snackbar.showError(
       this.translate.instant('recurring_booking.order_detail_make_recurring_plus_required'),
     );
+  }
+
+  private loadConsentState(): void {
+    if (!this.authService.isLoggedIn()) return;
+    this.customerClient.gdprClient
+      .consentsGet()
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError(() => of([] as UserConsentDto[])),
+      )
+      .subscribe((consents) => {
+        const onRecord = consents ?? [];
+        const granted = (type: ConsentType) =>
+          onRecord.some(
+            (c) => c.consentType === type && c.isGranted && !c.withdrawnAt && c.coversCurrentVersion,
+          );
+        this.alreadyConsented.set(
+          granted(ConsentType.TermsOfService) && granted(ConsentType.PrivacyPolicy),
+        );
+      });
   }
 
   private noteStartPassed(error: unknown): void {

@@ -133,6 +133,9 @@ export class OrderDetailComponent implements OnInit {
   readonly confirmingRecurring = this.facade.confirmingRecurring;
   readonly saveCardOffered = this.facade.saveCardOffered;
   readonly saveCard = this.facade.saveCard;
+  readonly termsAsked = this.facade.termsAsked;
+  readonly termsAccepted = this.facade.termsAccepted;
+  readonly confirmAwaitsTerms = this.facade.confirmAwaitsTerms;
 
   private readonly recurringPaysByCard = computed(
     () => this.order()?.paymentType?.value === PaymentType.Card,
@@ -514,6 +517,10 @@ export class OrderDetailComponent implements OnInit {
 
   setSaveCard(save: boolean): void {
     this.facade.setSaveCard(save);
+  }
+
+  setTermsAccepted(accepted: boolean): void {
+    this.facade.setTermsAccepted(accepted);
   }
 
   reportIssue(): void {

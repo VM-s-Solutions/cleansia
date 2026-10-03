@@ -143,14 +143,19 @@ need backfilling.
   clean. The web order detail used to show the total alone, so it did not match the card statement.
   (Matches the apps, 2026-10-02.)
 
-- **Customer Android and iOS — new cards in the Home carousel.** *Stay in the loop* shows while the
-  phone blocks the app's notifications, and asks for them or opens the settings. A card with the
-  customer's credit balance shows when they hold one, and a Plus member sees how many
-  express-surcharge waivers are left this month; both open booking. *How big is your home?* closes the
-  row with room and bathroom steppers, and *See my price* opens booking at that size; it replaces the
-  plain *Book* card. The referral card's *Share my code* opens the share sheet with the code. The first
-  four cards that apply show, most relevant first, so there are never more than five. (Owner ruling
-  2026-10-01.)
+- **Customer Android and iOS — five cards in the Home carousel, each saying more.** Every card now
+  has a two-line description under its title and a chip with its figure. *Stay in the loop* shows
+  while the phone blocks the app's notifications, and asks for them or opens the settings. A card with
+  the customer's credit balance shows when they hold one, and a Plus member sees how many
+  express-surcharge waivers are left this month; both open booking. *Did you know?* cards fill the
+  rest: a Plus member's free-cancellation window, booking from 2 hours ahead, points on every
+  completed cleaning and the exact arrival times. The Plus card names the plan's discount and the
+  referral card the points each side gets, both as the server states them. *How big is your home?*
+  closes the row with room and bathroom steppers, and *See my price* opens booking at that size; it
+  replaces the plain *Book* card. The referral card's *Share my code* opens the share sheet with the
+  code. The first four cards that apply show, most relevant first, so every customer sees five; a
+  customer with nothing pending used to see two or three. (Owner ruling 2026-10-01; the descriptions
+  and the *Did you know?* cards, owner remark 2026-10-03.)
 
 - **Customer Android and iOS — content fades out under the clock as it scrolls.** On Home, Profile
   and the Cleansia Plus offer, content scrolled to the top of the screen fades out under the status
@@ -622,7 +627,7 @@ need backfilling.
   last card lands on the first, and back past the first on the last, and it moves on by itself every 6
   seconds, always forward. After a swipe, a tap or a screen-reader card change it stops for the rest of
   that visit to Home, and it never moves by itself with VoiceOver, TalkBack, Reduce Motion or Remove
-  animations on. Screen readers announce *Offer 2 of 4*. (Owner ruling 2026-10-01.)
+  animations on. Screen readers announce *Offer 2 of 5*. (Owner ruling 2026-10-01.)
 
 - **Customer Android and iOS — every Home carousel card draws its own mascot.** The referral card and
   the Book card drew the same one, which every customer saw twice. No two cards repeat a drawing now,

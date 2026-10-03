@@ -103,14 +103,19 @@ trialing member's membership screen says *Free trial until* the day of the first
 → [Business rules — Cleansia Plus](/product/business-rules#cleansia-plus),
 [the free trial](/product/business-rules#plus-trial)
 
-**The Home carousel** (Android and iOS) — a row of offer cards at the top of Home. It loops: a swipe
-past the last card lands on the first, and a swipe back past the first lands on the last. It moves on
-by itself every 6 seconds, always forward. Once the customer swipes, taps or changes card with a screen
-reader, it stops for the rest of that visit to Home. It never moves by itself while VoiceOver or
-TalkBack is on, or while Reduce Motion (iOS) or Remove animations (Android) is set. A screen reader
-announces each card's place, *Offer 2 of 4*. On iOS a swipe up or down changes the card, and on Android
+**The Home carousel** (Android and iOS) — a row of five offer cards at the top of Home. It loops: a
+swipe past the last card lands on the first, and a swipe back past the first lands on the last. It
+moves on by itself every 6 seconds, always forward. Once the customer swipes, taps or changes card with
+a screen reader, it stops for the rest of that visit to Home. It never moves by itself while VoiceOver
+or TalkBack is on, or while Reduce Motion (iOS) or Remove animations (Android) is set. A screen reader
+announces each card's place, *Offer 2 of 5*. On iOS a swipe up or down changes the card, and on Android
 the *Next offer* and *Previous offer* actions do. Every card draws its own mascot, the same one on both
 platforms, so no two cards repeat a drawing: the Plus card carries the web's Plus mascot.
+
+**Each card says more than a headline** (since 2026-10-03). It has an eyebrow, a title, a two-line
+description and a fact chip: an icon, with the card's figure beside it when the card has one. All of
+this fits the card's old height. Every figure comes from the server or the booking rules, never from
+the translation, and a card whose figure has not loaded yet shows a line without one.
 
 Which cards show, most relevant first:
 
@@ -122,17 +127,29 @@ Which cards show, most relevant first:
   after that (since 2026-10-02; a permission never refused, such as a dismissed launch prompt, used to
   go straight to the settings). An install from before then that was refused for good opens the
   settings on the second tap.
-- The customer's credit, when they hold a balance in the currency Home prices in. It opens booking.
-- *No express surcharge on N more bookings this month*, for a Plus member with waivers left whose
-  benefits are not paused. It opens booking.
+- The customer's credit, *{balance} to spend on cleanings*, when they hold a balance in the currency
+  Home prices in. Its description gives the share of an order credit may pay. It opens booking.
+- *No surcharge on N more express bookings*, for a Plus member with waivers left whose benefits are not
+  paused. It opens booking.
 - Setting up a recurring cleaning, for a Plus member with no schedule whose benefits are not paused.
-- Cleansia Plus, for a customer who is not a member.
+- Cleansia Plus, for a customer who is not a member. It names the discount of the headline plan, the
+  monthly one, from the plans the server lists.
 - The referral card. *Share my code* opens the share sheet with the customer's code once it has
-  loaded, and Rewards until then.
+  loaded, and Rewards until then. It states the points each side gets, the server's figure.
+- Four *Did you know?* cards fill the row after referral:
+  - *Free cancellation up to N h before*, for a Plus member whose benefits are not paused, with N the
+    plan's own window. iOS shows it only while that window is shorter than the standard 24 h. Android
+    shows it for any window above 0.
+  - *Book as little as 2 h ahead*, which says an express surcharge applies under 4 h. These are
+    `BookingPolicy`'s two lead times. It shows whenever the member's express card does not.
+  - *Every completed cleaning earns points*, which opens Rewards.
+  - *Choose your exact arrival time*, any quarter hour from 08:00 to 19:45.
 
-The first four that apply show, and *How big is your home?* always closes the row, so there are never
-more than five cards. Its two steppers run 1–8 rooms and 1–4 bathrooms, and *See my price* opens booking
-at that size. It replaced the plain *Book* card, which repeated the Book button.
+The first four that apply show, and *How big is your home?* always closes the row. Referral, the
+points card and the arrival-times card always apply, and so does one of the two express cards, so
+every customer sees exactly five; until 2026-10-03 a customer with nothing pending saw two or three.
+Its two steppers run 1–8 rooms and 1–4 bathrooms, and *See my price* opens booking at that size. It
+replaced the plain *Book* card, which repeated the Book button.
 
 **Honest copy** — the money figures in the customer copy (the apology credit when a cleaner never
 comes, the insurance ceiling on the mobile trust badge and FAQ, the currency named in the terms) come
@@ -144,9 +161,12 @@ copy promises only what the platform does (since 2026-09-28): the web catalogue'
 *24 h to report a problem* — the dispute window — instead of *100 % Satisfaction*; the web order
 detail has no *Track live* button, which only went back; the mobile referral slide says both sides
 earn their points after the friend's **first completed cleaning**; the mobile credit slide states the
-server's balance and share (*{balance} comes off your next card booking, up to {share} % of it*), and
-the express slide the member's own waiver count and the 2–4 h window from `BookingPolicy` (since
-2026-10-01); and strings that promised a free
+server's balance and share (*{balance} to spend on cleanings*, taken off the next card payment *up to
+{share} % of the order*), and the express slide the member's own waiver count and the 2–4 h window
+from `BookingPolicy` (since 2026-10-01); since 2026-10-03 the Plus slide states the headline plan's
+discount, the referral slide the server's points per referral instead of a literal 150, and the
+*Book as little as 2 h ahead* slide `BookingPolicy`'s lead times, without calling express same-day;
+and strings that promised a free
 add-on, tier perks or a satisfaction guarantee the platform does not give are deleted. Each retired
 claim is pinned absent by a test in every locale.
 → [Business rules — disputes](/product/business-rules#disputes)

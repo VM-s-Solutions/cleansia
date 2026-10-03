@@ -125,7 +125,13 @@ public class CreateOrder
             // booking nobody consented to is refused on that ground before any figure is judged.
             RuleFor(x => x.TermsAccepted)
                 .MustAsync((command, termsAccepted, context, cancellationToken) =>
-                    AssertedOrAlreadyConsentedAsync(command, termsAccepted, context, cancellationToken))
+                    CustomerLegalConsents.AssertedOrCoverTextsInForceAsync(
+                        _userConsentRepository,
+                        _legalDocumentResolver,
+                        termsAccepted,
+                        _userSessionProvider.GetUserId(),
+                        () => ResolveOrderCountryIdAsync(command, context, cancellationToken),
+                        cancellationToken))
                 .WithMessage(BusinessErrorMessage.TermsNotAccepted)
                 .WithErrorCode(nameof(Command.TermsAccepted));
 
@@ -351,37 +357,6 @@ public class CreateOrder
                     .WithMessage(BusinessErrorMessage.PreferredEmployeeNotEligible)
                     .WithName(nameof(Command.PreferredEmployeeId));
             });
-        }
-
-        /// <summary>
-        /// The tick is the answer when it is asserted — the consent read is skipped, so a customer
-        /// re-consenting at checkout is never refused for a row the server has not written yet. Without
-        /// it, only a signed-in customer whose account holds BOTH legal consents, granted, not withdrawn
-        /// and accepted under the version in force for the booking's market, may book: that customer sees
-        /// no box on any client and sends nothing. One who accepted an older version is asked again
-        /// (owner ruling 2026-09-28); their earlier bookings keep the version they were made under. A
-        /// guest has no account to hold a consent on, so a guest always asserts it.
-        /// </summary>
-        private async Task<bool> AssertedOrAlreadyConsentedAsync(
-            Command command, bool? termsAccepted, ValidationContext<Command> context, CancellationToken cancellationToken)
-        {
-            if (termsAccepted == true)
-            {
-                return true;
-            }
-
-            var userId = _userSessionProvider.GetUserId();
-            if (string.IsNullOrEmpty(userId))
-            {
-                return false;
-            }
-
-            return await CustomerLegalConsents.CoverTextsInForceAsync(
-                _userConsentRepository,
-                _legalDocumentResolver,
-                userId,
-                await ResolveOrderCountryIdAsync(command, context, cancellationToken),
-                cancellationToken);
         }
 
         /// <summary>

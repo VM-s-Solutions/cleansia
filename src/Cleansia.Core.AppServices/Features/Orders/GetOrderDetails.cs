@@ -45,7 +45,8 @@ public class GetOrderDetails
         IExpressWaiverConsumer expressWaiverConsumer,
         IUserMembershipRepository userMembershipRepository,
         IWorkContractAcceptanceRepository workContractAcceptanceRepository,
-        IEmployeeActionAuditRepository employeeActionAuditRepository) : IQueryHandler<Query, OrderItem>
+        IEmployeeActionAuditRepository employeeActionAuditRepository,
+        ICancellationPolicyResolver cancellationPolicyResolver) : IQueryHandler<Query, OrderItem>
     {
         public async Task<BusinessResult<OrderItem>> Handle(Query query, CancellationToken cancellationToken)
         {
@@ -133,6 +134,9 @@ public class GetOrderDetails
                 ? await expressWaiverConsumer.WouldForfeitOnCustomerCancelAsync(
                     order.Id, order.AssignedEmployees.Count > 0, cancellationToken)
                 : null;
+            int? freeCancellationHours = isCustomerCaller
+                ? (await cancellationPolicyResolver.ResolveForOrderAsync(order, cancellationToken)).FreeCancellationHours
+                : null;
 
             var isAdminCaller = role == UserProfile.Administrator.ToString();
 
@@ -155,7 +159,8 @@ public class GetOrderDetails
                 isAdminCaller
                     ? await ResolveCustomerCompanyAsync(order, cancellationToken)
                     : null,
-                acceptances.Select(a => a.MapToDto()).ToList());
+                acceptances.Select(a => a.MapToDto()).ToList(),
+                freeCancellationHours);
 
             if (!isEntitledToCustomerData)
             {

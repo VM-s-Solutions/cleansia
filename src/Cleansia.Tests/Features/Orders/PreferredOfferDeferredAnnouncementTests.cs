@@ -257,6 +257,9 @@ public class PreferredOfferDeferredAnnouncementTests
             _notificationProducer.Object,
             resolver,
             Mock.Of<IAdminNotifier>(),
+            Mock.Of<IConsentService>(),
+            Legal.CustomerConsentDoubles.Consented(),
+            Mock.Of<ILegalDocumentResolver>(),
             new AuditContext(),
             NullLogger<ConfirmRecurringOrder.Handler>.Instance);
     }

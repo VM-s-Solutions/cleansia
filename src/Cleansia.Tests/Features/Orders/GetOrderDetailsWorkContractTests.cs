@@ -49,7 +49,8 @@ public sealed class GetOrderDetailsWorkContractTests
             _expressWaiverConsumer.Object,
             Mock.Of<IUserMembershipRepository>(),
             _acceptanceRepository.Object,
-            Mock.Of<IEmployeeActionAuditRepository>());
+            Mock.Of<IEmployeeActionAuditRepository>(),
+            new Cleansia.Core.AppServices.Services.CancellationPolicyResolver(Mock.Of<IUserMembershipRepository>(), Mock.Of<IOrderRepository>()));
 
     private (Order Order, OrderEmployee Seat) ArrangeEmployeeCaller(string caller, bool entitled)
     {

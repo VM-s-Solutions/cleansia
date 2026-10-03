@@ -203,7 +203,8 @@ public class PreferredOfferExitAgreementTests
             _expressWaiverConsumer.Object,
             _userMembershipRepository.Object,
             WorkContractTestData.AcceptanceRepository().Object,
-            Mock.Of<IEmployeeActionAuditRepository>());
+            Mock.Of<IEmployeeActionAuditRepository>(),
+            new Cleansia.Core.AppServices.Services.CancellationPolicyResolver(Mock.Of<IUserMembershipRepository>(), Mock.Of<IOrderRepository>()));
 
     private ChoosePreferredCleaner.Handler CreateChooseHandler() =>
         new(

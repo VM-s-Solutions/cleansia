@@ -63,6 +63,9 @@ public sealed class ConfirmRecurringOrderTellsAdministratorsTests
         new Mock<INotificationProducer>().Object,
         NoPreferredCleanerHold.Resolver,
         _adminNotifier.Object,
+        Mock.Of<IConsentService>(),
+        Legal.CustomerConsentDoubles.Consented(),
+        Mock.Of<ILegalDocumentResolver>(),
         new AuditContext(),
         NullLogger<ConfirmRecurringOrder.Handler>.Instance);
 

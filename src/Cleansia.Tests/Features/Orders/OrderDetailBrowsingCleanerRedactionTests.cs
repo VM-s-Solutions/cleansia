@@ -495,7 +495,8 @@ public class OrderDetailBrowsingCleanerRedactionTests
             _expressWaiverConsumer.Object,
             Mock.Of<IUserMembershipRepository>(),
             _acceptances.Object,
-            _employeeActionAuditRepository.Object);
+            _employeeActionAuditRepository.Object,
+            new Cleansia.Core.AppServices.Services.CancellationPolicyResolver(Mock.Of<IUserMembershipRepository>(), Mock.Of<IOrderRepository>()));
 
     private void ArrangeCommon(Order order)
     {

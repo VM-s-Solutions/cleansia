@@ -113,6 +113,9 @@ public sealed class ConfirmRecurringOrderCardSavingTests
         Mock.Of<INotificationProducer>(),
         NoPreferredCleanerHold.Resolver,
         Mock.Of<IAdminNotifier>(),
+        Mock.Of<IConsentService>(),
+        Legal.CustomerConsentDoubles.Consented(),
+        Mock.Of<ILegalDocumentResolver>(),
         new AuditContext(),
         NullLogger<ConfirmRecurringOrder.Handler>.Instance);
 
@@ -188,7 +191,9 @@ public sealed class ConfirmRecurringOrderCardSavingTests
         var guest = new Mock<IUserSessionProvider>();
         guest.Setup(s => s.GetUserId()).Returns((string?)null);
 
-        var result = await new ConfirmRecurringOrder.Validator(guest.Object)
+        var result = await new ConfirmRecurringOrder.Validator(
+                guest.Object, OrderAccessDoubles.Over(_orderRepository, guest),
+                Legal.CustomerConsentDoubles.Consented(), Mock.Of<ILegalDocumentResolver>())
             .ValidateAsync(new ConfirmRecurringOrder.Command(OrderId, SaveCard: true));
 
         Assert.Equal(BusinessErrorMessage.SavedCardRequiresAccount, Assert.Single(result.Errors).ErrorMessage);
@@ -197,7 +202,9 @@ public sealed class ConfirmRecurringOrderCardSavingTests
     [Fact]
     public async Task A_Signed_In_Customer_May_Ask_To_Save_The_Card()
     {
-        var result = await new ConfirmRecurringOrder.Validator(_session.Object)
+        var result = await new ConfirmRecurringOrder.Validator(
+                _session.Object, OrderAccessDoubles.Over(_orderRepository, _session),
+                Legal.CustomerConsentDoubles.Consented(), Mock.Of<ILegalDocumentResolver>())
             .ValidateAsync(new ConfirmRecurringOrder.Command(OrderId, SaveCard: true));
 
         Assert.True(result.IsValid);

@@ -44,6 +44,16 @@ final class StringCatalogCompletenessTests: XCTestCase {
         ),
         Exception("Customer", "devices_platform_ios", allLocalized, "Apple product name"),
         Exception("Customer", "dispute_create_char_count", allLocalized, "format specifiers and a literal count only"),
+        Exception("Customer", "home_upsell_chip_hours", ["cs", "sk"], "\"h\" is the same abbreviation in cs/sk"),
+        Exception("Customer", "home_upsell_chip_minutes", ["cs", "sk"], "\"min\" is the same abbreviation in cs/sk"),
+        Exception(
+            "Customer",
+            "home_upsell_chip_percent_off",
+            ["uk", "ru"],
+            "a figure only; uk/ru write it unspaced, as Android does"
+        ),
+        Exception("Customer", "home_upsell_chip_points", allLocalized, "a plus sign and a specifier only"),
+        Exception("Customer", "home_upsell_chip_times", allLocalized, "a specifier and the multiplication sign only"),
         Exception("Customer", "home_upsell_plus_top", allLocalized, "Cleansia Plus is the product name"),
         Exception("Customer", "membership_inactive_badge", allLocalized, "Cleansia Plus is the product name"),
         Exception("Customer", "membership_inactive_title", allLocalized, "Cleansia Plus is the product name"),

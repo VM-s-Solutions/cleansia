@@ -18,6 +18,7 @@ final class OrderDetailViewModelTests: XCTestCase {
         membershipClient: FakeMembershipManagementClient = FakeMembershipManagementClient(),
         marketStore: MarketStore? = nil,
         paymentIntent: FakePaymentIntentClient = FakePaymentIntentClient(),
+        consent: FakeConsentStatusClient = FakeConsentStatusClient(),
         pollInterval: TimeInterval = 60,
         onCreditMoved: @escaping () -> Void = {}
     ) -> OrderDetailViewModel {
@@ -31,6 +32,7 @@ final class OrderDetailViewModelTests: XCTestCase {
             snackbar: SnackbarController(),
             eventBus: OrderEventBus(),
             paymentIntentClient: paymentIntent,
+            consentClient: consent,
             liveActivity: NoopLiveActivitySync(),
             onCreditMoved: onCreditMoved,
             pollInterval: pollInterval

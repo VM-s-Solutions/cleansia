@@ -32,6 +32,7 @@ final class FakeOrderClient: OrderClient, @unchecked Sendable {
     var confirmRecurringResult: ApiResult<RecurringConfirmation> =
         .success(RecurringConfirmation(clientSecret: nil, stripeCustomerId: nil, ephemeralKey: nil))
     private(set) var confirmRecurringCallCount = 0
+    private(set) var confirmRecurringTerms: [Bool?] = []
 
     var cancellationQuoteResults: [ApiResult<CancellationQuote>] = []
     private(set) var cancellationQuoteCallCount = 0
@@ -83,8 +84,9 @@ final class FakeOrderClient: OrderClient, @unchecked Sendable {
         return photosResults[index]
     }
 
-    func confirmRecurring(orderId _: String) async -> ApiResult<RecurringConfirmation> {
+    func confirmRecurring(orderId _: String, termsAccepted: Bool?) async -> ApiResult<RecurringConfirmation> {
         confirmRecurringCallCount += 1
+        confirmRecurringTerms.append(termsAccepted)
         return confirmRecurringResult
     }
 

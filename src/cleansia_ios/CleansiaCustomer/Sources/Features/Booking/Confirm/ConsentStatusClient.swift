@@ -9,6 +9,14 @@ protocol ConsentStatusClient {
     func grantedTypes() async -> Set<SignupConsentType>?
 }
 
+extension ConsentStatusClient {
+    /// Whether the account already holds both documents the terms tick names, which is what hides the tick at
+    /// the booking review and at a recurring visit's confirm alike. A failed read asks.
+    func holdsTermsTickConsents() async -> Bool {
+        await grantedTypes()?.isSuperset(of: SignupConsentType.signupTick) == true
+    }
+}
+
 struct LiveConsentStatusClient: ConsentStatusClient {
     func grantedTypes() async -> Set<SignupConsentType>? {
         let result = await apiResult(mapError: ApiError.fromGenerated) {

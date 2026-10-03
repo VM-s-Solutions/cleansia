@@ -160,7 +160,9 @@ struct OrderDetailView: View {
             ConfirmRecurringFooter(
                 submitting: vm.confirmRecurringState.isSubmitting,
                 label: OrderRecurringConfirm.ctaLabel(order),
-                saveCard: vm.offersCardSaving ? Binding(get: { vm.saveCard }, set: vm.setSaveCard) : nil
+                saveCard: vm.offersCardSaving ? Binding(get: { vm.saveCard }, set: vm.setSaveCard) : nil,
+                termsAccepted: vm.asksForTerms ? Binding(get: { vm.termsAccepted }, set: vm.setTermsAccepted) : nil,
+                canConfirm: vm.canConfirmRecurring
             ) {
                 Task { await vm.confirmRecurring() }
             }
@@ -274,6 +276,8 @@ private struct ConfirmRecurringFooter: View {
     let submitting: Bool
     let label: String
     let saveCard: Binding<Bool>?
+    let termsAccepted: Binding<Bool>?
+    let canConfirm: Bool
     let onConfirm: () -> Void
 
     var body: some View {
@@ -281,11 +285,18 @@ private struct ConfirmRecurringFooter: View {
             if let saveCard {
                 SaveCardOption(saved: saveCard)
             }
+            if let termsAccepted {
+                CleansiaConsentCheckbox(
+                    checked: termsAccepted,
+                    markdown: L10n.Auth.acceptTerms,
+                    toggleAccessibilityLabel: L10n.Auth.acceptTermsToggle
+                )
+            }
             CleansiaPrimaryButton(
                 label,
                 leadingIcon: "checkmark.circle",
                 loading: submitting,
-                enabled: !submitting,
+                enabled: !submitting && canConfirm,
                 action: onConfirm
             )
         }

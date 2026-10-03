@@ -200,6 +200,36 @@ public class MigratedEmailRenderingTests
         AssertSupportLine(wire.Html);
     }
 
+    /// <summary>
+    /// Pressing Reply writes to support, not to the sender. Every e-mail leaves through the one send,
+    /// so a customer's mail, one carrying a PDF and a cleaner's mail stand for the rest. The From stays
+    /// the configured delivery address.
+    /// </summary>
+    [Fact]
+    public async Task Every_mail_replies_to_support_and_is_still_sent_from_the_sender()
+    {
+        var (service, wire) = Build(new Dictionary<string, string> { ["Subject"] = "Subject" });
+
+        await service.SendEmailConfirmationAsync(Recipient, "Jana", "483920", "cs", CancellationToken.None);
+        AssertReplyGoesToSupport(wire);
+
+        await service.SendOrderReceiptEmailAsync(
+            Recipient, NewOrder(), [0x25, 0x50, 0x44, 0x46], "receipt-42.pdf", "en", CancellationToken.None);
+        AssertReplyGoesToSupport(wire);
+
+        await service.SendPeriodClosedEmailAsync(
+            Recipient, "Petr", new DateOnly(2026, 8, 1), new DateOnly(2026, 8, 31),
+            new DateTime(2026, 9, 1, 6, 0, 0, DateTimeKind.Utc), "2026-08",
+            "en", null, null, CancellationToken.None);
+        AssertReplyGoesToSupport(wire);
+    }
+
+    private static void AssertReplyGoesToSupport(WireCapture wire)
+    {
+        Assert.Equal("support@cleansia.cz", wire.ReplyTo);
+        Assert.Equal("noreply@example.test", wire.From);
+    }
+
     private static void AssertSupportLine(string html)
     {
         Assert.Contains("<a href=\"mailto:support@cleansia.cz\">support@cleansia.cz</a>", html, StringComparison.Ordinal);
@@ -336,6 +366,8 @@ public class MigratedEmailRenderingTests
         public string Subject { get; private set; } = string.Empty;
         public string? AttachmentName { get; private set; }
         public string? AttachmentContent { get; private set; }
+        public string? From { get; private set; }
+        public string? ReplyTo { get; private set; }
 
         protected override async Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request, CancellationToken cancellationToken)
@@ -364,6 +396,9 @@ public class MigratedEmailRenderingTests
                   && personalizations[0].TryGetProperty("subject", out var personalSubject)
                     ? personalSubject.GetString() ?? string.Empty
                     : string.Empty;
+
+            From = root.TryGetProperty("from", out var from) ? from.GetProperty("email").GetString() : null;
+            ReplyTo = root.TryGetProperty("reply_to", out var replyTo) ? replyTo.GetProperty("email").GetString() : null;
 
             if (root.TryGetProperty("attachments", out var attachments) &&
                 attachments.ValueKind == JsonValueKind.Array &&

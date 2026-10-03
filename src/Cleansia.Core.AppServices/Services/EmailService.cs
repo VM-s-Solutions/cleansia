@@ -22,8 +22,9 @@ public sealed partial class EmailService : IEmailService
     // transport is built on. Kept in sync with SendGridExtensions.HttpClientName.
     private const string SendGridHttpClientName = "SendGrid";
 
-    // The one contact every e-mail's support line names. Not the sender (AddressFrom), which is a
-    // delivery address, and not a translation row: an address is the same in every locale.
+    // The one contact every e-mail's support line names, and every e-mail's Reply-To. Not the sender
+    // (AddressFrom), which is a delivery address, and not a translation row: an address is the same
+    // in every locale.
     private const string SupportAddress = "support@cleansia.cz";
 
     private readonly ISendGridConfig sendGridConfig;
@@ -1135,6 +1136,9 @@ public sealed partial class EmailService : IEmailService
             subject,
             plainTextContent: null,
             htmlContent: htmlContent);
+
+        // Pressing Reply reaches support, not the delivery sender.
+        msg.SetReplyTo(new EmailAddress(SupportAddress));
 
         if (attachmentBytes is { Length: > 0 } && !string.IsNullOrWhiteSpace(attachmentFileName))
         {

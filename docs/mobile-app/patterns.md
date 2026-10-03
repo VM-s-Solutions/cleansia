@@ -272,7 +272,9 @@ band it was in when the sheet closed. A standard time that has since slid into t
 does not hold, because it was quoted as a standard time, without the express surcharge; a time that
 was already express when the sheet closed does. A time that does not hold is cleared, and its day with it once the day is
 past. The booking goes back to the When step if it was past it, and a notice asks for a new time
-(`booking_draft_time_changed`). A time that holds is left alone. A seeded open is not re-checked: it
+(`booking_draft_time_changed`). A time that holds is kept. A kept day is named against the moment of the
+resume, so a day that has since become today reads *Today* and is the day the When step selects; iOS
+stores the day as its label and re-derives it, Android stores the date. A seeded open is not re-checked: it
 resets the draft anyway. Until then a draft resumed on the Confirm step could keep a time that had
 come inside the lead time, and only the server refused it. Neither app re-checks a sheet that stays
 open, such as a booking left on the Confirm step while the app sat in the background.

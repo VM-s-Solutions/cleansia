@@ -1015,7 +1015,8 @@ need backfilling.
 - **Customer Android and iOS — Help's *Email us* and *Call support* reach support.** *Email us* opens
   the mail app on support@cleansia.cz, and *Call support* opens the dialer on +420 739 788 108, the
   line the customer web footer prints. On a phone with no mail app, or one that cannot make calls,
-  the address or number is copied instead and a notice says so. On Android neither row did anything
+  the address or number is copied instead and a notice says so; on iOS the address is also copied
+  when no Mail account is set up. On Android neither row did anything
   when tapped, and on iOS both were plain text. Android's *Live chat* row is gone: there is no chat.
 
 - **Customer and cleaner iOS — a count takes the right form in the app's language.** On a phone set

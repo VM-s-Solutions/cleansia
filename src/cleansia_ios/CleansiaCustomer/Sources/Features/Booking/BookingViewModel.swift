@@ -63,7 +63,8 @@ final class BookingViewModel: ViewModel {
     var quotedAt: Date?
     /// When the sheet last closed on this draft: the band its time was priced in when no quote for it landed.
     private var draftLeftAt: Date?
-    /// The currency of the card PaymentSheet is saving; the booking waits for that card to land.
+    /// The currency of the card PaymentSheet is saving, until it is seen to land or the sheet is abandoned.
+    /// While it is set a cash booking waits for that card instead of capturing a second one.
     var guaranteeCurrencyCode: String?
     /// While Stripe's sheet is over the booking, paying for its order or saving its card. The sheet sets it; a
     /// return to the foreground re-checks nothing under it (`recheckOpenBooking`).

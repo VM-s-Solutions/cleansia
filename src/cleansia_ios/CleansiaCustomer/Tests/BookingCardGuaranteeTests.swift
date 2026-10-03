@@ -264,6 +264,67 @@ final class BookingCardGuaranteeTests: XCTestCase {
         XCTAssertFalse(vm.submitState.isSubmitting)
     }
 
+    /// "Still saving your card" asks the customer to slide again. That slide waits for the card PaymentSheet
+    /// already saved; it never opens a second capture because the first has not reached the server yet
+    /// (Android's `submit`).
+    func testASlideAfterTheCardWasStillSavingWaitsForThatCardRatherThanCapturingASecond() async {
+        let notYet = [ApiResult<[SavedCard]>](repeating: .success([]), count: 1 + BookingViewModel.cardCaptureReads + 1)
+        let cards = FakeSavedCardClient(reads: notYet + [.success([PaymentsFixtures.czkCard])])
+        let create = FakeOrderCreateClient()
+        let vm = makeVM(cards: cards, create: create)
+        vm.update(readyState())
+        guard case .cardGuaranteeNeeded = await vm.submit() else { return XCTFail("no capture was asked for") }
+        let stillSaving = await vm.submitAfterCardGuarantee()
+        XCTAssertEqual(stillSaving, .cardGuaranteePending)
+
+        let outcome = await vm.submit()
+
+        XCTAssertEqual(outcome, .success(orderId: "order-1", confirmationCode: "CLN-001"))
+        XCTAssertEqual(cards.captureConsents.count, 1, "a second card was captured")
+        XCTAssertEqual(create.commands.count, 1)
+    }
+
+    /// A time that stopped holding while the card was saved sends the customer back to When; the slide after
+    /// they pick again books on the card already saved.
+    func testASlideAfterATimeThatStoppedHoldingWaitsForTheCardAlreadySaved() async throws {
+        let cards = FakeSavedCardClient(reads: [.success([]), .success([]), .success([PaymentsFixtures.czkCard])])
+        let create = FakeOrderCreateClient()
+        let vm = makeVM(cards: cards, create: create)
+        vm.update(readyState())
+        guard case .cardGuaranteeNeeded = await vm.submit() else { return XCTFail("no capture was asked for") }
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let yesterday = try XCTUnwrap(calendar.date(byAdding: .day, value: -1, to: today))
+        vm.selectDay(yesterday)
+        vm.selectTime("10:00", on: yesterday)
+        let timeGone = await vm.submitAfterCardGuarantee()
+        XCTAssertEqual(timeGone, .timeNoLongerHolds)
+        let later = try XCTUnwrap(calendar.date(byAdding: .day, value: 3, to: today))
+        vm.selectDay(later)
+        vm.selectTime("10:00", on: later)
+
+        let outcome = await vm.submit()
+
+        XCTAssertEqual(outcome, .success(orderId: "order-1", confirmationCode: "CLN-001"))
+        XCTAssertEqual(cards.captureConsents.count, 1, "a second card was captured")
+    }
+
+    /// A setup sheet the customer cancelled saved nothing: the next slide captures afresh at once instead of
+    /// waiting out the reads for a card that is not coming.
+    func testAfterTheSetupSheetIsAbandonedTheNextSlideCapturesAfresh() async {
+        let cards = FakeSavedCardClient()
+        let vm = makeVM(cards: cards)
+        vm.update(readyState())
+        guard case .cardGuaranteeNeeded = await vm.submit() else { return XCTFail("no capture was asked for") }
+
+        vm.abandonCardGuarantee()
+        let outcome = await vm.submit()
+
+        guard case .cardGuaranteeNeeded = outcome else { return XCTFail("no fresh capture: \(outcome)") }
+        XCTAssertEqual(cards.captureConsents.count, 2)
+        XCTAssertEqual(cards.readCount, 2, "it waited for a card the cancelled sheet never saved")
+    }
+
     func testWithoutACaptureInFlightThereIsNothingToWaitFor() async {
         let cards = FakeSavedCardClient()
         let vm = makeVM(cards: cards)

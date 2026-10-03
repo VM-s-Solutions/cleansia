@@ -159,6 +159,7 @@ struct BookingSheetView: View {
         case .completed:
             await handle(vm.submitAfterCardGuarantee())
         case .canceled, .failed:
+            vm.abandonCardGuarantee()
             slideResetCount += 1
             snackbar.showError(L10n.Booking.cardGuaranteeCancelled)
         }

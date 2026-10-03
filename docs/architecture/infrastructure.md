@@ -347,6 +347,20 @@ repository's `email-templates/*.html`, embedded in `Cleansia.Core.AppServices` a
 `EmailTemplateRenderer` from the e-mail type's translation rows and the e-mail's own values, and hands
 SendGrid the finished page.
 
+**Every value goes in as text.** The renderer HTML-encodes each value before it replaces its
+`{{Placeholder}}`: `&`, `<`, `>` and `"`, the four characters that can leave element text or a
+double-quoted attribute. A customer called `<b>Ann & Co</b>` reads as typed, in their own e-mails and
+in the administrators' notifications alike. **There is no raw path**, because no value is markup: the
+copy in code and in the admin's plain-text translation rows is text, and the only values built in
+code are links (the password reset, the order and guest-tracking links, the Stripe pay link, the app
+link), each in a double-quoted `href`, where `&amp;` reads back as `&`. Markup an e-mail needs belongs
+in its template. `EmailTemplateRendererTests` pins that every placeholder in every template sits in
+element text or a double-quoted attribute, which is what makes the four characters enough. The
+apostrophe and accented letters are left as they are, which is why the renderer does not call
+`WebUtility.HtmlEncode` (it writes `á` as `&#225;`). The subject line is not HTML and is not encoded.
+Until 2026-10-03 every value went in as it came, so a name holding `<` or `&` broke the e-mail and
+markup typed into a name arrived as markup.
+
 There are ten templates, one per `EmailType` (`EmailService.TemplateFileFor`). The build fails when one
 is missing (`ValidateEmailTemplates` in the project file):
 

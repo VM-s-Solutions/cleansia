@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Memberships.Admin.DTOs;
+using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
@@ -10,7 +11,9 @@ namespace Cleansia.Core.AppServices.Features.Memberships.Admin;
 /// <summary>
 /// Admin edit of a membership plan's benefits and per-currency prices. Code and BillingInterval are
 /// create-only (immutable on edit). A currency the payload does not mention keeps the row it has;
-/// removing a row is not offered — deactivate the plan instead.
+/// removing a row is not offered — deactivate the plan instead. Once anyone has subscribed, the discount
+/// and the express quota are the terms that subscriber was shown and stay as they are; a different offer
+/// is a new plan.
 /// </summary>
 public class UpdateMembershipPlan
 {
@@ -33,11 +36,18 @@ public class UpdateMembershipPlan
 
     public class Validator : AbstractValidator<Command>
     {
+        private readonly IMembershipPlanRepository _membershipPlanRepository;
+        private readonly IUserMembershipRepository _userMembershipRepository;
+
         public Validator(
             IMembershipPlanRepository membershipPlanRepository,
             ICurrencyRepository currencyRepository,
-            IMembershipPlanPriceRepository membershipPlanPriceRepository)
+            IMembershipPlanPriceRepository membershipPlanPriceRepository,
+            IUserMembershipRepository userMembershipRepository)
         {
+            _membershipPlanRepository = membershipPlanRepository;
+            _userMembershipRepository = userMembershipRepository;
+
             RuleFor(x => x.MembershipPlanId)
                 .Cascade(CascadeMode.Stop)
                 .NotEmpty()
@@ -64,13 +74,43 @@ public class UpdateMembershipPlan
                 });
 
             RuleFor(x => x.DiscountPercentage)
+                .Cascade(CascadeMode.Stop)
                 .InclusiveBetween(0m, 100m)
-                .WithMessage(BusinessErrorMessage.MembershipPlanDiscountOutOfRange);
+                .WithMessage(BusinessErrorMessage.MembershipPlanDiscountOutOfRange)
+                .MustAsync((command, _, ct) => KeepsSubscribedTermsAsync(
+                    command, plan => plan.DiscountPercentage == command.DiscountPercentage, ct))
+                .WithMessage(BusinessErrorMessage.MembershipPlanBenefitsLocked);
+
+            // A subscriber was shown a quota of zero while the waiver is off, so the toggle moves the
+            // quota as surely as the number does.
+            RuleFor(x => x.ExpressUpgradesPerMonth)
+                .MustAsync((command, _, ct) => KeepsSubscribedTermsAsync(
+                    command,
+                    plan => plan.ExpressUpgradesPerMonth == command.ExpressUpgradesPerMonth
+                        && StatedExpressQuota(plan.AllowsExpressUpgrade, plan.ExpressUpgradesPerMonth)
+                            == StatedExpressQuota(command.AllowsExpressUpgrade, command.ExpressUpgradesPerMonth),
+                    ct))
+                .WithMessage(BusinessErrorMessage.MembershipPlanBenefitsLocked);
 
             RuleFor(x => x.TrialPeriodDays)
                 .GreaterThanOrEqualTo(0)
                 .WithMessage(BusinessErrorMessage.MustBePositive);
         }
+
+        private async Task<bool> KeepsSubscribedTermsAsync(
+            Command command,
+            Func<MembershipPlan, bool> isUnchanged,
+            CancellationToken cancellationToken)
+        {
+            var plan = await _membershipPlanRepository.GetByIdAsync(command.MembershipPlanId, cancellationToken);
+
+            return plan is null
+                || isUnchanged(plan)
+                || !await _userMembershipRepository.HasAnyForPlanAsync(plan.Id, cancellationToken);
+        }
+
+        private static int StatedExpressQuota(bool allowsExpressUpgrade, int expressUpgradesPerMonth) =>
+            allowsExpressUpgrade ? expressUpgradesPerMonth : 0;
     }
 
     public class Handler(

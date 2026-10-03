@@ -21,7 +21,8 @@ public static class MembershipPlanMapper
             IsActive: plan.IsActive,
             CreatedOn: plan.CreatedOn);
 
-    public static MembershipPlanDetailDto MapToDetailDto(this MembershipPlan plan, IEnumerable<MembershipPlanPrice> prices) =>
+    public static MembershipPlanDetailDto MapToDetailDto(
+        this MembershipPlan plan, IEnumerable<MembershipPlanPrice> prices, bool benefitsLocked) =>
         new(
             Id: plan.Id,
             Code: plan.Code,
@@ -34,6 +35,7 @@ public static class MembershipPlanMapper
             TrialPeriodDays: plan.TrialPeriodDays,
             AllowsExpressUpgrade: plan.AllowsExpressUpgrade,
             ExpressUpgradesPerMonth: plan.ExpressUpgradesPerMonth,
+            BenefitsLocked: benefitsLocked,
             IsActive: plan.IsActive,
             CreatedOn: plan.CreatedOn,
             UpdatedOn: plan.UpdatedOn);

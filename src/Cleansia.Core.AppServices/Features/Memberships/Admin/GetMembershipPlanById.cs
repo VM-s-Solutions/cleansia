@@ -14,7 +14,8 @@ public class GetMembershipPlanById
 
     public class Handler(
         IMembershipPlanRepository membershipPlanRepository,
-        IMembershipPlanPriceRepository membershipPlanPriceRepository)
+        IMembershipPlanPriceRepository membershipPlanPriceRepository,
+        IUserMembershipRepository userMembershipRepository)
         : IQueryHandler<Query, MembershipPlanDetailDto>
     {
         public async Task<BusinessResult<MembershipPlanDetailDto>> Handle(Query request, CancellationToken cancellationToken)
@@ -28,8 +29,9 @@ public class GetMembershipPlanById
             }
 
             var prices = await membershipPlanPriceRepository.GetAllForPlanAsync(plan.Id, cancellationToken);
+            var benefitsLocked = await userMembershipRepository.HasAnyForPlanAsync(plan.Id, cancellationToken);
 
-            return BusinessResult.Success(plan.MapToDetailDto(prices));
+            return BusinessResult.Success(plan.MapToDetailDto(prices, benefitsLocked));
         }
     }
 }

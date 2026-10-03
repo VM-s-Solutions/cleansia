@@ -78,4 +78,11 @@ public interface IUserMembershipRepository : IRepository<UserMembership, string>
     /// that ever invoiced another currency is locked to it by Stripe. Historical, so every row counts.
     /// </summary>
     Task<bool> HasAnyInOtherCurrencyAsync(string userId, string currencyId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Has anyone ever subscribed to this plan — any status, any company? A subscriber was shown the
+    /// plan's discount and express quota as their terms, so from then on those two are locked. Across
+    /// every company, because a plan is platform catalogue and another company's member holds it too.
+    /// </summary>
+    Task<bool> HasAnyForPlanAsync(string membershipPlanId, CancellationToken cancellationToken);
 }

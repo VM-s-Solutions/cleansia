@@ -3308,6 +3308,7 @@
     "membership": {
       "plan": {
         "action_failed": "Akcia s plánom členstva sa nepodarila. Skúste to znova.",
+        "benefits_locked": "Tento plán si už niekto predplatil, takže jeho zľavu a zahrnuté expresné upgrady už nemožno meniť. Namiesto toho vytvorte nový plán a tento deaktivujte.",
         "code_already_exists": "Plán s týmto kódom už existuje.",
         "discount_out_of_range": "Zľava musí byť medzi 0 a 100.",
         "not_found": "Plán členstva sa nenašiel.",

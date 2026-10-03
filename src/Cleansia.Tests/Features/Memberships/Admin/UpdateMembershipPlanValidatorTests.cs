@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Memberships.Admin;
 using Cleansia.Core.AppServices.Features.Memberships.Admin.DTOs;
+using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.TestUtilities.MockDataFactories.Memberships;
 using MockQueryable;
@@ -20,6 +21,7 @@ public class UpdateMembershipPlanValidatorTests
     private readonly Mock<IMembershipPlanRepository> _planRepository = new();
     private readonly Mock<ICurrencyRepository> _currencyRepository = new();
     private readonly Mock<IMembershipPlanPriceRepository> _priceRepository = new();
+    private readonly Mock<IUserMembershipRepository> _userMembershipRepository = new();
 
     public UpdateMembershipPlanValidatorTests()
     {
@@ -33,7 +35,7 @@ public class UpdateMembershipPlanValidatorTests
     }
 
     private UpdateMembershipPlan.Validator Validator() =>
-        new(_planRepository.Object, _currencyRepository.Object, _priceRepository.Object);
+        new(_planRepository.Object, _currencyRepository.Object, _priceRepository.Object, _userMembershipRepository.Object);
 
     private static UpdateMembershipPlan.Command Valid(Dictionary<string, MembershipPlanPriceInput>? prices) =>
         new(PlanId, "Plus Monthly", prices, 5m, 0, true);
@@ -144,4 +146,111 @@ public class UpdateMembershipPlanValidatorTests
             e.PropertyName == nameof(UpdateMembershipPlan.Command.TrialPeriodDays)
             && e.ErrorMessage == BusinessErrorMessage.MustBePositive);
     }
+
+    /// <summary>
+    /// Owner ruling 2026-10-03: the customer terms state a plan's discount and express quota "for your
+    /// plan when you subscribe", so once anyone has subscribed those two are fixed. A new offer is a new
+    /// plan; the old one is deactivated.
+    /// </summary>
+    [Fact]
+    public async Task ASubscribedPlan_RefusesADiscountChange_BenefitsLocked()
+    {
+        StoredPlan(subscribed: true);
+
+        var result = await Validator().ValidateAsync(Unchanged() with { DiscountPercentage = 10m });
+
+        Assert.False(result.IsValid);
+        var error = Assert.Single(result.Errors);
+        Assert.Equal(nameof(UpdateMembershipPlan.Command.DiscountPercentage), error.PropertyName);
+        Assert.Equal(BusinessErrorMessage.MembershipPlanBenefitsLocked, error.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task ASubscribedPlan_RefusesAnExpressQuotaChange_BenefitsLocked()
+    {
+        StoredPlan(subscribed: true);
+
+        var result = await Validator().ValidateAsync(Unchanged() with { ExpressUpgradesPerMonth = 3 });
+
+        Assert.False(result.IsValid);
+        var error = Assert.Single(result.Errors);
+        Assert.Equal(nameof(UpdateMembershipPlan.Command.ExpressUpgradesPerMonth), error.PropertyName);
+        Assert.Equal(BusinessErrorMessage.MembershipPlanBenefitsLocked, error.ErrorMessage);
+    }
+
+    /// <summary>
+    /// The quota a subscriber was shown is zero while the waiver is off, so switching the waiver off
+    /// takes the quota away exactly as editing the number to zero would.
+    /// </summary>
+    [Fact]
+    public async Task ASubscribedPlan_RefusesSwitchingTheExpressWaiverOff_BenefitsLocked()
+    {
+        StoredPlan(subscribed: true);
+
+        var result = await Validator().ValidateAsync(Unchanged() with { AllowsExpressUpgrade = false });
+
+        Assert.False(result.IsValid);
+        var error = Assert.Single(result.Errors);
+        Assert.Equal(nameof(UpdateMembershipPlan.Command.ExpressUpgradesPerMonth), error.PropertyName);
+        Assert.Equal(BusinessErrorMessage.MembershipPlanBenefitsLocked, error.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task ASubscribedPlan_WithNoExpressQuota_LetsTheWaiverToggleMove()
+    {
+        StoredPlan(subscribed: true, expressUpgradesPerMonth: 0);
+
+        var result = await Validator().ValidateAsync(Unchanged() with
+        {
+            AllowsExpressUpgrade = false,
+            ExpressUpgradesPerMonth = 0,
+        });
+
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public async Task ASubscribedPlan_WithItsBenefitsUnchanged_KeepsEveryOtherFieldEditable()
+    {
+        StoredPlan(subscribed: true);
+
+        var result = await Validator().ValidateAsync(Unchanged() with
+        {
+            Name = "Plus Monthly (2026)",
+            TrialPeriodDays = 14,
+            Prices = new Dictionary<string, MembershipPlanPriceInput> { ["CZK"] = new(249m, "price_czk_v2") },
+        });
+
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public async Task AnUnsubscribedPlan_KeepsItsBenefitsEditable()
+    {
+        StoredPlan(subscribed: false);
+
+        var result = await Validator().ValidateAsync(Unchanged() with
+        {
+            DiscountPercentage = 10m,
+            AllowsExpressUpgrade = true,
+            ExpressUpgradesPerMonth = 4,
+        });
+
+        Assert.True(result.IsValid);
+        _userMembershipRepository.Verify(r => r.HasAnyForPlanAsync(PlanId, It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+    }
+
+    private void StoredPlan(bool subscribed, int expressUpgradesPerMonth = 2)
+    {
+        var plan = MembershipPlan.Create(
+            "PLUS_MONTHLY", "Plus Monthly", discountPercentage: 5m, allowsExpressUpgrade: true, expressUpgradesPerMonth: expressUpgradesPerMonth);
+        plan.Id = PlanId;
+        _planRepository.Setup(r => r.GetByIdAsync(PlanId, It.IsAny<CancellationToken>())).ReturnsAsync(plan);
+        _userMembershipRepository
+            .Setup(r => r.HasAnyForPlanAsync(PlanId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(subscribed);
+    }
+
+    private static UpdateMembershipPlan.Command Unchanged() =>
+        new(PlanId, "Plus Monthly", null, 5m, 0, AllowsExpressUpgrade: true, ExpressUpgradesPerMonth: 2);
 }

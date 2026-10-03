@@ -1404,6 +1404,10 @@ describe('OrderWizardComponent (a11y)', () => {
     const marker = () => el.querySelector('[data-spec-in-package]');
     const addButton = () => el.querySelector<HTMLButtonElement>('[data-spec-select]');
 
+    // The previous case's basket is parked at its teardown, which runs after any afterEach here,
+    // and the next setup would restore it. Start every case from no parked basket.
+    beforeEach(() => sessionStorage.clear());
+
     async function onServicesStep(): Promise<void> {
       await setup();
       facade.services.set([makeService('windows', 'Windows')]);
@@ -1435,6 +1439,27 @@ describe('OrderWizardComponent (a11y)', () => {
       addButton()?.click();
 
       expect(facade.toggleService).toHaveBeenCalledWith('windows');
+    });
+
+    // The Plus step suggests services not chosen on their own, so it can suggest one the chosen
+    // package already includes; that row says so before its Add asks.
+    it('marks the Plus-step suggestion a chosen package includes, as the services step does', async () => {
+      await onServicesStep();
+      facade.packageNamesIncluding.mockImplementation((id: string) =>
+        id === 'windows' ? 'Deep clean' : null,
+      );
+      facade.updateFormData({ selectedPackageIds: ['deep'] });
+      facade.activeStep.set(5);
+      fixture.detectChanges();
+
+      const row = el.querySelector('.cl-wiz__cross-row');
+      expect(row).not.toBeNull();
+      const crossMarker = row?.querySelector('[data-spec-in-package]');
+      expect(crossMarker?.textContent).toContain('pages.order.package_overlap.in_package');
+      expect(crossMarker?.id).toBe('cross-in-pack-windows');
+      expect(row?.querySelector('.cl-wiz__cross-add')?.getAttribute('aria-describedby')).toBe(
+        'cross-in-pack-windows',
+      );
     });
 
     it('restores a parked package and service as they were, without asking', async () => {

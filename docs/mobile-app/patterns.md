@@ -295,7 +295,14 @@ things: no POIs, a muted base and the same pin.
   above both up to AX5. MapKit centres its region inside the layout margins, so the centre pin is
   pinned to the margins' centre, not the view's. When the inset changes, for example on a live
   text-size change, the picker sets the picked point back under the pin, because MapKit holds the map
-  still while the margins move. Since 2026-10-02 the two full-bleed order maps (the customer
+  still while the margins move. **So the card must not change height on a lookup** (since 2026-10-03,
+  owner remark). Every drag starts a reverse lookup, and the card's address block used to be one line
+  while it looked the address up (*Looking up…*) and two lines once it had it (the street over its
+  city line). Each lookup therefore moved the inset, and with it the map, the pin and the card. The
+  customer `BookingAddressPickerView` (booking and the address manager share it) now holds two lines
+  in every state. While there is no second line, the title holds its place in the second line's font,
+  unseen and hidden from VoiceOver, so the height still follows the text size. The partner
+  `AddressPickerView` has the same one-line lookup state and does not hold the line yet. Since 2026-10-02 the two full-bleed order maps (the customer
   `OrderDetailMap` and the partner `OrderDetailView`) keep the logo and *Legal* above their `SnapSheet`
   the same way: `fullBleedMap(coordinate:)` measures the map and reads the sheet's top, which `SnapSheet`
   publishes to its backdrop (`snapSheetTop`), and the bottom margin is the part of the map below it, at
@@ -312,7 +319,11 @@ things: no POIs, a muted base and the same pin.
   Both are lifted above the resting sheet, which covers the map's bottom edge. Since 2026-10-02 the two
   address pickers (the customer `AddressManagerScreen` and the partner `AddressPickerScreen`) lift them
   above their bottom card too, by the card's measured height, keeping Mapbox's own horizontal places;
-  only the ornaments move, not the camera centre the pin marks. `CleansiaMapUsageTest` fails any of the
+  only the ornaments move, not the camera centre the pin marks. Since 2026-10-03 the customer picker's
+  address block keeps the height of its two lines while it looks the address up (a minimum height of
+  the `titleSmall` and `bodySmall` line heights, converted through the density so it follows the font
+  scale). Before, each lookup bobbed the card and the ornaments above it by about 12dp. The partner
+  picker's card still changes height on a lookup. `CleansiaMapUsageTest` fails any of the
   four maps that leaves either ornament on its defaults.
 
 **The pin** is a brand-sky teardrop with a white house, 40 × 50 (pt or dp): sky-600 `#0284C7` on a

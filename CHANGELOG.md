@@ -978,6 +978,12 @@ need backfilling.
 
 ### Fixed
 
+- **Customer Android and iOS — the address picker holds still while it finds the address.** Each time
+  the map stopped, the card under it shrank to one line while it looked the address up, then grew back
+  to two. On iOS the map, the pin and the card jumped with it, and on Android the card and the Mapbox
+  logo bobbed. The card now keeps its height, in booking and in the saved addresses. (Owner remark
+  2026-10-03.)
+
 - **Customer iOS — the credit sheet's *Got it* button is no longer cut off.** The sheet that explains
   credit, opened from Rewards and from Profile, took half the screen whatever it held. That was too
   short for its text, so on iOS 16 and 18 *Got it* sat under the home indicator, and at a large text

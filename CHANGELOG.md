@@ -601,7 +601,7 @@ need backfilling.
   out, deleting the account, cancelling or switching Plus, deleting a schedule, renaming or deleting a
   saved address, removing a saved card, revoking a device, and for a cleaner confirming cash, deleting
   a note or an issue and declining or refusing an offer now ask with Android's standard dialog instead
-  of the app's card with its icon; the words are the same. A cleaner uploading a document picks its
+  of the app's card; the words are the same. A cleaner uploading a document picks its
   type from a list and then types the description into a second dialog, and a replacement or a
   deletion request asks for its text in one; the deletion request's button stays off until a reason
   is typed. The dialog closes when you tap, the screen shows that it is working (a card being removed

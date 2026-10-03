@@ -233,9 +233,9 @@ first point of scroll.
   inside the scroll, so the address bar starts below the status bar at rest and then scrolls under the
   band. That leaves Home's `PullToRefreshBox` filling the whole screen, so its indicator pads
   `WindowInsets.statusBars` before its 8dp and rests below the status bar, not under it. The band's
-  gradient ends on `background.copy(alpha = 0f)`, as iOS ends on `background.opacity(0)`: Android
-  interpolates gradient colours unpremultiplied, so a tail of `Color.Transparent`, which is transparent
-  black, passed through greys and tinted the light theme. `StatusBarFadeBindingTest` pins both
+  gradient ends on `background.copy(alpha = 0f)`, the page colour at zero alpha: Android interpolates
+  gradient colours unpremultiplied, so a tail of `Color.Transparent`, which is transparent black,
+  passed through greys and tinted the light theme. `StatusBarFadeBindingTest` pins both
   (2026-10-02).
 
 ## A booking swiped away keeps its draft {#booking-draft}

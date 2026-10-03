@@ -17,10 +17,10 @@ Push/notification prose: [`../../docs/architecture/push-notifications.md`](../..
 - `:core` → package `cz.cleansia.core.*` — shared by both apps. Real packages: `auth` (`TokenStore`,
   `SessionManager`, `AuthInterceptor`, `AuthAuthenticator`, `JwtDecoder`, `SessionScopedCache`),
   `network` (`NetworkCall.kt` → `networkCall { }`, enum serializers), `snackbar` (`SnackbarController`,
-  `GlobalSnackbarHost`), `ui.components` (`CleansiaButton.kt`, `CleansiaTextField.kt`, `CleansiaDialog.kt`,
-  `CleansiaDropdown.kt`, `CleansiaPhoneInput.kt`, `CleansiaSectionHeader.kt`, `CodeInput.kt`,
-  `MascotEmptyState.kt`, …), `ui.theme` (`CleansiaTypography` = Poppins headings / Nunito body,
-  `SemanticColors`, `Shape`, `Spacing`), `location`, `servicearea`, `format`, `freshness`, `sentry`.
+  `GlobalSnackbarHost`), `ui.components` (`CleansiaButton.kt`, `CleansiaTextField.kt`, `CleansiaDropdown.kt`,
+  `CleansiaPhoneInput.kt`, `CleansiaSectionHeader.kt`, `CodeInput.kt`, `MascotEmptyState.kt`, …), `ui.theme`
+  (`CleansiaTypography` = Poppins headings / Nunito body, `SemanticColors`, `Shape`, `Spacing`), `location`,
+  `servicearea`, `format`, `freshness`, `sentry`.
 - `:customer-app` → `cz.cleansia.customer.*`. Features inline ViewModel+Screens under
   `features/<name>/`; data adapters under `core/<domain>/`; theme `ui.theme.CleansiaTheme`;
   `ui.state.ActionState`; typed routes in `navigation.Routes`.
@@ -364,9 +364,10 @@ null/sign-out is a defect.
 
 Use `cz.cleansia.core.ui.components.*` — `CleansiaPrimaryButton`, `CleansiaOutlinedButton`,
 `CleansiaTextLink` (with `CleansiaButtonSize.{Small,Medium,Large}`), `CleansiaTextField`,
-`CleansiaDialog`, `MascotEmptyState`, etc. Colors/typography via `MaterialTheme.colorScheme.*` /
-`MaterialTheme.typography.*` inside `CleansiaTheme` (which applies `CleansiaTypography`). Never style
-raw components one-off; never duplicate a `:core` component.
+`MascotEmptyState`, etc. A confirm is Material 3's `AlertDialog`, never a `:core` card (the confirms rule
+below). Colors/typography via `MaterialTheme.colorScheme.*` / `MaterialTheme.typography.*` inside
+`CleansiaTheme` (which applies `CleansiaTypography`). Never style raw components one-off; never
+duplicate a `:core` component.
 
 > **iOS destructive affordance — the ONE way (T-0432):** the Core `CleansiaDangerButton` (in
 > `Core/Components/CleansiaButton.swift`, alongside the primary/outlined/link buttons) is the single
@@ -679,17 +680,23 @@ raw components one-off; never duplicate a `:core` component.
 > continuous with a deep floating shadow. Severity accent = `error` / green / `primary` / amber; the
 > `SnackbarMessage`/`SnackbarSeverity` API + dismiss button + accessibility are unchanged.
 
-> **iOS confirms — every one is a system dialog (H-8, owner remark 2026-10-03; D15 of 2026-10-01 kept a card for
-> six).** A confirm is a native `.alert` with `role: .destructive` where it destroys; a short choice is a
-> `.confirmationDialog` (anchor it to the control that opens it, so iOS 26 points at it); input is an iOS 16 `.alert`
-> holding a `TextField`. A system dialog is gone before the request starts, so the double-submit guard must be the trigger's (disabled or busy while the request runs) or the
-> view model's re-entry check, the busy state is the screen's (a row spinner, the other rows' buttons waiting), and a
-> refusal is the snackbar's — a retry hint inside the dialog has nowhere to live. **iOS 16 hides a disabled alert button
-> and never brings it back**, so a required field in an alert is refused by the view model (the partner document
-> deletion reason answers a blank one with `error.common.required` and sends nothing), never by
-> `.disabled(text.isEmpty)`. The Core `CleansiaDialog` overlay card is **deleted**; a custom confirm card on iOS is a
-> deviation. Android keeps `:core` `CleansiaDialog` (ADR-0018 D1 holds the content, D3 the component) → docs
-> `/mobile-app/patterns#native-ios`.
+> **Confirms — every one is a system dialog, on both platforms (iOS H-8 and Android J-1, owner remark 2026-10-03;
+> D15 of 2026-10-01 kept an iOS card for six).** **iOS:** a confirm is a native `.alert` with `role: .destructive`
+> where it destroys; a short choice is a `.confirmationDialog` (anchor it to the control that opens it, so iOS 26
+> points at it); input is an iOS 16 `.alert` holding a `TextField`. **Android:** a Material 3 `AlertDialog` —
+> `title`, `text`, a `TextButton` confirm (`ButtonDefaults.textButtonColors(contentColor = colorScheme.error)` where
+> it destroys) and a `TextButton` cancel, no icon, TalkBack's default semantics; input is a `CleansiaTextField` in the
+> `text` slot; a short choice is a list in the `text` slot. **Both:** a system dialog is gone before the request
+> starts — close it in the confirm's `onClick` — so the double-submit guard must be the trigger's (disabled or busy
+> while the request runs) or the view model's re-entry check, the busy state is the screen's (a row spinner, the
+> other rows' buttons waiting), and a refusal is the snackbar's — a retry hint inside the dialog has nowhere to live,
+> so the view model returns to `Idle` on a failure, not `ActionState.Error(hint)`. **iOS 16 hides a disabled alert
+> button and never brings it back**, so a required field in an iOS alert is refused by the view model (the partner
+> document deletion reason answers a blank one with `error.common.required` and sends nothing), never by
+> `.disabled(text.isEmpty)`; Android can, and holds the confirm `enabled = reason.isNotBlank()` — the one recorded
+> difference. The branded `CleansiaDialog` is **deleted on both** (the Core overlay card and the `:core` `Dialog`
+> window); a custom confirm card on either platform is a deviation, and on Android `SystemDialogUsageTest` fails any
+> `import androidx.compose.ui.window.Dialog` → docs `/mobile-app/patterns#native-ios`.
 
 > **iOS consent row + outbound web links — the ONE way:** a checkbox whose label carries links uses
 > the Core **`CleansiaConsentCheckbox`**, never `CleansiaCheckbox` — the latter wraps box + label in a
@@ -909,7 +916,7 @@ and `…/Network`; the `:core` sub-packages map by name (`auth`→`Auth`, `netwo
 | Material `colorScheme.*` (per-app `lightColorScheme`/`darkColorScheme`) | `CleansiaColors` in `Core/DesignSystem` — the **same Material slot names** (`primary`/`onPrimary`/`surface`/`outline`/`error`…) as `Color.dynamic(light:dark:)`, so components read 1:1 with the Compose source; the sky/slate ramp is `Palette` (internal). Slots the Android themes **don't override** render Compose's **Material3 BASELINE** on device — mirror that baseline hex verbatim (e.g. `tertiaryContainer`, dark `errorContainer`/`onErrorContainer` = error30/error90), never substitute a "close" ramp color |
 | `CleansiaTypography` (Poppins headings / Nunito body) | `CleansiaTypography` in `Core/DesignSystem` — same slot names returning `Font`; `CleansiaFont.{poppins,nunito}` register bundled `.ttf` (owner step) and **fall back to system font** if absent so it always builds |
 | customer `ui.theme.BrandGradients` (light/dark brand pairs) + the inline Plus `Sky950→Slate900` pair (`HomeTab.kt:412-421`) | the Core **`BrandGradient`** enum in `Core/DesignSystem` — `.blue`/`.purple`/`.cyan` as `Color.dynamic` pairs + the fixed `.plusHero`, exposing `colors` and a `linearGradient` (top-leading→bottom-trailing = Compose's default `Brush.linearGradient`). Models/views carry the semantic **token**, not resolved `Color`s, so slide/predicate tests compare gradients by case |
-| `cz.cleansia.core.ui.components.*` Composables | the same `Cleansia*` names as `View`s in `Core/Components` — **native SwiftUI, no Material re-impl** (Gate-DP): a `CleansiaDropdown` over a short closed list → a native `Menu` + inline `Picker` anchored to the field, a searchable one (the country lists) → `.sheet`+`.presentationDetents`+`.searchable` (owner decision D15, 2026-10-01; until then every dropdown was a sheet), Material Checkbox → SF-Symbol tappable row, custom Dialog → a native `.alert` / `.confirmationDialog` for every confirm, a field held in an `.alert` `TextField` (H-8, 2026-10-03; the `CleansiaDialog` card that D15 kept for six confirms is deleted); same layout/labels/branding |
+| `cz.cleansia.core.ui.components.*` Composables | the same `Cleansia*` names as `View`s in `Core/Components` — **native SwiftUI, no Material re-impl** (Gate-DP): a `CleansiaDropdown` over a short closed list → a native `Menu` + inline `Picker` anchored to the field, a searchable one (the country lists) → `.sheet`+`.presentationDetents`+`.searchable` (owner decision D15, 2026-10-01; until then every dropdown was a sheet), Material Checkbox → SF-Symbol tappable row, Material 3 `AlertDialog` (every Android confirm since J-1, 2026-10-03) → a native `.alert` / `.confirmationDialog` for every confirm, a field held in an `.alert` `TextField` (H-8, 2026-10-03); `CleansiaDialog` is deleted on both platforms (the iOS card that D15 kept for six confirms, and the Android `:core` `Dialog` window that was every Android confirm); same layout/labels/branding |
 | `@HiltViewModel` + `StateFlow` | `ObservableObject` + `@Published` state; own a VM with `@StateObject`, inject with `@ObservedObject` (the iOS-16 foot-gun, ADR-0014 #11). New VMs may subclass the `@MainActor open class ViewModel` base in `Core/State` (NOT `@Observable`) |
 | sealed `*UiState` (Loading/Error/Loaded) | an `enum State { case loading, error(canRetry: Bool), loaded(OrderDetailDto) }` |
 | `ActionState` (Idle/Submitting/Error) | an `enum ActionState` mirror |

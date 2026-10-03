@@ -452,14 +452,33 @@ What changed on iOS:
     deleted.
   - **iOS 16 hides a disabled alert button** and never brings it back, so the deletion request cannot
     hold its button off until a reason is typed. The view model refuses a blank reason itself, with
-    *This field is required.* in the snackbar, and sends nothing.
+    *This field is required.* in the snackbar, and sends nothing. Android can bring a button back, so
+    it holds the confirm disabled until a reason is typed. That is the one deliberate difference
+    between the two platforms' dialogs.
   - The alerts use the same title, message and button strings, and lose the card's icon circle and
     spring. `CleansiaDialog`, the branded card, had no caller left and is deleted from CleansiaCore.
     Until 2026-10-01 it was every confirmation, and until 2026-10-03 it was still the six that held a
     field or stayed up while submitting (card removal, both device revokes and the three document
-    dialogs). This is [ADR-0018](/decisions/adr-0018) D3's `AlertDialog` row with no exception left,
-    so no ADR changed. Android keeps its branded dialog for every confirmation, since the content is
-    what ADR-0018 D1 holds identical.
+    dialogs).
+  - **Android has matched since 2026-10-03** (owner remark). Every confirmation, notice and short
+    choice in both Android apps is a Material 3 `AlertDialog` with the same strings: a title, the
+    text, a `TextButton` confirm (in the error colour where it destroys) and a `TextButton` cancel,
+    with no icon circle, read by TalkBack as the system reads any dialog. The rules above hold there
+    too. The dialog closes on the tap. Removing a card or revoking a device shows a spinner on that
+    row while the other rows' buttons wait, a refusal goes to the snackbar, and the two retry hints
+    are deleted in all five locales. A field sits in the dialog's text. A document upload asks for the
+    type in a dialog that lists them, then for the description in a second dialog that holds the field
+    and names the type and the file. A replacement and a deletion request are one dialog each. The
+    cleaner's unreachable-server splash, which held its sign-out dialog open over the wipe, now closes
+    it on the tap and does not offer sign-out again while the wipe runs. The `:core` `CleansiaDialog`,
+    which drew a window of its own with an icon halo and a spring, is deleted too.
+    `SystemDialogUsageTest` fails any screen that imports Compose's `Dialog` window again.
+  - **Some forms differ by platform idiom, not by content.** Deleting a saved address is a dialog on
+    Android and an action sheet on iOS. The preferred-cleaner list is a dialog on Android and a sheet
+    on iOS. Choosing a photo's source is a bottom sheet on Android and an action sheet on iOS.
+  - **No ADR changed.** [ADR-0018](/decisions/adr-0018) D3 maps Material's `AlertDialog` to `.alert`
+    and `.confirmationDialog`. That row now holds on both sides with no exception left, and D1 holds
+    the content identical, which did not change.
 - **The birth date is picked on wheels.** The date-of-birth field (customer profile edit and
   completion, partner personal details) opens day, month and year wheels in a half-height sheet,
   instead of a month-by-month calendar that started at today. An empty field's wheels open thirty

@@ -595,8 +595,19 @@ need backfilling.
   into a system alert, and a replacement or a deletion request asks for its text the same way. The
   dialog closes when you tap, the screen shows that it is working, and an error appears at the bottom
   of the screen. A deletion request sent without a reason is refused with *This field is required.*
-  Android is unchanged. (Owner ruling 2026-10-01; the card removal, device and document dialogs, owner
-  remark 2026-10-03.)
+  (Owner ruling 2026-10-01; the card removal, device and document dialogs, owner remark 2026-10-03.)
+
+- **Customer and cleaner Android — every confirmation is the phone's own dialog, as on iOS.** Signing
+  out, deleting the account, cancelling or switching Plus, deleting a schedule, renaming or deleting a
+  saved address, removing a saved card, revoking a device, and for a cleaner confirming cash, deleting
+  a note or an issue and declining or refusing an offer now ask with Android's standard dialog instead
+  of the app's card with its icon; the words are the same. A cleaner uploading a document picks its
+  type from a list and then types the description into a second dialog, and a replacement or a
+  deletion request asks for its text in one; the deletion request's button stays off until a reason
+  is typed. The dialog closes when you tap, the screen shows that it is working (a card being removed
+  or a device being revoked shows a spinner on its row), and an error appears at the bottom of the
+  screen. A cleaner signing out from the screen shown when the app cannot reach the server sees the
+  dialog close at once, and is not asked again while the sign-out finishes. (Owner remark 2026-10-03.)
 
 - **Customer and cleaner iOS — a short list drops down from its field.** The dispute reason, the
   cleaner's sign-up market and the document type open as a menu on the field instead of a sheet over

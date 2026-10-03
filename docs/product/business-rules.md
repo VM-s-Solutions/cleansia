@@ -1795,7 +1795,8 @@ the web, Android and iOS — the same four things hold:
 
 - **A service a chosen package includes is marked** *In your package: {package}* under its name, the
   names joined by commas when more than one chosen package includes it. The line is part of what a
-  screen reader announces for the row (on the web, the add button's description), and the row stays
+  screen reader announces for the row (on the web booking, the add button's description; on the web
+  schedule form the whole row is the button, and the line is part of its name), and the row stays
   selectable.
 - **Adding that service asks first.** *Already in your package* — *"{service} is part of {package}.
   Adding it again books it twice: it is done twice and charged twice."* — with *Add again* and

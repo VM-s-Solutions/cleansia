@@ -29,7 +29,7 @@ final class CatalogWireContractTests: XCTestCase {
             description: "Deep",
             price: 900,
             translations: [:],
-            includedServices: [PackageServiceSummary(name: "Windows", translations: [:])]
+            includedServices: [PackageServiceSummary(serviceId: "svc-9", name: "Windows", translations: [:])]
         )
     }
 
@@ -54,6 +54,16 @@ final class CatalogWireContractTests: XCTestCase {
         XCTAssertEqual(try CatalogPackage(packagePayload()).price, 900)
         XCTAssertEqual(try CatalogExtra(extraPayload()).price, 250)
         XCTAssertEqual(try CatalogCurrency(currencyPayload()).code, "EUR")
+    }
+
+    /// The included service's id is what marks it in the services list and warns before it is added
+    /// twice; a server that leaves it out loses only that, never the catalogue.
+    func testAnIncludedServiceCarriesItsServiceIdAndAMissingOneRefusesNothing() throws {
+        XCTAssertEqual(try CatalogPackage(packagePayload()).includedServices.map(\.serviceId), ["svc-9"])
+
+        var payload = packagePayload()
+        payload.includedServices = [PackageServiceSummary(name: "Windows", translations: [:])]
+        XCTAssertEqual(try CatalogPackage(payload).includedServices.map(\.serviceId), [nil])
     }
 
     func testThePlatformDefaultIsTheOverviewsDefaultRow() throws {

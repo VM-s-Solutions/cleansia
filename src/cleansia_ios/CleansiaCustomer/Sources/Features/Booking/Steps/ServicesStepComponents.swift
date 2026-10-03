@@ -120,6 +120,9 @@ struct ServiceRow: View {
     let service: CatalogService
     let currencyCode: String
     let selected: Bool
+    /// "In your package: …" when a selected package already includes this service; part of the row's
+    /// VoiceOver label like every other line on it. The row stays selectable.
+    let inPackageNote: String?
     let onToggle: () -> Void
 
     var body: some View {
@@ -157,6 +160,9 @@ struct ServiceRow: View {
                 .font(CleansiaTypography.titleMedium)
                 .foregroundColor(CleansiaColors.onSurface)
                 .lineLimit(1)
+            if let inPackageNote {
+                InPackageNote(text: inPackageNote)
+            }
             if let description = service.localizedDescription(for: locale), !description.isEmpty {
                 Text(description)
                     .font(CleansiaTypography.bodyMedium)
@@ -179,6 +185,81 @@ struct ServiceRow: View {
 
     private func price(_ amount: Double) -> String {
         BookingPricing.formatTotal(amount, currencyCode: currencyCode)
+    }
+}
+
+/// The one-line marker a service row carries while a selected package already includes it — the
+/// booking's services list and the recurring form's both draw it.
+struct InPackageNote: View {
+    let text: String
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: Spacing.xxs) {
+            Image(systemName: "shippingbox.fill")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundColor(CleansiaColors.primary)
+                .accessibilityHidden(true)
+            Text(text)
+                .font(CleansiaTypography.labelMedium)
+                .foregroundColor(CleansiaColors.onSurfaceVariant)
+                .lineLimit(2)
+        }
+    }
+}
+
+/// The twice-booking confirm (→ /product/business-rules#charging-a-package-and-a-service-together):
+/// the pick lands only on the confirm; Cancel, the escape, leaves the selection as it was.
+struct TwiceBookedAlert: ViewModifier {
+    @Environment(\.locale) private var locale
+    let pick: TwiceBookedPick?
+    let catalog: Catalog?
+    let onConfirm: (TwiceBookedPick) -> Void
+    let onCancel: () -> Void
+
+    func body(content: Content) -> some View {
+        content.alert(
+            pick.map(title) ?? "",
+            isPresented: Binding(get: { pick != nil }, set: { if !$0 { onCancel() } }),
+            presenting: pick
+        ) { pick in
+            Button(confirmLabel(pick)) { onConfirm(pick) }
+            Button(L10n.cancel, role: .cancel, action: onCancel)
+        } message: { pick in
+            Text(message(pick))
+        }
+    }
+
+    private func title(_ pick: TwiceBookedPick) -> String {
+        switch pick {
+        case .service: L10n.Booking.twiceServiceTitle
+        case .package: L10n.Booking.twicePackageTitle
+        }
+    }
+
+    private func confirmLabel(_ pick: TwiceBookedPick) -> String {
+        switch pick {
+        case .service: L10n.Booking.twiceServiceConfirm
+        case .package: L10n.Booking.twicePackageConfirm
+        }
+    }
+
+    private func message(_ pick: TwiceBookedPick) -> String {
+        switch pick {
+        case let .service(id, packageIds):
+            L10n.Booking.twiceServiceMessage(service: serviceNames([id]), packages: packageNames(packageIds))
+        case let .package(id, serviceIds):
+            L10n.Booking.twicePackageMessage(package: packageNames([id]), services: serviceNames(serviceIds))
+        }
+    }
+
+    private func serviceNames(_ ids: [String]) -> String {
+        ids.compactMap { id in catalog?.services.first { $0.id == id }?.localizedName(for: locale) }
+            .joined(separator: ", ")
+    }
+
+    private func packageNames(_ ids: [String]) -> String {
+        ids.compactMap { id in catalog?.packages.first { $0.id == id }?.localizedName(for: locale) }
+            .joined(separator: ", ")
     }
 }
 

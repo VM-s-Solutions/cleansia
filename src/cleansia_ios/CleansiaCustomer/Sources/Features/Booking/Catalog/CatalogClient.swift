@@ -89,6 +89,7 @@ extension CatalogService {
 
 extension CatalogPackageServiceSummary {
     init(_ dto: PackageServiceSummary) throws {
+        serviceId = dto.serviceId
         name = try dto.name.requireNonBlank("name")
         translations = dto.translations?.toDomain ?? [:]
     }

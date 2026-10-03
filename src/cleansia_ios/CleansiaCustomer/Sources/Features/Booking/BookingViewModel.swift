@@ -34,6 +34,8 @@ final class BookingViewModel: ViewModel {
     @Published internal(set) var savedCards: [SavedCard]?
 
     @Published private(set) var currentStep = 1
+    /// A tap that would book a service twice, waiting for the customer to confirm or cancel it.
+    @Published internal(set) var twiceBookedPick: TwiceBookedPick?
 
     let events = PassthroughSubject<BookingEvent, Never>()
 
@@ -252,6 +254,7 @@ final class BookingViewModel: ViewModel {
         savedCards = nil
         guaranteeCurrencyCode = nil
         currentStep = 1
+        twiceBookedPick = nil
         lastQuoteRequest = nil
         // The last booking's quote and close are never read against the next one.
         quotedAt = nil

@@ -537,9 +537,9 @@
     <!-- Profile — help & support -->
     <string name="help_title">Довідка та підтримка</string>
     <string name="help_contact_title">Зв’яжіться з нами</string>
-    <string name="help_call">Зателефонувати в підтримку</string>
+    <string name="help_call">Зателефонуйте в підтримку</string>
     <string name="help_call_desc">Пн–Нд · 8:00–20:00</string>
-    <string name="help_email">Написати email</string>
+    <string name="help_email">Напишіть нам</string>
     <string name="help_email_desc">support@cleansia.cz</string>
     <string name="help_call_unavailable">На цьому пристрої не можна телефонувати. Номер скопійовано.</string>
     <string name="help_email_unavailable">Не знайдено поштового застосунку. Адресу скопійовано.</string>

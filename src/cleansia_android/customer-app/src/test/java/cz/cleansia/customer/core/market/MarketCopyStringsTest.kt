@@ -131,6 +131,35 @@ class MarketCopyStringsTest {
         }
     }
 
+    /**
+     * M5: iOS's Help is the reference for this screen (owner, 2026-10-03). Its contact rows are Email us,
+     * on the support address, then Call support, with the line's hours, in iOS's wording in every locale.
+     * Android listed the line first and worded both rows differently in cs, sk, uk and ru.
+     */
+    @Test
+    fun `the help rows follow iOS - e-mail first, then the line, in its wording`() {
+        val help = source("features/profile/HelpSupportScreen.kt")
+        val email = help.indexOf("title = stringResource(R.string.help_email),")
+        val call = help.indexOf("title = stringResource(R.string.help_call),")
+        assertTrue("the e-mail row is gone", email >= 0)
+        assertTrue("the call row is gone", call >= 0)
+        assertTrue("the line is listed before the e-mail, iOS lists the e-mail first", email < call)
+
+        val ios = mapOf(
+            "values" to listOf("Email us", "Call support", "Mon–Sun · 8:00–20:00"),
+            "values-cs" to listOf("Napište nám", "Zavolejte podpoře", "Po–Ne · 8:00–20:00"),
+            "values-sk" to listOf("Napíšte nám", "Zavolajte podpore", "Po–Ne · 8:00–20:00"),
+            "values-uk" to listOf("Напишіть нам", "Зателефонуйте в підтримку", "Пн–Нд · 8:00–20:00"),
+            "values-ru" to listOf("Напишите нам", "Позвоните в поддержку", "Пн–Вс · 8:00–20:00"),
+        )
+        ios.forEach { (locale, rows) ->
+            val xml = stringsXml(locale)
+            listOf("help_email", "help_call", "help_call_desc").zip(rows).forEach { (key, expected) ->
+                assertEquals("$locale/$key reads differently from iOS", expected, valueOf(xml, key))
+            }
+        }
+    }
+
     private fun source(path: String): String =
         File(moduleDir, "src/main/java/cz/cleansia/customer/$path").readText().replace(Regex("\\s+"), " ")
 

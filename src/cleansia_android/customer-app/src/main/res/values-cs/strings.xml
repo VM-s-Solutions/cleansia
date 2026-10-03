@@ -540,9 +540,9 @@
     <!-- Profile — help & support -->
     <string name="help_title">Nápověda a podpora</string>
     <string name="help_contact_title">Kontaktujte nás</string>
-    <string name="help_call">Zavolat na podporu</string>
+    <string name="help_call">Zavolejte podpoře</string>
     <string name="help_call_desc">Po–Ne · 8:00–20:00</string>
-    <string name="help_email">Napsat e-mail</string>
+    <string name="help_email">Napište nám</string>
     <string name="help_email_desc">support@cleansia.cz</string>
     <string name="help_call_unavailable">Na tomto zařízení nelze volat. Číslo je zkopírované.</string>
     <string name="help_email_unavailable">Nenašli jsme e-mailovou aplikaci. Adresa je zkopírovaná.</string>

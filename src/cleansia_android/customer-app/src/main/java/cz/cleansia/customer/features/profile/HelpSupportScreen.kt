@@ -145,18 +145,19 @@ private fun HelpSupportScreenContent(
             )
             Spacer(Modifier.height(10.dp))
 
-            ContactRow(
-                icon = Icons.Outlined.Phone,
-                title = stringResource(R.string.help_call),
-                subtitle = stringResource(R.string.help_call_desc),
-                onClick = onCall,
-            )
-            Spacer(Modifier.height(8.dp))
+            // E-mail first, then the line: iOS's Help is the reference for this screen (owner, 2026-10-03).
             ContactRow(
                 icon = Icons.Outlined.Email,
                 title = stringResource(R.string.help_email),
                 subtitle = stringResource(R.string.help_email_desc),
                 onClick = onEmail,
+            )
+            Spacer(Modifier.height(8.dp))
+            ContactRow(
+                icon = Icons.Outlined.Phone,
+                title = stringResource(R.string.help_call),
+                subtitle = stringResource(R.string.help_call_desc),
+                onClick = onCall,
             )
 
             Spacer(Modifier.height(24.dp))
